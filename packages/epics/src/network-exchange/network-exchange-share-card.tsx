@@ -29,11 +29,7 @@ import {
   type NetworkFieldSignalKind,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
-import {
-  WalletFlowCard,
-  WalletFlowLabel,
-  walletPresetClass,
-} from '../common/wallet-flow-card';
+import { WalletFlowLabel } from '../common/wallet-flow-card';
 import { CAPITAL_MARK } from './capital-marks';
 import {
   appendIndicativePayoutParams,
@@ -126,10 +122,9 @@ export function NetworkExchangeShareCard({
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
   const [capitals, setCapitals] = useState<CapitalKey[]>([]);
-  const [payout, setPayout] = useState<LinkedTreasuryPayout>({
-    amount: '',
-    token: '',
-  });
+  const [payouts, setPayouts] = useState<LinkedTreasuryPayout[]>([
+    { amount: '', token: '' },
+  ]);
   const [images, setImages] = useState<File[]>([]);
   const [documents, setDocuments] = useState<File[]>([]);
   const [mediaKind, setMediaKind] = useState<'images' | 'video' | null>(null);
@@ -209,7 +204,7 @@ export function NetworkExchangeShareCard({
       params.set('title', headline.slice(0, 50));
       params.set('description', body.slice(0, 4000));
       if (linkedVideo) params.set('video', linkedVideo);
-      appendIndicativePayoutParams(params, payout);
+      appendIndicativePayoutParams(params, payouts);
       if (capitals.length > 0 && typeof window !== 'undefined') {
         window.sessionStorage.setItem(
           EXCHANGE_SIGNAL_CAPITALS_KEY,
@@ -228,233 +223,231 @@ export function NetworkExchangeShareCard({
   const kindLabel = kind ? typeLabel(kind, t) : '';
 
   return (
-    <WalletFlowCard title={shareHeading(kind, t)}>
-      <p className="flex items-start gap-2 text-1 leading-relaxed text-neutral-11">
-        {kind ? <TypeIcon type={kind} /> : null}
-        <span>
-          {kind
-            ? t('shareExchangeBody', { type: kindLabel })
-            : t('shareExchangeBodySignal')}
-        </span>
-      </p>
+    <section className="min-w-0 border border-border bg-background">
+      <header className="border-b border-border px-3 py-2.5">
+        <h2
+          className="text-3 leading-tight font-medium tracking-[-0.02em]"
+          style={{ fontFamily: 'var(--font-family-heading)' }}
+        >
+          {shareHeading(kind, t)}
+        </h2>
+      </header>
+      <div className="flex flex-col gap-2.5 px-3 py-3">
+        {lockedType ? null : (
+          <div className="flex flex-col gap-1.5">
+            <WalletFlowLabel>{t('chooseSignalType')}</WalletFlowLabel>
+            <div
+              className="grid grid-cols-2 gap-1"
+              role="group"
+              aria-label={t('chooseSignalType')}
+            >
+              {NETWORK_FIELD_KINDS.map((option) => {
+                const selected = kind === option;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => setChosenType(option)}
+                    className={cn(
+                      'inline-flex items-center gap-1 border px-1.5 py-1 text-left text-1 uppercase tracking-[0.06em]',
+                      selected
+                        ? 'border-foreground bg-foreground text-background'
+                        : 'border-border bg-background text-foreground hover:border-foreground',
+                    )}
+                  >
+                    <TypeIcon type={option} />
+                    <span className="truncate">{typeLabel(option, t)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-      {lockedType ? null : (
-        <div className="flex flex-col gap-2">
-          <WalletFlowLabel>{t('chooseSignalType')}</WalletFlowLabel>
+        <div className="flex flex-col gap-1.5">
+          <WalletFlowLabel>{t('chooseSpace')}</WalletFlowLabel>
+          <MemberSpaceSelect
+            spaces={spaces}
+            value={spaceSlug}
+            onChange={(next) => {
+              touched.current = true;
+              setSpaceSlug(next);
+            }}
+            label={t('chooseSpace')}
+            emptyLabel={t('noneYet')}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <WalletFlowLabel>{t('signalTitle')}</WalletFlowLabel>
+          <input
+            value={title}
+            maxLength={50}
+            placeholder={t('signalTitleHint')}
+            aria-label={t('signalTitle')}
+            onChange={(event) => setTitle(event.target.value)}
+            className="h-9 w-full border border-border bg-background px-2.5 text-2 outline-none"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <WalletFlowLabel>{t('whatHappened')}</WalletFlowLabel>
+          <textarea
+            value={text}
+            maxLength={4000}
+            rows={2}
+            placeholder={
+              kind
+                ? t('shareExchangePrompt', { type: kindLabel })
+                : t('shareExchangePromptSignal')
+            }
+            aria-label={
+              kind
+                ? t('shareExchangePrompt', { type: kindLabel })
+                : t('shareExchangePromptSignal')
+            }
+            onChange={(event) => setText(event.target.value)}
+            className="w-full resize-none border border-border bg-background px-2.5 py-2 text-2 outline-none"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <WalletFlowLabel>{t('formOfCapital')}</WalletFlowLabel>
+          <div className="flex flex-wrap gap-1">
+            {CAPITALS.map((key) => (
+              <button
+                key={key}
+                type="button"
+                className={cn(
+                  'inline-flex h-8 items-center border px-2 text-1',
+                  capitals.includes(key)
+                    ? 'border-foreground bg-foreground text-background'
+                    : 'border-border hover:bg-accent-2',
+                )}
+                onClick={() => toggleCapital(key)}
+              >
+                <span aria-hidden className="mr-1">
+                  {CAPITAL_MARK[key]}
+                </span>
+                {t(`capitals.${key}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
           <div
-            className="flex flex-wrap gap-1"
             role="group"
-            aria-label={t('chooseSignalType')}
+            aria-label={`${tSignals('signalFormImage')}, ${tSignals(
+              'signalFormMediaVideo',
+            )}`}
+            className="grid grid-cols-2 gap-1"
           >
-            {NETWORK_FIELD_KINDS.map((option) => {
-              const selected = kind === option;
+            {(
+              [
+                {
+                  kind: 'images' as const,
+                  label: tSignals('signalFormImage'),
+                  Icon: Camera,
+                },
+                {
+                  kind: 'video' as const,
+                  label: tSignals('signalFormMediaVideo'),
+                  Icon: Video,
+                },
+              ] as const
+            ).map(({ kind: option, label, Icon }) => {
+              const selected = mediaKind === option;
               return (
                 <button
                   key={option}
                   type="button"
                   aria-pressed={selected}
-                  onClick={() => setChosenType(option)}
+                  onClick={() => setMediaKind(option)}
                   className={cn(
-                    'border px-2 py-1 text-1 uppercase tracking-[0.08em]',
+                    'flex h-12 items-center justify-center gap-1.5 border px-2 text-1',
                     selected
                       ? 'border-foreground bg-foreground text-background'
-                      : 'border-border bg-background text-foreground hover:border-foreground',
+                      : 'border-border bg-background text-foreground hover:bg-neutral-2',
                   )}
                 >
-                  {typeLabel(option, t)}
+                  <Icon className="size-3.5" strokeWidth={1.5} aria-hidden />
+                  <span>{label}</span>
                 </button>
               );
             })}
           </div>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-2">
-        <WalletFlowLabel>{t('chooseSpace')}</WalletFlowLabel>
-        <MemberSpaceSelect
-          spaces={spaces}
-          value={spaceSlug}
-          onChange={(next) => {
-            touched.current = true;
-            setSpaceSlug(next);
-          }}
-          label={t('chooseSpace')}
-          emptyLabel={t('noneYet')}
-        />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <WalletFlowLabel>{t('signalTitle')}</WalletFlowLabel>
-        <input
-          value={title}
-          maxLength={50}
-          placeholder={t('signalTitleHint')}
-          aria-label={t('signalTitle')}
-          onChange={(event) => setTitle(event.target.value)}
-          className="h-11 w-full border border-border bg-background px-3 text-2 outline-none"
-        />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <WalletFlowLabel>{t('whatHappened')}</WalletFlowLabel>
-        <textarea
-          value={text}
-          maxLength={4000}
-          rows={3}
-          placeholder={
-            kind
-              ? t('shareExchangePrompt', { type: kindLabel })
-              : t('shareExchangePromptSignal')
-          }
-          aria-label={
-            kind
-              ? t('shareExchangePrompt', { type: kindLabel })
-              : t('shareExchangePromptSignal')
-          }
-          onChange={(event) => setText(event.target.value)}
-          className="w-full resize-none border border-border bg-background p-3 text-2 outline-none"
-        />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <WalletFlowLabel>{t('formOfCapital')}</WalletFlowLabel>
-        <div className="flex flex-wrap gap-2">
-          {CAPITALS.map((key) => (
-            <button
-              key={key}
-              type="button"
-              className={walletPresetClass(capitals.includes(key))}
-              onClick={() => toggleCapital(key)}
-            >
-              <span aria-hidden className="mr-1">
-                {CAPITAL_MARK[key]}
-              </span>
-              {t(`capitals.${key}`)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <div
-          role="group"
-          aria-label={`${tSignals('signalFormImage')}, ${tSignals(
-            'signalFormMediaVideo',
-          )}`}
-          className="flex gap-2"
-        >
-          {(
-            [
-              {
-                kind: 'images' as const,
-                label: tSignals('signalFormImage'),
-                Icon: Camera,
-              },
-              {
-                kind: 'video' as const,
-                label: tSignals('signalFormMediaVideo'),
-                Icon: Video,
-              },
-            ] as const
-          ).map(({ kind: option, label, Icon }) => {
-            const selected = mediaKind === option;
-            return (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => setMediaKind(option)}
-                style={{ width: 112, height: 112 }}
-                className={cn(
-                  'flex flex-col items-center justify-center gap-2 border px-2',
-                  selected
-                    ? 'border-foreground bg-foreground text-background'
-                    : 'border-border bg-background text-foreground hover:bg-neutral-2',
-                )}
-              >
-                <Icon className="size-5" strokeWidth={1.5} aria-hidden />
-                <span className="text-center text-1 leading-tight">
-                  {label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        {mediaKind === 'images' ? (
-          <AddAttachment
-            accept={SIGNAL_IMAGE_ACCEPT}
-            maxFiles={SIGNAL_IMAGE_LIMIT}
-            maxBytes={SIGNAL_MEDIA_MAX_BYTES}
-            label={tSignals('signalFormImageHint')}
-            value={images}
-            onChange={setImages}
-          />
-        ) : null}
-        {mediaKind === 'video' ? (
-          <div className="flex flex-col gap-2">
-            <WalletFlowLabel>{tSignals('signalFormVideo')}</WalletFlowLabel>
+          {mediaKind === 'images' ? (
+            <AddAttachment
+              accept={SIGNAL_IMAGE_ACCEPT}
+              maxFiles={SIGNAL_IMAGE_LIMIT}
+              maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+              label={tSignals('signalFormImageHint')}
+              value={images}
+              onChange={setImages}
+            />
+          ) : null}
+          {mediaKind === 'video' ? (
             <input
               type="url"
               value={videoUrl}
               placeholder="https://"
               aria-label={tSignals('signalFormVideo')}
               onChange={(event) => setVideoUrl(event.target.value)}
-              className="h-11 w-full border border-border bg-background px-3 text-2 outline-none"
+              className="h-9 w-full border border-border bg-background px-2.5 text-2 outline-none"
             />
-            <p className="text-1 leading-relaxed text-neutral-11">
-              {tSignals('signalFormVideoHint')}
-            </p>
-          </div>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <WalletFlowLabel>
+            <span className="inline-flex items-center gap-1.5">
+              <FileText className="size-3.5" aria-hidden />
+              {tSignals('signalFormAttachments')}
+            </span>
+          </WalletFlowLabel>
+          <AddAttachment
+            accept={SIGNAL_DOCUMENT_ACCEPT}
+            maxFiles={SIGNAL_DOCUMENT_LIMIT}
+            maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+            label={tSignals('signalFormAttachmentsHint')}
+            value={documents}
+            onChange={setDocuments}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <WalletFlowLabel>
+            <span className="inline-flex items-center gap-1.5">
+              <Landmark className="size-3.5" aria-hidden />
+              {t('linkedAmountHint')}
+            </span>
+          </WalletFlowLabel>
+          <LinkedTreasuryAmountField
+            spaceSlug={spaceSlug}
+            value={payouts}
+            onChange={setPayouts}
+          />
+        </div>
+
+        {note ? (
+          <p className="text-1 text-neutral-11" role="alert">
+            {note}
+          </p>
         ) : null}
+
+        <Button
+          type="button"
+          disabled={!kind || !spaceSlug || !text.trim() || saving}
+          onClick={() => {
+            void share();
+          }}
+          className="h-9 w-full"
+        >
+          {t('share')}
+        </Button>
       </div>
-
-      <div className="flex flex-col gap-2">
-        <WalletFlowLabel>
-          <span className="inline-flex items-center gap-1.5">
-            <FileText className="size-3.5" aria-hidden />
-            {tSignals('signalFormAttachments')}
-          </span>
-        </WalletFlowLabel>
-        <AddAttachment
-          accept={SIGNAL_DOCUMENT_ACCEPT}
-          maxFiles={SIGNAL_DOCUMENT_LIMIT}
-          maxBytes={SIGNAL_MEDIA_MAX_BYTES}
-          label={tSignals('signalFormAttachmentsHint')}
-          value={documents}
-          onChange={setDocuments}
-        />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <WalletFlowLabel>
-          <span className="inline-flex items-center gap-1.5">
-            <Landmark className="size-3.5" aria-hidden />
-            {t('linkedAmountHint')}
-          </span>
-        </WalletFlowLabel>
-        <LinkedTreasuryAmountField
-          spaceSlug={spaceSlug}
-          value={payout}
-          onChange={setPayout}
-        />
-      </div>
-
-      {note ? (
-        <p className="text-1 text-neutral-11" role="alert">
-          {note}
-        </p>
-      ) : null}
-
-      <Button
-        type="button"
-        disabled={!kind || !spaceSlug || !text.trim() || saving}
-        onClick={() => {
-          void share();
-        }}
-        className={cn('h-11 w-full')}
-      >
-        {t('share')}
-      </Button>
-    </WalletFlowCard>
+    </section>
   );
 }

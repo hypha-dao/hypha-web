@@ -58,6 +58,8 @@ interface TokenPayoutFieldProps {
   /** Send-tokens amount block. Profile and agreement forms keep the default row. */
   variant?: 'default' | 'wallet';
   amountPresets?: number[];
+  /** Stack amount and token. A side-by-side row clips the token label in a narrow rail. */
+  stacked?: boolean;
 }
 
 /** Digits with at most one dot. Linear so a long paste cannot backtrack. */
@@ -87,6 +89,7 @@ function TokenPayoutFieldInner({
   emptyTokensLabel,
   variant = 'default',
   amountPresets,
+  stacked = false,
 }: TokenPayoutFieldProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tWallet = useTranslations('MyWallet');
@@ -229,7 +232,13 @@ function TokenPayoutFieldInner({
 
   return (
     <div className="flex flex-col gap-1 w-full">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-3 w-full">
+      <div
+        className={
+          stacked
+            ? 'flex w-full flex-col gap-2'
+            : 'flex w-full flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-3'
+        }
+      >
         <div className="flex min-w-0 flex-1">
           <Input
             rootClassName="min-h-10 w-full items-stretch"
@@ -241,16 +250,22 @@ function TokenPayoutFieldInner({
             className="h-10 min-h-10"
           />
         </div>
-        <div className="flex w-full min-w-0 shrink-0 sm:max-w-[min(18rem,42%)]">
+        <div
+          className={
+            stacked
+              ? 'flex w-full min-w-0'
+              : 'flex w-full min-w-0 shrink-0 sm:max-w-[min(18rem,42%)]'
+          }
+        >
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
                 colorVariant="neutral"
                 role="combobox"
-                className="h-10 min-h-10 w-full justify-between px-3 py-0 text-sm font-normal"
+                className="h-10 min-h-10 w-full min-w-0 justify-between overflow-hidden px-3 py-0 text-sm font-normal"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
                   {selectedToken ? (
                     <>
                       <Image
@@ -258,19 +273,19 @@ function TokenPayoutFieldInner({
                         width={20}
                         height={20}
                         alt={selectedToken.symbol}
-                        className="mr-2 rounded-full h-4 w-4"
+                        className="h-4 w-4 shrink-0 rounded-full"
                       />
-                      <span className="text-2 text-neutral-11">
+                      <span className="min-w-0 truncate text-2 text-neutral-11">
                         {selectedToken.symbol}
                       </span>
                     </>
                   ) : (
-                    <span className="text-2 text-neutral-11 whitespace-nowrap">
+                    <span className="min-w-0 truncate text-2 text-neutral-11">
                       {tAgreementFlow('plugins.tokenPayoutField.selectToken')}
                     </span>
                   )}
                 </div>
-                <ChevronDownIcon className="size-2" />
+                <ChevronDownIcon className="size-2 shrink-0" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-full max-h-[200px] overflow-y-scroll">

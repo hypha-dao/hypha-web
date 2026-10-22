@@ -157,10 +157,9 @@ export function NetworkQuickCreate({
   const [signalText, setSignalText] = useState('');
   const [signalImages, setSignalImages] = useState<File[]>([]);
   const [signalDocuments, setSignalDocuments] = useState<File[]>([]);
-  const [linkedPayout, setLinkedPayout] = useState<LinkedTreasuryPayout>({
-    amount: '',
-    token: '',
-  });
+  const [linkedPayouts, setLinkedPayouts] = useState<LinkedTreasuryPayout[]>([
+    { amount: '', token: '' },
+  ]);
   const [storyMedia, setStoryMedia] = useState<StoryMedia>('photo');
   const [storyTitle, setStoryTitle] = useState('');
   const [parties, setParties] = useState<Party[]>([
@@ -298,7 +297,7 @@ export function NetworkQuickCreate({
   const openSignal = (
     type: string,
     title: string,
-    payout?: LinkedTreasuryPayout,
+    payout?: readonly LinkedTreasuryPayout[],
   ) => {
     if (!spaceSlug || !/^[a-z0-9_-]{1,80}$/i.test(spaceSlug) || !title.trim()) {
       return;
@@ -587,8 +586,8 @@ export function NetworkQuickCreate({
               <p className="text-1 text-neutral-11">{t('linkedAmountHint')}</p>
               <LinkedTreasuryAmountField
                 spaceSlug={spaceSlug}
-                value={linkedPayout}
-                onChange={setLinkedPayout}
+                value={linkedPayouts}
+                onChange={setLinkedPayouts}
               />
             </div>
             {note ? (
@@ -613,7 +612,7 @@ export function NetworkQuickCreate({
                       uploadSignalMedia,
                     );
                     writeSignalCreateMedia({ images, documents });
-                    openSignal(signalType, signalText, linkedPayout);
+                    openSignal(signalType, signalText, linkedPayouts);
                   } catch {
                     setNote(tSignals('signalFormUploadFailed'));
                   } finally {

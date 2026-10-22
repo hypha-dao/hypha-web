@@ -18,8 +18,8 @@ type PageProps = {
     type?: string;
     title?: string;
     description?: string;
-    amount?: string;
-    token?: string;
+    amount?: string | string[];
+    token?: string | string[];
     video?: string;
     sharedWithNetwork?: string;
   }>;
@@ -67,16 +67,22 @@ export default async function NewSignalPage({
     typeof video === 'string' && /^https?:\/\//i.test(video.trim())
       ? video.trim().slice(0, 2000)
       : '';
-  const payoutAmount =
-    typeof amount === 'string' &&
-    /^\d+(\.\d{1,2})?$/.test(amount.trim()) &&
-    Number(amount) > 0
-      ? amount.trim()
-      : '';
-  const payoutToken =
-    typeof token === 'string' && /^0x[a-fA-F0-9]{40}$/.test(token.trim())
-      ? token.trim()
-      : '';
+  const amountList = Array.isArray(amount) ? amount : amount ? [amount] : [];
+  const tokenList = Array.isArray(token) ? token : token ? [token] : [];
+  const indicativePayouts = Array.from(
+    { length: Math.max(amountList.length, tokenList.length) },
+    (_, index) => {
+      const rawAmount = amountList[index]?.trim() ?? '';
+      const rawToken = tokenList[index]?.trim() ?? '';
+      return {
+        amount:
+          /^\d+(\.\d{1,2})?$/.test(rawAmount) && Number(rawAmount) > 0
+            ? rawAmount
+            : '',
+        token: /^0x[a-fA-F0-9]{40}$/.test(rawToken) ? rawToken : '',
+      };
+    },
+  ).filter((row) => row.amount || row.token);
   const shareOnNetwork =
     sharedWithNetwork === '1' || sharedWithNetwork === 'true';
 
@@ -98,8 +104,7 @@ export default async function NewSignalPage({
             signalTitle ||
             signalDescription ||
             signalVideo ||
-            payoutAmount ||
-            payoutToken ||
+            indicativePayouts.length > 0 ||
             shareOnNetwork
               ? {
                   ...(inheritedBoardTags.length > 0
@@ -111,12 +116,8 @@ export default async function NewSignalPage({
                     ? { description: signalDescription }
                     : {}),
                   ...(signalVideo ? { videoUrl: signalVideo } : {}),
-                  ...(payoutAmount || payoutToken
-                    ? {
-                        indicativePayouts: [
-                          { amount: payoutAmount, token: payoutToken },
-                        ],
-                      }
+                  ...(indicativePayouts.length > 0
+                    ? { indicativePayouts }
                     : {}),
                   ...(shareOnNetwork ? { sharedWithNetwork: true } : {}),
                 }

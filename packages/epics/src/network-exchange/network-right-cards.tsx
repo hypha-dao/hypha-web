@@ -696,10 +696,9 @@ export function ActionShareCard({
   const spaces = useMemberNamedSpaces();
   const [spaceSlug, setSpaceSlug] = useState('');
   const [text, setText] = useState('');
-  const [payout, setPayout] = useState<LinkedTreasuryPayout>({
-    amount: '',
-    token: '',
-  });
+  const [payouts, setPayouts] = useState<LinkedTreasuryPayout[]>([
+    { amount: '', token: '' },
+  ]);
   const [images, setImages] = useState<File[]>([]);
   const [documents, setDocuments] = useState<File[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
@@ -740,7 +739,7 @@ export function ActionShareCard({
       params.set('sharedWithNetwork', '1');
       params.set('title', body.slice(0, 50));
       params.set('description', body.slice(0, 4000));
-      appendIndicativePayoutParams(params, payout);
+      appendIndicativePayoutParams(params, payouts);
       router.push(
         `/${lang}/dho/${spaceSlug}/coherence/new-signal?${params.toString()}`,
       );
@@ -827,8 +826,8 @@ export function ActionShareCard({
         <p className="text-1 text-neutral-11">{t('linkedAmountHint')}</p>
         <LinkedTreasuryAmountField
           spaceSlug={spaceSlug}
-          value={payout}
-          onChange={setPayout}
+          value={payouts}
+          onChange={setPayouts}
         />
       </div>
       {note ? (
@@ -909,7 +908,7 @@ function ImpactSharedCard({ count }: { count: number }) {
 }
 
 export const NETWORK_RIGHT_PANEL_CLASS =
-  'hidden w-full shrink-0 flex-col gap-4 overflow-y-auto @4xl:sticky @4xl:top-[var(--menu-top-height,70px)] @4xl:flex @4xl:max-h-[calc(100dvh-var(--menu-top-height,70px)-1.25rem)] @4xl:w-[380px] @4xl:overflow-y-auto';
+  'hidden w-full shrink-0 flex-col gap-4 overflow-y-auto [scrollbar-gutter:stable] @4xl:sticky @4xl:top-[var(--menu-top-height,70px)] @4xl:flex @4xl:max-h-[calc(100dvh-var(--menu-top-height,70px)-1.25rem)] @4xl:w-[320px] @4xl:overflow-y-auto';
 
 export function NetworkRightColumn({
   lang,
@@ -937,7 +936,7 @@ export function NetworkRightColumn({
   if (variant === 'exchange' && !selected && !children) return null;
   const action = variant === 'action';
   return (
-    <aside className={cn(NETWORK_RIGHT_PANEL_CLASS, '@4xl:!w-[320px]')}>
+    <aside className={NETWORK_RIGHT_PANEL_CLASS}>
       {children ? (
         children
       ) : selected && !action && variant !== 'needs' ? (
