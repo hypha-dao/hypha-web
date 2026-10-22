@@ -45,7 +45,21 @@ type SignalTaskCardProps = {
   onDragOver?: (event: React.DragEvent<HTMLDivElement>) => void;
   refresh?: () => Promise<void>;
   className?: string;
+  /**
+   * UpVote (grid) only: show a short description when the card has no media.
+   * Keep off for board / swimlane / list so those layouts stay dense.
+   */
+  showDescriptionPreview?: boolean;
 };
+
+function plainSignalDescription(value: string | null | undefined) {
+  const text = (value ?? '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text;
+}
 
 export const SignalTaskCard = React.memo(function SignalTaskCard({
   signal,
@@ -61,6 +75,7 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
   onDragOver,
   refresh,
   className,
+  showDescriptionPreview = false,
 }: SignalTaskCardProps) {
   const t = useTranslations('CoherenceTab');
   const intlFormat = useFormatter();
@@ -137,6 +152,13 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
   }
 
   const video = resolveSignalVideo(signal.videoUrl);
+  const hasCardMedia = Boolean(
+    video || signal.leadImage?.trim() || (signal.attachments?.length ?? 0) > 0,
+  );
+  const descriptionPreview =
+    showDescriptionPreview && !hasCardMedia
+      ? plainSignalDescription(signal.description)
+      : '';
 
   return (
     <div
@@ -263,6 +285,12 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
                       {part.node}
                     </React.Fragment>
                   ))}
+                </p>
+              ) : null}
+
+              {descriptionPreview ? (
+                <p className="mt-1 line-clamp-4 text-1 leading-relaxed text-neutral-11">
+                  {descriptionPreview}
                 </p>
               ) : null}
             </div>

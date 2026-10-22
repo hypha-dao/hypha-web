@@ -49,6 +49,7 @@ export function SignalGrid({
             refresh={refresh}
             showBoard={Boolean(workflow)}
             board={board}
+            showDescriptionPreview
           />
         );
 
