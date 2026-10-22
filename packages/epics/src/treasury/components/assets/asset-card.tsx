@@ -339,7 +339,9 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         </div>
       ) : null}
       {note?.trim() ? (
-        <p className="text-2 leading-relaxed text-neutral-11">{note.trim()}</p>
+        <p className="mt-0.5 border-l border-border pl-2 text-1 leading-snug text-muted-foreground">
+          {note.trim()}
+        </p>
       ) : null}
     </Card>
   );
