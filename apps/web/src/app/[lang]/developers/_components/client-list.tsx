@@ -10,7 +10,7 @@ import {
   readApiError,
   useDeveloperApi,
 } from '../_lib/api';
-import { RotateKeyButton } from './key-dialogs';
+import { ClientKeyButton } from './key-dialogs';
 
 const STATUS_LABEL = {
   pending: 'Pending review',
@@ -166,10 +166,11 @@ export function ClientList() {
               client={client}
               actions={
                 client.status === 'approved' ? (
-                  <RotateKeyButton
+                  <ClientKeyButton
                     slug={client.slug}
                     clientName={client.name}
-                    onRotated={() => void load()}
+                    hasKey={!!client.keyPrefix}
+                    onChanged={() => void load()}
                   />
                 ) : (
                   client.status === 'pending' && (

@@ -105,17 +105,20 @@ function KeyRevealDialog({
 }
 
 /**
- * Rotate the key of an approved client: explain, confirm, then show the new key
- * with the same dialog as above.
+ * The key of an approved client. With no key yet, one press issues the first
+ * key and shows it. With a key, rotating first explains and confirms. Either
+ * way the key appears in the dialog above, once.
  */
-export function RotateKeyButton({
+export function ClientKeyButton({
   slug,
   clientName,
-  onRotated,
+  hasKey,
+  onChanged,
 }: {
   slug: string;
   clientName: string;
-  onRotated: () => void;
+  hasKey: boolean;
+  onChanged: () => void;
 }) {
   const api = useDeveloperApi();
   const [confirming, setConfirming] = useState(false);
@@ -135,6 +138,7 @@ export function RotateKeyButton({
       const body = (await res.json()) as { clientKey: string };
       setConfirming(false);
       setNewKey(body.clientKey);
+      onChanged(); // The list now has a key prefix; the key dialog stays up.
     } catch {
       setError('Could not reach the server.');
     } finally {
@@ -148,13 +152,26 @@ export function RotateKeyButton({
         <Button
           type="button"
           variant="outline"
+          disabled={busy}
           onClick={() => {
             setError(null);
-            setConfirming(true);
+            if (hasKey) setConfirming(true);
+            else void rotate();
           }}
         >
-          Rotate key
+          {hasKey ? 'Rotate key' : busy ? 'Generating…' : 'Generate key'}
         </Button>
+        {!hasKey && (
+          <p className="mt-1 text-1 text-muted-foreground">
+            Approved. Generate your private key now; it is shown once, only to
+            you.
+          </p>
+        )}
+        {!hasKey && error && (
+          <p role="alert" className="mt-1 text-1 text-destructive">
+            {error}
+          </p>
+        )}
       </div>
 
       {confirming && (
@@ -212,10 +229,7 @@ export function RotateKeyButton({
         <KeyRevealDialog
           clientName={clientName}
           clientKey={newKey}
-          onDone={() => {
-            setNewKey(null);
-            onRotated();
-          }}
+          onDone={() => setNewKey(null)}
         />
       )}
     </>

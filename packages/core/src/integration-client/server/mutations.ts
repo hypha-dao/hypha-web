@@ -87,23 +87,21 @@ export const requestIntegrationClient = async (
 };
 
 /**
- * pending → approved, issuing the key. Conditional on `pending` so a repeated
- * or concurrent approval cannot issue two keys.
+ * pending → approved, with no key: the requester issues their own first key
+ * (rotate), so the approver never holds it. Conditional on `pending` so a
+ * repeated or concurrent approval changes nothing.
  * @returns null when the client is not pending (or does not exist).
  */
 export const approveIntegrationClient = async (
   { slug, scopes }: { slug: string; scopes?: IntegrationClientScope[] },
   { db }: DbConfig,
-): Promise<IssuedClientKey | null> => {
-  const { plaintext, prefix, hash } = generateClientKey();
+): Promise<IntegrationClientSummary | null> => {
   const now = new Date();
 
   const [row] = await db
     .update(integrationClients)
     .set({
       status: 'approved',
-      keyPrefix: prefix,
-      keyHash: hash,
       approvedAt: now,
       updatedAt: now,
       ...(scopes ? { scopes } : {}),
@@ -116,11 +114,11 @@ export const approveIntegrationClient = async (
     )
     .returning();
 
-  return row ? { client: toClientSummary(row), plaintext } : null;
+  return row ? toClientSummary(row) : null;
 };
 
 /**
- * Replace the key in place (hard cut-over: the old key stops working at once).
+ * Issue the key, or replace it in place when there is one (hard cut-over: the old key stops working at once).
  * @returns null when the client is not approved.
  */
 export const rotateIntegrationClientKey = async (

@@ -68,7 +68,7 @@ export type IntegrationApiDeps = {
   approveClient(args: {
     slug: string;
     scopes?: IntegrationClientScope[];
-  }): Promise<IssuedKey | null>;
+  }): Promise<IntegrationClientSummary | null>;
   revokeClient(args: { slug: string }): Promise<boolean>;
   rotateClientKey(args: { slug: string }): Promise<IssuedKey | null>;
   registerGrant(args: {
@@ -419,8 +419,9 @@ export async function handleOpsListClients(
 }
 
 /**
- * POST ops/clients/{slug}/approve (ops secret): approve a pending client and
- * issue its key, returned by this call only. An optional body `{ scopes }`
+ * POST ops/clients/{slug}/approve (ops secret): approve a pending client. No key
+ * is issued: the requester generates the first key themselves (developer
+ * area). An optional body `{ scopes }`
  * narrows or edits the requested scopes first.
  */
 export async function handleOpsApproveClient(
@@ -442,22 +443,17 @@ export async function handleOpsApproveClient(
   }
 
   try {
-    const issued = await deps.approveClient({
+    const approved = await deps.approveClient({
       slug,
       scopes: parsed.data.scopes,
     });
-    if (!issued) {
+    if (!approved) {
       return integrationJson(
         { error: 'No pending client with that slug' },
         { status: 404 },
       );
     }
-    return integrationJson({
-      client: issued.client,
-      clientKey: issued.plaintext,
-      warning:
-        'Store this key now — it is not recoverable. Never expose it in client-side code.',
-    });
+    return integrationJson({ client: approved });
   } catch (error) {
     logFailure('approve integration client', { slug }, error);
     return serverError('Failed to approve integration client');

@@ -102,10 +102,7 @@ function makeDeps(over: Partial<IntegrationApiDeps> = {}) {
     requestClient: vi.fn(async () => clientSummary()),
     notifyClientRequested: vi.fn(async () => undefined),
     listClients: vi.fn(async () => [clientSummary()]),
-    approveClient: vi.fn(async () => ({
-      client: clientSummary({ status: 'approved' }),
-      plaintext: 'key-once',
-    })),
+    approveClient: vi.fn(async () => clientSummary({ status: 'approved' })),
     revokeClient: vi.fn(async () => true),
     rotateClientKey: vi.fn(async () => ({
       client: clientSummary({ status: 'approved' }),
@@ -306,10 +303,12 @@ describe('auth matrix: ops routes', () => {
     },
   );
 
-  it('returns the key once on approve and rotate, with headers', async () => {
+  it('approve issues no key; rotate returns it once; both keep the headers', async () => {
     const deps = makeDeps();
     const approved = await handleOpsApproveClient(post(), { slug: 'a' }, deps);
-    expect(await approved.json()).toMatchObject({ clientKey: 'key-once' });
+    const approvedText = await approved.text();
+    expect(approvedText).not.toContain('clientKey');
+    expect(JSON.parse(approvedText).client.status).toBe('approved');
     expectHeaders(approved);
     const rotated = await handleOpsRotateClientKey(post(), { slug: 'a' }, deps);
     expect(await rotated.json()).toMatchObject({ clientKey: 'key-twice' });

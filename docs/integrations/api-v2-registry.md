@@ -256,7 +256,7 @@ test fails when a route skips the wrapper or the values drift.
 | `POST /api/integration/v1/ops/clients/{slug}/rotate-key`   | new  | `POST /api/v1/ops/integration-clients/{slug}/rotate-key` | **built** | ops secret                      |
 | `GET /api/integration/v1/users/me/clients`                 | new  | none (developer area)                                    | **built** | user token                      |
 | `POST /api/integration/v1/users/me/clients/{slug}/logo`    | new  | none (developer area)                                    | **built** | user token, the requester       |
-| `POST /api/integration/v1/users/me/clients/{slug}/rotate-key` | new  | none (developer area)                                    | **built** | user token, the requester of an approved client; new key returned once |
+| `POST /api/integration/v1/users/me/clients/{slug}/rotate-key` | new  | none (developer area)                                    | **built** | user token, the requester of an approved client; issues the first key or replaces it, returned once |
 | signer state of the user's wallet (opt-in or sub-resource) | new  | none                                                     | `planned` | client key + user token (M4/M5) |
 | `POST /api/integration/v1/actions`                         | new  | none                                                     | **spike** | client key + user token         |
 | `GET /api/integration/v1/actions/{id}`                     | new  | none                                                     | **spike** | client key + user token         |
@@ -289,7 +289,7 @@ when the client is `approved` (approving the client approves the logo); the appr
 - `POST clients/requests`: `202 { slug, status: "pending" }` (no key); `429` several pending requests;
   `409` name already used; `400` validation.
 - `ops/...`: `503` secret not configured, `401` wrong secret, `404` unknown slug for the state; approve and
-  rotate return `clientKey` once.
+  approve issues no key (the requester generates the first one); rotate returns `clientKey` once.
 - Everywhere: `401` missing/invalid credentials, `403` no Hypha profile, `500` unexpected (no detail). Both
   kinds of credential failure carry a machine-readable `code` next to `error` (list below).
 
