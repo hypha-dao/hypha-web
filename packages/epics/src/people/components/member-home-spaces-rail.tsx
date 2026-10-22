@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import Link from 'next/link';
-import { Circle, LayoutGrid } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
@@ -21,7 +21,6 @@ import { cn } from '@hypha-platform/ui-utils';
 import type { Locale } from '@hypha-platform/i18n';
 import type { MemberIntelligence } from '@hypha-platform/core/client';
 
-import { APP_CHROME_ICON_TRIGGER } from '../../common/chrome-radius';
 import {
   readRecentSpaceSlugs,
   subscribeRecentSpaceSlugs,
@@ -179,27 +178,6 @@ export function MemberHomeSpacesRail({
     0,
   );
   const canToggle = !embedded && (isLoading || spaceCount > 0);
-  /** Home keeps a left column; other screens stay a collapsible top row below xl. */
-  const verticalOnly = persistOnWide || embedded;
-
-  const mySpacesMark = (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Link
-          href={`/${lang}/my-spaces`}
-          aria-label={t('openMySpaces')}
-          title={t('openMySpaces')}
-          className={cn(
-            APP_CHROME_ICON_TRIGGER,
-            'h-8 w-8 shrink-0 [&_svg]:size-3.5',
-          )}
-        >
-          <Circle aria-hidden />
-        </Link>
-      </TooltipTrigger>
-      <TooltipContent side="right">{t('openMySpaces')}</TooltipContent>
-    </Tooltip>
-  );
 
   const rail = (rowOnNarrow: boolean) => (
     <TooltipProvider delayDuration={200}>
@@ -213,11 +191,6 @@ export function MemberHomeSpacesRail({
             : 'flex-col overflow-y-auto px-0 py-2',
         )}
       >
-        {verticalOnly ? (
-          <div className="mb-1 flex shrink-0 justify-center">
-            {mySpacesMark}
-          </div>
-        ) : null}
         {isLoading ? (
           <>
             {Array.from({ length: 5 }, (_, index) => (
@@ -230,28 +203,26 @@ export function MemberHomeSpacesRail({
             ))}
           </>
         ) : spaceCount === 0 ? (
-          verticalOnly ? null : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href={`/${lang}/my-spaces`}
-                  aria-label={t('openMySpaces')}
-                  className={cn(
-                    'grid place-items-center rounded-full border border-dashed border-border text-neutral-11',
-                    'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                  )}
-                  style={{ width: RAIL_ICON, height: RAIL_ICON }}
-                >
-                  <LayoutGrid
-                    className="h-3.5 w-3.5"
-                    strokeWidth={1.5}
-                    aria-hidden
-                  />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">{t('openMySpaces')}</TooltipContent>
-            </Tooltip>
-          )
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href={`/${lang}/my-spaces`}
+                aria-label={t('openMySpaces')}
+                className={cn(
+                  'grid place-items-center rounded-full border border-dashed border-border text-neutral-11',
+                  'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                )}
+                style={{ width: RAIL_ICON, height: RAIL_ICON }}
+              >
+                <LayoutGrid
+                  className="h-3.5 w-3.5"
+                  strokeWidth={1.5}
+                  aria-hidden
+                />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">{t('openMySpaces')}</TooltipContent>
+          </Tooltip>
         ) : (
           <>
             {ecosystemGroups.map((group, groupIndex) => (
@@ -322,30 +293,26 @@ export function MemberHomeSpacesRail({
                 })}
               </div>
             ))}
-            {verticalOnly ? null : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link
-                    href={`/${lang}/my-spaces`}
-                    aria-label={t('openMySpaces')}
-                    className={cn(
-                      'grid shrink-0 place-items-center rounded-full border border-border text-neutral-11 xl:mt-1',
-                      'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                    )}
-                    style={{ width: RAIL_ICON, height: RAIL_ICON }}
-                  >
-                    <LayoutGrid
-                      className="h-3.5 w-3.5"
-                      strokeWidth={1.5}
-                      aria-hidden
-                    />
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  {t('openMySpaces')}
-                </TooltipContent>
-              </Tooltip>
-            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href={`/${lang}/my-spaces`}
+                  aria-label={t('openMySpaces')}
+                  className={cn(
+                    'grid shrink-0 place-items-center rounded-full border border-border text-neutral-11 xl:mt-1',
+                    'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  )}
+                  style={{ width: RAIL_ICON, height: RAIL_ICON }}
+                >
+                  <LayoutGrid
+                    className="h-3.5 w-3.5"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">{t('openMySpaces')}</TooltipContent>
+            </Tooltip>
           </>
         )}
       </nav>
@@ -360,19 +327,20 @@ export function MemberHomeSpacesRail({
     );
   }
 
-  // Home (`persistOnWide`): always a vertical left column with the spaces
-  // mark + space icons. Other screens: collapsible top row below xl.
+  // Home (`persistOnWide`): vertical column always; MenuTop circle toggles it
+  // below `xl`. Other screens: horizontal strip below `xl`, hidden on wide.
+  const rowOnNarrow = !persistOnWide;
   if (!canToggle) {
     return (
       <div className={railShellClass(persistOnWide, true)}>
-        {rail(!persistOnWide)}
+        {rail(rowOnNarrow)}
       </div>
     );
   }
 
   return (
     <SpacesRailHandle persistOnWide={persistOnWide}>
-      {rail(!persistOnWide)}
+      {rail(rowOnNarrow)}
     </SpacesRailHandle>
   );
 }
@@ -380,12 +348,13 @@ export function MemberHomeSpacesRail({
 function railShellClass(persistOnWide: boolean, visibleOnNarrow: boolean) {
   if (persistOnWide) {
     return cn(
-      'flex h-full w-[44px] shrink-0 flex-col overflow-hidden border-r border-border bg-background',
+      // Home: vertical left column. Narrow: only when MenuTop circle is open.
+      'h-full w-[44px] shrink-0 flex-col overflow-hidden border-r border-border bg-background',
+      visibleOnNarrow ? 'flex' : 'hidden xl:flex',
     );
   }
   return cn(
-    // Below xl the icons share one row, stuck to the top of the dashboard.
-    // The row paints over the mycelium so the field stays underneath it.
+    // Other screens: collapsible top row below xl.
     'sticky top-0 z-10 h-[44px] w-full shrink-0 flex-row overflow-hidden border-b border-border bg-background',
     'xl:static xl:z-auto xl:h-full xl:w-[44px] xl:flex-col xl:border-r xl:border-b-0',
     visibleOnNarrow ? 'flex' : 'hidden',
@@ -401,18 +370,10 @@ function SpacesRailHandle({
   persistOnWide?: boolean;
 }) {
   const { open, register } = useSpacesRailControl();
-  // Home owns a permanent column — do not register a collapsible rail, or the
-  // MenuTop circle toggle would appear with nothing to collapse.
-  useLayoutEffect(() => {
-    if (persistOnWide) return;
-    return register();
-  }, [persistOnWide, register]);
+  useLayoutEffect(() => register(), [register]);
   if (!open && !persistOnWide) return null;
   return (
-    <div
-      id={SPACES_RAIL_ID}
-      className={railShellClass(persistOnWide, persistOnWide || open)}
-    >
+    <div id={SPACES_RAIL_ID} className={railShellClass(persistOnWide, open)}>
       {children}
     </div>
   );

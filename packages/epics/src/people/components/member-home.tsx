@@ -300,7 +300,7 @@ export function MemberHome({
     <div className="@container/home relative isolate -mb-8 -mt-4 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] min-h-0 w-full min-w-0 flex-col overflow-hidden md:-mt-5 xl:h-[calc(100svh-var(--menu-top-height,4.5rem))] xl:pt-5">
       <MemberHomeBanner />
       <div className="flex min-h-0 w-full min-w-0 flex-1 flex-row overflow-hidden">
-        <div className={cn(isAiOpen ? 'hidden' : 'contents')}>
+        <div className={cn(isAiOpen ? 'hidden xl:contents' : 'contents')}>
           <MemberHomeSpacesRail
             lang={lang}
             spaces={home?.spaces ?? []}

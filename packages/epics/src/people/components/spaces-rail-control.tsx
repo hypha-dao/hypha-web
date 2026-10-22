@@ -81,8 +81,8 @@ export function SpacesRailProvider({ children }: { children: ReactNode }) {
 }
 
 /**
- * Collapse / expand for the spaces list on non-home screens.
- * Home keeps a permanent vertical rail with the same mark in the column.
+ * MenuTop circle (next to Hypha) below `xl`.
+ * Home: toggles the vertical spaces column. Other screens: horizontal strip.
  */
 export function SpacesRailTopToggle() {
   const { active, open, toggle } = useSpacesRailControl();
