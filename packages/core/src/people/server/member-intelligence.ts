@@ -104,6 +104,7 @@ const memberSpaceColumns = {
   ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
   ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
   address: spaces.address,
+  parentId: spaces.parentId,
 };
 
 function toSpaceLogo(row: {

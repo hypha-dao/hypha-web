@@ -78,6 +78,8 @@ export type MemberIntelligence = {
     address?: string | null;
     /** Chain id used to publish a proposal without leaving home. */
     web3SpaceId?: number | null;
+    /** Parent space id; null for an ecosystem root. */
+    parentId?: number | null;
   }>;
   /**
    * Spaces whose payment ends within two weeks. The home chat offers
@@ -216,6 +218,8 @@ export type MemberSpaceRow = {
   ecosystemLogoUrlDark?: string | null;
   address?: string | null;
   web3SpaceId?: number | null;
+  /** Parent space id; null for an ecosystem root. */
+  parentId?: number | null;
 };
 
 /** Chain memberships first, then any database rows not already included. */
