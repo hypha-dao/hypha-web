@@ -16,7 +16,7 @@ export const SIGNAL_BOARD_SELECT_TEXT_CLASS =
 
 /** Filter multi-select trigger. Grows with selected chips instead of clipping them. */
 export const SIGNAL_FILTER_MULTI_SELECT_CLASS =
-  'h-auto min-h-6 items-start whitespace-normal rounded-none border-border bg-neutral-1 px-2 py-1';
+  'h-auto min-h-10 items-start whitespace-normal rounded-none border-border bg-neutral-1 px-2 py-1';
 
 /** Quiet outline tags — hairline, no pill theater. */
 export const SIGNAL_TAG_BADGE_CLASS = `${SIGNAL_BOARD_META_TEXT_CLASS} shrink-0 max-w-[8.5rem] overflow-hidden text-ellipsis whitespace-nowrap rounded-none border-border/60 bg-transparent text-muted-foreground shadow-none ring-0`;

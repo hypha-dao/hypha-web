@@ -85,7 +85,7 @@ function FilterTag({
       type="button"
       onClick={onRemove}
       aria-label={t('removeFilter', { label })}
-      className="inline-flex h-8 items-center gap-1.5 border border-border bg-background px-2 text-2 text-foreground hover:border-foreground"
+      className="inline-flex h-10 min-h-10 items-center gap-1.5 border border-border bg-background px-2 text-2 text-foreground hover:border-foreground"
     >
       {type ? (
         <SignalTypeIcon type={type} className="size-3.5 shrink-0" />

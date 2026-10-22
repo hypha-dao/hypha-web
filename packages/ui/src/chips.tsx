@@ -713,7 +713,7 @@ export const MultiSelect = React.forwardRef<
                 onKeyDown={handleInputKeyDown}
                 placeholder={searchPlaceholder}
                 className={cn(
-                  'h-8 min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-0 text-foreground outline-none placeholder:text-muted-foreground',
+                  'h-6 min-h-0 min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-0 text-foreground outline-none placeholder:text-muted-foreground',
                   textClassName ?? 'text-sm',
                 )}
                 disabled={props.disabled}

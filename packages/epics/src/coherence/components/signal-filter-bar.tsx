@@ -49,8 +49,8 @@ export const SignalTitleSearch = React.memo(function SignalTitleSearch({
       placeholder={t('filterTitlePlaceholder')}
       aria-label={t('filterTitle')}
       onChange={(event) => onTitleChange(event.target.value)}
-      rootClassName="min-h-6"
-      className="h-6 min-h-6 min-w-0 flex-1 py-1"
+      rootClassName="min-h-10"
+      className="h-10 min-h-10 min-w-0 flex-1"
     />
   );
 });
@@ -97,7 +97,7 @@ export const SignalMenuFilters = React.memo(function SignalMenuFilters({
           {t('filterAssignee')}
         </span>
         <SpaceMemberSelect
-          className="h-6 w-full py-1"
+          className="h-10 min-h-10 w-full"
           members={members}
           value={assigneeValue}
           onChange={(id) => {
@@ -164,7 +164,7 @@ export const SignalMenuFilters = React.memo(function SignalMenuFilters({
             });
           }}
         >
-          <SelectTrigger className="h-6 w-full py-1">
+          <SelectTrigger className="h-10 min-h-10 w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -186,8 +186,8 @@ export const SignalMenuFilters = React.memo(function SignalMenuFilters({
           </span>
           <Input
             type="date"
-            rootClassName="min-h-6"
-            className="h-6 min-h-6 py-1"
+            rootClassName="min-h-10"
+            className="h-10 min-h-10"
             value={deadlineMode === 'after' ? from : to}
             onChange={(event) => {
               const date = event.target.value;
@@ -209,8 +209,8 @@ export const SignalMenuFilters = React.memo(function SignalMenuFilters({
             </span>
             <Input
               type="date"
-              rootClassName="min-h-6"
-              className="h-6 min-h-6 py-1"
+              rootClassName="min-h-10"
+              className="h-10 min-h-10"
               value={from}
               onChange={(event) => {
                 const date = event.target.value;
@@ -231,8 +231,8 @@ export const SignalMenuFilters = React.memo(function SignalMenuFilters({
             </span>
             <Input
               type="date"
-              rootClassName="min-h-6"
-              className="h-6 min-h-6 py-1"
+              rootClassName="min-h-10"
+              className="h-10 min-h-10"
               value={to}
               onChange={(event) => {
                 const date = event.target.value;
