@@ -1154,8 +1154,8 @@ export function MemberHomeChat({
               aria-live="polite"
               aria-busy="true"
             >
-              <MemberHomeMark className="mt-0.5 h-8 w-8 shrink-0" />
-              <p className="text-2 leading-relaxed text-neutral-11">
+              <MemberHomeMark className="home-send-breathe mt-0.5 h-8 w-8 shrink-0" />
+              <p className="home-send-breathe text-2 leading-relaxed text-neutral-11">
                 {t('thinking')}
               </p>
             </article>
