@@ -3,7 +3,20 @@
 import { useMemo, useRef, useState, type MouseEvent } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { ArrowUpRight, FileText, ListFilter, Play, X } from 'lucide-react';
+import {
+  ArrowUpRight,
+  BookOpen,
+  FileText,
+  Flame,
+  Layers,
+  Lightbulb,
+  ListFilter,
+  Megaphone,
+  Play,
+  Receipt,
+  TriangleAlert,
+  X,
+} from 'lucide-react';
 import './network-exchange-card.css';
 import { useLocale, useTranslations } from 'next-intl';
 import {
@@ -72,6 +85,23 @@ function badgeClass(type: NetworkFieldSignalKind) {
   }
   if (type === 'Need') return 'bg-foreground text-background';
   return 'bg-neutral-3 text-foreground';
+}
+
+function TypeIcon({ type }: { type: NetworkFieldSignalKind }) {
+  const className = 'size-3 shrink-0';
+  if (type === 'Need') return <Megaphone className={className} aria-hidden />;
+  if (type === 'Resource') return <Layers className={className} aria-hidden />;
+  if (type === 'Opportunity') {
+    return <ArrowUpRight className={className} aria-hidden />;
+  }
+  if (type === 'Insight')
+    return <Lightbulb className={className} aria-hidden />;
+  if (type === 'Tension') return <Flame className={className} aria-hidden />;
+  if (type === 'Risk') {
+    return <TriangleAlert className={className} aria-hidden />;
+  }
+  if (type === 'Action') return <Receipt className={className} aria-hidden />;
+  return <BookOpen className={className} aria-hidden />;
 }
 
 function capitalKey(value: string | null): CapitalKey | null {
@@ -550,10 +580,11 @@ export function NetworkReciprocalExchange({
                         <div className="flex items-center justify-between gap-2">
                           <span
                             className={cn(
-                              'shrink-0 px-2 py-0.5 text-1 uppercase tracking-[0.08em]',
+                              'inline-flex shrink-0 items-center gap-1 px-2 py-0.5 text-1 uppercase tracking-[0.08em]',
                               badgeClass(signal.type),
                             )}
                           >
+                            <TypeIcon type={signal.type} />
                             {typeLabel(signal.type, t)}
                           </span>
                           <span className="inline-flex min-w-0 items-center gap-1 truncate text-1 text-neutral-11">
@@ -668,11 +699,7 @@ export function NetworkReciprocalExchange({
           )}
         </div>
         <aside
-          className={cn(
-            NETWORK_RIGHT_PANEL_CLASS,
-            '@4xl:!w-[320px]',
-            open && '@4xl:!hidden',
-          )}
+          className={cn(NETWORK_RIGHT_PANEL_CLASS, open && '@4xl:!hidden')}
         >
           <NetworkExchangeShareCard
             lang={lang}
