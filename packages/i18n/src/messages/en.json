@@ -2615,6 +2615,13 @@
         "fullMessage": "Your wallet balance is insufficient. Please <topUpLink>top up with {token}</topUpLink> to proceed."
       }
     },
+    "insufficientFunds": {
+      "lead": "Your wallet balance is too low for this transaction. Please",
+      "buyUsdc": "buy USDC",
+      "or": "or",
+      "buyHypha": "buy Hypha",
+      "trail": "to continue."
+    },
     "proposalErrors": {
       "recipientRequired": "Please add a recipient or wallet address",
       "invalidEthereumAddress": "Invalid Ethereum address",

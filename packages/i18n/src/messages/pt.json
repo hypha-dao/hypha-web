@@ -1306,6 +1306,13 @@
         "fullMessage": "O saldo da sua carteira é insuficiente. <topUpLink>Recarregue com {token}</topUpLink> para continuar."
       }
     },
+    "insufficientFunds": {
+      "lead": "O saldo da sua carteira é demasiado baixo para esta transação. Por favor",
+      "buyUsdc": "compre USDC",
+      "or": "ou",
+      "buyHypha": "compre Hypha",
+      "trail": "para continuar."
+    },
     "issueNewTokenForm": {
       "duplicateToken": "Já existe um token com o mesmo nome e símbolo em seu espaço. Modifique o nome ou o símbolo para continuar.",
       "errors": {

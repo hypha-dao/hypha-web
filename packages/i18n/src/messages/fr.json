@@ -2016,6 +2016,13 @@
         "fullMessage": "Le solde de votre portefeuille est insuffisant. Veuillez <topUpLink>recharger avec {token}</topUpLink> pour continuer."
       }
     },
+    "insufficientFunds": {
+      "lead": "Le solde de votre portefeuille est trop bas pour cette transaction. Veuillez",
+      "buyUsdc": "acheter des USDC",
+      "or": "ou",
+      "buyHypha": "acheter des Hypha",
+      "trail": "pour continuer."
+    },
     "proposalErrors": {
       "recipientRequired": "Veuillez ajouter un destinataire ou une adresse de portefeuille",
       "invalidEthereumAddress": "Adresse Ethereum invalide",

@@ -2587,6 +2587,13 @@
         "fullMessage": "Uw portemonneesaldo is onvoldoende. Vul <topUpLink>aan met {token}</topUpLink> om door te gaan."
       }
     },
+    "insufficientFunds": {
+      "lead": "Het saldo van uw portemonnee is te laag voor deze transactie. Gelieve",
+      "buyUsdc": "USDC te kopen",
+      "or": "of",
+      "buyHypha": "Hypha te kopen",
+      "trail": "om door te gaan."
+    },
     "proposalErrors": {
       "recipientRequired": "Voeg een ontvanger of portefeuilleadres toe",
       "invalidEthereumAddress": "Ongeldig Ethereum-adres",

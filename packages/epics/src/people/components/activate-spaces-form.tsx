@@ -21,7 +21,12 @@ import { extractRevertReason, Space, useMe } from '@hypha-platform/core/client';
 import {
   BlockchainErrorText,
   isBlockchainErrorMessage,
+  isInsufficientBalanceErrorMessage,
 } from '../../common/format-blockchain-error';
+import {
+  buyHyphaTokensHref,
+  InsufficientFundsHint,
+} from '../../common/insufficient-funds-hint';
 import { SpaceWithNumberOfMonthsFieldArray } from './space-with-number-of-months-array';
 import { useActivateSpaces } from '../hooks/use-activate-hypha-spaces';
 import { Loader2 } from 'lucide-react';
@@ -248,19 +253,19 @@ export const ActivateSpacesForm = ({
           errorMessage = tActions(
             'activateSpaces.form.errors.smartWalletNotConnected',
           );
-        } else if (
-          error.message.includes('ERC20: transfer amount exceeds balance') ||
-          error.message.includes('Insufficient HYPHA balance')
-        ) {
+        } else if (isInsufficientBalanceErrorMessage(error.message)) {
           errorMessage = 'insufficient_funds';
         } else if (error.message.includes('Execution reverted with reason:')) {
           const match = error.message.match(
             /Execution reverted with reason: (.*?)\./,
           );
-          errorMessage =
+          const reason =
             match && match[1]
               ? extractRevertReason(match[1])
               : tActions('activateSpaces.form.errors.contractExecutionFailed');
+          errorMessage = isInsufficientBalanceErrorMessage(reason)
+            ? 'insufficient_funds'
+            : reason;
         } else if (error.message.includes('user rejected')) {
           errorMessage = tActions(
             'activateSpaces.form.errors.transactionRejected',
@@ -495,41 +500,21 @@ export const ActivateSpacesForm = ({
             </Button>
           )}
         </div>
-        {errors.root && (
-          <div className="text-2 text-foreground">
-            {errors.root.message === 'insufficient_funds' ? (
-              tAgreementFlow.rich(
-                'activateSpacesForm.insufficientFunds.fullMessage',
-                {
-                  token: paymentToken,
-                  topUpLink: (chunks) =>
-                    paymentToken === 'HYPHA' ? (
-                      <Link
-                        href={
-                          wallet
-                            ? `/${lang}/my-wallet/actions/purchase-hypha-tokens`
-                            : `/${lang}/profile/${person?.nickname}/actions/purchase-hypha-tokens`
-                        }
-                        className="font-bold cursor-pointer text-accent-9 underline"
-                      >
-                        {chunks}
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={fundWallet}
-                        className="font-bold cursor-pointer text-accent-9 underline"
-                      >
-                        {chunks}
-                      </button>
-                    ),
-                },
-              )
-            ) : (
-              <BlockchainErrorText message={errors.root.message ?? ''} />
-            )}
-          </div>
-        )}
+        {errors.root &&
+          (errors.root.message === 'insufficient_funds' ? (
+            <InsufficientFundsHint
+              onBuyUsdc={() => {
+                void fundWallet();
+              }}
+              buyHyphaHref={buyHyphaTokensHref({
+                lang,
+                appearance,
+                personSlug: personSlug || person?.nickname || person?.slug,
+              })}
+            />
+          ) : (
+            <BlockchainErrorText message={errors.root.message ?? ''} />
+          ))}
       </form>
     </Form>
   );

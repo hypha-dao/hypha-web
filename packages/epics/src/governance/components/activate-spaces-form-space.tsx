@@ -18,7 +18,6 @@ import { useConfig } from 'wagmi';
 import { useParams } from 'next/navigation';
 import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
-import Link from 'next/link';
 import { useActivateSpaces } from '../../people/hooks/use-activate-hypha-spaces';
 import { isAddress } from 'ethers';
 import {
@@ -29,6 +28,10 @@ import {
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+import {
+  buyHyphaTokensHref,
+  InsufficientFundsHint,
+} from '../../common/insufficient-funds-hint';
 
 const ACTIVATE_SPACES_RESUBMIT_SEGMENT = 'activate-spaces';
 
@@ -75,7 +78,6 @@ export const ActivateSpacesFormSpace = ({
     (a) => a.symbol === 'USDC' || a.symbol === 'HYPHA',
   );
   const [insufficientFunds, setInsufficientFunds] = React.useState(false);
-  const [paymentTokenForTopUp, setPaymentTokenForTopUp] = React.useState('');
 
   const { fundWallet } = useFundWallet({
     address: spaceDetails?.executor as `0x${string}`,
@@ -145,7 +147,6 @@ export const ActivateSpacesFormSpace = ({
 
     if (total > walletBalance) {
       setInsufficientFunds(true);
-      setPaymentTokenForTopUp(watchedPaymentToken);
       return;
     }
 
@@ -173,39 +174,18 @@ export const ActivateSpacesFormSpace = ({
       message={
         insufficientFunds ? (
           <div className="flex flex-col text-center gap-2 justify-center items-center">
-            <span>
-              {tAgreementFlow(
-                'activateSpacesForm.insufficientFunds.spaceWalletBalanceInsufficient',
-              )}
-              <br />{' '}
-              {tAgreementFlow('activateSpacesForm.insufficientFunds.please')}{' '}
-              {paymentTokenForTopUp === 'USDC' ? (
-                <span
-                  onClick={() => {
-                    setInsufficientFunds(false);
-                    fundWallet();
-                  }}
-                  className="font-bold cursor-pointer text-accent-9 underline"
-                >
-                  {tAgreementFlow(
-                    'activateSpacesForm.insufficientFunds.topUpWith',
-                    {
-                      token: paymentTokenForTopUp,
-                    },
-                  )}
-                </span>
-              ) : (
-                <Link
-                  href={`/${lang}/dho/${spaceSlug}/agreements/create/buy-hypha-tokens`}
-                  className="font-bold cursor-pointer text-accent-9 underline"
-                >
-                  {tAgreementFlow(
-                    'activateSpacesForm.insufficientFunds.buyHyphaTokens',
-                  )}
-                </Link>
-              )}{' '}
-              {tAgreementFlow('activateSpacesForm.insufficientFunds.toProceed')}
-            </span>
+            <InsufficientFundsHint
+              className="text-center"
+              onBuyUsdc={() => {
+                setInsufficientFunds(false);
+                void fundWallet();
+              }}
+              buyHyphaHref={
+                spaceSlug
+                  ? `/${lang}/dho/${spaceSlug}/agreements/create/buy-hypha-tokens`
+                  : buyHyphaTokensHref({ lang, appearance: 'wallet' })
+              }
+            />
             <Button
               className="w-fit"
               onClick={() => {

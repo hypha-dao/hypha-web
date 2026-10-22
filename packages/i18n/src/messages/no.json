@@ -2586,6 +2586,13 @@
         "fullMessage": "Saldoen i lommeboken din er ikke tilstrekkelig. Vennligst <topUpLink>fyll på med {token}</topUpLink> for å fortsette."
       }
     },
+    "insufficientFunds": {
+      "lead": "Saldoen i lommeboken din er for lav for denne transaksjonen. Vennligst",
+      "buyUsdc": "kjøp USDC",
+      "or": "eller",
+      "buyHypha": "kjøp Hypha",
+      "trail": "for å fortsette."
+    },
     "proposalErrors": {
       "recipientRequired": "Legg til en mottaker eller lommebokadresse",
       "invalidEthereumAddress": "Ugyldig Ethereum-adresse",

@@ -20,13 +20,16 @@ import { useScrollToErrors } from '../../hooks';
 import { useFundWallet } from '../../treasury/hooks';
 import { useJwt } from '@hypha-platform/core/client';
 import { useUserAssets } from '../../treasury/hooks';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   BlockchainErrorText,
   isBlockchainErrorMessage,
 } from '../../common/format-blockchain-error';
+import {
+  buyHyphaTokensHref,
+  InsufficientFundsHint,
+} from '../../common/insufficient-funds-hint';
 
 interface Token {
   icon: string;
@@ -229,31 +232,15 @@ export const PeopleTransferForm = ({
           </div>
           {form.formState.errors.root && (
             <div className="text-2 text-foreground">
-              {form.formState.errors.root.message === 'insufficient_funds' ? (
-                <>
-                  Your wallet balance is insufficient to complete this
-                  transaction. Please{' '}
-                  <span
-                    onClick={fundWallet}
-                    className="font-bold cursor-pointer text-accent-9 underline"
-                  >
-                    top up your account
-                  </span>{' '}
-                  to proceed.
-                </>
-              ) : form.formState.errors.root.message ===
-                'insufficient_hypha' ? (
-                <>
-                  Your wallet balance is insufficient to complete this
-                  transaction. Please{' '}
-                  <Link
-                    href={`/${lang}/profile/${person?.slug}/actions/purchase-hypha-tokens`}
-                    className="font-bold cursor-pointer text-accent-9 underline"
-                  >
-                    top up your account with HYPHA
-                  </Link>{' '}
-                  to proceed.
-                </>
+              {form.formState.errors.root.message === 'insufficient_funds' ||
+              form.formState.errors.root.message === 'insufficient_hypha' ? (
+                <InsufficientFundsHint
+                  onBuyUsdc={() => void fundWallet()}
+                  buyHyphaHref={buyHyphaTokensHref({
+                    lang,
+                    personSlug: person?.slug,
+                  })}
+                />
               ) : (
                 <BlockchainErrorText
                   message={form.formState.errors.root.message ?? ''}

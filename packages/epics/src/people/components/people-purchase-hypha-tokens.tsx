@@ -38,7 +38,12 @@ import { useTranslations } from 'next-intl';
 import {
   BlockchainErrorText,
   isBlockchainErrorMessage,
+  isInsufficientBalanceErrorMessage,
 } from '../../common/format-blockchain-error';
+import {
+  buyHyphaTokensHref,
+  InsufficientFundsHint,
+} from '../../common/insufficient-funds-hint';
 import {
   formatWalletAmount,
   WalletAmountBlock,
@@ -289,18 +294,19 @@ export const PeoplePurchaseHyphaTokens = ({
           errorMessage = tActions(
             'purchaseHypha.form.errors.smartWalletNotConnected',
           );
-        } else if (
-          error.message.includes('ERC20: transfer amount exceeds balance')
-        ) {
+        } else if (isInsufficientBalanceErrorMessage(error.message)) {
           errorMessage = 'insufficient_funds';
         } else if (error.message.includes('Execution reverted with reason:')) {
           const match = error.message.match(
             /Execution reverted with reason: (.*?)\./,
           );
-          errorMessage =
+          const reason =
             match && match[1]
               ? extractRevertReason(match[1])
               : tActions('purchaseHypha.form.errors.contractExecutionFailed');
+          errorMessage = isInsufficientBalanceErrorMessage(reason)
+            ? 'insufficient_funds'
+            : reason;
         } else if (error.message.includes('user rejected')) {
           errorMessage = tActions(
             'purchaseHypha.form.errors.transactionRejected',
@@ -463,36 +469,23 @@ export const PeoplePurchaseHyphaTokens = ({
             </Button>
           )}
         </div>
-        {form.formState.errors.root && (
-          <div className="text-2 text-foreground">
-            {form.formState.errors.root.message === 'insufficient_funds' ? (
-              <>
-                {tAgreementFlow(
-                  'buyHyphaTokensForm.insufficientFunds.walletBalanceInsufficient',
-                )}{' '}
-                {tAgreementFlow('buyHyphaTokensForm.insufficientFunds.please')}{' '}
-                <span
-                  onClick={fundWallet}
-                  className="font-bold cursor-pointer text-accent-9 underline"
-                >
-                  {tAgreementFlow(
-                    'buyHyphaTokensForm.insufficientFunds.topUpWith',
-                    {
-                      token: PAYMENT_TOKEN?.symbol ?? 'USDC',
-                    },
-                  )}
-                </span>{' '}
-                {tAgreementFlow(
-                  'buyHyphaTokensForm.insufficientFunds.toProceed',
-                )}
-              </>
-            ) : (
-              <BlockchainErrorText
-                message={form.formState.errors.root.message ?? ''}
-              />
-            )}
-          </div>
-        )}
+        {form.formState.errors.root &&
+          (form.formState.errors.root.message === 'insufficient_funds' ? (
+            <InsufficientFundsHint
+              onBuyUsdc={() => {
+                void fundWallet();
+              }}
+              buyHyphaHref={buyHyphaTokensHref({
+                lang,
+                appearance,
+                personSlug,
+              })}
+            />
+          ) : (
+            <BlockchainErrorText
+              message={form.formState.errors.root.message ?? ''}
+            />
+          ))}
       </form>
     </Form>
   );

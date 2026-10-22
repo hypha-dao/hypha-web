@@ -6,6 +6,16 @@ export function isBlockchainErrorMessage(message: string) {
   return BLOCKCHAIN_ERROR.test(message);
 }
 
+/** Wallet / ERC-20 balance failures — show top-up links instead of raw revert text. */
+export function isInsufficientBalanceErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes('transfer amount exceeds balance') ||
+    normalized.includes('exceeds balance') ||
+    (normalized.includes('insufficient') && normalized.includes('balance'))
+  );
+}
+
 function splitHexPayload(hex: string) {
   const body = hex.slice(2);
   if (body.length <= 64) return hex;

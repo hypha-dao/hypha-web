@@ -34,9 +34,17 @@ import { formatUnits } from 'viem';
 import { RecipientField } from '../../agreements/plugins/components/common/recipient-field';
 import { TokenSelectDropdown } from '../../agreements/plugins/components/common/token-select-dropdown';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { BlockchainErrorText } from '../../common/format-blockchain-error';
+import {
+  BlockchainErrorText,
+  isInsufficientBalanceErrorMessage,
+} from '../../common/format-blockchain-error';
+import {
+  buyHyphaTokensHref,
+  InsufficientFundsHint,
+} from '../../common/insufficient-funds-hint';
+import { useFundWallet } from '../../treasury';
 import { useUserAssets } from '../../treasury/hooks/use-user-assets';
 import {
   formatWalletAmount,
@@ -75,8 +83,12 @@ export const PeopleBuySpaceTokens = ({
   const tModalAside = useTranslations('ModalAside');
   const tWallet = useTranslations('MyWallet');
   const router = useRouter();
+  const { lang } = useParams<{ lang: string }>();
   const { person } = useMe();
   const { assets } = useUserAssets({ personSlug: person?.slug });
+  const { fundWallet } = useFundWallet({
+    address: person?.address as `0x${string}`,
+  });
   const { client } = useSmartWallets();
   const { tokens: dbTokens, isLoading: isTokensLoading } = useDbTokens();
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -352,10 +364,12 @@ export const PeopleBuySpaceTokens = ({
       reset();
     } catch (error) {
       console.error('Purchase failed', error);
-      const message =
+      const raw =
         error instanceof Error ? error.message : t('purchaseFailedGeneric');
       form.setError('root', {
-        message,
+        message: isInsufficientBalanceErrorMessage(raw)
+          ? 'insufficient_funds'
+          : raw,
       });
     } finally {
       setIsSubmitting(false);
@@ -628,16 +642,30 @@ export const PeopleBuySpaceTokens = ({
           )}
         </div>
 
-        {form.formState.errors.root?.message ? (
+        {form.formState.errors.root?.message === 'insufficient_funds' ||
+        ((approveError || buyError) &&
+          isInsufficientBalanceErrorMessage(
+            (approveError || buyError)?.message ?? '',
+          )) ? (
+          <InsufficientFundsHint
+            onBuyUsdc={() => {
+              void fundWallet();
+            }}
+            buyHyphaHref={buyHyphaTokensHref({
+              lang,
+              appearance,
+              personSlug: person?.slug ?? _personSlug,
+            })}
+          />
+        ) : form.formState.errors.root?.message ? (
           <BlockchainErrorText message={form.formState.errors.root.message} />
-        ) : null}
-        {(approveError || buyError) && !form.formState.errors.root && (
+        ) : (approveError || buyError) && !form.formState.errors.root ? (
           <BlockchainErrorText
             message={
               (approveError || buyError)?.message ?? t('transactionFailed')
             }
           />
-        )}
+        ) : null}
       </form>
     </Form>,
   );

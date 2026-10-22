@@ -1306,6 +1306,13 @@
         "fullMessage": "El saldo de tu billetera es insuficiente. <topUpLink>Recarga con {token}</topUpLink> para continuar."
       }
     },
+    "insufficientFunds": {
+      "lead": "El saldo de tu billetera es demasiado bajo para esta transacción. Por favor",
+      "buyUsdc": "compra USDC",
+      "or": "o",
+      "buyHypha": "compra Hypha",
+      "trail": "para continuar."
+    },
     "issueNewTokenForm": {
       "duplicateToken": "Ya existe un token con el mismo nombre y símbolo en tu espacio. Modifique el nombre o el símbolo para continuar.",
       "errors": {

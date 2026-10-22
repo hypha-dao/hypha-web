@@ -2567,6 +2567,13 @@
         "fullMessage": "Салдото на вашиот паричник е недоволно. Ве молиме <topUpLink>дополнете со {token}</topUpLink> за да продолжите."
       }
     },
+    "insufficientFunds": {
+      "lead": "Салдото на твојот паричник е премногу ниско за оваа трансакција. Те молиме",
+      "buyUsdc": "купи USDC",
+      "or": "или",
+      "buyHypha": "купи Hypha",
+      "trail": "за да продолжиш."
+    },
     "proposalErrors": {
       "recipientRequired": "Ве молиме додадете примач или адреса на паричник",
       "invalidEthereumAddress": "Невалидна Ethereum адреса",

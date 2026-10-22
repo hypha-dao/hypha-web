@@ -2588,6 +2588,13 @@
         "fullMessage": "Ihr Wallet-Guthaben ist nicht ausreichend. Bitte <topUpLink>laden Sie mit {token} auf</topUpLink>, um fortzufahren."
       }
     },
+    "insufficientFunds": {
+      "lead": "Ihr Wallet-Guthaben reicht für diese Transaktion nicht aus. Bitte",
+      "buyUsdc": "USDC kaufen",
+      "or": "oder",
+      "buyHypha": "Hypha kaufen",
+      "trail": "um fortzufahren."
+    },
     "proposalErrors": {
       "recipientRequired": "Bitte fügen Sie einen Empfänger oder eine Wallet-Adresse hinzu",
       "invalidEthereumAddress": "Ungültige Ethereum-Adresse",

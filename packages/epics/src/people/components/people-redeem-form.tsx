@@ -29,6 +29,10 @@ import {
   BlockchainErrorText,
   isBlockchainErrorMessage,
 } from '../../common/format-blockchain-error';
+import {
+  buyHyphaTokensHref,
+  InsufficientFundsHint,
+} from '../../common/insufficient-funds-hint';
 
 const USD_FEED_ADDRESS = '0x0000000000000000000000000000000000000000';
 const CURRENCY_CODE_BY_FEED = Object.fromEntries(
@@ -794,17 +798,14 @@ export const PeopleRedeemForm = ({
           {form.formState.errors.root && (
             <div className="text-2 text-foreground">
               {form.formState.errors.root.message === 'insufficient_funds' ? (
-                <>
-                  {t('form.insufficientFundsLead')}{' '}
-                  <button
-                    type="button"
-                    onClick={fundWallet}
-                    className="font-bold cursor-pointer text-accent-9 underline bg-transparent border-0 p-0"
-                  >
-                    {t('form.insufficientFundsTopUp')}
-                  </button>{' '}
-                  {t('form.insufficientFundsTrail')}
-                </>
+                <InsufficientFundsHint
+                  onBuyUsdc={() => void fundWallet()}
+                  buyHyphaHref={buyHyphaTokensHref({
+                    lang,
+                    appearance,
+                    personSlug: person?.slug ?? personSlug,
+                  })}
+                />
               ) : (
                 <BlockchainErrorText
                   message={form.formState.errors.root.message ?? ''}
