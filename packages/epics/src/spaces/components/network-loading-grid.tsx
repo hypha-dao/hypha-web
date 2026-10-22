@@ -118,6 +118,25 @@ const MAP_PINS: MapPin[] = [
   { x: 84, y: 72, size: 'sm', delayMs: 500 },
   { x: 88, y: 76, size: 'sm', delayMs: 520 },
   { x: 92, y: 58, size: 'sm', delayMs: 540 },
+  { x: 14, y: 28, size: 'dot', delayMs: 150 },
+  { x: 16, y: 48, size: 'sm', delayMs: 190 },
+  { x: 32, y: 28, size: 'dot', delayMs: 210 },
+  { x: 36, y: 64, size: 'md', delayMs: 250 },
+  { x: 33, y: 78, size: 'sm', delayMs: 270 },
+  { x: 46, y: 30, size: 'dot', delayMs: 290 },
+  { x: 49, y: 52, size: 'sm', delayMs: 330 },
+  { x: 52, y: 68, size: 'dot', delayMs: 350 },
+  { x: 55, y: 76, size: 'sm', delayMs: 370 },
+  { x: 60, y: 40, size: 'sm', delayMs: 390 },
+  { x: 62, y: 56, size: 'dot', delayMs: 410 },
+  { x: 66, y: 48, size: 'md', delayMs: 430 },
+  { x: 70, y: 34, size: 'sm', delayMs: 450 },
+  { x: 74, y: 42, size: 'sm', delayMs: 470 },
+  { x: 76, y: 54, size: 'dot', delayMs: 490 },
+  { x: 80, y: 32, size: 'sm', delayMs: 510 },
+  { x: 86, y: 38, size: 'dot', delayMs: 530 },
+  { x: 86, y: 68, size: 'sm', delayMs: 550 },
+  { x: 90, y: 74, size: 'dot', delayMs: 570 },
 ];
 
 /**
@@ -128,12 +147,11 @@ export function NetworkMapWave({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'relative aspect-[2/1] w-full overflow-hidden border border-border bg-background',
+        'relative aspect-[2/1] w-full overflow-hidden bg-background',
         className,
       )}
       aria-hidden
     >
-      <Wave className="absolute inset-0 opacity-40" text={false} />
       <svg
         viewBox="0 0 1000 500"
         preserveAspectRatio="xMidYMid meet"
@@ -141,7 +159,7 @@ export function NetworkMapWave({ className }: { className?: string }) {
       >
         <path
           d={WORLD_MAP_OUTLINE}
-          fill="color-mix(in srgb, var(--foreground) 5%, transparent)"
+          fill="none"
           stroke="currentColor"
           strokeWidth="1.25"
           strokeLinejoin="round"
