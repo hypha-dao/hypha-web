@@ -277,7 +277,7 @@ export function NetworkExchangeShareCard({
                     aria-pressed={selected}
                     onClick={() => setChosenType(option)}
                     className={cn(
-                      'inline-flex h-8 items-center border bg-background px-2 text-1 text-foreground',
+                      'inline-flex h-10 items-center border bg-background px-2 text-1 text-foreground',
                       selected
                         ? 'border-foreground'
                         : 'border-border hover:border-foreground',
@@ -350,7 +350,7 @@ export function NetworkExchangeShareCard({
                 key={key}
                 type="button"
                 className={cn(
-                  'inline-flex h-8 items-center border px-2 text-1',
+                  'inline-flex h-10 items-center border px-2 text-1',
                   capitals.includes(key)
                     ? 'border-foreground bg-foreground text-background'
                     : 'border-border hover:bg-accent-2',
@@ -395,7 +395,7 @@ export function NetworkExchangeShareCard({
                   aria-pressed={selected}
                   onClick={() => setMediaKind(option)}
                   className={cn(
-                    'flex h-12 items-center justify-center gap-1.5 border px-2 text-1',
+                    'flex h-10 items-center justify-center gap-1.5 border px-2 text-1',
                     selected
                       ? 'border-foreground bg-foreground text-background'
                       : 'border-border bg-background text-foreground hover:bg-neutral-2',
