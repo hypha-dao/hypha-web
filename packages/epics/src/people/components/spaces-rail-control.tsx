@@ -86,11 +86,6 @@ function isHomePath(pathname: string) {
   return /\/(?:home|my-dashboard)\/?$/.test(pathname);
 }
 
-/** Coherence keeps a vertical spaces column on mobile. Other screens use a row. */
-export function isCoherencePath(pathname: string) {
-  return /\/coherence(?:\/|$)/.test(pathname);
-}
-
 /**
  * Circle in the top bar, to the left of Hypha.
  * Mobile: every screen that has a spaces list. Desktop: Home only.

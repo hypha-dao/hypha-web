@@ -52,7 +52,7 @@ import {
 import { useConversationUnreadCount } from './my-connections';
 import { shouldShowMessagesAndSpacesNav } from './app-nav-visibility';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
-import { isCoherencePath, useSpacesRailControl } from './spaces-rail-control';
+import { useSpacesRailControl } from './spaces-rail-control';
 
 const OPEN_MOBILE_CREATE = 'hypha:open-mobile-create';
 
@@ -96,7 +96,6 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
   // While the AI panel is open the spaces list takes the left menu slot.
   const showSpacesRail = shouldShowMobileSpacesRail(pathname) && !isAiOpen;
-  const verticalSpacesRail = showSpacesRail && isCoherencePath(pathname);
   const [slideIn, setSlideIn] = useState(false);
 
   useEffect(() => {
@@ -126,9 +125,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
     <div
       className={cn(
         showSpacesRail &&
-          (verticalSpacesRail
-            ? 'max-xl:flex max-xl:w-full max-xl:min-w-0 max-xl:flex-row max-xl:items-start'
-            : 'max-xl:flex max-xl:w-full max-xl:min-w-0 max-xl:flex-col'),
+          'max-xl:flex max-xl:w-full max-xl:min-w-0 max-xl:flex-row max-xl:items-start',
         slideIn &&
           'max-md:animate-in max-md:slide-in-from-right max-md:duration-300 max-md:ease-out',
       )}
@@ -139,9 +136,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
             // Sit under the sticky MenuTop — top-0 clipped the first icons.
             // Stay mounted while closed so the top-bar control can open it.
             spacesRailOpen
-              ? verticalSpacesRail
-                ? 'sticky top-[var(--menu-top-height,4.5rem)] z-10 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] w-[44px] shrink-0 border-r border-border bg-background xl:hidden'
-                : 'sticky top-[var(--menu-top-height,4.5rem)] z-10 flex w-full shrink-0 xl:hidden'
+              ? 'sticky top-[var(--menu-top-height,4.5rem)] z-10 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] w-[44px] shrink-0 bg-background xl:hidden'
               : 'hidden',
           )}
         >

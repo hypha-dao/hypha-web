@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { LayoutGrid } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -27,13 +26,8 @@ import {
   subscribeRecentSpaceSlugs,
 } from '../../common/recent-space-history';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
-import {
-  isCoherencePath,
-  SPACES_RAIL_ID,
-  useSpacesRailControl,
-} from './spaces-rail-control';
+import { SPACES_RAIL_ID, useSpacesRailControl } from './spaces-rail-control';
 import { HomeWave } from './member-home-wave';
-import './member-home-spaces-rail.css';
 
 type HomeSpace = MemberIntelligence['spaces'][number];
 
@@ -166,8 +160,6 @@ export function MemberHomeSpacesRail({
   persistOnWide?: boolean;
 }) {
   const t = useTranslations('MemberHome');
-  const pathname = usePathname() ?? '';
-  const columnOnNarrow = isCoherencePath(pathname);
   const { resolvedTheme } = useTheme();
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const [recentSlugs, setRecentSlugs] = useState<string[]>(() =>
@@ -186,17 +178,12 @@ export function MemberHomeSpacesRail({
   );
   const canToggle = !embedded && (isLoading || spaceCount > 0);
 
-  const rail = (rowOnNarrow: boolean) => (
+  const rail = (
     <TooltipProvider delayDuration={200}>
       <nav
         aria-label={t('spacesRail')}
         tabIndex={-1}
-        className={cn(
-          'narrow-scrollbar flex h-full min-h-0 w-full min-w-0 shrink-0 items-center gap-1 outline-none',
-          rowOnNarrow
-            ? 'member-spaces-rail-row flex-row overflow-x-auto px-2 py-1 xl:flex-col xl:overflow-x-hidden xl:overflow-y-auto xl:px-0 xl:py-2'
-            : 'flex-col overflow-y-auto px-0 py-2',
-        )}
+        className="narrow-scrollbar flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col items-center gap-1 overflow-y-auto px-0 py-2 outline-none"
       >
         {isLoading ? (
           <>
@@ -235,20 +222,12 @@ export function MemberHomeSpacesRail({
             {ecosystemGroups.map((group, groupIndex) => (
               <div
                 key={group.rootId}
-                className={cn(
-                  'flex shrink-0 items-center gap-1',
-                  rowOnNarrow ? 'flex-row xl:flex-col' : 'flex-col',
-                )}
+                className="flex shrink-0 flex-col items-center gap-1"
               >
                 {groupIndex > 0 ? (
                   <span
                     aria-hidden
-                    className={cn(
-                      'shrink-0 bg-border/80',
-                      rowOnNarrow
-                        ? 'mx-0.5 h-4 w-px xl:mx-0 xl:my-0.5 xl:h-px xl:w-4'
-                        : 'my-0.5 h-px w-4',
-                    )}
+                    className="my-0.5 h-px w-4 shrink-0 bg-border/80"
                   />
                 ) : null}
                 {group.spaces.map((space) => {
@@ -306,8 +285,7 @@ export function MemberHomeSpacesRail({
                   href={`/${lang}/my-spaces`}
                   aria-label={t('openMySpaces')}
                   className={cn(
-                    'grid shrink-0 place-items-center rounded-full border border-border text-neutral-11',
-                    rowOnNarrow ? 'xl:mt-1' : 'mt-1',
+                    'mt-1 grid shrink-0 place-items-center rounded-full border border-border text-neutral-11',
                     'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                   )}
                   style={{ width: RAIL_ICON, height: RAIL_ICON }}
@@ -330,63 +308,41 @@ export function MemberHomeSpacesRail({
   if (embedded) {
     return (
       <div className="h-full w-full shrink-0 border-r-0 bg-transparent">
-        {rail(false)}
+        {rail}
       </div>
     );
   }
 
-  // Below `xl` the bar is a horizontal row, except Coherence, which keeps a
-  // vertical column. Home keeps that column once the bottom menu is gone.
+  // A 44px column on every screen. Home keeps it once the bottom menu is gone.
   if (!canToggle) {
-    return (
-      <div className={railShellClass(persistOnWide, true, columnOnNarrow)}>
-        {rail(!columnOnNarrow)}
-      </div>
-    );
+    return <div className={railShellClass(persistOnWide, true)}>{rail}</div>;
   }
 
   return (
-    <SpacesRailHandle
-      persistOnWide={persistOnWide}
-      columnOnNarrow={columnOnNarrow}
-    >
-      {rail(!columnOnNarrow)}
-    </SpacesRailHandle>
+    <SpacesRailHandle persistOnWide={persistOnWide}>{rail}</SpacesRailHandle>
   );
 }
 
-function railShellClass(
-  persistOnWide: boolean,
-  visibleOnNarrow: boolean,
-  columnOnNarrow: boolean,
-) {
+function railShellClass(persistOnWide: boolean, visibleOnNarrow: boolean) {
   return cn(
-    'shrink-0 overflow-hidden bg-background',
-    columnOnNarrow
-      ? 'h-full min-h-0 w-full flex-col'
-      : 'sticky top-0 z-10 h-[44px] w-full flex-row border-b border-border xl:static xl:z-auto xl:h-full xl:w-[44px] xl:flex-col xl:border-r xl:border-b-0',
+    'h-full min-h-0 w-[44px] shrink-0 flex-col overflow-hidden border-r border-border bg-background',
     visibleOnNarrow ? 'flex' : 'hidden',
-    columnOnNarrow ? 'xl:hidden' : persistOnWide ? 'xl:flex' : 'xl:hidden',
+    persistOnWide ? 'xl:flex' : 'xl:hidden',
   );
 }
 
 function SpacesRailHandle({
   children,
   persistOnWide = false,
-  columnOnNarrow = false,
 }: {
   children: ReactNode;
   persistOnWide?: boolean;
-  columnOnNarrow?: boolean;
 }) {
   const { open, register } = useSpacesRailControl();
   useLayoutEffect(() => register(), [register]);
   if (!open && !persistOnWide) return null;
   return (
-    <div
-      id={SPACES_RAIL_ID}
-      className={railShellClass(persistOnWide, open, columnOnNarrow)}
-    >
+    <div id={SPACES_RAIL_ID} className={railShellClass(persistOnWide, open)}>
       {children}
     </div>
   );
