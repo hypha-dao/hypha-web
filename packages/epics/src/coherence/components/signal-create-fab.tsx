@@ -3,9 +3,14 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { PlusIcon } from '@radix-ui/react-icons';
-import { Button } from '@hypha-platform/ui';
+import { buttonVariants } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
+/**
+ * Floating create control. The hit target is the link itself.
+ * A full-bleed `pointer-events-none` overlay with a sticky child painted
+ * the button in one place and received clicks in another.
+ */
 export function SignalCreateFab({
   href,
   className,
@@ -16,19 +21,18 @@ export function SignalCreateFab({
   const t = useTranslations('CoherenceTab');
 
   return (
-    <div className={cn('pointer-events-none absolute inset-0 z-30', className)}>
-      <div className="sticky top-[calc(100%-5.5rem)] flex justify-end px-1 pt-2">
-        <Button
-          asChild
-          colorVariant="accent"
-          className="pointer-events-auto h-12 shadow-md"
-        >
-          <Link href={href} aria-label={t('newSignal')}>
-            <PlusIcon />
-            <span className="hidden sm:inline">{t('newSignal')}</span>
-          </Link>
-        </Button>
-      </div>
+    <div className={cn('sticky bottom-6 z-40 flex justify-end', className)}>
+      <Link
+        href={href}
+        aria-label={t('newSignal')}
+        className={cn(
+          buttonVariants({ colorVariant: 'accent' }),
+          'h-12 shadow-md',
+        )}
+      >
+        <PlusIcon />
+        <span className="hidden sm:inline">{t('newSignal')}</span>
+      </Link>
     </div>
   );
 }
