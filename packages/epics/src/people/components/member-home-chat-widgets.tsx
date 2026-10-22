@@ -1284,9 +1284,9 @@ export function MemberHomeSendTokensWidget({
                         type="button"
                         aria-pressed={active}
                         className={cn(
-                          'flex w-full flex-col items-center gap-2 border px-2 py-2',
+                          'flex w-full flex-col items-center gap-2 border px-2 py-2 text-foreground',
                           active
-                            ? 'border-foreground bg-foreground text-background'
+                            ? 'border-border bg-background'
                             : 'border-transparent hover:bg-accent-2',
                         )}
                         onClick={() => {
@@ -1294,7 +1294,7 @@ export function MemberHomeSendTokensWidget({
                           setTargetId(item.id);
                         }}
                       >
-                        <span className="relative inline-flex">
+                        <span className="relative inline-flex rounded-full border border-border">
                           {person ? (
                             <PersonAvatar
                               avatarSrc={person.avatarUrl ?? undefined}
@@ -1304,7 +1304,7 @@ export function MemberHomeSendTokensWidget({
                               personId={person.id}
                             />
                           ) : (
-                            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-background-2 text-1 text-foreground">
+                            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-background-2 text-1 text-foreground">
                               {icon ? (
                                 <img
                                   src={icon}
@@ -1318,7 +1318,7 @@ export function MemberHomeSendTokensWidget({
                           )}
                           {active ? (
                             <span
-                              className="absolute -right-0.5 -bottom-0.5 grid size-4 place-items-center rounded-full bg-background text-foreground"
+                              className="absolute -right-0.5 -bottom-0.5 grid size-4 place-items-center rounded-full border border-border bg-background text-foreground"
                               aria-hidden
                             >
                               <Check className="size-2.5" strokeWidth={3} />
