@@ -99,7 +99,7 @@ export const ActivateSpacesFormSpace = ({
       attachments: undefined,
       creatorId: person?.id,
       spaceId: spaceId ?? undefined,
-      spaces: [{ spaceId: 0, months: 1 }],
+      spaces: [{ spaceId: 0, months: 3 }],
       paymentToken: 'HYPHA',
       recipient: RECIPIENT_SPACE_ADDRESS,
       label: 'Activate Spaces',

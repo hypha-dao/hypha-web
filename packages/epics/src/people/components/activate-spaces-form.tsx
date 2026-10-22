@@ -171,7 +171,7 @@ export const ActivateSpacesForm = ({
       spaces: [
         {
           spaceId: preselected,
-          months: preselected > 0 ? 1 : 0,
+          months: 3,
         },
       ],
       recipient: RECIPIENT_SPACE_ADDRESS,

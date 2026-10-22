@@ -43,7 +43,7 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
 
   const handleAddField = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    append({ spaceId: 0, months: 1 });
+    append({ spaceId: 0, months: 3 });
   };
 
   const handleRemoveLastField = (e: React.MouseEvent<HTMLButtonElement>) => {
