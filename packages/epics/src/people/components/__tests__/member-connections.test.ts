@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   STALE_CONNECTION_MS,
   connectionActivityTs,
+  conversationUnreadTotal,
   facesWithProfiles,
   groupRowsForConnections,
   memberRowsForConnections,
@@ -240,6 +241,36 @@ describe('supersededDirectRoomIds', () => {
     ]);
 
     expect(losers).toEqual([]);
+  });
+});
+
+describe('conversationUnreadTotal', () => {
+  it('ignores unread on an earlier direct room for the same person', () => {
+    const total = conversationUnreadTotal([
+      room({
+        roomId: '!older',
+        kind: 'person',
+        otherUserId: '@gerardo:matrix',
+        lastTs: 10,
+        unread: 3,
+      }),
+      room({
+        roomId: '!later',
+        kind: 'person',
+        otherUserId: '@gerardo:matrix',
+        lastTs: 20,
+        unread: 0,
+      }),
+      room({
+        roomId: '!kate',
+        kind: 'person',
+        otherUserId: '@kate:matrix',
+        lastTs: 15,
+        unread: 1,
+      }),
+    ]);
+
+    expect(total).toBe(1);
   });
 });
 

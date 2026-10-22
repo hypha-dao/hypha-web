@@ -96,6 +96,15 @@ function latestReceiptEvent(room: MatrixSdk.Room) {
   for (let index = events.length - 1; index >= 0; index -= 1) {
     const event = events[index];
     if (!event) continue;
+    if (event.getType() !== MatrixSdk.EventType.RoomMessage) continue;
+    const id = event.getId();
+    if (!id || id.startsWith('~')) continue;
+    if (event.status) continue;
+    return event;
+  }
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (!event) continue;
     const id = event.getId();
     if (!id || id.startsWith('~')) continue;
     if (event.status) continue;
@@ -119,9 +128,23 @@ function markEarlierDirectRoomsRead(
     const event = latestReceiptEvent(room);
     const eventId = event?.getId();
     if (!event || !eventId) continue;
-    void client.setRoomReadMarkers(roomId, eventId, event).catch((error) => {
-      console.warn('Failed to mark an earlier direct room read', error);
-    });
+    void client
+      .setRoomReadMarkers(roomId, eventId, event)
+      .then(() => {
+        if (typeof room.setUnreadNotificationCount === 'function') {
+          room.setUnreadNotificationCount(
+            MatrixSdk.NotificationCountType.Total,
+            0,
+          );
+          room.setUnreadNotificationCount(
+            MatrixSdk.NotificationCountType.Highlight,
+            0,
+          );
+        }
+      })
+      .catch((error) => {
+        console.warn('Failed to mark an earlier direct room read', error);
+      });
   }
 }
 

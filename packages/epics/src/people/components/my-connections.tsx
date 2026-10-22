@@ -8,6 +8,7 @@ import {
   ClientEvent,
   EventType,
   MatrixEventEvent,
+  NotificationCountType,
   RoomEvent,
   SyncState,
   type MatrixClient,
@@ -56,6 +57,7 @@ import {
   unreadRoomsMissingFromMembers,
   STALE_CONNECTION_MS,
   connectionActivityTs,
+  conversationUnreadTotal,
   suggestConnections,
   supersededDirectRoomIds,
   type ConnectionSuggestion,
@@ -300,6 +302,16 @@ let supersededReadTimer = 0;
 
 function latestReceiptEvent(room: Room) {
   const events = room.getLiveTimeline().getEvents();
+  // Prefer the latest room message so every earlier unread line is covered.
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (!event) continue;
+    if (event.getType() !== EventType.RoomMessage) continue;
+    const id = event.getId();
+    if (!id || id.startsWith('~')) continue;
+    if (event.status) continue;
+    return event;
+  }
   for (let index = events.length - 1; index >= 0; index -= 1) {
     const event = events[index];
     if (!event) continue;
@@ -309,6 +321,12 @@ function latestReceiptEvent(room: Room) {
     return event;
   }
   return null;
+}
+
+function clearLocalUnread(room: Room) {
+  if (typeof room.setUnreadNotificationCount !== 'function') return;
+  room.setUnreadNotificationCount(NotificationCountType.Total, 0);
+  room.setUnreadNotificationCount(NotificationCountType.Highlight, 0);
 }
 
 function scheduleSupersededDirectRead() {
@@ -327,23 +345,34 @@ async function markSupersededDirectRoomsRead() {
     const row = conversationCache.get(room.roomId)?.row;
     if (row) rows.push(row);
   }
+  let marked = false;
   for (const roomId of supersededDirectRoomIds(rows)) {
-    const unread = conversationCache.get(roomId)?.row?.unread ?? 0;
-    if (unread <= 0) continue;
+    const cachedUnread = conversationCache.get(roomId)?.row?.unread ?? 0;
     const room = client.getRoom(roomId);
     if (!room || room.getMyMembership() !== 'join') continue;
+    const syncUnread =
+      typeof room.getUnreadNotificationCount === 'function'
+        ? room.getUnreadNotificationCount(NotificationCountType.Total)
+        : 0;
+    if (cachedUnread <= 0 && syncUnread <= 0) continue;
     const event = latestReceiptEvent(room);
     const eventId = event?.getId();
     if (!event || !eventId) continue;
-    if (supersededReadEventIds.get(roomId) === eventId) continue;
+    if (supersededReadEventIds.get(roomId) === eventId && syncUnread <= 0) {
+      continue;
+    }
     supersededReadEventIds.set(roomId, eventId);
     try {
       await client.setRoomReadMarkers(roomId, eventId, event);
+      clearLocalUnread(room);
+      conversationCache.delete(roomId);
+      marked = true;
     } catch (error) {
       supersededReadEventIds.delete(roomId);
       console.warn('Failed to mark an earlier direct room read', error);
     }
   }
+  if (marked) notifyConversationUnreadChanged();
 }
 
 function roomStamp(room: Room, selfId: string | null) {
@@ -629,11 +658,12 @@ export function conversationRowsSnapshot(client: MatrixClient) {
 }
 
 export function conversationUnreadSnapshot(client: MatrixClient) {
-  let total = 0;
+  const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
-    total += conversationCache.get(room.roomId)?.row?.unread ?? 0;
+    const row = conversationCache.get(room.roomId)?.row;
+    if (row) rows.push(row);
   }
-  return total;
+  return conversationUnreadTotal(rows);
 }
 
 /** Keep a listener on the shared room summaries and fill any room still missing. */

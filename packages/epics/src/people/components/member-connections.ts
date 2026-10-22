@@ -370,6 +370,20 @@ export function supersededDirectRoomIds(rows: readonly ConversationRow[]) {
 }
 
 /**
+ * Messages tab total: one conversation per person. Earlier pair rooms stay out
+ * even when Matrix still reports them unread.
+ */
+export function conversationUnreadTotal(rows: readonly ConversationRow[]) {
+  const losers = new Set(supersededDirectRoomIds(rows));
+  let total = 0;
+  for (const row of rows) {
+    if (losers.has(row.roomId)) continue;
+    total += row.unread;
+  }
+  return total;
+}
+
+/**
  * Unread 1:1 rooms that do not map onto the loaded member directory yet.
  * Keeps the Chat tab badge and the people list in step.
  */
@@ -388,12 +402,14 @@ export function unreadRoomsMissingFromMembers<T extends ConnectionListPerson>(
       .map((member) => member.roomId)
       .filter((id): id is string => Boolean(id)),
   );
+  const superseded = new Set(supersededDirectRoomIds(rooms));
   const extras: MemberRow<T>[] = [];
   let syntheticId = -1;
   for (const room of rooms) {
     if (room.signalThread || room.kind !== 'person' || room.unread <= 0) {
       continue;
     }
+    if (superseded.has(room.roomId)) continue;
     if (knownRooms.has(room.roomId)) continue;
     if (room.otherUserId && knownMxids.has(room.otherUserId.toLowerCase())) {
       continue;
