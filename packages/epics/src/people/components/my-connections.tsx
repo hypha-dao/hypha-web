@@ -182,6 +182,9 @@ function conversationRowFromRoom(
   if (others.length === 0) return null;
 
   const kind = others.length === 1 ? 'person' : 'group';
+  // A 1:1 is only a room created as a DM. Two-person space, signal and untyped
+  // rooms are not private messages.
+  if (kind === 'person' && room.getType() !== HYPHA_ROOM_TYPES.dm) return null;
   const other = others.length === 1 ? others[0] : undefined;
   const name =
     (kind === 'person' ? other?.name || other?.rawDisplayName : room.name) ||
@@ -245,7 +248,6 @@ function conversationRowFromRoom(
     unread,
     memberCount: members.length,
     otherUserId: other?.userId ?? null,
-    roomType: room.getType() ?? null,
     faces,
     groupChat: kind === 'group' && isRememberedGroupChatRoom(room.roomId),
     kind,
@@ -341,45 +343,54 @@ function scheduleSupersededDirectRead() {
 function directPairHintsFromClient(client: MatrixClient) {
   const selfId = client.getUserId();
   const botId = botUserId();
-  const rooms = client.getRooms().map((room) => {
-    let members: { userId: string; name?: string; rawDisplayName?: string }[] =
-      [];
-    try {
-      members = room.getJoinedMembers();
-    } catch {
-      members = [];
-    }
-    const others = members
-      .filter((member) => {
-        if (!member.userId || member.userId === selfId) return false;
-        if (member.userId === botId) return false;
-        return !isHyphaBot(member.userId, member.name || member.rawDisplayName);
-      })
-      .map((member) => member.userId);
-    const signalThread =
-      isRememberedSignalThreadRoom(room.roomId) ||
-      room
-        .getLiveTimeline()
-        .getEvents()
-        .slice(-12)
-        .some(
-          (event) =>
-            event.getType() === EventType.RoomMessage &&
-            eventContentIsSignalThread(
-              event.getContent() as Record<string, unknown> | null,
-            ),
-        );
-    return {
-      roomId: room.roomId,
-      membership: room.getMyMembership(),
-      lastTs:
-        typeof room.getLastActiveTimestamp === 'function'
-          ? room.getLastActiveTimestamp()
-          : 0,
-      otherUserIds: others,
-      signalThread,
-    };
-  });
+  const rooms = client
+    .getRooms()
+    .filter((room) => room.getType() === HYPHA_ROOM_TYPES.dm)
+    .map((room) => {
+      let members: {
+        userId: string;
+        name?: string;
+        rawDisplayName?: string;
+      }[] = [];
+      try {
+        members = room.getJoinedMembers();
+      } catch {
+        members = [];
+      }
+      const others = members
+        .filter((member) => {
+          if (!member.userId || member.userId === selfId) return false;
+          if (member.userId === botId) return false;
+          return !isHyphaBot(
+            member.userId,
+            member.name || member.rawDisplayName,
+          );
+        })
+        .map((member) => member.userId);
+      const signalThread =
+        isRememberedSignalThreadRoom(room.roomId) ||
+        room
+          .getLiveTimeline()
+          .getEvents()
+          .slice(-12)
+          .some(
+            (event) =>
+              event.getType() === EventType.RoomMessage &&
+              eventContentIsSignalThread(
+                event.getContent() as Record<string, unknown> | null,
+              ),
+          );
+      return {
+        roomId: room.roomId,
+        membership: room.getMyMembership(),
+        lastTs:
+          typeof room.getLastActiveTimestamp === 'function'
+            ? room.getLastActiveTimestamp()
+            : 0,
+        otherUserIds: others,
+        signalThread,
+      };
+    });
   return collectDirectPairRoomHints(rooms);
 }
 
@@ -800,7 +811,7 @@ function roomAuditRows(client: MatrixClient) {
       cachedKind: row ? row.kind : '(null = hidden)',
       listed,
       unread: row?.unread ?? 0,
-      countedInBadge: counted ? (row?.unread ?? 0) : 0,
+      countedInBadge: counted ? row?.unread ?? 0 : 0,
       phantom: Boolean(row && !listed && counted && row.unread > 0),
       lastTs: row?.lastTs ? new Date(row.lastTs).toISOString() : '',
     };
