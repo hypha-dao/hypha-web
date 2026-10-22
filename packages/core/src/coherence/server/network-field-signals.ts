@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 
 import type { DatabaseInstance } from '../../common/server/types';
+import { COHERENCE_PRIORITIES } from '../coherence-priorities';
 import { parseCapitalKeys } from '../../network/capitals';
 import { readSpaceCapitals } from '../../network/exchange-capitals';
 import { readCoherenceCapitalsBySlugs } from '../../network/capital-columns';
@@ -43,6 +44,13 @@ function asText(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function asPriority(value: unknown): NetworkFieldSignal['priority'] {
+  return typeof value === 'string' &&
+    (COHERENCE_PRIORITIES as readonly string[]).includes(value)
+    ? (value as NetworkFieldSignal['priority'])
+    : 'medium';
+}
+
 function asPayouts(value: unknown): NetworkFieldPayout[] {
   const parsed = typeof value === 'string' ? asTags(value) : value;
   if (!Array.isArray(parsed)) return [];
@@ -63,32 +71,44 @@ function isImageAttachment(url: string, name: string) {
   return /\.(png|jpe?g|gif|webp|svg)$/i.test(hint);
 }
 
-function firstImageAttachment(value: unknown): string | null {
+function attachmentFiles(value: unknown): Array<{ url: string; name: string }> {
   const parsed = typeof value === 'string' ? asTags(value) : value;
-  if (!Array.isArray(parsed)) return null;
+  if (!Array.isArray(parsed)) return [];
+  const files: Array<{ url: string; name: string }> = [];
+  const seen = new Set<string>();
   for (const entry of parsed) {
     if (!entry || typeof entry !== 'object') continue;
     const url = asText((entry as { url?: unknown }).url);
     const name = asText((entry as { name?: unknown }).name);
-    if (!url || !isImageAttachment(url, name)) continue;
-    return url;
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    files.push({
+      url,
+      name: name || url.split('/').pop() || 'File',
+    });
   }
-  return null;
+  return files;
 }
 
-function firstDocumentAttachment(
-  value: unknown,
-): { url: string; name: string } | null {
-  const parsed = typeof value === 'string' ? asTags(value) : value;
-  if (!Array.isArray(parsed)) return null;
-  for (const entry of parsed) {
-    if (!entry || typeof entry !== 'object') continue;
-    const url = asText((entry as { url?: unknown }).url);
-    const name = asText((entry as { name?: unknown }).name);
-    if (!url || isImageAttachment(url, name)) continue;
-    return { url, name: name || url.split('/').pop() || 'Document' };
+function mediaFromAttachments(leadImage: string, value: unknown) {
+  const files = attachmentFiles(value);
+  const images: Array<{ url: string; name: string }> = [];
+  const seen = new Set<string>();
+  const pushImage = (url: string, name: string) => {
+    if (!url || seen.has(url)) return;
+    seen.add(url);
+    images.push({ url, name });
+  };
+  if (leadImage) pushImage(leadImage, '');
+  const documents: Array<{ url: string; name: string }> = [];
+  for (const file of files) {
+    if (isImageAttachment(file.url, file.name)) {
+      pushImage(file.url, file.name);
+    } else {
+      documents.push(file);
+    }
   }
-  return null;
+  return { images, documents };
 }
 
 function isFieldKind(value: unknown): value is NetworkFieldSignalKind {
@@ -106,7 +126,8 @@ export async function listNetworkFieldSignals(
   if (allowed.length === 0) return [];
   const result = await db.execute(sql`
     select c.slug, c.title, c.description, c.type, c.lead_image, c.video_url,
-           c.attachments, c.updated_at, c.tags, c.indicative_payouts,
+           c.attachments, c.updated_at, c.priority, c.due_at, c.tags,
+           c.indicative_payouts,
            s.id as space_id, s.slug as space_slug, s.title as space_title,
            s.location_label, s.chat_room_id, s.description as space_description,
            s.lead_image as space_lead_image,
@@ -142,6 +163,8 @@ export async function listNetworkFieldSignals(
     const spaceSlug = asText(record.space_slug);
     const spaceId = Number(record.space_id);
     if (!slug || !spaceSlug || !Number.isInteger(spaceId)) continue;
+    const leadImage = asText(record.lead_image);
+    const media = mediaFromAttachments(leadImage, record.attachments);
     drafts.push({
       spaceId,
       tagged: parseCapitalKeys(asTags(record.tags))[0] ?? null,
@@ -154,13 +177,14 @@ export async function listNetworkFieldSignals(
       place: asText(record.location_label),
       creatorName: asText(record.creator_name) || null,
       spaceChatRoomId: asText(record.chat_room_id) || null,
-      leadImage:
-        asText(record.lead_image) ||
-        firstImageAttachment(record.attachments) ||
-        null,
+      leadImage: media.images[0]?.url ?? null,
+      images: media.images,
       videoUrl: asText(record.video_url) || null,
-      document: firstDocumentAttachment(record.attachments),
+      documents: media.documents,
+      document: media.documents[0] ?? null,
       updatedAt: asIso(record.updated_at),
+      priority: asPriority(record.priority),
+      dueAt: asIso(record.due_at),
       payouts: asPayouts(record.indicative_payouts),
       spaceDescription: asText(record.space_description),
       spaceLeadImage: asText(record.space_lead_image) || null,

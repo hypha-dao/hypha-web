@@ -17,12 +17,14 @@
 
 .exchange-stage > img,
 .exchange-stage > video,
-.exchange-stage > .exchange-embed {
+.exchange-stage > .exchange-embed,
+.exchange-stage > .exchange-file {
   position: absolute;
   inset: 0;
   display: block;
   width: 100%;
   height: 100%;
+  max-width: none;
   border: 0;
   object-fit: cover;
   object-position: center;
@@ -63,6 +65,29 @@
 
 .exchange-play:hover {
   background: color-mix(in srgb, #000 72%, transparent);
+}
+
+.exchange-view {
+  position: absolute;
+  z-index: 2;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid color-mix(in srgb, #fff 55%, transparent);
+  background: color-mix(in srgb, #000 45%, transparent);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+
+.exchange-view:hover {
+  background: color-mix(in srgb, #000 72%, transparent);
+}
+
+.exchange-view-next {
+  top: 2.625rem;
 }
 
 .exchange-play svg {
