@@ -84,12 +84,23 @@ export function resolveSignalVideo(
   return null;
 }
 
+function fileStem(value: string) {
+  return value.split(/[?#]/)[0] ?? '';
+}
+
+/** Upload URLs often have no extension. The original file name still does. */
+function matchesExtension(
+  url: string,
+  name: string | undefined,
+  pattern: RegExp,
+) {
+  return pattern.test(fileStem(name ?? '')) || pattern.test(fileStem(url));
+}
+
 export function isPdfAttachment(url: string, name?: string): boolean {
-  const hint = `${name ?? ''} ${url}`.split(/[?#]/)[0] ?? '';
-  return /\.pdf$/i.test(hint);
+  return matchesExtension(url, name, /\.pdf$/i);
 }
 
 export function isImageAttachment(url: string, name?: string): boolean {
-  const hint = `${name ?? ''} ${url}`.split(/[?#]/)[0] ?? '';
-  return /\.(png|jpe?g|gif|webp|svg)$/i.test(hint);
+  return matchesExtension(url, name, /\.(png|jpe?g|gif|webp|svg)$/i);
 }

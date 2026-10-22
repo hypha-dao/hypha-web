@@ -13,6 +13,8 @@ const CONNECT_SOURCES =
  * - object-src: `<object type="application/pdf">` fallback when canvas render fails
  */
 const UPLOADTHING_UFS_HOST = 'https://*.ufs.sh';
+/** Older UploadThing links use utfs.io. PDF iframes need them in frame-src. */
+const UPLOADTHING_FILE_HOSTS = `${UPLOADTHING_UFS_HOST} https://utfs.io https://*.utfs.io`;
 /**
  * UploadThing v7 uploads go to a region-prefixed ingest host
  * (`<region>.ingest.uploadthing.com`), which is distinct from the `*.ufs.sh`
@@ -115,12 +117,12 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       `media-src ${mediaSrc}`,
       "font-src 'self' https://fonts.gstatic.com https://vercel.live",
       // Allow PDF previews for Space Memory (UploadThing URLs); 'none' blocks <object> and triggers console CSP noise.
-      `object-src 'self' blob: ${UPLOADTHING_UFS_HOST}`,
+      `object-src 'self' blob: ${UPLOADTHING_FILE_HOSTS}`,
       "base-uri 'self'",
       "form-action 'self' https://auth.privy.io https://privy.hypha.earth https://accounts.google.com",
       "frame-ancestors 'none'",
-      `child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org ${SIGNAL_VIDEO_FRAME_HOSTS} ${UPLOADTHING_UFS_HOST}`,
-      `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live https://docs.google.com https://drive.google.com ${SIGNAL_VIDEO_FRAME_HOSTS} ${UPLOADTHING_UFS_HOST}`,
+      `child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org ${SIGNAL_VIDEO_FRAME_HOSTS} ${UPLOADTHING_FILE_HOSTS}`,
+      `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live https://docs.google.com https://drive.google.com ${SIGNAL_VIDEO_FRAME_HOSTS} ${UPLOADTHING_FILE_HOSTS}`,
       `connect-src 'self' ${connectSrc}`,
       // pdf.js may spawn workers from blob URLs in some builds
       "worker-src 'self' blob:",

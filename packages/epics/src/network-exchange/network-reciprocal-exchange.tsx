@@ -152,8 +152,227 @@ function withAutoplay(src: string) {
 
 type FieldFile = { url: string; name: string };
 
+function fileStem(value: string) {
+  return value.split(/[?#]/)[0] ?? '';
+}
+
+const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg']);
+const TEXT_EXTENSIONS = new Set(['txt', 'csv', 'md']);
+const OFFICE_EXTENSIONS = new Set([
+  'doc',
+  'docx',
+  'ppt',
+  'pptx',
+  'xls',
+  'xlsx',
+  'odt',
+  'rtf',
+]);
+
+function fileExtension(file: FieldFile) {
+  const extension = (value: string) =>
+    /\.([a-z0-9]+)$/i.exec(fileStem(value))?.[1]?.toLowerCase() ?? '';
+  return extension(file.name) || extension(file.url);
+}
+
 function isPdfFile(file: FieldFile) {
-  return /\.pdf(?:$|[?#])/i.test(`${file.name} ${file.url}`);
+  return fileExtension(file) === 'pdf';
+}
+
+/** An image shared as a file. The upload URL often has no extension. */
+function isImageFile(file: FieldFile) {
+  return IMAGE_EXTENSIONS.has(fileExtension(file));
+}
+
+function FileFace({ name }: { name: string }) {
+  return (
+    <div className="absolute inset-0 flex flex-col items-start justify-end gap-3 p-8">
+      <FileText className="size-8" strokeWidth={1.25} aria-hidden />
+      <p className="max-w-md text-4 font-medium">{name}</p>
+    </div>
+  );
+}
+
+let pdfWorkerReady = false;
+
+async function loadPdfJs() {
+  const pdfJs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  if (!pdfWorkerReady) {
+    try {
+      pdfJs.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/legacy/build/pdf.worker.mjs',
+        import.meta.url,
+      ).toString();
+    } catch {
+      // Keep the default worker when the URL cannot be built.
+    }
+    pdfWorkerReady = true;
+  }
+  return pdfJs;
+}
+
+function pdfViewUrl(src: string) {
+  const base = src.split('#')[0] ?? src;
+  return `${base}#toolbar=0&navpanes=0&view=FitH`;
+}
+
+/** Pages of the PDF, without the browser's PDF viewer. */
+function PdfPreview({ src, title }: { src: string; title: string }) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const [phase, setPhase] = useState<'loading' | 'ready' | 'embed'>('loading');
+
+  useEffect(() => {
+    let cancelled = false;
+    let task: { destroy: () => void } | null = null;
+    let pdf: { destroy: () => Promise<void> } | null = null;
+    setPhase('loading');
+
+    async function render() {
+      const host = hostRef.current;
+      if (!host) {
+        setPhase('embed');
+        return;
+      }
+      try {
+        const pdfJs = await loadPdfJs();
+        const loadingTask = pdfJs.getDocument({ url: src, verbosity: 0 });
+        task = loadingTask;
+        const loaded = await loadingTask.promise;
+        pdf = loaded;
+        if (cancelled) return;
+        // A long file is easier to read in the browser viewer than as dozens of canvases.
+        if (loaded.numPages > 20) {
+          setPhase('embed');
+          return;
+        }
+        host.replaceChildren();
+        const width = Math.max(320, host.clientWidth - 32);
+        for (let number = 1; number <= loaded.numPages; number += 1) {
+          if (cancelled) return;
+          const page = await loaded.getPage(number);
+          const unscaled = page.getViewport({ scale: 1 });
+          const scale = Math.min(1.75, width / unscaled.width);
+          const viewport = page.getViewport({ scale });
+          const canvas = document.createElement('canvas');
+          const ratio = Math.min(2, window.devicePixelRatio || 1);
+          canvas.width = Math.floor(viewport.width * ratio);
+          canvas.height = Math.floor(viewport.height * ratio);
+          canvas.style.width = '100%';
+          canvas.style.height = 'auto';
+          const context = canvas.getContext('2d');
+          if (!context) continue;
+          context.setTransform(ratio, 0, 0, ratio, 0, 0);
+          await page.render({ canvas, canvasContext: context, viewport })
+            .promise;
+          const frame = document.createElement('div');
+          frame.className = 'w-full max-w-4xl bg-white';
+          frame.appendChild(canvas);
+          host.appendChild(frame);
+          if (number === 1 && !cancelled) setPhase('ready');
+        }
+        if (!cancelled) setPhase('ready');
+      } catch {
+        if (!cancelled) setPhase('embed');
+      }
+    }
+
+    void render();
+    return () => {
+      cancelled = true;
+      task?.destroy();
+      void pdf?.destroy().catch(() => undefined);
+    };
+  }, [src]);
+
+  if (phase === 'embed') {
+    return (
+      <iframe
+        title={title}
+        src={pdfViewUrl(src)}
+        className="absolute inset-0 size-full border-0 bg-background"
+      />
+    );
+  }
+
+  return (
+    <div className="absolute inset-0 overflow-auto bg-neutral-2">
+      <div ref={hostRef} className="flex flex-col items-center gap-4 p-4" />
+      {phase === 'loading' ? (
+        <div className="absolute inset-0 flex items-end p-8">
+          <FileText
+            className="size-8 animate-pulse"
+            strokeWidth={1.25}
+            aria-hidden
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function TextPreview({ src, name }: { src: string; name: string }) {
+  const [text, setText] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setText(null);
+    setFailed(false);
+    void fetch(src)
+      .then((response) => {
+        if (!response.ok) throw new Error('preview');
+        return response.text();
+      })
+      .then((body) => {
+        if (cancelled) return;
+        if (body.slice(0, 1000).includes('\u0000')) {
+          setFailed(true);
+          return;
+        }
+        setText(body.slice(0, 100_000));
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [src]);
+
+  if (failed) return <FileFace name={name} />;
+  if (text == null) return <FileFace name={name} />;
+  return (
+    <pre className="absolute inset-0 overflow-auto whitespace-pre-wrap p-8 text-2 text-foreground">
+      {text}
+    </pre>
+  );
+}
+
+/** Office files have no browser preview. Google's viewer is already allowed by CSP. */
+function officePreviewUrl(file: FieldFile) {
+  if (!OFFICE_EXTENSIONS.has(fileExtension(file))) return null;
+  return `https://docs.google.com/viewer?url=${encodeURIComponent(
+    file.url,
+  )}&embedded=true`;
+}
+
+function DocumentPreview({ file, title }: { file: FieldFile; title: string }) {
+  const label = file.name || title;
+  if (isPdfFile(file)) return <PdfPreview src={file.url} title={label} />;
+  if (TEXT_EXTENSIONS.has(fileExtension(file))) {
+    return <TextPreview src={file.url} name={label} />;
+  }
+  const office = officePreviewUrl(file);
+  if (office) {
+    return (
+      <iframe
+        title={label}
+        src={office}
+        className="absolute inset-0 size-full border-0 bg-background"
+      />
+    );
+  }
+  return <FileFace name={label} />;
 }
 
 function ExchangeGallery({
@@ -198,8 +417,7 @@ function ExchangeGallery({
   }, [total]);
 
   if (!file) return null;
-  const showImage =
-    mode === 'photos' || (!isPdfFile(file) && mode !== 'documents');
+  const showImage = mode === 'photos' || isImageFile(file);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -217,17 +435,12 @@ function ExchangeGallery({
               alt={file.name || title}
               className="absolute inset-0 size-full max-w-none object-contain"
             />
-          ) : isPdfFile(file) ? (
-            <iframe
-              title={file.name || title}
-              src={file.url}
-              className="absolute inset-0 size-full border-0 bg-background"
-            />
           ) : (
-            <div className="absolute inset-0 flex flex-col items-start justify-end gap-3 p-8">
-              <FileText className="size-8" strokeWidth={1.25} aria-hidden />
-              <p className="max-w-md text-4 font-medium">{file.name}</p>
-            </div>
+            <DocumentPreview
+              key={file.url}
+              file={file}
+              title={file.name || title}
+            />
           )}
           <DialogClose
             className="absolute right-3 top-3 inline-flex size-8 items-center justify-center border border-white/40 bg-black/45 text-white hover:bg-black/70"
@@ -374,6 +587,12 @@ function ExchangeMedia({
           alt={alt}
           className="absolute inset-0 size-full max-w-none object-cover"
           onError={() => setFailed(true)}
+        />
+      ) : document && isImageFile(document) ? (
+        <img
+          src={document.url}
+          alt={alt}
+          className="absolute inset-0 size-full max-w-none object-cover"
         />
       ) : document ? (
         <div className="exchange-file">

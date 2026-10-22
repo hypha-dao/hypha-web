@@ -67,8 +67,9 @@ function asPayouts(value: unknown): NetworkFieldPayout[] {
 
 /** UploadThing URLs often have no extension. The file name still does. */
 function isImageAttachment(url: string, name: string) {
-  const hint = `${name} ${url}`.split(/[?#]/)[0] ?? '';
-  return /\.(png|jpe?g|gif|webp|svg)$/i.test(hint);
+  const isImageName = (value: string) =>
+    /\.(png|jpe?g|gif|webp|svg)$/i.test(value.split(/[?#]/)[0] ?? '');
+  return isImageName(name) || isImageName(url);
 }
 
 function attachmentFiles(value: unknown): Array<{ url: string; name: string }> {
