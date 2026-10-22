@@ -13,10 +13,16 @@ export type LinkedTreasuryPayout = {
 
 const EMPTY_PAYOUT: LinkedTreasuryPayout = { amount: '', token: '' };
 
+function isPayoutRow(
+  payout: LinkedTreasuryPayout | readonly LinkedTreasuryPayout[],
+): payout is LinkedTreasuryPayout {
+  return !Array.isArray(payout);
+}
+
 function payoutRows(
   payout: LinkedTreasuryPayout | readonly LinkedTreasuryPayout[],
 ): readonly LinkedTreasuryPayout[] {
-  return Array.isArray(payout) ? payout : [payout];
+  return isPayoutRow(payout) ? [payout] : payout;
 }
 
 /** Amount and token pairs the create-signal form can prefill. Either may be absent. */
