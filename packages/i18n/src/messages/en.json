@@ -2266,6 +2266,8 @@
         "convertedIntoLabel": "Converted into",
         "redeem": "Redeem",
         "redeeming": "Redeeming",
+        "loadingTokens": "Loading tokens…",
+        "noRedeemableTokens": "You have no redeemable tokens right now. Tokens appear here when a space has redemption open and you hold a balance.",
         "loadingCollaterals": "Loading collateral assets…",
         "successMessage": "Your redemption has been successfully completed!",
         "requestedExceedsBalance": "Requested amount ({amount}) exceeds available balance ({balance}).",

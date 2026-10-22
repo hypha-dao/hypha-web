@@ -2452,6 +2452,8 @@
         "convertedIntoLabel": "Convertido en",
         "redeem": "Canjear",
         "redeeming": "Canjeando",
+        "loadingTokens": "Cargando tokens…",
+        "noRedeemableTokens": "No tienes tokens canjeables ahora. Aparecen aquí cuando un space tiene el canje abierto y tienes saldo.",
         "loadingCollaterals": "Cargando activos colaterales…",
         "successMessage": "¡Tu canje se completó correctamente!",
         "requestedExceedsBalance": "El monto solicitado ({amount}) supera el saldo disponible ({balance}).",

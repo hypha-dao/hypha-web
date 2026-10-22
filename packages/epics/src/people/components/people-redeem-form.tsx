@@ -716,7 +716,8 @@ export const PeopleRedeemForm = ({
             showSelectedTokenBalanceHint
             selectedTokenPriceHint={selectedTokenPriceHint}
             isLoadingTokens={isLoadingTokens}
-            loadingTokensLabel="Loading tokens..."
+            loadingTokensLabel={t('form.loadingTokens')}
+            emptyTokensLabel={t('form.noRedeemableTokens')}
             appearance={appearance}
             amountPresets={
               appearance === 'wallet' ? [5, 10, 25, 50, 100] : undefined
@@ -779,7 +780,12 @@ export const PeopleRedeemForm = ({
               <Button
                 type="submit"
                 className={appearance === 'wallet' ? 'w-full' : undefined}
-                disabled={isRedeeming || isCollateralsLoading}
+                disabled={
+                  isRedeeming ||
+                  isCollateralsLoading ||
+                  isLoadingTokens ||
+                  tokens.length === 0
+                }
               >
                 {t('form.redeem')}
               </Button>

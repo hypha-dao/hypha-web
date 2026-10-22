@@ -1667,6 +1667,8 @@
         "convertedIntoLabel": "Converti en",
         "redeem": "Échanger",
         "redeeming": "Échange en cours",
+        "loadingTokens": "Chargement des tokens…",
+        "noRedeemableTokens": "Vous n’avez aucun token échangeable pour le moment. Ils apparaissent ici lorsqu’un space ouvre le rachat et que vous détenez un solde.",
         "loadingCollaterals": "Chargement des actifs de garantie…",
         "successMessage": "Votre opération d'échange a été effectuée avec succès !",
         "requestedExceedsBalance": "Le montant demandé ({amount}) dépasse le solde disponible ({balance}).",

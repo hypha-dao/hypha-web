@@ -2218,6 +2218,8 @@
         "convertedIntoLabel": "Претворено во",
         "redeem": "Откупи",
         "redeeming": "Се откупува",
+        "loadingTokens": "Се вчитуваат токени…",
+        "noRedeemableTokens": "Немаш откупни токени во моментов. Се појавуваат овде кога простор има отворен откуп и имаш салдо.",
         "loadingCollaterals": "Се вчитуваат средствата за покритие…",
         "successMessage": "Твојот откуп е успешно завршен!",
         "requestedExceedsBalance": "Бараниот износ ({amount}) го надминува достапното салдо ({balance}).",

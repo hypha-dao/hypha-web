@@ -53,6 +53,8 @@ interface TokenPayoutFieldProps {
   selectedTokenPriceHint?: string;
   isLoadingTokens?: boolean;
   loadingTokensLabel?: string;
+  /** Shown when discovery finished and the list is empty. */
+  emptyTokensLabel?: string;
   /** Send-tokens amount block. Profile and agreement forms keep the default row. */
   variant?: 'default' | 'wallet';
   amountPresets?: number[];
@@ -82,6 +84,7 @@ function TokenPayoutFieldInner({
   selectedTokenPriceHint,
   isLoadingTokens = false,
   loadingTokensLabel,
+  emptyTokensLabel,
   variant = 'default',
   amountPresets,
 }: TokenPayoutFieldProps) {
@@ -141,7 +144,9 @@ function TokenPayoutFieldInner({
         onAmountChange={handleAmountChange}
         amountLabel={tAgreementFlow('plugins.tokenPayoutField.amount')}
         symbol={selectedToken?.symbol}
-        presets={amountPresets}
+        presets={
+          isLoadingTokens || tokens.length === 0 ? undefined : amountPresets
+        }
         symbolNode={
           showMenu ? (
             <DropdownMenu>
@@ -208,6 +213,11 @@ function TokenPayoutFieldInner({
             <span>
               {loadingTokensLabel ??
                 tAgreementFlow('plugins.exchangeStakesAndTokens.loadingTokens')}
+            </span>
+          ) : tokens.length === 0 ? (
+            <span>
+              {emptyTokensLabel ??
+                tAgreementFlow('plugins.tokenPayoutField.noTokensFound')}
             </span>
           ) : selectedTokenPriceHint ? (
             <span>{selectedTokenPriceHint}</span>
@@ -305,7 +315,8 @@ function TokenPayoutFieldInner({
                       tAgreementFlow(
                         'plugins.exchangeStakesAndTokens.loadingTokens',
                       )
-                    : tAgreementFlow('plugins.tokenPayoutField.noTokensFound')}
+                    : emptyTokensLabel ??
+                      tAgreementFlow('plugins.tokenPayoutField.noTokensFound')}
                 </span>
               )}
             </DropdownMenuContent>

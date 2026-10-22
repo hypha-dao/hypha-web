@@ -2438,6 +2438,8 @@
         "convertedIntoLabel": "Convertido em",
         "redeem": "Resgatar",
         "redeeming": "Resgatando",
+        "loadingTokens": "Carregando tokens…",
+        "noRedeemableTokens": "Você não tem tokens resgatáveis agora. Eles aparecem aqui quando um space abre o resgate e você tem saldo.",
         "loadingCollaterals": "Carregando ativos colaterais…",
         "successMessage": "Seu resgate foi concluído com sucesso!",
         "requestedExceedsBalance": "O valor solicitado ({amount}) excede o saldo disponível ({balance}).",

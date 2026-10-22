@@ -42,6 +42,7 @@ interface TokenPayoutFieldArrayProps {
   selectedTokenPriceHint?: string;
   isLoadingTokens?: boolean;
   loadingTokensLabel?: string;
+  emptyTokensLabel?: string;
   /** Proposal payouts are required. A signal amount is indicative, so the mark can be hidden. */
   markRequired?: boolean;
   appearance?: 'default' | 'wallet';
@@ -59,6 +60,7 @@ function TokenPayoutFieldArrayInner({
   selectedTokenPriceHint,
   isLoadingTokens = false,
   loadingTokensLabel,
+  emptyTokensLabel,
   markRequired = true,
   appearance = 'default',
   amountPresets,
@@ -108,6 +110,7 @@ function TokenPayoutFieldArrayInner({
                   selectedTokenPriceHint={selectedTokenPriceHint}
                   isLoadingTokens={isLoadingTokens}
                   loadingTokensLabel={loadingTokensLabel}
+                  emptyTokensLabel={emptyTokensLabel}
                   variant={appearance === 'wallet' ? 'wallet' : 'default'}
                   amountPresets={amountPresets}
                 />

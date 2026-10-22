@@ -2238,6 +2238,8 @@
         "convertedIntoLabel": "Omgezet in",
         "redeem": "Inwisselen",
         "redeeming": "Inwisselen",
+        "loadingTokens": "Tokens laden…",
+        "noRedeemableTokens": "Je hebt nu geen inwisselbare tokens. Ze verschijnen hier wanneer een space inwisseling open heeft en je een saldo aanhoudt.",
         "loadingCollaterals": "Onderpand activa laden...",
         "successMessage": "Uw inwisseling is succesvol voltooid!",
         "requestedExceedsBalance": "Het gevraagde bedrag ({amount}) overschrijdt het beschikbare saldo ({balance}).",

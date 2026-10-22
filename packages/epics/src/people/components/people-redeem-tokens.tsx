@@ -220,132 +220,136 @@ export const ProfileRedeemTokens = ({
     [tokenBalancesBySpaceAndAddress],
   );
 
-  const { data: redeemableData } = useSWR<{
-    tokens: Token[];
-    diagnostics: RedeemDiscoveryDiagnostics;
-  }>(
-    jwt && spaceSlugs.length > 0
-      ? [
-          'redeemable-space-tokens',
-          jwt,
-          spaceSlugs.join(','),
-          personData?.address ?? '',
-        ]
-      : null,
-    async () => {
-      const redeemableTokensAcrossSpaces: Token[] = [];
-      const diagnostics: RedeemDiscoveryDiagnostics = {
-        vaultFetch: [],
-        checkedVaultTokenCount: 0,
-        balanceReadFailureCount: 0,
-      };
-      const now = Date.now();
-      const memberAddress = personData?.address as `0x${string}` | undefined;
-      if (!memberAddress) {
-        return { tokens: [], diagnostics };
-      }
-
-      const spaceResults = await Promise.all(
-        uniqueSpaces.map(async (space) => {
-          const headers = {
-            Authorization: `Bearer ${jwt}`,
-            'Content-Type': 'application/json',
-          };
-          const vaultsRes = await fetch(
-            `/api/v1/spaces/${space.slug}/vaults?redeemableOnly=true`,
-            {
-              headers,
-            },
-          );
-
-          if (!vaultsRes.ok) {
-            diagnostics.vaultFetch.push({
-              spaceSlug: space.slug,
-              status: vaultsRes.status,
-            });
-            return [];
-          }
-
-          const vaultsPayload = (await vaultsRes.json()) as SpaceVaultsResponse;
-          const resolvedWeb3SpaceId =
-            typeof vaultsPayload.web3SpaceId === 'number'
-              ? vaultsPayload.web3SpaceId
-              : typeof space.web3SpaceId === 'number'
-              ? space.web3SpaceId
-              : undefined;
-          const activeVaultTokens = (vaultsPayload.vaults ?? []).filter(
-            (vault) => {
-              if (vault.redemptionEnabled !== true) return false;
-              if (!vault.redemptionStartDate) return true;
-              const startDate = new Date(vault.redemptionStartDate);
-              return (
-                Number.isNaN(startDate.getTime()) || startDate.getTime() <= now
-              );
-            },
-          );
-          diagnostics.checkedVaultTokenCount += activeVaultTokens.length;
-
-          const balanceResults =
-            activeVaultTokens.length === 0
-              ? []
-              : await publicClient.multicall({
-                  allowFailure: true,
-                  contracts: activeVaultTokens.map((vaultToken) => ({
-                    address: vaultToken.spaceToken as `0x${string}`,
-                    abi: erc20Abi,
-                    functionName: 'balanceOf' as const,
-                    args: [memberAddress],
-                  })),
-                });
-
-          return balanceResults
-            .map((balanceResult, index) => {
-              const vaultToken = activeVaultTokens[index]!;
-              if (balanceResult.status !== 'success') {
-                diagnostics.balanceReadFailureCount += 1;
-                return { token: vaultToken, hasBalance: false };
-              }
-              return {
-                token: vaultToken,
-                hasBalance: balanceResult.result > 0n,
-              };
-            })
-            .filter((entry) => entry.hasBalance)
-            .map((entry) => ({
-              icon: entry.token.tokenIcon || '/placeholder/token-icon.svg',
-              symbol: entry.token.tokenSymbol || 'UNKNOWN',
-              address: entry.token.spaceToken as `0x${string}`,
-              tokenPrice: entry.token.redemptionPrice,
-              value: getTokenAvailableBalance(
-                entry.token.spaceToken,
-                space.slug,
-              ),
-              space: {
-                title: space.title,
-                slug: space.slug,
-                web3SpaceId: resolvedWeb3SpaceId,
-              },
-            }));
-        }),
-      );
-
-      const seen = new Set<string>();
-      for (const tokenList of spaceResults) {
-        for (const token of tokenList) {
-          const key = `${
-            token.space?.slug ?? ''
-          }:${token.address.toLowerCase()}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          redeemableTokensAcrossSpaces.push(token);
+  const canDiscoverRedeemable = Boolean(jwt) && spaceSlugs.length > 0;
+  const { data: redeemableData, isLoading: isRedeemableRequestLoading } =
+    useSWR<{
+      tokens: Token[];
+      diagnostics: RedeemDiscoveryDiagnostics;
+    }>(
+      canDiscoverRedeemable
+        ? [
+            'redeemable-space-tokens',
+            jwt,
+            spaceSlugs.join(','),
+            personData?.address ?? '',
+          ]
+        : null,
+      async () => {
+        const redeemableTokensAcrossSpaces: Token[] = [];
+        const diagnostics: RedeemDiscoveryDiagnostics = {
+          vaultFetch: [],
+          checkedVaultTokenCount: 0,
+          balanceReadFailureCount: 0,
+        };
+        const now = Date.now();
+        const memberAddress = personData?.address as `0x${string}` | undefined;
+        if (!memberAddress) {
+          return { tokens: [], diagnostics };
         }
-      }
-      return {
-        tokens: redeemableTokensAcrossSpaces,
-        diagnostics,
-      };
-    },
-  );
+
+        const spaceResults = await Promise.all(
+          uniqueSpaces.map(async (space) => {
+            const headers = {
+              Authorization: `Bearer ${jwt}`,
+              'Content-Type': 'application/json',
+            };
+            const vaultsRes = await fetch(
+              `/api/v1/spaces/${space.slug}/vaults?redeemableOnly=true`,
+              {
+                headers,
+              },
+            );
+
+            if (!vaultsRes.ok) {
+              diagnostics.vaultFetch.push({
+                spaceSlug: space.slug,
+                status: vaultsRes.status,
+              });
+              return [];
+            }
+
+            const vaultsPayload =
+              (await vaultsRes.json()) as SpaceVaultsResponse;
+            const resolvedWeb3SpaceId =
+              typeof vaultsPayload.web3SpaceId === 'number'
+                ? vaultsPayload.web3SpaceId
+                : typeof space.web3SpaceId === 'number'
+                ? space.web3SpaceId
+                : undefined;
+            const activeVaultTokens = (vaultsPayload.vaults ?? []).filter(
+              (vault) => {
+                if (vault.redemptionEnabled !== true) return false;
+                if (!vault.redemptionStartDate) return true;
+                const startDate = new Date(vault.redemptionStartDate);
+                return (
+                  Number.isNaN(startDate.getTime()) ||
+                  startDate.getTime() <= now
+                );
+              },
+            );
+            diagnostics.checkedVaultTokenCount += activeVaultTokens.length;
+
+            const balanceResults =
+              activeVaultTokens.length === 0
+                ? []
+                : await publicClient.multicall({
+                    allowFailure: true,
+                    contracts: activeVaultTokens.map((vaultToken) => ({
+                      address: vaultToken.spaceToken as `0x${string}`,
+                      abi: erc20Abi,
+                      functionName: 'balanceOf' as const,
+                      args: [memberAddress],
+                    })),
+                  });
+
+            return balanceResults
+              .map((balanceResult, index) => {
+                const vaultToken = activeVaultTokens[index]!;
+                if (balanceResult.status !== 'success') {
+                  diagnostics.balanceReadFailureCount += 1;
+                  return { token: vaultToken, hasBalance: false };
+                }
+                return {
+                  token: vaultToken,
+                  hasBalance: balanceResult.result > 0n,
+                };
+              })
+              .filter((entry) => entry.hasBalance)
+              .map((entry) => ({
+                icon: entry.token.tokenIcon || '/placeholder/token-icon.svg',
+                symbol: entry.token.tokenSymbol || 'UNKNOWN',
+                address: entry.token.spaceToken as `0x${string}`,
+                tokenPrice: entry.token.redemptionPrice,
+                value: getTokenAvailableBalance(
+                  entry.token.spaceToken,
+                  space.slug,
+                ),
+                space: {
+                  title: space.title,
+                  slug: space.slug,
+                  web3SpaceId: resolvedWeb3SpaceId,
+                },
+              }));
+          }),
+        );
+
+        const seen = new Set<string>();
+        for (const tokenList of spaceResults) {
+          for (const token of tokenList) {
+            const key = `${
+              token.space?.slug ?? ''
+            }:${token.address.toLowerCase()}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            redeemableTokensAcrossSpaces.push(token);
+          }
+        }
+        return {
+          tokens: redeemableTokensAcrossSpaces,
+          diagnostics,
+        };
+      },
+    );
 
   const tokens = React.useMemo(() => {
     const list = redeemableData?.tokens ?? [];
@@ -371,8 +375,10 @@ export const ProfileRedeemTokens = ({
     tokenMetadataByAddress,
     tokenTypeByAddress,
   ]);
-  const isCoreLoading = personLoading || spacesLoading;
-  const isTokensLoading = Boolean(jwt) && !redeemableData;
+  const isCoreLoading = personLoading || (Boolean(jwt) && spacesLoading);
+  // Only treat as loading while a discover request is in flight. When the user
+  // has no spaces (or JWT), there is nothing to fetch — show the empty state.
+  const isTokensLoading = canDiscoverRedeemable && isRedeemableRequestLoading;
 
   const resolvedCloseUrl = closeUrl ?? `/${lang}/profile/${personSlug}`;
   const resolvedBackUrl = backUrl ?? `/${lang}/profile/${personSlug}/actions`;

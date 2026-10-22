@@ -2237,6 +2237,8 @@
         "convertedIntoLabel": "Konvertert til",
         "redeem": "Løs inn",
         "redeeming": "Løser inn",
+        "loadingTokens": "Laster tokens…",
+        "noRedeemableTokens": "Du har ingen innløsbare tokens akkurat nå. De vises her når et rom har åpnet innløsning og du har saldo.",
         "loadingCollaterals": "Laster inn sikkerhetsaktiva…",
         "successMessage": "Innløsningen din er fullført!",
         "requestedExceedsBalance": "Forespurt beløp ({amount}) overstiger tilgjengelig saldo ({balance}).",

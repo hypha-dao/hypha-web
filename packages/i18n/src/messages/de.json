@@ -2239,6 +2239,8 @@
         "convertedIntoLabel": "Umgewandelt in",
         "redeem": "Einlösen",
         "redeeming": "Wird eingelöst",
+        "loadingTokens": "Tokens werden geladen…",
+        "noRedeemableTokens": "Sie haben derzeit keine einlösbaren Tokens. Tokens erscheinen hier, wenn ein Space die Einlösung geöffnet hat und Sie einen Bestand halten.",
         "loadingCollaterals": "Sicherheiten werden geladen…",
         "successMessage": "Ihre Einlösung wurde erfolgreich abgeschlossen!",
         "requestedExceedsBalance": "Angeforderter Betrag ({amount}) übersteigt das verfügbare Guthaben ({balance}).",
