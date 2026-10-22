@@ -242,13 +242,15 @@ export function NetworkDirectoryMask({
 
   return (
     <div className="flex min-w-0 flex-col gap-4" aria-busy="true">
-      {title}
       <div className="flex min-w-0 flex-col gap-4 xl:gap-9">
-        <div className="flex w-full min-w-0 flex-row items-center gap-3">
-          <Wave className="h-10 min-w-0 flex-1" delayMs={40} text={false} />
-          <Wave className="h-10 w-28 shrink-0" delayMs={80} text={false} />
+        {title}
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="flex w-full min-w-0 flex-row items-center gap-3">
+            <Wave className="h-10 min-w-0 flex-1" delayMs={40} text={false} />
+            <Wave className="h-10 w-28 shrink-0" delayMs={80} text={false} />
+          </div>
+          <TagRowPlaceholder />
         </div>
-        <TagRowPlaceholder />
       </div>
 
       <div className="flex min-w-0 flex-col gap-4">
@@ -262,16 +264,16 @@ export function NetworkDirectoryMask({
               </div>
               <Wave className="h-8 w-28" delayMs={160} text={false} />
             </div>
-            <div className="my-2 md:my-6">
+            <div className="my-6">
               <CensusPlaceholder />
             </div>
-            <NetworkMapWave className={cn(showCards && 'mb-3 md:mb-7')} />
+            <NetworkMapWave className="mb-7" />
           </>
         ) : null}
 
         {showCards ? (
           <>
-            <div className="mb-3 flex w-full flex-row items-center justify-between gap-2 md:mb-7">
+            <div className="mb-7 flex w-full flex-row items-center justify-between gap-2">
               <Wave className="h-4 w-40" delayMs={200} />
               <Wave className="h-8 w-36" delayMs={240} text={false} />
             </div>
