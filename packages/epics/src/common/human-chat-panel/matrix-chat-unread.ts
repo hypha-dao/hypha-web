@@ -13,6 +13,8 @@ import {
   stripMatrixReplyFallback,
 } from '@hypha-platform/core/client';
 
+import { countIncomingUnreadMessages } from './conversation-unread-count';
+
 export type HumanChatUnreadState = {
   firstUnreadMessageId: string | null;
   unreadNotificationCount: number;
@@ -153,9 +155,13 @@ export function computeHumanChatUnreadState(
   const highlight = room.getUnreadNotificationCount(
     NotificationCountType.Highlight,
   );
-  const total = room.getUnreadNotificationCount(NotificationCountType.Total);
-  const unreadNotificationCount =
-    typeof highlight === 'number' && highlight > 0 ? highlight : total ?? 0;
+  // Homeserver totals still count notices and hidden room events. The badge
+  // should match messages a person can actually read.
+  const unreadNotificationCount = countIncomingUnreadMessages(
+    room,
+    userId,
+    isTechnicalChatSender,
+  );
 
   const unreadCountIsCapped = unreadNotificationCount >= 100;
 
@@ -375,6 +381,13 @@ export function findJoinedRoomIdByAliasLocalpart(
     }
   }
   return null;
+}
+
+function isTechnicalChatSender(userId: string, displayName?: string | null) {
+  const configured = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim();
+  if (configured && userId === configured) return true;
+  const local = userId.replace(/^@/, '').split(':')[0] ?? '';
+  return /hypha[_-]bot/i.test(local) || /hypha[_-]bot/i.test(displayName ?? '');
 }
 
 export function unreadNotificationBadgeForRoom(
