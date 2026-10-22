@@ -7,16 +7,8 @@ import useSWR from 'swr';
 import { useTranslations } from 'next-intl';
 import { QRCodeSVG } from 'qrcode.react';
 import { ChevronRight, Copy } from 'lucide-react';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Input,
-} from '@hypha-platform/ui';
-import { copyToClipboard } from '@hypha-platform/ui-utils';
+import { Button, Input } from '@hypha-platform/ui';
+import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
 import { Space, useJwt } from '@hypha-platform/core/client';
 import { BankAccountDetailsDialog } from '../../banking/components/bank-account-details-dialog';
 import { InlineCopyRow } from '../../banking/components/inline-copy-row';
@@ -112,17 +104,26 @@ function useDepositEligibleSpaces() {
   return { spaces, isLoading, error };
 }
 
+/** Dialog shell for Fund a Space — horizontally centered under MenuTop. */
+export const FUND_SPACE_DIALOG_CONTENT_CLASS = cn(
+  'max-w-md gap-0 overflow-y-auto p-0',
+  'top-[max(0.5rem,calc(var(--menu-top-height,70px)+0.5rem))]! translate-y-0!',
+);
+
 export function FundASpaceFlow({
   initialSpaceSlug,
   initialSpaceTitle,
 }: {
-  /** When set, that space is selected and deposit details open at once. */
+  /** When set, skip the picker and open deposit details for that space. */
   initialSpaceSlug?: string | null;
   /** Used to seed search when the slug is not deposit-eligible yet. */
   initialSpaceTitle?: string | null;
 } = {}) {
   const t = useTranslations('MyWallet.fundSpace');
   const { spaces, isLoading, error } = useDepositEligibleSpaces();
+  const lockedSlug = initialSpaceSlug?.trim() || '';
+  const lockedTitle = initialSpaceTitle?.trim() || '';
+  const skipPicker = Boolean(lockedSlug);
   const [query, setQuery] = useState('');
   const [selectedSlug, setSelectedSlug] = useState('');
   const [detailsSlug, setDetailsSlug] = useState('');
@@ -139,14 +140,12 @@ export function FundASpaceFlow({
   }, []);
 
   useEffect(() => {
-    const slug = initialSpaceSlug?.trim() ?? '';
-    const title = initialSpaceTitle?.trim() ?? '';
-    const key = `${slug}\n${title}`;
-    if (!slug && !title) return;
+    const key = `${lockedSlug}\n${lockedTitle}`;
+    if (!lockedSlug && !lockedTitle) return;
     if (appliedInitialKey.current === key) return;
 
-    if (slug && spaces.length > 0) {
-      const space = spaces.find((row) => row.slug === slug);
+    if (lockedSlug && spaces.length > 0) {
+      const space = spaces.find((row) => row.slug === lockedSlug);
       if (space) {
         appliedInitialKey.current = key;
         setQuery(space.title);
@@ -159,8 +158,13 @@ export function FundASpaceFlow({
 
     if (isLoading) return;
     appliedInitialKey.current = key;
-    if (title) setQuery(title);
-  }, [initialSpaceSlug, initialSpaceTitle, isLoading, spaces]);
+    if (skipPicker) {
+      setSelectedSlug('');
+      setDetailsSlug('');
+      return;
+    }
+    if (lockedTitle) setQuery(lockedTitle);
+  }, [isLoading, lockedSlug, lockedTitle, skipPicker, spaces]);
 
   const options = useMemo(
     () =>
@@ -175,6 +179,9 @@ export function FundASpaceFlow({
   const filteredOptions = filterOptionsByQuery(options, query);
   const selectedDepositSpace =
     spaces.find((space) => space.slug === detailsSlug) ?? null;
+  const lockedDepositSpace = skipPicker
+    ? spaces.find((space) => space.slug === lockedSlug) ?? null
+    : null;
   const hasChoices = options.length > 0;
   const disabled = isLoading || !hasChoices;
 
@@ -190,8 +197,34 @@ export function FundASpaceFlow({
     );
   };
 
+  if (skipPicker) {
+    const space = lockedDepositSpace ?? selectedDepositSpace;
+    if (isLoading && !space) {
+      return (
+        <p className="px-6 py-8 text-2 text-neutral-11" role="status">
+          {t('loadingSpaces')}
+        </p>
+      );
+    }
+    if (space?.address) {
+      return (
+        <DepositDetailsCard
+          space={space}
+          copiedAddress={copiedAddress}
+          onCopyAddress={handleCopyAddress}
+          embedded
+        />
+      );
+    }
+    return (
+      <p className="px-6 py-8 text-2 text-neutral-11">
+        {error?.message ? error.message : t('unavailable')}
+      </p>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 px-6 py-6">
       <div className="space-y-3">
         <p className="text-2 text-neutral-11">{t('description')}</p>
         <Input
@@ -205,7 +238,7 @@ export function FundASpaceFlow({
           placeholder={t('searchPlaceholder')}
           aria-label={t('description')}
           disabled={disabled}
-          className="h-10 rounded-none border-border bg-background"
+          className="h-10 rounded-none border-border bg-background focus-visible:ring-0"
         />
 
         {!disabled && !query.trim() ? (
@@ -279,10 +312,13 @@ function DepositDetailsCard({
   space,
   copiedAddress,
   onCopyAddress,
+  embedded = false,
 }: {
   space: Space;
   copiedAddress: boolean;
   onCopyAddress: (address: string) => void;
+  /** Drop the nested card chrome when the dialog already provides the frame. */
+  embedded?: boolean;
 }) {
   const t = useTranslations('MyWallet.fundSpace.details');
   const tFields = useTranslations('BankingTab.depositInstructions');
@@ -317,161 +353,176 @@ function DepositDetailsCard({
 
   const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
 
-  return (
-    <>
-      <Card className="mx-auto w-full max-w-md rounded-none border border-border bg-background shadow-none">
-        <CardHeader className="items-center space-y-2 px-6 pt-8 text-center">
-          <CardTitle
-            className="text-4"
-            style={{ fontFamily: 'var(--font-family-heading)' }}
-          >
-            {space.title}
-          </CardTitle>
-          <CardDescription className="max-w-[36ch] text-2 leading-relaxed text-neutral-11">
-            {t('share')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-8 px-6 pb-8">
-          {showBank ? (
-            <FundOptionGroup label={t('bank')}>
-              {bankPending && accounts.length === 0 ? (
-                <p className="px-4 py-4 text-2 text-neutral-11">
-                  {t('loadingAccounts')}
-                </p>
-              ) : accountsError && accounts.length === 0 ? (
-                <p className="px-4 py-4 text-2 text-neutral-11">
-                  {t('accountsUnavailable')}
-                </p>
-              ) : (
-                accounts.map((account) => {
-                  const ending = accountEnding(account);
-                  const copyBlock = getCardDepositCopyBlock(
-                    account.paymentRail,
-                    account.depositInstructions,
-                    (key) => tFields(key),
-                  );
-                  return (
-                    <div
-                      key={account.id}
-                      className="flex flex-col gap-3 px-4 py-4"
-                    >
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-4 text-left"
-                        onClick={() => setOpenAccount(account)}
-                      >
-                        <span className="w-12 shrink-0 text-2 tracking-[0.08em] text-foreground uppercase">
-                          {account.currency}
+  const header = (
+    <div
+      className={cn(
+        'items-center space-y-2 text-center',
+        embedded ? 'px-6 pt-6' : 'px-6 pt-8',
+      )}
+    >
+      <h2
+        className="text-4 font-medium"
+        style={{ fontFamily: 'var(--font-family-heading)' }}
+      >
+        {space.title}
+      </h2>
+      <p className="mx-auto max-w-[36ch] text-2 leading-relaxed text-neutral-11">
+        {t('share')}
+      </p>
+    </div>
+  );
+
+  const body = (
+    <div className="flex flex-col gap-8 px-6 pb-8 pt-6">
+      {showBank ? (
+        <FundOptionGroup label={t('bank')}>
+          {bankPending && accounts.length === 0 ? (
+            <p className="px-4 py-4 text-2 text-neutral-11">
+              {t('loadingAccounts')}
+            </p>
+          ) : accountsError && accounts.length === 0 ? (
+            <p className="px-4 py-4 text-2 text-neutral-11">
+              {t('accountsUnavailable')}
+            </p>
+          ) : (
+            accounts.map((account) => {
+              const ending = accountEnding(account);
+              const copyBlock = getCardDepositCopyBlock(
+                account.paymentRail,
+                account.depositInstructions,
+                (key) => tFields(key),
+              );
+              return (
+                <div key={account.id} className="flex flex-col gap-3 px-4 py-4">
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-4 text-left"
+                    onClick={() => setOpenAccount(account)}
+                  >
+                    <span className="w-12 shrink-0 text-2 tracking-[0.08em] text-foreground uppercase">
+                      {account.currency}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-2 text-foreground">
+                        {railLabel(account.paymentRail)}
+                      </span>
+                      {ending ? (
+                        <span className="mt-0.5 block font-mono text-1 text-neutral-11">
+                          ···· {ending}
                         </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-2 text-foreground">
-                            {railLabel(account.paymentRail)}
-                          </span>
-                          {ending ? (
-                            <span className="mt-0.5 block font-mono text-1 text-neutral-11">
-                              ···· {ending}
-                            </span>
-                          ) : null}
-                        </span>
-                        <ChevronRight
-                          className="size-4 shrink-0 text-neutral-9"
-                          aria-hidden
-                        />
-                      </button>
-                      {copyBlock ? (
-                        <InlineCopyRow
-                          label={copyBlock.label}
-                          value={copyBlock.copyText}
-                          multiline={copyBlock.multiline}
-                        />
                       ) : null}
-                    </div>
-                  );
-                })
-              )}
-            </FundOptionGroup>
-          ) : null}
-
-          <FundOptionGroup label={t('wallet')}>
-            <Link
-              href={walletHref}
-              scroll={false}
-              onClick={() => prepareWalletActionNavigation()}
-              className="flex w-full items-center gap-4 px-4 py-4 hover:bg-neutral-2"
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block text-2 text-foreground">
-                  {t('sendFromWallet')}
-                </span>
-                <span className="mt-0.5 block text-1 text-neutral-11">
-                  {t('sendFromWalletHint')}
-                </span>
-              </span>
-              <ChevronRight
-                className="size-4 shrink-0 text-neutral-9"
-                aria-hidden
-              />
-            </Link>
-          </FundOptionGroup>
-
-          <FundOptionGroup label={t('onBase')}>
-            <div className="flex flex-col items-center gap-4 px-4 py-5">
-              <div className="border border-border bg-white p-4">
-                {evmAddressPattern.test(address) ? (
-                  <QRCodeSVG
-                    value={address}
-                    size={180}
-                    bgColor="#ffffff"
-                    fgColor="#111111"
-                    level="M"
-                    aria-label={t('qrAriaLabel', { spaceName: space.title })}
-                  />
-                ) : (
-                  <p className="max-w-40 text-1 text-neutral-11">
-                    {t('invalidAddress')}
-                  </p>
-                )}
-              </div>
-              <div className="flex w-full items-center justify-between gap-3">
-                <div className="min-w-0 text-left">
-                  <p className="text-1 text-neutral-11">{t('addressLabel')}</p>
-                  <p className="truncate font-mono text-2 text-foreground">
-                    {shortAddress}
-                  </p>
+                    </span>
+                    <ChevronRight
+                      className="size-4 shrink-0 text-neutral-9"
+                      aria-hidden
+                    />
+                  </button>
+                  {copyBlock ? (
+                    <InlineCopyRow
+                      label={copyBlock.label}
+                      value={copyBlock.copyText}
+                      multiline={copyBlock.multiline}
+                    />
+                  ) : null}
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  colorVariant="neutral"
-                  onClick={() => onCopyAddress(address)}
-                  className="shrink-0 rounded-none px-2"
-                  aria-label={copiedAddress ? t('copied') : t('copy')}
-                >
-                  <Copy className="size-4" aria-hidden />
-                </Button>
-              </div>
-              <p className="text-center text-1 text-neutral-11">
-                {t('baseOnly')}
+              );
+            })
+          )}
+        </FundOptionGroup>
+      ) : null}
+
+      <FundOptionGroup label={t('wallet')}>
+        <Link
+          href={walletHref}
+          scroll={false}
+          onClick={() => prepareWalletActionNavigation()}
+          className="flex w-full items-center gap-4 px-4 py-4 hover:bg-neutral-2"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-2 text-foreground">
+              {t('sendFromWallet')}
+            </span>
+            <span className="mt-0.5 block text-1 text-neutral-11">
+              {t('sendFromWalletHint')}
+            </span>
+          </span>
+          <ChevronRight
+            className="size-4 shrink-0 text-neutral-9"
+            aria-hidden
+          />
+        </Link>
+      </FundOptionGroup>
+
+      <FundOptionGroup label={t('onBase')}>
+        <div className="flex flex-col items-center gap-4 px-4 py-5">
+          <div className="border border-border bg-white p-4">
+            {evmAddressPattern.test(address) ? (
+              <QRCodeSVG
+                value={address}
+                size={180}
+                bgColor="#ffffff"
+                fgColor="#111111"
+                level="M"
+                aria-label={t('qrAriaLabel', { spaceName: space.title })}
+              />
+            ) : (
+              <p className="max-w-40 text-1 text-neutral-11">
+                {t('invalidAddress')}
               </p>
-              <p className="text-center text-1 text-neutral-11">
-                {EXCHANGE_LINKS.map((link, index) => (
-                  <span key={link.id}>
-                    {index > 0 ? <span className="px-1.5">·</span> : null}
-                    <a
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline decoration-neutral-7 underline-offset-4 hover:text-foreground"
-                    >
-                      {link.label}
-                    </a>
-                  </span>
-                ))}
+            )}
+          </div>
+          <div className="flex w-full items-center justify-between gap-3">
+            <div className="min-w-0 text-left">
+              <p className="text-1 text-neutral-11">{t('addressLabel')}</p>
+              <p className="truncate font-mono text-2 text-foreground">
+                {shortAddress}
               </p>
             </div>
-          </FundOptionGroup>
-        </CardContent>
-      </Card>
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              onClick={() => onCopyAddress(address)}
+              className="shrink-0 rounded-none px-2"
+              aria-label={copiedAddress ? t('copied') : t('copy')}
+            >
+              <Copy className="size-4" aria-hidden />
+            </Button>
+          </div>
+          <p className="text-center text-1 text-neutral-11">{t('baseOnly')}</p>
+          <p className="text-center text-1 text-neutral-11">
+            {EXCHANGE_LINKS.map((link, index) => (
+              <span key={link.id}>
+                {index > 0 ? <span className="px-1.5">·</span> : null}
+                <a
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline decoration-neutral-7 underline-offset-4 hover:text-foreground"
+                >
+                  {link.label}
+                </a>
+              </span>
+            ))}
+          </p>
+        </div>
+      </FundOptionGroup>
+    </div>
+  );
+
+  return (
+    <>
+      {embedded ? (
+        <div className="flex flex-col">
+          {header}
+          {body}
+        </div>
+      ) : (
+        <div className="mx-auto w-full max-w-md rounded-none border border-border bg-background">
+          {header}
+          {body}
+        </div>
+      )}
       <BankAccountDetailsDialog
         account={openAccount}
         open={openAccount != null}
