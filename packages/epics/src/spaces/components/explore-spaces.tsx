@@ -340,9 +340,10 @@ export function ExploreSpaces({
           longitude: space.longitude,
           creatorCoordinates: creatorMapPins?.[space.id] ?? null,
         });
+        // Only real places: the space's own coordinates, or the creator's.
+        // No hashed / random scatter — empty locations stay off the map.
+        if (!pin) return [];
         if (pin.source === 'space') return [space];
-        // A public space with no place of its own is still drawn. The point is
-        // a stable scatter on land, or the creator's geocode. It is not saved.
         return [
           {
             ...space,
