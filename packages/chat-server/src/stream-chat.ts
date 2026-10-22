@@ -88,8 +88,8 @@ export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 export const MISSING_OPENROUTER_KEY_MESSAGE =
   'Hypha AI is not configured: OPENROUTER_API_KEY is missing.';
 
-/** Frontier chat model. A small model drops the home instructions. */
-const DEFAULT_OPENROUTER_CHAT_MODEL = 'anthropic/claude-opus-5.5';
+/** Default chat model. A small model drops the home instructions. */
+const DEFAULT_OPENROUTER_CHAT_MODEL = 'anthropic/claude-sonnet-5.5';
 function parseEnvNumber(
   value: string | undefined,
   fallback: number,
