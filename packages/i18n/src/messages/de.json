@@ -822,7 +822,7 @@
       "ariaLabel": "AI-Onboarding-Prompt",
       "flow": {
         "badge": "Simple. Powerful. By design.",
-        "createManually": "Manuell erstellen",
+        "createManually": "Selbst erstellen",
         "reviewingTitle": "Deine Anfrage wird analysiert",
         "reviewingDescription": "Die AI plant gerade den besten Weg für dein Ziel.",
         "reviewingDescriptionPersonalized": "{firstName}, die AI plant gerade den besten Weg für dein Ziel.",

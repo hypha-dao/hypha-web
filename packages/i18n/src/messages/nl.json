@@ -822,7 +822,7 @@
       "ariaLabel": "AI-onboarding-prompt",
       "flow": {
         "badge": "Eenvoudig. Krachtig. Door ontwerp.",
-        "createManually": "Handmatig maken",
+        "createManually": "Zelf maken",
         "reviewingTitle": "Het beoordelen van uw verzoek",
         "reviewingDescription": "AI brengt het beste pad voor uw doel in kaart.",
         "reviewingDescriptionPersonalized": "{firstName}, AI brengt het beste pad voor uw doel in kaart.",

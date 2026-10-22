@@ -822,7 +822,7 @@
       "ariaLabel": "Invite d’onboarding AI",
       "flow": {
         "badge": "Simple. Powerful. By design.",
-        "createManually": "Créer manuellement",
+        "createManually": "Créer soi-même",
         "reviewingTitle": "Analyse de votre demande",
         "reviewingDescription": "L’AI prépare le meilleur parcours pour votre objectif.",
         "reviewingDescriptionPersonalized": "{firstName}, l’AI prépare le meilleur parcours pour votre objectif.",

@@ -836,7 +836,7 @@
       "ariaLabel": "AI onboarding prompt",
       "flow": {
         "badge": "Simple. Powerful. By design.",
-        "createManually": "Create manually",
+        "createManually": "Create yourself",
         "reviewingTitle": "Reviewing your request",
         "reviewingDescription": "AI is mapping the best path for your goal.",
         "reviewingDescriptionPersonalized": "{firstName}, AI is mapping the best path for your goal.",
