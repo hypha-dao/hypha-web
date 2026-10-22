@@ -77,7 +77,7 @@ export const EditPersonSection = ({
   error,
 }: EditPersonSectionProps) => {
   const tProfile = useTranslations('Profile');
-  const tSignup = useTranslations('Signup');
+  const tWelcome = useTranslations('WelcomeFlow');
   const tSpaces = useTranslations('Spaces');
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
@@ -263,7 +263,7 @@ export const EditPersonSection = ({
     orientation === 'member' ||
     orientation === 'builder' ||
     orientation === 'investor'
-      ? tSignup(`offer.${orientation}`)
+      ? tWelcome(`offer.${orientation}`)
       : null;
 
   const handleSubmit = async (values: FormData) => {
@@ -609,7 +609,7 @@ export const EditPersonSection = ({
                             maxLength={500}
                             disabled={isLoading}
                             aria-label={offerLabel}
-                            placeholder={tSignup('offer.placeholder')}
+                            placeholder={tWelcome('offer.placeholder')}
                           />
                         </FormControl>
                         <FormMessage />
