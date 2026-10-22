@@ -53,6 +53,7 @@ import {
 import { MemberHomeActivationCard } from './member-home-activation-card';
 import { MemberHomeOnboardingCards } from './member-home-onboarding-cards';
 import { generatedVisualsFromParts } from '../../common/onboarding-visual-assets';
+import { useOnboardingSpaceSignature } from '../../common/use-onboarding-space-signature';
 import { MemberHomeMark } from './member-home-mark';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { PersonAvatar } from './person-avatar';
@@ -456,6 +457,7 @@ export function MemberHomeChat({
   const isStreaming = status === 'streaming' || status === 'submitted';
   const homeMessages = messages as HomeMessage[];
   messagesRef.current = homeMessages;
+  useOnboardingSpaceSignature(homeMessages, lang);
 
   const widgetKindFor = useCallback(
     (text: string): HomeWidgetKind | null => {

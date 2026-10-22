@@ -184,7 +184,10 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
         });
         return {
           ok: false,
-          error: `A space with slug "${normalizedSlug}" already exists.`,
+          slug_taken: true,
+          error: `The name "${data.title}" is already used by another space. It was not created in this conversation.`,
+          next_step:
+            'Ask once for a different space name and stop. Do not say this space is live, reserved, submitted, or waiting in My Spaces. After they choose a free name and confirm, call this tool again without dry_run so the wallet signature step can start.',
         };
       }
 
