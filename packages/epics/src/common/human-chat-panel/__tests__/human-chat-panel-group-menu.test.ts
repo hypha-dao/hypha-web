@@ -30,6 +30,12 @@ describe('isPeopleGroupChatRoom', () => {
         getJoinedMemberCount: () => 2,
       }),
     ).toBe(false);
+    expect(
+      isPeopleGroupChatRoom({
+        getType: () => undefined,
+        getJoinedMemberCount: () => 2,
+      }),
+    ).toBe(false);
   });
 });
 
@@ -63,6 +69,25 @@ describe('canArchivePeopleGroupRoom', () => {
         '@other:hypha',
       ),
     ).toBe(false);
+  });
+
+  it('lets power level 100 archive when another member is the stored creator', () => {
+    expect(
+      canArchivePeopleGroupRoom(
+        {
+          roomId: '!g',
+          currentState: {
+            getStateEvents: (type) =>
+              type === 'io.hypha.room.group_creator'
+                ? { getContent: () => ({ userId: '@ada:hypha' }) }
+                : null,
+          },
+          getMember: (userId) =>
+            userId === '@admin:hypha' ? { powerLevel: 100 } : { powerLevel: 0 },
+        },
+        '@admin:hypha',
+      ),
+    ).toBe(true);
   });
 
   it('lets any member archive a legacy group without a stored creator', () => {

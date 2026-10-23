@@ -23,6 +23,7 @@ import {
   findMatrixUserIdsByPrivyUserIds,
 } from './queries';
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
+import { getLinkByPrivyUserId } from './web3/get-link-by-privy-user-id';
 import { distinctPublicRoomId } from '../public-room-id';
 import { directPairAliasLocalpart } from '../direct-pair-room';
 import { HYPHA_ROOM_TYPES, type HyphaRoomType } from '../room-types';
@@ -31,9 +32,13 @@ import {
   GROUP_ROOM_CREATOR_STATE,
   groupRoomCreatorUserId,
   isGroupRoomArchivedContent,
+  isPeopleGroupRoomType,
   normalizeGroupRoomName,
 } from '../group-room';
+import { determineEnvironment } from '../../coherence/lib/determine-environment';
 import { Environment } from '../../coherence/types';
+import { getAppBaseUrl } from '../../common/server/get-app-url';
+import { verifyPrivyAuthToken } from '../../common/server/verify-privy-auth-token';
 import {
   ECOSYSTEM_ROOM_ALIAS_PREFIX,
   NETWORK_ROOM_ALIAS_LOCALPART,
@@ -48,6 +53,7 @@ import {
   matrixCreateRoom,
   matrixDeleteRoomAlias,
   matrixGetJoinedRoomMembers,
+  matrixGetPowerLevels,
   matrixGetRoomType,
   matrixGetStateEvent,
   matrixInviteUser,
@@ -269,21 +275,30 @@ export async function createBotOwnedRoomAction({
     );
   }
   if (roomType === HYPHA_ROOM_TYPES.group && creatorUserId) {
-    try {
-      await matrixSendStateEvent(
-        roomId,
-        GROUP_ROOM_CREATOR_STATE,
-        '',
-        { userId: creatorUserId },
-        botToken,
-        homeserver,
-      );
-    } catch (error) {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        await matrixSendStateEvent(
+          roomId,
+          GROUP_ROOM_CREATOR_STATE,
+          '',
+          { userId: creatorUserId },
+          botToken,
+          homeserver,
+        );
+        lastError = undefined;
+        break;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    if (lastError !== undefined) {
       console.warn(
         '[MatrixBot] Group room created but creator state failed:',
         roomId,
-        error instanceof Error ? error.message : error,
+        lastError instanceof Error ? lastError.message : lastError,
       );
+      return null;
     }
   }
   return { roomId };
@@ -741,29 +756,62 @@ export async function getLinkByMatrixUserIdAction(
   return getLinkByMatrixUserId({ matrixUserId, environment });
 }
 
-function isPeopleGroupRoomType(roomType: string | null): boolean {
-  if (roomType === HYPHA_ROOM_TYPES.group) return true;
-  // Legacy Messages groups predate an explicit room type.
-  return !roomType;
+function preferredMatrixEnvironment(): Environment {
+  const fromUrl = determineEnvironment(getAppBaseUrl());
+  if (fromUrl) return fromUrl;
+  const vercel = process.env.VERCEL_ENV;
+  if (vercel === 'production') return Environment.PRODUCTION;
+  if (vercel === 'preview') return Environment.PREVIEW;
+  return Environment.DEVELOPMENT;
 }
 
-async function loadPeopleGroupContext(roomId: string, matrixUserId: string) {
+async function resolveCallerMatrixUserId(
+  authToken: string | undefined,
+): Promise<string | null> {
+  if (!authToken?.trim()) return null;
+  const verified = await verifyPrivyAuthToken(authToken);
+  if (!verified.ok) return null;
+  const order = [
+    preferredMatrixEnvironment(),
+    Environment.PRODUCTION,
+    Environment.PREVIEW,
+    Environment.DEVELOPMENT,
+  ].filter((environment, index, all) => all.indexOf(environment) === index);
+  for (const environment of order) {
+    try {
+      const link = await getLinkByPrivyUserId({
+        privyUserId: verified.userId,
+        environment,
+      });
+      const userId = link?.matrixUserId?.trim();
+      if (userId) return userId;
+    } catch {
+      // Shared prod/preview DB: try the next environment.
+    }
+  }
+  return null;
+}
+
+async function loadPeopleGroupContext(
+  roomId: string,
+  authToken: string | undefined,
+) {
   const trimmedRoomId = roomId.trim();
-  const trimmedUserId = matrixUserId.trim();
   const homeserver = getMatrixHomeserverUrl();
   const botToken = getMatrixBotAsToken();
-  if (!trimmedRoomId || !trimmedUserId || !homeserver || !botToken) {
+  const userId = await resolveCallerMatrixUserId(authToken);
+  if (!trimmedRoomId || !userId || !homeserver || !botToken) {
     return null;
   }
   const roomType = await matrixGetRoomType(trimmedRoomId, botToken, homeserver);
-  if (!isPeopleGroupRoomType(roomType)) return null;
   const members = await matrixGetJoinedRoomMembers(
     trimmedRoomId,
     botToken,
     homeserver,
   );
-  if (!members.includes(trimmedUserId)) return null;
-  return { roomId: trimmedRoomId, userId: trimmedUserId, homeserver, botToken };
+  if (!isPeopleGroupRoomType(roomType, members.length)) return null;
+  if (!members.includes(userId)) return null;
+  return { roomId: trimmedRoomId, userId, homeserver, botToken };
 }
 
 /**
@@ -773,16 +821,16 @@ async function loadPeopleGroupContext(roomId: string, matrixUserId: string) {
 export async function renameGroupRoomAction({
   roomId,
   name,
-  matrixUserId,
+  authToken,
 }: {
   roomId: string;
   name: string;
-  matrixUserId: string;
+  authToken: string;
 }): Promise<{ name: string } | null> {
   const title = normalizeGroupRoomName(name);
   if (!title) return null;
   try {
-    const ctx = await loadPeopleGroupContext(roomId, matrixUserId);
+    const ctx = await loadPeopleGroupContext(roomId, authToken);
     if (!ctx) return null;
     await matrixSendStateEvent(
       ctx.roomId,
@@ -817,7 +865,16 @@ async function canArchivePeopleGroup(
     homeserver,
   );
   const creator = groupRoomCreatorUserId(creatorState);
-  if (creator) return creator === userId;
+  if (creator === userId) return true;
+  try {
+    const power = await matrixGetPowerLevels(roomId, botToken, homeserver);
+    if ((power.users?.[userId] ?? power.users_default ?? 0) >= 100) {
+      return true;
+    }
+  } catch {
+    // Fall through: stored creator still wins; legacy rooms stay open.
+  }
+  if (creator) return false;
   // Older groups have no stored human creator (the bot created the room).
   return true;
 }
@@ -828,13 +885,13 @@ async function canArchivePeopleGroup(
  */
 export async function archiveGroupRoomAction({
   roomId,
-  matrixUserId,
+  authToken,
 }: {
   roomId: string;
-  matrixUserId: string;
+  authToken: string;
 }): Promise<{ archived: true } | null> {
   try {
-    const ctx = await loadPeopleGroupContext(roomId, matrixUserId);
+    const ctx = await loadPeopleGroupContext(roomId, authToken);
     if (!ctx) return null;
     const archivedState = await matrixGetStateEvent(
       ctx.roomId,

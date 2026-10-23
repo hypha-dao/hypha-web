@@ -1,3 +1,5 @@
+import { HYPHA_ROOM_TYPES } from './room-types';
+
 /** Custom room state: who started this Messages group (bot is the Matrix creator). */
 export const GROUP_ROOM_CREATOR_STATE = 'io.hypha.room.group_creator';
 /** Custom room state: hide this group from everyone's Messages list. */
@@ -50,6 +52,15 @@ export function groupRoomCreatorUserId(
   const userId =
     typeof content?.userId === 'string' ? content.userId.trim() : '';
   return userId || null;
+}
+
+/** Explicit group type, or a legacy untyped room with more than two people. */
+export function isPeopleGroupRoomType(
+  roomType: string | null | undefined,
+  joinedMemberCount: number,
+): boolean {
+  if (roomType === HYPHA_ROOM_TYPES.group) return true;
+  return !roomType && joinedMemberCount > 2;
 }
 
 /**

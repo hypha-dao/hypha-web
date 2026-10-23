@@ -5,9 +5,11 @@ import {
   groupRoomCreatorUserId,
   isAutoJoinGroupInvite,
   isGroupRoomArchivedContent,
+  isPeopleGroupRoomType,
   normalizeGroupRoomName,
   sortConversationsByLastMessage,
 } from '../group-room';
+import { HYPHA_ROOM_TYPES } from '../room-types';
 
 const bot = '@hypha-bot:hypha.earth';
 
@@ -71,6 +73,14 @@ describe('group room name and archive state', () => {
     expect(normalizeGroupRoomName(`${'x'.repeat(119)}😀y`)).toBe(
       `${'x'.repeat(119)}😀`,
     );
+  });
+
+  it('treats untyped rooms as groups only when more than two people joined', () => {
+    expect(isPeopleGroupRoomType(HYPHA_ROOM_TYPES.group, 2)).toBe(true);
+    expect(isPeopleGroupRoomType(null, 3)).toBe(true);
+    expect(isPeopleGroupRoomType('', 4)).toBe(true);
+    expect(isPeopleGroupRoomType(null, 2)).toBe(false);
+    expect(isPeopleGroupRoomType(HYPHA_ROOM_TYPES.dm, 3)).toBe(false);
   });
 
   it('reads archived and creator state', () => {

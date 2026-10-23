@@ -1,5 +1,7 @@
-import { readGroupRoomCreatorUserId } from '../../../../core/src/matrix/group-room';
-import { HYPHA_ROOM_TYPES } from '../../../../core/src/matrix/room-types';
+import {
+  isPeopleGroupRoomType,
+  readGroupRoomCreatorUserId,
+} from '../../../../core/src/matrix/group-room';
 
 export function isPeopleGroupChatRoom(
   room: {
@@ -8,8 +10,10 @@ export function isPeopleGroupChatRoom(
   } | null,
 ) {
   if (!room) return false;
-  if (room.getType?.() === HYPHA_ROOM_TYPES.group) return true;
-  return (room.getJoinedMemberCount?.() ?? 0) > 2;
+  return isPeopleGroupRoomType(
+    room.getType?.(),
+    room.getJoinedMemberCount?.() ?? 0,
+  );
 }
 
 export function canArchivePeopleGroupRoom(
@@ -23,8 +27,9 @@ export function canArchivePeopleGroupRoom(
   const userId = selfId?.trim();
   if (!userId) return false;
   const creator = readGroupRoomCreatorUserId(room);
-  if (creator) return creator === userId;
+  if (creator === userId) return true;
   if ((room.getMember?.(userId)?.powerLevel ?? 0) >= 100) return true;
+  if (creator) return false;
   if (room.roomId && isLocalCreator?.(room.roomId)) return true;
   // Legacy groups have no stored human creator (the bot created the room).
   return true;

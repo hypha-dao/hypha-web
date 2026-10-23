@@ -10,6 +10,7 @@ import {
 import {
   GROUP_ROOM_NAME_MAX,
   normalizeGroupRoomName,
+  useJwt,
   useMatrix,
 } from '@hypha-platform/core/client';
 import {
@@ -55,6 +56,7 @@ export function HumanChatPanelGroupMenu({
   onArchived: () => void;
 }) {
   const t = useTranslations('HumanChatPanel');
+  const { jwt } = useJwt();
   const { client } = useMatrix();
   const selfId = client?.getUserId() ?? null;
   const room = client?.getRoom(roomId) ?? null;
@@ -82,14 +84,15 @@ export function HumanChatPanelGroupMenu({
 
   async function saveRename() {
     const next = normalizeGroupRoomName(name);
-    if (!next || !selfId) return;
+    const authToken = jwt?.trim();
+    if (!next || !authToken) return;
     setBusy(true);
     setError(null);
     try {
       const result = await renameGroupRoomAction({
         roomId,
         name: next,
-        matrixUserId: selfId,
+        authToken,
       });
       if (!result) {
         setError(t('renameGroupFailed'));
@@ -105,13 +108,14 @@ export function HumanChatPanelGroupMenu({
   }
 
   async function confirmArchive() {
-    if (!selfId) return;
+    const authToken = jwt?.trim();
+    if (!authToken) return;
     setBusy(true);
     setError(null);
     try {
       const result = await archiveGroupRoomAction({
         roomId,
-        matrixUserId: selfId,
+        authToken,
       });
       if (!result) {
         setError(t('archiveGroupFailed'));
