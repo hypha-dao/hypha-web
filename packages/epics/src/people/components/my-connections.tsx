@@ -22,8 +22,11 @@ import {
   HYPHA_ROOM_TYPES,
   conversationActivityTs,
   isArchivedGroupRoom,
+  isGroupCreateContent,
   isPeopleGroupRoomType,
+  isRoomInDirectAccountData,
   readGroupRoomCreatorUserId,
+  readRoomNameState,
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
   sortConversationsByLastMessage,
@@ -53,6 +56,7 @@ import {
   looksLikeHyphaBot,
   facesWithProfiles,
   groupRowsForConnections,
+  conversationMatchesSearch,
   isPeopleListGroup,
   isRememberedGroupChatRoom,
   memberRowsForConnections,
@@ -203,9 +207,23 @@ function conversationRowFromRoom(
     return null;
   }
   const overrideName = conversationTitleOverrides.get(room.roomId)?.trim();
+  const createEvent = room.currentState?.getStateEvents?.(
+    EventType.RoomCreate,
+    '',
+  );
   const isGroup = isPeopleGroupRoomType(roomType, members.length, {
     hasCreator: Boolean(readGroupRoomCreatorUserId(room)),
     remembered: isRememberedGroupChatRoom(room.roomId),
+    hasRoomName: Boolean(readRoomNameState(room)),
+    inDirect: isRoomInDirectAccountData(
+      client.getAccountData(EventType.Direct)?.getContent() as
+        | Record<string, unknown>
+        | undefined,
+      room.roomId,
+    ),
+    createdAsGroup: isGroupCreateContent(
+      createEvent?.getContent() as Record<string, unknown> | undefined,
+    ),
   });
   const kind = isGroup ? 'group' : 'person';
   // A 1:1 is only a room created as a DM. Two-person space, signal and untyped
@@ -1321,13 +1339,7 @@ export function MyConnections({
       : groupRowsForConnections<ConnectionPerson>(conversations, t('someone'));
     const source = [...groups, ...members];
     const filtered = needle
-      ? source.filter((row) => {
-          const haystack = [row.name, row.person.nickname, row.person.slug]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-          return haystack.includes(needle);
-        })
+      ? source.filter((row) => conversationMatchesSearch(row, needle))
       : source;
     const named = filtered.map((row) => ({
       ...row,

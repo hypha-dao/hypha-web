@@ -660,6 +660,29 @@ export function rememberedGroupChatMemberIds(roomId: string): string[] {
   return readGroupChatMembers()[roomId.trim()] ?? [];
 }
 
+/** People Around search: title, profile fields, and group faces. */
+export function conversationMatchesSearch(
+  row: {
+    name: string;
+    person?: { nickname?: string | null; slug?: string | null };
+    faces?: readonly { name?: string | null }[];
+  },
+  needle: string,
+) {
+  const query = needle.trim().toLowerCase();
+  if (!query) return true;
+  const haystack = [
+    row.name,
+    row.person?.nickname,
+    row.person?.slug,
+    ...(row.faces ?? []).map((face) => face.name),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return haystack.includes(query);
+}
+
 /**
  * A private group chat, not a space channel.
  * Once classified as a group it stays listed after a rename, even with two

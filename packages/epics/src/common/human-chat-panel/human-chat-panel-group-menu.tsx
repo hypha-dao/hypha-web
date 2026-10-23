@@ -9,10 +9,12 @@ import {
 } from '@hypha-platform/core/matrix/server/actions';
 import {
   GROUP_ROOM_NAME_MAX,
+  isRoomInDirectAccountData,
   normalizeGroupRoomName,
   useJwt,
   useMatrix,
 } from '@hypha-platform/core/client';
+import { EventType } from 'matrix-js-sdk';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -65,6 +67,12 @@ export function HumanChatPanelGroupMenu({
   const { client } = useMatrix();
   const selfId = client?.getUserId() ?? null;
   const room = client?.getRoom(roomId) ?? null;
+  const inDirect = isRoomInDirectAccountData(
+    client?.getAccountData(EventType.Direct)?.getContent() as
+      | Record<string, unknown>
+      | undefined,
+    roomId,
+  );
   const canArchive = useMemo(
     () =>
       room
@@ -79,7 +87,7 @@ export function HumanChatPanelGroupMenu({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!room || !isPeopleGroupChatRoom(room)) return null;
+  if (!room || !isPeopleGroupChatRoom(room, { inDirect })) return null;
 
   function openRename() {
     setName(title);

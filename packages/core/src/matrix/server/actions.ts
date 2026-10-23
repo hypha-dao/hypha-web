@@ -816,10 +816,26 @@ async function loadPeopleGroupContext(
     botToken,
     homeserver,
   );
+  const nameState = await matrixGetStateEvent(
+    trimmedRoomId,
+    'm.room.name',
+    '',
+    botToken,
+    homeserver,
+  );
   const hasCreator = Boolean(groupRoomCreatorUserId(creatorState));
+  const hasRoomName =
+    typeof nameState?.name === 'string' && Boolean(nameState.name.trim());
+  const createdAsGroup = roomType === HYPHA_ROOM_TYPES.group;
   // Joined members include the bot, so a 2-person group is often count 3.
-  // Creator state keeps a group-flow room a group even if that count later drops.
-  if (!isPeopleGroupRoomType(roomType, members.length, { hasCreator })) {
+  // A named untyped room or stored creator still counts as a group.
+  if (
+    !isPeopleGroupRoomType(roomType, members.length, {
+      hasCreator,
+      hasRoomName,
+      createdAsGroup,
+    })
+  ) {
     return null;
   }
   if (!members.includes(userId)) return null;

@@ -5,6 +5,7 @@ import { HYPHA_ROOM_TYPES } from '../../../../../core/src/matrix/room-types';
 import {
   STALE_CONNECTION_MS,
   connectionActivityTs,
+  conversationMatchesSearch,
   conversationUnreadTotal,
   facesWithProfiles,
   groupRowsForConnections,
@@ -597,6 +598,21 @@ describe('groupRowsForConnections', () => {
       { name: 'Gerardo Roza', avatarUrl: 'https://example/g.png' },
       { name: 'Vlad Hramtsov' },
     ]);
+  });
+
+  it('finds a renamed group by a member name in the title or faces', () => {
+    const row = room({
+      roomId: '!pair',
+      kind: 'group',
+      name: 'Vlad Hramtsov, Kate Bennett (test)',
+      faces: [{ name: 'Vlad Hramtsov' }, { name: 'Kate Bennett' }],
+      memberCount: 2,
+    });
+    expect(conversationMatchesSearch(row, 'Kate')).toBe(true);
+    expect(
+      conversationMatchesSearch({ ...row, name: 'Water team' }, 'Kate'),
+    ).toBe(true);
+    expect(conversationMatchesSearch(row, 'Marieke')).toBe(false);
   });
 
   it('keeps a renamed two-person group without a comma in the title', () => {

@@ -54,19 +54,64 @@ export function groupRoomCreatorUserId(
   return userId || null;
 }
 
+export function readRoomNameState(
+  room: StateEventReader | null | undefined,
+): string | null {
+  const event = room?.currentState?.getStateEvents?.('m.room.name', '');
+  const name = event?.getContent?.()?.name;
+  return typeof name === 'string' && name.trim() ? name.trim() : null;
+}
+
+export function isGroupCreateContent(
+  content: Record<string, unknown> | null | undefined,
+): boolean {
+  const type = typeof content?.type === 'string' ? content.type.trim() : '';
+  return type === HYPHA_ROOM_TYPES.group;
+}
+
+export function isRoomInDirectAccountData(
+  direct: Record<string, unknown> | null | undefined,
+  roomId: string,
+): boolean {
+  const id = roomId.trim();
+  if (!id || !direct) return false;
+  for (const value of Object.values(direct)) {
+    if (!Array.isArray(value)) continue;
+    if (
+      value.some((entry) => typeof entry === 'string' && entry.trim() === id)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export type PeopleGroupRoomFlags = {
+  hasCreator?: boolean;
+  remembered?: boolean;
+  /** Explicit `m.room.name`, not a Matrix-synthesized member list. */
+  hasRoomName?: boolean;
+  /** Room id appears in the user's `m.direct` account data. */
+  inDirect?: boolean;
+  /** `m.room.create` type is a Messages group, even if `getType()` is empty. */
+  createdAsGroup?: boolean;
+};
+
 /**
  * A Messages group stays a group even with two people or after a rename.
- * Typed DMs and other Hypha room kinds never qualify.
+ * Typed DMs and rooms already in `m.direct` stay 1:1 chats.
  */
 export function isPeopleGroupRoomType(
   roomType: string | null | undefined,
   joinedMemberCount: number,
-  flags: { hasCreator?: boolean; remembered?: boolean } = {},
+  flags: PeopleGroupRoomFlags = {},
 ): boolean {
   const type = roomType?.trim() || null;
-  if (type === HYPHA_ROOM_TYPES.group) return true;
+  if (type === HYPHA_ROOM_TYPES.group || flags.createdAsGroup) return true;
+  if (type === HYPHA_ROOM_TYPES.dm || flags.inDirect) return false;
   if (type) return false;
   if (flags.hasCreator || flags.remembered) return true;
+  if (flags.hasRoomName && joinedMemberCount >= 2) return true;
   return joinedMemberCount > 2;
 }
 

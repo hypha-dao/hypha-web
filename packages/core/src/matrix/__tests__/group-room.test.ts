@@ -4,9 +4,12 @@ import {
   conversationActivityTs,
   groupRoomCreatorUserId,
   isAutoJoinGroupInvite,
+  isGroupCreateContent,
   isGroupRoomArchivedContent,
   isPeopleGroupRoomType,
+  isRoomInDirectAccountData,
   normalizeGroupRoomName,
+  readRoomNameState,
   sortConversationsByLastMessage,
 } from '../group-room';
 import { HYPHA_ROOM_TYPES } from '../room-types';
@@ -85,6 +88,48 @@ describe('group room name and archive state', () => {
     expect(isPeopleGroupRoomType(null, 2, { remembered: true })).toBe(true);
     expect(
       isPeopleGroupRoomType(HYPHA_ROOM_TYPES.dm, 2, { hasCreator: true }),
+    ).toBe(false);
+  });
+
+  it('keeps a named two-person non-DM room as a group', () => {
+    expect(isPeopleGroupRoomType(null, 2, { hasRoomName: true })).toBe(true);
+    expect(isPeopleGroupRoomType(null, 2, { createdAsGroup: true })).toBe(true);
+    expect(
+      isPeopleGroupRoomType(null, 2, { hasRoomName: true, inDirect: true }),
+    ).toBe(false);
+    expect(
+      isPeopleGroupRoomType(HYPHA_ROOM_TYPES.dm, 2, { hasRoomName: true }),
+    ).toBe(false);
+  });
+
+  it('reads a room name state event and m.direct membership', () => {
+    expect(
+      readRoomNameState({
+        currentState: {
+          getStateEvents: (type) =>
+            type === 'm.room.name'
+              ? {
+                  getContent: () => ({
+                    name: 'Vlad Hramtsov, Kate Bennett (test)',
+                  }),
+                }
+              : null,
+        },
+      }),
+    ).toBe('Vlad Hramtsov, Kate Bennett (test)');
+    expect(
+      readRoomNameState({ currentState: { getStateEvents: () => null } }),
+    ).toBeNull();
+    expect(isGroupCreateContent({ type: HYPHA_ROOM_TYPES.group })).toBe(true);
+    expect(isGroupCreateContent({ type: HYPHA_ROOM_TYPES.dm })).toBe(false);
+    expect(
+      isRoomInDirectAccountData(
+        { '@kate:hypha': ['!dm'], '@other:hypha': ['!other'] },
+        '!dm',
+      ),
+    ).toBe(true);
+    expect(
+      isRoomInDirectAccountData({ '@kate:hypha': ['!dm'] }, '!group'),
     ).toBe(false);
   });
 

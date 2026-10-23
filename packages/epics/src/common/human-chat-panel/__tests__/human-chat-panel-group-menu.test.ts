@@ -51,6 +51,55 @@ describe('isPeopleGroupChatRoom', () => {
     ).toBe(true);
   });
 
+  it('keeps a named two-person untyped room that is not a DM', () => {
+    expect(
+      isPeopleGroupChatRoom({
+        roomId: '!legacy',
+        getType: () => undefined,
+        getJoinedMemberCount: () => 2,
+        currentState: {
+          getStateEvents: (type) =>
+            type === 'm.room.name'
+              ? {
+                  getContent: () => ({
+                    name: 'Vlad Hramtsov, Kate Bennett (test)',
+                  }),
+                }
+              : null,
+        },
+      }),
+    ).toBe(true);
+    expect(
+      isPeopleGroupChatRoom(
+        {
+          roomId: '!dm',
+          getType: () => undefined,
+          getJoinedMemberCount: () => 2,
+          currentState: {
+            getStateEvents: (type) =>
+              type === 'm.room.name'
+                ? { getContent: () => ({ name: 'Kate Bennett' }) }
+                : null,
+          },
+        },
+        { inDirect: true },
+      ),
+    ).toBe(false);
+    expect(
+      isPeopleGroupChatRoom({
+        roomId: '!typed',
+        getType: () => undefined,
+        getJoinedMemberCount: () => 2,
+        currentState: {
+          getStateEvents: (type) =>
+            type === 'm.room.create'
+              ? { getContent: () => ({ type: HYPHA_ROOM_TYPES.group }) }
+              : null,
+        },
+      }),
+    ).toBe(true);
+  });
+
   it('keeps a two-person group created via the group flow', () => {
     expect(
       isPeopleGroupChatRoom({
