@@ -149,16 +149,28 @@ export async function isRoomBoundToSpaceOrSignal(
 ): Promise<boolean> {
   const trimmed = roomId.trim();
   if (!trimmed) return false;
-  const [space] = await db
-    .select({ id: spaces.id })
-    .from(spaces)
-    .where(eq(spaces.chatRoomId, trimmed))
-    .limit(1);
-  if (space) return true;
-  const [signal] = await db
-    .select({ id: coherences.id })
-    .from(coherences)
-    .where(and(eq(coherences.roomId, trimmed), eq(coherences.archived, false)))
-    .limit(1);
-  return Boolean(signal);
+  try {
+    const [space] = await db
+      .select({ id: spaces.id })
+      .from(spaces)
+      .where(eq(spaces.chatRoomId, trimmed))
+      .limit(1);
+    if (space) return true;
+    const [signal] = await db
+      .select({ id: coherences.id })
+      .from(coherences)
+      .where(
+        and(eq(coherences.roomId, trimmed), eq(coherences.archived, false)),
+      )
+      .limit(1);
+    return Boolean(signal);
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to check space/signal room binding:',
+      trimmed,
+      error instanceof Error ? error.message : error,
+    );
+    // Fail closed: a lookup error must not authorize rename/archive.
+    return true;
+  }
 }

@@ -795,16 +795,8 @@ async function loadPeopleGroupContext(
   if (!trimmedRoomId || !userId || !homeserver || !botToken) {
     return null;
   }
-  try {
-    if (await isRoomBoundToSpaceOrSignal({ roomId: trimmedRoomId }, { db })) {
-      return null;
-    }
-  } catch (error) {
-    console.warn(
-      '[MatrixBot] Failed to check space/signal room binding:',
-      trimmedRoomId,
-      error instanceof Error ? error.message : error,
-    );
+  if (await isRoomBoundToSpaceOrSignal({ roomId: trimmedRoomId }, { db })) {
+    return null;
   }
   const roomType = await matrixGetRoomType(trimmedRoomId, botToken, homeserver);
   const members = await matrixGetJoinedRoomMembers(
