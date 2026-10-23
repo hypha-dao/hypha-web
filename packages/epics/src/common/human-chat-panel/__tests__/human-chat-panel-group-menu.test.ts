@@ -72,8 +72,28 @@ describe('isPeopleGroupChatRoom', () => {
     expect(
       isPeopleGroupChatRoom(
         {
-          roomId: '!dm',
+          roomId: '!legacy-direct',
           getType: () => undefined,
+          getJoinedMemberCount: () => 2,
+          currentState: {
+            getStateEvents: (type) =>
+              type === 'm.room.name'
+                ? {
+                    getContent: () => ({
+                      name: 'Vlad Hramtsov, Kate Bennett (test)',
+                    }),
+                  }
+                : null,
+          },
+        },
+        { inDirect: true },
+      ),
+    ).toBe(true);
+    expect(
+      isPeopleGroupChatRoom(
+        {
+          roomId: '!dm',
+          getType: () => HYPHA_ROOM_TYPES.dm,
           getJoinedMemberCount: () => 2,
           currentState: {
             getStateEvents: (type) =>

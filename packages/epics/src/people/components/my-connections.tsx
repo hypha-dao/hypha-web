@@ -23,8 +23,8 @@ import {
   conversationActivityTs,
   isArchivedGroupRoom,
   isGroupCreateContent,
-  isPeopleGroupRoomType,
   isRoomInDirectAccountData,
+  peopleConversationKind,
   readGroupRoomCreatorUserId,
   readRoomNameState,
   looksLikeTechnicalMatrixDisplayName,
@@ -211,7 +211,7 @@ function conversationRowFromRoom(
     EventType.RoomCreate,
     '',
   );
-  const isGroup = isPeopleGroupRoomType(roomType, members.length, {
+  const kind = peopleConversationKind(roomType, members.length, {
     hasCreator: Boolean(readGroupRoomCreatorUserId(room)),
     remembered: isRememberedGroupChatRoom(room.roomId),
     hasRoomName: Boolean(readRoomNameState(room)),
@@ -225,10 +225,9 @@ function conversationRowFromRoom(
       createEvent?.getContent() as Record<string, unknown> | undefined,
     ),
   });
-  const kind = isGroup ? 'group' : 'person';
-  // A 1:1 is only a room created as a DM. Two-person space, signal and untyped
-  // rooms are not private messages unless they were started as a group.
-  if (kind === 'person' && room.getType() !== HYPHA_ROOM_TYPES.dm) {
+  // Untyped rooms that are not groups are dropped. If they were also in
+  // m.direct they used to become `person` and then vanish from the list.
+  if (!kind) {
     return null;
   }
   const other = others.length === 1 ? others[0] : undefined;

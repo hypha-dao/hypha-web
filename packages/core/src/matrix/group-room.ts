@@ -99,7 +99,8 @@ export type PeopleGroupRoomFlags = {
 
 /**
  * A Messages group stays a group even with two people or after a rename.
- * Typed DMs and rooms already in `m.direct` stay 1:1 chats.
+ * Typed DMs stay 1:1 chats. A named group-flow room stays a group even when
+ * Matrix also filed it under `m.direct`.
  */
 export function isPeopleGroupRoomType(
   roomType: string | null | undefined,
@@ -108,11 +109,26 @@ export function isPeopleGroupRoomType(
 ): boolean {
   const type = roomType?.trim() || null;
   if (type === HYPHA_ROOM_TYPES.group || flags.createdAsGroup) return true;
-  if (type === HYPHA_ROOM_TYPES.dm || flags.inDirect) return false;
+  if (type === HYPHA_ROOM_TYPES.dm) return false;
   if (type) return false;
   if (flags.hasCreator || flags.remembered) return true;
   if (flags.hasRoomName && joinedMemberCount >= 2) return true;
+  if (flags.inDirect) return false;
   return joinedMemberCount > 2;
+}
+
+/**
+ * What the People Around list does with a joined room after archive/bot/signal
+ * filters: a group row, a typed DM, or drop (untyped person chats are hidden).
+ */
+export function peopleConversationKind(
+  roomType: string | null | undefined,
+  joinedMemberCount: number,
+  flags: PeopleGroupRoomFlags = {},
+): 'group' | 'person' | null {
+  if (isPeopleGroupRoomType(roomType, joinedMemberCount, flags)) return 'group';
+  if ((roomType?.trim() || null) === HYPHA_ROOM_TYPES.dm) return 'person';
+  return null;
 }
 
 /**

@@ -8,6 +8,7 @@ import {
   isGroupRoomArchivedContent,
   isPeopleGroupRoomType,
   isRoomInDirectAccountData,
+  peopleConversationKind,
   normalizeGroupRoomName,
   readRoomNameState,
   sortConversationsByLastMessage,
@@ -95,11 +96,33 @@ describe('group room name and archive state', () => {
     expect(isPeopleGroupRoomType(null, 2, { hasRoomName: true })).toBe(true);
     expect(isPeopleGroupRoomType(null, 2, { createdAsGroup: true })).toBe(true);
     expect(
-      isPeopleGroupRoomType(null, 2, { hasRoomName: true, inDirect: true }),
-    ).toBe(false);
-    expect(
       isPeopleGroupRoomType(HYPHA_ROOM_TYPES.dm, 2, { hasRoomName: true }),
     ).toBe(false);
+  });
+
+  it('lists the renamed Vlad+Kate legacy group even when it is in m.direct', () => {
+    // Exact preview room: untyped, 2 humans, custom m.room.name, no creator
+    // state, not remembered. Matrix also filed it under Kate in m.direct.
+    // add60a5 treated inDirect first, so kind became person and the untyped
+    // person row was dropped — Kate stayed as a directory person only.
+    const flags = {
+      hasCreator: false,
+      remembered: false,
+      hasRoomName: true,
+      inDirect: true,
+      createdAsGroup: false,
+    };
+    expect(isPeopleGroupRoomType(null, 2, flags)).toBe(true);
+    expect(peopleConversationKind(null, 2, flags)).toBe('group');
+    expect(
+      peopleConversationKind(null, 2, { inDirect: true, hasRoomName: false }),
+    ).toBeNull();
+    expect(
+      peopleConversationKind(HYPHA_ROOM_TYPES.dm, 2, {
+        hasRoomName: true,
+        inDirect: true,
+      }),
+    ).toBe('person');
   });
 
   it('reads a room name state event and m.direct membership', () => {
