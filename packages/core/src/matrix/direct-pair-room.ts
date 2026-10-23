@@ -1,8 +1,19 @@
 import { createHash } from 'crypto';
 
 /**
- * One directory alias per pair. The two Matrix ids are sorted first, so each
- * person computes the same alias and cannot create a second room.
+ * Environment of a Hypha-managed Matrix account: `prod`, `prev` or `dev` from
+ * `@<env>_privy_…`. Each environment's appservice reserves only its own alias
+ * range, so the tag keeps production and preview DM aliases apart.
+ */
+function environmentTag(userId: string): string {
+  const match = /^@([a-z0-9]+)_privy_/.exec(userId);
+  return match?.[1] ?? 'unknown';
+}
+
+/**
+ * One directory alias per pair: `hypha-dm-<env>-<hash>`. The two Matrix ids are
+ * sorted first, so each person computes the same alias and cannot create a
+ * second room.
  */
 export function directPairAliasLocalpart(
   selfUserId: string,
@@ -16,7 +27,7 @@ export function directPairAliasLocalpart(
     .update(`${first}\n${second}`)
     .digest('hex')
     .slice(0, 32);
-  return `hypha-dm-${digest}`;
+  return `hypha-dm-${environmentTag(first)}-${digest}`;
 }
 
 /**

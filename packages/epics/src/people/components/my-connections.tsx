@@ -16,6 +16,7 @@ import {
   type Room,
 } from 'matrix-js-sdk';
 import {
+  HYPHA_ROOM_TYPES,
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
   useJwt,
@@ -161,7 +162,9 @@ function conversationRowFromRoom(
   client: MatrixClient,
   room: Room,
 ): ConversationRow | null {
-  if (room.getMyMembership() !== 'join') return null;
+  if (room.getMyMembership() !== 'join') {
+    return null;
+  }
   const botId = botUserId();
   const selfId = client.getUserId();
   const knownMembers = room
@@ -178,9 +181,29 @@ function conversationRowFromRoom(
     return !isHyphaBot(member.userId, member.name || member.rawDisplayName);
   });
   const others = members.filter((member) => member.userId !== selfId);
-  if (others.length === 0) return null;
+  if (others.length === 0) {
+    return null;
+  }
 
-  const kind = others.length === 1 ? 'person' : 'group';
+  const roomType = room.getType();
+  // Space, signal, proposal, public, network and ecosystem rooms are not
+  // private conversations, whoever is in them.
+  if (
+    roomType?.startsWith('io.hypha.room.') &&
+    roomType !== HYPHA_ROOM_TYPES.dm &&
+    roomType !== HYPHA_ROOM_TYPES.group
+  ) {
+    return null;
+  }
+  const kind =
+    roomType === HYPHA_ROOM_TYPES.group || others.length > 1
+      ? 'group'
+      : 'person';
+  // A 1:1 is only a room created as a DM. Two-person space, signal and untyped
+  // rooms are not private messages.
+  if (kind === 'person' && room.getType() !== HYPHA_ROOM_TYPES.dm) {
+    return null;
+  }
   const other = others.length === 1 ? others[0] : undefined;
   const name =
     (kind === 'person' ? other?.name || other?.rawDisplayName : room.name) ||
@@ -244,6 +267,7 @@ function conversationRowFromRoom(
     unread,
     memberCount: members.length,
     otherUserId: other?.userId ?? null,
+    roomType: room.getType() ?? null,
     faces,
     groupChat: kind === 'group' && isRememberedGroupChatRoom(room.roomId),
     kind,
@@ -339,45 +363,54 @@ function scheduleSupersededDirectRead() {
 function directPairHintsFromClient(client: MatrixClient) {
   const selfId = client.getUserId();
   const botId = botUserId();
-  const rooms = client.getRooms().map((room) => {
-    let members: { userId: string; name?: string; rawDisplayName?: string }[] =
-      [];
-    try {
-      members = room.getJoinedMembers();
-    } catch {
-      members = [];
-    }
-    const others = members
-      .filter((member) => {
-        if (!member.userId || member.userId === selfId) return false;
-        if (member.userId === botId) return false;
-        return !isHyphaBot(member.userId, member.name || member.rawDisplayName);
-      })
-      .map((member) => member.userId);
-    const signalThread =
-      isRememberedSignalThreadRoom(room.roomId) ||
-      room
-        .getLiveTimeline()
-        .getEvents()
-        .slice(-12)
-        .some(
-          (event) =>
-            event.getType() === EventType.RoomMessage &&
-            eventContentIsSignalThread(
-              event.getContent() as Record<string, unknown> | null,
-            ),
-        );
-    return {
-      roomId: room.roomId,
-      membership: room.getMyMembership(),
-      lastTs:
-        typeof room.getLastActiveTimestamp === 'function'
-          ? room.getLastActiveTimestamp()
-          : 0,
-      otherUserIds: others,
-      signalThread,
-    };
-  });
+  const rooms = client
+    .getRooms()
+    .filter((room) => room.getType() === HYPHA_ROOM_TYPES.dm)
+    .map((room) => {
+      let members: {
+        userId: string;
+        name?: string;
+        rawDisplayName?: string;
+      }[] = [];
+      try {
+        members = room.getJoinedMembers();
+      } catch {
+        members = [];
+      }
+      const others = members
+        .filter((member) => {
+          if (!member.userId || member.userId === selfId) return false;
+          if (member.userId === botId) return false;
+          return !isHyphaBot(
+            member.userId,
+            member.name || member.rawDisplayName,
+          );
+        })
+        .map((member) => member.userId);
+      const signalThread =
+        isRememberedSignalThreadRoom(room.roomId) ||
+        room
+          .getLiveTimeline()
+          .getEvents()
+          .slice(-12)
+          .some(
+            (event) =>
+              event.getType() === EventType.RoomMessage &&
+              eventContentIsSignalThread(
+                event.getContent() as Record<string, unknown> | null,
+              ),
+          );
+      return {
+        roomId: room.roomId,
+        membership: room.getMyMembership(),
+        lastTs:
+          typeof room.getLastActiveTimestamp === 'function'
+            ? room.getLastActiveTimestamp()
+            : 0,
+        otherUserIds: others,
+        signalThread,
+      };
+    });
   return collectDirectPairRoomHints(rooms);
 }
 
@@ -504,6 +537,7 @@ function priorityRoomIds(
       for (let index = roomIds.length - 1; index >= 0; index -= 1) {
         const room = client.getRoom(roomIds[index] ?? '');
         if (room?.getMyMembership() !== 'join') continue;
+        if (room.getType() !== HYPHA_ROOM_TYPES.dm) continue;
         found.set(matrixUserId.toLowerCase(), room.roomId);
         break;
       }
@@ -513,6 +547,7 @@ function priorityRoomIds(
     const selfId = client.getUserId();
     for (const room of client.getRooms()) {
       if (room.getMyMembership() !== 'join') continue;
+      if (room.getType() !== HYPHA_ROOM_TYPES.dm) continue;
       const joined =
         typeof room.getJoinedMemberCount === 'function'
           ? room.getJoinedMemberCount()
@@ -621,7 +656,9 @@ function pumpConversationRooms(limit: number) {
     cachedConversation(client, room);
     done += 1;
   }
-  if (done > 0) notifyConversationListeners();
+  if (done > 0 || conversationQueue.length === 0) {
+    notifyConversationListeners();
+  }
   scheduleConversationPump();
 }
 
@@ -724,6 +761,20 @@ function useConversationClient(client: MatrixClient) {
   }
   conversationQueue = [];
   cancelConversationPump();
+}
+
+/**
+ * True while any joined room has not been summarised yet. Judged from the
+ * cache itself, so there is no gap between the first sync and the queue filling.
+ */
+export function conversationRowsPending(client: MatrixClient) {
+  if (conversationQueue.length > 0 || conversationPump != null) return true;
+  return client
+    .getRooms()
+    .some(
+      (room) =>
+        room.getMyMembership() === 'join' && !conversationIsFresh(client, room),
+    );
 }
 
 export function conversationRowsSnapshot(client: MatrixClient) {
@@ -870,6 +921,7 @@ export function MyConnections({
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
   const [synced, setSynced] = useState(false);
+  const [rowsPending, setRowsPending] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [picking, setPicking] = useState(false);
@@ -909,12 +961,13 @@ export function MyConnections({
   const needle = query.trim().toLowerCase();
   const listed =
     needle && searchDirectory != null ? searchDirectory : connections;
-  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
-    personIds: [
-      ...listed.map((person) => person.id),
-      ...(home?.person.id != null ? [home.person.id] : []),
-    ],
-  });
+  const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
+    useMatrixUserIdsByPersonIds({
+      personIds: [
+        ...listed.map((person) => person.id),
+        ...(home?.person.id != null ? [home.person.id] : []),
+      ],
+    });
   const matrixIdsRef = useRef(personIdToMatrixUserId);
   matrixIdsRef.current = personIdToMatrixUserId;
   const visibleMatrixKey = useMemo(
@@ -1059,6 +1112,7 @@ export function MyConnections({
     if (!client) {
       setRows([]);
       setSynced(false);
+      setRowsPending(true);
       return;
     }
     return attachConversationList(client, () => {
@@ -1070,6 +1124,7 @@ export function MyConnections({
       if (state === SyncState.Prepared || state === SyncState.Syncing) {
         setSynced(true);
       }
+      setRowsPending(conversationRowsPending(client));
     });
   }, [client]);
 
@@ -1308,13 +1363,21 @@ export function MyConnections({
     if (selectedPeople.length < 2 || starting) return;
     setStarting(true);
     setNotice(null);
-    const title = selectedPeople.map((row) => row.name).join(', ');
+    const requester = [home?.person.name, home?.person.surname]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    const title = [requester, ...selectedPeople.map((row) => row.name)]
+      .filter(Boolean)
+      .join(', ');
     const faces = selectedPeople.slice(0, 2).map((row) => ({
       name: row.name,
       avatarUrl: row.avatarUrl,
     }));
     try {
-      const { roomId } = await createRoom(title);
+      const { roomId } = await createRoom(title, {
+        roomType: HYPHA_ROOM_TYPES.group,
+      });
       const memberIds = selectedPeople.flatMap((row) => {
         const mxid = personIdToMatrixUserId[row.person.id]?.trim();
         return mxid ? [mxid] : [];
@@ -1553,6 +1616,8 @@ export function MyConnections({
               locale={locale}
               justNow={t('justNow')}
               noMessage={t('noMessage')}
+              previewLoading={!synced || rowsPending || matrixIdsLoading}
+              loadingLabel={t('loading')}
               youLabel={(message) => t('youWrote', { message })}
               unreadLabel={(count) => t('unread', { count })}
               selectLabel={(name) => t('selectMember', { name })}
@@ -1624,6 +1689,8 @@ function MemberList({
   locale,
   justNow,
   noMessage,
+  previewLoading,
+  loadingLabel,
   youLabel,
   unreadLabel,
   selectLabel,
@@ -1637,6 +1704,9 @@ function MemberList({
   locale: string;
   justNow: string;
   noMessage: string;
+  /** Rooms are still loading, so a missing conversation is not yet "empty". */
+  previewLoading: boolean;
+  loadingLabel: string;
   youLabel: (message: string) => string;
   unreadLabel: (count: number) => string;
   selectLabel: (name: string) => string;
@@ -1651,6 +1721,7 @@ function MemberList({
       </h2>
       <ul>
         {rows.map((row) => {
+          const loadingPreview = !row.roomId && previewLoading;
           const preview = row.preview
             ? row.mine
               ? youLabel(row.preview)
@@ -1718,9 +1789,18 @@ function MemberList({
                     ) : null}
                   </span>
                   <span className="mt-0.5 flex items-center justify-between gap-3">
-                    <span className="min-w-0 flex-1 truncate text-1 text-muted-foreground">
-                      {preview}
-                    </span>
+                    {loadingPreview ? (
+                      <span
+                        role="status"
+                        aria-busy="true"
+                        aria-label={loadingLabel}
+                        className="my-0.5 block h-3 w-40 max-w-full animate-pulse rounded-sm bg-neutral-5"
+                      />
+                    ) : (
+                      <span className="min-w-0 flex-1 truncate text-1 text-muted-foreground">
+                        {preview}
+                      </span>
+                    )}
                     {row.unread > 0 ? (
                       <span
                         className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-foreground px-1.5 text-[10px] leading-none text-background"

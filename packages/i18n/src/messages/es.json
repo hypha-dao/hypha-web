@@ -1496,6 +1496,7 @@
     "pickMembers": "Toca personas para añadirlas al chat",
     "selectMember": "Seleccionar {name}",
     "noMessage": "Todavía sin mensajes",
+    "loading": "Cargando",
     "someone": "Alguien",
     "justNow": "Ahora",
     "youWrote": "Tú: {message}",

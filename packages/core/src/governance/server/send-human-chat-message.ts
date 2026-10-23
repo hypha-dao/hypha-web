@@ -14,6 +14,7 @@ import {
   createBotOwnedRoomAction,
   ensureMemberJoinedRoomAction,
 } from '../../matrix/server/actions';
+import { HYPHA_ROOM_TYPES } from '../../matrix/room-types';
 import { findMatrixUserIdsByPersonIds } from '../../matrix/server/queries';
 import {
   checkSpaceAccessForSpace,
@@ -186,6 +187,7 @@ export async function sendHumanChatMessageForSpace(
         const created = await createBotOwnedRoomAction({
           title: signalTitle,
           grantPl100ToMatrixUserId: creatorMatrixUserId,
+          roomType: HYPHA_ROOM_TYPES.signal,
         });
         if (!created) {
           return {
@@ -215,6 +217,7 @@ export async function sendHumanChatMessageForSpace(
     if (!targetRoomId) {
       const created = await createBotOwnedRoomAction({
         title: `space-${spaceSlug}`,
+        roomType: HYPHA_ROOM_TYPES.space,
       });
       if (!created) {
         return {

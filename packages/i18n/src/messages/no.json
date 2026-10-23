@@ -717,6 +717,7 @@
     "pickMembers": "Trykk på personer for å legge dem til i chatten",
     "selectMember": "Velg {name}",
     "noMessage": "Ingen meldinger ennå",
+    "loading": "Laster",
     "someone": "Noen",
     "justNow": "Akkurat nå",
     "youWrote": "Du: {message}",

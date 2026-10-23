@@ -718,6 +718,7 @@
     "pickMembers": "Доприрај луѓе за да ги додадеш во разговорот",
     "selectMember": "Избери {name}",
     "noMessage": "Сè уште нема порака",
+    "loading": "Се вчитува",
     "someone": "Некој",
     "justNow": "Токму сега",
     "youWrote": "Ти: {message}",

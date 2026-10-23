@@ -37,6 +37,7 @@ import { useForm, useFormState, useWatch } from 'react-hook-form';
 import type { Control, UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 import {
+  HYPHA_ROOM_TYPES,
   COHERENCE_PRIORITY_OPTIONS,
   COHERENCE_SIGNAL_TYPES,
   COHERENCE_TAGS,
@@ -1081,6 +1082,7 @@ export const CreateSignalForm = ({
             try {
               const roomCreationResult = await createRoom(coherence.title, {
                 grantCreatorPl100: true,
+                roomType: HYPHA_ROOM_TYPES.signal,
               });
               roomId = roomCreationResult.roomId;
               const canonicalRoomId = await joinRoom(roomId);

@@ -1,4 +1,5 @@
 import { looksLikeTechnicalMatrixDisplayName } from '../../../../core/src/matrix/matrix-member-display';
+import { HYPHA_ROOM_TYPES } from '../../../../core/src/matrix/room-types';
 import { replacePlainTextMatrixMxidsWithLabels } from '../../../../core/src/matrix/mentions';
 
 export type ConnectionListPerson = {
@@ -30,6 +31,8 @@ export type ConversationRow = {
   memberCount: number;
   otherUserId: string | null;
   kind: 'person' | 'group';
+  /** `m.room.create` type, when the room was created with one. */
+  roomType?: string | null;
   /** Up to two other members, used as the group icon. */
   faces?: GroupFace[];
   /** Remembered as a group chat, even if the room was later renamed. */
@@ -664,6 +667,7 @@ export function rememberedGroupChatMemberIds(roomId: string): string[] {
  */
 export function isPeopleListGroup(room: ConversationRow) {
   if (room.kind !== 'group' || room.signalThread) return false;
+  if (room.roomType === HYPHA_ROOM_TYPES.group) return true;
   if (room.groupChat || isRememberedGroupChatRoom(room.roomId)) return true;
   return room.name.includes(',');
 }
