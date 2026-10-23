@@ -78,6 +78,7 @@ import {
 } from './human-chat-panel-voice-audio-row';
 import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row';
 import { formatComposerMentionToken } from './human-chat-display-mention';
+import { mentionCandidateMatchRank } from './human-chat-mention-search';
 import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';
 import { ComposerAttachGoogleDriveMenuItem } from '../composer';
 
@@ -267,6 +268,10 @@ export type ChatMentionAgentIcon =
 export type ChatMentionCandidate = {
   userId: string;
   displayLabel: string;
+  /** Hypha nickname — mention search matches this as well as the display name. */
+  nickname?: string | null;
+  /** Hypha username / slug. */
+  slug?: string | null;
   /** Optional thumbnail for the mention picker (Matrix room avatar HTTP URL). */
   avatarUrl?: string;
   /** When known from space roster (`Person.sub`), resolves profile without Matrix→Privy lookup. */
@@ -533,22 +538,6 @@ function insertAtCaret(
 
 const MAX_MENTION_SUGGESTIONS = 24;
 
-function mentionSearchLabel(
-  candidate: ChatMentionCandidate,
-  resolved: ReadonlyMap<string, string>,
-) {
-  return (resolved.get(candidate.userId) ?? candidate.displayLabel).trim();
-}
-
-function labelRank(label: string, query: string): 'start' | 'contains' | null {
-  if (!label) return null;
-  if (label.startsWith(query)) return 'start';
-  const words = label.split(/[\s._'-]+/);
-  if (words.some((word) => word.startsWith(query))) return 'start';
-  if (label.includes(query)) return 'contains';
-  return null;
-}
-
 function filterMentionCandidates(
   all: ChatMentionCandidate[],
   query: string,
@@ -563,25 +552,11 @@ function filterMentionCandidates(
   const contains: ChatMentionCandidate[] = [];
   const pending: ChatMentionCandidate[] = [];
   for (const m of all) {
-    const label = mentionSearchLabel(m, resolved).toLowerCase();
-    const prompts = [
-      m.prompt?.toLowerCase() ?? '',
-      ...(m.skills ?? []).map((skill) => skill.prompt.toLowerCase()),
-    ].filter(Boolean);
-    const id = m.userId.toLowerCase();
-    const local = m.userId.startsWith('@')
-      ? m.userId.slice(1).split(':')[0]?.toLowerCase() ?? ''
-      : '';
-    const idStarts =
-      prompts.some((prompt) => prompt.startsWith(q)) ||
-      id.startsWith(`@${q}`) ||
-      id.startsWith(q) ||
-      Boolean(local && local.startsWith(q));
-    const idContains =
-      prompts.some((prompt) => prompt.includes(q)) || id.includes(q);
-    const rank =
-      labelRank(label, q) ??
-      (idStarts ? 'start' : idContains ? 'contains' : null);
+    const rank = mentionCandidateMatchRank(
+      m,
+      q,
+      resolved.get(m.userId)?.trim(),
+    );
     if (rank === 'start') {
       if (starts.length < MAX_MENTION_SUGGESTIONS) starts.push(m);
     } else if (rank === 'contains') {

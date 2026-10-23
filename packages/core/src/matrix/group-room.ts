@@ -121,23 +121,14 @@ export function isRoomInDirectAccountData(
 }
 
 export type PeopleGroupRoomFlags = {
-  hasCreator?: boolean;
-  remembered?: boolean;
-  /** Explicit `m.room.name`, not a Matrix-synthesized member list. */
-  hasRoomName?: boolean;
-  /** Room id appears in the user's `m.direct` account data. */
-  inDirect?: boolean;
-  /** `m.room.create` type is a Messages group, even if `getType()` is empty. */
+  /** `m.room.create` type is a Messages group when `getType()` is empty. */
   createdAsGroup?: boolean;
 };
 
 /**
- * A Messages group stays a group even with two people or after a rename.
- * Typed DMs stay 1:1 chats. An untyped room with an explicit `m.room.name`
- * is a group, even with two people, even in `m.direct`, and even before
- * lazy members load. Real DMs from `ensureDirectPairRoomAction` set both
- * `io.hypha.room.dm` and a create-time name (the other person, or
- * "Conversation"), so they stay person chats.
+ * Messages groups are `io.hypha.room.group` (or the same type on create).
+ * Typed DMs stay 1:1. Untyped rooms are groups only with 3+ joined humans —
+ * two-person untyped rooms are never DMs and never groups.
  */
 export function isPeopleGroupRoomType(
   roomType: string | null | undefined,
@@ -148,14 +139,12 @@ export function isPeopleGroupRoomType(
   if (type === HYPHA_ROOM_TYPES.group || flags.createdAsGroup) return true;
   if (type === HYPHA_ROOM_TYPES.dm) return false;
   if (type) return false;
-  if (flags.hasCreator || flags.remembered || flags.hasRoomName) return true;
-  if (flags.inDirect) return false;
   return joinedMemberCount > 2;
 }
 
 /**
  * What the People Around list does with a joined room after archive/bot/signal
- * filters: a group row, a typed DM, or drop (untyped person chats are hidden).
+ * filters: a group row, a typed DM, or drop (untyped 1:1s are hidden).
  */
 export function peopleConversationKind(
   roomType: string | null | undefined,

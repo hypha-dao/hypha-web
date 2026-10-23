@@ -40,6 +40,7 @@ import {
   useMatrixUserIdsByPrivySubs,
   useMatrixUserIdsByPersonIds,
   useMe,
+  usePeopleBySubs,
   useOrganisationSpacesBySingleSlug,
   useSpaceBySlug,
   useSpaceMutationsWeb2Rsc,
@@ -139,6 +140,7 @@ import {
   matrixUserIdToCanonicalPrivySub,
   pickUserVisibleMemberLabel,
   shortenMatrixIdForDisplay,
+  uniqueCanonicalPrivySubsFromMxids,
   visibleMatrixMemberName,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
@@ -2003,8 +2005,53 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     useMatrixUserIdsByPersonIds({
       personIds: directoryPersonIds,
     });
+  const roomMemberMxids = useMemo(() => {
+    if (!isDirectConversation || !client || !roomId) return [];
+    const room = client.getRoom(roomId);
+    if (!room) return [];
+    return room
+      .getMembers()
+      .map((member) => member.userId?.trim())
+      .filter((id): id is string => Boolean(id));
+  }, [client, isDirectConversation, mentionMembershipEpoch, roomId]);
+  const roomMemberSubs = useMemo(
+    () => uniqueCanonicalPrivySubsFromMxids(roomMemberMxids),
+    [roomMemberMxids],
+  );
+  const { peopleBySub: roomPeopleBySub } = usePeopleBySubs({
+    subs: isDirectConversation ? roomMemberSubs : [],
+  });
+  const roomPersonByMxid = useMemo(() => {
+    const byMxid = new Map<
+      string,
+      {
+        label: string;
+        nickname: string | null;
+        slug: string | null;
+      }
+    >();
+    for (const userId of roomMemberMxids) {
+      const sub = matrixUserIdToCanonicalPrivySub(userId);
+      const person = sub ? roomPeopleBySub.get(sub) : undefined;
+      if (!person) continue;
+      const label =
+        [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+        person.nickname?.trim() ||
+        '';
+      if (!label) continue;
+      byMxid.set(userId, {
+        label,
+        nickname: person.nickname,
+        slug: person.slug,
+      });
+    }
+    return byMxid;
+  }, [roomMemberMxids, roomPeopleBySub]);
   const directoryLabelByMxid = useMemo(() => {
     const labels = new Map<string, string>();
+    for (const [userId, profile] of roomPersonByMxid) {
+      labels.set(userId, profile.label);
+    }
     if (!directoryHome) return labels;
     const people = [
       directoryHome.person,
@@ -2018,7 +2065,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (mxid && label) labels.set(mxid, label);
     }
     return labels;
-  }, [directoryHome, directoryMxids]);
+  }, [directoryHome, directoryMxids, roomPersonByMxid]);
 
   const rosterSubs = useMemo(
     () =>
@@ -2210,11 +2257,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         const userId = member.userId?.trim();
         if (!userId) continue;
         if (currentUserId && userId === currentUserId) continue;
+        const profile = roomPersonByMxid.get(userId);
         list.push({
           userId,
           displayLabel:
             directoryLabelByMxid.get(userId) ||
+            profile?.label ||
             matrixMemberDisplayLabel(member, userId),
+          nickname: profile?.nickname,
+          slug: profile?.slug,
         });
       }
       list.sort((left, right) =>
@@ -2236,6 +2287,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     currentUserId,
     directoryLabelByMxid,
     isDirectConversation,
+    roomPersonByMxid,
     mentionMembershipEpoch,
     personIdToMatrixUserId,
     roomId,

@@ -40,7 +40,7 @@ describe('isPeopleGroupChatRoom', () => {
     ).toBe(false);
   });
 
-  it('keeps a remembered two-person group after a rename', () => {
+  it('does not treat a remembered or named untyped pair as a group', () => {
     rememberGroupChatRooms(['!remembered-pair']);
     expect(
       isPeopleGroupChatRoom({
@@ -48,10 +48,7 @@ describe('isPeopleGroupChatRoom', () => {
         getType: () => undefined,
         getJoinedMemberCount: () => 2,
       }),
-    ).toBe(true);
-  });
-
-  it('keeps a named two-person untyped room that is not a DM', () => {
+    ).toBe(false);
     expect(
       isPeopleGroupChatRoom({
         roomId: '!legacy',
@@ -68,39 +65,16 @@ describe('isPeopleGroupChatRoom', () => {
               : null,
         },
       }),
-    ).toBe(true);
-    expect(
-      isPeopleGroupChatRoom(
-        {
-          roomId: '!legacy-direct',
-          getType: () => undefined,
-          getJoinedMemberCount: () => 2,
-          currentState: {
-            getStateEvents: (type) =>
-              type === 'm.room.name'
-                ? {
-                    getContent: () => ({
-                      name: 'Vlad Hramtsov, Kate Bennett (test)',
-                    }),
-                  }
-                : null,
-          },
-        },
-        { inDirect: true },
-      ),
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it('keeps a two-person room when create content is group-typed', () => {
     expect(
       isPeopleGroupChatRoom(
         {
           roomId: '!dm',
           getType: () => HYPHA_ROOM_TYPES.dm,
           getJoinedMemberCount: () => 2,
-          currentState: {
-            getStateEvents: (type) =>
-              type === 'm.room.name'
-                ? { getContent: () => ({ name: 'Kate Bennett' }) }
-                : null,
-          },
         },
         { inDirect: true },
       ),
@@ -114,22 +88,6 @@ describe('isPeopleGroupChatRoom', () => {
           getStateEvents: (type) =>
             type === 'm.room.create'
               ? { getContent: () => ({ type: HYPHA_ROOM_TYPES.group }) }
-              : null,
-        },
-      }),
-    ).toBe(true);
-  });
-
-  it('keeps a two-person group created via the group flow', () => {
-    expect(
-      isPeopleGroupChatRoom({
-        roomId: '!pair',
-        getType: () => undefined,
-        getJoinedMemberCount: () => 2,
-        currentState: {
-          getStateEvents: (type) =>
-            type === 'io.hypha.room.group_creator'
-              ? { getContent: () => ({ userId: '@ada:hypha' }) }
               : null,
         },
       }),

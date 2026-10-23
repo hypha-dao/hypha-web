@@ -145,7 +145,12 @@ export function HumanChatPanelGroupMenu({
       const mxid = personIdToMatrixUserId[person.id]?.trim().toLowerCase();
       if (!mxid || roomMemberIds.has(mxid)) return false;
       if (!needle) return true;
-      const haystack = [person.name, person.surname, person.nickname]
+      const haystack = [
+        person.name,
+        person.surname,
+        person.nickname,
+        person.slug,
+      ]
         .filter(Boolean)
         .join(' ')
         .toLowerCase();

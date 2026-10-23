@@ -827,6 +827,14 @@ export function enrichSearchMembers<T extends ConnectionListPerson>(
   profiles: ReadonlyMap<string, { name: string; avatarUrl?: string }>,
   connections: readonly MemberRow<T>[],
   personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+  peopleByMxid?: ReadonlyMap<
+    string,
+    {
+      name?: string | null;
+      nickname?: string | null;
+      slug?: string | null;
+    }
+  >,
 ) {
   const personByMxid = new Map<string, T>();
   for (const row of connections) {
@@ -837,18 +845,21 @@ export function enrichSearchMembers<T extends ConnectionListPerson>(
     const mxid = member.userId?.trim().toLowerCase();
     const profile = mxid ? profiles.get(mxid) : undefined;
     const person = mxid ? personByMxid.get(mxid) : undefined;
+    const resolved = mxid ? peopleByMxid?.get(mxid) : undefined;
     return {
       name:
         (mxid
           ? visibleMatrixMemberName(
               mxid,
+              resolved?.name,
               profile?.name,
               person ? personName(person, '') : '',
               member.name,
             )
-          : profile?.name || member.name) || member.name,
-      nickname: person?.nickname ?? member.nickname ?? null,
-      slug: person?.slug ?? member.slug ?? null,
+          : resolved?.name || profile?.name || member.name) || member.name,
+      nickname:
+        resolved?.nickname ?? person?.nickname ?? member.nickname ?? null,
+      slug: resolved?.slug ?? person?.slug ?? member.slug ?? null,
       userId: member.userId,
     };
   });

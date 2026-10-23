@@ -85,50 +85,19 @@ describe('group room name and archive state', () => {
     expect(isPeopleGroupRoomType('', 4)).toBe(true);
     expect(isPeopleGroupRoomType(null, 2)).toBe(false);
     expect(isPeopleGroupRoomType(HYPHA_ROOM_TYPES.dm, 3)).toBe(false);
-    expect(isPeopleGroupRoomType(null, 2, { hasCreator: true })).toBe(true);
-    expect(isPeopleGroupRoomType(null, 2, { remembered: true })).toBe(true);
-    expect(
-      isPeopleGroupRoomType(HYPHA_ROOM_TYPES.dm, 2, { hasCreator: true }),
-    ).toBe(false);
   });
 
-  it('keeps a named two-person non-DM room as a group', () => {
-    expect(isPeopleGroupRoomType(null, 2, { hasRoomName: true })).toBe(true);
+  it('keeps a two-person room as a group only when it is group-typed', () => {
     expect(isPeopleGroupRoomType(null, 2, { createdAsGroup: true })).toBe(true);
-    expect(
-      isPeopleGroupRoomType(HYPHA_ROOM_TYPES.dm, 2, { hasRoomName: true }),
-    ).toBe(false);
+    expect(isPeopleGroupRoomType(null, 2)).toBe(false);
+    expect(isPeopleGroupRoomType(HYPHA_ROOM_TYPES.dm, 2)).toBe(false);
   });
 
-  it('lists the renamed Vlad+Kate legacy group even when it is in m.direct', () => {
-    // Exact preview room: untyped, 2 humans, custom m.room.name, no creator
-    // state, not remembered. Matrix also filed it under Kate in m.direct.
-    // add60a5 treated inDirect first, so kind became person and the untyped
-    // person row was dropped — Kate stayed as a directory person only.
-    const flags = {
-      hasCreator: false,
-      remembered: false,
-      hasRoomName: true,
-      inDirect: true,
-      createdAsGroup: false,
-    };
-    expect(isPeopleGroupRoomType(null, 2, flags)).toBe(true);
-    expect(peopleConversationKind(null, 2, flags)).toBe('group');
-    // Lazy members: only self is in getMembers() until /members returns.
-    expect(isPeopleGroupRoomType(null, 1, flags)).toBe(true);
-    expect(peopleConversationKind(null, 1, flags)).toBe('group');
-    expect(peopleConversationKind(null, 0, flags)).toBe('group');
-    expect(
-      peopleConversationKind(null, 2, { inDirect: true, hasRoomName: false }),
-    ).toBeNull();
-    // Real DMs from ensureDirectPairRoomAction set type io.hypha.room.dm
-    // and also write m.room.name (the other person, or "Conversation").
-    expect(
-      peopleConversationKind(HYPHA_ROOM_TYPES.dm, 2, {
-        hasRoomName: true,
-        inDirect: true,
-      }),
-    ).toBe('person');
+  it('lists a group-typed room even before other members load', () => {
+    expect(peopleConversationKind(HYPHA_ROOM_TYPES.group, 1)).toBe('group');
+    expect(peopleConversationKind(HYPHA_ROOM_TYPES.group, 0)).toBe('group');
+    expect(peopleConversationKind(null, 2)).toBeNull();
+    expect(peopleConversationKind(HYPHA_ROOM_TYPES.dm, 2)).toBe('person');
   });
 
   it('reads a room name state event and m.direct membership', () => {

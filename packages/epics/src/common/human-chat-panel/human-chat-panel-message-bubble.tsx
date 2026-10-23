@@ -63,6 +63,7 @@ import {
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
   pickUserVisibleMemberLabel,
+  resolveBridgedLocalHandleToMxid,
   visibleMatrixMemberName,
 } from './matrix-room-member-display';
 import {
@@ -1354,6 +1355,7 @@ export function renderTextWithMentions(
   text: string,
   resolveMx: (matrixUserId: string) => string,
   viewerMentionTintRow = false,
+  memberUserIds: readonly string[] = [],
 ): React.ReactNode[] {
   const segments = splitPlainTextMatrixMentions(text);
   const localHandleRe = /(^|[^\w.+-])@([^\s@]{1,100}?)(?=\s|$|[.,!?;:])/g;
@@ -1378,14 +1380,29 @@ export function renderTextWithMentions(
           </span>,
         );
       }
-      chunks.push(
-        <span
-          key={`${keyBase}-at-${keyN++}`}
-          className={chatMentionPillClass(viewerMentionTintRow)}
-        >
-          @{handle}
-        </span>,
+      const bridgedMxid = resolveBridgedLocalHandleToMxid(
+        handle,
+        memberUserIds,
       );
+      if (bridgedMxid) {
+        chunks.push(
+          <MxidMentionPill
+            key={`${keyBase}-at-${keyN++}`}
+            fullMxid={bridgedMxid}
+            syncLabel={resolveMx(bridgedMxid).trim() || `@${handle}`}
+            viewerMentionTintRow={viewerMentionTintRow}
+          />,
+        );
+      } else {
+        chunks.push(
+          <span
+            key={`${keyBase}-at-${keyN++}`}
+            className={chatMentionPillClass(viewerMentionTintRow)}
+          >
+            @{handle}
+          </span>,
+        );
+      }
       last = mentionStart + handle.length + 1;
     }
     if (last < fragment.length) {
@@ -1456,8 +1473,14 @@ function resolveMatrixPlainAndHtmlFragments(
   fragment: string,
   resolveMx: (matrixUserId: string) => string,
   viewerMentionTintRow = false,
+  memberUserIds: readonly string[] = [],
 ): React.ReactNode[] {
-  return renderTextWithMentions(fragment, resolveMx, viewerMentionTintRow);
+  return renderTextWithMentions(
+    fragment,
+    resolveMx,
+    viewerMentionTintRow,
+    memberUserIds,
+  );
 }
 
 function reactionTooltipText(
@@ -1509,6 +1532,12 @@ export function HumanChatPanelMessageBubble({
         matrixMemberDisplayLabelFromRoom(client, roomId ?? null, matrixUserId)),
     [resolveMatrixMemberLabel, client, roomId],
   );
+  const roomMemberUserIds = useMemo(() => {
+    const room = client?.getRoom(roomId ?? undefined);
+    return (room?.getMembers() ?? [])
+      .map((member) => member.userId?.trim())
+      .filter((id): id is string => Boolean(id));
+  }, [client, roomId]);
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
@@ -2015,6 +2044,7 @@ export function HumanChatPanelMessageBubble({
                       fragment,
                       bodyResolveMx,
                       highlightMentionForViewer,
+                      roomMemberUserIds,
                     )
                   }
                 />
@@ -2048,6 +2078,7 @@ export function HumanChatPanelMessageBubble({
                   textContent,
                   bodyResolveMx,
                   highlightMentionForViewer,
+                  roomMemberUserIds,
                 )}
               </div>
             ))}

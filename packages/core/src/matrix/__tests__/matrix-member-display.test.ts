@@ -5,6 +5,8 @@ import {
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
   pickUserVisibleMemberLabel,
+  resolveBridgedLocalHandleToMxid,
+  uniqueCanonicalPrivySubsFromMxids,
   visibleMatrixMemberName,
   speakerLabelToCanonicalPrivySub,
   splitSpeakerLabeledTranscriptLine,
@@ -85,6 +87,36 @@ describe('matrixUserIdToCanonicalPrivySub', () => {
 
   it('returns null for non-bridged locals', () => {
     expect(matrixUserIdToCanonicalPrivySub('@alice:matrix.org')).toBeNull();
+  });
+});
+
+describe('uniqueCanonicalPrivySubsFromMxids', () => {
+  it('dedupes bridged prod locals', () => {
+    expect(
+      uniqueCanonicalPrivySubsFromMxids([
+        PROD_MXID,
+        PROD_MXID,
+        '@alice:matrix.org',
+        '  ',
+      ]),
+    ).toEqual(['did:privy:cmabc123']);
+  });
+});
+
+describe('resolveBridgedLocalHandleToMxid', () => {
+  it('prefers a joined member with the same localpart', () => {
+    expect(
+      resolveBridgedLocalHandleToMxid('prod_privy_did_privy_cmabc123', [
+        PROD_MXID,
+      ]),
+    ).toBe(PROD_MXID);
+  });
+
+  it('synthesizes an MXID so person lookup can run', () => {
+    expect(
+      resolveBridgedLocalHandleToMxid('prod_privy_did_privy_cmabc123'),
+    ).toBe('@prod_privy_did_privy_cmabc123:matrix');
+    expect(resolveBridgedLocalHandleToMxid('alice')).toBeNull();
   });
 });
 

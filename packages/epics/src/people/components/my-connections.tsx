@@ -23,18 +23,19 @@ import {
   conversationActivityTs,
   isArchivedGroupRoom,
   isGroupCreateContent,
-  isRoomInDirectAccountData,
   peopleConversationKind,
   readCreateContent,
-  readGroupRoomCreatorUserId,
   readRoomNameState,
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
+  matrixUserIdToCanonicalPrivySub,
   sortConversationsByLastMessage,
+  uniqueCanonicalPrivySubsFromMxids,
   visibleMatrixMemberName,
   useJwt,
   useMatrix,
   useMatrixUserIdsByPersonIds,
+  usePeopleBySubs,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import { listBoundChatRoomIdsAmongAction } from '@hypha-platform/core/matrix/server/actions';
@@ -228,15 +229,6 @@ function conversationRowFromRoom(
   const roomType = room.getType();
   const nameState = readRoomNameState(room);
   const flags = {
-    hasCreator: Boolean(readGroupRoomCreatorUserId(room)),
-    remembered: isRememberedGroupChatRoom(room.roomId),
-    hasRoomName: Boolean(nameState),
-    inDirect: isRoomInDirectAccountData(
-      client.getAccountData(EventType.Direct)?.getContent() as
-        | Record<string, unknown>
-        | undefined,
-      room.roomId,
-    ),
     createdAsGroup: isGroupCreateContent(readCreateContent(room)),
   };
   const classification = {
@@ -260,7 +252,7 @@ function conversationRowFromRoom(
   }
   const overrideName = conversationTitleOverrides.get(room.roomId)?.trim();
   const kind = peopleConversationKind(roomType, members.length, flags);
-  // Named groups stay listed even before lazy members arrive. Person chats
+  // Group-typed rooms stay listed before lazy members arrive. Person chats
   // still need the other human so they can attach to a directory row.
   if (others.length === 0 && kind !== 'group') {
     return logDroppedRoom(room, {
@@ -651,15 +643,11 @@ function peopleGroupRoomIds(client: MatrixClient): string[] {
       ids.push(room.roomId);
       continue;
     }
-    if (isRememberedGroupChatRoom(room.roomId)) {
+    if (isGroupCreateContent(readCreateContent(room))) {
       ids.push(room.roomId);
       continue;
     }
-    if (
-      room.getType() !== HYPHA_ROOM_TYPES.dm &&
-      (Boolean(readGroupRoomCreatorUserId(room)) ||
-        Boolean(readRoomNameState(room)))
-    ) {
+    if (isRememberedGroupChatRoom(room.roomId)) {
       ids.push(room.roomId);
     }
   }
@@ -1402,6 +1390,19 @@ export function MyConnections({
     [reachOut],
   );
 
+  const groupMemberSubs = useMemo(
+    () =>
+      uniqueCanonicalPrivySubsFromMxids(
+        rows.flatMap((row) =>
+          row.kind === 'group'
+            ? (row.searchMembers ?? []).map((member) => member.userId)
+            : [],
+        ),
+      ),
+    [rows],
+  );
+  const { peopleBySub } = usePeopleBySubs({ subs: groupMemberSubs });
+
   const people = useMemo(() => {
     const profiles = new Map<string, { name: string; avatarUrl?: string }>();
     const mentionNames = new Map<string, string>();
@@ -1435,6 +1436,33 @@ export function MyConnections({
     const liveGroupIds = new Set(
       rows.filter((row) => row.kind === 'group').map((row) => row.roomId),
     );
+    const peopleByMxid = new Map<
+      string,
+      {
+        name?: string | null;
+        nickname?: string | null;
+        slug?: string | null;
+      }
+    >();
+    for (const row of rows) {
+      if (row.kind !== 'group') continue;
+      for (const member of row.searchMembers ?? []) {
+        const mxid = member.userId?.trim();
+        if (!mxid) continue;
+        const sub = matrixUserIdToCanonicalPrivySub(mxid);
+        const person = sub ? peopleBySub.get(sub) : undefined;
+        if (!person) continue;
+        const name =
+          [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+          person.nickname?.trim() ||
+          '';
+        peopleByMxid.set(mxid.toLowerCase(), {
+          name,
+          nickname: person.nickname,
+          slug: person.slug,
+        });
+      }
+    }
     const conversations = [
       ...rows.map((row) => {
         if (row.kind !== 'group') return row;
@@ -1453,6 +1481,7 @@ export function MyConnections({
             profiles,
             members,
             personIdToMatrixUserId,
+            peopleByMxid,
           ),
         };
       }),
@@ -1494,6 +1523,7 @@ export function MyConnections({
     members,
     needle,
     pendingGroups,
+    peopleBySub,
     personIdToMatrixUserId,
     picking,
     rows,

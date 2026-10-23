@@ -133,6 +133,41 @@ export function matrixUserIdToCanonicalPrivySub(userId: string): string | null {
   return null;
 }
 
+/** Deduped `did:privy:*` subs from bridged Matrix user ids. */
+export function uniqueCanonicalPrivySubsFromMxids(
+  userIds: readonly (string | null | undefined)[],
+): string[] {
+  const subs = new Set<string>();
+  for (const id of userIds) {
+    const sub = id ? matrixUserIdToCanonicalPrivySub(id) : null;
+    if (sub) subs.add(sub);
+  }
+  return [...subs];
+}
+
+/**
+ * `@prod_privy_did_privy_…` without a homeserver still names a bridged user.
+ * Prefer a joined member with that localpart; otherwise synthesize an MXID so
+ * person lookup can run from the localpart.
+ */
+export function resolveBridgedLocalHandleToMxid(
+  handle: string,
+  memberUserIds: readonly string[] = [],
+  fallbackHomeserver = 'matrix',
+): string | null {
+  const local = handle.trim().replace(/^@/, '');
+  if (!local || local.includes(':')) return null;
+  if (!speakerLabelToCanonicalPrivySub(local)) return null;
+  const wanted = local.toLowerCase();
+  for (const id of memberUserIds) {
+    const trimmed = id.trim();
+    const memberLocal = trimmed.replace(/^@/, '').split(':')[0]?.toLowerCase();
+    if (memberLocal === wanted) return trimmed;
+  }
+  const domain = fallbackHomeserver.trim() || 'matrix';
+  return `@${local}:${domain}`;
+}
+
 /** Resolve Hypha `did:privy:*` from a transcript speaker label (MXID or bare localpart). */
 export function speakerLabelToCanonicalPrivySub(label: string): string | null {
   const trimmed = label.trim();

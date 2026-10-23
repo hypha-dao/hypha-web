@@ -3,9 +3,7 @@ import {
   isPeopleGroupRoomType,
   readCreateContent,
   readGroupRoomCreatorUserId,
-  readRoomNameState,
 } from '../../../../core/src/matrix/group-room';
-import { isRememberedGroupChatRoom } from '../../people/components/member-connections';
 
 export function isPeopleGroupChatRoom(
   room:
@@ -15,19 +13,12 @@ export function isPeopleGroupChatRoom(
         getJoinedMemberCount?: () => number;
       })
     | null,
-  options?: { inDirect?: boolean },
 ) {
   if (!room) return false;
   return isPeopleGroupRoomType(
     room.getType?.(),
     room.getJoinedMemberCount?.() ?? 0,
     {
-      hasCreator: Boolean(readGroupRoomCreatorUserId(room)),
-      remembered: Boolean(
-        room.roomId && isRememberedGroupChatRoom(room.roomId),
-      ),
-      hasRoomName: Boolean(readRoomNameState(room)),
-      inDirect: options?.inDirect,
       createdAsGroup: isGroupCreateContent(readCreateContent(room)),
     },
   );

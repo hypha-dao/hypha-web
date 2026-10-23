@@ -7,7 +7,9 @@ export {
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
   pickUserVisibleMemberLabel,
+  resolveBridgedLocalHandleToMxid,
   shortenMatrixIdForDisplay,
+  uniqueCanonicalPrivySubsFromMxids,
   visibleMatrixMemberName,
   speakerLabelToCanonicalPrivySub,
 } from '../../../../core/src/matrix/matrix-member-display';

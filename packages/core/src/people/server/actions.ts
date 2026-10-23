@@ -5,9 +5,15 @@ import {
   EditPersonInput,
   GetPersonByIdInput,
   GetPersonBySubInput,
+  GetPeopleBySubsInput,
 } from '../types';
 import { db } from '@hypha-platform/storage-postgres';
-import { findPersonById, findPersonBySub, listPayablePeople } from './queries';
+import {
+  findPersonById,
+  findPersonBySub,
+  findPeopleBySubs,
+  listPayablePeople,
+} from './queries';
 
 export async function editPersonAction(
   data: EditPersonInput,
@@ -39,4 +45,14 @@ export async function getPersonBySub(
     return null;
   }
   return findPersonBySub({ sub }, { db });
+}
+
+export async function getPeopleBySubs(
+  { subs }: GetPeopleBySubsInput,
+  { authToken }: { authToken?: string },
+) {
+  if (!subs?.length) {
+    return [];
+  }
+  return findPeopleBySubs({ subs }, { db });
 }

@@ -808,31 +808,12 @@ async function loadPeopleGroupContext(
     botToken,
     homeserver,
   );
-  const creatorState = await matrixGetStateEvent(
-    trimmedRoomId,
-    GROUP_ROOM_CREATOR_STATE,
-    '',
-    botToken,
-    homeserver,
-  );
-  const nameState = await matrixGetStateEvent(
-    trimmedRoomId,
-    'm.room.name',
-    '',
-    botToken,
-    homeserver,
-  );
-  const hasCreator = Boolean(groupRoomCreatorUserId(creatorState));
-  const hasRoomName =
-    typeof nameState?.name === 'string' && Boolean(nameState.name.trim());
   const createdAsGroup = roomType === HYPHA_ROOM_TYPES.group;
   const humanCount = countHumanMatrixMembers(members);
-  // Joined members include the org bot and any extra bots. Count humans
-  // the same way Messages does before deciding this is a group.
+  // Typed group, or the #2568 legacy untyped 3+ human room. Two-person
+  // untyped rooms are never Messages groups.
   if (
     !isPeopleGroupRoomType(roomType, humanCount, {
-      hasCreator,
-      hasRoomName,
       createdAsGroup,
     })
   ) {
