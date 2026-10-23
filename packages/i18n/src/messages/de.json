@@ -4136,13 +4136,13 @@
     "renameGroupName": "Gruppenname",
     "renameGroupSave": "Namen speichern",
     "renameGroupCancel": "Abbrechen",
-    "renameGroupFailed": "Die Gruppe konnte nicht umbenannt werden. Versuch es noch einmal.",
+    "renameGroupFailed": "Die Gruppe konnte nicht umbenannt werden. Bitte versuchen Sie es erneut.",
     "archiveGroup": "Gruppe archivieren",
     "archiveGroupTitle": "Diese Gruppe archivieren?",
     "archiveGroupDescription": "Die Gruppe verschwindet für alle aus Nachrichten. Die Mitglieder werden nicht gefragt. Der Verlauf bleibt im Raum.",
     "archiveGroupConfirm": "Ja, archivieren",
     "archiveGroupCancel": "Abbrechen",
-    "archiveGroupFailed": "Die Gruppe konnte nicht archiviert werden. Versuch es noch einmal."
+    "archiveGroupFailed": "Die Gruppe konnte nicht archiviert werden. Bitte versuchen Sie es erneut."
   },
   "CoherenceTab": {
     "signals": "Signale",

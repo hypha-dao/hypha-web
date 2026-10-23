@@ -68,6 +68,9 @@ describe('group room name and archive state', () => {
   it('trims and caps a group title', () => {
     expect(normalizeGroupRoomName('  Water  team  ')).toBe('Water team');
     expect(normalizeGroupRoomName('x'.repeat(200))).toHaveLength(120);
+    expect(normalizeGroupRoomName(`${'x'.repeat(119)}😀y`)).toBe(
+      `${'x'.repeat(119)}😀`,
+    );
   });
 
   it('reads archived and creator state', () => {
@@ -103,9 +106,9 @@ describe('sortConversationsByLastMessage', () => {
     expect(ranked.map((row) => row.roomId)).toEqual(['!a', '!c', '!b']);
   });
 
-  it('prefers a live room timestamp when the preview has none yet', () => {
+  it('prefers the last message and only falls back to the room timestamp', () => {
     expect(conversationActivityTs(null, 900)).toBe(900);
-    expect(conversationActivityTs(400, 900)).toBe(900);
+    expect(conversationActivityTs(400, 900)).toBe(400);
     expect(conversationActivityTs(400, 0)).toBe(400);
     expect(conversationActivityTs(null, null)).toBeNull();
   });

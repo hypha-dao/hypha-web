@@ -48,7 +48,6 @@ import {
   matrixCreateRoom,
   matrixDeleteRoomAlias,
   matrixGetJoinedRoomMembers,
-  matrixGetPowerLevels,
   matrixGetRoomType,
   matrixGetStateEvent,
   matrixInviteUser,
@@ -819,14 +818,6 @@ async function canArchivePeopleGroup(
   );
   const creator = groupRoomCreatorUserId(creatorState);
   if (creator) return creator === userId;
-  try {
-    const power = await matrixGetPowerLevels(roomId, botToken, homeserver);
-    if ((power.users?.[userId] ?? power.users_default ?? 0) >= 100) {
-      return true;
-    }
-  } catch {
-    // Fall through to the legacy "any member" path.
-  }
   // Older groups have no stored human creator (the bot created the room).
   return true;
 }

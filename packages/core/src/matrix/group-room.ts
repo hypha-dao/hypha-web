@@ -6,7 +6,9 @@ export const GROUP_ROOM_ARCHIVED_STATE = 'io.hypha.room.archived';
 export const GROUP_ROOM_NAME_MAX = 120;
 
 export function normalizeGroupRoomName(name: string): string {
-  return name.replace(/\s+/g, ' ').trim().slice(0, GROUP_ROOM_NAME_MAX);
+  return Array.from(name.replace(/\s+/g, ' ').trim())
+    .slice(0, GROUP_ROOM_NAME_MAX)
+    .join('');
 }
 
 export function isGroupRoomArchivedContent(
@@ -77,10 +79,10 @@ export function conversationActivityTs(
 ): number | null {
   const message =
     typeof lastMessageTs === 'number' && lastMessageTs > 0 ? lastMessageTs : 0;
+  if (message > 0) return message;
   const active =
     typeof roomActiveTs === 'number' && roomActiveTs > 0 ? roomActiveTs : 0;
-  const ts = Math.max(message, active);
-  return ts > 0 ? ts : null;
+  return active > 0 ? active : null;
 }
 
 /**

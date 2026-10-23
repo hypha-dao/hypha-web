@@ -3562,13 +3562,13 @@
     "renameGroupName": "Nom du groupe",
     "renameGroupSave": "Enregistrer le nom",
     "renameGroupCancel": "Annuler",
-    "renameGroupFailed": "Impossible de renommer ce groupe. Réessaie.",
+    "renameGroupFailed": "Impossible de renommer ce groupe. Réessayez.",
     "archiveGroup": "Archiver le groupe",
     "archiveGroupTitle": "Archiver ce groupe ?",
     "archiveGroupDescription": "Le groupe disparaît de Messages pour tout le monde. Les membres ne sont pas consultés. L’historique reste dans le salon.",
     "archiveGroupConfirm": "Oui, archiver",
     "archiveGroupCancel": "Annuler",
-    "archiveGroupFailed": "Impossible d’archiver ce groupe. Réessaie."
+    "archiveGroupFailed": "Impossible d’archiver ce groupe. Réessayez."
   },
   "CoherenceTab": {
     "signals": "Signaux",

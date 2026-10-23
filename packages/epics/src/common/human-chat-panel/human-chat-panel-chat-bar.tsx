@@ -65,7 +65,6 @@ import {
   type EmojiIndexEntry,
 } from './emoji-mart-index';
 import { getTextareaSelectionCenter } from './textarea-caret-position';
-import { highlightComposerUrlsForBackdrop } from './human-chat-panel-composer-url-highlight';
 import {
   type ChatPanelAttachmentMedia,
   looksLikeAudioMimeOrName,
@@ -714,13 +713,6 @@ export function HumanChatPanelChatBar({
   valueRef.current = value;
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  /** Mirrored backdrop for Discord-style URL coloring (textarea text is transparent). */
-  const composerBackdropRef = useRef<HTMLDivElement>(null);
-
-  const composerHighlightBackdrop = useMemo(
-    () => highlightComposerUrlsForBackdrop(value),
-    [value],
-  );
   const composerShellRef = useRef<HTMLDivElement>(null);
   const replyPreviewWasOpenRef = useRef(false);
   const editPreviewWasOpenRef = useRef(false);
@@ -822,7 +814,6 @@ export function HumanChatPanelChatBar({
 
   const autoResize = useCallback(() => {
     const ta = textareaRef.current;
-    const bd = composerBackdropRef.current;
     if (!ta) return;
     const content = valueRef.current;
     /**
@@ -837,10 +828,6 @@ export function HumanChatPanelChatBar({
     ta.style.height = `${h}px`;
     if (content.length === 0) {
       ta.scrollTop = 0;
-    }
-    if (bd) {
-      bd.style.height = `${h}px`;
-      if (content.length === 0) bd.scrollTop = 0;
     }
   }, []);
 
@@ -2186,21 +2173,10 @@ export function HumanChatPanelChatBar({
           now live on one element; it grows to COMPOSER_INPUT_MAX_PX then scrolls.
         */}
         <div className="relative isolate min-h-[36px] min-w-0 max-h-[160px] w-full overflow-hidden rounded-sm">
-          <div
-            ref={composerBackdropRef}
-            aria-hidden
-            className="pointer-events-none invisible absolute inset-0 overflow-hidden"
-          >
-            {composerHighlightBackdrop}
-          </div>
           <textarea
             ref={textareaRef}
             value={value}
             disabled={composerLocked}
-            onScroll={(e) => {
-              const bd = composerBackdropRef.current;
-              if (bd) bd.scrollTop = e.currentTarget.scrollTop;
-            }}
             onPointerDown={(e) => {
               if (e.button !== 0) return;
               pointerSelectingRef.current = true;

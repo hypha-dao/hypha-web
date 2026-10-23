@@ -174,10 +174,10 @@ export function HumanChatPanelGroupMenu({
               maxLength={GROUP_ROOM_NAME_MAX}
               onChange={(event) => setName(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  void saveRename();
-                }
+                if (event.key !== 'Enter') return;
+                if ((event.nativeEvent as KeyboardEvent).isComposing) return;
+                event.preventDefault();
+                void saveRename();
               }}
             />
           </div>

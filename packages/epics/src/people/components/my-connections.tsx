@@ -1283,7 +1283,10 @@ export function MyConnections({
         };
       }),
       ...pendingGroups
-        .filter((group) => !liveGroupIds.has(group.roomId))
+        .filter((group) => {
+          if (liveGroupIds.has(group.roomId)) return false;
+          return !isArchivedGroupRoom(client?.getRoom(group.roomId));
+        })
         .map((group) => ({
           ...group,
           faces: facesWithProfiles(group.faces, profiles),
@@ -1313,6 +1316,7 @@ export function MyConnections({
     }));
     return sortConversationsByLastMessage(named);
   }, [
+    client,
     home?.person,
     members,
     needle,
