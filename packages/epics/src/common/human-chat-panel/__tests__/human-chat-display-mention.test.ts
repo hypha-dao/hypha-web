@@ -4,6 +4,7 @@ import {
   formatComposerMentionToken,
   replaceDisplayNameMentionsWithMxids,
   replaceMxidsWithComposerMentionTokens,
+  replaceMxidsWithVisibleMentionLabels,
 } from '../human-chat-display-mention';
 
 const MXID = '@prod_privy_did_privy_cmh0rv92y0040abc:matrix.hypha.earth';
@@ -30,6 +31,25 @@ describe('replaceMxidsWithComposerMentionTokens', () => {
     expect(replaceMxidsWithComposerMentionTokens(`Hi ${MXID}`, new Map())).toBe(
       `Hi ${MXID}`,
     );
+  });
+
+  it('shows a display name in an edit/reply banner instead of the raw mxid', () => {
+    expect(
+      replaceMxidsWithVisibleMentionLabels(
+        `Hi ${MXID} can you look`,
+        new Map([[MXID, 'Alex Prate']]),
+      ),
+    ).toBe('Hi @Alex Prate can you look');
+  });
+
+  it('uses a roster fallback when the mention map misses the person', () => {
+    expect(
+      replaceMxidsWithVisibleMentionLabels(
+        `Hi ${MXID} can you look`,
+        new Map(),
+        (id) => (id === MXID ? 'Gerardo Roza' : ''),
+      ),
+    ).toBe('Hi @Gerardo Roza can you look');
   });
 
   it('round-trips disambiguated tokens for shared display names', () => {

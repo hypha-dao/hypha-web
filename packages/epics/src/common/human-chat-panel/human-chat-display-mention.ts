@@ -89,10 +89,31 @@ export function wireComposerPlainForMatrixSend(
   return { wirePlain, mentionUserIds };
 }
 
+/** Banner / preview line: `@Name` without composer ZWSP tokens. */
+export function replaceMxidsWithVisibleMentionLabels(
+  plain: string,
+  userIdToLabel: ReadonlyMap<string, string>,
+  fallbackLabel?: (matrixUserId: string) => string,
+): string {
+  if (!plain.trim()) return plain;
+  if (userIdToLabel.size === 0 && !fallbackLabel) return plain;
+  return replacePlainTextMatrixMxidsWithLabels(plain, (id) => {
+    const name =
+      userIdToLabel.get(id)?.trim() ||
+      userIdToLabel.get(id.toLowerCase())?.trim() ||
+      fallbackLabel?.(id)?.trim() ||
+      '';
+    const safe = sanitizeMentionDisplayLabel(name);
+    if (!safe || looksLikeTechnicalMatrixDisplayName(safe, id)) return id;
+    return `@${safe}`;
+  });
+}
+
 /**
  * Show display names in the composer while keeping a reversible token.
  * Send still writes the raw MXID via {@link replaceDisplayNameMentionsWithMxids}.
  */
+
 export function replaceMxidsWithComposerMentionTokens(
   plain: string,
   userIdToLabel: ReadonlyMap<string, string>,

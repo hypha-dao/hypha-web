@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
 import { useDebounce } from 'use-debounce';
@@ -50,6 +50,7 @@ import {
 } from '@hypha-platform/ui';
 
 import {
+  addablePeopleForGroup,
   isRememberedGroupChatRoom as isLocalGroupCreator,
   rememberGroupChatMembers,
 } from '../../people/components/member-connections';
@@ -122,8 +123,17 @@ export function HumanChatPanelGroupMenu({
     },
   );
   const connections = home?.connections ?? [];
+  const directoryRef = useRef<ConnectionPerson[]>([]);
+  if (!debouncedAddQuery && connections.length > 0) {
+    directoryRef.current = connections;
+  }
+  const directory =
+    directoryRef.current.length > 0 ? directoryRef.current : connections;
   const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
-    personIds: connections.map((person) => person.id),
+    personIds: [
+      ...directory.map((person) => person.id),
+      ...connections.map((person) => person.id),
+    ],
   });
   const roomMemberIds = useMemo(() => {
     const current = client?.getRoom(roomId);
@@ -137,24 +147,24 @@ export function HumanChatPanelGroupMenu({
     }
     return ids;
   }, [addOpen, archiveCheck, client, roomId]);
-  const addablePeople = useMemo(() => {
-    const needle = addQuery.trim().toLowerCase();
-    return connections.filter((person) => {
-      const mxid = personIdToMatrixUserId[person.id]?.trim().toLowerCase();
-      if (!mxid || roomMemberIds.has(mxid)) return false;
-      if (!needle) return true;
-      const haystack = [
-        person.name,
-        person.surname,
-        person.nickname,
-        person.slug,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(needle);
-    });
-  }, [addQuery, connections, personIdToMatrixUserId, roomMemberIds]);
+  const addablePeople = useMemo(
+    () =>
+      addablePeopleForGroup(
+        directory,
+        debouncedAddQuery ? connections : null,
+        personIdToMatrixUserId,
+        roomMemberIds,
+        addQuery,
+      ),
+    [
+      addQuery,
+      connections,
+      debouncedAddQuery,
+      directory,
+      personIdToMatrixUserId,
+      roomMemberIds,
+    ],
+  );
 
   if (!room || !isPeopleGroupChatRoom(room)) return null;
 

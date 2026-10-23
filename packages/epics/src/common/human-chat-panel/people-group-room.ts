@@ -1,8 +1,9 @@
 import {
   isGroupCreateContent,
-  isPeopleGroupRoomType,
+  peopleConversationKindForListing,
   readCreateContent,
   readGroupRoomCreatorUserId,
+  readRoomNameState,
 } from '../../../../core/src/matrix/group-room';
 
 export function isPeopleGroupChatRoom(
@@ -15,12 +16,15 @@ export function isPeopleGroupChatRoom(
     | null,
 ) {
   if (!room) return false;
-  return isPeopleGroupRoomType(
-    room.getType?.(),
-    room.getJoinedMemberCount?.() ?? 0,
-    {
+  const summary = room.getJoinedMemberCount?.() ?? 0;
+  return (
+    peopleConversationKindForListing({
+      roomType: room.getType?.(),
+      loadedHumanCount: summary,
+      summaryJoinedCount: summary,
       createdAsGroup: isGroupCreateContent(readCreateContent(room)),
-    },
+      hasRoomName: Boolean(readRoomNameState(room)),
+    }) === 'group'
   );
 }
 

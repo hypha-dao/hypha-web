@@ -169,6 +169,7 @@ import { SignalIndicativeAmounts } from '../coherence/components/signal-indicati
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
   replaceMxidsWithComposerMentionTokens,
+  replaceMxidsWithVisibleMentionLabels,
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
 } from './human-chat-panel/human-chat-display-mention';
@@ -4797,7 +4798,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           : target.role === 'member' && target.senderMatrixId
           ? resolveMemberLabel(target.senderMatrixId)
           : target.senderName ?? t('unknownMember');
-      const excerpt = firstLineForReplyPreview(getMessagePlainText(target));
+      const excerpt = firstLineForReplyPreview(
+        replaceMxidsWithVisibleMentionLabels(
+          getMessagePlainText(target),
+          mentionLabelByUserId,
+          resolveMemberLabel,
+        ),
+      );
       setEditDraft(null);
       setReplyDraft({
         messageId,
@@ -4809,7 +4816,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           : {}),
       });
     },
-    [messages, resolveMemberLabel, t],
+    [mentionLabelByUserId, messages, resolveMemberLabel, t],
   );
 
   const handleEditMessage = useCallback(
@@ -4851,7 +4858,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         );
         setEditDraft({
           messageId,
-          excerpt: firstLineForReplyPreview(plain),
+          excerpt: firstLineForReplyPreview(
+            replaceMxidsWithVisibleMentionLabels(
+              plain,
+              mentionLabelByUserId,
+              resolveMemberLabel,
+            ),
+          ),
           editMediaMode: true,
         });
         setInput(
@@ -4866,7 +4879,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setDraftAttachments([]);
       setEditDraft({
         messageId,
-        excerpt: firstLineForReplyPreview(plain),
+        excerpt: firstLineForReplyPreview(
+          replaceMxidsWithVisibleMentionLabels(
+            plain,
+            mentionLabelByUserId,
+            resolveMemberLabel,
+          ),
+        ),
       });
       setInput(
         replaceMxidsWithComposerMentionTokens(
@@ -4875,7 +4894,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         ),
       );
     },
-    [messages, client, mentionComposerTokenLabelByUserId, t],
+    [
+      messages,
+      client,
+      mentionComposerTokenLabelByUserId,
+      mentionLabelByUserId,
+      resolveMemberLabel,
+      t,
+    ],
   );
 
   const handleDeleteMessage = useCallback(

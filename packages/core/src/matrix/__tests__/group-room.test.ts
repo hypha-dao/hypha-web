@@ -9,6 +9,7 @@ import {
   isPeopleGroupRoomType,
   isRoomInDirectAccountData,
   peopleConversationKind,
+  peopleConversationKindForListing,
   normalizeGroupRoomName,
   readRoomNameState,
   sortConversationsByLastMessage,
@@ -98,6 +99,44 @@ describe('group room name and archive state', () => {
     expect(peopleConversationKind(HYPHA_ROOM_TYPES.group, 0)).toBe('group');
     expect(peopleConversationKind(null, 2)).toBeNull();
     expect(peopleConversationKind(HYPHA_ROOM_TYPES.dm, 2)).toBe('person');
+  });
+
+  it('keeps a renamed untyped 3-person group after reload with lazy members', () => {
+    // Gerardo Roza, Xerxes Potel, Vlad Hramtsov → "... (test)".
+    // Rename writes m.room.name only. After a hard reload Matrix often
+    // exposes only the current user until members lazy-load.
+    expect(
+      peopleConversationKindForListing({
+        roomType: null,
+        loadedHumanCount: 1,
+        summaryJoinedCount: 4,
+        hasRoomName: true,
+      }),
+    ).toBe('group');
+    expect(
+      peopleConversationKindForListing({
+        roomType: null,
+        loadedHumanCount: 1,
+        summaryJoinedCount: 1,
+        hasRoomName: true,
+      }),
+    ).toBe('group');
+    expect(
+      peopleConversationKindForListing({
+        roomType: null,
+        loadedHumanCount: 3,
+        summaryJoinedCount: 4,
+        hasRoomName: true,
+      }),
+    ).toBe('group');
+    expect(
+      peopleConversationKindForListing({
+        roomType: null,
+        loadedHumanCount: 2,
+        summaryJoinedCount: 2,
+        hasRoomName: true,
+      }),
+    ).toBeNull();
   });
 
   it('reads a room name state event and m.direct membership', () => {

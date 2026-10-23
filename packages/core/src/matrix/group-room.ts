@@ -125,6 +125,18 @@ export type PeopleGroupRoomFlags = {
   createdAsGroup?: boolean;
 };
 
+/** Extra listing hints so a rename cannot hide a group while members are lazy. */
+export type PeopleConversationListingInput = {
+  roomType: string | null | undefined;
+  /** Humans already in `getMembers()` after bot filtering. */
+  loadedHumanCount: number;
+  /** Room summary `joined_member_count` (includes bots). */
+  summaryJoinedCount: number;
+  createdAsGroup?: boolean;
+  /** Explicit `m.room.name` — set by rename and some creations. */
+  hasRoomName?: boolean;
+};
+
 /**
  * Messages groups are `io.hypha.room.group` (or the same type on create).
  * Typed DMs stay 1:1. Untyped rooms are groups only with 3+ joined humans —
@@ -153,6 +165,33 @@ export function peopleConversationKind(
 ): 'group' | 'person' | null {
   if (isPeopleGroupRoomType(roomType, joinedMemberCount, flags)) return 'group';
   if ((roomType?.trim() || null) === HYPHA_ROOM_TYPES.dm) return 'person';
+  return null;
+}
+
+/**
+ * List classification that keeps an untyped 3-person group visible after a
+ * rename/reload while Matrix has only lazy-loaded the current member.
+ * Rename writes `m.room.name` only — it does not change room type.
+ */
+export function peopleConversationKindForListing(
+  input: PeopleConversationListingInput,
+): 'group' | 'person' | null {
+  const flags = { createdAsGroup: input.createdAsGroup };
+  const loaded = peopleConversationKind(
+    input.roomType,
+    input.loadedHumanCount,
+    flags,
+  );
+  if (loaded) return loaded;
+  const type = input.roomType?.trim() || null;
+  if (type === HYPHA_ROOM_TYPES.dm) return 'person';
+  if (type) return null;
+  const membersIncomplete = input.loadedHumanCount < input.summaryJoinedCount;
+  if (membersIncomplete && input.summaryJoinedCount > 2) return 'group';
+  // Named untyped rooms stay listed until the full member list arrives.
+  // A completed 2-human list still drops (typed-room rule).
+  if (membersIncomplete && input.hasRoomName) return 'group';
+  if (input.loadedHumanCount <= 1 && input.hasRoomName) return 'group';
   return null;
 }
 

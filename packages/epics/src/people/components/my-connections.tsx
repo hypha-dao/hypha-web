@@ -23,7 +23,7 @@ import {
   conversationActivityTs,
   isArchivedGroupRoom,
   isGroupCreateContent,
-  peopleConversationKind,
+  peopleConversationKindForListing,
   readCreateContent,
   readRoomNameState,
   looksLikeTechnicalMatrixDisplayName,
@@ -61,6 +61,7 @@ import {
   facesWithProfiles,
   groupRowsForConnections,
   conversationMatchesSearch,
+  peopleMatchingSearch,
   conversationsVisibleInSection,
   enrichSearchMembers,
   isPeopleListGroup,
@@ -157,7 +158,9 @@ function lastRoomMessage(room: Room, selfId: string | null) {
     const preview = messagePreview(body, (matrixUserId) => {
       const member = room.getMember(matrixUserId);
       if (!member) return '';
-      return matrixMemberDisplayLabel(member, matrixUserId);
+      const label = matrixMemberDisplayLabel(member, matrixUserId);
+      if (looksLikeTechnicalMatrixDisplayName(label, matrixUserId)) return '';
+      return label;
     });
     if (!preview) continue;
     const sender = event.getSender();
@@ -251,7 +254,14 @@ function conversationRowFromRoom(
     });
   }
   const overrideName = conversationTitleOverrides.get(room.roomId)?.trim();
-  const kind = peopleConversationKind(roomType, members.length, flags);
+  const kind = peopleConversationKindForListing({
+    roomType,
+    loadedHumanCount: members.length,
+    summaryJoinedCount:
+      room.getJoinedMemberCount?.() ?? classification.joinedMemberCount,
+    createdAsGroup: flags.createdAsGroup,
+    hasRoomName: Boolean(nameState),
+  });
   // Group-typed rooms stay listed before lazy members arrive. Person chats
   // still need the other human so they can attach to a directory row.
   if (others.length === 0 && kind !== 'group') {
@@ -1180,8 +1190,9 @@ export function MyConnections({
   const hasMorePeople =
     !directoryComplete && connections.length < connectionTotal;
   const needle = query.trim().toLowerCase();
-  const listed =
-    needle && searchDirectory != null ? searchDirectory : connections;
+  const listed = needle
+    ? peopleMatchingSearch(connections, searchDirectory, needle)
+    : connections;
   const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
     useMatrixUserIdsByPersonIds({
       personIds: [
@@ -1525,9 +1536,16 @@ export function MyConnections({
           archived: isArchivedGroupRoom(client?.getRoom(group.roomId)),
         })),
     ];
+    for (const [mxid, profile] of peopleByMxid) {
+      if (profile.name) rememberName(mxid, profile.name);
+    }
     for (const row of conversations) {
       for (const face of row.faces ?? []) {
         if (face.userId && face.name) rememberName(face.userId, face.name);
+      }
+      for (const member of row.searchMembers ?? []) {
+        if (member.userId && member.name)
+          rememberName(member.userId, member.name);
       }
     }
     const groups = picking
@@ -1537,12 +1555,12 @@ export function MyConnections({
       groups,
       section === 'archived' ? 'archived' : 'messages',
     );
+    const matchingGroups = needle
+      ? listedGroups.filter((row) => conversationMatchesSearch(row, needle))
+      : listedGroups;
     const source =
-      section === 'archived' ? listedGroups : [...listedGroups, ...members];
-    const filtered = needle
-      ? source.filter((row) => conversationMatchesSearch(row, needle))
-      : source;
-    const named = filtered.map((row) => ({
+      section === 'archived' ? matchingGroups : [...matchingGroups, ...members];
+    const named = source.map((row) => ({
       ...row,
       preview: previewWithNames(row.preview, mentionNames),
     }));

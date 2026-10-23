@@ -40,6 +40,25 @@ describe('isPeopleGroupChatRoom', () => {
     ).toBe(false);
   });
 
+  it('keeps a renamed untyped 3-person group when the member count is lazy', () => {
+    expect(
+      isPeopleGroupChatRoom({
+        getType: () => undefined,
+        getJoinedMemberCount: () => 1,
+        currentState: {
+          getStateEvents: (type) =>
+            type === 'm.room.name'
+              ? {
+                  getContent: () => ({
+                    name: 'Gerardo Roza, Xerxes Potel, Vlad Hramtsov (test)',
+                  }),
+                }
+              : null,
+        },
+      }),
+    ).toBe(true);
+  });
+
   it('does not treat a remembered or named untyped pair as a group', () => {
     rememberGroupChatRooms(['!remembered-pair']);
     expect(

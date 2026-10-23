@@ -4,8 +4,11 @@ import { HYPHA_ROOM_TYPES } from '../../../../../core/src/matrix/room-types';
 
 import {
   STALE_CONNECTION_MS,
+  addablePeopleForGroup,
   connectionActivityTs,
+  connectionMatchesPeopleSearch,
   conversationMatchesSearch,
+  peopleMatchingSearch,
   conversationsVisibleInSection,
   conversationUnreadTotal,
   facesWithProfiles,
@@ -640,6 +643,58 @@ describe('groupRowsForConnections', () => {
     ]);
   });
 
+  it('returns people by name and username, not only existing rooms', () => {
+    const kate = {
+      ...person(2, 'Kate', 'Bennett'),
+      nickname: 'kate',
+      slug: 'kate-bennett',
+    };
+    const xerxes = {
+      ...person(9, 'Xerxes', 'Potel'),
+      nickname: 'xpotel',
+      slug: 'xerxes',
+    };
+    expect(connectionMatchesPeopleSearch(xerxes, 'xerxes')).toBe(true);
+    expect(connectionMatchesPeopleSearch(xerxes, 'xpotel')).toBe(true);
+    expect(
+      peopleMatchingSearch([kate], [xerxes], 'xerxes').map((p) => p.id),
+    ).toEqual([9]);
+    expect(
+      peopleMatchingSearch([kate, xerxes], [], 'bennett').map((p) => p.id),
+    ).toEqual([2]);
+  });
+
+  it('does not treat a missing mxid as already in the group', () => {
+    const kate = {
+      ...person(2, 'Kate', 'Bennett'),
+      nickname: 'kate',
+      slug: 'kate-bennett',
+    };
+    const xerxes = {
+      ...person(9, 'Xerxes', 'Potel'),
+      nickname: 'xpotel',
+      slug: 'xerxes',
+    };
+    expect(
+      addablePeopleForGroup(
+        [kate, xerxes],
+        [],
+        { 2: '@kate:matrix' },
+        new Set(['@kate:matrix']),
+        'xerxes',
+      ).map((p) => p.id),
+    ).toEqual([9]);
+    expect(
+      addablePeopleForGroup(
+        [kate],
+        [xerxes],
+        {},
+        new Set(['@someone:matrix']),
+        'xerxes',
+      ).map((p) => p.id),
+    ).toEqual([9]);
+  });
+
   it('finds a renamed group by a member name in the title or faces', () => {
     const row = room({
       roomId: '!pair',
@@ -723,6 +778,12 @@ describe('messagePreview', () => {
         id === GERARDO ? 'Gerardo Roza' : '',
       ),
     ).toBe('Hey @Gerardo Roza');
+  });
+
+  it('keeps a technical member label so a later pass can replace the mxid', () => {
+    expect(
+      messagePreview(`Hey ${GERARDO}`, (id) => (id === GERARDO ? GERARDO : '')),
+    ).toBe(`Hey ${GERARDO}`);
   });
 
   it('still shortens an ordinary mention and a long note', () => {

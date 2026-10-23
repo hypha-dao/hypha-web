@@ -729,6 +729,80 @@ export function rememberedGroupChatMemberIds(roomId: string): string[] {
   return readGroupChatMembers()[roomId.trim()] ?? [];
 }
 
+/** Directory people matching a Messages search by name or username. */
+export function connectionMatchesPeopleSearch(
+  person: {
+    name?: string | null;
+    surname?: string | null;
+    nickname?: string | null;
+    slug?: string | null;
+  },
+  needle: string,
+) {
+  const query = needle.trim().toLowerCase();
+  if (!query) return true;
+  return [person.name, person.surname, person.nickname, person.slug]
+    .filter((part): part is string => Boolean(part?.trim()))
+    .join(' ')
+    .toLowerCase()
+    .includes(query);
+}
+
+/** Local connections plus search hits, so a query is not rooms-only. */
+export function peopleMatchingSearch<
+  T extends {
+    id: number;
+    name?: string | null;
+    surname?: string | null;
+    nickname?: string | null;
+    slug?: string | null;
+  },
+>(
+  connections: readonly T[],
+  searchHits: readonly T[] | null | undefined,
+  needle: string,
+): T[] {
+  const query = needle.trim().toLowerCase();
+  if (!query) return [...connections];
+  const byId = new Map<number, T>();
+  for (const person of connections) {
+    if (connectionMatchesPeopleSearch(person, query))
+      byId.set(person.id, person);
+  }
+  for (const person of searchHits ?? []) {
+    if (connectionMatchesPeopleSearch(person, query))
+      byId.set(person.id, person);
+  }
+  return [...byId.values()];
+}
+
+/**
+ * Add-people candidates: name/username search, excluding only people whose
+ * Matrix id is already joined or invited. A missing mxid is not "already here".
+ */
+export function addablePeopleForGroup<
+  T extends {
+    id: number;
+    name?: string | null;
+    surname?: string | null;
+    nickname?: string | null;
+    slug?: string | null;
+  },
+>(
+  connections: readonly T[],
+  searchHits: readonly T[] | null | undefined,
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+  roomMemberIds: ReadonlySet<string>,
+  needle: string,
+): T[] {
+  return peopleMatchingSearch(connections, searchHits, needle).filter(
+    (person) => {
+      const mxid = personIdToMatrixUserId[person.id]?.trim().toLowerCase();
+      return !(mxid && roomMemberIds.has(mxid));
+    },
+  );
+}
+
 /** People Around search: title, profile fields, and group faces. */
 export function conversationMatchesSearch(
   row: {
