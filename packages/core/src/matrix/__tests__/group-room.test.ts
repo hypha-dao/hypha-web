@@ -68,7 +68,7 @@ describe('group room invite', () => {
         creatorUserId: '@someone:hypha.earth',
         botUserId: bot,
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 });
 
@@ -137,7 +137,7 @@ describe('group room name and archive state', () => {
         summaryJoinedCount: 2,
         hasRoomName: true,
       }),
-    ).toBe('group');
+    ).toBeNull();
     expect(
       peopleConversationKindForListing({
         roomType: null,

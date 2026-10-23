@@ -217,6 +217,7 @@ export type RoomListingInspection = {
   createdAsGroup: boolean;
   kind: 'group' | 'person' | null;
   listed: boolean;
+  cached: boolean;
   reason: string;
 };
 
@@ -285,6 +286,7 @@ function inspectionFrom(
     createdAsGroup: base.createdAsGroup,
     kind,
     listed,
+    cached: false,
     reason,
   };
 }
@@ -298,7 +300,7 @@ function classifyConversationRoom(
     row: null as ConversationRow | null,
     inspection: inspectionFrom(room, base, reason, kind, false),
   });
-  if (base.membership !== 'join' && base.membership !== 'invite') {
+  if (base.membership !== 'join') {
     return drop('not-joined');
   }
   if (isRememberedBoundChatRoom(room.roomId)) {
@@ -340,9 +342,6 @@ function classifyConversationRoom(
     typeof room.loadMembersIfNeeded === 'function'
   ) {
     void room.loadMembersIfNeeded().catch(() => undefined);
-  }
-  if (base.membership === 'invite' && kind !== 'group') {
-    return drop('not-joined', kind);
   }
   // Group-typed rooms stay listed before lazy members arrive. Person chats
   // still need the other human so they can attach to a directory row.
@@ -477,7 +476,13 @@ export function inspectJoinedAndInvitedRooms(
       const membership = room.getMyMembership();
       return membership === 'join' || membership === 'invite';
     })
-    .map((room) => classifyConversationRoom(client, room).inspection)
+    .map((room) => {
+      const inspection = classifyConversationRoom(client, room).inspection;
+      return {
+        ...inspection,
+        cached: Boolean(conversationCache.get(room.roomId)?.row),
+      };
+    })
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
@@ -758,7 +763,7 @@ function peopleGroupRoomIds(client: MatrixClient): string[] {
   const ids: string[] = [];
   for (const room of client.getRooms()) {
     const membership = room.getMyMembership();
-    if (membership !== 'join' && membership !== 'invite') continue;
+    if (membership !== 'join') continue;
     if (room.getType() === HYPHA_ROOM_TYPES.group) {
       ids.push(room.roomId);
       continue;
@@ -963,6 +968,8 @@ function refreshBoundChatRooms(client: MatrixClient) {
         for (const id of ids) {
           if (!conversationCache.has(id)) continue;
           conversationCache.delete(id);
+          const room = client.getRoom(id);
+          if (room) cachedConversation(client, room);
           changed = true;
         }
         if (changed) notifyConversationListeners();
@@ -1100,9 +1107,7 @@ export function conversationRowsPending(client: MatrixClient) {
     .getRooms()
     .some(
       (room) =>
-        (room.getMyMembership() === 'join' ||
-          room.getMyMembership() === 'invite') &&
-        !conversationIsFresh(client, room),
+        room.getMyMembership() === 'join' && !conversationIsFresh(client, room),
     );
 }
 
@@ -1127,7 +1132,8 @@ export function applyConversationRoomTitle(roomId: string, name: string) {
 export function conversationRowsSnapshot(client: MatrixClient) {
   const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
-    const row = conversationCache.get(room.roomId)?.row;
+    if (room.getMyMembership() !== 'join') continue;
+    const row = cachedConversation(client, room).row;
     if (row) rows.push(row);
   }
   return sortConversationRows(rows);
@@ -1136,6 +1142,7 @@ export function conversationRowsSnapshot(client: MatrixClient) {
 export function conversationUnreadSnapshot(client: MatrixClient) {
   const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
+    if (room.getMyMembership() !== 'join') continue;
     const row = conversationCache.get(room.roomId)?.row;
     if (row) rows.push(row);
   }
@@ -1191,6 +1198,7 @@ export function readConversationRows(client: MatrixClient): ConversationRow[] {
   useConversationClient(client);
   const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
+    if (room.getMyMembership() !== 'join') continue;
     const row = cachedConversation(client, room).row;
     if (row) rows.push(row);
   }
@@ -2048,6 +2056,7 @@ export function MyConnections({
                 <thead>
                   <tr className="border-b border-border">
                     <th className="py-1 pr-2">reason</th>
+                    <th className="py-1 pr-2">cache</th>
                     <th className="py-1 pr-2">membership</th>
                     <th className="py-1 pr-2">type</th>
                     <th className="py-1 pr-2">members</th>
@@ -2060,6 +2069,9 @@ export function MyConnections({
                     <tr key={room.roomId} className="border-b border-border/60">
                       <td className="py-1 pr-2 whitespace-nowrap">
                         {room.reason}
+                      </td>
+                      <td className="py-1 pr-2">
+                        {room.cached ? 'row' : 'missing'}
                       </td>
                       <td className="py-1 pr-2">{room.membership}</td>
                       <td className="py-1 pr-2">{room.roomType || '—'}</td>
