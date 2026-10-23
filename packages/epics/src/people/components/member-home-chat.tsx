@@ -152,7 +152,10 @@ function homeBoardFromMessage(message: HomeMessage) {
  * A new home turn must append. If the stream reuses an earlier assistant id,
  * the client writes the new words into that bubble.
  */
-function continueHomeChatResponse(response: Response): Response {
+function continueHomeChatResponse(
+  response: Response,
+  droppedLine: string,
+): Response {
   const stream = response.headers.get('x-vercel-ai-ui-message-stream');
   const contentType = response.headers.get('content-type') ?? '';
   if (!response.ok || !response.body) return response;
@@ -173,7 +176,7 @@ function continueHomeChatResponse(response: Response): Response {
         controller.enqueue(
           encoder.encode(
             `${lines
-              .map((line) => rewriteHomeStartLine(line, freshId))
+              .map((line) => rewriteHomeStartLine(line, freshId, droppedLine))
               .join('\n')}\n`,
           ),
         );
@@ -182,7 +185,9 @@ function continueHomeChatResponse(response: Response): Response {
         buffer += decoder.decode();
         if (!buffer) return;
         controller.enqueue(
-          encoder.encode(rewriteHomeStartLine(buffer, freshId)),
+          encoder.encode(
+            `${rewriteHomeStartLine(buffer, freshId, droppedLine)}\n`,
+          ),
         );
       },
     }),
@@ -194,7 +199,11 @@ function continueHomeChatResponse(response: Response): Response {
   });
 }
 
-function rewriteHomeStartLine(line: string, freshId: string) {
+function rewriteHomeStartLine(
+  line: string,
+  freshId: string,
+  droppedLine: string,
+) {
   const prefix = 'data: ';
   if (!line.startsWith(prefix)) return line;
   const payload = line.slice(prefix.length).trim();
@@ -203,9 +212,28 @@ function rewriteHomeStartLine(line: string, freshId: string) {
     const chunk = JSON.parse(payload) as {
       type?: unknown;
       messageId?: unknown;
+      errorText?: unknown;
     };
-    if (chunk.type !== 'start') return line;
-    return `${prefix}${JSON.stringify({ ...chunk, messageId: freshId })}`;
+    if (chunk.type === 'start') {
+      return `${prefix}${JSON.stringify({ ...chunk, messageId: freshId })}`;
+    }
+    // A fatal error chunk throws inside useChat and paints "thread dropped",
+    // which then looks like the assistant restarted. Finish the turn as text.
+    if (chunk.type === 'error') {
+      const raw =
+        typeof chunk.errorText === 'string' ? chunk.errorText.trim() : '';
+      const text =
+        raw && raw.length <= 240 && !/error|exception|zod|invalid/i.test(raw)
+          ? raw
+          : droppedLine;
+      const id = `e${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
+      return [
+        `${prefix}${JSON.stringify({ type: 'text-start', id })}`,
+        `${prefix}${JSON.stringify({ type: 'text-delta', id, delta: text })}`,
+        `${prefix}${JSON.stringify({ type: 'text-end', id })}`,
+      ].join('\n');
+    }
+    return line;
   } catch {
     return line;
   }
@@ -416,6 +444,9 @@ export function MemberHomeChat({
   );
   const { presenceById } = useMemberPresence(connectionIds);
 
+  const droppedLine = useRef('');
+  droppedLine.current = t('threadDropped');
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -437,7 +468,10 @@ export function MemberHomeChat({
           },
         }),
         fetch: async (input, init) =>
-          continueHomeChatResponse(await fetch(input, init)),
+          continueHomeChatResponse(
+            await fetch(input, init),
+            droppedLine.current,
+          ),
       }),
     [getAccessToken, lang],
   );
@@ -689,7 +723,8 @@ export function MemberHomeChat({
     conversationContext: voiceSessionContext,
     recentTranscriptSummary,
     getAccessToken,
-    onStopChat: stop,
+    // The open mic stays on. send() ends the previous turn when a real
+    // transcript is submitted.
     onSendTranscript: handleVoiceTranscriptSend,
   });
 

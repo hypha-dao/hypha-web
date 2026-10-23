@@ -18,7 +18,7 @@ import { Button } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { HOME_REFRESH_EVENT } from '@hypha-platform/epics';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import useSWR from 'swr';
 
 function sameMemberHome(
@@ -43,14 +43,24 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   const [isSavingOrientation, setIsSavingOrientation] = useState(false);
   const [orientationError, setOrientationError] = useState<string | null>(null);
 
+  const jwtRef = useRef(jwt);
+  jwtRef.current = jwt;
+  const keepHomeKey = useRef(false);
+  if (jwt) keepHomeKey.current = true;
   const {
     data,
     error,
     isLoading: isLoadingHome,
     mutate,
   } = useSWR<MemberIntelligence | null>(
-    jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
-    async ([url, token]) => {
+    // The token string rotates. Keying on it dropped the cached home, unmounted
+    // the assistant, and started a new turn a few seconds later.
+    jwt || keepHomeKey.current ? '/api/v1/people/me/intelligence' : null,
+    async (url: string) => {
+      const token = jwtRef.current;
+      if (!token) {
+        throw new Error('Access token not ready');
+      }
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store',
@@ -64,6 +74,8 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     {
       refreshInterval: 10_000,
       revalidateOnFocus: true,
+      keepPreviousData: true,
+      isPaused: () => !jwtRef.current,
       compare: sameMemberHome,
     },
   );
@@ -204,7 +216,10 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     );
   }
 
-  if (phase === 'profile-unavailable' || phase === 'home-unavailable') {
+  if (
+    phase === 'profile-unavailable' ||
+    (phase === 'home-unavailable' && !data)
+  ) {
     const name = person?.name?.trim() || person?.nickname?.trim();
     return (
       <div className="mx-auto max-w-lg px-5 py-20 text-center">
@@ -229,7 +244,9 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     );
   }
 
-  if (phase === 'loading' || !data) {
+  // A token refresh reports loading while the last home is still here.
+  // Swapping to the skeleton unmounts the assistant and starts it again.
+  if (!data) {
     const greetingName =
       person?.name?.trim() || person?.nickname?.trim() || null;
     return (
