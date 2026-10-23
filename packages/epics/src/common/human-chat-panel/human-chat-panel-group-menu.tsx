@@ -18,14 +18,12 @@ import {
 import {
   GROUP_ROOM_NAME_MAX,
   isArchivedGroupRoom,
-  isRoomInDirectAccountData,
   normalizeGroupRoomName,
   useJwt,
   useMatrix,
   useMatrixUserIdsByPersonIds,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
-import { EventType } from 'matrix-js-sdk';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -86,12 +84,6 @@ export function HumanChatPanelGroupMenu({
   const { client, ensureRoomMembers } = useMatrix();
   const selfId = client?.getUserId() ?? null;
   const room = client?.getRoom(roomId) ?? null;
-  const inDirect = isRoomInDirectAccountData(
-    client?.getAccountData(EventType.Direct)?.getContent() as
-      | Record<string, unknown>
-      | undefined,
-    roomId,
-  );
   const [archiveCheck, setArchiveCheck] = useState(0);
   const archived = isArchivedGroupRoom(room);
   const canArchive = useMemo(() => {
@@ -158,7 +150,7 @@ export function HumanChatPanelGroupMenu({
     });
   }, [addQuery, connections, personIdToMatrixUserId, roomMemberIds]);
 
-  if (!room || !isPeopleGroupChatRoom(room, { inDirect })) return null;
+  if (!room || !isPeopleGroupChatRoom(room)) return null;
 
   function personLabel(person: ConnectionPerson) {
     return (

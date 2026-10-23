@@ -70,14 +70,11 @@ describe('isPeopleGroupChatRoom', () => {
 
   it('keeps a two-person room when create content is group-typed', () => {
     expect(
-      isPeopleGroupChatRoom(
-        {
-          roomId: '!dm',
-          getType: () => HYPHA_ROOM_TYPES.dm,
-          getJoinedMemberCount: () => 2,
-        },
-        { inDirect: true },
-      ),
+      isPeopleGroupChatRoom({
+        roomId: '!dm',
+        getType: () => HYPHA_ROOM_TYPES.dm,
+        getJoinedMemberCount: () => 2,
+      }),
     ).toBe(false);
     expect(
       isPeopleGroupChatRoom({
