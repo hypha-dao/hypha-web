@@ -7,7 +7,9 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import {
   buildIntegrationActionMessage,
   notifyOpener,
+  recordUserExplicitConsent,
   useVote,
+  type UserExplicitConsent,
 } from '@hypha-platform/core/client';
 import { Button, Container } from '@hypha-platform/ui';
 import { setPopupClient } from '@web/components/popup-route-gate';
@@ -33,7 +35,7 @@ type PageState =
   | { step: 'not-found' }
   | { step: 'error' }
   | { step: 'review'; action: ActionView }
-  | { step: 'signing'; sign: SignRequest }
+  | { step: 'signing'; sign: SignRequest; consent: UserExplicitConsent }
   | {
       step: 'final';
       outcome: 'submitted' | 'rejected' | 'expired' | 'used' | 'failed';
@@ -61,23 +63,26 @@ const WALLET_NOT_READY = /wallet not connected/i;
 
 type SignVoteProps = {
   sign: SignRequest;
+  consent: UserExplicitConsent;
   authToken: string | null;
   onDone: (hash: string | null) => void;
 };
 
 /**
  * Signs the vote through the same hook the proposal page uses (`useVote`: the
- * Privy smart wallet, sponsored gas), once, with the parameters the server
- * returned from the stored action.
+ * smart wallet, sponsored gas), once, with the parameters the server returned
+ * from the stored action. The wallet provider's own confirmation is skipped
+ * because the user just confirmed this exact vote on this page; `consent` is
+ * the record of that click (see `voteWithExplicitConsent`).
  */
-const SignVote: FC<SignVoteProps> = ({ sign, authToken, onDone }) => {
+const SignVote: FC<SignVoteProps> = ({ sign, consent, authToken, onDone }) => {
   const t = useTranslations('ApproveAction');
-  const { handleAccept, handleReject } = useVote({
+  const { voteWithExplicitConsent } = useVote({
     proposalId: sign.web3ProposalId,
     authToken,
   });
-  const latest = useRef({ handleAccept, handleReject });
-  latest.current = { handleAccept, handleReject };
+  const latest = useRef(voteWithExplicitConsent);
+  latest.current = voteWithExplicitConsent;
   const started = useRef(false);
 
   useEffect(() => {
@@ -86,10 +91,7 @@ const SignVote: FC<SignVoteProps> = ({ sign, authToken, onDone }) => {
     void (async () => {
       for (let attempt = 0; attempt < 20; attempt++) {
         try {
-          const run = sign.support
-            ? latest.current.handleAccept
-            : latest.current.handleReject;
-          const hash = await run();
+          const hash = await latest.current(sign.support, consent);
           onDone(hash);
           return;
         } catch (error) {
@@ -103,7 +105,7 @@ const SignVote: FC<SignVoteProps> = ({ sign, authToken, onDone }) => {
         }
       }
     })();
-  }, [sign.support, onDone]);
+  }, [sign.support, consent, onDone]);
 
   return (
     <>
@@ -203,6 +205,9 @@ export const ApproveActionPage: FC<{
 
   const answer = useCallback(
     async (kind: 'approve' | 'reject') => {
+      // The press itself is the consent: take the instant now, before the
+      // server round trip.
+      const pressedAt = Date.now();
       setBusy(true);
       try {
         const res = await call(`/${kind}`, { method: 'POST' });
@@ -221,14 +226,25 @@ export const ApproveActionPage: FC<{
           return setState({ step: 'final', outcome: 'rejected' });
         }
         const body = (await res.json()) as { sign: SignRequest };
-        setState({ step: 'signing', sign: body.sign });
+        setState({
+          step: 'signing',
+          sign: body.sign,
+          consent: recordUserExplicitConsent({
+            source: 'integration-approval',
+            operation: 'vote',
+            subject: body.sign.web3ProposalId,
+            support: body.sign.support,
+            actionId,
+            now: pressedAt,
+          }),
+        });
       } catch {
         setState({ step: 'error' });
       } finally {
         setBusy(false);
       }
     },
-    [call],
+    [call, actionId],
   );
 
   const onSigned = useCallback(
@@ -384,7 +400,12 @@ export const ApproveActionPage: FC<{
         </>
       )}
       {state.step === 'signing' && (
-        <SignVote sign={state.sign} authToken={token} onDone={onSigned} />
+        <SignVote
+          sign={state.sign}
+          consent={state.consent}
+          authToken={token}
+          onDone={onSigned}
+        />
       )}
       {state.step === 'final' && (
         <>
