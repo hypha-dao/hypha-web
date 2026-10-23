@@ -1,4 +1,5 @@
 import { looksLikeTechnicalMatrixDisplayName } from '../../../../core/src/matrix/matrix-member-display';
+import { HYPHA_ROOM_TYPES } from '../../../../core/src/matrix/room-types';
 import { replacePlainTextMatrixMxidsWithLabels } from '../../../../core/src/matrix/mentions';
 
 export type ConnectionListPerson = {
@@ -666,6 +667,7 @@ export function rememberedGroupChatMemberIds(roomId: string): string[] {
  */
 export function isPeopleListGroup(room: ConversationRow) {
   if (room.kind !== 'group' || room.signalThread) return false;
+  if (room.roomType === HYPHA_ROOM_TYPES.group) return true;
   if (room.groupChat || isRememberedGroupChatRoom(room.roomId)) return true;
   return room.name.includes(',');
 }

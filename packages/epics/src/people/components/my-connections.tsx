@@ -199,7 +199,20 @@ function conversationRowFromRoom(
     );
   }
 
-  const kind = others.length === 1 ? 'person' : 'group';
+  const roomType = room.getType();
+  // Space, signal, proposal, public, network and ecosystem rooms are not
+  // private conversations, whoever is in them.
+  if (
+    roomType?.startsWith('io.hypha.room.') &&
+    roomType !== HYPHA_ROOM_TYPES.dm &&
+    roomType !== HYPHA_ROOM_TYPES.group
+  ) {
+    return skipRow(room, `typed ${roomType}`);
+  }
+  const kind =
+    roomType === HYPHA_ROOM_TYPES.group || others.length > 1
+      ? 'group'
+      : 'person';
   // A 1:1 is only a room created as a DM. Two-person space, signal and untyped
   // rooms are not private messages.
   if (kind === 'person' && room.getType() !== HYPHA_ROOM_TYPES.dm) {
