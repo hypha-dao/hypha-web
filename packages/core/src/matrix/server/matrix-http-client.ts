@@ -550,6 +550,47 @@ export async function matrixGetJoinOrInviteRoomMembers(
   return [...ids];
 }
 
+export async function matrixGetStateEvent<T = Record<string, unknown>>(
+  roomId: string,
+  eventType: string,
+  stateKey: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<T | null> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/state/${encodeURIComponent(eventType)}/${encodeURIComponent(stateKey)}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  if (res.status === 404) return null;
+  return readMatrixJson<T>(res);
+}
+
+export async function matrixSendStateEvent(
+  roomId: string,
+  eventType: string,
+  stateKey: string,
+  content: Record<string, unknown>,
+  accessToken: string,
+  homeserver: string,
+): Promise<void> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/state/${encodeURIComponent(eventType)}/${encodeURIComponent(stateKey)}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(content),
+    },
+  );
+  await readMatrixJson<Record<string, unknown>>(res);
+}
+
 export async function matrixSendTextMessage(
   roomId: string,
   message: string,

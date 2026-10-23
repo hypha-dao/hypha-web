@@ -4111,7 +4111,21 @@
     "signalTeamAccessRequested": "Побаран е пристап до тимот на сигналот",
     "signalTeamAccessApproved": "Пристапот до тимот на сигналот е одобрен",
     "mentionOpenFallbackRoom": "Не можевме да ја пронајдеме таа соба од твојот локален контекст. Отвори го поврзаниот простор и обиди се повторно.",
-    "mentionOpenFallbackMissingMessage": "Таа порака со спомнување сè уште не е достапна во вчитаната временска линија. Обиди се повторно за момент."
+    "mentionOpenFallbackMissingMessage": "Таа порака со спомнување сè уште не е достапна во вчитаната временска линија. Обиди се повторно за момент.",
+    "groupChatMenu": "Опции за групен разговор",
+    "renameGroup": "Преименувај група",
+    "renameGroupTitle": "Преименувај ја оваа група",
+    "renameGroupDescription": "Новото име го гледаат сите во овој разговор.",
+    "renameGroupName": "Име на групата",
+    "renameGroupSave": "Зачувај име",
+    "renameGroupCancel": "Откажи",
+    "renameGroupFailed": "Групата не можеше да се преименува. Обиди се повторно.",
+    "archiveGroup": "Архивирај група",
+    "archiveGroupTitle": "Да се архивира оваа група?",
+    "archiveGroupDescription": "Групата исчезнува од Пораки за сите. Членовите не се прашуваат однапред. Историјата останува во собата.",
+    "archiveGroupConfirm": "Да, архивирај",
+    "archiveGroupCancel": "Откажи",
+    "archiveGroupFailed": "Групата не можеше да се архивира. Обиди се повторно."
   },
   "CoherenceTab": {
     "signals": "Сигнали",

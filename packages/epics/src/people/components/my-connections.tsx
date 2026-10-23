@@ -10,15 +10,21 @@ import {
   MatrixEventEvent,
   NotificationCountType,
   RoomEvent,
+  RoomStateEvent,
   SyncState,
   type MatrixClient,
   type MatrixEvent,
   type Room,
 } from 'matrix-js-sdk';
 import {
+  GROUP_ROOM_ARCHIVED_STATE,
+  GROUP_ROOM_CREATOR_STATE,
   HYPHA_ROOM_TYPES,
+  conversationActivityTs,
+  isArchivedGroupRoom,
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
+  sortConversationsByLastMessage,
   useJwt,
   useMatrix,
   useMatrixUserIdsByPersonIds,
@@ -70,10 +76,7 @@ import {
   type MemberRow,
   type NewcomerCandidate,
 } from './member-connections';
-import {
-  sortByRecencyThenPresence,
-  type PresenceLevel,
-} from './member-presence';
+import { type PresenceLevel } from './member-presence';
 import { PersonAvatar } from './person-avatar';
 import { useMemberPresence } from './use-member-presence';
 
@@ -147,15 +150,22 @@ function lastRoomMessage(room: Room, selfId: string | null) {
     return {
       preview,
       mine: Boolean(selfId && sender === selfId),
-      ts: event.getTs(),
+      ts: conversationActivityTs(event.getTs(), roomActiveTs(room)),
     };
   }
-  const ts = room.getLastActiveTimestamp();
   return {
     preview: '',
     mine: false,
-    ts: ts > 0 ? ts : null,
+    ts: roomActiveTs(room),
   };
+}
+
+function roomActiveTs(room: Room): number | null {
+  const ts =
+    typeof room.getLastActiveTimestamp === 'function'
+      ? room.getLastActiveTimestamp()
+      : 0;
+  return conversationActivityTs(null, ts);
 }
 
 function conversationRowFromRoom(
@@ -163,6 +173,9 @@ function conversationRowFromRoom(
   room: Room,
 ): ConversationRow | null {
   if (room.getMyMembership() !== 'join') {
+    return null;
+  }
+  if (isArchivedGroupRoom(room)) {
     return null;
   }
   const botId = botUserId();
@@ -275,8 +288,7 @@ function conversationRowFromRoom(
 }
 
 function sortConversationRows(rows: ConversationRow[]) {
-  rows.sort((left, right) => (right.lastTs ?? 0) - (left.lastTs ?? 0));
-  return rows;
+  return sortConversationsByLastMessage(rows);
 }
 
 function sameConversationRows(
@@ -675,8 +687,25 @@ function onConversationSync() {
   const client = conversationClient;
   if (!client) return;
   enqueueConversationRooms(client, []);
+  // Summarise enough rooms on this tick that last-message order is already
+  // correct before the list paints. The idle pump finishes any remainder.
+  pumpConversationRooms(SYNC_ROOM_BUDGET);
   scheduleConversationPump();
   notifyConversationListeners();
+}
+
+function onConversationState(event: MatrixEvent) {
+  const type = event.getType();
+  if (
+    type !== EventType.RoomName &&
+    type !== GROUP_ROOM_ARCHIVED_STATE &&
+    type !== GROUP_ROOM_CREATOR_STATE
+  ) {
+    return;
+  }
+  const roomId = event.getRoomId();
+  if (!roomId || !conversationClient) return;
+  refreshConversationRoom(conversationClient.getRoom(roomId) ?? undefined);
 }
 
 function onConversationTimeline(
@@ -728,6 +757,7 @@ function listenForConversationRows(client: MatrixClient) {
   client.on(RoomEvent.Timeline, onConversationTimeline);
   client.on(RoomEvent.Receipt, onConversationReceipt);
   client.on(RoomEvent.MyMembership, onConversationMembership);
+  client.on(RoomStateEvent.Events, onConversationState);
   client.on(MatrixEventEvent.Decrypted, onConversationDecrypted);
   window.addEventListener(CONVERSATION_UNREAD_EVENT, onConversationUnreadEvent);
   releaseSignalRooms = subscribeSignalThreadRooms(onConversationSignals);
@@ -738,6 +768,7 @@ function stopListeningForConversationRows(client: MatrixClient) {
   client.removeListener(RoomEvent.Timeline, onConversationTimeline);
   client.removeListener(RoomEvent.Receipt, onConversationReceipt);
   client.removeListener(RoomEvent.MyMembership, onConversationMembership);
+  client.removeListener(RoomStateEvent.Events, onConversationState);
   client.removeListener(MatrixEventEvent.Decrypted, onConversationDecrypted);
   window.removeEventListener(
     CONVERSATION_UNREAD_EVENT,
@@ -781,7 +812,10 @@ export function conversationRowsSnapshot(client: MatrixClient) {
   const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
     const row = conversationCache.get(room.roomId)?.row;
-    if (row) rows.push(row);
+    if (!row) continue;
+    const liveTs = roomActiveTs(room);
+    const lastTs = conversationActivityTs(row.lastTs, liveTs);
+    rows.push(lastTs === row.lastTs ? row : { ...row, lastTs });
   }
   return sortConversationRows(rows);
 }
@@ -810,6 +844,7 @@ export function attachConversationList(
   conversationListeners.add(onChange);
   listenForConversationRows(client);
   enqueueConversationRooms(client, []);
+  pumpConversationRooms(SYNC_ROOM_BUDGET);
   scheduleConversationPump();
   onChange();
   return () => {
@@ -1276,7 +1311,7 @@ export function MyConnections({
       ...row,
       preview: previewWithNames(row.preview, mentionNames),
     }));
-    return sortByRecencyThenPresence(named, presenceById);
+    return sortConversationsByLastMessage(named);
   }, [
     home?.person,
     members,
@@ -1284,7 +1319,6 @@ export function MyConnections({
     pendingGroups,
     personIdToMatrixUserId,
     picking,
-    presenceById,
     rows,
     t,
   ]);
@@ -1376,6 +1410,7 @@ export function MyConnections({
     }));
     try {
       const { roomId } = await createRoom(title, {
+        grantCreatorPl100: true,
         roomType: HYPHA_ROOM_TYPES.group,
       });
       const memberIds = selectedPeople.flatMap((row) => {

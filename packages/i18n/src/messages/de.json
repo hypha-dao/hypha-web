@@ -4128,7 +4128,21 @@
     "signalTeamAccessRequested": "Signal-Team-Zugang angefragt",
     "signalTeamAccessApproved": "Signal-Team-Zugang genehmigt",
     "mentionOpenFallbackRoom": "Dieser Raum konnte im lokalen Kontext nicht aufgelöst werden. Öffnen Sie den zugehörigen Space und versuchen Sie es erneut.",
-    "mentionOpenFallbackMissingMessage": "Diese Erwähnung ist in der geladenen Timeline noch nicht verfügbar. Bitte versuchen Sie es gleich noch einmal."
+    "mentionOpenFallbackMissingMessage": "Diese Erwähnung ist in der geladenen Timeline noch nicht verfügbar. Bitte versuchen Sie es gleich noch einmal.",
+    "groupChatMenu": "Gruppenchat-Optionen",
+    "renameGroup": "Gruppe umbenennen",
+    "renameGroupTitle": "Diese Gruppe umbenennen",
+    "renameGroupDescription": "Der neue Name gilt für alle in diesem Chat.",
+    "renameGroupName": "Gruppenname",
+    "renameGroupSave": "Namen speichern",
+    "renameGroupCancel": "Abbrechen",
+    "renameGroupFailed": "Die Gruppe konnte nicht umbenannt werden. Versuch es noch einmal.",
+    "archiveGroup": "Gruppe archivieren",
+    "archiveGroupTitle": "Diese Gruppe archivieren?",
+    "archiveGroupDescription": "Die Gruppe verschwindet für alle aus Nachrichten. Die Mitglieder werden nicht gefragt. Der Verlauf bleibt im Raum.",
+    "archiveGroupConfirm": "Ja, archivieren",
+    "archiveGroupCancel": "Abbrechen",
+    "archiveGroupFailed": "Die Gruppe konnte nicht archiviert werden. Versuch es noch einmal."
   },
   "CoherenceTab": {
     "signals": "Signale",

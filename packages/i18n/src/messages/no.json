@@ -4129,7 +4129,21 @@
     "signalTeamAccessRequested": "Tilgang til Signal-teamet er forespurt",
     "signalTeamAccessApproved": "Tilgang til Signal-teamet er godkjent",
     "mentionOpenFallbackRoom": "Vi kunne ikke finne det rommet ut fra din lokale kontekst. Åpne det tilhørende rommet og prøv igjen.",
-    "mentionOpenFallbackMissingMessage": "Den omtalte meldingen er ikke tilgjengelig i den innlastede tidslinjen ennå. Prøv igjen om et øyeblikk."
+    "mentionOpenFallbackMissingMessage": "Den omtalte meldingen er ikke tilgjengelig i den innlastede tidslinjen ennå. Prøv igjen om et øyeblikk.",
+    "groupChatMenu": "Gruppechatvalg",
+    "renameGroup": "Gi gruppen nytt navn",
+    "renameGroupTitle": "Gi denne gruppen nytt navn",
+    "renameGroupDescription": "Det nye navnet deles med alle i denne chatten.",
+    "renameGroupName": "Gruppenavn",
+    "renameGroupSave": "Lagre navn",
+    "renameGroupCancel": "Avbryt",
+    "renameGroupFailed": "Kunne ikke gi gruppen nytt navn. Prøv igjen.",
+    "archiveGroup": "Arkiver gruppe",
+    "archiveGroupTitle": "Arkivere denne gruppen?",
+    "archiveGroupDescription": "Gruppen skjules fra Meldinger for alle. Medlemmene blir ikke spurt først. Historikken blir værende i rommet.",
+    "archiveGroupConfirm": "Ja, arkiver",
+    "archiveGroupCancel": "Avbryt",
+    "archiveGroupFailed": "Kunne ikke arkivere denne gruppen. Prøv igjen."
   },
   "CoherenceTab": {
     "signals": "Signaler",

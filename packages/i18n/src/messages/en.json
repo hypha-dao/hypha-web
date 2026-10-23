@@ -4160,7 +4160,21 @@
     "signalTeamAccessRequested": "Signal team access requested",
     "signalTeamAccessApproved": "Signal team access approved",
     "mentionOpenFallbackRoom": "We could not resolve that room from your local context. Open the related space and try again.",
-    "mentionOpenFallbackMissingMessage": "That mention message is not available in the loaded timeline yet. Try again in a moment."
+    "mentionOpenFallbackMissingMessage": "That mention message is not available in the loaded timeline yet. Try again in a moment.",
+    "groupChatMenu": "Group chat options",
+    "renameGroup": "Rename group",
+    "renameGroupTitle": "Rename this group",
+    "renameGroupDescription": "The new name is shared with everyone in this chat.",
+    "renameGroupName": "Group name",
+    "renameGroupSave": "Save name",
+    "renameGroupCancel": "Cancel",
+    "renameGroupFailed": "Could not rename this group. Try again.",
+    "archiveGroup": "Archive group",
+    "archiveGroupTitle": "Archive this group?",
+    "archiveGroupDescription": "This hides the group from Messages for everyone. Members are not asked first. History stays in the room.",
+    "archiveGroupConfirm": "Yes, archive",
+    "archiveGroupCancel": "Cancel",
+    "archiveGroupFailed": "Could not archive this group. Try again."
   },
   "CoherenceTab": {
     "signals": "Signals",

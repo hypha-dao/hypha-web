@@ -86,6 +86,7 @@ import { getRootSpace } from './get-root-space';
 
 import {
   HumanChatPanelHeader,
+  HumanChatPanelGroupMenu,
   HumanChatPanelLoader,
   HumanChatPanelMessages,
   HumanChatPanelChatBar,
@@ -1244,6 +1245,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const editDraftRef = useRef(editDraft);
   editDraftRef.current = editDraft;
   const [roomId, setRoomId] = useState<string | null>(null);
+  const [groupTitle, setGroupTitle] = useState<string | null>(null);
+
+  useEffect(() => {
+    setGroupTitle(null);
+  }, [coherenceRoomId]);
 
   useEffect(() => {
     if (mode !== 'coherence') {
@@ -5044,7 +5050,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       {screenshareTabAudioPromptDialog}
       <SidebarHeader className="gap-0 bg-page-background p-0 dark:bg-background-2">
         <HumanChatPanelHeader
-          title={mode === 'coherence' ? coherenceTitle ?? undefined : ''}
+          title={
+            mode === 'coherence'
+              ? groupTitle ?? coherenceTitle ?? undefined
+              : ''
+          }
           iconTitle={
             mode === 'space' && !spaceSlug?.trim()
               ? t('networkRoomTitle')
@@ -5124,6 +5134,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 countIsCapped={bellMentionCapped}
                 mentionsTabActive={activeTab === 'mentions'}
                 onOpenMentions={() => setActiveTab('mentions')}
+              />
+            ) : null
+          }
+          trailingEnd={
+            isDirectConversation && roomId ? (
+              <HumanChatPanelGroupMenu
+                roomId={roomId}
+                title={groupTitle ?? coherenceTitle ?? ''}
+                onRenamed={setGroupTitle}
+                onArchived={exitCoherenceChat}
               />
             ) : null
           }

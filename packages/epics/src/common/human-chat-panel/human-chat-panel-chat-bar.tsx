@@ -292,6 +292,9 @@ export type ChatDraftAttachment = {
   editSlot?: ChatDraftEditSlot;
 };
 
+/** Grow with the draft, then scroll inside so the caret stays in the text. */
+const COMPOSER_INPUT_MAX_PX = 160;
+
 type HumanChatPanelChatBarProps = {
   value: string;
   onChange: (value: string) => void;
@@ -826,21 +829,18 @@ export function HumanChatPanelChatBar({
      * After send we clear to `''`. With only `height='auto'`, some browsers keep the
      * previous large scrollHeight — force a shrink before measuring.
      */
-    if (content.length === 0) {
-      ta.style.height = '0px';
-      ta.style.minHeight = '0';
-      void ta.offsetHeight;
-    }
-    ta.style.height = 'auto';
+    ta.style.height = '0px';
     ta.style.minHeight = '';
-    const h = Math.min(ta.scrollHeight, 160);
+    void ta.offsetHeight;
+    ta.style.height = 'auto';
+    const h = Math.min(Math.max(ta.scrollHeight, 36), COMPOSER_INPUT_MAX_PX);
     ta.style.height = `${h}px`;
     if (content.length === 0) {
       ta.scrollTop = 0;
     }
-    /** Backdrop is `absolute inset-0` — no explicit height; mirrors textarea box via layout. */
-    if (bd && content.length === 0) {
-      bd.scrollTop = 0;
+    if (bd) {
+      bd.style.height = `${h}px`;
+      if (content.length === 0) bd.scrollTop = 0;
     }
   }, []);
 
@@ -2181,19 +2181,15 @@ export function HumanChatPanelChatBar({
           </div>
         )}
         {/*
-          Single-flow textarea sets height. Mirrored backdrop is absolute so it never
-          participates in CSS Grid row sizing (grid + two stacked cells kept the row
-          stuck at max height after send).
+          Visible auto-growing textarea. A transparent overlay used to paint URL
+          highlights, but its wrap/scroll did not match the caret. Text and caret
+          now live on one element; it grows to COMPOSER_INPUT_MAX_PX then scrolls.
         */}
         <div className="relative isolate min-h-[36px] min-w-0 max-h-[160px] w-full overflow-hidden rounded-sm">
           <div
             ref={composerBackdropRef}
             aria-hidden
-            className={cn(
-              'pointer-events-none absolute inset-0 z-0 overflow-y-auto overflow-x-hidden',
-              'whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed text-foreground',
-              'selection:bg-transparent narrow-scrollbar',
-            )}
+            className="pointer-events-none invisible absolute inset-0 overflow-hidden"
           >
             {composerHighlightBackdrop}
           </div>
@@ -2231,9 +2227,9 @@ export function HumanChatPanelChatBar({
             placeholder={placeholder ?? defaultPlaceholder}
             rows={1}
             className={cn(
-              'relative z-[1] block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
-              'overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-sm leading-relaxed',
-              'text-transparent caret-foreground',
+              'relative z-[1] box-border block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
+              'overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2 text-sm leading-5',
+              'text-foreground caret-foreground',
               'placeholder:text-muted-foreground focus:outline-none',
             )}
           />

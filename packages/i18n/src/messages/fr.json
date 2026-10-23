@@ -3554,7 +3554,21 @@
     "signalTeamAccessRequested": "Accès à l’équipe Signal demandé",
     "signalTeamAccessApproved": "Accès à l’équipe Signal approuvé",
     "mentionOpenFallbackRoom": "Impossible de résoudre ce salon depuis votre contexte local. Ouvrez l'espace concerné puis réessayez.",
-    "mentionOpenFallbackMissingMessage": "Ce message de mention n'est pas encore disponible dans la chronologie chargée. Réessayez dans un instant."
+    "mentionOpenFallbackMissingMessage": "Ce message de mention n'est pas encore disponible dans la chronologie chargée. Réessayez dans un instant.",
+    "groupChatMenu": "Options du groupe",
+    "renameGroup": "Renommer le groupe",
+    "renameGroupTitle": "Renommer ce groupe",
+    "renameGroupDescription": "Le nouveau nom est partagé avec tout le monde dans cette discussion.",
+    "renameGroupName": "Nom du groupe",
+    "renameGroupSave": "Enregistrer le nom",
+    "renameGroupCancel": "Annuler",
+    "renameGroupFailed": "Impossible de renommer ce groupe. Réessaie.",
+    "archiveGroup": "Archiver le groupe",
+    "archiveGroupTitle": "Archiver ce groupe ?",
+    "archiveGroupDescription": "Le groupe disparaît de Messages pour tout le monde. Les membres ne sont pas consultés. L’historique reste dans le salon.",
+    "archiveGroupConfirm": "Oui, archiver",
+    "archiveGroupCancel": "Annuler",
+    "archiveGroupFailed": "Impossible d’archiver ce groupe. Réessaie."
   },
   "CoherenceTab": {
     "signals": "Signaux",

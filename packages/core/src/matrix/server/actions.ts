@@ -26,6 +26,13 @@ import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
 import { distinctPublicRoomId } from '../public-room-id';
 import { directPairAliasLocalpart } from '../direct-pair-room';
 import { HYPHA_ROOM_TYPES, type HyphaRoomType } from '../room-types';
+import {
+  GROUP_ROOM_ARCHIVED_STATE,
+  GROUP_ROOM_CREATOR_STATE,
+  groupRoomCreatorUserId,
+  isGroupRoomArchivedContent,
+  normalizeGroupRoomName,
+} from '../group-room';
 import { Environment } from '../../coherence/types';
 import {
   ECOSYSTEM_ROOM_ALIAS_PREFIX,
@@ -40,11 +47,15 @@ import {
   matrixCreateAliasedRoom,
   matrixCreateRoom,
   matrixDeleteRoomAlias,
+  matrixGetJoinedRoomMembers,
+  matrixGetPowerLevels,
   matrixGetRoomType,
+  matrixGetStateEvent,
   matrixInviteUser,
   matrixJoinRoom,
   matrixJoinRoomAsPuppet,
   matrixResolveRoomAlias,
+  matrixSendStateEvent,
   matrixServerNameFromUserId,
   matrixWhoAmI,
 } from './matrix-http-client';
@@ -245,9 +256,10 @@ export async function createBotOwnedRoomAction({
   // Power-level setup is best-effort — the room already exists, so a failure here must not
   // orphan it: callers retry room creation on a `null` return, which would create a duplicate,
   // never-persisted room every time.
+  const creatorUserId = grantPl100ToMatrixUserId?.trim();
   try {
     await matrixApplyRoomPowerLevels(roomId, botToken, homeserver, {
-      grantPl100ToUserId: grantPl100ToMatrixUserId?.trim(),
+      grantPl100ToUserId: creatorUserId,
       additionalPl100UserIds: additionalBotUserIds,
     });
   } catch (error) {
@@ -256,6 +268,24 @@ export async function createBotOwnedRoomAction({
       roomId,
       error instanceof Error ? error.message : error,
     );
+  }
+  if (roomType === HYPHA_ROOM_TYPES.group && creatorUserId) {
+    try {
+      await matrixSendStateEvent(
+        roomId,
+        GROUP_ROOM_CREATOR_STATE,
+        '',
+        { userId: creatorUserId },
+        botToken,
+        homeserver,
+      );
+    } catch (error) {
+      console.warn(
+        '[MatrixBot] Group room created but creator state failed:',
+        roomId,
+        error instanceof Error ? error.message : error,
+      );
+    }
   }
   return { roomId };
 }
@@ -710,4 +740,147 @@ export async function getLinkByMatrixUserIdAction(
     throw new Error('authToken is required to get Matrix user link by ID');
   }
   return getLinkByMatrixUserId({ matrixUserId, environment });
+}
+
+function isPeopleGroupRoomType(roomType: string | null): boolean {
+  if (roomType === HYPHA_ROOM_TYPES.group) return true;
+  // Legacy Messages groups predate an explicit room type.
+  return !roomType;
+}
+
+async function loadPeopleGroupContext(roomId: string, matrixUserId: string) {
+  const trimmedRoomId = roomId.trim();
+  const trimmedUserId = matrixUserId.trim();
+  const homeserver = getMatrixHomeserverUrl();
+  const botToken = getMatrixBotAsToken();
+  if (!trimmedRoomId || !trimmedUserId || !homeserver || !botToken) {
+    return null;
+  }
+  const roomType = await matrixGetRoomType(trimmedRoomId, botToken, homeserver);
+  if (!isPeopleGroupRoomType(roomType)) return null;
+  const members = await matrixGetJoinedRoomMembers(
+    trimmedRoomId,
+    botToken,
+    homeserver,
+  );
+  if (!members.includes(trimmedUserId)) return null;
+  return { roomId: trimmedRoomId, userId: trimmedUserId, homeserver, botToken };
+}
+
+/**
+ * Any joined member can rename a Messages group. The bot writes `m.room.name`
+ * so existing rooms still work when the human is not PL50+.
+ */
+export async function renameGroupRoomAction({
+  roomId,
+  name,
+  matrixUserId,
+}: {
+  roomId: string;
+  name: string;
+  matrixUserId: string;
+}): Promise<{ name: string } | null> {
+  const title = normalizeGroupRoomName(name);
+  if (!title) return null;
+  try {
+    const ctx = await loadPeopleGroupContext(roomId, matrixUserId);
+    if (!ctx) return null;
+    await matrixSendStateEvent(
+      ctx.roomId,
+      'm.room.name',
+      '',
+      { name: title },
+      ctx.botToken,
+      ctx.homeserver,
+    );
+    return { name: title };
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to rename group room:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
+}
+
+async function canArchivePeopleGroup(
+  roomId: string,
+  userId: string,
+  botToken: string,
+  homeserver: string,
+): Promise<boolean> {
+  const creatorState = await matrixGetStateEvent(
+    roomId,
+    GROUP_ROOM_CREATOR_STATE,
+    '',
+    botToken,
+    homeserver,
+  );
+  const creator = groupRoomCreatorUserId(creatorState);
+  if (creator) return creator === userId;
+  try {
+    const power = await matrixGetPowerLevels(roomId, botToken, homeserver);
+    if ((power.users?.[userId] ?? power.users_default ?? 0) >= 100) {
+      return true;
+    }
+  } catch {
+    // Fall through to the legacy "any member" path.
+  }
+  // Older groups have no stored human creator (the bot created the room).
+  return true;
+}
+
+/**
+ * Creator archives a Messages group. The room stays in Matrix; every client
+ * hides it once `io.hypha.room.archived` is set. No member consent.
+ */
+export async function archiveGroupRoomAction({
+  roomId,
+  matrixUserId,
+}: {
+  roomId: string;
+  matrixUserId: string;
+}): Promise<{ archived: true } | null> {
+  try {
+    const ctx = await loadPeopleGroupContext(roomId, matrixUserId);
+    if (!ctx) return null;
+    const archivedState = await matrixGetStateEvent(
+      ctx.roomId,
+      GROUP_ROOM_ARCHIVED_STATE,
+      '',
+      ctx.botToken,
+      ctx.homeserver,
+    );
+    if (isGroupRoomArchivedContent(archivedState)) {
+      return { archived: true };
+    }
+    const allowed = await canArchivePeopleGroup(
+      ctx.roomId,
+      ctx.userId,
+      ctx.botToken,
+      ctx.homeserver,
+    );
+    if (!allowed) return null;
+    await matrixSendStateEvent(
+      ctx.roomId,
+      GROUP_ROOM_ARCHIVED_STATE,
+      '',
+      {
+        archived: true,
+        archivedBy: ctx.userId,
+        ts: Date.now(),
+      },
+      ctx.botToken,
+      ctx.homeserver,
+    );
+    return { archived: true };
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to archive group room:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
 }

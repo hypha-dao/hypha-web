@@ -3570,7 +3570,21 @@
     "signalTeamAccessRequested": "Acceso al equipo Signal solicitado",
     "signalTeamAccessApproved": "Acceso al equipo Signal aprobado",
     "mentionOpenFallbackRoom": "No pudimos resolver esa sala desde tu contexto local. Abre el espacio correspondiente e inténtalo de nuevo.",
-    "mentionOpenFallbackMissingMessage": "Ese mensaje de mención aún no está disponible en la cronología cargada. Vuelve a intentarlo en un momento."
+    "mentionOpenFallbackMissingMessage": "Ese mensaje de mención aún no está disponible en la cronología cargada. Vuelve a intentarlo en un momento.",
+    "groupChatMenu": "Opciones del chat de grupo",
+    "renameGroup": "Renombrar grupo",
+    "renameGroupTitle": "Renombrar este grupo",
+    "renameGroupDescription": "El nuevo nombre se comparte con todos en este chat.",
+    "renameGroupName": "Nombre del grupo",
+    "renameGroupSave": "Guardar nombre",
+    "renameGroupCancel": "Cancelar",
+    "renameGroupFailed": "No se pudo renombrar este grupo. Inténtalo de nuevo.",
+    "archiveGroup": "Archivar grupo",
+    "archiveGroupTitle": "¿Archivar este grupo?",
+    "archiveGroupDescription": "Esto oculta el grupo de Mensajes para todos. No se pide consentimiento a los miembros. El historial permanece en la sala.",
+    "archiveGroupConfirm": "Sí, archivar",
+    "archiveGroupCancel": "Cancelar",
+    "archiveGroupFailed": "No se pudo archivar este grupo. Inténtalo de nuevo."
   },
   "CoherenceTab": {
     "signals": "Señales",
