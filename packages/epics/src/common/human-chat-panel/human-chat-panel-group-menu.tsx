@@ -408,7 +408,9 @@ export function HumanChatPanelGroupMenu({
           <div className="max-h-72 overflow-y-auto border border-border">
             {addablePeople.length === 0 ? (
               <p className="p-3 text-sm text-muted-foreground">
-                {t('addPeopleEmpty')}
+                {addQuery.trim()
+                  ? t('addPeopleNoMatches')
+                  : t('addPeopleEmpty')}
               </p>
             ) : (
               addablePeople.map((person) => {

@@ -657,6 +657,17 @@ describe('groupRowsForConnections', () => {
     expect(connectionMatchesPeopleSearch(xerxes, 'xerxes')).toBe(true);
     expect(connectionMatchesPeopleSearch(xerxes, 'xpotel')).toBe(true);
     expect(
+      connectionMatchesPeopleSearch(
+        {
+          name: 'Vlad',
+          surname: 'Hramtsov',
+          nickname: 'vlad-hramtsov',
+          slug: 'vlad-hramtsov',
+        },
+        'vladhram',
+      ),
+    ).toBe(true);
+    expect(
       peopleMatchingSearch([kate], [xerxes], 'xerxes').map((p) => p.id),
     ).toEqual([9]);
     expect(
@@ -730,6 +741,22 @@ describe('groupRowsForConnections', () => {
           ],
         },
         'marie',
+      ),
+    ).toBe(true);
+    expect(
+      conversationMatchesSearch(
+        {
+          ...row,
+          name: 'Water team',
+          searchMembers: [
+            {
+              name: 'Vlad Hramtsov',
+              nickname: 'vlad-hramtsov',
+              slug: 'vlad-hramtsov',
+            },
+          ],
+        },
+        'vladhram',
       ),
     ).toBe(true);
   });

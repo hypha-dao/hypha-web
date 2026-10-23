@@ -135,7 +135,22 @@ export type PeopleConversationListingInput = {
   createdAsGroup?: boolean;
   /** Explicit `m.room.name` — set by rename and some creations. */
   hasRoomName?: boolean;
+  /** Comma-separated title parts (`A, B, C (test)` → 3). */
+  titleMemberHint?: number;
+  /** People remembered for this group, plus a guess for self. */
+  rememberedHumanCount?: number;
 };
+
+/** `"Gerardo Roza, Xerxes Potel, Vlad Hramtsov (test)"` → 3. */
+export function countCommaSeparatedNames(
+  name: string | null | undefined,
+): number {
+  if (!name?.trim()) return 0;
+  return name
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean).length;
+}
 
 /**
  * Messages groups are `io.hypha.room.group` (or the same type on create).
@@ -186,6 +201,16 @@ export function peopleConversationKindForListing(
   const type = input.roomType?.trim() || null;
   if (type === HYPHA_ROOM_TYPES.dm) return 'person';
   if (type) return null;
+  const titleHint = input.titleMemberHint ?? 0;
+  const remembered = input.rememberedHumanCount ?? 0;
+  // Untyped + named + 3 joined humans (title, memory, or loaded) must stay.
+  // A stale 2/2 summary is not enough to hide that shape. m.direct is ignored.
+  if (
+    input.hasRoomName &&
+    (input.loadedHumanCount > 2 || titleHint > 2 || remembered > 2)
+  ) {
+    return 'group';
+  }
   const membersIncomplete = input.loadedHumanCount < input.summaryJoinedCount;
   if (membersIncomplete && input.summaryJoinedCount > 2) return 'group';
   // Named untyped rooms stay listed until the full member list arrives.

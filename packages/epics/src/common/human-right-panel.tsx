@@ -1074,6 +1074,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const {
     client,
     isMatrixAvailable,
+    isConnecting,
     isAuthenticated: isMatrixAuthenticated,
     connectionStatus,
     retryMatrixConnection,
@@ -1132,7 +1133,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     (typeof spaceSlug === 'string' ? spaceSlug.trim() : '') ||
     (!isDirectConversation ? coherenceSpaceSlug?.trim() : null) ||
     null;
-  const { jwt: authToken } = useJwt();
+  const { jwt: authToken, isLoadingJwt } = useJwt();
   const { useSendNotifications } = useHookRegistry();
   const { notifyCallStarted } = useSendNotifications({
     authToken,
@@ -1610,8 +1611,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [pathname, router, openHumanChatPanel, setActiveTab],
   );
 
+  const sessionRestoring =
+    isAuthLoading ||
+    isLoadingJwt ||
+    (isAuthenticated && !isMatrixAvailable && isConnecting);
   const showAuthedUi = !isAuthLoading && isAuthenticated;
-  const showAuthPrompt = !isAuthLoading && !isAuthenticated;
+  const showAuthPrompt = !sessionRestoring && !isAuthenticated;
   const showPanelInteractionPrompt =
     hasSpaceActivityAccess &&
     !isUserSpaceStateLoading &&
@@ -5575,7 +5580,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         ref={sidebarContentRef}
         className="flex min-h-0 flex-col gap-0 overflow-hidden bg-page-background dark:bg-background-2"
       >
-        {isAuthLoading ? (
+        {sessionRestoring ? (
           <HumanChatPanelLoader />
         ) : showAuthPrompt ? (
           <div className="flex flex-1 items-center justify-center px-6">

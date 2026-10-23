@@ -57,6 +57,22 @@ describe('isPeopleGroupChatRoom', () => {
         },
       }),
     ).toBe(true);
+    expect(
+      isPeopleGroupChatRoom({
+        getType: () => undefined,
+        getJoinedMemberCount: () => 2,
+        currentState: {
+          getStateEvents: (type) =>
+            type === 'm.room.name'
+              ? {
+                  getContent: () => ({
+                    name: 'Gerardo Roza, Xerxes Potel, Vlad Hramtsov (test)',
+                  }),
+                }
+              : null,
+        },
+      }),
+    ).toBe(true);
   });
 
   it('does not treat a remembered or named untyped pair as a group', () => {

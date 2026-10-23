@@ -10,6 +10,7 @@ import {
   isRoomInDirectAccountData,
   peopleConversationKind,
   peopleConversationKindForListing,
+  countCommaSeparatedNames,
   normalizeGroupRoomName,
   readRoomNameState,
   sortConversationsByLastMessage,
@@ -137,6 +138,26 @@ describe('group room name and archive state', () => {
         hasRoomName: true,
       }),
     ).toBeNull();
+    expect(
+      peopleConversationKindForListing({
+        roomType: null,
+        loadedHumanCount: 2,
+        summaryJoinedCount: 2,
+        hasRoomName: true,
+        titleMemberHint: countCommaSeparatedNames(
+          'Gerardo Roza, Xerxes Potel, Vlad Hramtsov (test)',
+        ),
+      }),
+    ).toBe('group');
+    expect(
+      peopleConversationKindForListing({
+        roomType: null,
+        loadedHumanCount: 2,
+        summaryJoinedCount: 2,
+        hasRoomName: true,
+        rememberedHumanCount: 3,
+      }),
+    ).toBe('group');
   });
 
   it('reads a room name state event and m.direct membership', () => {

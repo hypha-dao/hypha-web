@@ -729,6 +729,24 @@ export function rememberedGroupChatMemberIds(roomId: string): string[] {
   return readGroupChatMembers()[roomId.trim()] ?? [];
 }
 
+function compactUsername(value: string) {
+  return value.toLowerCase().replace(/[@._\s-]/g, '');
+}
+
+/** Name and username match, including `vladhram` vs `vlad-hramtsov`. */
+export function textMatchesPeopleSearch(
+  parts: readonly (string | null | undefined)[],
+  needle: string,
+) {
+  const query = needle.trim().toLowerCase();
+  if (!query) return true;
+  const fields = parts.filter((part): part is string => Boolean(part?.trim()));
+  if (fields.join(' ').toLowerCase().includes(query)) return true;
+  const compact = compactUsername(query);
+  if (!compact) return false;
+  return fields.some((part) => compactUsername(part).includes(compact));
+}
+
 /** Directory people matching a Messages search by name or username. */
 export function connectionMatchesPeopleSearch(
   person: {
@@ -739,13 +757,10 @@ export function connectionMatchesPeopleSearch(
   },
   needle: string,
 ) {
-  const query = needle.trim().toLowerCase();
-  if (!query) return true;
-  return [person.name, person.surname, person.nickname, person.slug]
-    .filter((part): part is string => Boolean(part?.trim()))
-    .join(' ')
-    .toLowerCase()
-    .includes(query);
+  return textMatchesPeopleSearch(
+    [person.name, person.surname, person.nickname, person.slug],
+    needle,
+  );
 }
 
 /** Local connections plus search hits, so a query is not rooms-only. */
@@ -818,24 +833,21 @@ export function conversationMatchesSearch(
   },
   needle: string,
 ) {
-  const query = needle.trim().toLowerCase();
-  if (!query) return true;
-  const haystack = [
-    row.name,
-    row.person?.nickname,
-    row.person?.slug,
-    ...(row.faces ?? []).map((face) => face.name),
-    ...(row.searchMembers ?? []).flatMap((member) => [
-      member.name,
-      member.nickname,
-      member.slug,
-      member.userId?.replace(/^@/, '').split(':')[0],
-    ]),
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-  return haystack.includes(query);
+  return textMatchesPeopleSearch(
+    [
+      row.name,
+      row.person?.nickname,
+      row.person?.slug,
+      ...(row.faces ?? []).map((face) => face.name),
+      ...(row.searchMembers ?? []).flatMap((member) => [
+        member.name,
+        member.nickname,
+        member.slug,
+        member.userId?.replace(/^@/, '').split(':')[0],
+      ]),
+    ],
+    needle,
+  );
 }
 
 /**

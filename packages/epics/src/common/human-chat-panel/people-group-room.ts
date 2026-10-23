@@ -1,4 +1,5 @@
 import {
+  countCommaSeparatedNames,
   isGroupCreateContent,
   peopleConversationKindForListing,
   readCreateContent,
@@ -6,10 +7,13 @@ import {
   readRoomNameState,
 } from '../../../../core/src/matrix/group-room';
 
+import { rememberedGroupChatMemberIds } from '../../people/components/member-connections';
+
 export function isPeopleGroupChatRoom(
   room:
     | (Parameters<typeof readGroupRoomCreatorUserId>[0] & {
         roomId?: string;
+        name?: string;
         getType?: () => string | null | undefined;
         getJoinedMemberCount?: () => number;
       })
@@ -17,13 +21,20 @@ export function isPeopleGroupChatRoom(
 ) {
   if (!room) return false;
   const summary = room.getJoinedMemberCount?.() ?? 0;
+  const nameState = readRoomNameState(room);
+  const titleMemberHint = countCommaSeparatedNames(nameState || room.name);
+  const remembered = room.roomId
+    ? rememberedGroupChatMemberIds(room.roomId).length + 1
+    : 0;
   return (
     peopleConversationKindForListing({
       roomType: room.getType?.(),
       loadedHumanCount: summary,
       summaryJoinedCount: summary,
       createdAsGroup: isGroupCreateContent(readCreateContent(room)),
-      hasRoomName: Boolean(readRoomNameState(room)),
+      hasRoomName: Boolean(nameState) || titleMemberHint > 2,
+      titleMemberHint,
+      rememberedHumanCount: remembered,
     }) === 'group'
   );
 }

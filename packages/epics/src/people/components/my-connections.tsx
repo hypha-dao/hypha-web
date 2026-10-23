@@ -21,6 +21,7 @@ import {
   GROUP_ROOM_CREATOR_STATE,
   HYPHA_ROOM_TYPES,
   conversationActivityTs,
+  countCommaSeparatedNames,
   isArchivedGroupRoom,
   isGroupCreateContent,
   peopleConversationKindForListing,
@@ -209,8 +210,19 @@ function conversationRowFromRoom(
   if (membership !== 'join') {
     return logDroppedRoom(room, { reason: 'not-joined', membership });
   }
+  const roomType = room.getType();
   if (isRememberedBoundChatRoom(room.roomId)) {
-    return logDroppedRoom(room, { reason: 'space-or-signal' });
+    const typed = roomType?.trim() || null;
+    // Untyped people groups can be cached as bound by mistake. Only trust
+    // the cache for other Hypha room types (space, signal, …).
+    if (
+      typed &&
+      typed.startsWith('io.hypha.room.') &&
+      typed !== HYPHA_ROOM_TYPES.dm &&
+      typed !== HYPHA_ROOM_TYPES.group
+    ) {
+      return logDroppedRoom(room, { reason: 'space-or-signal' });
+    }
   }
   const archived = isArchivedGroupRoom(room);
   const botId = botUserId();
@@ -229,8 +241,12 @@ function conversationRowFromRoom(
     return !isHyphaBot(member.userId, member.name || member.rawDisplayName);
   });
   const others = members.filter((member) => member.userId !== selfId);
-  const roomType = room.getType();
   const nameState = readRoomNameState(room);
+  const titleMemberHint = countCommaSeparatedNames(
+    nameState || room.name || '',
+  );
+  const rememberedHumanCount =
+    rememberedGroupChatMemberIds(room.roomId).length + (selfId ? 1 : 0);
   const flags = {
     createdAsGroup: isGroupCreateContent(readCreateContent(room)),
   };
@@ -240,6 +256,8 @@ function conversationRowFromRoom(
     memberCount: members.length,
     othersCount: others.length,
     joinedMemberCount: room.getJoinedMemberCount?.() ?? members.length,
+    titleMemberHint,
+    rememberedHumanCount,
   };
   // Space, signal, proposal, public, network and ecosystem rooms are not
   // private conversations, whoever is in them.
@@ -260,8 +278,18 @@ function conversationRowFromRoom(
     summaryJoinedCount:
       room.getJoinedMemberCount?.() ?? classification.joinedMemberCount,
     createdAsGroup: flags.createdAsGroup,
-    hasRoomName: Boolean(nameState),
+    hasRoomName: Boolean(nameState) || titleMemberHint > 2,
+    titleMemberHint,
+    rememberedHumanCount,
   });
+  if (
+    !roomType &&
+    (nameState || titleMemberHint > 1) &&
+    members.length < 3 &&
+    typeof room.loadMembersIfNeeded === 'function'
+  ) {
+    void room.loadMembersIfNeeded().catch(() => undefined);
+  }
   // Group-typed rooms stay listed before lazy members arrive. Person chats
   // still need the other human so they can attach to a directory row.
   if (others.length === 0 && kind !== 'group') {
@@ -658,6 +686,13 @@ function peopleGroupRoomIds(client: MatrixClient): string[] {
       continue;
     }
     if (isRememberedGroupChatRoom(room.roomId)) {
+      ids.push(room.roomId);
+      continue;
+    }
+    if (
+      !room.getType() &&
+      (readRoomNameState(room) || countCommaSeparatedNames(room.name) > 2)
+    ) {
       ids.push(room.roomId);
     }
   }
@@ -1144,8 +1179,13 @@ export function MyConnections({
   const tCommon = useTranslations('Common');
   const locale = useLocale();
   const { jwt } = useJwt();
-  const { client, isMatrixAvailable, createRoom, ensureRoomMembers } =
-    useMatrix();
+  const {
+    client,
+    isMatrixAvailable,
+    isConnecting,
+    createRoom,
+    ensureRoomMembers,
+  } = useMatrix();
   useEffect(() => {
     setConversationBoundLookupToken(jwt);
     if (client && jwt?.trim()) refreshBoundChatRooms(client);
@@ -1447,7 +1487,9 @@ export function MyConnections({
       ),
     [rows],
   );
-  const { peopleBySub } = usePeopleBySubs({ subs: groupMemberSubs });
+  const { peopleBySub, isLoading: peopleBySubLoading } = usePeopleBySubs({
+    subs: groupMemberSubs,
+  });
 
   const people = useMemo(() => {
     const profiles = new Map<string, { name: string; avatarUrl?: string }>();
@@ -1565,10 +1607,13 @@ export function MyConnections({
       : listedGroups;
     const source =
       section === 'archived' ? matchingGroups : [...matchingGroups, ...members];
-    const named = source.map((row) => ({
-      ...row,
-      preview: previewWithNames(row.preview, mentionNames),
-    }));
+    const named = source.map((row) => {
+      const preview = previewWithNames(row.preview, mentionNames);
+      return {
+        ...row,
+        preview: /privy_did_privy/i.test(preview) ? '' : preview,
+      };
+    });
     return sortConversationsByLastMessage(named);
   }, [
     client,
@@ -1902,17 +1947,21 @@ export function MyConnections({
 
           {!isMatrixAvailable && !notice ? (
             <p className="text-2 text-muted-foreground">
-              {tChat('matrixUnavailable')}
+              {isConnecting ? t('loading') : tChat('matrixUnavailable')}
             </p>
           ) : null}
 
-          {section === 'archived' && people.length === 0 && !searching ? (
+          {section === 'archived' &&
+          isMatrixAvailable &&
+          people.length === 0 &&
+          !searching ? (
             <p className="text-2 text-muted-foreground">
               {needle ? t('noMatches') : t('archivedEmpty')}
             </p>
           ) : null}
 
           {section !== 'archived' &&
+          isMatrixAvailable &&
           home != null &&
           people.length === 0 &&
           !searching ? (
@@ -1929,7 +1978,9 @@ export function MyConnections({
               locale={locale}
               justNow={t('justNow')}
               noMessage={t('noMessage')}
-              previewLoading={!synced || rowsPending || matrixIdsLoading}
+              previewLoading={
+                !synced || rowsPending || matrixIdsLoading || peopleBySubLoading
+              }
               loadingLabel={t('loading')}
               youLabel={(message) => t('youWrote', { message })}
               unreadLabel={(count) => t('unread', { count })}
@@ -2034,11 +2085,14 @@ function MemberList({
       </h2>
       <ul>
         {rows.map((row) => {
-          const loadingPreview = !row.roomId && previewLoading;
-          const preview = row.preview
+          const leftoverPrivy = /privy_did_privy/i.test(row.preview);
+          const previewText = leftoverPrivy ? '' : row.preview;
+          const loadingPreview =
+            leftoverPrivy || (previewLoading && (!row.roomId || !previewText));
+          const preview = previewText
             ? row.mine
-              ? youLabel(row.preview)
-              : row.preview
+              ? youLabel(previewText)
+              : previewText
             : noMessage;
           const when = row.lastTs
             ? formatWhen(row.lastTs, locale, justNow)

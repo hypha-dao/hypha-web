@@ -561,6 +561,8 @@ interface MatrixContextType {
   client: MatrixSdk.MatrixClient | null;
   isMatrixAvailable: boolean;
   isAuthenticated: boolean;
+  /** Token fetch or client start is still in flight — not a signed-out state. */
+  isConnecting: boolean;
   /** Matrix `/sync` connection state — each tab runs its own `/sync` independently (#2456). */
   connectionStatus: MatrixConnectionStatus;
   /** Soft-restart Matrix sync; falls back to session refresh when no client exists. */
@@ -2518,10 +2520,16 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client, unregisterRoomListener, getPinnedMessageIds],
   );
 
+  const isConnecting =
+    isMatrixTokenLoading ||
+    Boolean(matrixToken && !isMatrixAvailable) ||
+    connectionStatus === 'reconnecting';
+
   const value: MatrixContextType = {
     client,
     isMatrixAvailable,
     isAuthenticated,
+    isConnecting,
     connectionStatus,
     retryMatrixConnection,
     connectionRetryFailed,
@@ -2557,6 +2565,7 @@ const noopMatrixContext: MatrixContextType = {
   client: null,
   isMatrixAvailable: false,
   isAuthenticated: false,
+  isConnecting: false,
   connectionStatus: 'connected',
   retryMatrixConnection: async () => {},
   connectionRetryFailed: false,
