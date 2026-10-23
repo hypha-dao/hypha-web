@@ -55,6 +55,7 @@ import {
   isHyphaBotMatrixIdentity,
   looksLikeTechnicalMatrixDisplayName,
   matrixUserIdToCanonicalPrivySub,
+  visibleMatrixMemberName,
 } from './matrix-room-member-display';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
@@ -216,7 +217,9 @@ function ReplyPreviewAuthorName({
     ) {
       return fallback;
     }
-    return unknownMemberLabel;
+    return matrixUserId
+      ? visibleMatrixMemberName(matrixUserId, fallback)
+      : unknownMemberLabel;
   }, [authorLabel, matrixUserId, person, unknownMemberLabel]);
 
   const jwtBlockingForPerson =

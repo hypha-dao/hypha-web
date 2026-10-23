@@ -5,6 +5,7 @@ import {
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
   pickUserVisibleMemberLabel,
+  visibleMatrixMemberName,
   speakerLabelToCanonicalPrivySub,
   splitSpeakerLabeledTranscriptLine,
 } from '../matrix-member-display';
@@ -39,6 +40,18 @@ describe('pickUserVisibleMemberLabel', () => {
         '@prod_privy_did_privy_cmabc123:srv1294735.hstgr.cloud',
       ),
     ).toBeNull();
+  });
+});
+
+describe('visibleMatrixMemberName', () => {
+  it('falls back to a shortened id when every candidate is a Privy slug', () => {
+    expect(
+      visibleMatrixMemberName(
+        PROD_MXID,
+        'prod_privy_did_privy_cmabc123',
+        PROD_MXID,
+      ),
+    ).toBe('@prod_privy…abc123:srv1294735.hstgr.cloud');
   });
 });
 

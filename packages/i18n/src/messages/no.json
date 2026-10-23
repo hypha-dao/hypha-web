@@ -305,7 +305,8 @@
     "profileUnavailable": "Du er fortsatt innlogget. Profilen din kunne ikke lastes.",
     "retry": "Prøv igjen",
     "sendTokensChoose": "Velg et token. Nå {symbol}.",
-    "gotItDone": "Takk — jeg er med"
+    "gotItDone": "Takk — jeg er med",
+    "matrixPersonUnavailable": "Den personen har ikke chat ennå."
   },
   "WelcomeFlow": {
     "offer": {
@@ -695,7 +696,8 @@
     "titleLineTwo": "Del meldinger",
     "tabs": {
       "messages": "Meldinger",
-      "suggestions": "Forslag"
+      "suggestions": "Forslag",
+      "archived": "Arkivert"
     },
     "suggestionsEmpty": "Ingen forslag akkurat nå.",
     "reachOut": "Hypha foreslår",
@@ -723,7 +725,8 @@
     "youWrote": "Du: {message}",
     "unread": "{count} nye",
     "members": "{count} medlemmer",
-    "loadMoreFailed": "Resten av listen ble ikke lastet. Du kan prøve igjen."
+    "loadMoreFailed": "Resten av listen ble ikke lastet. Du kan prøve igjen.",
+    "archivedEmpty": "Arkiverte grupper vises her."
   },
   "NetworkFeedback": {
     "triggerLabel": "Bidra til Hypha",
@@ -4140,10 +4143,25 @@
     "renameGroupFailed": "Kunne ikke gi gruppen nytt navn. Prøv igjen.",
     "archiveGroup": "Arkiver gruppe",
     "archiveGroupTitle": "Arkivere denne gruppen?",
-    "archiveGroupDescription": "Gruppen skjules fra Meldinger for alle. Medlemmene blir ikke spurt først. Historikken blir værende i rommet.",
+    "archiveGroupDescription": "Dette skjuler gruppen fra Meldinger. Historikken blir værende i rommet. Du kan åpne den fra Arkivert og gjenopprette den senere. Medlemmene blir ikke spurt først.",
     "archiveGroupConfirm": "Ja, arkiver",
     "archiveGroupCancel": "Avbryt",
-    "archiveGroupFailed": "Kunne ikke arkivere denne gruppen. Prøv igjen."
+    "archiveGroupFailed": "Kunne ikke arkivere denne gruppen. Prøv igjen.",
+    "addPeople": "Legg til personer",
+    "addPeopleTitle": "Legg til personer i denne gruppen",
+    "addPeopleDescription": "De blir invitert inn i denne chatten.",
+    "addPeopleConfirm": "Legg til",
+    "addPeopleCancel": "Avbryt",
+    "addPeopleFailed": "Kunne ikke legge til personer i denne gruppen. Prøv igjen.",
+    "addPeopleEmpty": "Alle du kan legge til er allerede her.",
+    "addPeopleSearch": "Søk etter personer",
+    "unarchiveGroup": "Gjenopprett gruppe",
+    "unarchiveGroupTitle": "Gjenopprette denne gruppen?",
+    "unarchiveGroupDescription": "Gruppen vises i Meldinger igjen. Alle kan sende meldinger.",
+    "unarchiveGroupConfirm": "Ja, gjenopprett",
+    "unarchiveGroupCancel": "Avbryt",
+    "unarchiveGroupFailed": "Kunne ikke gjenopprette denne gruppen. Prøv igjen.",
+    "archivedGroupReadOnly": "Denne gruppen er arkivert. Gjenopprett den for å sende meldinger."
   },
   "CoherenceTab": {
     "signals": "Signaler",

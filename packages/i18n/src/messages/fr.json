@@ -305,7 +305,8 @@
     "profileUnavailable": "Tu es toujours connecté. Ton profil n'a pas pu être chargé.",
     "retry": "Réessayer",
     "sendTokensChoose": "Choisis un token. Actuellement {symbol}.",
-    "gotItDone": "Merci — je suis avec vous"
+    "gotItDone": "Merci — je suis avec vous",
+    "matrixPersonUnavailable": "Cette personne n’a pas encore de chat."
   },
   "WelcomeFlow": {
     "offer": {
@@ -696,7 +697,8 @@
     "titleLineTwo": "Partagez des messages",
     "tabs": {
       "messages": "Messages",
-      "suggestions": "Suggestions"
+      "suggestions": "Suggestions",
+      "archived": "Archivés"
     },
     "suggestionsEmpty": "Aucune suggestion pour le moment.",
     "reachOut": "Hypha suggère",
@@ -724,7 +726,8 @@
     "youWrote": "Toi : {message}",
     "unread": "{count} nouveaux",
     "members": "{count} membres",
-    "loadMoreFailed": "Le reste de la liste ne s'est pas chargé. Tu peux réessayer."
+    "loadMoreFailed": "Le reste de la liste ne s'est pas chargé. Tu peux réessayer.",
+    "archivedEmpty": "Les groupes archivés apparaissent ici."
   },
   "NetworkFeedback": {
     "triggerLabel": "Façonner Hypha",
@@ -3565,10 +3568,25 @@
     "renameGroupFailed": "Impossible de renommer ce groupe. Réessayez.",
     "archiveGroup": "Archiver le groupe",
     "archiveGroupTitle": "Archiver ce groupe ?",
-    "archiveGroupDescription": "Le groupe disparaît de Messages pour tout le monde. Les membres ne sont pas consultés. L’historique reste dans le salon.",
+    "archiveGroupDescription": "Le groupe disparaît de Messages. L’historique reste dans le salon. Tu peux l’ouvrir depuis Archivés et le restaurer plus tard. Les membres ne sont pas consultés.",
     "archiveGroupConfirm": "Oui, archiver",
     "archiveGroupCancel": "Annuler",
-    "archiveGroupFailed": "Impossible d’archiver ce groupe. Réessayez."
+    "archiveGroupFailed": "Impossible d’archiver ce groupe. Réessayez.",
+    "addPeople": "Ajouter des personnes",
+    "addPeopleTitle": "Ajouter des personnes à ce groupe",
+    "addPeopleDescription": "Elles seront invitées dans ce chat.",
+    "addPeopleConfirm": "Ajouter",
+    "addPeopleCancel": "Annuler",
+    "addPeopleFailed": "Impossible d’ajouter des personnes à ce groupe. Réessayez.",
+    "addPeopleEmpty": "Toutes les personnes que tu peux ajouter sont déjà ici.",
+    "addPeopleSearch": "Rechercher des personnes",
+    "unarchiveGroup": "Restaurer le groupe",
+    "unarchiveGroupTitle": "Restaurer ce groupe ?",
+    "unarchiveGroupDescription": "Le groupe réapparaît dans Messages. Tout le monde peut envoyer des messages.",
+    "unarchiveGroupConfirm": "Oui, restaurer",
+    "unarchiveGroupCancel": "Annuler",
+    "unarchiveGroupFailed": "Impossible de restaurer ce groupe. Réessayez.",
+    "archivedGroupReadOnly": "Ce groupe est archivé. Restaure-le pour envoyer des messages."
   },
   "CoherenceTab": {
     "signals": "Signaux",

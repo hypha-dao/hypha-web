@@ -305,7 +305,8 @@
     "profileUnavailable": "Сè уште си најавен. Твојот профил не можеше да се вчита.",
     "retry": "Обиди се повторно",
     "sendTokensChoose": "Избери токен. Сега {symbol}.",
-    "gotItDone": "Благодарам — сум со тебе"
+    "gotItDone": "Благодарам — сум со тебе",
+    "matrixPersonUnavailable": "Тоа лице сѐ уште нема разговор."
   },
   "WelcomeFlow": {
     "offer": {
@@ -696,7 +697,8 @@
     "titleLineTwo": "Сподели пораки",
     "tabs": {
       "messages": "Пораки",
-      "suggestions": "Предлози"
+      "suggestions": "Предлози",
+      "archived": "Архивирани"
     },
     "suggestionsEmpty": "Нема предлози во моментов.",
     "reachOut": "Хифа предлага",
@@ -724,7 +726,8 @@
     "youWrote": "Ти: {message}",
     "unread": "{count} нови",
     "members": "{count} членови",
-    "loadMoreFailed": "Остатокот од листата не се вчита. Можеш да пробаш повторно."
+    "loadMoreFailed": "Остатокот од листата не се вчита. Можеш да пробаш повторно.",
+    "archivedEmpty": "Архивираните групи се појавуваат тука."
   },
   "OnboardingAdventure": {
     "heroEyebrow": "ИНТЕЛИГЕНТНАТА ОРГАНИЗАЦИЈА",
@@ -4122,10 +4125,25 @@
     "renameGroupFailed": "Групата не можеше да се преименува. Обиди се повторно.",
     "archiveGroup": "Архивирај група",
     "archiveGroupTitle": "Да се архивира оваа група?",
-    "archiveGroupDescription": "Групата исчезнува од Пораки за сите. Членовите не се прашуваат однапред. Историјата останува во собата.",
+    "archiveGroupDescription": "Групата се крие од Пораки. Историјата останува во собата. Можеш да ја отвориш од Архивирани и да ја вратиш подоцна. Членовите не се прашуваат однапред.",
     "archiveGroupConfirm": "Да, архивирај",
     "archiveGroupCancel": "Откажи",
-    "archiveGroupFailed": "Групата не можеше да се архивира. Обиди се повторно."
+    "archiveGroupFailed": "Групата не можеше да се архивира. Обиди се повторно.",
+    "addPeople": "Додај луѓе",
+    "addPeopleTitle": "Додај луѓе во оваа група",
+    "addPeopleDescription": "Ќе бидат поканети во овој разговор.",
+    "addPeopleConfirm": "Додај",
+    "addPeopleCancel": "Откажи",
+    "addPeopleFailed": "Не можеа да се додадат луѓе во групата. Обиди се повторно.",
+    "addPeopleEmpty": "Сите што можеш да ги додадеш веќе се тука.",
+    "addPeopleSearch": "Барај луѓе",
+    "unarchiveGroup": "Врати група",
+    "unarchiveGroupTitle": "Да се врати оваа група?",
+    "unarchiveGroupDescription": "Групата повторно ќе се појави во Пораки. Секој може да испраќа пораки.",
+    "unarchiveGroupConfirm": "Да, врати",
+    "unarchiveGroupCancel": "Откажи",
+    "unarchiveGroupFailed": "Групата не можеше да се врати. Обиди се повторно.",
+    "archivedGroupReadOnly": "Оваа група е архивирана. Врати ја за да испраќаш пораки."
   },
   "CoherenceTab": {
     "signals": "Сигнали",

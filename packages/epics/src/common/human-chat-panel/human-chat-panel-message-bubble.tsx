@@ -63,6 +63,7 @@ import {
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
   pickUserVisibleMemberLabel,
+  visibleMatrixMemberName,
 } from './matrix-room-member-display';
 import {
   type ChatPanelAttachmentMedia,
@@ -1316,7 +1317,7 @@ function MxidMentionPill({
       return t('agentMentionLabel');
     }
     const fromPerson = person ? formatPersonDisplayName(person) : '';
-    const visible = pickUserVisibleMemberLabel(fullMxid, fromPerson, syncLabel);
+    const visible = visibleMatrixMemberName(fullMxid, fromPerson, syncLabel);
     if (!visible) return '';
     return visible.startsWith('@') ? visible : `@${visible}`;
   }, [person, syncLabel, fullMxid, t]);
@@ -1633,14 +1634,14 @@ export function HumanChatPanelMessageBubble({
       : '';
     const visible =
       message.senderMatrixId != null
-        ? pickUserVisibleMemberLabel(
+        ? visibleMatrixMemberName(
             message.senderMatrixId,
             fromPerson,
             rosterSenderLabel,
             message.senderName,
           )
         : fromPerson || rosterSenderLabel?.trim() || message.senderName?.trim();
-    return visible ?? t('unknownMember');
+    return visible || t('unknownMember');
   }, [
     message.role,
     message.senderMatrixId,
@@ -1658,14 +1659,14 @@ export function HumanChatPanelMessageBubble({
     const fromPerson = replyPerson ? formatPersonDisplayName(replyPerson) : '';
     const visible =
       replyTo.sourceUserId != null
-        ? pickUserVisibleMemberLabel(
+        ? visibleMatrixMemberName(
             replyTo.sourceUserId,
             fromPerson,
             rosterReplyLabel,
             replyTo.authorLabel,
           )
         : fromPerson || rosterReplyLabel?.trim() || replyTo.authorLabel?.trim();
-    return visible ?? t('unknownMember');
+    return visible || t('unknownMember');
   }, [replyPerson, replyTo, rosterReplyLabel, t]);
 
   const senderHasVisibleLabel = useMemo(() => {

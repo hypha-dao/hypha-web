@@ -305,7 +305,8 @@
     "profileUnavailable": "Sigues con la sesión iniciada. No se pudo cargar tu perfil.",
     "retry": "Intentar de nuevo",
     "sendTokensChoose": "Elige un token. Ahora: {symbol}.",
-    "gotItDone": "Gracias — estoy contigo"
+    "gotItDone": "Gracias — estoy contigo",
+    "matrixPersonUnavailable": "Esa persona todavía no tiene chat."
   },
   "WelcomeFlow": {
     "offer": {
@@ -1474,7 +1475,8 @@
     "titleLineTwo": "Comparte mensajes",
     "tabs": {
       "messages": "Mensajes",
-      "suggestions": "Sugerencias"
+      "suggestions": "Sugerencias",
+      "archived": "Archivados"
     },
     "suggestionsEmpty": "No hay sugerencias ahora.",
     "reachOut": "Hypha sugiere",
@@ -1502,7 +1504,8 @@
     "youWrote": "Tú: {message}",
     "unread": "{count} nuevos",
     "members": "{count} miembros",
-    "loadMoreFailed": "El resto de la lista no se cargó. Puedes intentarlo de nuevo."
+    "loadMoreFailed": "El resto de la lista no se cargó. Puedes intentarlo de nuevo.",
+    "archivedEmpty": "Los grupos archivados aparecen aquí."
   },
   "NetworkFeedback": {
     "triggerLabel": "Da forma a Hypha",
@@ -3581,10 +3584,25 @@
     "renameGroupFailed": "No se pudo renombrar este grupo. Inténtalo de nuevo.",
     "archiveGroup": "Archivar grupo",
     "archiveGroupTitle": "¿Archivar este grupo?",
-    "archiveGroupDescription": "Esto oculta el grupo de Mensajes para todos. No se pide consentimiento a los miembros. El historial permanece en la sala.",
+    "archiveGroupDescription": "Esto oculta el grupo de Mensajes. El historial permanece en la sala. Puedes abrirlo desde Archivados y restaurarlo después. No se pide consentimiento a los miembros.",
     "archiveGroupConfirm": "Sí, archivar",
     "archiveGroupCancel": "Cancelar",
-    "archiveGroupFailed": "No se pudo archivar este grupo. Inténtalo de nuevo."
+    "archiveGroupFailed": "No se pudo archivar este grupo. Inténtalo de nuevo.",
+    "addPeople": "Añadir personas",
+    "addPeopleTitle": "Añadir personas a este grupo",
+    "addPeopleDescription": "Se les invitará a este chat.",
+    "addPeopleConfirm": "Añadir",
+    "addPeopleCancel": "Cancelar",
+    "addPeopleFailed": "No se pudo añadir personas a este grupo. Inténtalo de nuevo.",
+    "addPeopleEmpty": "Todas las personas que puedes añadir ya están aquí.",
+    "addPeopleSearch": "Buscar personas",
+    "unarchiveGroup": "Restaurar grupo",
+    "unarchiveGroupTitle": "¿Restaurar este grupo?",
+    "unarchiveGroupDescription": "El grupo volverá a aparecer en Mensajes. Cualquiera puede enviar mensajes.",
+    "unarchiveGroupConfirm": "Sí, restaurar",
+    "unarchiveGroupCancel": "Cancelar",
+    "unarchiveGroupFailed": "No se pudo restaurar este grupo. Inténtalo de nuevo.",
+    "archivedGroupReadOnly": "Este grupo está archivado. Restáuralo para enviar mensajes."
   },
   "CoherenceTab": {
     "signals": "Señales",

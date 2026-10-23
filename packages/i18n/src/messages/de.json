@@ -305,7 +305,8 @@
     "profileUnavailable": "Du bist noch angemeldet. Dein Profil konnte nicht geladen werden.",
     "retry": "Nochmal versuchen",
     "sendTokensChoose": "Wähle einen Token. Aktuell {symbol}.",
-    "gotItDone": "Danke — ich bin dabei"
+    "gotItDone": "Danke — ich bin dabei",
+    "matrixPersonUnavailable": "Diese Person hat noch keinen Chat."
   },
   "WelcomeFlow": {
     "offer": {
@@ -696,7 +697,8 @@
     "titleLineTwo": "Teile Nachrichten",
     "tabs": {
       "messages": "Nachrichten",
-      "suggestions": "Vorschläge"
+      "suggestions": "Vorschläge",
+      "archived": "Archiviert"
     },
     "suggestionsEmpty": "Gerade keine Vorschläge.",
     "reachOut": "Hypha schlägt vor",
@@ -724,7 +726,8 @@
     "youWrote": "Du: {message}",
     "unread": "{count} neu",
     "members": "{count} Mitglieder",
-    "loadMoreFailed": "Der Rest der Liste wurde nicht geladen. Du kannst es erneut versuchen."
+    "loadMoreFailed": "Der Rest der Liste wurde nicht geladen. Du kannst es erneut versuchen.",
+    "archivedEmpty": "Archivierte Gruppen erscheinen hier."
   },
   "NetworkFeedback": {
     "triggerLabel": "Hypha gestalten",
@@ -4139,10 +4142,25 @@
     "renameGroupFailed": "Die Gruppe konnte nicht umbenannt werden. Bitte versuchen Sie es erneut.",
     "archiveGroup": "Gruppe archivieren",
     "archiveGroupTitle": "Diese Gruppe archivieren?",
-    "archiveGroupDescription": "Die Gruppe verschwindet für alle aus Nachrichten. Die Mitglieder werden nicht gefragt. Der Verlauf bleibt im Raum.",
+    "archiveGroupDescription": "Die Gruppe verschwindet aus Nachrichten. Der Verlauf bleibt im Raum. Du kannst sie unter Archiviert öffnen und später wiederherstellen. Die Mitglieder werden nicht gefragt.",
     "archiveGroupConfirm": "Ja, archivieren",
     "archiveGroupCancel": "Abbrechen",
-    "archiveGroupFailed": "Die Gruppe konnte nicht archiviert werden. Bitte versuchen Sie es erneut."
+    "archiveGroupFailed": "Die Gruppe konnte nicht archiviert werden. Bitte versuchen Sie es erneut.",
+    "addPeople": "Personen hinzufügen",
+    "addPeopleTitle": "Personen zu dieser Gruppe hinzufügen",
+    "addPeopleDescription": "Sie werden in diesen Chat eingeladen.",
+    "addPeopleConfirm": "Hinzufügen",
+    "addPeopleCancel": "Abbrechen",
+    "addPeopleFailed": "Personen konnten nicht zur Gruppe hinzugefügt werden. Bitte versuchen Sie es erneut.",
+    "addPeopleEmpty": "Alle Personen, die du hinzufügen kannst, sind schon hier.",
+    "addPeopleSearch": "Personen suchen",
+    "unarchiveGroup": "Gruppe wiederherstellen",
+    "unarchiveGroupTitle": "Diese Gruppe wiederherstellen?",
+    "unarchiveGroupDescription": "Die Gruppe erscheint wieder in Nachrichten. Jeder kann Nachrichten senden.",
+    "unarchiveGroupConfirm": "Ja, wiederherstellen",
+    "unarchiveGroupCancel": "Abbrechen",
+    "unarchiveGroupFailed": "Die Gruppe konnte nicht wiederhergestellt werden. Bitte versuchen Sie es erneut.",
+    "archivedGroupReadOnly": "Diese Gruppe ist archiviert. Stelle sie wieder her, um Nachrichten zu senden."
   },
   "CoherenceTab": {
     "signals": "Signale",

@@ -8,5 +8,6 @@ export {
   needsHyphaProfileResolutionForMatrixLabel,
   pickUserVisibleMemberLabel,
   shortenMatrixIdForDisplay,
+  visibleMatrixMemberName,
   speakerLabelToCanonicalPrivySub,
 } from '../../../../core/src/matrix/matrix-member-display';

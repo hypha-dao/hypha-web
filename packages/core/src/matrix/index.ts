@@ -7,4 +7,5 @@ export * from './chat-markup';
 export * from './reactions';
 export * from './mentions';
 export * from './matrix-member-display';
+export * from './open-direct-room';
 export * from './signal-team-events';

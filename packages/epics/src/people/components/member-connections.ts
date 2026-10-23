@@ -1,6 +1,7 @@
 import {
   isHyphaBotMatrixIdentity,
   looksLikeTechnicalMatrixDisplayName,
+  visibleMatrixMemberName,
 } from '../../../../core/src/matrix/matrix-member-display';
 import { replacePlainTextMatrixMxidsWithLabels } from '../../../../core/src/matrix/mentions';
 import { HYPHA_ROOM_TYPES } from '../../../../core/src/matrix/room-types';
@@ -42,6 +43,15 @@ export type ConversationRow = {
   groupChat?: boolean;
   /** A signal thread that happens to have one other person. Not a private message. */
   signalThread?: boolean;
+  /** Hidden from Messages; still listed under Archived. */
+  archived?: boolean;
+  /** All other members, so search can match more than the two faces. */
+  searchMembers?: {
+    name: string;
+    nickname?: string | null;
+    slug?: string | null;
+    userId?: string;
+  }[];
 };
 
 export type MemberRow<T extends ConnectionListPerson = ConnectionListPerson> = {
@@ -55,6 +65,15 @@ export type MemberRow<T extends ConnectionListPerson = ConnectionListPerson> = {
   roomId: string | null;
   /** Set on a group chat. Two faces mean the row is a group. */
   faces?: GroupFace[];
+  /** Hidden from Messages; still listed under Archived. */
+  archived?: boolean;
+  /** All other members, so search can match more than the two faces. */
+  searchMembers?: {
+    name: string;
+    nickname?: string | null;
+    slug?: string | null;
+    userId?: string;
+  }[];
 };
 
 export function looksLikeHyphaBot(value: string | null | undefined) {
@@ -580,12 +599,13 @@ export function facesWithProfiles(
     const profile = face.userId
       ? profiles.get(face.userId.toLowerCase())
       : undefined;
-    if (!profile) return face;
-    const name = profile.name.trim();
+    const name = face.userId
+      ? visibleMatrixMemberName(face.userId, profile?.name, face.name)
+      : profile?.name.trim() || face.name;
     return {
       ...face,
       name: name || face.name,
-      avatarUrl: profile.avatarUrl || face.avatarUrl,
+      avatarUrl: profile?.avatarUrl || face.avatarUrl,
     };
   });
 }
@@ -715,6 +735,12 @@ export function conversationMatchesSearch(
     name: string;
     person?: { nickname?: string | null; slug?: string | null };
     faces?: readonly { name?: string | null }[];
+    searchMembers?: readonly {
+      name?: string | null;
+      nickname?: string | null;
+      slug?: string | null;
+      userId?: string | null;
+    }[];
   },
   needle: string,
 ) {
@@ -725,6 +751,12 @@ export function conversationMatchesSearch(
     row.person?.nickname,
     row.person?.slug,
     ...(row.faces ?? []).map((face) => face.name),
+    ...(row.searchMembers ?? []).flatMap((member) => [
+      member.name,
+      member.nickname,
+      member.slug,
+      member.userId?.replace(/^@/, '').split(':')[0],
+    ]),
   ]
     .filter(Boolean)
     .join(' ')
@@ -777,8 +809,59 @@ export function groupRowsForConnections<T extends ConnectionListPerson>(
         lastTs: room.lastTs,
         unread: room.unread,
         roomId: room.roomId,
+        archived: room.archived,
+        searchMembers: room.searchMembers,
       };
     });
+}
+
+export function enrichSearchMembers<T extends ConnectionListPerson>(
+  members:
+    | readonly {
+        name: string;
+        nickname?: string | null;
+        slug?: string | null;
+        userId?: string;
+      }[]
+    | undefined,
+  profiles: ReadonlyMap<string, { name: string; avatarUrl?: string }>,
+  connections: readonly MemberRow<T>[],
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+) {
+  const personByMxid = new Map<string, T>();
+  for (const row of connections) {
+    const mxid = personIdToMatrixUserId[row.person.id]?.trim().toLowerCase();
+    if (mxid) personByMxid.set(mxid, row.person);
+  }
+  return (members ?? []).map((member) => {
+    const mxid = member.userId?.trim().toLowerCase();
+    const profile = mxid ? profiles.get(mxid) : undefined;
+    const person = mxid ? personByMxid.get(mxid) : undefined;
+    return {
+      name:
+        (mxid
+          ? visibleMatrixMemberName(
+              mxid,
+              profile?.name,
+              person ? personName(person, '') : '',
+              member.name,
+            )
+          : profile?.name || member.name) || member.name,
+      nickname: person?.nickname ?? member.nickname ?? null,
+      slug: person?.slug ?? member.slug ?? null,
+      userId: member.userId,
+    };
+  });
+}
+
+/** Messages hides archived groups; Archived shows only those groups. */
+export function conversationsVisibleInSection<T extends ConnectionListPerson>(
+  rows: readonly MemberRow<T>[],
+  section: 'messages' | 'archived',
+) {
+  return rows.filter((row) =>
+    section === 'archived' ? Boolean(row.archived) : !row.archived,
+  );
 }
 
 /** Members this person connects with. Signal rooms stay out of the list. */

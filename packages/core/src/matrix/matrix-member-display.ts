@@ -75,6 +75,17 @@ export function pickUserVisibleMemberLabel(
   return null;
 }
 
+/** Hypha profile or Matrix display name, then a shortened id. */
+export function visibleMatrixMemberName(
+  matrixUserId: string,
+  ...candidates: Array<string | undefined | null>
+): string {
+  return (
+    pickUserVisibleMemberLabel(matrixUserId, ...candidates) ??
+    shortenMatrixIdForDisplay(matrixUserId)
+  );
+}
+
 /** Matrix `m.room.member` displayname can mirror the ugly localpart — treat as absent. */
 export function looksLikeTechnicalMatrixDisplayName(
   label: string | undefined,

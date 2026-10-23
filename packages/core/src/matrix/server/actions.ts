@@ -966,6 +966,50 @@ export async function archiveGroupRoomAction({
   }
 }
 
+/**
+ * Creator restores a Messages group. The room stays in Matrix; every client
+ * shows it in Messages once `io.hypha.room.archived` is cleared.
+ */
+export async function unarchiveGroupRoomAction({
+  roomId,
+  authToken,
+}: {
+  roomId: string;
+  authToken: string;
+}): Promise<{ archived: false } | null> {
+  try {
+    const ctx = await loadPeopleGroupContext(roomId, authToken);
+    if (!ctx) return null;
+    const allowed = await canArchivePeopleGroup(
+      ctx.roomId,
+      ctx.userId,
+      ctx.botToken,
+      ctx.homeserver,
+    );
+    if (!allowed) return null;
+    await matrixSendStateEvent(
+      ctx.roomId,
+      GROUP_ROOM_ARCHIVED_STATE,
+      '',
+      {
+        archived: false,
+        archivedBy: ctx.userId,
+        ts: Date.now(),
+      },
+      ctx.botToken,
+      ctx.homeserver,
+    );
+    return { archived: false };
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to unarchive group room:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
+}
+
 /** Space chats and signal threads the client must keep out of Messages. */
 export async function listBoundChatRoomIdsAmongAction(
   roomIds: readonly string[],

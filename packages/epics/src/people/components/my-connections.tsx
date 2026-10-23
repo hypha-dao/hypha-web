@@ -31,6 +31,7 @@ import {
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
   sortConversationsByLastMessage,
+  visibleMatrixMemberName,
   useJwt,
   useMatrix,
   useMatrixUserIdsByPersonIds,
@@ -59,6 +60,8 @@ import {
   facesWithProfiles,
   groupRowsForConnections,
   conversationMatchesSearch,
+  conversationsVisibleInSection,
+  enrichSearchMembers,
   isPeopleListGroup,
   isRememberedBoundChatRoom,
   isRememberedGroupChatRoom,
@@ -205,9 +208,7 @@ function conversationRowFromRoom(
   if (isRememberedBoundChatRoom(room.roomId)) {
     return logDroppedRoom(room, { reason: 'space-or-signal' });
   }
-  if (isArchivedGroupRoom(room)) {
-    return logDroppedRoom(room, { reason: 'archived' });
-  }
+  const archived = isArchivedGroupRoom(room);
   const botId = botUserId();
   const selfId = client.getUserId();
   const knownMembers = room
@@ -306,9 +307,11 @@ function conversationRowFromRoom(
   const faces =
     kind === 'group'
       ? others.slice(0, 2).map((member) => ({
-          name:
-            (member.name || member.rawDisplayName || '').trim() ||
+          name: visibleMatrixMemberName(
             member.userId,
+            member.name,
+            member.rawDisplayName,
+          ),
           userId: member.userId,
           avatarUrl: avatarHttp(
             client,
@@ -343,6 +346,17 @@ function conversationRowFromRoom(
   // Always walk real incoming messages. The SDK notification total still
   // counts hidden call/signal notices, which inflated the Messages badge.
   const unread = countIncomingUnreadMessages(room, selfId, isHyphaBot);
+  const searchMembers =
+    kind === 'group'
+      ? others.map((member) => ({
+          name: visibleMatrixMemberName(
+            member.userId,
+            member.name,
+            member.rawDisplayName,
+          ),
+          userId: member.userId,
+        }))
+      : undefined;
 
   return {
     roomId: room.roomId,
@@ -350,7 +364,7 @@ function conversationRowFromRoom(
     avatarUrl: avatarHttp(client, mxc),
     preview: last.preview,
     mine: last.mine,
-    lastTs: last.ts,
+    lastTs: last.ts ?? (kind === 'group' ? groupFallbackTimestamp(room) : null),
     unread,
     memberCount: members.length,
     otherUserId: other?.userId ?? null,
@@ -358,7 +372,22 @@ function conversationRowFromRoom(
     faces,
     groupChat: kind === 'group',
     kind,
+    archived,
+    searchMembers,
   };
+}
+
+function groupFallbackTimestamp(room: Room): number | null {
+  const create = room.currentState?.getStateEvents?.('m.room.create', '');
+  const event = Array.isArray(create) ? create[0] : create;
+  const createdTs =
+    event && typeof event.getTs === 'function' ? event.getTs() : 0;
+  if (createdTs > 0) return createdTs;
+  if (typeof room.getLastActiveTimestamp === 'function') {
+    const active = room.getLastActiveTimestamp();
+    if (active > 0) return active;
+  }
+  return null;
 }
 
 function sortConversationRows(rows: ConversationRow[]) {
@@ -380,7 +409,8 @@ function sameConversationRows(
       current.lastTs !== next.lastTs ||
       current.unread !== next.unread ||
       current.mine !== next.mine ||
-      current.name !== next.name
+      current.name !== next.name ||
+      current.archived !== next.archived
     ) {
       return false;
     }
@@ -593,6 +623,7 @@ function roomStamp(room: Room, selfId: string | null) {
     readRoomNameState(room) ?? '',
     room.getJoinedMemberCount?.() ?? 0,
     room.getMembers?.().length ?? 0,
+    isArchivedGroupRoom(room) ? '1' : '0',
   ].join(':');
 }
 
@@ -610,6 +641,29 @@ function conversationIsFresh(client: MatrixClient, room: Room) {
   const hit = conversationCache.get(room.roomId);
   if (!hit) return false;
   return hit.stamp === roomStamp(room, client.getUserId());
+}
+
+function peopleGroupRoomIds(client: MatrixClient): string[] {
+  const ids: string[] = [];
+  for (const room of client.getRooms()) {
+    if (room.getMyMembership() !== 'join') continue;
+    if (room.getType() === HYPHA_ROOM_TYPES.group) {
+      ids.push(room.roomId);
+      continue;
+    }
+    if (isRememberedGroupChatRoom(room.roomId)) {
+      ids.push(room.roomId);
+      continue;
+    }
+    if (
+      room.getType() !== HYPHA_ROOM_TYPES.dm &&
+      (Boolean(readGroupRoomCreatorUserId(room)) ||
+        Boolean(readRoomNameState(room)))
+    ) {
+      ids.push(room.roomId);
+    }
+  }
+  return ids;
 }
 
 function priorityRoomIds(
@@ -780,7 +834,7 @@ function onConversationSync() {
   const client = conversationClient;
   if (!client) return;
   refreshBoundChatRooms(client);
-  enqueueConversationRooms(client, []);
+  enqueueConversationRooms(client, peopleGroupRoomIds(client));
   // Summarise enough rooms on this tick that last-message order is already
   // correct before the list paints. The idle pump finishes any remainder.
   pumpConversationRooms(SYNC_ROOM_BUDGET);
@@ -954,7 +1008,7 @@ export function attachConversationList(
   conversationListeners.add(onChange);
   listenForConversationRows(client);
   refreshBoundChatRooms(client);
-  enqueueConversationRooms(client, []);
+  enqueueConversationRooms(client, peopleGroupRoomIds(client));
   pumpConversationRooms(SYNC_ROOM_BUDGET);
   scheduleConversationPump();
   onChange();
@@ -973,10 +1027,13 @@ export function prioritizeConversationRooms(
 ) {
   if (matrixUserIds.length === 0) return;
   useConversationClient(client);
-  const roomIds = priorityRoomIds(client, matrixUserIds);
+  const roomIds = [
+    ...peopleGroupRoomIds(client),
+    ...priorityRoomIds(client, matrixUserIds),
+  ];
   enqueueConversationRooms(client, roomIds);
   pumpConversationRooms(
-    Math.min(SYNC_ROOM_BUDGET, Math.max(roomIds.length, 1)),
+    Math.min(SYNC_ROOM_BUDGET + 8, Math.max(roomIds.length, 1)),
   );
 }
 
@@ -1050,8 +1107,8 @@ function formatWhen(ts: number, locale: string, justNow: string) {
 export function MyConnections({
   section = 'messages',
 }: {
-  /** Messages is the conversation list. Suggestions is its own screen. */
-  section?: 'messages' | 'suggestions';
+  /** Messages is the conversation list. Suggestions and Archived are their own screens. */
+  section?: 'messages' | 'suggestions' | 'archived';
 }) {
   const t = useTranslations('Connections');
   const tChat = useTranslations('MemberHome');
@@ -1391,18 +1448,22 @@ export function MyConnections({
           name: row.name.trim() || pending?.name || row.name,
           faces: facesWithProfiles(faces, profiles),
           lastTs: row.lastTs,
+          searchMembers: enrichSearchMembers(
+            row.searchMembers,
+            profiles,
+            members,
+            personIdToMatrixUserId,
+          ),
         };
       }),
       ...pendingGroups
-        .filter((group) => {
-          if (liveGroupIds.has(group.roomId)) return false;
-          return !isArchivedGroupRoom(client?.getRoom(group.roomId));
-        })
+        .filter((group) => !liveGroupIds.has(group.roomId))
         .map((group) => ({
           ...group,
           name:
             conversationTitleOverrides.get(group.roomId)?.trim() || group.name,
           faces: facesWithProfiles(group.faces, profiles),
+          archived: isArchivedGroupRoom(client?.getRoom(group.roomId)),
         })),
     ];
     for (const row of conversations) {
@@ -1413,7 +1474,12 @@ export function MyConnections({
     const groups = picking
       ? []
       : groupRowsForConnections<ConnectionPerson>(conversations, t('someone'));
-    const source = [...groups, ...members];
+    const listedGroups = conversationsVisibleInSection(
+      groups,
+      section === 'archived' ? 'archived' : 'messages',
+    );
+    const source =
+      section === 'archived' ? listedGroups : [...listedGroups, ...members];
     const filtered = needle
       ? source.filter((row) => conversationMatchesSearch(row, needle))
       : source;
@@ -1431,6 +1497,7 @@ export function MyConnections({
     personIdToMatrixUserId,
     picking,
     rows,
+    section,
     t,
   ]);
   const selectedPeople = members.filter((row) => selected.has(row.person.id));
@@ -1493,7 +1560,12 @@ export function MyConnections({
       openCoherenceChat(row.roomId, row.name, '', null, null);
       return;
     }
-    const opened = await openChatRef.current?.({
+    const openChat = openChatRef.current;
+    if (!openChat) {
+      setNotice(tChat('matrixUnavailable'));
+      return;
+    }
+    await openChat({
       id: row.person.id,
       slug: row.person.slug,
       name: row.person.name,
@@ -1501,7 +1573,6 @@ export function MyConnections({
       nickname: row.person.nickname,
       avatarUrl: row.person.avatarUrl,
     });
-    if (!opened) setNotice(tChat('matrixUnavailable'));
   }
 
   async function startGroupChat() {
@@ -1536,7 +1607,7 @@ export function MyConnections({
           name: title,
           preview: '',
           mine: false,
-          lastTs: null,
+          lastTs: Date.now(),
           unread: 0,
           memberCount: selectedPeople.length + 1,
           otherUserId: null,
@@ -1563,7 +1634,12 @@ export function MyConnections({
       openCoherenceChat(card.roomId, card.name, '', null, null);
       return;
     }
-    const opened = await openChatRef.current?.({
+    const openChat = openChatRef.current;
+    if (!openChat) {
+      setNotice(tChat('matrixUnavailable'));
+      return;
+    }
+    await openChat({
       id: card.person.id,
       slug: card.person.slug,
       name: card.person.name,
@@ -1571,7 +1647,6 @@ export function MyConnections({
       nickname: card.person.nickname,
       avatarUrl: card.person.avatarUrl,
     });
-    if (!opened) setNotice(tChat('matrixUnavailable'));
   }
 
   return (
@@ -1635,7 +1710,7 @@ export function MyConnections({
         </section>
       ) : null}
 
-      {section === 'messages' ? (
+      {section === 'messages' || section === 'archived' ? (
         <>
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
@@ -1653,7 +1728,7 @@ export function MyConnections({
                   className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
                 />
               </label>
-              {picking ? (
+              {section === 'archived' ? null : picking ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -1742,13 +1817,22 @@ export function MyConnections({
             </p>
           ) : null}
 
-          {!isMatrixAvailable ? (
+          {!isMatrixAvailable && !notice ? (
             <p className="text-2 text-muted-foreground">
               {tChat('matrixUnavailable')}
             </p>
           ) : null}
 
-          {home != null && people.length === 0 && !searching ? (
+          {section === 'archived' && people.length === 0 && !searching ? (
+            <p className="text-2 text-muted-foreground">
+              {needle ? t('noMatches') : t('archivedEmpty')}
+            </p>
+          ) : null}
+
+          {section !== 'archived' &&
+          home != null &&
+          people.length === 0 &&
+          !searching ? (
             <p className="text-2 text-muted-foreground">
               {needle ? t('noMatches') : t('empty')}
             </p>
@@ -1756,7 +1840,7 @@ export function MyConnections({
 
           {people.length > 0 ? (
             <MemberList
-              title={t('people')}
+              title={section === 'archived' ? t('tabs.archived') : t('people')}
               rows={people}
               presenceById={presenceById}
               locale={locale}
@@ -1773,7 +1857,7 @@ export function MyConnections({
             />
           ) : null}
 
-          {hasMorePeople && !needle ? (
+          {hasMorePeople && !needle && section !== 'archived' ? (
             <div className="flex justify-center">
               <Button
                 type="button"

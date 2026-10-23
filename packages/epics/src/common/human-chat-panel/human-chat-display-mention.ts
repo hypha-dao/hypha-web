@@ -1,4 +1,8 @@
-import { extractMentionUserIdsFromPlainBody } from '@hypha-platform/core/client';
+import { looksLikeTechnicalMatrixDisplayName } from '../../../../core/src/matrix/matrix-member-display';
+import {
+  extractMentionUserIdsFromPlainBody,
+  replacePlainTextMatrixMxidsWithLabels,
+} from '../../../../core/src/matrix/mentions';
 
 /** Zero-width space — keeps `@` + display name visually distinct from a raw MXID in the composer. */
 export const MENTION_DISPLAY_ZWSP = '\u200B';
@@ -83,4 +87,28 @@ export function wireComposerPlainForMatrixSend(
   );
   const mentionUserIds = extractMentionUserIdsFromPlainBody(wirePlain);
   return { wirePlain, mentionUserIds };
+}
+
+/**
+ * Show display names in the composer while keeping a reversible token.
+ * Send still writes the raw MXID via {@link replaceDisplayNameMentionsWithMxids}.
+ */
+export function replaceMxidsWithComposerMentionTokens(
+  plain: string,
+  userIdToLabel: ReadonlyMap<string, string>,
+): string {
+  if (!plain.trim() || userIdToLabel.size === 0) return plain;
+  const labels = new Map<string, string>();
+  for (const [userId, label] of userIdToLabel) {
+    const id = userId.trim();
+    const name = sanitizeMentionDisplayLabel(label);
+    if (!id || !name) continue;
+    if (looksLikeTechnicalMatrixDisplayName(name, id)) continue;
+    labels.set(id, name);
+    labels.set(id.toLowerCase(), name);
+  }
+  return replacePlainTextMatrixMxidsWithLabels(plain, (id) => {
+    const name = labels.get(id) ?? labels.get(id.toLowerCase());
+    return name ? formatComposerMentionToken(name).trimEnd() : id;
+  });
 }

@@ -6,6 +6,7 @@ import {
   STALE_CONNECTION_MS,
   connectionActivityTs,
   conversationMatchesSearch,
+  conversationsVisibleInSection,
   conversationUnreadTotal,
   facesWithProfiles,
   groupRowsForConnections,
@@ -652,6 +653,30 @@ describe('groupRowsForConnections', () => {
       conversationMatchesSearch({ ...row, name: 'Water team' }, 'Kate'),
     ).toBe(true);
     expect(conversationMatchesSearch(row, 'Marieke')).toBe(false);
+    expect(
+      conversationMatchesSearch(
+        {
+          ...row,
+          name: 'Water team',
+          searchMembers: [
+            { name: 'Marieke Visser', nickname: 'marie', slug: 'marieke' },
+          ],
+        },
+        'Marieke',
+      ),
+    ).toBe(true);
+    expect(
+      conversationMatchesSearch(
+        {
+          ...row,
+          name: 'Water team',
+          searchMembers: [
+            { name: 'Marieke Visser', nickname: 'marie', slug: 'marieke' },
+          ],
+        },
+        'marie',
+      ),
+    ).toBe(true);
   });
 
   it('keeps a renamed two-person group without a comma in the title', () => {
@@ -666,6 +691,21 @@ describe('groupRowsForConnections', () => {
     expect(groupRowsForConnections([row], 'Someone')[0]?.name).toBe(
       'Water team',
     );
+  });
+
+  it('keeps archived groups so the Archived view can list them', () => {
+    const row = room({
+      roomId: '!old',
+      kind: 'group',
+      name: 'Water team',
+      archived: true,
+      memberCount: 3,
+    });
+    const rows = groupRowsForConnections([row], 'Someone');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.archived).toBe(true);
+    expect(conversationsVisibleInSection(rows, 'messages')).toEqual([]);
+    expect(conversationsVisibleInSection(rows, 'archived')).toHaveLength(1);
   });
 });
 

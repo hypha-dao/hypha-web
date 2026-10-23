@@ -30,6 +30,7 @@ import {
   usePrefersCoarsePointer,
 } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
+import useSWR from 'swr';
 import {
   HYPHA_ROOM_TYPES,
   useMatrix,
@@ -57,7 +58,9 @@ import {
   isRedactedRoomMessageEvent,
   type MessageReaction,
   type Person,
+  isArchivedGroupRoom,
   looksLikeTechnicalSpaceMemoryName,
+  type MemberIntelligence,
   type SignalTeamNotice,
   requestRemoteGroupCallLeave,
   calledSpecialistIds,
@@ -136,6 +139,7 @@ import {
   matrixUserIdToCanonicalPrivySub,
   pickUserVisibleMemberLabel,
   shortenMatrixIdForDisplay,
+  visibleMatrixMemberName,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
@@ -162,6 +166,7 @@ import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
 import { SignalIndicativeAmounts } from '../coherence/components/signal-indicative-amounts';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
+  replaceMxidsWithComposerMentionTokens,
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
 } from './human-chat-panel/human-chat-display-mention';
@@ -1975,6 +1980,46 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const profileLookupInFlightRef = useRef<Set<string>>(new Set());
   const profileLookupAttemptedRef = useRef<Set<string>>(new Set());
 
+  const { data: directoryHome } = useSWR<MemberIntelligence | null>(
+    isDirectConversation && authToken
+      ? ['/api/v1/people/me/intelligence', authToken]
+      : null,
+    async ([url, token]) => {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return null;
+      return (await response.json()) as MemberIntelligence;
+    },
+  );
+  const directoryPersonIds = useMemo(() => {
+    if (!directoryHome) return [];
+    return [
+      directoryHome.person?.id,
+      ...(directoryHome.connections ?? []).map((person) => person.id),
+    ].filter((id): id is number => Number.isFinite(id) && id > 0);
+  }, [directoryHome]);
+  const { personIdToMatrixUserId: directoryMxids } =
+    useMatrixUserIdsByPersonIds({
+      personIds: directoryPersonIds,
+    });
+  const directoryLabelByMxid = useMemo(() => {
+    const labels = new Map<string, string>();
+    if (!directoryHome) return labels;
+    const people = [
+      directoryHome.person,
+      ...(directoryHome.connections ?? []),
+    ].filter((person): person is NonNullable<typeof person> => Boolean(person));
+    for (const person of people) {
+      const mxid = directoryMxids[person.id]?.trim();
+      const label =
+        [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+        person.nickname?.trim();
+      if (mxid && label) labels.set(mxid, label);
+    }
+    return labels;
+  }, [directoryHome, directoryMxids]);
+
   const rosterSubs = useMemo(
     () =>
       spaceMembers
@@ -2072,6 +2117,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         const full = [me?.name, me?.surname].filter(Boolean).join(' ').trim();
         return full || t('you');
       }
+      const directoryLabel = directoryLabelByMxid.get(userId)?.trim();
+      if (directoryLabel) return directoryLabel;
       const rosterLabel = matrixUserIdToPersonLabel.get(userId)?.trim();
       if (rosterLabel) return rosterLabel;
       const localpartSub = matrixLocalpartToPrivySub(userId);
@@ -2096,11 +2143,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           }
         }
       }
-      return pickUserVisibleMemberLabel(userId, profileLabel) ?? '';
+      return visibleMatrixMemberName(userId, profileLabel);
     },
     [
       client,
       currentUserId,
+      directoryLabelByMxid,
       matrixLocalpartToPrivySub,
       matrixProfileLabelByUserId,
       matrixUserIdToPersonLabel,
@@ -2164,7 +2212,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (currentUserId && userId === currentUserId) continue;
         list.push({
           userId,
-          displayLabel: matrixMemberDisplayLabel(member, userId),
+          displayLabel:
+            directoryLabelByMxid.get(userId) ||
+            matrixMemberDisplayLabel(member, userId),
         });
       }
       list.sort((left, right) =>
@@ -2184,6 +2234,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     client,
     currentUserId,
+    directoryLabelByMxid,
     isDirectConversation,
     mentionMembershipEpoch,
     personIdToMatrixUserId,
@@ -2268,10 +2319,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const canInteractWithSignalThread =
     !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
+  const archivedGroup =
+    isDirectConversation &&
+    isArchivedGroupRoom(client?.getRoom(roomId ?? undefined));
   const chatComposerLocked =
-    blockSpaceChatForMembership || !canInteractWithSignalThread;
+    blockSpaceChatForMembership ||
+    !canInteractWithSignalThread ||
+    archivedGroup;
   const chatComposerLockedMessage = blockSpaceChatForMembership
     ? tCommon('joinSpaceToUse')
+    : archivedGroup
+    ? t('archivedGroupReadOnly')
     : !canInteractWithSignalThread
     ? t('signalTeamInteractionRestricted')
     : undefined;
@@ -4727,7 +4785,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           excerpt: firstLineForReplyPreview(plain),
           editMediaMode: true,
         });
-        setInput(plain);
+        setInput(
+          replaceMxidsWithComposerMentionTokens(plain, mentionLabelByUserId),
+        );
         return;
       }
 
@@ -4736,9 +4796,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         messageId,
         excerpt: firstLineForReplyPreview(plain),
       });
-      setInput(plain);
+      setInput(
+        replaceMxidsWithComposerMentionTokens(plain, mentionLabelByUserId),
+      );
     },
-    [messages, client, t],
+    [messages, client, mentionLabelByUserId, t],
   );
 
   const handleDeleteMessage = useCallback(
@@ -5149,7 +5211,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   applyConversationRoomTitle(roomId, name);
                   setGroupTitle(name);
                 }}
-                onArchived={exitCoherenceChat}
               />
             ) : null
           }
