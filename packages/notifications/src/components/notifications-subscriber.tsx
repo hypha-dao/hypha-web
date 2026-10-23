@@ -189,6 +189,13 @@ export function NotificationSubscriber({
         );
         // TEMP(#2575)
         console.log('[#2575] notification click', {
+          visibility: document.visibilityState,
+          historyLength: window.history.length,
+          navigationType: (
+            performance.getEntriesByType('navigation')[0] as
+              | PerformanceNavigationTiming
+              | undefined
+          )?.type,
           launchURL: event.notification.launchURL,
           from: window.location.href,
           pushingTo: url.pathname + url.search + url.hash,
