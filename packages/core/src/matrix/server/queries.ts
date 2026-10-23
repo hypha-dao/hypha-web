@@ -1,9 +1,11 @@
 import {
+  coherences,
   matrixUserLinks,
   people,
+  spaces,
   type MatrixUserLink,
 } from '@hypha-platform/storage-postgres';
-import { and, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, like } from 'drizzle-orm';
 
 import { Environment } from '../../coherence/types';
 import { DbConfig } from '../../server';
@@ -139,3 +141,24 @@ export const findAdminUserName = async (
 
   return response.privyUserId;
 };
+
+/** Space member rooms and signal threads must not be treated as Messages groups. */
+export async function isRoomBoundToSpaceOrSignal(
+  { roomId }: { roomId: string },
+  { db }: DbConfig,
+): Promise<boolean> {
+  const trimmed = roomId.trim();
+  if (!trimmed) return false;
+  const [space] = await db
+    .select({ id: spaces.id })
+    .from(spaces)
+    .where(eq(spaces.chatRoomId, trimmed))
+    .limit(1);
+  if (space) return true;
+  const [signal] = await db
+    .select({ id: coherences.id })
+    .from(coherences)
+    .where(and(eq(coherences.roomId, trimmed), eq(coherences.archived, false)))
+    .limit(1);
+  return Boolean(signal);
+}

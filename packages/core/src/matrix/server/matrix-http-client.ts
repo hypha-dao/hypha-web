@@ -296,6 +296,11 @@ export async function matrixCreateRoom(
   accessToken: string,
   homeserver: string,
   roomType?: string,
+  initialState?: Array<{
+    type: string;
+    state_key?: string;
+    content: Record<string, unknown>;
+  }>,
 ): Promise<string> {
   const res = await matrixFetch(`${homeserver}/_matrix/client/v3/createRoom`, {
     method: 'POST',
@@ -308,6 +313,7 @@ export async function matrixCreateRoom(
       preset: 'private_chat',
       visibility: 'private',
       ...(roomType ? { creation_content: { type: roomType } } : {}),
+      ...(initialState?.length ? { initial_state: initialState } : {}),
     }),
   });
   const data = await readMatrixJson<{ room_id?: string }>(res);

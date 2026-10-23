@@ -73,13 +73,13 @@ export function HumanChatPanelGroupMenu({
       | undefined,
     roomId,
   );
-  const canArchive = useMemo(
-    () =>
-      room
-        ? canArchivePeopleGroupRoom(room, selfId, isLocalGroupCreator)
-        : false,
-    [room, selfId],
-  );
+  const [archiveCheck, setArchiveCheck] = useState(0);
+  const canArchive = useMemo(() => {
+    const current = client?.getRoom(roomId) ?? null;
+    return current
+      ? canArchivePeopleGroupRoom(current, selfId, isLocalGroupCreator)
+      : false;
+  }, [archiveCheck, client, roomId, selfId]);
 
   const [renameOpen, setRenameOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -97,8 +97,12 @@ export function HumanChatPanelGroupMenu({
 
   async function saveRename() {
     const next = normalizeGroupRoomName(name);
+    if (!next) return;
     const authToken = jwt?.trim();
-    if (!next || !authToken) return;
+    if (!authToken) {
+      setError(t('renameGroupFailed'));
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -122,7 +126,10 @@ export function HumanChatPanelGroupMenu({
 
   async function confirmArchive() {
     const authToken = jwt?.trim();
-    if (!authToken) return;
+    if (!authToken) {
+      setError(t('archiveGroupFailed'));
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -145,7 +152,12 @@ export function HumanChatPanelGroupMenu({
 
   return (
     <>
-      <DropdownMenu modal={false}>
+      <DropdownMenu
+        modal={false}
+        onOpenChange={(open) => {
+          if (open) setArchiveCheck((value) => value + 1);
+        }}
+      >
         <DropdownMenuTrigger asChild>
           <button
             type="button"

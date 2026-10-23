@@ -21,6 +21,7 @@ import {
   findLinkByPrivyUserId,
   findMatrixUserIdsByPersonIds,
   findMatrixUserIdsByPrivyUserIds,
+  isRoomBoundToSpaceOrSignal,
 } from './queries';
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
 import { getLinkByPrivyUserId } from './web3/get-link-by-privy-user-id';
@@ -240,9 +241,27 @@ export async function createBotOwnedRoomAction({
   const botToken = getMatrixBotAsToken();
   if (!homeserver || !botToken) return null;
 
+  const creatorUserId = grantPl100ToMatrixUserId?.trim();
+  const initialState =
+    roomType === HYPHA_ROOM_TYPES.group && creatorUserId
+      ? [
+          {
+            type: GROUP_ROOM_CREATOR_STATE,
+            state_key: '',
+            content: { userId: creatorUserId },
+          },
+        ]
+      : undefined;
+
   let roomId: string;
   try {
-    roomId = await matrixCreateRoom(title, botToken, homeserver, roomType);
+    roomId = await matrixCreateRoom(
+      title,
+      botToken,
+      homeserver,
+      roomType,
+      initialState,
+    );
   } catch (error) {
     console.warn(
       '[MatrixBot] Failed to create bot-owned room:',
@@ -260,8 +279,8 @@ export async function createBotOwnedRoomAction({
 
   // Power-level setup is best-effort — the room already exists, so a failure here must not
   // orphan it: callers retry room creation on a `null` return, which would create a duplicate,
-  // never-persisted room every time.
-  const creatorUserId = grantPl100ToMatrixUserId?.trim();
+  // never-persisted room every time. Group creator state is written in initial_state so
+  // create succeeds or fails with it. A room missing that state can be archived by any member.
   try {
     await matrixApplyRoomPowerLevels(roomId, botToken, homeserver, {
       grantPl100ToUserId: creatorUserId,
@@ -273,33 +292,6 @@ export async function createBotOwnedRoomAction({
       roomId,
       error instanceof Error ? error.message : error,
     );
-  }
-  if (roomType === HYPHA_ROOM_TYPES.group && creatorUserId) {
-    let lastError: unknown;
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        await matrixSendStateEvent(
-          roomId,
-          GROUP_ROOM_CREATOR_STATE,
-          '',
-          { userId: creatorUserId },
-          botToken,
-          homeserver,
-        );
-        lastError = undefined;
-        break;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-    if (lastError !== undefined) {
-      console.warn(
-        '[MatrixBot] Group room created but creator state failed:',
-        roomId,
-        lastError instanceof Error ? lastError.message : lastError,
-      );
-      return null;
-    }
   }
   return { roomId };
 }
@@ -803,6 +795,17 @@ async function loadPeopleGroupContext(
   if (!trimmedRoomId || !userId || !homeserver || !botToken) {
     return null;
   }
+  try {
+    if (await isRoomBoundToSpaceOrSignal({ roomId: trimmedRoomId }, { db })) {
+      return null;
+    }
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to check space/signal room binding:',
+      trimmedRoomId,
+      error instanceof Error ? error.message : error,
+    );
+  }
   const roomType = await matrixGetRoomType(trimmedRoomId, botToken, homeserver);
   const members = await matrixGetJoinedRoomMembers(
     trimmedRoomId,
@@ -844,7 +847,6 @@ async function loadPeopleGroupContext(
     userId,
     homeserver,
     botToken,
-    hasCreator,
   };
 }
 
@@ -874,24 +876,6 @@ export async function renameGroupRoomAction({
       ctx.botToken,
       ctx.homeserver,
     );
-    if (!ctx.hasCreator) {
-      try {
-        await matrixSendStateEvent(
-          ctx.roomId,
-          GROUP_ROOM_CREATOR_STATE,
-          '',
-          { userId: ctx.userId },
-          ctx.botToken,
-          ctx.homeserver,
-        );
-      } catch (error) {
-        console.warn(
-          '[MatrixBot] Renamed group but creator state failed:',
-          roomId,
-          error instanceof Error ? error.message : error,
-        );
-      }
-    }
     return { name: title };
   } catch (error) {
     console.warn(
