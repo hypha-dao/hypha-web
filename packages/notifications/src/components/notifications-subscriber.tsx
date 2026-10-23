@@ -187,6 +187,12 @@ export function NotificationSubscriber({
           event.notification.launchURL,
           window.location.origin,
         );
+        // TEMP(#2575)
+        console.log('[#2575] notification click', {
+          launchURL: event.notification.launchURL,
+          from: window.location.href,
+          pushingTo: url.pathname + url.search + url.hash,
+        });
         router.push(url.pathname + url.search + url.hash);
       }
     };
