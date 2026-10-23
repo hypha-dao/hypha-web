@@ -101,6 +101,45 @@ describe('memberRowsForConnections', () => {
     expect(rows[1]).toMatchObject({ roomId: null, preview: '' });
   });
 
+  it('keeps the directory person row even when a named group also exists', () => {
+    const rows = memberRowsForConnections(
+      [person(2, 'Kate', 'Bennett')],
+      [
+        room({
+          roomId: '!legacy-group',
+          kind: 'group',
+          name: 'Vlad Hramtsov, Kate Bennett (test)',
+          lastTs: null,
+          otherUserId: '@kate:matrix',
+        }),
+      ],
+      { 2: '@kate:matrix' },
+      1,
+      'Someone',
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      name: 'Kate Bennett',
+      roomId: null,
+      preview: '',
+      lastTs: null,
+    });
+    expect(
+      groupRowsForConnections(
+        [
+          room({
+            roomId: '!legacy-group',
+            kind: 'group',
+            name: 'Vlad Hramtsov, Kate Bennett (test)',
+            lastTs: null,
+          }),
+        ],
+        'Someone',
+      ).map((row) => row.name),
+    ).toEqual(['Vlad Hramtsov, Kate Bennett (test)']);
+  });
+
   it('does not use a signal thread as the private message', () => {
     const rows = memberRowsForConnections(
       [person(1, 'Edgar', 'Kampers')],

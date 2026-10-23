@@ -25,6 +25,7 @@ import {
   isGroupCreateContent,
   isRoomInDirectAccountData,
   peopleConversationKind,
+  readCreateContent,
   readGroupRoomCreatorUserId,
   readRoomNameState,
   looksLikeTechnicalMatrixDisplayName,
@@ -166,15 +167,40 @@ function lastRoomMessage(room: Room, selfId: string | null) {
   };
 }
 
+function debugRoomsEnabled() {
+  if (typeof window === 'undefined') return false;
+  try {
+    return (
+      new URLSearchParams(window.location.search).get('debugRooms') === '1'
+    );
+  } catch {
+    return false;
+  }
+}
+
+function logDroppedRoom(room: Room, details: Record<string, unknown>): null {
+  if (debugRoomsEnabled()) {
+    console.debug('[debugRooms] dropped', {
+      roomId: room.roomId,
+      roomName: room.name,
+      roomType: room.getType() ?? null,
+      membership: room.getMyMembership(),
+      ...details,
+    });
+  }
+  return null;
+}
+
 function conversationRowFromRoom(
   client: MatrixClient,
   room: Room,
 ): ConversationRow | null {
-  if (room.getMyMembership() !== 'join') {
-    return null;
+  const membership = room.getMyMembership();
+  if (membership !== 'join') {
+    return logDroppedRoom(room, { reason: 'not-joined', membership });
   }
   if (isArchivedGroupRoom(room)) {
-    return null;
+    return logDroppedRoom(room, { reason: 'archived' });
   }
   const botId = botUserId();
   const selfId = client.getUserId();
@@ -192,11 +218,27 @@ function conversationRowFromRoom(
     return !isHyphaBot(member.userId, member.name || member.rawDisplayName);
   });
   const others = members.filter((member) => member.userId !== selfId);
-  if (others.length === 0) {
-    return null;
-  }
-
   const roomType = room.getType();
+  const nameState = readRoomNameState(room);
+  const flags = {
+    hasCreator: Boolean(readGroupRoomCreatorUserId(room)),
+    remembered: isRememberedGroupChatRoom(room.roomId),
+    hasRoomName: Boolean(nameState),
+    inDirect: isRoomInDirectAccountData(
+      client.getAccountData(EventType.Direct)?.getContent() as
+        | Record<string, unknown>
+        | undefined,
+      room.roomId,
+    ),
+    createdAsGroup: isGroupCreateContent(readCreateContent(room)),
+  };
+  const classification = {
+    ...flags,
+    nameState,
+    memberCount: members.length,
+    othersCount: others.length,
+    joinedMemberCount: room.getJoinedMemberCount?.() ?? members.length,
+  };
   // Space, signal, proposal, public, network and ecosystem rooms are not
   // private conversations, whoever is in them.
   if (
@@ -204,37 +246,38 @@ function conversationRowFromRoom(
     roomType !== HYPHA_ROOM_TYPES.dm &&
     roomType !== HYPHA_ROOM_TYPES.group
   ) {
-    return null;
+    return logDroppedRoom(room, {
+      reason: 'hypha-typed',
+      ...classification,
+    });
   }
   const overrideName = conversationTitleOverrides.get(room.roomId)?.trim();
-  const createEvent = room.currentState?.getStateEvents?.(
-    EventType.RoomCreate,
-    '',
-  );
-  const kind = peopleConversationKind(roomType, members.length, {
-    hasCreator: Boolean(readGroupRoomCreatorUserId(room)),
-    remembered: isRememberedGroupChatRoom(room.roomId),
-    hasRoomName: Boolean(readRoomNameState(room)),
-    inDirect: isRoomInDirectAccountData(
-      client.getAccountData(EventType.Direct)?.getContent() as
-        | Record<string, unknown>
-        | undefined,
-      room.roomId,
-    ),
-    createdAsGroup: isGroupCreateContent(
-      createEvent?.getContent() as Record<string, unknown> | undefined,
-    ),
-  });
+  const kind = peopleConversationKind(roomType, members.length, flags);
+  // Named groups stay listed even before lazy members arrive. Person chats
+  // still need the other human so they can attach to a directory row.
+  if (others.length === 0 && kind !== 'group') {
+    return logDroppedRoom(room, {
+      reason: 'no-other-members',
+      kind,
+      ...classification,
+    });
+  }
   // Untyped rooms that are not groups are dropped. If they were also in
   // m.direct they used to become `person` and then vanish from the list.
   if (!kind) {
-    return null;
+    return logDroppedRoom(room, {
+      reason: 'not-people-conversation',
+      ...classification,
+    });
   }
   const other = others.length === 1 ? others[0] : undefined;
   const name =
     overrideName ||
-    (kind === 'person' ? other?.name || other?.rawDisplayName : room.name) ||
+    (kind === 'person'
+      ? other?.name || other?.rawDisplayName
+      : nameState || room.name) ||
     room.name ||
+    nameState ||
     '';
   if (overrideName && room.name.trim() === overrideName) {
     conversationTitleOverrides.delete(room.roomId);
@@ -244,7 +287,11 @@ function conversationRowFromRoom(
     looksLikeHyphaBot(room.name) ||
     looksLikeHyphaBot(name)
   ) {
-    return null;
+    return logDroppedRoom(room, {
+      reason: 'bot',
+      kind,
+      ...classification,
+    });
   }
   const mxc =
     kind === 'person'
@@ -280,7 +327,11 @@ function conversationRowFromRoom(
     isRememberedSignalThreadRoom(room.roomId) || signalMarkerInTimeline;
   if (signalThread) {
     rememberSignalThreadRooms([room.roomId], { quiet: true });
-    return null;
+    return logDroppedRoom(room, {
+      reason: 'signal',
+      kind,
+      ...classification,
+    });
   }
   const last = lastRoomMessage(room, selfId);
   // Always walk real incoming messages. The SDK notification total still
@@ -532,6 +583,10 @@ function roomStamp(room: Room, selfId: string | null) {
     last?.getTs() ?? 0,
     clear,
     receipt,
+    room.getType() ?? '',
+    readRoomNameState(room) ?? '',
+    room.getJoinedMemberCount?.() ?? 0,
+    room.getMembers?.().length ?? 0,
   ].join(':');
 }
 

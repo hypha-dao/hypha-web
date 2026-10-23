@@ -19,31 +19,45 @@ export function isGroupRoomArchivedContent(
   return content?.archived === true;
 }
 
+type StateEventLike = {
+  getContent?: () => Record<string, unknown>;
+} | null;
+
 type StateEventReader = {
   currentState?: {
     getStateEvents?: (
       type: string,
-      key: string,
-    ) => { getContent?: () => Record<string, unknown> } | null;
+      key?: string,
+    ) => StateEventLike | StateEventLike[];
   };
 };
 
+function nameFromStateEvent(event: StateEventLike): string | null {
+  const name = event?.getContent?.()?.name;
+  return typeof name === 'string' && name.trim() ? name.trim() : null;
+}
+
+function readStateEvent(
+  room: StateEventReader | null | undefined,
+  type: string,
+): StateEventLike {
+  const event = room?.currentState?.getStateEvents?.(type, '');
+  if (Array.isArray(event)) return event[0] ?? null;
+  return event ?? null;
+}
+
 export function isArchivedGroupRoom(room: StateEventReader | null | undefined) {
-  const event = room?.currentState?.getStateEvents?.(
-    GROUP_ROOM_ARCHIVED_STATE,
-    '',
+  return isGroupRoomArchivedContent(
+    readStateEvent(room, GROUP_ROOM_ARCHIVED_STATE)?.getContent?.(),
   );
-  return isGroupRoomArchivedContent(event?.getContent?.());
 }
 
 export function readGroupRoomCreatorUserId(
   room: StateEventReader | null | undefined,
 ) {
-  const event = room?.currentState?.getStateEvents?.(
-    GROUP_ROOM_CREATOR_STATE,
-    '',
+  return groupRoomCreatorUserId(
+    readStateEvent(room, GROUP_ROOM_CREATOR_STATE)?.getContent?.(),
   );
-  return groupRoomCreatorUserId(event?.getContent?.());
 }
 
 export function groupRoomCreatorUserId(
@@ -57,9 +71,29 @@ export function groupRoomCreatorUserId(
 export function readRoomNameState(
   room: StateEventReader | null | undefined,
 ): string | null {
-  const event = room?.currentState?.getStateEvents?.('m.room.name', '');
-  const name = event?.getContent?.()?.name;
-  return typeof name === 'string' && name.trim() ? name.trim() : null;
+  const get = room?.currentState?.getStateEvents;
+  if (!get) return null;
+  const keyed = get.call(room.currentState, 'm.room.name', '');
+  if (!Array.isArray(keyed)) {
+    const named = nameFromStateEvent(keyed);
+    if (named) return named;
+  }
+  const all = Array.isArray(keyed)
+    ? keyed
+    : get.call(room.currentState, 'm.room.name');
+  if (Array.isArray(all)) {
+    for (const event of all) {
+      const named = nameFromStateEvent(event);
+      if (named) return named;
+    }
+  }
+  return null;
+}
+
+export function readCreateContent(
+  room: StateEventReader | null | undefined,
+): Record<string, unknown> | undefined {
+  return readStateEvent(room, 'm.room.create')?.getContent?.();
 }
 
 export function isGroupCreateContent(
@@ -99,8 +133,11 @@ export type PeopleGroupRoomFlags = {
 
 /**
  * A Messages group stays a group even with two people or after a rename.
- * Typed DMs stay 1:1 chats. A named group-flow room stays a group even when
- * Matrix also filed it under `m.direct`.
+ * Typed DMs stay 1:1 chats. An untyped room with an explicit `m.room.name`
+ * is a group, even with two people, even in `m.direct`, and even before
+ * lazy members load. Real DMs from `ensureDirectPairRoomAction` set both
+ * `io.hypha.room.dm` and a create-time name (the other person, or
+ * "Conversation"), so they stay person chats.
  */
 export function isPeopleGroupRoomType(
   roomType: string | null | undefined,
@@ -111,8 +148,7 @@ export function isPeopleGroupRoomType(
   if (type === HYPHA_ROOM_TYPES.group || flags.createdAsGroup) return true;
   if (type === HYPHA_ROOM_TYPES.dm) return false;
   if (type) return false;
-  if (flags.hasCreator || flags.remembered) return true;
-  if (flags.hasRoomName && joinedMemberCount >= 2) return true;
+  if (flags.hasCreator || flags.remembered || flags.hasRoomName) return true;
   if (flags.inDirect) return false;
   return joinedMemberCount > 2;
 }

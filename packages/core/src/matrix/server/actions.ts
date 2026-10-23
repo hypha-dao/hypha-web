@@ -528,7 +528,9 @@ function isMatrixUserId(value: string) {
 
 /**
  * The one direct room for a pair. The alias `#hypha-dm-<env>-<hash>` is the lookup
- * key and the room's `m.room.create` type is the proof that it is a DM. An alias
+ * key and the room's `m.room.create` type is the proof that it is a DM. The
+ * create-room `name` is the other person's title or "Conversation" — Messages
+ * still treats typed DMs as person chats even with that `m.room.name`. An alias
  * that points at a room without the DM type (a space or signal room that took
  * it over before types existed) is detached and a clean DM room is created.
  * Both people are puppet-joined into the room.

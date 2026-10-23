@@ -114,9 +114,15 @@ describe('group room name and archive state', () => {
     };
     expect(isPeopleGroupRoomType(null, 2, flags)).toBe(true);
     expect(peopleConversationKind(null, 2, flags)).toBe('group');
+    // Lazy members: only self is in getMembers() until /members returns.
+    expect(isPeopleGroupRoomType(null, 1, flags)).toBe(true);
+    expect(peopleConversationKind(null, 1, flags)).toBe('group');
+    expect(peopleConversationKind(null, 0, flags)).toBe('group');
     expect(
       peopleConversationKind(null, 2, { inDirect: true, hasRoomName: false }),
     ).toBeNull();
+    // Real DMs from ensureDirectPairRoomAction set type io.hypha.room.dm
+    // and also write m.room.name (the other person, or "Conversation").
     expect(
       peopleConversationKind(HYPHA_ROOM_TYPES.dm, 2, {
         hasRoomName: true,
@@ -137,6 +143,37 @@ describe('group room name and archive state', () => {
                   }),
                 }
               : null,
+        },
+      }),
+    ).toBe('Vlad Hramtsov, Kate Bennett (test)');
+    expect(
+      readRoomNameState({
+        currentState: {
+          getStateEvents: (type, key) =>
+            type === 'm.room.name' && key === ''
+              ? {
+                  getContent: () => ({
+                    name: '  Water team  ',
+                  }),
+                }
+              : null,
+        },
+      }),
+    ).toBe('Water team');
+    expect(
+      readRoomNameState({
+        currentState: {
+          getStateEvents: (type, key) => {
+            if (type !== 'm.room.name') return key === undefined ? [] : null;
+            if (key === '') return null;
+            return [
+              {
+                getContent: () => ({
+                  name: 'Vlad Hramtsov, Kate Bennett (test)',
+                }),
+              },
+            ];
+          },
         },
       }),
     ).toBe('Vlad Hramtsov, Kate Bennett (test)');
