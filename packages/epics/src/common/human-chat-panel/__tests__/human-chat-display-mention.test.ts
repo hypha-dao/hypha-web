@@ -31,4 +31,24 @@ describe('replaceMxidsWithComposerMentionTokens', () => {
       `Hi ${MXID}`,
     );
   });
+
+  it('round-trips disambiguated tokens for shared display names', () => {
+    const other = '@prod_privy_did_privy_other:matrix.hypha.earth';
+    const labeled = replaceMxidsWithComposerMentionTokens(
+      `Hi ${MXID} and ${other}`,
+      new Map([
+        [MXID, 'Alex Prate (prod_privy…0abc)'],
+        [other, 'Alex Prate (prod_privy…ther)'],
+      ]),
+    );
+    expect(
+      replaceDisplayNameMentionsWithMxids(
+        labeled,
+        new Map([
+          ['Alex Prate (prod_privy…0abc)', MXID],
+          ['Alex Prate (prod_privy…ther)', other],
+        ]),
+      ),
+    ).toBe(`Hi ${MXID} and ${other}`);
+  });
 });

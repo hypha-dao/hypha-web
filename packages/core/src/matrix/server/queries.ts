@@ -202,6 +202,7 @@ export async function findBoundChatRoomIdsAmong(
       '[MatrixBot] Failed to list space/signal room bindings:',
       error instanceof Error ? error.message : error,
     );
-    return ids;
+    // Do not report unknown rooms as bound. The client persists this result.
+    throw error;
   }
 }

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   noticeKeyForOpenPersonRoomError,
   OpenPersonRoomFailure,
-} from '../open-person-room';
+} from '../open-person-room-error';
 
 describe('noticeKeyForOpenPersonRoomError', () => {
   it('maps connection, missing person, and open failures', () => {

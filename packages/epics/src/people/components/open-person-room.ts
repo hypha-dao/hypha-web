@@ -1,24 +1,17 @@
 import { ClientEvent, SyncState, type MatrixClient } from 'matrix-js-sdk';
-import {
-  findJoinedDirectRoomId,
-  waitUntil,
-} from '../../../../core/src/matrix/open-direct-room';
+import { findJoinedDirectRoomId, waitUntil } from '@hypha-platform/core/client';
 
 import {
   readRememberedDirectRoom,
   rememberDirectRoom,
 } from './member-connections';
+import {
+  OpenPersonRoomFailure,
+  noticeKeyForOpenPersonRoomError,
+} from './open-person-room-error';
 
-export type OpenPersonRoomError =
-  | 'not-connected'
-  | 'no-matrix-id'
-  | 'open-failed';
-
-export class OpenPersonRoomFailure extends Error {
-  constructor(readonly code: OpenPersonRoomError) {
-    super(code);
-  }
-}
+export type { OpenPersonRoomError } from './open-person-room-error';
+export { OpenPersonRoomFailure, noticeKeyForOpenPersonRoomError };
 
 type MatrixHandle = {
   client: MatrixClient | null;
@@ -120,20 +113,14 @@ export async function openOrEnsurePersonRoom(options: {
       return roomId;
     } catch (error) {
       lastError = error;
-      await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+      if (attempt < 2) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, 400 * (attempt + 1)),
+        );
+      }
     }
   }
   throw lastError instanceof Error
     ? lastError
     : new OpenPersonRoomFailure('open-failed');
-}
-
-export function noticeKeyForOpenPersonRoomError(
-  error: unknown,
-): 'matrixUnavailable' | 'matrixPersonUnavailable' | 'matrixFailed' {
-  if (error instanceof OpenPersonRoomFailure) {
-    if (error.code === 'not-connected') return 'matrixUnavailable';
-    if (error.code === 'no-matrix-id') return 'matrixPersonUnavailable';
-  }
-  return 'matrixFailed';
 }

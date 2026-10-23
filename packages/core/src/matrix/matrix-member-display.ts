@@ -3,7 +3,13 @@ import type { MatrixClient, RoomMember } from 'matrix-js-sdk';
 /** This env's bot plus any extra bot MXIDs (prod/preview share one Dendrite). */
 export function configuredHyphaBotUserIds(): string[] {
   const primary = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim();
-  const additional = (process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS ?? '')
+  // Browser bundles only see NEXT_PUBLIC_* ; the unprefixed name stays for server.
+  const additional = [
+    process.env.NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS,
+    process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(',')
     .split(',')
     .map((id) => id.trim())
     .filter(Boolean);

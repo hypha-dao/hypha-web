@@ -72,4 +72,20 @@ describe('findBoundChatRoomIdsAmong', () => {
       ),
     ).resolves.toEqual(['!space', '!archived-signal']);
   });
+
+  it('does not treat every input id as bound when the lookup fails', async () => {
+    const db = {
+      select: () => ({
+        from: () => ({
+          where: () => Promise.reject(new Error('db down')),
+        }),
+      }),
+    };
+    await expect(
+      findBoundChatRoomIdsAmong(
+        { roomIds: ['!space', '!group'] },
+        { db: db as never },
+      ),
+    ).rejects.toThrow('db down');
+  });
 });

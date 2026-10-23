@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
+import { useDebounce } from 'use-debounce';
 import {
   Archive,
   ArchiveRestore,
@@ -17,6 +18,7 @@ import {
 } from '@hypha-platform/core/matrix/server/actions';
 import {
   GROUP_ROOM_NAME_MAX,
+  MEMBER_CONNECTION_MAX,
   isArchivedGroupRoom,
   normalizeGroupRoomName,
   useJwt,
@@ -102,13 +104,17 @@ export function HumanChatPanelGroupMenu({
   const [error, setError] = useState<string | null>(null);
   const [addQuery, setAddQuery] = useState('');
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [debouncedAddQuery] = useDebounce(addQuery.trim(), 200);
 
   const { data: home } = useSWR<MemberIntelligence | null>(
     addOpen && jwt
-      ? ['/api/v1/people/me/intelligence', jwt, 'add-people']
+      ? ['/api/v1/people/me/intelligence', jwt, 'add-people', debouncedAddQuery]
       : null,
-    async ([url, token]) => {
-      const response = await fetch(url, {
+    async ([url, token, , q]: [string, string, string, string]) => {
+      const params = new URLSearchParams();
+      if (q) params.set('q', q);
+      else params.set('connections', String(MEMBER_CONNECTION_MAX));
+      const response = await fetch(`${url}?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) return null;

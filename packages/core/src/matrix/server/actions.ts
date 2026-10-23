@@ -992,8 +992,17 @@ export async function unarchiveGroupRoomAction({
 }
 
 /** Space chats and signal threads the client must keep out of Messages. */
+const MAX_BOUND_LOOKUP_IDS = 100;
+
 export async function listBoundChatRoomIdsAmongAction(
   roomIds: readonly string[],
+  { authToken }: { authToken?: string } = {},
 ): Promise<string[]> {
-  return findBoundChatRoomIdsAmong({ roomIds }, { db });
+  if (!authToken?.trim()) return [];
+  const verified = await verifyPrivyAuthToken(authToken);
+  if (!verified.ok) return [];
+  return findBoundChatRoomIdsAmong(
+    { roomIds: roomIds.slice(0, MAX_BOUND_LOOKUP_IDS) },
+    { db },
+  );
 }

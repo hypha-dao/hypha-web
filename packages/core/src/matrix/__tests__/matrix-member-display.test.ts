@@ -153,6 +153,8 @@ describe('splitSpeakerLabeledTranscriptLine', () => {
 describe('countHumanMatrixMembers', () => {
   const previousPrimary = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID;
   const previousExtra = process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+  const previousPublicExtra =
+    process.env.NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
 
   afterEach(() => {
     if (previousPrimary == null)
@@ -162,6 +164,12 @@ describe('countHumanMatrixMembers', () => {
       delete process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
     } else {
       process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS = previousExtra;
+    }
+    if (previousPublicExtra == null) {
+      delete process.env.NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+    } else {
+      process.env.NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS =
+        previousPublicExtra;
     }
   });
 
@@ -175,6 +183,21 @@ describe('countHumanMatrixMembers', () => {
         '@hypha-bot:hypha.earth',
         '@hypha-bot-preview:hypha.earth',
         '@hypha_bot_prod:hypha.earth',
+        '@kate:hypha.earth',
+      ]),
+    ).toBe(2);
+  });
+
+  it('reads additional bot IDs from the client-safe NEXT_PUBLIC_ variable', () => {
+    process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID = '@hypha-bot:hypha.earth';
+    delete process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+    process.env.NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS =
+      '@hypha-bot-preview:hypha.earth';
+    expect(
+      countHumanMatrixMembers([
+        '@ada:hypha.earth',
+        '@hypha-bot:hypha.earth',
+        '@hypha-bot-preview:hypha.earth',
         '@kate:hypha.earth',
       ]),
     ).toBe(2);

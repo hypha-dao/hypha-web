@@ -2570,6 +2570,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return m;
   }, [mentionLabelByUserId, duplicateSanitizedDisplayKeys]);
 
+  /** Composer tokens for edit use the same disambiguated keys as the send map. */
+  const mentionComposerTokenLabelByUserId = useMemo(
+    () =>
+      new Map(
+        [...mentionLabelByUserId].map(([userId, label]) => [
+          userId,
+          disambiguatedMentionTokenKey(
+            userId,
+            label,
+            duplicateSanitizedDisplayKeys,
+          ),
+        ]),
+      ),
+    [mentionLabelByUserId, duplicateSanitizedDisplayKeys],
+  );
+
   const getMentionComposerLabel = useCallback(
     (member: ChatMentionCandidate, resolvedComposerLabel?: string) => {
       const label =
@@ -3122,6 +3138,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     currentUserAvatarUrl,
     matrixUserIdToPersonLabel,
     matrixUserIdToPersonAvatar,
+    directoryLabelByMxid,
     matrixProfileLabelByUserId,
     subToMatrixUserId,
     memberLabelEpoch,
@@ -4838,7 +4855,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           editMediaMode: true,
         });
         setInput(
-          replaceMxidsWithComposerMentionTokens(plain, mentionLabelByUserId),
+          replaceMxidsWithComposerMentionTokens(
+            plain,
+            mentionComposerTokenLabelByUserId,
+          ),
         );
         return;
       }
@@ -4849,10 +4869,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         excerpt: firstLineForReplyPreview(plain),
       });
       setInput(
-        replaceMxidsWithComposerMentionTokens(plain, mentionLabelByUserId),
+        replaceMxidsWithComposerMentionTokens(
+          plain,
+          mentionComposerTokenLabelByUserId,
+        ),
       );
     },
-    [messages, client, mentionLabelByUserId, t],
+    [messages, client, mentionComposerTokenLabelByUserId, t],
   );
 
   const handleDeleteMessage = useCallback(

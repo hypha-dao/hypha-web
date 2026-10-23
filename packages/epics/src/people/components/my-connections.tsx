@@ -804,18 +804,43 @@ function refreshConversationRoom(room: Room | undefined) {
   notifyConversationListeners();
 }
 
+const MAX_BOUND_LOOKUP_IDS = 100;
+const checkedBoundRoomIds = new Set<string>();
+let conversationBoundLookupToken: string | null = null;
+
+function setConversationBoundLookupToken(token: string | null | undefined) {
+  conversationBoundLookupToken = token?.trim() || null;
+}
+
 function refreshBoundChatRooms(client: MatrixClient) {
-  const roomIds = client.getRooms().map((room) => room.roomId);
-  void listBoundChatRoomIdsAmongAction(roomIds).then((ids) => {
-    rememberBoundChatRooms(ids);
-    let changed = false;
-    for (const id of ids) {
-      if (!conversationCache.has(id)) continue;
-      conversationCache.delete(id);
-      changed = true;
+  const authToken = conversationBoundLookupToken;
+  if (!authToken) return;
+  const roomIds = client
+    .getRooms()
+    .map((room) => room.roomId)
+    .filter((id) => !checkedBoundRoomIds.has(id));
+  if (roomIds.length === 0) return;
+  void (async () => {
+    try {
+      for (let i = 0; i < roomIds.length; i += MAX_BOUND_LOOKUP_IDS) {
+        const chunk = roomIds.slice(i, i + MAX_BOUND_LOOKUP_IDS);
+        const ids = await listBoundChatRoomIdsAmongAction(chunk, {
+          authToken,
+        });
+        for (const id of chunk) checkedBoundRoomIds.add(id);
+        rememberBoundChatRooms(ids);
+        let changed = false;
+        for (const id of ids) {
+          if (!conversationCache.has(id)) continue;
+          conversationCache.delete(id);
+          changed = true;
+        }
+        if (changed) notifyConversationListeners();
+      }
+    } catch (error) {
+      console.warn('Failed to check bound chat rooms', error);
     }
-    if (changed) notifyConversationListeners();
-  });
+  })();
 }
 
 function onConversationSync() {
@@ -920,6 +945,7 @@ function useConversationClient(client: MatrixClient) {
   if (conversationClient === client) return;
   if (listeningClient) stopListeningForConversationRows(listeningClient);
   conversationClient = client;
+  checkedBoundRoomIds.clear();
   conversationCache.clear();
   conversationTitleOverrides.clear();
   supersededReadEventIds.clear();
@@ -1105,6 +1131,10 @@ export function MyConnections({
   const { jwt } = useJwt();
   const { client, isMatrixAvailable, createRoom, ensureRoomMembers } =
     useMatrix();
+  useEffect(() => {
+    setConversationBoundLookupToken(jwt);
+    if (client && jwt?.trim()) refreshBoundChatRooms(client);
+  }, [client, jwt]);
   const { openCoherenceChat } = useHumanChatPanel();
   const searchParams = useSearchParams();
   const openedDirectChatRef = useRef<string | null>(null);
