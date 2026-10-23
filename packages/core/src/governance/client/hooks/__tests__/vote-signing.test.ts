@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  CONSENT_MAX_AGE_MS,
+  WEB_CONSENT_MAX_AGE_MS,
   CONSENT_MISMATCH,
   CONSENT_REQUIRED,
   CONSENT_STALE,
@@ -73,7 +73,7 @@ describe('signVoteWithExplicitConsent', () => {
       signVoteWithExplicitConsent(
         input(),
         consentFor(),
-        T0 + CONSENT_MAX_AGE_MS + 1,
+        T0 + WEB_CONSENT_MAX_AGE_MS + 1,
       ),
     ).toThrow(CONSENT_STALE);
     expect(sendTransaction).not.toHaveBeenCalled();

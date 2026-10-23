@@ -5,8 +5,14 @@ import {
   type UserExplicitConsent,
 } from './user-explicit-consent';
 
-/** How long a recorded consent stays usable for signing. */
-export const CONSENT_MAX_AGE_MS = 60_000;
+/**
+ * Max age of a recorded consent before signing, sized for the WEB channel
+ * (the user presses Approve and signing follows within seconds). Other
+ * channels, such as an AI/MCP interaction where the user may confirm and then
+ * step away, may need a different value; decide that when those channels are
+ * implemented, not by raising this one.
+ */
+export const WEB_CONSENT_MAX_AGE_MS = 60_000;
 
 export const CONSENT_REQUIRED = 'Explicit user consent is required to vote';
 export const CONSENT_MISMATCH = 'Consent does not match this vote';
@@ -76,7 +82,7 @@ export const signVoteWithExplicitConsent = (
     throw new Error(CONSENT_MISMATCH);
   }
   const age = now - consent.recordedAt;
-  if (age < 0 || age > CONSENT_MAX_AGE_MS) {
+  if (age < 0 || age > WEB_CONSENT_MAX_AGE_MS) {
     throw new Error(CONSENT_STALE);
   }
   return sendVote({ ...input, hideWalletUi: true });
