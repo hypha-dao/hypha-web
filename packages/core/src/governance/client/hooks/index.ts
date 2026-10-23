@@ -36,6 +36,7 @@ export * from './build-update-issued-token-tx';
 export * from './useUpdateIssuedTokenMutations.web3.rpc';
 export * from './useProposeAContributionMutations.web3.rsc';
 export * from './useVote';
+export * from './user-explicit-consent';
 export * from './useTokenMutationWeb2.rsc';
 export * from './useMyVote';
 export * from './useBuyHyphaTokensOrchestrator';

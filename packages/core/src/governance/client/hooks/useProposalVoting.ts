@@ -1,12 +1,17 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { encodeFunctionData } from 'viem';
+import type { Hash } from 'viem';
 import { useAccount } from 'wagmi';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
 import { createGovernancePublicClient } from '../../../common/web3/governance-public-client';
 import { getGovernanceChainId } from './governance-chain-id';
+import {
+  signVoteWithExplicitConsent,
+  signVoteWithWalletPrompt,
+} from './vote-signing';
+import type { UserExplicitConsent } from './user-explicit-consent';
 
 export const useProposalVoting = ({
   proposalId,
@@ -19,36 +24,59 @@ export const useProposalVoting = ({
   const [isVoting, setIsVoting] = useState(false);
   const [isCheckingExpiration, setIsCheckingExpiration] = useState(false);
 
-  const vote = useCallback(
+  // The default smart-wallet client follows whichever chain was last active.
+  // A vote has to be signed on the governance chain.
+  const resolveVoteInput = useCallback(
     async (support: boolean) => {
       if (proposalId == null) throw new Error('Proposal ID is required');
+      const votingClient = (await getClientForChain({ id: chainId })) ?? client;
+      if (!votingClient) throw new Error('Smart wallet not connected');
+      return {
+        signer: votingClient,
+        contractAddress: daoProposalsImplementationConfig.address[chainId],
+        proposalId,
+        support,
+      };
+    },
+    [chainId, client, getClientForChain, proposalId],
+  );
 
+  const runVote = useCallback(
+    async (
+      sign: (
+        input: Awaited<ReturnType<typeof resolveVoteInput>>,
+      ) => Promise<Hash>,
+      support: boolean,
+    ) => {
       setIsVoting(true);
       try {
-        // The default smart-wallet client follows whichever chain was last
-        // active. A vote has to be signed on the governance chain, and
-        // `sendTransaction` is the method that opens the wallet signature.
-        // `writeContract` closes over the raw client and skips that prompt.
-        const votingClient =
-          (await getClientForChain({ id: chainId })) ?? client;
-        if (!votingClient) throw new Error('Smart wallet not connected');
-
+        const input = await resolveVoteInput(support);
         const governancePublicClient = createGovernancePublicClient();
-        const hash = await votingClient.sendTransaction({
-          to: daoProposalsImplementationConfig.address[chainId],
-          data: encodeFunctionData({
-            abi: daoProposalsImplementationConfig.abi,
-            functionName: 'vote',
-            args: [BigInt(proposalId), support],
-          }),
-        });
+        const hash = await sign(input);
         await governancePublicClient.waitForTransactionReceipt({ hash });
         return hash;
       } finally {
         setIsVoting(false);
       }
     },
-    [chainId, client, getClientForChain, proposalId],
+    [resolveVoteInput],
+  );
+
+  // Wallet provider confirmation shown (`sendTransaction` opens it).
+  const vote = useCallback(
+    (support: boolean) => runVote(signVoteWithWalletPrompt, support),
+    [runVote],
+  );
+
+  /**
+   * Signs without the wallet provider's confirmation. Only for a screen that
+   * just asked the user to confirm this exact vote; see `vote-signing.ts`.
+   * Regular callers must keep `handleAccept` / `handleReject`.
+   */
+  const voteWithExplicitConsent = useCallback(
+    (support: boolean, consent: UserExplicitConsent) =>
+      runVote((input) => signVoteWithExplicitConsent(input, consent), support),
+    [runVote],
   );
 
   const checkProposalExpiration = useCallback(async () => {
@@ -82,6 +110,7 @@ export const useProposalVoting = ({
   return {
     handleAccept,
     handleReject,
+    voteWithExplicitConsent,
     handleCheckProposalExpiration,
     isVoting,
     isCheckingExpiration,
