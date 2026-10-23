@@ -37,12 +37,17 @@ import {
 } from '@hypha-platform/ui';
 
 import { isRememberedGroupChatRoom as isLocalGroupCreator } from '../../people/components/member-connections';
+import { openDialogAfterMenu } from './open-dialog-after-menu';
 import {
   canArchivePeopleGroupRoom,
   isPeopleGroupChatRoom,
 } from './people-group-room';
 
-export { canArchivePeopleGroupRoom, isPeopleGroupChatRoom };
+export {
+  canArchivePeopleGroupRoom,
+  isPeopleGroupChatRoom,
+  openDialogAfterMenu,
+};
 
 export function HumanChatPanelGroupMenu({
   roomId,
@@ -79,7 +84,7 @@ export function HumanChatPanelGroupMenu({
   function openRename() {
     setName(title);
     setError(null);
-    setRenameOpen(true);
+    openDialogAfterMenu(() => setRenameOpen(true));
   }
 
   async function saveRename() {
@@ -132,7 +137,7 @@ export function HumanChatPanelGroupMenu({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
@@ -152,7 +157,7 @@ export function HumanChatPanelGroupMenu({
             <DropdownMenuItem
               onSelect={() => {
                 setError(null);
-                setArchiveOpen(true);
+                openDialogAfterMenu(() => setArchiveOpen(true));
               }}
             >
               <Archive aria-hidden />

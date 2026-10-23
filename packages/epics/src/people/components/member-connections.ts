@@ -1,6 +1,6 @@
 import { looksLikeTechnicalMatrixDisplayName } from '../../../../core/src/matrix/matrix-member-display';
-import { HYPHA_ROOM_TYPES } from '../../../../core/src/matrix/room-types';
 import { replacePlainTextMatrixMxidsWithLabels } from '../../../../core/src/matrix/mentions';
+import { HYPHA_ROOM_TYPES } from '../../../../core/src/matrix/room-types';
 
 export type ConnectionListPerson = {
   id: number;
@@ -662,14 +662,19 @@ export function rememberedGroupChatMemberIds(roomId: string): string[] {
 
 /**
  * A private group chat, not a space channel.
- * Space rooms share the Matrix account but are named for the space.
- * A group chat is titled with the people in it, or remembered from here.
+ * Once classified as a group it stays listed after a rename, even with two
+ * people and no comma in the title.
  */
 export function isPeopleListGroup(room: ConversationRow) {
   if (room.kind !== 'group' || room.signalThread) return false;
-  if (room.roomType === HYPHA_ROOM_TYPES.group) return true;
-  if (room.groupChat || isRememberedGroupChatRoom(room.roomId)) return true;
-  return room.name.includes(',');
+  if (
+    room.roomType &&
+    room.roomType !== HYPHA_ROOM_TYPES.group &&
+    room.roomType.startsWith('io.hypha.room.')
+  ) {
+    return false;
+  }
+  return true;
 }
 
 /** Group chats mixed into the people list. One row per room, with two faces. */

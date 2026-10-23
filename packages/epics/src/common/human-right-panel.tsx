@@ -111,7 +111,10 @@ import {
 } from './human-chat-panel/use-resolved-mention-candidate-label';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
-import { MyConnections } from '../people/components/my-connections';
+import {
+  applyConversationRoomTitle,
+  MyConnections,
+} from '../people/components/my-connections';
 import {
   MemberSpaceIcons,
   memberProfileAsideHref,
@@ -5142,7 +5145,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               <HumanChatPanelGroupMenu
                 roomId={roomId}
                 title={groupTitle ?? coherenceTitle ?? ''}
-                onRenamed={setGroupTitle}
+                onRenamed={(name) => {
+                  applyConversationRoomTitle(roomId, name);
+                  setGroupTitle(name);
+                }}
                 onArchived={exitCoherenceChat}
               />
             ) : null

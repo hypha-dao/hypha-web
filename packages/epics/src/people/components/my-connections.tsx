@@ -22,6 +22,8 @@ import {
   HYPHA_ROOM_TYPES,
   conversationActivityTs,
   isArchivedGroupRoom,
+  isPeopleGroupRoomType,
+  readGroupRoomCreatorUserId,
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
   sortConversationsByLastMessage,
@@ -150,22 +152,14 @@ function lastRoomMessage(room: Room, selfId: string | null) {
     return {
       preview,
       mine: Boolean(selfId && sender === selfId),
-      ts: conversationActivityTs(event.getTs(), roomActiveTs(room)),
+      ts: conversationActivityTs(event.getTs()),
     };
   }
   return {
     preview: '',
     mine: false,
-    ts: roomActiveTs(room),
+    ts: null,
   };
-}
-
-function roomActiveTs(room: Room): number | null {
-  const ts =
-    typeof room.getLastActiveTimestamp === 'function'
-      ? room.getLastActiveTimestamp()
-      : 0;
-  return conversationActivityTs(null, ts);
 }
 
 function conversationRowFromRoom(
@@ -208,20 +202,26 @@ function conversationRowFromRoom(
   ) {
     return null;
   }
-  const kind =
-    roomType === HYPHA_ROOM_TYPES.group || others.length > 1
-      ? 'group'
-      : 'person';
+  const overrideName = conversationTitleOverrides.get(room.roomId)?.trim();
+  const isGroup = isPeopleGroupRoomType(roomType, members.length, {
+    hasCreator: Boolean(readGroupRoomCreatorUserId(room)),
+    remembered: isRememberedGroupChatRoom(room.roomId),
+  });
+  const kind = isGroup ? 'group' : 'person';
   // A 1:1 is only a room created as a DM. Two-person space, signal and untyped
-  // rooms are not private messages.
+  // rooms are not private messages unless they were started as a group.
   if (kind === 'person' && room.getType() !== HYPHA_ROOM_TYPES.dm) {
     return null;
   }
   const other = others.length === 1 ? others[0] : undefined;
   const name =
+    overrideName ||
     (kind === 'person' ? other?.name || other?.rawDisplayName : room.name) ||
     room.name ||
     '';
+  if (overrideName && room.name.trim() === overrideName) {
+    conversationTitleOverrides.delete(room.roomId);
+  }
   if (
     isHyphaBot(other?.userId, name) ||
     looksLikeHyphaBot(room.name) ||
@@ -282,7 +282,7 @@ function conversationRowFromRoom(
     otherUserId: other?.userId ?? null,
     roomType: room.getType() ?? null,
     faces,
-    groupChat: kind === 'group' && isRememberedGroupChatRoom(room.roomId),
+    groupChat: kind === 'group',
     kind,
   };
 }
@@ -323,6 +323,7 @@ type CachedConversation = { stamp: string; row: ConversationRow | null };
  * The people currently listed are summarised first; the rest wait for idle time.
  */
 const conversationCache = new Map<string, CachedConversation>();
+const conversationTitleOverrides = new Map<string, string>();
 const conversationListeners = new Set<() => void>();
 let conversationClient: MatrixClient | null = null;
 let listeningClient: MatrixClient | null = null;
@@ -785,6 +786,7 @@ function useConversationClient(client: MatrixClient) {
   if (listeningClient) stopListeningForConversationRows(listeningClient);
   conversationClient = client;
   conversationCache.clear();
+  conversationTitleOverrides.clear();
   supersededReadEventIds.clear();
   if (supersededReadTimer) {
     window.clearTimeout(supersededReadTimer);
@@ -808,14 +810,29 @@ export function conversationRowsPending(client: MatrixClient) {
     );
 }
 
+/** Apply a group rename to the list immediately, before Matrix echoes `m.room.name`. */
+export function applyConversationRoomTitle(roomId: string, name: string) {
+  const id = roomId.trim();
+  const title = name.trim();
+  if (!id || !title) return;
+  rememberGroupChatRooms([id]);
+  conversationTitleOverrides.set(id, title);
+  const client = conversationClient;
+  if (!client) {
+    notifyConversationListeners();
+    return;
+  }
+  conversationCache.delete(id);
+  const room = client.getRoom(id);
+  if (room) cachedConversation(client, room);
+  notifyConversationListeners();
+}
+
 export function conversationRowsSnapshot(client: MatrixClient) {
   const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
     const row = conversationCache.get(room.roomId)?.row;
-    if (!row) continue;
-    const liveTs = roomActiveTs(room);
-    const lastTs = conversationActivityTs(row.lastTs, liveTs);
-    rows.push(lastTs === row.lastTs ? row : { ...row, lastTs });
+    if (row) rows.push(row);
   }
   return sortConversationRows(rows);
 }
@@ -1279,7 +1296,7 @@ export function MyConnections({
           ...row,
           name: row.name.trim() || pending?.name || row.name,
           faces: facesWithProfiles(faces, profiles),
-          lastTs: row.lastTs ?? pending?.lastTs ?? row.lastTs,
+          lastTs: row.lastTs,
         };
       }),
       ...pendingGroups
@@ -1289,6 +1306,8 @@ export function MyConnections({
         })
         .map((group) => ({
           ...group,
+          name:
+            conversationTitleOverrides.get(group.roomId)?.trim() || group.name,
           faces: facesWithProfiles(group.faces, profiles),
         })),
     ];
@@ -1429,7 +1448,7 @@ export function MyConnections({
           name: title,
           preview: '',
           mine: false,
-          lastTs: Date.now(),
+          lastTs: null,
           unread: 0,
           memberCount: selectedPeople.length + 1,
           otherUserId: null,

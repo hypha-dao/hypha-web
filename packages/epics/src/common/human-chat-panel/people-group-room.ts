@@ -2,17 +2,27 @@ import {
   isPeopleGroupRoomType,
   readGroupRoomCreatorUserId,
 } from '../../../../core/src/matrix/group-room';
+import { isRememberedGroupChatRoom } from '../../people/components/member-connections';
 
 export function isPeopleGroupChatRoom(
-  room: {
-    getType?: () => string | null | undefined;
-    getJoinedMemberCount?: () => number;
-  } | null,
+  room:
+    | (Parameters<typeof readGroupRoomCreatorUserId>[0] & {
+        roomId?: string;
+        getType?: () => string | null | undefined;
+        getJoinedMemberCount?: () => number;
+      })
+    | null,
 ) {
   if (!room) return false;
   return isPeopleGroupRoomType(
     room.getType?.(),
     room.getJoinedMemberCount?.() ?? 0,
+    {
+      hasCreator: Boolean(readGroupRoomCreatorUserId(room)),
+      remembered: Boolean(
+        room.roomId && isRememberedGroupChatRoom(room.roomId),
+      ),
+    },
   );
 }
 

@@ -809,9 +809,27 @@ async function loadPeopleGroupContext(
     botToken,
     homeserver,
   );
-  if (!isPeopleGroupRoomType(roomType, members.length)) return null;
+  const creatorState = await matrixGetStateEvent(
+    trimmedRoomId,
+    GROUP_ROOM_CREATOR_STATE,
+    '',
+    botToken,
+    homeserver,
+  );
+  const hasCreator = Boolean(groupRoomCreatorUserId(creatorState));
+  // Joined members include the bot, so a 2-person group is often count 3.
+  // Creator state keeps a group-flow room a group even if that count later drops.
+  if (!isPeopleGroupRoomType(roomType, members.length, { hasCreator })) {
+    return null;
+  }
   if (!members.includes(userId)) return null;
-  return { roomId: trimmedRoomId, userId, homeserver, botToken };
+  return {
+    roomId: trimmedRoomId,
+    userId,
+    homeserver,
+    botToken,
+    hasCreator,
+  };
 }
 
 /**
@@ -840,6 +858,24 @@ export async function renameGroupRoomAction({
       ctx.botToken,
       ctx.homeserver,
     );
+    if (!ctx.hasCreator) {
+      try {
+        await matrixSendStateEvent(
+          ctx.roomId,
+          GROUP_ROOM_CREATOR_STATE,
+          '',
+          { userId: ctx.userId },
+          ctx.botToken,
+          ctx.homeserver,
+        );
+      } catch (error) {
+        console.warn(
+          '[MatrixBot] Renamed group but creator state failed:',
+          roomId,
+          error instanceof Error ? error.message : error,
+        );
+      }
+    }
     return { name: title };
   } catch (error) {
     console.warn(

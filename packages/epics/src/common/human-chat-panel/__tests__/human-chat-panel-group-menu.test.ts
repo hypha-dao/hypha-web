@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { HYPHA_ROOM_TYPES } from '../../../../../core/src/matrix/room-types';
+import { rememberGroupChatRooms } from '../../../people/components/member-connections';
 
+import { openDialogAfterMenu } from '../open-dialog-after-menu';
 import {
   canArchivePeopleGroupRoom,
   isPeopleGroupChatRoom,
@@ -36,6 +38,51 @@ describe('isPeopleGroupChatRoom', () => {
         getJoinedMemberCount: () => 2,
       }),
     ).toBe(false);
+  });
+
+  it('keeps a remembered two-person group after a rename', () => {
+    rememberGroupChatRooms(['!remembered-pair']);
+    expect(
+      isPeopleGroupChatRoom({
+        roomId: '!remembered-pair',
+        getType: () => undefined,
+        getJoinedMemberCount: () => 2,
+      }),
+    ).toBe(true);
+  });
+
+  it('keeps a two-person group created via the group flow', () => {
+    expect(
+      isPeopleGroupChatRoom({
+        roomId: '!pair',
+        getType: () => undefined,
+        getJoinedMemberCount: () => 2,
+        currentState: {
+          getStateEvents: (type) =>
+            type === 'io.hypha.room.group_creator'
+              ? { getContent: () => ({ userId: '@ada:hypha' }) }
+              : null,
+        },
+      }),
+    ).toBe(true);
+  });
+});
+
+describe('openDialogAfterMenu', () => {
+  it('opens on the next frames so the menu can release pointer events', () => {
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    const open = vi.fn();
+    openDialogAfterMenu(open);
+    expect(open).not.toHaveBeenCalled();
+    frames[0]?.(0);
+    expect(open).not.toHaveBeenCalled();
+    frames[1]?.(0);
+    expect(open).toHaveBeenCalledOnce();
+    vi.unstubAllGlobals();
   });
 });
 

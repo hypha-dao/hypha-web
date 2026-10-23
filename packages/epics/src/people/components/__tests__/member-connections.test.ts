@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
+import { HYPHA_ROOM_TYPES } from '../../../../../core/src/matrix/room-types';
+
 import {
   STALE_CONNECTION_MS,
   connectionActivityTs,
   conversationUnreadTotal,
   facesWithProfiles,
   groupRowsForConnections,
+  isPeopleListGroup,
   memberRowsForConnections,
   messagePreview,
   orphanedDirectRoomIds,
@@ -565,6 +568,7 @@ describe('groupRowsForConnections', () => {
           roomId: '!space',
           kind: 'group',
           name: 'Hypha',
+          roomType: HYPHA_ROOM_TYPES.space,
           memberCount: 40,
           lastTs: 900,
         }),
@@ -593,6 +597,20 @@ describe('groupRowsForConnections', () => {
       { name: 'Gerardo Roza', avatarUrl: 'https://example/g.png' },
       { name: 'Vlad Hramtsov' },
     ]);
+  });
+
+  it('keeps a renamed two-person group without a comma in the title', () => {
+    const row = room({
+      roomId: '!pair',
+      kind: 'group',
+      name: 'Water team',
+      memberCount: 2,
+    });
+    expect(isPeopleListGroup(row)).toBe(true);
+    expect(groupRowsForConnections([row], 'Someone')).toHaveLength(1);
+    expect(groupRowsForConnections([row], 'Someone')[0]?.name).toBe(
+      'Water team',
+    );
   });
 });
 

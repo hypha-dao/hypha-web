@@ -81,6 +81,11 @@ describe('group room name and archive state', () => {
     expect(isPeopleGroupRoomType('', 4)).toBe(true);
     expect(isPeopleGroupRoomType(null, 2)).toBe(false);
     expect(isPeopleGroupRoomType(HYPHA_ROOM_TYPES.dm, 3)).toBe(false);
+    expect(isPeopleGroupRoomType(null, 2, { hasCreator: true })).toBe(true);
+    expect(isPeopleGroupRoomType(null, 2, { remembered: true })).toBe(true);
+    expect(
+      isPeopleGroupRoomType(HYPHA_ROOM_TYPES.dm, 2, { hasCreator: true }),
+    ).toBe(false);
   });
 
   it('reads archived and creator state', () => {
@@ -116,8 +121,8 @@ describe('sortConversationsByLastMessage', () => {
     expect(ranked.map((row) => row.roomId)).toEqual(['!a', '!c', '!b']);
   });
 
-  it('prefers the last message and only falls back to the room timestamp', () => {
-    expect(conversationActivityTs(null, 900)).toBe(900);
+  it('uses the last message only and ignores room activity', () => {
+    expect(conversationActivityTs(null, 900)).toBeNull();
     expect(conversationActivityTs(400, 900)).toBe(400);
     expect(conversationActivityTs(400, 0)).toBe(400);
     expect(conversationActivityTs(null, null)).toBeNull();

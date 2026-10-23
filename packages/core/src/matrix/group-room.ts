@@ -54,13 +54,20 @@ export function groupRoomCreatorUserId(
   return userId || null;
 }
 
-/** Explicit group type, or a legacy untyped room with more than two people. */
+/**
+ * A Messages group stays a group even with two people or after a rename.
+ * Typed DMs and other Hypha room kinds never qualify.
+ */
 export function isPeopleGroupRoomType(
   roomType: string | null | undefined,
   joinedMemberCount: number,
+  flags: { hasCreator?: boolean; remembered?: boolean } = {},
 ): boolean {
-  if (roomType === HYPHA_ROOM_TYPES.group) return true;
-  return !roomType && joinedMemberCount > 2;
+  const type = roomType?.trim() || null;
+  if (type === HYPHA_ROOM_TYPES.group) return true;
+  if (type) return false;
+  if (flags.hasCreator || flags.remembered) return true;
+  return joinedMemberCount > 2;
 }
 
 /**
@@ -83,17 +90,14 @@ export function sortConversationsByLastMessage<
   });
 }
 
-/** Prefer the last human message; fall back to the room's last event. */
+/** Last human message only. Name changes and other room events do not count. */
 export function conversationActivityTs(
   lastMessageTs: number | null | undefined,
-  roomActiveTs: number | null | undefined,
+  _roomActiveTs?: number | null,
 ): number | null {
-  const message =
-    typeof lastMessageTs === 'number' && lastMessageTs > 0 ? lastMessageTs : 0;
-  if (message > 0) return message;
-  const active =
-    typeof roomActiveTs === 'number' && roomActiveTs > 0 ? roomActiveTs : 0;
-  return active > 0 ? active : null;
+  return typeof lastMessageTs === 'number' && lastMessageTs > 0
+    ? lastMessageTs
+    : null;
 }
 
 /**
