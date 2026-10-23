@@ -31,6 +31,7 @@ import {
 } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
+  HYPHA_ROOM_TYPES,
   useMatrix,
   useCoherenceMutationsWeb2Rsc,
   useHookRegistry,
@@ -1282,10 +1283,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (created) return Promise.resolve({ roomId: created });
       const inFlight = createRoomInFlightRef.current.get(slug);
       if (inFlight) return inFlight;
-      const pending = matrixRef.current.createRoom(title).then((result) => {
-        createdRoomBySlugRef.current.set(slug, result.roomId);
-        return result;
-      });
+      const pending = matrixRef.current
+        .createRoom(title, { roomType: HYPHA_ROOM_TYPES.signal })
+        .then((result) => {
+          createdRoomBySlugRef.current.set(slug, result.roomId);
+          return result;
+        });
       createRoomInFlightRef.current.set(slug, pending);
       const clearInFlight = () => {
         if (createRoomInFlightRef.current.get(slug) === pending) {
@@ -3227,6 +3230,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             }
             const { roomId: newRoomId } = await createRoom(
               `space-${spaceSlug}`,
+              { roomType: HYPHA_ROOM_TYPES.space },
             );
             if (!newRoomId) {
               throw new Error('Failed to create room: empty roomId returned');
@@ -3422,7 +3426,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             openingSpaceSlug,
           );
           const { roomId: newRoomId } = await promiseWithTimeout(
-            matrixRef.current.createRoom(`space-${openingSpaceSlug}`),
+            matrixRef.current.createRoom(`space-${openingSpaceSlug}`, {
+              roomType: HYPHA_ROOM_TYPES.space,
+            }),
             COHERENCE_ROOM_JOIN_TIMEOUT_MS,
             'Space room create timed out',
           );

@@ -718,6 +718,7 @@
     "pickMembers": "Tippe Personen an, um sie zum Chat hinzuzufügen",
     "selectMember": "{name} auswählen",
     "noMessage": "Noch keine Nachricht",
+    "loading": "Wird geladen",
     "someone": "Jemand",
     "justNow": "Gerade eben",
     "youWrote": "Du: {message}",

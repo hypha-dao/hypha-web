@@ -11,7 +11,6 @@ import {
 
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
-import { directPairRoomCandidates } from './member-home-closest';
 import { rememberDirectRoom } from './member-connections';
 
 type HomePerson = {
@@ -154,11 +153,7 @@ export function MemberHomePeople({
       setNotice(t('matrixFailed'));
       return null;
     }
-    const { roomId } = await ready.ensureDirectRoom(
-      mxid,
-      title,
-      directPairRoomCandidates(client, selfId, mxid),
-    );
+    const { roomId } = await ready.ensureDirectRoom(mxid, title);
     rememberDirectRoom(selfId, mxid, roomId);
     return roomId;
   }

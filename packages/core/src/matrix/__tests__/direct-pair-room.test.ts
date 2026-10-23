@@ -17,8 +17,19 @@ describe('direct pair room', () => {
       directPairAliasLocalpart(gerardo, alex),
     );
     expect(directPairAliasLocalpart(alex, gerardo)).toMatch(
-      /^hypha-dm-[0-9a-f]{32}$/,
+      /^hypha-dm-unknown-[0-9a-f]{32}$/,
     );
+  });
+
+  it('keeps production, preview and local aliases apart', () => {
+    const alias = (env: string) =>
+      directPairAliasLocalpart(
+        `@${env}_privy_did_privy_a:hypha.earth`,
+        `@${env}_privy_did_privy_b:hypha.earth`,
+      );
+    expect(alias('prod')).toMatch(/^hypha-dm-prod-[0-9a-f]{32}$/);
+    expect(alias('prev')).toMatch(/^hypha-dm-prev-[0-9a-f]{32}$/);
+    expect(alias('dev')).toMatch(/^hypha-dm-dev-[0-9a-f]{32}$/);
   });
 
   it('accepts the room even when the other person is only invited', () => {

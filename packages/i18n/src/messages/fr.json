@@ -718,6 +718,7 @@
     "pickMembers": "Touche des personnes pour les ajouter à la discussion",
     "selectMember": "Sélectionner {name}",
     "noMessage": "Pas encore de message",
+    "loading": "Chargement",
     "someone": "Quelqu'un",
     "justNow": "À l'instant",
     "youWrote": "Toi : {message}",

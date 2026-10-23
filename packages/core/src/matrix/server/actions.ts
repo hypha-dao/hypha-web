@@ -24,13 +24,8 @@ import {
 } from './queries';
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
 import { distinctPublicRoomId } from '../public-room-id';
-import {
-  directPairAliasLocalpart,
-  isDirectPairRoom,
-  isSignalThreadMessageContent,
-  pickDirectPairRoom,
-} from '../direct-pair-room';
-import { isHyphaBotMatrixIdentity } from '../matrix-member-display';
+import { directPairAliasLocalpart } from '../direct-pair-room';
+import { HYPHA_ROOM_TYPES, type HyphaRoomType } from '../room-types';
 import { Environment } from '../../coherence/types';
 import {
   ECOSYSTEM_ROOM_ALIAS_PREFIX,
@@ -45,12 +40,10 @@ import {
   matrixCreateAliasedRoom,
   matrixCreateRoom,
   matrixDeleteRoomAlias,
-  matrixGetJoinOrInviteRoomMembers,
+  matrixGetRoomType,
   matrixInviteUser,
   matrixJoinRoom,
   matrixJoinRoomAsPuppet,
-  matrixListRoomMessages,
-  matrixPublishRoomAlias,
   matrixResolveRoomAlias,
   matrixServerNameFromUserId,
   matrixWhoAmI,
@@ -220,9 +213,12 @@ async function joinAdditionalBotsToRoom(
 export async function createBotOwnedRoomAction({
   title,
   grantPl100ToMatrixUserId,
+  roomType,
 }: {
   title: string;
   grantPl100ToMatrixUserId?: string;
+  /** Written into `m.room.create` so the kind of room is explicit. */
+  roomType?: HyphaRoomType;
 }): Promise<{ roomId: string } | null> {
   const homeserver = getMatrixHomeserverUrl();
   const botToken = getMatrixBotAsToken();
@@ -230,7 +226,7 @@ export async function createBotOwnedRoomAction({
 
   let roomId: string;
   try {
-    roomId = await matrixCreateRoom(title, botToken, homeserver);
+    roomId = await matrixCreateRoom(title, botToken, homeserver, roomType);
   } catch (error) {
     console.warn(
       '[MatrixBot] Failed to create bot-owned room:',
@@ -282,10 +278,12 @@ async function ensureAliasedChatRoomAction({
   aliasLocalpart,
   roomName,
   memberRoomIds,
+  roomType,
 }: {
   matrixUserId: string;
   aliasLocalpart: string;
   roomName: string;
+  roomType: HyphaRoomType;
   /**
    * Room ids that belong to the space member channel. If the alias already
    * points at one of them, detach it and create a separate room.
@@ -348,6 +346,7 @@ async function ensureAliasedChatRoomAction({
         aliasLocalpart,
         botToken,
         homeserver,
+        roomType,
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -420,6 +419,7 @@ export async function ensureNetworkChatRoomAction({
     matrixUserId,
     aliasLocalpart: NETWORK_ROOM_ALIAS_LOCALPART,
     roomName: 'Network',
+    roomType: HYPHA_ROOM_TYPES.network,
   });
 }
 
@@ -440,6 +440,7 @@ export async function ensureEcosystemChatRoomAction({
     matrixUserId,
     aliasLocalpart: matrixAliasLocalpart(ECOSYSTEM_ROOM_ALIAS_PREFIX, slug),
     roomName: `Ecosystem · ${slug}`,
+    roomType: HYPHA_ROOM_TYPES.ecosystem,
   });
 }
 
@@ -480,71 +481,29 @@ export async function ensurePublicChatRoomAction({
     matrixUserId,
     aliasLocalpart: matrixAliasLocalpart(PUBLIC_ROOM_ALIAS_PREFIX, slug),
     roomName: `Public · ${slug}`,
+    roomType: HYPHA_ROOM_TYPES.spacePublic,
     memberRoomIds: [...memberRoomIds],
   });
 }
-
-const DIRECT_PAIR_CANDIDATE_LIMIT = 8;
 
 function isMatrixUserId(value: string) {
   return value.startsWith('@') && value.includes(':');
 }
 
-function isMatrixRoomId(value: string) {
-  return value.startsWith('!') && value.includes(':') && value.length < 255;
-}
-
-async function knownBotIds(primaryToken: string, homeserver: string) {
-  const ids = new Set<string>();
-  const configured = getMatrixBotUserId()?.trim().toLowerCase();
-  if (configured) ids.add(configured);
-  for (const token of [primaryToken, ...getMatrixAdditionalBotAsTokens()]) {
-    try {
-      const id = (await matrixWhoAmI(token, homeserver)).trim().toLowerCase();
-      if (id) ids.add(id);
-    } catch {
-      // Another token may still identify the bot.
-    }
-  }
-  return ids;
-}
-
-function chunkHasSignalThread(chunk: unknown[]) {
-  for (const event of chunk) {
-    if (!event || typeof event !== 'object') continue;
-    const content = (event as { content?: unknown }).content;
-    if (isSignalThreadMessageContent(content)) return true;
-  }
-  return false;
-}
-
-function latestMessageTs(chunk: unknown[]) {
-  let latest = 0;
-  for (const event of chunk) {
-    if (!event || typeof event !== 'object') continue;
-    const row = event as { type?: unknown; origin_server_ts?: unknown };
-    if (row.type !== 'm.room.message') continue;
-    if (typeof row.origin_server_ts !== 'number') continue;
-    if (row.origin_server_ts > latest) latest = row.origin_server_ts;
-  }
-  return latest;
-}
-
 /**
- * One direct room for a pair. An existing room is kept — the one with the
- * later message — and both people are puppet-joined into it. A new room is
- * created only when the pair has none. The directory alias is the shared name,
- * so the next open cannot create a second room.
+ * The one direct room for a pair. The alias `#hypha-dm-<env>-<hash>` is the lookup
+ * key and the room's `m.room.create` type is the proof that it is a DM. An alias
+ * that points at a room without the DM type (a space or signal room that took
+ * it over before types existed) is detached and a clean DM room is created.
+ * Both people are puppet-joined into the room.
  */
 export async function ensureDirectPairRoomAction({
   matrixUserId,
   otherMatrixUserId,
-  candidateRoomIds,
   title,
 }: {
   matrixUserId: string;
   otherMatrixUserId: string;
-  candidateRoomIds?: string[];
   title?: string;
 }): Promise<{ roomId: string } | null> {
   const self = matrixUserId?.trim() ?? '';
@@ -586,74 +545,48 @@ export async function ensureDirectPairRoomAction({
     return null;
   }
 
-  const bots = await knownBotIds(botToken, homeserver);
-  const isBot = (userId: string) =>
-    bots.has(userId.trim().toLowerCase()) || isHyphaBotMatrixIdentity(userId);
-  const seen = new Set<string>();
-  const roomIds: string[] = [];
-  if (aliasedRoomId && isMatrixRoomId(aliasedRoomId)) {
-    seen.add(aliasedRoomId);
-    roomIds.push(aliasedRoomId);
+  let roomId: string | null = null;
+  let aliasedRoomType: string | null = null;
+  if (aliasedRoomId) {
+    try {
+      aliasedRoomType = await matrixGetRoomType(
+        aliasedRoomId,
+        botToken,
+        homeserver,
+      );
+    } catch (error) {
+      console.warn(
+        '[MatrixBot] Could not read the type of the aliased direct room:',
+        aliasedRoomId,
+        error instanceof Error ? error.message : error,
+      );
+      // The type is unknown, so this is an error, not a "not a DM". Fail fast
+      // and leave the alias where it is.
+      return null;
+    }
+    if (aliasedRoomType === HYPHA_ROOM_TYPES.dm) roomId = aliasedRoomId;
   }
-  for (const candidate of candidateRoomIds ?? []) {
-    const roomId = candidate?.trim() ?? '';
-    if (!isMatrixRoomId(roomId) || seen.has(roomId)) continue;
-    seen.add(roomId);
-    roomIds.push(roomId);
-    if (roomIds.length >= DIRECT_PAIR_CANDIDATE_LIMIT) break;
-  }
-
-  const viable: { roomId: string; lastMessageTs: number }[] = [];
-  await Promise.all(
-    roomIds.map(async (candidateRoomId) => {
-      let members: string[];
-      try {
-        members = await matrixGetJoinOrInviteRoomMembers(
-          candidateRoomId,
-          botToken,
-          homeserver,
-        );
-      } catch (error) {
-        console.warn(
-          '[MatrixBot] Skipping a direct-room candidate:',
-          candidateRoomId,
-          error instanceof Error ? error.message : error,
-        );
-        return;
-      }
-      if (!isDirectPairRoom(members, self, other, isBot)) return;
-      let lastMessageTs = 0;
-      try {
-        const messages = await matrixListRoomMessages(
-          candidateRoomId,
-          botToken,
-          homeserver,
-          { limit: 30 },
-        );
-        if (chunkHasSignalThread(messages.chunk)) return;
-        lastMessageTs = latestMessageTs(messages.chunk);
-      } catch (error) {
-        console.warn(
-          '[MatrixBot] Direct room kept without its message time:',
-          candidateRoomId,
-          error instanceof Error ? error.message : error,
-        );
-      }
-      viable.push({ roomId: candidateRoomId, lastMessageTs });
-    }),
-  );
-
-  let roomId = pickDirectPairRoom(viable);
-  let created = false;
   if (!roomId) {
+    if (aliasedRoomId) {
+      try {
+        await matrixDeleteRoomAlias(alias, botToken, homeserver);
+      } catch (error) {
+        console.warn(
+          '[MatrixBot] Failed to detach the alias from a non-DM room:',
+          alias,
+          error instanceof Error ? error.message : error,
+        );
+        return null;
+      }
+    }
     try {
       roomId = await matrixCreateAliasedRoom(
         title?.trim() || 'Conversation',
         localpart,
         botToken,
         homeserver,
+        HYPHA_ROOM_TYPES.dm,
       );
-      created = true;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const aliasTaken =
@@ -667,6 +600,7 @@ export async function ensureDirectPairRoomAction({
         );
         return null;
       }
+      // Another request created it between the lookup and here.
       try {
         roomId = await matrixResolveRoomAlias(alias, botToken, homeserver);
       } catch (lookupError) {
@@ -680,20 +614,6 @@ export async function ensureDirectPairRoomAction({
     }
   }
   if (!roomId) return null;
-
-  if (!created && roomId !== aliasedRoomId) {
-    try {
-      if (aliasedRoomId)
-        await matrixDeleteRoomAlias(alias, botToken, homeserver);
-      await matrixPublishRoomAlias(alias, roomId, botToken, homeserver);
-    } catch (error) {
-      console.warn(
-        '[MatrixBot] Failed to publish the direct room alias:',
-        alias,
-        error instanceof Error ? error.message : error,
-      );
-    }
-  }
 
   const joinedSelf = await ensureMemberJoinedRoomAction({
     roomId,

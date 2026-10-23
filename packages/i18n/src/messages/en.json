@@ -145,6 +145,7 @@
     "pickMembers": "Tap people to add them to the chat",
     "selectMember": "Select {name}",
     "noMessage": "No messages yet",
+    "loading": "Loading",
     "someone": "Someone",
     "justNow": "Just now",
     "youWrote": "You: {message}",
