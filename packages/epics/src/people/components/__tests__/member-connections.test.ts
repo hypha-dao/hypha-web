@@ -14,6 +14,7 @@ import {
   facesWithProfiles,
   groupRowsForConnections,
   isPeopleListGroup,
+  peopleAroundGroupRows,
   memberRowsForConnections,
   messagePreview,
   orphanedDirectRoomIds,
@@ -141,7 +142,7 @@ describe('memberRowsForConnections', () => {
         ],
         'Someone',
       ).map((row) => row.name),
-    ).toEqual(['Vlad Hramtsov, Kate Bennett (test)']);
+    ).toEqual([]);
   });
 
   it('does not use a signal thread as the private message', () => {
@@ -767,12 +768,75 @@ describe('groupRowsForConnections', () => {
       kind: 'group',
       name: 'Water team',
       memberCount: 2,
+      roomType: HYPHA_ROOM_TYPES.group,
     });
     expect(isPeopleListGroup(row)).toBe(true);
     expect(groupRowsForConnections([row], 'Someone')).toHaveLength(1);
     expect(groupRowsForConnections([row], 'Someone')[0]?.name).toBe(
       'Water team',
     );
+  });
+
+  it('lists a named untyped group when only one member has loaded', () => {
+    const rows = peopleAroundGroupRows(
+      [
+        {
+          roomId: '!Cm2va52o4xgesz0V:srv1294735.hstgr.cloud',
+          name: 'Gerardo Roza, Xerxes Potel, Vlad Hramtsov (test)',
+          roomType: null,
+          loadedHumanCount: 1,
+          summaryJoinedCount: 4,
+          hasRoomName: true,
+        },
+      ],
+      'Someone',
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.roomId).toBe('!Cm2va52o4xgesz0V:srv1294735.hstgr.cloud');
+  });
+
+  it('hides untyped proposal, space, and signal rooms that production hid', () => {
+    const rows = peopleAroundGroupRows(
+      [
+        {
+          roomId: '!proposal',
+          name: 'Proposal discussion',
+          loadedHumanCount: 12,
+          summaryJoinedCount: 12,
+          hasRoomName: true,
+        },
+        {
+          roomId: '!space',
+          name: 'space-hypha',
+          loadedHumanCount: 40,
+          summaryJoinedCount: 40,
+          hasRoomName: true,
+        },
+        {
+          roomId: '!signal',
+          name: 'Signals upvote feature',
+          loadedHumanCount: 8,
+          summaryJoinedCount: 8,
+          hasRoomName: true,
+        },
+        {
+          roomId: '!redesign',
+          name: 'Signal Redesign',
+          loadedHumanCount: 6,
+          summaryJoinedCount: 6,
+          hasRoomName: true,
+        },
+        {
+          roomId: '!cal',
+          name: 'Calendar…',
+          loadedHumanCount: 5,
+          summaryJoinedCount: 5,
+          hasRoomName: true,
+        },
+      ],
+      'Someone',
+    );
+    expect(rows).toEqual([]);
   });
 
   it('keeps archived groups so the Archived view can list them', () => {
@@ -782,6 +846,7 @@ describe('groupRowsForConnections', () => {
       name: 'Water team',
       archived: true,
       memberCount: 3,
+      groupChat: true,
     });
     const rows = groupRowsForConnections([row], 'Someone');
     expect(rows).toHaveLength(1);

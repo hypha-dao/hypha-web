@@ -221,6 +221,20 @@ export function peopleConversationKindForListing(
 }
 
 /**
+ * Keep a classified row when the room has not changed. A cached `null` is not
+ * reused — listing can become true without a stamp change (computed `room.name`,
+ * remembered members). The People Around snapshot was dropping those rooms.
+ */
+export function resolveConversationCacheEntry<T>(
+  existing: { stamp: string; row: T | null } | undefined,
+  stamp: string,
+  classify: () => T | null,
+): { stamp: string; row: T | null } {
+  if (existing?.stamp === stamp && existing.row != null) return existing;
+  return { stamp, row: classify() };
+}
+
+/**
  * Newest last-message first. Equal times stay stable by name, then room id.
  * Unread and presence must not move a recent chat below the fold.
  */

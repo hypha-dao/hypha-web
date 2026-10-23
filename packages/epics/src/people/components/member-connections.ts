@@ -4,6 +4,10 @@ import {
   visibleMatrixMemberName,
 } from '../../../../core/src/matrix/matrix-member-display';
 import { replacePlainTextMatrixMxidsWithLabels } from '../../../../core/src/matrix/mentions';
+import {
+  countCommaSeparatedNames,
+  peopleConversationKindForListing,
+} from '../../../../core/src/matrix/group-room';
 import { HYPHA_ROOM_TYPES } from '../../../../core/src/matrix/room-types';
 
 export type ConnectionListPerson = {
@@ -852,8 +856,10 @@ export function conversationMatchesSearch(
 
 /**
  * A private group chat, not a space channel.
- * Once classified as a group it stays listed after a rename, even with two
- * people and no comma in the title.
+ * Same gate as production: typed group, remembered Messages group, or a
+ * comma-titled room with 3+ humans. Untyped space / proposal / signal rooms
+ * have 3+ members too — they stay out because their titles have no comma
+ * and they are not remembered as group chats.
  */
 export function isPeopleListGroup(room: ConversationRow) {
   if (room.kind !== 'group' || room.signalThread) return false;
@@ -864,7 +870,66 @@ export function isPeopleListGroup(room: ConversationRow) {
   ) {
     return false;
   }
-  return true;
+  if (room.roomType === HYPHA_ROOM_TYPES.group) return true;
+  if (room.groupChat || isRememberedGroupChatRoom(room.roomId)) return true;
+  if (!room.name.includes(',')) return false;
+  return (room.memberCount ?? 0) > 2 || countCommaSeparatedNames(room.name) > 2;
+}
+
+/**
+ * Kind + People Around gate used by the rendered Messages list.
+ * A joined untyped named room with 3+ summary members and 1 loaded member
+ * still produces a row when the title names three people.
+ */
+export function peopleAroundGroupRows<T extends ConnectionListPerson>(
+  rooms: readonly {
+    roomId: string;
+    name: string;
+    roomType?: string | null;
+    loadedHumanCount: number;
+    summaryJoinedCount: number;
+    hasRoomName?: boolean;
+    titleMemberHint?: number;
+    rememberedHumanCount?: number;
+    createdAsGroup?: boolean;
+    groupChat?: boolean;
+    signalThread?: boolean;
+    archived?: boolean;
+  }[],
+  fallback: string,
+): MemberRow<T>[] {
+  const rows: ConversationRow[] = [];
+  for (const room of rooms) {
+    const kind = peopleConversationKindForListing({
+      roomType: room.roomType,
+      loadedHumanCount: room.loadedHumanCount,
+      summaryJoinedCount: room.summaryJoinedCount,
+      createdAsGroup: room.createdAsGroup,
+      hasRoomName: room.hasRoomName ?? Boolean(room.name.trim()),
+      titleMemberHint:
+        room.titleMemberHint ?? countCommaSeparatedNames(room.name),
+      rememberedHumanCount: room.rememberedHumanCount,
+    });
+    if (kind !== 'group') continue;
+    const row: ConversationRow = {
+      roomId: room.roomId,
+      name: room.name,
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      memberCount: room.loadedHumanCount,
+      otherUserId: null,
+      roomType: room.roomType ?? null,
+      groupChat: room.groupChat,
+      kind,
+      signalThread: room.signalThread,
+      archived: room.archived,
+    };
+    if (!isPeopleListGroup(row)) continue;
+    rows.push(row);
+  }
+  return groupRowsForConnections<T>(rows, fallback);
 }
 
 /** Group chats mixed into the people list. One row per room, with two faces. */

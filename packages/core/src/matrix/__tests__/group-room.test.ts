@@ -10,6 +10,7 @@ import {
   isRoomInDirectAccountData,
   peopleConversationKind,
   peopleConversationKindForListing,
+  resolveConversationCacheEntry,
   countCommaSeparatedNames,
   normalizeGroupRoomName,
   readRoomNameState,
@@ -100,6 +101,19 @@ describe('group room name and archive state', () => {
     expect(peopleConversationKind(HYPHA_ROOM_TYPES.group, 0)).toBe('group');
     expect(peopleConversationKind(null, 2)).toBeNull();
     expect(peopleConversationKind(HYPHA_ROOM_TYPES.dm, 2)).toBe('person');
+  });
+
+  it('rebuilds a listed row when the cache still holds a matching null', () => {
+    const stamp = 'join:0:::0::untyped:Gerardo:4:1:0:Gerardo Roza, Xerxes';
+    const row = { roomId: '!Cm2va52o4xgesz0V:srv1294735.hstgr.cloud' };
+    expect(
+      resolveConversationCacheEntry({ stamp, row: null }, stamp, () => row).row,
+    ).toEqual(row);
+    expect(
+      resolveConversationCacheEntry({ stamp, row }, stamp, () => {
+        throw new Error('must not reclassify a fresh row');
+      }).row,
+    ).toEqual(row);
   });
 
   it('keeps a renamed untyped 3-person group after reload with lazy members', () => {

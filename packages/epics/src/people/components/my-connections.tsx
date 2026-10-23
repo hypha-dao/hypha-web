@@ -26,6 +26,7 @@ import {
   isGroupCreateContent,
   peopleConversationKindForListing,
   readCreateContent,
+  resolveConversationCacheEntry,
   readRoomNameState,
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
@@ -438,11 +439,14 @@ function classifyConversationRoom(
     otherUserId: other?.userId ?? null,
     roomType: room.getType() ?? null,
     faces,
-    groupChat: kind === 'group',
+    groupChat: kind === 'group' && isRememberedGroupChatRoom(room.roomId),
     kind,
     archived: base.archived,
     searchMembers,
   };
+  if (kind === 'group' && !isPeopleListGroup(row)) {
+    return drop('not-people-group', kind);
+  }
   return {
     row,
     inspection: inspectionFrom(
@@ -477,6 +481,9 @@ export function inspectJoinedAndInvitedRooms(
       return membership === 'join' || membership === 'invite';
     })
     .map((room) => {
+      if (room.getMyMembership() === 'join') {
+        cachedConversation(client, room);
+      }
       const inspection = classifyConversationRoom(client, room).inspection;
       return {
         ...inspection,
@@ -740,15 +747,17 @@ function roomStamp(room: Room, selfId: string | null) {
     room.getJoinedMemberCount?.() ?? 0,
     room.getMembers?.().length ?? 0,
     isArchivedGroupRoom(room) ? '1' : '0',
+    room.name || '',
   ].join(':');
 }
 
 function cachedConversation(client: MatrixClient, room: Room) {
   const stamp = roomStamp(room, client.getUserId());
-  const hit = conversationCache.get(room.roomId);
-  if (hit?.stamp === stamp) return hit;
-  const row = conversationRowFromRoom(client, room);
-  const entry = { stamp, row };
+  const entry = resolveConversationCacheEntry(
+    conversationCache.get(room.roomId),
+    stamp,
+    () => conversationRowFromRoom(client, room),
+  );
   conversationCache.set(room.roomId, entry);
   return entry;
 }
