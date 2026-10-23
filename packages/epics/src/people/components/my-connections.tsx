@@ -158,21 +158,12 @@ function lastRoomMessage(room: Room, selfId: string | null) {
   };
 }
 
-/** TEMP (#2566): why a room has no conversation row. Read by `__hyphaRoomAudit()`. */
-const rowSkipReasons = new Map<string, string>();
-
-function skipRow(room: Room, reason: string): null {
-  rowSkipReasons.set(room.roomId, reason);
-  return null;
-}
-
 function conversationRowFromRoom(
   client: MatrixClient,
   room: Room,
 ): ConversationRow | null {
-  rowSkipReasons.delete(room.roomId);
   if (room.getMyMembership() !== 'join') {
-    return skipRow(room, `membership=${room.getMyMembership()}`);
+    return null;
   }
   const botId = botUserId();
   const selfId = client.getUserId();
@@ -191,12 +182,7 @@ function conversationRowFromRoom(
   });
   const others = members.filter((member) => member.userId !== selfId);
   if (others.length === 0) {
-    return skipRow(
-      room,
-      `no other humans (members known: ${knownMembers.length}, joined: ${
-        room.getJoinedMemberCount?.() ?? '?'
-      })`,
-    );
+    return null;
   }
 
   const roomType = room.getType();
@@ -207,7 +193,7 @@ function conversationRowFromRoom(
     roomType !== HYPHA_ROOM_TYPES.dm &&
     roomType !== HYPHA_ROOM_TYPES.group
   ) {
-    return skipRow(room, `typed ${roomType}`);
+    return null;
   }
   const kind =
     roomType === HYPHA_ROOM_TYPES.group || others.length > 1
@@ -216,7 +202,7 @@ function conversationRowFromRoom(
   // A 1:1 is only a room created as a DM. Two-person space, signal and untyped
   // rooms are not private messages.
   if (kind === 'person' && room.getType() !== HYPHA_ROOM_TYPES.dm) {
-    return skipRow(room, `1:1 but type=${room.getType() ?? '(none)'}`);
+    return null;
   }
   const other = others.length === 1 ? others[0] : undefined;
   const name =
@@ -228,7 +214,7 @@ function conversationRowFromRoom(
     looksLikeHyphaBot(room.name) ||
     looksLikeHyphaBot(name)
   ) {
-    return skipRow(room, 'bot');
+    return null;
   }
   const mxc =
     kind === 'person'
@@ -264,7 +250,7 @@ function conversationRowFromRoom(
     isRememberedSignalThreadRoom(room.roomId) || signalMarkerInTimeline;
   if (signalThread) {
     rememberSignalThreadRooms([room.roomId], { quiet: true });
-    return skipRow(room, 'signal thread');
+    return null;
   }
   const last = lastRoomMessage(room, selfId);
   // Always walk real incoming messages. The SDK notification total still
@@ -673,16 +659,6 @@ function pumpConversationRooms(limit: number) {
   if (done > 0 || conversationQueue.length === 0) {
     notifyConversationListeners();
   }
-  if (conversationQueue.length === 0) {
-    // TEMP (#2566)
-    const rows = conversationRowsSnapshot(client);
-    console.info('[conv-list] pump drained', {
-      rooms: client.getRooms().length,
-      cached: conversationCache.size,
-      rows: rows.length,
-      dmRows: rows.filter((row) => row.roomType === HYPHA_ROOM_TYPES.dm).length,
-    });
-  }
   scheduleConversationPump();
 }
 
@@ -825,95 +801,12 @@ export function conversationUnreadSnapshot(client: MatrixClient) {
   );
 }
 
-/**
- * TEMP (#2566): one table row per Matrix room, to see which rooms the Messages
- * list and the unread badge are built from. Run `__hyphaRoomAudit()` in the
- * browser console (also exposes `__hyphaRoomAudit.rows`).
- */
-function roomAuditRows(client: MatrixClient) {
-  const selfId = client.getUserId();
-  const botId = botUserId();
-  const orphans = new Set(
-    orphanedDirectRoomIds(
-      directPairHintsFromClient(client),
-      rememberedRoomByOther(client),
-    ),
-  );
-  return client.getRooms().map((room) => {
-    const members = room
-      .getMembers()
-      .filter((m) => m.membership === 'join' || m.membership === 'invite');
-    const humans = members.filter(
-      (m) => m.userId !== botId && !isHyphaBot(m.userId, m.name),
-    );
-    const create = room.currentState.getStateEvents(EventType.RoomCreate, '');
-    const createContent = (
-      Array.isArray(create) ? create[0] : create
-    )?.getContent() as { type?: string } | undefined;
-    const row = conversationCache.get(room.roomId)?.row ?? null;
-    const listed = row
-      ? row.kind === 'person' || isPeopleListGroup(row)
-      : false;
-    const counted = row ? !orphans.has(row.roomId) : false;
-    return {
-      roomId: room.roomId,
-      membership: room.getMyMembership(),
-      name: room.name,
-      alias: room.getCanonicalAlias() ?? '',
-      createType: createContent?.type ?? '(none)',
-      spaceParents: room.currentState
-        .getStateEvents('m.space.parent')
-        .map((e) => e.getStateKey())
-        .join(','),
-      humans: humans.map((m) => m.userId.replace(/:.*/, '')).join(' '),
-      humanCount: humans.length,
-      hasSelf: humans.some((m) => m.userId === selfId),
-      rememberedSignal: isRememberedSignalThreadRoom(room.roomId),
-      rememberedGroup: isRememberedGroupChatRoom(room.roomId),
-      cachedKind: row ? row.kind : '(null = hidden)',
-      skipReason: rowSkipReasons.get(room.roomId) ?? '',
-      roomType: room.getType() ?? '(none)',
-      timelineEvents: room.getLiveTimeline().getEvents().length,
-      cached: conversationCache.has(room.roomId),
-      queued: conversationQueue.includes(room.roomId),
-      listed,
-      unread: row?.unread ?? 0,
-      countedInBadge: counted ? row?.unread ?? 0 : 0,
-      phantom: Boolean(row && !listed && counted && row.unread > 0),
-      lastTs: row?.lastTs ? new Date(row.lastTs).toISOString() : '',
-    };
-  });
-}
-
-function installRoomAudit(client: MatrixClient) {
-  if (typeof window === 'undefined') return;
-  const audit = () => {
-    const rows = roomAuditRows(client);
-    console.groupCollapsed(`[room-audit] ${rows.length} rooms`);
-    console.table(rows);
-    console.info(
-      '[room-audit] badge =',
-      conversationUnreadSnapshot(client),
-      '| listed unread =',
-      rows.filter((r) => r.listed).reduce((n, r) => n + r.countedInBadge, 0),
-      '| phantom rooms =',
-      rows.filter((r) => r.phantom).map((r) => r.roomId),
-    );
-    console.groupEnd();
-    (audit as unknown as { rows: unknown }).rows = rows;
-    return rows;
-  };
-  (window as unknown as { __hyphaRoomAudit: typeof audit }).__hyphaRoomAudit =
-    audit;
-}
-
 /** Keep a listener on the shared room summaries and fill any room still missing. */
 export function attachConversationList(
   client: MatrixClient,
   onChange: () => void,
 ) {
   useConversationClient(client);
-  installRoomAudit(client);
   conversationListeners.add(onChange);
   listenForConversationRows(client);
   enqueueConversationRooms(client, []);
@@ -935,15 +828,6 @@ export function prioritizeConversationRooms(
   if (matrixUserIds.length === 0) return;
   useConversationClient(client);
   const roomIds = priorityRoomIds(client, matrixUserIds);
-  // TEMP (#2566): which rooms are summarised first for the listed people.
-  console.info(
-    '[conv-list] priority rooms',
-    roomIds.map((id) => ({
-      roomId: id,
-      name: client.getRoom(id)?.name,
-      type: client.getRoom(id)?.getType() ?? '(none)',
-    })),
-  );
   enqueueConversationRooms(client, roomIds);
   pumpConversationRooms(
     Math.min(SYNC_ROOM_BUDGET, Math.max(roomIds.length, 1)),
@@ -1276,39 +1160,6 @@ export function MyConnections({
     ];
   }, [home?.person.id, listed, personIdToMatrixUserId, rows, t]);
 
-  // TEMP (#2566): what the Messages list has to work with right now.
-  useEffect(() => {
-    console.info('[messages-list]', {
-      synced,
-      rowsPending,
-      matrixIdsLoading,
-      matrixClientRooms: client?.getRooms().length ?? 0,
-      conversationRows: rows.length,
-      dmRows: rows.filter((row) => row.roomType === HYPHA_ROOM_TYPES.dm).length,
-      people: members.length,
-      peopleWithRoom: members.filter((row) => row.roomId).length,
-      peopleWithPreview: members.filter((row) => row.preview).length,
-    });
-    console.table(
-      members.slice(0, 20).map((row) => ({
-        name: row.name,
-        mxid: personIdToMatrixUserId[row.person.id] ?? '(none)',
-        roomId: row.roomId ?? '(no row)',
-        preview: row.preview.slice(0, 30),
-        lastTs: row.lastTs ? new Date(row.lastTs).toISOString() : '',
-        unread: row.unread,
-      })),
-    );
-  }, [
-    client,
-    matrixIdsLoading,
-    members,
-    personIdToMatrixUserId,
-    rows,
-    rowsPending,
-    synced,
-  ]);
-
   const memberPersonIds = useMemo(
     () => members.map((row) => row.person.id),
     [members],
@@ -1512,7 +1363,13 @@ export function MyConnections({
     if (selectedPeople.length < 2 || starting) return;
     setStarting(true);
     setNotice(null);
-    const title = selectedPeople.map((row) => row.name).join(', ');
+    const requester = [home?.person.name, home?.person.surname]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    const title = [requester, ...selectedPeople.map((row) => row.name)]
+      .filter(Boolean)
+      .join(', ');
     const faces = selectedPeople.slice(0, 2).map((row) => ({
       name: row.name,
       avatarUrl: row.avatarUrl,
@@ -1760,6 +1617,7 @@ export function MyConnections({
               justNow={t('justNow')}
               noMessage={t('noMessage')}
               previewLoading={!synced || rowsPending || matrixIdsLoading}
+              loadingLabel={t('loading')}
               youLabel={(message) => t('youWrote', { message })}
               unreadLabel={(count) => t('unread', { count })}
               selectLabel={(name) => t('selectMember', { name })}
@@ -1832,6 +1690,7 @@ function MemberList({
   justNow,
   noMessage,
   previewLoading,
+  loadingLabel,
   youLabel,
   unreadLabel,
   selectLabel,
@@ -1847,6 +1706,7 @@ function MemberList({
   noMessage: string;
   /** Rooms are still loading, so a missing conversation is not yet "empty". */
   previewLoading: boolean;
+  loadingLabel: string;
   youLabel: (message: string) => string;
   unreadLabel: (count: number) => string;
   selectLabel: (name: string) => string;
@@ -1933,7 +1793,7 @@ function MemberList({
                       <span
                         role="status"
                         aria-busy="true"
-                        aria-label="Loading"
+                        aria-label={loadingLabel}
                         className="my-0.5 block h-3 w-40 max-w-full animate-pulse rounded-sm bg-neutral-5"
                       />
                     ) : (

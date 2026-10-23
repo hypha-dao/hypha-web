@@ -718,6 +718,7 @@
     "pickMembers": "Tik op mensen om ze aan de chat toe te voegen",
     "selectMember": "{name} selecteren",
     "noMessage": "Nog geen bericht",
+    "loading": "Laden",
     "someone": "Iemand",
     "justNow": "Zojuist",
     "youWrote": "Jij: {message}",

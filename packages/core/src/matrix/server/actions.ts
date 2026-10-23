@@ -122,17 +122,7 @@ export async function getMatrixUserIdsByPersonIdsAction(
   if (!authToken) {
     throw new Error('authToken is required for matrix user id batch lookup');
   }
-  const rows = await findMatrixUserIdsByPersonIds(
-    { personIds, environment },
-    { db },
-  );
-  // TEMP (#2566): which listed people have a Matrix account.
-  console.info('[matrix-ids]', {
-    requested: personIds.length,
-    found: rows.length,
-    missing: personIds.filter((id) => !rows.some((row) => row.personId === id)),
-  });
-  return rows;
+  return findMatrixUserIdsByPersonIds({ personIds, environment }, { db });
 }
 
 /**
@@ -576,15 +566,6 @@ export async function ensureDirectPairRoomAction({
     }
     if (aliasedRoomType === HYPHA_ROOM_TYPES.dm) roomId = aliasedRoomId;
   }
-  // TEMP (#2566): trace how the DM room for a pair is chosen.
-  console.info('[dm-ensure]', {
-    alias,
-    aliasedRoomId,
-    aliasedRoomType,
-    reused: Boolean(roomId),
-    willDetachAlias: Boolean(aliasedRoomId && !roomId),
-  });
-
   if (!roomId) {
     if (aliasedRoomId) {
       try {
