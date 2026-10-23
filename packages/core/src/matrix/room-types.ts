@@ -5,7 +5,7 @@
  * type and keep falling back to the older heuristics.
  */
 export const HYPHA_ROOM_TYPES = {
-  /** Private 1:1, found through its `hypha-dm-<hash>` alias. */
+  /** Private 1:1, found through its `hypha-dm-<env>-<hash>` alias. */
   dm: 'io.hypha.room.dm',
   /** Private group chat started from Messages. */
   group: 'io.hypha.room.group',
