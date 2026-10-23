@@ -74,6 +74,9 @@ export function HumanChatPanelMembers({
   const { client, getRoomMembers, isMatrixAvailable, isAuthenticated } =
     useMatrix();
   const [memberQuery, setMemberQuery] = useState('');
+  useEffect(() => {
+    setMemberQuery('');
+  }, [roomId]);
   const [onlineCount, setOnlineCount] = useState(0);
   const [roomMembers, setRoomMembers] = useState<RoomScopedMember[]>([]);
   const [roomMembersLoading, setRoomMembersLoading] = useState(false);

@@ -68,7 +68,7 @@ describe('group room invite', () => {
         creatorUserId: '@someone:hypha.earth',
         botUserId: bot,
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 });
 
@@ -137,7 +137,7 @@ describe('group room name and archive state', () => {
         summaryJoinedCount: 2,
         hasRoomName: true,
       }),
-    ).toBeNull();
+    ).toBe('group');
     expect(
       peopleConversationKindForListing({
         roomType: null,
@@ -158,6 +158,14 @@ describe('group room name and archive state', () => {
         rememberedHumanCount: 3,
       }),
     ).toBe('group');
+    expect(
+      peopleConversationKindForListing({
+        roomType: null,
+        loadedHumanCount: 2,
+        summaryJoinedCount: 2,
+        hasRoomName: false,
+      }),
+    ).toBeNull();
   });
 
   it('reads a room name state event and m.direct membership', () => {

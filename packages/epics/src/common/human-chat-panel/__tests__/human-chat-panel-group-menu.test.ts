@@ -75,7 +75,7 @@ describe('isPeopleGroupChatRoom', () => {
     ).toBe(true);
   });
 
-  it('does not treat a remembered or named untyped pair as a group', () => {
+  it('does not treat a remembered untyped pair without a name as a group', () => {
     rememberGroupChatRooms(['!remembered-pair']);
     expect(
       isPeopleGroupChatRoom({
@@ -84,6 +84,9 @@ describe('isPeopleGroupChatRoom', () => {
         getJoinedMemberCount: () => 2,
       }),
     ).toBe(false);
+  });
+
+  it('keeps a renamed untyped room even when the member count looks like a pair', () => {
     expect(
       isPeopleGroupChatRoom({
         roomId: '!legacy',
@@ -100,7 +103,7 @@ describe('isPeopleGroupChatRoom', () => {
               : null,
         },
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('keeps a two-person room when create content is group-typed', () => {

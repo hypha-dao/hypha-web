@@ -202,29 +202,27 @@ function logDroppedRoom(room: Room, details: Record<string, unknown>): null {
   return null;
 }
 
-function conversationRowFromRoom(
-  client: MatrixClient,
-  room: Room,
-): ConversationRow | null {
-  const membership = room.getMyMembership();
-  if (membership !== 'join') {
-    return logDroppedRoom(room, { reason: 'not-joined', membership });
-  }
-  const roomType = room.getType();
-  if (isRememberedBoundChatRoom(room.roomId)) {
-    const typed = roomType?.trim() || null;
-    // Untyped people groups can be cached as bound by mistake. Only trust
-    // the cache for other Hypha room types (space, signal, …).
-    if (
-      typed &&
-      typed.startsWith('io.hypha.room.') &&
-      typed !== HYPHA_ROOM_TYPES.dm &&
-      typed !== HYPHA_ROOM_TYPES.group
-    ) {
-      return logDroppedRoom(room, { reason: 'space-or-signal' });
-    }
-  }
-  const archived = isArchivedGroupRoom(room);
+export type RoomListingInspection = {
+  roomId: string;
+  name: string;
+  nameState: string | null;
+  roomType: string | null;
+  membership: string;
+  loadedHumanCount: number;
+  summaryJoinedCount: number;
+  othersCount: number;
+  titleMemberHint: number;
+  rememberedHumanCount: number;
+  archived: boolean;
+  createdAsGroup: boolean;
+  kind: 'group' | 'person' | null;
+  listed: boolean;
+  reason: string;
+};
+
+function inspectBase(room: Room, client: MatrixClient) {
+  const membership = room.getMyMembership() || '';
+  const roomType = room.getType() ?? null;
   const botId = botUserId();
   const selfId = client.getUserId();
   const knownMembers = room
@@ -247,74 +245,123 @@ function conversationRowFromRoom(
   );
   const rememberedHumanCount =
     rememberedGroupChatMemberIds(room.roomId).length + (selfId ? 1 : 0);
-  const flags = {
-    createdAsGroup: isGroupCreateContent(readCreateContent(room)),
-  };
-  const classification = {
-    ...flags,
+  const createdAsGroup = isGroupCreateContent(readCreateContent(room));
+  const archived = isArchivedGroupRoom(room);
+  return {
+    membership,
+    roomType,
+    members,
+    others,
     nameState,
-    memberCount: members.length,
-    othersCount: others.length,
-    joinedMemberCount: room.getJoinedMemberCount?.() ?? members.length,
     titleMemberHint,
     rememberedHumanCount,
+    createdAsGroup,
+    archived,
+    selfId,
+    loadedHumanCount: members.length,
+    summaryJoinedCount: room.getJoinedMemberCount?.() ?? members.length,
   };
+}
+
+function inspectionFrom(
+  room: Room,
+  base: ReturnType<typeof inspectBase>,
+  reason: string,
+  kind: 'group' | 'person' | null,
+  listed: boolean,
+): RoomListingInspection {
+  return {
+    roomId: room.roomId,
+    name: (base.nameState || room.name || '').trim(),
+    nameState: base.nameState,
+    roomType: base.roomType,
+    membership: base.membership,
+    loadedHumanCount: base.loadedHumanCount,
+    summaryJoinedCount: base.summaryJoinedCount,
+    othersCount: base.others.length,
+    titleMemberHint: base.titleMemberHint,
+    rememberedHumanCount: base.rememberedHumanCount,
+    archived: base.archived,
+    createdAsGroup: base.createdAsGroup,
+    kind,
+    listed,
+    reason,
+  };
+}
+
+function classifyConversationRoom(
+  client: MatrixClient,
+  room: Room,
+): { row: ConversationRow | null; inspection: RoomListingInspection } {
+  const base = inspectBase(room, client);
+  const drop = (reason: string, kind: 'group' | 'person' | null = null) => ({
+    row: null as ConversationRow | null,
+    inspection: inspectionFrom(room, base, reason, kind, false),
+  });
+  if (base.membership !== 'join' && base.membership !== 'invite') {
+    return drop('not-joined');
+  }
+  if (isRememberedBoundChatRoom(room.roomId)) {
+    const typed = base.roomType?.trim() || null;
+    // Untyped people groups can be cached as bound by mistake. Only trust
+    // the cache for other Hypha room types (space, signal, …).
+    if (
+      typed &&
+      typed.startsWith('io.hypha.room.') &&
+      typed !== HYPHA_ROOM_TYPES.dm &&
+      typed !== HYPHA_ROOM_TYPES.group
+    ) {
+      return drop('space-or-signal');
+    }
+  }
   // Space, signal, proposal, public, network and ecosystem rooms are not
   // private conversations, whoever is in them.
   if (
-    roomType?.startsWith('io.hypha.room.') &&
-    roomType !== HYPHA_ROOM_TYPES.dm &&
-    roomType !== HYPHA_ROOM_TYPES.group
+    base.roomType?.startsWith('io.hypha.room.') &&
+    base.roomType !== HYPHA_ROOM_TYPES.dm &&
+    base.roomType !== HYPHA_ROOM_TYPES.group
   ) {
-    return logDroppedRoom(room, {
-      reason: 'hypha-typed',
-      ...classification,
-    });
+    return drop('hypha-typed');
   }
   const overrideName = conversationTitleOverrides.get(room.roomId)?.trim();
   const kind = peopleConversationKindForListing({
-    roomType,
-    loadedHumanCount: members.length,
-    summaryJoinedCount:
-      room.getJoinedMemberCount?.() ?? classification.joinedMemberCount,
-    createdAsGroup: flags.createdAsGroup,
-    hasRoomName: Boolean(nameState) || titleMemberHint > 2,
-    titleMemberHint,
-    rememberedHumanCount,
+    roomType: base.roomType,
+    loadedHumanCount: base.loadedHumanCount,
+    summaryJoinedCount: base.summaryJoinedCount,
+    createdAsGroup: base.createdAsGroup,
+    hasRoomName: Boolean(base.nameState) || base.titleMemberHint > 2,
+    titleMemberHint: base.titleMemberHint,
+    rememberedHumanCount: base.rememberedHumanCount,
   });
   if (
-    !roomType &&
-    (nameState || titleMemberHint > 1) &&
-    members.length < 3 &&
+    !base.roomType &&
+    (base.nameState || base.titleMemberHint > 1) &&
+    base.members.length < 3 &&
     typeof room.loadMembersIfNeeded === 'function'
   ) {
     void room.loadMembersIfNeeded().catch(() => undefined);
   }
+  if (base.membership === 'invite' && kind !== 'group') {
+    return drop('not-joined', kind);
+  }
   // Group-typed rooms stay listed before lazy members arrive. Person chats
   // still need the other human so they can attach to a directory row.
-  if (others.length === 0 && kind !== 'group') {
-    return logDroppedRoom(room, {
-      reason: 'no-other-members',
-      kind,
-      ...classification,
-    });
+  if (base.others.length === 0 && kind !== 'group') {
+    return drop('no-other-members', kind);
   }
   // Untyped rooms that are not groups are dropped. If they were also in
   // m.direct they used to become `person` and then vanish from the list.
   if (!kind) {
-    return logDroppedRoom(room, {
-      reason: 'not-people-conversation',
-      ...classification,
-    });
+    return drop('not-people-conversation');
   }
-  const other = others.length === 1 ? others[0] : undefined;
+  const other = base.others.length === 1 ? base.others[0] : undefined;
   const name =
     overrideName ||
     (kind === 'person'
       ? other?.name || other?.rawDisplayName
-      : nameState || room.name) ||
+      : base.nameState || room.name) ||
     room.name ||
-    nameState ||
+    base.nameState ||
     '';
   if (overrideName && room.name.trim() === overrideName) {
     conversationTitleOverrides.delete(room.roomId);
@@ -324,11 +371,7 @@ function conversationRowFromRoom(
     looksLikeHyphaBot(room.name) ||
     looksLikeHyphaBot(name)
   ) {
-    return logDroppedRoom(room, {
-      reason: 'bot',
-      kind,
-      ...classification,
-    });
+    return drop('bot', kind);
   }
   const mxc =
     kind === 'person'
@@ -336,7 +379,7 @@ function conversationRowFromRoom(
       : room.getMxcAvatarUrl();
   const faces =
     kind === 'group'
-      ? others.slice(0, 2).map((member) => ({
+      ? base.others.slice(0, 2).map((member) => ({
           name: visibleMatrixMemberName(
             member.userId,
             member.name,
@@ -366,19 +409,15 @@ function conversationRowFromRoom(
     isRememberedSignalThreadRoom(room.roomId) || signalMarkerInTimeline;
   if (signalThread) {
     rememberSignalThreadRooms([room.roomId], { quiet: true });
-    return logDroppedRoom(room, {
-      reason: 'signal',
-      kind,
-      ...classification,
-    });
+    return drop('signal', kind);
   }
-  const last = lastRoomMessage(room, selfId);
+  const last = lastRoomMessage(room, base.selfId);
   // Always walk real incoming messages. The SDK notification total still
   // counts hidden call/signal notices, which inflated the Messages badge.
-  const unread = countIncomingUnreadMessages(room, selfId, isHyphaBot);
+  const unread = countIncomingUnreadMessages(room, base.selfId, isHyphaBot);
   const searchMembers =
     kind === 'group'
-      ? others.map((member) => ({
+      ? base.others.map((member) => ({
           name: visibleMatrixMemberName(
             member.userId,
             member.name,
@@ -388,7 +427,7 @@ function conversationRowFromRoom(
         }))
       : undefined;
 
-  return {
+  const row: ConversationRow = {
     roomId: room.roomId,
     name: name.trim(),
     avatarUrl: avatarHttp(client, mxc),
@@ -396,15 +435,57 @@ function conversationRowFromRoom(
     mine: last.mine,
     lastTs: last.ts ?? (kind === 'group' ? groupFallbackTimestamp(room) : null),
     unread,
-    memberCount: members.length,
+    memberCount: base.members.length,
     otherUserId: other?.userId ?? null,
     roomType: room.getType() ?? null,
     faces,
     groupChat: kind === 'group',
     kind,
-    archived,
+    archived: base.archived,
     searchMembers,
   };
+  return {
+    row,
+    inspection: inspectionFrom(
+      room,
+      base,
+      base.archived ? 'listed-archived' : 'listed',
+      kind,
+      true,
+    ),
+  };
+}
+
+function conversationRowFromRoom(
+  client: MatrixClient,
+  room: Room,
+): ConversationRow | null {
+  const { row, inspection } = classifyConversationRoom(client, room);
+  if (!row) {
+    logDroppedRoom(room, inspection);
+  }
+  return row;
+}
+
+/** Every joined or invited room, with the Messages-list filter reason. */
+export function inspectJoinedAndInvitedRooms(
+  client: MatrixClient,
+): RoomListingInspection[] {
+  return client
+    .getRooms()
+    .filter((room) => {
+      const membership = room.getMyMembership();
+      return membership === 'join' || membership === 'invite';
+    })
+    .map((room) => classifyConversationRoom(client, room).inspection)
+    .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function logRoomListingDump(client: MatrixClient) {
+  if (!debugRoomsEnabled()) return;
+  console.info('[debugRooms] joined and invited rooms', {
+    rooms: inspectJoinedAndInvitedRooms(client),
+  });
 }
 
 function groupFallbackTimestamp(room: Room): number | null {
@@ -676,7 +757,8 @@ function conversationIsFresh(client: MatrixClient, room: Room) {
 function peopleGroupRoomIds(client: MatrixClient): string[] {
   const ids: string[] = [];
   for (const room of client.getRooms()) {
-    if (room.getMyMembership() !== 'join') continue;
+    const membership = room.getMyMembership();
+    if (membership !== 'join' && membership !== 'invite') continue;
     if (room.getType() === HYPHA_ROOM_TYPES.group) {
       ids.push(room.roomId);
       continue;
@@ -897,6 +979,7 @@ function onConversationSync() {
   const client = conversationClient;
   if (!client) return;
   refreshBoundChatRooms(client);
+  logRoomListingDump(client);
   enqueueConversationRooms(client, peopleGroupRoomIds(client));
   // Summarise enough rooms on this tick that last-message order is already
   // correct before the list paints. The idle pump finishes any remainder.
@@ -1017,7 +1100,9 @@ export function conversationRowsPending(client: MatrixClient) {
     .getRooms()
     .some(
       (room) =>
-        room.getMyMembership() === 'join' && !conversationIsFresh(client, room),
+        (room.getMyMembership() === 'join' ||
+          room.getMyMembership() === 'invite') &&
+        !conversationIsFresh(client, room),
     );
 }
 
@@ -1072,6 +1157,7 @@ export function attachConversationList(
   conversationListeners.add(onChange);
   listenForConversationRows(client);
   refreshBoundChatRooms(client);
+  logRoomListingDump(client);
   enqueueConversationRooms(client, peopleGroupRoomIds(client));
   pumpConversationRooms(SYNC_ROOM_BUDGET);
   scheduleConversationPump();
@@ -1192,6 +1278,7 @@ export function MyConnections({
   }, [client, jwt]);
   const { openCoherenceChat } = useHumanChatPanel();
   const searchParams = useSearchParams();
+  const debugRooms = searchParams.get('debugRooms') === '1';
   const openedDirectChatRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
   const [query, setQuery] = useState('');
@@ -1629,6 +1716,10 @@ export function MyConnections({
     t,
   ]);
   const selectedPeople = members.filter((row) => selected.has(row.person.id));
+  const roomDiagnostics = useMemo(
+    () => (debugRooms && client ? inspectJoinedAndInvitedRooms(client) : []),
+    [client, debugRooms, rows, synced],
+  );
 
   async function loadMorePeople() {
     if (loadingMore || !jwt || !hasMorePeople) return;
@@ -1943,6 +2034,47 @@ export function MyConnections({
             <p className="text-1 text-error-11" role="alert">
               {notice}
             </p>
+          ) : null}
+
+          {debugRooms ? (
+            <div
+              className="overflow-x-auto border border-border bg-muted/30 p-3 text-[11px] leading-4 text-muted-foreground"
+              data-testid="debug-rooms"
+            >
+              <p className="mb-2 font-medium text-foreground">
+                debugRooms ({roomDiagnostics.length})
+              </p>
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="py-1 pr-2">reason</th>
+                    <th className="py-1 pr-2">membership</th>
+                    <th className="py-1 pr-2">type</th>
+                    <th className="py-1 pr-2">members</th>
+                    <th className="py-1 pr-2">name</th>
+                    <th className="py-1">roomId</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {roomDiagnostics.map((room) => (
+                    <tr key={room.roomId} className="border-b border-border/60">
+                      <td className="py-1 pr-2 whitespace-nowrap">
+                        {room.reason}
+                      </td>
+                      <td className="py-1 pr-2">{room.membership}</td>
+                      <td className="py-1 pr-2">{room.roomType || '—'}</td>
+                      <td className="py-1 pr-2 whitespace-nowrap">
+                        {room.loadedHumanCount}/{room.summaryJoinedCount} o
+                        {room.othersCount}
+                        {room.archived ? ' archived' : ''}
+                      </td>
+                      <td className="py-1 pr-2">{room.name || '—'}</td>
+                      <td className="py-1 break-all">{room.roomId}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : null}
 
           {!isMatrixAvailable && !notice ? (

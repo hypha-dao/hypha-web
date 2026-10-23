@@ -203,20 +203,15 @@ export function peopleConversationKindForListing(
   if (type) return null;
   const titleHint = input.titleMemberHint ?? 0;
   const remembered = input.rememberedHumanCount ?? 0;
-  // Untyped + named + 3 joined humans (title, memory, or loaded) must stay.
-  // A stale 2/2 summary is not enough to hide that shape. m.direct is ignored.
-  if (
-    input.hasRoomName &&
-    (input.loadedHumanCount > 2 || titleHint > 2 || remembered > 2)
-  ) {
+  // Rename writes `m.room.name` only. A stale 2/2 summary is not enough to
+  // hide a named untyped room — that is the Gerardo/Xerxes "(test)" shape.
+  // m.direct is ignored.
+  if (input.hasRoomName) return 'group';
+  if (input.loadedHumanCount > 2 || titleHint > 2 || remembered > 2) {
     return 'group';
   }
   const membersIncomplete = input.loadedHumanCount < input.summaryJoinedCount;
   if (membersIncomplete && input.summaryJoinedCount > 2) return 'group';
-  // Named untyped rooms stay listed until the full member list arrives.
-  // A completed 2-human list still drops (typed-room rule).
-  if (membersIncomplete && input.hasRoomName) return 'group';
-  if (input.loadedHumanCount <= 1 && input.hasRoomName) return 'group';
   return null;
 }
 
@@ -251,28 +246,23 @@ export function conversationActivityTs(
 }
 
 /**
- * A group chat is its own invite-only room. People only see it once they are
- * joined. An invite left sitting in Matrix never shows up in the people list.
+ * A group chat is its own invite-only room. Comma titles without a space alias
+ * are accepted so a human-created untyped group is not left sitting as invite.
  */
 export function isAutoJoinGroupInvite({
   membership,
   canonicalAlias,
   roomName,
-  creatorUserId,
-  botUserId,
 }: {
   membership: string | null | undefined;
   canonicalAlias: string | null | undefined;
   roomName: string | null | undefined;
-  creatorUserId: string | null | undefined;
-  botUserId: string | null | undefined;
+  creatorUserId?: string | null | undefined;
+  botUserId?: string | null | undefined;
 }): boolean {
   if (membership !== 'invite') return false;
   if (canonicalAlias?.trim()) return false;
   const name = roomName?.trim() ?? '';
-  if (!name.includes(',')) return false;
-  const bot = botUserId?.trim();
-  const creator = creatorUserId?.trim();
-  if (!bot || !creator) return false;
-  return creator === bot;
+  // Comma titles are people groups. Space rooms have aliases and stay out.
+  return name.includes(',');
 }
