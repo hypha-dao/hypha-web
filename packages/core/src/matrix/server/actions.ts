@@ -570,6 +570,9 @@ export async function ensureDirectPairRoomAction({
         aliasedRoomId,
         error instanceof Error ? error.message : error,
       );
+      // The type is unknown, so this is an error, not a "not a DM". Fail fast
+      // and leave the alias where it is.
+      return null;
     }
     if (aliasedRoomType === HYPHA_ROOM_TYPES.dm) roomId = aliasedRoomId;
   }
