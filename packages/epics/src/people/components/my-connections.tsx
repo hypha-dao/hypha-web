@@ -817,6 +817,7 @@ function refreshConversationRoom(room: Room | undefined) {
 const MAX_BOUND_LOOKUP_IDS = 100;
 const checkedBoundRoomIds = new Set<string>();
 let conversationBoundLookupToken: string | null = null;
+let boundLookupInFlight = false;
 
 function setConversationBoundLookupToken(token: string | null | undefined) {
   conversationBoundLookupToken = token?.trim() || null;
@@ -825,11 +826,13 @@ function setConversationBoundLookupToken(token: string | null | undefined) {
 function refreshBoundChatRooms(client: MatrixClient) {
   const authToken = conversationBoundLookupToken;
   if (!authToken) return;
+  if (boundLookupInFlight) return;
   const roomIds = client
     .getRooms()
     .map((room) => room.roomId)
     .filter((id) => !checkedBoundRoomIds.has(id));
   if (roomIds.length === 0) return;
+  boundLookupInFlight = true;
   void (async () => {
     try {
       for (let i = 0; i < roomIds.length; i += MAX_BOUND_LOOKUP_IDS) {
@@ -849,6 +852,8 @@ function refreshBoundChatRooms(client: MatrixClient) {
       }
     } catch (error) {
       console.warn('Failed to check bound chat rooms', error);
+    } finally {
+      boundLookupInFlight = false;
     }
   })();
 }
