@@ -1,4 +1,7 @@
-import { looksLikeTechnicalMatrixDisplayName } from '../../../../core/src/matrix/matrix-member-display';
+import {
+  isHyphaBotMatrixIdentity,
+  looksLikeTechnicalMatrixDisplayName,
+} from '../../../../core/src/matrix/matrix-member-display';
 import { replacePlainTextMatrixMxidsWithLabels } from '../../../../core/src/matrix/mentions';
 import { HYPHA_ROOM_TYPES } from '../../../../core/src/matrix/room-types';
 
@@ -54,19 +57,12 @@ export type MemberRow<T extends ConnectionListPerson = ConnectionListPerson> = {
   faces?: GroupFace[];
 };
 
-function botUserId() {
-  return process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
-}
-
 export function looksLikeHyphaBot(value: string | null | undefined) {
   return Boolean(value && /hypha[_-]bot/i.test(value));
 }
 
 export function isHyphaBot(userId: string | undefined, name?: string | null) {
-  const configured = botUserId();
-  if (configured && userId === configured) return true;
-  const local = userId?.replace(/^@/, '').split(':')[0] ?? '';
-  return looksLikeHyphaBot(local) || looksLikeHyphaBot(name);
+  return isHyphaBotMatrixIdentity(userId, name);
 }
 
 export const STALE_CONNECTION_MS = 14 * 24 * 60 * 60 * 1000;
@@ -260,6 +256,59 @@ export function rememberSignalThreadRooms(
 export function isRememberedSignalThreadRoom(roomId: string) {
   loadSignalThreadRooms();
   return signalThreadRoomIds.has(roomId.trim());
+}
+
+const boundChatRoomIds = new Set<string>();
+const BOUND_CHAT_ROOMS_KEY = 'hypha.bound-chat-rooms';
+let boundChatRoomsLoaded = false;
+
+function loadBoundChatRooms() {
+  if (boundChatRoomsLoaded || typeof window === 'undefined') return;
+  boundChatRoomsLoaded = true;
+  try {
+    const raw = window.localStorage.getItem(BOUND_CHAT_ROOMS_KEY);
+    const ids = raw ? (JSON.parse(raw) as unknown) : [];
+    if (!Array.isArray(ids)) return;
+    for (const id of ids) {
+      if (typeof id === 'string' && id.trim()) {
+        boundChatRoomIds.add(id.trim());
+      }
+    }
+  } catch {
+    // Ignore a broken cache. The next lookup can refill it.
+  }
+}
+
+function persistBoundChatRooms() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(
+      BOUND_CHAT_ROOMS_KEY,
+      JSON.stringify([...boundChatRoomIds]),
+    );
+  } catch {
+    // Ignore quota and private-mode failures.
+  }
+}
+
+/** Space member rooms and signal threads, including archived signals. */
+export function rememberBoundChatRooms(
+  roomIds: Iterable<string | null | undefined>,
+) {
+  loadBoundChatRooms();
+  let changed = false;
+  for (const roomId of roomIds) {
+    const id = roomId?.trim();
+    if (!id || boundChatRoomIds.has(id)) continue;
+    boundChatRoomIds.add(id);
+    changed = true;
+  }
+  if (changed) persistBoundChatRooms();
+}
+
+export function isRememberedBoundChatRoom(roomId: string) {
+  loadBoundChatRooms();
+  return boundChatRoomIds.has(roomId.trim());
 }
 
 function directRoomKey(selfUserId: string, otherUserId: string) {

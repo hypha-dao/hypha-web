@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
+  countHumanMatrixMembers,
   looksLikeTechnicalMatrixDisplayName,
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
@@ -101,5 +102,36 @@ describe('splitSpeakerLabeledTranscriptLine', () => {
       speaker: 'prod_privy_did_privy_abc',
       body: ' hello team',
     });
+  });
+});
+
+describe('countHumanMatrixMembers', () => {
+  const previousPrimary = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID;
+  const previousExtra = process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+
+  afterEach(() => {
+    if (previousPrimary == null)
+      delete process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID;
+    else process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID = previousPrimary;
+    if (previousExtra == null) {
+      delete process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+    } else {
+      process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS = previousExtra;
+    }
+  });
+
+  it('drops the configured bot, extra bots, and Hypha bot identities', () => {
+    process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID = '@hypha-bot:hypha.earth';
+    process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS =
+      '@hypha-bot-preview:hypha.earth';
+    expect(
+      countHumanMatrixMembers([
+        '@ada:hypha.earth',
+        '@hypha-bot:hypha.earth',
+        '@hypha-bot-preview:hypha.earth',
+        '@hypha_bot_prod:hypha.earth',
+        '@kate:hypha.earth',
+      ]),
+    ).toBe(2);
   });
 });

@@ -159,9 +159,7 @@ export async function isRoomBoundToSpaceOrSignal(
     const [signal] = await db
       .select({ id: coherences.id })
       .from(coherences)
-      .where(
-        and(eq(coherences.roomId, trimmed), eq(coherences.archived, false)),
-      )
+      .where(eq(coherences.roomId, trimmed))
       .limit(1);
     return Boolean(signal);
   } catch (error) {
@@ -172,5 +170,38 @@ export async function isRoomBoundToSpaceOrSignal(
     );
     // Fail closed: a lookup error must not authorize rename/archive.
     return true;
+  }
+}
+
+/** Room ids already used as a space chat or a signal thread (including archived). */
+export async function findBoundChatRoomIdsAmong(
+  { roomIds }: { roomIds: readonly string[] },
+  { db }: DbConfig,
+): Promise<string[]> {
+  const ids = [
+    ...new Set(roomIds.map((roomId) => roomId.trim()).filter(Boolean)),
+  ];
+  if (ids.length === 0) return [];
+  try {
+    const spaceRows = await db
+      .select({ roomId: spaces.chatRoomId })
+      .from(spaces)
+      .where(inArray(spaces.chatRoomId, ids));
+    const signalRows = await db
+      .select({ roomId: coherences.roomId })
+      .from(coherences)
+      .where(inArray(coherences.roomId, ids));
+    const bound = new Set<string>();
+    for (const row of [...spaceRows, ...signalRows]) {
+      const roomId = row.roomId?.trim();
+      if (roomId) bound.add(roomId);
+    }
+    return [...bound];
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to list space/signal room bindings:',
+      error instanceof Error ? error.message : error,
+    );
+    return ids;
   }
 }

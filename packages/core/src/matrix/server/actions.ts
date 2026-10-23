@@ -21,6 +21,7 @@ import {
   findLinkByPrivyUserId,
   findMatrixUserIdsByPersonIds,
   findMatrixUserIdsByPrivyUserIds,
+  findBoundChatRoomIdsAmong,
   isRoomBoundToSpaceOrSignal,
 } from './queries';
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
@@ -36,6 +37,7 @@ import {
   isPeopleGroupRoomType,
   normalizeGroupRoomName,
 } from '../group-room';
+import { countHumanMatrixMembers } from '../matrix-member-display';
 import { determineEnvironment } from '../../coherence/lib/determine-environment';
 import { Environment } from '../../coherence/types';
 import { getAppBaseUrl } from '../../common/server/get-app-url';
@@ -824,10 +826,11 @@ async function loadPeopleGroupContext(
   const hasRoomName =
     typeof nameState?.name === 'string' && Boolean(nameState.name.trim());
   const createdAsGroup = roomType === HYPHA_ROOM_TYPES.group;
-  // Joined members include the bot, so a 2-person group is often count 3.
-  // A named untyped room or stored creator still counts as a group.
+  const humanCount = countHumanMatrixMembers(members);
+  // Joined members include the org bot and any extra bots. Count humans
+  // the same way Messages does before deciding this is a group.
   if (
-    !isPeopleGroupRoomType(roomType, members.length, {
+    !isPeopleGroupRoomType(roomType, humanCount, {
       hasCreator,
       hasRoomName,
       createdAsGroup,
@@ -961,4 +964,11 @@ export async function archiveGroupRoomAction({
     );
     return null;
   }
+}
+
+/** Space chats and signal threads the client must keep out of Messages. */
+export async function listBoundChatRoomIdsAmongAction(
+  roomIds: readonly string[],
+): Promise<string[]> {
+  return findBoundChatRoomIdsAmong({ roomIds }, { db });
 }

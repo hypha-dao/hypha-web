@@ -36,6 +36,7 @@ import {
   useMatrixUserIdsByPersonIds,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
+import { listBoundChatRoomIdsAmongAction } from '@hypha-platform/core/matrix/server/actions';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { Search, Users, X } from 'lucide-react';
@@ -59,11 +60,13 @@ import {
   groupRowsForConnections,
   conversationMatchesSearch,
   isPeopleListGroup,
+  isRememberedBoundChatRoom,
   isRememberedGroupChatRoom,
   memberRowsForConnections,
   messagePreview,
   previewWithNames,
   rememberGroupChatMembers,
+  rememberBoundChatRooms,
   rememberGroupChatRooms,
   rememberedGroupChatMemberIds,
   rememberSignalThreadRooms,
@@ -198,6 +201,9 @@ function conversationRowFromRoom(
   const membership = room.getMyMembership();
   if (membership !== 'join') {
     return logDroppedRoom(room, { reason: 'not-joined', membership });
+  }
+  if (isRememberedBoundChatRoom(room.roomId)) {
+    return logDroppedRoom(room, { reason: 'space-or-signal' });
   }
   if (isArchivedGroupRoom(room)) {
     return logDroppedRoom(room, { reason: 'archived' });
@@ -756,9 +762,24 @@ function refreshConversationRoom(room: Room | undefined) {
   notifyConversationListeners();
 }
 
+function refreshBoundChatRooms(client: MatrixClient) {
+  const roomIds = client.getRooms().map((room) => room.roomId);
+  void listBoundChatRoomIdsAmongAction(roomIds).then((ids) => {
+    rememberBoundChatRooms(ids);
+    let changed = false;
+    for (const id of ids) {
+      if (!conversationCache.has(id)) continue;
+      conversationCache.delete(id);
+      changed = true;
+    }
+    if (changed) notifyConversationListeners();
+  });
+}
+
 function onConversationSync() {
   const client = conversationClient;
   if (!client) return;
+  refreshBoundChatRooms(client);
   enqueueConversationRooms(client, []);
   // Summarise enough rooms on this tick that last-message order is already
   // correct before the list paints. The idle pump finishes any remainder.
@@ -932,6 +953,7 @@ export function attachConversationList(
   useConversationClient(client);
   conversationListeners.add(onChange);
   listenForConversationRows(client);
+  refreshBoundChatRooms(client);
   enqueueConversationRooms(client, []);
   pumpConversationRooms(SYNC_ROOM_BUDGET);
   scheduleConversationPump();
