@@ -51,10 +51,12 @@ export function Debug2575Lifecycle({ name }: { name: string }) {
           JSON.stringify(args[1] ?? null) === '{}';
         console.log(
           `[#2575] router.${method} #${count}${
-            fromRedirectBoundary ? ' [REDIRECT-BOUNDARY: server redirect()]' : ''
-          } -> ${JSON.stringify(
-            args[0],
-          )} ${JSON.stringify(args[1] ?? null)} | ${stack}`,
+            fromRedirectBoundary
+              ? ' [REDIRECT-BOUNDARY: server redirect()]'
+              : ''
+          } -> ${JSON.stringify(args[0])} ${JSON.stringify(
+            args[1] ?? null,
+          )} | ${stack}`,
         );
         return (original as (...a: unknown[]) => unknown)(...args);
       };
