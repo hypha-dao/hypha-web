@@ -16,13 +16,14 @@ export default function E2eEmojiPickerPage() {
 
   const [composerOpen, setComposerOpen] = useState(false);
   const [reactOpen, setReactOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(true);
 
   return (
     <main
       data-testid="e2e-emoji-picker-harness"
       className="min-h-svh bg-background"
     >
-      <SidebarProvider defaultOpen open>
+      <SidebarProvider defaultOpen open={sheetOpen} onOpenChange={setSheetOpen}>
         <Sidebar
           side="right"
           variant="sidebar"
@@ -32,6 +33,7 @@ export default function E2eEmojiPickerPage() {
           className="z-[50]"
         >
           <div
+            data-hypha-chat-panel=""
             data-testid="e2e-emoji-chat"
             className="flex h-full flex-col justify-end gap-4 p-4"
           >

@@ -981,6 +981,24 @@ describe('applyResolvedPeerTitles', () => {
       ),
     ).toEqual(['!empty-dm']);
   });
+
+  it('keeps a directory name when the person has no mapped mxid', () => {
+    const bob = {
+      person: person(42, 'Bob', 'Duindam'),
+      name: 'Bob Duindam',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const resolved = applyResolvedPeerTitles([bob], [], new Map(), {});
+
+    expect(resolved[0]).toMatchObject({
+      name: 'Bob Duindam',
+      titlePending: false,
+    });
+  });
 });
 
 describe('conversationsMatchingSearch', () => {

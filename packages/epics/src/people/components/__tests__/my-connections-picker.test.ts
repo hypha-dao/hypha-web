@@ -15,6 +15,7 @@ describe('group picker chips and radio', () => {
     expect(source).toContain('mergeDirectoryPeople');
     expect(source).toContain('onClick={() => toggleSelected(row)}');
     expect(source).not.toMatch(/toggleSelected\(row\);\s*setQuery\(/);
+    expect(source).toMatch(/function exitPicking\(\) \{[\s\S]*setQuery\(''\)/);
   });
 
   it('selects a member when the radio circle is tapped', () => {

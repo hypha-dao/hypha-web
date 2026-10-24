@@ -10,18 +10,27 @@ describe('emoji picker layout', () => {
     const picker = read('human-chat-panel-emoji-picker.tsx');
     expect(picker).toContain("side = 'top'");
     expect(picker).toContain('collisionPadding={12}');
-    expect(picker).toContain('w-[min(calc(100vw-2rem),22rem)]');
-    expect(picker).toContain('overflow-hidden');
+    expect(picker).toContain(
+      'w-[min(22rem,var(--radix-popover-content-available-width),calc(100vw-2rem))]',
+    );
+    expect(picker).toContain('overflow-x-hidden');
+    expect(picker).toContain('collisionBoundary');
   });
 
   it('closes only the picker on Escape and lets the wheel scroll the grid', () => {
     const picker = read('human-chat-panel-emoji-picker.tsx');
     expect(picker).toContain('onEscapeKeyDown');
     expect(picker).toContain('event.stopPropagation()');
+    expect(picker).toContain('event.isComposing || event.keyCode === 229');
     expect(picker).toContain("addEventListener('keydown', onKeyDown, true)");
     expect(picker).toContain('onWheel');
     const overflow = read('human-chat-panel-message-overflow.tsx');
     expect(overflow).toContain('onWheel={(event) => event.stopPropagation()}');
+    expect(overflow).toContain('onEscapeKeyDown={(event) => {');
+    expect(overflow).toContain('event.stopPropagation()');
+    expect(overflow).not.toMatch(
+      /onEscapeKeyDown=\{\(event\) => \{[\s\S]*event\.preventDefault\(\)/,
+    );
     const chatBar = read('human-chat-panel-chat-bar.tsx');
     expect(chatBar).toContain("e.key === 'Escape' && emojiPickerOpen");
     expect(chatBar).toContain('e.stopPropagation()');
