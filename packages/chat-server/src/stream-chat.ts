@@ -67,8 +67,11 @@ import {
   createGetEcosystemBySpaceSlugTool,
   createGetSignalsBySpaceSlugTool,
   createGetTokenHoldingsBySpaceSlugTool,
+  createHumanChatMessageTool,
+  createMcpNavigationTool,
   getSpaceBySlugTool,
 } from './tools/index';
+import { createGenerateSpaceVisualAssetsTool } from './tools/generate-space-visual-assets';
 
 const VOICE_MODE_ACTIVE_DIRECTIVES = `${STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES}
 CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS reads it word for word). Human summary only — ${VOICE_SPOKEN_SENTENCE_LIMIT} natural sentences, no Title/Description/field labels, no numbered lists, no form structure. Draft first, one small reaction ask.
@@ -1010,6 +1013,7 @@ async function buildDeterministicSpaceFallback({
 function createOpenRouterAuthRecoveryTransform(
   debugRequestId: string,
   deterministicFallback: DeterministicFallbackContext | null,
+  errorsAsText: boolean,
 ): StreamTextTransform<ToolSet> {
   return () => {
     const nextTextId = createIdGenerator({ prefix: 't', size: 12 });
@@ -1068,6 +1072,10 @@ function createOpenRouterAuthRecoveryTransform(
           return;
         }
 
+        if (!errorsAsText) {
+          controller.enqueue(chunk);
+          return;
+        }
         console.error('[chat][openrouter][stream-error]', {
           debugRequestId,
           message,
@@ -1450,6 +1458,18 @@ export async function createChatStreamResult(
           SHOW_MEMBER_HOME_ITEM_TOOL,
           createShowMemberHomeItemTool(memberHomeItems),
         ),
+        create_human_chat_message: safeChatTool(
+          'create_human_chat_message',
+          createHumanChatMessageTool(authToken, requestUrlForSessionMatrix),
+        ),
+        mcp_navigation: safeChatTool(
+          'mcp_navigation',
+          createMcpNavigationTool(authToken),
+        ),
+        generate_space_visual_assets: safeChatTool(
+          'generate_space_visual_assets',
+          createGenerateSpaceVisualAssetsTool(),
+        ),
       }
     : createChatTools(
         authToken,
@@ -1570,7 +1590,9 @@ export async function createChatStreamResult(
         ?.collectedFields ?? snapshotWalkthrough?.collectedFields,
   });
   const systemPrompt = memberHomeRecord
-    ? 'You are Hypha, speaking to this member at home. Use only the brief below. Two short sentences, then stop. Call show_member_home_item once for the one item in the brief. Do not call any other tool. Do not think out loud.'
+    ? `${effectiveSystemPrompt}\n\nYou are Hypha, speaking to this member at home. Use only the brief below. Two short sentences, then stop. Call show_member_home_item once for the one item in the brief unless this turn is a share or a visual request. You may also call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not call any other tool. Do not think out loud.${
+        onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''
+      }`
     : normalizedConversationContext?.mode === 'onboarding_setup'
     ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
         normalizedConversationContext.setupPhase ?? 'discover'
@@ -1751,6 +1773,7 @@ export async function createChatStreamResult(
     experimental_transform: createOpenRouterAuthRecoveryTransform(
       debugRequestId,
       deterministicFallback,
+      memberHomeRecord != null,
     ),
   });
   return Object.assign(result, { memberHomeCard });

@@ -357,10 +357,23 @@ export function readHomeThread(): UIMessage[] {
   }
 }
 
+function isHomeErrorMessage(message: { metadata?: unknown }) {
+  const metadata = message.metadata;
+  return (
+    metadata != null &&
+    typeof metadata === 'object' &&
+    'homeError' in metadata &&
+    (metadata as { homeError?: unknown }).homeError === true
+  );
+}
+
 export function writeHomeThread(messages: readonly UIMessage[]) {
-  if (typeof window === 'undefined' || messages.length === 0) return;
+  const persistable = messages.filter(
+    (message) => !isHomeErrorMessage(message),
+  );
+  if (typeof window === 'undefined' || persistable.length === 0) return;
   try {
-    const stored = messages.slice(-40).map((message) => ({
+    const stored = persistable.slice(-40).map((message) => ({
       id: message.id,
       role: message.role,
       metadata: message.metadata,
