@@ -21,6 +21,77 @@ type PipelineProbabilitySettingsProps = {
   spaceSlug: string;
 };
 
+type StageDraftRow = PipelineStageDefinition & { rowKey: string };
+
+let nextStageRowKey = 0;
+
+function withRowKey(
+  stage: PipelineStageDefinition,
+  rowKey?: string,
+): StageDraftRow {
+  return {
+    ...stage,
+    rowKey: rowKey ?? `stage-row-${++nextStageRowKey}`,
+  };
+}
+
+function toStageDefinition({
+  rowKey: _rowKey,
+  ...stage
+}: StageDraftRow): PipelineStageDefinition {
+  return stage;
+}
+
+function migrateMatrixSlug(
+  matrix: ProbabilityMatrix,
+  tracks: { slug: string }[],
+  fromSlug: string,
+  adoptedSlug: string,
+): ProbabilityMatrix {
+  const updated: ProbabilityMatrix = {};
+  for (const track of tracks) {
+    const existing = matrix[track.slug];
+    const lane = {
+      ...(existing && !Array.isArray(existing) ? existing : {}),
+    };
+    lane[adoptedSlug] =
+      getProbabilityCell(matrix, track.slug, adoptedSlug) ??
+      getProbabilityCell(matrix, track.slug, fromSlug) ??
+      seedStageProbability(track.slug, adoptedSlug);
+    updated[track.slug] = lane;
+  }
+  return updated;
+}
+
+function adoptPlaceholderSlug(
+  rows: StageDraftRow[],
+  index: number,
+  matrix: ProbabilityMatrix,
+  tracks: { slug: string }[],
+  placeholderRowKeys: ReadonlySet<string>,
+): { rows: StageDraftRow[]; matrix: ProbabilityMatrix } {
+  const stage = rows[index];
+  if (!stage) return { rows, matrix };
+  const adoptedSlug = resolveAdoptedStageSlug({
+    stage,
+    name: stage.name,
+    siblingSlugs: rows
+      .filter((_, otherIndex) => otherIndex !== index)
+      .map((other) => other.slug),
+    unsavedPlaceholderSlugs: placeholderRowKeys.has(stage.rowKey)
+      ? new Set([stage.slug])
+      : new Set(),
+    defaultStages: DEFAULT_PIPELINE_STAGES,
+  });
+  if (adoptedSlug === stage.slug) return { rows, matrix };
+  return {
+    rows: rows.map((item, i) =>
+      i === index ? { ...item, slug: adoptedSlug } : item,
+    ),
+    matrix: migrateMatrixSlug(matrix, tracks, stage.slug, adoptedSlug),
+  };
+}
+
 function cloneMatrix(
   matrix: ProbabilityMatrix,
   tracks: { slug: string }[],
@@ -73,6 +144,10 @@ function cloneStages(
   return stages.map((stage, position) => ({ ...stage, position }));
 }
 
+function cloneStageDraft(stages: PipelineStageDefinition[]): StageDraftRow[] {
+  return cloneStages(stages).map((stage) => withRowKey(stage));
+}
+
 /** Tracks whose non-terminal stages are not monotonically increasing. */
 function nonMonotonicTracks(
   matrix: ProbabilityMatrix,
@@ -107,22 +182,22 @@ export function PipelineProbabilitySettings({
     saveConfig,
     isSaving,
   } = usePipelineConfig(spaceSlug);
-  const [stageDraft, setStageDraft] = React.useState<PipelineStageDefinition[]>(
-    () => cloneStages(stages),
+  const [stageDraft, setStageDraft] = React.useState<StageDraftRow[]>(() =>
+    cloneStageDraft(stages),
   );
   const [draft, setDraft] = React.useState<ProbabilityMatrix>(() =>
     cloneMatrix(probabilities, tracks, stages),
   );
   const [error, setError] = React.useState<string | null>(null);
   const [savedAt, setSavedAt] = React.useState<Date | null>(null);
-  const removedStagesRef = React.useRef<PipelineStageDefinition[]>([]);
-  const newStageSlugsRef = React.useRef(new Set<string>());
+  const removedStagesRef = React.useRef<StageDraftRow[]>([]);
+  const newStageRowKeysRef = React.useRef(new Set<string>());
 
   const hasLoadedRef = React.useRef(false);
   React.useEffect(() => {
     if (hasLoadedRef.current || isLoading || configError) return;
     hasLoadedRef.current = true;
-    setStageDraft(cloneStages(stages));
+    setStageDraft(cloneStageDraft(stages));
     setDraft(cloneMatrix(probabilities, tracks, stages));
   }, [probabilities, stages, tracks, isLoading, configError]);
 
@@ -153,42 +228,23 @@ export function PipelineProbabilitySettings({
   };
 
   const renameStage = (index: number, name: string) => {
-    const stage = stageDraft[index];
-    if (!stage) return;
-    const adoptedSlug = resolveAdoptedStageSlug({
-      stage,
-      name,
-      siblingSlugs: stageDraft
-        .filter((_, otherIndex) => otherIndex !== index)
-        .map((other) => other.slug),
-      unsavedPlaceholderSlugs: newStageSlugsRef.current,
-      defaultStages: DEFAULT_PIPELINE_STAGES,
-    });
-    if (adoptedSlug !== stage.slug) {
-      const fromSlug = stage.slug;
-      newStageSlugsRef.current.delete(fromSlug);
-      newStageSlugsRef.current.add(adoptedSlug);
-      setDraft((matrix) => {
-        const updated: ProbabilityMatrix = {};
-        for (const track of tracks) {
-          const existing = matrix[track.slug];
-          const lane = {
-            ...(existing && !Array.isArray(existing) ? existing : {}),
-          };
-          lane[adoptedSlug] =
-            getProbabilityCell(matrix, track.slug, adoptedSlug) ??
-            getProbabilityCell(matrix, track.slug, fromSlug) ??
-            seedStageProbability(track.slug, adoptedSlug);
-          updated[track.slug] = lane;
-        }
-        return updated;
-      });
-    }
     setStageDraft(
-      stageDraft.map((item, i) =>
-        i === index ? { ...item, name, slug: adoptedSlug } : item,
-      ),
+      stageDraft.map((item, i) => (i === index ? { ...item, name } : item)),
     );
+    setSavedAt(null);
+  };
+
+  const commitStageName = (index: number) => {
+    const committed = adoptPlaceholderSlug(
+      stageDraft,
+      index,
+      draft,
+      tracks,
+      newStageRowKeysRef.current,
+    );
+    if (committed.rows === stageDraft) return;
+    setStageDraft(committed.rows);
+    setDraft(committed.matrix);
     setSavedAt(null);
   };
 
@@ -203,15 +259,13 @@ export function PipelineProbabilitySettings({
     } else {
       const slugs = new Set(stageDraft.map((stage) => stage.slug));
       const slug = uniqueSlug('new_stage', slugs);
-      newStageSlugsRef.current.add(slug);
-      setStageDraft([
-        ...stageDraft,
-        {
-          slug,
-          name: t('stages.newStage'),
-          position: stageDraft.length,
-        },
-      ]);
+      const row = withRowKey({
+        slug,
+        name: t('stages.newStage'),
+        position: stageDraft.length,
+      });
+      newStageRowKeysRef.current.add(row.rowKey);
+      setStageDraft([...stageDraft, row]);
       setDraft((matrix) => {
         const updated: ProbabilityMatrix = {};
         for (const track of tracks) {
@@ -245,8 +299,8 @@ export function PipelineProbabilitySettings({
   };
 
   const resetDefaults = () => {
-    const nextStages = cloneStages(DEFAULT_PIPELINE_STAGES);
-    newStageSlugsRef.current.clear();
+    const nextStages = cloneStageDraft(DEFAULT_PIPELINE_STAGES);
+    newStageRowKeysRef.current.clear();
     removedStagesRef.current = [];
     setStageDraft(nextStages);
     setDraft(defaultProbabilityMatrix(tracks, nextStages));
@@ -264,19 +318,32 @@ export function PipelineProbabilitySettings({
       return;
     }
     try {
-      const stagesToSave = stageDraft.map((stage, position) => ({
-        ...stage,
+      let committedRows = stageDraft;
+      let committedMatrix = draft;
+      for (let i = 0; i < committedRows.length; i += 1) {
+        const next = adoptPlaceholderSlug(
+          committedRows,
+          i,
+          committedMatrix,
+          tracks,
+          newStageRowKeysRef.current,
+        );
+        committedRows = next.rows;
+        committedMatrix = next.matrix;
+      }
+      const stagesToSave = committedRows.map((stage, position) => ({
+        ...toStageDefinition(stage),
         name: stage.name.trim(),
         position,
       }));
       const saved = await saveConfig({
         stages: stagesToSave,
-        probabilities: cloneMatrix(draft, tracks, stagesToSave),
+        probabilities: cloneMatrix(committedMatrix, tracks, stagesToSave),
       });
       if (saved) {
-        newStageSlugsRef.current.clear();
+        newStageRowKeysRef.current.clear();
         removedStagesRef.current = [];
-        setStageDraft(cloneStages(saved.stages));
+        setStageDraft(cloneStageDraft(saved.stages));
         setDraft(cloneMatrix(saved.probabilities, saved.tracks, saved.stages));
       }
       setSavedAt(new Date());
@@ -318,7 +385,7 @@ export function PipelineProbabilitySettings({
       <div className="flex flex-col gap-3">
         {stageDraft.map((stage, index) => (
           <PipelineConfigRow
-            key={stage.slug}
+            key={stage.rowKey}
             label={stage.name}
             index={index}
             total={stageDraft.length}
@@ -330,6 +397,7 @@ export function PipelineProbabilitySettings({
             <Input
               value={stage.name}
               onChange={(event) => renameStage(index, event.target.value)}
+              onBlur={() => commitStageName(index)}
               placeholder={t('stages.namePlaceholder')}
               aria-label={t('stages.namePlaceholder')}
             />
