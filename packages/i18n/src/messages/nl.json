@@ -3762,6 +3762,7 @@
     "connectionRetryFailedDescription": "Kon niet opnieuw verbinding maken. Controleer uw netwerk en probeer het opnieuw.",
     "connectionRetryingLabel": "Opnieuw proberen…",
     "connectionLostRetry": "Opnieuw proberen",
+    "chatThreadCrashedDescription": "Dit chatvenster is vastgelopen. Probeer het opnieuw.",
     "openPanel": "Chatpaneel openen",
     "openPanelWithUnreadMentions": "Chatpaneel openen (ongelezen vermeldingen)",
     "hidePanel": "Chatpaneel verbergen",

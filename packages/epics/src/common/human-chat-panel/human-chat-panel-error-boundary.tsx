@@ -1,17 +1,20 @@
 'use client';
 
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, Fragment, type ErrorInfo, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@hypha-platform/ui';
+
+import {
+  CHAT_PANEL_CRASH_FALLBACK_MESSAGE_KEY,
+  idleChatPanelErrorBoundaryState,
+  retryChatPanelErrorBoundary,
+  type ChatPanelErrorBoundaryState,
+} from './human-chat-panel-error-boundary-state';
 
 type HumanChatPanelErrorBoundaryInnerProps = {
   children: ReactNode;
   fallbackTitle: string;
   retryLabel: string;
-};
-
-type HumanChatPanelErrorBoundaryState = {
-  hasError: boolean;
 };
 
 /**
@@ -20,11 +23,14 @@ type HumanChatPanelErrorBoundaryState = {
  */
 class HumanChatPanelErrorBoundaryInner extends Component<
   HumanChatPanelErrorBoundaryInnerProps,
-  HumanChatPanelErrorBoundaryState
+  ChatPanelErrorBoundaryState
 > {
-  state: HumanChatPanelErrorBoundaryState = { hasError: false };
+  state: ChatPanelErrorBoundaryState = idleChatPanelErrorBoundaryState();
 
-  static getDerivedStateFromError(): HumanChatPanelErrorBoundaryState {
+  static getDerivedStateFromError(): Pick<
+    ChatPanelErrorBoundaryState,
+    'hasError'
+  > {
     return { hasError: true };
   }
 
@@ -36,9 +42,15 @@ class HumanChatPanelErrorBoundaryInner extends Component<
     );
   }
 
+  handleRetry = () => {
+    this.setState(retryChatPanelErrorBoundary);
+  };
+
   render() {
     if (!this.state.hasError) {
-      return this.props.children;
+      return (
+        <Fragment key={this.state.retryNonce}>{this.props.children}</Fragment>
+      );
     }
     return (
       <div
@@ -52,7 +64,7 @@ class HumanChatPanelErrorBoundaryInner extends Component<
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => this.setState({ hasError: false })}
+          onClick={this.handleRetry}
         >
           {this.props.retryLabel}
         </Button>
@@ -69,7 +81,7 @@ export function HumanChatPanelErrorBoundary({
   const t = useTranslations('HumanChatPanel');
   return (
     <HumanChatPanelErrorBoundaryInner
-      fallbackTitle={t('connectionRetryFailedDescription')}
+      fallbackTitle={t(CHAT_PANEL_CRASH_FALLBACK_MESSAGE_KEY)}
       retryLabel={t('connectionLostRetry')}
     >
       {children}

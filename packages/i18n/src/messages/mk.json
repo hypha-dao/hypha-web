@@ -3742,6 +3742,7 @@
     "connectionRetryFailedDescription": "Не можеше повторно да се поврзе. Провери ја мрежата и обиди се повторно.",
     "connectionRetryingLabel": "Повторен обид…",
     "connectionLostRetry": "Обиди се повторно",
+    "chatThreadCrashedDescription": "Овој приказ на разговорот падна. Обиди се повторно.",
     "openPanel": "Отвори панел за разговор",
     "openPanelWithUnreadMentions": "Отвори панел за разговор (непрочитани спомнувања)",
     "hidePanel": "Сокриј панел за разговор",
