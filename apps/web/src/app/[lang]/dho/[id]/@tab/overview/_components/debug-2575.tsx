@@ -8,7 +8,7 @@ import {
   type ErrorInfo,
   type ReactNode,
 } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSelectedLayoutSegment } from 'next/navigation';
 import { installHistoryTrace2575 } from '@hypha-platform/epics';
 
 function navigationType() {
@@ -45,8 +45,14 @@ export function Debug2575Lifecycle({ name }: { name: string }) {
           .split('\n')
           .slice(2, 9)
           .join(' | ');
+        const fromRedirectBoundary =
+          method === 'replace' &&
+          stack.includes('startTransition') &&
+          JSON.stringify(args[1] ?? null) === '{}';
         console.log(
-          `[#2575] router.${method} #${count} -> ${JSON.stringify(
+          `[#2575] router.${method} #${count}${
+            fromRedirectBoundary ? ' [REDIRECT-BOUNDARY: server redirect()]' : ''
+          } -> ${JSON.stringify(
             args[0],
           )} ${JSON.stringify(args[1] ?? null)} | ${stack}`,
         );
@@ -191,6 +197,22 @@ export class Debug2575Boundary extends Component<
   render() {
     return this.props.children;
   }
+}
+
+/** Logs which page each layout slot holds. `children` non-null means dho/[id]/page.tsx (the redirecting page) is active. */
+export function Debug2575Slots() {
+  const children = useSelectedLayoutSegment('children');
+  const tab = useSelectedLayoutSegment('tab');
+  const aside = useSelectedLayoutSegment('aside');
+  useEffect(() => {
+    console.log('[#2575] layout slots', {
+      children,
+      tab,
+      aside,
+      href: window.location.href,
+    });
+  }, [children, tab, aside]);
+  return null;
 }
 
 let commits = 0;
