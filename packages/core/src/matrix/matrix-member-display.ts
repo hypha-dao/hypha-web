@@ -1,5 +1,16 @@
 import type { MatrixClient, RoomMember } from 'matrix-js-sdk';
 
+/**
+ * Prod and preview share one Dendrite. These org-bot MXIDs stay trusted even
+ * when `NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS` was not baked into
+ * the browser bundle. Localparts still have to match `hypha-bot` / `hypha_bot`
+ * on these homeservers — this is not an any-homeserver match.
+ */
+const SHARED_DENDRITE_HYPHA_BOT_USER_IDS = [
+  '@hypha_bot_prod:matrix.hypha.earth',
+  '@hypha_bot_preview:matrix.hypha.earth',
+] as const;
+
 /** This env's bot plus any extra bot MXIDs (prod/preview share one Dendrite). */
 export function configuredHyphaBotUserIds(): string[] {
   const primary = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim();
@@ -15,7 +26,9 @@ export function configuredHyphaBotUserIds(): string[] {
     .filter(Boolean);
   return [
     ...new Set(
-      [primary, ...additional].filter((id): id is string => Boolean(id)),
+      [primary, ...additional, ...SHARED_DENDRITE_HYPHA_BOT_USER_IDS].filter(
+        (id): id is string => Boolean(id),
+      ),
     ),
   ];
 }

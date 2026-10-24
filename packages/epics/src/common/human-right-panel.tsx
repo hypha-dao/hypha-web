@@ -1100,6 +1100,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const tCommon = useTranslations('Common');
   const tSpaces = useTranslations('Spaces');
   const tMember = useTranslations('MemberHome');
+  const tConnections = useTranslations('Connections');
   const isMobile = useIsMobile() ?? false;
   const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
   const isTouchCallChrome = isMobile || prefersCoarsePointer;
@@ -5836,6 +5837,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               />
             ) : null
           }
+          mark={archivedGroup ? tConnections('tabs.archived') : undefined}
           roomChoice={
             mode === 'space' && spaceSlug?.trim()
               ? {

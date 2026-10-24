@@ -140,7 +140,10 @@ export function HumanChatPanelHeader({
         )}
         {titleStart}
         {mark && !roomChoice ? (
-          <span className="inline-flex shrink-0 border border-foreground bg-foreground px-3 py-1 text-1 text-background">
+          <span
+            className="inline-flex shrink-0 border border-foreground bg-foreground px-3 py-1 text-1 text-background"
+            data-testid="chat-panel-archived-badge"
+          >
             {mark}
           </span>
         ) : null}
