@@ -641,6 +641,8 @@ export async function ensureDirectPairRoomAction({
           aliasedRoomId,
           error instanceof Error ? error.message : error,
         );
+        // Same as a failed type lookup: leave the alias where it is.
+        return null;
       }
     }
   }

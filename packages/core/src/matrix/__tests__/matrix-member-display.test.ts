@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   countHumanMatrixMembers,
+  isHyphaBotMatrixIdentity,
   looksLikeTechnicalMatrixDisplayName,
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
@@ -26,12 +27,20 @@ describe('pickUserVisibleMemberLabel', () => {
   });
 
   it('hides the production bot account name', () => {
-    expect(
-      pickUserVisibleMemberLabel(
-        '@hypha_bot_prod:matrix.hypha.earth',
-        'hypha_bot_prod',
-      ),
-    ).toBeNull();
+    const previous = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID;
+    process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID =
+      '@hypha_bot_prod:matrix.hypha.earth';
+    try {
+      expect(
+        pickUserVisibleMemberLabel(
+          '@hypha_bot_prod:matrix.hypha.earth',
+          'hypha_bot_prod',
+        ),
+      ).toBeNull();
+    } finally {
+      if (previous == null) delete process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID;
+      else process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID = previous;
+    }
   });
 
   it('returns null when every candidate is a bridged Privy slug', () => {
@@ -199,6 +208,21 @@ describe('countHumanMatrixMembers', () => {
         '@hypha-bot:hypha.earth',
         '@hypha-bot-preview:hypha.earth',
         '@kate:hypha.earth',
+      ]),
+    ).toBe(2);
+  });
+
+  it('counts a remote hypha_bot-named account as a person', () => {
+    process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID = '@hypha-bot:hypha.earth';
+    delete process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+    delete process.env.NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+    expect(isHyphaBotMatrixIdentity('@hypha_bot_eve:remote.example')).toBe(
+      false,
+    );
+    expect(
+      countHumanMatrixMembers([
+        '@ada:hypha.earth',
+        '@hypha_bot_eve:remote.example',
       ]),
     ).toBe(2);
   });
