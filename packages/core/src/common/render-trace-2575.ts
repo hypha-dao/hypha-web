@@ -1,3 +1,5 @@
+'use client';
+
 /** TEMP(#2575): render-storm tracer, remove with the fix. */
 import { useRef } from 'react';
 

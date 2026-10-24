@@ -1,3 +1,5 @@
+'use client';
+
 /** TEMP(#2575): diagnostics only, remove with the fix. */
 import { useRef } from 'react';
 
