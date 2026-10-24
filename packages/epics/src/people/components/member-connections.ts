@@ -195,6 +195,7 @@ export function resolvePeerRowTitle(
 }
 
 export type PeerProfileBySub = {
+  id?: number;
   name?: string | null;
   surname?: string | null;
   nickname?: string | null;
@@ -223,7 +224,12 @@ export function applyResolvedPeerTitles<T extends ConnectionListPerson>(
   rooms: readonly ConversationRow[],
   peopleBySub: ReadonlyMap<string, PeerProfileBySub>,
   personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
-  options?: { loading?: boolean; fallback?: string },
+  options?: {
+    loading?: boolean;
+    pendingSubs?: ReadonlySet<string>;
+    fallback?: string;
+    hideUnresolved?: boolean;
+  },
 ): MemberRow<T>[] {
   const otherByRoom = new Map<string, string>();
   for (const room of rooms) {
@@ -253,6 +259,8 @@ export function applyResolvedPeerTitles<T extends ConnectionListPerson>(
         fetched.nickname?.trim() ||
         ''
       : '';
+    const fetchedId =
+      fetched?.id && fetched.id > 0 ? fetched.id : row.person.id;
     if (fetchedName && !isUnresolvedConversationTitle(fetchedName, mxid)) {
       return {
         ...row,
@@ -261,6 +269,7 @@ export function applyResolvedPeerTitles<T extends ConnectionListPerson>(
         avatarUrl: fetched?.avatarUrl || row.avatarUrl,
         person: {
           ...row.person,
+          id: fetchedId,
           name: fetched?.name ?? row.person.name,
           surname: fetched?.surname ?? row.person.surname,
           nickname: fetched?.nickname ?? row.person.nickname,
@@ -269,14 +278,42 @@ export function applyResolvedPeerTitles<T extends ConnectionListPerson>(
         },
       };
     }
-    if (options?.loading) {
+    const rowLoading = options?.pendingSubs
+      ? Boolean(sub && options.pendingSubs.has(sub))
+      : Boolean(options?.loading);
+    if (rowLoading) {
       return { ...row, name: '', titlePending: true };
     }
-    if (fallback && !isUnresolvedConversationTitle(fallback)) {
-      return { ...row, name: fallback, titlePending: false };
+    if (
+      options?.hideUnresolved ||
+      !fallback ||
+      isUnresolvedConversationTitle(fallback)
+    ) {
+      return { ...row, name: '', titlePending: true };
     }
-    return { ...row, name: '', titlePending: true };
+    return { ...row, name: fallback, titlePending: false };
   });
+}
+
+/** Drop DM rows whose title never resolved. Skeletons stay while profiles load. */
+export function visibleMemberRowsAfterTitleResolve<
+  T extends ConnectionListPerson,
+>(rows: readonly MemberRow<T>[], loading: boolean): MemberRow<T>[] {
+  if (loading) return [...rows];
+  return rows.filter((row) => !row.titlePending);
+}
+
+/** Union directory pages / search hits by person id. Synthetics stay out. */
+export function mergeDirectoryPeople<T extends { id: number }>(
+  ...lists: Array<readonly T[] | null | undefined>
+): T[] {
+  const byId = new Map<number, T>();
+  for (const list of lists) {
+    for (const person of list ?? []) {
+      if (person.id > 0) byId.set(person.id, person);
+    }
+  }
+  return [...byId.values()];
 }
 
 const PREVIEW_LENGTH = 48;
@@ -1220,7 +1257,12 @@ export function addablePeopleForGroup<
 export function conversationMatchesSearch(
   row: {
     name: string;
-    person?: { nickname?: string | null; slug?: string | null };
+    person?: {
+      name?: string | null;
+      surname?: string | null;
+      nickname?: string | null;
+      slug?: string | null;
+    };
     faces?: readonly { name?: string | null }[];
     searchMembers?: readonly {
       name?: string | null;
@@ -1234,6 +1276,8 @@ export function conversationMatchesSearch(
   return textMatchesPeopleSearch(
     [
       row.name,
+      row.person?.name,
+      row.person?.surname,
       row.person?.nickname,
       row.person?.slug,
       ...(row.faces ?? []).map((face) => face.name),

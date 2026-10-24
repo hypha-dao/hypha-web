@@ -62,7 +62,6 @@ import {
   looksLikeHyphaBot,
   facesWithProfiles,
   groupRowsForConnections,
-  peopleMatchingSearch,
   conversationsMatchingSearch,
   membersForGroupPicker,
   conversationsVisibleInSection,
@@ -80,8 +79,10 @@ import {
   subscribeSignalThreadRooms,
   applyResolvedPeerTitles,
   conversationPeerSubs,
+  mergeDirectoryPeople,
   personRowsFromDmRooms,
   nextSelectedMembers,
+  visibleMemberRowsAfterTitleResolve,
   STALE_CONNECTION_MS,
   connectionActivityTs,
   collectDirectPairRoomHints,
@@ -1333,7 +1334,7 @@ export function MyConnections({
   const [loadingMore, setLoadingMore] = useState(false);
   const [moreFailed, setMoreFailed] = useState(false);
   const [directoryComplete, setDirectoryComplete] = useState(false);
-  const suggestionPoolRequested = useRef(false);
+  const fullDirectoryRequested = useRef(false);
 
   const { data: home } = useSWR<MemberIntelligence | null>(
     jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
@@ -1357,13 +1358,16 @@ export function MyConnections({
   const hasMorePeople =
     !directoryComplete && connections.length < connectionTotal;
   const needle = query.trim().toLowerCase();
-  const listed = needle
-    ? peopleMatchingSearch(connections, searchDirectory, needle)
-    : connections;
+  const wantsFullDirectory =
+    section === 'suggestions' || picking || Boolean(query.trim());
+  const directoryPeople = mergeDirectoryPeople(
+    connections,
+    needle || picking ? searchDirectory : null,
+  );
   const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
     useMatrixUserIdsByPersonIds({
       personIds: [
-        ...listed.map((person) => person.id),
+        ...directoryPeople.map((person) => person.id),
         ...[...selectedById.keys()].filter((id) => id > 0),
         ...(home?.person.id != null ? [home.person.id] : []),
       ],
@@ -1472,11 +1476,17 @@ export function MyConnections({
   }, [jwt, query]);
 
   useEffect(() => {
-    if (section !== 'suggestions' || !jwt || suggestionPoolRequested.current) {
+    if (!wantsFullDirectory || !jwt || fullDirectoryRequested.current) {
       return;
     }
-    suggestionPoolRequested.current = true;
+    if (home == null) return;
+    if (directoryComplete || connections.length >= connectionTotal) {
+      fullDirectoryRequested.current = true;
+      return;
+    }
+    fullDirectoryRequested.current = true;
     const controller = new AbortController();
+    let succeeded = false;
     void (async () => {
       try {
         const response = await fetch(
@@ -1486,27 +1496,42 @@ export function MyConnections({
             signal: controller.signal,
           },
         );
-        if (!response.ok) return;
+        if (!response.ok) {
+          fullDirectoryRequested.current = false;
+          return;
+        }
         const body = (await response.json()) as MemberIntelligence;
         if (controller.signal.aborted) return;
         const page = body.connections ?? [];
-        if (page.length === 0) return;
+        if (page.length === 0) {
+          setDirectoryComplete(true);
+          succeeded = true;
+          return;
+        }
         setDirectory(page);
-        if (page.length >= (body.counts?.connections ?? page.length)) {
+        if (page.length >= (body.counts?.connections ?? connectionTotal)) {
           setDirectoryComplete(true);
         }
+        succeeded = true;
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
         }
-        suggestionPoolRequested.current = false;
+        fullDirectoryRequested.current = false;
       }
     })();
     return () => {
       controller.abort();
-      suggestionPoolRequested.current = false;
+      if (!succeeded) fullDirectoryRequested.current = false;
     };
-  }, [jwt, section]);
+  }, [
+    connectionTotal,
+    connections.length,
+    directoryComplete,
+    home,
+    jwt,
+    wantsFullDirectory,
+  ]);
 
   useEffect(() => {
     if (!client) {
@@ -1545,14 +1570,14 @@ export function MyConnections({
   const members = useMemo(
     () =>
       personRowsFromDmRooms(
-        listed,
+        directoryPeople,
         rows,
         personIdToMatrixUserId,
         home?.person.id ?? null,
         t('someone'),
-        connections,
+        directoryPeople,
       ),
-    [connections, home?.person.id, listed, personIdToMatrixUserId, rows, t],
+    [directoryPeople, home?.person.id, personIdToMatrixUserId, rows, t],
   );
 
   const memberPersonIds = useMemo(
@@ -1595,9 +1620,14 @@ export function MyConnections({
   );
 
   const peerSubs = useMemo(() => conversationPeerSubs(rows), [rows]);
-  const { peopleBySub, isLoading: peopleBySubLoading } = usePeopleBySubs({
+  const {
+    peopleBySub,
+    pendingSubs,
+    isLoading: peopleBySubLoading,
+  } = usePeopleBySubs({
     subs: peerSubs,
   });
+  const titlesLoading = peopleBySubLoading || (peerSubs.length > 0 && !jwt);
   const resolvedMembers = useMemo(
     () =>
       applyResolvedPeerTitles(
@@ -1606,20 +1636,23 @@ export function MyConnections({
         peopleBySub,
         personIdToMatrixUserId,
         {
-          loading: peopleBySubLoading || (peerSubs.length > 0 && !jwt),
-          fallback: t('someone'),
+          loading: titlesLoading,
+          pendingSubs,
+          hideUnresolved: true,
         },
       ),
     [
-      jwt,
       members,
-      peerSubs.length,
+      pendingSubs,
       peopleBySub,
-      peopleBySubLoading,
       personIdToMatrixUserId,
       rows,
-      t,
+      titlesLoading,
     ],
+  );
+  const titledMembers = useMemo(
+    () => visibleMemberRowsAfterTitleResolve(resolvedMembers, titlesLoading),
+    [resolvedMembers, titlesLoading],
   );
 
   const people = useMemo(() => {
@@ -1737,7 +1770,7 @@ export function MyConnections({
     );
     const matchingGroups = conversationsMatchingSearch(listedGroups, needle);
     const matchingMembers = conversationsMatchingSearch(
-      membersForGroupPicker(resolvedMembers, picking),
+      membersForGroupPicker(titledMembers, picking),
       needle,
     );
     const source =
@@ -1764,6 +1797,7 @@ export function MyConnections({
     rows,
     section,
     t,
+    titledMembers,
   ]);
   const selectedPeople = useMemo(
     () => [...selectedById.values()],
