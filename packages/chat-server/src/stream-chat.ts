@@ -1014,6 +1014,7 @@ function createOpenRouterAuthRecoveryTransform(
   debugRequestId: string,
   deterministicFallback: DeterministicFallbackContext | null,
   errorsAsText: boolean,
+  homeErrorMark?: { current: boolean },
 ): StreamTextTransform<ToolSet> {
   return () => {
     const nextTextId = createIdGenerator({ prefix: 't', size: 12 });
@@ -1057,6 +1058,7 @@ function createOpenRouterAuthRecoveryTransform(
               ? { statusCode: err.statusCode, url: err.url }
               : {}),
           });
+          if (errorsAsText && homeErrorMark) homeErrorMark.current = true;
           const id = nextTextId();
           controller.enqueue({ type: 'text-start', id });
           controller.enqueue({
@@ -1076,6 +1078,7 @@ function createOpenRouterAuthRecoveryTransform(
           controller.enqueue(chunk);
           return;
         }
+        if (homeErrorMark) homeErrorMark.current = true;
         console.error('[chat][openrouter][stream-error]', {
           debugRequestId,
           message,
@@ -1399,8 +1402,10 @@ export async function createChatStreamResult(
 ): Promise<
   ReturnType<typeof streamText> & {
     memberHomeCard: { kind: string; slug: string } | null;
+    homeError: { current: boolean };
   }
 > {
+  const homeError = { current: false };
   const memberHomeRecord = memberHome
     ? await loadMemberHomeFacts(authToken)
     : null;
@@ -1774,7 +1779,8 @@ export async function createChatStreamResult(
       debugRequestId,
       deterministicFallback,
       memberHomeRecord != null,
+      homeError,
     ),
   });
-  return Object.assign(result, { memberHomeCard });
+  return Object.assign(result, { memberHomeCard, homeError });
 }

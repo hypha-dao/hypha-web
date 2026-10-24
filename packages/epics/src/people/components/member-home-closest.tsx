@@ -183,8 +183,34 @@ export function findDirectRoomId(
   const remembered = readRememberedDirectRoom(selfUserId, otherUserId);
   const rememberedRoom = remembered ? client.getRoom(remembered) : null;
   const rememberedMembership = rememberedRoom?.getMyMembership();
-  if (rememberedMembership === 'join' || rememberedMembership === 'invite') {
-    return remembered;
+  if (
+    rememberedRoom &&
+    (rememberedMembership === 'join' || rememberedMembership === 'invite')
+  ) {
+    const participants = [
+      ...new Set(
+        rememberedRoom
+          .getMembers()
+          .filter(
+            (member) =>
+              member.membership === 'join' || member.membership === 'invite',
+          )
+          .map((member) => member.userId)
+          .filter((id) => id && !isHyphaBotMatrixIdentity(id))
+          .map((id) => id.toLowerCase()),
+      ),
+    ];
+    const self = selfUserId.trim().toLowerCase();
+    const other = otherUserId.trim().toLowerCase();
+    if (
+      self &&
+      other &&
+      participants.length === 2 &&
+      participants.includes(self) &&
+      participants.includes(other)
+    ) {
+      return remembered;
+    }
   }
   return null;
 }

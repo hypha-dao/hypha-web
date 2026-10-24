@@ -182,11 +182,19 @@ export async function POST(req: Request) {
       sendReasoning: !memberHome,
       // The card is known before the model speaks, so it can show with the
       // first token instead of after a second tool step.
-      ...(memberHome && result.memberHomeCard
+      ...(memberHome
         ? {
-            messageMetadata: () => ({
-              homeItem: result.memberHomeCard,
-            }),
+            messageMetadata: () => {
+              const metadata: {
+                homeItem?: { kind: string; slug: string };
+                homeError?: true;
+              } = {};
+              if (result.memberHomeCard) {
+                metadata.homeItem = result.memberHomeCard;
+              }
+              if (result.homeError.current) metadata.homeError = true;
+              return Object.keys(metadata).length > 0 ? metadata : undefined;
+            },
           }
         : {}),
     });

@@ -258,6 +258,10 @@ function rewriteHomeStartLine(
       // Each event needs a blank line. A single newline joins the JSON into
       // one payload, which the client rejects and shows as a dropped thread.
       return `${[
+        `${prefix}${JSON.stringify({
+          type: 'message-metadata',
+          messageMetadata: { homeError: true },
+        })}`,
         `${prefix}${JSON.stringify({ type: 'text-start', id })}`,
         `${prefix}${JSON.stringify({ type: 'text-delta', id, delta: text })}`,
         `${prefix}${JSON.stringify({ type: 'text-end', id })}`,
