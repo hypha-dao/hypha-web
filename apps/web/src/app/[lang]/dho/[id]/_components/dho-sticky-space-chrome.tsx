@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '@hypha-platform/core/client'; // TEMP(#2575)
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, usePathname } from 'next/navigation';
@@ -345,6 +346,7 @@ export function DhoStickySpaceChrome({
   logoAlt,
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
+  useRenderTrace2575('DhoStickySpaceChrome');
   const params = useParams();
   const pathname = usePathname() ?? '';
   const spaceSlug =

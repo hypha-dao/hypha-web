@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '@hypha-platform/core/client'; // TEMP(#2575)
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   DEFAULT_SPACE_LEAD_IMAGE,
@@ -57,6 +58,7 @@ export function LiveSpaceHero({
   logoAlt: _logoAlt,
   ...bannerRest
 }: LiveSpaceHeroBannerProps) {
+  useRenderTrace2575('LiveSpaceHero');
   const { space: liveSpace } = useSpaceBySlug(spaceSlug);
 
   const resolvedTitle = liveSpace?.title?.trim() || title;

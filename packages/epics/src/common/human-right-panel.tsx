@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '@hypha-platform/core/client'; // TEMP(#2575)
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   ClientEvent,
@@ -1043,6 +1044,7 @@ type HumanRightPanelProps = {
 };
 
 export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
+  useRenderTrace2575('HumanRightPanel');
   const t = useTranslations('HumanChatPanel');
   const tCommon = useTranslations('Common');
   const tSpaces = useTranslations('Spaces');

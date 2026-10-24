@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '@hypha-platform/core/client'; // TEMP(#2575)
 import { useEffect, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSpaceEnergy } from '@hypha-platform/epics';
@@ -24,6 +25,7 @@ export function SpaceOverviewEntry({
   children: ReactNode;
 }) {
   const { data, isLoading, error } = useSpaceEnergy();
+  useRenderTrace2575('SpaceOverviewEntry');
   const pathname = usePathname();
   const router = useRouter();
   const energyHome = !stay && data?.enabled === true;

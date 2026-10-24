@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '@hypha-platform/core/client'; // TEMP(#2575)
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Skeleton } from '@hypha-platform/ui';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
@@ -19,6 +20,7 @@ export function SpaceTabAccessWrapper({
   spaceSlug,
   children,
 }: SpaceTabAccessWrapperProps) {
+  useRenderTrace2575('SpaceTabAccessWrapper');
   const { isLoading: isAuthLoading } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug || '');
   const effectiveSpaceId = spaceId || space?.web3SpaceId || undefined;

@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  useChangedTrace2575,
+  useRenderTrace2575,
+} from '@hypha-platform/core/client'; // TEMP(#2575)
 import * as React from 'react';
 import useSWR from 'swr';
 import * as d3 from 'd3';
@@ -1414,6 +1418,7 @@ function SignalsPulseMapWidget({
 }
 
 export function SpaceTokenHolderDiagrams({ spaceSlug }: { spaceSlug: string }) {
+  useRenderTrace2575('SpaceTokenHolderDiagrams');
   const { getAccessToken, isAuthenticated, isAuthLoading, accessTokenReady } =
     useAccessTokenReady();
   const locale = useLocale();
@@ -1438,6 +1443,15 @@ export function SpaceTokenHolderDiagrams({ spaceSlug }: { spaceSlug: string }) {
     { revalidateOnFocus: true, refreshInterval: 60_000 },
   );
   const holdingsLoading = !authReady || isLoading;
+  useChangedTrace2575('SpaceTokenHolderDiagrams', {
+    getAccessToken,
+    isAuthenticated,
+    isAuthLoading,
+    accessTokenReady,
+    data,
+    error,
+    isLoading,
+  });
   const getTokenTypeLabel = React.useCallback(
     (type: string) => {
       const translationKey = `plugins.issueNewToken.general.tokenTypeOptions.${type}.label`;

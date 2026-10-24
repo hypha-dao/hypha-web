@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '@hypha-platform/core/client'; // TEMP(#2575)
 import { createContext, useCallback, useContext, useState } from 'react';
 
 /**
@@ -133,6 +134,8 @@ export function HumanChatPanelProvider({
   setOpen: (value: boolean) => void;
 }) {
   const [mode, setMode] = useState<'space' | 'coherence'>('space');
+  useRenderTrace2575('HumanChatPanelProvider');
+
   const [coherenceRoomId, setCoherenceRoomId] = useState<string | null>(null);
   const [coherenceTitle, setCoherenceTitle] = useState<string | null>(null);
   const [coherenceSlug, setCoherenceSlug] = useState<string | null>(null);
