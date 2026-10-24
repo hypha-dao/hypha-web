@@ -18,7 +18,13 @@ import { Button } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { HOME_REFRESH_EVENT } from '@hypha-platform/epics';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import useSWR from 'swr';
 
 function sameMemberHome(
@@ -44,9 +50,11 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   const [orientationError, setOrientationError] = useState<string | null>(null);
 
   const jwtRef = useRef(jwt);
-  jwtRef.current = jwt;
-  const keepHomeKey = useRef(false);
-  if (jwt) keepHomeKey.current = true;
+  const keepHomeKey = useRef(Boolean(jwt));
+  useLayoutEffect(() => {
+    jwtRef.current = jwt;
+    if (jwt) keepHomeKey.current = true;
+  }, [jwt]);
   const {
     data,
     error,
