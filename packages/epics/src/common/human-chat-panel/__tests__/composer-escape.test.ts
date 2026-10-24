@@ -49,6 +49,12 @@ describe('composer Escape stays inside overlays', () => {
     expect(source).toContain('event.isComposing');
     expect(source).toContain('stopImmediatePropagation');
     expect(source).toContain('data-hypha-colon-autocomplete');
+    const capture = source.slice(
+      source.indexOf('handleComposerShellKeyDownCapture'),
+    );
+    expect(capture.indexOf('isComposing')).toBeLessThan(
+      capture.indexOf('closeComposerOverlayFromEscape(e)'),
+    );
   });
 
   it('emoji picker uses window capture and onEscapeKeyDown', () => {

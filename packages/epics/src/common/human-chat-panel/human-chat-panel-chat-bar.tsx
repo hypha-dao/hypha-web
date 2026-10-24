@@ -1606,6 +1606,7 @@ export function HumanChatPanelChatBar({
 
   const handleComposerShellKeyDownCapture = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if ((e.nativeEvent as KeyboardEvent).isComposing) return;
       if (e.key === 'Escape' && closeComposerOverlayFromEscape(e)) {
         return;
       }
@@ -1618,8 +1619,6 @@ export function HumanChatPanelChatBar({
       ) {
         return;
       }
-      const composing = (e.nativeEvent as KeyboardEvent).isComposing;
-      if (composing) return;
       if (
         atOpen ||
         colonOpen ||
