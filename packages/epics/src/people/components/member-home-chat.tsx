@@ -57,15 +57,13 @@ import { useOnboardingSpaceSignature } from '../../common/use-onboarding-space-s
 import { MemberHomeMark } from './member-home-mark';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { PersonAvatar } from './person-avatar';
-import { presenceFillClass } from './presence-dot';
 import {
   MemberHomePeopleWidgetCard,
   MemberHomeSendTokensWidget,
   MemberHomeSpacesWidgetCard,
 } from './member-home-chat-widgets';
 import type { MemberHomeOpenChat } from './member-home-people';
-import type { PresenceLevel } from './member-presence';
-import { useMemberPresence } from './use-member-presence';
+import { homeAssistantTurnSucceeded } from './member-home-chat-error';
 
 type HomeWidgetKind = 'spaces' | 'people' | 'tokens';
 
@@ -132,8 +130,34 @@ type HomeMessage = UIMessage & {
   metadata?: {
     homeArrival?: boolean;
     homeBoard?: { href: string; title: string };
+    homeItem?: { kind: string; slug: string };
+    homeError?: boolean;
   };
 };
+
+function isHomeErrorMessage(message: { metadata?: unknown }) {
+  const metadata = message.metadata;
+  return (
+    metadata != null &&
+    typeof metadata === 'object' &&
+    'homeError' in metadata &&
+    (metadata as { homeError?: unknown }).homeError === true
+  );
+}
+
+function homeItemForMessage(
+  items: readonly MemberHomeThreadItem[],
+  message: HomeMessage,
+): MemberHomeThreadItem | null {
+  const hinted = message.metadata?.homeItem;
+  if (hinted?.kind && hinted.slug) {
+    const match = items.find(
+      (item) => item.kind === hinted.kind && item.slug === hinted.slug,
+    );
+    if (match) return match;
+  }
+  return memberHomeThreadItemForMessage(items, message);
+}
 
 function homeBoardFromMessage(message: HomeMessage) {
   const board = message.metadata?.homeBoard;
@@ -152,7 +176,10 @@ function homeBoardFromMessage(message: HomeMessage) {
  * A new home turn must append. If the stream reuses an earlier assistant id,
  * the client writes the new words into that bubble.
  */
-function continueHomeChatResponse(response: Response): Response {
+function continueHomeChatResponse(
+  response: Response,
+  droppedLine: string,
+): Response {
   const stream = response.headers.get('x-vercel-ai-ui-message-stream');
   const contentType = response.headers.get('content-type') ?? '';
   if (!response.ok || !response.body) return response;
@@ -163,6 +190,7 @@ function continueHomeChatResponse(response: Response): Response {
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   let buffer = '';
+  const sawAssistantText = { current: false };
   const rewritten = response.body.pipeThrough(
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
@@ -173,7 +201,14 @@ function continueHomeChatResponse(response: Response): Response {
         controller.enqueue(
           encoder.encode(
             `${lines
-              .map((line) => rewriteHomeStartLine(line, freshId))
+              .map((line) =>
+                rewriteHomeStartLine(
+                  line,
+                  freshId,
+                  droppedLine,
+                  sawAssistantText,
+                ),
+              )
               .join('\n')}\n`,
           ),
         );
@@ -182,7 +217,14 @@ function continueHomeChatResponse(response: Response): Response {
         buffer += decoder.decode();
         if (!buffer) return;
         controller.enqueue(
-          encoder.encode(rewriteHomeStartLine(buffer, freshId)),
+          encoder.encode(
+            `${rewriteHomeStartLine(
+              buffer,
+              freshId,
+              droppedLine,
+              sawAssistantText,
+            )}\n`,
+          ),
         );
       },
     }),
@@ -194,7 +236,12 @@ function continueHomeChatResponse(response: Response): Response {
   });
 }
 
-function rewriteHomeStartLine(line: string, freshId: string) {
+function rewriteHomeStartLine(
+  line: string,
+  freshId: string,
+  droppedLine: string,
+  sawAssistantText: { current: boolean },
+) {
   const prefix = 'data: ';
   if (!line.startsWith(prefix)) return line;
   const payload = line.slice(prefix.length).trim();
@@ -203,9 +250,45 @@ function rewriteHomeStartLine(line: string, freshId: string) {
     const chunk = JSON.parse(payload) as {
       type?: unknown;
       messageId?: unknown;
+      errorText?: unknown;
     };
-    if (chunk.type !== 'start') return line;
-    return `${prefix}${JSON.stringify({ ...chunk, messageId: freshId })}`;
+    if (chunk.type === 'start') {
+      return `${prefix}${JSON.stringify({ ...chunk, messageId: freshId })}`;
+    }
+    // Reasoning is not shown on home. A delta without its start throws in
+    // useChat and paints the dropped-thread banner.
+    if (typeof chunk.type === 'string' && chunk.type.startsWith('reasoning-')) {
+      return '';
+    }
+    if (chunk.type === 'text-start' || chunk.type === 'text-delta') {
+      sawAssistantText.current = true;
+      return line;
+    }
+    // A fatal error chunk throws inside useChat and paints "thread dropped",
+    // which then looks like the assistant restarted. Finish the turn as text
+    // only when the model has not already spoken.
+    if (chunk.type === 'error') {
+      if (sawAssistantText.current) return '';
+      const raw =
+        typeof chunk.errorText === 'string' ? chunk.errorText.trim() : '';
+      const text =
+        raw && raw.length <= 240 && !/error|exception|zod|invalid/i.test(raw)
+          ? raw
+          : droppedLine;
+      const id = `e${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
+      // Each event needs a blank line. A single newline joins the JSON into
+      // one payload, which the client rejects and shows as a dropped thread.
+      return `${[
+        `${prefix}${JSON.stringify({
+          type: 'message-metadata',
+          messageMetadata: { homeError: true },
+        })}`,
+        `${prefix}${JSON.stringify({ type: 'text-start', id })}`,
+        `${prefix}${JSON.stringify({ type: 'text-delta', id, delta: text })}`,
+        `${prefix}${JSON.stringify({ type: 'text-end', id })}`,
+      ].join('\n\n')}\n\n`;
+    }
+    return line;
   } catch {
     return line;
   }
@@ -272,65 +355,14 @@ function homeAssistantScript(input: {
 
 const HOME_LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
 
-type MentionPerson = {
-  id: number;
-  name?: string | null;
-  surname?: string | null;
-  nickname?: string | null;
-};
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function personMentionLabels(person: MentionPerson): string[] {
-  const labels: string[] = [];
-  const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
-  if (full) labels.push(full);
-  const first = person.name?.trim();
-  if (first) labels.push(first);
-  const nick = person.nickname?.trim();
-  if (nick) labels.push(nick);
-  return [...new Set(labels)].sort((left, right) => right.length - left.length);
-}
-
-function homeMessageNodes(
-  text: string,
-  options?: {
-    people?: readonly MentionPerson[];
-    presenceById?: ReadonlyMap<number, PresenceLevel>;
-  },
-): ReactNode[] {
-  const mentions: { label: string; personId: number }[] = [];
-  const seenLabels = new Set<string>();
-  for (const person of options?.people ?? []) {
-    for (const label of personMentionLabels(person)) {
-      if (label.length < 2) continue;
-      const key = label.toLowerCase();
-      if (seenLabels.has(key)) continue;
-      seenLabels.add(key);
-      mentions.push({ label, personId: person.id });
-    }
-  }
-  const mentionPattern =
-    mentions.length > 0
-      ? mentions.map((mention) => escapeRegExp(mention.label)).join('|')
-      : null;
-  const pattern = mentionPattern
-    ? new RegExp(
-        `\\[([^\\]]+)\\]\\((https?:\\/\\/[^\\s)]+)\\)|(https?:\\/\\/[^\\s)]+)|(${mentionPattern})`,
-        'gi',
-      )
-    : HOME_LINK;
-
+function homeMessageNodes(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   let last = 0;
-  for (const match of text.matchAll(pattern)) {
+  for (const match of text.matchAll(HOME_LINK)) {
     const index = match.index ?? 0;
     if (index > last) nodes.push(text.slice(last, index));
     const href = match[2] ?? match[3];
     const linkLabel = match[1] ?? href;
-    const mentionLabel = match[4];
     if (href && linkLabel) {
       nodes.push(
         <a
@@ -342,34 +374,6 @@ function homeMessageNodes(
         >
           {linkLabel}
         </a>,
-      );
-    } else if (mentionLabel) {
-      const mention = mentions.find(
-        (entry) => entry.label.toLowerCase() === mentionLabel.toLowerCase(),
-      );
-      const presence =
-        mention && options?.presenceById
-          ? options.presenceById.get(mention.personId) ?? 'offline'
-          : 'offline';
-      const around = presence === 'active' || presence === 'idle';
-      nodes.push(
-        <span
-          key={`${index}-${mentionLabel}`}
-          className="inline-flex items-center gap-1"
-        >
-          <span>{mentionLabel}</span>
-          {around ? (
-            <span
-              aria-hidden
-              className={cn(
-                'inline-block size-1.5 shrink-0 rounded-full',
-                presence === 'active'
-                  ? presenceFillClass.active
-                  : presenceFillClass.idle,
-              )}
-            />
-          ) : null}
-        </span>,
       );
     }
     last = index + match[0].length;
@@ -410,11 +414,10 @@ export function MemberHomeChat({
   const gliding = useRef(false);
   const pinnedToEnd = useRef(true);
   const settlingIds = useRef(new Set<string>());
-  const connectionIds = useMemo(
-    () => intelligence.connections.map((person) => person.id),
-    [intelligence.connections],
-  );
-  const { presenceById } = useMemberPresence(connectionIds);
+  const droppedLine = useRef(t('threadDropped'));
+  useLayoutEffect(() => {
+    droppedLine.current = t('threadDropped');
+  }, [t]);
 
   const transport = useMemo(
     () =>
@@ -437,7 +440,27 @@ export function MemberHomeChat({
           },
         }),
         fetch: async (input, init) =>
-          continueHomeChatResponse(await fetch(input, init)),
+          continueHomeChatResponse(
+            await fetch(input, init),
+            droppedLine.current,
+          ),
+        prepareSendMessagesRequest: ({
+          id,
+          messages,
+          body,
+          trigger,
+          messageId,
+        }) => ({
+          body: {
+            ...body,
+            id,
+            messages: messages.filter(
+              (message) => !isHomeErrorMessage(message),
+            ),
+            trigger,
+            messageId,
+          },
+        }),
       }),
     [getAccessToken, lang],
   );
@@ -457,6 +480,31 @@ export function MemberHomeChat({
   const isStreaming = status === 'streaming' || status === 'submitted';
   const homeMessages = messages as HomeMessage[];
   messagesRef.current = homeMessages;
+  useLayoutEffect(() => {
+    if (!error) return;
+    const current = messagesRef.current;
+    const last = current[current.length - 1];
+    const fallback = droppedLine.current;
+    const lastText = last?.role === 'assistant' ? messageText(last) : '';
+    // Keeping `error` after CodeRabbit's homeError change left the banner up
+    // when a late stream close followed a real reply. Clear that false drop.
+    if (homeAssistantTurnSucceeded(last, lastText, fallback)) {
+      clearError();
+      return;
+    }
+    const alreadyTold = last?.role === 'assistant' && lastText === fallback;
+    if (!alreadyTold) {
+      setMessages([
+        ...current,
+        {
+          id: `home-assistant-${crypto.randomUUID()}`,
+          role: 'assistant',
+          metadata: { homeError: true },
+          parts: [{ type: 'text', text: fallback }],
+        },
+      ]);
+    }
+  }, [clearError, error, setMessages]);
   useOnboardingSpaceSignature(homeMessages, lang);
 
   const widgetKindFor = useCallback(
@@ -479,6 +527,13 @@ export function MemberHomeChat({
       if (!trimmed && files.length === 0) return;
       const reveal = !hidden;
       await stop();
+      const withoutErrors = messagesRef.current.filter(
+        (message) => !isHomeErrorMessage(message),
+      );
+      if (withoutErrors.length !== messagesRef.current.length) {
+        setMessages(withoutErrors);
+        messagesRef.current = withoutErrors;
+      }
       if (!hidden && files.length === 0) {
         const previousAssistant = [...messagesRef.current]
           .reverse()
@@ -664,7 +719,7 @@ export function MemberHomeChat({
       const board =
         homeBoardFromMessage(message) ??
         memberHomeSignalCatalogue(rawText, intelligence.spaces, lang);
-      const spokenItem = memberHomeThreadItemForMessage(threadItems, message);
+      const spokenItem = homeItemForMessage(threadItems, message);
       return homeAssistantScript({
         displayText: board
           ? t('boardInstead', { space: board.title })
@@ -689,7 +744,8 @@ export function MemberHomeChat({
     conversationContext: voiceSessionContext,
     recentTranscriptSummary,
     getAccessToken,
-    onStopChat: stop,
+    // The open mic stays on. send() ends the previous turn when a real
+    // transcript is submitted.
     onSendTranscript: handleVoiceTranscriptSend,
   });
 
@@ -791,7 +847,7 @@ export function MemberHomeChat({
       if (message.role !== 'assistant' || message.metadata?.homeArrival) {
         continue;
       }
-      const item = memberHomeThreadItemForMessage(threadItems, message);
+      const item = homeItemForMessage(threadItems, message);
       if (!item) continue;
       const key = memberHomeThreadItemKey(item);
       if (seen.has(key)) continue;
@@ -805,16 +861,13 @@ export function MemberHomeChat({
       const message = homeMessages[index];
       if (!message || message.role !== 'assistant') continue;
       if (message.metadata?.homeArrival) continue;
-      if (memberHomeThreadItemForMessage(threadItems, message))
-        return message.id;
+      if (homeItemForMessage(threadItems, message)) return message.id;
     }
     return null;
   }, [homeMessages, threadItems]);
   const focusedItem = useMemo(() => {
     const message = homeMessages.find((item) => item.id === cardMessageId);
-    return message
-      ? memberHomeThreadItemForMessage(threadItems, message)
-      : null;
+    return message ? homeItemForMessage(threadItems, message) : null;
   }, [cardMessageId, homeMessages, threadItems]);
   useEffect(() => {
     const node = scroller.current;
@@ -837,7 +890,7 @@ export function MemberHomeChat({
       if (!message || message.metadata?.homeArrival) continue;
       if (message.role !== 'assistant') return true;
       if (messageText(message)) return false;
-      return memberHomeThreadItemForMessage(threadItems, message) == null;
+      return homeItemForMessage(threadItems, message) == null;
     }
     return true;
   }, [homeMessages, isStreaming, threadItems]);
@@ -924,8 +977,6 @@ export function MemberHomeChat({
       return (
         <MemberHomePeopleWidgetCard
           people={intelligence.connections}
-          networkSignals={intelligence.networkSignals}
-          selfId={intelligence.person.id}
           fallbackName={t('fallbackMember')}
           onChat={(person) => {
             void onChatPerson(person);
@@ -950,7 +1001,17 @@ export function MemberHomeChat({
     );
   };
 
-  const visibleError = error && !dismissedError;
+  const lastAssistant = [...homeMessages]
+    .reverse()
+    .find((message) => message.role === 'assistant');
+  const visibleError =
+    error &&
+    !dismissedError &&
+    !homeAssistantTurnSucceeded(
+      lastAssistant,
+      lastAssistant ? messageText(lastAssistant) : '',
+      droppedLine.current,
+    );
 
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
@@ -988,7 +1049,7 @@ export function MemberHomeChat({
                 : null;
             const spokenItem =
               message.role === 'assistant'
-                ? memberHomeThreadItemForMessage(threadItems, message)
+                ? homeItemForMessage(threadItems, message)
                 : null;
             const text =
               message.role === 'assistant'
@@ -1057,10 +1118,7 @@ export function MemberHomeChat({
                             mine && 'text-right',
                           )}
                         >
-                          {homeMessageNodes(text, {
-                            people: intelligence.connections,
-                            presenceById,
-                          })}
+                          {homeMessageNodes(text)}
                         </p>
                       ) : null}
                       {visuals ? (
@@ -1204,7 +1262,7 @@ export function MemberHomeChat({
       ) : null}
 
       <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
-        <div className="mx-5 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto pt-2 [scrollbar-width:none] md:mx-4 [&::-webkit-scrollbar]:hidden">
+        <div className="mx-5 mb-2 flex min-w-0 flex-wrap gap-1.5 pt-2 md:mx-4">
           {freshStart ? (
             <button
               type="button"

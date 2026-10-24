@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   ClientEvent,
@@ -184,8 +183,34 @@ export function findDirectRoomId(
   const remembered = readRememberedDirectRoom(selfUserId, otherUserId);
   const rememberedRoom = remembered ? client.getRoom(remembered) : null;
   const rememberedMembership = rememberedRoom?.getMyMembership();
-  if (rememberedMembership === 'join' || rememberedMembership === 'invite') {
-    return remembered;
+  if (
+    rememberedRoom &&
+    (rememberedMembership === 'join' || rememberedMembership === 'invite')
+  ) {
+    const participants = [
+      ...new Set(
+        rememberedRoom
+          .getMembers()
+          .filter(
+            (member) =>
+              member.membership === 'join' || member.membership === 'invite',
+          )
+          .map((member) => member.userId)
+          .filter((id) => id && !isHyphaBotMatrixIdentity(id))
+          .map((id) => id.toLowerCase()),
+      ),
+    ];
+    const self = selfUserId.trim().toLowerCase();
+    const other = otherUserId.trim().toLowerCase();
+    if (
+      self &&
+      other &&
+      participants.length === 2 &&
+      participants.includes(self) &&
+      participants.includes(other)
+    ) {
+      return remembered;
+    }
   }
   return null;
 }
@@ -208,7 +233,6 @@ export function MemberHomeClosest({
   onOpenChat,
 }: MemberHomeClosestProps) {
   const t = useTranslations('MemberHome');
-  const router = useRouter();
   const matrix = useMatrix();
   const [messageCounts, setMessageCounts] = useState<Map<number, number>>(
     () => new Map(),
@@ -416,14 +440,10 @@ export function MemberHomeClosest({
                       if (openingRef.current) return;
                       openingRef.current = true;
                       setOpeningId(person.id);
-                      void onOpenChat(person)
-                        .then((opened) => {
-                          if (!opened) router.push(href);
-                        })
-                        .finally(() => {
-                          openingRef.current = false;
-                          setOpeningId(null);
-                        });
+                      void onOpenChat(person).finally(() => {
+                        openingRef.current = false;
+                        setOpeningId(null);
+                      });
                     }}
                   >
                     {portrait}

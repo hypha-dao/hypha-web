@@ -18,8 +18,17 @@ import { Button } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { HOME_REFRESH_EVENT } from '@hypha-platform/epics';
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import useSWR from 'swr';
+
+/** Fail before the ~40s Vercel 504 so Home can render the person shell. */
+const HOME_INTELLIGENCE_TIMEOUT_MS = 8_000;
 
 function sameMemberHome(
   left: MemberIntelligence | null | undefined,
@@ -43,17 +52,30 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   const [isSavingOrientation, setIsSavingOrientation] = useState(false);
   const [orientationError, setOrientationError] = useState<string | null>(null);
 
+  const jwtRef = useRef(jwt);
+  const keepHomeKey = useRef(Boolean(jwt));
+  useLayoutEffect(() => {
+    jwtRef.current = jwt;
+    if (jwt) keepHomeKey.current = true;
+  }, [jwt]);
   const {
     data,
     error,
     isLoading: isLoadingHome,
     mutate,
   } = useSWR<MemberIntelligence | null>(
-    jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
-    async ([url, token]) => {
+    // The token string rotates. Keying on it dropped the cached home, unmounted
+    // the assistant, and started a new turn a few seconds later.
+    jwt || keepHomeKey.current ? '/api/v1/people/me/intelligence' : null,
+    async (url: string) => {
+      const token = jwtRef.current;
+      if (!token) {
+        throw new Error('Access token not ready');
+      }
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store',
+        signal: AbortSignal.timeout(HOME_INTELLIGENCE_TIMEOUT_MS),
       });
       if (response.status === 404) return null;
       if (!response.ok) {
@@ -64,6 +86,8 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     {
       refreshInterval: 10_000,
       revalidateOnFocus: true,
+      keepPreviousData: true,
+      isPaused: () => !jwtRef.current,
       compare: sameMemberHome,
     },
   );
@@ -204,17 +228,10 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     );
   }
 
-  if (phase === 'profile-unavailable' || phase === 'home-unavailable') {
-    const name = person?.name?.trim() || person?.nickname?.trim();
+  if (phase === 'profile-unavailable') {
     return (
       <div className="mx-auto max-w-lg px-5 py-20 text-center">
-        <p className="text-2 text-neutral-11">
-          {phase === 'profile-unavailable'
-            ? t('profileUnavailable')
-            : name
-            ? t('errorNamed', { name })
-            : t('error')}
-        </p>
+        <p className="text-2 text-neutral-11">{t('profileUnavailable')}</p>
         <Button
           className="mt-4"
           type="button"
@@ -229,13 +246,15 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     );
   }
 
-  if (phase === 'loading' || !data) {
+  // Intelligence can hang until a 504. Keep the person shell (greeting,
+  // retry on the next SWR tick) instead of a hard error or a 40s skeleton.
+  if (!data) {
     const greetingName =
       person?.name?.trim() || person?.nickname?.trim() || null;
     return (
       <MemberHome
         lang={lang}
-        isLoading
+        isLoading={isLoadingHome}
         greetingName={greetingName}
         isSavingOrientation={isSavingOrientation}
         orientationError={orientationError}

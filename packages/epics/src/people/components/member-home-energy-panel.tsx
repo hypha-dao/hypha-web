@@ -204,6 +204,8 @@ function EnergyCommunityCard({
   );
 }
 
+const ENERGY_HOME_TIMEOUT_MS = 6_000;
+
 export function useMemberEnergyCommunities(
   personSlug: string | null | undefined,
 ) {
@@ -214,13 +216,18 @@ export function useMemberEnergyCommunities(
   const { data, isLoading } = useSWR(
     jwt && endpoint ? [endpoint, jwt] : null,
     async ([path, token]) => {
-      const response = await fetch(path, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch member energy: ${response.status}`);
+      try {
+        const response = await fetch(path, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(ENERGY_HOME_TIMEOUT_MS),
+        });
+        if (!response.ok) {
+          return { communities: [] } satisfies MemberEnergyHomeResponse;
+        }
+        return (await response.json()) as MemberEnergyHomeResponse;
+      } catch {
+        return { communities: [] } satisfies MemberEnergyHomeResponse;
       }
-      return (await response.json()) as MemberEnergyHomeResponse;
     },
     { refreshInterval: 60_000, shouldRetryOnError: false },
   );

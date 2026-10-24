@@ -23,6 +23,8 @@ type HomePerson = {
   nickname: string | null;
   avatarUrl: string | null;
   sharedSpaceCount?: number;
+  /** Wallet used when the chat panel loads this person's spaces. */
+  address?: string | null;
   /** Space this conversation belongs to, when it was opened from one. */
   spaceSlug?: string | null;
 };
@@ -37,6 +39,7 @@ type MemberHomePeopleProps = {
   onOpenChatReady?: (openChat: MemberHomeOpenChat) => void;
   onOpenCallReady?: (openCall: MemberHomeOpenChat) => void;
   onOpenVideoReady?: (openVideo: MemberHomeOpenChat) => void;
+  onNotice?: (notice: string | null) => void;
 };
 
 function labelOf(person: HomePerson, fallback: string) {
@@ -53,6 +56,7 @@ export function MemberHomePeople({
   onOpenChatReady,
   onOpenCallReady,
   onOpenVideoReady,
+  onNotice,
 }: MemberHomePeopleProps) {
   const t = useTranslations('MemberHome');
   const { openCoherenceChat } = useHumanChatPanel();
@@ -90,7 +94,9 @@ export function MemberHomePeople({
     // @-mentions inherit that space's roster.
     const peerSlug = person?.slug?.trim();
     openCoherenceChat(roomId, title, '', null, null, {
-      peerPerson: peerSlug ? { slug: peerSlug } : null,
+      peerPerson: peerSlug
+        ? { slug: peerSlug, address: person?.address ?? null }
+        : null,
     });
   }
 
@@ -182,6 +188,11 @@ export function MemberHomePeople({
   useEffect(() => {
     onOpenVideoReady?.((person) => openPersonVideoRef.current(person));
   }, [onOpenVideoReady]);
+
+  useEffect(() => {
+    onNotice?.(notice);
+    return () => onNotice?.(null);
+  }, [notice, onNotice]);
 
   if (!notice) return null;
 

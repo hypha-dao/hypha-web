@@ -177,6 +177,26 @@ export async function POST(req: Request) {
       },
       originalMessages,
       generateMessageId: createIdGenerator({ prefix: 'msg', size: 12 }),
+      // Home only speaks the reply. Reasoning chunks are not shown, and a
+      // malformed one makes useChat throw the dropped-thread banner.
+      sendReasoning: !memberHome,
+      // The card is known before the model speaks, so it can show with the
+      // first token instead of after a second tool step.
+      ...(memberHome
+        ? {
+            messageMetadata: () => {
+              const metadata: {
+                homeItem?: { kind: string; slug: string };
+                homeError?: true;
+              } = {};
+              if (result.memberHomeCard) {
+                metadata.homeItem = result.memberHomeCard;
+              }
+              if (result.homeError.current) metadata.homeError = true;
+              return Object.keys(metadata).length > 0 ? metadata : undefined;
+            },
+          }
+        : {}),
     });
   } catch (error) {
     console.error('[chat][route][stream-response-error]', {

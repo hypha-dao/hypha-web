@@ -210,6 +210,7 @@ export function MemberHome({
     (person) => openVideoRef.current(person),
     [],
   );
+  const [chatNotice, setChatNotice] = useState<string | null>(null);
   const memberFallback = t('fallbackMember');
   const home = isLoading || !intelligence ? null : intelligence;
   useEffect(() => {
@@ -502,12 +503,24 @@ export function MemberHome({
                     ))}
                   </div>
                 ) : (
-                  <MemberHomeClosest
-                    lang={lang}
-                    people={home.connections}
-                    fallbackName={memberFallback}
-                    onOpenChat={openChat}
-                  />
+                  <>
+                    <MemberHomeClosest
+                      lang={lang}
+                      people={home.connections}
+                      fallbackName={memberFallback}
+                      onOpenChat={openChat}
+                    />
+                    <MemberHomePeople
+                      people={home.connections}
+                      chatSpaceSlug={home.chatSpaceSlug}
+                      fallbackName={memberFallback}
+                      extraPersonIds={reachIds}
+                      onOpenChatReady={onOpenChatReady}
+                      onOpenCallReady={onOpenCallReady}
+                      onOpenVideoReady={onOpenVideoReady}
+                      onNotice={setChatNotice}
+                    />
+                  </>
                 )}
               </div>
             </div>
@@ -636,21 +649,11 @@ export function MemberHome({
               people={home?.connections ?? []}
               isLoading={home == null}
               fallbackName={memberFallback}
+              notice={chatNotice}
               onChat={home ? openChat : undefined}
               onCall={home ? openCall : undefined}
               onVideo={home ? openVideo : undefined}
             />
-            {home ? (
-              <MemberHomePeople
-                people={home.connections}
-                chatSpaceSlug={home.chatSpaceSlug}
-                fallbackName={memberFallback}
-                extraPersonIds={reachIds}
-                onOpenChatReady={onOpenChatReady}
-                onOpenCallReady={onOpenCallReady}
-                onOpenVideoReady={onOpenVideoReady}
-              />
-            ) : null}
           </aside>
           {showEnergy && home?.person.slug ? (
             <div className="flex shrink-0 flex-col gap-4 px-5 py-4 xl:hidden">
@@ -950,7 +953,7 @@ function ChatSkeleton() {
         </div>
       </div>
       <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
-        <div className="mx-5 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-hidden pt-2 md:mx-4">
+        <div className="mx-5 mb-2 flex min-w-0 flex-wrap gap-1.5 pt-2 md:mx-4">
           {chipWidths.map((width, index) => (
             <HomePulse
               key={width}

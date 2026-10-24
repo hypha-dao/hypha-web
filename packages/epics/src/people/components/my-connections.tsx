@@ -41,7 +41,7 @@ import {
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import { listBoundChatRoomIdsAmongAction } from '@hypha-platform/core/matrix/server/actions';
-import { Button } from '@hypha-platform/ui';
+import { Badge, Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { Search, Users, X } from 'lucide-react';
 
@@ -2137,6 +2137,7 @@ export function MyConnections({
               locale={locale}
               justNow={t('justNow')}
               noMessage={t('noMessage')}
+              archivedLabel={t('tabs.archived')}
               previewLoading={
                 !synced || rowsPending || matrixIdsLoading || peopleBySubLoading
               }
@@ -2212,6 +2213,7 @@ function MemberList({
   locale,
   justNow,
   noMessage,
+  archivedLabel,
   previewLoading,
   loadingLabel,
   youLabel,
@@ -2227,6 +2229,7 @@ function MemberList({
   locale: string;
   justNow: string;
   noMessage: string;
+  archivedLabel: string;
   /** Rooms are still loading, so a missing conversation is not yet "empty". */
   previewLoading: boolean;
   loadingLabel: string;
@@ -2300,13 +2303,26 @@ function MemberList({
                 )}
                 <span className="min-w-0 flex-1 pr-2">
                   <span className="flex items-baseline justify-between gap-3">
-                    <span
-                      className={cn(
-                        'min-w-0 truncate text-2 text-foreground',
-                        row.unread > 0 && 'font-semibold',
-                      )}
-                    >
-                      {row.name}
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span
+                        className={cn(
+                          'min-w-0 truncate text-2 text-foreground',
+                          row.unread > 0 && 'font-semibold',
+                        )}
+                      >
+                        {row.name}
+                      </span>
+                      {row.archived ? (
+                        <Badge
+                          variant="outline"
+                          colorVariant="neutral"
+                          size={1}
+                          className="shrink-0"
+                          data-testid="archived-conversation-badge"
+                        >
+                          {archivedLabel}
+                        </Badge>
+                      ) : null}
                     </span>
                     {when ? (
                       <span className="shrink-0 text-1 text-muted-foreground">

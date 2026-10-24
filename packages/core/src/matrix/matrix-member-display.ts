@@ -1,5 +1,16 @@
 import type { MatrixClient, RoomMember } from 'matrix-js-sdk';
 
+/**
+ * Prod and preview share one Dendrite. These org-bot MXIDs stay trusted even
+ * when `NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS` was not baked into
+ * the browser bundle. Localparts still have to match `hypha-bot` / `hypha_bot`
+ * on these homeservers — this is not an any-homeserver match.
+ */
+const SHARED_DENDRITE_HYPHA_BOT_USER_IDS = [
+  '@hypha_bot_prod:matrix.hypha.earth',
+  '@hypha_bot_preview:matrix.hypha.earth',
+] as const;
+
 /** This env's bot plus any extra bot MXIDs (prod/preview share one Dendrite). */
 export function configuredHyphaBotUserIds(): string[] {
   const primary = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim();
@@ -15,20 +26,48 @@ export function configuredHyphaBotUserIds(): string[] {
     .filter(Boolean);
   return [
     ...new Set(
-      [primary, ...additional].filter((id): id is string => Boolean(id)),
+      [primary, ...additional, ...SHARED_DENDRITE_HYPHA_BOT_USER_IDS].filter(
+        (id): id is string => Boolean(id),
+      ),
     ),
   ];
 }
 
-/** Production and preview org-bot accounts. People meet them as AI Agents. */
+function matrixIdServerName(userId: string): string | null {
+  const trimmed = userId.trim();
+  const colon = trimmed.lastIndexOf(':');
+  if (!trimmed.startsWith('@') || colon <= 1 || colon === trimmed.length - 1) {
+    return null;
+  }
+  return trimmed.slice(colon + 1);
+}
+
+/**
+ * Trusted Hypha bots only: configured MXIDs (`NEXT_PUBLIC_MATRIX_BOT_USER_ID`
+ * / extra bot IDs from #2569) plus `hypha-bot` / `hypha_bot` localparts on
+ * those homeservers. A matching name on any other server is a person.
+ * The optional label is accepted for existing call sites and is not a
+ * trust signal.
+ */
 export function isHyphaBotMatrixIdentity(
   userId?: string | null,
   label?: string | null,
 ): boolean {
+  void label;
   const id = userId?.trim();
-  if (id && configuredHyphaBotUserIds().includes(id)) return true;
-  const local = id?.replace(/^@/, '').split(':')[0] ?? '';
-  return /hypha[_-]bot/i.test(local) || /hypha[_-]bot/i.test(label ?? '');
+  if (!id) return false;
+  const configured = configuredHyphaBotUserIds();
+  if (configured.includes(id)) return true;
+  const local = id.replace(/^@/, '').split(':')[0] ?? '';
+  if (!/hypha[_-]bot/i.test(local)) return false;
+  const server = matrixIdServerName(id);
+  if (!server) return false;
+  const homeServers = new Set(
+    configured
+      .map((bot) => matrixIdServerName(bot)?.toLowerCase())
+      .filter((value): value is string => Boolean(value)),
+  );
+  return homeServers.has(server.toLowerCase());
 }
 
 /** Joined humans only — configured bots, extra bots, and Hypha bot identities. */
@@ -36,11 +75,12 @@ export function countHumanMatrixMembers(
   memberIds: readonly (string | null | undefined)[],
   labels?: Readonly<Record<string, string | null | undefined>>,
 ): number {
+  void labels;
   let count = 0;
   for (const raw of memberIds) {
     const id = raw?.trim();
     if (!id) continue;
-    if (isHyphaBotMatrixIdentity(id, labels?.[id])) continue;
+    if (isHyphaBotMatrixIdentity(id)) continue;
     count += 1;
   }
   return count;
@@ -99,7 +139,7 @@ export function looksLikeTechnicalMatrixDisplayName(
 ): boolean {
   const l = label?.trim() ?? '';
   if (!l || l === matrixUserId) return true;
-  if (isHyphaBotMatrixIdentity(matrixUserId, l)) return true;
+  if (isHyphaBotMatrixIdentity(matrixUserId)) return true;
   const stem = displayNameStem(l);
   if (/^did:privy:/i.test(stem) || /^did:privy:/i.test(l)) return true;
   if (stemLooksLikeBridgedPrivyLocalpart(stem)) return true;
