@@ -21,6 +21,9 @@ import {
   memberRowsForConnections,
   nextSelectedMembers,
   personRowsFromDmRooms,
+  applyResolvedPeerTitles,
+  resolvePeerRowTitle,
+  conversationDisplayName,
   messagePreview,
   orphanedDirectRoomIds,
   previewWithNames,
@@ -709,6 +712,140 @@ describe('personRowsFromDmRooms', () => {
 
     expect(rows.map((row) => row.roomId)).toEqual(['!dm']);
     expect(rows[0]).toMatchObject({ name: 'Gerardo Roza', roomId: '!dm' });
+  });
+
+  it('does not use a raw Privy id as the row title', () => {
+    const rows = personRowsFromDmRooms(
+      [],
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_cmjzxabc',
+          otherUserId: '@prod_privy_did_privy_cmjzxabc:matrix',
+          preview: 'You: test',
+          mine: true,
+          lastTs: 20,
+        }),
+      ],
+      {},
+      null,
+      'Someone',
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.titlePending).toBe(true);
+    expect(rows[0]?.name).toBe('');
+    expect(rows[0]?.name).not.toMatch(/privy|@prod_/i);
+  });
+});
+
+describe('resolvePeerRowTitle', () => {
+  it('keeps a human Matrix name and hides a raw Privy id', () => {
+    expect(
+      resolvePeerRowTitle({
+        roomId: '!dm',
+        name: 'Gerardo Roza',
+        otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+      }),
+    ).toEqual({ name: 'Gerardo Roza', titlePending: false });
+    expect(
+      conversationDisplayName(
+        '@prod_privy_did_privy_cmjzx:matrix',
+        'prod_privy_did_privy_cmjzx',
+      ),
+    ).toBeNull();
+    expect(
+      resolvePeerRowTitle({
+        roomId: '!dm',
+        name: 'prod_privy_did_privy_cmjzx',
+        otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+      }),
+    ).toEqual({ name: '', titlePending: true });
+  });
+});
+
+describe('applyResolvedPeerTitles', () => {
+  it('fills a pending DM title from the peer profile, never the raw id', () => {
+    const pending = personRowsFromDmRooms(
+      [],
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_cmjzx',
+          otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+          preview: 'You: test',
+          mine: true,
+          lastTs: 20,
+        }),
+      ],
+      {},
+      null,
+      'Someone',
+    );
+    const resolved = applyResolvedPeerTitles(
+      pending,
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_cmjzx',
+          otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+        }),
+      ],
+      new Map([
+        [
+          'did:privy:cmjzx',
+          { name: 'Gerardo', surname: 'Roza', nickname: null, slug: 'gerardo' },
+        ],
+      ]),
+      {},
+    );
+
+    expect(resolved[0]).toMatchObject({
+      name: 'Gerardo Roza',
+      titlePending: false,
+    });
+    expect(resolved[0]?.name).not.toMatch(/privy/i);
+  });
+
+  it('keeps a skeleton while the peer profile is still loading', () => {
+    const pending = personRowsFromDmRooms(
+      [],
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_cmjzx',
+          otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+        }),
+      ],
+      {},
+      null,
+      'Someone',
+    );
+    const resolved = applyResolvedPeerTitles(
+      pending,
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_cmjzx',
+          otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+        }),
+      ],
+      new Map(),
+      {},
+      { loading: true, fallback: 'Someone' },
+    );
+
+    expect(resolved[0]).toMatchObject({ name: '', titlePending: true });
   });
 });
 

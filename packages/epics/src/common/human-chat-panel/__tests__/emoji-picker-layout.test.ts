@@ -18,20 +18,31 @@ describe('emoji picker layout', () => {
     const picker = read('human-chat-panel-emoji-picker.tsx');
     expect(picker).toContain('onEscapeKeyDown');
     expect(picker).toContain('event.stopPropagation()');
+    expect(picker).toContain("addEventListener('keydown', onKeyDown, true)");
     expect(picker).toContain('onWheel');
     const overflow = read('human-chat-panel-message-overflow.tsx');
     expect(overflow).toContain('onWheel={(event) => event.stopPropagation()}');
     const chatBar = read('human-chat-panel-chat-bar.tsx');
     expect(chatBar).toContain("e.key === 'Escape' && emojiPickerOpen");
     expect(chatBar).toContain('e.stopPropagation()');
+    const sidebar = readFileSync(
+      resolve(dir, '../../../../ui/src/sidebar.tsx'),
+      'utf8',
+    );
+    expect(sidebar).toContain('onEscapeKeyDown');
+    expect(sidebar).toContain('[data-hypha-emoji-picker]');
+    expect(sidebar).toContain('event.preventDefault()');
   });
 
-  it('lets emoji-mart fill a definite-width parent instead of a second min-width', () => {
+  it('forces the emoji-mart host to the panel width, including the React wrapper', () => {
     const surface = read('human-chat-panel-emoji-mart-surface.tsx');
     expect(surface).toContain('w-full min-w-0');
     expect(surface).toContain('h-[min(22.5rem,calc(100dvh-8rem))]');
-    expect(surface).toContain('--em-emoji-picker-width');
+    expect(surface).toContain('[&>div]:w-full');
+    expect(surface).toContain('[&_em-emoji-picker]:!w-full');
+    expect(surface).toContain('data-hypha-emoji-picker');
     expect(surface).toContain('onWheel');
     expect(surface).not.toContain('min-w-[280px]');
+    expect(surface).not.toContain('--em-emoji-picker-width');
   });
 });

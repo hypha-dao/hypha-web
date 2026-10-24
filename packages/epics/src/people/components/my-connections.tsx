@@ -31,8 +31,8 @@ import {
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
   matrixUserIdToCanonicalPrivySub,
+  pickUserVisibleMemberLabel,
   sortConversationsByLastMessage,
-  uniqueCanonicalPrivySubsFromMxids,
   visibleMatrixMemberName,
   useJwt,
   useMatrix,
@@ -77,6 +77,8 @@ import {
   rememberedGroupChatMemberIds,
   rememberSignalThreadRooms,
   subscribeSignalThreadRooms,
+  applyResolvedPeerTitles,
+  conversationPeerSubs,
   personRowsFromDmRooms,
   nextSelectedMembers,
   STALE_CONNECTION_MS,
@@ -356,13 +358,19 @@ function classifyConversationRoom(
     return drop('not-people-conversation');
   }
   const other = base.others.length === 1 ? base.others[0] : undefined;
+  const personLabel =
+    kind === 'person' && other
+      ? pickUserVisibleMemberLabel(
+          other.userId,
+          other.name,
+          other.user?.displayName,
+          other.rawDisplayName,
+        )
+      : null;
   const name =
     overrideName ||
-    (kind === 'person'
-      ? other?.name || other?.rawDisplayName
-      : base.nameState || room.name) ||
-    room.name ||
-    base.nameState ||
+    (kind === 'person' ? personLabel : base.nameState || room.name) ||
+    (kind === 'person' ? '' : room.name || base.nameState) ||
     '';
   if (overrideName && room.name.trim() === overrideName) {
     conversationTitleOverrides.delete(room.roomId);
@@ -1585,20 +1593,33 @@ export function MyConnections({
     [reachOut],
   );
 
-  const groupMemberSubs = useMemo(
-    () =>
-      uniqueCanonicalPrivySubsFromMxids(
-        rows.flatMap((row) =>
-          row.kind === 'group'
-            ? (row.searchMembers ?? []).map((member) => member.userId)
-            : [],
-        ),
-      ),
-    [rows],
-  );
+  const peerSubs = useMemo(() => conversationPeerSubs(rows), [rows]);
   const { peopleBySub, isLoading: peopleBySubLoading } = usePeopleBySubs({
-    subs: groupMemberSubs,
+    subs: peerSubs,
   });
+  const resolvedMembers = useMemo(
+    () =>
+      applyResolvedPeerTitles(
+        members,
+        rows,
+        peopleBySub,
+        personIdToMatrixUserId,
+        {
+          loading: peopleBySubLoading || (peerSubs.length > 0 && !jwt),
+          fallback: t('someone'),
+        },
+      ),
+    [
+      jwt,
+      members,
+      peerSubs.length,
+      peopleBySub,
+      peopleBySubLoading,
+      personIdToMatrixUserId,
+      rows,
+      t,
+    ],
+  );
 
   const people = useMemo(() => {
     const profiles = new Map<string, { name: string; avatarUrl?: string }>();
@@ -1612,8 +1633,10 @@ export function MyConnections({
       const local = id.replace(/^@/, '').split(':')[0]?.toLowerCase();
       if (local) mentionNames.set(local, clean);
     };
-    for (const row of members) {
-      const mxid = personIdToMatrixUserId[row.person.id];
+    for (const row of resolvedMembers) {
+      const mxid =
+        personIdToMatrixUserId[row.person.id] ||
+        rows.find((room) => room.roomId === row.roomId)?.otherUserId;
       if (!mxid) continue;
       const avatar = row.avatarUrl || row.person.avatarUrl || undefined;
       profiles.set(mxid.toLowerCase(), {
@@ -1676,7 +1699,7 @@ export function MyConnections({
           searchMembers: enrichSearchMembers(
             row.searchMembers,
             profiles,
-            members,
+            resolvedMembers,
             personIdToMatrixUserId,
             peopleByMxid,
           ),
@@ -1712,7 +1735,10 @@ export function MyConnections({
       section === 'archived' ? 'archived' : 'messages',
     );
     const matchingGroups = conversationsMatchingSearch(listedGroups, needle);
-    const matchingMembers = conversationsMatchingSearch(members, needle);
+    const matchingMembers = conversationsMatchingSearch(
+      resolvedMembers,
+      needle,
+    );
     const source =
       section === 'archived'
         ? matchingGroups
@@ -1728,12 +1754,12 @@ export function MyConnections({
   }, [
     client,
     home?.person,
-    members,
     needle,
     pendingGroups,
     peopleBySub,
     personIdToMatrixUserId,
     picking,
+    resolvedMembers,
     rows,
     section,
     t,
@@ -2303,14 +2329,23 @@ function MemberList({
                 )}
                 <span className="min-w-0 flex-1 pr-2">
                   <span className="flex items-baseline justify-between gap-3">
-                    <span
-                      className={cn(
-                        'min-w-0 truncate text-2 text-foreground',
-                        row.unread > 0 && 'font-semibold',
-                      )}
-                    >
-                      {row.name}
-                    </span>
+                    {row.titlePending ? (
+                      <span
+                        role="status"
+                        aria-busy="true"
+                        aria-label={loadingLabel}
+                        className="my-0.5 block h-4 w-32 max-w-[60%] animate-pulse rounded-sm bg-neutral-5"
+                      />
+                    ) : (
+                      <span
+                        className={cn(
+                          'min-w-0 truncate text-2 text-foreground',
+                          row.unread > 0 && 'font-semibold',
+                        )}
+                      >
+                        {row.name}
+                      </span>
+                    )}
                     {when ? (
                       <span className="shrink-0 text-1 text-muted-foreground">
                         {when}
