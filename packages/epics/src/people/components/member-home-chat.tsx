@@ -57,15 +57,12 @@ import { useOnboardingSpaceSignature } from '../../common/use-onboarding-space-s
 import { MemberHomeMark } from './member-home-mark';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { PersonAvatar } from './person-avatar';
-import { presenceFillClass } from './presence-dot';
 import {
   MemberHomePeopleWidgetCard,
   MemberHomeSendTokensWidget,
   MemberHomeSpacesWidgetCard,
 } from './member-home-chat-widgets';
 import type { MemberHomeOpenChat } from './member-home-people';
-import type { PresenceLevel } from './member-presence';
-import { useMemberPresence } from './use-member-presence';
 
 type HomeWidgetKind = 'spaces' | 'people' | 'tokens';
 
@@ -227,11 +224,13 @@ function rewriteHomeStartLine(
           ? raw
           : droppedLine;
       const id = `e${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
-      return [
+      // Each event needs a blank line. A single newline joins the JSON into
+      // one payload, which the client rejects and shows as a dropped thread.
+      return `${[
         `${prefix}${JSON.stringify({ type: 'text-start', id })}`,
         `${prefix}${JSON.stringify({ type: 'text-delta', id, delta: text })}`,
         `${prefix}${JSON.stringify({ type: 'text-end', id })}`,
-      ].join('\n');
+      ].join('\n\n')}\n\n`;
     }
     return line;
   } catch {
@@ -300,65 +299,14 @@ function homeAssistantScript(input: {
 
 const HOME_LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
 
-type MentionPerson = {
-  id: number;
-  name?: string | null;
-  surname?: string | null;
-  nickname?: string | null;
-};
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function personMentionLabels(person: MentionPerson): string[] {
-  const labels: string[] = [];
-  const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
-  if (full) labels.push(full);
-  const first = person.name?.trim();
-  if (first) labels.push(first);
-  const nick = person.nickname?.trim();
-  if (nick) labels.push(nick);
-  return [...new Set(labels)].sort((left, right) => right.length - left.length);
-}
-
-function homeMessageNodes(
-  text: string,
-  options?: {
-    people?: readonly MentionPerson[];
-    presenceById?: ReadonlyMap<number, PresenceLevel>;
-  },
-): ReactNode[] {
-  const mentions: { label: string; personId: number }[] = [];
-  const seenLabels = new Set<string>();
-  for (const person of options?.people ?? []) {
-    for (const label of personMentionLabels(person)) {
-      if (label.length < 2) continue;
-      const key = label.toLowerCase();
-      if (seenLabels.has(key)) continue;
-      seenLabels.add(key);
-      mentions.push({ label, personId: person.id });
-    }
-  }
-  const mentionPattern =
-    mentions.length > 0
-      ? mentions.map((mention) => escapeRegExp(mention.label)).join('|')
-      : null;
-  const pattern = mentionPattern
-    ? new RegExp(
-        `\\[([^\\]]+)\\]\\((https?:\\/\\/[^\\s)]+)\\)|(https?:\\/\\/[^\\s)]+)|(${mentionPattern})`,
-        'gi',
-      )
-    : HOME_LINK;
-
+function homeMessageNodes(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   let last = 0;
-  for (const match of text.matchAll(pattern)) {
+  for (const match of text.matchAll(HOME_LINK)) {
     const index = match.index ?? 0;
     if (index > last) nodes.push(text.slice(last, index));
     const href = match[2] ?? match[3];
     const linkLabel = match[1] ?? href;
-    const mentionLabel = match[4];
     if (href && linkLabel) {
       nodes.push(
         <a
@@ -370,34 +318,6 @@ function homeMessageNodes(
         >
           {linkLabel}
         </a>,
-      );
-    } else if (mentionLabel) {
-      const mention = mentions.find(
-        (entry) => entry.label.toLowerCase() === mentionLabel.toLowerCase(),
-      );
-      const presence =
-        mention && options?.presenceById
-          ? options.presenceById.get(mention.personId) ?? 'offline'
-          : 'offline';
-      const around = presence === 'active' || presence === 'idle';
-      nodes.push(
-        <span
-          key={`${index}-${mentionLabel}`}
-          className="inline-flex items-center gap-1"
-        >
-          <span>{mentionLabel}</span>
-          {around ? (
-            <span
-              aria-hidden
-              className={cn(
-                'inline-block size-1.5 shrink-0 rounded-full',
-                presence === 'active'
-                  ? presenceFillClass.active
-                  : presenceFillClass.idle,
-              )}
-            />
-          ) : null}
-        </span>,
       );
     }
     last = index + match[0].length;
@@ -438,12 +358,6 @@ export function MemberHomeChat({
   const gliding = useRef(false);
   const pinnedToEnd = useRef(true);
   const settlingIds = useRef(new Set<string>());
-  const connectionIds = useMemo(
-    () => intelligence.connections.map((person) => person.id),
-    [intelligence.connections],
-  );
-  const { presenceById } = useMemberPresence(connectionIds);
-
   const droppedLine = useRef('');
   droppedLine.current = t('threadDropped');
 
@@ -1090,10 +1004,7 @@ export function MemberHomeChat({
                             mine && 'text-right',
                           )}
                         >
-                          {homeMessageNodes(text, {
-                            people: intelligence.connections,
-                            presenceById,
-                          })}
+                          {homeMessageNodes(text)}
                         </p>
                       ) : null}
                       {visuals ? (
