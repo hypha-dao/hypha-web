@@ -46,11 +46,11 @@ export function installHistoryTrace2575(): () => void {
   let count = 0;
   const trace = (kind: string, url: unknown) => {
     count += 1;
-    const stack = (new Error().stack ?? '').split('\n').slice(3, 8).join(' | ');
-    console.log(`[#2575] history.${kind} #${count}`, {
-      url: String(url),
-      stack,
-    });
+    const stack = (new Error().stack ?? '')
+      .split('\n')
+      .slice(3, 10)
+      .join(' | ');
+    console.log(`[#2575] history.${kind} #${count} ${String(url)} | ${stack}`);
   };
   window.history.pushState = (data, unused, url) => {
     trace('pushState', url);
@@ -71,10 +71,9 @@ export function installHistoryTrace2575(): () => void {
     if (!actionId && (headers.get('rsc') || url0.includes('_rsc='))) {
       const kind = headers.get('next-router-prefetch') ? 'prefetch' : 'rsc';
       const response = await originalFetch(input, init);
-      console.log(`[#2575] ${kind} fetch`, {
-        url: url0,
-        status: response.status,
-      });
+      console.log(
+        `[#2575] ${kind} fetch ${url0} -> ${response.status} redirected=${response.redirected} final=${response.url}`,
+      );
       return response;
     }
     if (!actionId) return originalFetch(input, init);

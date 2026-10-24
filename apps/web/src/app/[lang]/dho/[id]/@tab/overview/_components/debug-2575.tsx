@@ -43,9 +43,13 @@ export function Debug2575Lifecycle({ name }: { name: string }) {
         count += 1;
         const stack = (new Error().stack ?? '')
           .split('\n')
-          .slice(2, 6)
+          .slice(2, 9)
           .join(' | ');
-        console.log(`[#2575] router.${method} #${count}`, { args, stack });
+        console.log(
+          `[#2575] router.${method} #${count} -> ${JSON.stringify(
+            args[0],
+          )} ${JSON.stringify(args[1] ?? null)} | ${stack}`,
+        );
         return (original as (...a: unknown[]) => unknown)(...args);
       };
     }
@@ -98,9 +102,16 @@ export function Debug2575Lifecycle({ name }: { name: string }) {
         sameDocument: event.destination?.sameDocument,
       });
     nav?.addEventListener('navigate', onNavigate);
+    const removeNav = () =>
+      (
+        nav as unknown as {
+          removeEventListener?: (type: string, cb: (e: any) => void) => void;
+        }
+      )?.removeEventListener?.('navigate', onNavigate);
     return () => {
       window.removeEventListener('pagehide', onPageHide);
       window.removeEventListener('popstate', onPopState);
+      removeNav();
     };
   }, []);
 
