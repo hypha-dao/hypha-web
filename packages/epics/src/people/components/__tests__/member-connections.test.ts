@@ -714,6 +714,42 @@ describe('personRowsFromDmRooms', () => {
     expect(rows[0]).toMatchObject({ name: 'Gerardo Roza', roomId: '!dm' });
   });
 
+  it('still lists the newer technical DM when a human-named room is superseded', () => {
+    const rows = personRowsFromDmRooms(
+      [],
+      [
+        room({
+          roomId: '!old',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'Gerardo Roza',
+          otherUserId: '@gerardo:matrix',
+          preview: 'older',
+          lastTs: 10,
+          unread: 0,
+        }),
+        room({
+          roomId: '!new',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_gerardo',
+          otherUserId: '@gerardo:matrix',
+          preview: 'newer',
+          lastTs: 90,
+          unread: 2,
+        }),
+      ],
+      {},
+      null,
+      'Someone',
+    );
+
+    expect(rows.map((row) => row.roomId)).toEqual(['!new']);
+    expect(rows[0]?.titlePending).toBe(true);
+    expect(rows[0]?.name).toBe('');
+    expect(rows[0]?.person.id).toBeLessThan(0);
+  });
+
   it('does not use a raw Privy id as the row title', () => {
     const rows = personRowsFromDmRooms(
       [],
@@ -905,6 +941,30 @@ describe('nextSelectedMembers', () => {
     const afterSearchWouldHideAda = nextSelectedMembers(afterBoth, grace);
     expect([...afterSearchWouldHideAda.keys()]).toEqual([1]);
     expect(afterSearchWouldHideAda.get(1)?.name).toBe('Ada Lovelace');
+  });
+
+  it('does not select a synthetic DM row', () => {
+    const synthetic = {
+      person: person(-12, 'Gerardo', 'Roza'),
+      name: 'Gerardo Roza',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: '!dm',
+    };
+    const ada = {
+      person: person(1, 'Ada', 'Lovelace'),
+      name: 'Ada Lovelace',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const afterAda = nextSelectedMembers(new Map(), ada);
+    const afterSynthetic = nextSelectedMembers(afterAda, synthetic);
+    expect([...afterSynthetic.keys()]).toEqual([1]);
   });
 });
 

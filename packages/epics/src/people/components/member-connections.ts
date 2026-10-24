@@ -798,7 +798,6 @@ export function unreadRoomsMissingFromMembers<T extends ConnectionListPerson>(
   const superseded = new Set(supersededDirectRoomIds(rooms));
   const hiddenPairs = new Set(hiddenLegacyPairRoomIds(rooms));
   const extras: MemberRow<T>[] = [];
-  let syntheticId = -1;
   for (const room of rooms) {
     if (room.signalThread || room.kind !== 'person' || room.unread <= 0) {
       continue;
@@ -814,7 +813,7 @@ export function unreadRoomsMissingFromMembers<T extends ConnectionListPerson>(
     const title = resolvePeerRowTitle(room);
     extras.push({
       person: {
-        id: syntheticId,
+        id: groupPersonId(room.roomId),
         name: title.name || null,
         surname: null,
         nickname: null,
@@ -831,7 +830,6 @@ export function unreadRoomsMissingFromMembers<T extends ConnectionListPerson>(
       unread: room.unread,
       roomId: room.roomId,
     });
-    syntheticId -= 1;
   }
   return extras;
 }
@@ -886,10 +884,13 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
   const usedMxids = new Set<string>();
   const usedRoomIds = new Set<string>();
   const fromRooms: MemberRow<T>[] = [];
-  let syntheticId = -1;
   const typedPeerHasHumanName = new Set<string>();
   for (const room of rooms) {
-    if (!isTypedDirectPersonRoom(room) || hiddenPairs.has(room.roomId))
+    if (
+      !isTypedDirectPersonRoom(room) ||
+      hiddenPairs.has(room.roomId) ||
+      superseded.has(room.roomId)
+    )
       continue;
     const mxid = room.otherUserId?.trim().toLowerCase();
     if (
@@ -928,7 +929,7 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
       const title = resolvePeerRowTitle(room);
       fromRooms.push({
         person: {
-          id: syntheticId,
+          id: groupPersonId(room.roomId),
           name: title.name || null,
           surname: null,
           nickname: null,
@@ -945,7 +946,6 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
         unread: room.unread,
         roomId: room.roomId,
       });
-      syntheticId -= 1;
     }
     if (mxid) usedMxids.add(mxid);
     usedRoomIds.add(room.roomId);
@@ -1435,6 +1435,9 @@ export function nextSelectedMembers<T extends ConnectionListPerson>(
   current: ReadonlyMap<number, MemberRow<T>>,
   row: MemberRow<T>,
 ): Map<number, MemberRow<T>> {
+  // Directory people only. Synthetic DM / group rows use negative ids
+  // derived from the room, not a Hypha person, and cannot be invited.
+  if (row.person.id <= 0) return new Map(current);
   const next = new Map(current);
   if (next.has(row.person.id)) next.delete(row.person.id);
   else next.set(row.person.id, row);
