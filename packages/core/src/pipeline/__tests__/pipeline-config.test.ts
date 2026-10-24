@@ -20,6 +20,7 @@ import {
   PIPELINE_SWIMLANES,
   resolveDefaultStageSlug,
   resolveDefaultTrackSlug,
+  resolveStatusAfterTrackChange,
 } from '../constants';
 
 describe('normalizeProbabilityMatrix', () => {
@@ -204,6 +205,25 @@ describe('default slugs', () => {
     expect(resolveDefaultStageSlug(DEFAULT_PIPELINE_CONFIG.stages)).toBe(
       'Identified',
     );
+  });
+
+  it('resets to defaultStatus when the track changes even if the stage still exists', () => {
+    expect(
+      resolveStatusAfterTrackChange({
+        stages: DEFAULT_PIPELINE_STAGES,
+        currentStatus: 'Proposal',
+      }),
+    ).toBe('Identified');
+  });
+
+  it('keeps an explicit status sent with the track change', () => {
+    expect(
+      resolveStatusAfterTrackChange({
+        stages: DEFAULT_PIPELINE_STAGES,
+        currentStatus: 'Proposal',
+        explicitStatus: 'Engaged',
+      }),
+    ).toBe('Engaged');
   });
 });
 

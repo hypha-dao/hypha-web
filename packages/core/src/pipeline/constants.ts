@@ -170,6 +170,24 @@ export function resolveDefaultStageSlug(
   return firstOpen?.slug ?? stages[0]?.slug ?? PIPELINE_STATUSES[0];
 }
 
+/**
+ * Moving a deal to another track always restarts it on the default open
+ * stage unless the caller sent an explicit status with the same write.
+ * Shared stages (Proposal on Sales and Tenders) still reset — the new
+ * track's default, not "still listed", is the rule.
+ */
+export function resolveStatusAfterTrackChange({
+  stages,
+  explicitStatus,
+}: {
+  stages: readonly PipelineStageDefinition[];
+  currentStatus?: string;
+  explicitStatus?: string;
+}): PipelineStatus {
+  if (explicitStatus) return explicitStatus;
+  return resolveDefaultStageSlug(stages);
+}
+
 export const PIPELINE_PROBABILITY: Record<
   PipelineSwimlane,
   Record<PipelineStatus, number>

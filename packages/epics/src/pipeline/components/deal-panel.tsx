@@ -8,6 +8,7 @@ import {
   getDealProbability,
   isGrantOrTenderSwimlane,
   resolveRegionForSpace,
+  resolveStatusAfterTrackChange,
   useDealMutations,
   useDeals,
   usePipelineConfig,
@@ -159,7 +160,13 @@ export function DealPanel({
           <Select
             value={deal.pipelineSwimlane}
             onValueChange={(v) =>
-              schedule({ pipelineSwimlane: v as PipelineSwimlane })
+              schedule({
+                pipelineSwimlane: v as PipelineSwimlane,
+                pipelineStatus: resolveStatusAfterTrackChange({
+                  stages,
+                  currentStatus: deal.pipelineStatus,
+                }),
+              })
             }
           >
             <SelectTrigger>
