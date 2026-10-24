@@ -9,8 +9,10 @@ import {
   connectionMatchesPeopleSearch,
   conversationMatchesSearch,
   peopleMatchingSearch,
+  conversationsMatchingSearch,
   conversationsVisibleInSection,
   conversationUnreadTotal,
+  hiddenLegacyPairRoomIds,
   facesWithProfiles,
   groupRowsForConnections,
   isMessagesVisibleConversation,
@@ -251,6 +253,7 @@ describe('supersededDirectRoomIds', () => {
       room({
         roomId: '!older',
         kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
         otherUserId: '@gerardo:matrix',
         lastTs: 10,
         unread: 4,
@@ -258,6 +261,7 @@ describe('supersededDirectRoomIds', () => {
       room({
         roomId: '!later',
         kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
         otherUserId: '@Gerardo:matrix',
         lastTs: 20,
         unread: 1,
@@ -278,6 +282,7 @@ describe('supersededDirectRoomIds', () => {
       room({
         roomId: '!only',
         kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
         otherUserId: '@kate:matrix',
         lastTs: 10,
         unread: 3,
@@ -294,6 +299,28 @@ describe('supersededDirectRoomIds', () => {
 
     expect(losers).toEqual([]);
   });
+
+  it('keeps the typed DM even when an untyped leftover is newer', () => {
+    const losers = supersededDirectRoomIds([
+      room({
+        roomId: '!legacy',
+        kind: 'person',
+        roomType: null,
+        name: 'prod_privy_did_privy_gerardo',
+        otherUserId: '@gerardo:matrix',
+        lastTs: 90,
+      }),
+      room({
+        roomId: '!dm',
+        kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
+        name: 'Gerardo Roza',
+        otherUserId: '@gerardo:matrix',
+        lastTs: 10,
+      }),
+    ]);
+    expect(losers).toEqual(['!legacy']);
+  });
 });
 
 describe('conversationUnreadTotal', () => {
@@ -302,6 +329,7 @@ describe('conversationUnreadTotal', () => {
       room({
         roomId: '!older',
         kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
         otherUserId: '@gerardo:matrix',
         lastTs: 10,
         unread: 3,
@@ -309,6 +337,7 @@ describe('conversationUnreadTotal', () => {
       room({
         roomId: '!later',
         kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
         otherUserId: '@gerardo:matrix',
         lastTs: 20,
         unread: 0,
@@ -316,6 +345,7 @@ describe('conversationUnreadTotal', () => {
       room({
         roomId: '!kate',
         kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
         otherUserId: '@kate:matrix',
         lastTs: 15,
         unread: 1,
@@ -420,6 +450,55 @@ describe('isMessagesVisibleConversation', () => {
         }),
       ),
     ).toBe(false);
+    expect(
+      isMessagesVisibleConversation(
+        room({
+          roomId: '!stale-person',
+          kind: 'person',
+          roomType: null,
+          name: 'prod_privy_did_privy_abc',
+          otherUserId: '@gerardo:matrix',
+        }),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('hiddenLegacyPairRoomIds', () => {
+  it('hides an untyped 1:1 whose peer already has a typed DM', () => {
+    const hidden = hiddenLegacyPairRoomIds([
+      room({
+        roomId: '!dm',
+        kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
+        name: 'Gerardo Roza',
+        otherUserId: '@gerardo:matrix',
+        preview: 'test',
+        mine: true,
+        lastTs: 20,
+      }),
+      room({
+        roomId: '!legacy',
+        kind: 'person',
+        roomType: null,
+        name: 'prod_privy_did_privy_gerardo',
+        otherUserId: '@gerardo:matrix',
+        preview: 'test',
+        mine: true,
+        lastTs: 10,
+        memberCount: 2,
+      }),
+      room({
+        roomId: '!named-pair',
+        kind: 'group',
+        name: 'prod_privy_did_privy_gerardo',
+        otherUserId: '@gerardo:matrix',
+        memberCount: 2,
+        lastTs: 10,
+      }),
+    ]);
+    expect(hidden).toEqual(expect.arrayContaining(['!legacy', '!named-pair']));
+    expect(hidden).not.toContain('!dm');
   });
 });
 
@@ -458,6 +537,7 @@ describe('unreadRoomsMissingFromMembers', () => {
         room({
           roomId: '!stranger',
           kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
           name: 'Gerardo Reza',
           otherUserId: '@gerardo:matrix',
           preview: 'ping',
@@ -595,6 +675,69 @@ describe('personRowsFromDmRooms', () => {
 
     expect(rows.map((row) => row.roomId)).toEqual([null]);
     expect(rows[0]?.unread).toBe(0);
+  });
+
+  it('hides a named untyped 1:1 when the peer already has a typed DM', () => {
+    const rows = personRowsFromDmRooms(
+      [person(1, 'Gerardo', 'Roza')],
+      [
+        room({
+          roomId: '!legacy',
+          kind: 'person',
+          roomType: null,
+          name: 'prod_privy_did_privy_gerardo',
+          otherUserId: '@gerardo:matrix',
+          preview: 'test',
+          mine: true,
+          lastTs: 90,
+        }),
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'Gerardo Roza',
+          otherUserId: '@gerardo:matrix',
+          preview: 'test',
+          mine: true,
+          lastTs: 80,
+        }),
+      ],
+      { 1: '@gerardo:matrix' },
+      null,
+      'Someone',
+    );
+
+    expect(rows.map((row) => row.roomId)).toEqual(['!dm']);
+    expect(rows[0]).toMatchObject({ name: 'Gerardo Roza', roomId: '!dm' });
+  });
+});
+
+describe('conversationsMatchingSearch', () => {
+  it('keeps the needle when a selected chip is removed', () => {
+    const ada = {
+      person: person(1, 'Ada', 'Lovelace'),
+      name: 'Ada Lovelace',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const grace = {
+      person: person(2, 'Grace', 'Hopper'),
+      name: 'Grace Hopper',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const selected = nextSelectedMembers(new Map(), ada);
+    const afterRemove = nextSelectedMembers(selected, ada);
+    expect(afterRemove.size).toBe(0);
+    expect(
+      conversationsMatchingSearch([ada, grace], 'ada').map((row) => row.name),
+    ).toEqual(['Ada Lovelace']);
   });
 });
 
@@ -971,6 +1114,42 @@ describe('groupRowsForConnections', () => {
     expect(groupRowsForConnections([row], 'Someone')[0]?.name).toBe(
       'Water team',
     );
+  });
+
+  it('hides an untyped named 1:1 leftover next to a typed DM', () => {
+    const rows = groupRowsForConnections(
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'Gerardo Roza',
+          otherUserId: '@gerardo:matrix',
+        }),
+        room({
+          roomId: '!legacy-pair',
+          kind: 'group',
+          name: 'prod_privy_did_privy_gerardo',
+          otherUserId: '@gerardo:matrix',
+          memberCount: 2,
+          groupChat: true,
+        }),
+      ],
+      'Someone',
+    );
+    expect(rows.map((row) => row.roomId)).toEqual([]);
+    expect(
+      isPeopleListGroup(
+        room({
+          roomId: '!legacy-pair',
+          kind: 'group',
+          name: 'prod_privy_did_privy_gerardo',
+          otherUserId: '@gerardo:matrix',
+          memberCount: 2,
+          groupChat: true,
+        }),
+      ),
+    ).toBe(false);
   });
 
   it('lists a named untyped group when only one member has loaded', () => {

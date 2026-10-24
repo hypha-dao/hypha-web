@@ -61,7 +61,7 @@ export function HumanChatPanelEmojiPicker({
         side={side}
         sideOffset={8}
         collisionPadding={12}
-        className="w-[min(calc(100vw-2rem),22rem)] max-w-[calc(100vw-1rem)] overflow-hidden border-border p-0 shadow-lg"
+        className="w-[min(calc(100vw-2rem),22rem)] max-w-[min(22rem,calc(100vw-1rem))] overflow-hidden border-border p-0 shadow-lg"
         aria-label={ariaLabel}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
@@ -69,6 +69,7 @@ export function HumanChatPanelEmojiPicker({
           e.stopPropagation();
           onOpenChange(false);
         }}
+        onWheel={(event) => event.stopPropagation()}
       >
         <HumanChatPanelEmojiMartSurface
           ariaLabel={ariaLabel}
