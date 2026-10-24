@@ -75,6 +75,7 @@ import {
   ChatVoiceAudioRow,
   formatVoiceDurationLabel,
 } from './human-chat-panel-voice-audio-row';
+import { asTimelineDate } from './human-chat-timeline-order';
 
 type Reaction = {
   emoji: string;
@@ -697,6 +698,9 @@ type HumanChatPanelMessageBubbleProps = {
   isActionBarVisible?: boolean;
   onRowPointerEnter?: () => void;
   onRowPointerLeave?: () => void;
+  /** Touch: tap the row to toggle the same action bar used on web. */
+  onRowActivate?: () => void;
+  isTouchComposer?: boolean;
   /** Notify when the hover-bar emoji picker opens/closes (parent may lock visibility). */
   onHoverReactPickerOpenChange?: (open: boolean) => void;
   /** Active Matrix room (for message link + overflow). */
@@ -847,6 +851,8 @@ function formatTimestamp(
   date: Date,
   t: (key: string, values?: Record<string, string>) => string,
 ): string {
+  const safe = asTimelineDate(date);
+  if (!safe) return '';
   const now = new Date();
   const startOfToday = new Date(
     now.getFullYear(),
@@ -854,16 +860,16 @@ function formatTimestamp(
     now.getDate(),
   );
   const startOfMessageDay = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
+    safe.getFullYear(),
+    safe.getMonth(),
+    safe.getDate(),
   );
   const dayDiff = Math.round(
     (startOfToday.getTime() - startOfMessageDay.getTime()) /
       (24 * 60 * 60 * 1000),
   );
 
-  const timeStr = date.toLocaleTimeString(undefined, {
+  const timeStr = safe.toLocaleTimeString(undefined, {
     hour: 'numeric',
     minute: '2-digit',
   });
@@ -875,10 +881,10 @@ function formatTimestamp(
     return t('timestampYesterday', { time: timeStr });
   }
 
-  const dateStr = date.toLocaleDateString(undefined, {
+  const dateStr = safe.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
-    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    year: safe.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
   });
   return t('timestampDate', { date: dateStr, time: timeStr });
 }
@@ -1504,6 +1510,8 @@ export function HumanChatPanelMessageBubble({
   isActionBarVisible = false,
   onRowPointerEnter,
   onRowPointerLeave,
+  onRowActivate,
+  isTouchComposer = false,
   onHoverReactPickerOpenChange,
   message,
   isStreaming,
@@ -1775,8 +1783,9 @@ export function HumanChatPanelMessageBubble({
       !replyHeaderAvatarResolved?.trim() &&
       (isLoadingReplyLink ||
         (Boolean(replyPrivySub ?? replyCanonicalSub) && isLoadingReplyPerson)));
-  const timestamp = message.timestamp
-    ? formatTimestamp(message.timestamp, t)
+  const safeTimestamp = asTimelineDate(message.timestamp);
+  const timestamp = safeTimestamp
+    ? formatTimestamp(safeTimestamp, t)
     : undefined;
   const reactions = message.reactions ?? [];
   const isSendPendingRow = Boolean(message.sendPending);
@@ -1874,6 +1883,28 @@ export function HumanChatPanelMessageBubble({
       )}
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}
+      onPointerUp={
+        onRowActivate
+          ? (event) => {
+              if (
+                event.pointerType !== 'touch' &&
+                event.pointerType !== 'pen'
+              ) {
+                return;
+              }
+              const target = event.target;
+              if (!(target instanceof Element)) return;
+              if (
+                target.closest(
+                  'button, a, input, textarea, [role="menuitem"], [data-chat-message-actions]',
+                )
+              ) {
+                return;
+              }
+              onRowActivate();
+            }
+          : undefined
+      }
     >
       {replyTo && (
         <ChatReplyConnectorMeasured
@@ -2428,9 +2459,15 @@ export function HumanChatPanelMessageBubble({
 
       {/* Discord-style floating bar: compact height, tight to icon row */}
       <div
+        data-chat-message-actions=""
         className={cn(
-          'absolute right-3 z-10 flex h-6 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
-          replyTo ? 'top-[calc(1.25rem+0.125rem)]' : 'top-0',
+          'absolute right-3 z-10 flex items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
+          isTouchComposer
+            ? 'top-2 h-9 translate-y-0'
+            : cn(
+                'h-6 -translate-y-1/2',
+                replyTo ? 'top-[calc(1.25rem+0.125rem)]' : 'top-0',
+              ),
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
@@ -2452,7 +2489,10 @@ export function HumanChatPanelMessageBubble({
         >
           <button
             type="button"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+            className={cn(
+              'flex shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block',
+              isTouchComposer ? 'h-9 w-9' : 'h-6 w-6',
+            )}
             aria-label={t('reactButton')}
             disabled={!canReact}
             aria-disabled={!canReact}
@@ -2463,7 +2503,10 @@ export function HumanChatPanelMessageBubble({
         </HumanChatPanelEmojiPicker>
         <button
           type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+          className={cn(
+            'flex shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block',
+            isTouchComposer ? 'h-9 w-9' : 'h-6 w-6',
+          )}
           aria-label={t('editButton')}
           disabled={!canEdit}
           aria-disabled={!canEdit}
@@ -2473,7 +2516,10 @@ export function HumanChatPanelMessageBubble({
         </button>
         <button
           type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+          className={cn(
+            'flex shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block',
+            isTouchComposer ? 'h-9 w-9' : 'h-6 w-6',
+          )}
           aria-label={t('replyButton')}
           disabled={!canReply}
           aria-disabled={!canReply}
@@ -2504,6 +2550,7 @@ export function HumanChatPanelMessageBubble({
       onDeleteMessage={onDeleteMessage}
       currentUserId={currentUserId}
       senderMatrixId={message.senderMatrixId}
+      isTouchComposer={isTouchComposer}
       resolveMatrixMemberLabel={bodyResolveMx}
       message={{
         parts: message.parts,

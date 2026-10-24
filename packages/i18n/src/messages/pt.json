@@ -3188,6 +3188,7 @@
     "connectionRetryFailedDescription": "Não foi possível reconectar. Verifique a sua rede e tente novamente.",
     "connectionRetryingLabel": "A tentar novamente…",
     "connectionLostRetry": "Tentar novamente",
+    "chatThreadCrashedDescription": "Esta vista do chat falhou. Tente novamente.",
     "openPanel": "Abrir painel de chat",
     "openPanelWithUnreadMentions": "Abrir painel de chat (menções não lidas)",
     "hidePanel": "Ocultar painel de chat",

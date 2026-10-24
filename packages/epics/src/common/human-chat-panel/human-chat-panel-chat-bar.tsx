@@ -41,6 +41,7 @@ import {
   DropdownMenuTrigger,
   Skeleton,
   useIsMobile,
+  usePrefersCoarsePointer,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -54,7 +55,6 @@ import { MemberHomeMark } from '../../people/components/member-home-mark';
 import {
   isHyphaBotMatrixIdentity,
   looksLikeTechnicalMatrixDisplayName,
-  matrixUserIdToCanonicalPrivySub,
   visibleMatrixMemberName,
 } from './matrix-room-member-display';
 
@@ -72,6 +72,10 @@ import {
   looksLikeVideoMimeOrName,
 } from './chat-panel-media-types';
 import { getActiveAtToken } from './human-chat-mention-token';
+import { composerKeySendsMessage } from './composer-enter';
+import { touchComposerFromViewportFlags } from './touch-composer-flags';
+import { useVisualViewportKeyboardInset } from './use-visual-viewport-keyboard-inset';
+import { composerBottomPadding } from './visual-viewport-keyboard';
 import {
   ChatVoiceAudioRow,
   useDraftVoiceDuration,
@@ -79,6 +83,7 @@ import {
 import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row';
 import { formatComposerMentionToken } from './human-chat-display-mention';
 import { mentionCandidateMatchRank } from './human-chat-mention-search';
+import { resolveReplyPreviewAuthorLookup } from './reply-preview-author';
 import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';
 import { ComposerAttachGoogleDriveMenuItem } from '../composer';
 
@@ -173,42 +178,27 @@ function ReplyPreviewAuthorName({
   unknownMemberLabel: string;
   agentMentionLabel: string;
 }) {
-  if (isYou) {
-    return <>{youLabel}</>;
-  }
-
-  const matrixUserId = sourceUserId?.trim() ?? '';
-  if (isHyphaBotMatrixIdentity(matrixUserId, authorLabel)) {
-    return <>{agentMentionLabel}</>;
-  }
-  const canonicalSub = matrixUserId
-    ? matrixUserIdToCanonicalPrivySub(matrixUserId)
-    : null;
-  const authorLooksTechnical = looksLikeTechnicalMatrixDisplayName(
+  const lookup = resolveReplyPreviewAuthorLookup({
+    isYou,
+    sourceUserId,
     authorLabel,
-    matrixUserId,
-  );
-  const hasFriendlyAuthorLabel =
-    Boolean(authorLabel.trim()) &&
-    authorLabel.trim() !== matrixUserId &&
-    !authorLooksTechnical;
-  const needsLinkLookup =
-    Boolean(matrixUserId) && !canonicalSub && !hasFriendlyAuthorLabel;
-  const needsPersonLookup =
-    !hasFriendlyAuthorLabel && (Boolean(canonicalSub) || needsLinkLookup);
+  });
+  const { matrixUserId, needsLinkLookup, needsPersonLookup } = lookup;
 
   const { privyUserId: linkedSub, isLoading: loadingLink } =
     useUserPrivyIdByMatrixId({
       matrixUserId: needsLinkLookup ? matrixUserId : undefined,
     });
-  const resolvedSub = linkedSub ?? canonicalSub ?? undefined;
+  const resolvedSub = linkedSub ?? lookup.canonicalSub ?? undefined;
   const { user } = useAuthentication();
   const { jwt, isLoadingJwt } = useJwt();
   const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: resolvedSub,
+    sub: needsPersonLookup ? resolvedSub : undefined,
   });
 
   const text = useMemo(() => {
+    if (lookup.kind === 'you') return youLabel;
+    if (lookup.kind === 'agent') return agentMentionLabel;
     const fromPerson = person ? formatPersonDisplayName(person) : '';
     if (fromPerson.trim()) return fromPerson;
     const fallback = authorLabel.trim();
@@ -221,7 +211,15 @@ function ReplyPreviewAuthorName({
     return matrixUserId
       ? visibleMatrixMemberName(matrixUserId, fallback)
       : unknownMemberLabel;
-  }, [authorLabel, matrixUserId, person, unknownMemberLabel]);
+  }, [
+    agentMentionLabel,
+    authorLabel,
+    lookup.kind,
+    matrixUserId,
+    person,
+    unknownMemberLabel,
+    youLabel,
+  ]);
 
   const jwtBlockingForPerson =
     Boolean(resolvedSub) &&
@@ -231,6 +229,12 @@ function ReplyPreviewAuthorName({
     ((needsLinkLookup && loadingLink) ||
       (Boolean(resolvedSub) && (loadingPerson || jwtBlockingForPerson)));
 
+  if (lookup.kind === 'you') {
+    return <>{youLabel}</>;
+  }
+  if (lookup.kind === 'agent') {
+    return <>{agentMentionLabel}</>;
+  }
   if (loading) {
     return (
       <Skeleton
@@ -686,6 +690,13 @@ export function HumanChatPanelChatBar({
   const dictationSessionFinalizedRef = useRef(false);
   const [isDictating, setIsDictating] = useState(false);
   const isMobile = useIsMobile() ?? false;
+  const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
+  const isTouchComposer = touchComposerFromViewportFlags(
+    isMobile,
+    prefersCoarsePointer,
+  );
+  const [composerFocused, setComposerFocused] = useState(false);
+  const keyboardInset = useVisualViewportKeyboardInset(composerFocused);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const valueRef = useRef(value);
   valueRef.current = value;
@@ -1469,7 +1480,15 @@ export function HumanChatPanelChatBar({
 
   const handleAttachMenuContentEnter = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
+      if (
+        !composerKeySendsMessage({
+          key: e.key,
+          shiftKey: e.shiftKey,
+          isTouchComposer,
+        })
+      ) {
+        return;
+      }
       if (isKeyboardActivationTarget(e.target)) return;
       const ne = e.nativeEvent as KeyboardEvent;
       if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
@@ -1482,7 +1501,7 @@ export function HumanChatPanelChatBar({
         sendMessage();
       }
     },
-    [canSend, draftAttachments.length, sendMessage],
+    [canSend, draftAttachments.length, isTouchComposer, sendMessage],
   );
 
   /**
@@ -1492,7 +1511,15 @@ export function HumanChatPanelChatBar({
    */
   const handleDraftAttachmentsKeyDownCapture = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
+      if (
+        !composerKeySendsMessage({
+          key: e.key,
+          shiftKey: e.shiftKey,
+          isTouchComposer,
+        })
+      ) {
+        return;
+      }
       if (isKeyboardActivationTarget(e.target)) return;
       const ne = e.nativeEvent as KeyboardEvent;
       if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
@@ -1516,6 +1543,7 @@ export function HumanChatPanelChatBar({
       atSuggestions.length,
       canSend,
       draftAttachments.length,
+      isTouchComposer,
       sendMessage,
     ],
   );
@@ -1526,7 +1554,15 @@ export function HumanChatPanelChatBar({
    */
   const handleComposerShellKeyDownCapture = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
+      if (
+        !composerKeySendsMessage({
+          key: e.key,
+          shiftKey: e.shiftKey,
+          isTouchComposer,
+        })
+      ) {
+        return;
+      }
       const composing = (e.nativeEvent as KeyboardEvent).isComposing;
       if (composing) return;
       if (
@@ -1550,6 +1586,7 @@ export function HumanChatPanelChatBar({
       attachMenuOpen,
       emojiPickerOpen,
       canSend,
+      isTouchComposer,
       sendMessage,
     ],
   );
@@ -1571,7 +1608,7 @@ export function HumanChatPanelChatBar({
           );
           return;
         }
-        if (e.key === 'Enter' || e.key === 'Tab') {
+        if (e.key === 'Tab' || (e.key === 'Enter' && !isTouchComposer)) {
           e.preventDefault();
           if (keyboardPickDisabled) return;
           const safeIndex = Math.max(
@@ -1612,7 +1649,7 @@ export function HumanChatPanelChatBar({
           );
           return;
         }
-        if (e.key === 'Enter' || e.key === 'Tab') {
+        if (e.key === 'Tab' || (e.key === 'Enter' && !isTouchComposer)) {
           e.preventDefault();
           const safeIndex = Math.max(
             0,
@@ -1632,7 +1669,13 @@ export function HumanChatPanelChatBar({
         }
       }
 
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (
+        composerKeySendsMessage({
+          key: e.key,
+          shiftKey: e.shiftKey,
+          isTouchComposer,
+        })
+      ) {
         e.preventDefault();
         if (canSend) {
           sendMessage();
@@ -1652,6 +1695,7 @@ export function HumanChatPanelChatBar({
       applyColonChoice,
       canSend,
       draftAttachments.length,
+      isTouchComposer,
       sendMessage,
     ],
   );
@@ -1699,7 +1743,10 @@ export function HumanChatPanelChatBar({
     'flex h-6 w-6 shrink-0 items-center justify-center rounded text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground';
 
   return (
-    <div className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pb-2 pt-2">
+    <div
+      className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pt-2"
+      style={{ paddingBottom: composerBottomPadding(keyboardInset) }}
+    >
       <div
         ref={composerShellRef}
         onKeyDownCapture={handleComposerShellKeyDownCapture}
@@ -2175,17 +2222,31 @@ export function HumanChatPanelChatBar({
             }}
             onKeyUp={updateSelectionBar}
             onMouseUp={updateSelectionBar}
-            onBlur={() => setSelectionBar(null)}
+            onBlur={() => {
+              setComposerFocused(false);
+              setSelectionBar(null);
+            }}
             onKeyDown={handleKeyDown}
+            onFocus={() => {
+              setComposerFocused(true);
+              requestAnimationFrame(() => {
+                composerShellRef.current?.scrollIntoView({
+                  block: 'nearest',
+                  inline: 'nearest',
+                });
+              });
+            }}
+            enterKeyHint={isTouchComposer ? 'enter' : 'send'}
             aria-label={placeholder ?? defaultPlaceholder}
             placeholder={placeholder ?? defaultPlaceholder}
             rows={1}
             className={cn(
               'relative z-[1] box-border block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
-              'overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2 text-sm leading-5',
+              'overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2 text-[16px] leading-5',
               'text-foreground caret-foreground',
               'placeholder:text-muted-foreground focus:outline-none',
             )}
+            style={{ fontSize: 16 }}
           />
         </div>
 

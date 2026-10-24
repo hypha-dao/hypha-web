@@ -3760,6 +3760,7 @@
     "connectionRetryFailedDescription": "Verbindung fehlgeschlagen. Prüfen Sie Ihr Netzwerk und versuchen Sie es erneut.",
     "connectionRetryingLabel": "Wird erneut versucht…",
     "connectionLostRetry": "Erneut versuchen",
+    "chatThreadCrashedDescription": "Diese Chat-Ansicht ist abgestürzt. Versuchen Sie es erneut.",
     "openPanel": "Chat-Panel öffnen",
     "openPanelWithUnreadMentions": "Chat-Panel öffnen (ungelesene Erwähnungen)",
     "hidePanel": "Chat-Panel ausblenden",

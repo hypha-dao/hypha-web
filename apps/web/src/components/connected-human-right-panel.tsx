@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import {
+  HumanChatPanelErrorBoundary,
   HumanRightPanel,
   useIsNetworkContext,
   useIsSpaceContext,
@@ -27,5 +28,9 @@ export function ConnectedHumanRightPanel() {
     return null;
   }
 
-  return <HumanRightPanel useMembers={useMembers} />;
+  return (
+    <HumanChatPanelErrorBoundary>
+      <HumanRightPanel useMembers={useMembers} />
+    </HumanChatPanelErrorBoundary>
+  );
 }

@@ -1,7 +1,7 @@
 import { VercelToolbar } from '@vercel/toolbar/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import { extractRouterConfig } from 'uploadthing/server';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
 
 import { hyphaFontVariables } from '@web/lib/hypha-fonts';
@@ -52,6 +52,12 @@ import { ConnectedMenuTop } from '@web/components/connected-menu-top';
 import { LocalizedIntlProvider } from '@web/components/localized-intl-provider';
 import { SwrProvider } from '@web/components/swr-provider';
 import '@web/utils/initialize-proxy';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   title: 'Hypha',

@@ -57,6 +57,7 @@ export {
   personRosterDisplayLabel,
 } from './build-space-roster-mention-candidates';
 export { HumanChatPanelMessages } from './human-chat-panel-messages';
+export { HumanChatPanelErrorBoundary } from './human-chat-panel-error-boundary';
 export { HumanChatPanelTabs } from './human-chat-panel-tabs';
 export type { ChatPanelTab } from './human-chat-panel-tabs';
 export { HumanChatPanelMembers } from './human-chat-panel-members';

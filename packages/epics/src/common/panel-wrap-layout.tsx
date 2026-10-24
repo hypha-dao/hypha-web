@@ -41,6 +41,7 @@ import {
 } from './use-is-space-context';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useCallMembershipRegistry } from './human-chat-panel/use-call-membership-registry';
+import { HumanChatPanelErrorBoundary } from './human-chat-panel/human-chat-panel-error-boundary';
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
 import { PanelScrollInset } from './panel-scroll-inset';
 import { APP_CHROME_ICON_TRIGGER } from './chrome-radius';
@@ -659,7 +660,9 @@ export function PanelWrapLayout({
           className="z-[50]"
         >
           <SidebarResizeHandle />
-          {effectiveRight.content}
+          <HumanChatPanelErrorBoundary>
+            {effectiveRight.content}
+          </HumanChatPanelErrorBoundary>
         </Sidebar>
       </SidebarProvider>
     );
