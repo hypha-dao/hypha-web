@@ -30,14 +30,32 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const result = await sendPushByAlias({
-    app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
-    alias: { include_aliases: { external_id: [self.slug] } },
-    content: {
-      headings: { en: '#2575 test push' },
-      contents: { en: path },
-    },
-    url: getAbsoluteAppUrl(path),
-  });
-  return NextResponse.json({ ok: true, result });
+  try {
+    const result = await sendPushByAlias({
+      app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
+      alias: { include_aliases: { external_id: [self.slug] } },
+      content: {
+        headings: { en: '#2575 test push' },
+        contents: { en: path },
+      },
+      url: getAbsoluteAppUrl(path),
+    });
+    return NextResponse.json({ ok: true, result });
+  } catch (error) {
+    const cause = (
+      error as { cause?: { code?: number; body?: unknown; message?: string } }
+    ).cause;
+    console.error('[#2575] test-push failed', error);
+    return NextResponse.json(
+      {
+        error: (error as Error).message,
+        code: cause?.code,
+        body: cause?.body,
+        cause: cause?.message,
+        hasApiKey: Boolean(process.env.ONESIGNAL_API_KEY),
+        hasAppId: Boolean(process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID),
+      },
+      { status: 502 },
+    );
+  }
 }
