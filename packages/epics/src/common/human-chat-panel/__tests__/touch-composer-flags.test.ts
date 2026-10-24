@@ -28,6 +28,7 @@ describe('viewport hooks are not short-circuited', () => {
     'human-chat-panel-messages.tsx',
     'human-chat-panel-message-overflow.tsx',
     'human-chat-panel-chat-bar.tsx',
+    'human-chat-panel-in-call-controls.tsx',
     'human-right-panel.tsx',
   ])('%s calls each viewport hook on its own statement', (file) => {
     const path =
