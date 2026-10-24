@@ -261,10 +261,16 @@ function createResilientOpenRouterFetch(baseFetch: typeof fetch): typeof fetch {
 }
 
 function openRouterUnavailableResponse(error: unknown): Response {
+  console.error('[chat][openrouter][unavailable]', {
+    message: messageFromUnknownError(error),
+    ...(error instanceof Error
+      ? { name: error.name, stack: error.stack }
+      : { error }),
+  });
   return new Response(
     JSON.stringify({
       error: {
-        message: messageFromUnknownError(error),
+        message: 'Hypha AI provider is temporarily unavailable.',
       },
     }),
     {
