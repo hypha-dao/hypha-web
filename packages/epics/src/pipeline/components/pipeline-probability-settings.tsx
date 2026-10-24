@@ -14,6 +14,7 @@ import {
 import { Button, Input, Separator } from '@hypha-platform/ui';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { resolveAdoptedStageSlug } from '../lib/resolve-adopted-stage-slug';
 import { PipelineConfigRow } from './pipeline-config-row';
 
 type PipelineProbabilitySettingsProps = {
@@ -115,6 +116,7 @@ export function PipelineProbabilitySettings({
   const [error, setError] = React.useState<string | null>(null);
   const [savedAt, setSavedAt] = React.useState<Date | null>(null);
   const removedStagesRef = React.useRef<PipelineStageDefinition[]>([]);
+  const newStageSlugsRef = React.useRef(new Set<string>());
 
   const hasLoadedRef = React.useRef(false);
   React.useEffect(() => {
@@ -151,62 +153,65 @@ export function PipelineProbabilitySettings({
   };
 
   const renameStage = (index: number, name: string) => {
-    setStageDraft((current) =>
-      current.map((stage, i) => {
-        if (i !== index) return stage;
-        const match = DEFAULT_PIPELINE_STAGES.find(
-          (item) => item.name.toLowerCase() === name.trim().toLowerCase(),
-        );
-        const adoptedSlug =
-          match &&
-          !current.some(
-            (other, otherIndex) =>
-              otherIndex !== index && other.slug === match.slug,
-          )
-            ? match.slug
-            : stage.slug;
-        if (adoptedSlug !== stage.slug) {
-          const fromSlug = stage.slug;
-          setDraft((matrix) => {
-            const updated: ProbabilityMatrix = {};
-            for (const track of tracks) {
-              const existing = matrix[track.slug];
-              const lane = {
-                ...(existing && !Array.isArray(existing) ? existing : {}),
-              };
-              lane[adoptedSlug] =
-                getProbabilityCell(matrix, track.slug, adoptedSlug) ??
-                getProbabilityCell(matrix, track.slug, fromSlug) ??
-                seedStageProbability(track.slug, adoptedSlug);
-              updated[track.slug] = lane;
-            }
-            return updated;
-          });
+    const stage = stageDraft[index];
+    if (!stage) return;
+    const adoptedSlug = resolveAdoptedStageSlug({
+      stage,
+      name,
+      siblingSlugs: stageDraft
+        .filter((_, otherIndex) => otherIndex !== index)
+        .map((other) => other.slug),
+      unsavedPlaceholderSlugs: newStageSlugsRef.current,
+      defaultStages: DEFAULT_PIPELINE_STAGES,
+    });
+    if (adoptedSlug !== stage.slug) {
+      const fromSlug = stage.slug;
+      newStageSlugsRef.current.delete(fromSlug);
+      newStageSlugsRef.current.add(adoptedSlug);
+      setDraft((matrix) => {
+        const updated: ProbabilityMatrix = {};
+        for (const track of tracks) {
+          const existing = matrix[track.slug];
+          const lane = {
+            ...(existing && !Array.isArray(existing) ? existing : {}),
+          };
+          lane[adoptedSlug] =
+            getProbabilityCell(matrix, track.slug, adoptedSlug) ??
+            getProbabilityCell(matrix, track.slug, fromSlug) ??
+            seedStageProbability(track.slug, adoptedSlug);
+          updated[track.slug] = lane;
         }
-        return { ...stage, name, slug: adoptedSlug };
-      }),
+        return updated;
+      });
+    }
+    setStageDraft(
+      stageDraft.map((item, i) =>
+        i === index ? { ...item, name, slug: adoptedSlug } : item,
+      ),
     );
     setSavedAt(null);
   };
 
   const addStage = () => {
-    setStageDraft((current) => {
-      const recycled = removedStagesRef.current.pop();
-      if (recycled && !current.some((stage) => stage.slug === recycled.slug)) {
-        return [...current, { ...recycled, position: current.length }].map(
+    const recycled = removedStagesRef.current.pop();
+    if (recycled && !stageDraft.some((stage) => stage.slug === recycled.slug)) {
+      setStageDraft(
+        [...stageDraft, { ...recycled, position: stageDraft.length }].map(
           (stage, position) => ({ ...stage, position }),
-        );
-      }
-      const slugs = new Set(current.map((stage) => stage.slug));
+        ),
+      );
+    } else {
+      const slugs = new Set(stageDraft.map((stage) => stage.slug));
       const slug = uniqueSlug('new_stage', slugs);
-      const next = [
-        ...current,
+      newStageSlugsRef.current.add(slug);
+      setStageDraft([
+        ...stageDraft,
         {
           slug,
           name: t('stages.newStage'),
-          position: current.length,
+          position: stageDraft.length,
         },
-      ];
+      ]);
       setDraft((matrix) => {
         const updated: ProbabilityMatrix = {};
         for (const track of tracks) {
@@ -220,25 +225,29 @@ export function PipelineProbabilitySettings({
         }
         return updated;
       });
-      return next;
-    });
+    }
     setSavedAt(null);
   };
 
   const removeStage = (index: number) => {
-    setStageDraft((current) => {
-      if (current.length <= 1) return current;
-      const removed = current[index];
-      if (removed) removedStagesRef.current.push(removed);
-      return current
+    if (stageDraft.length <= 1) {
+      setSavedAt(null);
+      return;
+    }
+    const removed = stageDraft[index];
+    if (removed) removedStagesRef.current.push(removed);
+    setStageDraft(
+      stageDraft
         .filter((_, i) => i !== index)
-        .map((stage, position) => ({ ...stage, position }));
-    });
+        .map((stage, position) => ({ ...stage, position })),
+    );
     setSavedAt(null);
   };
 
   const resetDefaults = () => {
     const nextStages = cloneStages(DEFAULT_PIPELINE_STAGES);
+    newStageSlugsRef.current.clear();
+    removedStagesRef.current = [];
     setStageDraft(nextStages);
     setDraft(defaultProbabilityMatrix(tracks, nextStages));
     setError(null);
@@ -265,6 +274,7 @@ export function PipelineProbabilitySettings({
         probabilities: cloneMatrix(draft, tracks, stagesToSave),
       });
       if (saved) {
+        newStageSlugsRef.current.clear();
         removedStagesRef.current = [];
         setStageDraft(cloneStages(saved.stages));
         setDraft(cloneMatrix(saved.probabilities, saved.tracks, saved.stages));
