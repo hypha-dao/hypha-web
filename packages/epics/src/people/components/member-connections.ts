@@ -511,7 +511,29 @@ export function orphanedDirectRoomIds(
 }
 
 /**
- * Messages tab total: one conversation per person. Earlier pair rooms stay out
+ * Same rooms the Messages tab lists (search ignored). Archived groups, signal
+ * threads, and anything that is not a typed DM or a People-Around group stay
+ * out so the nav badge cannot count a row the list does not show.
+ */
+export function isMessagesVisibleConversation(row: ConversationRow): boolean {
+  if (row.archived || row.signalThread) return false;
+  if (row.kind === 'person') {
+    return !row.roomType || row.roomType === HYPHA_ROOM_TYPES.dm;
+  }
+  if (row.kind === 'group') return isPeopleListGroup(row);
+  return false;
+}
+
+/** Cached rows that would render on Messages (not Archived, not search). */
+export function messagesVisibleConversationRows(
+  rows: readonly ConversationRow[],
+): ConversationRow[] {
+  return rows.filter((row) => isMessagesVisibleConversation(row));
+}
+
+/**
+ * Messages tab total: unread on the filtered, visible list only. Earlier pair
+ * rooms and rows the list hides (archived, legacy untyped, signal) stay out
  * even when Matrix still reports them unread.
  */
 export function conversationUnreadTotal(
@@ -523,7 +545,7 @@ export function conversationUnreadTotal(
     ...(extraOrphanRoomIds ?? []),
   ]);
   let total = 0;
-  for (const row of rows) {
+  for (const row of messagesVisibleConversationRows(rows)) {
     if (losers.has(row.roomId)) continue;
     total += row.unread;
   }
@@ -582,6 +604,128 @@ export function unreadRoomsMissingFromMembers<T extends ConnectionListPerson>(
     syntheticId -= 1;
   }
   return extras;
+}
+
+function isTypedDirectPersonRoom(room: ConversationRow) {
+  if (room.signalThread || room.kind !== 'person') return false;
+  // Person rows come from `io.hypha.room.dm`. A missing type is only accepted
+  // for tests / older cache snapshots that already classified as `person`.
+  return !room.roomType || room.roomType === HYPHA_ROOM_TYPES.dm;
+}
+
+function memberRowFromPersonRoom<T extends ConnectionListPerson>(
+  room: ConversationRow,
+  person: T,
+  name: string,
+): MemberRow<T> {
+  return {
+    person,
+    name,
+    avatarUrl: person.avatarUrl || room.avatarUrl || undefined,
+    preview: room.preview,
+    mine: room.mine,
+    lastTs: room.lastTs,
+    unread: room.unread,
+    roomId: room.roomId,
+  };
+}
+
+/**
+ * Person rows for Messages: one row per DM-typed room, then directory people
+ * who do not yet have a room. Incoming DMs appear even when the sender shares
+ * no space. Legacy untyped pair rooms never become a person row.
+ */
+export function personRowsFromDmRooms<T extends ConnectionListPerson>(
+  connections: readonly T[],
+  rooms: readonly ConversationRow[],
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+  selfId: number | null,
+  fallback: string,
+  profiles?: readonly T[],
+): MemberRow<T>[] {
+  const directory = profiles ?? connections;
+  const personByMxid = new Map<string, T>();
+  for (const person of directory) {
+    if (person.id === selfId) continue;
+    const mxid = personIdToMatrixUserId[person.id]?.trim();
+    if (mxid) personByMxid.set(mxid.toLowerCase(), person);
+  }
+  const superseded = new Set(supersededDirectRoomIds(rooms));
+  const usedMxids = new Set<string>();
+  const usedRoomIds = new Set<string>();
+  const fromRooms: MemberRow<T>[] = [];
+  let syntheticId = -1;
+
+  for (const room of rooms) {
+    if (!isTypedDirectPersonRoom(room)) continue;
+    if (superseded.has(room.roomId)) continue;
+    const mxid = room.otherUserId?.trim().toLowerCase();
+    if (mxid && usedMxids.has(mxid)) continue;
+    if (usedRoomIds.has(room.roomId)) continue;
+    const person = mxid ? personByMxid.get(mxid) : undefined;
+    if (person) {
+      if (
+        isHyphaBot(personIdToMatrixUserId[person.id], personName(person, ''))
+      ) {
+        continue;
+      }
+      fromRooms.push(
+        memberRowFromPersonRoom(room, person, personName(person, fallback)),
+      );
+    } else {
+      fromRooms.push({
+        person: {
+          id: syntheticId,
+          name: room.name || null,
+          surname: null,
+          nickname: null,
+          avatarUrl: room.avatarUrl ?? null,
+          slug: null,
+          sharedSpaceCount: 0,
+        } as T,
+        name: room.name.trim() || room.otherUserId || room.roomId,
+        avatarUrl: room.avatarUrl,
+        preview: room.preview,
+        mine: room.mine,
+        lastTs: room.lastTs,
+        unread: room.unread,
+        roomId: room.roomId,
+      });
+      syntheticId -= 1;
+    }
+    if (mxid) usedMxids.add(mxid);
+    usedRoomIds.add(room.roomId);
+  }
+
+  const withoutRoom = connections
+    .filter((person) => person.id !== selfId)
+    .map((person) => {
+      const mxid = personIdToMatrixUserId[person.id]?.trim().toLowerCase();
+      if (mxid && usedMxids.has(mxid)) return null;
+      if (
+        isHyphaBot(personIdToMatrixUserId[person.id], personName(person, ''))
+      ) {
+        return null;
+      }
+      const name = personName(person, fallback);
+      return {
+        person,
+        name,
+        avatarUrl: person.avatarUrl || undefined,
+        preview: '',
+        mine: false,
+        lastTs: null,
+        unread: 0,
+        roomId: null,
+      } satisfies MemberRow<T>;
+    })
+    .filter((row): row is MemberRow<T> => row != null);
+
+  return [...fromRooms, ...withoutRoom].sort((left, right) => {
+    const byTime = (right.lastTs ?? 0) - (left.lastTs ?? 0);
+    if (byTime !== 0) return byTime;
+    return left.name.localeCompare(right.name);
+  });
 }
 
 function groupPersonId(roomId: string) {
@@ -1015,6 +1159,17 @@ export function enrichSearchMembers<T extends ConnectionListPerson>(
       userId: member.userId,
     };
   });
+}
+
+/** Keep group-pick selections even when search hides those rows. */
+export function nextSelectedMembers<T extends ConnectionListPerson>(
+  current: ReadonlyMap<number, MemberRow<T>>,
+  row: MemberRow<T>,
+): Map<number, MemberRow<T>> {
+  const next = new Map(current);
+  if (next.has(row.person.id)) next.delete(row.person.id);
+  else next.set(row.person.id, row);
+  return next;
 }
 
 /** Messages hides archived groups; Archived shows only those groups. */

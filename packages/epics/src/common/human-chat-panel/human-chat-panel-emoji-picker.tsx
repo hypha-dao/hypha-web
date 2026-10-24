@@ -15,6 +15,8 @@ type HumanChatPanelEmojiPickerProps = {
   /** Accessible label for the picker surface (composer vs message react). */
   ariaLabel: string;
   align?: 'start' | 'center' | 'end';
+  /** Composer and hover-react sit at the bottom of the panel — open upward. */
+  side?: 'top' | 'bottom' | 'left' | 'right';
   /** Additional class on trigger wrapper */
   className?: string;
   /**
@@ -31,6 +33,7 @@ export function HumanChatPanelEmojiPicker({
   onOpenChange,
   ariaLabel,
   align = 'end',
+  side = 'top',
   className,
   modal = true,
 }: HumanChatPanelEmojiPickerProps) {
@@ -55,7 +58,10 @@ export function HumanChatPanelEmojiPicker({
       </PopoverTrigger>
       <PopoverContent
         align={align}
-        className="w-[min(100vw-2rem,352px)] border-border p-0 shadow-lg"
+        side={side}
+        sideOffset={8}
+        collisionPadding={12}
+        className="w-[min(calc(100vw-2rem),22rem)] max-w-[calc(100vw-1rem)] overflow-hidden border-border p-0 shadow-lg"
         aria-label={ariaLabel}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
