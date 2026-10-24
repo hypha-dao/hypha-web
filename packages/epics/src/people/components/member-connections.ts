@@ -1258,6 +1258,18 @@ export function conversationsMatchingSearch<
 }
 
 /**
+ * Group-pick candidates. Synthetic DM rows (`person.id <= 0`) stay on
+ * Messages but cannot be selected — they have no directory person id.
+ */
+export function membersForGroupPicker<T extends { person: { id: number } }>(
+  rows: readonly T[],
+  picking: boolean,
+): T[] {
+  if (!picking) return [...rows];
+  return rows.filter((row) => row.person.id > 0);
+}
+
+/**
  * A private group chat, not a space channel.
  * Same gate as production: typed group, remembered Messages group, or a
  * comma-titled room with 3+ humans. Untyped space / proposal / signal rooms
