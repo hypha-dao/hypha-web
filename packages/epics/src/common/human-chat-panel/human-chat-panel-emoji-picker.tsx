@@ -43,6 +43,11 @@ export function HumanChatPanelEmojiPicker({
         className="w-[min(100vw-2rem,352px)] border-border p-0 shadow-lg"
         aria-label={ariaLabel}
         onOpenAutoFocus={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onOpenChange(false);
+        }}
       >
         <HumanChatPanelEmojiMartSurface
           ariaLabel={ariaLabel}

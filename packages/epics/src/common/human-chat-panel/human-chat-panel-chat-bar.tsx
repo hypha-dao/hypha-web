@@ -72,6 +72,7 @@ import {
   looksLikeVideoMimeOrName,
 } from './chat-panel-media-types';
 import { getActiveAtToken } from './human-chat-mention-token';
+import { composerOverlayConsumesEscape } from './composer-escape';
 import { composerKeySendsMessage } from './composer-enter';
 import { touchComposerFromViewportFlags } from './touch-composer-flags';
 import { useVisualViewportKeyboardInset } from './use-visual-viewport-keyboard-inset';
@@ -713,6 +714,10 @@ export function HumanChatPanelChatBar({
   const [colonActive, setColonActive] = useState(0);
   const colonTokenRef = useRef<{ start: number; query: string } | null>(null);
   const colonRequestIdRef = useRef(0);
+  const emojiPickerOpenRef = useRef(emojiPickerOpen);
+  emojiPickerOpenRef.current = emojiPickerOpen;
+  const colonAutocompleteOpenRef = useRef(false);
+  colonAutocompleteOpenRef.current = colonOpen && colonSuggestions.length > 0;
 
   const [atOpen, setAtOpen] = useState(false);
   const [atSuggestions, setAtSuggestions] = useState<ChatMentionCandidate[]>(
@@ -1552,8 +1557,54 @@ export function HumanChatPanelChatBar({
    * Enter often targets the attach (+) or mic trigger after menus/files — send from
    * anywhere in the composer shell unless a popover menu is open.
    */
+  const closeComposerOverlayFromEscape = useCallback(
+    (e: {
+      preventDefault(): void;
+      stopPropagation(): void;
+      stopImmediatePropagation?: () => void;
+    }) => {
+      if (
+        !composerOverlayConsumesEscape({
+          emojiPickerOpen: emojiPickerOpenRef.current,
+          colonAutocompleteOpen: colonAutocompleteOpenRef.current,
+        })
+      ) {
+        return false;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation?.();
+      if (emojiPickerOpenRef.current) {
+        setEmojiPickerOpen(false);
+        return true;
+      }
+      colonRequestIdRef.current += 1;
+      setColonOpen(false);
+      setColonSuggestions([]);
+      colonTokenRef.current = null;
+      return true;
+    },
+    [],
+  );
+
+  /**
+   * Sheet listens on document capture. Register on mount (child effect runs
+   * first) so Escape hits this before the panel dismisses.
+   */
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      closeComposerOverlayFromEscape(event);
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
+  }, [closeComposerOverlayFromEscape]);
+
   const handleComposerShellKeyDownCapture = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === 'Escape' && closeComposerOverlayFromEscape(e)) {
+        return;
+      }
       if (
         !composerKeySendsMessage({
           key: e.key,
@@ -1584,6 +1635,7 @@ export function HumanChatPanelChatBar({
       colonSuggestions.length,
       atSuggestions.length,
       attachMenuOpen,
+      closeComposerOverlayFromEscape,
       emojiPickerOpen,
       canSend,
       isTouchComposer,
@@ -1595,6 +1647,9 @@ export function HumanChatPanelChatBar({
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       const composing = (e.nativeEvent as KeyboardEvent).isComposing;
       if (composing) return;
+      if (e.key === 'Escape' && closeComposerOverlayFromEscape(e)) {
+        return;
+      }
       if (atOpen && atSuggestions.length > 0) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
@@ -1629,6 +1684,7 @@ export function HumanChatPanelChatBar({
         }
         if (e.key === 'Escape') {
           e.preventDefault();
+          e.stopPropagation();
           setAtOpen(false);
           setAtSuggestions([]);
           atTokenRef.current = null;
@@ -1661,6 +1717,7 @@ export function HumanChatPanelChatBar({
         }
         if (e.key === 'Escape') {
           e.preventDefault();
+          e.stopPropagation();
           colonRequestIdRef.current += 1;
           setColonOpen(false);
           setColonSuggestions([]);
@@ -1693,6 +1750,7 @@ export function HumanChatPanelChatBar({
       colonSuggestions,
       colonActive,
       applyColonChoice,
+      closeComposerOverlayFromEscape,
       canSend,
       draftAttachments.length,
       isTouchComposer,
