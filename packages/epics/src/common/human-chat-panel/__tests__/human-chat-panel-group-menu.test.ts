@@ -91,6 +91,23 @@ describe('isPeopleGroupChatRoom', () => {
         getJoinedMemberCount: () => 2,
       }),
     ).toBe(false);
+    rememberGroupChatRooms(['!remembered-pair-with-bot']);
+    expect(
+      isPeopleGroupChatRoom({
+        roomId: '!remembered-pair-with-bot',
+        getType: () => undefined,
+        getJoinedMemberCount: () => 3,
+        getJoinedMembers: () => [
+          { userId: '@ada:hypha', membership: 'join', name: 'Ada Lovelace' },
+          { userId: '@grace:hypha', membership: 'join', name: 'Grace Hopper' },
+          {
+            userId: '@hypha_bot:hypha',
+            membership: 'join',
+            name: 'hypha_bot',
+          },
+        ],
+      }),
+    ).toBe(false);
     expect(
       isPeopleGroupChatRoom({
         roomId: '!legacy',

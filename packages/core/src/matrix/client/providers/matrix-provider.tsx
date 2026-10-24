@@ -702,6 +702,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       if (!matrixToken) {
         return;
       }
+      let startedClient: MatrixSdk.MatrixClient | null = null;
       try {
         setClientInitFailed(false);
         const { accessToken, userId, homeserverUrl, deviceId } = matrixToken;
@@ -734,6 +735,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         });
 
         await matrixClient.startClient();
+        startedClient = matrixClient;
 
         /** Warm TURN credentials before the first call join (reduces ICE stall). */
         void evaluateMatrixTurnReadiness(matrixClient).catch(() => undefined);
@@ -749,6 +751,13 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         setConnectionRetryFailed(false);
       } catch (error) {
         console.error('Failed to initialize Matrix client:', error);
+        if (startedClient) {
+          try {
+            startedClient.stopClient();
+          } catch {
+            // Ignore stop errors while tearing down a failed init.
+          }
+        }
         clientRef.current = null;
         setClient(null);
         setIsMatrixAvailable(false);
