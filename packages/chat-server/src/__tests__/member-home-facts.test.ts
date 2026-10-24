@@ -8,6 +8,12 @@ import type { MemberIntelligence } from '@hypha-platform/core/client';
 
 import { formatMemberHomeFacts } from '../member-home-facts';
 
+function formatMemberHomeFactsText(
+  ...args: Parameters<typeof formatMemberHomeFacts>
+) {
+  return formatMemberHomeFacts(...args).text;
+}
+
 const home: MemberIntelligence = {
   person: {
     id: 1,
@@ -78,7 +84,7 @@ const home: MemberIntelligence = {
 
 describe('formatMemberHomeFacts', () => {
   it('offers activation when a space is about to expire', () => {
-    const facts = formatMemberHomeFacts({
+    const facts = formatMemberHomeFactsText({
       ...home,
       expiringSpaces: [
         { slug: 'grove', title: 'Grove', web3SpaceId: 4, daysLeft: 6 },
@@ -90,7 +96,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('keeps Hypha AI voice and lists this member’s world', () => {
-    const facts = formatMemberHomeFacts(home);
+    const facts = formatMemberHomeFactsText(home);
     expect(facts).toContain('Keep the Hypha AI voice');
     expect(facts).toContain('The collective is the point');
     expect(facts).toContain('No open question');
@@ -164,7 +170,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('keeps walking when the short focus item is cleared but attention remains', () => {
-    const facts = formatMemberHomeFacts(
+    const facts = formatMemberHomeFactsText(
       {
         ...home,
         proposals: [
@@ -186,7 +192,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('puts who they are and who they share a space with on the decision line', () => {
-    const facts = formatMemberHomeFacts({
+    const facts = formatMemberHomeFactsText({
       ...home,
       proposals: [
         {
@@ -218,7 +224,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('does not offer the signed-in member as someone to meet', () => {
-    const facts = formatMemberHomeFacts({
+    const facts = formatMemberHomeFactsText({
       ...home,
       connections: [
         ...home.connections,
@@ -238,7 +244,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('removes an item the member already refused from the queue', () => {
-    const facts = formatMemberHomeFacts(home, {
+    const facts = formatMemberHomeFactsText(home, {
       passed: ['proposal:path'],
     });
     expect(facts).toContain('Passed.');
@@ -248,7 +254,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('brings a deferred item back only as a good time', () => {
-    const facts = formatMemberHomeFacts(home, {
+    const facts = formatMemberHomeFactsText(home, {
       deferred: ['proposal:path'],
     });
     expect(facts).toContain('is this a good time');
@@ -257,7 +263,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('does not ask if this is a good time a second time', () => {
-    const facts = formatMemberHomeFacts(home, {
+    const facts = formatMemberHomeFactsText(home, {
       recalled: ['proposal:path'],
     });
     expect(facts).toContain('Already asked once if this is a good time');
@@ -266,7 +272,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('continues with the next item after they come back', () => {
-    const facts = formatMemberHomeFacts(
+    const facts = formatMemberHomeFactsText(
       {
         ...home,
         proposals: [
@@ -290,7 +296,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('speaks a closed vote as the outcome', () => {
-    const facts = formatMemberHomeFacts({
+    const facts = formatMemberHomeFactsText({
       ...home,
       attention: [
         {
@@ -319,7 +325,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('stays on the proposal they just asked about when titles collide', () => {
-    const facts = formatMemberHomeFacts(
+    const facts = formatMemberHomeFactsText(
       {
         ...home,
         proposals: [
@@ -363,7 +369,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('names one decision and withholds the rest', () => {
-    const facts = formatMemberHomeFacts(
+    const facts = formatMemberHomeFactsText(
       {
         ...home,
         signals: [
@@ -407,7 +413,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('moves on when they say the card is not a proposal', () => {
-    const facts = formatMemberHomeFacts(home, { notADecision: true });
+    const facts = formatMemberHomeFactsText(home, { notADecision: true });
     expect(facts).toContain('nothing to decide');
     expect(facts).toContain(
       'Do not say "You can now decide on the proposal card."',
@@ -416,7 +422,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('treats Share signal as a missing body, and a longer message as the post', () => {
-    const command = formatMemberHomeFacts(home, { asked: 'Share signal' });
+    const command = formatMemberHomeFactsText(home, { asked: 'Share signal' });
     expect(command).toContain('The body is not in this message');
     expect(command).toContain('Ask once for a few lines or a file, and stop');
     expect(command).toContain(
@@ -425,12 +431,12 @@ describe('formatMemberHomeFacts', () => {
     expect(command).toContain('Do not restate the briefing');
     expect(command).not.toContain('This reply is about that card only');
 
-    const intent = formatMemberHomeFacts(home, {
+    const intent = formatMemberHomeFactsText(home, {
       asked: 'I want to share a signal',
     });
     expect(intent).toContain('The body is not in this message');
 
-    const alreadyAsked = formatMemberHomeFacts(home, {
+    const alreadyAsked = formatMemberHomeFactsText(home, {
       asked: 'Share signal',
       prior:
         "Drop it in here, either a few lines or a file. I'll turn it into a short post on Edgar's signal.",
@@ -441,7 +447,7 @@ describe('formatMemberHomeFacts', () => {
     expect(alreadyAsked).toContain('Do not ask that same question again');
     expect(alreadyAsked).not.toContain('The body is not in this message');
 
-    const content = formatMemberHomeFacts(home, {
+    const content = formatMemberHomeFactsText(home, {
       asked: 'We shipped the energy ledger and two spaces are paying.',
       prior:
         "Drop it in here, either a few lines or a file. I'll turn it into a short post on Edgar's signal.",
@@ -451,14 +457,14 @@ describe('formatMemberHomeFacts', () => {
     expect(content).toContain('target signal_chat');
     expect(content).toContain('Do not ask them to paste it again');
 
-    const withBody = formatMemberHomeFacts(home, {
+    const withBody = formatMemberHomeFactsText(home, {
       asked:
         'Share signal. We shipped the energy ledger and two spaces are paying.',
     });
     expect(withBody).toContain('This turn: this message is the content');
     expect(withBody).not.toContain('The body is not in this message');
 
-    const declined = formatMemberHomeFacts(home, {
+    const declined = formatMemberHomeFactsText(home, {
       asked: 'No thanks',
       prior:
         "Drop it in here, either a few lines or a file. I'll turn it into a short post on Edgar's signal.",

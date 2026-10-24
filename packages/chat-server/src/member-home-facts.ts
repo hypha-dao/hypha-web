@@ -170,7 +170,7 @@ export function formatMemberHomeFacts(
     /** A file arrived with this message. */
     attached?: boolean;
   },
-): string {
+): { text: string; card: { kind: string; slug: string } | null } {
   const spaces = home.spaces.map((space) => space.title).join('; ') || 'none';
   const networkSlugs = new Set(
     (home.networkSignals ?? []).flatMap((signal) =>
@@ -467,4 +467,9 @@ export function formatMemberHomeFacts(
   ]
     .filter((line): line is string => Boolean(line))
     .join('\n');
+  const card =
+    spoken?.slug && shareTurn == null
+      ? { kind: spoken.kind, slug: spoken.slug }
+      : null;
+  return { text, card };
 }

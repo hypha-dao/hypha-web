@@ -129,8 +129,23 @@ type HomeMessage = UIMessage & {
   metadata?: {
     homeArrival?: boolean;
     homeBoard?: { href: string; title: string };
+    homeItem?: { kind: string; slug: string };
   };
 };
+
+function homeItemForMessage(
+  items: readonly MemberHomeThreadItem[],
+  message: HomeMessage,
+): MemberHomeThreadItem | null {
+  const hinted = message.metadata?.homeItem;
+  if (hinted?.kind && hinted.slug) {
+    const match = items.find(
+      (item) => item.kind === hinted.kind && item.slug === hinted.slug,
+    );
+    if (match) return match;
+  }
+  return memberHomeThreadItemForMessage(items, message);
+}
 
 function homeBoardFromMessage(message: HomeMessage) {
   const board = message.metadata?.homeBoard;
@@ -638,7 +653,7 @@ export function MemberHomeChat({
       const board =
         homeBoardFromMessage(message) ??
         memberHomeSignalCatalogue(rawText, intelligence.spaces, lang);
-      const spokenItem = memberHomeThreadItemForMessage(threadItems, message);
+      const spokenItem = homeItemForMessage(threadItems, message);
       return homeAssistantScript({
         displayText: board
           ? t('boardInstead', { space: board.title })
@@ -766,7 +781,7 @@ export function MemberHomeChat({
       if (message.role !== 'assistant' || message.metadata?.homeArrival) {
         continue;
       }
-      const item = memberHomeThreadItemForMessage(threadItems, message);
+      const item = homeItemForMessage(threadItems, message);
       if (!item) continue;
       const key = memberHomeThreadItemKey(item);
       if (seen.has(key)) continue;
@@ -780,16 +795,13 @@ export function MemberHomeChat({
       const message = homeMessages[index];
       if (!message || message.role !== 'assistant') continue;
       if (message.metadata?.homeArrival) continue;
-      if (memberHomeThreadItemForMessage(threadItems, message))
-        return message.id;
+      if (homeItemForMessage(threadItems, message)) return message.id;
     }
     return null;
   }, [homeMessages, threadItems]);
   const focusedItem = useMemo(() => {
     const message = homeMessages.find((item) => item.id === cardMessageId);
-    return message
-      ? memberHomeThreadItemForMessage(threadItems, message)
-      : null;
+    return message ? homeItemForMessage(threadItems, message) : null;
   }, [cardMessageId, homeMessages, threadItems]);
   useEffect(() => {
     const node = scroller.current;
@@ -812,7 +824,7 @@ export function MemberHomeChat({
       if (!message || message.metadata?.homeArrival) continue;
       if (message.role !== 'assistant') return true;
       if (messageText(message)) return false;
-      return memberHomeThreadItemForMessage(threadItems, message) == null;
+      return homeItemForMessage(threadItems, message) == null;
     }
     return true;
   }, [homeMessages, isStreaming, threadItems]);
@@ -961,7 +973,7 @@ export function MemberHomeChat({
                 : null;
             const spokenItem =
               message.role === 'assistant'
-                ? memberHomeThreadItemForMessage(threadItems, message)
+                ? homeItemForMessage(threadItems, message)
                 : null;
             const text =
               message.role === 'assistant'
