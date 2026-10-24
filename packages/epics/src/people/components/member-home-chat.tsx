@@ -130,8 +130,19 @@ type HomeMessage = UIMessage & {
     homeArrival?: boolean;
     homeBoard?: { href: string; title: string };
     homeItem?: { kind: string; slug: string };
+    homeError?: boolean;
   };
 };
+
+function isHomeErrorMessage(message: { metadata?: unknown }) {
+  const metadata = message.metadata;
+  return (
+    metadata != null &&
+    typeof metadata === 'object' &&
+    'homeError' in metadata &&
+    (metadata as { homeError?: unknown }).homeError === true
+  );
+}
 
 function homeItemForMessage(
   items: readonly MemberHomeThreadItem[],
@@ -408,6 +419,23 @@ export function MemberHomeChat({
             await fetch(input, init),
             droppedLine.current,
           ),
+        prepareSendMessagesRequest: ({
+          id,
+          messages,
+          body,
+          trigger,
+          messageId,
+        }) => ({
+          body: {
+            ...body,
+            id,
+            messages: messages.filter(
+              (message) => !isHomeErrorMessage(message),
+            ),
+            trigger,
+            messageId,
+          },
+        }),
       }),
     [getAccessToken, lang],
   );
@@ -440,12 +468,12 @@ export function MemberHomeChat({
         {
           id: `home-assistant-${crypto.randomUUID()}`,
           role: 'assistant',
+          metadata: { homeError: true },
           parts: [{ type: 'text', text: fallback }],
         },
       ]);
     }
-    clearError();
-  }, [clearError, error, setMessages]);
+  }, [error, setMessages]);
   useOnboardingSpaceSignature(homeMessages, lang);
 
   const widgetKindFor = useCallback(
@@ -468,6 +496,13 @@ export function MemberHomeChat({
       if (!trimmed && files.length === 0) return;
       const reveal = !hidden;
       await stop();
+      const withoutErrors = messagesRef.current.filter(
+        (message) => !isHomeErrorMessage(message),
+      );
+      if (withoutErrors.length !== messagesRef.current.length) {
+        setMessages(withoutErrors);
+        messagesRef.current = withoutErrors;
+      }
       if (!hidden && files.length === 0) {
         const previousAssistant = [...messagesRef.current]
           .reverse()

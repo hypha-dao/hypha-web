@@ -471,4 +471,60 @@ describe('formatMemberHomeFacts', () => {
     });
     expect(declined).not.toContain('This turn: this message is the content');
   });
+
+  it('returns no card while a share turn is open', () => {
+    const awaiting = formatMemberHomeFacts(home, { asked: 'Share signal' });
+    expect(awaiting.card).toBeNull();
+
+    const ready = formatMemberHomeFacts(home, {
+      asked: 'We shipped the energy ledger and two spaces are paying.',
+      prior:
+        "Drop it in here, either a few lines or a file. I'll turn it into a short post on Edgar's signal.",
+    });
+    expect(ready.card).toBeNull();
+  });
+
+  it('returns the waiting item as the card', () => {
+    const { card } = formatMemberHomeFacts(home);
+    expect(card).toEqual({ kind: 'proposal', slug: 'path' });
+  });
+
+  it('returns the asked item as the card', () => {
+    const { card } = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          {
+            ...home.proposals[0]!,
+            creatorName: 'Gerardo Roza',
+          },
+          {
+            ...home.proposals[0]!,
+            id: 11,
+            slug: 'invite-energy',
+            title: 'Invite Member',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Welime Haitsma',
+            web3ProposalId: 42,
+          },
+          {
+            ...home.proposals[0]!,
+            id: 12,
+            slug: 'invite-pollinate',
+            title: 'Invite Member',
+            spaceSlug: 'hypha-pollinate',
+            spaceTitle: 'Hypha Pollinate',
+            creatorName: 'Gerardo Roza',
+            web3ProposalId: 43,
+          },
+        ],
+      },
+      {
+        asked:
+          'Help me think about Invite Member in Hypha Pollinate, proposed by Gerardo Roza. Summarise it, and leave the decision with me.',
+      },
+    );
+    expect(card).toEqual({ kind: 'proposal', slug: 'invite-pollinate' });
+  });
 });
