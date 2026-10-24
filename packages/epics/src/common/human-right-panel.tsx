@@ -4389,6 +4389,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (mode === 'coherence' && coherenceSlug?.trim()) {
       const slug = coherenceSlug.trim();
       const currentSpace = spaceSlug?.trim();
+      // TEMP(#2575)
+      console.log('[#2575] signal-url sync effect', {
+        slug,
+        pathname,
+        urlSignal: readSignalDeepLinkSlug(searchParams),
+        liveSearch:
+          typeof window !== 'undefined' ? window.location.search : null,
+        sessionSpace: coherenceRoomId?.trim()
+          ? readRoomToCoherenceSession(coherenceRoomId).spaceSlug
+          : null,
+        currentSpace,
+      });
       if (coherenceRoomId?.trim() && currentSpace) {
         const session = readRoomToCoherenceSession(coherenceRoomId);
         if (session.spaceSlug && session.spaceSlug !== currentSpace) {
@@ -4408,6 +4420,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
       }
       if (readSignalDeepLinkSlug(searchParams) === slug) {
+        console.log('[#2575] signal-url sync: URL already matches, no write');
         previousSignalChatSlugRef.current = slug;
         previousSignalUrlSlugRef.current = slug;
         previousSignalChoiceRef.current = slug;
@@ -4426,8 +4439,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       previousSignalUrlSlugRef.current = urlSignal;
       previousSignalChoiceRef.current = choice;
       if (!shouldWriteOpenChatToSignalUrl(choice, slug, urlSignal)) {
+        console.log('[#2575] signal-url sync: skipped write', {
+          choice,
+          slug,
+          urlSignal,
+        });
         return;
       }
+      console.log('[#2575] signal-url sync: WRITING ?signal=', {
+        choice,
+        slug,
+        urlSignal,
+      });
       const href = setSignalSearchParam(
         pathname,
         typeof window !== 'undefined'
