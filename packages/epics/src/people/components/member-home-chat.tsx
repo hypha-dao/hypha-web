@@ -214,6 +214,11 @@ function rewriteHomeStartLine(
     if (chunk.type === 'start') {
       return `${prefix}${JSON.stringify({ ...chunk, messageId: freshId })}`;
     }
+    // Reasoning is not shown on home. A delta without its start throws in
+    // useChat and paints the dropped-thread banner.
+    if (typeof chunk.type === 'string' && chunk.type.startsWith('reasoning-')) {
+      return '';
+    }
     // A fatal error chunk throws inside useChat and paints "thread dropped",
     // which then looks like the assistant restarted. Finish the turn as text.
     if (chunk.type === 'error') {
@@ -407,6 +412,25 @@ export function MemberHomeChat({
   const isStreaming = status === 'streaming' || status === 'submitted';
   const homeMessages = messages as HomeMessage[];
   messagesRef.current = homeMessages;
+  useLayoutEffect(() => {
+    if (!error) return;
+    const current = messagesRef.current;
+    const last = current[current.length - 1];
+    const fallback = droppedLine.current;
+    const alreadyTold =
+      last?.role === 'assistant' && messageText(last) === fallback;
+    if (!alreadyTold) {
+      setMessages([
+        ...current,
+        {
+          id: `home-assistant-${crypto.randomUUID()}`,
+          role: 'assistant',
+          parts: [{ type: 'text', text: fallback }],
+        },
+      ]);
+    }
+    clearError();
+  }, [clearError, error, setMessages]);
   useOnboardingSpaceSignature(homeMessages, lang);
 
   const widgetKindFor = useCallback(

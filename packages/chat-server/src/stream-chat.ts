@@ -101,7 +101,7 @@ function parseEnvNumber(
 }
 const OPENROUTER_REQUEST_TIMEOUT_MS = parseEnvNumber(
   process.env.OPENROUTER_REQUEST_TIMEOUT_MS,
-  20_000,
+  90_000,
   1_000,
 );
 const OPENROUTER_MAX_ATTEMPTS = Math.max(
@@ -188,7 +188,9 @@ function createResilientOpenRouterFetch(baseFetch: typeof fetch): typeof fetch {
     init?: Parameters<typeof fetch>[1],
   ) => {
     if (isOpenRouterCircuitOpen()) {
-      throw new Error('OpenRouter circuit open');
+      return openRouterUnavailableResponse(
+        new Error('OpenRouter circuit open'),
+      );
     }
 
     let attempt = 0;
@@ -243,7 +245,7 @@ function createResilientOpenRouterFetch(baseFetch: typeof fetch): typeof fetch {
 
         if (!retryable || attempt >= OPENROUTER_MAX_ATTEMPTS) {
           recordOpenRouterFailure();
-          throw error;
+          return openRouterUnavailableResponse(error);
         }
         await sleep(150 * attempt);
       } finally {
@@ -252,8 +254,24 @@ function createResilientOpenRouterFetch(baseFetch: typeof fetch): typeof fetch {
     }
 
     recordOpenRouterFailure();
-    throw new Error('OpenRouter request failed after retries');
+    return openRouterUnavailableResponse(
+      new Error('OpenRouter request failed after retries'),
+    );
   };
+}
+
+function openRouterUnavailableResponse(error: unknown): Response {
+  return new Response(
+    JSON.stringify({
+      error: {
+        message: messageFromUnknownError(error),
+      },
+    }),
+    {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
 }
 
 /** @see https://openrouter.ai/docs/api/reference/authorization — Referer + title are required for many keys. */
@@ -1627,7 +1645,15 @@ export async function createChatStreamResult(
       : '';
 
   return streamText({
-    model: openrouterWithHyphaHeaders(openRouterModelId),
+    model: memberHomeRecord
+      ? openrouterWithHyphaHeaders(openRouterModelId, {
+          // Home replies are short. Reasoning on this model holds the first
+          // token long enough that the turn dies before any words arrive.
+          reasoning: { effort: 'none', exclude: true },
+        })
+      : openrouterWithHyphaHeaders(openRouterModelId),
+    // The fetch wrapper already retries. Another SDK retry would stack on a slow turn.
+    maxRetries: 0,
     system: [systemPrompt, memberHomeFacts, homeVisualDirective]
       .filter(Boolean)
       .join('\n\n'),

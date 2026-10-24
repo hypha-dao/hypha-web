@@ -177,6 +177,9 @@ export async function POST(req: Request) {
       },
       originalMessages,
       generateMessageId: createIdGenerator({ prefix: 'msg', size: 12 }),
+      // Home only speaks the reply. Reasoning chunks are not shown, and a
+      // malformed one makes useChat throw the dropped-thread banner.
+      sendReasoning: !memberHome,
     });
   } catch (error) {
     console.error('[chat][route][stream-response-error]', {
