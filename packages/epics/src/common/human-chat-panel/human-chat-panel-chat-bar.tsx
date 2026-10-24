@@ -1597,6 +1597,7 @@ export function HumanChatPanelChatBar({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
+      if (event.isComposing) return;
       closeComposerOverlayFromEscape(event);
     };
     window.addEventListener('keydown', onKeyDown, true);

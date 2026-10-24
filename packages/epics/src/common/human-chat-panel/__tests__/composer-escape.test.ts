@@ -3,7 +3,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { composerOverlayConsumesEscape } from '../composer-escape';
+import {
+  COMPOSER_OVERLAY_ESCAPE_SELECTOR,
+  composerOverlayConsumesEscape,
+  shouldPreventChatSheetEscapeDismiss,
+} from '../composer-escape';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -42,6 +46,7 @@ describe('composer Escape stays inside overlays', () => {
     expect(source).toContain(
       "window.addEventListener('keydown', onKeyDown, true)",
     );
+    expect(source).toContain('event.isComposing');
     expect(source).toContain('stopImmediatePropagation');
     expect(source).toContain('data-hypha-colon-autocomplete');
   });
@@ -57,19 +62,25 @@ describe('composer Escape stays inside overlays', () => {
     expect(source).toContain('onEscapeKeyDown');
   });
 
-  it('Sheet preventDefaults Escape while a composer overlay is in the DOM', () => {
+  it('Sheet preventDefaults Escape via a caller-supplied shouldPreventEscapeDismiss', () => {
     const sidebar = readFileSync(
       join(here, '../../../../../ui/src/sidebar.tsx'),
+      'utf8',
+    );
+    const wrapLayout = readFileSync(
+      join(here, '../../panel-wrap-layout.tsx'),
       'utf8',
     );
     const surface = readFileSync(
       join(here, '../human-chat-panel-emoji-mart-surface.tsx'),
       'utf8',
     );
-    expect(sidebar).toContain('onEscapeKeyDown');
-    expect(sidebar).toContain(
-      '[data-hypha-emoji-picker], [data-hypha-colon-autocomplete]',
+    expect(sidebar).toContain('shouldPreventEscapeDismiss');
+    expect(sidebar).not.toContain(COMPOSER_OVERLAY_ESCAPE_SELECTOR);
+    expect(wrapLayout).toContain(
+      'shouldPreventEscapeDismiss={shouldPreventChatSheetEscapeDismiss}',
     );
     expect(surface).toContain('data-hypha-emoji-picker');
+    expect(shouldPreventChatSheetEscapeDismiss()).toBe(false);
   });
 });
