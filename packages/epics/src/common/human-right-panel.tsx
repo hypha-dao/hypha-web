@@ -5954,12 +5954,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         : handleEditMessage
                     }
                     onDeleteMessage={
-                      blockSpaceChatForMembership
+                      blockSpaceChatForMembership || archivedGroup
                         ? undefined
                         : handleDeleteMessage
                     }
                     onToggleReaction={
-                      blockSpaceChatForMembership
+                      blockSpaceChatForMembership || archivedGroup
                         ? undefined
                         : handleToggleReaction
                     }

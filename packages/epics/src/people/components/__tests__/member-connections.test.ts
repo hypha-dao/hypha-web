@@ -795,6 +795,49 @@ describe('groupRowsForConnections', () => {
     expect(rows[0]?.roomId).toBe('!Cm2va52o4xgesz0V:srv1294735.hstgr.cloud');
   });
 
+  it('keeps a remembered renamed group and drops untyped proposal or space rooms', () => {
+    const rows = peopleAroundGroupRows(
+      [
+        {
+          roomId: '!team',
+          name: 'Team Alpha',
+          roomType: null,
+          loadedHumanCount: 1,
+          summaryJoinedCount: 4,
+          hasRoomName: true,
+          groupChat: true,
+        },
+        {
+          roomId: '!Cm2va52o4xgesz0V:srv1294735.hstgr.cloud',
+          name: 'Gerardo Roza, Xerxes Potel, Vlad Hramtsov (test)',
+          roomType: null,
+          loadedHumanCount: 1,
+          summaryJoinedCount: 4,
+          hasRoomName: true,
+        },
+        {
+          roomId: '!proposal',
+          name: 'Proposal discussion',
+          loadedHumanCount: 12,
+          summaryJoinedCount: 12,
+          hasRoomName: true,
+        },
+        {
+          roomId: '!space',
+          name: 'space-hypha',
+          loadedHumanCount: 40,
+          summaryJoinedCount: 40,
+          hasRoomName: true,
+        },
+      ],
+      'Someone',
+    );
+    expect(rows.map((row) => row.roomId)).toEqual([
+      '!team',
+      '!Cm2va52o4xgesz0V:srv1294735.hstgr.cloud',
+    ]);
+  });
+
   it('hides untyped proposal, space, and signal rooms that production hid', () => {
     const rows = peopleAroundGroupRows(
       [

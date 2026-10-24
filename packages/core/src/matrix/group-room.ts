@@ -139,6 +139,11 @@ export type PeopleConversationListingInput = {
   titleMemberHint?: number;
   /** People remembered for this group, plus a guess for self. */
   rememberedHumanCount?: number;
+  /**
+   * Started or renamed from Messages (`hypha.group-chat-rooms`).
+   * Non-comma untyped rooms need this or they stay out of People Around.
+   */
+  rememberedAsGroup?: boolean;
 };
 
 /** `"Gerardo Roza, Xerxes Potel, Vlad Hramtsov (test)"` → 3. */
@@ -191,46 +196,37 @@ export function peopleConversationKind(
 export function peopleConversationKindForListing(
   input: PeopleConversationListingInput,
 ): 'group' | 'person' | null {
-  const flags = { createdAsGroup: input.createdAsGroup };
-  const loaded = peopleConversationKind(
-    input.roomType,
-    input.loadedHumanCount,
-    flags,
-  );
-  if (loaded) return loaded;
   const type = input.roomType?.trim() || null;
   if (type === HYPHA_ROOM_TYPES.dm) return 'person';
+  if (type === HYPHA_ROOM_TYPES.group || input.createdAsGroup) return 'group';
   if (type) return null;
   const titleHint = input.titleMemberHint ?? 0;
   const remembered = input.rememberedHumanCount ?? 0;
-  // Untyped + named + 3 joined humans (title, memory, or loaded) must stay.
-  // A stale 2/2 summary is not enough to hide that shape. m.direct is ignored.
-  if (
-    input.hasRoomName &&
-    (input.loadedHumanCount > 2 || titleHint > 2 || remembered > 2)
-  ) {
-    return 'group';
-  }
-  const membersIncomplete = input.loadedHumanCount < input.summaryJoinedCount;
-  if (membersIncomplete && input.summaryJoinedCount > 2) return 'group';
-  // Named untyped rooms stay listed until the full member list arrives.
-  // A completed 2-human list still drops (typed-room rule).
-  if (membersIncomplete && input.hasRoomName) return 'group';
-  if (input.loadedHumanCount <= 1 && input.hasRoomName) return 'group';
+  const loaded = input.loadedHumanCount;
+  const incomplete = loaded < input.summaryJoinedCount;
+  // Untyped rooms match isPeopleListGroup: a 3-name comma title, or a
+  // Messages group we created/renamed that still has 3+ humans (or a
+  // rename while members are lazy). Loaded count alone is not enough —
+  // space, proposal, and signal rooms also have 3+ humans.
+  if (titleHint > 2) return 'group';
+  if (!input.rememberedAsGroup) return null;
+  if (loaded > 2 || remembered > 2) return 'group';
+  if (incomplete && input.summaryJoinedCount > 2) return 'group';
+  if (input.hasRoomName && loaded <= 1) return 'group';
   return null;
 }
 
 /**
- * Keep a classified row when the room has not changed. A cached `null` is not
- * reused — listing can become true without a stamp change (computed `room.name`,
- * remembered members). The People Around snapshot was dropping those rooms.
+ * Keep a classified row when the stamp is unchanged, including a cached
+ * `null`. Callers must put every listing input in the stamp (name, remembered
+ * group/bound/signal, title override) so a later keep-rule still reclassifies.
  */
 export function resolveConversationCacheEntry<T>(
   existing: { stamp: string; row: T | null } | undefined,
   stamp: string,
   classify: () => T | null,
 ): { stamp: string; row: T | null } {
-  if (existing?.stamp === stamp && existing.row != null) return existing;
+  if (existing?.stamp === stamp) return existing;
   return { stamp, row: classify() };
 }
 

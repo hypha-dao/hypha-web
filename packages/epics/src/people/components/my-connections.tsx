@@ -335,6 +335,7 @@ function classifyConversationRoom(
     hasRoomName: Boolean(base.nameState) || base.titleMemberHint > 2,
     titleMemberHint: base.titleMemberHint,
     rememberedHumanCount: base.rememberedHumanCount,
+    rememberedAsGroup: isRememberedGroupChatRoom(room.roomId),
   });
   if (
     !base.roomType &&
@@ -748,6 +749,11 @@ function roomStamp(room: Room, selfId: string | null) {
     room.getMembers?.().length ?? 0,
     isArchivedGroupRoom(room) ? '1' : '0',
     room.name || '',
+    isRememberedGroupChatRoom(room.roomId) ? '1' : '0',
+    isRememberedBoundChatRoom(room.roomId) ? '1' : '0',
+    isRememberedSignalThreadRoom(room.roomId) ? '1' : '0',
+    conversationTitleOverrides.get(room.roomId) ?? '',
+    rememberedGroupChatMemberIds(room.roomId).join(','),
   ].join(':');
 }
 

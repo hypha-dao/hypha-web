@@ -7,7 +7,10 @@ import {
   readRoomNameState,
 } from '../../../../core/src/matrix/group-room';
 
-import { rememberedGroupChatMemberIds } from '../../people/components/member-connections';
+import {
+  isRememberedGroupChatRoom,
+  rememberedGroupChatMemberIds,
+} from '../../people/components/member-connections';
 
 export function isPeopleGroupChatRoom(
   room:
@@ -35,6 +38,9 @@ export function isPeopleGroupChatRoom(
       hasRoomName: Boolean(nameState) || titleMemberHint > 2,
       titleMemberHint,
       rememberedHumanCount: remembered,
+      rememberedAsGroup: Boolean(
+        room.roomId && isRememberedGroupChatRoom(room.roomId),
+      ),
     }) === 'group'
   );
 }

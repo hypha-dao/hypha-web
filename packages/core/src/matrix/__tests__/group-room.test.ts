@@ -103,11 +103,20 @@ describe('group room name and archive state', () => {
     expect(peopleConversationKind(HYPHA_ROOM_TYPES.dm, 2)).toBe('person');
   });
 
-  it('rebuilds a listed row when the cache still holds a matching null', () => {
+  it('reuses a matching cache entry, including a null row', () => {
     const stamp = 'join:0:::0::untyped:Gerardo:4:1:0:Gerardo Roza, Xerxes';
     const row = { roomId: '!Cm2va52o4xgesz0V:srv1294735.hstgr.cloud' };
     expect(
-      resolveConversationCacheEntry({ stamp, row: null }, stamp, () => row).row,
+      resolveConversationCacheEntry({ stamp, row: null }, stamp, () => {
+        throw new Error('must not reclassify a matching null');
+      }).row,
+    ).toBeNull();
+    expect(
+      resolveConversationCacheEntry(
+        { stamp, row: null },
+        `${stamp}:renamed`,
+        () => row,
+      ).row,
     ).toEqual(row);
     expect(
       resolveConversationCacheEntry({ stamp, row }, stamp, () => {
@@ -126,6 +135,9 @@ describe('group room name and archive state', () => {
         loadedHumanCount: 1,
         summaryJoinedCount: 4,
         hasRoomName: true,
+        titleMemberHint: countCommaSeparatedNames(
+          'Gerardo Roza, Xerxes Potel, Vlad Hramtsov (test)',
+        ),
       }),
     ).toBe('group');
     expect(
@@ -134,6 +146,7 @@ describe('group room name and archive state', () => {
         loadedHumanCount: 1,
         summaryJoinedCount: 1,
         hasRoomName: true,
+        rememberedAsGroup: true,
       }),
     ).toBe('group');
     expect(
@@ -143,7 +156,7 @@ describe('group room name and archive state', () => {
         summaryJoinedCount: 4,
         hasRoomName: true,
       }),
-    ).toBe('group');
+    ).toBeNull();
     expect(
       peopleConversationKindForListing({
         roomType: null,
@@ -169,9 +182,18 @@ describe('group room name and archive state', () => {
         loadedHumanCount: 2,
         summaryJoinedCount: 2,
         hasRoomName: true,
+        rememberedAsGroup: true,
         rememberedHumanCount: 3,
       }),
     ).toBe('group');
+    expect(
+      peopleConversationKindForListing({
+        roomType: null,
+        loadedHumanCount: 12,
+        summaryJoinedCount: 12,
+        hasRoomName: true,
+      }),
+    ).toBeNull();
     expect(
       peopleConversationKindForListing({
         roomType: null,

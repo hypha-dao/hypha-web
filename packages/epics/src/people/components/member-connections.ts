@@ -909,6 +909,7 @@ export function peopleAroundGroupRows<T extends ConnectionListPerson>(
       titleMemberHint:
         room.titleMemberHint ?? countCommaSeparatedNames(room.name),
       rememberedHumanCount: room.rememberedHumanCount,
+      rememberedAsGroup: room.groupChat,
     });
     if (kind !== 'group') continue;
     const row: ConversationRow = {

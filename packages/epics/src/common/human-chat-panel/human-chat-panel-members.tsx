@@ -67,19 +67,25 @@ export function HumanChatPanelMembers({
 }: HumanChatPanelMembersProps) {
   const t = useTranslations('HumanChatPanel');
   const tCoherence = useTranslations('CoherenceTab');
-  const calledSpecialists = calledIds.flatMap((id) => {
-    const specialist = specialistById(id);
-    return specialist ? [specialist] : [];
-  });
+  const calledSpecialists = useMemo(
+    () =>
+      calledIds.flatMap((id) => {
+        const specialist = specialistById(id);
+        return specialist ? [specialist] : [];
+      }),
+    [calledIds],
+  );
   const { client, getRoomMembers, isMatrixAvailable, isAuthenticated } =
     useMatrix();
   const [memberQuery, setMemberQuery] = useState('');
-  useEffect(() => {
-    setMemberQuery('');
-  }, [roomId]);
   const [onlineCount, setOnlineCount] = useState(0);
   const [roomMembers, setRoomMembers] = useState<RoomScopedMember[]>([]);
   const [roomMembersLoading, setRoomMembersLoading] = useState(false);
+  useEffect(() => {
+    setMemberQuery('');
+    setRoomMembers([]);
+    setOnlineCount(0);
+  }, [roomId]);
   const { space } = useSpaceBySlug(roomScoped ? '' : spaceSlug ?? '');
   const {
     persons: members,
@@ -140,6 +146,11 @@ export function HumanChatPanelMembers({
       );
     });
   }, [memberQuery, members]);
+  const visibleCalledSpecialists = useMemo(() => {
+    return calledSpecialists.filter((specialist) =>
+      textMatchesPeopleSearch([tCoherence(specialist.roleKey)], memberQuery),
+    );
+  }, [calledSpecialists, memberQuery, tCoherence]);
   const listedCount = roomScoped
     ? visibleRoomMembers.length
     : visibleSpaceMembers.length;
@@ -220,7 +231,7 @@ export function HumanChatPanelMembers({
     !showRoomLoading &&
     !showSpaceError &&
     listedCount === 0 &&
-    calledSpecialists.length === 0;
+    visibleCalledSpecialists.length === 0;
   const emptyCopy = memberQuery.trim() ? t('membersNoMatches') : t('noMembers');
 
   return (
@@ -369,7 +380,7 @@ export function HumanChatPanelMembers({
               </div>
             );
           })}
-      {calledSpecialists.map((specialist) => {
+      {visibleCalledSpecialists.map((specialist) => {
         const role = tCoherence(specialist.roleKey);
         return (
           <div

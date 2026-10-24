@@ -661,6 +661,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   const connectionRetryPromiseRef = React.useRef<Promise<void> | null>(null);
   const [connectionRetryFailed, setConnectionRetryFailed] =
     React.useState(false);
+  const [clientInitFailed, setClientInitFailed] = React.useState(false);
   const pendingClientRecycleRef = React.useRef(false);
   const registeredRoomListenersRef = React.useRef<RoomMessageListenerRecord[]>(
     [],
@@ -702,6 +703,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         return;
       }
       try {
+        setClientInitFailed(false);
         const { accessToken, userId, homeserverUrl, deviceId } = matrixToken;
         // Voice and video (group calls): keep VoIP enabled; TURN/ICE for WebRTC. See
         // docs/requirements/voice-video-call-implementation-spec.md §2.1
@@ -749,6 +751,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         console.error('Failed to initialize Matrix client:', error);
         clientRef.current = null;
         setClient(null);
+        setIsMatrixAvailable(false);
+        setClientInitFailed(true);
+        setConnectionRetryFailed(true);
+        if (matrixToken.userId) setIsAuthenticated(true);
         setConnectionStatus(
           isTransientMatrixNetworkError(error)
             ? 'disconnected'
@@ -2522,7 +2528,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
   const isConnecting =
     isMatrixTokenLoading ||
-    Boolean(matrixToken && !isMatrixAvailable) ||
+    Boolean(matrixToken && !isMatrixAvailable && !clientInitFailed) ||
     connectionStatus === 'reconnecting';
 
   const value: MatrixContextType = {

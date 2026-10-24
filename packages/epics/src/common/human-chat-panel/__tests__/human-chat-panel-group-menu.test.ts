@@ -25,6 +25,13 @@ describe('isPeopleGroupChatRoom', () => {
         getType: () => undefined,
         getJoinedMemberCount: () => 3,
       }),
+    ).toBe(false);
+    expect(
+      isPeopleGroupChatRoom({
+        getType: () => undefined,
+        getJoinedMemberCount: () => 3,
+        name: 'Ada Lovelace, Grace Hopper, Alan Turing',
+      }),
     ).toBe(true);
     expect(
       isPeopleGroupChatRoom({
