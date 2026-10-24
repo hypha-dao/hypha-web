@@ -240,9 +240,13 @@ function MenuSections({
         </SubTrigger>
         <SubContent
           sideOffset={2}
+          data-testid="hypha-emoji-picker-panel"
           className="w-[min(calc(100vw-2rem),22rem)] max-w-[min(22rem,calc(100vw-1rem))] overflow-hidden border-border p-0 shadow-lg"
           onWheel={(event) => event.stopPropagation()}
-          onEscapeKeyDown={(event) => event.stopPropagation()}
+          onEscapeKeyDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
         >
           <HumanChatPanelEmojiMartSurface
             ariaLabel={t('addReactionButton')}

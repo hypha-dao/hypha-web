@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -36,6 +37,18 @@ export function HumanChatPanelEmojiPicker({
   className,
   modal = true,
 }: HumanChatPanelEmojiPickerProps) {
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      onOpenChange(false);
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [open, onOpenChange]);
+
   return (
     <Popover modal={modal} open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild className={cn('inline-flex', className)}>
@@ -46,10 +59,14 @@ export function HumanChatPanelEmojiPicker({
         side={side}
         sideOffset={8}
         collisionPadding={12}
+        data-testid="hypha-emoji-picker-panel"
         className="w-[min(calc(100vw-2rem),22rem)] max-w-[min(22rem,calc(100vw-1rem))] overflow-hidden border-border p-0 shadow-lg"
         aria-label={ariaLabel}
         onOpenAutoFocus={(e) => e.preventDefault()}
-        onEscapeKeyDown={(event) => event.stopPropagation()}
+        onEscapeKeyDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
         onWheel={(event) => event.stopPropagation()}
       >
         <HumanChatPanelEmojiMartSurface

@@ -43,17 +43,19 @@ export function HumanChatPanelEmojiMartSurface({
     <div
       role="dialog"
       aria-label={ariaLabel}
+      data-hypha-emoji-picker=""
+      data-testid="hypha-emoji-mart-surface"
       className={cn(
         /**
-         * emoji-mart sizes its grid from this element's rendered width
-         * (`dynamicWidth`). The parent popover/menu is the same 22rem as
-         * the native picker; `--em-emoji-picker-width: 100%` makes the
-         * custom element fill that panel instead of a narrow column.
+         * @emoji-mart/react mounts an empty wrapper `div` and appends
+         * `em-emoji-picker` inside it. The host's own CSS is
+         * `:host { width: min-content }`, which beats an un-`!important`
+         * light-DOM width and then `dynamicWidth` measures ~130px.
+         * Stretch the wrapper and force the host to the panel width.
          */
-        'flex h-[min(22.5rem,calc(100dvh-8rem))] w-full min-w-0 flex-col overflow-hidden [&>em-emoji-picker]:h-full [&>em-emoji-picker]:w-full [&>em-emoji-picker]:max-w-none',
+        'flex h-[min(22.5rem,calc(100dvh-8rem))] w-full min-w-0 flex-col overflow-hidden [&>div]:h-full [&>div]:w-full [&>div]:min-w-0 [&_em-emoji-picker]:!h-full [&_em-emoji-picker]:!w-full [&_em-emoji-picker]:!max-w-none [&_em-emoji-picker]:!min-w-full',
         className,
       )}
-      style={{ ['--em-emoji-picker-width' as string]: '100%' }}
       onWheel={(event) => event.stopPropagation()}
     >
       {mounted && (

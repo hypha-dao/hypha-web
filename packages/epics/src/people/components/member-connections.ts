@@ -1,6 +1,9 @@
 import {
   isHyphaBotMatrixIdentity,
   looksLikeTechnicalMatrixDisplayName,
+  matrixUserIdToCanonicalPrivySub,
+  pickUserVisibleMemberLabel,
+  uniqueCanonicalPrivySubsFromMxids,
   visibleMatrixMemberName,
 } from '../../../../core/src/matrix/matrix-member-display';
 import { replacePlainTextMatrixMxidsWithLabels } from '../../../../core/src/matrix/mentions';
@@ -67,6 +70,11 @@ export type MemberRow<T extends ConnectionListPerson = ConnectionListPerson> = {
   lastTs: number | null;
   unread: number;
   roomId: string | null;
+  /**
+   * True until a human display name is known. Never put a raw Privy / Matrix
+   * id in `name` while this is set — the row shows a skeleton instead.
+   */
+  titlePending?: boolean;
   /** Set on a group chat. Two faces mean the row is a group. */
   faces?: GroupFace[];
   /** Hidden from Messages; still listed under Archived. */
@@ -134,6 +142,141 @@ export type NewcomerCandidate = {
 function personName(person: ConnectionListPerson, fallback: string) {
   const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
   return full || person.nickname || fallback;
+}
+
+/** First label that is safe to show as a Messages row title. Never an id. */
+export function conversationDisplayName(
+  matrixUserId: string | null | undefined,
+  ...candidates: Array<string | null | undefined>
+): string | null {
+  const mxid = matrixUserId?.trim() ?? '';
+  if (mxid) {
+    return pickUserVisibleMemberLabel(mxid, ...candidates);
+  }
+  for (const candidate of candidates) {
+    const label = candidate?.trim();
+    if (!label) continue;
+    if (!looksLikeTechnicalMatrixDisplayName(label, label)) return label;
+  }
+  return null;
+}
+
+export function isUnresolvedConversationTitle(
+  name: string | null | undefined,
+  matrixUserId?: string | null,
+) {
+  const label = name?.trim() ?? '';
+  if (!label) return true;
+  return looksLikeTechnicalMatrixDisplayName(label, matrixUserId ?? label);
+}
+
+export type ResolvedPeerTitle = {
+  name: string;
+  titlePending: boolean;
+};
+
+/** Title for a DM row: a real name, or pending (never a raw Privy / Matrix id). */
+export function resolvePeerRowTitle(
+  room: Pick<ConversationRow, 'name' | 'otherUserId' | 'roomId'>,
+  person?: ConnectionListPerson,
+  fallback = '',
+): ResolvedPeerTitle {
+  const visible = conversationDisplayName(
+    room.otherUserId,
+    person ? personName(person, '') : '',
+    room.name,
+  );
+  if (visible) return { name: visible, titlePending: false };
+  const placeholder = fallback.trim();
+  if (placeholder && !isUnresolvedConversationTitle(placeholder)) {
+    return { name: placeholder, titlePending: false };
+  }
+  return { name: '', titlePending: true };
+}
+
+export type PeerProfileBySub = {
+  name?: string | null;
+  surname?: string | null;
+  nickname?: string | null;
+  slug?: string | null;
+  avatarUrl?: string | null;
+};
+
+/** Privy subs for DM peers and group members — fetch these up front. */
+export function conversationPeerSubs(
+  rows: readonly Pick<ConversationRow, 'otherUserId' | 'searchMembers'>[],
+): string[] {
+  return uniqueCanonicalPrivySubsFromMxids(
+    rows.flatMap((row) => [
+      row.otherUserId,
+      ...(row.searchMembers ?? []).map((member) => member.userId),
+    ]),
+  );
+}
+
+/**
+ * Overlay Hypha profiles onto DM rows whose Matrix title is still a raw id.
+ * While profiles are loading the title stays pending (skeleton), never the id.
+ */
+export function applyResolvedPeerTitles<T extends ConnectionListPerson>(
+  members: readonly MemberRow<T>[],
+  rooms: readonly ConversationRow[],
+  peopleBySub: ReadonlyMap<string, PeerProfileBySub>,
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+  options?: { loading?: boolean; fallback?: string },
+): MemberRow<T>[] {
+  const otherByRoom = new Map<string, string>();
+  for (const room of rooms) {
+    if (room.otherUserId?.trim()) {
+      otherByRoom.set(room.roomId, room.otherUserId.trim());
+    }
+  }
+  const fallback = options?.fallback?.trim() ?? '';
+  return members.map((row) => {
+    if (row.faces && row.faces.length > 0) return row;
+    const mxid =
+      (row.person.id > 0
+        ? personIdToMatrixUserId[row.person.id]?.trim()
+        : undefined) ||
+      (row.roomId ? otherByRoom.get(row.roomId) : undefined) ||
+      '';
+    const fromRow = conversationDisplayName(
+      mxid,
+      personName(row.person, ''),
+      row.name,
+    );
+    if (fromRow) return { ...row, name: fromRow, titlePending: false };
+    const sub = mxid ? matrixUserIdToCanonicalPrivySub(mxid) : null;
+    const fetched = sub ? peopleBySub.get(sub) : undefined;
+    const fetchedName = fetched
+      ? [fetched.name, fetched.surname].filter(Boolean).join(' ').trim() ||
+        fetched.nickname?.trim() ||
+        ''
+      : '';
+    if (fetchedName && !isUnresolvedConversationTitle(fetchedName, mxid)) {
+      return {
+        ...row,
+        name: fetchedName,
+        titlePending: false,
+        avatarUrl: fetched?.avatarUrl || row.avatarUrl,
+        person: {
+          ...row.person,
+          name: fetched?.name ?? row.person.name,
+          surname: fetched?.surname ?? row.person.surname,
+          nickname: fetched?.nickname ?? row.person.nickname,
+          slug: fetched?.slug ?? row.person.slug,
+          avatarUrl: fetched?.avatarUrl ?? row.person.avatarUrl,
+        },
+      };
+    }
+    if (options?.loading) {
+      return { ...row, name: '', titlePending: true };
+    }
+    if (fallback && !isUnresolvedConversationTitle(fallback)) {
+      return { ...row, name: fallback, titlePending: false };
+    }
+    return { ...row, name: '', titlePending: true };
+  });
 }
 
 const PREVIEW_LENGTH = 48;
@@ -668,17 +811,19 @@ export function unreadRoomsMissingFromMembers<T extends ConnectionListPerson>(
     if (room.otherUserId && knownMxids.has(room.otherUserId.toLowerCase())) {
       continue;
     }
+    const title = resolvePeerRowTitle(room);
     extras.push({
       person: {
         id: syntheticId,
-        name: room.name || null,
+        name: title.name || null,
         surname: null,
         nickname: null,
         avatarUrl: room.avatarUrl ?? null,
         slug: null,
         sharedSpaceCount: 0,
       } as T,
-      name: room.name.trim() || room.otherUserId || room.roomId,
+      name: title.name,
+      titlePending: title.titlePending,
       avatarUrl: room.avatarUrl,
       preview: room.preview,
       mine: room.mine,
@@ -780,17 +925,19 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
       );
     } else {
       if (technicalName && !mxid) continue;
+      const title = resolvePeerRowTitle(room);
       fromRooms.push({
         person: {
           id: syntheticId,
-          name: room.name || null,
+          name: title.name || null,
           surname: null,
           nickname: null,
           avatarUrl: room.avatarUrl ?? null,
           slug: null,
           sharedSpaceCount: 0,
         } as T,
-        name: room.name.trim() || room.otherUserId || room.roomId,
+        name: title.name,
+        titlePending: title.titlePending,
         avatarUrl: room.avatarUrl,
         preview: room.preview,
         mine: room.mine,
