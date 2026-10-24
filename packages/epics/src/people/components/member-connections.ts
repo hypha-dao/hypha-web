@@ -697,29 +697,25 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
     usedRoomIds.add(room.roomId);
   }
 
-  const withoutRoom = connections
-    .filter((person) => person.id !== selfId)
-    .map((person) => {
-      const mxid = personIdToMatrixUserId[person.id]?.trim().toLowerCase();
-      if (mxid && usedMxids.has(mxid)) return null;
-      if (
-        isHyphaBot(personIdToMatrixUserId[person.id], personName(person, ''))
-      ) {
-        return null;
-      }
-      const name = personName(person, fallback);
-      return {
-        person,
-        name,
-        avatarUrl: person.avatarUrl || undefined,
-        preview: '',
-        mine: false,
-        lastTs: null,
-        unread: 0,
-        roomId: null,
-      } satisfies MemberRow<T>;
-    })
-    .filter((row): row is MemberRow<T> => row != null);
+  const withoutRoom: MemberRow<T>[] = [];
+  for (const person of connections) {
+    if (person.id === selfId) continue;
+    const mxid = personIdToMatrixUserId[person.id]?.trim().toLowerCase();
+    if (mxid && usedMxids.has(mxid)) continue;
+    if (isHyphaBot(personIdToMatrixUserId[person.id], personName(person, ''))) {
+      continue;
+    }
+    withoutRoom.push({
+      person,
+      name: personName(person, fallback),
+      avatarUrl: person.avatarUrl || undefined,
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    });
+  }
 
   return [...fromRooms, ...withoutRoom].sort((left, right) => {
     const byTime = (right.lastTs ?? 0) - (left.lastTs ?? 0);
