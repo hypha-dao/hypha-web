@@ -321,7 +321,7 @@ export function formatMemberHomeFacts(
       )
       .join('; ') || 'none';
 
-  return [
+  const text = [
     'Member home facts for this signed-in person. These are records. Keep the Hypha AI voice from the instructions above. You already know this member, the spaces they belong to, and the people they share those spaces with. Accompany them. The collective is the point. Every reply ends on the next step. No open question.',
     'LENGTH: Typed chat and spoken voice are the same script: at most 2 short sentences, then stop. Greeting counts as one. The waiting item is the other. Never a third sentence about movement, another space, or a separate upvote nudge. Never a paragraph. Never a wall of text. Never repeat the same idea in different words. Do not dump about=. Do not list every name in with=. One person and one space is enough. The card carries the rest.',
     'POSTING: Never volunteer to post, draft, or leave a note on a signal. Never invent that they already asked for a call, a share, or a post. Never ask "Should I post it?" Forbidden, including close paraphrases: "Earlier you said", "so I can post a short note", "Should I post it?", "I can post", "I\'ll post a note", "your call could pull in". create_human_chat_message only when they clearly asked to share or post and the lines or a file are in that message. Until then, do not offer to post on their behalf.',
@@ -468,7 +468,7 @@ export function formatMemberHomeFacts(
     .filter((line): line is string => Boolean(line))
     .join('\n');
   const card =
-    spoken?.slug && shareTurn == null
+    spoken != null && spoken.slug && shareTurn == null
       ? { kind: spoken.kind, slug: spoken.slug }
       : null;
   return { text, card };
