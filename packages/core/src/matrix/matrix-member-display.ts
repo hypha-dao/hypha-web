@@ -1,15 +1,49 @@
 import type { MatrixClient, RoomMember } from 'matrix-js-sdk';
 
+/** This env's bot plus any extra bot MXIDs (prod/preview share one Dendrite). */
+export function configuredHyphaBotUserIds(): string[] {
+  const primary = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim();
+  // Browser bundles only see NEXT_PUBLIC_* ; the unprefixed name stays for server.
+  const additional = [
+    process.env.NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS,
+    process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(',')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return [
+    ...new Set(
+      [primary, ...additional].filter((id): id is string => Boolean(id)),
+    ),
+  ];
+}
+
 /** Production and preview org-bot accounts. People meet them as AI Agents. */
 export function isHyphaBotMatrixIdentity(
   userId?: string | null,
   label?: string | null,
 ): boolean {
-  const configured = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim();
   const id = userId?.trim();
-  if (configured && id && id === configured) return true;
+  if (id && configuredHyphaBotUserIds().includes(id)) return true;
   const local = id?.replace(/^@/, '').split(':')[0] ?? '';
   return /hypha[_-]bot/i.test(local) || /hypha[_-]bot/i.test(label ?? '');
+}
+
+/** Joined humans only — configured bots, extra bots, and Hypha bot identities. */
+export function countHumanMatrixMembers(
+  memberIds: readonly (string | null | undefined)[],
+  labels?: Readonly<Record<string, string | null | undefined>>,
+): number {
+  let count = 0;
+  for (const raw of memberIds) {
+    const id = raw?.trim();
+    if (!id) continue;
+    if (isHyphaBotMatrixIdentity(id, labels?.[id])) continue;
+    count += 1;
+  }
+  return count;
 }
 
 /** Matrix often prefixes displaynames with `@` — strip for localpart-style checks. */
@@ -45,6 +79,17 @@ export function pickUserVisibleMemberLabel(
     if (!looksLikeTechnicalMatrixDisplayName(label, id)) return label;
   }
   return null;
+}
+
+/** Hypha profile or Matrix display name, then a shortened id. */
+export function visibleMatrixMemberName(
+  matrixUserId: string,
+  ...candidates: Array<string | undefined | null>
+): string {
+  return (
+    pickUserVisibleMemberLabel(matrixUserId, ...candidates) ??
+    shortenMatrixIdForDisplay(matrixUserId)
+  );
 }
 
 /** Matrix `m.room.member` displayname can mirror the ugly localpart — treat as absent. */
@@ -92,6 +137,41 @@ export function matrixUserIdToCanonicalPrivySub(userId: string): string | null {
   const bridged = localpart.match(/^(?:dev|prev|prod)_privy_did_privy_(.+)$/i);
   if (bridged?.[1]) return `did:privy:${bridged[1]}`;
   return null;
+}
+
+/** Deduped `did:privy:*` subs from bridged Matrix user ids. */
+export function uniqueCanonicalPrivySubsFromMxids(
+  userIds: readonly (string | null | undefined)[],
+): string[] {
+  const subs = new Set<string>();
+  for (const id of userIds) {
+    const sub = id ? matrixUserIdToCanonicalPrivySub(id) : null;
+    if (sub) subs.add(sub);
+  }
+  return [...subs];
+}
+
+/**
+ * `@prod_privy_did_privy_…` without a homeserver still names a bridged user.
+ * Prefer a joined member with that localpart; otherwise synthesize an MXID so
+ * person lookup can run from the localpart.
+ */
+export function resolveBridgedLocalHandleToMxid(
+  handle: string,
+  memberUserIds: readonly string[] = [],
+  fallbackHomeserver = 'matrix',
+): string | null {
+  const local = handle.trim().replace(/^@/, '');
+  if (!local || local.includes(':')) return null;
+  if (!speakerLabelToCanonicalPrivySub(local)) return null;
+  const wanted = local.toLowerCase();
+  for (const id of memberUserIds) {
+    const trimmed = id.trim();
+    const memberLocal = trimmed.replace(/^@/, '').split(':')[0]?.toLowerCase();
+    if (memberLocal === wanted) return trimmed;
+  }
+  const domain = fallbackHomeserver.trim() || 'matrix';
+  return `@${local}:${domain}`;
 }
 
 /** Resolve Hypha `did:privy:*` from a transcript speaker label (MXID or bare localpart). */

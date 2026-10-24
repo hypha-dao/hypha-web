@@ -1,6 +1,14 @@
-import { looksLikeTechnicalMatrixDisplayName } from '../../../../core/src/matrix/matrix-member-display';
-import { HYPHA_ROOM_TYPES } from '../../../../core/src/matrix/room-types';
+import {
+  isHyphaBotMatrixIdentity,
+  looksLikeTechnicalMatrixDisplayName,
+  visibleMatrixMemberName,
+} from '../../../../core/src/matrix/matrix-member-display';
 import { replacePlainTextMatrixMxidsWithLabels } from '../../../../core/src/matrix/mentions';
+import {
+  countCommaSeparatedNames,
+  peopleConversationKindForListing,
+} from '../../../../core/src/matrix/group-room';
+import { HYPHA_ROOM_TYPES } from '../../../../core/src/matrix/room-types';
 
 export type ConnectionListPerson = {
   id: number;
@@ -39,6 +47,15 @@ export type ConversationRow = {
   groupChat?: boolean;
   /** A signal thread that happens to have one other person. Not a private message. */
   signalThread?: boolean;
+  /** Hidden from Messages; still listed under Archived. */
+  archived?: boolean;
+  /** All other members, so search can match more than the two faces. */
+  searchMembers?: {
+    name: string;
+    nickname?: string | null;
+    slug?: string | null;
+    userId?: string;
+  }[];
 };
 
 export type MemberRow<T extends ConnectionListPerson = ConnectionListPerson> = {
@@ -52,21 +69,23 @@ export type MemberRow<T extends ConnectionListPerson = ConnectionListPerson> = {
   roomId: string | null;
   /** Set on a group chat. Two faces mean the row is a group. */
   faces?: GroupFace[];
+  /** Hidden from Messages; still listed under Archived. */
+  archived?: boolean;
+  /** All other members, so search can match more than the two faces. */
+  searchMembers?: {
+    name: string;
+    nickname?: string | null;
+    slug?: string | null;
+    userId?: string;
+  }[];
 };
-
-function botUserId() {
-  return process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
-}
 
 export function looksLikeHyphaBot(value: string | null | undefined) {
   return Boolean(value && /hypha[_-]bot/i.test(value));
 }
 
 export function isHyphaBot(userId: string | undefined, name?: string | null) {
-  const configured = botUserId();
-  if (configured && userId === configured) return true;
-  const local = userId?.replace(/^@/, '').split(':')[0] ?? '';
-  return looksLikeHyphaBot(local) || looksLikeHyphaBot(name);
+  return isHyphaBotMatrixIdentity(userId, name);
 }
 
 export const STALE_CONNECTION_MS = 14 * 24 * 60 * 60 * 1000;
@@ -260,6 +279,59 @@ export function rememberSignalThreadRooms(
 export function isRememberedSignalThreadRoom(roomId: string) {
   loadSignalThreadRooms();
   return signalThreadRoomIds.has(roomId.trim());
+}
+
+const boundChatRoomIds = new Set<string>();
+const BOUND_CHAT_ROOMS_KEY = 'hypha.bound-chat-rooms';
+let boundChatRoomsLoaded = false;
+
+function loadBoundChatRooms() {
+  if (boundChatRoomsLoaded || typeof window === 'undefined') return;
+  boundChatRoomsLoaded = true;
+  try {
+    const raw = window.localStorage.getItem(BOUND_CHAT_ROOMS_KEY);
+    const ids = raw ? (JSON.parse(raw) as unknown) : [];
+    if (!Array.isArray(ids)) return;
+    for (const id of ids) {
+      if (typeof id === 'string' && id.trim()) {
+        boundChatRoomIds.add(id.trim());
+      }
+    }
+  } catch {
+    // Ignore a broken cache. The next lookup can refill it.
+  }
+}
+
+function persistBoundChatRooms() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(
+      BOUND_CHAT_ROOMS_KEY,
+      JSON.stringify([...boundChatRoomIds]),
+    );
+  } catch {
+    // Ignore quota and private-mode failures.
+  }
+}
+
+/** Space member rooms and signal threads, including archived signals. */
+export function rememberBoundChatRooms(
+  roomIds: Iterable<string | null | undefined>,
+) {
+  loadBoundChatRooms();
+  let changed = false;
+  for (const roomId of roomIds) {
+    const id = roomId?.trim();
+    if (!id || boundChatRoomIds.has(id)) continue;
+    boundChatRoomIds.add(id);
+    changed = true;
+  }
+  if (changed) persistBoundChatRooms();
+}
+
+export function isRememberedBoundChatRoom(roomId: string) {
+  loadBoundChatRooms();
+  return boundChatRoomIds.has(roomId.trim());
 }
 
 function directRoomKey(selfUserId: string, otherUserId: string) {
@@ -531,12 +603,13 @@ export function facesWithProfiles(
     const profile = face.userId
       ? profiles.get(face.userId.toLowerCase())
       : undefined;
-    if (!profile) return face;
-    const name = profile.name.trim();
+    const name = face.userId
+      ? visibleMatrixMemberName(face.userId, profile?.name, face.name)
+      : profile?.name.trim() || face.name;
     return {
       ...face,
       name: name || face.name,
-      avatarUrl: profile.avatarUrl || face.avatarUrl,
+      avatarUrl: profile?.avatarUrl || face.avatarUrl,
     };
   });
 }
@@ -660,16 +733,204 @@ export function rememberedGroupChatMemberIds(roomId: string): string[] {
   return readGroupChatMembers()[roomId.trim()] ?? [];
 }
 
+function compactUsername(value: string) {
+  return value.toLowerCase().replace(/[@._\s-]/g, '');
+}
+
+/** Name and username match, including `vladhram` vs `vlad-hramtsov`. */
+export function textMatchesPeopleSearch(
+  parts: readonly (string | null | undefined)[],
+  needle: string,
+) {
+  const query = needle.trim().toLowerCase();
+  if (!query) return true;
+  const fields = parts.filter((part): part is string => Boolean(part?.trim()));
+  if (fields.join(' ').toLowerCase().includes(query)) return true;
+  const compact = compactUsername(query);
+  if (!compact) return false;
+  return fields.some((part) => compactUsername(part).includes(compact));
+}
+
+/** Directory people matching a Messages search by name or username. */
+export function connectionMatchesPeopleSearch(
+  person: {
+    name?: string | null;
+    surname?: string | null;
+    nickname?: string | null;
+    slug?: string | null;
+  },
+  needle: string,
+) {
+  return textMatchesPeopleSearch(
+    [person.name, person.surname, person.nickname, person.slug],
+    needle,
+  );
+}
+
+/** Local connections plus search hits, so a query is not rooms-only. */
+export function peopleMatchingSearch<
+  T extends {
+    id: number;
+    name?: string | null;
+    surname?: string | null;
+    nickname?: string | null;
+    slug?: string | null;
+  },
+>(
+  connections: readonly T[],
+  searchHits: readonly T[] | null | undefined,
+  needle: string,
+): T[] {
+  const query = needle.trim().toLowerCase();
+  if (!query) return [...connections];
+  const byId = new Map<number, T>();
+  for (const person of connections) {
+    if (connectionMatchesPeopleSearch(person, query))
+      byId.set(person.id, person);
+  }
+  for (const person of searchHits ?? []) {
+    if (connectionMatchesPeopleSearch(person, query))
+      byId.set(person.id, person);
+  }
+  return [...byId.values()];
+}
+
+/**
+ * Add-people candidates: name/username search, excluding only people whose
+ * Matrix id is already joined or invited. A missing mxid is not "already here".
+ */
+export function addablePeopleForGroup<
+  T extends {
+    id: number;
+    name?: string | null;
+    surname?: string | null;
+    nickname?: string | null;
+    slug?: string | null;
+  },
+>(
+  connections: readonly T[],
+  searchHits: readonly T[] | null | undefined,
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+  roomMemberIds: ReadonlySet<string>,
+  needle: string,
+): T[] {
+  return peopleMatchingSearch(connections, searchHits, needle).filter(
+    (person) => {
+      const mxid = personIdToMatrixUserId[person.id]?.trim().toLowerCase();
+      return !(mxid && roomMemberIds.has(mxid));
+    },
+  );
+}
+
+/** People Around search: title, profile fields, and group faces. */
+export function conversationMatchesSearch(
+  row: {
+    name: string;
+    person?: { nickname?: string | null; slug?: string | null };
+    faces?: readonly { name?: string | null }[];
+    searchMembers?: readonly {
+      name?: string | null;
+      nickname?: string | null;
+      slug?: string | null;
+      userId?: string | null;
+    }[];
+  },
+  needle: string,
+) {
+  return textMatchesPeopleSearch(
+    [
+      row.name,
+      row.person?.nickname,
+      row.person?.slug,
+      ...(row.faces ?? []).map((face) => face.name),
+      ...(row.searchMembers ?? []).flatMap((member) => [
+        member.name,
+        member.nickname,
+        member.slug,
+        member.userId?.replace(/^@/, '').split(':')[0],
+      ]),
+    ],
+    needle,
+  );
+}
+
 /**
  * A private group chat, not a space channel.
- * Space rooms share the Matrix account but are named for the space.
- * A group chat is titled with the people in it, or remembered from here.
+ * Same gate as production: typed group, remembered Messages group, or a
+ * comma-titled room with 3+ humans. Untyped space / proposal / signal rooms
+ * have 3+ members too — they stay out because their titles have no comma
+ * and they are not remembered as group chats.
  */
 export function isPeopleListGroup(room: ConversationRow) {
   if (room.kind !== 'group' || room.signalThread) return false;
+  if (
+    room.roomType &&
+    room.roomType !== HYPHA_ROOM_TYPES.group &&
+    room.roomType.startsWith('io.hypha.room.')
+  ) {
+    return false;
+  }
   if (room.roomType === HYPHA_ROOM_TYPES.group) return true;
   if (room.groupChat || isRememberedGroupChatRoom(room.roomId)) return true;
-  return room.name.includes(',');
+  if (!room.name.includes(',')) return false;
+  return (room.memberCount ?? 0) > 2 || countCommaSeparatedNames(room.name) > 2;
+}
+
+/**
+ * Kind + People Around gate used by the rendered Messages list.
+ * A joined untyped named room with 3+ summary members and 1 loaded member
+ * still produces a row when the title names three people.
+ */
+export function peopleAroundGroupRows<T extends ConnectionListPerson>(
+  rooms: readonly {
+    roomId: string;
+    name: string;
+    roomType?: string | null;
+    loadedHumanCount: number;
+    summaryJoinedCount: number;
+    hasRoomName?: boolean;
+    titleMemberHint?: number;
+    rememberedHumanCount?: number;
+    createdAsGroup?: boolean;
+    groupChat?: boolean;
+    signalThread?: boolean;
+    archived?: boolean;
+  }[],
+  fallback: string,
+): MemberRow<T>[] {
+  const rows: ConversationRow[] = [];
+  for (const room of rooms) {
+    const kind = peopleConversationKindForListing({
+      roomType: room.roomType,
+      loadedHumanCount: room.loadedHumanCount,
+      summaryJoinedCount: room.summaryJoinedCount,
+      createdAsGroup: room.createdAsGroup,
+      hasRoomName: room.hasRoomName ?? Boolean(room.name.trim()),
+      titleMemberHint:
+        room.titleMemberHint ?? countCommaSeparatedNames(room.name),
+      rememberedHumanCount: room.rememberedHumanCount,
+      rememberedAsGroup: room.groupChat,
+    });
+    if (kind !== 'group') continue;
+    const row: ConversationRow = {
+      roomId: room.roomId,
+      name: room.name,
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      memberCount: room.loadedHumanCount,
+      otherUserId: null,
+      roomType: room.roomType ?? null,
+      groupChat: room.groupChat,
+      kind,
+      signalThread: room.signalThread,
+      archived: room.archived,
+    };
+    if (!isPeopleListGroup(row)) continue;
+    rows.push(row);
+  }
+  return groupRowsForConnections<T>(rows, fallback);
 }
 
 /** Group chats mixed into the people list. One row per room, with two faces. */
@@ -700,8 +961,70 @@ export function groupRowsForConnections<T extends ConnectionListPerson>(
         lastTs: room.lastTs,
         unread: room.unread,
         roomId: room.roomId,
+        archived: room.archived,
+        searchMembers: room.searchMembers,
       };
     });
+}
+
+export function enrichSearchMembers<T extends ConnectionListPerson>(
+  members:
+    | readonly {
+        name: string;
+        nickname?: string | null;
+        slug?: string | null;
+        userId?: string;
+      }[]
+    | undefined,
+  profiles: ReadonlyMap<string, { name: string; avatarUrl?: string }>,
+  connections: readonly MemberRow<T>[],
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+  peopleByMxid?: ReadonlyMap<
+    string,
+    {
+      name?: string | null;
+      nickname?: string | null;
+      slug?: string | null;
+    }
+  >,
+) {
+  const personByMxid = new Map<string, T>();
+  for (const row of connections) {
+    const mxid = personIdToMatrixUserId[row.person.id]?.trim().toLowerCase();
+    if (mxid) personByMxid.set(mxid, row.person);
+  }
+  return (members ?? []).map((member) => {
+    const mxid = member.userId?.trim().toLowerCase();
+    const profile = mxid ? profiles.get(mxid) : undefined;
+    const person = mxid ? personByMxid.get(mxid) : undefined;
+    const resolved = mxid ? peopleByMxid?.get(mxid) : undefined;
+    return {
+      name:
+        (mxid
+          ? visibleMatrixMemberName(
+              mxid,
+              resolved?.name,
+              profile?.name,
+              person ? personName(person, '') : '',
+              member.name,
+            )
+          : resolved?.name || profile?.name || member.name) || member.name,
+      nickname:
+        resolved?.nickname ?? person?.nickname ?? member.nickname ?? null,
+      slug: resolved?.slug ?? person?.slug ?? member.slug ?? null,
+      userId: member.userId,
+    };
+  });
+}
+
+/** Messages hides archived groups; Archived shows only those groups. */
+export function conversationsVisibleInSection<T extends ConnectionListPerson>(
+  rows: readonly MemberRow<T>[],
+  section: 'messages' | 'archived',
+) {
+  return rows.filter((row) =>
+    section === 'archived' ? Boolean(row.archived) : !row.archived,
+  );
 }
 
 /** Members this person connects with. Signal rooms stay out of the list. */

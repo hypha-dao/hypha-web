@@ -355,6 +355,10 @@ export function peopleSharingMemberSpaces({
   };
 }
 
+function compactUsername(value: string) {
+  return value.toLowerCase().replace(/[@._\s-]/g, '');
+}
+
 function personMatchesQuery(
   person: {
     name: string | null;
@@ -364,11 +368,13 @@ function personMatchesQuery(
   },
   needle: string,
 ) {
-  return [person.name, person.surname, person.nickname, person.slug]
+  const fields = [person.name, person.surname, person.nickname, person.slug]
     .filter((part): part is string => Boolean(part?.trim()))
-    .join(' ')
-    .toLowerCase()
-    .includes(needle);
+    .map((part) => part.toLowerCase());
+  if (fields.join(' ').includes(needle)) return true;
+  const compact = compactUsername(needle);
+  if (!compact) return false;
+  return fields.some((part) => compactUsername(part).includes(compact));
 }
 
 /**

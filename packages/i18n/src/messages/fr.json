@@ -305,7 +305,8 @@
     "profileUnavailable": "Tu es toujours connecté. Ton profil n'a pas pu être chargé.",
     "retry": "Réessayer",
     "sendTokensChoose": "Choisis un token. Actuellement {symbol}.",
-    "gotItDone": "Merci — je suis avec vous"
+    "gotItDone": "Merci — je suis avec vous",
+    "matrixPersonUnavailable": "Cette personne n’a pas encore de chat."
   },
   "WelcomeFlow": {
     "offer": {
@@ -696,7 +697,8 @@
     "titleLineTwo": "Partagez des messages",
     "tabs": {
       "messages": "Messages",
-      "suggestions": "Suggestions"
+      "suggestions": "Suggestions",
+      "archived": "Archivés"
     },
     "suggestionsEmpty": "Aucune suggestion pour le moment.",
     "reachOut": "Hypha suggère",
@@ -724,7 +726,8 @@
     "youWrote": "Toi : {message}",
     "unread": "{count} nouveaux",
     "members": "{count} membres",
-    "loadMoreFailed": "Le reste de la liste ne s'est pas chargé. Tu peux réessayer."
+    "loadMoreFailed": "Le reste de la liste ne s'est pas chargé. Tu peux réessayer.",
+    "archivedEmpty": "Les groupes archivés apparaissent ici."
   },
   "NetworkFeedback": {
     "triggerLabel": "Façonner Hypha",
@@ -3295,6 +3298,8 @@
     "chatRoomTitle": "Message direct",
     "systemSender": "Système",
     "noMembers": "Aucun membre trouvé",
+    "membersSearch": "Rechercher des membres",
+    "membersNoMatches": "Aucun membre ne correspond.",
     "unknownMember": "Inconnu",
     "backToSpaceChat": "Retour au chat de l'espace",
     "failedToJoinRoom": "Impossible de rejoindre la salle de conversation",
@@ -3554,7 +3559,37 @@
     "signalTeamAccessRequested": "Accès à l’équipe Signal demandé",
     "signalTeamAccessApproved": "Accès à l’équipe Signal approuvé",
     "mentionOpenFallbackRoom": "Impossible de résoudre ce salon depuis votre contexte local. Ouvrez l'espace concerné puis réessayez.",
-    "mentionOpenFallbackMissingMessage": "Ce message de mention n'est pas encore disponible dans la chronologie chargée. Réessayez dans un instant."
+    "mentionOpenFallbackMissingMessage": "Ce message de mention n'est pas encore disponible dans la chronologie chargée. Réessayez dans un instant.",
+    "groupChatMenu": "Options du groupe",
+    "renameGroup": "Renommer le groupe",
+    "renameGroupTitle": "Renommer ce groupe",
+    "renameGroupDescription": "Le nouveau nom est partagé avec tout le monde dans cette discussion.",
+    "renameGroupName": "Nom du groupe",
+    "renameGroupSave": "Enregistrer le nom",
+    "renameGroupCancel": "Annuler",
+    "renameGroupFailed": "Impossible de renommer ce groupe. Réessayez.",
+    "archiveGroup": "Archiver le groupe",
+    "archiveGroupTitle": "Archiver ce groupe ?",
+    "archiveGroupDescription": "Le groupe disparaît de Messages. L’historique reste dans le salon. Tu peux l’ouvrir depuis Archivés et le restaurer plus tard. Les membres ne sont pas consultés.",
+    "archiveGroupConfirm": "Oui, archiver",
+    "archiveGroupCancel": "Annuler",
+    "archiveGroupFailed": "Impossible d’archiver ce groupe. Réessayez.",
+    "addPeople": "Ajouter des personnes",
+    "addPeopleTitle": "Ajouter des personnes à ce groupe",
+    "addPeopleDescription": "Elles seront invitées dans ce chat.",
+    "addPeopleConfirm": "Ajouter",
+    "addPeopleCancel": "Annuler",
+    "addPeopleFailed": "Impossible d’ajouter des personnes à ce groupe. Réessayez.",
+    "addPeopleEmpty": "Toutes les personnes que tu peux ajouter sont déjà ici.",
+    "addPeopleNoMatches": "Personne ne correspond à cette recherche.",
+    "addPeopleSearch": "Rechercher des personnes",
+    "unarchiveGroup": "Restaurer le groupe",
+    "unarchiveGroupTitle": "Restaurer ce groupe ?",
+    "unarchiveGroupDescription": "Le groupe réapparaît dans Messages. Tout le monde peut envoyer des messages.",
+    "unarchiveGroupConfirm": "Oui, restaurer",
+    "unarchiveGroupCancel": "Annuler",
+    "unarchiveGroupFailed": "Impossible de restaurer ce groupe. Réessayez.",
+    "archivedGroupReadOnly": "Ce groupe est archivé. Restaure-le pour envoyer des messages."
   },
   "CoherenceTab": {
     "signals": "Signaux",

@@ -55,6 +55,7 @@ import {
   isHyphaBotMatrixIdentity,
   looksLikeTechnicalMatrixDisplayName,
   matrixUserIdToCanonicalPrivySub,
+  visibleMatrixMemberName,
 } from './matrix-room-member-display';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
@@ -65,7 +66,6 @@ import {
   type EmojiIndexEntry,
 } from './emoji-mart-index';
 import { getTextareaSelectionCenter } from './textarea-caret-position';
-import { highlightComposerUrlsForBackdrop } from './human-chat-panel-composer-url-highlight';
 import {
   type ChatPanelAttachmentMedia,
   looksLikeAudioMimeOrName,
@@ -78,6 +78,7 @@ import {
 } from './human-chat-panel-voice-audio-row';
 import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row';
 import { formatComposerMentionToken } from './human-chat-display-mention';
+import { mentionCandidateMatchRank } from './human-chat-mention-search';
 import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';
 import { ComposerAttachGoogleDriveMenuItem } from '../composer';
 
@@ -217,7 +218,9 @@ function ReplyPreviewAuthorName({
     ) {
       return fallback;
     }
-    return unknownMemberLabel;
+    return matrixUserId
+      ? visibleMatrixMemberName(matrixUserId, fallback)
+      : unknownMemberLabel;
   }, [authorLabel, matrixUserId, person, unknownMemberLabel]);
 
   const jwtBlockingForPerson =
@@ -265,6 +268,10 @@ export type ChatMentionAgentIcon =
 export type ChatMentionCandidate = {
   userId: string;
   displayLabel: string;
+  /** Hypha nickname — mention search matches this as well as the display name. */
+  nickname?: string | null;
+  /** Hypha username / slug. */
+  slug?: string | null;
   /** Optional thumbnail for the mention picker (Matrix room avatar HTTP URL). */
   avatarUrl?: string;
   /** When known from space roster (`Person.sub`), resolves profile without Matrix→Privy lookup. */
@@ -291,6 +298,9 @@ export type ChatDraftAttachment = {
   /** When set, this row is an existing Matrix attachment (edit mode). */
   editSlot?: ChatDraftEditSlot;
 };
+
+/** Grow with the draft, then scroll inside so the caret stays in the text. */
+const COMPOSER_INPUT_MAX_PX = 160;
 
 type HumanChatPanelChatBarProps = {
   value: string;
@@ -528,22 +538,6 @@ function insertAtCaret(
 
 const MAX_MENTION_SUGGESTIONS = 24;
 
-function mentionSearchLabel(
-  candidate: ChatMentionCandidate,
-  resolved: ReadonlyMap<string, string>,
-) {
-  return (resolved.get(candidate.userId) ?? candidate.displayLabel).trim();
-}
-
-function labelRank(label: string, query: string): 'start' | 'contains' | null {
-  if (!label) return null;
-  if (label.startsWith(query)) return 'start';
-  const words = label.split(/[\s._'-]+/);
-  if (words.some((word) => word.startsWith(query))) return 'start';
-  if (label.includes(query)) return 'contains';
-  return null;
-}
-
 function filterMentionCandidates(
   all: ChatMentionCandidate[],
   query: string,
@@ -558,25 +552,11 @@ function filterMentionCandidates(
   const contains: ChatMentionCandidate[] = [];
   const pending: ChatMentionCandidate[] = [];
   for (const m of all) {
-    const label = mentionSearchLabel(m, resolved).toLowerCase();
-    const prompts = [
-      m.prompt?.toLowerCase() ?? '',
-      ...(m.skills ?? []).map((skill) => skill.prompt.toLowerCase()),
-    ].filter(Boolean);
-    const id = m.userId.toLowerCase();
-    const local = m.userId.startsWith('@')
-      ? m.userId.slice(1).split(':')[0]?.toLowerCase() ?? ''
-      : '';
-    const idStarts =
-      prompts.some((prompt) => prompt.startsWith(q)) ||
-      id.startsWith(`@${q}`) ||
-      id.startsWith(q) ||
-      Boolean(local && local.startsWith(q));
-    const idContains =
-      prompts.some((prompt) => prompt.includes(q)) || id.includes(q);
-    const rank =
-      labelRank(label, q) ??
-      (idStarts ? 'start' : idContains ? 'contains' : null);
+    const rank = mentionCandidateMatchRank(
+      m,
+      q,
+      resolved.get(m.userId)?.trim(),
+    );
     if (rank === 'start') {
       if (starts.length < MAX_MENTION_SUGGESTIONS) starts.push(m);
     } else if (rank === 'contains') {
@@ -711,13 +691,6 @@ export function HumanChatPanelChatBar({
   valueRef.current = value;
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  /** Mirrored backdrop for Discord-style URL coloring (textarea text is transparent). */
-  const composerBackdropRef = useRef<HTMLDivElement>(null);
-
-  const composerHighlightBackdrop = useMemo(
-    () => highlightComposerUrlsForBackdrop(value),
-    [value],
-  );
   const composerShellRef = useRef<HTMLDivElement>(null);
   const replyPreviewWasOpenRef = useRef(false);
   const editPreviewWasOpenRef = useRef(false);
@@ -819,28 +792,20 @@ export function HumanChatPanelChatBar({
 
   const autoResize = useCallback(() => {
     const ta = textareaRef.current;
-    const bd = composerBackdropRef.current;
     if (!ta) return;
     const content = valueRef.current;
     /**
      * After send we clear to `''`. With only `height='auto'`, some browsers keep the
      * previous large scrollHeight — force a shrink before measuring.
      */
-    if (content.length === 0) {
-      ta.style.height = '0px';
-      ta.style.minHeight = '0';
-      void ta.offsetHeight;
-    }
-    ta.style.height = 'auto';
+    ta.style.height = '0px';
     ta.style.minHeight = '';
-    const h = Math.min(ta.scrollHeight, 160);
+    void ta.offsetHeight;
+    ta.style.height = 'auto';
+    const h = Math.min(Math.max(ta.scrollHeight, 36), COMPOSER_INPUT_MAX_PX);
     ta.style.height = `${h}px`;
     if (content.length === 0) {
       ta.scrollTop = 0;
-    }
-    /** Backdrop is `absolute inset-0` — no explicit height; mirrors textarea box via layout. */
-    if (bd && content.length === 0) {
-      bd.scrollTop = 0;
     }
   }, []);
 
@@ -2181,30 +2146,15 @@ export function HumanChatPanelChatBar({
           </div>
         )}
         {/*
-          Single-flow textarea sets height. Mirrored backdrop is absolute so it never
-          participates in CSS Grid row sizing (grid + two stacked cells kept the row
-          stuck at max height after send).
+          Visible auto-growing textarea. A transparent overlay used to paint URL
+          highlights, but its wrap/scroll did not match the caret. Text and caret
+          now live on one element; it grows to COMPOSER_INPUT_MAX_PX then scrolls.
         */}
         <div className="relative isolate min-h-[36px] min-w-0 max-h-[160px] w-full overflow-hidden rounded-sm">
-          <div
-            ref={composerBackdropRef}
-            aria-hidden
-            className={cn(
-              'pointer-events-none absolute inset-0 z-0 overflow-y-auto overflow-x-hidden',
-              'whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed text-foreground',
-              'selection:bg-transparent narrow-scrollbar',
-            )}
-          >
-            {composerHighlightBackdrop}
-          </div>
           <textarea
             ref={textareaRef}
             value={value}
             disabled={composerLocked}
-            onScroll={(e) => {
-              const bd = composerBackdropRef.current;
-              if (bd) bd.scrollTop = e.currentTarget.scrollTop;
-            }}
             onPointerDown={(e) => {
               if (e.button !== 0) return;
               pointerSelectingRef.current = true;
@@ -2231,9 +2181,9 @@ export function HumanChatPanelChatBar({
             placeholder={placeholder ?? defaultPlaceholder}
             rows={1}
             className={cn(
-              'relative z-[1] block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
-              'overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-sm leading-relaxed',
-              'text-transparent caret-foreground',
+              'relative z-[1] box-border block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
+              'overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2 text-sm leading-5',
+              'text-foreground caret-foreground',
               'placeholder:text-muted-foreground focus:outline-none',
             )}
           />

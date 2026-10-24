@@ -305,7 +305,8 @@
     "profileUnavailable": "Je bent nog aangemeld. Je profiel kon niet worden geladen.",
     "retry": "Opnieuw proberen",
     "sendTokensChoose": "Kies een token. Nu {symbol}.",
-    "gotItDone": "Bedankt — ik ben erbij"
+    "gotItDone": "Bedankt — ik ben erbij",
+    "matrixPersonUnavailable": "Die persoon heeft nog geen chat."
   },
   "WelcomeFlow": {
     "offer": {
@@ -696,7 +697,8 @@
     "titleLineTwo": "Deel berichten",
     "tabs": {
       "messages": "Berichten",
-      "suggestions": "Suggesties"
+      "suggestions": "Suggesties",
+      "archived": "Gearchiveerd"
     },
     "suggestionsEmpty": "Nu geen suggesties.",
     "reachOut": "Hypha stelt voor",
@@ -724,7 +726,8 @@
     "youWrote": "Jij: {message}",
     "unread": "{count} nieuw",
     "members": "{count} leden",
-    "loadMoreFailed": "De rest van de lijst is niet geladen. Je kunt het opnieuw proberen."
+    "loadMoreFailed": "De rest van de lijst is niet geladen. Je kunt het opnieuw proberen.",
+    "archivedEmpty": "Gearchiveerde groepen verschijnen hier."
   },
   "NetworkFeedback": {
     "triggerLabel": "Ondersteun Hypha",
@@ -3872,6 +3875,8 @@
     "chatRoomTitle": "Privébericht",
     "systemSender": "Systeem",
     "noMembers": "Geen leden gevonden",
+    "membersSearch": "Leden zoeken",
+    "membersNoMatches": "Geen leden komen overeen.",
     "unknownMember": "Onbekend",
     "failedToJoinRoom": "Kan niet deelnemen aan de gespreksruimte",
     "emojiPickerComposer": "Kies emoji",
@@ -4130,7 +4135,37 @@
     "signalTeamAccessRequested": "Toegang tot signaalteam aangevraagd",
     "signalTeamAccessApproved": "Toegang tot signaalteam goedgekeurd",
     "mentionOpenFallbackRoom": "We konden die kamer niet oplossen vanuit uw lokale context. Open de gerelateerde ruimte en probeer het opnieuw.",
-    "mentionOpenFallbackMissingMessage": "Dat vermeldingsbericht is nog niet beschikbaar in de geladen tijdlijn. Probeer het zo nog eens."
+    "mentionOpenFallbackMissingMessage": "Dat vermeldingsbericht is nog niet beschikbaar in de geladen tijdlijn. Probeer het zo nog eens.",
+    "groupChatMenu": "Groepschatopties",
+    "renameGroup": "Groep hernoemen",
+    "renameGroupTitle": "Deze groep hernoemen",
+    "renameGroupDescription": "De nieuwe naam geldt voor iedereen in deze chat.",
+    "renameGroupName": "Groepsnaam",
+    "renameGroupSave": "Naam opslaan",
+    "renameGroupCancel": "Annuleren",
+    "renameGroupFailed": "Deze groep kon niet worden hernoemd. Probeer het opnieuw.",
+    "archiveGroup": "Groep archiveren",
+    "archiveGroupTitle": "Deze groep archiveren?",
+    "archiveGroupDescription": "Dit verbergt de groep uit Berichten. De geschiedenis blijft in de ruimte. Je kunt hem openen via Gearchiveerd en later herstellen. Leden worden niet gevraagd.",
+    "archiveGroupConfirm": "Ja, archiveren",
+    "archiveGroupCancel": "Annuleren",
+    "archiveGroupFailed": "Deze groep kon niet worden gearchiveerd. Probeer het opnieuw.",
+    "addPeople": "Mensen toevoegen",
+    "addPeopleTitle": "Mensen aan deze groep toevoegen",
+    "addPeopleDescription": "Ze worden uitgenodigd in deze chat.",
+    "addPeopleConfirm": "Toevoegen",
+    "addPeopleCancel": "Annuleren",
+    "addPeopleFailed": "Kon geen mensen aan deze groep toevoegen. Probeer het opnieuw.",
+    "addPeopleEmpty": "Iedereen die je kunt toevoegen is hier al.",
+    "addPeopleNoMatches": "Niemand komt overeen met die zoekopdracht.",
+    "addPeopleSearch": "Mensen zoeken",
+    "unarchiveGroup": "Groep herstellen",
+    "unarchiveGroupTitle": "Deze groep herstellen?",
+    "unarchiveGroupDescription": "De groep verschijnt weer in Berichten. Iedereen kan berichten sturen.",
+    "unarchiveGroupConfirm": "Ja, herstellen",
+    "unarchiveGroupCancel": "Annuleren",
+    "unarchiveGroupFailed": "Kon deze groep niet herstellen. Probeer het opnieuw.",
+    "archivedGroupReadOnly": "Deze groep is gearchiveerd. Herstel hem om berichten te sturen."
   },
   "CoherenceTab": {
     "signals": "Signalen",

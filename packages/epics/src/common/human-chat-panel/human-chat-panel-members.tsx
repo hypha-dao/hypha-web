@@ -1,11 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Search } from 'lucide-react';
 import { Skeleton } from '@hypha-platform/ui';
 import {
+  looksLikeTechnicalMatrixDisplayName,
+  matrixUserIdToCanonicalPrivySub,
   specialistById,
+  uniqueCanonicalPrivySubsFromMxids,
   useMatrix,
+  usePeopleBySubs,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import {
@@ -13,6 +18,7 @@ import {
   tagGroupAccentClass,
 } from '../ai-agent-competencies';
 import { PersonAvatar } from '../../people/components/person-avatar';
+import { textMatchesPeopleSearch } from '../../people/components/member-connections';
 import { UseMembers } from '../../spaces';
 import { useSpaceMembersAndDelegates } from '../../spaces/hooks/use-space-members-and-delegates';
 import {
@@ -24,7 +30,11 @@ import {
 type RoomScopedMember = {
   userId: string;
   displayName: string;
+  avatarUrl?: string;
+  nickname?: string | null;
+  slug?: string | null;
   online: boolean;
+  unresolved?: boolean;
 };
 
 type HumanChatPanelMembersProps = {
@@ -57,15 +67,25 @@ export function HumanChatPanelMembers({
 }: HumanChatPanelMembersProps) {
   const t = useTranslations('HumanChatPanel');
   const tCoherence = useTranslations('CoherenceTab');
-  const calledSpecialists = calledIds.flatMap((id) => {
-    const specialist = specialistById(id);
-    return specialist ? [specialist] : [];
-  });
+  const calledSpecialists = useMemo(
+    () =>
+      calledIds.flatMap((id) => {
+        const specialist = specialistById(id);
+        return specialist ? [specialist] : [];
+      }),
+    [calledIds],
+  );
   const { client, getRoomMembers, isMatrixAvailable, isAuthenticated } =
     useMatrix();
+  const [memberQuery, setMemberQuery] = useState('');
   const [onlineCount, setOnlineCount] = useState(0);
   const [roomMembers, setRoomMembers] = useState<RoomScopedMember[]>([]);
   const [roomMembersLoading, setRoomMembersLoading] = useState(false);
+  useEffect(() => {
+    setMemberQuery('');
+    setRoomMembers([]);
+    setOnlineCount(0);
+  }, [roomId]);
   const { space } = useSpaceBySlug(roomScoped ? '' : spaceSlug ?? '');
   const {
     persons: members,
@@ -76,8 +96,67 @@ export function HumanChatPanelMembers({
     web3SpaceId: roomScoped ? undefined : space?.web3SpaceId,
     useMembers,
   });
-  const listedCount = roomScoped ? roomMembers.length : members.length;
-  const totalCount = listedCount + calledSpecialists.length;
+  const memberSubs = useMemo(
+    () =>
+      uniqueCanonicalPrivySubsFromMxids(
+        roomMembers.map((member) => member.userId),
+      ),
+    [roomMembers],
+  );
+  const { peopleBySub, isLoading: peopleBySubLoading } = usePeopleBySubs({
+    subs: roomScoped ? memberSubs : [],
+  });
+  const resolvedRoomMembers = useMemo(() => {
+    return roomMembers.map((member) => {
+      const sub = matrixUserIdToCanonicalPrivySub(member.userId);
+      const person = sub ? peopleBySub.get(sub) : undefined;
+      const hyphaName =
+        [person?.name, person?.surname].filter(Boolean).join(' ').trim() ||
+        person?.nickname?.trim() ||
+        '';
+      const raw = hyphaName || member.displayName;
+      const technical = looksLikeTechnicalMatrixDisplayName(raw, member.userId);
+      return {
+        ...member,
+        displayName: technical ? '' : raw,
+        avatarUrl: person?.avatarUrl || member.avatarUrl || undefined,
+        nickname: person?.nickname ?? member.nickname ?? null,
+        slug: person?.slug ?? member.slug ?? null,
+        unresolved: technical,
+      };
+    });
+  }, [peopleBySub, roomMembers]);
+  const visibleRoomMembers = useMemo(() => {
+    return resolvedRoomMembers.filter((member) =>
+      textMatchesPeopleSearch(
+        [member.displayName, member.nickname, member.slug],
+        memberQuery,
+      ),
+    );
+  }, [memberQuery, resolvedRoomMembers]);
+  const visibleSpaceMembers = useMemo(() => {
+    return members.filter((member) => {
+      const displayName =
+        [member.name, member.surname].filter(Boolean).join(' ') ||
+        member.nickname ||
+        '';
+      return textMatchesPeopleSearch(
+        [displayName, member.nickname, member.slug],
+        memberQuery,
+      );
+    });
+  }, [memberQuery, members]);
+  const visibleCalledSpecialists = useMemo(() => {
+    return calledSpecialists.filter((specialist) =>
+      textMatchesPeopleSearch([tCoherence(specialist.roleKey)], memberQuery),
+    );
+  }, [calledSpecialists, memberQuery, tCoherence]);
+  const listedCount = roomScoped
+    ? visibleRoomMembers.length
+    : visibleSpaceMembers.length;
+  const totalCount = roomScoped
+    ? resolvedRoomMembers.length + calledSpecialists.length
+    : members.length + calledSpecialists.length;
 
   useEffect(() => {
     if (!roomId || !isMatrixAvailable || !isAuthenticated) {
@@ -107,14 +186,16 @@ export function HumanChatPanelMembers({
                 userId: entry.userId,
                 displayName: member
                   ? matrixMemberDisplayLabel(member, entry.userId)
-                  : shortenMatrixIdForDisplay(entry.userId),
+                  : '',
                 online: entry.presence,
               };
             });
           next.sort((left, right) =>
-            left.displayName.localeCompare(right.displayName, undefined, {
-              sensitivity: 'base',
-            }),
+            (left.displayName || left.userId).localeCompare(
+              right.displayName || right.userId,
+              undefined,
+              { sensitivity: 'base' },
+            ),
           );
           setRoomMembers(next);
         }
@@ -150,7 +231,8 @@ export function HumanChatPanelMembers({
     !showRoomLoading &&
     !showSpaceError &&
     listedCount === 0 &&
-    calledSpecialists.length === 0;
+    visibleCalledSpecialists.length === 0;
+  const emptyCopy = memberQuery.trim() ? t('membersNoMatches') : t('noMembers');
 
   return (
     <div
@@ -187,6 +269,21 @@ export function HumanChatPanelMembers({
           online: onlineCount,
         })}
       </div>
+      <label className="relative mb-2 min-w-0">
+        <span className="sr-only">{t('membersSearch')}</span>
+        <Search
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
+          strokeWidth={1.5}
+          aria-hidden
+        />
+        <input
+          value={memberQuery}
+          onChange={(event) => setMemberQuery(event.target.value)}
+          placeholder={t('membersSearch')}
+          data-testid="chat-panel-members-search"
+          className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+        />
+      </label>
       {(showSpaceLoading || showRoomLoading) && (
         <div className="flex flex-col gap-1">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -212,31 +309,53 @@ export function HumanChatPanelMembers({
       )}
       {showEmpty && (
         <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-          {t('noMembers')}
+          {emptyCopy}
         </div>
       )}
       {roomScoped
-        ? roomMembers.map((member) => (
-            <div
-              key={member.userId}
-              className="flex items-center gap-3 rounded-none px-2 py-1.5 transition-colors hover:bg-foreground/[0.04]"
-              data-testid="chat-panel-member-item"
-            >
-              <PersonAvatar
-                userName={member.displayName}
-                size="md"
-                className="rounded-full"
-                matrixUserId={member.userId}
-              />
-              <span className="truncate text-sm text-foreground">
-                {member.displayName}
-                {currentUserMatrixId && member.userId === currentUserMatrixId
-                  ? ` (${t('you')})`
-                  : ''}
-              </span>
-            </div>
-          ))
-        : members.map((member) => {
+        ? visibleRoomMembers.map((member) => {
+            const pendingName =
+              member.unresolved && peopleBySubLoading && !member.displayName;
+            const label = member.displayName || t('unknownMember');
+            return (
+              <div
+                key={member.userId}
+                className="flex items-center gap-3 rounded-none px-2 py-1.5 transition-colors hover:bg-foreground/[0.04]"
+                data-testid="chat-panel-member-item"
+              >
+                {pendingName ? (
+                  <>
+                    <PersonAvatar
+                      isLoading
+                      size="md"
+                      className="rounded-full"
+                    />
+                    <Skeleton width="120px" height="16px" loading>
+                      <div />
+                    </Skeleton>
+                  </>
+                ) : (
+                  <>
+                    <PersonAvatar
+                      avatarSrc={member.avatarUrl}
+                      userName={label}
+                      size="md"
+                      className="rounded-full"
+                      matrixUserId={member.userId}
+                    />
+                    <span className="truncate text-sm text-foreground">
+                      {label}
+                      {currentUserMatrixId &&
+                      member.userId === currentUserMatrixId
+                        ? ` (${t('you')})`
+                        : ''}
+                    </span>
+                  </>
+                )}
+              </div>
+            );
+          })
+        : visibleSpaceMembers.map((member) => {
             const displayName =
               [member.name, member.surname].filter(Boolean).join(' ') ||
               member.nickname ||
@@ -261,7 +380,7 @@ export function HumanChatPanelMembers({
               </div>
             );
           })}
-      {calledSpecialists.map((specialist) => {
+      {visibleCalledSpecialists.map((specialist) => {
         const role = tCoherence(specialist.roleKey);
         return (
           <div

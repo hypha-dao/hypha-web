@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ClientEvent, SyncState } from 'matrix-js-sdk';
 import {
   useJwt,
   useMatrix,
@@ -11,7 +10,10 @@ import {
 
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
-import { rememberDirectRoom } from './member-connections';
+import {
+  noticeKeyForOpenPersonRoomError,
+  openOrEnsurePersonRoom,
+} from './open-person-room';
 
 export type DirectoryPerson = {
   id: number;
@@ -65,39 +67,6 @@ export function useMemberDirectoryConnect(people: DirectoryPerson[]) {
     });
   }
 
-  async function waitForMatrix() {
-    for (let attempt = 0; attempt < 30; attempt += 1) {
-      const current = matrixRef.current;
-      if (current.isAuthenticated && current.client) {
-        await waitForRoomList(current.client);
-        return current;
-      }
-      await new Promise((resolve) => window.setTimeout(resolve, 100));
-    }
-    return matrixRef.current;
-  }
-
-  function waitForRoomList(client: NonNullable<typeof matrix.client>) {
-    const state = client.getSyncState();
-    if (state === SyncState.Prepared || state === SyncState.Syncing) {
-      return Promise.resolve();
-    }
-    return new Promise<void>((resolve) => {
-      const timer = window.setTimeout(finish, 4000);
-      const onSync = (next: SyncState | null) => {
-        if (next === SyncState.Prepared || next === SyncState.Syncing) {
-          finish();
-        }
-      };
-      function finish() {
-        window.clearTimeout(timer);
-        client.removeListener(ClientEvent.Sync, onSync);
-        resolve();
-      }
-      client.on(ClientEvent.Sync, onSync);
-    });
-  }
-
   async function waitForMatrixUserId(personId: number) {
     for (let attempt = 0; attempt < 40; attempt += 1) {
       const mxid = matrixIdsRef.current[personId];
@@ -109,21 +78,17 @@ export function useMemberDirectoryConnect(people: DirectoryPerson[]) {
   }
 
   async function resolvePersonRoom(person: DirectoryPerson, title: string) {
-    const ready = await waitForMatrix();
-    const client = ready.client;
-    const selfId = client?.getUserId() ?? '';
-    if (!ready.isAuthenticated || !client) {
-      setNotice(t('matrixUnavailable'));
+    try {
+      return await openOrEnsurePersonRoom({
+        getMatrix: () => matrixRef.current,
+        personId: person.id,
+        title,
+        waitForMatrixUserId,
+      });
+    } catch (error) {
+      setNotice(t(noticeKeyForOpenPersonRoomError(error)));
       return null;
     }
-    const mxid = await waitForMatrixUserId(person.id);
-    if (!mxid || !selfId) {
-      setNotice(t('matrixUnavailable'));
-      return null;
-    }
-    const { roomId } = await ready.ensureDirectRoom(mxid, title);
-    rememberDirectRoom(selfId, mxid, roomId);
-    return roomId;
   }
 
   async function openChat(person: DirectoryPerson) {

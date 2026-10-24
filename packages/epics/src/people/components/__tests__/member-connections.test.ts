@@ -1,11 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
+import { HYPHA_ROOM_TYPES } from '../../../../../core/src/matrix/room-types';
+
 import {
   STALE_CONNECTION_MS,
+  addablePeopleForGroup,
   connectionActivityTs,
+  connectionMatchesPeopleSearch,
+  conversationMatchesSearch,
+  peopleMatchingSearch,
+  conversationsVisibleInSection,
   conversationUnreadTotal,
   facesWithProfiles,
   groupRowsForConnections,
+  isPeopleListGroup,
+  peopleAroundGroupRows,
   memberRowsForConnections,
   messagePreview,
   orphanedDirectRoomIds,
@@ -95,6 +104,45 @@ describe('memberRowsForConnections', () => {
       lastTs: 300,
     });
     expect(rows[1]).toMatchObject({ roomId: null, preview: '' });
+  });
+
+  it('keeps the directory person row even when a named group also exists', () => {
+    const rows = memberRowsForConnections(
+      [person(2, 'Kate', 'Bennett')],
+      [
+        room({
+          roomId: '!legacy-group',
+          kind: 'group',
+          name: 'Vlad Hramtsov, Kate Bennett (test)',
+          lastTs: null,
+          otherUserId: '@kate:matrix',
+        }),
+      ],
+      { 2: '@kate:matrix' },
+      1,
+      'Someone',
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      name: 'Kate Bennett',
+      roomId: null,
+      preview: '',
+      lastTs: null,
+    });
+    expect(
+      groupRowsForConnections(
+        [
+          room({
+            roomId: '!legacy-group',
+            kind: 'group',
+            name: 'Vlad Hramtsov, Kate Bennett (test)',
+            lastTs: null,
+          }),
+        ],
+        'Someone',
+      ).map((row) => row.name),
+    ).toEqual([]);
   });
 
   it('does not use a signal thread as the private message', () => {
@@ -565,6 +613,7 @@ describe('groupRowsForConnections', () => {
           roomId: '!space',
           kind: 'group',
           name: 'Hypha',
+          roomType: HYPHA_ROOM_TYPES.space,
           memberCount: 40,
           lastTs: 900,
         }),
@@ -594,6 +643,260 @@ describe('groupRowsForConnections', () => {
       { name: 'Vlad Hramtsov' },
     ]);
   });
+
+  it('returns people by name and username, not only existing rooms', () => {
+    const kate = {
+      ...person(2, 'Kate', 'Bennett'),
+      nickname: 'kate',
+      slug: 'kate-bennett',
+    };
+    const xerxes = {
+      ...person(9, 'Xerxes', 'Potel'),
+      nickname: 'xpotel',
+      slug: 'xerxes',
+    };
+    expect(connectionMatchesPeopleSearch(xerxes, 'xerxes')).toBe(true);
+    expect(connectionMatchesPeopleSearch(xerxes, 'xpotel')).toBe(true);
+    expect(
+      connectionMatchesPeopleSearch(
+        {
+          name: 'Vlad',
+          surname: 'Hramtsov',
+          nickname: 'vlad-hramtsov',
+          slug: 'vlad-hramtsov',
+        },
+        'vladhram',
+      ),
+    ).toBe(true);
+    expect(
+      peopleMatchingSearch([kate], [xerxes], 'xerxes').map((p) => p.id),
+    ).toEqual([9]);
+    expect(
+      peopleMatchingSearch([kate, xerxes], [], 'bennett').map((p) => p.id),
+    ).toEqual([2]);
+  });
+
+  it('does not treat a missing mxid as already in the group', () => {
+    const kate = {
+      ...person(2, 'Kate', 'Bennett'),
+      nickname: 'kate',
+      slug: 'kate-bennett',
+    };
+    const xerxes = {
+      ...person(9, 'Xerxes', 'Potel'),
+      nickname: 'xpotel',
+      slug: 'xerxes',
+    };
+    expect(
+      addablePeopleForGroup(
+        [kate, xerxes],
+        [],
+        { 2: '@kate:matrix' },
+        new Set(['@kate:matrix']),
+        'xerxes',
+      ).map((p) => p.id),
+    ).toEqual([9]);
+    expect(
+      addablePeopleForGroup(
+        [kate],
+        [xerxes],
+        {},
+        new Set(['@someone:matrix']),
+        'xerxes',
+      ).map((p) => p.id),
+    ).toEqual([9]);
+  });
+
+  it('finds a renamed group by a member name in the title or faces', () => {
+    const row = room({
+      roomId: '!pair',
+      kind: 'group',
+      name: 'Vlad Hramtsov, Kate Bennett (test)',
+      faces: [{ name: 'Vlad Hramtsov' }, { name: 'Kate Bennett' }],
+      memberCount: 2,
+    });
+    expect(conversationMatchesSearch(row, 'Kate')).toBe(true);
+    expect(
+      conversationMatchesSearch({ ...row, name: 'Water team' }, 'Kate'),
+    ).toBe(true);
+    expect(conversationMatchesSearch(row, 'Marieke')).toBe(false);
+    expect(
+      conversationMatchesSearch(
+        {
+          ...row,
+          name: 'Water team',
+          searchMembers: [
+            { name: 'Marieke Visser', nickname: 'marie', slug: 'marieke' },
+          ],
+        },
+        'Marieke',
+      ),
+    ).toBe(true);
+    expect(
+      conversationMatchesSearch(
+        {
+          ...row,
+          name: 'Water team',
+          searchMembers: [
+            { name: 'Marieke Visser', nickname: 'marie', slug: 'marieke' },
+          ],
+        },
+        'marie',
+      ),
+    ).toBe(true);
+    expect(
+      conversationMatchesSearch(
+        {
+          ...row,
+          name: 'Water team',
+          searchMembers: [
+            {
+              name: 'Vlad Hramtsov',
+              nickname: 'vlad-hramtsov',
+              slug: 'vlad-hramtsov',
+            },
+          ],
+        },
+        'vladhram',
+      ),
+    ).toBe(true);
+  });
+
+  it('keeps a renamed two-person group without a comma in the title', () => {
+    const row = room({
+      roomId: '!pair',
+      kind: 'group',
+      name: 'Water team',
+      memberCount: 2,
+      roomType: HYPHA_ROOM_TYPES.group,
+    });
+    expect(isPeopleListGroup(row)).toBe(true);
+    expect(groupRowsForConnections([row], 'Someone')).toHaveLength(1);
+    expect(groupRowsForConnections([row], 'Someone')[0]?.name).toBe(
+      'Water team',
+    );
+  });
+
+  it('lists a named untyped group when only one member has loaded', () => {
+    const rows = peopleAroundGroupRows(
+      [
+        {
+          roomId: '!Cm2va52o4xgesz0V:srv1294735.hstgr.cloud',
+          name: 'Gerardo Roza, Xerxes Potel, Vlad Hramtsov (test)',
+          roomType: null,
+          loadedHumanCount: 1,
+          summaryJoinedCount: 4,
+          hasRoomName: true,
+        },
+      ],
+      'Someone',
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.roomId).toBe('!Cm2va52o4xgesz0V:srv1294735.hstgr.cloud');
+  });
+
+  it('keeps a remembered renamed group and drops untyped proposal or space rooms', () => {
+    const rows = peopleAroundGroupRows(
+      [
+        {
+          roomId: '!team',
+          name: 'Team Alpha',
+          roomType: null,
+          loadedHumanCount: 1,
+          summaryJoinedCount: 4,
+          hasRoomName: true,
+          groupChat: true,
+        },
+        {
+          roomId: '!Cm2va52o4xgesz0V:srv1294735.hstgr.cloud',
+          name: 'Gerardo Roza, Xerxes Potel, Vlad Hramtsov (test)',
+          roomType: null,
+          loadedHumanCount: 1,
+          summaryJoinedCount: 4,
+          hasRoomName: true,
+        },
+        {
+          roomId: '!proposal',
+          name: 'Proposal discussion',
+          loadedHumanCount: 12,
+          summaryJoinedCount: 12,
+          hasRoomName: true,
+        },
+        {
+          roomId: '!space',
+          name: 'space-hypha',
+          loadedHumanCount: 40,
+          summaryJoinedCount: 40,
+          hasRoomName: true,
+        },
+      ],
+      'Someone',
+    );
+    expect(rows.map((row) => row.roomId)).toEqual([
+      '!team',
+      '!Cm2va52o4xgesz0V:srv1294735.hstgr.cloud',
+    ]);
+  });
+
+  it('hides untyped proposal, space, and signal rooms that production hid', () => {
+    const rows = peopleAroundGroupRows(
+      [
+        {
+          roomId: '!proposal',
+          name: 'Proposal discussion',
+          loadedHumanCount: 12,
+          summaryJoinedCount: 12,
+          hasRoomName: true,
+        },
+        {
+          roomId: '!space',
+          name: 'space-hypha',
+          loadedHumanCount: 40,
+          summaryJoinedCount: 40,
+          hasRoomName: true,
+        },
+        {
+          roomId: '!signal',
+          name: 'Signals upvote feature',
+          loadedHumanCount: 8,
+          summaryJoinedCount: 8,
+          hasRoomName: true,
+        },
+        {
+          roomId: '!redesign',
+          name: 'Signal Redesign',
+          loadedHumanCount: 6,
+          summaryJoinedCount: 6,
+          hasRoomName: true,
+        },
+        {
+          roomId: '!cal',
+          name: 'Calendar…',
+          loadedHumanCount: 5,
+          summaryJoinedCount: 5,
+          hasRoomName: true,
+        },
+      ],
+      'Someone',
+    );
+    expect(rows).toEqual([]);
+  });
+
+  it('keeps archived groups so the Archived view can list them', () => {
+    const row = room({
+      roomId: '!old',
+      kind: 'group',
+      name: 'Water team',
+      archived: true,
+      memberCount: 3,
+      groupChat: true,
+    });
+    const rows = groupRowsForConnections([row], 'Someone');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.archived).toBe(true);
+    expect(conversationsVisibleInSection(rows, 'messages')).toEqual([]);
+    expect(conversationsVisibleInSection(rows, 'archived')).toHaveLength(1);
+  });
 });
 
 const GERARDO =
@@ -610,6 +913,12 @@ describe('messagePreview', () => {
         id === GERARDO ? 'Gerardo Roza' : '',
       ),
     ).toBe('Hey @Gerardo Roza');
+  });
+
+  it('keeps a technical member label so a later pass can replace the mxid', () => {
+    expect(
+      messagePreview(`Hey ${GERARDO}`, (id) => (id === GERARDO ? GERARDO : '')),
+    ).toBe(`Hey ${GERARDO}`);
   });
 
   it('still shortens an ordinary mention and a long note', () => {
