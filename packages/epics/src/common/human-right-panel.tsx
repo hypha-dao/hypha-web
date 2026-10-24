@@ -180,6 +180,7 @@ import {
   buildSpaceRosterSignalTeamMembers,
 } from './human-chat-panel/build-space-roster-mention-candidates';
 import { directConversationWelcomeName } from './human-chat-panel/direct-conversation-welcome';
+import { logEffectRun2575, useWhatChanged2575 } from './debug-2575';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -4472,9 +4473,29 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
   }, [searchParams]);
 
+  // TEMP(#2575)
+  useWhatChanged2575('HumanRightPanel signal deep-link effect', {
+    mode,
+    spaceSlug,
+    coherenceSlug,
+    coherenceRoomId,
+    pathname,
+    router,
+    searchParams,
+    openCoherenceChat,
+    openHumanChatPanel,
+    t,
+  });
+
   useEffect(() => {
     if (!spaceSlug?.trim()) return;
     const qpSignal = readSignalDeepLinkSlug(searchParams);
+    // TEMP(#2575)
+    logEffectRun2575('HumanRightPanel signal deep-link', {
+      qpSignal,
+      mode,
+      coherenceSlug,
+    });
     const qpMsg =
       readLiveSearchParam('msg') ?? searchParams?.get('msg')?.trim() ?? null;
     if (!qpSignal) return;
@@ -4491,6 +4512,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const expectedSpaceSlug = spaceSlug.trim();
 
     const stripInvalidSignalFromUrl = () => {
+      console.log('[#2575] stripInvalidSignalFromUrl', { qpSignal });
       signalDeepLinkEpochRef.current += 1;
       const cleaned = setSignalSearchParam(
         pathname,
@@ -4515,6 +4537,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             headers,
           });
         },
+      });
+      console.log('[#2575] signal deep-link resolved', {
+        qpSignal,
+        ok: result.ok,
+        cancelled,
+        staleEpoch: epochAtStart !== signalDeepLinkEpochRef.current,
+        liveSignal: readLiveSearchParam('signal'),
       });
       if (cancelled) return;
       if (epochAtStart !== signalDeepLinkEpochRef.current) return;

@@ -241,3 +241,4 @@ export {
   SpaceCreatedOnText,
 } from './formatted-local-date-time';
 export * from './composer';
+export { installHistoryTrace2575 } from './debug-2575'; // TEMP(#2575)

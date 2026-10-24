@@ -9,6 +9,8 @@ import { Debug2575Boundary, Debug2575Lifecycle } from './debug-2575';
  * Energy communities open on the energy dashboard. Overview stays available
  * when the menu asks for the space dashboard (`board=space`) or an invite is open.
  */
+const renderStamps2575: number[] = [];
+
 export function SpaceOverviewEntry({
   stay,
   children,
@@ -29,7 +31,16 @@ export function SpaceOverviewEntry({
 
   const waiting = !stay && !error && (isLoading || data == null);
   // TEMP(#2575)
+  const now = Date.now();
+  renderStamps2575.push(now);
+  while (
+    renderStamps2575.length > 0 &&
+    now - (renderStamps2575[0] ?? now) > 1000
+  ) {
+    renderStamps2575.shift();
+  }
   console.log('[#2575] SpaceOverviewEntry render', {
+    rendersLastSecond: renderStamps2575.length,
     pathname,
     search: typeof window !== 'undefined' ? window.location.search : null,
     stay,

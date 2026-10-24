@@ -2,6 +2,7 @@
 
 /** TEMP(#2575): diagnostics only, remove with the fix. */
 import { Component, useEffect, type ErrorInfo, type ReactNode } from 'react';
+import { installHistoryTrace2575 } from '@hypha-platform/epics';
 
 function navigationType() {
   const entry = performance.getEntriesByType('navigation')[0] as
@@ -25,7 +26,9 @@ export function Debug2575Lifecycle({ name }: { name: string }) {
         stack: event.error?.stack,
       });
     window.addEventListener('error', onError);
+    const uninstallHistoryTrace = installHistoryTrace2575();
     return () => {
+      uninstallHistoryTrace();
       window.removeEventListener('error', onError);
       console.log(`[#2575] ${name} unmounted`, {
         href: window.location.href,
