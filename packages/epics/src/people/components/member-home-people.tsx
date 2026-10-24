@@ -12,6 +12,7 @@ import {
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { rememberDirectRoom } from './member-connections';
+import { findDirectRoomId } from './member-home-closest';
 
 type HomePerson = {
   id: number;
@@ -21,6 +22,8 @@ type HomePerson = {
   nickname: string | null;
   avatarUrl: string | null;
   sharedSpaceCount?: number;
+  /** Wallet used when the chat panel loads this person's spaces. */
+  address?: string | null;
   /** Space this conversation belongs to, when it was opened from one. */
   spaceSlug?: string | null;
 };
@@ -67,13 +70,16 @@ export function MemberHomePeople({
     for (const person of people) ids.add(person.id);
     return [...ids];
   }, [extraPersonIds, people]);
-  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
-    personIds,
-  });
+  const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
+    useMatrixUserIdsByPersonIds({
+      personIds,
+    });
   const matrixRef = useRef(matrix);
   matrixRef.current = matrix;
   const matrixIdsRef = useRef(personIdToMatrixUserId);
   matrixIdsRef.current = personIdToMatrixUserId;
+  const matrixIdsLoadingRef = useRef(matrixIdsLoading);
+  matrixIdsLoadingRef.current = matrixIdsLoading;
   const knownMatrixIdsRef = useRef<Record<number, string>>({});
   if (Object.keys(personIdToMatrixUserId).length > 0) {
     knownMatrixIdsRef.current = {
@@ -88,7 +94,9 @@ export function MemberHomePeople({
     // @-mentions inherit that space's roster.
     const peerSlug = person?.slug?.trim();
     openCoherenceChat(roomId, title, '', null, null, {
-      peerPerson: peerSlug ? { slug: peerSlug } : null,
+      peerPerson: peerSlug
+        ? { slug: peerSlug, address: person?.address ?? null }
+        : null,
     });
   }
 
@@ -130,6 +138,7 @@ export function MemberHomePeople({
       const mxid =
         matrixIdsRef.current[personId] ?? knownMatrixIdsRef.current[personId];
       if (mxid) return mxid;
+      if (!matrixIdsLoadingRef.current && attempt > 2) return null;
       await new Promise((resolve) => window.setTimeout(resolve, 100));
     }
     return (
@@ -137,6 +146,13 @@ export function MemberHomePeople({
       knownMatrixIdsRef.current[personId] ??
       null
     );
+  }
+
+  function localDirectRoom(mxid: string, title: string) {
+    const client = matrixRef.current.client;
+    const selfId = client?.getUserId() ?? '';
+    if (!client || !selfId) return null;
+    return findDirectRoomId(client, selfId, mxid, title);
   }
 
   async function resolvePersonRoom(person: HomePerson, title: string) {
@@ -150,12 +166,26 @@ export function MemberHomePeople({
     const mxid = await waitForMatrixUserId(person.id);
     if (!selfId) return null;
     if (!mxid) {
-      setNotice(t('matrixFailed'));
+      setNotice(t('matrixUnavailable'));
       return null;
     }
-    const { roomId } = await ready.ensureDirectRoom(mxid, title);
-    rememberDirectRoom(selfId, mxid, roomId);
-    return roomId;
+    const existing = localDirectRoom(mxid, title);
+    if (existing) {
+      rememberDirectRoom(selfId, mxid, existing);
+      return existing;
+    }
+    try {
+      const { roomId } = await ready.ensureDirectRoom(mxid, title);
+      rememberDirectRoom(selfId, mxid, roomId);
+      return roomId;
+    } catch {
+      const fallback = localDirectRoom(mxid, title);
+      if (fallback) {
+        rememberDirectRoom(selfId, mxid, fallback);
+        return fallback;
+      }
+      throw new Error('Failed to open the direct room');
+    }
   }
 
   async function openPersonChat(person: HomePerson): Promise<boolean> {

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   ClientEvent,
@@ -208,7 +207,6 @@ export function MemberHomeClosest({
   onOpenChat,
 }: MemberHomeClosestProps) {
   const t = useTranslations('MemberHome');
-  const router = useRouter();
   const matrix = useMatrix();
   const [messageCounts, setMessageCounts] = useState<Map<number, number>>(
     () => new Map(),
@@ -416,14 +414,10 @@ export function MemberHomeClosest({
                       if (openingRef.current) return;
                       openingRef.current = true;
                       setOpeningId(person.id);
-                      void onOpenChat(person)
-                        .then((opened) => {
-                          if (!opened) router.push(href);
-                        })
-                        .finally(() => {
-                          openingRef.current = false;
-                          setOpeningId(null);
-                        });
+                      void onOpenChat(person).finally(() => {
+                        openingRef.current = false;
+                        setOpeningId(null);
+                      });
                     }}
                   >
                     {portrait}
