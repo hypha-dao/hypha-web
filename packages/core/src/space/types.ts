@@ -42,7 +42,7 @@ export interface Space {
   locatedAt?: Date | null;
   /** Matrix room id for space chat when provisioned. */
   chatRoomId?: string | null;
-  /** When true, Deal Pipeline is available for this space. */
+  /** When true, Pipeline is available for this space. */
   pipelineEnabled?: boolean;
   flags: SpaceFlags[];
   parent?: Space | null;

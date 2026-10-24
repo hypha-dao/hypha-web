@@ -2525,8 +2525,8 @@
     "escrowDepositApproving": "Godkjenner...",
     "escrowDepositInsufficientWallet": "Lommeboksaldoen din er lavere enn beløpet som kreves.",
     "mySpacesSupport": "Opprett et rom eller åpne et du allerede er med i.",
-    "pipelineEnabled": "Deal-pipeline",
-    "pipelineEnabledDescription": "Aktiver en Kanban deal-pipeline for dette rommet. Av som standard."
+    "pipelineEnabled": "Pipeline",
+    "pipelineEnabledDescription": "Aktiver en Kanban-pipeline for dette rommet. Av som standard."
   },
   "AgreementFlow": {
     "labels": {
@@ -5166,14 +5166,17 @@
     }
   },
   "Pipeline": {
-    "title": "Deal-pipeline",
-    "dealDetails": "Dealdetails",
-    "loading": "Laster deals…",
-    "notFound": "Fant ikke deal",
+    "title": "Pipeline",
+    "dealDetails": "{item}-detaljer",
+    "loading": "Laster {items}…",
+    "configLoadFailed": "Kunne ikke laste pipeline-konfigurasjonen.",
+    "retry": "Prøv igjen",
+    "unassignedLane": "Ikke tildelt",
+    "notFound": "{item} ble ikke funnet",
     "saving": "Lagre…",
     "saved": "Lagret",
     "cancel": "Avbryt",
-    "delete": "Slett deal",
+    "delete": "Slett {item}",
     "exportXlsx": "Eksporter XLSX",
     "filter": "Filter",
     "reset": "Tilbakestill",
@@ -5185,7 +5188,7 @@
     "backToBoard": "Tilbake til tavle",
     "trackTitle": "{swimlane}-track",
     "summary": {
-      "deals": "Deals",
+      "deals": "Muligheter",
       "active": "Aktive",
       "pipelineValue": "Pipeline-verdi",
       "weightedValue": "Vektet verdi"
@@ -5195,7 +5198,7 @@
       "swimlane": "Svømmebane",
       "region": "Region",
       "priority": "Prioritet",
-      "status": "Dealstatus",
+      "status": "{item}-status",
       "deadline": "Indieningsfrist",
       "tag": "Tag",
       "all": "Alle",
@@ -5207,8 +5210,8 @@
       "allPriorities": "Alle prioriteiten",
       "allStatuses": "Alle stamellom",
       "anyDeadline": "Elke frist",
-      "tagLabel": "Deal-tag",
-      "tagPlaceholder": "Filter op et deal-tag",
+      "tagLabel": "{item}-tagg",
+      "tagPlaceholder": "Filtrer etter tagg for {item}",
       "country": "Land",
       "countrySearch": "Zoek landen…",
       "allCountries": "Alle landen",
@@ -5222,12 +5225,12 @@
       "delete": "Slett visning"
     },
     "newDeal": {
-      "title": "Nieuw pipeline-item",
-      "titlePlaceholder": "Selskap, deallerede eller aanbesteding",
+      "title": "Opprett {item}",
+      "titlePlaceholder": "Selskap, {item} eller grantnavn",
       "countryPlaceholder": "Velg land (valgfritt)",
       "valuePlaceholder": "0",
       "create": "Kort maken",
-      "created": "Deallerede aangemaakt",
+      "created": "{item} opprettet",
       "titleLabel": "Tittel",
       "overviewSection": "Oversikt",
       "contactSection": "Kontakt",
@@ -5275,9 +5278,9 @@
       "value": "Verdi",
       "currency": "Valuta",
       "priority": "Prioritet",
-      "dealStatus": "Dealstatus",
+      "dealStatus": "{item}-status",
       "successRate": "Slagingskans (%)",
-      "successRateOverride": "Deal-specifieke verdi — leegmaken om de fasestandaard te gebruiken",
+      "successRateOverride": "{item}-spesifikk overstyring — tøm for å bruke fasestandarden",
       "successRateDefault": "Fasestandaard wordt gebruikt ({rate}%)",
       "nextAction": "Neste handling",
       "nextActionDate": "Dato for neste handling",
@@ -5308,7 +5311,7 @@
     },
     "regions": {
       "title": "Pipeline-regio’s",
-      "description": "Voeg territoria toe eller verwijder ze die gebruikt bli hos het maken og filteren av deals (bijv. Benelux eller Nordics).",
+      "description": "Legg til eller fjern territorier som brukes når muligheter opprettes og filtreres (for eksempel Benelux eller Nordics).",
       "default": "Standaard",
       "add": "Region toevoegen",
       "addPlaceholder": "bijv. DACH",
@@ -5323,15 +5326,57 @@
     },
     "probabilities": {
       "title": "Succespercentages per fase",
-      "description": "Standaard succeskans (%) per track og fase. Ny deals og deals die til et fase bli verplaatst starten med dette verdin; per deallerede kan dette bli overschreven.",
+      "description": "Standard suksessannsynlighet (%) per spor og fase. Nye muligheter og muligheter som flyttes til en fase starter med disse verdiene; hver mulighet kan fortsatt overstyres individuelt.",
       "track": "Spor",
-      "terminalHint": "Won er altijd 100% og Lost altijd 0%.",
+      "terminalHint": "En vunnet fase er alltid 100 % og en tapt fase alltid 0 %.",
       "monotonicWarning": "Kansen moeten av links til rechts toenemen. Controleer: {lanes}",
       "save": "Succespercentages lagre",
       "saved": "Succespercentages opgeslagen",
       "saveFailed": "Kon succespercentages ikke lagre",
       "loading": "Succespercentages laden…",
       "resetDefaults": "Standaard herstellen"
+    },
+    "labels": {
+      "title": "Pipeline-etiketter",
+      "description": "Angi sidetittelen og hva elementene i denne pipelinen kalles.",
+      "pageTitle": "Sidetittel",
+      "pageTitlePlaceholder": "Pipeline",
+      "itemSingular": "Elementnavn (entall)",
+      "itemSingularPlaceholder": "Mulighet",
+      "itemPlural": "Elementnavn (flertall)",
+      "itemPluralPlaceholder": "Muligheter",
+      "required": "Sidetittel og elementnavn er påkrevd",
+      "save": "Lagre etiketter",
+      "saved": "Etiketter lagret",
+      "saveFailed": "Kunne ikke lagre etiketter",
+      "loading": "Laster etiketter…"
+    },
+    "tracks": {
+      "title": "Spor",
+      "description": "Legg til, gi nytt navn, endre rekkefølge eller fjern spor. Et rom kan ha færre spor enn standard.",
+      "add": "Legg til spor",
+      "newTrack": "Nytt spor",
+      "namePlaceholder": "Spornavn",
+      "nameRequired": "Hvert spor trenger et navn",
+      "atLeastOne": "Behold minst ett spor",
+      "save": "Lagre spor",
+      "saved": "Spor lagret",
+      "saveFailed": "Kunne ikke lagre spor",
+      "loading": "Laster spor…",
+      "resetDefaults": "Tilbakestill til standard"
+    },
+    "stages": {
+      "description": "Legg til, gi nytt navn, endre rekkefølge eller fjern faser som brukes på tavlen og i suksessraten.",
+      "add": "Legg til fase",
+      "newStage": "Ny fase",
+      "namePlaceholder": "Fasenavn",
+      "nameRequired": "Hver fase trenger et navn",
+      "atLeastOne": "Behold minst én fase"
+    },
+    "workflow": {
+      "moveUp": "Flytt {label} opp (rad {position})",
+      "moveDown": "Flytt {label} ned (rad {position})",
+      "remove": "Fjern {label} (rad {position})"
     }
   },
   "OverviewOps": {

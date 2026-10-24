@@ -3,92 +3,282 @@
 import React from 'react';
 import {
   defaultProbabilityMatrix,
-  PIPELINE_STATUSES,
-  PIPELINE_SWIMLANES,
-  TERMINAL_STAGE_PROBABILITIES,
+  DEFAULT_PIPELINE_STAGES,
+  getProbabilityCell,
+  seedStageProbability,
+  terminalProbabilityForStage,
   usePipelineConfig,
-  type PipelineStatus,
-  type PipelineSwimlane,
+  type PipelineStageDefinition,
   type ProbabilityMatrix,
 } from '@hypha-platform/core/client';
 import { Button, Input, Separator } from '@hypha-platform/ui';
+import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { resolveAdoptedStageSlug } from '../lib/resolve-adopted-stage-slug';
+import { PipelineConfigRow } from './pipeline-config-row';
 
 type PipelineProbabilitySettingsProps = {
   spaceSlug: string;
 };
 
-function cloneMatrix(matrix: ProbabilityMatrix): ProbabilityMatrix {
-  const clone = {} as ProbabilityMatrix;
-  for (const swimlane of PIPELINE_SWIMLANES) {
-    clone[swimlane] = { ...matrix[swimlane] };
+function cloneMatrix(
+  matrix: ProbabilityMatrix,
+  tracks: { slug: string }[],
+  stages: PipelineStageDefinition[],
+): ProbabilityMatrix {
+  const clone: ProbabilityMatrix = {};
+  for (const track of tracks) {
+    const lane: Record<string, number> = {};
+    for (const stage of stages) {
+      const terminal = terminalProbabilityForStage(stage);
+      lane[stage.slug] =
+        terminal ??
+        getProbabilityCell(matrix, track.slug, stage.slug) ??
+        seedStageProbability(track.slug, stage.slug);
+    }
+    // Keep this track's cells for stages not in the current list so a
+    // later re-add of the same slug restores the track's own value.
+    const existing = matrix[track.slug];
+    if (existing && !Array.isArray(existing)) {
+      for (const [stageSlug, value] of Object.entries(existing)) {
+        if (lane[stageSlug] === undefined && typeof value === 'number') {
+          lane[stageSlug] = value;
+        }
+      }
+    }
+    clone[track.slug] = lane;
   }
   return clone;
 }
 
-/** Lanes whose non-terminal stages are not monotonically increasing. */
-function nonMonotonicLanes(matrix: ProbabilityMatrix): PipelineSwimlane[] {
-  const stages = PIPELINE_STATUSES.filter(
-    (s) => TERMINAL_STAGE_PROBABILITIES[s] === undefined,
+function uniqueSlug(base: string, existing: Set<string>): string {
+  const normalized =
+    base
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 64) || 'stage';
+  if (!existing.has(normalized)) return normalized;
+  let counter = 2;
+  while (existing.has(`${normalized}_${counter}`)) {
+    counter += 1;
+  }
+  return `${normalized}_${counter}`.slice(0, 64);
+}
+
+function cloneStages(
+  stages: PipelineStageDefinition[],
+): PipelineStageDefinition[] {
+  return stages.map((stage, position) => ({ ...stage, position }));
+}
+
+/** Tracks whose non-terminal stages are not monotonically increasing. */
+function nonMonotonicTracks(
+  matrix: ProbabilityMatrix,
+  tracks: { slug: string; name: string }[],
+  stages: PipelineStageDefinition[],
+): string[] {
+  const openStages = stages.filter(
+    (stage) => terminalProbabilityForStage(stage) === undefined,
   );
-  return PIPELINE_SWIMLANES.filter((swimlane) => {
-    for (let i = 1; i < stages.length; i += 1) {
-      if (matrix[swimlane][stages[i]!] < matrix[swimlane][stages[i - 1]!]) {
-        return true;
+  return tracks
+    .filter((track) => {
+      for (let i = 1; i < openStages.length; i += 1) {
+        const current = matrix[track.slug]?.[openStages[i]!.slug] ?? 0;
+        const previous = matrix[track.slug]?.[openStages[i - 1]!.slug] ?? 0;
+        if (current < previous) return true;
       }
-    }
-    return false;
-  });
+      return false;
+    })
+    .map((track) => track.name);
 }
 
 export function PipelineProbabilitySettings({
   spaceSlug,
 }: PipelineProbabilitySettingsProps) {
   const t = useTranslations('Pipeline');
-  const { probabilities, isLoading, saveConfig, isSaving } =
-    usePipelineConfig(spaceSlug);
+  const {
+    tracks,
+    stages,
+    probabilities,
+    isLoading,
+    error: configError,
+    saveConfig,
+    isSaving,
+  } = usePipelineConfig(spaceSlug);
+  const [stageDraft, setStageDraft] = React.useState<PipelineStageDefinition[]>(
+    () => cloneStages(stages),
+  );
   const [draft, setDraft] = React.useState<ProbabilityMatrix>(() =>
-    cloneMatrix(probabilities),
+    cloneMatrix(probabilities, tracks, stages),
   );
   const [error, setError] = React.useState<string | null>(null);
   const [savedAt, setSavedAt] = React.useState<Date | null>(null);
+  const removedStagesRef = React.useRef<PipelineStageDefinition[]>([]);
+  const newStageSlugsRef = React.useRef(new Set<string>());
 
-  // Sync the draft from the server config on initial load only. SWR
-  // revalidates on focus; syncing on every `probabilities` change would
-  // silently wipe unsaved edits (same pattern as the new-deal dialog reset).
   const hasLoadedRef = React.useRef(false);
   React.useEffect(() => {
-    if (hasLoadedRef.current || isLoading) return;
+    if (hasLoadedRef.current || isLoading || configError) return;
     hasLoadedRef.current = true;
-    setDraft(cloneMatrix(probabilities));
-  }, [probabilities, isLoading]);
+    setStageDraft(cloneStages(stages));
+    setDraft(cloneMatrix(probabilities, tracks, stages));
+  }, [probabilities, stages, tracks, isLoading, configError]);
 
-  const setCell = (
-    swimlane: PipelineSwimlane,
-    status: PipelineStatus,
-    raw: string,
-  ) => {
+  const setCell = (trackSlug: string, stageSlug: string, raw: string) => {
     const n = raw === '' ? 0 : Math.round(Number(raw));
     if (!Number.isFinite(n)) return;
     setDraft((prev) => ({
       ...prev,
-      [swimlane]: {
-        ...prev[swimlane],
-        [status]: Math.min(100, Math.max(0, n)),
+      [trackSlug]: {
+        ...(prev[trackSlug] && !Array.isArray(prev[trackSlug])
+          ? prev[trackSlug]
+          : {}),
+        [stageSlug]: Math.min(100, Math.max(0, n)),
       },
     }));
     setSavedAt(null);
   };
 
+  const moveStage = (index: number, direction: -1 | 1) => {
+    setStageDraft((current) => {
+      const next = [...current];
+      const target = index + direction;
+      if (target < 0 || target >= next.length) return current;
+      [next[index], next[target]] = [next[target]!, next[index]!];
+      return next.map((stage, position) => ({ ...stage, position }));
+    });
+    setSavedAt(null);
+  };
+
+  const renameStage = (index: number, name: string) => {
+    const stage = stageDraft[index];
+    if (!stage) return;
+    const adoptedSlug = resolveAdoptedStageSlug({
+      stage,
+      name,
+      siblingSlugs: stageDraft
+        .filter((_, otherIndex) => otherIndex !== index)
+        .map((other) => other.slug),
+      unsavedPlaceholderSlugs: newStageSlugsRef.current,
+      defaultStages: DEFAULT_PIPELINE_STAGES,
+    });
+    if (adoptedSlug !== stage.slug) {
+      const fromSlug = stage.slug;
+      newStageSlugsRef.current.delete(fromSlug);
+      newStageSlugsRef.current.add(adoptedSlug);
+      setDraft((matrix) => {
+        const updated: ProbabilityMatrix = {};
+        for (const track of tracks) {
+          const existing = matrix[track.slug];
+          const lane = {
+            ...(existing && !Array.isArray(existing) ? existing : {}),
+          };
+          lane[adoptedSlug] =
+            getProbabilityCell(matrix, track.slug, adoptedSlug) ??
+            getProbabilityCell(matrix, track.slug, fromSlug) ??
+            seedStageProbability(track.slug, adoptedSlug);
+          updated[track.slug] = lane;
+        }
+        return updated;
+      });
+    }
+    setStageDraft(
+      stageDraft.map((item, i) =>
+        i === index ? { ...item, name, slug: adoptedSlug } : item,
+      ),
+    );
+    setSavedAt(null);
+  };
+
+  const addStage = () => {
+    const recycled = removedStagesRef.current.pop();
+    if (recycled && !stageDraft.some((stage) => stage.slug === recycled.slug)) {
+      setStageDraft(
+        [...stageDraft, { ...recycled, position: stageDraft.length }].map(
+          (stage, position) => ({ ...stage, position }),
+        ),
+      );
+    } else {
+      const slugs = new Set(stageDraft.map((stage) => stage.slug));
+      const slug = uniqueSlug('new_stage', slugs);
+      newStageSlugsRef.current.add(slug);
+      setStageDraft([
+        ...stageDraft,
+        {
+          slug,
+          name: t('stages.newStage'),
+          position: stageDraft.length,
+        },
+      ]);
+      setDraft((matrix) => {
+        const updated: ProbabilityMatrix = {};
+        for (const track of tracks) {
+          const existing = matrix[track.slug];
+          updated[track.slug] = {
+            ...(existing && !Array.isArray(existing) ? existing : {}),
+            [slug]:
+              getProbabilityCell(matrix, track.slug, slug) ??
+              seedStageProbability(track.slug, slug),
+          };
+        }
+        return updated;
+      });
+    }
+    setSavedAt(null);
+  };
+
+  const removeStage = (index: number) => {
+    if (stageDraft.length <= 1) {
+      setSavedAt(null);
+      return;
+    }
+    const removed = stageDraft[index];
+    if (removed) removedStagesRef.current.push(removed);
+    setStageDraft(
+      stageDraft
+        .filter((_, i) => i !== index)
+        .map((stage, position) => ({ ...stage, position })),
+    );
+    setSavedAt(null);
+  };
+
   const resetDefaults = () => {
-    setDraft(defaultProbabilityMatrix());
+    const nextStages = cloneStages(DEFAULT_PIPELINE_STAGES);
+    newStageSlugsRef.current.clear();
+    removedStagesRef.current = [];
+    setStageDraft(nextStages);
+    setDraft(defaultProbabilityMatrix(tracks, nextStages));
     setError(null);
     setSavedAt(null);
   };
 
   const save = async () => {
+    if (stageDraft.length < 1) {
+      setError(t('stages.atLeastOne'));
+      return;
+    }
+    if (stageDraft.some((stage) => !stage.name.trim())) {
+      setError(t('stages.nameRequired'));
+      return;
+    }
     try {
-      await saveConfig({ probabilities: draft });
+      const stagesToSave = stageDraft.map((stage, position) => ({
+        ...stage,
+        name: stage.name.trim(),
+        position,
+      }));
+      const saved = await saveConfig({
+        stages: stagesToSave,
+        probabilities: cloneMatrix(draft, tracks, stagesToSave),
+      });
+      if (saved) {
+        newStageSlugsRef.current.clear();
+        removedStagesRef.current = [];
+        setStageDraft(cloneStages(saved.stages));
+        setDraft(cloneMatrix(saved.probabilities, saved.tracks, saved.stages));
+      }
       setSavedAt(new Date());
       setError(null);
     } catch (err) {
@@ -104,7 +294,7 @@ export function PipelineProbabilitySettings({
     );
   }
 
-  const warningLanes = nonMonotonicLanes(draft);
+  const warningTracks = nonMonotonicTracks(draft, tracks, stageDraft);
 
   return (
     <div className="flex flex-col gap-3">
@@ -117,6 +307,36 @@ export function PipelineProbabilitySettings({
         </p>
       </div>
 
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-1 text-neutral-11">{t('stages.description')}</p>
+        <Button type="button" variant="outline" size="sm" onClick={addStage}>
+          <Plus className="size-4" />
+          {t('stages.add')}
+        </Button>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {stageDraft.map((stage, index) => (
+          <PipelineConfigRow
+            key={stage.slug}
+            label={stage.name}
+            index={index}
+            total={stageDraft.length}
+            onMoveUp={() => moveStage(index, -1)}
+            onMoveDown={() => moveStage(index, 1)}
+            onRemove={() => removeStage(index)}
+            disableRemove={stageDraft.length <= 1}
+          >
+            <Input
+              value={stage.name}
+              onChange={(event) => renameStage(index, event.target.value)}
+              placeholder={t('stages.namePlaceholder')}
+              aria-label={t('stages.namePlaceholder')}
+            />
+          </PipelineConfigRow>
+        ))}
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] border-collapse text-1">
           <thead>
@@ -124,27 +344,30 @@ export function PipelineProbabilitySettings({
               <th className="px-2 py-1.5 text-left font-medium text-neutral-11">
                 {t('probabilities.track')}
               </th>
-              {PIPELINE_STATUSES.map((status) => (
+              {stageDraft.map((stage) => (
                 <th
-                  key={status}
+                  key={stage.slug}
                   className="px-2 py-1.5 text-left font-medium text-neutral-11"
                 >
-                  {status}
+                  {stage.name || stage.slug}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {PIPELINE_SWIMLANES.map((swimlane) => (
-              <tr key={swimlane} className="border-t border-neutral-5">
+            {tracks.map((track) => (
+              <tr key={track.slug} className="border-t border-neutral-5">
                 <td className="px-2 py-1.5 font-medium text-neutral-12">
-                  {swimlane}
+                  {track.name}
                 </td>
-                {PIPELINE_STATUSES.map((status) => {
-                  const terminalValue = TERMINAL_STAGE_PROBABILITIES[status];
+                {stageDraft.map((stage) => {
+                  const terminalValue = terminalProbabilityForStage(stage);
                   const terminal = terminalValue !== undefined;
                   return (
-                    <td key={status} className="px-2 py-1.5">
+                    <td
+                      key={`${track.slug}:${stage.slug}`}
+                      className="px-2 py-1.5"
+                    >
                       <Input
                         type="number"
                         min={0}
@@ -152,14 +375,20 @@ export function PipelineProbabilitySettings({
                         step={5}
                         className="w-16"
                         value={
-                          terminal ? terminalValue : draft[swimlane][status]
+                          terminal
+                            ? terminalValue
+                            : getProbabilityCell(
+                                draft,
+                                track.slug,
+                                stage.slug,
+                              ) ?? 0
                         }
                         disabled={terminal}
                         title={
                           terminal ? t('probabilities.terminalHint') : undefined
                         }
                         onChange={(e) =>
-                          setCell(swimlane, status, e.target.value)
+                          setCell(track.slug, stage.slug, e.target.value)
                         }
                       />
                     </td>
@@ -175,10 +404,10 @@ export function PipelineProbabilitySettings({
         {t('probabilities.terminalHint')}
       </p>
 
-      {warningLanes.length > 0 ? (
+      {warningTracks.length > 0 ? (
         <p className="text-1 text-amber-11" role="alert">
           {t('probabilities.monotonicWarning', {
-            lanes: warningLanes.join(', '),
+            lanes: warningTracks.join(', '),
           })}
         </p>
       ) : null}
@@ -195,7 +424,11 @@ export function PipelineProbabilitySettings({
         <Button type="button" variant="ghost" onClick={resetDefaults}>
           {t('probabilities.resetDefaults')}
         </Button>
-        <Button type="button" disabled={isSaving} onClick={save}>
+        <Button
+          type="button"
+          disabled={isSaving || Boolean(configError)}
+          onClick={save}
+        >
           {isSaving ? t('saving') : t('probabilities.save')}
         </Button>
       </div>
