@@ -132,11 +132,33 @@ function walletAddress(address: string | null | undefined): Hex | null {
  * own, so the rest of the home still returns. An empty list means the wallet
  * has no on-chain spaces.
  */
+const MEMBER_SPACES_TIMEOUT_MS = 8_000;
+
+async function withTimeout<T>(
+  work: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function chainWeb3SpaceIds(address: string | null | undefined) {
   const wallet = walletAddress(address);
   if (!wallet) return [];
-  const web3SpaceIds = (await web3Client.readContract(
-    getMemberSpaces({ memberAddress: wallet }),
+  const web3SpaceIds = (await withTimeout(
+    web3Client.readContract(getMemberSpaces({ memberAddress: wallet })),
+    MEMBER_SPACES_TIMEOUT_MS,
+    'member spaces',
   )) as readonly bigint[];
   return [
     ...new Set(

@@ -27,6 +27,9 @@ import {
 } from 'react';
 import useSWR from 'swr';
 
+/** Fail before the ~40s Vercel 504 so Home can render the person shell. */
+const HOME_INTELLIGENCE_TIMEOUT_MS = 8_000;
+
 function sameMemberHome(
   left: MemberIntelligence | null | undefined,
   right: MemberIntelligence | null | undefined,
@@ -72,6 +75,7 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store',
+        signal: AbortSignal.timeout(HOME_INTELLIGENCE_TIMEOUT_MS),
       });
       if (response.status === 404) return null;
       if (!response.ok) {
@@ -224,20 +228,10 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     );
   }
 
-  if (
-    phase === 'profile-unavailable' ||
-    (phase === 'home-unavailable' && !data)
-  ) {
-    const name = person?.name?.trim() || person?.nickname?.trim();
+  if (phase === 'profile-unavailable') {
     return (
       <div className="mx-auto max-w-lg px-5 py-20 text-center">
-        <p className="text-2 text-neutral-11">
-          {phase === 'profile-unavailable'
-            ? t('profileUnavailable')
-            : name
-            ? t('errorNamed', { name })
-            : t('error')}
-        </p>
+        <p className="text-2 text-neutral-11">{t('profileUnavailable')}</p>
         <Button
           className="mt-4"
           type="button"
@@ -252,15 +246,15 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     );
   }
 
-  // A token refresh reports loading while the last home is still here.
-  // Swapping to the skeleton unmounts the assistant and starts it again.
+  // Intelligence can hang until a 504. Keep the person shell (greeting,
+  // retry on the next SWR tick) instead of a hard error or a 40s skeleton.
   if (!data) {
     const greetingName =
       person?.name?.trim() || person?.nickname?.trim() || null;
     return (
       <MemberHome
         lang={lang}
-        isLoading
+        isLoading={isLoadingHome}
         greetingName={greetingName}
         isSavingOrientation={isSavingOrientation}
         orientationError={orientationError}

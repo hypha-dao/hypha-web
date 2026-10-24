@@ -1018,13 +1018,22 @@ function createOpenRouterAuthRecoveryTransform(
 ): StreamTextTransform<ToolSet> {
   return () => {
     const nextTextId = createIdGenerator({ prefix: 't', size: 12 });
+    let sawText = false;
     return new TransformStream<
       TextStreamPart<ToolSet>,
       TextStreamPart<ToolSet>
     >({
       transform(chunk, controller) {
+        if (chunk.type === 'text-start' || chunk.type === 'text-delta') {
+          sawText = true;
+        }
         if (chunk.type !== 'error') {
           controller.enqueue(chunk);
+          return;
+        }
+        // A trailing provider error after a spoken reply must not mark the
+        // home turn as homeError (that dropped a good answer from the thread).
+        if (sawText) {
           return;
         }
 

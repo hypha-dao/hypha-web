@@ -63,6 +63,7 @@ import {
   MemberHomeSpacesWidgetCard,
 } from './member-home-chat-widgets';
 import type { MemberHomeOpenChat } from './member-home-people';
+import { homeAssistantTurnSucceeded } from './member-home-chat-error';
 
 type HomeWidgetKind = 'spaces' | 'people' | 'tokens';
 
@@ -189,6 +190,7 @@ function continueHomeChatResponse(
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   let buffer = '';
+  const sawAssistantText = { current: false };
   const rewritten = response.body.pipeThrough(
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
@@ -199,7 +201,14 @@ function continueHomeChatResponse(
         controller.enqueue(
           encoder.encode(
             `${lines
-              .map((line) => rewriteHomeStartLine(line, freshId, droppedLine))
+              .map((line) =>
+                rewriteHomeStartLine(
+                  line,
+                  freshId,
+                  droppedLine,
+                  sawAssistantText,
+                ),
+              )
               .join('\n')}\n`,
           ),
         );
@@ -209,7 +218,12 @@ function continueHomeChatResponse(
         if (!buffer) return;
         controller.enqueue(
           encoder.encode(
-            `${rewriteHomeStartLine(buffer, freshId, droppedLine)}\n`,
+            `${rewriteHomeStartLine(
+              buffer,
+              freshId,
+              droppedLine,
+              sawAssistantText,
+            )}\n`,
           ),
         );
       },
@@ -226,6 +240,7 @@ function rewriteHomeStartLine(
   line: string,
   freshId: string,
   droppedLine: string,
+  sawAssistantText: { current: boolean },
 ) {
   const prefix = 'data: ';
   if (!line.startsWith(prefix)) return line;
@@ -245,9 +260,15 @@ function rewriteHomeStartLine(
     if (typeof chunk.type === 'string' && chunk.type.startsWith('reasoning-')) {
       return '';
     }
+    if (chunk.type === 'text-start' || chunk.type === 'text-delta') {
+      sawAssistantText.current = true;
+      return line;
+    }
     // A fatal error chunk throws inside useChat and paints "thread dropped",
-    // which then looks like the assistant restarted. Finish the turn as text.
+    // which then looks like the assistant restarted. Finish the turn as text
+    // only when the model has not already spoken.
     if (chunk.type === 'error') {
+      if (sawAssistantText.current) return '';
       const raw =
         typeof chunk.errorText === 'string' ? chunk.errorText.trim() : '';
       const text =
@@ -464,8 +485,14 @@ export function MemberHomeChat({
     const current = messagesRef.current;
     const last = current[current.length - 1];
     const fallback = droppedLine.current;
-    const alreadyTold =
-      last?.role === 'assistant' && messageText(last) === fallback;
+    const lastText = last?.role === 'assistant' ? messageText(last) : '';
+    // Keeping `error` after CodeRabbit's homeError change left the banner up
+    // when a late stream close followed a real reply. Clear that false drop.
+    if (homeAssistantTurnSucceeded(last, lastText, fallback)) {
+      clearError();
+      return;
+    }
+    const alreadyTold = last?.role === 'assistant' && lastText === fallback;
     if (!alreadyTold) {
       setMessages([
         ...current,
@@ -477,7 +504,7 @@ export function MemberHomeChat({
         },
       ]);
     }
-  }, [error, setMessages]);
+  }, [clearError, error, setMessages]);
   useOnboardingSpaceSignature(homeMessages, lang);
 
   const widgetKindFor = useCallback(
@@ -974,7 +1001,17 @@ export function MemberHomeChat({
     );
   };
 
-  const visibleError = error && !dismissedError;
+  const lastAssistant = [...homeMessages]
+    .reverse()
+    .find((message) => message.role === 'assistant');
+  const visibleError =
+    error &&
+    !dismissedError &&
+    !homeAssistantTurnSucceeded(
+      lastAssistant,
+      lastAssistant ? messageText(lastAssistant) : '',
+      droppedLine.current,
+    );
 
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
@@ -1225,7 +1262,7 @@ export function MemberHomeChat({
       ) : null}
 
       <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
-        <div className="mx-5 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto pt-2 [scrollbar-width:none] md:mx-4 [&::-webkit-scrollbar]:hidden">
+        <div className="mx-5 mb-2 flex min-w-0 flex-wrap gap-1.5 pt-2 md:mx-4">
           {freshStart ? (
             <button
               type="button"
