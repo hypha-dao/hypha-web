@@ -1044,7 +1044,19 @@ function createOpenRouterAuthRecoveryTransform(
           return;
         }
 
-        controller.enqueue(chunk);
+        console.error('[chat][openrouter][stream-error]', {
+          debugRequestId,
+          message,
+        });
+        const id = nextTextId();
+        controller.enqueue({ type: 'text-start', id });
+        controller.enqueue({
+          type: 'text-delta',
+          id,
+          text:
+            deterministicFallback?.text ?? OPENROUTER_TEMP_UNAVAILABLE_REPLY,
+        });
+        controller.enqueue({ type: 'text-end', id });
       },
     });
   };
