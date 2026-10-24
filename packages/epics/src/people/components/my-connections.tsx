@@ -82,6 +82,7 @@ import {
   mergeDirectoryPeople,
   personRowsFromDmRooms,
   nextSelectedMembers,
+  resolvedMatrixIdsForGroup,
   visibleMemberRowsAfterTitleResolve,
   STALE_CONNECTION_MS,
   connectionActivityTs,
@@ -1877,8 +1878,26 @@ export function MyConnections({
     });
   }
 
+  const groupMemberIds = resolvedMatrixIdsForGroup(
+    selectedPeople,
+    personIdToMatrixUserId,
+  );
+  const canStartGroup =
+    selectedPeople.length >= 2 &&
+    !starting &&
+    !matrixIdsLoading &&
+    groupMemberIds != null;
+
   async function startGroupChat() {
     if (selectedPeople.length < 2 || starting) return;
+    const memberIds = resolvedMatrixIdsForGroup(
+      selectedPeople,
+      personIdToMatrixUserId,
+    );
+    if (!memberIds) {
+      setNotice(tChat('matrixFailed'));
+      return;
+    }
     setStarting(true);
     setNotice(null);
     const requester = [home?.person.name, home?.person.surname]
@@ -1896,10 +1915,6 @@ export function MyConnections({
       const { roomId } = await createRoom(title, {
         grantCreatorPl100: true,
         roomType: HYPHA_ROOM_TYPES.group,
-      });
-      const memberIds = selectedPeople.flatMap((row) => {
-        const mxid = personIdToMatrixUserId[row.person.id]?.trim();
-        return mxid ? [mxid] : [];
       });
       rememberGroupChatMembers(roomId, memberIds);
       await ensureRoomMembers(roomId, memberIds);
@@ -2102,7 +2117,7 @@ export function MyConnections({
                 </p>
                 <Button
                   type="button"
-                  disabled={selectedPeople.length < 2 || starting}
+                  disabled={!canStartGroup}
                   className="shrink-0 gap-1.5"
                   onClick={() => void startGroupChat()}
                 >
