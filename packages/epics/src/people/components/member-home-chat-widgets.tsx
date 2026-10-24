@@ -380,23 +380,21 @@ export function MemberHomePeopleWidgetCard({
                     </span>
                   </span>
                 </button>
-                <div className="flex shrink-0 border border-border">
+                <div className="flex shrink-0 gap-1">
                   {actions.map((action) => {
                     const Icon = action.icon;
                     return (
-                      <button
+                      <Button
                         key={action.key}
                         type="button"
-                        className="grid h-8 w-8 place-items-center border-r border-border text-foreground last:border-r-0 hover:bg-accent-2"
+                        size="icon"
+                        variant="outline"
+                        colorVariant="neutral"
                         aria-label={action.label(name)}
                         onClick={() => action.run(person)}
                       >
-                        <Icon
-                          className="size-3.5"
-                          strokeWidth={1.25}
-                          aria-hidden
-                        />
-                      </button>
+                        <Icon className="h-4 w-4" />
+                      </Button>
                     );
                   })}
                 </div>
