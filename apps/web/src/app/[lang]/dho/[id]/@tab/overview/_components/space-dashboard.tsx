@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  useChangedTrace2575,
+  useRenderTrace2575,
+} from '@hypha-platform/core/client'; // TEMP(#2575)
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -138,6 +142,7 @@ function SpaceMemberCircles({
   }>;
   membersHref: string;
 }) {
+  useRenderTrace2575('SpaceMemberCircles');
   const t = useTranslations('OverviewOps');
   const { person: me } = useMe();
   const { openChat, notice } = useMemberDirectoryConnect(people);
@@ -388,6 +393,7 @@ function RowsSkeleton() {
 }
 
 export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
+  useRenderTrace2575('SpaceDashboard');
   const locale = useLocale();
   const format = useFormatter();
   const t = useTranslations('OverviewOps');
@@ -492,6 +498,20 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
     },
     { revalidateOnFocus: false },
   );
+
+  useChangedTrace2575('SpaceDashboard', {
+    locale,
+    format,
+    person,
+    getAccessToken,
+    space,
+    coherences,
+    persons,
+    memberSpaces,
+    documents,
+    visit,
+    treasury,
+  });
 
   const openSignals = useMemo(
     () => (coherences ?? []).filter((signal) => !signal.archived),

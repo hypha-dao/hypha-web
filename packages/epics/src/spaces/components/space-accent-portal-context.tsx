@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '@hypha-platform/core/client'; // TEMP(#2575)
 import * as React from 'react';
 import type { SpaceAccentPortalStyles } from '../utils/space-accent-portal-styles';
 import { defaultSpacePortalStyles } from '../utils/space-accent-portal-styles';
@@ -18,6 +19,7 @@ export function SpaceAccentPortalBridge({
 }: {
   children: React.ReactNode;
 }) {
+  useRenderTrace2575('SpaceAccentPortalBridge');
   const [styles, setStyles] = React.useState<SpaceAccentPortalStyles>(
     defaultSpacePortalStyles,
   );

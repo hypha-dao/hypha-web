@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '@hypha-platform/core/client'; // TEMP(#2575)
 import { useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MemberHomeBanner } from '@hypha-platform/epics';
@@ -16,6 +17,7 @@ const GROUND_FRAME_CLASS =
   'relative isolate -mx-4 h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] w-[calc(100%+2rem)] sm:-mx-5 sm:w-[calc(100%+3rem)] xl:h-[calc(100svh-var(--menu-top-height,4.5rem))]';
 
 export function SpaceOpsHome({ spaceSlug }: { spaceSlug: string }) {
+  useRenderTrace2575('SpaceOpsHome');
   const tCommon = useTranslations('Common');
   const [groundHost, setGroundHost] = useState<HTMLElement | null>(null);
 

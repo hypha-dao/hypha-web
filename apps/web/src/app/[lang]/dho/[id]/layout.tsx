@@ -25,6 +25,7 @@ import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 import { LiveSpaceHero } from './_components/live-space-hero';
+import { Debug2575Slots } from './@tab/overview/_components/debug-2575';
 import { DhoStickySpaceChrome } from './_components/dho-sticky-space-chrome';
 import { SpaceMainNav } from './_components/space-main-nav';
 import { SpaceActivityGatedBanners } from './_components/space-activity-gated-banners';
@@ -294,6 +295,7 @@ export default async function DhoLayout({
                 />
               ) : null}
             </div>
+            <Debug2575Slots />
             {tab}
             {children}
           </div>

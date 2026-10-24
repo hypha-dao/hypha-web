@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '../../../common/render-trace-2575'; // TEMP(#2575)
 import React from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
 import { TokenRefreshLogoutError } from 'matrix-js-sdk/lib/http-api/errors';
@@ -638,6 +639,7 @@ interface MatrixProviderProps {
 }
 
 export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
+  useRenderTrace2575('MatrixProvider');
   React.useEffect(() => {
     configureMatrixGlobalLogger();
   }, []);

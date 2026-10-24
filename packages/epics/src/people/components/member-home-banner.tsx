@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '@hypha-platform/core/client'; // TEMP(#2575)
 import './member-home-banner.css';
 
 /** Home ground: the mycelium field, its veil, and the paper behind it. */
@@ -9,6 +10,7 @@ export function MemberHomeBanner({
   /** Extra class on the frame. Space overview uses this to lift the field. */
   className?: string;
 } = {}) {
+  useRenderTrace2575('MemberHomeBanner');
   return (
     <div
       className={

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '@hypha-platform/core/client'; // TEMP(#2575)
 import React from 'react';
 import {
   getRemoteGroupCallHold,
@@ -982,6 +983,7 @@ export function GlobalCallDockProvider({
 }: {
   children: React.ReactNode;
 }) {
+  useRenderTrace2575('GlobalCallDockProvider');
   const value = useGlobalCallDockValue();
   return (
     <GlobalCallDockContext.Provider value={value}>

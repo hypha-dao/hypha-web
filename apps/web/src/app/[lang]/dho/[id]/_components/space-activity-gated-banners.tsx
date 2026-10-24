@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '@hypha-platform/core/client'; // TEMP(#2575)
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   SalesBanner,
@@ -28,6 +29,7 @@ export function SpaceActivityGatedBanners({
   spaceSlug,
   lang,
 }: SpaceActivityGatedBannersProps) {
+  useRenderTrace2575('SpaceActivityGatedBanners');
   const { isLoading: isAuthLoading } = useAuthentication();
   const { access, isLoading: isAccessLoading } = useSpaceDiscoverability({
     spaceId: web3SpaceId != null ? BigInt(web3SpaceId) : undefined,

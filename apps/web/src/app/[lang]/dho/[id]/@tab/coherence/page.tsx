@@ -11,6 +11,7 @@ import {
 import { Locale } from '@hypha-platform/i18n';
 import { redirect } from 'next/navigation';
 import { getDhoPathOverview } from '../overview/constants';
+import { DebugTestPush } from './_debug-test-push';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -39,6 +40,7 @@ export default async function CoherencePage(props: PageProps) {
   return (
     <SpaceTabAccessWrapper spaceSlug={id}>
       <div className="flex flex-col gap-4 py-4">
+        {process.env.VERCEL_ENV !== 'production' ? <DebugTestPush /> : null}
         <ConnectedCoherenceBlock
           lang={lang}
           spaceSlug={id}

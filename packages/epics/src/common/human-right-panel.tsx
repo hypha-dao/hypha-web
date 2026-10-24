@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '@hypha-platform/core/client'; // TEMP(#2575)
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   ClientEvent,
@@ -192,6 +193,7 @@ import {
   buildSpaceRosterSignalTeamMembers,
 } from './human-chat-panel/build-space-roster-mention-candidates';
 import { directConversationWelcomeName } from './human-chat-panel/direct-conversation-welcome';
+import { logEffectRun2575, useWhatChanged2575 } from './debug-2575';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -1054,6 +1056,7 @@ type HumanRightPanelProps = {
 };
 
 export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
+  useRenderTrace2575('HumanRightPanel');
   const t = useTranslations('HumanChatPanel');
   const tCommon = useTranslations('Common');
   const tSpaces = useTranslations('Spaces');
@@ -4528,6 +4531,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (mode === 'coherence' && coherenceSlug?.trim()) {
       const slug = coherenceSlug.trim();
       const currentSpace = spaceSlug?.trim();
+      // TEMP(#2575)
+      console.log('[#2575] signal-url sync effect', {
+        slug,
+        pathname,
+        urlSignal: readSignalDeepLinkSlug(searchParams),
+        liveSearch:
+          typeof window !== 'undefined' ? window.location.search : null,
+        sessionSpace: coherenceRoomId?.trim()
+          ? readRoomToCoherenceSession(coherenceRoomId).spaceSlug
+          : null,
+        currentSpace,
+      });
       if (coherenceRoomId?.trim() && currentSpace) {
         const session = readRoomToCoherenceSession(coherenceRoomId);
         if (session.spaceSlug && session.spaceSlug !== currentSpace) {
@@ -4547,6 +4562,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
       }
       if (readSignalDeepLinkSlug(searchParams) === slug) {
+        console.log('[#2575] signal-url sync: URL already matches, no write');
         previousSignalChatSlugRef.current = slug;
         previousSignalUrlSlugRef.current = slug;
         previousSignalChoiceRef.current = slug;
@@ -4565,8 +4581,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       previousSignalUrlSlugRef.current = urlSignal;
       previousSignalChoiceRef.current = choice;
       if (!shouldWriteOpenChatToSignalUrl(choice, slug, urlSignal)) {
+        console.log('[#2575] signal-url sync: skipped write', {
+          choice,
+          slug,
+          urlSignal,
+        });
         return;
       }
+      console.log('[#2575] signal-url sync: WRITING ?signal=', {
+        choice,
+        slug,
+        urlSignal,
+      });
       const href = setSignalSearchParam(
         pathname,
         typeof window !== 'undefined'
@@ -4614,9 +4640,29 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
   }, [searchParams]);
 
+  // TEMP(#2575)
+  useWhatChanged2575('HumanRightPanel signal deep-link effect', {
+    mode,
+    spaceSlug,
+    coherenceSlug,
+    coherenceRoomId,
+    pathname,
+    router,
+    searchParams,
+    openCoherenceChat,
+    openHumanChatPanel,
+    t,
+  });
+
   useEffect(() => {
     if (!spaceSlug?.trim()) return;
     const qpSignal = readSignalDeepLinkSlug(searchParams);
+    // TEMP(#2575)
+    logEffectRun2575('HumanRightPanel signal deep-link', {
+      qpSignal,
+      mode,
+      coherenceSlug,
+    });
     const qpMsg =
       readLiveSearchParam('msg') ?? searchParams?.get('msg')?.trim() ?? null;
     if (!qpSignal) return;
@@ -4633,6 +4679,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const expectedSpaceSlug = spaceSlug.trim();
 
     const stripInvalidSignalFromUrl = () => {
+      console.log('[#2575] stripInvalidSignalFromUrl', { qpSignal });
       signalDeepLinkEpochRef.current += 1;
       const cleaned = setSignalSearchParam(
         pathname,
@@ -4657,6 +4704,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             headers,
           });
         },
+      });
+      console.log('[#2575] signal deep-link resolved', {
+        qpSignal,
+        ok: result.ok,
+        cancelled,
+        staleEpoch: epochAtStart !== signalDeepLinkEpochRef.current,
+        liveSignal: readLiveSearchParam('signal'),
       });
       if (cancelled) return;
       if (epochAtStart !== signalDeepLinkEpochRef.current) return;

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRenderTrace2575 } from '@hypha-platform/core/client'; // TEMP(#2575)
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useIsDelegate } from '@hypha-platform/core/client';
 import {
@@ -36,6 +37,7 @@ export function SpaceMembershipCtaUnderHero({
   web3SpaceId,
   spaceSlug,
 }: SpaceMembershipCtaUnderHeroProps) {
+  useRenderTrace2575('SpaceMembershipCtaUnderHero');
   const { isAuthenticated } = useAuthentication();
   const { userState } = useUserSpaceState({
     spaceId: web3SpaceId,
