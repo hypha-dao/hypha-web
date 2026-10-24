@@ -415,15 +415,20 @@ export function eventContentIsSignalThread(
   return slug.length > 0;
 }
 
+function preferDirectRoom(current: ConversationRow, next: ConversationRow) {
+  const currentTyped = isTypedDmConversation(current);
+  const nextTyped = isTypedDmConversation(next);
+  if (currentTyped !== nextTyped) return nextTyped ? next : current;
+  return (next.lastTs ?? 0) >= (current.lastTs ?? 0) ? next : current;
+}
+
 function directRoomByMatrixId(rows: readonly ConversationRow[]) {
   const rooms = new Map<string, ConversationRow>();
   for (const row of rows) {
     if (row.signalThread || row.kind !== 'person' || !row.otherUserId) continue;
     const key = row.otherUserId.toLowerCase();
     const current = rooms.get(key);
-    if (!current || (row.lastTs ?? 0) >= (current.lastTs ?? 0)) {
-      rooms.set(key, row);
-    }
+    rooms.set(key, current ? preferDirectRoom(current, row) : row);
   }
   return rooms;
 }
@@ -510,6 +515,81 @@ export function orphanedDirectRoomIds(
   return orphans;
 }
 
+function conversationRoomType(row: { roomType?: string | null }) {
+  return row.roomType?.trim() || null;
+}
+
+export function isTypedDmConversation(row: ConversationRow) {
+  return conversationRoomType(row) === HYPHA_ROOM_TYPES.dm;
+}
+
+function pairPeerIds(row: ConversationRow): string[] {
+  if (row.otherUserId?.trim()) return [row.otherUserId.trim().toLowerCase()];
+  const fromMembers = (row.searchMembers ?? [])
+    .map((member) => member.userId?.trim().toLowerCase())
+    .filter((id): id is string => Boolean(id));
+  if (fromMembers.length === 1) return fromMembers;
+  return [];
+}
+
+/**
+ * Leftover 1:1 / 2-person rooms that are not `io.hypha.room.dm|group`.
+ * A raw Privy id in `m.room.name` or a stale `kind=person` snapshot used to
+ * sneak these past the typed-DM filter.
+ */
+export function isLegacyUntypedPairConversation(row: ConversationRow): boolean {
+  if (row.signalThread) return false;
+  const type = conversationRoomType(row);
+  if (type === HYPHA_ROOM_TYPES.dm || type === HYPHA_ROOM_TYPES.group) {
+    return false;
+  }
+  if (type?.startsWith('io.hypha.room.')) return false;
+  if (countCommaSeparatedNames(row.name) > 2) return false;
+  if ((row.memberCount ?? 0) > 2) return false;
+  if (row.kind === 'person') return true;
+  if (
+    looksLikeTechnicalMatrixDisplayName(row.name, row.otherUserId ?? row.roomId)
+  ) {
+    return true;
+  }
+  return Boolean(row.otherUserId?.trim()) || (row.memberCount ?? 0) === 2;
+}
+
+/**
+ * Untyped pair rooms whose peer already has a typed DM, plus raw-id leftovers.
+ * 3-name / 3+ member untyped groups stay listed.
+ */
+export function hiddenLegacyPairRoomIds(
+  rows: readonly ConversationRow[],
+): string[] {
+  const typedPeers = new Set<string>();
+  for (const row of rows) {
+    if (!isTypedDmConversation(row) || !row.otherUserId?.trim()) continue;
+    typedPeers.add(row.otherUserId.trim().toLowerCase());
+  }
+  const hidden: string[] = [];
+  for (const row of rows) {
+    if (!isLegacyUntypedPairConversation(row)) continue;
+    if (row.kind === 'person') {
+      hidden.push(row.roomId);
+      continue;
+    }
+    if (
+      looksLikeTechnicalMatrixDisplayName(
+        row.name,
+        row.otherUserId ?? row.roomId,
+      )
+    ) {
+      hidden.push(row.roomId);
+      continue;
+    }
+    if (pairPeerIds(row).some((id) => typedPeers.has(id))) {
+      hidden.push(row.roomId);
+    }
+  }
+  return hidden;
+}
+
 /**
  * Same rooms the Messages tab lists (search ignored). Archived groups, signal
  * threads, and anything that is not a typed DM or a People-Around group stay
@@ -517,9 +597,7 @@ export function orphanedDirectRoomIds(
  */
 export function isMessagesVisibleConversation(row: ConversationRow): boolean {
   if (row.archived || row.signalThread) return false;
-  if (row.kind === 'person') {
-    return !row.roomType || row.roomType === HYPHA_ROOM_TYPES.dm;
-  }
+  if (row.kind === 'person') return isTypedDmConversation(row);
   if (row.kind === 'group') return isPeopleListGroup(row);
   return false;
 }
@@ -528,7 +606,10 @@ export function isMessagesVisibleConversation(row: ConversationRow): boolean {
 export function messagesVisibleConversationRows(
   rows: readonly ConversationRow[],
 ): ConversationRow[] {
-  return rows.filter((row) => isMessagesVisibleConversation(row));
+  const hidden = new Set(hiddenLegacyPairRoomIds(rows));
+  return rows.filter(
+    (row) => isMessagesVisibleConversation(row) && !hidden.has(row.roomId),
+  );
 }
 
 /**
@@ -572,10 +653,14 @@ export function unreadRoomsMissingFromMembers<T extends ConnectionListPerson>(
       .filter((id): id is string => Boolean(id)),
   );
   const superseded = new Set(supersededDirectRoomIds(rooms));
+  const hiddenPairs = new Set(hiddenLegacyPairRoomIds(rooms));
   const extras: MemberRow<T>[] = [];
   let syntheticId = -1;
   for (const room of rooms) {
     if (room.signalThread || room.kind !== 'person' || room.unread <= 0) {
+      continue;
+    }
+    if (!isTypedDmConversation(room) || hiddenPairs.has(room.roomId)) {
       continue;
     }
     if (superseded.has(room.roomId)) continue;
@@ -608,9 +693,10 @@ export function unreadRoomsMissingFromMembers<T extends ConnectionListPerson>(
 
 function isTypedDirectPersonRoom(room: ConversationRow) {
   if (room.signalThread || room.kind !== 'person') return false;
-  // Person rows come from `io.hypha.room.dm`. A missing type is only accepted
-  // for tests / older cache snapshots that already classified as `person`.
-  return !room.roomType || room.roomType === HYPHA_ROOM_TYPES.dm;
+  // Person rows come from `io.hypha.room.dm` only. A missing, stale, or odd
+  // type used to pass (`!room.roomType`) and leaked leftover 1:1s — including
+  // rooms whose `m.room.name` is a raw Privy id.
+  return isTypedDmConversation(room);
 }
 
 function memberRowFromPersonRoom<T extends ConnectionListPerson>(
@@ -651,17 +737,37 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
     if (mxid) personByMxid.set(mxid.toLowerCase(), person);
   }
   const superseded = new Set(supersededDirectRoomIds(rooms));
+  const hiddenPairs = new Set(hiddenLegacyPairRoomIds(rooms));
   const usedMxids = new Set<string>();
   const usedRoomIds = new Set<string>();
   const fromRooms: MemberRow<T>[] = [];
   let syntheticId = -1;
+  const typedPeerHasHumanName = new Set<string>();
+  for (const room of rooms) {
+    if (!isTypedDirectPersonRoom(room) || hiddenPairs.has(room.roomId))
+      continue;
+    const mxid = room.otherUserId?.trim().toLowerCase();
+    if (
+      mxid &&
+      !looksLikeTechnicalMatrixDisplayName(room.name, room.otherUserId ?? '')
+    ) {
+      typedPeerHasHumanName.add(mxid);
+    }
+  }
 
   for (const room of rooms) {
     if (!isTypedDirectPersonRoom(room)) continue;
-    if (superseded.has(room.roomId)) continue;
+    if (superseded.has(room.roomId) || hiddenPairs.has(room.roomId)) continue;
     const mxid = room.otherUserId?.trim().toLowerCase();
     if (mxid && usedMxids.has(mxid)) continue;
     if (usedRoomIds.has(room.roomId)) continue;
+    const technicalName = looksLikeTechnicalMatrixDisplayName(
+      room.name,
+      room.otherUserId ?? room.roomId,
+    );
+    if (technicalName && mxid && typedPeerHasHumanName.has(mxid)) {
+      continue;
+    }
     const person = mxid ? personByMxid.get(mxid) : undefined;
     if (person) {
       if (
@@ -673,6 +779,7 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
         memberRowFromPersonRoom(room, person, personName(person, fallback)),
       );
     } else {
+      if (technicalName && !mxid) continue;
       fromRooms.push({
         person: {
           id: syntheticId,
@@ -994,6 +1101,15 @@ export function conversationMatchesSearch(
   );
 }
 
+/** Keep the search filter when a selected chip is removed. */
+export function conversationsMatchingSearch<
+  T extends Parameters<typeof conversationMatchesSearch>[0],
+>(rows: readonly T[], needle: string): T[] {
+  const query = needle.trim();
+  if (!query) return [...rows];
+  return rows.filter((row) => conversationMatchesSearch(row, query));
+}
+
 /**
  * A private group chat, not a space channel.
  * Same gate as production: typed group, remembered Messages group, or a
@@ -1003,6 +1119,15 @@ export function conversationMatchesSearch(
  */
 export function isPeopleListGroup(room: ConversationRow) {
   if (room.kind !== 'group' || room.signalThread) return false;
+  if (
+    !conversationRoomType(room) &&
+    looksLikeTechnicalMatrixDisplayName(
+      room.name,
+      room.otherUserId ?? room.roomId,
+    )
+  ) {
+    return false;
+  }
   if (
     room.roomType &&
     room.roomType !== HYPHA_ROOM_TYPES.group &&
@@ -1078,8 +1203,9 @@ export function groupRowsForConnections<T extends ConnectionListPerson>(
   rooms: readonly ConversationRow[],
   fallback: string,
 ): MemberRow<T>[] {
+  const hiddenPairs = new Set(hiddenLegacyPairRoomIds(rooms));
   return rooms
-    .filter((room) => isPeopleListGroup(room))
+    .filter((room) => isPeopleListGroup(room) && !hiddenPairs.has(room.roomId))
     .map((room) => {
       const faces = twoGroupFaces(room);
       const name = room.name.trim() || fallback;

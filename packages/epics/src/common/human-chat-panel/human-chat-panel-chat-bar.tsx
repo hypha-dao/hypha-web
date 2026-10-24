@@ -1526,6 +1526,12 @@ export function HumanChatPanelChatBar({
    */
   const handleComposerShellKeyDownCapture = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === 'Escape' && emojiPickerOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        setEmojiPickerOpen(false);
+        return;
+      }
       if (e.key !== 'Enter' || e.shiftKey) return;
       const composing = (e.nativeEvent as KeyboardEvent).isComposing;
       if (composing) return;
@@ -1558,6 +1564,12 @@ export function HumanChatPanelChatBar({
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       const composing = (e.nativeEvent as KeyboardEvent).isComposing;
       if (composing) return;
+      if (e.key === 'Escape' && emojiPickerOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        setEmojiPickerOpen(false);
+        return;
+      }
       if (atOpen && atSuggestions.length > 0) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
@@ -1652,6 +1664,7 @@ export function HumanChatPanelChatBar({
       applyColonChoice,
       canSend,
       draftAttachments.length,
+      emojiPickerOpen,
       sendMessage,
     ],
   );

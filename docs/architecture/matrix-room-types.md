@@ -30,7 +30,10 @@ Constants live in [`packages/core/src/matrix/room-types.ts`](../../packages/core
 1. **Person rows are built from DM-typed rooms**, then enriched with a Hypha
    profile when the other Matrix id is in the directory. A DM from someone who
    shares no space still appears.
-2. **Legacy untyped 1:1 rooms are hidden.** They are not DMs. Their unread and
+2. **Legacy untyped 1:1 rooms are hidden.** They are not DMs — including
+   leftovers that still have an `m.room.name` (often a raw Privy id) or a
+   stale/odd type. An untyped 2-person room whose peer already appears via a
+   typed DM stays out of Messages and the new-group picker. Their unread and
    @-mentions must not raise the Messages badge or invent a person row
    (“phantom mentions”).
 3. **The unread badge sums the same rows Messages shows** (search ignored).

@@ -62,8 +62,8 @@ import {
   looksLikeHyphaBot,
   facesWithProfiles,
   groupRowsForConnections,
-  conversationMatchesSearch,
   peopleMatchingSearch,
+  conversationsMatchingSearch,
   conversationsVisibleInSection,
   enrichSearchMembers,
   isPeopleListGroup,
@@ -1711,12 +1711,8 @@ export function MyConnections({
       groups,
       section === 'archived' ? 'archived' : 'messages',
     );
-    const matchingGroups = needle
-      ? listedGroups.filter((row) => conversationMatchesSearch(row, needle))
-      : listedGroups;
-    const matchingMembers = needle
-      ? members.filter((row) => conversationMatchesSearch(row, needle))
-      : members;
+    const matchingGroups = conversationsMatchingSearch(listedGroups, needle);
+    const matchingMembers = conversationsMatchingSearch(members, needle);
     const source =
       section === 'archived'
         ? matchingGroups
@@ -2277,11 +2273,16 @@ function MemberList({
               >
                 {picking ? (
                   <span
-                    aria-hidden
+                    role="presentation"
                     className={cn(
                       'grid size-5 shrink-0 place-items-center rounded-full border border-neutral-8',
                       checked && 'border-foreground bg-foreground',
                     )}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onOpen(row);
+                    }}
                   >
                     {checked ? (
                       <span className="size-2 rounded-full bg-background" />
