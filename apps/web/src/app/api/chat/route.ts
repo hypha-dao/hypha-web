@@ -180,6 +180,15 @@ export async function POST(req: Request) {
       // Home only speaks the reply. Reasoning chunks are not shown, and a
       // malformed one makes useChat throw the dropped-thread banner.
       sendReasoning: !memberHome,
+      // The card is known before the model speaks, so it can show with the
+      // first token instead of after a second tool step.
+      ...(memberHome && result.memberHomeCard
+        ? {
+            messageMetadata: () => ({
+              homeItem: result.memberHomeCard,
+            }),
+          }
+        : {}),
     });
   } catch (error) {
     console.error('[chat][route][stream-response-error]', {

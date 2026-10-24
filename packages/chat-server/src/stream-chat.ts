@@ -1382,7 +1382,11 @@ export async function createChatStreamResult(
     memberHome,
     memberHomeMemory,
   }: ChatStreamCallbacks,
-): Promise<ReturnType<typeof streamText>> {
+): Promise<
+  ReturnType<typeof streamText> & {
+    memberHomeCard: { kind: string; slug: string } | null;
+  }
+> {
   const memberHomeRecord = memberHome
     ? await loadMemberHomeFacts(authToken)
     : null;
@@ -1398,7 +1402,7 @@ export async function createChatStreamResult(
   const memberHomeLastUserText = memberHomeRecord
     ? extractLastUserText(messages)
     : null;
-  const memberHomeFacts = memberHomeRecord
+  const memberHomeBrief = memberHomeRecord
     ? formatMemberHomeFacts(memberHomeRecord.home, {
         alreadyShown: shownMemberHomeItemKeys(memberHomeItems, messages),
         passed: memberHomeChoices?.passed,
@@ -1418,7 +1422,12 @@ export async function createChatStreamResult(
         attached: lastUserAttachedFile(messages),
       })
     : null;
-  const modelMessages = await convertMessagesSafely(messages, debugRequestId);
+  const memberHomeFacts = memberHomeBrief?.text ?? null;
+  const memberHomeCard = memberHomeBrief?.card ?? null;
+  const modelMessages = await convertMessagesSafely(
+    memberHomeRecord ? messages.slice(-8) : messages,
+    debugRequestId,
+  );
   const lastUserText = extractLastUserText(messages);
   const recentUserTexts = extractRecentUserTexts(messages);
   const normalizedConversationContext = normalizeConversationContext(
@@ -1429,44 +1438,49 @@ export async function createChatStreamResult(
     locale,
     conversationContext: normalizedConversationContext,
   });
-  const tools = createChatTools(
-    authToken,
-    requestUrlForSessionMatrix,
-    normalizedConversationContext,
-    {
-      onboardingWriteToolsEnabled: onboardingWriteToolsEnabled !== false,
-      ecosystemAutomationEnabled: ecosystemAutomationEnabled !== false,
-    },
-    lastUserText,
-    recentUserTexts,
-    activeProposalFormSnapshot,
-    chatLocale,
-  );
-  if (memberHomeRecord) {
-    tools[SHOW_MEMBER_HOME_ITEM_TOOL] = safeChatTool(
-      SHOW_MEMBER_HOME_ITEM_TOOL,
-      createShowMemberHomeItemTool(memberHomeItems),
-    );
-  }
-  const deterministicFallback = await buildDeterministicSpaceFallback({
-    lastUserText,
-    spaceSlug,
-    authToken,
-    debugRequestId,
-  });
+  const tools = memberHomeRecord
+    ? {
+        [SHOW_MEMBER_HOME_ITEM_TOOL]: safeChatTool(
+          SHOW_MEMBER_HOME_ITEM_TOOL,
+          createShowMemberHomeItemTool(memberHomeItems),
+        ),
+      }
+    : createChatTools(
+        authToken,
+        requestUrlForSessionMatrix,
+        normalizedConversationContext,
+        {
+          onboardingWriteToolsEnabled: onboardingWriteToolsEnabled !== false,
+          ecosystemAutomationEnabled: ecosystemAutomationEnabled !== false,
+        },
+        lastUserText,
+        recentUserTexts,
+        activeProposalFormSnapshot,
+        chatLocale,
+      );
+  const deterministicFallback = memberHomeRecord
+    ? null
+    : await buildDeterministicSpaceFallback({
+        lastUserText,
+        spaceSlug,
+        authToken,
+        debugRequestId,
+      });
   const requestedSpaceSlug = spaceSlug?.trim() || '';
   const voiceSpaceSlug =
     requestedSpaceSlug || memberHomeRecord?.chatSpaceSlug || '';
-  const spaceContextSnapshot = requestedSpaceSlug
-    ? await buildSpaceContextSnapshot(
-        requestedSpaceSlug,
-        activeSpaceTitle,
-        authToken,
-      )
-    : null;
-  const memberBrief = spaceContextSnapshot
-    ? null
-    : await loadSignedInMemberBrief(authToken);
+  const spaceContextSnapshot =
+    memberHomeRecord || !requestedSpaceSlug
+      ? null
+      : await buildSpaceContextSnapshot(
+          requestedSpaceSlug,
+          activeSpaceTitle,
+          authToken,
+        );
+  const memberBrief =
+    memberHomeRecord || spaceContextSnapshot
+      ? null
+      : await loadSignedInMemberBrief(authToken);
   const effectiveSystemPrompt = buildEffectiveSystemPrompt(
     voiceSpaceSlug || spaceSlug,
     lastUserText,
@@ -1549,70 +1563,67 @@ export async function createChatStreamResult(
       normalizedConversationContext?.activeGovernanceProposal
         ?.collectedFields ?? snapshotWalkthrough?.collectedFields,
   });
-  const systemPrompt =
-    normalizedConversationContext?.mode === 'onboarding_setup'
-      ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
-          normalizedConversationContext.setupPhase ?? 'discover'
-        }.\n${ONBOARDING_TRANSPARENCY_GUIDELINES}\n${ONBOARDING_CATEGORY_GUIDELINES}\n${ONBOARDING_CREATION_CONFIRMATION_GUIDELINES}\n${SOUND_ADVISOR_GUIDELINES}\n${ECOSYSTEM_NESTED_SPACES_GUIDELINES}\n- Discovery order (single space): (1) journey cards, (2) name and purpose, (3) principles reaction, (4) org discovery, (5) activation mode, (6) transparency discoverability then activity access, (7) entry method, (8) location, (9) logo and hero banner.\n- Discovery order (full ecosystem): same through (4), then (5) root-space role and ecosystem structure, (6) functional domains and propose_organisation_blueprint—confirm nested-space plan BEFORE activation, (7) activation mode, (8) transparency, (9) entry method, (10) location, (11) logo and hero banner, (12) create root space ONLY (never create_ecosystem_space during onboarding), (13) left panel execute—nested spaces one at a time on-chain with create_space_from_onboarding and parent_space_slug.\n- Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until onboarding_guidance shows the current step is complete—including nested-space blueprint confirmation before operational settings.\n- After org discovery, use assigned_category_groups and suggested_categories from onboarding_guidance—do not ask users to confirm or invent tags.\n- After ecosystem root creation the user lands on ecosystem navigation with the left AI panel open—nested spaces from the saved blueprint are the mandatory next step, not governance.\n- User-facing vocabulary: say nested spaces only—never subspace, subspaces, or child space.\n- After single-space onboarding creation, the user lands on the coherence view with the AI panel open—finish voting method and entry method setup first, then help with the first signal once governance basics are settled.\n- When the user selects journey, activation, transparency, entry method, or location via onboarding UI, pass values into onboarding_guidance known_answers and create tools. For location, always use the address search and map card—never ask users to confirm latitude or longitude in chat.\n- After wallet handoff, instruct the user to complete the wallet signing prompt (standard signatures and 2FA/MFA wallets). If signing fails, explain clearly and offer retry—never loop on verbal confirmations.${
-          resolveLatestVisualGenerationIntent(recentUserTexts)
-            ? '\n- The user asked for generated visuals in this thread. You MUST call generate_space_visual_assets or create_space_from_onboarding with generate_visuals=true in this turn. Never say images must wait until after creation. HARD RULE: generated visuals are always text-free — no words, letters, or space name in the image; do not request wording for rendering. visual_vibe must describe a real photograph or a quiet physical emblem: place, material, daylight. Never request neon, glowing roots, god rays, or fantasy CGI.'
-            : ''
-        }${
-          (normalizedConversationContext.setupPhase === 'execute' ||
-            normalizedConversationContext.setupPhase === 'verify') &&
-          !pendingEcosystemChildren
-            ? `\n${POST_CREATE_GOVERNANCE_SETUP_GUIDELINES}\n${PROPOSAL_DISCOVERY_GUIDELINES}\n- Post-create phase (space is live): finish governance setup before signals or member-gated read tools. Recommend a voting method or use the voting method card — when the user accepts, call prepare_governance_proposal with change_voting_method in the same turn (partial: true opens the form). Then entry method if skipped during discover. Do NOT call create_space_setup_proposal with collective_agreement for voting or entry method. Do NOT call get_signals_by_space_slug or other member-gated tools until voting method and entry method are settled.${
-                postCreateVotingMethodDirective
-                  ? `\n${postCreateVotingMethodDirective}`
-                  : ''
-              }${
-                activeGovernanceProposalDirective
-                  ? `\n${activeGovernanceProposalDirective}`
-                  : ''
-              }${
-                proposalAcceptanceDirective
-                  ? `\n${proposalAcceptanceDirective}`
-                  : ''
-              }`
-            : ''
-        }${
-          normalizedConversationContext.setupPhase === 'confirm'
-            ? '\n- The user already confirmed creation in this thread. Do not ask for another confirmation. Proceed with create_space_from_onboarding (no dry_run) only when logo_url and lead_image_url are set, then wallet signing.'
-            : ''
-        }${ecosystemExecuteDirective ? `\n${ecosystemExecuteDirective}` : ''}${
-          voiceDiscoveryActive
-            ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: friendly and joyful, about people helping each other. Name the step, then ask if they want to pursue it ("Ready to take a look?"). They decide. On yes, be glad and name the next step. On no, "All good", then the next step. Do not close with "let me know if you want anything else". Stop only if they ask to pause. Keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
-            : ''
-        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
-          localizedEntryMethodGuidelines
-            ? `\n${localizedEntryMethodGuidelines}`
-            : ''
-        }`
-      : voiceDiscoveryActive && spaceSlug?.trim()
-      ? `${effectiveSystemPrompt}\n\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice discovery mode is active for this space: the AI does it for them—reflect what you heard, propose drafts and next steps, one small ask at a time, short conversational replies (no bullet lists or markdown in voice turns). Continuous discovery applies: learn the space with tools, adapt to circumstances, and handle the next move toward purpose—not a fixed checklist.${
-          proposalAcceptanceDirective
-            ? `\n\n${proposalAcceptanceDirective}`
-            : ''
-        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
-          localizedEntryMethodGuidelines
-            ? `\n${localizedEntryMethodGuidelines}`
-            : ''
-        }`
-      : `${effectiveSystemPrompt}${
-          proposalFormStateDirective ? `\n\n${proposalFormStateDirective}` : ''
-        }${
-          activeGovernanceProposalDirective
-            ? `\n\n${activeGovernanceProposalDirective}`
-            : ''
-        }${
-          proposalAcceptanceDirective
-            ? `\n\n${proposalAcceptanceDirective}`
-            : ''
-        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
-          localizedEntryMethodGuidelines
-            ? `\n${localizedEntryMethodGuidelines}`
-            : ''
-        }`;
+  const systemPrompt = memberHomeRecord
+    ? 'You are Hypha, speaking to this member at home. Use only the brief below. Two short sentences, then stop. Call show_member_home_item once for the one item in the brief. Do not call any other tool. Do not think out loud.'
+    : normalizedConversationContext?.mode === 'onboarding_setup'
+    ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
+        normalizedConversationContext.setupPhase ?? 'discover'
+      }.\n${ONBOARDING_TRANSPARENCY_GUIDELINES}\n${ONBOARDING_CATEGORY_GUIDELINES}\n${ONBOARDING_CREATION_CONFIRMATION_GUIDELINES}\n${SOUND_ADVISOR_GUIDELINES}\n${ECOSYSTEM_NESTED_SPACES_GUIDELINES}\n- Discovery order (single space): (1) journey cards, (2) name and purpose, (3) principles reaction, (4) org discovery, (5) activation mode, (6) transparency discoverability then activity access, (7) entry method, (8) location, (9) logo and hero banner.\n- Discovery order (full ecosystem): same through (4), then (5) root-space role and ecosystem structure, (6) functional domains and propose_organisation_blueprint—confirm nested-space plan BEFORE activation, (7) activation mode, (8) transparency, (9) entry method, (10) location, (11) logo and hero banner, (12) create root space ONLY (never create_ecosystem_space during onboarding), (13) left panel execute—nested spaces one at a time on-chain with create_space_from_onboarding and parent_space_slug.\n- Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until onboarding_guidance shows the current step is complete—including nested-space blueprint confirmation before operational settings.\n- After org discovery, use assigned_category_groups and suggested_categories from onboarding_guidance—do not ask users to confirm or invent tags.\n- After ecosystem root creation the user lands on ecosystem navigation with the left AI panel open—nested spaces from the saved blueprint are the mandatory next step, not governance.\n- User-facing vocabulary: say nested spaces only—never subspace, subspaces, or child space.\n- After single-space onboarding creation, the user lands on the coherence view with the AI panel open—finish voting method and entry method setup first, then help with the first signal once governance basics are settled.\n- When the user selects journey, activation, transparency, entry method, or location via onboarding UI, pass values into onboarding_guidance known_answers and create tools. For location, always use the address search and map card—never ask users to confirm latitude or longitude in chat.\n- After wallet handoff, instruct the user to complete the wallet signing prompt (standard signatures and 2FA/MFA wallets). If signing fails, explain clearly and offer retry—never loop on verbal confirmations.${
+        resolveLatestVisualGenerationIntent(recentUserTexts)
+          ? '\n- The user asked for generated visuals in this thread. You MUST call generate_space_visual_assets or create_space_from_onboarding with generate_visuals=true in this turn. Never say images must wait until after creation. HARD RULE: generated visuals are always text-free — no words, letters, or space name in the image; do not request wording for rendering. visual_vibe must describe a real photograph or a quiet physical emblem: place, material, daylight. Never request neon, glowing roots, god rays, or fantasy CGI.'
+          : ''
+      }${
+        (normalizedConversationContext.setupPhase === 'execute' ||
+          normalizedConversationContext.setupPhase === 'verify') &&
+        !pendingEcosystemChildren
+          ? `\n${POST_CREATE_GOVERNANCE_SETUP_GUIDELINES}\n${PROPOSAL_DISCOVERY_GUIDELINES}\n- Post-create phase (space is live): finish governance setup before signals or member-gated read tools. Recommend a voting method or use the voting method card — when the user accepts, call prepare_governance_proposal with change_voting_method in the same turn (partial: true opens the form). Then entry method if skipped during discover. Do NOT call create_space_setup_proposal with collective_agreement for voting or entry method. Do NOT call get_signals_by_space_slug or other member-gated tools until voting method and entry method are settled.${
+              postCreateVotingMethodDirective
+                ? `\n${postCreateVotingMethodDirective}`
+                : ''
+            }${
+              activeGovernanceProposalDirective
+                ? `\n${activeGovernanceProposalDirective}`
+                : ''
+            }${
+              proposalAcceptanceDirective
+                ? `\n${proposalAcceptanceDirective}`
+                : ''
+            }`
+          : ''
+      }${
+        normalizedConversationContext.setupPhase === 'confirm'
+          ? '\n- The user already confirmed creation in this thread. Do not ask for another confirmation. Proceed with create_space_from_onboarding (no dry_run) only when logo_url and lead_image_url are set, then wallet signing.'
+          : ''
+      }${ecosystemExecuteDirective ? `\n${ecosystemExecuteDirective}` : ''}${
+        voiceDiscoveryActive
+          ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: friendly and joyful, about people helping each other. Name the step, then ask if they want to pursue it ("Ready to take a look?"). They decide. On yes, be glad and name the next step. On no, "All good", then the next step. Do not close with "let me know if you want anything else". Stop only if they ask to pause. Keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
+          : ''
+      }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
+        localizedEntryMethodGuidelines
+          ? `\n${localizedEntryMethodGuidelines}`
+          : ''
+      }`
+    : voiceDiscoveryActive && spaceSlug?.trim()
+    ? `${effectiveSystemPrompt}\n\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice discovery mode is active for this space: the AI does it for them—reflect what you heard, propose drafts and next steps, one small ask at a time, short conversational replies (no bullet lists or markdown in voice turns). Continuous discovery applies: learn the space with tools, adapt to circumstances, and handle the next move toward purpose—not a fixed checklist.${
+        proposalAcceptanceDirective ? `\n\n${proposalAcceptanceDirective}` : ''
+      }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
+        localizedEntryMethodGuidelines
+          ? `\n${localizedEntryMethodGuidelines}`
+          : ''
+      }`
+    : `${effectiveSystemPrompt}${
+        proposalFormStateDirective ? `\n\n${proposalFormStateDirective}` : ''
+      }${
+        activeGovernanceProposalDirective
+          ? `\n\n${activeGovernanceProposalDirective}`
+          : ''
+      }${
+        proposalAcceptanceDirective ? `\n\n${proposalAcceptanceDirective}` : ''
+      }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
+        localizedEntryMethodGuidelines
+          ? `\n${localizedEntryMethodGuidelines}`
+          : ''
+      }`;
 
   if (modelMessages.length === 0) {
     console.warn('[chat][empty-model-messages]', {
@@ -1644,16 +1655,19 @@ export async function createChatStreamResult(
       ? 'The member wants a logo and a banner generated now. You MUST call generate_space_visual_assets in this turn before describing any image. Do not say the images exist until that tool returns logo_url and lead_image_url. Describe them only after the tool succeeds. Never paste the URLs.'
       : '';
 
-  return streamText({
+  const result = streamText({
     model: memberHomeRecord
       ? openrouterWithHyphaHeaders(openRouterModelId, {
-          // Home replies are short. Reasoning on this model holds the first
-          // token long enough that the turn dies before any words arrive.
+          // Home replies are short. Reasoning holds the first token, and a
+          // busy provider holds it longer. Skip both.
           reasoning: { effort: 'none', exclude: true },
+          provider: { sort: 'latency' },
         })
       : openrouterWithHyphaHeaders(openRouterModelId),
     // The fetch wrapper already retries. Another SDK retry would stack on a slow turn.
     maxRetries: 0,
+    // Two sentences. A long completion is what pushes a home turn past a few seconds.
+    ...(memberHomeRecord ? { maxOutputTokens: 160 } : {}),
     system: [systemPrompt, memberHomeFacts, homeVisualDirective]
       .filter(Boolean)
       .join('\n\n'),
@@ -1670,7 +1684,8 @@ export async function createChatStreamResult(
 
     // Cast: ChatRouteTool's generic Zod input doesn't satisfy ai's CoreTool typing, but is structurally compatible at runtime.
     tools: tools as unknown as Parameters<typeof streamText>[0]['tools'],
-    stopWhen: stepCountIs(6),
+    // Home shows one card, then the two sentences. More steps are another full wait.
+    stopWhen: stepCountIs(memberHomeRecord ? 2 : 6),
     onStepFinish: (event) => {
       if (!OPENROUTER_DEBUG) return;
 
@@ -1732,4 +1747,5 @@ export async function createChatStreamResult(
       deterministicFallback,
     ),
   });
+  return Object.assign(result, { memberHomeCard });
 }
