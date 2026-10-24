@@ -717,7 +717,7 @@ describe('personRowsFromDmRooms', () => {
 
   it('skips superseded rooms in the typedPeerHasHumanName first pass', () => {
     const rows = personRowsFromDmRooms(
-      [],
+      [] as Person[],
       [
         room({
           roomId: '!old',
