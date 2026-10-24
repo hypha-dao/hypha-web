@@ -1018,14 +1018,18 @@ function createOpenRouterAuthRecoveryTransform(
 ): StreamTextTransform<ToolSet> {
   return () => {
     const nextTextId = createIdGenerator({ prefix: 't', size: 12 });
-    let sawText = false;
+    let sawSpokenText = false;
     return new TransformStream<
       TextStreamPart<ToolSet>,
       TextStreamPart<ToolSet>
     >({
       transform(chunk, controller) {
-        if (chunk.type === 'text-start' || chunk.type === 'text-delta') {
-          sawText = true;
+        if (chunk.type === 'text-delta') {
+          const content =
+            'text' in chunk && typeof chunk.text === 'string' ? chunk.text : '';
+          if (content.length > 0) {
+            sawSpokenText = true;
+          }
         }
         if (chunk.type !== 'error') {
           controller.enqueue(chunk);
@@ -1033,7 +1037,8 @@ function createOpenRouterAuthRecoveryTransform(
         }
         // A trailing provider error after a spoken reply must not mark the
         // home turn as homeError (that dropped a good answer from the thread).
-        if (errorsAsText && sawText) {
+        // text-start alone is not a reply — only a non-empty text-delta is.
+        if (errorsAsText && sawSpokenText) {
           return;
         }
 

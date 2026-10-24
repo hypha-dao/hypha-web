@@ -30,6 +30,23 @@ import useSWR from 'swr';
 /** Fail before the ~40s Vercel 504 so Home can render the person shell. */
 const HOME_INTELLIGENCE_TIMEOUT_MS = 8_000;
 
+/** Privy access tokens are JWTs; `sub` is the member id (`did:privy:…`). */
+function readJwtSubject(token: string): string | null {
+  const payload = token.split('.')[1];
+  if (!payload) return null;
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = normalized.length % 4;
+    const padded = pad ? `${normalized}${'='.repeat(4 - pad)}` : normalized;
+    const parsed = JSON.parse(atob(padded)) as { sub?: unknown };
+    return typeof parsed.sub === 'string' && parsed.sub.trim()
+      ? parsed.sub.trim()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function sameMemberHome(
   left: MemberIntelligence | null | undefined,
   right: MemberIntelligence | null | undefined,
@@ -55,11 +72,23 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   const [orientationError, setOrientationError] = useState<string | null>(null);
 
   const jwtRef = useRef(jwt);
-  const keepHomeKey = useRef(Boolean(jwt));
+  const jwtOwnerRef = useRef<string | null>(null);
+  const keepHomeKey = useRef(false);
+  const jwtSubject = jwt ? readJwtSubject(jwt) : null;
   useLayoutEffect(() => {
+    if (!jwt) return;
     jwtRef.current = jwt;
-    if (jwt) keepHomeKey.current = true;
-  }, [jwt]);
+    if (jwtSubject) jwtOwnerRef.current = jwtSubject;
+    keepHomeKey.current = Boolean(
+      jwtSubject && memberId && jwtSubject === memberId,
+    );
+  }, [jwt, jwtSubject, memberId]);
+  const tokenOwner = jwtSubject ?? jwtOwnerRef.current;
+  const homeKeyReady =
+    Boolean(memberId) &&
+    Boolean(tokenOwner) &&
+    tokenOwner === memberId &&
+    (Boolean(jwt) || keepHomeKey.current);
   const {
     data,
     error,
@@ -67,13 +96,15 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     mutate,
   } = useSWR<MemberIntelligence | null>(
     // The token string rotates. Keying on it dropped the cached home, unmounted
-    // the assistant, and started a new turn a few seconds later.
-    (jwt || keepHomeKey.current) && memberId
+    // the assistant, and started a new turn a few seconds later. useJwt can
+    // keep the previous member's token via keepPreviousData — only fetch when
+    // that token's sub matches the current member.
+    homeKeyReady
       ? (['/api/v1/people/me/intelligence', memberId] as const)
       : null,
     async ([url]: readonly [string, string]) => {
       const token = jwtRef.current;
-      if (!token) {
+      if (!token || jwtOwnerRef.current !== memberId) {
         throw new Error('Access token not ready');
       }
       const response = await fetch(url, {
@@ -93,7 +124,7 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
       // Key is the Privy member id, so token rotation keeps the cache. A
       // different member must not inherit the previous Home payload.
       keepPreviousData: false,
-      isPaused: () => !jwtRef.current,
+      isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
       compare: sameMemberHome,
     },
   );
@@ -255,8 +286,11 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   // Intelligence can hang until a 504. Keep the person shell (greeting,
   // retry on the next SWR tick) instead of a hard error or a 40s skeleton.
   if (!data) {
-    const greetingName =
-      person?.name?.trim() || person?.nickname?.trim() || null;
+    const personIsCurrentMember =
+      Boolean(memberId) && tokenOwner === memberId && person?.sub === memberId;
+    const greetingName = personIsCurrentMember
+      ? person?.name?.trim() || person?.nickname?.trim() || null
+      : null;
     return (
       <MemberHome
         lang={lang}
