@@ -44,6 +44,7 @@ export {
   type HumanChatPanelCallStageLayout,
 } from './human-chat-panel-call-stage';
 export { HumanChatPanelHeader } from './human-chat-panel-header';
+export { HumanChatPanelGroupMenu } from './human-chat-panel-group-menu';
 export { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
 export {
   HumanChatPanelChatBar,

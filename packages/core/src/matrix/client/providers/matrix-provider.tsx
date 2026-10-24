@@ -561,6 +561,8 @@ interface MatrixContextType {
   client: MatrixSdk.MatrixClient | null;
   isMatrixAvailable: boolean;
   isAuthenticated: boolean;
+  /** Token fetch or client start is still in flight — not a signed-out state. */
+  isConnecting: boolean;
   /** Matrix `/sync` connection state — each tab runs its own `/sync` independently (#2456). */
   connectionStatus: MatrixConnectionStatus;
   /** Soft-restart Matrix sync; falls back to session refresh when no client exists. */
@@ -659,6 +661,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   const connectionRetryPromiseRef = React.useRef<Promise<void> | null>(null);
   const [connectionRetryFailed, setConnectionRetryFailed] =
     React.useState(false);
+  const [clientInitFailed, setClientInitFailed] = React.useState(false);
   const pendingClientRecycleRef = React.useRef(false);
   const registeredRoomListenersRef = React.useRef<RoomMessageListenerRecord[]>(
     [],
@@ -699,7 +702,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       if (!matrixToken) {
         return;
       }
+      let startedClient: MatrixSdk.MatrixClient | null = null;
       try {
+        setClientInitFailed(false);
         const { accessToken, userId, homeserverUrl, deviceId } = matrixToken;
         // Voice and video (group calls): keep VoIP enabled; TURN/ICE for WebRTC. See
         // docs/requirements/voice-video-call-implementation-spec.md §2.1
@@ -730,6 +735,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         });
 
         await matrixClient.startClient();
+        startedClient = matrixClient;
 
         /** Warm TURN credentials before the first call join (reduces ICE stall). */
         void evaluateMatrixTurnReadiness(matrixClient).catch(() => undefined);
@@ -745,8 +751,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         setConnectionRetryFailed(false);
       } catch (error) {
         console.error('Failed to initialize Matrix client:', error);
+        if (startedClient) {
+          try {
+            startedClient.stopClient();
+          } catch {
+            // Ignore stop errors while tearing down a failed init.
+          }
+        }
         clientRef.current = null;
         setClient(null);
+        setIsMatrixAvailable(false);
+        setClientInitFailed(true);
+        setConnectionRetryFailed(true);
+        if (matrixToken.userId) setIsAuthenticated(true);
         setConnectionStatus(
           isTransientMatrixNetworkError(error)
             ? 'disconnected'
@@ -2518,10 +2535,16 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client, unregisterRoomListener, getPinnedMessageIds],
   );
 
+  const isConnecting =
+    isMatrixTokenLoading ||
+    Boolean(matrixToken && !isMatrixAvailable && !clientInitFailed) ||
+    connectionStatus === 'reconnecting';
+
   const value: MatrixContextType = {
     client,
     isMatrixAvailable,
     isAuthenticated,
+    isConnecting,
     connectionStatus,
     retryMatrixConnection,
     connectionRetryFailed,
@@ -2557,6 +2580,7 @@ const noopMatrixContext: MatrixContextType = {
   client: null,
   isMatrixAvailable: false,
   isAuthenticated: false,
+  isConnecting: false,
   connectionStatus: 'connected',
   retryMatrixConnection: async () => {},
   connectionRetryFailed: false,

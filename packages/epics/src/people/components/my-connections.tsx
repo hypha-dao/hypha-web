@@ -10,20 +10,37 @@ import {
   MatrixEventEvent,
   NotificationCountType,
   RoomEvent,
+  RoomStateEvent,
   SyncState,
   type MatrixClient,
   type MatrixEvent,
   type Room,
 } from 'matrix-js-sdk';
 import {
+  GROUP_ROOM_ARCHIVED_STATE,
+  GROUP_ROOM_CREATOR_STATE,
   HYPHA_ROOM_TYPES,
+  conversationActivityTs,
+  countCommaSeparatedNames,
+  isArchivedGroupRoom,
+  isGroupCreateContent,
+  peopleConversationKindForListing,
+  readCreateContent,
+  resolveConversationCacheEntry,
+  readRoomNameState,
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
+  matrixUserIdToCanonicalPrivySub,
+  sortConversationsByLastMessage,
+  uniqueCanonicalPrivySubsFromMxids,
+  visibleMatrixMemberName,
   useJwt,
   useMatrix,
   useMatrixUserIdsByPersonIds,
+  usePeopleBySubs,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
+import { listBoundChatRoomIdsAmongAction } from '@hypha-platform/core/matrix/server/actions';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { Search, Users, X } from 'lucide-react';
@@ -45,12 +62,18 @@ import {
   looksLikeHyphaBot,
   facesWithProfiles,
   groupRowsForConnections,
+  conversationMatchesSearch,
+  peopleMatchingSearch,
+  conversationsVisibleInSection,
+  enrichSearchMembers,
   isPeopleListGroup,
+  isRememberedBoundChatRoom,
   isRememberedGroupChatRoom,
   memberRowsForConnections,
   messagePreview,
   previewWithNames,
   rememberGroupChatMembers,
+  rememberBoundChatRooms,
   rememberGroupChatRooms,
   rememberedGroupChatMemberIds,
   rememberSignalThreadRooms,
@@ -70,10 +93,7 @@ import {
   type MemberRow,
   type NewcomerCandidate,
 } from './member-connections';
-import {
-  sortByRecencyThenPresence,
-  type PresenceLevel,
-} from './member-presence';
+import { type PresenceLevel } from './member-presence';
 import { PersonAvatar } from './person-avatar';
 import { useMemberPresence } from './use-member-presence';
 
@@ -140,31 +160,71 @@ function lastRoomMessage(room: Room, selfId: string | null) {
     const preview = messagePreview(body, (matrixUserId) => {
       const member = room.getMember(matrixUserId);
       if (!member) return '';
-      return matrixMemberDisplayLabel(member, matrixUserId);
+      const label = matrixMemberDisplayLabel(member, matrixUserId);
+      if (looksLikeTechnicalMatrixDisplayName(label, matrixUserId)) return '';
+      return label;
     });
     if (!preview) continue;
     const sender = event.getSender();
     return {
       preview,
       mine: Boolean(selfId && sender === selfId),
-      ts: event.getTs(),
+      ts: conversationActivityTs(event.getTs()),
     };
   }
-  const ts = room.getLastActiveTimestamp();
   return {
     preview: '',
     mine: false,
-    ts: ts > 0 ? ts : null,
+    ts: null,
   };
 }
 
-function conversationRowFromRoom(
-  client: MatrixClient,
-  room: Room,
-): ConversationRow | null {
-  if (room.getMyMembership() !== 'join') {
-    return null;
+function debugRoomsEnabled() {
+  if (typeof window === 'undefined') return false;
+  try {
+    return (
+      new URLSearchParams(window.location.search).get('debugRooms') === '1'
+    );
+  } catch {
+    return false;
   }
+}
+
+function logDroppedRoom(room: Room, details: Record<string, unknown>): null {
+  if (debugRoomsEnabled()) {
+    console.debug('[debugRooms] dropped', {
+      roomId: room.roomId,
+      roomName: room.name,
+      roomType: room.getType() ?? null,
+      membership: room.getMyMembership(),
+      ...details,
+    });
+  }
+  return null;
+}
+
+export type RoomListingInspection = {
+  roomId: string;
+  name: string;
+  nameState: string | null;
+  roomType: string | null;
+  membership: string;
+  loadedHumanCount: number;
+  summaryJoinedCount: number;
+  othersCount: number;
+  titleMemberHint: number;
+  rememberedHumanCount: number;
+  archived: boolean;
+  createdAsGroup: boolean;
+  kind: 'group' | 'person' | null;
+  listed: boolean;
+  cached: boolean;
+  reason: string;
+};
+
+function inspectBase(room: Room, client: MatrixClient) {
+  const membership = room.getMyMembership() || '';
+  const roomType = room.getType() ?? null;
   const botId = botUserId();
   const selfId = client.getUserId();
   const knownMembers = room
@@ -181,40 +241,138 @@ function conversationRowFromRoom(
     return !isHyphaBot(member.userId, member.name || member.rawDisplayName);
   });
   const others = members.filter((member) => member.userId !== selfId);
-  if (others.length === 0) {
-    return null;
-  }
+  const nameState = readRoomNameState(room);
+  const titleMemberHint = countCommaSeparatedNames(
+    nameState || room.name || '',
+  );
+  const rememberedHumanCount =
+    rememberedGroupChatMemberIds(room.roomId).length + (selfId ? 1 : 0);
+  const createdAsGroup = isGroupCreateContent(readCreateContent(room));
+  const archived = isArchivedGroupRoom(room);
+  return {
+    membership,
+    roomType,
+    members,
+    others,
+    nameState,
+    titleMemberHint,
+    rememberedHumanCount,
+    createdAsGroup,
+    archived,
+    selfId,
+    loadedHumanCount: members.length,
+    summaryJoinedCount: room.getJoinedMemberCount?.() ?? members.length,
+  };
+}
 
-  const roomType = room.getType();
+function inspectionFrom(
+  room: Room,
+  base: ReturnType<typeof inspectBase>,
+  reason: string,
+  kind: 'group' | 'person' | null,
+  listed: boolean,
+): RoomListingInspection {
+  return {
+    roomId: room.roomId,
+    name: (base.nameState || room.name || '').trim(),
+    nameState: base.nameState,
+    roomType: base.roomType,
+    membership: base.membership,
+    loadedHumanCount: base.loadedHumanCount,
+    summaryJoinedCount: base.summaryJoinedCount,
+    othersCount: base.others.length,
+    titleMemberHint: base.titleMemberHint,
+    rememberedHumanCount: base.rememberedHumanCount,
+    archived: base.archived,
+    createdAsGroup: base.createdAsGroup,
+    kind,
+    listed,
+    cached: false,
+    reason,
+  };
+}
+
+function classifyConversationRoom(
+  client: MatrixClient,
+  room: Room,
+): { row: ConversationRow | null; inspection: RoomListingInspection } {
+  const base = inspectBase(room, client);
+  const drop = (reason: string, kind: 'group' | 'person' | null = null) => ({
+    row: null as ConversationRow | null,
+    inspection: inspectionFrom(room, base, reason, kind, false),
+  });
+  if (base.membership !== 'join') {
+    return drop('not-joined');
+  }
+  if (isRememberedBoundChatRoom(room.roomId)) {
+    const typed = base.roomType?.trim() || null;
+    // Untyped people groups can be cached as bound by mistake. Only trust
+    // the cache for other Hypha room types (space, signal, …).
+    if (
+      typed &&
+      typed.startsWith('io.hypha.room.') &&
+      typed !== HYPHA_ROOM_TYPES.dm &&
+      typed !== HYPHA_ROOM_TYPES.group
+    ) {
+      return drop('space-or-signal');
+    }
+  }
   // Space, signal, proposal, public, network and ecosystem rooms are not
   // private conversations, whoever is in them.
   if (
-    roomType?.startsWith('io.hypha.room.') &&
-    roomType !== HYPHA_ROOM_TYPES.dm &&
-    roomType !== HYPHA_ROOM_TYPES.group
+    base.roomType?.startsWith('io.hypha.room.') &&
+    base.roomType !== HYPHA_ROOM_TYPES.dm &&
+    base.roomType !== HYPHA_ROOM_TYPES.group
   ) {
-    return null;
+    return drop('hypha-typed');
   }
-  const kind =
-    roomType === HYPHA_ROOM_TYPES.group || others.length > 1
-      ? 'group'
-      : 'person';
-  // A 1:1 is only a room created as a DM. Two-person space, signal and untyped
-  // rooms are not private messages.
-  if (kind === 'person' && room.getType() !== HYPHA_ROOM_TYPES.dm) {
-    return null;
+  const overrideName = conversationTitleOverrides.get(room.roomId)?.trim();
+  const kind = peopleConversationKindForListing({
+    roomType: base.roomType,
+    loadedHumanCount: base.loadedHumanCount,
+    summaryJoinedCount: base.summaryJoinedCount,
+    createdAsGroup: base.createdAsGroup,
+    hasRoomName: Boolean(base.nameState) || base.titleMemberHint > 2,
+    titleMemberHint: base.titleMemberHint,
+    rememberedHumanCount: base.rememberedHumanCount,
+    rememberedAsGroup: isRememberedGroupChatRoom(room.roomId),
+  });
+  if (
+    !base.roomType &&
+    (base.nameState || base.titleMemberHint > 1) &&
+    base.members.length < 3 &&
+    typeof room.loadMembersIfNeeded === 'function'
+  ) {
+    void room.loadMembersIfNeeded().catch(() => undefined);
   }
-  const other = others.length === 1 ? others[0] : undefined;
+  // Group-typed rooms stay listed before lazy members arrive. Person chats
+  // still need the other human so they can attach to a directory row.
+  if (base.others.length === 0 && kind !== 'group') {
+    return drop('no-other-members', kind);
+  }
+  // Untyped rooms that are not groups are dropped. If they were also in
+  // m.direct they used to become `person` and then vanish from the list.
+  if (!kind) {
+    return drop('not-people-conversation');
+  }
+  const other = base.others.length === 1 ? base.others[0] : undefined;
   const name =
-    (kind === 'person' ? other?.name || other?.rawDisplayName : room.name) ||
+    overrideName ||
+    (kind === 'person'
+      ? other?.name || other?.rawDisplayName
+      : base.nameState || room.name) ||
     room.name ||
+    base.nameState ||
     '';
+  if (overrideName && room.name.trim() === overrideName) {
+    conversationTitleOverrides.delete(room.roomId);
+  }
   if (
     isHyphaBot(other?.userId, name) ||
     looksLikeHyphaBot(room.name) ||
     looksLikeHyphaBot(name)
   ) {
-    return null;
+    return drop('bot', kind);
   }
   const mxc =
     kind === 'person'
@@ -222,10 +380,12 @@ function conversationRowFromRoom(
       : room.getMxcAvatarUrl();
   const faces =
     kind === 'group'
-      ? others.slice(0, 2).map((member) => ({
-          name:
-            (member.name || member.rawDisplayName || '').trim() ||
+      ? base.others.slice(0, 2).map((member) => ({
+          name: visibleMatrixMemberName(
             member.userId,
+            member.name,
+            member.rawDisplayName,
+          ),
           userId: member.userId,
           avatarUrl: avatarHttp(
             client,
@@ -250,33 +410,112 @@ function conversationRowFromRoom(
     isRememberedSignalThreadRoom(room.roomId) || signalMarkerInTimeline;
   if (signalThread) {
     rememberSignalThreadRooms([room.roomId], { quiet: true });
-    return null;
+    return drop('signal', kind);
   }
-  const last = lastRoomMessage(room, selfId);
+  const last = lastRoomMessage(room, base.selfId);
   // Always walk real incoming messages. The SDK notification total still
   // counts hidden call/signal notices, which inflated the Messages badge.
-  const unread = countIncomingUnreadMessages(room, selfId, isHyphaBot);
+  const unread = countIncomingUnreadMessages(room, base.selfId, isHyphaBot);
+  const searchMembers =
+    kind === 'group'
+      ? base.others.map((member) => ({
+          name: visibleMatrixMemberName(
+            member.userId,
+            member.name,
+            member.rawDisplayName,
+          ),
+          userId: member.userId,
+        }))
+      : undefined;
 
-  return {
+  const row: ConversationRow = {
     roomId: room.roomId,
     name: name.trim(),
     avatarUrl: avatarHttp(client, mxc),
     preview: last.preview,
     mine: last.mine,
-    lastTs: last.ts,
+    lastTs: last.ts ?? (kind === 'group' ? groupFallbackTimestamp(room) : null),
     unread,
-    memberCount: members.length,
+    memberCount: base.members.length,
     otherUserId: other?.userId ?? null,
     roomType: room.getType() ?? null,
     faces,
     groupChat: kind === 'group' && isRememberedGroupChatRoom(room.roomId),
     kind,
+    archived: base.archived,
+    searchMembers,
+  };
+  if (kind === 'group' && !isPeopleListGroup(row)) {
+    return drop('not-people-group', kind);
+  }
+  return {
+    row,
+    inspection: inspectionFrom(
+      room,
+      base,
+      base.archived ? 'listed-archived' : 'listed',
+      kind,
+      true,
+    ),
   };
 }
 
+function conversationRowFromRoom(
+  client: MatrixClient,
+  room: Room,
+): ConversationRow | null {
+  const { row, inspection } = classifyConversationRoom(client, room);
+  if (!row) {
+    logDroppedRoom(room, inspection);
+  }
+  return row;
+}
+
+/** Every joined or invited room, with the Messages-list filter reason. */
+export function inspectJoinedAndInvitedRooms(
+  client: MatrixClient,
+): RoomListingInspection[] {
+  return client
+    .getRooms()
+    .filter((room) => {
+      const membership = room.getMyMembership();
+      return membership === 'join' || membership === 'invite';
+    })
+    .map((room) => {
+      if (room.getMyMembership() === 'join') {
+        cachedConversation(client, room);
+      }
+      const inspection = classifyConversationRoom(client, room).inspection;
+      return {
+        ...inspection,
+        cached: Boolean(conversationCache.get(room.roomId)?.row),
+      };
+    })
+    .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function logRoomListingDump(client: MatrixClient) {
+  if (!debugRoomsEnabled()) return;
+  console.info('[debugRooms] joined and invited rooms', {
+    rooms: inspectJoinedAndInvitedRooms(client),
+  });
+}
+
+function groupFallbackTimestamp(room: Room): number | null {
+  const create = room.currentState?.getStateEvents?.('m.room.create', '');
+  const event = Array.isArray(create) ? create[0] : create;
+  const createdTs =
+    event && typeof event.getTs === 'function' ? event.getTs() : 0;
+  if (createdTs > 0) return createdTs;
+  if (typeof room.getLastActiveTimestamp === 'function') {
+    const active = room.getLastActiveTimestamp();
+    if (active > 0) return active;
+  }
+  return null;
+}
+
 function sortConversationRows(rows: ConversationRow[]) {
-  rows.sort((left, right) => (right.lastTs ?? 0) - (left.lastTs ?? 0));
-  return rows;
+  return sortConversationsByLastMessage(rows);
 }
 
 function sameConversationRows(
@@ -294,7 +533,8 @@ function sameConversationRows(
       current.lastTs !== next.lastTs ||
       current.unread !== next.unread ||
       current.mine !== next.mine ||
-      current.name !== next.name
+      current.name !== next.name ||
+      current.archived !== next.archived
     ) {
       return false;
     }
@@ -311,6 +551,7 @@ type CachedConversation = { stamp: string; row: ConversationRow | null };
  * The people currently listed are summarised first; the rest wait for idle time.
  */
 const conversationCache = new Map<string, CachedConversation>();
+const conversationTitleOverrides = new Map<string, string>();
 const conversationListeners = new Set<() => void>();
 let conversationClient: MatrixClient | null = null;
 let listeningClient: MatrixClient | null = null;
@@ -502,15 +743,27 @@ function roomStamp(room: Room, selfId: string | null) {
     last?.getTs() ?? 0,
     clear,
     receipt,
+    room.getType() ?? '',
+    readRoomNameState(room) ?? '',
+    room.getJoinedMemberCount?.() ?? 0,
+    room.getMembers?.().length ?? 0,
+    isArchivedGroupRoom(room) ? '1' : '0',
+    room.name || '',
+    isRememberedGroupChatRoom(room.roomId) ? '1' : '0',
+    isRememberedBoundChatRoom(room.roomId) ? '1' : '0',
+    isRememberedSignalThreadRoom(room.roomId) ? '1' : '0',
+    conversationTitleOverrides.get(room.roomId) ?? '',
+    rememberedGroupChatMemberIds(room.roomId).join(','),
   ].join(':');
 }
 
 function cachedConversation(client: MatrixClient, room: Room) {
   const stamp = roomStamp(room, client.getUserId());
-  const hit = conversationCache.get(room.roomId);
-  if (hit?.stamp === stamp) return hit;
-  const row = conversationRowFromRoom(client, room);
-  const entry = { stamp, row };
+  const entry = resolveConversationCacheEntry(
+    conversationCache.get(room.roomId),
+    stamp,
+    () => conversationRowFromRoom(client, room),
+  );
   conversationCache.set(room.roomId, entry);
   return entry;
 }
@@ -519,6 +772,33 @@ function conversationIsFresh(client: MatrixClient, room: Room) {
   const hit = conversationCache.get(room.roomId);
   if (!hit) return false;
   return hit.stamp === roomStamp(room, client.getUserId());
+}
+
+function peopleGroupRoomIds(client: MatrixClient): string[] {
+  const ids: string[] = [];
+  for (const room of client.getRooms()) {
+    const membership = room.getMyMembership();
+    if (membership !== 'join') continue;
+    if (room.getType() === HYPHA_ROOM_TYPES.group) {
+      ids.push(room.roomId);
+      continue;
+    }
+    if (isGroupCreateContent(readCreateContent(room))) {
+      ids.push(room.roomId);
+      continue;
+    }
+    if (isRememberedGroupChatRoom(room.roomId)) {
+      ids.push(room.roomId);
+      continue;
+    }
+    if (
+      !room.getType() &&
+      (readRoomNameState(room) || countCommaSeparatedNames(room.name) > 2)
+    ) {
+      ids.push(room.roomId);
+    }
+  }
+  return ids;
 }
 
 function priorityRoomIds(
@@ -671,12 +951,77 @@ function refreshConversationRoom(room: Room | undefined) {
   notifyConversationListeners();
 }
 
+const MAX_BOUND_LOOKUP_IDS = 100;
+const checkedBoundRoomIds = new Set<string>();
+let conversationBoundLookupToken: string | null = null;
+let boundLookupInFlight = false;
+
+function setConversationBoundLookupToken(token: string | null | undefined) {
+  conversationBoundLookupToken = token?.trim() || null;
+}
+
+function refreshBoundChatRooms(client: MatrixClient) {
+  const authToken = conversationBoundLookupToken;
+  if (!authToken) return;
+  if (boundLookupInFlight) return;
+  const roomIds = client
+    .getRooms()
+    .map((room) => room.roomId)
+    .filter((id) => !checkedBoundRoomIds.has(id));
+  if (roomIds.length === 0) return;
+  boundLookupInFlight = true;
+  void (async () => {
+    try {
+      for (let i = 0; i < roomIds.length; i += MAX_BOUND_LOOKUP_IDS) {
+        const chunk = roomIds.slice(i, i + MAX_BOUND_LOOKUP_IDS);
+        const ids = await listBoundChatRoomIdsAmongAction(chunk, {
+          authToken,
+        });
+        for (const id of chunk) checkedBoundRoomIds.add(id);
+        rememberBoundChatRooms(ids);
+        let changed = false;
+        for (const id of ids) {
+          if (!conversationCache.has(id)) continue;
+          conversationCache.delete(id);
+          const room = client.getRoom(id);
+          if (room) cachedConversation(client, room);
+          changed = true;
+        }
+        if (changed) notifyConversationListeners();
+      }
+    } catch (error) {
+      console.warn('Failed to check bound chat rooms', error);
+    } finally {
+      boundLookupInFlight = false;
+    }
+  })();
+}
+
 function onConversationSync() {
   const client = conversationClient;
   if (!client) return;
-  enqueueConversationRooms(client, []);
+  refreshBoundChatRooms(client);
+  logRoomListingDump(client);
+  enqueueConversationRooms(client, peopleGroupRoomIds(client));
+  // Summarise enough rooms on this tick that last-message order is already
+  // correct before the list paints. The idle pump finishes any remainder.
+  pumpConversationRooms(SYNC_ROOM_BUDGET);
   scheduleConversationPump();
   notifyConversationListeners();
+}
+
+function onConversationState(event: MatrixEvent) {
+  const type = event.getType();
+  if (
+    type !== EventType.RoomName &&
+    type !== GROUP_ROOM_ARCHIVED_STATE &&
+    type !== GROUP_ROOM_CREATOR_STATE
+  ) {
+    return;
+  }
+  const roomId = event.getRoomId();
+  if (!roomId || !conversationClient) return;
+  refreshConversationRoom(conversationClient.getRoom(roomId) ?? undefined);
 }
 
 function onConversationTimeline(
@@ -728,6 +1073,7 @@ function listenForConversationRows(client: MatrixClient) {
   client.on(RoomEvent.Timeline, onConversationTimeline);
   client.on(RoomEvent.Receipt, onConversationReceipt);
   client.on(RoomEvent.MyMembership, onConversationMembership);
+  client.on(RoomStateEvent.Events, onConversationState);
   client.on(MatrixEventEvent.Decrypted, onConversationDecrypted);
   window.addEventListener(CONVERSATION_UNREAD_EVENT, onConversationUnreadEvent);
   releaseSignalRooms = subscribeSignalThreadRooms(onConversationSignals);
@@ -738,6 +1084,7 @@ function stopListeningForConversationRows(client: MatrixClient) {
   client.removeListener(RoomEvent.Timeline, onConversationTimeline);
   client.removeListener(RoomEvent.Receipt, onConversationReceipt);
   client.removeListener(RoomEvent.MyMembership, onConversationMembership);
+  client.removeListener(RoomStateEvent.Events, onConversationState);
   client.removeListener(MatrixEventEvent.Decrypted, onConversationDecrypted);
   window.removeEventListener(
     CONVERSATION_UNREAD_EVENT,
@@ -753,7 +1100,9 @@ function useConversationClient(client: MatrixClient) {
   if (conversationClient === client) return;
   if (listeningClient) stopListeningForConversationRows(listeningClient);
   conversationClient = client;
+  checkedBoundRoomIds.clear();
   conversationCache.clear();
+  conversationTitleOverrides.clear();
   supersededReadEventIds.clear();
   if (supersededReadTimer) {
     window.clearTimeout(supersededReadTimer);
@@ -777,10 +1126,29 @@ export function conversationRowsPending(client: MatrixClient) {
     );
 }
 
+/** Apply a group rename to the list immediately, before Matrix echoes `m.room.name`. */
+export function applyConversationRoomTitle(roomId: string, name: string) {
+  const id = roomId.trim();
+  const title = name.trim();
+  if (!id || !title) return;
+  rememberGroupChatRooms([id]);
+  conversationTitleOverrides.set(id, title);
+  const client = conversationClient;
+  if (!client) {
+    notifyConversationListeners();
+    return;
+  }
+  conversationCache.delete(id);
+  const room = client.getRoom(id);
+  if (room) cachedConversation(client, room);
+  notifyConversationListeners();
+}
+
 export function conversationRowsSnapshot(client: MatrixClient) {
   const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
-    const row = conversationCache.get(room.roomId)?.row;
+    if (room.getMyMembership() !== 'join') continue;
+    const row = cachedConversation(client, room).row;
     if (row) rows.push(row);
   }
   return sortConversationRows(rows);
@@ -789,6 +1157,7 @@ export function conversationRowsSnapshot(client: MatrixClient) {
 export function conversationUnreadSnapshot(client: MatrixClient) {
   const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
+    if (room.getMyMembership() !== 'join') continue;
     const row = conversationCache.get(room.roomId)?.row;
     if (row) rows.push(row);
   }
@@ -809,7 +1178,10 @@ export function attachConversationList(
   useConversationClient(client);
   conversationListeners.add(onChange);
   listenForConversationRows(client);
-  enqueueConversationRooms(client, []);
+  refreshBoundChatRooms(client);
+  logRoomListingDump(client);
+  enqueueConversationRooms(client, peopleGroupRoomIds(client));
+  pumpConversationRooms(SYNC_ROOM_BUDGET);
   scheduleConversationPump();
   onChange();
   return () => {
@@ -827,10 +1199,13 @@ export function prioritizeConversationRooms(
 ) {
   if (matrixUserIds.length === 0) return;
   useConversationClient(client);
-  const roomIds = priorityRoomIds(client, matrixUserIds);
+  const roomIds = [
+    ...peopleGroupRoomIds(client),
+    ...priorityRoomIds(client, matrixUserIds),
+  ];
   enqueueConversationRooms(client, roomIds);
   pumpConversationRooms(
-    Math.min(SYNC_ROOM_BUDGET, Math.max(roomIds.length, 1)),
+    Math.min(SYNC_ROOM_BUDGET + 8, Math.max(roomIds.length, 1)),
   );
 }
 
@@ -838,6 +1213,7 @@ export function readConversationRows(client: MatrixClient): ConversationRow[] {
   useConversationClient(client);
   const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
+    if (room.getMyMembership() !== 'join') continue;
     const row = cachedConversation(client, room).row;
     if (row) rows.push(row);
   }
@@ -904,18 +1280,28 @@ function formatWhen(ts: number, locale: string, justNow: string) {
 export function MyConnections({
   section = 'messages',
 }: {
-  /** Messages is the conversation list. Suggestions is its own screen. */
-  section?: 'messages' | 'suggestions';
+  /** Messages is the conversation list. Suggestions and Archived are their own screens. */
+  section?: 'messages' | 'suggestions' | 'archived';
 }) {
   const t = useTranslations('Connections');
   const tChat = useTranslations('MemberHome');
   const tCommon = useTranslations('Common');
   const locale = useLocale();
   const { jwt } = useJwt();
-  const { client, isMatrixAvailable, createRoom, ensureRoomMembers } =
-    useMatrix();
+  const {
+    client,
+    isMatrixAvailable,
+    isConnecting,
+    createRoom,
+    ensureRoomMembers,
+  } = useMatrix();
+  useEffect(() => {
+    setConversationBoundLookupToken(jwt);
+    if (client && jwt?.trim()) refreshBoundChatRooms(client);
+  }, [client, jwt]);
   const { openCoherenceChat } = useHumanChatPanel();
   const searchParams = useSearchParams();
+  const debugRooms = searchParams.get('debugRooms') === '1';
   const openedDirectChatRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
   const [query, setQuery] = useState('');
@@ -959,8 +1345,9 @@ export function MyConnections({
   const hasMorePeople =
     !directoryComplete && connections.length < connectionTotal;
   const needle = query.trim().toLowerCase();
-  const listed =
-    needle && searchDirectory != null ? searchDirectory : connections;
+  const listed = needle
+    ? peopleMatchingSearch(connections, searchDirectory, needle)
+    : connections;
   const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
     useMatrixUserIdsByPersonIds({
       personIds: [
@@ -1199,6 +1586,21 @@ export function MyConnections({
     [reachOut],
   );
 
+  const groupMemberSubs = useMemo(
+    () =>
+      uniqueCanonicalPrivySubsFromMxids(
+        rows.flatMap((row) =>
+          row.kind === 'group'
+            ? (row.searchMembers ?? []).map((member) => member.userId)
+            : [],
+        ),
+      ),
+    [rows],
+  );
+  const { peopleBySub, isLoading: peopleBySubLoading } = usePeopleBySubs({
+    subs: groupMemberSubs,
+  });
+
   const people = useMemo(() => {
     const profiles = new Map<string, { name: string; avatarUrl?: string }>();
     const mentionNames = new Map<string, string>();
@@ -1232,6 +1634,33 @@ export function MyConnections({
     const liveGroupIds = new Set(
       rows.filter((row) => row.kind === 'group').map((row) => row.roomId),
     );
+    const peopleByMxid = new Map<
+      string,
+      {
+        name?: string | null;
+        nickname?: string | null;
+        slug?: string | null;
+      }
+    >();
+    for (const row of rows) {
+      if (row.kind !== 'group') continue;
+      for (const member of row.searchMembers ?? []) {
+        const mxid = member.userId?.trim();
+        if (!mxid) continue;
+        const sub = matrixUserIdToCanonicalPrivySub(mxid);
+        const person = sub ? peopleBySub.get(sub) : undefined;
+        if (!person) continue;
+        const name =
+          [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+          person.nickname?.trim() ||
+          '';
+        peopleByMxid.set(mxid.toLowerCase(), {
+          name,
+          nickname: person.nickname,
+          slug: person.slug,
+        });
+      }
+    }
     const conversations = [
       ...rows.map((row) => {
         if (row.kind !== 'group') return row;
@@ -1244,51 +1673,76 @@ export function MyConnections({
           ...row,
           name: row.name.trim() || pending?.name || row.name,
           faces: facesWithProfiles(faces, profiles),
-          lastTs: row.lastTs ?? pending?.lastTs ?? row.lastTs,
+          lastTs: row.lastTs,
+          searchMembers: enrichSearchMembers(
+            row.searchMembers,
+            profiles,
+            members,
+            personIdToMatrixUserId,
+            peopleByMxid,
+          ),
         };
       }),
       ...pendingGroups
         .filter((group) => !liveGroupIds.has(group.roomId))
         .map((group) => ({
           ...group,
+          name:
+            conversationTitleOverrides.get(group.roomId)?.trim() || group.name,
           faces: facesWithProfiles(group.faces, profiles),
+          archived: isArchivedGroupRoom(client?.getRoom(group.roomId)),
         })),
     ];
+    for (const [mxid, profile] of peopleByMxid) {
+      if (profile.name) rememberName(mxid, profile.name);
+    }
     for (const row of conversations) {
       for (const face of row.faces ?? []) {
         if (face.userId && face.name) rememberName(face.userId, face.name);
+      }
+      for (const member of row.searchMembers ?? []) {
+        if (member.userId && member.name)
+          rememberName(member.userId, member.name);
       }
     }
     const groups = picking
       ? []
       : groupRowsForConnections<ConnectionPerson>(conversations, t('someone'));
-    const source = [...groups, ...members];
-    const filtered = needle
-      ? source.filter((row) => {
-          const haystack = [row.name, row.person.nickname, row.person.slug]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-          return haystack.includes(needle);
-        })
-      : source;
-    const named = filtered.map((row) => ({
-      ...row,
-      preview: previewWithNames(row.preview, mentionNames),
-    }));
-    return sortByRecencyThenPresence(named, presenceById);
+    const listedGroups = conversationsVisibleInSection(
+      groups,
+      section === 'archived' ? 'archived' : 'messages',
+    );
+    const matchingGroups = needle
+      ? listedGroups.filter((row) => conversationMatchesSearch(row, needle))
+      : listedGroups;
+    const source =
+      section === 'archived' ? matchingGroups : [...matchingGroups, ...members];
+    const named = source.map((row) => {
+      const preview = previewWithNames(row.preview, mentionNames);
+      return {
+        ...row,
+        preview: /privy_did_privy/i.test(preview) ? '' : preview,
+      };
+    });
+    return sortConversationsByLastMessage(named);
   }, [
+    client,
     home?.person,
     members,
     needle,
     pendingGroups,
+    peopleBySub,
     personIdToMatrixUserId,
     picking,
-    presenceById,
     rows,
+    section,
     t,
   ]);
   const selectedPeople = members.filter((row) => selected.has(row.person.id));
+  const roomDiagnostics = useMemo(
+    () => (debugRooms && client ? inspectJoinedAndInvitedRooms(client) : []),
+    [client, debugRooms, rows, synced],
+  );
 
   async function loadMorePeople() {
     if (loadingMore || !jwt || !hasMorePeople) return;
@@ -1348,7 +1802,12 @@ export function MyConnections({
       openCoherenceChat(row.roomId, row.name, '', null, null);
       return;
     }
-    const opened = await openChatRef.current?.({
+    const openChat = openChatRef.current;
+    if (!openChat) {
+      setNotice(tChat('matrixUnavailable'));
+      return;
+    }
+    await openChat({
       id: row.person.id,
       slug: row.person.slug,
       name: row.person.name,
@@ -1356,7 +1815,6 @@ export function MyConnections({
       nickname: row.person.nickname,
       avatarUrl: row.person.avatarUrl,
     });
-    if (!opened) setNotice(tChat('matrixUnavailable'));
   }
 
   async function startGroupChat() {
@@ -1376,6 +1834,7 @@ export function MyConnections({
     }));
     try {
       const { roomId } = await createRoom(title, {
+        grantCreatorPl100: true,
         roomType: HYPHA_ROOM_TYPES.group,
       });
       const memberIds = selectedPeople.flatMap((row) => {
@@ -1417,7 +1876,12 @@ export function MyConnections({
       openCoherenceChat(card.roomId, card.name, '', null, null);
       return;
     }
-    const opened = await openChatRef.current?.({
+    const openChat = openChatRef.current;
+    if (!openChat) {
+      setNotice(tChat('matrixUnavailable'));
+      return;
+    }
+    await openChat({
       id: card.person.id,
       slug: card.person.slug,
       name: card.person.name,
@@ -1425,7 +1889,6 @@ export function MyConnections({
       nickname: card.person.nickname,
       avatarUrl: card.person.avatarUrl,
     });
-    if (!opened) setNotice(tChat('matrixUnavailable'));
   }
 
   return (
@@ -1489,7 +1952,7 @@ export function MyConnections({
         </section>
       ) : null}
 
-      {section === 'messages' ? (
+      {section === 'messages' || section === 'archived' ? (
         <>
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
@@ -1507,7 +1970,7 @@ export function MyConnections({
                   className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
                 />
               </label>
-              {picking ? (
+              {section === 'archived' ? null : picking ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -1596,13 +2059,71 @@ export function MyConnections({
             </p>
           ) : null}
 
-          {!isMatrixAvailable ? (
+          {debugRooms ? (
+            <div
+              className="overflow-x-auto border border-border bg-muted/30 p-3 text-[11px] leading-4 text-muted-foreground"
+              data-testid="debug-rooms"
+            >
+              <p className="mb-2 font-medium text-foreground">
+                debugRooms ({roomDiagnostics.length})
+              </p>
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="py-1 pr-2">reason</th>
+                    <th className="py-1 pr-2">cache</th>
+                    <th className="py-1 pr-2">membership</th>
+                    <th className="py-1 pr-2">type</th>
+                    <th className="py-1 pr-2">members</th>
+                    <th className="py-1 pr-2">name</th>
+                    <th className="py-1">roomId</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {roomDiagnostics.map((room) => (
+                    <tr key={room.roomId} className="border-b border-border/60">
+                      <td className="py-1 pr-2 whitespace-nowrap">
+                        {room.reason}
+                      </td>
+                      <td className="py-1 pr-2">
+                        {room.cached ? 'row' : 'missing'}
+                      </td>
+                      <td className="py-1 pr-2">{room.membership}</td>
+                      <td className="py-1 pr-2">{room.roomType || '—'}</td>
+                      <td className="py-1 pr-2 whitespace-nowrap">
+                        {room.loadedHumanCount}/{room.summaryJoinedCount} o
+                        {room.othersCount}
+                        {room.archived ? ' archived' : ''}
+                      </td>
+                      <td className="py-1 pr-2">{room.name || '—'}</td>
+                      <td className="py-1 break-all">{room.roomId}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+
+          {!isMatrixAvailable && !notice ? (
             <p className="text-2 text-muted-foreground">
-              {tChat('matrixUnavailable')}
+              {isConnecting ? t('loading') : tChat('matrixUnavailable')}
             </p>
           ) : null}
 
-          {home != null && people.length === 0 && !searching ? (
+          {section === 'archived' &&
+          isMatrixAvailable &&
+          people.length === 0 &&
+          !searching ? (
+            <p className="text-2 text-muted-foreground">
+              {needle ? t('noMatches') : t('archivedEmpty')}
+            </p>
+          ) : null}
+
+          {section !== 'archived' &&
+          isMatrixAvailable &&
+          home != null &&
+          people.length === 0 &&
+          !searching ? (
             <p className="text-2 text-muted-foreground">
               {needle ? t('noMatches') : t('empty')}
             </p>
@@ -1610,13 +2131,15 @@ export function MyConnections({
 
           {people.length > 0 ? (
             <MemberList
-              title={t('people')}
+              title={section === 'archived' ? t('tabs.archived') : t('people')}
               rows={people}
               presenceById={presenceById}
               locale={locale}
               justNow={t('justNow')}
               noMessage={t('noMessage')}
-              previewLoading={!synced || rowsPending || matrixIdsLoading}
+              previewLoading={
+                !synced || rowsPending || matrixIdsLoading || peopleBySubLoading
+              }
               loadingLabel={t('loading')}
               youLabel={(message) => t('youWrote', { message })}
               unreadLabel={(count) => t('unread', { count })}
@@ -1627,7 +2150,7 @@ export function MyConnections({
             />
           ) : null}
 
-          {hasMorePeople && !needle ? (
+          {hasMorePeople && !needle && section !== 'archived' ? (
             <div className="flex justify-center">
               <Button
                 type="button"
@@ -1721,11 +2244,14 @@ function MemberList({
       </h2>
       <ul>
         {rows.map((row) => {
-          const loadingPreview = !row.roomId && previewLoading;
-          const preview = row.preview
+          const leftoverPrivy = /privy_did_privy/i.test(row.preview);
+          const previewText = leftoverPrivy ? '' : row.preview;
+          const loadingPreview =
+            leftoverPrivy || (previewLoading && (!row.roomId || !previewText));
+          const preview = previewText
             ? row.mine
-              ? youLabel(row.preview)
-              : row.preview
+              ? youLabel(previewText)
+              : previewText
             : noMessage;
           const when = row.lastTs
             ? formatWhen(row.lastTs, locale, justNow)

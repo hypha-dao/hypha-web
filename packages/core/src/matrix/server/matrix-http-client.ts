@@ -296,6 +296,11 @@ export async function matrixCreateRoom(
   accessToken: string,
   homeserver: string,
   roomType?: string,
+  initialState?: Array<{
+    type: string;
+    state_key?: string;
+    content: Record<string, unknown>;
+  }>,
 ): Promise<string> {
   const res = await matrixFetch(`${homeserver}/_matrix/client/v3/createRoom`, {
     method: 'POST',
@@ -308,6 +313,7 @@ export async function matrixCreateRoom(
       preset: 'private_chat',
       visibility: 'private',
       ...(roomType ? { creation_content: { type: roomType } } : {}),
+      ...(initialState?.length ? { initial_state: initialState } : {}),
     }),
   });
   const data = await readMatrixJson<{ room_id?: string }>(res);
@@ -548,6 +554,47 @@ export async function matrixGetJoinOrInviteRoomMembers(
     if (id) ids.add(id);
   }
   return [...ids];
+}
+
+export async function matrixGetStateEvent<T = Record<string, unknown>>(
+  roomId: string,
+  eventType: string,
+  stateKey: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<T | null> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/state/${encodeURIComponent(eventType)}/${encodeURIComponent(stateKey)}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  if (res.status === 404) return null;
+  return readMatrixJson<T>(res);
+}
+
+export async function matrixSendStateEvent(
+  roomId: string,
+  eventType: string,
+  stateKey: string,
+  content: Record<string, unknown>,
+  accessToken: string,
+  homeserver: string,
+): Promise<void> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/state/${encodeURIComponent(eventType)}/${encodeURIComponent(stateKey)}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(content),
+    },
+  );
+  await readMatrixJson<Record<string, unknown>>(res);
 }
 
 export async function matrixSendTextMessage(

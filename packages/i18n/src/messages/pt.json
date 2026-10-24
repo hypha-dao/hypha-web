@@ -305,7 +305,8 @@
     "profileUnavailable": "Continuas com sessão iniciada. Não foi possível carregar o teu perfil.",
     "retry": "Tentar outra vez",
     "sendTokensChoose": "Escolhe um token. Agora: {symbol}.",
-    "gotItDone": "Obrigado — estou contigo"
+    "gotItDone": "Obrigado — estou contigo",
+    "matrixPersonUnavailable": "Essa pessoa ainda não tem chat."
   },
   "WelcomeFlow": {
     "offer": {
@@ -1474,7 +1475,8 @@
     "titleLineTwo": "Partilhe mensagens",
     "tabs": {
       "messages": "Mensagens",
-      "suggestions": "Sugestões"
+      "suggestions": "Sugestões",
+      "archived": "Arquivados"
     },
     "suggestionsEmpty": "Sem sugestões neste momento.",
     "reachOut": "A Hypha sugere",
@@ -1502,7 +1504,8 @@
     "youWrote": "Tu: {message}",
     "unread": "{count} novas",
     "members": "{count} membros",
-    "loadMoreFailed": "O resto da lista não carregou. Podes tentar de novo."
+    "loadMoreFailed": "O resto da lista não carregou. Podes tentar de novo.",
+    "archivedEmpty": "Os grupos arquivados aparecem aqui."
   },
   "NetworkFeedback": {
     "triggerLabel": "Moldar a Hypha",
@@ -3295,6 +3298,8 @@
     "chatRoomTitle": "Mensagem direta",
     "systemSender": "Sistema",
     "noMembers": "Nenhum membro encontrado",
+    "membersSearch": "Pesquisar membros",
+    "membersNoMatches": "Nenhum membro corresponde.",
     "unknownMember": "Desconhecido",
     "backToSpaceChat": "Voltar ao chat do espaço",
     "failedToJoinRoom": "Falha ao entrar na sala de conversa",
@@ -3556,7 +3561,37 @@
     "signalTeamAccessRequested": "Acesso à equipe Signal solicitado",
     "signalTeamAccessApproved": "Acesso à equipe Signal aprovado",
     "mentionOpenFallbackRoom": "Não foi possível resolver essa sala no seu contexto local. Abra o espaço relacionado e tente novamente.",
-    "mentionOpenFallbackMissingMessage": "Essa mensagem de menção ainda não está disponível na linha do tempo carregada. Tente novamente em instantes."
+    "mentionOpenFallbackMissingMessage": "Essa mensagem de menção ainda não está disponível na linha do tempo carregada. Tente novamente em instantes.",
+    "groupChatMenu": "Opções do grupo",
+    "renameGroup": "Renomear grupo",
+    "renameGroupTitle": "Renomear este grupo",
+    "renameGroupDescription": "O novo nome é partilhado com todos neste chat.",
+    "renameGroupName": "Nome do grupo",
+    "renameGroupSave": "Guardar nome",
+    "renameGroupCancel": "Cancelar",
+    "renameGroupFailed": "Não foi possível renomear este grupo. Tenta novamente.",
+    "archiveGroup": "Arquivar grupo",
+    "archiveGroupTitle": "Arquivar este grupo?",
+    "archiveGroupDescription": "Isto esconde o grupo de Mensagens. O histórico permanece na sala. Podes abri-lo em Arquivados e restaurá-lo mais tarde. Os membros não são consultados.",
+    "archiveGroupConfirm": "Sim, arquivar",
+    "archiveGroupCancel": "Cancelar",
+    "archiveGroupFailed": "Não foi possível arquivar este grupo. Tenta novamente.",
+    "addPeople": "Adicionar pessoas",
+    "addPeopleTitle": "Adicionar pessoas a este grupo",
+    "addPeopleDescription": "Serão convidadas para este chat.",
+    "addPeopleConfirm": "Adicionar",
+    "addPeopleCancel": "Cancelar",
+    "addPeopleFailed": "Não foi possível adicionar pessoas a este grupo. Tenta novamente.",
+    "addPeopleEmpty": "Todas as pessoas que podes adicionar já estão aqui.",
+    "addPeopleNoMatches": "Ninguém corresponde a essa pesquisa.",
+    "addPeopleSearch": "Pesquisar pessoas",
+    "unarchiveGroup": "Restaurar grupo",
+    "unarchiveGroupTitle": "Restaurar este grupo?",
+    "unarchiveGroupDescription": "O grupo volta a aparecer em Mensagens. Qualquer pessoa pode enviar mensagens.",
+    "unarchiveGroupConfirm": "Sim, restaurar",
+    "unarchiveGroupCancel": "Cancelar",
+    "unarchiveGroupFailed": "Não foi possível restaurar este grupo. Tenta novamente.",
+    "archivedGroupReadOnly": "Este grupo está arquivado. Restaura-o para enviar mensagens."
   },
   "CoherenceTab": {
     "signals": "Sinais",

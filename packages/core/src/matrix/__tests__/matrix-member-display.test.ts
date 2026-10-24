@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
+  countHumanMatrixMembers,
   looksLikeTechnicalMatrixDisplayName,
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
   pickUserVisibleMemberLabel,
+  resolveBridgedLocalHandleToMxid,
+  uniqueCanonicalPrivySubsFromMxids,
+  visibleMatrixMemberName,
   speakerLabelToCanonicalPrivySub,
   splitSpeakerLabeledTranscriptLine,
 } from '../matrix-member-display';
@@ -41,6 +45,18 @@ describe('pickUserVisibleMemberLabel', () => {
   });
 });
 
+describe('visibleMatrixMemberName', () => {
+  it('falls back to a shortened id when every candidate is a Privy slug', () => {
+    expect(
+      visibleMatrixMemberName(
+        PROD_MXID,
+        'prod_privy_did_privy_cmabc123',
+        PROD_MXID,
+      ),
+    ).toBe('@prod_privy…abc123:srv1294735.hstgr.cloud');
+  });
+});
+
 describe('looksLikeTechnicalMatrixDisplayName', () => {
   it('treats did:privy subs as technical display names', () => {
     expect(
@@ -74,6 +90,36 @@ describe('matrixUserIdToCanonicalPrivySub', () => {
   });
 });
 
+describe('uniqueCanonicalPrivySubsFromMxids', () => {
+  it('dedupes bridged prod locals', () => {
+    expect(
+      uniqueCanonicalPrivySubsFromMxids([
+        PROD_MXID,
+        PROD_MXID,
+        '@alice:matrix.org',
+        '  ',
+      ]),
+    ).toEqual(['did:privy:cmabc123']);
+  });
+});
+
+describe('resolveBridgedLocalHandleToMxid', () => {
+  it('prefers a joined member with the same localpart', () => {
+    expect(
+      resolveBridgedLocalHandleToMxid('prod_privy_did_privy_cmabc123', [
+        PROD_MXID,
+      ]),
+    ).toBe(PROD_MXID);
+  });
+
+  it('synthesizes an MXID so person lookup can run', () => {
+    expect(
+      resolveBridgedLocalHandleToMxid('prod_privy_did_privy_cmabc123'),
+    ).toBe('@prod_privy_did_privy_cmabc123:matrix');
+    expect(resolveBridgedLocalHandleToMxid('alice')).toBeNull();
+  });
+});
+
 describe('speakerLabelToCanonicalPrivySub', () => {
   it('maps bare prod localparts from call transcripts', () => {
     expect(
@@ -101,5 +147,59 @@ describe('splitSpeakerLabeledTranscriptLine', () => {
       speaker: 'prod_privy_did_privy_abc',
       body: ' hello team',
     });
+  });
+});
+
+describe('countHumanMatrixMembers', () => {
+  const previousPrimary = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID;
+  const previousExtra = process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+  const previousPublicExtra =
+    process.env.NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+
+  afterEach(() => {
+    if (previousPrimary == null)
+      delete process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID;
+    else process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID = previousPrimary;
+    if (previousExtra == null) {
+      delete process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+    } else {
+      process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS = previousExtra;
+    }
+    if (previousPublicExtra == null) {
+      delete process.env.NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+    } else {
+      process.env.NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS =
+        previousPublicExtra;
+    }
+  });
+
+  it('drops the configured bot, extra bots, and Hypha bot identities', () => {
+    process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID = '@hypha-bot:hypha.earth';
+    process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS =
+      '@hypha-bot-preview:hypha.earth';
+    expect(
+      countHumanMatrixMembers([
+        '@ada:hypha.earth',
+        '@hypha-bot:hypha.earth',
+        '@hypha-bot-preview:hypha.earth',
+        '@hypha_bot_prod:hypha.earth',
+        '@kate:hypha.earth',
+      ]),
+    ).toBe(2);
+  });
+
+  it('reads additional bot IDs from the client-safe NEXT_PUBLIC_ variable', () => {
+    process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID = '@hypha-bot:hypha.earth';
+    delete process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+    process.env.NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS =
+      '@hypha-bot-preview:hypha.earth';
+    expect(
+      countHumanMatrixMembers([
+        '@ada:hypha.earth',
+        '@hypha-bot:hypha.earth',
+        '@hypha-bot-preview:hypha.earth',
+        '@kate:hypha.earth',
+      ]),
+    ).toBe(2);
   });
 });

@@ -63,6 +63,8 @@ import {
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
   pickUserVisibleMemberLabel,
+  resolveBridgedLocalHandleToMxid,
+  visibleMatrixMemberName,
 } from './matrix-room-member-display';
 import {
   type ChatPanelAttachmentMedia,
@@ -1316,7 +1318,7 @@ function MxidMentionPill({
       return t('agentMentionLabel');
     }
     const fromPerson = person ? formatPersonDisplayName(person) : '';
-    const visible = pickUserVisibleMemberLabel(fullMxid, fromPerson, syncLabel);
+    const visible = visibleMatrixMemberName(fullMxid, fromPerson, syncLabel);
     if (!visible) return '';
     return visible.startsWith('@') ? visible : `@${visible}`;
   }, [person, syncLabel, fullMxid, t]);
@@ -1353,6 +1355,7 @@ export function renderTextWithMentions(
   text: string,
   resolveMx: (matrixUserId: string) => string,
   viewerMentionTintRow = false,
+  memberUserIds: readonly string[] = [],
 ): React.ReactNode[] {
   const segments = splitPlainTextMatrixMentions(text);
   const localHandleRe = /(^|[^\w.+-])@([^\s@]{1,100}?)(?=\s|$|[.,!?;:])/g;
@@ -1377,14 +1380,29 @@ export function renderTextWithMentions(
           </span>,
         );
       }
-      chunks.push(
-        <span
-          key={`${keyBase}-at-${keyN++}`}
-          className={chatMentionPillClass(viewerMentionTintRow)}
-        >
-          @{handle}
-        </span>,
+      const bridgedMxid = resolveBridgedLocalHandleToMxid(
+        handle,
+        memberUserIds,
       );
+      if (bridgedMxid) {
+        chunks.push(
+          <MxidMentionPill
+            key={`${keyBase}-at-${keyN++}`}
+            fullMxid={bridgedMxid}
+            syncLabel={resolveMx(bridgedMxid).trim() || `@${handle}`}
+            viewerMentionTintRow={viewerMentionTintRow}
+          />,
+        );
+      } else {
+        chunks.push(
+          <span
+            key={`${keyBase}-at-${keyN++}`}
+            className={chatMentionPillClass(viewerMentionTintRow)}
+          >
+            @{handle}
+          </span>,
+        );
+      }
       last = mentionStart + handle.length + 1;
     }
     if (last < fragment.length) {
@@ -1455,8 +1473,14 @@ function resolveMatrixPlainAndHtmlFragments(
   fragment: string,
   resolveMx: (matrixUserId: string) => string,
   viewerMentionTintRow = false,
+  memberUserIds: readonly string[] = [],
 ): React.ReactNode[] {
-  return renderTextWithMentions(fragment, resolveMx, viewerMentionTintRow);
+  return renderTextWithMentions(
+    fragment,
+    resolveMx,
+    viewerMentionTintRow,
+    memberUserIds,
+  );
 }
 
 function reactionTooltipText(
@@ -1508,6 +1532,12 @@ export function HumanChatPanelMessageBubble({
         matrixMemberDisplayLabelFromRoom(client, roomId ?? null, matrixUserId)),
     [resolveMatrixMemberLabel, client, roomId],
   );
+  const roomMemberUserIds = useMemo(() => {
+    const room = client?.getRoom(roomId ?? undefined);
+    return (room?.getMembers() ?? [])
+      .map((member) => member.userId?.trim())
+      .filter((id): id is string => Boolean(id));
+  }, [client, roomId]);
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
@@ -1633,14 +1663,14 @@ export function HumanChatPanelMessageBubble({
       : '';
     const visible =
       message.senderMatrixId != null
-        ? pickUserVisibleMemberLabel(
+        ? visibleMatrixMemberName(
             message.senderMatrixId,
             fromPerson,
             rosterSenderLabel,
             message.senderName,
           )
         : fromPerson || rosterSenderLabel?.trim() || message.senderName?.trim();
-    return visible ?? t('unknownMember');
+    return visible || t('unknownMember');
   }, [
     message.role,
     message.senderMatrixId,
@@ -1658,14 +1688,14 @@ export function HumanChatPanelMessageBubble({
     const fromPerson = replyPerson ? formatPersonDisplayName(replyPerson) : '';
     const visible =
       replyTo.sourceUserId != null
-        ? pickUserVisibleMemberLabel(
+        ? visibleMatrixMemberName(
             replyTo.sourceUserId,
             fromPerson,
             rosterReplyLabel,
             replyTo.authorLabel,
           )
         : fromPerson || rosterReplyLabel?.trim() || replyTo.authorLabel?.trim();
-    return visible ?? t('unknownMember');
+    return visible || t('unknownMember');
   }, [replyPerson, replyTo, rosterReplyLabel, t]);
 
   const senderHasVisibleLabel = useMemo(() => {
@@ -2014,6 +2044,7 @@ export function HumanChatPanelMessageBubble({
                       fragment,
                       bodyResolveMx,
                       highlightMentionForViewer,
+                      roomMemberUserIds,
                     )
                   }
                 />
@@ -2047,6 +2078,7 @@ export function HumanChatPanelMessageBubble({
                   textContent,
                   bodyResolveMx,
                   highlightMentionForViewer,
+                  roomMemberUserIds,
                 )}
               </div>
             ))}

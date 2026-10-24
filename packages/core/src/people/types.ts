@@ -33,6 +33,10 @@ export interface GetPersonBySubInput {
   sub?: string;
 }
 
+export interface GetPeopleBySubsInput {
+  subs?: string[];
+}
+
 export interface EditPersonInput {
   avatarUrl?: string;
   name?: string;
