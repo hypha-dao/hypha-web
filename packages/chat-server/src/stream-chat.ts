@@ -1033,7 +1033,7 @@ function createOpenRouterAuthRecoveryTransform(
         }
         // A trailing provider error after a spoken reply must not mark the
         // home turn as homeError (that dropped a good answer from the thread).
-        if (sawText) {
+        if (errorsAsText && sawText) {
           return;
         }
 

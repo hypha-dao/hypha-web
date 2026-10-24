@@ -26,12 +26,13 @@ const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 const ENERGY_HOME_DEADLINE_MS = 8_000;
 
 async function settleByDeadline<T>(
-  work: Promise<T>,
+  start: () => Promise<T>,
   deadlineAt: number,
   fallback: T,
 ): Promise<T> {
   const left = deadlineAt - Date.now();
   if (left <= 0) return fallback;
+  const work = start();
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
@@ -42,6 +43,7 @@ async function settleByDeadline<T>(
     ]);
   } finally {
     if (timer) clearTimeout(timer);
+    void work.catch(() => undefined);
   }
 }
 
@@ -244,7 +246,7 @@ export async function GET(
 
     const memberAddress = person.address as `0x${string}`;
     const memberWeb3SpaceIds = await settleByDeadline(
-      web3Client.readContract(getMemberSpaces({ memberAddress })),
+      () => web3Client.readContract(getMemberSpaces({ memberAddress })),
       deadlineAt,
       [] as readonly bigint[],
     );
@@ -262,19 +264,21 @@ export async function GET(
     });
 
     const spaces = await settleByDeadline(
-      findAllSpacesByWeb3SpaceIds(
-        { web3SpaceIds, parentOnly: false },
-        { db: appDb },
-      ),
+      () =>
+        findAllSpacesByWeb3SpaceIds(
+          { web3SpaceIds, parentOnly: false },
+          { db: appDb },
+        ),
       deadlineAt,
       [],
     );
     const mappings = await settleByDeadline(
-      Promise.all(
-        spaces.map((space) =>
-          findEnergyCommunityBySpaceId(space.id, { db: appDb }),
+      () =>
+        Promise.all(
+          spaces.map((space) =>
+            findEnergyCommunityBySpaceId(space.id, { db: appDb }),
+          ),
         ),
-      ),
       deadlineAt,
       spaces.map(() => null),
     );
@@ -288,13 +292,14 @@ export async function GET(
           const proxy = mapping.communityProxyAddress as `0x${string}`;
           if (!ADDRESS_RE.test(proxy)) return null;
           return settleByDeadline(
-            loadCommunity({
-              appDb,
-              memberAddress,
-              mapping,
-              space,
-              proxy,
-            }),
+            () =>
+              loadCommunity({
+                appDb,
+                memberAddress,
+                mapping,
+                space,
+                proxy,
+              }),
             deadlineAt,
             null,
           );
@@ -305,6 +310,9 @@ export async function GET(
     return NextResponse.json({ communities });
   } catch (error) {
     console.error('Failed to fetch member energy home:', error);
-    return NextResponse.json({ communities: [] });
+    return NextResponse.json(
+      { error: 'Failed to load energy home' },
+      { status: 503 },
+    );
   }
 }

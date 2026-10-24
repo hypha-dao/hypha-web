@@ -250,7 +250,6 @@ function rewriteHomeStartLine(
     const chunk = JSON.parse(payload) as {
       type?: unknown;
       messageId?: unknown;
-      errorText?: unknown;
     };
     if (chunk.type === 'start') {
       return `${prefix}${JSON.stringify({ ...chunk, messageId: freshId })}`;
@@ -269,12 +268,7 @@ function rewriteHomeStartLine(
     // only when the model has not already spoken.
     if (chunk.type === 'error') {
       if (sawAssistantText.current) return '';
-      const raw =
-        typeof chunk.errorText === 'string' ? chunk.errorText.trim() : '';
-      const text =
-        raw && raw.length <= 240 && !/error|exception|zod|invalid/i.test(raw)
-          ? raw
-          : droppedLine;
+      const text = droppedLine;
       const id = `e${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
       // Each event needs a blank line. A single newline joins the JSON into
       // one payload, which the client rejects and shows as a dropped thread.

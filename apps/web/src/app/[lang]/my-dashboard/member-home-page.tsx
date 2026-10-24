@@ -46,9 +46,11 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     isAuthenticated,
     isLoading: isAuthLoading,
     login,
+    user,
   } = useAuthentication();
   const { jwt, isLoadingJwt } = useJwt();
   const { person, isLoading: isPersonLoading, meError, revalidate } = useMe();
+  const memberId = user?.id ?? null;
   const [isSavingOrientation, setIsSavingOrientation] = useState(false);
   const [orientationError, setOrientationError] = useState<string | null>(null);
 
@@ -66,8 +68,10 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   } = useSWR<MemberIntelligence | null>(
     // The token string rotates. Keying on it dropped the cached home, unmounted
     // the assistant, and started a new turn a few seconds later.
-    jwt || keepHomeKey.current ? '/api/v1/people/me/intelligence' : null,
-    async (url: string) => {
+    (jwt || keepHomeKey.current) && memberId
+      ? (['/api/v1/people/me/intelligence', memberId] as const)
+      : null,
+    async ([url]: readonly [string, string]) => {
       const token = jwtRef.current;
       if (!token) {
         throw new Error('Access token not ready');
@@ -86,7 +90,9 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     {
       refreshInterval: 10_000,
       revalidateOnFocus: true,
-      keepPreviousData: true,
+      // Key is the Privy member id, so token rotation keeps the cache. A
+      // different member must not inherit the previous Home payload.
+      keepPreviousData: false,
       isPaused: () => !jwtRef.current,
       compare: sameMemberHome,
     },

@@ -96,15 +96,16 @@ export function MemberHomePeople({
   function showRoom(roomId: string | null, title: string, person?: HomePerson) {
     // PM / group rooms are private — never attach a space slug or the AI and
     // @-mentions inherit that space's roster.
-    const peerSlug = person?.slug?.trim();
+    const peerSlug = person?.slug?.trim() ?? '';
+    const peerAddress = person?.address?.trim() || null;
     const peerId = person?.id && person.id > 0 ? person.id : undefined;
     openCoherenceChat(roomId, title, '', null, null, {
       peerPerson:
-        peerSlug || peerId
+        peerSlug || peerId || peerAddress
           ? {
-              slug: peerSlug || '',
+              slug: peerSlug,
               id: peerId,
-              address: person?.address ?? null,
+              address: peerAddress,
             }
           : null,
     });

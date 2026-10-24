@@ -635,12 +635,12 @@ export async function ensureDirectPairRoomAction({
   const localpart = directPairAliasLocalpart(self, other);
   if (!homeserver || !botToken || !localpart) return null;
 
-  let serverName = matrixServerNameFromUserId(getMatrixBotUserId() ?? '');
+  let resolvedBotUserId = getMatrixBotUserId()?.trim() ?? '';
+  let serverName = matrixServerNameFromUserId(resolvedBotUserId);
   if (!serverName) {
     try {
-      serverName = matrixServerNameFromUserId(
-        await matrixWhoAmI(botToken, homeserver),
-      );
+      resolvedBotUserId = await matrixWhoAmI(botToken, homeserver);
+      serverName = matrixServerNameFromUserId(resolvedBotUserId);
     } catch (error) {
       console.warn(
         '[MatrixBot] Failed to resolve homeserver name for the direct room:',
@@ -690,7 +690,7 @@ export async function ensureDirectPairRoomAction({
           botToken,
           homeserver,
         );
-        const botId = getMatrixBotUserId()?.trim().toLowerCase() ?? '';
+        const botId = resolvedBotUserId.trim().toLowerCase();
         const participants = [
           ...new Set(
             members
