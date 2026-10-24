@@ -61,6 +61,7 @@ export function IntegratedBoard({
     probabilities,
     error: configError,
     refresh: refreshConfig,
+    isLoading: isConfigLoading,
   } = usePipelineConfig(spaceSlug);
   const { collapsedLanes, toggleLane } = useCollapsedPipelineLanes(spaceSlug);
   const defaultTrack = resolveDefaultTrackSlug(tracks);
@@ -79,9 +80,10 @@ export function IntegratedBoard({
   }, [filters.swimlane, tracks]);
 
   const unmatchedDeals = React.useMemo(() => {
+    if (isConfigLoading) return [];
     const known = new Set(tracks.map((track) => track.slug));
     return filtered.filter((deal) => !known.has(deal.pipelineSwimlane));
-  }, [filtered, tracks]);
+  }, [filtered, isConfigLoading, tracks]);
 
   const onMoveStatus = React.useCallback(
     async (dealId: number, status: PipelineStatus) => {

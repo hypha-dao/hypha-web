@@ -86,8 +86,15 @@ export function PipelineProbabilitySettings({
   spaceSlug,
 }: PipelineProbabilitySettingsProps) {
   const t = useTranslations('Pipeline');
-  const { tracks, stages, probabilities, isLoading, saveConfig, isSaving } =
-    usePipelineConfig(spaceSlug);
+  const {
+    tracks,
+    stages,
+    probabilities,
+    isLoading,
+    error: configError,
+    saveConfig,
+    isSaving,
+  } = usePipelineConfig(spaceSlug);
   const [stageDraft, setStageDraft] = React.useState<PipelineStageDefinition[]>(
     () => cloneStages(stages),
   );
@@ -99,11 +106,11 @@ export function PipelineProbabilitySettings({
 
   const hasLoadedRef = React.useRef(false);
   React.useEffect(() => {
-    if (hasLoadedRef.current || isLoading) return;
+    if (hasLoadedRef.current || isLoading || configError) return;
     hasLoadedRef.current = true;
     setStageDraft(cloneStages(stages));
     setDraft(cloneMatrix(probabilities, tracks, stages));
-  }, [probabilities, stages, tracks, isLoading]);
+  }, [probabilities, stages, tracks, isLoading, configError]);
 
   const setCell = (trackSlug: string, stageSlug: string, raw: string) => {
     const n = raw === '' ? 0 : Math.round(Number(raw));
@@ -350,7 +357,11 @@ export function PipelineProbabilitySettings({
         <Button type="button" variant="ghost" onClick={resetDefaults}>
           {t('probabilities.resetDefaults')}
         </Button>
-        <Button type="button" disabled={isSaving} onClick={save}>
+        <Button
+          type="button"
+          disabled={isSaving || Boolean(configError)}
+          onClick={save}
+        >
           {isSaving ? t('saving') : t('probabilities.save')}
         </Button>
       </div>

@@ -41,8 +41,13 @@ export function PipelineTrackSettings({
   spaceSlug,
 }: PipelineTrackSettingsProps) {
   const t = useTranslations('Pipeline');
-  const { tracks, isLoading, saveConfig, isSaving } =
-    usePipelineConfig(spaceSlug);
+  const {
+    tracks,
+    isLoading,
+    error: configError,
+    saveConfig,
+    isSaving,
+  } = usePipelineConfig(spaceSlug);
   const [draft, setDraft] = React.useState<PipelineTrackDefinition[]>(() =>
     cloneTracks(tracks),
   );
@@ -51,10 +56,10 @@ export function PipelineTrackSettings({
 
   const hasLoadedRef = React.useRef(false);
   React.useEffect(() => {
-    if (hasLoadedRef.current || isLoading) return;
+    if (hasLoadedRef.current || isLoading || configError) return;
     hasLoadedRef.current = true;
     setDraft(cloneTracks(tracks));
-  }, [tracks, isLoading]);
+  }, [tracks, isLoading, configError]);
 
   const move = (index: number, direction: -1 | 1) => {
     setDraft((current) => {
@@ -185,7 +190,11 @@ export function PipelineTrackSettings({
         <Button type="button" variant="ghost" onClick={resetDefaults}>
           {t('tracks.resetDefaults')}
         </Button>
-        <Button type="button" disabled={isSaving} onClick={save}>
+        <Button
+          type="button"
+          disabled={isSaving || Boolean(configError)}
+          onClick={save}
+        >
           {isSaving ? t('saving') : t('tracks.save')}
         </Button>
       </div>
