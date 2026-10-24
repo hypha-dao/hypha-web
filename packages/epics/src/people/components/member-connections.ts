@@ -1487,6 +1487,23 @@ export function enrichSearchMembers<T extends ConnectionListPerson>(
   });
 }
 
+/**
+ * Matrix ids for every selected directory person. `null` if any id is
+ * still loading or missing — do not create the room until this returns.
+ */
+export function resolvedMatrixIdsForGroup(
+  selected: readonly { person: { id: number } }[],
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+): string[] | null {
+  const memberIds: string[] = [];
+  for (const row of selected) {
+    const mxid = personIdToMatrixUserId[row.person.id]?.trim();
+    if (!mxid) return null;
+    memberIds.push(mxid);
+  }
+  return memberIds;
+}
+
 /** Keep group-pick selections even when search hides those rows. */
 export function nextSelectedMembers<T extends ConnectionListPerson>(
   current: ReadonlyMap<number, MemberRow<T>>,

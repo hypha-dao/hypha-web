@@ -18,6 +18,17 @@ describe('group picker chips and radio', () => {
     expect(source).toMatch(/function exitPicking\(\) \{[\s\S]*setQuery\(''\)/);
   });
 
+  it('resolves Matrix ids for every pick before createRoom', () => {
+    expect(source).toContain('resolvedMatrixIdsForGroup');
+    expect(source).toContain('disabled={!canStartGroup}');
+    const resolveAt = source.indexOf(
+      'const memberIds = resolvedMatrixIdsForGroup',
+    );
+    const createAt = source.indexOf('createRoom(title,');
+    expect(resolveAt).toBeGreaterThan(-1);
+    expect(createAt).toBeGreaterThan(resolveAt);
+  });
+
   it('selects a member when the radio circle is tapped', () => {
     expect(source).toContain('onClick={(event) => {');
     expect(source).toContain('event.stopPropagation()');

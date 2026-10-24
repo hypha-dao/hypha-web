@@ -21,6 +21,7 @@ import {
   peopleAroundGroupRows,
   memberRowsForConnections,
   nextSelectedMembers,
+  resolvedMatrixIdsForGroup,
   personRowsFromDmRooms,
   applyResolvedPeerTitles,
   mergeDirectoryPeople,
@@ -1129,6 +1130,22 @@ describe('membersForGroupPicker', () => {
         (row) => row.person.id,
       ),
     ).toEqual([-4, 1]);
+  });
+});
+
+describe('resolvedMatrixIdsForGroup', () => {
+  it('returns null until every selected member has a Matrix id', () => {
+    const ada = { person: person(1, 'Ada', 'Lovelace') };
+    const grace = { person: person(2, 'Grace', 'Hopper') };
+    expect(
+      resolvedMatrixIdsForGroup([ada, grace], { 1: '@ada:matrix' }),
+    ).toBeNull();
+    expect(
+      resolvedMatrixIdsForGroup([ada, grace], {
+        1: '  @ada:matrix  ',
+        2: '@grace:matrix',
+      }),
+    ).toEqual(['@ada:matrix', '@grace:matrix']);
   });
 });
 
