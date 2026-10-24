@@ -358,8 +358,10 @@ export function MemberHomeChat({
   const gliding = useRef(false);
   const pinnedToEnd = useRef(true);
   const settlingIds = useRef(new Set<string>());
-  const droppedLine = useRef('');
-  droppedLine.current = t('threadDropped');
+  const droppedLine = useRef(t('threadDropped'));
+  useLayoutEffect(() => {
+    droppedLine.current = t('threadDropped');
+  }, [t]);
 
   const transport = useMemo(
     () =>
