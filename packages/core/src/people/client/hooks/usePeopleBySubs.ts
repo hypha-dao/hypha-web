@@ -30,7 +30,7 @@ export const usePeopleBySubs = ({
   const cacheRef = useRef(new Map<string, PersonBySubRecord>());
   const lookedUpRef = useRef(new Set<string>());
 
-  const { data, isLoading, isValidating } = useSWR(
+  const { data, error, isLoading, isValidating } = useSWR(
     key,
     async () => {
       const batches: string[][] = [];
@@ -50,7 +50,7 @@ export const usePeopleBySubs = ({
   for (const person of data ?? []) {
     cacheRef.current.set(person.sub, person);
   }
-  if (key && data !== undefined && !isLoading && !isValidating) {
+  if (key && !isLoading && !isValidating && (data !== undefined || error)) {
     for (const sub of unique) lookedUpRef.current.add(sub);
   }
 

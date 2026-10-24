@@ -156,7 +156,8 @@ export function conversationDisplayName(
   for (const candidate of candidates) {
     const label = candidate?.trim();
     if (!label) continue;
-    if (!looksLikeTechnicalMatrixDisplayName(label, label)) return label;
+    if (isHyphaBotMatrixIdentity('', label)) continue;
+    if (!looksLikeTechnicalMatrixDisplayName(label, '')) return label;
   }
   return null;
 }
@@ -167,7 +168,7 @@ export function isUnresolvedConversationTitle(
 ) {
   const label = name?.trim() ?? '';
   if (!label) return true;
-  return looksLikeTechnicalMatrixDisplayName(label, matrixUserId ?? label);
+  return looksLikeTechnicalMatrixDisplayName(label, matrixUserId?.trim() ?? '');
 }
 
 export type ResolvedPeerTitle = {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -37,11 +37,22 @@ export function HumanChatPanelEmojiPicker({
   className,
   modal = true,
 }: HumanChatPanelEmojiPickerProps) {
+  const triggerWrapRef = useRef<HTMLDivElement>(null);
+  const [boundary, setBoundary] = useState<Element | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const node = triggerWrapRef.current?.closest(
+      '[data-hypha-chat-panel], [data-testid="e2e-emoji-chat"], [data-sidebar="sidebar"]',
+    );
+    setBoundary(node ?? null);
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      if (event.isComposing) return;
+      if (event.isComposing || event.keyCode === 229) return;
       event.preventDefault();
       event.stopPropagation();
       onOpenChange(false);
@@ -53,16 +64,19 @@ export function HumanChatPanelEmojiPicker({
 
   return (
     <Popover modal={modal} open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild className={cn('inline-flex', className)}>
-        {children}
-      </PopoverTrigger>
+      <div ref={triggerWrapRef} className={cn('inline-flex', className)}>
+        <PopoverTrigger asChild className="inline-flex">
+          {children}
+        </PopoverTrigger>
+      </div>
       <PopoverContent
         align={align}
         side={side}
         sideOffset={8}
         collisionPadding={12}
+        collisionBoundary={boundary ?? undefined}
         data-testid="hypha-emoji-picker-panel"
-        className="w-[min(calc(100vw-2rem),22rem)] max-w-[min(22rem,calc(100vw-1rem))] overflow-hidden border-border p-0 shadow-lg"
+        className="w-[min(22rem,var(--radix-popover-content-available-width),calc(100vw-2rem))] max-w-[min(22rem,var(--radix-popover-content-available-width),calc(100vw-2rem))] overflow-x-hidden overflow-hidden border-border p-0 shadow-lg"
         aria-label={ariaLabel}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {

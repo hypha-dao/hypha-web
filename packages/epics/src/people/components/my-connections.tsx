@@ -1849,6 +1849,7 @@ export function MyConnections({
   function exitPicking() {
     setPicking(false);
     setSelectedById(new Map());
+    setQuery('');
   }
 
   async function openMember(row: ConnectionMemberRow) {
