@@ -1,44 +1,205 @@
 import {
+  DEFAULT_PIPELINE_ITEM_PLURAL,
+  DEFAULT_PIPELINE_ITEM_SINGULAR,
+  DEFAULT_PIPELINE_PAGE_TITLE,
   DEFAULT_PIPELINE_REGIONS,
+  DEFAULT_PIPELINE_STAGES,
+  DEFAULT_PIPELINE_TRACKS,
   PIPELINE_PROBABILITY,
-  PIPELINE_STATUSES,
-  PIPELINE_SWIMLANES,
-  TERMINAL_STAGE_PROBABILITIES,
-  type PipelineStatus,
-  type PipelineSwimlane,
+  seedStageProbability,
+  terminalProbabilityForStage,
+  type PipelineStageDefinition,
+  type PipelineStageTerminal,
+  type PipelineTrackDefinition,
 } from './constants';
 
-/** Success probability (%) per swimlane (track) × pipeline stage. */
-export type ProbabilityMatrix = Record<
-  PipelineSwimlane,
-  Record<PipelineStatus, number>
->;
+/** Success probability (%) per track slug × stage slug. */
+export type ProbabilityMatrix = Record<string, Record<string, number>>;
 
 export type PipelineConfig = {
+  /** Page heading. Defaults to "Pipeline". */
+  pageTitle: string;
+  /** Singular item label. Defaults to "Opportunity". */
+  itemSingular: string;
+  /** Plural item label. Defaults to "Opportunities". */
+  itemPlural: string;
   /** Configurable territory / owning-team labels for deals. */
   regions: string[];
   /** Preferred default when creating deals (must be in regions when set). */
   defaultRegion: string;
+  /** Ordered tracks (swimlanes). Defaults keep Sales / Investors / … */
+  tracks: PipelineTrackDefinition[];
+  /** Ordered stages. Defaults keep Identified → Lost. */
+  stages: PipelineStageDefinition[];
   /**
-   * Stage default success rates (%) per swimlane. Seeds a deal's
+   * Stage default success rates (%) per track. Seeds a deal's
    * successRate when it enters a stage; deals can override per deal.
    */
   probabilities: ProbabilityMatrix;
 };
 
-export function defaultProbabilityMatrix(): ProbabilityMatrix {
-  const matrix = {} as ProbabilityMatrix;
-  for (const swimlane of PIPELINE_SWIMLANES) {
-    matrix[swimlane] = { ...PIPELINE_PROBABILITY[swimlane] };
-  }
-  return matrix;
+const LABEL_MAX = 80;
+const SLUG_MAX = 64;
+const SLUG_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+
+function normalizeLabel(
+  value: unknown,
+  fallback: string,
+  max = LABEL_MAX,
+): string {
+  if (typeof value !== 'string') return fallback;
+  const trimmed = value.trim().replace(/\s+/g, ' ');
+  if (!trimmed) return fallback;
+  return trimmed.slice(0, max);
 }
 
-export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
-  regions: [...DEFAULT_PIPELINE_REGIONS],
-  defaultRegion: 'Benelux',
-  probabilities: defaultProbabilityMatrix(),
-};
+function slugifyName(value: string): string {
+  const lower = value.trim().toLowerCase();
+  let normalized = '';
+  let lastWasUnderscore = false;
+  for (const char of lower) {
+    const code = char.charCodeAt(0);
+    const isSlugChar =
+      (code >= 97 && code <= 122) || (code >= 48 && code <= 57) || char === '_';
+    if (isSlugChar) {
+      normalized += char;
+      lastWasUnderscore = char === '_';
+      continue;
+    }
+    if (!lastWasUnderscore && normalized.length > 0) {
+      normalized += '_';
+      lastWasUnderscore = true;
+    }
+  }
+  return normalized.replace(/^_+|_+$/g, '').slice(0, SLUG_MAX) || 'item';
+}
+
+function reserveUniqueSlug(base: string, used: Set<string>): string {
+  const candidate = SLUG_PATTERN.test(base) ? base : slugifyName(base);
+  if (!used.has(candidate)) {
+    used.add(candidate);
+    return candidate;
+  }
+  let counter = 2;
+  while (used.has(`${candidate}_${counter}`)) {
+    counter += 1;
+  }
+  const next = `${candidate}_${counter}`.slice(0, SLUG_MAX);
+  used.add(next);
+  return next;
+}
+
+function reindexPositions<T extends { position?: number }>(items: T[]): T[] {
+  return items.map((item, index) => ({ ...item, position: index }));
+}
+
+function normalizeTerminal(value: unknown): PipelineStageTerminal | undefined {
+  if (value === 'won' || value === 'lost') return value;
+  return undefined;
+}
+
+function normalizeTracks(raw: unknown): PipelineTrackDefinition[] {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return DEFAULT_PIPELINE_TRACKS.map((track) => ({ ...track }));
+  }
+
+  const used = new Set<string>();
+  const tracks: PipelineTrackDefinition[] = [];
+  raw.slice(0, 20).forEach((item, index) => {
+    const source =
+      item && typeof item === 'object' && !Array.isArray(item)
+        ? (item as Record<string, unknown>)
+        : {};
+    const name = normalizeLabel(
+      source.name ?? source.slug,
+      `Track ${index + 1}`,
+    );
+    const slug = reserveUniqueSlug(
+      typeof source.slug === 'string' && source.slug.trim()
+        ? source.slug.trim()
+        : name,
+      used,
+    );
+    tracks.push({
+      slug,
+      name,
+      position:
+        typeof source.position === 'number' && Number.isFinite(source.position)
+          ? source.position
+          : index,
+    });
+  });
+
+  return tracks.length > 0
+    ? reindexPositions(
+        tracks.sort((a, b) => (a.position ?? 0) - (b.position ?? 0)),
+      )
+    : DEFAULT_PIPELINE_TRACKS.map((track) => ({ ...track }));
+}
+
+function normalizeStages(raw: unknown): PipelineStageDefinition[] {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return DEFAULT_PIPELINE_STAGES.map((stage) => ({ ...stage }));
+  }
+
+  const used = new Set<string>();
+  const stages: PipelineStageDefinition[] = [];
+  raw.slice(0, 20).forEach((item, index) => {
+    const source =
+      item && typeof item === 'object' && !Array.isArray(item)
+        ? (item as Record<string, unknown>)
+        : {};
+    const name = normalizeLabel(
+      source.name ?? source.slug,
+      `Stage ${index + 1}`,
+    );
+    const slug = reserveUniqueSlug(
+      typeof source.slug === 'string' && source.slug.trim()
+        ? source.slug.trim()
+        : name,
+      used,
+    );
+    const terminal =
+      normalizeTerminal(source.terminal) ??
+      (slug === 'Won' ? 'won' : slug === 'Lost' ? 'lost' : undefined);
+    stages.push({
+      slug,
+      name,
+      position:
+        typeof source.position === 'number' && Number.isFinite(source.position)
+          ? source.position
+          : index,
+      ...(terminal ? { terminal } : {}),
+    });
+  });
+
+  // At most one won and one lost terminal — first occurrence wins.
+  let sawWon = false;
+  let sawLost = false;
+  const deduped = stages.map((stage) => {
+    if (stage.terminal === 'won') {
+      if (sawWon) {
+        const { terminal: _terminal, ...rest } = stage;
+        return rest;
+      }
+      sawWon = true;
+    }
+    if (stage.terminal === 'lost') {
+      if (sawLost) {
+        const { terminal: _terminal, ...rest } = stage;
+        return rest;
+      }
+      sawLost = true;
+    }
+    return stage;
+  });
+
+  return deduped.length > 0
+    ? reindexPositions(
+        deduped.sort((a, b) => (a.position ?? 0) - (b.position ?? 0)),
+      )
+    : DEFAULT_PIPELINE_STAGES.map((stage) => ({ ...stage }));
+}
 
 function normalizeRegionName(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -53,39 +214,61 @@ function normalizeProbability(value: unknown): number | null {
   return Math.min(100, Math.max(0, Math.round(n)));
 }
 
+export function defaultProbabilityMatrix(
+  tracks: readonly PipelineTrackDefinition[] = DEFAULT_PIPELINE_TRACKS,
+  stages: readonly PipelineStageDefinition[] = DEFAULT_PIPELINE_STAGES,
+): ProbabilityMatrix {
+  return normalizeProbabilityMatrix(PIPELINE_PROBABILITY, tracks, stages);
+}
+
 /**
- * Normalizes a raw probability matrix, falling back to seed defaults for
- * missing/invalid cells. Terminal stages are absolute: Won=100, Lost=0.
+ * Normalizes a raw probability matrix against the space's tracks and stages.
+ * Terminal stages are absolute: won=100, lost=0.
  */
-export function normalizeProbabilityMatrix(raw: unknown): ProbabilityMatrix {
+export function normalizeProbabilityMatrix(
+  raw: unknown,
+  tracks: readonly PipelineTrackDefinition[] = DEFAULT_PIPELINE_TRACKS,
+  stages: readonly PipelineStageDefinition[] = DEFAULT_PIPELINE_STAGES,
+): ProbabilityMatrix {
   const source =
     raw && typeof raw === 'object' && !Array.isArray(raw)
       ? (raw as Record<string, unknown>)
       : {};
 
-  const matrix = {} as ProbabilityMatrix;
-  for (const swimlane of PIPELINE_SWIMLANES) {
+  const matrix: ProbabilityMatrix = {};
+  for (const track of tracks) {
     const rawLane =
-      source[swimlane] &&
-      typeof source[swimlane] === 'object' &&
-      !Array.isArray(source[swimlane])
-        ? (source[swimlane] as Record<string, unknown>)
+      source[track.slug] &&
+      typeof source[track.slug] === 'object' &&
+      !Array.isArray(source[track.slug])
+        ? (source[track.slug] as Record<string, unknown>)
         : {};
-    const lane = {} as Record<PipelineStatus, number>;
-    for (const status of PIPELINE_STATUSES) {
-      const terminal = TERMINAL_STAGE_PROBABILITIES[status];
+    const lane: Record<string, number> = {};
+    for (const stage of stages) {
+      const terminal = terminalProbabilityForStage(stage);
       if (terminal !== undefined) {
-        lane[status] = terminal;
+        lane[stage.slug] = terminal;
         continue;
       }
-      lane[status] =
-        normalizeProbability(rawLane[status]) ??
-        PIPELINE_PROBABILITY[swimlane][status];
+      lane[stage.slug] =
+        normalizeProbability(rawLane[stage.slug]) ??
+        seedStageProbability(track.slug, stage.slug);
     }
-    matrix[swimlane] = lane;
+    matrix[track.slug] = lane;
   }
   return matrix;
 }
+
+export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
+  pageTitle: DEFAULT_PIPELINE_PAGE_TITLE,
+  itemSingular: DEFAULT_PIPELINE_ITEM_SINGULAR,
+  itemPlural: DEFAULT_PIPELINE_ITEM_PLURAL,
+  regions: [...DEFAULT_PIPELINE_REGIONS],
+  defaultRegion: 'Benelux',
+  tracks: DEFAULT_PIPELINE_TRACKS.map((track) => ({ ...track })),
+  stages: DEFAULT_PIPELINE_STAGES.map((stage) => ({ ...stage })),
+  probabilities: defaultProbabilityMatrix(),
+};
 
 export function normalizePipelineConfig(raw: unknown): PipelineConfig {
   const source =
@@ -127,19 +310,42 @@ export function normalizePipelineConfig(raw: unknown): PipelineConfig {
       ? 'Global'
       : resolvedRegions[0]!;
 
+  const tracks = normalizeTracks(source.tracks);
+  const stages = normalizeStages(source.stages);
+
   return {
+    pageTitle: normalizeLabel(source.pageTitle, DEFAULT_PIPELINE_PAGE_TITLE),
+    itemSingular: normalizeLabel(
+      source.itemSingular,
+      DEFAULT_PIPELINE_ITEM_SINGULAR,
+      40,
+    ),
+    itemPlural: normalizeLabel(
+      source.itemPlural,
+      DEFAULT_PIPELINE_ITEM_PLURAL,
+      40,
+    ),
     regions: resolvedRegions,
     defaultRegion,
-    probabilities: normalizeProbabilityMatrix(source.probabilities),
+    tracks,
+    stages,
+    probabilities: normalizeProbabilityMatrix(
+      source.probabilities,
+      tracks,
+      stages,
+    ),
   };
 }
 
 export type PipelineConfigPatch = {
+  pageTitle?: string;
+  itemSingular?: string;
+  itemPlural?: string;
   regions?: string[];
   defaultRegion?: string;
-  probabilities?: Partial<
-    Record<PipelineSwimlane, Partial<Record<PipelineStatus, number>>>
-  >;
+  tracks?: PipelineTrackDefinition[];
+  stages?: PipelineStageDefinition[];
+  probabilities?: ProbabilityMatrix;
 };
 
 /**
@@ -151,24 +357,49 @@ export function mergePipelineConfig(
   patch: PipelineConfigPatch,
 ): PipelineConfig {
   const base = normalizePipelineConfig(current);
-  return normalizePipelineConfig({
-    regions: patch.regions ?? base.regions,
-    defaultRegion: patch.defaultRegion ?? base.defaultRegion,
-    probabilities: patch.probabilities
+  const tracks = patch.tracks ? normalizeTracks(patch.tracks) : base.tracks;
+  const stages = patch.stages ? normalizeStages(patch.stages) : base.stages;
+  const probabilities = normalizeProbabilityMatrix(
+    patch.probabilities
       ? mergeProbabilities(base.probabilities, patch.probabilities)
       : base.probabilities,
+    tracks,
+    stages,
+  );
+
+  return normalizePipelineConfig({
+    pageTitle: patch.pageTitle ?? base.pageTitle,
+    itemSingular: patch.itemSingular ?? base.itemSingular,
+    itemPlural: patch.itemPlural ?? base.itemPlural,
+    regions: patch.regions ?? base.regions,
+    defaultRegion: patch.defaultRegion ?? base.defaultRegion,
+    tracks,
+    stages,
+    probabilities,
   });
 }
 
 function mergeProbabilities(
   base: ProbabilityMatrix,
-  patch: Partial<
-    Record<PipelineSwimlane, Partial<Record<PipelineStatus, number>>>
-  >,
+  patch: ProbabilityMatrix,
 ): ProbabilityMatrix {
-  const merged = {} as ProbabilityMatrix;
-  for (const swimlane of PIPELINE_SWIMLANES) {
-    merged[swimlane] = { ...base[swimlane], ...(patch[swimlane] ?? {}) };
+  const merged: ProbabilityMatrix = { ...base };
+  for (const [trackSlug, lane] of Object.entries(patch)) {
+    merged[trackSlug] = { ...(base[trackSlug] ?? {}), ...lane };
   }
   return merged;
+}
+
+export function findTrackName(
+  tracks: readonly PipelineTrackDefinition[],
+  slug: string,
+): string {
+  return tracks.find((track) => track.slug === slug)?.name ?? slug;
+}
+
+export function findStageName(
+  stages: readonly PipelineStageDefinition[],
+  slug: string,
+): string {
+  return stages.find((stage) => stage.slug === slug)?.name ?? slug;
 }

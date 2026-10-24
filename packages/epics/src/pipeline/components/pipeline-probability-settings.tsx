@@ -3,92 +3,215 @@
 import React from 'react';
 import {
   defaultProbabilityMatrix,
-  PIPELINE_STATUSES,
-  PIPELINE_SWIMLANES,
-  TERMINAL_STAGE_PROBABILITIES,
+  DEFAULT_PIPELINE_STAGES,
+  seedStageProbability,
+  terminalProbabilityForStage,
   usePipelineConfig,
-  type PipelineStatus,
-  type PipelineSwimlane,
+  type PipelineStageDefinition,
   type ProbabilityMatrix,
 } from '@hypha-platform/core/client';
 import { Button, Input, Separator } from '@hypha-platform/ui';
+import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { PipelineConfigRow } from './pipeline-config-row';
 
 type PipelineProbabilitySettingsProps = {
   spaceSlug: string;
 };
 
-function cloneMatrix(matrix: ProbabilityMatrix): ProbabilityMatrix {
-  const clone = {} as ProbabilityMatrix;
-  for (const swimlane of PIPELINE_SWIMLANES) {
-    clone[swimlane] = { ...matrix[swimlane] };
+function cloneMatrix(
+  matrix: ProbabilityMatrix,
+  tracks: { slug: string }[],
+  stages: PipelineStageDefinition[],
+): ProbabilityMatrix {
+  const clone: ProbabilityMatrix = {};
+  for (const track of tracks) {
+    const lane: Record<string, number> = {};
+    for (const stage of stages) {
+      const terminal = terminalProbabilityForStage(stage);
+      lane[stage.slug] =
+        terminal ??
+        matrix[track.slug]?.[stage.slug] ??
+        seedStageProbability(track.slug, stage.slug);
+    }
+    clone[track.slug] = lane;
   }
   return clone;
 }
 
-/** Lanes whose non-terminal stages are not monotonically increasing. */
-function nonMonotonicLanes(matrix: ProbabilityMatrix): PipelineSwimlane[] {
-  const stages = PIPELINE_STATUSES.filter(
-    (s) => TERMINAL_STAGE_PROBABILITIES[s] === undefined,
+function uniqueSlug(base: string, existing: Set<string>): string {
+  const normalized =
+    base
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 64) || 'stage';
+  if (!existing.has(normalized)) return normalized;
+  let counter = 2;
+  while (existing.has(`${normalized}_${counter}`)) {
+    counter += 1;
+  }
+  return `${normalized}_${counter}`.slice(0, 64);
+}
+
+function cloneStages(
+  stages: PipelineStageDefinition[],
+): PipelineStageDefinition[] {
+  return stages.map((stage, position) => ({ ...stage, position }));
+}
+
+/** Tracks whose non-terminal stages are not monotonically increasing. */
+function nonMonotonicTracks(
+  matrix: ProbabilityMatrix,
+  tracks: { slug: string; name: string }[],
+  stages: PipelineStageDefinition[],
+): string[] {
+  const openStages = stages.filter(
+    (stage) => terminalProbabilityForStage(stage) === undefined,
   );
-  return PIPELINE_SWIMLANES.filter((swimlane) => {
-    for (let i = 1; i < stages.length; i += 1) {
-      if (matrix[swimlane][stages[i]!] < matrix[swimlane][stages[i - 1]!]) {
-        return true;
+  return tracks
+    .filter((track) => {
+      for (let i = 1; i < openStages.length; i += 1) {
+        const current = matrix[track.slug]?.[openStages[i]!.slug] ?? 0;
+        const previous = matrix[track.slug]?.[openStages[i - 1]!.slug] ?? 0;
+        if (current < previous) return true;
       }
-    }
-    return false;
-  });
+      return false;
+    })
+    .map((track) => track.name);
 }
 
 export function PipelineProbabilitySettings({
   spaceSlug,
 }: PipelineProbabilitySettingsProps) {
   const t = useTranslations('Pipeline');
-  const { probabilities, isLoading, saveConfig, isSaving } =
+  const { tracks, stages, probabilities, isLoading, saveConfig, isSaving } =
     usePipelineConfig(spaceSlug);
+  const [stageDraft, setStageDraft] = React.useState<PipelineStageDefinition[]>(
+    () => cloneStages(stages),
+  );
   const [draft, setDraft] = React.useState<ProbabilityMatrix>(() =>
-    cloneMatrix(probabilities),
+    cloneMatrix(probabilities, tracks, stages),
   );
   const [error, setError] = React.useState<string | null>(null);
   const [savedAt, setSavedAt] = React.useState<Date | null>(null);
 
-  // Sync the draft from the server config on initial load only. SWR
-  // revalidates on focus; syncing on every `probabilities` change would
-  // silently wipe unsaved edits (same pattern as the new-deal dialog reset).
   const hasLoadedRef = React.useRef(false);
   React.useEffect(() => {
     if (hasLoadedRef.current || isLoading) return;
     hasLoadedRef.current = true;
-    setDraft(cloneMatrix(probabilities));
-  }, [probabilities, isLoading]);
+    setStageDraft(cloneStages(stages));
+    setDraft(cloneMatrix(probabilities, tracks, stages));
+  }, [probabilities, stages, tracks, isLoading]);
 
-  const setCell = (
-    swimlane: PipelineSwimlane,
-    status: PipelineStatus,
-    raw: string,
-  ) => {
+  const setCell = (trackSlug: string, stageSlug: string, raw: string) => {
     const n = raw === '' ? 0 : Math.round(Number(raw));
     if (!Number.isFinite(n)) return;
     setDraft((prev) => ({
       ...prev,
-      [swimlane]: {
-        ...prev[swimlane],
-        [status]: Math.min(100, Math.max(0, n)),
+      [trackSlug]: {
+        ...prev[trackSlug],
+        [stageSlug]: Math.min(100, Math.max(0, n)),
       },
     }));
     setSavedAt(null);
   };
 
+  const moveStage = (index: number, direction: -1 | 1) => {
+    setStageDraft((current) => {
+      const next = [...current];
+      const target = index + direction;
+      if (target < 0 || target >= next.length) return current;
+      [next[index], next[target]] = [next[target]!, next[index]!];
+      return next.map((stage, position) => ({ ...stage, position }));
+    });
+    setSavedAt(null);
+  };
+
+  const renameStage = (index: number, name: string) => {
+    setStageDraft((current) =>
+      current.map((stage, i) => (i === index ? { ...stage, name } : stage)),
+    );
+    setSavedAt(null);
+  };
+
+  const addStage = () => {
+    setStageDraft((current) => {
+      const slugs = new Set(current.map((stage) => stage.slug));
+      const slug = uniqueSlug('new_stage', slugs);
+      const next = [
+        ...current,
+        {
+          slug,
+          name: t('stages.newStage'),
+          position: current.length,
+        },
+      ];
+      setDraft((matrix) => {
+        const updated: ProbabilityMatrix = {};
+        for (const track of tracks) {
+          updated[track.slug] = {
+            ...(matrix[track.slug] ?? {}),
+            [slug]: seedStageProbability(track.slug, slug),
+          };
+        }
+        return updated;
+      });
+      return next;
+    });
+    setSavedAt(null);
+  };
+
+  const removeStage = (index: number) => {
+    setStageDraft((current) => {
+      if (current.length <= 1) return current;
+      const removed = current[index];
+      const next = current
+        .filter((_, i) => i !== index)
+        .map((stage, position) => ({ ...stage, position }));
+      if (removed) {
+        setDraft((matrix) => {
+          const updated: ProbabilityMatrix = {};
+          for (const [trackSlug, lane] of Object.entries(matrix)) {
+            const { [removed.slug]: _dropped, ...rest } = lane;
+            updated[trackSlug] = rest;
+          }
+          return updated;
+        });
+      }
+      return next;
+    });
+    setSavedAt(null);
+  };
+
   const resetDefaults = () => {
-    setDraft(defaultProbabilityMatrix());
+    const nextStages = cloneStages(DEFAULT_PIPELINE_STAGES);
+    setStageDraft(nextStages);
+    setDraft(defaultProbabilityMatrix(tracks, nextStages));
     setError(null);
     setSavedAt(null);
   };
 
   const save = async () => {
+    if (stageDraft.length < 1) {
+      setError(t('stages.atLeastOne'));
+      return;
+    }
+    if (stageDraft.some((stage) => !stage.name.trim())) {
+      setError(t('stages.nameRequired'));
+      return;
+    }
     try {
-      await saveConfig({ probabilities: draft });
+      const stagesToSave = stageDraft.map((stage, position) => ({
+        ...stage,
+        name: stage.name.trim(),
+        position,
+      }));
+      await saveConfig({
+        stages: stagesToSave,
+        probabilities: cloneMatrix(draft, tracks, stagesToSave),
+      });
       setSavedAt(new Date());
       setError(null);
     } catch (err) {
@@ -104,7 +227,7 @@ export function PipelineProbabilitySettings({
     );
   }
 
-  const warningLanes = nonMonotonicLanes(draft);
+  const warningTracks = nonMonotonicTracks(draft, tracks, stageDraft);
 
   return (
     <div className="flex flex-col gap-3">
@@ -117,6 +240,35 @@ export function PipelineProbabilitySettings({
         </p>
       </div>
 
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-1 text-neutral-11">{t('stages.description')}</p>
+        <Button type="button" variant="outline" size="sm" onClick={addStage}>
+          <Plus className="size-4" />
+          {t('stages.add')}
+        </Button>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {stageDraft.map((stage, index) => (
+          <PipelineConfigRow
+            key={stage.slug}
+            index={index}
+            total={stageDraft.length}
+            onMoveUp={() => moveStage(index, -1)}
+            onMoveDown={() => moveStage(index, 1)}
+            onRemove={() => removeStage(index)}
+            disableRemove={stageDraft.length <= 1}
+          >
+            <Input
+              value={stage.name}
+              onChange={(event) => renameStage(index, event.target.value)}
+              placeholder={t('stages.namePlaceholder')}
+              aria-label={t('stages.namePlaceholder')}
+            />
+          </PipelineConfigRow>
+        ))}
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] border-collapse text-1">
           <thead>
@@ -124,27 +276,27 @@ export function PipelineProbabilitySettings({
               <th className="px-2 py-1.5 text-left font-medium text-neutral-11">
                 {t('probabilities.track')}
               </th>
-              {PIPELINE_STATUSES.map((status) => (
+              {stageDraft.map((stage) => (
                 <th
-                  key={status}
+                  key={stage.slug}
                   className="px-2 py-1.5 text-left font-medium text-neutral-11"
                 >
-                  {status}
+                  {stage.name || stage.slug}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {PIPELINE_SWIMLANES.map((swimlane) => (
-              <tr key={swimlane} className="border-t border-neutral-5">
+            {tracks.map((track) => (
+              <tr key={track.slug} className="border-t border-neutral-5">
                 <td className="px-2 py-1.5 font-medium text-neutral-12">
-                  {swimlane}
+                  {track.name}
                 </td>
-                {PIPELINE_STATUSES.map((status) => {
-                  const terminalValue = TERMINAL_STAGE_PROBABILITIES[status];
+                {stageDraft.map((stage) => {
+                  const terminalValue = terminalProbabilityForStage(stage);
                   const terminal = terminalValue !== undefined;
                   return (
-                    <td key={status} className="px-2 py-1.5">
+                    <td key={stage.slug} className="px-2 py-1.5">
                       <Input
                         type="number"
                         min={0}
@@ -152,14 +304,16 @@ export function PipelineProbabilitySettings({
                         step={5}
                         className="w-16"
                         value={
-                          terminal ? terminalValue : draft[swimlane][status]
+                          terminal
+                            ? terminalValue
+                            : draft[track.slug]?.[stage.slug] ?? 0
                         }
                         disabled={terminal}
                         title={
                           terminal ? t('probabilities.terminalHint') : undefined
                         }
                         onChange={(e) =>
-                          setCell(swimlane, status, e.target.value)
+                          setCell(track.slug, stage.slug, e.target.value)
                         }
                       />
                     </td>
@@ -175,10 +329,10 @@ export function PipelineProbabilitySettings({
         {t('probabilities.terminalHint')}
       </p>
 
-      {warningLanes.length > 0 ? (
+      {warningTracks.length > 0 ? (
         <p className="text-1 text-amber-11" role="alert">
           {t('probabilities.monotonicWarning', {
-            lanes: warningLanes.join(', '),
+            lanes: warningTracks.join(', '),
           })}
         </p>
       ) : null}

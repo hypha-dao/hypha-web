@@ -7,8 +7,6 @@ import {
   DEAL_STATUSES,
   getDealProbability,
   isGrantOrTenderSwimlane,
-  PIPELINE_STATUSES,
-  PIPELINE_SWIMLANES,
   resolveRegionForSpace,
   useDealMutations,
   useDeals,
@@ -108,18 +106,34 @@ export function DealPanel({
   const { deals, isLoading } = useDeals({ spaceSlug });
   const { patchDeal, deleteDeal, isDeleting } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
-  const { regions, defaultRegion, probabilities } =
-    usePipelineConfig(spaceSlug);
+  const {
+    regions,
+    defaultRegion,
+    tracks,
+    stages,
+    probabilities,
+    itemSingular,
+    itemPlural,
+  } = usePipelineConfig(spaceSlug);
+  const itemLabels = { item: itemSingular, items: itemPlural };
   const { persons } = useMembers({ spaceSlug, paginationDisabled: true });
   const members = persons?.data ?? [];
   const deal = deals.find((d) => d.id === dealId) ?? null;
   const { schedule, saving, savedAt } = useDebouncedSave(dealId, patchDeal);
 
   if (isLoading && !deal) {
-    return <div className="p-4 text-2 text-neutral-11">{t('loading')}</div>;
+    return (
+      <div className="p-4 text-2 text-neutral-11">
+        {t('loading', itemLabels)}
+      </div>
+    );
   }
   if (!deal) {
-    return <div className="p-4 text-2 text-neutral-11">{t('notFound')}</div>;
+    return (
+      <div className="p-4 text-2 text-neutral-11">
+        {t('notFound', itemLabels)}
+      </div>
+    );
   }
 
   const grantTender = isGrantOrTenderSwimlane(deal.pipelineSwimlane);
@@ -152,11 +166,16 @@ export function DealPanel({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {PIPELINE_SWIMLANES.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
+              {tracks.map((track) => (
+                <SelectItem key={track.slug} value={track.slug}>
+                  {track.name}
                 </SelectItem>
               ))}
+              {!tracks.some((track) => track.slug === deal.pipelineSwimlane) ? (
+                <SelectItem value={deal.pipelineSwimlane}>
+                  {deal.pipelineSwimlane}
+                </SelectItem>
+              ) : null}
             </SelectContent>
           </Select>
         </Field>
@@ -171,11 +190,16 @@ export function DealPanel({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {PIPELINE_STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
+              {stages.map((stage) => (
+                <SelectItem key={stage.slug} value={stage.slug}>
+                  {stage.name}
                 </SelectItem>
               ))}
+              {!stages.some((stage) => stage.slug === deal.pipelineStatus) ? (
+                <SelectItem value={deal.pipelineStatus}>
+                  {deal.pipelineStatus}
+                </SelectItem>
+              ) : null}
             </SelectContent>
           </Select>
         </Field>
@@ -259,7 +283,7 @@ export function DealPanel({
             </SelectContent>
           </Select>
         </Field>
-        <Field label={t('fields.dealStatus')}>
+        <Field label={t('fields.dealStatus', itemLabels)}>
           <Select
             value={deal.status}
             onValueChange={(v) => schedule({ status: v as DealStatus })}
@@ -335,7 +359,7 @@ export function DealPanel({
           />
           <span className="text-1 text-neutral-10">
             {deal.successRate != null
-              ? t('fields.successRateOverride')
+              ? t('fields.successRateOverride', itemLabels)
               : t('fields.successRateDefault', {
                   rate: getDealProbability(
                     deal.pipelineSwimlane,
@@ -478,7 +502,7 @@ export function DealPanel({
           onDeleted?.();
         }}
       >
-        {t('delete')}
+        {t('delete', itemLabels)}
       </Button>
     </div>
   );

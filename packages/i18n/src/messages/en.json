@@ -2550,8 +2550,8 @@
     "escrowDepositDepositing": "Depositing...",
     "escrowDepositApproving": "Approving...",
     "escrowDepositInsufficientWallet": "Your wallet balance is below the required amount.",
-    "pipelineEnabled": "Deal Pipeline",
-    "pipelineEnabledDescription": "Enable a Kanban deal pipeline for this space. Off by default.",
+    "pipelineEnabled": "Pipeline",
+    "pipelineEnabledDescription": "Enable a Kanban pipeline for this space. Off by default.",
     "mySpacesSupport": "Create a space or open one you already belong to."
   },
   "AgreementFlow": {
@@ -5162,14 +5162,14 @@
     }
   },
   "Pipeline": {
-    "title": "Deal Pipeline",
-    "dealDetails": "Deal details",
-    "loading": "Loading deals…",
-    "notFound": "Deal not found",
+    "title": "Pipeline",
+    "dealDetails": "{item} details",
+    "loading": "Loading {items}…",
+    "notFound": "{item} not found",
     "saving": "Saving…",
     "saved": "Saved",
     "cancel": "Cancel",
-    "delete": "Delete deal",
+    "delete": "Delete {item}",
     "exportXlsx": "Export XLSX",
     "filter": "Filter",
     "reset": "Reset",
@@ -5181,7 +5181,7 @@
     "backToBoard": "Back to board",
     "trackTitle": "{swimlane} track",
     "summary": {
-      "deals": "Deals",
+      "deals": "Opportunities",
       "active": "Active",
       "pipelineValue": "Pipeline value",
       "weightedValue": "Weighted value"
@@ -5191,7 +5191,7 @@
       "swimlane": "Swimlane",
       "region": "Region",
       "priority": "Priority",
-      "status": "Deal status",
+      "status": "{item} status",
       "deadline": "Submission deadline",
       "tag": "Tag",
       "all": "All",
@@ -5206,8 +5206,8 @@
       "allPriorities": "All priorities",
       "allStatuses": "All statuses",
       "anyDeadline": "Any deadline",
-      "tagLabel": "Deal tag",
-      "tagPlaceholder": "Filter by a deal tag",
+      "tagLabel": "{item} tag",
+      "tagPlaceholder": "Filter by an {item} tag",
       "accountManager": "Account manager",
       "allAccountManagers": "All account managers"
     },
@@ -5218,12 +5218,12 @@
       "delete": "Delete view"
     },
     "newDeal": {
-      "title": "New pipeline item",
-      "titlePlaceholder": "Company, deal, or grant name",
+      "title": "New {item}",
+      "titlePlaceholder": "Company, {item}, or grant name",
       "countryPlaceholder": "Select country (optional)",
       "valuePlaceholder": "0",
       "create": "Create card",
-      "created": "Deal created",
+      "created": "{item} created",
       "titleLabel": "Title",
       "overviewSection": "Overview",
       "contactSection": "Contact",
@@ -5271,9 +5271,9 @@
       "value": "Value",
       "currency": "Currency",
       "priority": "Priority",
-      "dealStatus": "Deal status",
+      "dealStatus": "{item} status",
       "successRate": "Success rate (%)",
-      "successRateOverride": "Deal-specific override — clear to use the stage default",
+      "successRateOverride": "{item}-specific override — clear to use the stage default",
       "successRateDefault": "Using stage default ({rate}%)",
       "nextAction": "Next action",
       "nextActionDate": "Next action date",
@@ -5304,7 +5304,7 @@
     },
     "regions": {
       "title": "Pipeline regions",
-      "description": "Add or remove territories used when creating and filtering deals (for example Benelux or Nordics).",
+      "description": "Add or remove territories used when creating and filtering opportunities (for example Benelux or Nordics).",
       "default": "Default",
       "add": "Add region",
       "addPlaceholder": "e.g. DACH",
@@ -5319,15 +5319,57 @@
     },
     "probabilities": {
       "title": "Stage success rates",
-      "description": "Default success probability (%) per track and stage. New deals and deals moved to a stage start from these values; each deal can still be overridden individually.",
+      "description": "Default success probability (%) per track and stage. New opportunities and opportunities moved to a stage start from these values; each opportunity can still be overridden individually.",
       "track": "Track",
-      "terminalHint": "Won is always 100% and Lost is always 0%.",
+      "terminalHint": "A won stage is always 100% and a lost stage is always 0%.",
       "monotonicWarning": "Probabilities should increase from left to right. Check: {lanes}",
       "save": "Save success rates",
       "saved": "Success rates saved",
       "saveFailed": "Could not save success rates",
       "loading": "Loading success rates…",
       "resetDefaults": "Reset to defaults"
+    },
+    "labels": {
+      "title": "Pipeline labels",
+      "description": "Set the page title and what items in this pipeline are called.",
+      "pageTitle": "Page title",
+      "pageTitlePlaceholder": "Pipeline",
+      "itemSingular": "Item name (singular)",
+      "itemSingularPlaceholder": "Opportunity",
+      "itemPlural": "Item name (plural)",
+      "itemPluralPlaceholder": "Opportunities",
+      "required": "Page title and item names are required",
+      "save": "Save labels",
+      "saved": "Labels saved",
+      "saveFailed": "Could not save labels",
+      "loading": "Loading labels…"
+    },
+    "tracks": {
+      "title": "Tracks",
+      "description": "Add, rename, reorder, or remove tracks. A space can use fewer tracks than the defaults.",
+      "add": "Add track",
+      "newTrack": "New track",
+      "namePlaceholder": "Track name",
+      "nameRequired": "Every track needs a name",
+      "atLeastOne": "Keep at least one track",
+      "save": "Save tracks",
+      "saved": "Tracks saved",
+      "saveFailed": "Could not save tracks",
+      "loading": "Loading tracks…",
+      "resetDefaults": "Reset to defaults"
+    },
+    "stages": {
+      "description": "Add, rename, reorder, or remove stages used on the board and in the success-rate grid.",
+      "add": "Add stage",
+      "newStage": "New stage",
+      "namePlaceholder": "Stage name",
+      "nameRequired": "Every stage needs a name",
+      "atLeastOne": "Keep at least one stage"
+    },
+    "workflow": {
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "remove": "Remove"
     }
   },
   "OverviewOps": {
