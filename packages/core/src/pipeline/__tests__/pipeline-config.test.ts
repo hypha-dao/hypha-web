@@ -15,6 +15,7 @@ import {
   DEFAULT_PIPELINE_STAGES,
   DEFAULT_PIPELINE_TRACKS,
   effectiveSuccessRate,
+  getDealProbability,
   PIPELINE_PROBABILITY,
   PIPELINE_STATUSES,
   PIPELINE_SWIMLANES,
@@ -59,7 +60,30 @@ describe('normalizeProbabilityMatrix', () => {
       ],
     );
     expect(Object.keys(matrix)).toEqual(['Sales']);
-    expect(matrix.Sales).toEqual({ Identified: 12, Won: 100 });
+    expect(matrix.Sales?.Identified).toBe(12);
+    expect(matrix.Sales?.Won).toBe(100);
+  });
+
+  it('keeps each track keyed by stage slug when a stage is removed', () => {
+    const stages = DEFAULT_PIPELINE_STAGES.filter(
+      (stage) => stage.slug !== 'Identified',
+    );
+    const matrix = normalizeProbabilityMatrix(
+      PIPELINE_PROBABILITY,
+      DEFAULT_PIPELINE_TRACKS,
+      stages,
+    );
+    expect(matrix.Tenders?.Qualified).toBe(10);
+    expect(matrix.Tenders?.Engaged).toBe(30);
+    expect(matrix.Tenders?.Proposal).toBe(60);
+    expect(matrix.Tenders?.Finalizing).toBe(80);
+    expect(matrix.Sales?.Qualified).toBe(10);
+    expect(matrix.Sales?.Engaged).toBe(25);
+    expect(matrix.Sales?.Proposal).toBe(40);
+    expect(matrix.Sales?.Finalizing).toBe(60);
+    // Orphan Identified cells stay on their own track so a re-add can restore.
+    expect(matrix.Sales?.Identified).toBe(5);
+    expect(matrix.Tenders?.Identified).toBe(0);
   });
 });
 
@@ -155,6 +179,39 @@ describe('mergePipelineConfig', () => {
     ]);
     expect(Object.keys(merged.probabilities)).toEqual(['Sales']);
   });
+
+  it('does not copy Sales values onto Tenders when Identified is removed', () => {
+    const stages = DEFAULT_PIPELINE_STAGES.filter(
+      (stage) => stage.slug !== 'Identified',
+    );
+    const merged = mergePipelineConfig(DEFAULT_PIPELINE_CONFIG, {
+      stages,
+      probabilities: normalizeProbabilityMatrix(
+        DEFAULT_PIPELINE_CONFIG.probabilities,
+        DEFAULT_PIPELINE_CONFIG.tracks,
+        stages,
+      ),
+    });
+    expect(merged.probabilities.Tenders?.Engaged).toBe(30);
+    expect(merged.probabilities.Tenders?.Proposal).toBe(60);
+    expect(merged.probabilities.Tenders?.Finalizing).toBe(80);
+    expect(merged.probabilities.Tenders?.Engaged).not.toBe(
+      merged.probabilities.Sales?.Engaged,
+    );
+  });
+
+  it("restores each track's Identified cell when the stage is added back", () => {
+    const withoutIdentified = mergePipelineConfig(DEFAULT_PIPELINE_CONFIG, {
+      stages: DEFAULT_PIPELINE_STAGES.filter(
+        (stage) => stage.slug !== 'Identified',
+      ),
+    });
+    const restored = mergePipelineConfig(withoutIdentified, {
+      stages: DEFAULT_PIPELINE_STAGES,
+    });
+    expect(restored.probabilities.Sales?.Identified).toBe(5);
+    expect(restored.probabilities.Tenders?.Identified).toBe(0);
+  });
 });
 
 describe('effectiveSuccessRate', () => {
@@ -194,6 +251,31 @@ describe('effectiveSuccessRate', () => {
         pipelineStatus: 'Engaged',
       }),
     ).toBe(PIPELINE_PROBABILITY.Grants?.Engaged);
+  });
+
+  it("uses the deal's current track for the stage default, not Sales", () => {
+    expect(
+      getDealProbability('Tenders', 'Identified', PIPELINE_PROBABILITY),
+    ).toBe(0);
+    expect(
+      getDealProbability('Sales', 'Identified', PIPELINE_PROBABILITY),
+    ).toBe(5);
+    expect(
+      effectiveSuccessRate(
+        {
+          successRate: null,
+          pipelineSwimlane: 'Tenders',
+          pipelineStatus: 'Identified',
+        },
+        PIPELINE_PROBABILITY,
+      ),
+    ).toBe(0);
+    // A matrix that only has Sales must not leak 5% onto Tenders.
+    expect(
+      getDealProbability('Tenders', 'Identified', {
+        Sales: PIPELINE_PROBABILITY.Sales ?? {},
+      }),
+    ).toBe(0);
   });
 });
 

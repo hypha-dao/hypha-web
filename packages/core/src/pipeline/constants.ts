@@ -377,14 +377,35 @@ export function currencyForCountry(code: string | null | undefined): string {
   return '€';
 }
 
+/**
+ * Read one success-rate cell. Always keyed by track slug + stage slug —
+ * never by column index and never by falling through to another track.
+ */
+export function getProbabilityCell(
+  matrix: Record<string, Record<string, number>> | undefined,
+  trackSlug: string,
+  stageSlug: string,
+): number | undefined {
+  if (!matrix || !trackSlug || !stageSlug) return undefined;
+  const lane = matrix[trackSlug];
+  if (!lane || Array.isArray(lane) || typeof lane !== 'object') {
+    return undefined;
+  }
+  if (!Object.prototype.hasOwnProperty.call(lane, stageSlug)) {
+    return undefined;
+  }
+  const value = lane[stageSlug];
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
 export function seedStageProbability(swimlane: string, status: string): number {
   const terminal = TERMINAL_STAGE_PROBABILITIES[status];
   if (terminal !== undefined) return terminal;
-  const seedLane =
-    PIPELINE_PROBABILITY[swimlane as keyof typeof PIPELINE_PROBABILITY] ??
-    PIPELINE_PROBABILITY.Sales;
+  const seedLane = PIPELINE_PROBABILITY[swimlane];
   if (!seedLane) return 0;
-  return seedLane[status as keyof typeof seedLane] ?? 0;
+  return seedLane[status] ?? 0;
 }
 
 export function getDealProbability(
@@ -398,10 +419,9 @@ export function getDealProbability(
     const terminal = terminalProbabilityForStage(stage);
     if (terminal !== undefined) return terminal;
   }
-  return (
-    probabilities?.[swimlane]?.[status] ??
-    seedStageProbability(swimlane, status)
-  );
+  const cell = getProbabilityCell(probabilities, swimlane, status);
+  if (cell !== undefined) return cell;
+  return seedStageProbability(swimlane, status);
 }
 
 /**

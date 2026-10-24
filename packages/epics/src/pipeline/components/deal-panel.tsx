@@ -350,6 +350,7 @@ export function DealPanel({
                 deal.pipelineSwimlane,
                 deal.pipelineStatus,
                 probabilities,
+                stages,
               ),
             )}
             onBlur={(e) => {
@@ -372,6 +373,7 @@ export function DealPanel({
                     deal.pipelineSwimlane,
                     deal.pipelineStatus,
                     probabilities,
+                    stages,
                   ),
                 })}
           </span>

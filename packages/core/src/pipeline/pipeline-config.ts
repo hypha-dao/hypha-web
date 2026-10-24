@@ -5,6 +5,7 @@ import {
   DEFAULT_PIPELINE_REGIONS,
   DEFAULT_PIPELINE_STAGES,
   DEFAULT_PIPELINE_TRACKS,
+  getProbabilityCell,
   PIPELINE_PROBABILITY,
   seedStageProbability,
   terminalProbabilityForStage,
@@ -235,6 +236,7 @@ export function normalizeProbabilityMatrix(
       ? (raw as Record<string, unknown>)
       : {};
 
+  const sourceMatrix = source as ProbabilityMatrix;
   const matrix: ProbabilityMatrix = {};
   for (const track of tracks) {
     const rawLane =
@@ -251,8 +253,17 @@ export function normalizeProbabilityMatrix(
         continue;
       }
       lane[stage.slug] =
-        normalizeProbability(rawLane[stage.slug]) ??
-        seedStageProbability(track.slug, stage.slug);
+        normalizeProbability(
+          getProbabilityCell(sourceMatrix, track.slug, stage.slug) ??
+            rawLane[stage.slug],
+        ) ?? seedStageProbability(track.slug, stage.slug);
+    }
+    // Keep cells for stages that were removed so a later re-add of the same
+    // slug restores this track's value instead of a seed or another track.
+    for (const [stageSlug, value] of Object.entries(rawLane)) {
+      if (lane[stageSlug] !== undefined) continue;
+      const kept = normalizeProbability(value);
+      if (kept !== null) lane[stageSlug] = kept;
     }
     matrix[track.slug] = lane;
   }
@@ -383,9 +394,16 @@ function mergeProbabilities(
   base: ProbabilityMatrix,
   patch: ProbabilityMatrix,
 ): ProbabilityMatrix {
-  const merged: ProbabilityMatrix = { ...base };
-  for (const [trackSlug, lane] of Object.entries(patch)) {
-    merged[trackSlug] = { ...(base[trackSlug] ?? {}), ...lane };
+  const merged: ProbabilityMatrix = {};
+  const trackSlugs = new Set([...Object.keys(base), ...Object.keys(patch)]);
+  for (const trackSlug of trackSlugs) {
+    const baseLane =
+      base[trackSlug] && !Array.isArray(base[trackSlug]) ? base[trackSlug] : {};
+    const patchLane =
+      patch[trackSlug] && !Array.isArray(patch[trackSlug])
+        ? patch[trackSlug]
+        : {};
+    merged[trackSlug] = { ...baseLane, ...patchLane };
   }
   return merged;
 }

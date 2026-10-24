@@ -4,6 +4,7 @@ import React from 'react';
 import {
   defaultProbabilityMatrix,
   DEFAULT_PIPELINE_STAGES,
+  getProbabilityCell,
   seedStageProbability,
   terminalProbabilityForStage,
   usePipelineConfig,
@@ -31,8 +32,18 @@ function cloneMatrix(
       const terminal = terminalProbabilityForStage(stage);
       lane[stage.slug] =
         terminal ??
-        matrix[track.slug]?.[stage.slug] ??
+        getProbabilityCell(matrix, track.slug, stage.slug) ??
         seedStageProbability(track.slug, stage.slug);
+    }
+    // Keep this track's cells for stages not in the current list so a
+    // later re-add of the same slug restores the track's own value.
+    const existing = matrix[track.slug];
+    if (existing && !Array.isArray(existing)) {
+      for (const [stageSlug, value] of Object.entries(existing)) {
+        if (lane[stageSlug] === undefined && typeof value === 'number') {
+          lane[stageSlug] = value;
+        }
+      }
     }
     clone[track.slug] = lane;
   }
@@ -103,6 +114,7 @@ export function PipelineProbabilitySettings({
   );
   const [error, setError] = React.useState<string | null>(null);
   const [savedAt, setSavedAt] = React.useState<Date | null>(null);
+  const removedStagesRef = React.useRef<PipelineStageDefinition[]>([]);
 
   const hasLoadedRef = React.useRef(false);
   React.useEffect(() => {
@@ -118,7 +130,9 @@ export function PipelineProbabilitySettings({
     setDraft((prev) => ({
       ...prev,
       [trackSlug]: {
-        ...prev[trackSlug],
+        ...(prev[trackSlug] && !Array.isArray(prev[trackSlug])
+          ? prev[trackSlug]
+          : {}),
         [stageSlug]: Math.min(100, Math.max(0, n)),
       },
     }));
@@ -138,13 +152,51 @@ export function PipelineProbabilitySettings({
 
   const renameStage = (index: number, name: string) => {
     setStageDraft((current) =>
-      current.map((stage, i) => (i === index ? { ...stage, name } : stage)),
+      current.map((stage, i) => {
+        if (i !== index) return stage;
+        const match = DEFAULT_PIPELINE_STAGES.find(
+          (item) => item.name.toLowerCase() === name.trim().toLowerCase(),
+        );
+        const adoptedSlug =
+          match &&
+          !current.some(
+            (other, otherIndex) =>
+              otherIndex !== index && other.slug === match.slug,
+          )
+            ? match.slug
+            : stage.slug;
+        if (adoptedSlug !== stage.slug) {
+          const fromSlug = stage.slug;
+          setDraft((matrix) => {
+            const updated: ProbabilityMatrix = {};
+            for (const track of tracks) {
+              const existing = matrix[track.slug];
+              const lane = {
+                ...(existing && !Array.isArray(existing) ? existing : {}),
+              };
+              lane[adoptedSlug] =
+                getProbabilityCell(matrix, track.slug, adoptedSlug) ??
+                getProbabilityCell(matrix, track.slug, fromSlug) ??
+                seedStageProbability(track.slug, adoptedSlug);
+              updated[track.slug] = lane;
+            }
+            return updated;
+          });
+        }
+        return { ...stage, name, slug: adoptedSlug };
+      }),
     );
     setSavedAt(null);
   };
 
   const addStage = () => {
     setStageDraft((current) => {
+      const recycled = removedStagesRef.current.pop();
+      if (recycled && !current.some((stage) => stage.slug === recycled.slug)) {
+        return [...current, { ...recycled, position: current.length }].map(
+          (stage, position) => ({ ...stage, position }),
+        );
+      }
       const slugs = new Set(current.map((stage) => stage.slug));
       const slug = uniqueSlug('new_stage', slugs);
       const next = [
@@ -158,9 +210,12 @@ export function PipelineProbabilitySettings({
       setDraft((matrix) => {
         const updated: ProbabilityMatrix = {};
         for (const track of tracks) {
+          const existing = matrix[track.slug];
           updated[track.slug] = {
-            ...(matrix[track.slug] ?? {}),
-            [slug]: seedStageProbability(track.slug, slug),
+            ...(existing && !Array.isArray(existing) ? existing : {}),
+            [slug]:
+              getProbabilityCell(matrix, track.slug, slug) ??
+              seedStageProbability(track.slug, slug),
           };
         }
         return updated;
@@ -174,20 +229,10 @@ export function PipelineProbabilitySettings({
     setStageDraft((current) => {
       if (current.length <= 1) return current;
       const removed = current[index];
-      const next = current
+      if (removed) removedStagesRef.current.push(removed);
+      return current
         .filter((_, i) => i !== index)
         .map((stage, position) => ({ ...stage, position }));
-      if (removed) {
-        setDraft((matrix) => {
-          const updated: ProbabilityMatrix = {};
-          for (const [trackSlug, lane] of Object.entries(matrix)) {
-            const { [removed.slug]: _dropped, ...rest } = lane;
-            updated[trackSlug] = rest;
-          }
-          return updated;
-        });
-      }
-      return next;
     });
     setSavedAt(null);
   };
@@ -215,10 +260,15 @@ export function PipelineProbabilitySettings({
         name: stage.name.trim(),
         position,
       }));
-      await saveConfig({
+      const saved = await saveConfig({
         stages: stagesToSave,
         probabilities: cloneMatrix(draft, tracks, stagesToSave),
       });
+      if (saved) {
+        removedStagesRef.current = [];
+        setStageDraft(cloneStages(saved.stages));
+        setDraft(cloneMatrix(saved.probabilities, saved.tracks, saved.stages));
+      }
       setSavedAt(new Date());
       setError(null);
     } catch (err) {
@@ -304,7 +354,10 @@ export function PipelineProbabilitySettings({
                   const terminalValue = terminalProbabilityForStage(stage);
                   const terminal = terminalValue !== undefined;
                   return (
-                    <td key={stage.slug} className="px-2 py-1.5">
+                    <td
+                      key={`${track.slug}:${stage.slug}`}
+                      className="px-2 py-1.5"
+                    >
                       <Input
                         type="number"
                         min={0}
@@ -314,7 +367,11 @@ export function PipelineProbabilitySettings({
                         value={
                           terminal
                             ? terminalValue
-                            : draft[track.slug]?.[stage.slug] ?? 0
+                            : getProbabilityCell(
+                                draft,
+                                track.slug,
+                                stage.slug,
+                              ) ?? 0
                         }
                         disabled={terminal}
                         title={
