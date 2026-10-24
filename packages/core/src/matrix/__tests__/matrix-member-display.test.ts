@@ -226,4 +226,24 @@ describe('countHumanMatrixMembers', () => {
       ]),
     ).toBe(2);
   });
+
+  it('trusts the shared Dendrite prod and preview bots without extra env', () => {
+    delete process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID;
+    delete process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+    delete process.env.NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS;
+    expect(isHyphaBotMatrixIdentity('@hypha_bot_prod:matrix.hypha.earth')).toBe(
+      true,
+    );
+    expect(
+      isHyphaBotMatrixIdentity('@hypha_bot_preview:matrix.hypha.earth'),
+    ).toBe(true);
+    expect(
+      countHumanMatrixMembers([
+        '@ada:matrix.hypha.earth',
+        '@hypha_bot_prod:matrix.hypha.earth',
+        '@hypha_bot_preview:matrix.hypha.earth',
+        '@kate:matrix.hypha.earth',
+      ]),
+    ).toBe(2);
+  });
 });
