@@ -58,8 +58,36 @@ export function installHistoryTrace2575(): () => void {
     trace('replaceState', url);
     return originalReplace(data, unused, url);
   };
+  const originalFetch = window.fetch.bind(window);
+  let serverActionCalls = 0;
+  window.fetch = async (input, init) => {
+    const headers = new Headers(
+      init?.headers ?? (input instanceof Request ? input.headers : undefined),
+    );
+    const actionId = headers.get('next-action');
+    if (!actionId) return originalFetch(input, init);
+    serverActionCalls += 1;
+    const n = serverActionCalls;
+    const stack = (new Error().stack ?? '').split('
+').slice(2, 7).join(' | ');
+    const url = input instanceof Request ? input.url : String(input);
+    try {
+      const response = await originalFetch(input, init);
+      console.log(`[#2575] server action #${n}`, {
+        actionId,
+        url,
+        status: response.status,
+        stack,
+      });
+      return response;
+    } catch (error) {
+      console.log(`[#2575] server action #${n} threw`, { actionId, url, error });
+      throw error;
+    }
+  };
   return () => {
     window.history.pushState = originalPush;
     window.history.replaceState = originalReplace;
+    window.fetch = originalFetch;
   };
 }

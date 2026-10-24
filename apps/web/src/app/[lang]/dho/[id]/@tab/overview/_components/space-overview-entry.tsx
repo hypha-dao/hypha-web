@@ -3,7 +3,12 @@
 import { useEffect, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSpaceEnergy } from '@hypha-platform/epics';
-import { Debug2575Boundary, Debug2575Lifecycle } from './debug-2575';
+import { useWhatChanged2575 } from '@hypha-platform/epics';
+import {
+  Debug2575Boundary,
+  Debug2575Lifecycle,
+  Debug2575Profiler,
+} from './debug-2575';
 
 /**
  * Energy communities open on the energy dashboard. Overview stays available
@@ -29,6 +34,15 @@ export function SpaceOverviewEntry({
     if (energyPath !== pathname) router.replace(energyPath);
   }, [energyHome, pathname, router]);
 
+  useWhatChanged2575('SpaceOverviewEntry', {
+    data,
+    isLoading,
+    error,
+    pathname,
+    router,
+    stay,
+    children,
+  });
   const waiting = !stay && !error && (isLoading || data == null);
   // TEMP(#2575)
   const now = Date.now();
@@ -55,7 +69,7 @@ export function SpaceOverviewEntry({
   return (
     <Debug2575Boundary>
       <Debug2575Lifecycle name="overview children" />
-      {children}
+      <Debug2575Profiler>{children}</Debug2575Profiler>
     </Debug2575Boundary>
   );
 }
