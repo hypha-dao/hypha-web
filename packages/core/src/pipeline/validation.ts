@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { DEAL_PRIORITIES, DEAL_STATUSES } from './constants';
+import {
+  DEAL_PRIORITIES,
+  DEAL_STATUSES,
+  terminalProbabilityForStage,
+} from './constants';
 
 const pipelineSlug = z
   .string()
@@ -220,4 +224,17 @@ export const schemaPipelineConfig = z
     };
     uniqueSlugs(data.tracks, 'tracks');
     uniqueSlugs(data.stages, 'stages');
+
+    if (
+      data.stages &&
+      !data.stages.some(
+        (stage) => terminalProbabilityForStage(stage) === undefined,
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['stages'],
+        message: 'At least one open (non-terminal) stage is required',
+      });
+    }
   });

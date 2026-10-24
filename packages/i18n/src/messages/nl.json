@@ -5135,6 +5135,9 @@
     "title": "Pipeline",
     "dealDetails": "{item}details",
     "loading": "{items} laden…",
+    "configLoadFailed": "De pipelineconfiguratie kon niet worden geladen.",
+    "retry": "Opnieuw proberen",
+    "unassignedLane": "Niet toegewezen",
     "notFound": "{item} niet gevonden",
     "saving": "Opslaan…",
     "saved": "Opgeslagen",
@@ -5174,7 +5177,7 @@
       "allStatuses": "Alle statussen",
       "anyDeadline": "Elke deadline",
       "tagLabel": "{item}-tag",
-      "tagPlaceholder": "Filteren op een {item}-tag",
+      "tagPlaceholder": "Filteren op tag voor {item}",
       "country": "Land",
       "countrySearch": "Zoek landen…",
       "allCountries": "Alle landen",
@@ -5188,7 +5191,7 @@
       "delete": "Delete view"
     },
     "newDeal": {
-      "title": "Nieuwe {item}",
+      "title": "{item} aanmaken",
       "titlePlaceholder": "Bedrijf, {item} of grantnaam",
       "countryPlaceholder": "Selecteer land (optioneel)",
       "valuePlaceholder": "0",
@@ -5337,9 +5340,9 @@
       "atLeastOne": "Houd minstens één fase"
     },
     "workflow": {
-      "moveUp": "Omhoog",
-      "moveDown": "Omlaag",
-      "remove": "Verwijderen"
+      "moveUp": "{label} omhoog (rij {position})",
+      "moveDown": "{label} omlaag (rij {position})",
+      "remove": "{label} verwijderen (rij {position})"
     }
   },
   "OverviewOps": {

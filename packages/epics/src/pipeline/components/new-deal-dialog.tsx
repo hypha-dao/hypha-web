@@ -86,8 +86,15 @@ export function NewDealDialog({
   const t = useTranslations('Pipeline');
   const { createDeal, isCreating } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
-  const { regions, defaultRegion, tracks, stages, itemSingular, itemPlural } =
-    usePipelineConfig(spaceSlug);
+  const {
+    regions,
+    defaultRegion,
+    tracks,
+    stages,
+    itemSingular,
+    itemPlural,
+    isLoading: isConfigLoading,
+  } = usePipelineConfig(spaceSlug);
   const itemLabels = { item: itemSingular, items: itemPlural };
   const resolvedDefaultSwimlane =
     defaultSwimlane && tracks.some((track) => track.slug === defaultSwimlane)
@@ -108,6 +115,8 @@ export function NewDealDialog({
     resolvedDefaultSwimlane,
   );
   const [status, setStatus] = React.useState<PipelineStatus>(defaultStatus);
+  const swimlaneTouchedRef = React.useRef(false);
+  const statusTouchedRef = React.useRef(false);
   const [region, setRegion] = React.useState<Region>(defaultRegion);
   const [country, setCountry] = React.useState<string | null>(null);
   const [value, setValue] = React.useState('');
@@ -142,6 +151,8 @@ export function NewDealDialog({
     setTitle('');
     setAccountManagerId(null);
     setTeamMemberIds([]);
+    swimlaneTouchedRef.current = false;
+    statusTouchedRef.current = false;
     setSwimlane(resolvedDefaultSwimlane);
     setStatus(defaultStatus);
     setRegion(defaultRegion);
@@ -172,15 +183,47 @@ export function NewDealDialog({
     }
   }, [open, resetForm]);
 
+  React.useEffect(() => {
+    if (isConfigLoading) return;
+    if (
+      !swimlaneTouchedRef.current ||
+      !tracks.some((track) => track.slug === swimlane)
+    ) {
+      setSwimlane(resolvedDefaultSwimlane);
+    }
+    if (
+      !statusTouchedRef.current ||
+      !stages.some((stage) => stage.slug === status)
+    ) {
+      setStatus(defaultStatus);
+    }
+  }, [
+    defaultStatus,
+    isConfigLoading,
+    resolvedDefaultSwimlane,
+    stages,
+    status,
+    swimlane,
+    tracks,
+  ]);
+
   const canSubmit =
     Boolean(title.trim()) &&
     Boolean(swimlane) &&
     Boolean(region) &&
     Boolean(status) &&
-    Boolean(firstName.trim());
+    Boolean(firstName.trim()) &&
+    !isConfigLoading;
 
   const submit = async () => {
-    if (!title.trim() || !swimlane || !region || !status || !firstName.trim()) {
+    if (
+      isConfigLoading ||
+      !title.trim() ||
+      !swimlane ||
+      !region ||
+      !status ||
+      !firstName.trim()
+    ) {
       setError(t('newDeal.validationRequired'));
       return;
     }
@@ -328,8 +371,9 @@ export function NewDealDialog({
             <Select
               value={swimlane || undefined}
               onValueChange={(v) => {
+                swimlaneTouchedRef.current = true;
                 setSwimlane(v as PipelineSwimlane);
-                setStatus('Identified');
+                setStatus(defaultStatus);
               }}
             >
               <SelectTrigger>
@@ -387,7 +431,10 @@ export function NewDealDialog({
             <Select
               value={status}
               disabled={!swimlane}
-              onValueChange={(v) => setStatus(v as PipelineStatus)}
+              onValueChange={(v) => {
+                statusTouchedRef.current = true;
+                setStatus(v as PipelineStatus);
+              }}
             >
               <SelectTrigger>
                 <SelectValue
@@ -544,7 +591,7 @@ export function NewDealDialog({
             </Button>
             <Button
               type="button"
-              disabled={!canSubmit || isCreating}
+              disabled={!canSubmit || isCreating || isConfigLoading}
               onClick={submit}
             >
               {t('newDeal.create')}

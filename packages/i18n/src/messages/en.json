@@ -5165,6 +5165,9 @@
     "title": "Pipeline",
     "dealDetails": "{item} details",
     "loading": "Loading {items}…",
+    "configLoadFailed": "Could not load pipeline configuration.",
+    "retry": "Retry",
+    "unassignedLane": "Unassigned",
     "notFound": "{item} not found",
     "saving": "Saving…",
     "saved": "Saved",
@@ -5207,7 +5210,7 @@
       "allStatuses": "All statuses",
       "anyDeadline": "Any deadline",
       "tagLabel": "{item} tag",
-      "tagPlaceholder": "Filter by an {item} tag",
+      "tagPlaceholder": "Filter by tag for {item}",
       "accountManager": "Account manager",
       "allAccountManagers": "All account managers"
     },
@@ -5367,9 +5370,9 @@
       "atLeastOne": "Keep at least one stage"
     },
     "workflow": {
-      "moveUp": "Move up",
-      "moveDown": "Move down",
-      "remove": "Remove"
+      "moveUp": "Move {label} up (row {position})",
+      "moveDown": "Move {label} down (row {position})",
+      "remove": "Remove {label} (row {position})"
     }
   },
   "OverviewOps": {

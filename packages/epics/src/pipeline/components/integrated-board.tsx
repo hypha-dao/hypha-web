@@ -53,8 +53,15 @@ export function IntegratedBoard({
   const { deals, isLoading } = useDeals({ spaceSlug });
   const { moveDealToStatus } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
-  const { pageTitle, itemPlural, tracks, stages, probabilities } =
-    usePipelineConfig(spaceSlug);
+  const {
+    pageTitle,
+    itemPlural,
+    tracks,
+    stages,
+    probabilities,
+    error: configError,
+    refresh: refreshConfig,
+  } = usePipelineConfig(spaceSlug);
   const { collapsedLanes, toggleLane } = useCollapsedPipelineLanes(spaceSlug);
   const defaultTrack = resolveDefaultTrackSlug(tracks);
 
@@ -70,6 +77,11 @@ export function IntegratedBoard({
       : [filters.swimlane];
     return tracks.filter((track) => selected.includes(track.slug));
   }, [filters.swimlane, tracks]);
+
+  const unmatchedDeals = React.useMemo(() => {
+    const known = new Set(tracks.map((track) => track.slug));
+    return filtered.filter((deal) => !known.has(deal.pipelineSwimlane));
+  }, [filtered, tracks]);
 
   const onMoveStatus = React.useCallback(
     async (dealId: number, status: PipelineStatus) => {
@@ -128,6 +140,25 @@ export function IntegratedBoard({
         itemPlural={itemPlural}
       />
 
+      {configError ? (
+        <div
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-6 bg-red-2 px-3 py-2 text-2 text-red-11"
+          role="alert"
+        >
+          <span>{t('configLoadFailed')}</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void refreshConfig();
+            }}
+          >
+            {t('retry')}
+          </Button>
+        </div>
+      ) : null}
+
       {isLoading && deals.length === 0 ? (
         <div className="text-2 text-neutral-11">
           {t('loading', { items: itemPlural })}
@@ -179,6 +210,24 @@ export function IntegratedBoard({
               </PipelineLaneSection>
             );
           })}
+          {unmatchedDeals.length > 0 ? (
+            <PipelineLaneSection
+              laneSlug="__unassigned"
+              title={t('unassignedLane')}
+              count={unmatchedDeals.length}
+              collapsed={collapsedLanes.includes('__unassigned')}
+              onToggle={() => toggleLane('__unassigned')}
+            >
+              <KanbanBoard
+                deals={unmatchedDeals}
+                stages={stages}
+                onDealClick={(deal) => onDealOpen(deal.id)}
+                onMoveStatus={onMoveStatus}
+                activeDealId={activeDealId}
+                probabilities={probabilities}
+              />
+            </PipelineLaneSection>
+          ) : null}
         </div>
       )}
 

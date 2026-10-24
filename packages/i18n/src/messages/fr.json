@@ -5125,6 +5125,9 @@
     "title": "Pipeline",
     "dealDetails": "Détails de {item}",
     "loading": "Chargement des {items}…",
+    "configLoadFailed": "Impossible de charger la configuration du pipeline.",
+    "retry": "Réessayer",
+    "unassignedLane": "Non assigné",
     "notFound": "{item} introuvable",
     "saving": "Enregistrement…",
     "saved": "Enregistré",
@@ -5164,7 +5167,7 @@
       "allStatuses": "Tous les statuts",
       "anyDeadline": "Toute échéance",
       "tagLabel": "Tag de {item}",
-      "tagPlaceholder": "Filtrer par un tag de {item}",
+      "tagPlaceholder": "Filtrer par tag de {item}",
       "country": "Pays",
       "countrySearch": "Rechercher des pays…",
       "allCountries": "Tous les pays",
@@ -5178,12 +5181,12 @@
       "delete": "Delete view"
     },
     "newDeal": {
-      "title": "Nouvelle {item}",
+      "title": "Créer {item}",
       "titlePlaceholder": "Entreprise, {item} ou nom de grant",
       "countryPlaceholder": "Sélectionner un pays (optionnel)",
       "valuePlaceholder": "0",
       "create": "Créer la carte",
-      "created": "{item} créée",
+      "created": "Création de {item} réussie",
       "titleLabel": "Titre",
       "overviewSection": "Aperçu",
       "contactSection": "Contact",
@@ -5327,9 +5330,9 @@
       "atLeastOne": "Conservez au moins une étape"
     },
     "workflow": {
-      "moveUp": "Monter",
-      "moveDown": "Descendre",
-      "remove": "Retirer"
+      "moveUp": "Monter {label} (ligne {position})",
+      "moveDown": "Descendre {label} (ligne {position})",
+      "remove": "Retirer {label} (ligne {position})"
     }
   },
   "OverviewOps": {

@@ -5143,7 +5143,10 @@
     "title": "Pipeline",
     "dealDetails": "Detalles de {item}",
     "loading": "Cargando {items}…",
-    "notFound": "{item} no encontrada",
+    "configLoadFailed": "No se pudo cargar la configuración del pipeline.",
+    "retry": "Reintentar",
+    "unassignedLane": "Sin asignar",
+    "notFound": "No se encontró {item}",
     "saving": "Guardando…",
     "saved": "Guardado",
     "cancel": "Cancelar",
@@ -5182,7 +5185,7 @@
       "allStatuses": "Todos los estados",
       "anyDeadline": "Cualquier plazo",
       "tagLabel": "Etiqueta de {item}",
-      "tagPlaceholder": "Filtrar por una etiqueta de {item}",
+      "tagPlaceholder": "Filtrar por etiqueta de {item}",
       "country": "País",
       "countrySearch": "Buscar países…",
       "allCountries": "Todos los países",
@@ -5196,12 +5199,12 @@
       "delete": "Delete view"
     },
     "newDeal": {
-      "title": "Nueva {item}",
+      "title": "Crear {item}",
       "titlePlaceholder": "Empresa, {item} o nombre de grant",
       "countryPlaceholder": "Seleccionar país (opcional)",
       "valuePlaceholder": "0",
       "create": "Crear tarjeta",
-      "created": "{item} creada",
+      "created": "Se creó {item}",
       "titleLabel": "Título",
       "overviewSection": "Resumen",
       "contactSection": "Contacto",
@@ -5345,9 +5348,9 @@
       "atLeastOne": "Mantén al menos una etapa"
     },
     "workflow": {
-      "moveUp": "Subir",
-      "moveDown": "Bajar",
-      "remove": "Eliminar"
+      "moveUp": "Subir {label} (fila {position})",
+      "moveDown": "Bajar {label} (fila {position})",
+      "remove": "Eliminar {label} (fila {position})"
     }
   },
   "OverviewOps": {

@@ -252,6 +252,7 @@ export function PipelineProbabilitySettings({
         {stageDraft.map((stage, index) => (
           <PipelineConfigRow
             key={stage.slug}
+            label={stage.name}
             index={index}
             total={stageDraft.length}
             onMoveUp={() => moveStage(index, -1)}

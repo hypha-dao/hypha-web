@@ -155,6 +155,7 @@ export function PipelineTrackSettings({
         {draft.map((track, index) => (
           <PipelineConfigRow
             key={track.slug}
+            label={track.name}
             index={index}
             total={draft.length}
             onMoveUp={() => move(index, -1)}

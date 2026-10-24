@@ -5134,6 +5134,9 @@
     "title": "Pipeline",
     "dealDetails": "{item}-detaljer",
     "loading": "Laster {items}…",
+    "configLoadFailed": "Kunne ikke laste pipeline-konfigurasjonen.",
+    "retry": "Prøv igjen",
+    "unassignedLane": "Ikke tildelt",
     "notFound": "{item} ble ikke funnet",
     "saving": "Lagre…",
     "saved": "Lagret",
@@ -5173,7 +5176,7 @@
       "allStatuses": "Alle stamellom",
       "anyDeadline": "Elke frist",
       "tagLabel": "{item}-tagg",
-      "tagPlaceholder": "Filtrer etter en {item}-tagg",
+      "tagPlaceholder": "Filtrer etter tagg for {item}",
       "country": "Land",
       "countrySearch": "Zoek landen…",
       "allCountries": "Alle landen",
@@ -5187,7 +5190,7 @@
       "delete": "Slett visning"
     },
     "newDeal": {
-      "title": "Ny {item}",
+      "title": "Opprett {item}",
       "titlePlaceholder": "Selskap, {item} eller grantnavn",
       "countryPlaceholder": "Velg land (valgfritt)",
       "valuePlaceholder": "0",
@@ -5336,9 +5339,9 @@
       "atLeastOne": "Behold minst én fase"
     },
     "workflow": {
-      "moveUp": "Flytt opp",
-      "moveDown": "Flytt ned",
-      "remove": "Fjern"
+      "moveUp": "Flytt {label} opp (rad {position})",
+      "moveDown": "Flytt {label} ned (rad {position})",
+      "remove": "Fjern {label} (rad {position})"
     }
   },
   "OverviewOps": {

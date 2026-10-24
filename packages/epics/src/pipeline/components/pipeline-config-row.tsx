@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 
 type PipelineConfigRowProps = {
   children: React.ReactNode;
+  label: string;
   index: number;
   total: number;
   onMoveUp: () => void;
@@ -17,6 +18,7 @@ type PipelineConfigRowProps = {
 
 export function PipelineConfigRow({
   children,
+  label,
   index,
   total,
   onMoveUp,
@@ -25,6 +27,7 @@ export function PipelineConfigRow({
   disableRemove,
 }: PipelineConfigRowProps) {
   const t = useTranslations('Pipeline');
+  const namedAction = { label, position: index + 1 };
 
   return (
     <div className="grid grid-cols-1 gap-2 rounded-lg border border-border p-3 sm:grid-cols-[1fr_auto] sm:items-center">
@@ -34,7 +37,7 @@ export function PipelineConfigRow({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={t('workflow.moveUp')}
+          aria-label={t('workflow.moveUp', namedAction)}
           disabled={index === 0}
           onClick={onMoveUp}
         >
@@ -44,7 +47,7 @@ export function PipelineConfigRow({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={t('workflow.moveDown')}
+          aria-label={t('workflow.moveDown', namedAction)}
           disabled={index >= total - 1}
           onClick={onMoveDown}
         >
@@ -54,7 +57,7 @@ export function PipelineConfigRow({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={t('workflow.remove')}
+          aria-label={t('workflow.remove', namedAction)}
           disabled={disableRemove}
           onClick={onRemove}
         >

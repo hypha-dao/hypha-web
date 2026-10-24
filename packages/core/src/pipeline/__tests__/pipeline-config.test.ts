@@ -7,6 +7,7 @@ import {
   normalizePipelineConfig,
   normalizeProbabilityMatrix,
 } from '../pipeline-config';
+import { schemaPipelineConfig } from '../validation';
 import {
   DEFAULT_PIPELINE_ITEM_PLURAL,
   DEFAULT_PIPELINE_ITEM_SINGULAR,
@@ -203,5 +204,22 @@ describe('default slugs', () => {
     expect(resolveDefaultStageSlug(DEFAULT_PIPELINE_CONFIG.stages)).toBe(
       'Identified',
     );
+  });
+});
+
+describe('schemaPipelineConfig', () => {
+  it('rejects a pipeline that has only terminal stages', () => {
+    const result = schemaPipelineConfig.safeParse({
+      stages: [
+        { slug: 'Won', name: 'Won', terminal: 'won' },
+        { slug: 'Lost', name: 'Lost', terminal: 'lost' },
+      ],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(
+        result.error.issues.some((issue) => issue.path[0] === 'stages'),
+      ).toBe(true);
+    }
   });
 });

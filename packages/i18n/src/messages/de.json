@@ -5129,6 +5129,9 @@
     "title": "Pipeline",
     "dealDetails": "{item}-Details",
     "loading": "{items} werden geladen…",
+    "configLoadFailed": "Die Pipeline-Konfiguration konnte nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "unassignedLane": "Nicht zugeordnet",
     "notFound": "{item} nicht gefunden",
     "saving": "Speichern…",
     "saved": "Gespeichert",
@@ -5168,7 +5171,7 @@
       "allStatuses": "Alle Status",
       "anyDeadline": "Beliebige Frist",
       "tagLabel": "{item}-Tag",
-      "tagPlaceholder": "Nach einem {item}-Tag filtern",
+      "tagPlaceholder": "Nach Tag für {item} filtern",
       "country": "Land",
       "countrySearch": "Länder suchen…",
       "allCountries": "Alle Länder",
@@ -5182,7 +5185,7 @@
       "delete": "Delete view"
     },
     "newDeal": {
-      "title": "Neue {item}",
+      "title": "{item} erstellen",
       "titlePlaceholder": "Unternehmen, {item} oder Grant-Name",
       "countryPlaceholder": "Land wählen (optional)",
       "valuePlaceholder": "0",
@@ -5331,9 +5334,9 @@
       "atLeastOne": "Behalten Sie mindestens eine Stufe"
     },
     "workflow": {
-      "moveUp": "Nach oben",
-      "moveDown": "Nach unten",
-      "remove": "Entfernen"
+      "moveUp": "{label} nach oben (Zeile {position})",
+      "moveDown": "{label} nach unten (Zeile {position})",
+      "remove": "{label} entfernen (Zeile {position})"
     }
   },
   "OverviewOps": {

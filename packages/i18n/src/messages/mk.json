@@ -5116,7 +5116,10 @@
     "title": "Pipeline",
     "dealDetails": "Детали за {item}",
     "loading": "Се вчитуваат {items}…",
-    "notFound": "{item} не е пронајдена",
+    "configLoadFailed": "Конфигурацијата на pipeline не може да се вчита.",
+    "retry": "Обиди се повторно",
+    "unassignedLane": "Недоделено",
+    "notFound": "Не е пронајдено: {item}",
     "saving": "Се зачувува…",
     "saved": "Зачувано",
     "cancel": "Откажи",
@@ -5155,7 +5158,7 @@
       "allStatuses": "Сите статуси",
       "anyDeadline": "Било кој рок",
       "tagLabel": "Ознака на {item}",
-      "tagPlaceholder": "Филтрирај по ознака на {item}",
+      "tagPlaceholder": "Филтрирај по ознака за {item}",
       "country": "Земја",
       "countrySearch": "Пребарај земји…",
       "allCountries": "Сите земји",
@@ -5169,12 +5172,12 @@
       "delete": "Delete view"
     },
     "newDeal": {
-      "title": "Нова {item}",
+      "title": "Создај {item}",
       "titlePlaceholder": "Компанија, {item} или име на грант",
       "countryPlaceholder": "Избери земја (опционално)",
       "valuePlaceholder": "0",
       "create": "Создај картичка",
-      "created": "{item} е создадена",
+      "created": "Создадено: {item}",
       "titleLabel": "Наслов",
       "overviewSection": "Преглед",
       "contactSection": "Контакт",
@@ -5318,9 +5321,9 @@
       "atLeastOne": "Задржете барем една фаза"
     },
     "workflow": {
-      "moveUp": "Нагоре",
-      "moveDown": "Надолу",
-      "remove": "Отстрани"
+      "moveUp": "Нагоре {label} (ред {position})",
+      "moveDown": "Надолу {label} (ред {position})",
+      "remove": "Отстрани {label} (ред {position})"
     }
   },
   "OverviewOps": {
