@@ -50,6 +50,7 @@ import { usePathname } from 'next/navigation';
 import { HumanChatPanelEmojiMartSurface } from './human-chat-panel-emoji-mart-surface';
 import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
 import { buildHyphaChatMessageUrl } from './human-chat-message-link';
+import { touchComposerFromViewportFlags } from './touch-composer-flags';
 
 const RECENT_REACTIONS_STORAGE_KEY = 'hypha-chat-recent-reactions';
 const RECENT_REACTIONS_BUMP_EVENT = 'hypha-chat-recent-reactions-bump';
@@ -354,8 +355,12 @@ export function HumanChatPanelMessageOverflow({
   const t = useTranslations('HumanChatPanel');
   const pathname = usePathname() ?? '';
   const quickEmojis = useQuickReactions();
-  const inferredTouch =
-    (useIsMobile() ?? false) || (usePrefersCoarsePointer() ?? false);
+  const isMobile = useIsMobile();
+  const prefersCoarsePointer = usePrefersCoarsePointer();
+  const inferredTouch = touchComposerFromViewportFlags(
+    isMobile,
+    prefersCoarsePointer,
+  );
   const touchComposer = isTouchComposer ?? inferredTouch;
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);

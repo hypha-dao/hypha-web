@@ -40,6 +40,7 @@ class HumanChatPanelErrorBoundaryInner extends Component<
       error,
       info.componentStack,
     );
+    // Do not rethrow — a hook-order throw must stay inside this panel.
   }
 
   handleRetry = () => {

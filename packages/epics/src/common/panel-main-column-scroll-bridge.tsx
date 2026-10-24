@@ -9,6 +9,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID } from '@hypha-platform/core/client';
+import { HumanChatPanelErrorBoundary } from './human-chat-panel/human-chat-panel-error-boundary';
 import { setMainColumnScrollRoot } from './main-column-scroll';
 
 type Props = {
@@ -121,16 +122,18 @@ export function PanelDualSidebarScrollBridge({
           >
             {children}
           </div>
-          <Sidebar
-            side="right"
-            variant="sidebar"
-            collapsible="offcanvas"
-            mobileWidth="100vw"
-            className="z-[50]"
-          >
-            <SidebarResizeHandle />
-            {rightContent}
-          </Sidebar>
+          <HumanChatPanelErrorBoundary>
+            <Sidebar
+              side="right"
+              variant="sidebar"
+              collapsible="offcanvas"
+              mobileWidth="100vw"
+              className="z-[50]"
+            >
+              <SidebarResizeHandle />
+              {rightContent}
+            </Sidebar>
+          </HumanChatPanelErrorBoundary>
         </SidebarProvider>
       </SidebarInset>
     </SidebarProvider>

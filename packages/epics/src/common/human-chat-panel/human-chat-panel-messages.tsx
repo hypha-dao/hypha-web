@@ -18,6 +18,7 @@ import { useIsMobile, usePrefersCoarsePointer } from '@hypha-platform/ui';
 import { HumanChatPanelDateSeparator } from './human-chat-panel-date-separator';
 import { HumanChatPanelUnreadDivider } from './human-chat-panel-unread-divider';
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
+import { touchComposerFromViewportFlags } from './touch-composer-flags';
 import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
 import {
   asTimelineDate,
@@ -224,8 +225,12 @@ export function HumanChatPanelMessages({
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
   const formatter = useFormatter();
-  const isTouchComposer =
-    (useIsMobile() ?? false) || (usePrefersCoarsePointer() ?? false);
+  const isMobile = useIsMobile();
+  const prefersCoarsePointer = usePrefersCoarsePointer();
+  const isTouchComposer = touchComposerFromViewportFlags(
+    isMobile,
+    prefersCoarsePointer,
+  );
 
   const welcomeMessage: UIMessage = {
     id: 'welcome',
