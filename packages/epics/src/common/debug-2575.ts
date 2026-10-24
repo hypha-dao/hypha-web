@@ -67,6 +67,16 @@ export function installHistoryTrace2575(): () => void {
       init?.headers ?? (input instanceof Request ? input.headers : undefined),
     );
     const actionId = headers.get('next-action');
+    const url0 = input instanceof Request ? input.url : String(input);
+    if (!actionId && (headers.get('rsc') || url0.includes('_rsc='))) {
+      const kind = headers.get('next-router-prefetch') ? 'prefetch' : 'rsc';
+      const response = await originalFetch(input, init);
+      console.log(`[#2575] ${kind} fetch`, {
+        url: url0,
+        status: response.status,
+      });
+      return response;
+    }
     if (!actionId) return originalFetch(input, init);
     serverActionCalls += 1;
     const n = serverActionCalls;

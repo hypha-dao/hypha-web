@@ -8,6 +8,7 @@ import {
   type ErrorInfo,
   type ReactNode,
 } from 'react';
+import { useRouter } from 'next/navigation';
 import { installHistoryTrace2575 } from '@hypha-platform/epics';
 
 function navigationType() {
@@ -17,7 +18,92 @@ function navigationType() {
   return entry?.type ?? null;
 }
 
+const UNLOAD_KEY = '2575:unload';
+
 export function Debug2575Lifecycle({ name }: { name: string }) {
+  const router = useRouter();
+
+  // Wrap the shared app-router object so every router.* call is logged with its caller.
+  useEffect(() => {
+    const target = router as unknown as Record<string, unknown>;
+    const originals = new Map<string, unknown>();
+    let count = 0;
+    for (const method of [
+      'push',
+      'replace',
+      'refresh',
+      'prefetch',
+      'back',
+      'forward',
+    ]) {
+      const original = target[method];
+      if (typeof original !== 'function') continue;
+      originals.set(method, original);
+      target[method] = (...args: unknown[]) => {
+        count += 1;
+        const stack = (new Error().stack ?? '')
+          .split('\n')
+          .slice(2, 6)
+          .join(' | ');
+        console.log(`[#2575] router.${method} #${count}`, { args, stack });
+        return (original as (...a: unknown[]) => unknown)(...args);
+      };
+    }
+    return () => {
+      for (const [method, original] of originals) target[method] = original;
+    };
+  }, [router]);
+
+  // Why does the document reload? Record navigations and what the previous document saw last.
+  useEffect(() => {
+    try {
+      const previous = window.sessionStorage.getItem(UNLOAD_KEY);
+      if (previous) {
+        console.log('[#2575] previous document unloaded', JSON.parse(previous));
+        window.sessionStorage.removeItem(UNLOAD_KEY);
+      }
+    } catch {
+      /* storage unavailable */
+    }
+    const onPageHide = (event: PageTransitionEvent) => {
+      try {
+        window.sessionStorage.setItem(
+          UNLOAD_KEY,
+          JSON.stringify({
+            at: new Date().toISOString(),
+            href: window.location.href,
+            persisted: event.persisted,
+          }),
+        );
+      } catch {
+        /* storage unavailable */
+      }
+    };
+    const onPopState = () =>
+      console.log('[#2575] popstate', { href: window.location.href });
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('popstate', onPopState);
+    const nav = (
+      window as unknown as {
+        navigation?: EventTarget & {
+          addEventListener: (type: string, cb: (e: any) => void) => void;
+        };
+      }
+    ).navigation;
+    const onNavigate = (event: any) =>
+      console.log('[#2575] navigation api', {
+        to: event.destination?.url,
+        type: event.navigationType,
+        userInitiated: event.userInitiated,
+        sameDocument: event.destination?.sameDocument,
+      });
+    nav?.addEventListener('navigate', onNavigate);
+    return () => {
+      window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, []);
+
   useEffect(() => {
     console.log(`[#2575] ${name} mounted`, {
       href: window.location.href,
