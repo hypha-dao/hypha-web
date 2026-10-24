@@ -691,7 +691,8 @@ export function HumanChatPanelChatBar({
   const isMobile = useIsMobile() ?? false;
   const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
   const isTouchComposer = isMobile || prefersCoarsePointer;
-  const keyboardInset = useVisualViewportKeyboardInset();
+  const [composerFocused, setComposerFocused] = useState(false);
+  const keyboardInset = useVisualViewportKeyboardInset(composerFocused);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const valueRef = useRef(value);
   valueRef.current = value;
@@ -2221,9 +2222,13 @@ export function HumanChatPanelChatBar({
             }}
             onKeyUp={updateSelectionBar}
             onMouseUp={updateSelectionBar}
-            onBlur={() => setSelectionBar(null)}
+            onBlur={() => {
+              setComposerFocused(false);
+              setSelectionBar(null);
+            }}
             onKeyDown={handleKeyDown}
             onFocus={() => {
+              setComposerFocused(true);
               requestAnimationFrame(() => {
                 composerShellRef.current?.scrollIntoView({
                   block: 'nearest',

@@ -20,6 +20,7 @@ import { HumanChatPanelUnreadDivider } from './human-chat-panel-unread-divider';
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
 import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
 import {
+  asTimelineDate,
   shouldStickChatTimelineToBottom,
   sortMessagesChronologically,
 } from './human-chat-timeline-order';
@@ -63,10 +64,12 @@ type UIMessage = {
   };
 };
 
-function dayKeyLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+function dayKeyLocal(d: Date): string | null {
+  const date = asTimelineDate(d);
+  if (!date) return null;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
 
@@ -74,12 +77,18 @@ function formatDateDividerLabel(
   date: Date,
   formatter: ReturnType<typeof useFormatter>,
 ): string {
-  return formatter.dateTime(date, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  const safe = asTimelineDate(date);
+  if (!safe) return '';
+  try {
+    return formatter.dateTime(safe, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch {
+    return '';
+  }
 }
 
 type TimelineRow =
@@ -102,10 +111,10 @@ function buildTimelineRows(
   const ordered = sortMessagesChronologically(messages);
 
   for (const msg of ordered) {
-    const ts = msg.timestamp;
+    const ts = asTimelineDate(msg.timestamp);
     if (ts) {
       const dk = dayKeyLocal(ts);
-      if (dk !== prevDay) {
+      if (dk && dk !== prevDay) {
         rows.push({
           kind: 'date',
           key: `day-${dk}`,
@@ -274,20 +283,32 @@ export function HumanChatPanelMessages({
       };
     }
     const target = displayMessages.find((m) => m.id === firstUnreadMessageId);
-    const ts = target?.timestamp;
+    const ts = asTimelineDate(target?.timestamp);
     if (!ts) {
       return {
         dateLabel: null as string | null,
         timeLabel: null as string | null,
       };
     }
-    return {
-      dateLabel: formatDateDividerLabel(ts, formatter),
-      timeLabel: formatter.dateTime(ts, {
+    try {
+      const dateLabel = formatDateDividerLabel(ts, formatter);
+      const timeLabel = formatter.dateTime(ts, {
         timeStyle: 'short',
         dateStyle: undefined,
-      }),
-    };
+      });
+      if (!dateLabel || !timeLabel) {
+        return {
+          dateLabel: null as string | null,
+          timeLabel: null as string | null,
+        };
+      }
+      return { dateLabel, timeLabel };
+    } catch {
+      return {
+        dateLabel: null as string | null,
+        timeLabel: null as string | null,
+      };
+    }
   }, [displayMessages, firstUnreadMessageId, formatter]);
 
   const showUnreadBanner =

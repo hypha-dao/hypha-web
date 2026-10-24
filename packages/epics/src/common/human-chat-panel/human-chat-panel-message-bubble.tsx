@@ -75,6 +75,7 @@ import {
   ChatVoiceAudioRow,
   formatVoiceDurationLabel,
 } from './human-chat-panel-voice-audio-row';
+import { asTimelineDate } from './human-chat-timeline-order';
 
 type Reaction = {
   emoji: string;
@@ -850,6 +851,8 @@ function formatTimestamp(
   date: Date,
   t: (key: string, values?: Record<string, string>) => string,
 ): string {
+  const safe = asTimelineDate(date);
+  if (!safe) return '';
   const now = new Date();
   const startOfToday = new Date(
     now.getFullYear(),
@@ -857,16 +860,16 @@ function formatTimestamp(
     now.getDate(),
   );
   const startOfMessageDay = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
+    safe.getFullYear(),
+    safe.getMonth(),
+    safe.getDate(),
   );
   const dayDiff = Math.round(
     (startOfToday.getTime() - startOfMessageDay.getTime()) /
       (24 * 60 * 60 * 1000),
   );
 
-  const timeStr = date.toLocaleTimeString(undefined, {
+  const timeStr = safe.toLocaleTimeString(undefined, {
     hour: 'numeric',
     minute: '2-digit',
   });
@@ -878,10 +881,10 @@ function formatTimestamp(
     return t('timestampYesterday', { time: timeStr });
   }
 
-  const dateStr = date.toLocaleDateString(undefined, {
+  const dateStr = safe.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
-    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    year: safe.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
   });
   return t('timestampDate', { date: dateStr, time: timeStr });
 }
@@ -1780,8 +1783,9 @@ export function HumanChatPanelMessageBubble({
       !replyHeaderAvatarResolved?.trim() &&
       (isLoadingReplyLink ||
         (Boolean(replyPrivySub ?? replyCanonicalSub) && isLoadingReplyPerson)));
-  const timestamp = message.timestamp
-    ? formatTimestamp(message.timestamp, t)
+  const safeTimestamp = asTimelineDate(message.timestamp);
+  const timestamp = safeTimestamp
+    ? formatTimestamp(safeTimestamp, t)
     : undefined;
   const reactions = message.reactions ?? [];
   const isSendPendingRow = Boolean(message.sendPending);

@@ -74,6 +74,21 @@ describe('sortMessagesChronologically', () => {
     expect(input.map((row) => row.id)).toEqual(['$b', '$a']);
     expect(sorted.map((row) => row.id)).toEqual(['$a', '$b']);
   });
+
+  it('accepts string timestamps and drops rows without ids', () => {
+    const sorted = sortMessagesChronologically([
+      { id: '$b', timestamp: '1970-01-01T00:00:00.200Z' },
+      { id: '', timestamp: new Date(50) },
+      { timestamp: new Date(10) },
+      { id: '$a', timestamp: '1970-01-01T00:00:00.100Z' },
+    ]);
+    expect(sorted.map((row) => row.id)).toEqual(['$a', '$b']);
+  });
+
+  it('returns an empty list for missing input', () => {
+    expect(sortMessagesChronologically(null)).toEqual([]);
+    expect(sortMessagesChronologically(undefined)).toEqual([]);
+  });
 });
 
 describe('shouldStickChatTimelineToBottom', () => {
