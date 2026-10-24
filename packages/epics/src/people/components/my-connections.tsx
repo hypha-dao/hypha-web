@@ -1736,7 +1736,9 @@ export function MyConnections({
     );
     const matchingGroups = conversationsMatchingSearch(listedGroups, needle);
     const matchingMembers = conversationsMatchingSearch(
-      resolvedMembers,
+      picking
+        ? resolvedMembers.filter((row) => row.person.id > 0)
+        : resolvedMembers,
       needle,
     );
     const source =
