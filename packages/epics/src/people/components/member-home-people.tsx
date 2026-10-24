@@ -24,6 +24,8 @@ type HomePerson = {
   nickname: string | null;
   avatarUrl: string | null;
   sharedSpaceCount?: number;
+  /** Wallet used when the chat panel loads this person's spaces. */
+  address?: string | null;
   /** Space this conversation belongs to, when it was opened from one. */
   spaceSlug?: string | null;
 };
@@ -96,7 +98,13 @@ export function MemberHomePeople({
     const peerId = person?.id && person.id > 0 ? person.id : undefined;
     openCoherenceChat(roomId, title, '', null, null, {
       peerPerson:
-        peerSlug || peerId ? { slug: peerSlug || '', id: peerId } : null,
+        peerSlug || peerId
+          ? {
+              slug: peerSlug || '',
+              id: peerId,
+              address: person?.address ?? null,
+            }
+          : null,
     });
   }
 

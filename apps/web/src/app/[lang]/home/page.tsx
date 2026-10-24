@@ -3,8 +3,13 @@ import { getTranslations } from 'next-intl/server';
 
 import { MemberHomePage } from '../my-dashboard/member-home-page';
 
-export async function generateMetadata() {
-  const t = await getTranslations('MemberHome');
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: Locale }>;
+}) {
+  const { lang } = await params;
+  const t = await getTranslations({ locale: lang, namespace: 'MemberHome' });
   return {
     title: t('metaTitle'),
     description: t('metaDescription'),

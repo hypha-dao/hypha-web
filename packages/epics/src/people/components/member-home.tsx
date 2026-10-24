@@ -502,12 +502,23 @@ export function MemberHome({
                     ))}
                   </div>
                 ) : (
-                  <MemberHomeClosest
-                    lang={lang}
-                    people={home.connections}
-                    fallbackName={memberFallback}
-                    onOpenChat={openChat}
-                  />
+                  <>
+                    <MemberHomeClosest
+                      lang={lang}
+                      people={home.connections}
+                      fallbackName={memberFallback}
+                      onOpenChat={openChat}
+                    />
+                    <MemberHomePeople
+                      people={home.connections}
+                      chatSpaceSlug={home.chatSpaceSlug}
+                      fallbackName={memberFallback}
+                      extraPersonIds={reachIds}
+                      onOpenChatReady={onOpenChatReady}
+                      onOpenCallReady={onOpenCallReady}
+                      onOpenVideoReady={onOpenVideoReady}
+                    />
+                  </>
                 )}
               </div>
             </div>
@@ -640,17 +651,6 @@ export function MemberHome({
               onCall={home ? openCall : undefined}
               onVideo={home ? openVideo : undefined}
             />
-            {home ? (
-              <MemberHomePeople
-                people={home.connections}
-                chatSpaceSlug={home.chatSpaceSlug}
-                fallbackName={memberFallback}
-                extraPersonIds={reachIds}
-                onOpenChatReady={onOpenChatReady}
-                onOpenCallReady={onOpenCallReady}
-                onOpenVideoReady={onOpenVideoReady}
-              />
-            ) : null}
           </aside>
           {showEnergy && home?.person.slug ? (
             <div className="flex shrink-0 flex-col gap-4 px-5 py-4 xl:hidden">
