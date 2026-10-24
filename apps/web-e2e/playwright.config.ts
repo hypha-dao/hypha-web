@@ -26,7 +26,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'HYPHA_E2E_HARNESS=1 npx nx start web',
-    url: 'http://127.0.0.1:3000',
+    url: 'http://127.0.0.1:3000/en/e2e/emoji-picker',
     reuseExistingServer: !process.env.CI,
     cwd: workspaceRoot,
     env: {
