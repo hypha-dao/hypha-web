@@ -33,8 +33,14 @@ function matrixIdServerName(userId: string): string | null {
  * Trusted Hypha bots only: configured MXIDs (`NEXT_PUBLIC_MATRIX_BOT_USER_ID`
  * / extra bot IDs from #2569) plus `hypha-bot` / `hypha_bot` localparts on
  * those homeservers. A matching name on any other server is a person.
+ * The optional label is accepted for existing call sites and is not a
+ * trust signal.
  */
-export function isHyphaBotMatrixIdentity(userId?: string | null): boolean {
+export function isHyphaBotMatrixIdentity(
+  userId?: string | null,
+  label?: string | null,
+): boolean {
+  void label;
   const id = userId?.trim();
   if (!id) return false;
   const configured = configuredHyphaBotUserIds();
