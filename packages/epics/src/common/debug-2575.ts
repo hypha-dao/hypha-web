@@ -68,8 +68,7 @@ export function installHistoryTrace2575(): () => void {
     if (!actionId) return originalFetch(input, init);
     serverActionCalls += 1;
     const n = serverActionCalls;
-    const stack = (new Error().stack ?? '').split('
-').slice(2, 7).join(' | ');
+    const stack = (new Error().stack ?? '').split('\n').slice(2, 7).join(' | ');
     const url = input instanceof Request ? input.url : String(input);
     try {
       const response = await originalFetch(input, init);
@@ -81,7 +80,11 @@ export function installHistoryTrace2575(): () => void {
       });
       return response;
     } catch (error) {
-      console.log(`[#2575] server action #${n} threw`, { actionId, url, error });
+      console.log(`[#2575] server action #${n} threw`, {
+        actionId,
+        url,
+        error,
+      });
       throw error;
     }
   };
