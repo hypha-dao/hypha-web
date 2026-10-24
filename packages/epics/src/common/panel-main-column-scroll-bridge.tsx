@@ -122,18 +122,18 @@ export function PanelDualSidebarScrollBridge({
           >
             {children}
           </div>
-          <HumanChatPanelErrorBoundary>
-            <Sidebar
-              side="right"
-              variant="sidebar"
-              collapsible="offcanvas"
-              mobileWidth="100vw"
-              className="z-[50]"
-            >
-              <SidebarResizeHandle />
+          <Sidebar
+            side="right"
+            variant="sidebar"
+            collapsible="offcanvas"
+            mobileWidth="100vw"
+            className="z-[50]"
+          >
+            <SidebarResizeHandle />
+            <HumanChatPanelErrorBoundary>
               {rightContent}
-            </Sidebar>
-          </HumanChatPanelErrorBoundary>
+            </HumanChatPanelErrorBoundary>
+          </Sidebar>
         </SidebarProvider>
       </SidebarInset>
     </SidebarProvider>

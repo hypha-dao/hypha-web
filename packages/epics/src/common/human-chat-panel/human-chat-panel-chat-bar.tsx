@@ -73,7 +73,9 @@ import {
 } from './chat-panel-media-types';
 import { getActiveAtToken } from './human-chat-mention-token';
 import { composerKeySendsMessage } from './composer-enter';
+import { touchComposerFromViewportFlags } from './touch-composer-flags';
 import { useVisualViewportKeyboardInset } from './use-visual-viewport-keyboard-inset';
+import { composerBottomPadding } from './visual-viewport-keyboard';
 import {
   ChatVoiceAudioRow,
   useDraftVoiceDuration,
@@ -689,7 +691,10 @@ export function HumanChatPanelChatBar({
   const [isDictating, setIsDictating] = useState(false);
   const isMobile = useIsMobile() ?? false;
   const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
-  const isTouchComposer = isMobile || prefersCoarsePointer;
+  const isTouchComposer = touchComposerFromViewportFlags(
+    isMobile,
+    prefersCoarsePointer,
+  );
   const [composerFocused, setComposerFocused] = useState(false);
   const keyboardInset = useVisualViewportKeyboardInset(composerFocused);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
@@ -1739,12 +1744,8 @@ export function HumanChatPanelChatBar({
 
   return (
     <div
-      className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pb-2 pt-2"
-      style={
-        keyboardInset > 0
-          ? { paddingBottom: `calc(0.5rem + ${keyboardInset}px)` }
-          : undefined
-      }
+      className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pt-2"
+      style={{ paddingBottom: composerBottomPadding(keyboardInset) }}
     >
       <div
         ref={composerShellRef}

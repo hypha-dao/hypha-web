@@ -5,6 +5,7 @@ import {
   composerKeySendsMessage,
 } from '../composer-enter';
 import {
+  composerBottomPadding,
   effectiveComposerKeyboardInset,
   stabilizeComposerKeyboardInset,
   visualViewportKeyboardInset,
@@ -97,5 +98,19 @@ describe('stabilizeComposerKeyboardInset', () => {
     expect(stabilizeComposerKeyboardInset(300, 0)).toBe(0);
     expect(stabilizeComposerKeyboardInset(0, 300)).toBe(300);
     expect(stabilizeComposerKeyboardInset(300, 380)).toBe(380);
+  });
+});
+
+describe('composerBottomPadding', () => {
+  it('takes the larger of keyboard inset and the safe-area inset', () => {
+    expect(composerBottomPadding(300)).toBe(
+      'calc(0.5rem + max(300px, env(safe-area-inset-bottom, 0px)))',
+    );
+    expect(composerBottomPadding(0)).toBe(
+      'calc(0.5rem + max(0px, env(safe-area-inset-bottom, 0px)))',
+    );
+    expect(composerBottomPadding(Number.NaN)).toBe(
+      'calc(0.5rem + max(0px, env(safe-area-inset-bottom, 0px)))',
+    );
   });
 });

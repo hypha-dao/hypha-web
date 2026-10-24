@@ -40,6 +40,16 @@ export function effectiveComposerKeyboardInset(
   return Math.round(rawInset);
 }
 
+/**
+ * Base spacing plus the larger of the keyboard inset and the iOS home-indicator
+ * inset. Summing them stacks extra gap when the keyboard is already open.
+ */
+export function composerBottomPadding(keyboardInset: number): string {
+  const inset =
+    Number.isFinite(keyboardInset) && keyboardInset > 0 ? keyboardInset : 0;
+  return `calc(0.5rem + max(${inset}px, env(safe-area-inset-bottom, 0px)))`;
+}
+
 /** Keep padding stable so a layout→visualViewport feedback loop cannot setState. */
 export function stabilizeComposerKeyboardInset(
   current: number,

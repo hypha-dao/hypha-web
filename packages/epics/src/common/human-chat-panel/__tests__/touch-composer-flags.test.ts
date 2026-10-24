@@ -8,14 +8,15 @@ import { touchComposerFromViewportFlags } from '../touch-composer-flags';
 const here = dirname(fileURLToPath(import.meta.url));
 
 describe('touchComposerFromViewportFlags', () => {
-  it('is true when either viewport flag is true', () => {
-    expect(touchComposerFromViewportFlags(true, false)).toBe(true);
+  it('follows coarse pointer, not viewport width', () => {
+    expect(touchComposerFromViewportFlags(true, false)).toBe(false);
     expect(touchComposerFromViewportFlags(false, true)).toBe(true);
-    expect(touchComposerFromViewportFlags(true, undefined)).toBe(true);
+    expect(touchComposerFromViewportFlags(true, true)).toBe(true);
+    expect(touchComposerFromViewportFlags(true, undefined)).toBe(false);
     expect(touchComposerFromViewportFlags(undefined, true)).toBe(true);
   });
 
-  it('is false while both flags are still hydrating or desktop', () => {
+  it('is false while coarse pointer is still hydrating or fine', () => {
     expect(touchComposerFromViewportFlags(undefined, undefined)).toBe(false);
     expect(touchComposerFromViewportFlags(false, false)).toBe(false);
   });
@@ -37,5 +38,12 @@ describe('viewport hooks are not short-circuited', () => {
         : join(here, '..', file);
     const source = readFileSync(path, 'utf8');
     expect(source).not.toMatch(shortCircuit);
+    if (
+      file === 'human-chat-panel-messages.tsx' ||
+      file === 'human-chat-panel-message-overflow.tsx' ||
+      file === 'human-chat-panel-chat-bar.tsx'
+    ) {
+      expect(source).toContain('touchComposerFromViewportFlags(');
+    }
   });
 });

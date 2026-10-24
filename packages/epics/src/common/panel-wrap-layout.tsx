@@ -652,18 +652,18 @@ export function PanelWrapLayout({
         <PanelScrollInset className="overflow-y-auto">
           {content}
         </PanelScrollInset>
-        <HumanChatPanelErrorBoundary>
-          <Sidebar
-            side="right"
-            variant="sidebar"
-            collapsible="offcanvas"
-            mobileWidth="100vw"
-            className="z-[50]"
-          >
-            <SidebarResizeHandle />
+        <Sidebar
+          side="right"
+          variant="sidebar"
+          collapsible="offcanvas"
+          mobileWidth="100vw"
+          className="z-[50]"
+        >
+          <SidebarResizeHandle />
+          <HumanChatPanelErrorBoundary>
             {effectiveRight.content}
-          </Sidebar>
-        </HumanChatPanelErrorBoundary>
+          </HumanChatPanelErrorBoundary>
+        </Sidebar>
       </SidebarProvider>
     );
   } else if (effectiveLeft) {
