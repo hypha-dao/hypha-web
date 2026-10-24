@@ -715,9 +715,11 @@ export function HumanChatPanelChatBar({
   const colonTokenRef = useRef<{ start: number; query: string } | null>(null);
   const colonRequestIdRef = useRef(0);
   const emojiPickerOpenRef = useRef(emojiPickerOpen);
-  emojiPickerOpenRef.current = emojiPickerOpen;
   const colonAutocompleteOpenRef = useRef(false);
-  colonAutocompleteOpenRef.current = colonOpen && colonSuggestions.length > 0;
+  useLayoutEffect(() => {
+    emojiPickerOpenRef.current = emojiPickerOpen;
+    colonAutocompleteOpenRef.current = colonOpen && colonSuggestions.length > 0;
+  }, [emojiPickerOpen, colonOpen, colonSuggestions.length]);
 
   const [atOpen, setAtOpen] = useState(false);
   const [atSuggestions, setAtSuggestions] = useState<ChatMentionCandidate[]>(
