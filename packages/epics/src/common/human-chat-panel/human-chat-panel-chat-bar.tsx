@@ -41,6 +41,7 @@ import {
   DropdownMenuTrigger,
   Skeleton,
   useIsMobile,
+  usePrefersCoarsePointer,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -72,6 +73,8 @@ import {
   looksLikeVideoMimeOrName,
 } from './chat-panel-media-types';
 import { getActiveAtToken } from './human-chat-mention-token';
+import { composerKeySendsMessage } from './composer-enter';
+import { useVisualViewportKeyboardInset } from './use-visual-viewport-keyboard-inset';
 import {
   ChatVoiceAudioRow,
   useDraftVoiceDuration,
@@ -686,6 +689,9 @@ export function HumanChatPanelChatBar({
   const dictationSessionFinalizedRef = useRef(false);
   const [isDictating, setIsDictating] = useState(false);
   const isMobile = useIsMobile() ?? false;
+  const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
+  const isTouchComposer = isMobile || prefersCoarsePointer;
+  const keyboardInset = useVisualViewportKeyboardInset();
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const valueRef = useRef(value);
   valueRef.current = value;
@@ -1469,7 +1475,15 @@ export function HumanChatPanelChatBar({
 
   const handleAttachMenuContentEnter = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
+      if (
+        !composerKeySendsMessage({
+          key: e.key,
+          shiftKey: e.shiftKey,
+          isTouchComposer,
+        })
+      ) {
+        return;
+      }
       if (isKeyboardActivationTarget(e.target)) return;
       const ne = e.nativeEvent as KeyboardEvent;
       if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
@@ -1482,7 +1496,7 @@ export function HumanChatPanelChatBar({
         sendMessage();
       }
     },
-    [canSend, draftAttachments.length, sendMessage],
+    [canSend, draftAttachments.length, isTouchComposer, sendMessage],
   );
 
   /**
@@ -1492,7 +1506,15 @@ export function HumanChatPanelChatBar({
    */
   const handleDraftAttachmentsKeyDownCapture = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
+      if (
+        !composerKeySendsMessage({
+          key: e.key,
+          shiftKey: e.shiftKey,
+          isTouchComposer,
+        })
+      ) {
+        return;
+      }
       if (isKeyboardActivationTarget(e.target)) return;
       const ne = e.nativeEvent as KeyboardEvent;
       if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
@@ -1516,6 +1538,7 @@ export function HumanChatPanelChatBar({
       atSuggestions.length,
       canSend,
       draftAttachments.length,
+      isTouchComposer,
       sendMessage,
     ],
   );
@@ -1526,7 +1549,15 @@ export function HumanChatPanelChatBar({
    */
   const handleComposerShellKeyDownCapture = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
+      if (
+        !composerKeySendsMessage({
+          key: e.key,
+          shiftKey: e.shiftKey,
+          isTouchComposer,
+        })
+      ) {
+        return;
+      }
       const composing = (e.nativeEvent as KeyboardEvent).isComposing;
       if (composing) return;
       if (
@@ -1550,6 +1581,7 @@ export function HumanChatPanelChatBar({
       attachMenuOpen,
       emojiPickerOpen,
       canSend,
+      isTouchComposer,
       sendMessage,
     ],
   );
@@ -1571,7 +1603,7 @@ export function HumanChatPanelChatBar({
           );
           return;
         }
-        if (e.key === 'Enter' || e.key === 'Tab') {
+        if (e.key === 'Tab' || (e.key === 'Enter' && !isTouchComposer)) {
           e.preventDefault();
           if (keyboardPickDisabled) return;
           const safeIndex = Math.max(
@@ -1612,7 +1644,7 @@ export function HumanChatPanelChatBar({
           );
           return;
         }
-        if (e.key === 'Enter' || e.key === 'Tab') {
+        if (e.key === 'Tab' || (e.key === 'Enter' && !isTouchComposer)) {
           e.preventDefault();
           const safeIndex = Math.max(
             0,
@@ -1632,7 +1664,13 @@ export function HumanChatPanelChatBar({
         }
       }
 
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (
+        composerKeySendsMessage({
+          key: e.key,
+          shiftKey: e.shiftKey,
+          isTouchComposer,
+        })
+      ) {
         e.preventDefault();
         if (canSend) {
           sendMessage();
@@ -1652,6 +1690,7 @@ export function HumanChatPanelChatBar({
       applyColonChoice,
       canSend,
       draftAttachments.length,
+      isTouchComposer,
       sendMessage,
     ],
   );
@@ -1699,7 +1738,14 @@ export function HumanChatPanelChatBar({
     'flex h-6 w-6 shrink-0 items-center justify-center rounded text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground';
 
   return (
-    <div className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pb-2 pt-2">
+    <div
+      className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pb-2 pt-2"
+      style={
+        keyboardInset > 0
+          ? { paddingBottom: `calc(0.5rem + ${keyboardInset}px)` }
+          : undefined
+      }
+    >
       <div
         ref={composerShellRef}
         onKeyDownCapture={handleComposerShellKeyDownCapture}
@@ -2177,15 +2223,25 @@ export function HumanChatPanelChatBar({
             onMouseUp={updateSelectionBar}
             onBlur={() => setSelectionBar(null)}
             onKeyDown={handleKeyDown}
+            onFocus={() => {
+              requestAnimationFrame(() => {
+                composerShellRef.current?.scrollIntoView({
+                  block: 'nearest',
+                  inline: 'nearest',
+                });
+              });
+            }}
+            enterKeyHint={isTouchComposer ? 'enter' : 'send'}
             aria-label={placeholder ?? defaultPlaceholder}
             placeholder={placeholder ?? defaultPlaceholder}
             rows={1}
             className={cn(
               'relative z-[1] box-border block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
-              'overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2 text-sm leading-5',
+              'overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2 text-[16px] leading-5',
               'text-foreground caret-foreground',
               'placeholder:text-muted-foreground focus:outline-none',
             )}
+            style={{ fontSize: 16 }}
           />
         </div>
 

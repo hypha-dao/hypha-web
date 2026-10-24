@@ -192,6 +192,10 @@ import {
   buildSpaceRosterSignalTeamMembers,
 } from './human-chat-panel/build-space-roster-mention-candidates';
 import { directConversationWelcomeName } from './human-chat-panel/direct-conversation-welcome';
+import {
+  sortMessagesChronologically,
+  upsertTimelineMessages,
+} from './human-chat-panel/human-chat-timeline-order';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -2643,17 +2647,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         return prev;
       }
       messagesRoomIdRef.current = targetRoomId;
-      return existing.map((m) =>
-        toUIMessage(
-          m,
-          currentUserIdRef.current,
-          resolveMemberLabelRef.current,
-          currentUserAvatarUrlRef.current,
-          resolveMemberAvatarRef.current,
-          targetRoomId,
-          matrixRef.current.client ?? null,
-          formatSignalTeamNoticeRef.current,
-          systemSenderLabelRef.current,
+      return sortMessagesChronologically(
+        existing.map((m) =>
+          toUIMessage(
+            m,
+            currentUserIdRef.current,
+            resolveMemberLabelRef.current,
+            currentUserAvatarUrlRef.current,
+            resolveMemberAvatarRef.current,
+            targetRoomId,
+            matrixRef.current.client ?? null,
+            formatSignalTeamNoticeRef.current,
+            systemSenderLabelRef.current,
+          ),
         ),
       );
     });
@@ -3777,26 +3783,23 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           if (redacts.size > 0) {
             next = next.filter((m) => !redacts.has(m.id));
           }
+          const incoming: UIMessage[] = [];
           for (const message of upserts.values()) {
-            const ui = toUIMessage(
-              message,
-              currentUserIdRef.current,
-              resolveMemberLabelRef.current,
-              currentUserAvatarUrlRef.current,
-              resolveMemberAvatarRef.current,
-              roomId,
-              matrixRef.current.client ?? null,
-              formatSignalTeamNoticeRef.current,
-              systemSenderLabelRef.current,
+            incoming.push(
+              toUIMessage(
+                message,
+                currentUserIdRef.current,
+                resolveMemberLabelRef.current,
+                currentUserAvatarUrlRef.current,
+                resolveMemberAvatarRef.current,
+                roomId,
+                matrixRef.current.client ?? null,
+                formatSignalTeamNoticeRef.current,
+                systemSenderLabelRef.current,
+              ),
             );
-            const idx = next.findIndex((m) => m.id === ui.id);
-            if (idx === -1) {
-              next = [...next, ui];
-            } else {
-              next = next.map((m, i) => (i === idx ? ui : m));
-            }
           }
-          return next;
+          return upsertTimelineMessages(next, incoming);
         });
 
         for (const message of upserts.values()) {
@@ -4172,7 +4175,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       },
       avatarUrl: currentUserAvatarUrl,
     };
-    return [...messages, pendingRow];
+    return sortMessagesChronologically([...messages, pendingRow]);
   }, [messages, sendingPending, currentUserAvatarUrl]);
 
   const calledAgents = useMemo(

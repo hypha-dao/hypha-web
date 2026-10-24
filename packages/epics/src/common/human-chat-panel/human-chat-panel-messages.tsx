@@ -13,10 +13,16 @@ import { useFormatter, useTranslations } from 'next-intl';
 
 import { Button } from '@hypha-platform/ui';
 
+import { useIsMobile, usePrefersCoarsePointer } from '@hypha-platform/ui';
+
 import { HumanChatPanelDateSeparator } from './human-chat-panel-date-separator';
 import { HumanChatPanelUnreadDivider } from './human-chat-panel-unread-divider';
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
 import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
+import {
+  shouldStickChatTimelineToBottom,
+  sortMessagesChronologically,
+} from './human-chat-timeline-order';
 
 type UIMessage = {
   id: string;
@@ -93,8 +99,9 @@ function buildTimelineRows(
   const rows: TimelineRow[] = [];
   let prevDay: string | null = null;
   let insertedUnread = !firstUnreadMessageId;
+  const ordered = sortMessagesChronologically(messages);
 
-  for (const msg of messages) {
+  for (const msg of ordered) {
     const ts = msg.timestamp;
     if (ts) {
       const dk = dayKeyLocal(ts);
@@ -208,6 +215,8 @@ export function HumanChatPanelMessages({
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
   const formatter = useFormatter();
+  const isTouchComposer =
+    (useIsMobile() ?? false) || (usePrefersCoarsePointer() ?? false);
 
   const welcomeMessage: UIMessage = {
     id: 'welcome',
@@ -217,7 +226,6 @@ export function HumanChatPanelMessages({
     senderName: welcomeSenderName ?? t('chatRoomTitle'),
   };
   const containerRef = useRef<HTMLDivElement>(null);
-  const prevLenRef = useRef(0);
   const prevLastIdRef = useRef<string | null>(null);
   const stickToBottomRef = useRef(true);
   const initialUnreadScrollDoneRef = useRef(false);
@@ -248,7 +256,10 @@ export function HumanChatPanelMessages({
   /** Pointer left row while hover picker was open (portal); hide bar when picker closes. */
   const leaveWhileLockedRef = useRef<string | null>(null);
 
-  const displayMessages = messages.length > 0 ? messages : [welcomeMessage];
+  const displayMessages =
+    messages.length > 0
+      ? sortMessagesChronologically(messages)
+      : [welcomeMessage];
 
   const timelineRows = useMemo(
     () => buildTimelineRows(displayMessages, firstUnreadMessageId),
@@ -397,13 +408,13 @@ export function HumanChatPanelMessages({
 
     const len = messages.length;
     const lastId = len > 0 ? messages[len - 1]!.id : null;
-    const prevLen = prevLenRef.current;
     const prevLastId = prevLastIdRef.current;
 
-    const appended =
+    const newestIsOwn =
       len > 0 &&
       lastId != null &&
-      (prevLen === 0 || (len >= prevLen && lastId !== prevLastId));
+      lastId !== prevLastId &&
+      messages[len - 1]?.role === 'user';
 
     const shouldScrollUnread =
       Boolean(firstUnreadMessageId) &&
@@ -416,20 +427,21 @@ export function HumanChatPanelMessages({
       window.requestAnimationFrame(() => {
         scrollToUnread();
       });
-      prevLenRef.current = len;
       prevLastIdRef.current = lastId;
       return;
     }
 
-    if (appended) {
+    if (
+      shouldStickChatTimelineToBottom({
+        alreadyStuckToBottom: stickToBottomRef.current,
+        newestMessageIsOwn: newestIsOwn,
+        isStreaming,
+      })
+    ) {
       stickToBottomRef.current = true;
-    }
-
-    if (stickToBottomRef.current || isStreaming) {
       container.scrollTop = container.scrollHeight;
     }
 
-    prevLenRef.current = len;
     prevLastIdRef.current = lastId;
   }, [messages, isStreaming, firstUnreadMessageId, scrollToUnread]);
 
@@ -501,6 +513,32 @@ export function HumanChatPanelMessages({
       io.disconnect();
     };
   }, [onReachedTimelineBottom, timelineRows.length, viewportActive]);
+
+  useEffect(() => {
+    if (
+      !isTouchComposer ||
+      (hoverActionMessageId == null && lockActionMessageId == null)
+    ) {
+      return;
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (
+        target.closest(
+          '[data-radix-popper-content-wrapper], [data-radix-menu-content], [role="menu"], [role="listbox"], [data-chat-message-actions]',
+        )
+      ) {
+        return;
+      }
+      const row = target.closest('[data-matrix-event-id]');
+      if (row && containerRef.current?.contains(row)) return;
+      setHoverActionMessageId(null);
+      setLockActionMessageId(null);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [hoverActionMessageId, isTouchComposer, lockActionMessageId]);
 
   const messageIndexForStreaming = displayMessages.length - 1;
 
@@ -632,19 +670,39 @@ export function HumanChatPanelMessages({
                 resolveSenderDisplayLabel={resolveSenderDisplayLabel}
                 isActionBarVisible={isActionBarVisible}
                 unreadBoundary={row.isFirstUnread}
-                onRowPointerEnter={() => {
-                  leaveWhileLockedRef.current = null;
-                  setHoverActionMessageId(msg.id);
-                }}
-                onRowPointerLeave={() => {
-                  if (lockActionMessageIdRef.current === msg.id) {
-                    leaveWhileLockedRef.current = msg.id;
-                    return;
-                  }
-                  setHoverActionMessageId((current) =>
-                    current === msg.id ? null : current,
-                  );
-                }}
+                isTouchComposer={isTouchComposer}
+                onRowPointerEnter={
+                  isTouchComposer
+                    ? undefined
+                    : () => {
+                        leaveWhileLockedRef.current = null;
+                        setHoverActionMessageId(msg.id);
+                      }
+                }
+                onRowPointerLeave={
+                  isTouchComposer
+                    ? undefined
+                    : () => {
+                        if (lockActionMessageIdRef.current === msg.id) {
+                          leaveWhileLockedRef.current = msg.id;
+                          return;
+                        }
+                        setHoverActionMessageId((current) =>
+                          current === msg.id ? null : current,
+                        );
+                      }
+                }
+                onRowActivate={
+                  isTouchComposer
+                    ? () => {
+                        leaveWhileLockedRef.current = null;
+                        setHoverActionMessageId((current) =>
+                          current === msg.id ? null : msg.id,
+                        );
+                        setLockActionMessageId(null);
+                      }
+                    : undefined
+                }
                 onHoverReactPickerOpenChange={(open) => {
                   if (open) {
                     setLockActionMessageId(msg.id);
