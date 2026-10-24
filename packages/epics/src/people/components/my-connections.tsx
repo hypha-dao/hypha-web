@@ -64,6 +64,7 @@ import {
   groupRowsForConnections,
   peopleMatchingSearch,
   conversationsMatchingSearch,
+  membersForGroupPicker,
   conversationsVisibleInSection,
   enrichSearchMembers,
   isPeopleListGroup,
@@ -1736,9 +1737,7 @@ export function MyConnections({
     );
     const matchingGroups = conversationsMatchingSearch(listedGroups, needle);
     const matchingMembers = conversationsMatchingSearch(
-      picking
-        ? resolvedMembers.filter((row) => row.person.id > 0)
-        : resolvedMembers,
+      membersForGroupPicker(resolvedMembers, picking),
       needle,
     );
     const source =

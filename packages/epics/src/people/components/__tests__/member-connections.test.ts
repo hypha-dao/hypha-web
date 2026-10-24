@@ -10,6 +10,7 @@ import {
   conversationMatchesSearch,
   peopleMatchingSearch,
   conversationsMatchingSearch,
+  membersForGroupPicker,
   conversationsVisibleInSection,
   conversationUnreadTotal,
   hiddenLegacyPairRoomIds,
@@ -714,7 +715,7 @@ describe('personRowsFromDmRooms', () => {
     expect(rows[0]).toMatchObject({ name: 'Gerardo Roza', roomId: '!dm' });
   });
 
-  it('still lists the newer technical DM when a human-named room is superseded', () => {
+  it('skips superseded rooms in the typedPeerHasHumanName first pass', () => {
     const rows = personRowsFromDmRooms(
       [],
       [
@@ -911,6 +912,40 @@ describe('conversationsMatchingSearch', () => {
     expect(
       conversationsMatchingSearch([ada, grace], 'ada').map((row) => row.name),
     ).toEqual(['Ada Lovelace']);
+  });
+});
+
+describe('membersForGroupPicker', () => {
+  it('excludes synthetic rows (id <= 0) in picker mode and keeps them otherwise', () => {
+    const ada = {
+      person: person(1, 'Ada', 'Lovelace'),
+      name: 'Ada Lovelace',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const synthetic = {
+      person: person(-4, 'Gerardo', 'Roza'),
+      name: 'Gerardo Roza',
+      preview: 'You: test',
+      mine: true,
+      lastTs: 20,
+      unread: 0,
+      roomId: '!dm',
+    };
+    const listed = [synthetic, ada];
+    expect(
+      conversationsMatchingSearch(membersForGroupPicker(listed, true), '').map(
+        (row) => row.person.id,
+      ),
+    ).toEqual([1]);
+    expect(
+      conversationsMatchingSearch(membersForGroupPicker(listed, false), '').map(
+        (row) => row.person.id,
+      ),
+    ).toEqual([-4, 1]);
   });
 });
 

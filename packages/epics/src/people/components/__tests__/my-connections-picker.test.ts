@@ -9,7 +9,7 @@ const source = readFileSync(
 
 describe('group picker chips and radio', () => {
   it('keeps the search needle when a selected chip is removed', () => {
-    expect(source).toContain('row.person.id > 0');
+    expect(source).toContain('membersForGroupPicker(resolvedMembers, picking)');
     expect(source).toContain('conversationsMatchingSearch');
     expect(source).toContain('onClick={() => toggleSelected(row)}');
     expect(source).not.toMatch(/toggleSelected\(row\);\s*setQuery\(/);
