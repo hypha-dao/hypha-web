@@ -38,6 +38,7 @@ type MemberHomePeopleProps = {
   onOpenChatReady?: (openChat: MemberHomeOpenChat) => void;
   onOpenCallReady?: (openCall: MemberHomeOpenChat) => void;
   onOpenVideoReady?: (openVideo: MemberHomeOpenChat) => void;
+  onNotice?: (notice: string | null) => void;
 };
 
 function labelOf(person: HomePerson, fallback: string) {
@@ -54,6 +55,7 @@ export function MemberHomePeople({
   onOpenChatReady,
   onOpenCallReady,
   onOpenVideoReady,
+  onNotice,
 }: MemberHomePeopleProps) {
   const t = useTranslations('MemberHome');
   const { openCoherenceChat } = useHumanChatPanel();
@@ -254,6 +256,11 @@ export function MemberHomePeople({
   useEffect(() => {
     onOpenVideoReady?.((person) => openPersonVideoRef.current(person));
   }, [onOpenVideoReady]);
+
+  useEffect(() => {
+    onNotice?.(notice);
+    return () => onNotice?.(null);
+  }, [notice, onNotice]);
 
   if (!notice) return null;
 

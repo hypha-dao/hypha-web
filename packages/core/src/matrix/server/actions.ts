@@ -26,6 +26,7 @@ import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
 import { distinctPublicRoomId } from '../public-room-id';
 import { directPairAliasLocalpart } from '../direct-pair-room';
 import { HYPHA_ROOM_TYPES, type HyphaRoomType } from '../room-types';
+import { isHyphaBotMatrixIdentity } from '../matrix-member-display';
 import { Environment } from '../../coherence/types';
 import {
   ECOSYSTEM_ROOM_ALIAS_PREFIX,
@@ -40,6 +41,7 @@ import {
   matrixCreateAliasedRoom,
   matrixCreateRoom,
   matrixDeleteRoomAlias,
+  matrixGetJoinOrInviteRoomMembers,
   matrixGetRoomType,
   matrixInviteUser,
   matrixJoinRoom,
@@ -564,7 +566,41 @@ export async function ensureDirectPairRoomAction({
       // and leave the alias where it is.
       return null;
     }
-    if (aliasedRoomType === HYPHA_ROOM_TYPES.dm) roomId = aliasedRoomId;
+    if (aliasedRoomType === HYPHA_ROOM_TYPES.dm) {
+      try {
+        const members = await matrixGetJoinOrInviteRoomMembers(
+          aliasedRoomId,
+          botToken,
+          homeserver,
+        );
+        const botId = getMatrixBotUserId()?.trim().toLowerCase() ?? '';
+        const participants = [
+          ...new Set(
+            members
+              .map((id) => id.trim())
+              .filter((id) => {
+                if (!id) return false;
+                if (botId && id.toLowerCase() === botId) return false;
+                return !isHyphaBotMatrixIdentity(id);
+              })
+              .map((id) => id.toLowerCase()),
+          ),
+        ];
+        if (
+          participants.length === 2 &&
+          participants.includes(self.toLowerCase()) &&
+          participants.includes(other.toLowerCase())
+        ) {
+          roomId = aliasedRoomId;
+        }
+      } catch (error) {
+        console.warn(
+          '[MatrixBot] Could not read members of the aliased direct room:',
+          aliasedRoomId,
+          error instanceof Error ? error.message : error,
+        );
+      }
+    }
   }
   if (!roomId) {
     if (aliasedRoomId) {

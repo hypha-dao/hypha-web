@@ -210,6 +210,7 @@ export function MemberHome({
     (person) => openVideoRef.current(person),
     [],
   );
+  const [chatNotice, setChatNotice] = useState<string | null>(null);
   const memberFallback = t('fallbackMember');
   const home = isLoading || !intelligence ? null : intelligence;
   useEffect(() => {
@@ -517,6 +518,7 @@ export function MemberHome({
                       onOpenChatReady={onOpenChatReady}
                       onOpenCallReady={onOpenCallReady}
                       onOpenVideoReady={onOpenVideoReady}
+                      onNotice={setChatNotice}
                     />
                   </>
                 )}
@@ -647,6 +649,7 @@ export function MemberHome({
               people={home?.connections ?? []}
               isLoading={home == null}
               fallbackName={memberFallback}
+              notice={chatNotice}
               onChat={home ? openChat : undefined}
               onCall={home ? openCall : undefined}
               onVideo={home ? openVideo : undefined}
