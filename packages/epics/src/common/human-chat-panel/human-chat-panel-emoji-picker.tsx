@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -33,6 +34,20 @@ export function HumanChatPanelEmojiPicker({
   className,
   modal = true,
 }: HumanChatPanelEmojiPickerProps) {
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (event.isComposing) return;
+      event.preventDefault();
+      event.stopPropagation();
+      onOpenChange(false);
+    };
+    // window capture runs before the Sheet's document capture listener.
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [open, onOpenChange]);
+
   return (
     <Popover modal={modal} open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild className={cn('inline-flex', className)}>

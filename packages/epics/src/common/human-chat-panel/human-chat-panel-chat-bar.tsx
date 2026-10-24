@@ -1588,16 +1588,17 @@ export function HumanChatPanelChatBar({
   );
 
   /**
-   * Sheet listens on document capture. Register on mount (child effect runs
-   * first) so Escape hits this before the panel dismisses.
+   * Sheet's Radix dismiss is a *document* capture listener registered when
+   * the Sheet opens — before ChatBar mounts (`hasOpened` is a later effect).
+   * `window` capture runs first, so this can stop the Sheet.
    */
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       closeComposerOverlayFromEscape(event);
     };
-    document.addEventListener('keydown', onKeyDown, true);
-    return () => document.removeEventListener('keydown', onKeyDown, true);
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
   }, [closeComposerOverlayFromEscape]);
 
   const handleComposerShellKeyDownCapture = useCallback(
@@ -2226,6 +2227,7 @@ export function HumanChatPanelChatBar({
         {colonOpen && colonSuggestions.length > 0 && (
           <div
             role="listbox"
+            data-hypha-colon-autocomplete=""
             aria-label={t('emojiShortcodeListLabel')}
             className="absolute bottom-full left-2 right-2 z-50 mb-1 max-h-48 overflow-y-auto rounded-md border border-border bg-popover shadow-md"
           >

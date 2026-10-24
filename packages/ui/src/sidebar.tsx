@@ -244,6 +244,18 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
             }
             {...props}
             side={side}
+            onEscapeKeyDown={(event) => {
+              // Picker portals outside this Sheet; its document listener is
+              // registered after ours. preventDefault here is what actually
+              // stops Radix from dismissing the mobile DM panel.
+              if (
+                document.querySelector(
+                  '[data-hypha-emoji-picker], [data-hypha-colon-autocomplete]',
+                )
+              ) {
+                event.preventDefault();
+              }
+            }}
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Sidebar</SheetTitle>
