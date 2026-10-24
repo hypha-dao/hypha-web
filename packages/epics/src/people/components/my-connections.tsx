@@ -69,7 +69,6 @@ import {
   isPeopleListGroup,
   isRememberedBoundChatRoom,
   isRememberedGroupChatRoom,
-  memberRowsForConnections,
   messagePreview,
   previewWithNames,
   rememberGroupChatMembers,
@@ -78,7 +77,8 @@ import {
   rememberedGroupChatMemberIds,
   rememberSignalThreadRooms,
   subscribeSignalThreadRooms,
-  unreadRoomsMissingFromMembers,
+  personRowsFromDmRooms,
+  nextSelectedMembers,
   STALE_CONNECTION_MS,
   connectionActivityTs,
   collectDirectPairRoomHints,
@@ -1309,7 +1309,10 @@ export function MyConnections({
   const [synced, setSynced] = useState(false);
   const [rowsPending, setRowsPending] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selectedById, setSelectedById] = useState<
+    Map<number, ConnectionMemberRow>
+  >(() => new Map());
+  const selected = useMemo(() => new Set(selectedById.keys()), [selectedById]);
   const [picking, setPicking] = useState(false);
   const [starting, setStarting] = useState(false);
   const [pendingGroups, setPendingGroups] = useState<ConversationRow[]>([]);
@@ -1352,6 +1355,7 @@ export function MyConnections({
     useMatrixUserIdsByPersonIds({
       personIds: [
         ...listed.map((person) => person.id),
+        ...[...selectedById.keys()].filter((id) => id > 0),
         ...(home?.person.id != null ? [home.person.id] : []),
       ],
     });
@@ -1529,23 +1533,18 @@ export function MyConnections({
     );
   }, [home?.signals]);
 
-  const members = useMemo(() => {
-    const directoryRows = memberRowsForConnections(
-      listed,
-      rows,
-      personIdToMatrixUserId,
-      home?.person.id ?? null,
-      t('someone'),
-    );
-    return [
-      ...unreadRoomsMissingFromMembers(
+  const members = useMemo(
+    () =>
+      personRowsFromDmRooms(
+        listed,
         rows,
-        directoryRows,
         personIdToMatrixUserId,
+        home?.person.id ?? null,
+        t('someone'),
+        connections,
       ),
-      ...directoryRows,
-    ];
-  }, [home?.person.id, listed, personIdToMatrixUserId, rows, t]);
+    [connections, home?.person.id, listed, personIdToMatrixUserId, rows, t],
+  );
 
   const memberPersonIds = useMemo(
     () => members.map((row) => row.person.id),
@@ -1715,8 +1714,13 @@ export function MyConnections({
     const matchingGroups = needle
       ? listedGroups.filter((row) => conversationMatchesSearch(row, needle))
       : listedGroups;
+    const matchingMembers = needle
+      ? members.filter((row) => conversationMatchesSearch(row, needle))
+      : members;
     const source =
-      section === 'archived' ? matchingGroups : [...matchingGroups, ...members];
+      section === 'archived'
+        ? matchingGroups
+        : [...matchingGroups, ...matchingMembers];
     const named = source.map((row) => {
       const preview = previewWithNames(row.preview, mentionNames);
       return {
@@ -1738,7 +1742,10 @@ export function MyConnections({
     section,
     t,
   ]);
-  const selectedPeople = members.filter((row) => selected.has(row.person.id));
+  const selectedPeople = useMemo(
+    () => [...selectedById.values()],
+    [selectedById],
+  );
   const roomDiagnostics = useMemo(
     () => (debugRooms && client ? inspectJoinedAndInvitedRooms(client) : []),
     [client, debugRooms, rows, synced],
@@ -1778,23 +1785,18 @@ export function MyConnections({
     }
   }
 
-  function toggleSelected(id: number) {
-    setSelected((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  function toggleSelected(row: ConnectionMemberRow) {
+    setSelectedById((current) => nextSelectedMembers(current, row));
   }
 
   function exitPicking() {
     setPicking(false);
-    setSelected(new Set());
+    setSelectedById(new Map());
   }
 
   async function openMember(row: ConnectionMemberRow) {
     if (picking) {
-      toggleSelected(row.person.id);
+      toggleSelected(row);
       return;
     }
     setNotice(null);
@@ -2008,7 +2010,7 @@ export function MyConnections({
                     type="button"
                     className="flex w-16 shrink-0 flex-col items-center gap-1 text-center"
                     aria-label={t('removeSelected', { name: row.name })}
-                    onClick={() => toggleSelected(row.person.id)}
+                    onClick={() => toggleSelected(row)}
                   >
                     <span className="relative inline-flex">
                       <PersonAvatar

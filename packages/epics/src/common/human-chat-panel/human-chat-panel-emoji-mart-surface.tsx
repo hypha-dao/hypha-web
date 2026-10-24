@@ -46,10 +46,11 @@ export function HumanChatPanelEmojiMartSurface({
       className={cn(
         /**
          * emoji-mart sizes its grid from this element's rendered width
-         * (`dynamicWidth`). The width has to be a definite size: `w-full`
-         * inside an auto-width popover collapses the picker.
+         * (`dynamicWidth`). The parent popover/menu supplies a definite
+         * width; `w-full` here fills it. A second min-width on this box
+         * used to overflow the panel and clip the category row.
          */
-        'h-[min(420px,70vh)] w-[min(100vw-2rem,352px)] min-w-[280px] overflow-hidden [&>em-emoji-picker]:h-full [&>em-emoji-picker]:w-full',
+        'flex h-[min(22.5rem,calc(100dvh-8rem))] w-full min-w-0 flex-col overflow-hidden [&>em-emoji-picker]:h-full [&>em-emoji-picker]:w-full [&>em-emoji-picker]:max-w-full',
         className,
       )}
     >
