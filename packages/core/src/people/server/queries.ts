@@ -607,6 +607,7 @@ const PEOPLE_BY_SUBS_LIMIT = 40;
 
 /** Name fields for Matrix mention/search resolution. Skips orientation extras. */
 export type PersonLabelBySub = {
+  id: number;
   sub: string;
   name: string | null;
   surname: string | null;
@@ -625,6 +626,7 @@ export async function findPeopleBySubs(
   if (unique.length === 0) return [];
   const rows = await db
     .select({
+      id: people.id,
       sub: people.sub,
       name: people.name,
       surname: people.surname,
@@ -638,6 +640,7 @@ export async function findPeopleBySubs(
     row.sub
       ? [
           {
+            id: row.id,
             sub: row.sub,
             name: row.name,
             surname: row.surname,

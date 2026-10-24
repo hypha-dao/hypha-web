@@ -9,13 +9,25 @@ import {
   connectionMatchesPeopleSearch,
   conversationMatchesSearch,
   peopleMatchingSearch,
+  conversationsMatchingSearch,
+  membersForGroupPicker,
   conversationsVisibleInSection,
   conversationUnreadTotal,
+  hiddenLegacyPairRoomIds,
   facesWithProfiles,
   groupRowsForConnections,
+  isMessagesVisibleConversation,
   isPeopleListGroup,
   peopleAroundGroupRows,
   memberRowsForConnections,
+  nextSelectedMembers,
+  resolvedMatrixIdsForGroup,
+  personRowsFromDmRooms,
+  applyResolvedPeerTitles,
+  mergeDirectoryPeople,
+  resolvePeerRowTitle,
+  conversationDisplayName,
+  visibleMemberRowsAfterTitleResolve,
   messagePreview,
   orphanedDirectRoomIds,
   previewWithNames,
@@ -248,6 +260,7 @@ describe('supersededDirectRoomIds', () => {
       room({
         roomId: '!older',
         kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
         otherUserId: '@gerardo:matrix',
         lastTs: 10,
         unread: 4,
@@ -255,6 +268,7 @@ describe('supersededDirectRoomIds', () => {
       room({
         roomId: '!later',
         kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
         otherUserId: '@Gerardo:matrix',
         lastTs: 20,
         unread: 1,
@@ -275,6 +289,7 @@ describe('supersededDirectRoomIds', () => {
       room({
         roomId: '!only',
         kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
         otherUserId: '@kate:matrix',
         lastTs: 10,
         unread: 3,
@@ -291,6 +306,28 @@ describe('supersededDirectRoomIds', () => {
 
     expect(losers).toEqual([]);
   });
+
+  it('keeps the typed DM even when an untyped leftover is newer', () => {
+    const losers = supersededDirectRoomIds([
+      room({
+        roomId: '!legacy',
+        kind: 'person',
+        roomType: null,
+        name: 'prod_privy_did_privy_gerardo',
+        otherUserId: '@gerardo:matrix',
+        lastTs: 90,
+      }),
+      room({
+        roomId: '!dm',
+        kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
+        name: 'Gerardo Roza',
+        otherUserId: '@gerardo:matrix',
+        lastTs: 10,
+      }),
+    ]);
+    expect(losers).toEqual(['!legacy']);
+  });
 });
 
 describe('conversationUnreadTotal', () => {
@@ -299,6 +336,7 @@ describe('conversationUnreadTotal', () => {
       room({
         roomId: '!older',
         kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
         otherUserId: '@gerardo:matrix',
         lastTs: 10,
         unread: 3,
@@ -306,6 +344,7 @@ describe('conversationUnreadTotal', () => {
       room({
         roomId: '!later',
         kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
         otherUserId: '@gerardo:matrix',
         lastTs: 20,
         unread: 0,
@@ -313,6 +352,7 @@ describe('conversationUnreadTotal', () => {
       room({
         roomId: '!kate',
         kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
         otherUserId: '@kate:matrix',
         lastTs: 15,
         unread: 1,
@@ -336,6 +376,136 @@ describe('conversationUnreadTotal', () => {
       ['!older'],
     );
     expect(total).toBe(0);
+  });
+
+  it('counts only rows Messages would show', () => {
+    const total = conversationUnreadTotal([
+      room({
+        roomId: '!dm',
+        kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
+        otherUserId: '@kate:matrix',
+        unread: 2,
+      }),
+      room({
+        roomId: '!archived',
+        kind: 'group',
+        roomType: HYPHA_ROOM_TYPES.group,
+        name: 'Old trio',
+        unread: 4,
+        archived: true,
+      }),
+      room({
+        roomId: '!space-leak',
+        kind: 'group',
+        roomType: HYPHA_ROOM_TYPES.space,
+        name: 'Hypha',
+        unread: 5,
+        memberCount: 40,
+      }),
+      room({
+        roomId: '!legacy-dm',
+        kind: 'person',
+        roomType: null,
+        otherUserId: '@old:matrix',
+        unread: 3,
+        signalThread: true,
+      }),
+    ]);
+    expect(total).toBe(2);
+  });
+});
+
+describe('isMessagesVisibleConversation', () => {
+  it('keeps typed DMs and listed groups, drops archived and other types', () => {
+    expect(
+      isMessagesVisibleConversation(
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isMessagesVisibleConversation(
+        room({
+          roomId: '!group',
+          kind: 'group',
+          roomType: HYPHA_ROOM_TYPES.group,
+          name: 'Ada, Grace',
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isMessagesVisibleConversation(
+        room({
+          roomId: '!archived',
+          kind: 'group',
+          roomType: HYPHA_ROOM_TYPES.group,
+          archived: true,
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      isMessagesVisibleConversation(
+        room({
+          roomId: '!legacy',
+          kind: 'group',
+          name: 'Hypha',
+          memberCount: 12,
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      isMessagesVisibleConversation(
+        room({
+          roomId: '!stale-person',
+          kind: 'person',
+          roomType: null,
+          name: 'prod_privy_did_privy_abc',
+          otherUserId: '@gerardo:matrix',
+        }),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('hiddenLegacyPairRoomIds', () => {
+  it('hides an untyped 1:1 whose peer already has a typed DM', () => {
+    const hidden = hiddenLegacyPairRoomIds([
+      room({
+        roomId: '!dm',
+        kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
+        name: 'Gerardo Roza',
+        otherUserId: '@gerardo:matrix',
+        preview: 'test',
+        mine: true,
+        lastTs: 20,
+      }),
+      room({
+        roomId: '!legacy',
+        kind: 'person',
+        roomType: null,
+        name: 'prod_privy_did_privy_gerardo',
+        otherUserId: '@gerardo:matrix',
+        preview: 'test',
+        mine: true,
+        lastTs: 10,
+        memberCount: 2,
+      }),
+      room({
+        roomId: '!named-pair',
+        kind: 'group',
+        name: 'prod_privy_did_privy_gerardo',
+        otherUserId: '@gerardo:matrix',
+        memberCount: 2,
+        lastTs: 10,
+      }),
+    ]);
+    expect(hidden).toEqual(expect.arrayContaining(['!legacy', '!named-pair']));
+    expect(hidden).not.toContain('!dm');
   });
 });
 
@@ -374,6 +544,7 @@ describe('unreadRoomsMissingFromMembers', () => {
         room({
           roomId: '!stranger',
           kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
           name: 'Gerardo Reza',
           otherUserId: '@gerardo:matrix',
           preview: 'ping',
@@ -429,6 +600,606 @@ describe('unreadRoomsMissingFromMembers', () => {
     );
 
     expect(extras).toEqual([]);
+  });
+});
+
+describe('personRowsFromDmRooms', () => {
+  it('lists a DM-typed room when the sender shares no space', () => {
+    const rows = personRowsFromDmRooms(
+      [person(1, 'Kate', 'Bennett')],
+      [
+        room({
+          roomId: '!incoming',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'Gerardo Reza',
+          otherUserId: '@gerardo:matrix',
+          preview: 'hello from elsewhere',
+          unread: 0,
+          lastTs: 80,
+        }),
+      ],
+      { 1: '@kate:matrix' },
+      null,
+      'Someone',
+    );
+
+    expect(rows.map((row) => row.roomId)).toEqual(['!incoming', null]);
+    expect(rows[0]).toMatchObject({
+      name: 'Gerardo Reza',
+      preview: 'hello from elsewhere',
+      unread: 0,
+    });
+    expect(rows[1]).toMatchObject({ name: 'Kate Bennett', roomId: null });
+  });
+
+  it('attaches a directory profile to a DM-typed room', () => {
+    const rows = personRowsFromDmRooms(
+      [person(1, 'Gerardo', 'Reza')],
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did',
+          otherUserId: '@gerardo:matrix',
+          preview: 'see you',
+          unread: 2,
+          lastTs: 10,
+        }),
+      ],
+      { 1: '@gerardo:matrix' },
+      null,
+      'Someone',
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      roomId: '!dm',
+      name: 'Gerardo Reza',
+      unread: 2,
+      person: { id: 1 },
+    });
+  });
+
+  it('does not build a person row from a legacy untyped room', () => {
+    const rows = personRowsFromDmRooms(
+      [person(1, 'Kate', 'Bennett')],
+      [
+        room({
+          roomId: '!old',
+          kind: 'group',
+          name: 'Kate Bennett',
+          otherUserId: '@kate:matrix',
+          unread: 4,
+          lastTs: 90,
+        }),
+      ],
+      { 1: '@kate:matrix' },
+      null,
+      'Someone',
+    );
+
+    expect(rows.map((row) => row.roomId)).toEqual([null]);
+    expect(rows[0]?.unread).toBe(0);
+  });
+
+  it('hides a named untyped 1:1 when the peer already has a typed DM', () => {
+    const rows = personRowsFromDmRooms(
+      [person(1, 'Gerardo', 'Roza')],
+      [
+        room({
+          roomId: '!legacy',
+          kind: 'person',
+          roomType: null,
+          name: 'prod_privy_did_privy_gerardo',
+          otherUserId: '@gerardo:matrix',
+          preview: 'test',
+          mine: true,
+          lastTs: 90,
+        }),
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'Gerardo Roza',
+          otherUserId: '@gerardo:matrix',
+          preview: 'test',
+          mine: true,
+          lastTs: 80,
+        }),
+      ],
+      { 1: '@gerardo:matrix' },
+      null,
+      'Someone',
+    );
+
+    expect(rows.map((row) => row.roomId)).toEqual(['!dm']);
+    expect(rows[0]).toMatchObject({ name: 'Gerardo Roza', roomId: '!dm' });
+  });
+
+  it('skips superseded rooms in the typedPeerHasHumanName first pass', () => {
+    const rows = personRowsFromDmRooms(
+      [] as Person[],
+      [
+        room({
+          roomId: '!old',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'Gerardo Roza',
+          otherUserId: '@gerardo:matrix',
+          preview: 'older',
+          lastTs: 10,
+          unread: 0,
+        }),
+        room({
+          roomId: '!new',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_gerardo',
+          otherUserId: '@gerardo:matrix',
+          preview: 'newer',
+          lastTs: 90,
+          unread: 2,
+        }),
+      ],
+      {},
+      null,
+      'Someone',
+    );
+
+    expect(rows.map((row) => row.roomId)).toEqual(['!new']);
+    expect(rows[0]?.titlePending).toBe(true);
+    expect(rows[0]?.name).toBe('');
+    expect(rows[0]?.person.id).toBeLessThan(0);
+  });
+
+  it('does not use a raw Privy id as the row title', () => {
+    const rows = personRowsFromDmRooms(
+      [],
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_cmjzxabc',
+          otherUserId: '@prod_privy_did_privy_cmjzxabc:matrix',
+          preview: 'You: test',
+          mine: true,
+          lastTs: 20,
+        }),
+      ],
+      {},
+      null,
+      'Someone',
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.titlePending).toBe(true);
+    expect(rows[0]?.name).toBe('');
+    expect(rows[0]?.name).not.toMatch(/privy|@prod_/i);
+  });
+});
+
+describe('resolvePeerRowTitle', () => {
+  it('keeps a human Matrix name and hides a raw Privy id', () => {
+    expect(
+      resolvePeerRowTitle({
+        roomId: '!dm',
+        name: 'Gerardo Roza',
+        otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+      }),
+    ).toEqual({ name: 'Gerardo Roza', titlePending: false });
+    expect(
+      conversationDisplayName(
+        '@prod_privy_did_privy_cmjzx:matrix',
+        'prod_privy_did_privy_cmjzx',
+      ),
+    ).toBeNull();
+    expect(
+      resolvePeerRowTitle({
+        roomId: '!dm',
+        name: 'prod_privy_did_privy_cmjzx',
+        otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+      }),
+    ).toEqual({ name: '', titlePending: true });
+  });
+});
+
+describe('applyResolvedPeerTitles', () => {
+  it('fills a pending DM title from the peer profile, never the raw id', () => {
+    const pending = personRowsFromDmRooms(
+      [],
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_cmjzx',
+          otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+          preview: 'You: test',
+          mine: true,
+          lastTs: 20,
+        }),
+      ],
+      {},
+      null,
+      'Someone',
+    );
+    const resolved = applyResolvedPeerTitles(
+      pending,
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_cmjzx',
+          otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+        }),
+      ],
+      new Map([
+        [
+          'did:privy:cmjzx',
+          { name: 'Gerardo', surname: 'Roza', nickname: null, slug: 'gerardo' },
+        ],
+      ]),
+      {},
+    );
+
+    expect(resolved[0]).toMatchObject({
+      name: 'Gerardo Roza',
+      titlePending: false,
+    });
+    expect(resolved[0]?.name).not.toMatch(/privy/i);
+  });
+
+  it('keeps a skeleton while the peer profile is still loading', () => {
+    const pending = personRowsFromDmRooms(
+      [],
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_cmjzx',
+          otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+        }),
+      ],
+      {},
+      null,
+      'Someone',
+    );
+    const resolved = applyResolvedPeerTitles(
+      pending,
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_cmjzx',
+          otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+        }),
+      ],
+      new Map(),
+      {},
+      { loading: true, fallback: 'Someone' },
+    );
+
+    expect(resolved[0]).toMatchObject({ name: '', titlePending: true });
+  });
+
+  it('attaches a directory person id from the peer profile', () => {
+    const pending = personRowsFromDmRooms(
+      [] as Person[],
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_cmjzx',
+          otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+        }),
+      ],
+      {},
+      null,
+      'Someone',
+    );
+    const resolved = applyResolvedPeerTitles(
+      pending,
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_cmjzx',
+          otherUserId: '@prod_privy_did_privy_cmjzx:matrix',
+        }),
+      ],
+      new Map([
+        [
+          'did:privy:cmjzx',
+          {
+            id: 42,
+            name: 'Gerardo',
+            surname: 'Roza',
+            nickname: null,
+            slug: 'gerardo',
+          },
+        ],
+      ]),
+      {},
+    );
+
+    expect(resolved[0]).toMatchObject({
+      name: 'Gerardo Roza',
+      titlePending: false,
+      person: { id: 42 },
+    });
+  });
+
+  it('keeps an unresolved DM pending after settle so it can be hidden', () => {
+    const pending = personRowsFromDmRooms(
+      [] as Person[],
+      [
+        room({
+          roomId: '!empty-dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_unknown',
+          otherUserId: '@prod_privy_did_privy_unknown:matrix',
+          preview: '',
+        }),
+      ],
+      {},
+      null,
+      'Someone',
+    );
+    const resolved = applyResolvedPeerTitles(
+      pending,
+      [
+        room({
+          roomId: '!empty-dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_unknown',
+          otherUserId: '@prod_privy_did_privy_unknown:matrix',
+        }),
+      ],
+      new Map(),
+      {},
+      { hideUnresolved: true },
+    );
+
+    expect(resolved[0]).toMatchObject({ name: '', titlePending: true });
+    expect(
+      visibleMemberRowsAfterTitleResolve(resolved, false).map(
+        (row) => row.roomId,
+      ),
+    ).toEqual([]);
+    expect(
+      visibleMemberRowsAfterTitleResolve(resolved, true).map(
+        (row) => row.roomId,
+      ),
+    ).toEqual(['!empty-dm']);
+  });
+
+  it('keeps a directory name when the person has no mapped mxid', () => {
+    const bob = {
+      person: person(42, 'Bob', 'Duindam'),
+      name: 'Bob Duindam',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const resolved = applyResolvedPeerTitles([bob], [], new Map(), {});
+
+    expect(resolved[0]).toMatchObject({
+      name: 'Bob Duindam',
+      titlePending: false,
+    });
+  });
+});
+
+describe('conversationsMatchingSearch', () => {
+  it('keeps the needle when a selected chip is removed', () => {
+    const ada = {
+      person: person(1, 'Ada', 'Lovelace'),
+      name: 'Ada Lovelace',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const grace = {
+      person: person(2, 'Grace', 'Hopper'),
+      name: 'Grace Hopper',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const selected = nextSelectedMembers(new Map(), ada);
+    const afterRemove = nextSelectedMembers(selected, ada);
+    expect(afterRemove.size).toBe(0);
+    expect(
+      conversationsMatchingSearch([ada, grace], 'ada').map((row) => row.name),
+    ).toEqual(['Ada Lovelace']);
+  });
+
+  it('matches a directory person by given name when the row title is pending', () => {
+    const bob = {
+      person: person(42, 'Bob', 'Duindam'),
+      name: '',
+      titlePending: true,
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    expect(conversationMatchesSearch(bob, 'Bob')).toBe(true);
+    expect(conversationsMatchingSearch([bob], 'Bob')).toHaveLength(1);
+  });
+});
+
+describe('mergeDirectoryPeople', () => {
+  it('unions paged connections with later search hits by id', () => {
+    const firstPage = [person(1, 'Ada', 'Lovelace')];
+    const later = [person(42, 'Bob', 'Duindam'), person(1, 'Ada', 'Lovelace')];
+    expect(
+      mergeDirectoryPeople(firstPage, later, null).map((row) => row.id),
+    ).toEqual([1, 42]);
+    expect(
+      peopleMatchingSearch(
+        mergeDirectoryPeople(firstPage, later),
+        [],
+        'Bob',
+      ).map((row) => row.id),
+    ).toEqual([42]);
+  });
+});
+
+describe('membersForGroupPicker', () => {
+  it('keeps directory connections with no room (positive id) in the picker', () => {
+    const bob = {
+      person: person(42, 'Bob', 'Duindam'),
+      name: 'Bob Duindam',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const dannie = {
+      person: person(43, 'Dannie', 'Quilitzsch'),
+      name: 'Dannie Quilitzsch',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const synthetic = {
+      person: person(-4, '', ''),
+      name: '',
+      titlePending: true,
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: '!empty-dm',
+    };
+    expect(
+      membersForGroupPicker([bob, dannie, synthetic], true).map(
+        (row) => row.person.id,
+      ),
+    ).toEqual([42, 43]);
+  });
+
+  it('excludes synthetic rows (id <= 0) in picker mode and keeps them otherwise', () => {
+    const ada = {
+      person: person(1, 'Ada', 'Lovelace'),
+      name: 'Ada Lovelace',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const synthetic = {
+      person: person(-4, 'Gerardo', 'Roza'),
+      name: 'Gerardo Roza',
+      preview: 'You: test',
+      mine: true,
+      lastTs: 20,
+      unread: 0,
+      roomId: '!dm',
+    };
+    const listed = [synthetic, ada];
+    expect(
+      conversationsMatchingSearch(membersForGroupPicker(listed, true), '').map(
+        (row) => row.person.id,
+      ),
+    ).toEqual([1]);
+    expect(
+      conversationsMatchingSearch(membersForGroupPicker(listed, false), '').map(
+        (row) => row.person.id,
+      ),
+    ).toEqual([-4, 1]);
+  });
+});
+
+describe('resolvedMatrixIdsForGroup', () => {
+  it('returns null until every selected member has a Matrix id', () => {
+    const ada = { person: person(1, 'Ada', 'Lovelace') };
+    const grace = { person: person(2, 'Grace', 'Hopper') };
+    expect(
+      resolvedMatrixIdsForGroup([ada, grace], { 1: '@ada:matrix' }),
+    ).toBeNull();
+    expect(
+      resolvedMatrixIdsForGroup([ada, grace], {
+        1: '  @ada:matrix  ',
+        2: '@grace:matrix',
+      }),
+    ).toEqual(['@ada:matrix', '@grace:matrix']);
+  });
+});
+
+describe('nextSelectedMembers', () => {
+  it('keeps earlier picks when the searched list changes', () => {
+    const ada = {
+      person: person(1, 'Ada', 'Lovelace'),
+      name: 'Ada Lovelace',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const grace = {
+      person: person(2, 'Grace', 'Hopper'),
+      name: 'Grace Hopper',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const afterAda = nextSelectedMembers(new Map(), ada);
+    const afterBoth = nextSelectedMembers(afterAda, grace);
+    expect([...afterBoth.keys()]).toEqual([1, 2]);
+    expect(afterBoth.get(1)?.name).toBe('Ada Lovelace');
+    const afterSearchWouldHideAda = nextSelectedMembers(afterBoth, grace);
+    expect([...afterSearchWouldHideAda.keys()]).toEqual([1]);
+    expect(afterSearchWouldHideAda.get(1)?.name).toBe('Ada Lovelace');
+  });
+
+  it('does not select a synthetic DM row', () => {
+    const synthetic = {
+      person: person(-12, 'Gerardo', 'Roza'),
+      name: 'Gerardo Roza',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: '!dm',
+    };
+    const ada = {
+      person: person(1, 'Ada', 'Lovelace'),
+      name: 'Ada Lovelace',
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+      roomId: null,
+    };
+    const afterAda = nextSelectedMembers(new Map(), ada);
+    const afterSynthetic = nextSelectedMembers(afterAda, synthetic);
+    expect([...afterSynthetic.keys()]).toEqual([1]);
   });
 });
 
@@ -775,6 +1546,42 @@ describe('groupRowsForConnections', () => {
     expect(groupRowsForConnections([row], 'Someone')[0]?.name).toBe(
       'Water team',
     );
+  });
+
+  it('hides an untyped named 1:1 leftover next to a typed DM', () => {
+    const rows = groupRowsForConnections(
+      [
+        room({
+          roomId: '!dm',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'Gerardo Roza',
+          otherUserId: '@gerardo:matrix',
+        }),
+        room({
+          roomId: '!legacy-pair',
+          kind: 'group',
+          name: 'prod_privy_did_privy_gerardo',
+          otherUserId: '@gerardo:matrix',
+          memberCount: 2,
+          groupChat: true,
+        }),
+      ],
+      'Someone',
+    );
+    expect(rows.map((row) => row.roomId)).toEqual([]);
+    expect(
+      isPeopleListGroup(
+        room({
+          roomId: '!legacy-pair',
+          kind: 'group',
+          name: 'prod_privy_did_privy_gerardo',
+          otherUserId: '@gerardo:matrix',
+          memberCount: 2,
+          groupChat: true,
+        }),
+      ),
+    ).toBe(false);
   });
 
   it('lists a named untyped group when only one member has loaded', () => {

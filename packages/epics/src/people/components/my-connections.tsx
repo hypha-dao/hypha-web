@@ -31,8 +31,8 @@ import {
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
   matrixUserIdToCanonicalPrivySub,
+  pickUserVisibleMemberLabel,
   sortConversationsByLastMessage,
-  uniqueCanonicalPrivySubsFromMxids,
   visibleMatrixMemberName,
   useJwt,
   useMatrix,
@@ -62,14 +62,13 @@ import {
   looksLikeHyphaBot,
   facesWithProfiles,
   groupRowsForConnections,
-  conversationMatchesSearch,
-  peopleMatchingSearch,
+  conversationsMatchingSearch,
+  membersForGroupPicker,
   conversationsVisibleInSection,
   enrichSearchMembers,
   isPeopleListGroup,
   isRememberedBoundChatRoom,
   isRememberedGroupChatRoom,
-  memberRowsForConnections,
   messagePreview,
   previewWithNames,
   rememberGroupChatMembers,
@@ -78,7 +77,13 @@ import {
   rememberedGroupChatMemberIds,
   rememberSignalThreadRooms,
   subscribeSignalThreadRooms,
-  unreadRoomsMissingFromMembers,
+  applyResolvedPeerTitles,
+  conversationPeerSubs,
+  mergeDirectoryPeople,
+  personRowsFromDmRooms,
+  nextSelectedMembers,
+  resolvedMatrixIdsForGroup,
+  visibleMemberRowsAfterTitleResolve,
   STALE_CONNECTION_MS,
   connectionActivityTs,
   collectDirectPairRoomHints,
@@ -356,13 +361,19 @@ function classifyConversationRoom(
     return drop('not-people-conversation');
   }
   const other = base.others.length === 1 ? base.others[0] : undefined;
+  const personLabel =
+    kind === 'person' && other
+      ? pickUserVisibleMemberLabel(
+          other.userId,
+          other.name,
+          other.user?.displayName,
+          other.rawDisplayName,
+        )
+      : null;
   const name =
     overrideName ||
-    (kind === 'person'
-      ? other?.name || other?.rawDisplayName
-      : base.nameState || room.name) ||
-    room.name ||
-    base.nameState ||
+    (kind === 'person' ? personLabel : base.nameState || room.name) ||
+    (kind === 'person' ? '' : room.name || base.nameState) ||
     '';
   if (overrideName && room.name.trim() === overrideName) {
     conversationTitleOverrides.delete(room.roomId);
@@ -1309,7 +1320,10 @@ export function MyConnections({
   const [synced, setSynced] = useState(false);
   const [rowsPending, setRowsPending] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selectedById, setSelectedById] = useState<
+    Map<number, ConnectionMemberRow>
+  >(() => new Map());
+  const selected = useMemo(() => new Set(selectedById.keys()), [selectedById]);
   const [picking, setPicking] = useState(false);
   const [starting, setStarting] = useState(false);
   const [pendingGroups, setPendingGroups] = useState<ConversationRow[]>([]);
@@ -1321,7 +1335,7 @@ export function MyConnections({
   const [loadingMore, setLoadingMore] = useState(false);
   const [moreFailed, setMoreFailed] = useState(false);
   const [directoryComplete, setDirectoryComplete] = useState(false);
-  const suggestionPoolRequested = useRef(false);
+  const fullDirectoryRequested = useRef(false);
 
   const { data: home } = useSWR<MemberIntelligence | null>(
     jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
@@ -1345,13 +1359,17 @@ export function MyConnections({
   const hasMorePeople =
     !directoryComplete && connections.length < connectionTotal;
   const needle = query.trim().toLowerCase();
-  const listed = needle
-    ? peopleMatchingSearch(connections, searchDirectory, needle)
-    : connections;
+  const wantsFullDirectory =
+    section === 'suggestions' || picking || Boolean(query.trim());
+  const directoryPeople = mergeDirectoryPeople(
+    connections,
+    needle || picking ? searchDirectory : null,
+  );
   const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
     useMatrixUserIdsByPersonIds({
       personIds: [
-        ...listed.map((person) => person.id),
+        ...directoryPeople.map((person) => person.id),
+        ...[...selectedById.keys()].filter((id) => id > 0),
         ...(home?.person.id != null ? [home.person.id] : []),
       ],
     });
@@ -1459,11 +1477,17 @@ export function MyConnections({
   }, [jwt, query]);
 
   useEffect(() => {
-    if (section !== 'suggestions' || !jwt || suggestionPoolRequested.current) {
+    if (!wantsFullDirectory || !jwt || fullDirectoryRequested.current) {
       return;
     }
-    suggestionPoolRequested.current = true;
+    if (home == null) return;
+    if (directoryComplete || connections.length >= connectionTotal) {
+      fullDirectoryRequested.current = true;
+      return;
+    }
+    fullDirectoryRequested.current = true;
     const controller = new AbortController();
+    let succeeded = false;
     void (async () => {
       try {
         const response = await fetch(
@@ -1473,27 +1497,42 @@ export function MyConnections({
             signal: controller.signal,
           },
         );
-        if (!response.ok) return;
+        if (!response.ok) {
+          fullDirectoryRequested.current = false;
+          return;
+        }
         const body = (await response.json()) as MemberIntelligence;
         if (controller.signal.aborted) return;
         const page = body.connections ?? [];
-        if (page.length === 0) return;
+        if (page.length === 0) {
+          setDirectoryComplete(true);
+          succeeded = true;
+          return;
+        }
         setDirectory(page);
-        if (page.length >= (body.counts?.connections ?? page.length)) {
+        if (page.length >= (body.counts?.connections ?? connectionTotal)) {
           setDirectoryComplete(true);
         }
+        succeeded = true;
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
         }
-        suggestionPoolRequested.current = false;
+        fullDirectoryRequested.current = false;
       }
     })();
     return () => {
       controller.abort();
-      suggestionPoolRequested.current = false;
+      if (!succeeded) fullDirectoryRequested.current = false;
     };
-  }, [jwt, section]);
+  }, [
+    connectionTotal,
+    connections.length,
+    directoryComplete,
+    home,
+    jwt,
+    wantsFullDirectory,
+  ]);
 
   useEffect(() => {
     if (!client) {
@@ -1529,23 +1568,18 @@ export function MyConnections({
     );
   }, [home?.signals]);
 
-  const members = useMemo(() => {
-    const directoryRows = memberRowsForConnections(
-      listed,
-      rows,
-      personIdToMatrixUserId,
-      home?.person.id ?? null,
-      t('someone'),
-    );
-    return [
-      ...unreadRoomsMissingFromMembers(
+  const members = useMemo(
+    () =>
+      personRowsFromDmRooms(
+        directoryPeople,
         rows,
-        directoryRows,
         personIdToMatrixUserId,
+        home?.person.id ?? null,
+        t('someone'),
+        directoryPeople,
       ),
-      ...directoryRows,
-    ];
-  }, [home?.person.id, listed, personIdToMatrixUserId, rows, t]);
+    [directoryPeople, home?.person.id, personIdToMatrixUserId, rows, t],
+  );
 
   const memberPersonIds = useMemo(
     () => members.map((row) => row.person.id),
@@ -1586,20 +1620,41 @@ export function MyConnections({
     [reachOut],
   );
 
-  const groupMemberSubs = useMemo(
-    () =>
-      uniqueCanonicalPrivySubsFromMxids(
-        rows.flatMap((row) =>
-          row.kind === 'group'
-            ? (row.searchMembers ?? []).map((member) => member.userId)
-            : [],
-        ),
-      ),
-    [rows],
-  );
-  const { peopleBySub, isLoading: peopleBySubLoading } = usePeopleBySubs({
-    subs: groupMemberSubs,
+  const peerSubs = useMemo(() => conversationPeerSubs(rows), [rows]);
+  const {
+    peopleBySub,
+    pendingSubs,
+    isLoading: peopleBySubLoading,
+  } = usePeopleBySubs({
+    subs: peerSubs,
   });
+  const titlesLoading = peopleBySubLoading || (peerSubs.length > 0 && !jwt);
+  const resolvedMembers = useMemo(
+    () =>
+      applyResolvedPeerTitles(
+        members,
+        rows,
+        peopleBySub,
+        personIdToMatrixUserId,
+        {
+          loading: titlesLoading,
+          pendingSubs,
+          hideUnresolved: true,
+        },
+      ),
+    [
+      members,
+      pendingSubs,
+      peopleBySub,
+      personIdToMatrixUserId,
+      rows,
+      titlesLoading,
+    ],
+  );
+  const titledMembers = useMemo(
+    () => visibleMemberRowsAfterTitleResolve(resolvedMembers, titlesLoading),
+    [resolvedMembers, titlesLoading],
+  );
 
   const people = useMemo(() => {
     const profiles = new Map<string, { name: string; avatarUrl?: string }>();
@@ -1613,8 +1668,10 @@ export function MyConnections({
       const local = id.replace(/^@/, '').split(':')[0]?.toLowerCase();
       if (local) mentionNames.set(local, clean);
     };
-    for (const row of members) {
-      const mxid = personIdToMatrixUserId[row.person.id];
+    for (const row of resolvedMembers) {
+      const mxid =
+        personIdToMatrixUserId[row.person.id] ||
+        rows.find((room) => room.roomId === row.roomId)?.otherUserId;
       if (!mxid) continue;
       const avatar = row.avatarUrl || row.person.avatarUrl || undefined;
       profiles.set(mxid.toLowerCase(), {
@@ -1677,7 +1734,7 @@ export function MyConnections({
           searchMembers: enrichSearchMembers(
             row.searchMembers,
             profiles,
-            members,
+            resolvedMembers,
             personIdToMatrixUserId,
             peopleByMxid,
           ),
@@ -1712,11 +1769,15 @@ export function MyConnections({
       groups,
       section === 'archived' ? 'archived' : 'messages',
     );
-    const matchingGroups = needle
-      ? listedGroups.filter((row) => conversationMatchesSearch(row, needle))
-      : listedGroups;
+    const matchingGroups = conversationsMatchingSearch(listedGroups, needle);
+    const matchingMembers = conversationsMatchingSearch(
+      membersForGroupPicker(titledMembers, picking),
+      needle,
+    );
     const source =
-      section === 'archived' ? matchingGroups : [...matchingGroups, ...members];
+      section === 'archived'
+        ? matchingGroups
+        : [...matchingGroups, ...matchingMembers];
     const named = source.map((row) => {
       const preview = previewWithNames(row.preview, mentionNames);
       return {
@@ -1728,17 +1789,21 @@ export function MyConnections({
   }, [
     client,
     home?.person,
-    members,
     needle,
     pendingGroups,
     peopleBySub,
     personIdToMatrixUserId,
     picking,
+    resolvedMembers,
     rows,
     section,
     t,
+    titledMembers,
   ]);
-  const selectedPeople = members.filter((row) => selected.has(row.person.id));
+  const selectedPeople = useMemo(
+    () => [...selectedById.values()],
+    [selectedById],
+  );
   const roomDiagnostics = useMemo(
     () => (debugRooms && client ? inspectJoinedAndInvitedRooms(client) : []),
     [client, debugRooms, rows, synced],
@@ -1778,23 +1843,19 @@ export function MyConnections({
     }
   }
 
-  function toggleSelected(id: number) {
-    setSelected((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  function toggleSelected(row: ConnectionMemberRow) {
+    setSelectedById((current) => nextSelectedMembers(current, row));
   }
 
   function exitPicking() {
     setPicking(false);
-    setSelected(new Set());
+    setSelectedById(new Map());
+    setQuery('');
   }
 
   async function openMember(row: ConnectionMemberRow) {
     if (picking) {
-      toggleSelected(row.person.id);
+      toggleSelected(row);
       return;
     }
     setNotice(null);
@@ -1817,8 +1878,26 @@ export function MyConnections({
     });
   }
 
+  const groupMemberIds = resolvedMatrixIdsForGroup(
+    selectedPeople,
+    personIdToMatrixUserId,
+  );
+  const canStartGroup =
+    selectedPeople.length >= 2 &&
+    !starting &&
+    !matrixIdsLoading &&
+    groupMemberIds != null;
+
   async function startGroupChat() {
     if (selectedPeople.length < 2 || starting) return;
+    const memberIds = resolvedMatrixIdsForGroup(
+      selectedPeople,
+      personIdToMatrixUserId,
+    );
+    if (!memberIds) {
+      setNotice(tChat('matrixFailed'));
+      return;
+    }
     setStarting(true);
     setNotice(null);
     const requester = [home?.person.name, home?.person.surname]
@@ -1836,10 +1915,6 @@ export function MyConnections({
       const { roomId } = await createRoom(title, {
         grantCreatorPl100: true,
         roomType: HYPHA_ROOM_TYPES.group,
-      });
-      const memberIds = selectedPeople.flatMap((row) => {
-        const mxid = personIdToMatrixUserId[row.person.id]?.trim();
-        return mxid ? [mxid] : [];
       });
       rememberGroupChatMembers(roomId, memberIds);
       await ensureRoomMembers(roomId, memberIds);
@@ -2008,7 +2083,7 @@ export function MyConnections({
                     type="button"
                     className="flex w-16 shrink-0 flex-col items-center gap-1 text-center"
                     aria-label={t('removeSelected', { name: row.name })}
-                    onClick={() => toggleSelected(row.person.id)}
+                    onClick={() => toggleSelected(row)}
                   >
                     <span className="relative inline-flex">
                       <PersonAvatar
@@ -2042,7 +2117,7 @@ export function MyConnections({
                 </p>
                 <Button
                   type="button"
-                  disabled={selectedPeople.length < 2 || starting}
+                  disabled={!canStartGroup}
                   className="shrink-0 gap-1.5"
                   onClick={() => void startGroupChat()}
                 >
@@ -2275,11 +2350,16 @@ function MemberList({
               >
                 {picking ? (
                   <span
-                    aria-hidden
+                    role="presentation"
                     className={cn(
                       'grid size-5 shrink-0 place-items-center rounded-full border border-neutral-8',
                       checked && 'border-foreground bg-foreground',
                     )}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onOpen(row);
+                    }}
                   >
                     {checked ? (
                       <span className="size-2 rounded-full bg-background" />
@@ -2300,14 +2380,23 @@ function MemberList({
                 )}
                 <span className="min-w-0 flex-1 pr-2">
                   <span className="flex items-baseline justify-between gap-3">
-                    <span
-                      className={cn(
-                        'min-w-0 truncate text-2 text-foreground',
-                        row.unread > 0 && 'font-semibold',
-                      )}
-                    >
-                      {row.name}
-                    </span>
+                    {row.titlePending ? (
+                      <span
+                        role="status"
+                        aria-busy="true"
+                        aria-label={loadingLabel}
+                        className="my-0.5 block h-4 w-32 max-w-[60%] animate-pulse rounded-sm bg-neutral-5"
+                      />
+                    ) : (
+                      <span
+                        className={cn(
+                          'min-w-0 truncate text-2 text-foreground',
+                          row.unread > 0 && 'font-semibold',
+                        )}
+                      >
+                        {row.name}
+                      </span>
+                    )}
                     {when ? (
                       <span className="shrink-0 text-1 text-muted-foreground">
                         {when}

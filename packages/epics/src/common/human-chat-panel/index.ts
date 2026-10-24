@@ -5,6 +5,7 @@ export { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-c
 export { HumanChatPanelCallJoinStrip } from './human-chat-panel-call-join-strip';
 export { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
 export { HumanChatPanelCallReactPopover } from './human-chat-panel-call-react-popover';
+export { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
 export { HumanChatPanelCallRaisedHandsStrip } from './human-chat-panel-call-raised-hands-strip';
 export { HumanChatPanelScreenshareTakeoverDialog } from './human-chat-panel-screenshare-takeover-dialog';
 export { HumanChatPanelCallSwitchConfirmDialog } from './human-chat-panel-call-switch-confirm-dialog';

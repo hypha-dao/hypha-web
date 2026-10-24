@@ -244,6 +244,11 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
             }
             {...props}
             side={side}
+            onEscapeKeyDown={(event) => {
+              if (document.querySelector('[data-hypha-emoji-picker]')) {
+                event.preventDefault();
+              }
+            }}
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Sidebar</SheetTitle>
