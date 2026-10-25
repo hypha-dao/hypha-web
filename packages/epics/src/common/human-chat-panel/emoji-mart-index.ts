@@ -60,8 +60,17 @@ export function filterEmojiShortcodes(
   return [...starts, ...contains].slice(0, MAX_SUGGESTIONS);
 }
 
+function isColonWordStart(value: string, colonIndex: number): boolean {
+  if (colonIndex <= 0) return true;
+  const prev = value.charAt(colonIndex - 1);
+  /** Reject `10:30`, `text: more`, `http:` — same word-constituents as @mentions. */
+  return !/[\p{L}\p{M}\p{N}_]/u.test(prev);
+}
+
 /**
  * Parse active `:shortcode` fragment before cursor (Discord-style).
+ * Only a colon at a token boundary opens the picker; the colon stays in the
+ * draft until the user picks a suggestion.
  */
 export function getActiveColonToken(
   value: string,
@@ -70,6 +79,7 @@ export function getActiveColonToken(
   const before = value.slice(0, cursor);
   const colonIdx = before.lastIndexOf(':');
   if (colonIdx === -1) return null;
+  if (!isColonWordStart(value, colonIdx)) return null;
   const afterColon = before.slice(colonIdx + 1);
   if (afterColon.includes('\n')) return null;
   if (!/^[\w_]*$/.test(afterColon)) return null;

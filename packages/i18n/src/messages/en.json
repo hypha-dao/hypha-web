@@ -3790,6 +3790,7 @@
     "connectionRetryFailedDescription": "Could not reconnect. Check your network and try again.",
     "connectionRetryingLabel": "Retrying…",
     "connectionLostRetry": "Retry",
+    "chatThreadCrashedDescription": "This chat view crashed. Try again.",
     "openPanel": "Open chat panel",
     "openPanelWithUnreadMentions": "Open chat panel (unread mentions)",
     "hidePanel": "Hide chat panel",

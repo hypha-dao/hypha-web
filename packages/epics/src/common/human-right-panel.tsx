@@ -94,6 +94,7 @@ import {
   HumanChatPanelLoader,
   HumanChatPanelMessages,
   HumanChatPanelChatBar,
+  HumanChatPanelErrorBoundary,
   HumanChatPanelTabs,
   HumanChatPanelMembers,
   HumanChatPanelMentionBell,
@@ -192,6 +193,11 @@ import {
   buildSpaceRosterSignalTeamMembers,
 } from './human-chat-panel/build-space-roster-mention-candidates';
 import { directConversationWelcomeName } from './human-chat-panel/direct-conversation-welcome';
+import {
+  asTimelineDate,
+  sortMessagesChronologically,
+  upsertTimelineMessages,
+} from './human-chat-panel/human-chat-timeline-order';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -616,7 +622,7 @@ function writePersistedChatHistory(
       .slice(-CHAT_HISTORY_MAX_ITEMS)
       .map((m) => ({
         ...m,
-        timestamp: m.timestamp?.toISOString(),
+        timestamp: asTimelineDate(m.timestamp)?.toISOString(),
       }));
     window.sessionStorage.setItem(
       `${CHAT_HISTORY_SESSION_PREFIX}${roomId}`,
@@ -2643,17 +2649,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         return prev;
       }
       messagesRoomIdRef.current = targetRoomId;
-      return existing.map((m) =>
-        toUIMessage(
-          m,
-          currentUserIdRef.current,
-          resolveMemberLabelRef.current,
-          currentUserAvatarUrlRef.current,
-          resolveMemberAvatarRef.current,
-          targetRoomId,
-          matrixRef.current.client ?? null,
-          formatSignalTeamNoticeRef.current,
-          systemSenderLabelRef.current,
+      return sortMessagesChronologically(
+        existing.map((m) =>
+          toUIMessage(
+            m,
+            currentUserIdRef.current,
+            resolveMemberLabelRef.current,
+            currentUserAvatarUrlRef.current,
+            resolveMemberAvatarRef.current,
+            targetRoomId,
+            matrixRef.current.client ?? null,
+            formatSignalTeamNoticeRef.current,
+            systemSenderLabelRef.current,
+          ),
         ),
       );
     });
@@ -3777,26 +3785,23 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           if (redacts.size > 0) {
             next = next.filter((m) => !redacts.has(m.id));
           }
+          const incoming: UIMessage[] = [];
           for (const message of upserts.values()) {
-            const ui = toUIMessage(
-              message,
-              currentUserIdRef.current,
-              resolveMemberLabelRef.current,
-              currentUserAvatarUrlRef.current,
-              resolveMemberAvatarRef.current,
-              roomId,
-              matrixRef.current.client ?? null,
-              formatSignalTeamNoticeRef.current,
-              systemSenderLabelRef.current,
+            incoming.push(
+              toUIMessage(
+                message,
+                currentUserIdRef.current,
+                resolveMemberLabelRef.current,
+                currentUserAvatarUrlRef.current,
+                resolveMemberAvatarRef.current,
+                roomId,
+                matrixRef.current.client ?? null,
+                formatSignalTeamNoticeRef.current,
+                systemSenderLabelRef.current,
+              ),
             );
-            const idx = next.findIndex((m) => m.id === ui.id);
-            if (idx === -1) {
-              next = [...next, ui];
-            } else {
-              next = next.map((m, i) => (i === idx ? ui : m));
-            }
           }
-          return next;
+          return upsertTimelineMessages(next, incoming);
         });
 
         for (const message of upserts.values()) {
@@ -4172,7 +4177,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       },
       avatarUrl: currentUserAvatarUrl,
     };
-    return [...messages, pendingRow];
+    return sortMessagesChronologically([...messages, pendingRow]);
   }, [messages, sendingPending, currentUserAvatarUrl]);
 
   const calledAgents = useMemo(
@@ -5914,79 +5919,83 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {isJoining ? (
                   <HumanChatPanelLoader showPreview />
                 ) : (
-                  <HumanChatPanelMessages
-                    messages={mergedMessages}
-                    roomId={roomId}
-                    currentUserId={currentUserId}
-                    currentUserAvatarUrl={currentUserAvatarUrl}
-                    welcomeText={
-                      mode === 'space' && !spaceSlug?.trim()
-                        ? t('networkWelcome')
-                        : mode === 'space' && spaceRoom === 'ecosystem'
-                        ? t('ecosystemWelcome')
-                        : mode === 'space' && spaceRoom === 'public'
-                        ? t('publicWelcome')
-                        : coherencePublic
-                        ? t('publicWelcome')
-                        : welcomePartner
-                        ? t('welcomeWith', { name: welcomePartner })
-                        : undefined
-                    }
-                    welcomeSenderName={
-                      mode === 'space' && !spaceSlug?.trim()
-                        ? t('networkRoomTitle')
-                        : mode === 'space' && spaceRoom === 'ecosystem'
-                        ? t('ecosystemRoomTitle')
-                        : mode === 'space' && spaceRoom === 'public'
-                        ? t('publicRoomTitle')
-                        : coherencePublic
-                        ? t('publicRoomTitle')
-                        : welcomePartner ?? undefined
-                    }
-                    onReply={
-                      blockSpaceChatForMembership
-                        ? undefined
-                        : handleReplyToMessage
-                    }
-                    onEditMessage={
-                      blockSpaceChatForMembership
-                        ? undefined
-                        : handleEditMessage
-                    }
-                    onDeleteMessage={
-                      blockSpaceChatForMembership || archivedGroup
-                        ? undefined
-                        : handleDeleteMessage
-                    }
-                    onToggleReaction={
-                      blockSpaceChatForMembership || archivedGroup
-                        ? undefined
-                        : handleToggleReaction
-                    }
-                    resolveReactionReactorLabel={(userId) =>
-                      resolveMemberLabel(userId)
-                    }
-                    resolveMatrixMemberLabel={resolveMentionMemberLabel}
-                    resolveSenderDisplayLabel={resolveSenderDisplayLabel}
-                    onCancelSendPending={cancelSendInFlight}
-                    firstUnreadMessageId={unreadChatState.firstUnreadMessageId}
-                    unreadNotificationCount={
-                      unreadChatState.unreadNotificationCount
-                    }
-                    unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
-                    viewportActive={sidebarOpen && activeTab === 'chat'}
-                    onReachedTimelineBottom={handleReachedTimelineBottom}
-                    onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
-                    scrollTargetEventId={scrollToEventId}
-                    onConsumedScrollTarget={handleConsumedScrollTarget}
-                    onScrollTargetNotFound={handleScrollTargetNotFound}
-                    hasMoreOlderMessages={hasMoreOlderMessages}
-                    loadingOlderMessages={loadingOlderMessages}
-                    enableAutoLoadOlderMessages={
-                      connectionStatus === 'connected' && !autoLoadOlderPaused
-                    }
-                    onLoadOlderMessages={handleLoadOlderMessages}
-                  />
+                  <HumanChatPanelErrorBoundary key={roomId ?? 'messages'}>
+                    <HumanChatPanelMessages
+                      messages={mergedMessages}
+                      roomId={roomId}
+                      currentUserId={currentUserId}
+                      currentUserAvatarUrl={currentUserAvatarUrl}
+                      welcomeText={
+                        mode === 'space' && !spaceSlug?.trim()
+                          ? t('networkWelcome')
+                          : mode === 'space' && spaceRoom === 'ecosystem'
+                          ? t('ecosystemWelcome')
+                          : mode === 'space' && spaceRoom === 'public'
+                          ? t('publicWelcome')
+                          : coherencePublic
+                          ? t('publicWelcome')
+                          : welcomePartner
+                          ? t('welcomeWith', { name: welcomePartner })
+                          : undefined
+                      }
+                      welcomeSenderName={
+                        mode === 'space' && !spaceSlug?.trim()
+                          ? t('networkRoomTitle')
+                          : mode === 'space' && spaceRoom === 'ecosystem'
+                          ? t('ecosystemRoomTitle')
+                          : mode === 'space' && spaceRoom === 'public'
+                          ? t('publicRoomTitle')
+                          : coherencePublic
+                          ? t('publicRoomTitle')
+                          : welcomePartner ?? undefined
+                      }
+                      onReply={
+                        blockSpaceChatForMembership
+                          ? undefined
+                          : handleReplyToMessage
+                      }
+                      onEditMessage={
+                        blockSpaceChatForMembership
+                          ? undefined
+                          : handleEditMessage
+                      }
+                      onDeleteMessage={
+                        blockSpaceChatForMembership || archivedGroup
+                          ? undefined
+                          : handleDeleteMessage
+                      }
+                      onToggleReaction={
+                        blockSpaceChatForMembership || archivedGroup
+                          ? undefined
+                          : handleToggleReaction
+                      }
+                      resolveReactionReactorLabel={(userId) =>
+                        resolveMemberLabel(userId)
+                      }
+                      resolveMatrixMemberLabel={resolveMentionMemberLabel}
+                      resolveSenderDisplayLabel={resolveSenderDisplayLabel}
+                      onCancelSendPending={cancelSendInFlight}
+                      firstUnreadMessageId={
+                        unreadChatState.firstUnreadMessageId
+                      }
+                      unreadNotificationCount={
+                        unreadChatState.unreadNotificationCount
+                      }
+                      unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
+                      viewportActive={sidebarOpen && activeTab === 'chat'}
+                      onReachedTimelineBottom={handleReachedTimelineBottom}
+                      onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
+                      scrollTargetEventId={scrollToEventId}
+                      onConsumedScrollTarget={handleConsumedScrollTarget}
+                      onScrollTargetNotFound={handleScrollTargetNotFound}
+                      hasMoreOlderMessages={hasMoreOlderMessages}
+                      loadingOlderMessages={loadingOlderMessages}
+                      enableAutoLoadOlderMessages={
+                        connectionStatus === 'connected' && !autoLoadOlderPaused
+                      }
+                      onLoadOlderMessages={handleLoadOlderMessages}
+                    />
+                  </HumanChatPanelErrorBoundary>
                 )}
               </div>
             )}
@@ -6051,46 +6060,48 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 border-t border-border/70 bg-page-background p-0 dark:bg-background-2">
             <div>
-              <HumanChatPanelChatBar
-                value={input}
-                onChange={setInput}
-                onSend={handleSend}
-                mentionCandidates={composerMentionCandidates}
-                mentionPickerEnabled={mentionPickerEnabled}
-                composerLocked={chatComposerLocked}
-                composerLockedMessage={chatComposerLockedMessage}
-                getMentionComposerLabel={getMentionComposerLabel}
-                onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
-                draftAttachments={draftAttachments}
-                onDraftAttachmentsChange={setDraftAttachments}
-                replyPreview={
-                  replyDraft
-                    ? {
-                        authorLabel: replyDraft.authorLabel,
-                        excerpt: replyDraft.excerpt,
-                        sourceUserId: replyDraft.sourceUserId,
-                        isYou: replyDraft.isYou,
-                        onDismiss: () => setReplyDraft(null),
-                      }
-                    : undefined
-                }
-                editPreview={
-                  editDraft
-                    ? {
-                        excerpt: editDraft.excerpt,
-                        onDismiss: () => {
-                          setEditDraft(null);
-                          setInput('');
-                          disposeDraftAttachmentUrls(
-                            draftAttachmentsRef.current,
-                          );
-                          setDraftAttachments([]);
-                        },
-                      }
-                    : undefined
-                }
-                editMediaMode={Boolean(editDraft?.editMediaMode)}
-              />
+              <HumanChatPanelErrorBoundary key={roomId ?? 'composer'}>
+                <HumanChatPanelChatBar
+                  value={input}
+                  onChange={setInput}
+                  onSend={handleSend}
+                  mentionCandidates={composerMentionCandidates}
+                  mentionPickerEnabled={mentionPickerEnabled}
+                  composerLocked={chatComposerLocked}
+                  composerLockedMessage={chatComposerLockedMessage}
+                  getMentionComposerLabel={getMentionComposerLabel}
+                  onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
+                  draftAttachments={draftAttachments}
+                  onDraftAttachmentsChange={setDraftAttachments}
+                  replyPreview={
+                    replyDraft
+                      ? {
+                          authorLabel: replyDraft.authorLabel,
+                          excerpt: replyDraft.excerpt,
+                          sourceUserId: replyDraft.sourceUserId,
+                          isYou: replyDraft.isYou,
+                          onDismiss: () => setReplyDraft(null),
+                        }
+                      : undefined
+                  }
+                  editPreview={
+                    editDraft
+                      ? {
+                          excerpt: editDraft.excerpt,
+                          onDismiss: () => {
+                            setEditDraft(null);
+                            setInput('');
+                            disposeDraftAttachmentUrls(
+                              draftAttachmentsRef.current,
+                            );
+                            setDraftAttachments([]);
+                          },
+                        }
+                      : undefined
+                  }
+                  editMediaMode={Boolean(editDraft?.editMediaMode)}
+                />
+              </HumanChatPanelErrorBoundary>
             </div>
           </SidebarFooter>
         )}

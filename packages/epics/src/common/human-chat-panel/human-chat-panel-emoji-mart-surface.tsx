@@ -43,6 +43,7 @@ export function HumanChatPanelEmojiMartSurface({
     <div
       role="dialog"
       aria-label={ariaLabel}
+      data-hypha-emoji-picker=""
       className={cn(
         /**
          * emoji-mart sizes its grid from this element's rendered width

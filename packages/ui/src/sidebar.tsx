@@ -186,6 +186,11 @@ export interface SidebarProps extends React.ComponentProps<'div'> {
   collapsible?: 'offcanvas' | 'icon' | 'none';
   /** Optional mobile sheet width override (e.g. "100vw"). */
   mobileWidth?: string;
+  /**
+   * When this returns true, the mobile Sheet does not dismiss on Escape.
+   * Callers own overlay selectors — do not hard-code product markup here.
+   */
+  shouldPreventEscapeDismiss?: (event: KeyboardEvent) => boolean;
 }
 
 const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
@@ -195,6 +200,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
       variant = 'sidebar',
       collapsible = 'offcanvas',
       mobileWidth,
+      shouldPreventEscapeDismiss,
       className,
       children,
       ...props
@@ -244,6 +250,11 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
             }
             {...props}
             side={side}
+            onEscapeKeyDown={(event) => {
+              if (shouldPreventEscapeDismiss?.(event)) {
+                event.preventDefault();
+              }
+            }}
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Sidebar</SheetTitle>

@@ -3188,6 +3188,7 @@
     "connectionRetryFailedDescription": "Impossible de se reconnecter. Vérifiez votre réseau et réessayez.",
     "connectionRetryingLabel": "Nouvelle tentative…",
     "connectionLostRetry": "Réessayer",
+    "chatThreadCrashedDescription": "Cette vue du chat a planté. Réessayez.",
     "openPanel": "Ouvrir le panneau de chat",
     "openPanelWithUnreadMentions": "Ouvrir le panneau de chat (mentions non lues)",
     "hidePanel": "Masquer le panneau de chat",

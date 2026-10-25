@@ -41,6 +41,8 @@ import {
 } from './use-is-space-context';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useCallMembershipRegistry } from './human-chat-panel/use-call-membership-registry';
+import { HumanChatPanelErrorBoundary } from './human-chat-panel/human-chat-panel-error-boundary';
+import { shouldPreventChatSheetEscapeDismiss } from './human-chat-panel/composer-escape';
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
 import { PanelScrollInset } from './panel-scroll-inset';
 import { APP_CHROME_ICON_TRIGGER } from './chrome-radius';
@@ -657,9 +659,12 @@ export function PanelWrapLayout({
           collapsible="offcanvas"
           mobileWidth="100vw"
           className="z-[50]"
+          shouldPreventEscapeDismiss={shouldPreventChatSheetEscapeDismiss}
         >
           <SidebarResizeHandle />
-          {effectiveRight.content}
+          <HumanChatPanelErrorBoundary>
+            {effectiveRight.content}
+          </HumanChatPanelErrorBoundary>
         </Sidebar>
       </SidebarProvider>
     );
