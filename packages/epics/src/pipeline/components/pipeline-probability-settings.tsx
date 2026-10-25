@@ -14,6 +14,7 @@ import {
 import { Button, Input, Separator } from '@hypha-platform/ui';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { migrateMatrixSlug } from '../lib/migrate-matrix-slug';
 import { resolveAdoptedStageSlug } from '../lib/resolve-adopted-stage-slug';
 import { PipelineConfigRow } from './pipeline-config-row';
 
@@ -42,27 +43,6 @@ function toStageDefinition({
   return stage;
 }
 
-function migrateMatrixSlug(
-  matrix: ProbabilityMatrix,
-  tracks: { slug: string }[],
-  fromSlug: string,
-  adoptedSlug: string,
-): ProbabilityMatrix {
-  const updated: ProbabilityMatrix = {};
-  for (const track of tracks) {
-    const existing = matrix[track.slug];
-    const lane = {
-      ...(existing && !Array.isArray(existing) ? existing : {}),
-    };
-    lane[adoptedSlug] =
-      getProbabilityCell(matrix, track.slug, adoptedSlug) ??
-      getProbabilityCell(matrix, track.slug, fromSlug) ??
-      seedStageProbability(track.slug, adoptedSlug);
-    updated[track.slug] = lane;
-  }
-  return updated;
-}
-
 function adoptPlaceholderSlug(
   rows: StageDraftRow[],
   index: number,
@@ -88,7 +68,13 @@ function adoptPlaceholderSlug(
     rows: rows.map((item, i) =>
       i === index ? { ...item, slug: adoptedSlug } : item,
     ),
-    matrix: migrateMatrixSlug(matrix, tracks, stage.slug, adoptedSlug),
+    matrix: migrateMatrixSlug(
+      matrix,
+      tracks,
+      stage.slug,
+      adoptedSlug,
+      seedStageProbability,
+    ),
   };
 }
 
