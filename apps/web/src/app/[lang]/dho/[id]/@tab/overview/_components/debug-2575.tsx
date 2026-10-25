@@ -19,6 +19,8 @@ function navigationType() {
 }
 
 const UNLOAD_KEY = '2575:unload';
+/** Counts replayed server redirects for the whole document, not per mount. */
+let redirectBoundaryTotal2575 = 0;
 
 export function Debug2575Lifecycle({ name }: { name: string }) {
   const router = useRouter();
@@ -52,7 +54,7 @@ export function Debug2575Lifecycle({ name }: { name: string }) {
         console.log(
           `[#2575] router.${method} #${count}${
             fromRedirectBoundary
-              ? ' [REDIRECT-BOUNDARY: server redirect()]'
+              ? ` [REDIRECT-BOUNDARY: server redirect() TOTAL=${++redirectBoundaryTotal2575}]`
               : ''
           } -> ${JSON.stringify(args[0])} ${JSON.stringify(
             args[1] ?? null,
