@@ -52,9 +52,11 @@ describe('composer Escape stays inside overlays', () => {
     const capture = source.slice(
       source.indexOf('handleComposerShellKeyDownCapture'),
     );
-    expect(capture.indexOf('isComposing')).toBeLessThan(
-      capture.indexOf('closeComposerOverlayFromEscape(e)'),
-    );
+    const composingIdx = capture.indexOf('isComposing');
+    const closeIdx = capture.indexOf('closeComposerOverlayFromEscape(e)');
+    expect(composingIdx).toBeGreaterThanOrEqual(0);
+    expect(closeIdx).toBeGreaterThanOrEqual(0);
+    expect(composingIdx).toBeLessThan(closeIdx);
   });
 
   it('emoji picker uses window capture and onEscapeKeyDown', () => {
