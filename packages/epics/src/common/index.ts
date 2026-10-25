@@ -229,6 +229,7 @@ export {
   HumanChatPanelMessages,
   HumanChatPanelCallReactPopover,
   HumanChatPanelErrorBoundary,
+  HumanChatPanelEmojiPicker,
 } from './human-chat-panel';
 export { HumanRightPanel } from './human-right-panel';
 export { useIsNetworkContext, useIsSpaceContext } from './use-is-space-context';
