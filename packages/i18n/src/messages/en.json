@@ -724,6 +724,7 @@
     "error": "Your home could not be loaded.",
     "errorNamed": "{name}, your home could not be loaded.",
     "profileUnavailable": "You are still signed in. Your profile could not be loaded.",
+    "homeUnavailable": "You are still signed in. Who is around and home updates could not be loaded.",
     "retry": "Try again",
     "sendTokensChoose": "Choose a token. Currently {symbol}.",
     "gotItDone": "Thanks — I'm with you",

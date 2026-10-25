@@ -303,6 +303,7 @@
     "error": "Je startpagina kon niet worden geladen.",
     "errorNamed": "{name}, je startpagina kon niet worden geladen.",
     "profileUnavailable": "Je bent nog aangemeld. Je profiel kon niet worden geladen.",
+    "homeUnavailable": "Je bent nog aangemeld. Wie er is en de home-updates konden niet worden geladen.",
     "retry": "Opnieuw proberen",
     "sendTokensChoose": "Kies een token. Nu {symbol}.",
     "gotItDone": "Bedankt — ik ben erbij",

@@ -303,6 +303,7 @@
     "error": "Ton accueil n'a pas pu être chargé.",
     "errorNamed": "{name}, ton accueil n'a pas pu être chargé.",
     "profileUnavailable": "Tu es toujours connecté. Ton profil n'a pas pu être chargé.",
+    "homeUnavailable": "Tu es toujours connecté. Impossible de charger qui est là et les mises à jour de l'accueil.",
     "retry": "Réessayer",
     "sendTokensChoose": "Choisis un token. Actuellement {symbol}.",
     "gotItDone": "Merci — je suis avec vous",

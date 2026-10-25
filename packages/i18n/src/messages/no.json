@@ -303,6 +303,7 @@
     "error": "Hjemmet ditt kunne ikke lastes.",
     "errorNamed": "{name}, hjemmet ditt kunne ikke lastes.",
     "profileUnavailable": "Du er fortsatt innlogget. Profilen din kunne ikke lastes.",
+    "homeUnavailable": "Du er fortsatt innlogget. Hvem som er her og hjemmeoppdateringer kunne ikke lastes.",
     "retry": "Prøv igjen",
     "sendTokensChoose": "Velg et token. Nå {symbol}.",
     "gotItDone": "Takk — jeg er med",

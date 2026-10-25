@@ -303,6 +303,7 @@
     "error": "No se pudo cargar tu inicio.",
     "errorNamed": "{name}, no se pudo cargar tu inicio.",
     "profileUnavailable": "Sigues con la sesión iniciada. No se pudo cargar tu perfil.",
+    "homeUnavailable": "Sigues con la sesión iniciada. No se pudo cargar quién está cerca ni las actualizaciones de inicio.",
     "retry": "Intentar de nuevo",
     "sendTokensChoose": "Elige un token. Ahora: {symbol}.",
     "gotItDone": "Gracias — estoy contigo",

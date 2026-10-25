@@ -303,6 +303,7 @@
     "error": "Dein Zuhause konnte nicht geladen werden.",
     "errorNamed": "{name}, dein Zuhause konnte nicht geladen werden.",
     "profileUnavailable": "Du bist noch angemeldet. Dein Profil konnte nicht geladen werden.",
+    "homeUnavailable": "Du bist noch angemeldet. Wer da ist und die Home-Updates konnten nicht geladen werden.",
     "retry": "Nochmal versuchen",
     "sendTokensChoose": "Wähle einen Token. Aktuell {symbol}.",
     "gotItDone": "Danke — ich bin dabei",

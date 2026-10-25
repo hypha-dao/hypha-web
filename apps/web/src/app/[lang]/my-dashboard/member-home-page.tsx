@@ -301,7 +301,7 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
         greetingName={greetingName}
         unavailable={
           <>
-            <p className="text-1 text-neutral-11">{t('error')}</p>
+            <p className="text-1 text-neutral-11">{t('homeUnavailable')}</p>
             <Button
               type="button"
               variant="outline"
