@@ -1309,7 +1309,12 @@ export function useOnboardingVoiceRealtime({
       return;
     }
 
-    if (realtimeSpeakInFlightRef.current || speechPlaybackRef.current) {
+    // An early lead-in is still this turn: finish it, then say the rest.
+    // Any other audio is the previous bubble. The chat has moved on.
+    if (
+      earlyPrefix &&
+      (realtimeSpeakInFlightRef.current || speechPlaybackRef.current)
+    ) {
       pendingRemainderSpeakRef.current = remainder;
       lastSpokenAssistantRef.current = spoken;
       return;

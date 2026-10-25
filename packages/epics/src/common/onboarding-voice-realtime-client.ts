@@ -169,20 +169,10 @@ function buildRealtimeSpeakLanguageDirective(): string {
 
 function buildRealtimeSpeakInstructions(text: string): string {
   return [
-    'CRITICAL OVERRIDE FOR THIS RESPONSE ONLY.',
-    'Ignore any earlier briefing, space facts, or conversation summary for speech content.',
-    'You are a voice output relay only. Do not call tools or add new information.',
-    'Your only job is text-to-speech of the SCRIPT below.',
-    'Speak the SCRIPT verbatim — every word, in order, with a warm natural tone.',
-    'Do not paraphrase, summarize, reorder, soften, or skip any sentence.',
-    'Do not add greetings, fillers, questions, or closings that are not in the SCRIPT.',
-    'Do not ask follow-up questions. Do not return to a previous signal or topic.',
+    'Say the words below and nothing else. Same language. Warm, natural pace.',
     buildRealtimeSpeakLanguageDirective(),
     '',
-    'SCRIPT (read aloud exactly):',
-    '"""',
     text,
-    '"""',
   ].join('\n');
 }
 
