@@ -18,10 +18,11 @@ export function useWhatChanged2575(
     }
   }
   if (changed.length > 0) {
-    console.log(`[#2575] ${name} deps changed`, {
-      render: renders.current,
-      changed,
-    });
+    console.log(
+      `[#2575] ${name} deps changed (render ${renders.current}): ${changed.join(
+        ', ',
+      )}`,
+    );
   }
   previous.current = deps;
 }

@@ -4468,6 +4468,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       return;
     }
 
+    // TEMP(#2575): why the effect did not write
+    console.log(
+      `[#2575] signal-url sync effect: NOT in coherence branch mode=${String(
+        mode,
+      )} prevMode=${String(prevMode)} coherenceSlug=${String(
+        coherenceSlug,
+      )} urlSignal=${String(readSignalDeepLinkSlug(searchParams))}`,
+    );
     if (
       prevMode === 'coherence' &&
       mode === 'space' &&
