@@ -38,19 +38,12 @@ export function resolveMemberHomePhase(input: {
   return 'ready';
 }
 
-/**
- * Intelligence failure still has a loaded /me person. Do not require
- * `person.sub === memberId` — domain Person omits `sub`, so that gate
- * would always drop the name and fall back to "there".
- */
+/** Name only when /me is the signed-in member (`person.sub === memberId`). */
 export function resolveMemberHomeGreetingName(input: {
-  phase: MemberHomePhase;
   personName?: string | null;
   personNickname?: string | null;
   personIsCurrentMember: boolean;
 }): string | null {
-  const name = input.personName?.trim() || input.personNickname?.trim() || null;
-  if (!name) return null;
-  if (input.phase === 'home-unavailable') return name;
-  return input.personIsCurrentMember ? name : null;
+  if (!input.personIsCurrentMember) return null;
+  return input.personName?.trim() || input.personNickname?.trim() || null;
 }

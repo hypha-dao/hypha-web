@@ -328,144 +328,150 @@ export function MemberHome({
                 'max-xl:flex max-xl:shrink-0 max-xl:overflow-visible max-xl:border-0 max-xl:px-5',
             )}
           >
-            <section
-              aria-busy={railsBusy || undefined}
-              className="flex w-full min-w-0 flex-col border border-border bg-background p-4"
-            >
-              <h2
-                className="text-3"
-                style={{ fontFamily: 'var(--font-family-heading)' }}
+            {showUnavailable ? null : (
+              <section
+                aria-busy={railsBusy || undefined}
+                className="flex w-full min-w-0 flex-col border border-border bg-background p-4"
               >
-                {t('overviewTitle')}
-              </h2>
-              <div
-                className={
-                  railsBusy || orientation
-                    ? 'mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3'
-                    : 'mt-3 grid'
-                }
-              >
-                {!showUnavailable && (home == null || orientation == null) ? (
-                  <div className="flex w-14 shrink-0 flex-col items-center gap-1.5">
-                    <HomePulse className="h-9 w-9" />
-                    <HomePulse className="h-3 w-12" />
-                  </div>
-                ) : orientation ? (
-                  <OrientationBadge
-                    orientation={orientation}
-                    isSaving={isSavingOrientation}
-                    error={orientationError}
-                    onChoose={onChooseOrientation}
-                  />
-                ) : null}
-                <dl className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-2">
-                  <Stat
-                    label={t('counts.spaces')}
-                    value={home?.counts.spaces ?? 0}
-                    isLoading={railsBusy}
-                  />
-                  <Stat
-                    label={t('counts.proposals')}
-                    value={home?.counts.openProposals ?? 0}
-                    isLoading={railsBusy}
-                  />
-                  <Stat
-                    label={t('counts.signals')}
-                    value={home?.counts.signals ?? 0}
-                    isLoading={railsBusy}
-                  />
-                  <Stat
-                    label={t('counts.people')}
-                    value={home?.counts.connections ?? 0}
-                    isLoading={railsBusy}
-                  />
-                </dl>
-              </div>
-            </section>
+                <h2
+                  className="text-3"
+                  style={{ fontFamily: 'var(--font-family-heading)' }}
+                >
+                  {t('overviewTitle')}
+                </h2>
+                <div
+                  className={
+                    railsBusy || orientation
+                      ? 'mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3'
+                      : 'mt-3 grid'
+                  }
+                >
+                  {home == null || orientation == null ? (
+                    <div className="flex w-14 shrink-0 flex-col items-center gap-1.5">
+                      <HomePulse className="h-9 w-9" />
+                      <HomePulse className="h-3 w-12" />
+                    </div>
+                  ) : orientation ? (
+                    <OrientationBadge
+                      orientation={orientation}
+                      isSaving={isSavingOrientation}
+                      error={orientationError}
+                      onChoose={onChooseOrientation}
+                    />
+                  ) : null}
+                  <dl className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-2">
+                    <Stat
+                      label={t('counts.spaces')}
+                      value={home?.counts.spaces ?? 0}
+                      isLoading={railsBusy}
+                    />
+                    <Stat
+                      label={t('counts.proposals')}
+                      value={home?.counts.openProposals ?? 0}
+                      isLoading={railsBusy}
+                    />
+                    <Stat
+                      label={t('counts.signals')}
+                      value={home?.counts.signals ?? 0}
+                      isLoading={railsBusy}
+                    />
+                    <Stat
+                      label={t('counts.people')}
+                      value={home?.counts.connections ?? 0}
+                      isLoading={railsBusy}
+                    />
+                  </dl>
+                </div>
+              </section>
+            )}
 
-            <MemberHomeWalletWidget
-              lang={lang}
-              personSlug={home?.person.slug}
-              hasAddress={Boolean(home?.wallet.address)}
-              isHomeLoading={railsBusy}
-            />
-            <Tile
-              title={t('notifications')}
-              count={
-                home && home.counts.notifications > 0
-                  ? home.counts.notifications
-                  : undefined
-              }
-              busy={railsBusy}
-            >
-              <ResourceList
-                isLoading={railsBusy}
-                empty={t('noNotifications')}
-                maxItems={5}
-                markSize={24}
-                items={
-                  home
-                    ? [...home.notifications]
-                        .sort((left, right) => {
-                          const leftAt = left.at ?? '';
-                          const rightAt = right.at ?? '';
-                          if (leftAt !== rightAt) {
-                            return leftAt < rightAt ? 1 : -1;
-                          }
-                          return left.id < right.id ? -1 : 1;
-                        })
-                        .flatMap((item) => {
-                          const match = queue.find(
-                            (entry) =>
-                              entry.kind === item.kind &&
-                              entry.slug === item.targetSlug,
-                          );
-                          return [
-                            {
-                              id: item.id,
-                              kind: item.kind,
-                              title: item.title,
-                              detail: item.detail,
-                              icon: item.spaceLogo ?? null,
-                              href:
-                                item.kind === 'signal'
-                                  ? getSignalPath(
-                                      lang,
-                                      item.spaceSlug,
-                                      item.targetSlug,
-                                    )
-                                  : getProposalPath(
-                                      lang,
-                                      item.spaceSlug,
-                                      item.targetSlug,
-                                    ),
-                              ...(match
-                                ? {
-                                    onSelect: () =>
-                                      setFocusKey(
-                                        `${match.kind}:${match.slug}`,
-                                      ),
-                                  }
-                                : {}),
-                            },
-                          ];
-                        })
-                    : []
-                }
+            {showUnavailable ? null : (
+              <MemberHomeWalletWidget
+                lang={lang}
+                personSlug={home?.person.slug}
+                hasAddress={Boolean(home?.wallet.address)}
+                isHomeLoading={railsBusy}
               />
-              {home && home.notifications.length > 5 ? (
-                <Button asChild className="mt-4 w-full text-sm">
-                  <Link href={`/${lang}/home/notifications`}>
-                    {t('seeMoreNotifications')}
-                  </Link>
-                </Button>
-              ) : null}
-            </Tile>
+            )}
+            {showUnavailable ? null : (
+              <Tile
+                title={t('notifications')}
+                count={
+                  home && home.counts.notifications > 0
+                    ? home.counts.notifications
+                    : undefined
+                }
+                busy={railsBusy}
+              >
+                <ResourceList
+                  isLoading={railsBusy}
+                  empty={t('noNotifications')}
+                  maxItems={5}
+                  markSize={24}
+                  items={
+                    home
+                      ? [...home.notifications]
+                          .sort((left, right) => {
+                            const leftAt = left.at ?? '';
+                            const rightAt = right.at ?? '';
+                            if (leftAt !== rightAt) {
+                              return leftAt < rightAt ? 1 : -1;
+                            }
+                            return left.id < right.id ? -1 : 1;
+                          })
+                          .flatMap((item) => {
+                            const match = queue.find(
+                              (entry) =>
+                                entry.kind === item.kind &&
+                                entry.slug === item.targetSlug,
+                            );
+                            return [
+                              {
+                                id: item.id,
+                                kind: item.kind,
+                                title: item.title,
+                                detail: item.detail,
+                                icon: item.spaceLogo ?? null,
+                                href:
+                                  item.kind === 'signal'
+                                    ? getSignalPath(
+                                        lang,
+                                        item.spaceSlug,
+                                        item.targetSlug,
+                                      )
+                                    : getProposalPath(
+                                        lang,
+                                        item.spaceSlug,
+                                        item.targetSlug,
+                                      ),
+                                ...(match
+                                  ? {
+                                      onSelect: () =>
+                                        setFocusKey(
+                                          `${match.kind}:${match.slug}`,
+                                        ),
+                                    }
+                                  : {}),
+                              },
+                            ];
+                          })
+                      : []
+                  }
+                />
+                {home && home.notifications.length > 5 ? (
+                  <Button asChild className="mt-4 w-full text-sm">
+                    <Link href={`/${lang}/home/notifications`}>
+                      {t('seeMoreNotifications')}
+                    </Link>
+                  </Button>
+                ) : null}
+              </Tile>
+            )}
           </aside>
           <main
             className={cn(
               'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[68rem]/home:col-start-1 @min-[68rem]/home:row-start-1 @min-[80rem]/home:col-start-2',
-              (showField || showEnergy) && 'max-xl:hidden',
+              (showField || showEnergy) && !showUnavailable && 'max-xl:hidden',
             )}
           >
             <div className="shrink-0 px-5 pt-4 md:px-4">
@@ -663,16 +669,18 @@ export function MemberHome({
                 onSelect={setFocusKey}
               />
             )}
-            <MemberHomeConnectionsWidget
-              lang={lang}
-              people={home?.connections ?? []}
-              isLoading={railsBusy}
-              fallbackName={memberFallback}
-              notice={chatNotice}
-              onChat={home ? openChat : undefined}
-              onCall={home ? openCall : undefined}
-              onVideo={home ? openVideo : undefined}
-            />
+            {showUnavailable ? null : (
+              <MemberHomeConnectionsWidget
+                lang={lang}
+                people={home?.connections ?? []}
+                isLoading={railsBusy}
+                fallbackName={memberFallback}
+                notice={chatNotice}
+                onChat={home ? openChat : undefined}
+                onCall={home ? openCall : undefined}
+                onVideo={home ? openVideo : undefined}
+              />
+            )}
           </aside>
           {showEnergy && home?.person.slug ? (
             <div className="flex shrink-0 flex-col gap-4 px-5 py-4 xl:hidden">

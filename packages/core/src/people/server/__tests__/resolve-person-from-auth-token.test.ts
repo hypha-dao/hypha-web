@@ -54,6 +54,7 @@ describe('resolvePersonFromAuthToken', () => {
 
     const person = await resolvePersonFromAuthToken('token');
     expect(person?.slug).toBe('alex');
+    expect(person?.sub).toBe('did:privy:abc');
     expect(findSelf).not.toHaveBeenCalled();
   });
 
@@ -73,6 +74,7 @@ describe('resolvePersonFromAuthToken', () => {
 
     const person = await resolvePersonFromAuthToken('token');
     expect(person?.slug).toBe('fallback');
+    expect(person?.sub).toBe('did:privy:abc');
     expect(findSelf).toHaveBeenCalledOnce();
   });
 
@@ -90,6 +92,7 @@ describe('resolvePersonFromAuthToken', () => {
 
     const caller = await resolveMemberCaller('token');
     expect(caller?.person.id).toBe(7);
+    expect(caller?.person.sub).toBe('did:privy:alex');
     expect(findPersonBySub).toHaveBeenCalledWith(
       { sub: 'did:privy:alex' },
       expect.anything(),
@@ -114,6 +117,7 @@ describe('resolvePersonFromAuthToken', () => {
 
     const caller = await resolveMemberCaller('token');
     expect(caller?.person.id).toBe(3);
+    expect(caller?.person.sub).toBe('did:privy:new');
     expect(caller?.db).toBe(authDb);
   });
 

@@ -6,6 +6,11 @@ import type { DatabaseInstance } from '../../common/server/types';
 import type { Person } from '../types';
 import { findPersonBySub, findSelf } from './queries';
 
+/** Domain Person omits `sub`; /me needs the verified id for ownership checks. */
+function withVerifiedSub(person: Person, userId: string): Person {
+  return person.sub === userId ? person : { ...person, sub: userId };
+}
+
 /**
  * Resolve the signed-in person for server auth gates.
  * Prefer Privy-verified sub + service DB (avoids Neon RLS failures on chat/tools),
@@ -19,11 +24,13 @@ export async function resolvePersonFromAuthToken(
   const verified = await verifyPrivyAuthToken(authToken);
   if (verified.ok) {
     const person = await findPersonBySub({ sub: verified.userId }, { db });
-    if (person) return person;
+    if (person) return withVerifiedSub(person, verified.userId);
   }
 
   try {
-    return await findSelf({ db: getDb({ authToken }) });
+    const person = await findSelf({ db: getDb({ authToken }) });
+    if (!person) return null;
+    return verified.ok ? withVerifiedSub(person, verified.userId) : person;
   } catch (error) {
     console.error(
       '[resolvePersonFromAuthToken] findSelf fallback failed',
@@ -48,7 +55,9 @@ export async function resolveMemberCaller(
   if (verified.ok) {
     try {
       const person = await findPersonBySub({ sub: verified.userId }, { db });
-      if (person?.id) return { person, db };
+      if (person?.id) {
+        return { person: withVerifiedSub(person, verified.userId), db };
+      }
     } catch (error) {
       console.error(
         '[resolveMemberCaller] service lookup failed',
@@ -61,7 +70,10 @@ export async function resolveMemberCaller(
     const authDb = getDb({ authToken });
     const person = await findSelf({ db: authDb });
     if (!person?.id) return null;
-    return { person, db: authDb };
+    return {
+      person: verified.ok ? withVerifiedSub(person, verified.userId) : person,
+      db: authDb,
+    };
   } catch (error) {
     console.error(
       '[resolveMemberCaller] findSelf fallback failed',

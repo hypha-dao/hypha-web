@@ -244,7 +244,6 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   const personIsCurrentMember =
     Boolean(memberId) && tokenOwner === memberId && person?.sub === memberId;
   const greetingName = resolveMemberHomeGreetingName({
-    phase,
     personName: person?.name,
     personNickname: person?.nickname,
     personIsCurrentMember,

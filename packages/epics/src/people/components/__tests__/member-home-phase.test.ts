@@ -100,21 +100,9 @@ describe('resolveMemberHomePhase', () => {
 });
 
 describe('resolveMemberHomeGreetingName', () => {
-  it('uses the loaded person on home-unavailable even without a sub match', () => {
+  it('returns a name only when the person is the current member', () => {
     expect(
       resolveMemberHomeGreetingName({
-        phase: 'home-unavailable',
-        personName: 'Vlad',
-        personNickname: 'v',
-        personIsCurrentMember: false,
-      }),
-    ).toBe('Vlad');
-  });
-
-  it('still gates the loading shell on the current-member check', () => {
-    expect(
-      resolveMemberHomeGreetingName({
-        phase: 'loading',
         personName: 'Vlad',
         personNickname: 'v',
         personIsCurrentMember: false,
@@ -122,7 +110,6 @@ describe('resolveMemberHomeGreetingName', () => {
     ).toBeNull();
     expect(
       resolveMemberHomeGreetingName({
-        phase: 'loading',
         personName: 'Vlad',
         personNickname: 'v',
         personIsCurrentMember: true,
