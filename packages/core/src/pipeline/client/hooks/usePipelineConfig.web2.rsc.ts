@@ -93,8 +93,13 @@ export function usePipelineConfig(spaceSlug?: string) {
 
   return {
     config,
+    pageTitle: config.pageTitle,
+    itemSingular: config.itemSingular,
+    itemPlural: config.itemPlural,
     regions: config.regions,
     defaultRegion: config.defaultRegion,
+    tracks: config.tracks,
+    stages: config.stages,
     probabilities: config.probabilities,
     isLoading,
     error,

@@ -2,9 +2,15 @@ import { z } from 'zod';
 import {
   DEAL_PRIORITIES,
   DEAL_STATUSES,
-  PIPELINE_STATUSES,
-  PIPELINE_SWIMLANES,
+  terminalProbabilityForStage,
 } from './constants';
+
+const pipelineSlug = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/);
 
 const dealContactSchema = z.object({
   firstName: z.string().trim().max(100).optional(),
@@ -47,8 +53,8 @@ const countryCode = z
 
 export const schemaCreateDeal = z.object({
   title: z.string().trim().min(1).max(200),
-  pipelineSwimlane: z.enum(PIPELINE_SWIMLANES),
-  pipelineStatus: z.enum(PIPELINE_STATUSES),
+  pipelineSwimlane: pipelineSlug,
+  pipelineStatus: pipelineSlug,
   status: z.enum(DEAL_STATUSES).optional().default('active'),
   priority: z.enum(DEAL_PRIORITIES).optional().default('medium'),
   value: z.coerce.number().min(0).optional().default(0),
@@ -96,9 +102,7 @@ export const schemaUpdateDeal = schemaCreateDeal.partial().extend({
 
 export const schemaDealFiltersQuery = z.object({
   q: z.string().trim().optional(),
-  swimlane: z
-    .union([z.enum(PIPELINE_SWIMLANES), z.array(z.enum(PIPELINE_SWIMLANES))])
-    .optional(),
+  swimlane: z.union([pipelineSlug, z.array(pipelineSlug)]).optional(),
   region: z
     .union([
       z.string().trim().min(1).max(80),
@@ -127,9 +131,7 @@ export const schemaDealFiltersQuery = z.object({
   status: z
     .union([z.enum(DEAL_STATUSES), z.array(z.enum(DEAL_STATUSES))])
     .optional(),
-  pipelineStatus: z
-    .union([z.enum(PIPELINE_STATUSES), z.array(z.enum(PIPELINE_STATUSES))])
-    .optional(),
+  pipelineStatus: z.union([pipelineSlug, z.array(pipelineSlug)]).optional(),
   ownerId: z.coerce.number().int().positive().optional(),
   accountManagerId: z.coerce.number().int().positive().optional(),
   tag: z.string().trim().optional(),
@@ -158,35 +160,34 @@ export const schemaPipelineUserSettings = z.object({
 
 const probabilityValue = z.coerce.number().int().min(0).max(100);
 
-const probabilityLane = z
-  .object(
-    Object.fromEntries(
-      PIPELINE_STATUSES.map((status) => [status, probabilityValue.optional()]),
-    ) as Record<
-      (typeof PIPELINE_STATUSES)[number],
-      z.ZodOptional<typeof probabilityValue>
-    >,
-  )
-  .partial();
+const schemaPipelineTrack = z.object({
+  slug: pipelineSlug,
+  name: z.string().trim().min(1).max(80),
+  position: z.number().int().min(0).optional(),
+});
+
+const schemaPipelineStage = z.object({
+  slug: pipelineSlug,
+  name: z.string().trim().min(1).max(80),
+  position: z.number().int().min(0).optional(),
+  terminal: z.enum(['won', 'lost']).optional(),
+});
 
 export const schemaPipelineConfig = z
   .object({
+    pageTitle: z.string().trim().min(1).max(80).optional(),
+    itemSingular: z.string().trim().min(1).max(40).optional(),
+    itemPlural: z.string().trim().min(1).max(40).optional(),
     regions: z
       .array(z.string().trim().min(1).max(80))
       .min(1)
       .max(50)
       .optional(),
     defaultRegion: z.string().trim().min(1).max(80).optional(),
+    tracks: z.array(schemaPipelineTrack).min(1).max(20).optional(),
+    stages: z.array(schemaPipelineStage).min(1).max(20).optional(),
     probabilities: z
-      .object(
-        Object.fromEntries(
-          PIPELINE_SWIMLANES.map((lane) => [lane, probabilityLane.optional()]),
-        ) as Record<
-          (typeof PIPELINE_SWIMLANES)[number],
-          z.ZodOptional<typeof probabilityLane>
-        >,
-      )
-      .partial()
+      .record(z.string(), z.record(z.string(), probabilityValue))
       .optional(),
   })
   .superRefine((data, ctx) => {
@@ -201,6 +202,39 @@ export const schemaPipelineConfig = z
         code: z.ZodIssueCode.custom,
         path: ['defaultRegion'],
         message: 'defaultRegion must be one of the configured regions',
+      });
+    }
+
+    const uniqueSlugs = (
+      items: { slug: string }[] | undefined,
+      path: string,
+    ) => {
+      if (!items) return;
+      const seen = new Set<string>();
+      for (const item of items) {
+        if (seen.has(item.slug)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [path],
+            message: `Duplicate ${path.slice(0, -1)} slug "${item.slug}"`,
+          });
+        }
+        seen.add(item.slug);
+      }
+    };
+    uniqueSlugs(data.tracks, 'tracks');
+    uniqueSlugs(data.stages, 'stages');
+
+    if (
+      data.stages &&
+      !data.stages.some(
+        (stage) => terminalProbabilityForStage(stage) === undefined,
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['stages'],
+        message: 'At least one open (non-terminal) stage is required',
       });
     }
   });
