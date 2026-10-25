@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveMemberHomePhase } from '../member-home-phase';
+import {
+  resolveMemberHomeGreetingName,
+  resolveMemberHomePhase,
+} from '../member-home-phase';
 
 const settled = {
   authLoading: false,
@@ -93,5 +96,37 @@ describe('resolveMemberHomePhase', () => {
 
   it('shows member home when the person and intelligence both loaded', () => {
     expect(resolveMemberHomePhase(settled)).toBe('ready');
+  });
+});
+
+describe('resolveMemberHomeGreetingName', () => {
+  it('uses the loaded person on home-unavailable even without a sub match', () => {
+    expect(
+      resolveMemberHomeGreetingName({
+        phase: 'home-unavailable',
+        personName: 'Vlad',
+        personNickname: 'v',
+        personIsCurrentMember: false,
+      }),
+    ).toBe('Vlad');
+  });
+
+  it('still gates the loading shell on the current-member check', () => {
+    expect(
+      resolveMemberHomeGreetingName({
+        phase: 'loading',
+        personName: 'Vlad',
+        personNickname: 'v',
+        personIsCurrentMember: false,
+      }),
+    ).toBeNull();
+    expect(
+      resolveMemberHomeGreetingName({
+        phase: 'loading',
+        personName: 'Vlad',
+        personNickname: 'v',
+        personIsCurrentMember: true,
+      }),
+    ).toBe('Vlad');
   });
 });

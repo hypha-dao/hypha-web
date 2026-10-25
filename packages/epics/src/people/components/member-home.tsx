@@ -482,7 +482,12 @@ export function MemberHome({
                       <HomePulse text className="h-[28px] w-56 max-w-full" />
                     ) : (
                       <h1
-                        className="truncate text-7"
+                        className={cn(
+                          'text-7',
+                          showUnavailable
+                            ? 'text-wrap break-words'
+                            : 'truncate',
+                        )}
                         style={{ fontFamily: 'var(--font-family-heading)' }}
                       >
                         {t(greetingKey(), { name: displayName })}
@@ -498,7 +503,12 @@ export function MemberHome({
               </div>
               <div className="min-w-0 pt-1 pl-[calc(24px+var(--spacing-3))]">
                 {showUnavailable ? (
-                  <div className="mt-3">{unavailable}</div>
+                  <div
+                    className="mt-2 flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2"
+                    role="status"
+                  >
+                    {unavailable}
+                  </div>
                 ) : home == null ? (
                   <div className="mt-2 flex gap-2" aria-hidden>
                     {Array.from({ length: 5 }, (_, index) => (

@@ -2,6 +2,7 @@
 
 import {
   MemberHome,
+  resolveMemberHomeGreetingName,
   resolveMemberHomePhase,
   type MemberHomeRecord,
   type SignupOrientation,
@@ -242,9 +243,12 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
 
   const personIsCurrentMember =
     Boolean(memberId) && tokenOwner === memberId && person?.sub === memberId;
-  const greetingName = personIsCurrentMember
-    ? person?.name?.trim() || person?.nickname?.trim() || null
-    : null;
+  const greetingName = resolveMemberHomeGreetingName({
+    phase,
+    personName: person?.name,
+    personNickname: person?.nickname,
+    personIsCurrentMember,
+  });
 
   if (phase === 'signup') {
     return (
@@ -297,10 +301,12 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
         greetingName={greetingName}
         unavailable={
           <>
-            <p className="text-2 text-neutral-11">{t('error')}</p>
+            <p className="text-1 text-neutral-11">{t('error')}</p>
             <Button
-              className="mt-4"
               type="button"
+              variant="outline"
+              colorVariant="neutral"
+              size="sm"
               onClick={() => {
                 void revalidate();
                 void mutate();
