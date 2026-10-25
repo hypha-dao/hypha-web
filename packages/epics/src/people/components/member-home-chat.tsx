@@ -16,6 +16,7 @@ import { Volume2, VolumeX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
+  listMemberHomeThreadCatalog,
   listMemberHomeThreadItems,
   memberHomeBoardDestination,
   memberHomeItemMemory,
@@ -702,6 +703,11 @@ export function MemberHomeChat({
     () => listMemberHomeThreadItems(intelligence),
     [intelligence],
   );
+  // The walk is short. The card can be any open item the brief names.
+  const cardItems = useMemo(
+    () => listMemberHomeThreadCatalog(intelligence),
+    [intelligence],
+  );
 
   /** Same string the bubble shows — Realtime must speak this script. */
   const lastAssistantText = useMemo(() => {
@@ -713,7 +719,7 @@ export function MemberHomeChat({
       const board =
         homeBoardFromMessage(message) ??
         memberHomeSignalCatalogue(rawText, intelligence.spaces, lang);
-      const spokenItem = homeItemForMessage(threadItems, message);
+      const spokenItem = homeItemForMessage(cardItems, message);
       return homeAssistantScript({
         displayText: board
           ? t('boardInstead', { space: board.title })
@@ -724,7 +730,7 @@ export function MemberHomeChat({
       });
     }
     return '';
-  }, [homeMessages, intelligence.spaces, lang, t, threadItems]);
+  }, [cardItems, homeMessages, intelligence.spaces, lang, t]);
 
   const voiceInterview = useOnboardingVoiceDiscovery({
     enabled: soundReady && dialogue && !isAuthLoading && isAuthenticated,
@@ -841,7 +847,7 @@ export function MemberHomeChat({
       if (message.role !== 'assistant' || message.metadata?.homeArrival) {
         continue;
       }
-      const item = homeItemForMessage(threadItems, message);
+      const item = homeItemForMessage(cardItems, message);
       if (!item) continue;
       const key = memberHomeThreadItemKey(item);
       if (seen.has(key)) continue;
@@ -849,20 +855,20 @@ export function MemberHomeChat({
       map.set(message.id, item);
     }
     return map;
-  }, [homeMessages, threadItems]);
+  }, [cardItems, homeMessages]);
   const cardMessageId = useMemo(() => {
     for (let index = homeMessages.length - 1; index >= 0; index -= 1) {
       const message = homeMessages[index];
       if (!message || message.role !== 'assistant') continue;
       if (message.metadata?.homeArrival) continue;
-      if (homeItemForMessage(threadItems, message)) return message.id;
+      if (homeItemForMessage(cardItems, message)) return message.id;
     }
     return null;
-  }, [homeMessages, threadItems]);
+  }, [cardItems, homeMessages]);
   const focusedItem = useMemo(() => {
     const message = homeMessages.find((item) => item.id === cardMessageId);
-    return message ? homeItemForMessage(threadItems, message) : null;
-  }, [cardMessageId, homeMessages, threadItems]);
+    return message ? homeItemForMessage(cardItems, message) : null;
+  }, [cardItems, cardMessageId, homeMessages]);
   useEffect(() => {
     const node = scroller.current;
     if (!node) return;
@@ -884,10 +890,10 @@ export function MemberHomeChat({
       if (!message || message.metadata?.homeArrival) continue;
       if (message.role !== 'assistant') return true;
       if (messageText(message)) return false;
-      return homeItemForMessage(threadItems, message) == null;
+      return homeItemForMessage(cardItems, message) == null;
     }
     return true;
-  }, [homeMessages, isStreaming, threadItems]);
+  }, [cardItems, homeMessages, isStreaming]);
   const hasSpoken = homeMessages.some(
     (message) => message.role === 'user' && !message.metadata?.homeArrival,
   );
@@ -1043,7 +1049,7 @@ export function MemberHomeChat({
                 : null;
             const spokenItem =
               message.role === 'assistant'
-                ? homeItemForMessage(threadItems, message)
+                ? homeItemForMessage(cardItems, message)
                 : null;
             const text =
               message.role === 'assistant'

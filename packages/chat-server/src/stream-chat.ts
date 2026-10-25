@@ -15,7 +15,7 @@ import type {
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
 import {
-  listMemberHomeThreadItems,
+  listMemberHomeThreadCatalog,
   SHOW_MEMBER_HOME_ITEM_TOOL,
   memberHomeItemMemory,
   mergeMemberHomeMemory,
@@ -1424,7 +1424,7 @@ export async function createChatStreamResult(
     ? await loadMemberHomeFacts(authToken)
     : null;
   const memberHomeItems = memberHomeRecord
-    ? listMemberHomeThreadItems(memberHomeRecord.home)
+    ? listMemberHomeThreadCatalog(memberHomeRecord.home)
     : [];
   const memberHomeMemoryFromMessages = memberHomeRecord
     ? memberHomeItemMemory(memberHomeItems, messages)
@@ -1609,7 +1609,7 @@ export async function createChatStreamResult(
         ?.collectedFields ?? snapshotWalkthrough?.collectedFields,
   });
   const systemPrompt = memberHomeRecord
-    ? `${effectiveSystemPrompt}\n\nYou are Hypha, speaking to this member at home. Use only the brief below. Two short sentences, then stop. Call show_member_home_item once for the one item in the brief unless this turn is a share or a visual request. You may also call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not call any other tool. Do not think out loud.${
+    ? `${effectiveSystemPrompt}\n\nYou are Hypha, speaking to this member at home. Use only the brief below. Write at most two short sentences. Those sentences are read aloud word for word, so say them as you would to the member. Call show_member_home_item once for the one item in the brief unless this turn is a share or a visual request, then write the sentences. You may also call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not mention tools, slugs, or instructions. Do not call any other tool. Do not think out loud.${
         onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''
       }`
     : normalizedConversationContext?.mode === 'onboarding_setup'
@@ -1705,16 +1705,13 @@ export async function createChatStreamResult(
   const result = streamText({
     model: memberHomeRecord
       ? openrouterWithHyphaHeaders(openRouterModelId, {
-          // Home replies are short. Reasoning holds the first token, and a
-          // busy provider holds it longer. Skip both.
+          // Reasoning holds the first token. The card tool still has to run,
+          // so this stays on the normal provider instead of the fastest one.
           reasoning: { effort: 'none', exclude: true },
-          provider: { sort: 'latency' },
         })
       : openrouterWithHyphaHeaders(openRouterModelId),
     // The fetch wrapper already retries. Another SDK retry would stack on a slow turn.
     maxRetries: 0,
-    // Two sentences. A long completion is what pushes a home turn past a few seconds.
-    ...(memberHomeRecord ? { maxOutputTokens: 160 } : {}),
     system: [systemPrompt, memberHomeFacts, homeVisualDirective]
       .filter(Boolean)
       .join('\n\n'),
@@ -1731,8 +1728,20 @@ export async function createChatStreamResult(
 
     // Cast: ChatRouteTool's generic Zod input doesn't satisfy ai's CoreTool typing, but is structurally compatible at runtime.
     tools: tools as unknown as Parameters<typeof streamText>[0]['tools'],
-    // Home shows one card, then the two sentences. More steps are another full wait.
-    stopWhen: stepCountIs(memberHomeRecord ? 2 : 6),
+    // After the waiting-item card, the next step is speech only. Share and
+    // visual turns still need their tools on later steps.
+    prepareStep: memberHomeRecord
+      ? ({ stepNumber }) =>
+          stepNumber > 0 && memberHomeCard
+            ? { toolChoice: 'none' as const }
+            : {}
+      : undefined,
+    stopWhen: memberHomeRecord
+      ? ({ steps }) => {
+          if (steps.length >= 2) return true;
+          return Boolean(steps[steps.length - 1]?.text?.trim());
+        }
+      : stepCountIs(6),
     onStepFinish: (event) => {
       if (!OPENROUTER_DEBUG) return;
 
