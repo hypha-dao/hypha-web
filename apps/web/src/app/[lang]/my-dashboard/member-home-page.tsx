@@ -240,6 +240,12 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     router.replace(`/${lang}/profile/signup`);
   }, [phase, lang, router]);
 
+  const personIsCurrentMember =
+    Boolean(memberId) && tokenOwner === memberId && person?.sub === memberId;
+  const greetingName = personIsCurrentMember
+    ? person?.name?.trim() || person?.nickname?.trim() || null
+    : null;
+
   if (phase === 'signup') {
     return (
       <p className="px-5 py-16 text-center text-2 text-neutral-11">
@@ -284,52 +290,38 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   }
 
   if (phase === 'home-unavailable') {
-    const personIsCurrentMember =
-      Boolean(memberId) && tokenOwner === memberId && person?.sub === memberId;
-    const greetingName = personIsCurrentMember
-      ? person?.name?.trim() || person?.nickname?.trim() || null
-      : null;
     return (
-      <div className="px-5 py-8">
-        {greetingName ? (
-          <h1
-            className="text-7 font-medium tracking-[-0.03em]"
-            style={{ fontFamily: 'var(--font-family-heading)' }}
-          >
-            {greetingName}
-          </h1>
-        ) : null}
-        <p
-          className={
-            greetingName
-              ? 'mt-3 text-2 text-neutral-11'
-              : 'text-2 text-neutral-11'
-          }
-        >
-          {t('error')}
-        </p>
-        <Button
-          className="mt-4"
-          type="button"
-          onClick={() => {
-            void revalidate();
-            void mutate();
-          }}
-        >
-          {t('retry')}
-        </Button>
-      </div>
+      <MemberHome
+        lang={lang}
+        isLoading={false}
+        greetingName={greetingName}
+        unavailable={
+          <>
+            <p className="text-2 text-neutral-11">{t('error')}</p>
+            <Button
+              className="mt-4"
+              type="button"
+              onClick={() => {
+                void revalidate();
+                void mutate();
+              }}
+            >
+              {t('retry')}
+            </Button>
+          </>
+        }
+        isSavingOrientation={isSavingOrientation}
+        orientationError={orientationError}
+        onChooseOrientation={(orientation) => {
+          void chooseOrientation(orientation);
+        }}
+      />
     );
   }
 
   // Intelligence can hang until a 504. Keep the person shell (greeting)
   // instead of a hard error or a 40s skeleton while the request is in flight.
   if (!data) {
-    const personIsCurrentMember =
-      Boolean(memberId) && tokenOwner === memberId && person?.sub === memberId;
-    const greetingName = personIsCurrentMember
-      ? person?.name?.trim() || person?.nickname?.trim() || null
-      : null;
     return (
       <MemberHome
         lang={lang}

@@ -85,6 +85,8 @@ type MemberHomeProps = {
   intelligence?: MemberIntelligence | null;
   isLoading?: boolean;
   greetingName?: string | null;
+  /** Inline under the greeting when intelligence failed; skip loading pulses. */
+  unavailable?: ReactNode;
   isSavingOrientation?: boolean;
   orientationError?: string | null;
   onChooseOrientation: (orientation: SignupOrientation) => void;
@@ -170,6 +172,7 @@ export function MemberHome({
   intelligence,
   isLoading = false,
   greetingName,
+  unavailable,
   isSavingOrientation,
   orientationError,
   onChooseOrientation,
@@ -213,6 +216,8 @@ export function MemberHome({
   const [chatNotice, setChatNotice] = useState<string | null>(null);
   const memberFallback = t('fallbackMember');
   const home = isLoading || !intelligence ? null : intelligence;
+  const showUnavailable = Boolean(unavailable) && home == null;
+  const railsBusy = home == null && !showUnavailable;
   useEffect(() => {
     rememberSignalThreadRooms(
       (home?.signals ?? []).map((signal) => signal.roomId),
@@ -250,7 +255,7 @@ export function MemberHome({
     greetingName?.trim() ||
     '';
   const displayName = knownName || t('fallbackName');
-  const greetingPending = home == null && !knownName;
+  const greetingPending = home == null && !knownName && !showUnavailable;
   const queue = useMemo(
     () => (home ? listMemberHomeThreadItems(home) : []),
     [home],
@@ -305,7 +310,7 @@ export function MemberHome({
           <MemberHomeSpacesRail
             lang={lang}
             spaces={home?.spaces ?? []}
-            isLoading={home == null}
+            isLoading={railsBusy}
             persistOnWide
           />
         </div>
@@ -324,7 +329,7 @@ export function MemberHome({
             )}
           >
             <section
-              aria-busy={home == null || undefined}
+              aria-busy={railsBusy || undefined}
               className="flex w-full min-w-0 flex-col border border-border bg-background p-4"
             >
               <h2
@@ -335,12 +340,12 @@ export function MemberHome({
               </h2>
               <div
                 className={
-                  home == null || orientation
+                  railsBusy || orientation
                     ? 'mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3'
                     : 'mt-3 grid'
                 }
               >
-                {home == null || orientation == null ? (
+                {!showUnavailable && (home == null || orientation == null) ? (
                   <div className="flex w-14 shrink-0 flex-col items-center gap-1.5">
                     <HomePulse className="h-9 w-9" />
                     <HomePulse className="h-3 w-12" />
@@ -357,22 +362,22 @@ export function MemberHome({
                   <Stat
                     label={t('counts.spaces')}
                     value={home?.counts.spaces ?? 0}
-                    isLoading={home == null}
+                    isLoading={railsBusy}
                   />
                   <Stat
                     label={t('counts.proposals')}
                     value={home?.counts.openProposals ?? 0}
-                    isLoading={home == null}
+                    isLoading={railsBusy}
                   />
                   <Stat
                     label={t('counts.signals')}
                     value={home?.counts.signals ?? 0}
-                    isLoading={home == null}
+                    isLoading={railsBusy}
                   />
                   <Stat
                     label={t('counts.people')}
                     value={home?.counts.connections ?? 0}
-                    isLoading={home == null}
+                    isLoading={railsBusy}
                   />
                 </dl>
               </div>
@@ -382,7 +387,7 @@ export function MemberHome({
               lang={lang}
               personSlug={home?.person.slug}
               hasAddress={Boolean(home?.wallet.address)}
-              isHomeLoading={home == null}
+              isHomeLoading={railsBusy}
             />
             <Tile
               title={t('notifications')}
@@ -391,10 +396,10 @@ export function MemberHome({
                   ? home.counts.notifications
                   : undefined
               }
-              busy={home == null}
+              busy={railsBusy}
             >
               <ResourceList
-                isLoading={home == null}
+                isLoading={railsBusy}
                 empty={t('noNotifications')}
                 maxItems={5}
                 markSize={24}
@@ -492,7 +497,9 @@ export function MemberHome({
                 />
               </div>
               <div className="min-w-0 pt-1 pl-[calc(24px+var(--spacing-3))]">
-                {home == null ? (
+                {showUnavailable ? (
+                  <div className="mt-3">{unavailable}</div>
+                ) : home == null ? (
                   <div className="mt-2 flex gap-2" aria-hidden>
                     {Array.from({ length: 5 }, (_, index) => (
                       <HomePulse
@@ -524,7 +531,7 @@ export function MemberHome({
                 )}
               </div>
             </div>
-            {home && showAssistant ? (
+            {showUnavailable ? null : home && showAssistant ? (
               <MemberHomeChat
                 lang={lang}
                 intelligence={home}
@@ -591,7 +598,7 @@ export function MemberHome({
                 className={cn(showField && 'max-xl:hidden')}
               />
             ) : null}
-            {home == null ? (
+            {railsBusy ? (
               <section
                 className="border border-border bg-background p-4"
                 aria-hidden
@@ -638,16 +645,18 @@ export function MemberHome({
               </section>
             ) : null}
 
-            <AttentionNeeded
-              lang={lang}
-              home={home}
-              queue={attentionQueue}
-              onSelect={setFocusKey}
-            />
+            {showUnavailable ? null : (
+              <AttentionNeeded
+                lang={lang}
+                home={home}
+                queue={attentionQueue}
+                onSelect={setFocusKey}
+              />
+            )}
             <MemberHomeConnectionsWidget
               lang={lang}
               people={home?.connections ?? []}
-              isLoading={home == null}
+              isLoading={railsBusy}
               fallbackName={memberFallback}
               notice={chatNotice}
               onChat={home ? openChat : undefined}

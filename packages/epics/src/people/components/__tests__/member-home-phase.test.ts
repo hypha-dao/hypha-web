@@ -73,6 +73,16 @@ describe('resolveMemberHomePhase', () => {
         homeError: true,
       }),
     ).toBe('home-unavailable');
+    // A request abort / network block is an intelligence error, not /me.
+    expect(
+      resolveMemberHomePhase({
+        ...settled,
+        person: 'present',
+        home: 'missing',
+        homeError: true,
+        meError: false,
+      }),
+    ).toBe('home-unavailable');
     expect(
       resolveMemberHomePhase({
         ...settled,
