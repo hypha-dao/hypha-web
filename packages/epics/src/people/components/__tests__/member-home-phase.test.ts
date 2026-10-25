@@ -69,6 +69,13 @@ describe('resolveMemberHomePhase', () => {
     expect(
       resolveMemberHomePhase({
         ...settled,
+        home: 'missing',
+        homeError: true,
+      }),
+    ).toBe('home-unavailable');
+    expect(
+      resolveMemberHomePhase({
+        ...settled,
         meError: true,
       }),
     ).toBe('ready');

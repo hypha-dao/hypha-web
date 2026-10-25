@@ -283,8 +283,47 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     );
   }
 
-  // Intelligence can hang until a 504. Keep the person shell (greeting,
-  // retry on the next SWR tick) instead of a hard error or a 40s skeleton.
+  if (phase === 'home-unavailable') {
+    const personIsCurrentMember =
+      Boolean(memberId) && tokenOwner === memberId && person?.sub === memberId;
+    const greetingName = personIsCurrentMember
+      ? person?.name?.trim() || person?.nickname?.trim() || null
+      : null;
+    return (
+      <div className="px-5 py-8">
+        {greetingName ? (
+          <h1
+            className="text-7 font-medium tracking-[-0.03em]"
+            style={{ fontFamily: 'var(--font-family-heading)' }}
+          >
+            {greetingName}
+          </h1>
+        ) : null}
+        <p
+          className={
+            greetingName
+              ? 'mt-3 text-2 text-neutral-11'
+              : 'text-2 text-neutral-11'
+          }
+        >
+          {t('error')}
+        </p>
+        <Button
+          className="mt-4"
+          type="button"
+          onClick={() => {
+            void revalidate();
+            void mutate();
+          }}
+        >
+          {t('retry')}
+        </Button>
+      </div>
+    );
+  }
+
+  // Intelligence can hang until a 504. Keep the person shell (greeting)
+  // instead of a hard error or a 40s skeleton while the request is in flight.
   if (!data) {
     const personIsCurrentMember =
       Boolean(memberId) && tokenOwner === memberId && person?.sub === memberId;
