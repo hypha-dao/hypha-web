@@ -5,7 +5,7 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { getDhoPathOverview } from './@tab/overview/constants';
 
 type PageProps = {
@@ -28,10 +28,23 @@ export default async function Index(props: PageProps) {
     nextUrl: h.get('next-url'),
     referer: h.get('referer'),
   });
+  // TEMP(#2575): experiment `keep-query` forwards ?signal=&msg= through this redirect.
+  const keepQuery =
+    process.env.VERCEL_ENV !== 'production' &&
+    ((await cookies()).get('exp2575')?.value ?? '')
+      .split(',')
+      .includes('keep-query');
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    for (const item of Array.isArray(value) ? value : value ? [value] : []) {
+      qs.append(key, item);
+    }
+  }
+  const suffix = keepQuery && qs.toString() ? `?${qs.toString()}` : '';
   const space = await findSpaceBySlug({ slug: id }, { db });
   if (space) {
     const energy = await findEnergyCommunityBySpaceId(space.id, { db });
-    if (energy) redirect(`/${lang}/dho/${id}/energy`);
+    if (energy) redirect(`/${lang}/dho/${id}/energy${suffix}`);
   }
-  redirect(getDhoPathOverview(lang, id));
+  redirect(`${getDhoPathOverview(lang, id)}${suffix}`);
 }

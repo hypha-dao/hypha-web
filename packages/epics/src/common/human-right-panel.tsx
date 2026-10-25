@@ -181,7 +181,7 @@ import {
   buildSpaceRosterSignalTeamMembers,
 } from './human-chat-panel/build-space-roster-mention-candidates';
 import { directConversationWelcomeName } from './human-chat-panel/direct-conversation-welcome';
-import { logEffectRun2575, useWhatChanged2575 } from './debug-2575';
+import { isExp2575, logEffectRun2575, useWhatChanged2575 } from './debug-2575';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -4461,7 +4461,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (typeof window !== 'undefined') {
         window.history.replaceState(window.history.state, '', href);
       }
-      router.replace(href, { scroll: false });
+      // TEMP(#2575): experiment `no-router-replace` skips the server round trip
+      if (!isExp2575('no-router-replace')) {
+        router.replace(href, { scroll: false });
+      }
       return;
     }
 

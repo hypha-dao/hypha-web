@@ -26,6 +26,15 @@ export function useWhatChanged2575(
   previous.current = deps;
 }
 
+/** Experiment switches, kept in the `exp2575` cookie so middleware, server pages and client code all see them. */
+export function isExp2575(flag: string): boolean {
+  if (typeof document === 'undefined') return false;
+  const entry = document.cookie
+    .split('; ')
+    .find((item) => item.startsWith('exp2575='));
+  return (entry?.slice('exp2575='.length) ?? '').split(',').includes(flag);
+}
+
 let effectRuns = 0;
 /** Counts how often an effect body runs. */
 export function logEffectRun2575(

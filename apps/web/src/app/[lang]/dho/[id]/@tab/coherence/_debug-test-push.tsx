@@ -1,7 +1,7 @@
 'use client';
 
 /** TEMP(#2575): button that sends a push to yourself with a chosen link. Remove with the fix. */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useAuthentication } from '@hypha-platform/authentication';
 
@@ -25,6 +25,39 @@ export function DebugTestPush() {
     { label: 'overview', value: `${base}/overview` },
   ];
 
+  const [flags, setFlags] = useState<string[]>([]);
+  useEffect(() => {
+    const entry = document.cookie
+      .split('; ')
+      .find((item) => item.startsWith('exp2575='));
+    setFlags(
+      (entry?.slice('exp2575='.length) ?? '').split(',').filter(Boolean),
+    );
+  }, []);
+  const toggleFlag = (flag: string) => {
+    const next = flags.includes(flag)
+      ? flags.filter((item) => item !== flag)
+      : [...flags, flag];
+    document.cookie = `exp2575=${next.join(
+      ',',
+    )}; path=/; max-age=86400; samesite=lax`;
+    setFlags(next);
+  };
+  const experiments: { flag: string; label: string }[] = [
+    {
+      flag: 'http-redirect',
+      label: 'X: bare space URL redirects over HTTP (middleware)',
+    },
+    {
+      flag: 'keep-query',
+      label: 'Y: bare space redirect keeps ?signal=&msg= (page and X)',
+    },
+    {
+      flag: 'no-router-replace',
+      label: 'Z: signal-URL sync uses history.replaceState only',
+    },
+  ];
+
   const send = async () => {
     setStatus('sending…');
     const token = await getAccessToken();
@@ -42,6 +75,21 @@ export function DebugTestPush() {
   return (
     <div className="flex flex-col gap-2 rounded border border-dashed p-3 text-1">
       <strong>#2575 test push (temporary)</strong>
+      <div className="flex flex-col gap-1">
+        <span>
+          Experiments (apply on the next navigation; hard reload to be safe):
+        </span>
+        {experiments.map(({ flag, label }) => (
+          <label key={flag} className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={flags.includes(flag)}
+              onChange={() => toggleFlag(flag)}
+            />
+            {label}
+          </label>
+        ))}
+      </div>
       <div className="flex flex-wrap gap-2">
         {presets.map(({ label, value }) => (
           <button
