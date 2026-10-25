@@ -88,6 +88,25 @@ const nextConfig: NextConfig = {
         destination: '/:lang/network',
         permanent: true,
       },
+      // TEMP(#2575): experiment `http-redirect` (cookie `exp2575`, non-production only) answers
+      // the bare space URL with an HTTP redirect, so dho/[id]/page.tsx never renders into the
+      // layout's children slot. Next passes the query string through to the destination.
+      ...(process.env.VERCEL_ENV === 'production'
+        ? []
+        : [
+            {
+              source: `/:lang(${LOCALES.join('|')})/dho/:id`,
+              has: [
+                {
+                  type: 'cookie' as const,
+                  key: 'exp2575',
+                  value: '(.*http-redirect.*)',
+                },
+              ],
+              destination: '/:lang/dho/:id/overview',
+              permanent: false,
+            },
+          ]),
     ];
   },
   rewrites: async () => {

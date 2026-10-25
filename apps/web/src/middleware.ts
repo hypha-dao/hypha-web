@@ -138,30 +138,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   return response;
 }
 
-/** TEMP(#2575): experiment switches live in the `exp2575` cookie (non-production only). */
-function hasExp2575(request: NextRequest, flag: string): boolean {
-  if (process.env.VERCEL_ENV === 'production') return false;
-  const value = request.cookies.get('exp2575')?.value ?? '';
-  return value.split(',').includes(flag);
-}
-
 export function middleware(request: NextRequest) {
-  // TEMP(#2575): experiment `http-redirect` answers the bare space URL with an HTTP redirect,
-  // so the redirecting dho/[id]/page.tsx is never rendered into the layout's children slot.
-  const bareSpace = /^\/([a-z]{2})\/dho\/([^/]+)\/?$/.exec(
-    request.nextUrl.pathname,
-  );
-  if (bareSpace && hasExp2575(request, 'http-redirect')) {
-    const target = request.nextUrl.clone();
-    target.pathname = `/${bareSpace[1]}/dho/${bareSpace[2]}/overview`;
-    if (!hasExp2575(request, 'keep-query')) target.search = '';
-    console.log('[#2575] middleware http-redirect', {
-      from: request.nextUrl.pathname + request.nextUrl.search,
-      to: target.pathname + target.search,
-    });
-    return NextResponse.redirect(target, 307);
-  }
-
   const response = i18nMiddleware(request);
 
   if (response.status === 301 || response.status === 302) {

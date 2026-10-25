@@ -2,10 +2,11 @@
 
 /** TEMP(#2575): button that sends a push to yourself with a chosen link. Remove with the fix. */
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 export function DebugTestPush() {
+  const router = useRouter();
   const { lang, id } = useParams<{ lang: string; id: string }>();
   const signal = useSearchParams().get('signal') ?? '<signal-slug>';
   const { getAccessToken } = useAuthentication();
@@ -46,11 +47,12 @@ export function DebugTestPush() {
   const experiments: { flag: string; label: string }[] = [
     {
       flag: 'http-redirect',
-      label: 'X: bare space URL redirects over HTTP (middleware)',
+      label:
+        'X: bare space URL redirects via next.config (query is kept by Next)',
     },
     {
       flag: 'keep-query',
-      label: 'Y: bare space redirect keeps ?signal=&msg= (page and X)',
+      label: 'Y: the redirect in dho/[id]/page.tsx keeps ?signal=&msg=',
     },
     {
       flag: 'no-router-replace',
@@ -113,6 +115,13 @@ export function DebugTestPush() {
         onClick={() => void send()}
       >
         Send push to me
+      </button>
+      <button
+        type="button"
+        className="self-start rounded border px-2 py-1"
+        onClick={() => router.push(path)}
+      >
+        Navigate to this link (no push, same router.push as the click handler)
       </button>
       {status ? <span>{status}</span> : null}
     </div>
