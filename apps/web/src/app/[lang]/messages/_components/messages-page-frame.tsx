@@ -8,11 +8,15 @@ export async function MessagesPageFrame({
 }: {
   children: ReactNode;
   /** Suggestions uses its own title. The messages screen keeps "Share messages". */
-  heading?: 'messages' | 'suggestions';
+  heading?: 'messages' | 'suggestions' | 'archived';
 }) {
   const t = await getTranslations('Connections');
   const titleLineTwo =
-    heading === 'suggestions' ? t('reachOut') : t('titleLineTwo');
+    heading === 'suggestions'
+      ? t('reachOut')
+      : heading === 'archived'
+      ? t('tabs.archived')
+      : t('titleLineTwo');
 
   return (
     <div className="w-full min-w-0 overflow-x-hidden overflow-y-auto">

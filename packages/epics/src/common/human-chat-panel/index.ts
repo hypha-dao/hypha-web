@@ -5,6 +5,7 @@ export { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-c
 export { HumanChatPanelCallJoinStrip } from './human-chat-panel-call-join-strip';
 export { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
 export { HumanChatPanelCallReactPopover } from './human-chat-panel-call-react-popover';
+export { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
 export { HumanChatPanelCallRaisedHandsStrip } from './human-chat-panel-call-raised-hands-strip';
 export { HumanChatPanelScreenshareTakeoverDialog } from './human-chat-panel-screenshare-takeover-dialog';
 export { HumanChatPanelCallSwitchConfirmDialog } from './human-chat-panel-call-switch-confirm-dialog';
@@ -44,6 +45,7 @@ export {
   type HumanChatPanelCallStageLayout,
 } from './human-chat-panel-call-stage';
 export { HumanChatPanelHeader } from './human-chat-panel-header';
+export { HumanChatPanelGroupMenu } from './human-chat-panel-group-menu';
 export { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
 export {
   HumanChatPanelChatBar,
@@ -56,6 +58,7 @@ export {
   personRosterDisplayLabel,
 } from './build-space-roster-mention-candidates';
 export { HumanChatPanelMessages } from './human-chat-panel-messages';
+export { HumanChatPanelErrorBoundary } from './human-chat-panel-error-boundary';
 export { HumanChatPanelTabs } from './human-chat-panel-tabs';
 export type { ChatPanelTab } from './human-chat-panel-tabs';
 export { HumanChatPanelMembers } from './human-chat-panel-members';

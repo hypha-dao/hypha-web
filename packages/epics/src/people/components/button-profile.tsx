@@ -53,6 +53,8 @@ import {
 export type ButtonProfileProps = {
   address?: string;
   isConnected: boolean;
+  /** Privy has not finished restoring the session — do not show Sign In. */
+  isAuthLoading?: boolean;
   onLogin: () => void;
   onLogout: () => void;
   /** #2456: true while a logout click is in flight (see `ConnectedButtonProfile`) — disables
@@ -125,6 +127,7 @@ function resolveNavItemIcon(href?: string) {
 export const ButtonProfile = ({
   person,
   isConnected,
+  isAuthLoading = false,
   address,
   onLogin,
   onLogout,
@@ -212,6 +215,20 @@ export const ButtonProfile = ({
   }, []);
 
   if (compact) {
+    if (isAuthLoading && !isConnected) {
+      return (
+        <div
+          className="flex h-10 w-10 items-center justify-center"
+          role="status"
+          aria-label={tConnections('loading')}
+        >
+          <Loader2
+            className="size-4 animate-spin text-muted-foreground"
+            aria-hidden
+          />
+        </div>
+      );
+    }
     if (!isConnected) {
       return (
         <Button className="h-10" onClick={onLogin}>
@@ -993,14 +1010,29 @@ export const ButtonProfile = ({
             />
           ))}
           {trailingBeforeProfile}
-          <Button onClick={onLogin}>{t('signIn')}</Button>
-          <Button
-            className="hidden md:flex"
-            variant="outline"
-            onClick={onLogin}
-          >
-            {t('getStarted')}
-          </Button>
+          {isAuthLoading ? (
+            <div
+              className="flex h-10 items-center justify-center px-3"
+              role="status"
+              aria-label={tConnections('loading')}
+            >
+              <Loader2
+                className="size-4 animate-spin text-muted-foreground"
+                aria-hidden
+              />
+            </div>
+          ) : (
+            <>
+              <Button onClick={onLogin}>{t('signIn')}</Button>
+              <Button
+                className="hidden md:flex"
+                variant="outline"
+                onClick={onLogin}
+              >
+                {t('getStarted')}
+              </Button>
+            </>
+          )}
         </div>
       )}
     </div>

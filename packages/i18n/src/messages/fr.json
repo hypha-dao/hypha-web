@@ -305,7 +305,8 @@
     "profileUnavailable": "Tu es toujours connecté. Ton profil n'a pas pu être chargé.",
     "retry": "Réessayer",
     "sendTokensChoose": "Choisis un token. Actuellement {symbol}.",
-    "gotItDone": "Merci — je suis avec vous"
+    "gotItDone": "Merci — je suis avec vous",
+    "matrixPersonUnavailable": "Cette personne n’a pas encore de chat."
   },
   "WelcomeFlow": {
     "offer": {
@@ -696,7 +697,8 @@
     "titleLineTwo": "Partagez des messages",
     "tabs": {
       "messages": "Messages",
-      "suggestions": "Suggestions"
+      "suggestions": "Suggestions",
+      "archived": "Archivés"
     },
     "suggestionsEmpty": "Aucune suggestion pour le moment.",
     "reachOut": "Hypha suggère",
@@ -724,7 +726,8 @@
     "youWrote": "Toi : {message}",
     "unread": "{count} nouveaux",
     "members": "{count} membres",
-    "loadMoreFailed": "Le reste de la liste ne s'est pas chargé. Tu peux réessayer."
+    "loadMoreFailed": "Le reste de la liste ne s'est pas chargé. Tu peux réessayer.",
+    "archivedEmpty": "Les groupes archivés apparaissent ici."
   },
   "NetworkFeedback": {
     "triggerLabel": "Façonner Hypha",
@@ -1951,8 +1954,8 @@
     "escrowDepositDepositing": "Dépôt en cours...",
     "escrowDepositApproving": "Approbation en cours...",
     "escrowDepositInsufficientWallet": "Le solde de votre portefeuille est inférieur au montant requis.",
-    "pipelineEnabled": "Pipeline de deals",
-    "pipelineEnabledDescription": "Activez un pipeline Kanban de deals pour cet espace. Désactivé par défaut.",
+    "pipelineEnabled": "Pipeline",
+    "pipelineEnabledDescription": "Activez un pipeline Kanban pour cet espace. Désactivé par défaut.",
     "mySpacesSupport": "Créez un espace ou ouvrez-en un auquel vous appartenez déjà."
   },
   "AgreementFlow": {
@@ -3185,6 +3188,7 @@
     "connectionRetryFailedDescription": "Impossible de se reconnecter. Vérifiez votre réseau et réessayez.",
     "connectionRetryingLabel": "Nouvelle tentative…",
     "connectionLostRetry": "Réessayer",
+    "chatThreadCrashedDescription": "Cette vue du chat a planté. Réessayez.",
     "openPanel": "Ouvrir le panneau de chat",
     "openPanelWithUnreadMentions": "Ouvrir le panneau de chat (mentions non lues)",
     "hidePanel": "Masquer le panneau de chat",
@@ -3295,6 +3299,8 @@
     "chatRoomTitle": "Message direct",
     "systemSender": "Système",
     "noMembers": "Aucun membre trouvé",
+    "membersSearch": "Rechercher des membres",
+    "membersNoMatches": "Aucun membre ne correspond.",
     "unknownMember": "Inconnu",
     "backToSpaceChat": "Retour au chat de l'espace",
     "failedToJoinRoom": "Impossible de rejoindre la salle de conversation",
@@ -3554,7 +3560,37 @@
     "signalTeamAccessRequested": "Accès à l’équipe Signal demandé",
     "signalTeamAccessApproved": "Accès à l’équipe Signal approuvé",
     "mentionOpenFallbackRoom": "Impossible de résoudre ce salon depuis votre contexte local. Ouvrez l'espace concerné puis réessayez.",
-    "mentionOpenFallbackMissingMessage": "Ce message de mention n'est pas encore disponible dans la chronologie chargée. Réessayez dans un instant."
+    "mentionOpenFallbackMissingMessage": "Ce message de mention n'est pas encore disponible dans la chronologie chargée. Réessayez dans un instant.",
+    "groupChatMenu": "Options du groupe",
+    "renameGroup": "Renommer le groupe",
+    "renameGroupTitle": "Renommer ce groupe",
+    "renameGroupDescription": "Le nouveau nom est partagé avec tout le monde dans cette discussion.",
+    "renameGroupName": "Nom du groupe",
+    "renameGroupSave": "Enregistrer le nom",
+    "renameGroupCancel": "Annuler",
+    "renameGroupFailed": "Impossible de renommer ce groupe. Réessayez.",
+    "archiveGroup": "Archiver le groupe",
+    "archiveGroupTitle": "Archiver ce groupe ?",
+    "archiveGroupDescription": "Le groupe disparaît de Messages. L’historique reste dans le salon. Tu peux l’ouvrir depuis Archivés et le restaurer plus tard. Les membres ne sont pas consultés.",
+    "archiveGroupConfirm": "Oui, archiver",
+    "archiveGroupCancel": "Annuler",
+    "archiveGroupFailed": "Impossible d’archiver ce groupe. Réessayez.",
+    "addPeople": "Ajouter des personnes",
+    "addPeopleTitle": "Ajouter des personnes à ce groupe",
+    "addPeopleDescription": "Elles seront invitées dans ce chat.",
+    "addPeopleConfirm": "Ajouter",
+    "addPeopleCancel": "Annuler",
+    "addPeopleFailed": "Impossible d’ajouter des personnes à ce groupe. Réessayez.",
+    "addPeopleEmpty": "Toutes les personnes que tu peux ajouter sont déjà ici.",
+    "addPeopleNoMatches": "Personne ne correspond à cette recherche.",
+    "addPeopleSearch": "Rechercher des personnes",
+    "unarchiveGroup": "Restaurer le groupe",
+    "unarchiveGroupTitle": "Restaurer ce groupe ?",
+    "unarchiveGroupDescription": "Le groupe réapparaît dans Messages. Tout le monde peut envoyer des messages.",
+    "unarchiveGroupConfirm": "Oui, restaurer",
+    "unarchiveGroupCancel": "Annuler",
+    "unarchiveGroupFailed": "Impossible de restaurer ce groupe. Réessayez.",
+    "archivedGroupReadOnly": "Ce groupe est archivé. Restaure-le pour envoyer des messages."
   },
   "CoherenceTab": {
     "signals": "Signaux",
@@ -5122,14 +5158,17 @@
     }
   },
   "Pipeline": {
-    "title": "Pipeline de deals",
-    "dealDetails": "Détails du deal",
-    "loading": "Chargement des deals…",
-    "notFound": "Deal introuvable",
+    "title": "Pipeline",
+    "dealDetails": "Détails de {item}",
+    "loading": "Chargement des {items}…",
+    "configLoadFailed": "Impossible de charger la configuration du pipeline.",
+    "retry": "Réessayer",
+    "unassignedLane": "Non assigné",
+    "notFound": "{item} introuvable",
     "saving": "Enregistrement…",
     "saved": "Enregistré",
     "cancel": "Annuler",
-    "delete": "Supprimer le deal",
+    "delete": "Supprimer {item}",
     "exportXlsx": "Exporter XLSX",
     "filter": "Filtre",
     "reset": "Réinitialiser",
@@ -5141,7 +5180,7 @@
     "backToBoard": "Retour au tableau",
     "trackTitle": "Piste {swimlane}",
     "summary": {
-      "deals": "Deals",
+      "deals": "Opportunités",
       "active": "Active",
       "pipelineValue": "Pipeline value",
       "weightedValue": "Weighted value"
@@ -5151,7 +5190,7 @@
       "swimlane": "Swimlane",
       "region": "Region",
       "priority": "Priority",
-      "status": "Statut du deal",
+      "status": "Statut de {item}",
       "deadline": "Date limite de soumission",
       "tag": "Tag",
       "all": "All",
@@ -5163,8 +5202,8 @@
       "allPriorities": "Toutes les priorités",
       "allStatuses": "Tous les statuts",
       "anyDeadline": "Toute échéance",
-      "tagLabel": "Tag du deal",
-      "tagPlaceholder": "Filtrer par un tag",
+      "tagLabel": "Tag de {item}",
+      "tagPlaceholder": "Filtrer par tag de {item}",
       "country": "Pays",
       "countrySearch": "Rechercher des pays…",
       "allCountries": "Tous les pays",
@@ -5178,12 +5217,12 @@
       "delete": "Delete view"
     },
     "newDeal": {
-      "title": "Nouvel élément du pipeline",
-      "titlePlaceholder": "Entreprise, deal ou appel",
+      "title": "Créer {item}",
+      "titlePlaceholder": "Entreprise, {item} ou nom de grant",
       "countryPlaceholder": "Sélectionner un pays (optionnel)",
       "valuePlaceholder": "0",
       "create": "Créer la carte",
-      "created": "Affaire créée",
+      "created": "Création de {item} réussie",
       "titleLabel": "Titre",
       "overviewSection": "Aperçu",
       "contactSection": "Contact",
@@ -5231,9 +5270,9 @@
       "value": "Value",
       "currency": "Currency",
       "priority": "Priority",
-      "dealStatus": "Deal status",
+      "dealStatus": "Statut de {item}",
       "successRate": "Taux de réussite (%)",
-      "successRateOverride": "Valeur spécifique à l'affaire — effacez pour utiliser la valeur par défaut de l'étape",
+      "successRateOverride": "Surcharge spécifique à {item} — effacez pour utiliser la valeur de l’étape",
       "successRateDefault": "Valeur par défaut de l'étape utilisée ({rate}%)",
       "nextAction": "Next action",
       "nextActionDate": "Next action date",
@@ -5264,7 +5303,7 @@
     },
     "regions": {
       "title": "Régions du pipeline",
-      "description": "Ajoutez ou retirez les territoires utilisés à la création et au filtrage des deals (par ex. Benelux ou Nordics).",
+      "description": "Ajoutez ou retirez des territoires utilisés à la création et au filtrage des opportunités (par exemple Benelux ou Nordics).",
       "default": "Par défaut",
       "add": "Ajouter une région",
       "addPlaceholder": "ex. DACH",
@@ -5279,15 +5318,57 @@
     },
     "probabilities": {
       "title": "Taux de réussite par étape",
-      "description": "Probabilité de réussite par défaut (%) par track et par étape. Les nouveaux deals et ceux déplacés vers une étape partent de ces valeurs ; chaque deal peut être ajusté individuellement.",
+      "description": "Probabilité de succès par défaut (%) par piste et étape. Les nouvelles opportunités et celles déplacées vers une étape partent de ces valeurs ; chaque opportunité peut encore être surchargée individuellement.",
       "track": "Track",
-      "terminalHint": "Won est toujours à 100 % et Lost toujours à 0 %.",
+      "terminalHint": "Une étape gagnée est toujours à 100 % et une étape perdue toujours à 0 %.",
       "monotonicWarning": "Les probabilités doivent augmenter de gauche à droite. Vérifiez : {lanes}",
       "save": "Enregistrer les taux",
       "saved": "Taux de réussite enregistrés",
       "saveFailed": "Impossible d'enregistrer les taux de réussite",
       "loading": "Chargement des taux de réussite…",
       "resetDefaults": "Réinitialiser"
+    },
+    "labels": {
+      "title": "Libellés du pipeline",
+      "description": "Définissez le titre de la page et le nom des éléments de ce pipeline.",
+      "pageTitle": "Titre de la page",
+      "pageTitlePlaceholder": "Pipeline",
+      "itemSingular": "Nom de l’élément (singulier)",
+      "itemSingularPlaceholder": "Opportunité",
+      "itemPlural": "Nom de l’élément (pluriel)",
+      "itemPluralPlaceholder": "Opportunités",
+      "required": "Le titre et les noms d’élément sont requis",
+      "save": "Enregistrer les libellés",
+      "saved": "Libellés enregistrés",
+      "saveFailed": "Impossible d’enregistrer les libellés",
+      "loading": "Chargement des libellés…"
+    },
+    "tracks": {
+      "title": "Pistes",
+      "description": "Ajoutez, renommez, réordonnez ou retirez des pistes. Un espace peut utiliser moins de pistes que les valeurs par défaut.",
+      "add": "Ajouter une piste",
+      "newTrack": "Nouvelle piste",
+      "namePlaceholder": "Nom de la piste",
+      "nameRequired": "Chaque piste doit avoir un nom",
+      "atLeastOne": "Conservez au moins une piste",
+      "save": "Enregistrer les pistes",
+      "saved": "Pistes enregistrées",
+      "saveFailed": "Impossible d’enregistrer les pistes",
+      "loading": "Chargement des pistes…",
+      "resetDefaults": "Réinitialiser"
+    },
+    "stages": {
+      "description": "Ajoutez, renommez, réordonnez ou retirez les étapes utilisées sur le tableau et dans la grille des taux de succès.",
+      "add": "Ajouter une étape",
+      "newStage": "Nouvelle étape",
+      "namePlaceholder": "Nom de l’étape",
+      "nameRequired": "Chaque étape doit avoir un nom",
+      "atLeastOne": "Conservez au moins une étape"
+    },
+    "workflow": {
+      "moveUp": "Monter {label} (ligne {position})",
+      "moveDown": "Descendre {label} (ligne {position})",
+      "remove": "Retirer {label} (ligne {position})"
     }
   },
   "OverviewOps": {

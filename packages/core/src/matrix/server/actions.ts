@@ -21,12 +21,27 @@ import {
   findLinkByPrivyUserId,
   findMatrixUserIdsByPersonIds,
   findMatrixUserIdsByPrivyUserIds,
+  findBoundChatRoomIdsAmong,
+  isRoomBoundToSpaceOrSignal,
 } from './queries';
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
+import { getLinkByPrivyUserId } from './web3/get-link-by-privy-user-id';
 import { distinctPublicRoomId } from '../public-room-id';
 import { directPairAliasLocalpart } from '../direct-pair-room';
 import { HYPHA_ROOM_TYPES, type HyphaRoomType } from '../room-types';
+import {
+  GROUP_ROOM_ARCHIVED_STATE,
+  GROUP_ROOM_CREATOR_STATE,
+  groupRoomCreatorUserId,
+  isGroupRoomArchivedContent,
+  isPeopleGroupRoomType,
+  normalizeGroupRoomName,
+} from '../group-room';
+import { countHumanMatrixMembers } from '../matrix-member-display';
+import { determineEnvironment } from '../../coherence/lib/determine-environment';
 import { Environment } from '../../coherence/types';
+import { getAppBaseUrl } from '../../common/server/get-app-url';
+import { verifyPrivyAuthToken } from '../../common/server/verify-privy-auth-token';
 import {
   ECOSYSTEM_ROOM_ALIAS_PREFIX,
   NETWORK_ROOM_ALIAS_LOCALPART,
@@ -40,11 +55,15 @@ import {
   matrixCreateAliasedRoom,
   matrixCreateRoom,
   matrixDeleteRoomAlias,
+  matrixGetJoinedRoomMembers,
+  matrixGetPowerLevels,
   matrixGetRoomType,
+  matrixGetStateEvent,
   matrixInviteUser,
   matrixJoinRoom,
   matrixJoinRoomAsPuppet,
   matrixResolveRoomAlias,
+  matrixSendStateEvent,
   matrixServerNameFromUserId,
   matrixWhoAmI,
 } from './matrix-http-client';
@@ -224,9 +243,27 @@ export async function createBotOwnedRoomAction({
   const botToken = getMatrixBotAsToken();
   if (!homeserver || !botToken) return null;
 
+  const creatorUserId = grantPl100ToMatrixUserId?.trim();
+  const initialState =
+    roomType === HYPHA_ROOM_TYPES.group && creatorUserId
+      ? [
+          {
+            type: GROUP_ROOM_CREATOR_STATE,
+            state_key: '',
+            content: { userId: creatorUserId },
+          },
+        ]
+      : undefined;
+
   let roomId: string;
   try {
-    roomId = await matrixCreateRoom(title, botToken, homeserver, roomType);
+    roomId = await matrixCreateRoom(
+      title,
+      botToken,
+      homeserver,
+      roomType,
+      initialState,
+    );
   } catch (error) {
     console.warn(
       '[MatrixBot] Failed to create bot-owned room:',
@@ -244,10 +281,11 @@ export async function createBotOwnedRoomAction({
 
   // Power-level setup is best-effort — the room already exists, so a failure here must not
   // orphan it: callers retry room creation on a `null` return, which would create a duplicate,
-  // never-persisted room every time.
+  // never-persisted room every time. Group creator state is written in initial_state so
+  // create succeeds or fails with it. A room missing that state can be archived by any member.
   try {
     await matrixApplyRoomPowerLevels(roomId, botToken, homeserver, {
-      grantPl100ToUserId: grantPl100ToMatrixUserId?.trim(),
+      grantPl100ToUserId: creatorUserId,
       additionalPl100UserIds: additionalBotUserIds,
     });
   } catch (error) {
@@ -492,7 +530,9 @@ function isMatrixUserId(value: string) {
 
 /**
  * The one direct room for a pair. The alias `#hypha-dm-<env>-<hash>` is the lookup
- * key and the room's `m.room.create` type is the proof that it is a DM. An alias
+ * key and the room's `m.room.create` type is the proof that it is a DM. The
+ * create-room `name` is the other person's title or "Conversation" — Messages
+ * still treats typed DMs as person chats even with that `m.room.name`. An alias
  * that points at a room without the DM type (a space or signal room that took
  * it over before types existed) is detached and a clean DM room is created.
  * Both people are puppet-joined into the room.
@@ -710,4 +750,259 @@ export async function getLinkByMatrixUserIdAction(
     throw new Error('authToken is required to get Matrix user link by ID');
   }
   return getLinkByMatrixUserId({ matrixUserId, environment });
+}
+
+function preferredMatrixEnvironment(): Environment {
+  const fromUrl = determineEnvironment(getAppBaseUrl());
+  if (fromUrl) return fromUrl;
+  const vercel = process.env.VERCEL_ENV;
+  if (vercel === 'production') return Environment.PRODUCTION;
+  if (vercel === 'preview') return Environment.PREVIEW;
+  return Environment.DEVELOPMENT;
+}
+
+async function resolveCallerMatrixUserId(
+  authToken: string | undefined,
+): Promise<string | null> {
+  if (!authToken?.trim()) return null;
+  const verified = await verifyPrivyAuthToken(authToken);
+  if (!verified.ok) return null;
+  const order = [
+    preferredMatrixEnvironment(),
+    Environment.PRODUCTION,
+    Environment.PREVIEW,
+    Environment.DEVELOPMENT,
+  ].filter((environment, index, all) => all.indexOf(environment) === index);
+  for (const environment of order) {
+    try {
+      const link = await getLinkByPrivyUserId({
+        privyUserId: verified.userId,
+        environment,
+      });
+      const userId = link?.matrixUserId?.trim();
+      if (userId) return userId;
+    } catch {
+      // Shared prod/preview DB: try the next environment.
+    }
+  }
+  return null;
+}
+
+async function loadPeopleGroupContext(
+  roomId: string,
+  authToken: string | undefined,
+) {
+  const trimmedRoomId = roomId.trim();
+  const homeserver = getMatrixHomeserverUrl();
+  const botToken = getMatrixBotAsToken();
+  const userId = await resolveCallerMatrixUserId(authToken);
+  if (!trimmedRoomId || !userId || !homeserver || !botToken) {
+    return null;
+  }
+  if (await isRoomBoundToSpaceOrSignal({ roomId: trimmedRoomId }, { db })) {
+    return null;
+  }
+  const roomType = await matrixGetRoomType(trimmedRoomId, botToken, homeserver);
+  const members = await matrixGetJoinedRoomMembers(
+    trimmedRoomId,
+    botToken,
+    homeserver,
+  );
+  const createdAsGroup = roomType === HYPHA_ROOM_TYPES.group;
+  const humanCount = countHumanMatrixMembers(members);
+  // Typed group, or the #2568 legacy untyped 3+ human room. Two-person
+  // untyped rooms are never Messages groups.
+  if (
+    !isPeopleGroupRoomType(roomType, humanCount, {
+      createdAsGroup,
+    })
+  ) {
+    return null;
+  }
+  if (!members.includes(userId)) return null;
+  return {
+    roomId: trimmedRoomId,
+    userId,
+    homeserver,
+    botToken,
+  };
+}
+
+/**
+ * Any joined member can rename a Messages group. The bot writes `m.room.name`
+ * so existing rooms still work when the human is not PL50+.
+ */
+export async function renameGroupRoomAction({
+  roomId,
+  name,
+  authToken,
+}: {
+  roomId: string;
+  name: string;
+  authToken: string;
+}): Promise<{ name: string } | null> {
+  const title = normalizeGroupRoomName(name);
+  if (!title) return null;
+  try {
+    const ctx = await loadPeopleGroupContext(roomId, authToken);
+    if (!ctx) return null;
+    await matrixSendStateEvent(
+      ctx.roomId,
+      'm.room.name',
+      '',
+      { name: title },
+      ctx.botToken,
+      ctx.homeserver,
+    );
+    return { name: title };
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to rename group room:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
+}
+
+async function canArchivePeopleGroup(
+  roomId: string,
+  userId: string,
+  botToken: string,
+  homeserver: string,
+): Promise<boolean> {
+  const creatorState = await matrixGetStateEvent(
+    roomId,
+    GROUP_ROOM_CREATOR_STATE,
+    '',
+    botToken,
+    homeserver,
+  );
+  const creator = groupRoomCreatorUserId(creatorState);
+  if (creator === userId) return true;
+  try {
+    const power = await matrixGetPowerLevels(roomId, botToken, homeserver);
+    if ((power.users?.[userId] ?? power.users_default ?? 0) >= 100) {
+      return true;
+    }
+  } catch {
+    // Fall through: stored creator still wins; legacy rooms stay open.
+  }
+  if (creator) return false;
+  // Older groups have no stored human creator (the bot created the room).
+  return true;
+}
+
+/**
+ * Creator archives a Messages group. The room stays in Matrix; every client
+ * hides it once `io.hypha.room.archived` is set. No member consent.
+ */
+export async function archiveGroupRoomAction({
+  roomId,
+  authToken,
+}: {
+  roomId: string;
+  authToken: string;
+}): Promise<{ archived: true } | null> {
+  try {
+    const ctx = await loadPeopleGroupContext(roomId, authToken);
+    if (!ctx) return null;
+    const archivedState = await matrixGetStateEvent(
+      ctx.roomId,
+      GROUP_ROOM_ARCHIVED_STATE,
+      '',
+      ctx.botToken,
+      ctx.homeserver,
+    );
+    if (isGroupRoomArchivedContent(archivedState)) {
+      return { archived: true };
+    }
+    const allowed = await canArchivePeopleGroup(
+      ctx.roomId,
+      ctx.userId,
+      ctx.botToken,
+      ctx.homeserver,
+    );
+    if (!allowed) return null;
+    await matrixSendStateEvent(
+      ctx.roomId,
+      GROUP_ROOM_ARCHIVED_STATE,
+      '',
+      {
+        archived: true,
+        archivedBy: ctx.userId,
+        ts: Date.now(),
+      },
+      ctx.botToken,
+      ctx.homeserver,
+    );
+    return { archived: true };
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to archive group room:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
+}
+
+/**
+ * Creator restores a Messages group. The room stays in Matrix; every client
+ * shows it in Messages once `io.hypha.room.archived` is cleared.
+ */
+export async function unarchiveGroupRoomAction({
+  roomId,
+  authToken,
+}: {
+  roomId: string;
+  authToken: string;
+}): Promise<{ archived: false } | null> {
+  try {
+    const ctx = await loadPeopleGroupContext(roomId, authToken);
+    if (!ctx) return null;
+    const allowed = await canArchivePeopleGroup(
+      ctx.roomId,
+      ctx.userId,
+      ctx.botToken,
+      ctx.homeserver,
+    );
+    if (!allowed) return null;
+    await matrixSendStateEvent(
+      ctx.roomId,
+      GROUP_ROOM_ARCHIVED_STATE,
+      '',
+      {
+        archived: false,
+        archivedBy: ctx.userId,
+        ts: Date.now(),
+      },
+      ctx.botToken,
+      ctx.homeserver,
+    );
+    return { archived: false };
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to unarchive group room:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
+}
+
+/** Space chats and signal threads the client must keep out of Messages. */
+const MAX_BOUND_LOOKUP_IDS = 100;
+
+export async function listBoundChatRoomIdsAmongAction(
+  roomIds: readonly string[],
+  { authToken }: { authToken?: string } = {},
+): Promise<string[]> {
+  if (!authToken?.trim()) return [];
+  const verified = await verifyPrivyAuthToken(authToken);
+  if (!verified.ok) return [];
+  return findBoundChatRoomIdsAmong(
+    { roomIds: roomIds.slice(0, MAX_BOUND_LOOKUP_IDS) },
+    { db },
+  );
 }

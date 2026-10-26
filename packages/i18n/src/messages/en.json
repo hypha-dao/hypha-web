@@ -123,7 +123,8 @@
     "titleLineTwo": "Share messages",
     "tabs": {
       "messages": "Messages",
-      "suggestions": "Suggestions"
+      "suggestions": "Suggestions",
+      "archived": "Archived"
     },
     "suggestionsEmpty": "No suggestions right now.",
     "reachOut": "Hypha suggests",
@@ -151,7 +152,8 @@
     "youWrote": "You: {message}",
     "unread": "{count} new",
     "members": "{count} members",
-    "loadMoreFailed": "The rest of the list did not load. You can try again."
+    "loadMoreFailed": "The rest of the list did not load. You can try again.",
+    "archivedEmpty": "Archived groups show up here."
   },
   "WelcomeFlow": {
     "step": "Step {current} of {total}",
@@ -724,7 +726,8 @@
     "profileUnavailable": "You are still signed in. Your profile could not be loaded.",
     "retry": "Try again",
     "sendTokensChoose": "Choose a token. Currently {symbol}.",
-    "gotItDone": "Thanks — I'm with you"
+    "gotItDone": "Thanks — I'm with you",
+    "matrixPersonUnavailable": "That person does not have chat yet."
   },
   "Marketplace": {
     "metaTitle": "Network marketplace | Hypha",
@@ -2550,8 +2553,8 @@
     "escrowDepositDepositing": "Depositing...",
     "escrowDepositApproving": "Approving...",
     "escrowDepositInsufficientWallet": "Your wallet balance is below the required amount.",
-    "pipelineEnabled": "Deal Pipeline",
-    "pipelineEnabledDescription": "Enable a Kanban deal pipeline for this space. Off by default.",
+    "pipelineEnabled": "Pipeline",
+    "pipelineEnabledDescription": "Enable a Kanban pipeline for this space. Off by default.",
     "mySpacesSupport": "Create a space or open one you already belong to."
   },
   "AgreementFlow": {
@@ -3787,6 +3790,7 @@
     "connectionRetryFailedDescription": "Could not reconnect. Check your network and try again.",
     "connectionRetryingLabel": "Retrying…",
     "connectionLostRetry": "Retry",
+    "chatThreadCrashedDescription": "This chat view crashed. Try again.",
     "openPanel": "Open chat panel",
     "openPanelWithUnreadMentions": "Open chat panel (unread mentions)",
     "hidePanel": "Hide chat panel",
@@ -3900,6 +3904,8 @@
     "chatRoomTitle": "Direct message",
     "systemSender": "System",
     "noMembers": "No members found",
+    "membersSearch": "Search members",
+    "membersNoMatches": "No members match.",
     "unknownMember": "Unknown",
     "failedToJoinRoom": "Failed to join conversation room",
     "emojiPickerComposer": "Choose emoji",
@@ -4160,7 +4166,37 @@
     "signalTeamAccessRequested": "Signal team access requested",
     "signalTeamAccessApproved": "Signal team access approved",
     "mentionOpenFallbackRoom": "We could not resolve that room from your local context. Open the related space and try again.",
-    "mentionOpenFallbackMissingMessage": "That mention message is not available in the loaded timeline yet. Try again in a moment."
+    "mentionOpenFallbackMissingMessage": "That mention message is not available in the loaded timeline yet. Try again in a moment.",
+    "groupChatMenu": "Group chat options",
+    "renameGroup": "Rename group",
+    "renameGroupTitle": "Rename this group",
+    "renameGroupDescription": "The new name is shared with everyone in this chat.",
+    "renameGroupName": "Group name",
+    "renameGroupSave": "Save name",
+    "renameGroupCancel": "Cancel",
+    "renameGroupFailed": "Could not rename this group. Try again.",
+    "archiveGroup": "Archive group",
+    "archiveGroupTitle": "Archive this group?",
+    "archiveGroupDescription": "This hides the group from Messages. History stays in the room. You can open it from Archived and restore it later. Members are not asked first.",
+    "archiveGroupConfirm": "Yes, archive",
+    "archiveGroupCancel": "Cancel",
+    "archiveGroupFailed": "Could not archive this group. Try again.",
+    "addPeople": "Add people",
+    "addPeopleTitle": "Add people to this group",
+    "addPeopleDescription": "They will be invited into this chat.",
+    "addPeopleConfirm": "Add",
+    "addPeopleCancel": "Cancel",
+    "addPeopleFailed": "Could not add people to this group. Try again.",
+    "addPeopleEmpty": "Everyone you can add is already here.",
+    "addPeopleNoMatches": "No people match that search.",
+    "addPeopleSearch": "Search people",
+    "unarchiveGroup": "Restore group",
+    "unarchiveGroupTitle": "Restore this group?",
+    "unarchiveGroupDescription": "The group will show in Messages again. Anyone can send messages.",
+    "unarchiveGroupConfirm": "Yes, restore",
+    "unarchiveGroupCancel": "Cancel",
+    "unarchiveGroupFailed": "Could not restore this group. Try again.",
+    "archivedGroupReadOnly": "This group is archived. Restore it to send messages."
   },
   "CoherenceTab": {
     "signals": "Signals",
@@ -5162,14 +5198,17 @@
     }
   },
   "Pipeline": {
-    "title": "Deal Pipeline",
-    "dealDetails": "Deal details",
-    "loading": "Loading deals…",
-    "notFound": "Deal not found",
+    "title": "Pipeline",
+    "dealDetails": "{item} details",
+    "loading": "Loading {items}…",
+    "configLoadFailed": "Could not load pipeline configuration.",
+    "retry": "Retry",
+    "unassignedLane": "Unassigned",
+    "notFound": "{item} not found",
     "saving": "Saving…",
     "saved": "Saved",
     "cancel": "Cancel",
-    "delete": "Delete deal",
+    "delete": "Delete {item}",
     "exportXlsx": "Export XLSX",
     "filter": "Filter",
     "reset": "Reset",
@@ -5181,7 +5220,7 @@
     "backToBoard": "Back to board",
     "trackTitle": "{swimlane} track",
     "summary": {
-      "deals": "Deals",
+      "deals": "Opportunities",
       "active": "Active",
       "pipelineValue": "Pipeline value",
       "weightedValue": "Weighted value"
@@ -5191,7 +5230,7 @@
       "swimlane": "Swimlane",
       "region": "Region",
       "priority": "Priority",
-      "status": "Deal status",
+      "status": "{item} status",
       "deadline": "Submission deadline",
       "tag": "Tag",
       "all": "All",
@@ -5206,8 +5245,8 @@
       "allPriorities": "All priorities",
       "allStatuses": "All statuses",
       "anyDeadline": "Any deadline",
-      "tagLabel": "Deal tag",
-      "tagPlaceholder": "Filter by a deal tag",
+      "tagLabel": "{item} tag",
+      "tagPlaceholder": "Filter by tag for {item}",
       "accountManager": "Account manager",
       "allAccountManagers": "All account managers"
     },
@@ -5218,12 +5257,12 @@
       "delete": "Delete view"
     },
     "newDeal": {
-      "title": "New pipeline item",
-      "titlePlaceholder": "Company, deal, or grant name",
+      "title": "New {item}",
+      "titlePlaceholder": "Company, {item}, or grant name",
       "countryPlaceholder": "Select country (optional)",
       "valuePlaceholder": "0",
       "create": "Create card",
-      "created": "Deal created",
+      "created": "{item} created",
       "titleLabel": "Title",
       "overviewSection": "Overview",
       "contactSection": "Contact",
@@ -5271,9 +5310,9 @@
       "value": "Value",
       "currency": "Currency",
       "priority": "Priority",
-      "dealStatus": "Deal status",
+      "dealStatus": "{item} status",
       "successRate": "Success rate (%)",
-      "successRateOverride": "Deal-specific override — clear to use the stage default",
+      "successRateOverride": "{item}-specific override — clear to use the stage default",
       "successRateDefault": "Using stage default ({rate}%)",
       "nextAction": "Next action",
       "nextActionDate": "Next action date",
@@ -5304,7 +5343,7 @@
     },
     "regions": {
       "title": "Pipeline regions",
-      "description": "Add or remove territories used when creating and filtering deals (for example Benelux or Nordics).",
+      "description": "Add or remove territories used when creating and filtering opportunities (for example Benelux or Nordics).",
       "default": "Default",
       "add": "Add region",
       "addPlaceholder": "e.g. DACH",
@@ -5319,15 +5358,57 @@
     },
     "probabilities": {
       "title": "Stage success rates",
-      "description": "Default success probability (%) per track and stage. New deals and deals moved to a stage start from these values; each deal can still be overridden individually.",
+      "description": "Default success probability (%) per track and stage. New opportunities and opportunities moved to a stage start from these values; each opportunity can still be overridden individually.",
       "track": "Track",
-      "terminalHint": "Won is always 100% and Lost is always 0%.",
+      "terminalHint": "A won stage is always 100% and a lost stage is always 0%.",
       "monotonicWarning": "Probabilities should increase from left to right. Check: {lanes}",
       "save": "Save success rates",
       "saved": "Success rates saved",
       "saveFailed": "Could not save success rates",
       "loading": "Loading success rates…",
       "resetDefaults": "Reset to defaults"
+    },
+    "labels": {
+      "title": "Pipeline labels",
+      "description": "Set the page title and what items in this pipeline are called.",
+      "pageTitle": "Page title",
+      "pageTitlePlaceholder": "Pipeline",
+      "itemSingular": "Item name (singular)",
+      "itemSingularPlaceholder": "Opportunity",
+      "itemPlural": "Item name (plural)",
+      "itemPluralPlaceholder": "Opportunities",
+      "required": "Page title and item names are required",
+      "save": "Save labels",
+      "saved": "Labels saved",
+      "saveFailed": "Could not save labels",
+      "loading": "Loading labels…"
+    },
+    "tracks": {
+      "title": "Tracks",
+      "description": "Add, rename, reorder, or remove tracks. A space can use fewer tracks than the defaults.",
+      "add": "Add track",
+      "newTrack": "New track",
+      "namePlaceholder": "Track name",
+      "nameRequired": "Every track needs a name",
+      "atLeastOne": "Keep at least one track",
+      "save": "Save tracks",
+      "saved": "Tracks saved",
+      "saveFailed": "Could not save tracks",
+      "loading": "Loading tracks…",
+      "resetDefaults": "Reset to defaults"
+    },
+    "stages": {
+      "description": "Add, rename, reorder, or remove stages used on the board and in the success-rate grid.",
+      "add": "Add stage",
+      "newStage": "New stage",
+      "namePlaceholder": "Stage name",
+      "nameRequired": "Every stage needs a name",
+      "atLeastOne": "Keep at least one stage"
+    },
+    "workflow": {
+      "moveUp": "Move {label} up (row {position})",
+      "moveDown": "Move {label} down (row {position})",
+      "remove": "Remove {label} (row {position})"
     }
   },
   "OverviewOps": {

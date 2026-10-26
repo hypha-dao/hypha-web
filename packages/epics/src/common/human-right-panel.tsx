@@ -31,6 +31,7 @@ import {
   usePrefersCoarsePointer,
 } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
+import useSWR from 'swr';
 import {
   HYPHA_ROOM_TYPES,
   useMatrix,
@@ -40,6 +41,7 @@ import {
   useMatrixUserIdsByPrivySubs,
   useMatrixUserIdsByPersonIds,
   useMe,
+  usePeopleBySubs,
   useOrganisationSpacesBySingleSlug,
   useSpaceBySlug,
   useSpaceMutationsWeb2Rsc,
@@ -58,7 +60,9 @@ import {
   isRedactedRoomMessageEvent,
   type MessageReaction,
   type Person,
+  isArchivedGroupRoom,
   looksLikeTechnicalSpaceMemoryName,
+  type MemberIntelligence,
   type SignalTeamNotice,
   requestRemoteGroupCallLeave,
   calledSpecialistIds,
@@ -87,9 +91,11 @@ import { getRootSpace } from './get-root-space';
 
 import {
   HumanChatPanelHeader,
+  HumanChatPanelGroupMenu,
   HumanChatPanelLoader,
   HumanChatPanelMessages,
   HumanChatPanelChatBar,
+  HumanChatPanelErrorBoundary,
   HumanChatPanelTabs,
   HumanChatPanelMembers,
   HumanChatPanelMentionBell,
@@ -111,7 +117,10 @@ import {
 } from './human-chat-panel/use-resolved-mention-candidate-label';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
-import { MyConnections } from '../people/components/my-connections';
+import {
+  applyConversationRoomTitle,
+  MyConnections,
+} from '../people/components/my-connections';
 import {
   MemberSpaceIcons,
   memberProfileAsideHref,
@@ -133,6 +142,8 @@ import {
   matrixUserIdToCanonicalPrivySub,
   pickUserVisibleMemberLabel,
   shortenMatrixIdForDisplay,
+  uniqueCanonicalPrivySubsFromMxids,
+  visibleMatrixMemberName,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
@@ -159,6 +170,8 @@ import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
 import { SignalIndicativeAmounts } from '../coherence/components/signal-indicative-amounts';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
+  replaceMxidsWithComposerMentionTokens,
+  replaceMxidsWithVisibleMentionLabels,
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
 } from './human-chat-panel/human-chat-display-mention';
@@ -182,6 +195,11 @@ import {
 } from './human-chat-panel/build-space-roster-mention-candidates';
 import { directConversationWelcomeName } from './human-chat-panel/direct-conversation-welcome';
 import { isExp2575, logEffectRun2575, useWhatChanged2575 } from './debug-2575';
+import {
+  asTimelineDate,
+  sortMessagesChronologically,
+  upsertTimelineMessages,
+} from './human-chat-panel/human-chat-timeline-order';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -606,7 +624,7 @@ function writePersistedChatHistory(
       .slice(-CHAT_HISTORY_MAX_ITEMS)
       .map((m) => ({
         ...m,
-        timestamp: m.timestamp?.toISOString(),
+        timestamp: asTimelineDate(m.timestamp)?.toISOString(),
       }));
     window.sessionStorage.setItem(
       `${CHAT_HISTORY_SESSION_PREFIX}${roomId}`,
@@ -1065,6 +1083,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const {
     client,
     isMatrixAvailable,
+    isConnecting,
     isAuthenticated: isMatrixAuthenticated,
     connectionStatus,
     retryMatrixConnection,
@@ -1123,7 +1142,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     (typeof spaceSlug === 'string' ? spaceSlug.trim() : '') ||
     (!isDirectConversation ? coherenceSpaceSlug?.trim() : null) ||
     null;
-  const { jwt: authToken } = useJwt();
+  const { jwt: authToken, isLoadingJwt } = useJwt();
   const { useSendNotifications } = useHookRegistry();
   const { notifyCallStarted } = useSendNotifications({
     authToken,
@@ -1247,6 +1266,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const editDraftRef = useRef(editDraft);
   editDraftRef.current = editDraft;
   const [roomId, setRoomId] = useState<string | null>(null);
+  const [groupTitle, setGroupTitle] = useState<string | null>(null);
+
+  useEffect(() => {
+    setGroupTitle(null);
+  }, [coherenceRoomId]);
 
   useEffect(() => {
     if (mode !== 'coherence') {
@@ -1596,8 +1620,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [pathname, router, openHumanChatPanel, setActiveTab],
   );
 
+  const sessionRestoring =
+    isAuthLoading ||
+    isLoadingJwt ||
+    (isAuthenticated && !isMatrixAvailable && isConnecting);
   const showAuthedUi = !isAuthLoading && isAuthenticated;
-  const showAuthPrompt = !isAuthLoading && !isAuthenticated;
+  const showAuthPrompt = !sessionRestoring && !isAuthenticated;
   const showPanelInteractionPrompt =
     hasSpaceActivityAccess &&
     !isUserSpaceStateLoading &&
@@ -1969,6 +1997,91 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const profileLookupInFlightRef = useRef<Set<string>>(new Set());
   const profileLookupAttemptedRef = useRef<Set<string>>(new Set());
 
+  const { data: directoryHome } = useSWR<MemberIntelligence | null>(
+    isDirectConversation && authToken
+      ? ['/api/v1/people/me/intelligence', authToken]
+      : null,
+    async ([url, token]) => {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return null;
+      return (await response.json()) as MemberIntelligence;
+    },
+  );
+  const directoryPersonIds = useMemo(() => {
+    if (!directoryHome) return [];
+    return [
+      directoryHome.person?.id,
+      ...(directoryHome.connections ?? []).map((person) => person.id),
+    ].filter((id): id is number => Number.isFinite(id) && id > 0);
+  }, [directoryHome]);
+  const { personIdToMatrixUserId: directoryMxids } =
+    useMatrixUserIdsByPersonIds({
+      personIds: directoryPersonIds,
+    });
+  const roomMemberMxids = useMemo(() => {
+    if (!isDirectConversation || !client || !roomId) return [];
+    const room = client.getRoom(roomId);
+    if (!room) return [];
+    return room
+      .getMembers()
+      .map((member) => member.userId?.trim())
+      .filter((id): id is string => Boolean(id));
+  }, [client, isDirectConversation, mentionMembershipEpoch, roomId]);
+  const roomMemberSubs = useMemo(
+    () => uniqueCanonicalPrivySubsFromMxids(roomMemberMxids),
+    [roomMemberMxids],
+  );
+  const { peopleBySub: roomPeopleBySub } = usePeopleBySubs({
+    subs: isDirectConversation ? roomMemberSubs : [],
+  });
+  const roomPersonByMxid = useMemo(() => {
+    const byMxid = new Map<
+      string,
+      {
+        label: string;
+        nickname: string | null;
+        slug: string | null;
+      }
+    >();
+    for (const userId of roomMemberMxids) {
+      const sub = matrixUserIdToCanonicalPrivySub(userId);
+      const person = sub ? roomPeopleBySub.get(sub) : undefined;
+      if (!person) continue;
+      const label =
+        [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+        person.nickname?.trim() ||
+        '';
+      if (!label) continue;
+      byMxid.set(userId, {
+        label,
+        nickname: person.nickname,
+        slug: person.slug,
+      });
+    }
+    return byMxid;
+  }, [roomMemberMxids, roomPeopleBySub]);
+  const directoryLabelByMxid = useMemo(() => {
+    const labels = new Map<string, string>();
+    for (const [userId, profile] of roomPersonByMxid) {
+      labels.set(userId, profile.label);
+    }
+    if (!directoryHome) return labels;
+    const people = [
+      directoryHome.person,
+      ...(directoryHome.connections ?? []),
+    ].filter((person): person is NonNullable<typeof person> => Boolean(person));
+    for (const person of people) {
+      const mxid = directoryMxids[person.id]?.trim();
+      const label =
+        [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+        person.nickname?.trim();
+      if (mxid && label) labels.set(mxid, label);
+    }
+    return labels;
+  }, [directoryHome, directoryMxids, roomPersonByMxid]);
+
   const rosterSubs = useMemo(
     () =>
       spaceMembers
@@ -2066,6 +2179,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         const full = [me?.name, me?.surname].filter(Boolean).join(' ').trim();
         return full || t('you');
       }
+      const directoryLabel = directoryLabelByMxid.get(userId)?.trim();
+      if (directoryLabel) return directoryLabel;
       const rosterLabel = matrixUserIdToPersonLabel.get(userId)?.trim();
       if (rosterLabel) return rosterLabel;
       const localpartSub = matrixLocalpartToPrivySub(userId);
@@ -2090,11 +2205,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           }
         }
       }
-      return pickUserVisibleMemberLabel(userId, profileLabel) ?? '';
+      return visibleMatrixMemberName(userId, profileLabel);
     },
     [
       client,
       currentUserId,
+      directoryLabelByMxid,
       matrixLocalpartToPrivySub,
       matrixProfileLabelByUserId,
       matrixUserIdToPersonLabel,
@@ -2156,9 +2272,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         const userId = member.userId?.trim();
         if (!userId) continue;
         if (currentUserId && userId === currentUserId) continue;
+        const profile = roomPersonByMxid.get(userId);
         list.push({
           userId,
-          displayLabel: matrixMemberDisplayLabel(member, userId),
+          displayLabel:
+            directoryLabelByMxid.get(userId) ||
+            profile?.label ||
+            matrixMemberDisplayLabel(member, userId),
+          nickname: profile?.nickname,
+          slug: profile?.slug,
         });
       }
       list.sort((left, right) =>
@@ -2178,7 +2300,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     client,
     currentUserId,
+    directoryLabelByMxid,
     isDirectConversation,
+    roomPersonByMxid,
     mentionMembershipEpoch,
     personIdToMatrixUserId,
     roomId,
@@ -2262,10 +2386,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const canInteractWithSignalThread =
     !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
+  const archivedGroup =
+    isDirectConversation &&
+    isArchivedGroupRoom(client?.getRoom(roomId ?? undefined));
   const chatComposerLocked =
-    blockSpaceChatForMembership || !canInteractWithSignalThread;
+    blockSpaceChatForMembership ||
+    !canInteractWithSignalThread ||
+    archivedGroup;
   const chatComposerLockedMessage = blockSpaceChatForMembership
     ? tCommon('joinSpaceToUse')
+    : archivedGroup
+    ? t('archivedGroupReadOnly')
     : !canInteractWithSignalThread
     ? t('signalTeamInteractionRestricted')
     : undefined;
@@ -2454,6 +2585,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return m;
   }, [mentionLabelByUserId, duplicateSanitizedDisplayKeys]);
 
+  /** Composer tokens for edit use the same disambiguated keys as the send map. */
+  const mentionComposerTokenLabelByUserId = useMemo(
+    () =>
+      new Map(
+        [...mentionLabelByUserId].map(([userId, label]) => [
+          userId,
+          disambiguatedMentionTokenKey(
+            userId,
+            label,
+            duplicateSanitizedDisplayKeys,
+          ),
+        ]),
+      ),
+    [mentionLabelByUserId, duplicateSanitizedDisplayKeys],
+  );
+
   const getMentionComposerLabel = useCallback(
     (member: ChatMentionCandidate, resolvedComposerLabel?: string) => {
       const label =
@@ -2505,17 +2652,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         return prev;
       }
       messagesRoomIdRef.current = targetRoomId;
-      return existing.map((m) =>
-        toUIMessage(
-          m,
-          currentUserIdRef.current,
-          resolveMemberLabelRef.current,
-          currentUserAvatarUrlRef.current,
-          resolveMemberAvatarRef.current,
-          targetRoomId,
-          matrixRef.current.client ?? null,
-          formatSignalTeamNoticeRef.current,
-          systemSenderLabelRef.current,
+      return sortMessagesChronologically(
+        existing.map((m) =>
+          toUIMessage(
+            m,
+            currentUserIdRef.current,
+            resolveMemberLabelRef.current,
+            currentUserAvatarUrlRef.current,
+            resolveMemberAvatarRef.current,
+            targetRoomId,
+            matrixRef.current.client ?? null,
+            formatSignalTeamNoticeRef.current,
+            systemSenderLabelRef.current,
+          ),
         ),
       );
     });
@@ -3006,6 +3155,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     currentUserAvatarUrl,
     matrixUserIdToPersonLabel,
     matrixUserIdToPersonAvatar,
+    directoryLabelByMxid,
     matrixProfileLabelByUserId,
     subToMatrixUserId,
     memberLabelEpoch,
@@ -3638,26 +3788,23 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           if (redacts.size > 0) {
             next = next.filter((m) => !redacts.has(m.id));
           }
+          const incoming: UIMessage[] = [];
           for (const message of upserts.values()) {
-            const ui = toUIMessage(
-              message,
-              currentUserIdRef.current,
-              resolveMemberLabelRef.current,
-              currentUserAvatarUrlRef.current,
-              resolveMemberAvatarRef.current,
-              roomId,
-              matrixRef.current.client ?? null,
-              formatSignalTeamNoticeRef.current,
-              systemSenderLabelRef.current,
+            incoming.push(
+              toUIMessage(
+                message,
+                currentUserIdRef.current,
+                resolveMemberLabelRef.current,
+                currentUserAvatarUrlRef.current,
+                resolveMemberAvatarRef.current,
+                roomId,
+                matrixRef.current.client ?? null,
+                formatSignalTeamNoticeRef.current,
+                systemSenderLabelRef.current,
+              ),
             );
-            const idx = next.findIndex((m) => m.id === ui.id);
-            if (idx === -1) {
-              next = [...next, ui];
-            } else {
-              next = next.map((m, i) => (i === idx ? ui : m));
-            }
           }
-          return next;
+          return upsertTimelineMessages(next, incoming);
         });
 
         for (const message of upserts.values()) {
@@ -4033,7 +4180,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       },
       avatarUrl: currentUserAvatarUrl,
     };
-    return [...messages, pendingRow];
+    return sortMessagesChronologically([...messages, pendingRow]);
   }, [messages, sendingPending, currentUserAvatarUrl]);
 
   const calledAgents = useMemo(
@@ -4726,7 +4873,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           : target.role === 'member' && target.senderMatrixId
           ? resolveMemberLabel(target.senderMatrixId)
           : target.senderName ?? t('unknownMember');
-      const excerpt = firstLineForReplyPreview(getMessagePlainText(target));
+      const excerpt = firstLineForReplyPreview(
+        replaceMxidsWithVisibleMentionLabels(
+          getMessagePlainText(target),
+          mentionLabelByUserId,
+          resolveMemberLabel,
+        ),
+      );
       setEditDraft(null);
       setReplyDraft({
         messageId,
@@ -4738,7 +4891,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           : {}),
       });
     },
-    [messages, resolveMemberLabel, t],
+    [mentionLabelByUserId, messages, resolveMemberLabel, t],
   );
 
   const handleEditMessage = useCallback(
@@ -4780,21 +4933,50 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         );
         setEditDraft({
           messageId,
-          excerpt: firstLineForReplyPreview(plain),
+          excerpt: firstLineForReplyPreview(
+            replaceMxidsWithVisibleMentionLabels(
+              plain,
+              mentionLabelByUserId,
+              resolveMemberLabel,
+            ),
+          ),
           editMediaMode: true,
         });
-        setInput(plain);
+        setInput(
+          replaceMxidsWithComposerMentionTokens(
+            plain,
+            mentionComposerTokenLabelByUserId,
+          ),
+        );
         return;
       }
 
       setDraftAttachments([]);
       setEditDraft({
         messageId,
-        excerpt: firstLineForReplyPreview(plain),
+        excerpt: firstLineForReplyPreview(
+          replaceMxidsWithVisibleMentionLabels(
+            plain,
+            mentionLabelByUserId,
+            resolveMemberLabel,
+          ),
+        ),
       });
-      setInput(plain);
+      setInput(
+        replaceMxidsWithComposerMentionTokens(
+          plain,
+          mentionComposerTokenLabelByUserId,
+        ),
+      );
     },
-    [messages, client, t],
+    [
+      messages,
+      client,
+      mentionComposerTokenLabelByUserId,
+      mentionLabelByUserId,
+      resolveMemberLabel,
+      t,
+    ],
   );
 
   const handleDeleteMessage = useCallback(
@@ -5109,7 +5291,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       {screenshareTabAudioPromptDialog}
       <SidebarHeader className="gap-0 bg-page-background p-0 dark:bg-background-2">
         <HumanChatPanelHeader
-          title={mode === 'coherence' ? coherenceTitle ?? undefined : ''}
+          title={
+            mode === 'coherence'
+              ? groupTitle ?? coherenceTitle ?? undefined
+              : ''
+          }
           iconTitle={
             mode === 'space' && !spaceSlug?.trim()
               ? t('networkRoomTitle')
@@ -5189,6 +5375,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 countIsCapped={bellMentionCapped}
                 mentionsTabActive={activeTab === 'mentions'}
                 onOpenMentions={() => setActiveTab('mentions')}
+              />
+            ) : null
+          }
+          trailingEnd={
+            isDirectConversation && roomId ? (
+              <HumanChatPanelGroupMenu
+                roomId={roomId}
+                title={groupTitle ?? coherenceTitle ?? ''}
+                onRenamed={(name) => {
+                  applyConversationRoomTitle(roomId, name);
+                  setGroupTitle(name);
+                }}
               />
             ) : null
           }
@@ -5452,7 +5650,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         ref={sidebarContentRef}
         className="flex min-h-0 flex-col gap-0 overflow-hidden bg-page-background dark:bg-background-2"
       >
-        {isAuthLoading ? (
+        {sessionRestoring ? (
           <HumanChatPanelLoader />
         ) : showAuthPrompt ? (
           <div className="flex flex-1 items-center justify-center px-6">
@@ -5786,79 +5984,83 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {isJoining ? (
                   <HumanChatPanelLoader showPreview />
                 ) : (
-                  <HumanChatPanelMessages
-                    messages={mergedMessages}
-                    roomId={roomId}
-                    currentUserId={currentUserId}
-                    currentUserAvatarUrl={currentUserAvatarUrl}
-                    welcomeText={
-                      mode === 'space' && !spaceSlug?.trim()
-                        ? t('networkWelcome')
-                        : mode === 'space' && spaceRoom === 'ecosystem'
-                        ? t('ecosystemWelcome')
-                        : mode === 'space' && spaceRoom === 'public'
-                        ? t('publicWelcome')
-                        : coherencePublic
-                        ? t('publicWelcome')
-                        : welcomePartner
-                        ? t('welcomeWith', { name: welcomePartner })
-                        : undefined
-                    }
-                    welcomeSenderName={
-                      mode === 'space' && !spaceSlug?.trim()
-                        ? t('networkRoomTitle')
-                        : mode === 'space' && spaceRoom === 'ecosystem'
-                        ? t('ecosystemRoomTitle')
-                        : mode === 'space' && spaceRoom === 'public'
-                        ? t('publicRoomTitle')
-                        : coherencePublic
-                        ? t('publicRoomTitle')
-                        : welcomePartner ?? undefined
-                    }
-                    onReply={
-                      blockSpaceChatForMembership
-                        ? undefined
-                        : handleReplyToMessage
-                    }
-                    onEditMessage={
-                      blockSpaceChatForMembership
-                        ? undefined
-                        : handleEditMessage
-                    }
-                    onDeleteMessage={
-                      blockSpaceChatForMembership
-                        ? undefined
-                        : handleDeleteMessage
-                    }
-                    onToggleReaction={
-                      blockSpaceChatForMembership
-                        ? undefined
-                        : handleToggleReaction
-                    }
-                    resolveReactionReactorLabel={(userId) =>
-                      resolveMemberLabel(userId)
-                    }
-                    resolveMatrixMemberLabel={resolveMentionMemberLabel}
-                    resolveSenderDisplayLabel={resolveSenderDisplayLabel}
-                    onCancelSendPending={cancelSendInFlight}
-                    firstUnreadMessageId={unreadChatState.firstUnreadMessageId}
-                    unreadNotificationCount={
-                      unreadChatState.unreadNotificationCount
-                    }
-                    unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
-                    viewportActive={sidebarOpen && activeTab === 'chat'}
-                    onReachedTimelineBottom={handleReachedTimelineBottom}
-                    onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
-                    scrollTargetEventId={scrollToEventId}
-                    onConsumedScrollTarget={handleConsumedScrollTarget}
-                    onScrollTargetNotFound={handleScrollTargetNotFound}
-                    hasMoreOlderMessages={hasMoreOlderMessages}
-                    loadingOlderMessages={loadingOlderMessages}
-                    enableAutoLoadOlderMessages={
-                      connectionStatus === 'connected' && !autoLoadOlderPaused
-                    }
-                    onLoadOlderMessages={handleLoadOlderMessages}
-                  />
+                  <HumanChatPanelErrorBoundary key={roomId ?? 'messages'}>
+                    <HumanChatPanelMessages
+                      messages={mergedMessages}
+                      roomId={roomId}
+                      currentUserId={currentUserId}
+                      currentUserAvatarUrl={currentUserAvatarUrl}
+                      welcomeText={
+                        mode === 'space' && !spaceSlug?.trim()
+                          ? t('networkWelcome')
+                          : mode === 'space' && spaceRoom === 'ecosystem'
+                          ? t('ecosystemWelcome')
+                          : mode === 'space' && spaceRoom === 'public'
+                          ? t('publicWelcome')
+                          : coherencePublic
+                          ? t('publicWelcome')
+                          : welcomePartner
+                          ? t('welcomeWith', { name: welcomePartner })
+                          : undefined
+                      }
+                      welcomeSenderName={
+                        mode === 'space' && !spaceSlug?.trim()
+                          ? t('networkRoomTitle')
+                          : mode === 'space' && spaceRoom === 'ecosystem'
+                          ? t('ecosystemRoomTitle')
+                          : mode === 'space' && spaceRoom === 'public'
+                          ? t('publicRoomTitle')
+                          : coherencePublic
+                          ? t('publicRoomTitle')
+                          : welcomePartner ?? undefined
+                      }
+                      onReply={
+                        blockSpaceChatForMembership
+                          ? undefined
+                          : handleReplyToMessage
+                      }
+                      onEditMessage={
+                        blockSpaceChatForMembership
+                          ? undefined
+                          : handleEditMessage
+                      }
+                      onDeleteMessage={
+                        blockSpaceChatForMembership || archivedGroup
+                          ? undefined
+                          : handleDeleteMessage
+                      }
+                      onToggleReaction={
+                        blockSpaceChatForMembership || archivedGroup
+                          ? undefined
+                          : handleToggleReaction
+                      }
+                      resolveReactionReactorLabel={(userId) =>
+                        resolveMemberLabel(userId)
+                      }
+                      resolveMatrixMemberLabel={resolveMentionMemberLabel}
+                      resolveSenderDisplayLabel={resolveSenderDisplayLabel}
+                      onCancelSendPending={cancelSendInFlight}
+                      firstUnreadMessageId={
+                        unreadChatState.firstUnreadMessageId
+                      }
+                      unreadNotificationCount={
+                        unreadChatState.unreadNotificationCount
+                      }
+                      unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
+                      viewportActive={sidebarOpen && activeTab === 'chat'}
+                      onReachedTimelineBottom={handleReachedTimelineBottom}
+                      onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
+                      scrollTargetEventId={scrollToEventId}
+                      onConsumedScrollTarget={handleConsumedScrollTarget}
+                      onScrollTargetNotFound={handleScrollTargetNotFound}
+                      hasMoreOlderMessages={hasMoreOlderMessages}
+                      loadingOlderMessages={loadingOlderMessages}
+                      enableAutoLoadOlderMessages={
+                        connectionStatus === 'connected' && !autoLoadOlderPaused
+                      }
+                      onLoadOlderMessages={handleLoadOlderMessages}
+                    />
+                  </HumanChatPanelErrorBoundary>
                 )}
               </div>
             )}
@@ -5923,46 +6125,48 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 border-t border-border/70 bg-page-background p-0 dark:bg-background-2">
             <div>
-              <HumanChatPanelChatBar
-                value={input}
-                onChange={setInput}
-                onSend={handleSend}
-                mentionCandidates={composerMentionCandidates}
-                mentionPickerEnabled={mentionPickerEnabled}
-                composerLocked={chatComposerLocked}
-                composerLockedMessage={chatComposerLockedMessage}
-                getMentionComposerLabel={getMentionComposerLabel}
-                onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
-                draftAttachments={draftAttachments}
-                onDraftAttachmentsChange={setDraftAttachments}
-                replyPreview={
-                  replyDraft
-                    ? {
-                        authorLabel: replyDraft.authorLabel,
-                        excerpt: replyDraft.excerpt,
-                        sourceUserId: replyDraft.sourceUserId,
-                        isYou: replyDraft.isYou,
-                        onDismiss: () => setReplyDraft(null),
-                      }
-                    : undefined
-                }
-                editPreview={
-                  editDraft
-                    ? {
-                        excerpt: editDraft.excerpt,
-                        onDismiss: () => {
-                          setEditDraft(null);
-                          setInput('');
-                          disposeDraftAttachmentUrls(
-                            draftAttachmentsRef.current,
-                          );
-                          setDraftAttachments([]);
-                        },
-                      }
-                    : undefined
-                }
-                editMediaMode={Boolean(editDraft?.editMediaMode)}
-              />
+              <HumanChatPanelErrorBoundary key={roomId ?? 'composer'}>
+                <HumanChatPanelChatBar
+                  value={input}
+                  onChange={setInput}
+                  onSend={handleSend}
+                  mentionCandidates={composerMentionCandidates}
+                  mentionPickerEnabled={mentionPickerEnabled}
+                  composerLocked={chatComposerLocked}
+                  composerLockedMessage={chatComposerLockedMessage}
+                  getMentionComposerLabel={getMentionComposerLabel}
+                  onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
+                  draftAttachments={draftAttachments}
+                  onDraftAttachmentsChange={setDraftAttachments}
+                  replyPreview={
+                    replyDraft
+                      ? {
+                          authorLabel: replyDraft.authorLabel,
+                          excerpt: replyDraft.excerpt,
+                          sourceUserId: replyDraft.sourceUserId,
+                          isYou: replyDraft.isYou,
+                          onDismiss: () => setReplyDraft(null),
+                        }
+                      : undefined
+                  }
+                  editPreview={
+                    editDraft
+                      ? {
+                          excerpt: editDraft.excerpt,
+                          onDismiss: () => {
+                            setEditDraft(null);
+                            setInput('');
+                            disposeDraftAttachmentUrls(
+                              draftAttachmentsRef.current,
+                            );
+                            setDraftAttachments([]);
+                          },
+                        }
+                      : undefined
+                  }
+                  editMediaMode={Boolean(editDraft?.editMediaMode)}
+                />
+              </HumanChatPanelErrorBoundary>
             </div>
           </SidebarFooter>
         )}

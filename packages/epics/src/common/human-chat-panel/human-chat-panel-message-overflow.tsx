@@ -37,6 +37,8 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  useIsMobile,
+  usePrefersCoarsePointer,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
@@ -48,6 +50,7 @@ import { usePathname } from 'next/navigation';
 import { HumanChatPanelEmojiMartSurface } from './human-chat-panel-emoji-mart-surface';
 import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
 import { buildHyphaChatMessageUrl } from './human-chat-message-link';
+import { touchComposerFromViewportFlags } from './touch-composer-flags';
 
 const RECENT_REACTIONS_STORAGE_KEY = 'hypha-chat-recent-reactions';
 const RECENT_REACTIONS_BUMP_EVENT = 'hypha-chat-recent-reactions-bump';
@@ -107,6 +110,8 @@ export type HumanChatPanelMessageOverflowProps = {
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
   /** Current Matrix user id; used for delete permission. */
   currentUserId?: string | null;
+  /** Touch: skip hover context-menu and keep the ⋯ menu modal / on-screen. */
+  isTouchComposer?: boolean;
   /** Message author MXID when known (for delete permission). */
   senderMatrixId?: string;
   /** Resolve `@mxid` tokens to human labels for read-aloud. */
@@ -174,6 +179,7 @@ function MenuSections({
   onRequestDelete,
   onAfterAddReaction,
   onAfterQuickReaction,
+  onOpenFullReactionPicker,
   Sub,
   SubTrigger,
   SubContent,
@@ -199,6 +205,8 @@ function MenuSections({
   onAfterAddReaction?: () => void;
   /** Close menu after tapping a quick emoji (top row). */
   onAfterQuickReaction?: () => void;
+  /** Touch: open the emoji grid inside this menu instead of a hover submenu. */
+  onOpenFullReactionPicker?: () => void;
   Sub: typeof ContextMenuSub | typeof DropdownMenuSub;
   SubTrigger: typeof ContextMenuSubTrigger | typeof DropdownMenuSubTrigger;
   SubContent: typeof ContextMenuSubContent | typeof DropdownMenuSubContent;
@@ -231,27 +239,44 @@ function MenuSections({
           </button>
         ))}
       </div>
-      <Sub>
-        <SubTrigger
+      {onOpenFullReactionPicker ? (
+        <Item
           disabled={!canReact || !onReact}
-          className="flex cursor-pointer items-center gap-2 pr-1"
+          onSelect={(event) => {
+            event.preventDefault();
+            if (canReact && onReact) onOpenFullReactionPicker();
+          }}
         >
           <span className="flex-1">{t('addReactionButton')}</span>
-        </SubTrigger>
-        <SubContent
-          sideOffset={2}
-          className="w-auto max-w-[min(100vw-2rem,352px)] border-border p-0 shadow-lg"
-        >
-          <HumanChatPanelEmojiMartSurface
-            ariaLabel={t('addReactionButton')}
-            onEmojiSelect={(native) => {
-              pushRecentChatReaction(native);
-              if (onReact) void onReact(native);
-              onAfterAddReaction?.();
+        </Item>
+      ) : (
+        <Sub>
+          <SubTrigger
+            disabled={!canReact || !onReact}
+            className="flex cursor-pointer items-center gap-2 pr-1"
+          >
+            <span className="flex-1">{t('addReactionButton')}</span>
+          </SubTrigger>
+          <SubContent
+            sideOffset={2}
+            data-testid="hypha-emoji-picker-panel"
+            className="w-[min(calc(100vw-2rem),22rem)] max-w-[min(22rem,calc(100vw-1rem))] overflow-hidden border-border p-0 shadow-lg"
+            onWheel={(event) => event.stopPropagation()}
+            onEscapeKeyDown={(event) => {
+              event.stopPropagation();
             }}
-          />
-        </SubContent>
-      </Sub>
+          >
+            <HumanChatPanelEmojiMartSurface
+              ariaLabel={t('addReactionButton')}
+              onEmojiSelect={(native) => {
+                pushRecentChatReaction(native);
+                if (onReact) void onReact(native);
+                onAfterAddReaction?.();
+              }}
+            />
+          </SubContent>
+        </Sub>
+      )}
       <Separator />
       <Item
         disabled={!canEdit}
@@ -327,6 +352,7 @@ export function HumanChatPanelMessageOverflow({
   onDeleteMessage,
   currentUserId,
   senderMatrixId,
+  isTouchComposer,
   resolveMatrixMemberLabel,
   message,
   children,
@@ -334,8 +360,16 @@ export function HumanChatPanelMessageOverflow({
   const t = useTranslations('HumanChatPanel');
   const pathname = usePathname() ?? '';
   const quickEmojis = useQuickReactions();
+  const isMobile = useIsMobile();
+  const prefersCoarsePointer = usePrefersCoarsePointer();
+  const inferredTouch = touchComposerFromViewportFlags(
+    isMobile,
+    prefersCoarsePointer,
+  );
+  const touchComposer = isTouchComposer ?? inferredTouch;
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -458,29 +492,49 @@ export function HumanChatPanelMessageOverflow({
     />
   );
 
-  const dropdownMenu = (
-    <MenuSections
-      {...menuPropsBase}
-      onAfterAddReaction={() => setDropdownOpen(false)}
-      onAfterQuickReaction={() => setDropdownOpen(false)}
-      Sub={DropdownMenuSub}
-      SubTrigger={DropdownMenuSubTrigger}
-      SubContent={DropdownMenuSubContent}
-      Item={DropdownMenuItem}
-      Separator={DropdownMenuSeparator}
-    />
-  );
+  const dropdownMenu =
+    touchComposer && reactionPickerOpen ? (
+      <HumanChatPanelEmojiMartSurface
+        ariaLabel={t('addReactionButton')}
+        onEmojiSelect={(native) => {
+          pushRecentChatReaction(native);
+          if (onReact) void onReact(native);
+          setReactionPickerOpen(false);
+          setDropdownOpen(false);
+        }}
+      />
+    ) : (
+      <MenuSections
+        {...menuPropsBase}
+        onAfterAddReaction={() => setDropdownOpen(false)}
+        onAfterQuickReaction={() => setDropdownOpen(false)}
+        onOpenFullReactionPicker={
+          touchComposer ? () => setReactionPickerOpen(true) : undefined
+        }
+        Sub={DropdownMenuSub}
+        SubTrigger={DropdownMenuSubTrigger}
+        SubContent={DropdownMenuSubContent}
+        Item={DropdownMenuItem}
+        Separator={DropdownMenuSeparator}
+      />
+    );
 
   const moreSlot = (
     <DropdownMenu
       open={dropdownOpen}
-      onOpenChange={setDropdownOpen}
-      modal={false}
+      onOpenChange={(open) => {
+        setDropdownOpen(open);
+        if (!open) setReactionPickerOpen(false);
+      }}
+      modal={touchComposer}
     >
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:block"
+          className={cn(
+            'flex shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:block',
+            touchComposer ? 'h-9 w-9' : 'h-6 w-6',
+          )}
           aria-label={t('moreButton')}
           aria-expanded={dropdownOpen}
         >
@@ -489,8 +543,15 @@ export function HumanChatPanelMessageOverflow({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
+        side={touchComposer ? 'top' : 'bottom'}
         sideOffset={4}
-        className="min-w-[220px] p-1"
+        collisionPadding={16}
+        className={cn(
+          'min-w-[220px] p-1',
+          touchComposer &&
+            reactionPickerOpen &&
+            'w-auto max-w-[min(100vw-2rem,352px)] p-0',
+        )}
       >
         {dropdownMenu}
       </DropdownMenuContent>
@@ -502,12 +563,16 @@ export function HumanChatPanelMessageOverflow({
 
   return (
     <>
-      <ContextMenu>
-        <ContextMenuTrigger asChild>{rowInner}</ContextMenuTrigger>
-        <ContextMenuContent className="min-w-[220px] p-1">
-          {contextMenu}
-        </ContextMenuContent>
-      </ContextMenu>
+      {touchComposer ? (
+        rowInner
+      ) : (
+        <ContextMenu>
+          <ContextMenuTrigger asChild>{rowInner}</ContextMenuTrigger>
+          <ContextMenuContent className="min-w-[220px] p-1">
+            {contextMenu}
+          </ContextMenuContent>
+        </ContextMenu>
+      )}
 
       <AlertDialog
         open={deleteOpen}

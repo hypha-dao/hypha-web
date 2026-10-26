@@ -305,7 +305,8 @@
     "profileUnavailable": "Je bent nog aangemeld. Je profiel kon niet worden geladen.",
     "retry": "Opnieuw proberen",
     "sendTokensChoose": "Kies een token. Nu {symbol}.",
-    "gotItDone": "Bedankt — ik ben erbij"
+    "gotItDone": "Bedankt — ik ben erbij",
+    "matrixPersonUnavailable": "Die persoon heeft nog geen chat."
   },
   "WelcomeFlow": {
     "offer": {
@@ -696,7 +697,8 @@
     "titleLineTwo": "Deel berichten",
     "tabs": {
       "messages": "Berichten",
-      "suggestions": "Suggesties"
+      "suggestions": "Suggesties",
+      "archived": "Gearchiveerd"
     },
     "suggestionsEmpty": "Nu geen suggesties.",
     "reachOut": "Hypha stelt voor",
@@ -724,7 +726,8 @@
     "youWrote": "Jij: {message}",
     "unread": "{count} nieuw",
     "members": "{count} leden",
-    "loadMoreFailed": "De rest van de lijst is niet geladen. Je kunt het opnieuw proberen."
+    "loadMoreFailed": "De rest van de lijst is niet geladen. Je kunt het opnieuw proberen.",
+    "archivedEmpty": "Gearchiveerde groepen verschijnen hier."
   },
   "NetworkFeedback": {
     "triggerLabel": "Ondersteun Hypha",
@@ -2522,8 +2525,8 @@
     "escrowDepositDepositing": "Storten...",
     "escrowDepositApproving": "Goedkeuren...",
     "escrowDepositInsufficientWallet": "Uw portemonneesaldo is lager dan het vereiste bedrag.",
-    "pipelineEnabled": "Deal-pipeline",
-    "pipelineEnabledDescription": "Schakel een Kanban deal-pipeline in voor deze ruimte. Standaard uit.",
+    "pipelineEnabled": "Pipeline",
+    "pipelineEnabledDescription": "Schakel een Kanban-pipeline in voor deze ruimte. Standaard uit.",
     "mySpacesSupport": "Maak een ruimte of open er een waar je al lid van bent."
   },
   "AgreementFlow": {
@@ -3759,6 +3762,7 @@
     "connectionRetryFailedDescription": "Kon niet opnieuw verbinding maken. Controleer uw netwerk en probeer het opnieuw.",
     "connectionRetryingLabel": "Opnieuw proberen…",
     "connectionLostRetry": "Opnieuw proberen",
+    "chatThreadCrashedDescription": "Dit chatvenster is vastgelopen. Probeer het opnieuw.",
     "openPanel": "Chatpaneel openen",
     "openPanelWithUnreadMentions": "Chatpaneel openen (ongelezen vermeldingen)",
     "hidePanel": "Chatpaneel verbergen",
@@ -3872,6 +3876,8 @@
     "chatRoomTitle": "Privébericht",
     "systemSender": "Systeem",
     "noMembers": "Geen leden gevonden",
+    "membersSearch": "Leden zoeken",
+    "membersNoMatches": "Geen leden komen overeen.",
     "unknownMember": "Onbekend",
     "failedToJoinRoom": "Kan niet deelnemen aan de gespreksruimte",
     "emojiPickerComposer": "Kies emoji",
@@ -4130,7 +4136,37 @@
     "signalTeamAccessRequested": "Toegang tot signaalteam aangevraagd",
     "signalTeamAccessApproved": "Toegang tot signaalteam goedgekeurd",
     "mentionOpenFallbackRoom": "We konden die kamer niet oplossen vanuit uw lokale context. Open de gerelateerde ruimte en probeer het opnieuw.",
-    "mentionOpenFallbackMissingMessage": "Dat vermeldingsbericht is nog niet beschikbaar in de geladen tijdlijn. Probeer het zo nog eens."
+    "mentionOpenFallbackMissingMessage": "Dat vermeldingsbericht is nog niet beschikbaar in de geladen tijdlijn. Probeer het zo nog eens.",
+    "groupChatMenu": "Groepschatopties",
+    "renameGroup": "Groep hernoemen",
+    "renameGroupTitle": "Deze groep hernoemen",
+    "renameGroupDescription": "De nieuwe naam geldt voor iedereen in deze chat.",
+    "renameGroupName": "Groepsnaam",
+    "renameGroupSave": "Naam opslaan",
+    "renameGroupCancel": "Annuleren",
+    "renameGroupFailed": "Deze groep kon niet worden hernoemd. Probeer het opnieuw.",
+    "archiveGroup": "Groep archiveren",
+    "archiveGroupTitle": "Deze groep archiveren?",
+    "archiveGroupDescription": "Dit verbergt de groep uit Berichten. De geschiedenis blijft in de ruimte. Je kunt hem openen via Gearchiveerd en later herstellen. Leden worden niet gevraagd.",
+    "archiveGroupConfirm": "Ja, archiveren",
+    "archiveGroupCancel": "Annuleren",
+    "archiveGroupFailed": "Deze groep kon niet worden gearchiveerd. Probeer het opnieuw.",
+    "addPeople": "Mensen toevoegen",
+    "addPeopleTitle": "Mensen aan deze groep toevoegen",
+    "addPeopleDescription": "Ze worden uitgenodigd in deze chat.",
+    "addPeopleConfirm": "Toevoegen",
+    "addPeopleCancel": "Annuleren",
+    "addPeopleFailed": "Kon geen mensen aan deze groep toevoegen. Probeer het opnieuw.",
+    "addPeopleEmpty": "Iedereen die je kunt toevoegen is hier al.",
+    "addPeopleNoMatches": "Niemand komt overeen met die zoekopdracht.",
+    "addPeopleSearch": "Mensen zoeken",
+    "unarchiveGroup": "Groep herstellen",
+    "unarchiveGroupTitle": "Deze groep herstellen?",
+    "unarchiveGroupDescription": "De groep verschijnt weer in Berichten. Iedereen kan berichten sturen.",
+    "unarchiveGroupConfirm": "Ja, herstellen",
+    "unarchiveGroupCancel": "Annuleren",
+    "unarchiveGroupFailed": "Kon deze groep niet herstellen. Probeer het opnieuw.",
+    "archivedGroupReadOnly": "Deze groep is gearchiveerd. Herstel hem om berichten te sturen."
   },
   "CoherenceTab": {
     "signals": "Signalen",
@@ -5132,14 +5168,17 @@
     }
   },
   "Pipeline": {
-    "title": "Deal-pipeline",
-    "dealDetails": "Dealdetails",
-    "loading": "Deals laden…",
-    "notFound": "Deal niet gevonden",
+    "title": "Pipeline",
+    "dealDetails": "{item}details",
+    "loading": "{items} laden…",
+    "configLoadFailed": "De pipelineconfiguratie kon niet worden geladen.",
+    "retry": "Opnieuw proberen",
+    "unassignedLane": "Niet toegewezen",
+    "notFound": "{item} niet gevonden",
     "saving": "Opslaan…",
     "saved": "Opgeslagen",
     "cancel": "Annuleren",
-    "delete": "Deal verwijderen",
+    "delete": "{item} verwijderen",
     "exportXlsx": "Exporteer XLSX",
     "filter": "Filter",
     "reset": "Opnieuw instellen",
@@ -5151,7 +5190,7 @@
     "backToBoard": "Terug naar bord",
     "trackTitle": "{swimlane}-track",
     "summary": {
-      "deals": "Deals",
+      "deals": "Opportunities",
       "active": "Active",
       "pipelineValue": "Pipeline value",
       "weightedValue": "Weighted value"
@@ -5161,7 +5200,7 @@
       "swimlane": "Swimlane",
       "region": "Region",
       "priority": "Priority",
-      "status": "Dealstatus",
+      "status": "{item}status",
       "deadline": "Indieningsdeadline",
       "tag": "Tag",
       "all": "All",
@@ -5173,8 +5212,8 @@
       "allPriorities": "Alle prioriteiten",
       "allStatuses": "Alle statussen",
       "anyDeadline": "Elke deadline",
-      "tagLabel": "Deal-tag",
-      "tagPlaceholder": "Filter op een deal-tag",
+      "tagLabel": "{item}-tag",
+      "tagPlaceholder": "Filteren op tag voor {item}",
       "country": "Land",
       "countrySearch": "Zoek landen…",
       "allCountries": "Alle landen",
@@ -5188,12 +5227,12 @@
       "delete": "Delete view"
     },
     "newDeal": {
-      "title": "Nieuw pipeline-item",
-      "titlePlaceholder": "Bedrijf, deal of aanbesteding",
+      "title": "{item} aanmaken",
+      "titlePlaceholder": "Bedrijf, {item} of grantnaam",
       "countryPlaceholder": "Selecteer land (optioneel)",
       "valuePlaceholder": "0",
       "create": "Kaart maken",
-      "created": "Deal aangemaakt",
+      "created": "{item} aangemaakt",
       "titleLabel": "Titel",
       "overviewSection": "Overzicht",
       "contactSection": "Contact",
@@ -5241,9 +5280,9 @@
       "value": "Value",
       "currency": "Currency",
       "priority": "Priority",
-      "dealStatus": "Deal status",
+      "dealStatus": "{item}status",
       "successRate": "Slagingskans (%)",
-      "successRateOverride": "Deal-specifieke waarde — leegmaken om de fasestandaard te gebruiken",
+      "successRateOverride": "{item}-specifieke overschrijving — wis om de fasedefault te gebruiken",
       "successRateDefault": "Fasestandaard wordt gebruikt ({rate}%)",
       "nextAction": "Next action",
       "nextActionDate": "Next action date",
@@ -5274,7 +5313,7 @@
     },
     "regions": {
       "title": "Pipeline-regio’s",
-      "description": "Voeg territoria toe of verwijder ze die gebruikt worden bij het maken en filteren van deals (bijv. Benelux of Nordics).",
+      "description": "Voeg gebieden toe of verwijder ze die worden gebruikt bij het aanmaken en filteren van opportunities (bijvoorbeeld Benelux of Nordics).",
       "default": "Standaard",
       "add": "Regio toevoegen",
       "addPlaceholder": "bijv. DACH",
@@ -5289,15 +5328,57 @@
     },
     "probabilities": {
       "title": "Succespercentages per fase",
-      "description": "Standaard succeskans (%) per track en fase. Nieuwe deals en deals die naar een fase worden verplaatst starten met deze waarden; per deal kan dit worden overschreven.",
+      "description": "Standaard slagingskans (%) per track en fase. Nieuwe opportunities en opportunities die naar een fase worden verplaatst, starten met deze waarden; elke opportunity kan nog individueel worden overschreven.",
       "track": "Track",
-      "terminalHint": "Won is altijd 100% en Lost altijd 0%.",
+      "terminalHint": "Een gewonnen fase is altijd 100% en een verloren fase altijd 0%.",
       "monotonicWarning": "Kansen moeten van links naar rechts toenemen. Controleer: {lanes}",
       "save": "Succespercentages opslaan",
       "saved": "Succespercentages opgeslagen",
       "saveFailed": "Kon succespercentages niet opslaan",
       "loading": "Succespercentages laden…",
       "resetDefaults": "Standaard herstellen"
+    },
+    "labels": {
+      "title": "Pipeline-labels",
+      "description": "Stel de paginatitel in en hoe items in deze pipeline heten.",
+      "pageTitle": "Paginatitel",
+      "pageTitlePlaceholder": "Pipeline",
+      "itemSingular": "Itemnaam (enkelvoud)",
+      "itemSingularPlaceholder": "Opportunity",
+      "itemPlural": "Itemnaam (meervoud)",
+      "itemPluralPlaceholder": "Opportunities",
+      "required": "Paginatitel en itemnamen zijn verplicht",
+      "save": "Labels opslaan",
+      "saved": "Labels opgeslagen",
+      "saveFailed": "Labels konden niet worden opgeslagen",
+      "loading": "Labels laden…"
+    },
+    "tracks": {
+      "title": "Tracks",
+      "description": "Tracks toevoegen, hernoemen, herschikken of verwijderen. Een ruimte kan minder tracks hebben dan de standaard.",
+      "add": "Track toevoegen",
+      "newTrack": "Nieuwe track",
+      "namePlaceholder": "Tracknaam",
+      "nameRequired": "Elke track heeft een naam nodig",
+      "atLeastOne": "Houd minstens één track",
+      "save": "Tracks opslaan",
+      "saved": "Tracks opgeslagen",
+      "saveFailed": "Tracks konden niet worden opgeslagen",
+      "loading": "Tracks laden…",
+      "resetDefaults": "Herstel standaardwaarden"
+    },
+    "stages": {
+      "description": "Fases toevoegen, hernoemen, herschikken of verwijderen die op het bord en in de slagingskans-tabel worden gebruikt.",
+      "add": "Fase toevoegen",
+      "newStage": "Nieuwe fase",
+      "namePlaceholder": "Fasenaam",
+      "nameRequired": "Elke fase heeft een naam nodig",
+      "atLeastOne": "Houd minstens één fase"
+    },
+    "workflow": {
+      "moveUp": "{label} omhoog (rij {position})",
+      "moveDown": "{label} omlaag (rij {position})",
+      "remove": "{label} verwijderen (rij {position})"
     }
   },
   "OverviewOps": {

@@ -41,6 +41,7 @@ import {
   DropdownMenuTrigger,
   Skeleton,
   useIsMobile,
+  usePrefersCoarsePointer,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -54,7 +55,7 @@ import { MemberHomeMark } from '../../people/components/member-home-mark';
 import {
   isHyphaBotMatrixIdentity,
   looksLikeTechnicalMatrixDisplayName,
-  matrixUserIdToCanonicalPrivySub,
+  visibleMatrixMemberName,
 } from './matrix-room-member-display';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
@@ -65,19 +66,25 @@ import {
   type EmojiIndexEntry,
 } from './emoji-mart-index';
 import { getTextareaSelectionCenter } from './textarea-caret-position';
-import { highlightComposerUrlsForBackdrop } from './human-chat-panel-composer-url-highlight';
 import {
   type ChatPanelAttachmentMedia,
   looksLikeAudioMimeOrName,
   looksLikeVideoMimeOrName,
 } from './chat-panel-media-types';
 import { getActiveAtToken } from './human-chat-mention-token';
+import { composerOverlayConsumesEscape } from './composer-escape';
+import { composerKeySendsMessage } from './composer-enter';
+import { touchComposerFromViewportFlags } from './touch-composer-flags';
+import { useVisualViewportKeyboardInset } from './use-visual-viewport-keyboard-inset';
+import { composerBottomPadding } from './visual-viewport-keyboard';
 import {
   ChatVoiceAudioRow,
   useDraftVoiceDuration,
 } from './human-chat-panel-voice-audio-row';
 import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row';
 import { formatComposerMentionToken } from './human-chat-display-mention';
+import { mentionCandidateMatchRank } from './human-chat-mention-search';
+import { resolveReplyPreviewAuthorLookup } from './reply-preview-author';
 import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';
 import { ComposerAttachGoogleDriveMenuItem } from '../composer';
 
@@ -172,42 +179,27 @@ function ReplyPreviewAuthorName({
   unknownMemberLabel: string;
   agentMentionLabel: string;
 }) {
-  if (isYou) {
-    return <>{youLabel}</>;
-  }
-
-  const matrixUserId = sourceUserId?.trim() ?? '';
-  if (isHyphaBotMatrixIdentity(matrixUserId, authorLabel)) {
-    return <>{agentMentionLabel}</>;
-  }
-  const canonicalSub = matrixUserId
-    ? matrixUserIdToCanonicalPrivySub(matrixUserId)
-    : null;
-  const authorLooksTechnical = looksLikeTechnicalMatrixDisplayName(
+  const lookup = resolveReplyPreviewAuthorLookup({
+    isYou,
+    sourceUserId,
     authorLabel,
-    matrixUserId,
-  );
-  const hasFriendlyAuthorLabel =
-    Boolean(authorLabel.trim()) &&
-    authorLabel.trim() !== matrixUserId &&
-    !authorLooksTechnical;
-  const needsLinkLookup =
-    Boolean(matrixUserId) && !canonicalSub && !hasFriendlyAuthorLabel;
-  const needsPersonLookup =
-    !hasFriendlyAuthorLabel && (Boolean(canonicalSub) || needsLinkLookup);
+  });
+  const { matrixUserId, needsLinkLookup, needsPersonLookup } = lookup;
 
   const { privyUserId: linkedSub, isLoading: loadingLink } =
     useUserPrivyIdByMatrixId({
       matrixUserId: needsLinkLookup ? matrixUserId : undefined,
     });
-  const resolvedSub = linkedSub ?? canonicalSub ?? undefined;
+  const resolvedSub = linkedSub ?? lookup.canonicalSub ?? undefined;
   const { user } = useAuthentication();
   const { jwt, isLoadingJwt } = useJwt();
   const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: resolvedSub,
+    sub: needsPersonLookup ? resolvedSub : undefined,
   });
 
   const text = useMemo(() => {
+    if (lookup.kind === 'you') return youLabel;
+    if (lookup.kind === 'agent') return agentMentionLabel;
     const fromPerson = person ? formatPersonDisplayName(person) : '';
     if (fromPerson.trim()) return fromPerson;
     const fallback = authorLabel.trim();
@@ -217,8 +209,18 @@ function ReplyPreviewAuthorName({
     ) {
       return fallback;
     }
-    return unknownMemberLabel;
-  }, [authorLabel, matrixUserId, person, unknownMemberLabel]);
+    return matrixUserId
+      ? visibleMatrixMemberName(matrixUserId, fallback)
+      : unknownMemberLabel;
+  }, [
+    agentMentionLabel,
+    authorLabel,
+    lookup.kind,
+    matrixUserId,
+    person,
+    unknownMemberLabel,
+    youLabel,
+  ]);
 
   const jwtBlockingForPerson =
     Boolean(resolvedSub) &&
@@ -228,6 +230,12 @@ function ReplyPreviewAuthorName({
     ((needsLinkLookup && loadingLink) ||
       (Boolean(resolvedSub) && (loadingPerson || jwtBlockingForPerson)));
 
+  if (lookup.kind === 'you') {
+    return <>{youLabel}</>;
+  }
+  if (lookup.kind === 'agent') {
+    return <>{agentMentionLabel}</>;
+  }
   if (loading) {
     return (
       <Skeleton
@@ -265,6 +273,10 @@ export type ChatMentionAgentIcon =
 export type ChatMentionCandidate = {
   userId: string;
   displayLabel: string;
+  /** Hypha nickname — mention search matches this as well as the display name. */
+  nickname?: string | null;
+  /** Hypha username / slug. */
+  slug?: string | null;
   /** Optional thumbnail for the mention picker (Matrix room avatar HTTP URL). */
   avatarUrl?: string;
   /** When known from space roster (`Person.sub`), resolves profile without Matrix→Privy lookup. */
@@ -291,6 +303,9 @@ export type ChatDraftAttachment = {
   /** When set, this row is an existing Matrix attachment (edit mode). */
   editSlot?: ChatDraftEditSlot;
 };
+
+/** Grow with the draft, then scroll inside so the caret stays in the text. */
+const COMPOSER_INPUT_MAX_PX = 160;
 
 type HumanChatPanelChatBarProps = {
   value: string;
@@ -528,22 +543,6 @@ function insertAtCaret(
 
 const MAX_MENTION_SUGGESTIONS = 24;
 
-function mentionSearchLabel(
-  candidate: ChatMentionCandidate,
-  resolved: ReadonlyMap<string, string>,
-) {
-  return (resolved.get(candidate.userId) ?? candidate.displayLabel).trim();
-}
-
-function labelRank(label: string, query: string): 'start' | 'contains' | null {
-  if (!label) return null;
-  if (label.startsWith(query)) return 'start';
-  const words = label.split(/[\s._'-]+/);
-  if (words.some((word) => word.startsWith(query))) return 'start';
-  if (label.includes(query)) return 'contains';
-  return null;
-}
-
 function filterMentionCandidates(
   all: ChatMentionCandidate[],
   query: string,
@@ -558,25 +557,11 @@ function filterMentionCandidates(
   const contains: ChatMentionCandidate[] = [];
   const pending: ChatMentionCandidate[] = [];
   for (const m of all) {
-    const label = mentionSearchLabel(m, resolved).toLowerCase();
-    const prompts = [
-      m.prompt?.toLowerCase() ?? '',
-      ...(m.skills ?? []).map((skill) => skill.prompt.toLowerCase()),
-    ].filter(Boolean);
-    const id = m.userId.toLowerCase();
-    const local = m.userId.startsWith('@')
-      ? m.userId.slice(1).split(':')[0]?.toLowerCase() ?? ''
-      : '';
-    const idStarts =
-      prompts.some((prompt) => prompt.startsWith(q)) ||
-      id.startsWith(`@${q}`) ||
-      id.startsWith(q) ||
-      Boolean(local && local.startsWith(q));
-    const idContains =
-      prompts.some((prompt) => prompt.includes(q)) || id.includes(q);
-    const rank =
-      labelRank(label, q) ??
-      (idStarts ? 'start' : idContains ? 'contains' : null);
+    const rank = mentionCandidateMatchRank(
+      m,
+      q,
+      resolved.get(m.userId)?.trim(),
+    );
     if (rank === 'start') {
       if (starts.length < MAX_MENTION_SUGGESTIONS) starts.push(m);
     } else if (rank === 'contains') {
@@ -706,18 +691,18 @@ export function HumanChatPanelChatBar({
   const dictationSessionFinalizedRef = useRef(false);
   const [isDictating, setIsDictating] = useState(false);
   const isMobile = useIsMobile() ?? false;
+  const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
+  const isTouchComposer = touchComposerFromViewportFlags(
+    isMobile,
+    prefersCoarsePointer,
+  );
+  const [composerFocused, setComposerFocused] = useState(false);
+  const keyboardInset = useVisualViewportKeyboardInset(composerFocused);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const valueRef = useRef(value);
   valueRef.current = value;
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  /** Mirrored backdrop for Discord-style URL coloring (textarea text is transparent). */
-  const composerBackdropRef = useRef<HTMLDivElement>(null);
-
-  const composerHighlightBackdrop = useMemo(
-    () => highlightComposerUrlsForBackdrop(value),
-    [value],
-  );
   const composerShellRef = useRef<HTMLDivElement>(null);
   const replyPreviewWasOpenRef = useRef(false);
   const editPreviewWasOpenRef = useRef(false);
@@ -729,6 +714,12 @@ export function HumanChatPanelChatBar({
   const [colonActive, setColonActive] = useState(0);
   const colonTokenRef = useRef<{ start: number; query: string } | null>(null);
   const colonRequestIdRef = useRef(0);
+  const emojiPickerOpenRef = useRef(emojiPickerOpen);
+  const colonAutocompleteOpenRef = useRef(false);
+  useLayoutEffect(() => {
+    emojiPickerOpenRef.current = emojiPickerOpen;
+    colonAutocompleteOpenRef.current = colonOpen && colonSuggestions.length > 0;
+  }, [emojiPickerOpen, colonOpen, colonSuggestions.length]);
 
   const [atOpen, setAtOpen] = useState(false);
   const [atSuggestions, setAtSuggestions] = useState<ChatMentionCandidate[]>(
@@ -819,28 +810,20 @@ export function HumanChatPanelChatBar({
 
   const autoResize = useCallback(() => {
     const ta = textareaRef.current;
-    const bd = composerBackdropRef.current;
     if (!ta) return;
     const content = valueRef.current;
     /**
      * After send we clear to `''`. With only `height='auto'`, some browsers keep the
      * previous large scrollHeight — force a shrink before measuring.
      */
-    if (content.length === 0) {
-      ta.style.height = '0px';
-      ta.style.minHeight = '0';
-      void ta.offsetHeight;
-    }
-    ta.style.height = 'auto';
+    ta.style.height = '0px';
     ta.style.minHeight = '';
-    const h = Math.min(ta.scrollHeight, 160);
+    void ta.offsetHeight;
+    ta.style.height = 'auto';
+    const h = Math.min(Math.max(ta.scrollHeight, 36), COMPOSER_INPUT_MAX_PX);
     ta.style.height = `${h}px`;
     if (content.length === 0) {
       ta.scrollTop = 0;
-    }
-    /** Backdrop is `absolute inset-0` — no explicit height; mirrors textarea box via layout. */
-    if (bd && content.length === 0) {
-      bd.scrollTop = 0;
     }
   }, []);
 
@@ -1504,7 +1487,15 @@ export function HumanChatPanelChatBar({
 
   const handleAttachMenuContentEnter = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
+      if (
+        !composerKeySendsMessage({
+          key: e.key,
+          shiftKey: e.shiftKey,
+          isTouchComposer,
+        })
+      ) {
+        return;
+      }
       if (isKeyboardActivationTarget(e.target)) return;
       const ne = e.nativeEvent as KeyboardEvent;
       if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
@@ -1517,7 +1508,7 @@ export function HumanChatPanelChatBar({
         sendMessage();
       }
     },
-    [canSend, draftAttachments.length, sendMessage],
+    [canSend, draftAttachments.length, isTouchComposer, sendMessage],
   );
 
   /**
@@ -1527,7 +1518,15 @@ export function HumanChatPanelChatBar({
    */
   const handleDraftAttachmentsKeyDownCapture = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
+      if (
+        !composerKeySendsMessage({
+          key: e.key,
+          shiftKey: e.shiftKey,
+          isTouchComposer,
+        })
+      ) {
+        return;
+      }
       if (isKeyboardActivationTarget(e.target)) return;
       const ne = e.nativeEvent as KeyboardEvent;
       if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
@@ -1551,6 +1550,7 @@ export function HumanChatPanelChatBar({
       atSuggestions.length,
       canSend,
       draftAttachments.length,
+      isTouchComposer,
       sendMessage,
     ],
   );
@@ -1559,11 +1559,66 @@ export function HumanChatPanelChatBar({
    * Enter often targets the attach (+) or mic trigger after menus/files — send from
    * anywhere in the composer shell unless a popover menu is open.
    */
+  const closeComposerOverlayFromEscape = useCallback(
+    (e: {
+      preventDefault(): void;
+      stopPropagation(): void;
+      stopImmediatePropagation?: () => void;
+    }) => {
+      if (
+        !composerOverlayConsumesEscape({
+          emojiPickerOpen: emojiPickerOpenRef.current,
+          colonAutocompleteOpen: colonAutocompleteOpenRef.current,
+        })
+      ) {
+        return false;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation?.();
+      if (emojiPickerOpenRef.current) {
+        setEmojiPickerOpen(false);
+        return true;
+      }
+      colonRequestIdRef.current += 1;
+      setColonOpen(false);
+      setColonSuggestions([]);
+      colonTokenRef.current = null;
+      return true;
+    },
+    [],
+  );
+
+  /**
+   * Sheet's Radix dismiss is a *document* capture listener registered when
+   * the Sheet opens — before ChatBar mounts (`hasOpened` is a later effect).
+   * `window` capture runs first, so this can stop the Sheet.
+   */
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (event.isComposing) return;
+      closeComposerOverlayFromEscape(event);
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [closeComposerOverlayFromEscape]);
+
   const handleComposerShellKeyDownCapture = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
-      const composing = (e.nativeEvent as KeyboardEvent).isComposing;
-      if (composing) return;
+      if ((e.nativeEvent as KeyboardEvent).isComposing) return;
+      if (e.key === 'Escape' && closeComposerOverlayFromEscape(e)) {
+        return;
+      }
+      if (
+        !composerKeySendsMessage({
+          key: e.key,
+          shiftKey: e.shiftKey,
+          isTouchComposer,
+        })
+      ) {
+        return;
+      }
       if (
         atOpen ||
         colonOpen ||
@@ -1583,8 +1638,10 @@ export function HumanChatPanelChatBar({
       colonSuggestions.length,
       atSuggestions.length,
       attachMenuOpen,
+      closeComposerOverlayFromEscape,
       emojiPickerOpen,
       canSend,
+      isTouchComposer,
       sendMessage,
     ],
   );
@@ -1593,6 +1650,9 @@ export function HumanChatPanelChatBar({
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       const composing = (e.nativeEvent as KeyboardEvent).isComposing;
       if (composing) return;
+      if (e.key === 'Escape' && closeComposerOverlayFromEscape(e)) {
+        return;
+      }
       if (atOpen && atSuggestions.length > 0) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
@@ -1606,7 +1666,7 @@ export function HumanChatPanelChatBar({
           );
           return;
         }
-        if (e.key === 'Enter' || e.key === 'Tab') {
+        if (e.key === 'Tab' || (e.key === 'Enter' && !isTouchComposer)) {
           e.preventDefault();
           if (keyboardPickDisabled) return;
           const safeIndex = Math.max(
@@ -1627,6 +1687,7 @@ export function HumanChatPanelChatBar({
         }
         if (e.key === 'Escape') {
           e.preventDefault();
+          e.stopPropagation();
           setAtOpen(false);
           setAtSuggestions([]);
           atTokenRef.current = null;
@@ -1647,7 +1708,7 @@ export function HumanChatPanelChatBar({
           );
           return;
         }
-        if (e.key === 'Enter' || e.key === 'Tab') {
+        if (e.key === 'Tab' || (e.key === 'Enter' && !isTouchComposer)) {
           e.preventDefault();
           const safeIndex = Math.max(
             0,
@@ -1659,6 +1720,7 @@ export function HumanChatPanelChatBar({
         }
         if (e.key === 'Escape') {
           e.preventDefault();
+          e.stopPropagation();
           colonRequestIdRef.current += 1;
           setColonOpen(false);
           setColonSuggestions([]);
@@ -1667,7 +1729,13 @@ export function HumanChatPanelChatBar({
         }
       }
 
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (
+        composerKeySendsMessage({
+          key: e.key,
+          shiftKey: e.shiftKey,
+          isTouchComposer,
+        })
+      ) {
         e.preventDefault();
         if (canSend) {
           sendMessage();
@@ -1685,8 +1753,10 @@ export function HumanChatPanelChatBar({
       colonSuggestions,
       colonActive,
       applyColonChoice,
+      closeComposerOverlayFromEscape,
       canSend,
       draftAttachments.length,
+      isTouchComposer,
       sendMessage,
     ],
   );
@@ -1734,7 +1804,10 @@ export function HumanChatPanelChatBar({
     'flex h-6 w-6 shrink-0 items-center justify-center rounded text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground';
 
   return (
-    <div className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pb-2 pt-2">
+    <div
+      className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pt-2"
+      style={{ paddingBottom: composerBottomPadding(keyboardInset) }}
+    >
       <div
         ref={composerShellRef}
         onKeyDownCapture={handleComposerShellKeyDownCapture}
@@ -2156,6 +2229,7 @@ export function HumanChatPanelChatBar({
         {colonOpen && colonSuggestions.length > 0 && (
           <div
             role="listbox"
+            data-hypha-colon-autocomplete=""
             aria-label={t('emojiShortcodeListLabel')}
             className="absolute bottom-full left-2 right-2 z-50 mb-1 max-h-48 overflow-y-auto rounded-md border border-border bg-popover shadow-md"
           >
@@ -2181,30 +2255,15 @@ export function HumanChatPanelChatBar({
           </div>
         )}
         {/*
-          Single-flow textarea sets height. Mirrored backdrop is absolute so it never
-          participates in CSS Grid row sizing (grid + two stacked cells kept the row
-          stuck at max height after send).
+          Visible auto-growing textarea. A transparent overlay used to paint URL
+          highlights, but its wrap/scroll did not match the caret. Text and caret
+          now live on one element; it grows to COMPOSER_INPUT_MAX_PX then scrolls.
         */}
         <div className="relative isolate min-h-[36px] min-w-0 max-h-[160px] w-full overflow-hidden rounded-sm">
-          <div
-            ref={composerBackdropRef}
-            aria-hidden
-            className={cn(
-              'pointer-events-none absolute inset-0 z-0 overflow-y-auto overflow-x-hidden',
-              'whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed text-foreground',
-              'selection:bg-transparent narrow-scrollbar',
-            )}
-          >
-            {composerHighlightBackdrop}
-          </div>
           <textarea
             ref={textareaRef}
             value={value}
             disabled={composerLocked}
-            onScroll={(e) => {
-              const bd = composerBackdropRef.current;
-              if (bd) bd.scrollTop = e.currentTarget.scrollTop;
-            }}
             onPointerDown={(e) => {
               if (e.button !== 0) return;
               pointerSelectingRef.current = true;
@@ -2225,17 +2284,31 @@ export function HumanChatPanelChatBar({
             }}
             onKeyUp={updateSelectionBar}
             onMouseUp={updateSelectionBar}
-            onBlur={() => setSelectionBar(null)}
+            onBlur={() => {
+              setComposerFocused(false);
+              setSelectionBar(null);
+            }}
             onKeyDown={handleKeyDown}
+            onFocus={() => {
+              setComposerFocused(true);
+              requestAnimationFrame(() => {
+                composerShellRef.current?.scrollIntoView({
+                  block: 'nearest',
+                  inline: 'nearest',
+                });
+              });
+            }}
+            enterKeyHint={isTouchComposer ? 'enter' : 'send'}
             aria-label={placeholder ?? defaultPlaceholder}
             placeholder={placeholder ?? defaultPlaceholder}
             rows={1}
             className={cn(
-              'relative z-[1] block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
-              'overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-sm leading-relaxed',
-              'text-transparent caret-foreground',
+              'relative z-[1] box-border block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
+              'overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2 text-[16px] leading-5',
+              'text-foreground caret-foreground',
               'placeholder:text-muted-foreground focus:outline-none',
             )}
+            style={{ fontSize: 16 }}
           />
         </div>
 

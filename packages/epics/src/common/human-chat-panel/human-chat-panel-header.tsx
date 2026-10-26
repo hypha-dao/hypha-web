@@ -58,6 +58,8 @@ type HumanChatPanelHeaderProps = {
   iconTitle?: string;
   /** Sits before the title — e.g. peer space icons on a direct chat. */
   titleStart?: ReactNode;
+  /** Extra header actions (group rename/archive). Same 36px control row. */
+  trailingEnd?: ReactNode;
   /** Two rooms that sit side by side, such as a space and its ecosystem. */
   roomChoice?: {
     value: string;
@@ -76,6 +78,7 @@ export function HumanChatPanelHeader({
   mark,
   iconTitle,
   titleStart,
+  trailingEnd,
   roomChoice,
 }: HumanChatPanelHeaderProps) {
   const { setOpen, setOpenMobile } = useSidebar();
@@ -129,6 +132,7 @@ export function HumanChatPanelHeader({
             <Settings className="craft-icon" aria-hidden />
           </button>
         ) : null}
+        {trailingEnd}
       </div>
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
         {displayDescription && (
