@@ -367,6 +367,22 @@ describe('Start-a-conversation call toolbar', () => {
     expect(panel).toContain('isDirectConversation');
     expect(panel).toContain('personPanelCallSelectionMatches');
     expect(panel).toContain('PersonPanelCallAborted');
+    expect(panel).toContain('OpenPersonRoomFailure');
+    const startAt = panel.indexOf('const startPersonPanelCall = useCallback');
+    const audioAt = panel.indexOf(
+      'const handleCallAudio = useCallback',
+      startAt,
+    );
+    const startBlock = panel.slice(startAt, audioAt);
+    expect(startAt).toBeGreaterThan(-1);
+    expect(audioAt).toBeGreaterThan(startAt);
+    expect(startBlock).toContain('error instanceof OpenPersonRoomFailure');
+    expect(startBlock).toContain("error.code === 'no-matrix-id'");
+    expect(startBlock).toContain(
+      "setError(tMember('matrixPersonUnavailable'))",
+    );
+    expect(startBlock).toContain("setError(tMember('callFailed'))");
+    expect(startBlock).not.toContain('refusePersonPanelCallStart()');
     const toolbarAt = panel.indexOf('<HumanChatPanelCallToolbar');
     const checkedAt = panel.lastIndexOf('callActionsChecked ? (', toolbarAt);
     expect(toolbarAt).toBeGreaterThan(-1);

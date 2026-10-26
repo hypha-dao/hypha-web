@@ -89,7 +89,10 @@ import {
   rememberPersonDirectRoom,
   rememberSignalThreadRooms,
 } from '../people/components/member-connections';
-import { openOrEnsurePersonRoom } from '../people/components/open-person-room';
+import {
+  openOrEnsurePersonRoom,
+  OpenPersonRoomFailure,
+} from '../people/components/open-person-room';
 import { getRootSpace } from './get-root-space';
 
 import {
@@ -2061,6 +2064,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         },
       }).catch((error) => {
         if (error instanceof PersonPanelCallAborted) return;
+        if (
+          error instanceof OpenPersonRoomFailure &&
+          error.code === 'no-matrix-id'
+        ) {
+          setError(tMember('matrixPersonUnavailable'));
+          return;
+        }
         setError(tMember('callFailed'));
       });
     },
