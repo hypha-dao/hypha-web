@@ -372,7 +372,7 @@ function homeAssistantScript(input: {
   // Dropping the cue can leave a dangling dash from "…decision — You can…"
   return base
     .replace(/You can now decide on the proposal card\.?/gi, '')
-    .replace(/[\s]*[—–-:]\s*$/u, '')
+    .replace(/\s*[-—–:]\s*$/u, '')
     .trim();
 }
 
