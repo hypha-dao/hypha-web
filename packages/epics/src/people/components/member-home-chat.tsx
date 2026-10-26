@@ -352,7 +352,9 @@ function homeAssistantScript(input: {
 }) {
   const base = input.displayText.trim();
   if (!input.stripDecisionCue) return base;
-  return base.replace(/You can now decide on the proposal card\.?/gi, '').trim();
+  return base
+    .replace(/You can now decide on the proposal card\.?/gi, '')
+    .trim();
 }
 
 const HOME_LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
@@ -733,8 +735,8 @@ export function MemberHomeChat({
       live.add(message.id);
       const rawText = messageText(message).replace(/\*\*/g, '');
       const board = rawText
-        ? (homeBoardFromMessage(message) ??
-          memberHomeSignalCatalogue(rawText, intelligence.spaces, lang))
+        ? homeBoardFromMessage(message) ??
+          memberHomeSignalCatalogue(rawText, intelligence.spaces, lang)
         : null;
       const spokenItem = rawText
         ? homeItemForMessage(cardItems, message)
@@ -753,9 +755,7 @@ export function MemberHomeChat({
       const streamingThis = isStreaming && message.id === lastMessage?.id;
       const text =
         script ||
-        (streamingThis
-          ? (heldBubbleText.current.get(message.id) ?? '')
-          : '');
+        (streamingThis ? heldBubbleText.current.get(message.id) ?? '' : '');
       if (!streamingThis && !script) heldBubbleText.current.delete(message.id);
       if (text) shown.set(message.id, text);
     }
@@ -1101,7 +1101,7 @@ export function MemberHomeChat({
                 : null;
             const text =
               message.role === 'assistant'
-                ? (shownAssistantText.get(message.id) ?? '')
+                ? shownAssistantText.get(message.id) ?? ''
                 : rawText;
             const pinnedItem =
               message.role === 'assistant'
