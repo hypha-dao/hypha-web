@@ -2009,6 +2009,8 @@
     "vaults": "Hvelv",
     "searchTransactions": "Søk i transaksjoner",
     "noTransactionsFound": "Ingen transaksjoner funnet",
+    "failedToLoadTransactions": "Kunne ikke laste transaksjoner",
+    "retryTransactions": "Prøv igjen",
     "loadMoreTransactions": "Last inn flere transaksjoner",
     "rewardsSection": {
       "title": "Belønninger",

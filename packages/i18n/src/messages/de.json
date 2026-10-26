@@ -2011,6 +2011,8 @@
     "vaults": "Tresore",
     "searchTransactions": "Transaktionen suchen",
     "noTransactionsFound": "Keine Transaktionen gefunden",
+    "failedToLoadTransactions": "Transaktionen konnten nicht geladen werden",
+    "retryTransactions": "Erneut versuchen",
     "loadMoreTransactions": "Mehr Transaktionen laden",
     "rewardsSection": {
       "title": "Belohnungen",

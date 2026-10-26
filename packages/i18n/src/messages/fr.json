@@ -1439,6 +1439,8 @@
     "vaults": "Coffres",
     "searchTransactions": "Rechercher des transactions",
     "noTransactionsFound": "Aucune transaction trouvée",
+    "failedToLoadTransactions": "Impossible de charger les transactions",
+    "retryTransactions": "Réessayer",
     "loadMoreTransactions": "Charger plus de transactions",
     "rewardsSection": {
       "title": "Récompenses",

@@ -1,9 +1,15 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   getSpaceDetails,
+  getSpaceRegularTokens,
+  getSpaceOwnershipTokens,
+  getSpaceDecayingTokens,
   schemaGetTransfersQuery,
   validTokenTypes,
   type TokenType,
+  buildKnownTreasuryAddressSet,
+  selectVisibleTransfers,
+  getEnergyCommunityTokenAddresses,
 } from '@hypha-platform/core/client';
 import {
   findSpaceBySlug,
@@ -68,6 +74,41 @@ export async function GET(
     );
 
     const spaceAddress = spaceDetails.at(9) as `0x${string}`;
+    const spaceId = BigInt(space.web3SpaceId as number);
+
+    const [rawDbTokens, issuedTokenResults] = await Promise.all([
+      findAllTokens({ db }, { search: undefined }),
+      web3Client
+        .multicall({
+          contracts: [
+            getSpaceRegularTokens({ spaceId }),
+            getSpaceOwnershipTokens({ spaceId }),
+            getSpaceDecayingTokens({ spaceId }),
+          ],
+        })
+        .catch((error: unknown) => {
+          console.warn('Failed to fetch on-chain space token lists:', error);
+          return [];
+        }),
+    ]);
+
+    const issuedTokenAddresses = (
+      Array.isArray(issuedTokenResults) ? issuedTokenResults : []
+    )
+      .filter(
+        (response) =>
+          response &&
+          response.status === 'success' &&
+          Array.isArray(response.result) &&
+          response.result.length !== 0,
+      )
+      .flatMap((response) => response.result as `0x${string}`[]);
+
+    const dbKnownAddresses = buildKnownTreasuryAddressSet(rawDbTokens, [
+      ...getEnergyCommunityTokenAddresses(),
+      ...issuedTokenAddresses,
+    ]);
+
     const transfers = await getTransfersByAddress({
       address: spaceAddress,
       contractAddresses: token,
@@ -75,10 +116,8 @@ export async function GET(
       toDate,
       fromBlock,
       toBlock,
-      limit,
+      knownAddresses: dbKnownAddresses,
     });
-
-    const rawDbTokens = await findAllTokens({ db }, { search: undefined });
 
     // Mints emit Transfer(0x0 -> recipient) and never reference the space
     // address, so the address-based query above misses tokens the space
@@ -111,22 +150,26 @@ export async function GET(
       (mint) => mint.to.toLowerCase() !== spaceAddress.toLowerCase(),
     );
 
-    // Apply the date window to the merged set before slicing: the mint branch
-    // only filters by block range, so date-only requests would otherwise leak
-    // out-of-range mints into the response.
+    // Apply the date window to the merged set before the visible-token page:
+    // the mint branch only filters by block range, so date-only requests
+    // would otherwise leak out-of-range mints into the response.
     const fromTime = fromDate?.getTime();
     const toTime = toDate?.getTime();
 
-    // Enforce the limit on the merged set only when the caller requested one;
-    // `slice(0, undefined)` keeps the full history.
-    const allTransfers = [...transfers, ...mintTransfers]
-      .filter(
-        (transfer) =>
-          (fromTime === undefined || transfer.timestamp >= fromTime) &&
-          (toTime === undefined || transfer.timestamp <= toTime),
-      )
-      .sort((a, b) => b.block_number - a.block_number)
-      .slice(0, limit);
+    // Filter allowed tokens before `limit` so hidden airdrops do not eat
+    // page slots. On-chain space-issued tokens stay visible even without a
+    // DB row, matching the treasury asset list.
+    const allTransfers = selectVisibleTransfers(
+      [...transfers, ...mintTransfers]
+        .filter(
+          (transfer) =>
+            (fromTime === undefined || transfer.timestamp >= fromTime) &&
+            (toTime === undefined || transfer.timestamp <= toTime),
+        )
+        .sort((a, b) => b.block_number - a.block_number),
+      dbKnownAddresses,
+      limit,
+    );
 
     const dbTransfers = await findTransfersByTransactionHashes(
       { db },

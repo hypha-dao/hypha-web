@@ -54,7 +54,9 @@ export function isWalletSectionNavActive(
     return (
       pathname === item.href ||
       pathname === `${item.href}/` ||
-      pathname.startsWith(`${item.href}/actions`)
+      pathname.startsWith(`${item.href}/actions`) ||
+      pathname.startsWith(`${item.href}/transactions`) ||
+      pathname.startsWith(`${item.href}/assets`)
     );
   }
   return pathname === item.href || pathname.startsWith(`${item.href}/`);

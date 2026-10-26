@@ -2038,6 +2038,8 @@
     "vaults": "Vaults",
     "searchTransactions": "Search transactions",
     "noTransactionsFound": "No transactions found",
+    "failedToLoadTransactions": "Failed to load transactions",
+    "retryTransactions": "Retry",
     "loadMoreTransactions": "Load more transactions",
     "rewardsSection": {
       "title": "Rewards",
