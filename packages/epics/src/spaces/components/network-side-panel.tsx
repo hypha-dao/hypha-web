@@ -15,6 +15,7 @@ import {
   type Space,
 } from '@hypha-platform/core/client';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
+import { useOpenSpacePublicChat } from '../../common/use-open-space-public-chat';
 import {
   FUND_SPACE_DIALOG_CONTENT_CLASS,
   FUND_SPACE_DIALOG_OVERLAY_CLASS,
@@ -108,7 +109,8 @@ export function NetworkSidePanel({
   const t = useTranslations('NetworkExchange');
   const tCommon = useTranslations('Common');
   const tWallet = useTranslations('MyWallet');
-  const { openCoherenceChat, setFocusedSpaceChat } = useHumanChatPanel();
+  const { setFocusedSpaceChat } = useHumanChatPanel();
+  const { openPublicChat, opening } = useOpenSpacePublicChat();
   const panelRef = useRef<HTMLDivElement>(null);
   const [fundOpen, setFundOpen] = useState(false);
   const seeks = parseCapitalKeys(capitals?.seeks);
@@ -156,16 +158,14 @@ export function NetworkSidePanel({
   }, [setFocusedSpaceChat]);
 
   const openSpaceRoom = () => {
-    if (!focusedSlug) return;
-    // Empty coherence slug: open the space Matrix room as chat, not a signal
-    // thread (Signal Team / turn-into-proposal chrome).
-    openCoherenceChat(
-      focusedRoomId,
-      focusedTitle,
-      '',
-      focusedDescription,
-      focusedSlug,
-    );
+    if (!focusedSlug || opening) return;
+    // Network map Connect: resolve the space's public channel, never
+    // `spaces.chatRoomId` (the member / private room).
+    void openPublicChat({
+      slug: focusedSlug,
+      title: focusedTitle,
+      description: focusedDescription,
+    });
   };
 
   return (
@@ -264,6 +264,7 @@ export function NetworkSidePanel({
               variant="outline"
               colorVariant="neutral"
               className="h-10 w-full justify-center"
+              disabled={opening}
               onClick={openSpaceRoom}
             >
               {t('connect')}

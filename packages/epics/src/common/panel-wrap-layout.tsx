@@ -46,6 +46,7 @@ import { shouldPreventChatSheetEscapeDismiss } from './human-chat-panel/composer
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
 import { PanelScrollInset } from './panel-scroll-inset';
 import { APP_CHROME_ICON_TRIGGER } from './chrome-radius';
+import { useOpenSpacePublicChat } from './use-open-space-public-chat';
 
 // ─── Panel Providers ─────────────────────────────────────────────────────────
 // Owns the open/close state for both panels and wraps children with the
@@ -212,10 +213,11 @@ export function HumanSidebarTrigger() {
     open,
     toggle,
     openHumanChatPanel,
-    openCoherenceChat,
     focusedSpaceChat,
     unreadMentionCount,
   } = useHumanChatPanel();
+  const { openPublicChat, opening: openingPublicChat } =
+    useOpenSpacePublicChat();
   const { open: leftOpen, overlayVisible, closeAiPanel } = useAiPanel();
   const t = useTranslations('HumanChatPanel');
   const pathname = usePathname();
@@ -255,13 +257,14 @@ export function HumanSidebarTrigger() {
             closeAiPanel();
           }
           if (focusedSpaceChat?.slug) {
-            openCoherenceChat(
-              focusedSpaceChat.roomId,
-              focusedSpaceChat.title,
-              '',
-              focusedSpaceChat.description,
-              focusedSpaceChat.slug,
-            );
+            if (openingPublicChat) return;
+            // Map-selected space: same public channel as Connect, not the
+            // member room stored on `focusedSpaceChat.roomId`.
+            void openPublicChat({
+              slug: focusedSpaceChat.slug,
+              title: focusedSpaceChat.title,
+              description: focusedSpaceChat.description,
+            });
             return;
           }
           openHumanChatPanel();
