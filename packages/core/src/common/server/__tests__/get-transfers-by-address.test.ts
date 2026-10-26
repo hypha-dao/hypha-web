@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SortingOrder } from 'alchemy-sdk';
+import { getAddress } from 'viem';
 import { TOKENS } from '../../web3/tokens';
 
 vi.mock('server-only', () => ({}));
@@ -111,6 +112,57 @@ describe('getTransfersByAddress', () => {
     ).toEqual([USDC.toLowerCase(), DB_TOKEN]);
     expect(getTokenMetadata).not.toHaveBeenCalledWith(SPAM_A);
     expect(getTokenMetadata).not.toHaveBeenCalledWith(SPAM_B);
+    for (const [params] of getAssetTransfers.mock.calls) {
+      expect(params.contractAddresses).toBeUndefined();
+      expect(params).not.toHaveProperty('pageKey');
+    }
+  });
+
+  it('forwards an explicit token filter and omits it when only an allowlist is set', async () => {
+    getAssetTransfers.mockResolvedValue({ transfers: [] });
+
+    await getTransfersByAddress({
+      address: WALLET,
+      contractAddresses: [DB_TOKEN, 'not-an-address'],
+      knownAddresses: new Set([DB_TOKEN]),
+    });
+
+    expect(getAssetTransfers).toHaveBeenCalled();
+    for (const [params] of getAssetTransfers.mock.calls) {
+      expect(params.contractAddresses).toEqual([getAddress(DB_TOKEN)]);
+    }
+  });
+
+  it('keeps the other direction when one Alchemy call returns 400', async () => {
+    const knownAddresses = new Set([DB_TOKEN]);
+
+    getAssetTransfers.mockImplementation(
+      async (params: { fromAddress?: string }) => {
+        if (params.fromAddress) {
+          const error = new Error('Invalid contractAddresses');
+          (error as Error & { status: number }).status = 400;
+          throw error;
+        }
+        return {
+          transfers: [
+            rawTransfer({
+              token: DB_TOKEN,
+              blockNum: '0x10',
+              hash: '0xinbound',
+              asset: 'SPACE',
+            }),
+          ],
+        };
+      },
+    );
+
+    const transfers = await getTransfersByAddress({
+      address: WALLET,
+      knownAddresses,
+    });
+
+    expect(transfers).toHaveLength(1);
+    expect(transfers[0]?.transaction_hash).toBe('0xinbound');
   });
 
   it('pages newest-first until enough allowlisted rows exist', async () => {
@@ -227,6 +279,8 @@ describe('getTransfersByAddress', () => {
       expect(params.fromBlock).toBe('0x3e8');
       expect(params.toBlock).toBe('0x7d0');
       expect(params.withMetadata).toBe(true);
+      expect(params).not.toHaveProperty('pageKey');
+      expect(params).not.toHaveProperty('contractAddresses');
     }
   });
 });

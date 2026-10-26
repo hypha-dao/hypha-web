@@ -7,7 +7,8 @@ import {
   AssetTransfersCategory,
   SortingOrder,
 } from 'alchemy-sdk';
-import { isVisibleWalletToken, TOKENS } from '../web3/tokens';
+import { getAddress, isAddress } from 'viem';
+import { isVisibleWalletToken } from '../web3/tokens';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -27,8 +28,10 @@ export type GetTransfersByAddressParams = {
   toBlock?: number;
   limit?: number;
   /**
-   * When set, inbound spam is dropped before `getTokenMetadata` and Alchemy
-   * is optionally scoped to the allowlist (plus catalogue stables / HYPHA).
+   * When set, inbound spam is dropped before `getTokenMetadata`.
+   * Not forwarded to Alchemy as `contractAddresses` — a long or dirty
+   * allowlist 400s `alchemy_getAssetTransfers` (space treasury omits it
+   * and succeeds).
    */
   knownAddresses?: ReadonlySet<string>;
 };
@@ -58,14 +61,38 @@ function chunkAddresses(addresses: string[], size: number): string[][] {
   return batches;
 }
 
-function uniqueLowercased(addresses: Iterable<string>): string[] {
-  return Array.from(
-    new Set(
-      Array.from(addresses)
-        .map((address) => address.toLowerCase())
-        .filter((address) => address.length > 0),
-    ),
-  );
+function checksumContractAddresses(addresses: string[]): string[] {
+  const unique = new Set<string>();
+  for (const address of addresses) {
+    if (!isAddress(address, { strict: false })) {
+      continue;
+    }
+    unique.add(getAddress(address));
+  }
+  return Array.from(unique);
+}
+
+function checksumWalletAddress(address: string): string {
+  if (!isAddress(address, { strict: false })) {
+    throw new Error(`Invalid wallet address: ${address}`);
+  }
+  return getAddress(address);
+}
+
+/**
+ * Explicit `token=` query only. A large DB allowlist must not be sent —
+ * Alchemy 400s on too many addresses or any invalid entry.
+ */
+function resolveContractBatches(
+  contractAddresses: string[] | undefined,
+): Array<string[] | undefined> {
+  if (!contractAddresses || contractAddresses.length === 0) {
+    return [undefined];
+  }
+  const sanitized = checksumContractAddresses(contractAddresses);
+  return sanitized.length === 0
+    ? [undefined]
+    : chunkAddresses(sanitized, ALCHEMY_CONTRACT_BATCH_SIZE);
 }
 
 function isAllowlistedRaw(
@@ -76,43 +103,6 @@ function isAllowlistedRaw(
     return true;
   }
   return isVisibleWalletToken(transfer.rawContract.address, knownAddresses);
-}
-
-/**
- * Contract filters for Alchemy. An explicit `token=` query wins. Otherwise a
- * known-address set is sent in 45-address batches so spam airdrops never
- * enter the result set. Catalogue tokens are always included in that set
- * because {@link isVisibleWalletToken} allows them even when they are absent
- * from `knownAddresses`.
- */
-function resolveContractBatches(
-  contractAddresses: string[] | undefined,
-  knownAddresses?: ReadonlySet<string>,
-): Array<string[] | undefined> {
-  if (contractAddresses && contractAddresses.length > 0) {
-    return chunkAddresses(
-      uniqueLowercased(contractAddresses),
-      ALCHEMY_CONTRACT_BATCH_SIZE,
-    );
-  }
-  if (!knownAddresses) {
-    return [undefined];
-  }
-  const queryAddresses = new Set<string>();
-  for (const address of knownAddresses) {
-    if (isVisibleWalletToken(address, knownAddresses)) {
-      queryAddresses.add(address.toLowerCase());
-    }
-  }
-  for (const token of TOKENS) {
-    if (isVisibleWalletToken(token.address, knownAddresses)) {
-      queryAddresses.add(token.address.toLowerCase());
-    }
-  }
-  const list = Array.from(queryAddresses);
-  return list.length === 0
-    ? [undefined]
-    : chunkAddresses(list, ALCHEMY_CONTRACT_BATCH_SIZE);
 }
 
 function hasEnoughVisible(
@@ -129,39 +119,87 @@ function hasEnoughVisible(
   return visible.length >= limit;
 }
 
+/**
+ * Build Alchemy params with only defined keys. The SDK Object.assigns the
+ * whole object into JSON-RPC; `null`/`undefined` `pageKey` or
+ * `contractAddresses` have 400'd `alchemy_getAssetTransfers`.
+ */
+function buildAssetTransferParams(params: {
+  fromAddress?: string;
+  toAddress?: string;
+  contractAddresses?: string[];
+  fromBlock?: string;
+  toBlock?: string;
+  pageKey?: string;
+}): AssetTransfersParams {
+  const request: AssetTransfersParams = {
+    category: [AssetTransfersCategory.ERC20],
+    withMetadata: true,
+    order: SortingOrder.DESCENDING,
+    maxCount: ALCHEMY_PAGE_SIZE,
+  };
+  if (params.fromAddress) {
+    request.fromAddress = params.fromAddress;
+  }
+  if (params.toAddress) {
+    request.toAddress = params.toAddress;
+  }
+  if (params.contractAddresses && params.contractAddresses.length > 0) {
+    request.contractAddresses = params.contractAddresses;
+  }
+  if (params.fromBlock) {
+    request.fromBlock = params.fromBlock;
+  }
+  if (params.toBlock) {
+    request.toBlock = params.toBlock;
+  }
+  if (params.pageKey) {
+    request.pageKey = params.pageKey;
+  }
+  return request;
+}
+
 async function fetchAssetTransferPages(
   alchemy: Alchemy,
-  base: Pick<
-    AssetTransfersParams,
-    'fromAddress' | 'toAddress' | 'contractAddresses' | 'fromBlock' | 'toBlock'
-  >,
+  base: {
+    fromAddress?: string;
+    toAddress?: string;
+    contractAddresses?: string[];
+    fromBlock?: string;
+    toBlock?: string;
+  },
   options: {
     knownAddresses?: ReadonlySet<string>;
     limit?: number;
   },
-): Promise<AssetTransfersWithMetadataResult[]> {
+): Promise<{
+  transfers: AssetTransfersWithMetadataResult[];
+  failed: boolean;
+}> {
   const collected: AssetTransfersWithMetadataResult[] = [];
   let pageKey: string | undefined;
   let pages = 0;
+  let failed = false;
 
   do {
-    const response = await alchemy.core.getAssetTransfers({
-      ...base,
-      category: [AssetTransfersCategory.ERC20],
-      withMetadata: true,
-      order: SortingOrder.DESCENDING,
-      maxCount: ALCHEMY_PAGE_SIZE,
-      pageKey,
-    });
-    collected.push(...(response.transfers ?? []));
-    pageKey = response.pageKey;
+    try {
+      const response = await alchemy.core.getAssetTransfers(
+        buildAssetTransferParams({ ...base, pageKey }),
+      );
+      collected.push(...(response.transfers ?? []));
+      pageKey = response.pageKey;
+    } catch (error) {
+      console.warn('Alchemy getAssetTransfers failed', error);
+      failed = true;
+      break;
+    }
     pages += 1;
     if (hasEnoughVisible(collected, options.knownAddresses, options.limit)) {
       break;
     }
   } while (pageKey && pages < ALCHEMY_MAX_PAGES);
 
-  return collected;
+  return { transfers: collected, failed };
 }
 
 /**
@@ -288,19 +326,17 @@ export async function getTransfersByAddress(
     knownAddresses,
   } = params;
   const alchemy = getAlchemy();
+  const wallet = checksumWalletAddress(address);
   const hexFromBlock = toHexBlock(fromBlock);
   const hexToBlock = toHexBlock(toBlock);
-  const contractBatches = resolveContractBatches(
-    contractAddresses,
-    knownAddresses,
-  );
+  const contractBatches = resolveContractBatches(contractAddresses);
 
   const pages = await Promise.all(
     contractBatches.flatMap((batch) => [
       fetchAssetTransferPages(
         alchemy,
         {
-          fromAddress: address,
+          fromAddress: wallet,
           contractAddresses: batch,
           fromBlock: hexFromBlock,
           toBlock: hexToBlock,
@@ -310,7 +346,7 @@ export async function getTransfersByAddress(
       fetchAssetTransferPages(
         alchemy,
         {
-          toAddress: address,
+          toAddress: wallet,
           contractAddresses: batch,
           fromBlock: hexFromBlock,
           toBlock: hexToBlock,
@@ -321,8 +357,12 @@ export async function getTransfersByAddress(
   );
 
   const rawTransfers = pages
-    .flat()
+    .flatMap((page) => page.transfers)
     .filter((transfer) => isAllowlistedRaw(transfer, knownAddresses));
+
+  if (rawTransfers.length === 0 && pages.every((page) => page.failed)) {
+    throw new Error('Alchemy getAssetTransfers failed for every request');
+  }
 
   const withMetadata = await toTransfersWithMetadata(alchemy, rawTransfers);
   const inWindow = applyDateWindow(withMetadata, fromDate, toDate);
@@ -353,24 +393,31 @@ export async function getMintTransfersByTokens({
     return [];
   }
   const alchemy = getAlchemy();
+  const sanitized = checksumContractAddresses(contractAddresses);
+  if (sanitized.length === 0) {
+    return [];
+  }
 
-  const mints = await alchemy.core.getAssetTransfers({
+  const request: AssetTransfersParams = {
     fromAddress: ZERO_ADDRESS,
     category: [AssetTransfersCategory.ERC20],
-    contractAddresses,
+    contractAddresses: sanitized,
     withMetadata: true,
-    // Alchemy expects block bounds as 0x-prefixed hex strings.
-    fromBlock: toHexBlock(fromBlock),
-    toBlock: toHexBlock(toBlock),
-    // Alchemy defaults to ascending (oldest first), so a bounded page would
-    // contain only the oldest mints and newly minted transfers would never
-    // appear. Request newest-first so the page holds the most recent mints.
     order: SortingOrder.DESCENDING,
-    // Bound the result set when the caller requested a limit. When undefined,
-    // Alchemy falls back to its page maximum (1000), matching the behavior of
-    // the address-based queries above.
-    maxCount: limit,
-  });
+  };
+  const hexFromBlock = toHexBlock(fromBlock);
+  const hexToBlock = toHexBlock(toBlock);
+  if (hexFromBlock) {
+    request.fromBlock = hexFromBlock;
+  }
+  if (hexToBlock) {
+    request.toBlock = hexToBlock;
+  }
+  if (limit != null) {
+    request.maxCount = limit;
+  }
+
+  const mints = await alchemy.core.getAssetTransfers(request);
 
   return toTransfersWithMetadata(alchemy, mints.transfers);
 }

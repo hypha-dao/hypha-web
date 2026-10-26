@@ -14,6 +14,7 @@ export const useUserTransfers = ({
   personSlug?: string;
 }) => {
   const { jwt } = useJwt();
+  const waitingForAuth = Boolean(personSlug) && !jwt;
 
   const endpoint = React.useMemo(() => {
     if (!personSlug) return '';
@@ -29,21 +30,27 @@ export const useUserTransfers = ({
           Authorization: `Bearer ${jwt}`,
         },
       });
+      // Any non-2xx (400 included) must surface as an error, not an empty list.
       if (!res.ok) {
         throw new Error(`Failed to fetch transactions: ${res.status}`);
       }
-      return await res.json();
+      const payload = await res.json();
+      if (!Array.isArray(payload)) {
+        throw new Error('Failed to fetch transactions: invalid payload');
+      }
+      return payload as TransferWithEntity[];
     },
     {
       refreshInterval,
       keepPreviousData: true,
       errorRetryCount: 3,
+      shouldRetryOnError: true,
     },
   );
 
   return {
-    transfers: (data as TransferWithEntity[]) || [],
-    isLoading,
+    transfers: error ? [] : data || [],
+    isLoading: isLoading || waitingForAuth,
     error,
     retry: mutate,
   };

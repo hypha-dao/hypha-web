@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ZodError } from 'zod';
 import {
   getTransfersByAddress,
   getTokenMeta,
@@ -47,12 +48,12 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { fromDate, toDate, fromBlock, toBlock, limit, token } =
-    schemaGetTransfersQuery.parse(
-      Object.fromEntries(request.nextUrl.searchParams.entries()),
-    );
-
   try {
+    const { fromDate, toDate, fromBlock, toBlock, limit, token } =
+      schemaGetTransfersQuery.parse(
+        Object.fromEntries(request.nextUrl.searchParams.entries()),
+      );
+
     const person = await findPersonBySlug(
       { slug: personSlug },
       { db: getDb({ authToken }) },
@@ -62,7 +63,7 @@ export async function GET(
       return NextResponse.json({ error: 'Person not found' }, { status: 404 });
     }
 
-    const address = person.address as `0x${string}`;
+    const address = (person.address ?? '').trim() as `0x${string}`;
     if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
       return NextResponse.json(
         { error: 'Invalid or missing address' },
@@ -253,6 +254,12 @@ export async function GET(
 
     return NextResponse.json(validTransfers);
   } catch (error: any) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid query parameters' },
+        { status: 400 },
+      );
+    }
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);
     if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
