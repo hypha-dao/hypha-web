@@ -448,6 +448,7 @@ export function useOnboardingVoiceRealtime({
       }
       const replacing = Boolean(activeRealtimeResponseIdRef.current);
       if (replacing) replacingSpeechRef.current = true;
+      setRealtimeRemoteAudioMuted(connection, false);
       void connection.remoteAudio.play().catch(() => undefined);
       // A blip heard before this line must not cancel it.
       clearInterruptTimer();

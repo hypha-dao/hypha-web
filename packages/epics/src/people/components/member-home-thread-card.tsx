@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
@@ -23,14 +23,19 @@ import { SpaceSwitcherMark } from '../../spaces/components/space-switcher-option
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { celebrate } from './member-home-celebrate';
 import {
+  HOME_QUEUE_EVENT,
   homeReturnText,
   markHomeActed,
+  readHomeActed,
   rememberHomeAction,
 } from './member-home-resume';
 import { MemberHomeProposalBody } from './member-home-proposal-body';
 import { PersonAvatar } from './person-avatar';
 import { SentTick } from './member-home-sent-tick';
 import './member-home-banner.css';
+
+/** The tick mark finishes just after 900ms. Let it sit, then ask for the next item. */
+const TICK_THEN_NEXT_MS = 1100;
 
 const SIGNAL_TYPES = [
   'Need',
@@ -60,6 +65,8 @@ type MemberHomeThreadCardProps = {
   item: MemberHomeThreadItem;
   proposal: MemberIntelligence['proposals'][number] | null;
   onAsk: (text: string, hidden?: boolean) => void;
+  /** The tick is on screen. Stop the current voice line before the next item. */
+  onSettled?: () => void;
   onReach: (person: ReachPerson, mode: 'call' | 'chat') => Promise<boolean>;
   /** Side panel uses the spaces-tile scale. The conversation card stays larger. */
   compact?: boolean;
@@ -116,6 +123,7 @@ export function MemberHomeThreadCard({
   item,
   proposal,
   onAsk,
+  onSettled,
   onReach,
   compact = false,
   chat = false,
@@ -132,8 +140,59 @@ export function MemberHomeThreadCard({
   const [chosen, setChosen] = useState<string | null>(null);
   const [kept, setKept] = useState(false);
   const held = useRef(false);
+  const continued = useRef(false);
+  const continueTimer = useRef<number | null>(null);
+  const itemTitleRef = useRef(item.title);
+  itemTitleRef.current = item.title;
+  const onAskRef = useRef(onAsk);
+  const onSettledRef = useRef(onSettled);
+  onAskRef.current = onAsk;
+  onSettledRef.current = onSettled;
   // Local keep paints the tick before storage catches up.
   const complete = done || kept;
+
+  useEffect(() => {
+    return () => {
+      if (continueTimer.current != null) {
+        window.clearTimeout(continueTimer.current);
+      }
+    };
+  }, []);
+
+  function beginNextAfterTick(text: string) {
+    if (continued.current || !assistant) return;
+    continued.current = true;
+    onSettledRef.current?.();
+    const reduce = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    continueTimer.current = window.setTimeout(
+      () => {
+        onAskRef.current(text, true);
+      },
+      reduce ? 200 : TICK_THEN_NEXT_MS,
+    );
+  }
+
+  function settleWithoutNext() {
+    continued.current = true;
+    onSettledRef.current?.();
+  }
+
+  const itemKey = memberHomeThreadItemKey(item);
+  useEffect(() => {
+    if (!assistant) return;
+    // Storage already knows this one. Loading the thread must not ask again.
+    let already = readHomeActed().includes(itemKey);
+    const onActed = () => {
+      if (already || continued.current) return;
+      if (!readHomeActed().includes(itemKey)) return;
+      already = true;
+      beginNextAfterTick(homeReturnText(itemTitleRef.current));
+    };
+    window.addEventListener(HOME_QUEUE_EVENT, onActed);
+    return () => window.removeEventListener(HOME_QUEUE_EVENT, onActed);
+  }, [assistant, itemKey]);
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const spaceIconUrl = resolveSpaceDisplayLogoUrl(
     item.spaceLogo ?? proposal?.spaceLogo,
@@ -225,6 +284,7 @@ export function MemberHomeThreadCard({
 
   function noteAction() {
     setKept(true);
+    settleWithoutNext();
     rememberHomeAction(memberHomeThreadItemKey(item), item.title);
   }
 
@@ -234,11 +294,12 @@ export function MemberHomeThreadCard({
     const key = memberHomeThreadItemKey(item);
     setKept(true);
     if (leaves) {
+      settleWithoutNext();
       rememberHomeAction(key, item.title);
       return;
     }
+    beginNextAfterTick(homeReturnText(item.title));
     markHomeActed(key);
-    onAsk(homeReturnText(item.title), true);
   }
 
   async function reach(mode: 'call' | 'chat') {
@@ -497,9 +558,8 @@ export function MemberHomeThreadCard({
                 const key = memberHomeThreadItemKey(item);
                 const title = item.title;
                 setKept(true);
+                if (assistant) beginNextAfterTick(t('gotItChosen', { title }));
                 markHomeActed(key);
-                if (!assistant) return;
-                onAsk(t('gotItChosen', { title }), true);
               }}
             >
               {t('gotIt')}

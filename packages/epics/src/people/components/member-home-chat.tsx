@@ -399,6 +399,33 @@ function homeMessageNodes(text: string): ReactNode[] {
   return nodes;
 }
 
+/** Glide the thread onto a card so the move itself is visible, then call back. */
+function glideScrollerTo(
+  node: HTMLElement,
+  top: number,
+  onFrame: (id: number) => void,
+  onDone: () => void,
+) {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || Math.abs(node.scrollTop - top) < 2) {
+    node.scrollTop = top;
+    onDone();
+    return;
+  }
+  const from = node.scrollTop;
+  const delta = top - from;
+  const duration = Math.min(1400, Math.max(720, Math.abs(delta) * 0.65));
+  const start = performance.now();
+  const step = (now: number) => {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = 1 - (1 - t) ** 3;
+    node.scrollTop = from + delta * eased;
+    if (t < 1) onFrame(requestAnimationFrame(step));
+    else onDone();
+  };
+  onFrame(requestAnimationFrame(step));
+}
+
 export function MemberHomeChat({
   lang,
   intelligence,
@@ -429,7 +456,15 @@ export function MemberHomeChat({
   const settleSend = useRef(false);
   const glideScroll = useRef(false);
   const gliding = useRef(false);
+  const glideTimer = useRef<number | null>(null);
   const pinnedToEnd = useRef(true);
+  const holdVoiceRef = useRef(false);
+  const [holdVoice, setHoldVoice] = useState(false);
+  const arrivalBaselineIds = useRef(new Set<string>());
+  const arrivalScrollStarted = useRef(false);
+  const arrivalScrollFinished = useRef(false);
+  const arrivalFrame = useRef<number | null>(null);
+  const isStreamingRef = useRef(false);
   const settlingIds = useRef(new Set<string>());
   // Last non-empty line for the message that is still streaming. A cleaner
   // gap must not unmount the bubble and play the entrance animation again.
@@ -498,6 +533,7 @@ export function MemberHomeChat({
     transport,
   });
   const isStreaming = status === 'streaming' || status === 'submitted';
+  isStreamingRef.current = isStreaming;
   const homeMessages = messages as HomeMessage[];
   messagesRef.current = homeMessages;
   useLayoutEffect(() => {
@@ -546,6 +582,16 @@ export function MemberHomeChat({
       const files = includeDrafts ? drafts.map((item) => item.file) : [];
       if (!trimmed && files.length === 0) return;
       const reveal = !hidden;
+      if (reveal) {
+        if (arrivalFrame.current != null) {
+          cancelAnimationFrame(arrivalFrame.current);
+          arrivalFrame.current = null;
+        }
+        holdVoiceRef.current = false;
+        arrivalScrollStarted.current = false;
+        arrivalScrollFinished.current = false;
+        setHoldVoice(false);
+      }
       await stop();
       const withoutErrors = messagesRef.current.filter(
         (message) => !isHomeErrorMessage(message),
@@ -820,7 +866,7 @@ export function MemberHomeChat({
     speakEarlyLeadIn: false,
     speakDisplayedText: true,
     isStreaming,
-    lastAssistantText,
+    lastAssistantText: holdVoice ? '' : lastAssistantText,
     lastAssistantMessageId,
     locale: lang,
     activeSpaceSlug: HOME_VOICE_PREFERENCE_KEY,
@@ -985,7 +1031,7 @@ export function MemberHomeChat({
     const node = scroller.current;
     if (!node) return;
     const onScroll = () => {
-      if (gliding.current) return;
+      if (gliding.current || holdVoiceRef.current) return;
       const gap = node.scrollHeight - node.scrollTop - node.clientHeight;
       pinnedToEnd.current = gap < 120;
     };
@@ -1049,7 +1095,51 @@ export function MemberHomeChat({
 
   useLayoutEffect(() => {
     const node = scroller.current;
-    if (!node || !pinnedToEnd.current || gliding.current) return;
+    if (!node) return;
+
+    if (holdVoiceRef.current) {
+      if (gliding.current) return;
+      if (arrivalScrollStarted.current) {
+        if (arrivalScrollFinished.current && !isStreamingRef.current) {
+          holdVoiceRef.current = false;
+          arrivalScrollStarted.current = false;
+          arrivalScrollFinished.current = false;
+          setHoldVoice(false);
+        }
+        return;
+      }
+      const target = node.querySelector('[data-home-arrival]');
+      if (!target) return;
+      arrivalScrollStarted.current = true;
+      const top = Math.max(
+        0,
+        node.scrollTop +
+          target.getBoundingClientRect().top -
+          node.getBoundingClientRect().top -
+          12,
+      );
+      gliding.current = true;
+      glideScrollerTo(
+        node,
+        top,
+        (id) => {
+          arrivalFrame.current = id;
+        },
+        () => {
+          arrivalFrame.current = null;
+          gliding.current = false;
+          arrivalScrollFinished.current = true;
+          if (isStreamingRef.current || !holdVoiceRef.current) return;
+          holdVoiceRef.current = false;
+          arrivalScrollStarted.current = false;
+          arrivalScrollFinished.current = false;
+          setHoldVoice(false);
+        },
+      );
+      return;
+    }
+
+    if (!pinnedToEnd.current || gliding.current) return;
     const top = node.scrollHeight;
     const glide =
       glideScroll.current &&
@@ -1059,17 +1149,55 @@ export function MemberHomeChat({
     if (glide) {
       gliding.current = true;
       node.scrollTo({ top, behavior: 'smooth' });
-      window.setTimeout(() => {
+      if (glideTimer.current != null) window.clearTimeout(glideTimer.current);
+      glideTimer.current = window.setTimeout(() => {
+        glideTimer.current = null;
         gliding.current = false;
         const current = scroller.current;
-        if (current && pinnedToEnd.current) {
+        if (current && pinnedToEnd.current && !holdVoiceRef.current) {
           current.scrollTop = current.scrollHeight;
         }
       }, 520);
       return;
     }
     node.scrollTop = top;
-  }, [focusedItem, homeMessages, isStreaming, showArrivalMask, widgets]);
+  }, [
+    focusedItem,
+    holdVoice,
+    homeMessages,
+    isStreaming,
+    showArrivalMask,
+    widgets,
+  ]);
+
+  useEffect(() => {
+    if (!holdVoice || isStreaming || !holdVoiceRef.current) return;
+    if (arrivalScrollStarted.current) {
+      if (!arrivalScrollFinished.current) return;
+      holdVoiceRef.current = false;
+      arrivalScrollStarted.current = false;
+      arrivalScrollFinished.current = false;
+      setHoldVoice(false);
+      return;
+    }
+    const node = scroller.current;
+    if (node?.querySelector('[data-home-arrival]')) return;
+    holdVoiceRef.current = false;
+    setHoldVoice(false);
+    if (node) {
+      pinnedToEnd.current = true;
+      node.scrollTop = node.scrollHeight;
+    }
+  }, [holdVoice, homeMessages, isStreaming]);
+
+  useEffect(() => {
+    return () => {
+      if (arrivalFrame.current != null) {
+        cancelAnimationFrame(arrivalFrame.current);
+      }
+      if (glideTimer.current != null) window.clearTimeout(glideTimer.current);
+    };
+  }, []);
 
   const chips = [
     { key: 'useful', ask: t('chipUseful') },
@@ -1178,6 +1306,10 @@ export function MemberHomeChat({
               Boolean(visuals);
             if (!showMessage && attached.length === 0) return null;
             const mine = message.role === 'user';
+            const arriving =
+              holdVoice &&
+              message.role === 'assistant' &&
+              !arrivalBaselineIds.current.has(message.id);
             const oneLine =
               text.length > 0 &&
               !visuals &&
@@ -1194,6 +1326,9 @@ export function MemberHomeChat({
               <div key={message.id} className="grid gap-4">
                 {showMessage ? (
                   <article
+                    data-home-arrival={
+                      arriving && !pinnedItem && !isStreaming ? '' : undefined
+                    }
                     className={cn(
                       'flex gap-3',
                       settlingIds.current.has(message.id) && 'home-send-settle',
@@ -1213,30 +1348,54 @@ export function MemberHomeChat({
                       )}
                     >
                       {!mine && pinnedItem ? (
-                        <MemberHomeThreadCard
-                          chat
-                          lang={lang}
-                          item={pinnedItem}
-                          done={actedKeySet.has(
-                            memberHomeThreadItemKey(pinnedItem),
-                          )}
-                          proposal={
-                            pinnedItem.kind === 'proposal'
-                              ? intelligence.proposals.find(
-                                  (proposal) =>
-                                    proposal.slug === pinnedItem.slug,
-                                ) ?? null
-                              : null
-                          }
-                          onAsk={(ask, hidden) => {
-                            void send(ask, Boolean(hidden));
-                          }}
-                          onReach={(person, mode) =>
-                            mode === 'call'
-                              ? onCallPerson(person)
-                              : onChatPerson(person)
-                          }
-                        />
+                        <div data-home-arrival={arriving ? '' : undefined}>
+                          <MemberHomeThreadCard
+                            chat
+                            lang={lang}
+                            item={pinnedItem}
+                            done={actedKeySet.has(
+                              memberHomeThreadItemKey(pinnedItem),
+                            )}
+                            proposal={
+                              pinnedItem.kind === 'proposal'
+                                ? intelligence.proposals.find(
+                                    (proposal) =>
+                                      proposal.slug === pinnedItem.slug,
+                                  ) ?? null
+                                : null
+                            }
+                            onSettled={() => {
+                              voiceInterview.stopSpeaking();
+                            }}
+                            onAsk={(ask, hidden) => {
+                              if (hidden) {
+                                if (glideTimer.current != null) {
+                                  window.clearTimeout(glideTimer.current);
+                                  glideTimer.current = null;
+                                }
+                                if (arrivalFrame.current != null) {
+                                  cancelAnimationFrame(arrivalFrame.current);
+                                  arrivalFrame.current = null;
+                                }
+                                gliding.current = false;
+                                pinnedToEnd.current = false;
+                                arrivalBaselineIds.current = new Set(
+                                  messagesRef.current.map((entry) => entry.id),
+                                );
+                                arrivalScrollStarted.current = false;
+                                arrivalScrollFinished.current = false;
+                                holdVoiceRef.current = true;
+                                setHoldVoice(true);
+                              }
+                              void send(ask, Boolean(hidden));
+                            }}
+                            onReach={(person, mode) =>
+                              mode === 'call'
+                                ? onCallPerson(person)
+                                : onChatPerson(person)
+                            }
+                          />
+                        </div>
                       ) : null}
                       {text ? (
                         <p
