@@ -12,6 +12,7 @@ import {
   TokenType,
   isVisibleWalletToken,
   buildKnownTreasuryAddressSet,
+  getEnergyCommunityTokenAddresses,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -84,7 +85,10 @@ export async function GET(
       console.warn('Failed to fetch wallet token balances:', error);
     }
 
-    const dbKnownAddresses = buildKnownTreasuryAddressSet(rawDbTokens);
+    const dbKnownAddresses = buildKnownTreasuryAddressSet(
+      rawDbTokens,
+      getEnergyCommunityTokenAddresses(),
+    );
 
     const parsedExternalTokens: Token[] = externalTokens
       .filter(

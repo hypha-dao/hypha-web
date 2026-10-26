@@ -187,6 +187,21 @@ export function isVisibleWalletToken(
   return isKnownTreasuryToken(address, knownAddresses);
 }
 
+/**
+ * Keep activity rows for allowed tokens, then apply `limit`. Filtering first
+ * stops hidden spam from consuming page slots.
+ */
+export function selectVisibleTransfers<T extends { token: string }>(
+  transfers: readonly T[],
+  knownAddresses: ReadonlySet<string>,
+  limit?: number,
+): T[] {
+  const visible = transfers.filter((transfer) =>
+    isVisibleWalletToken(transfer.token, knownAddresses),
+  );
+  return limit == null ? visible : visible.slice(0, limit);
+}
+
 /** Alchemy (or other indexer) ERC-20 balance row used to discover held tokens. */
 export type HeldTokenBalance = {
   tokenAddress?: string;

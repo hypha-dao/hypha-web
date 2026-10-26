@@ -8,8 +8,8 @@ import {
   schemaGetTransfersQuery,
   validTokenTypes,
   TokenType,
-  isVisibleWalletToken,
   buildKnownTreasuryAddressSet,
+  selectVisibleTransfers,
   getEnergyCommunityTokenAddresses,
 } from '@hypha-platform/core/client';
 import {
@@ -66,20 +66,18 @@ export async function GET(
         { status: 400 },
       );
     }
-    const transfers = await getTransfersByAddress({
-      address,
-      contractAddresses: token,
-      fromDate,
-      toDate,
-      fromBlock,
-      toBlock,
-      limit,
-    });
-
-    const dbTransfers = await findAllTransfers(
-      { db: getDb({ authToken }) },
-      {},
-    );
+    const [fetchedTransfers, dbTransfers, rawDbTokens] = await Promise.all([
+      getTransfersByAddress({
+        address,
+        contractAddresses: token,
+        fromDate,
+        toDate,
+        fromBlock,
+        toBlock,
+      }),
+      findAllTransfers({ db: getDb({ authToken }) }, {}),
+      findAllTokens({ db: getDb({ authToken }) }, { search: undefined }),
+    ]);
 
     const memoMap = new Map(
       dbTransfers.map((dbTransfer) => [
@@ -88,10 +86,6 @@ export async function GET(
       ]),
     );
 
-    const rawDbTokens = await findAllTokens(
-      { db: getDb({ authToken }) },
-      { search: undefined },
-    );
     const dbTokens = rawDbTokens.map((token) => ({
       agreementId: token.agreementId ?? undefined,
       spaceId: token.spaceId ?? undefined,
@@ -107,23 +101,24 @@ export async function GET(
       address: token.address ?? undefined,
     }));
 
+    const dbKnownAddresses = buildKnownTreasuryAddressSet(
+      rawDbTokens,
+      getEnergyCommunityTokenAddresses(),
+    );
+    // Drop spam before `limit` so hidden airdrops do not eat page slots.
+    const transfers = selectVisibleTransfers(
+      fetchedTransfers,
+      dbKnownAddresses,
+      limit,
+    );
+
     // Resolve token metadata once per unique token. Resolving it per transfer
     // fires one on-chain multicall per transfer, which fails with rate-limit
     // errors on profiles with long transfer histories. Tokens whose metadata
     // can't be resolved (e.g. spam tokens without symbol/name) are skipped
     // instead of failing the whole response.
-    const dbKnownAddresses = buildKnownTreasuryAddressSet(
-      rawDbTokens,
-      getEnergyCommunityTokenAddresses(),
-    );
-    // Same allowlist as the wallet token list: stables / Hypha-created /
-    // energy-community / HYPHA. Unknown inbound airdrops stay hidden.
     const uniqueTokenAddresses = Array.from(
-      new Set(
-        transfers
-          .map((transfer) => transfer.token.toLowerCase())
-          .filter((address) => isVisibleWalletToken(address, dbKnownAddresses)),
-      ),
+      new Set(transfers.map((transfer) => transfer.token.toLowerCase())),
     );
     const tokenMetaByAddress = new Map<
       string,

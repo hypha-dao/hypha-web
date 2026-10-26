@@ -13,6 +13,7 @@ import {
   isKnownTreasuryToken,
   isVisibleWalletToken,
   buildKnownTreasuryAddressSet,
+  selectVisibleTransfers,
   selectKnownHeldTokens,
 } from '../tokens';
 import {
@@ -166,6 +167,33 @@ describe('isVisibleWalletToken', () => {
     expect(isVisibleWalletToken(hidden, new Set([hidden]))).toBe(false);
     expect(isVisibleWalletToken('not-an-address', known)).toBe(false);
     expect(isVisibleWalletToken(null, known)).toBe(false);
+  });
+});
+
+describe('selectVisibleTransfers', () => {
+  const dbToken = '0x2222222222222222222222222222222222222222';
+  const spam = '0x1111111111111111111111111111111111111111';
+  const known = new Set([dbToken.toLowerCase()]);
+  const rows = [
+    { token: spam, id: 'spam-1' },
+    { token: dbToken, id: 'ok-1' },
+    { token: spam, id: 'spam-2' },
+    { token: TOKENS[0].address, id: 'usdc' },
+    { token: dbToken, id: 'ok-2' },
+  ];
+
+  it('drops unknown tokens before applying limit', () => {
+    expect(selectVisibleTransfers(rows, known, 2).map((row) => row.id)).toEqual(
+      ['ok-1', 'usdc'],
+    );
+  });
+
+  it('returns every visible row when limit is omitted', () => {
+    expect(selectVisibleTransfers(rows, known).map((row) => row.id)).toEqual([
+      'ok-1',
+      'usdc',
+      'ok-2',
+    ]);
   });
 });
 
