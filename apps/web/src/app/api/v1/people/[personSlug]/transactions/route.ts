@@ -12,6 +12,7 @@ import {
 } from '@hypha-platform/core/server';
 import {
   schemaGetTransfersQuery,
+  resolveTransferTokenFilter,
   validTokenTypes,
   TokenType,
   buildKnownTreasuryAddressSet,
@@ -49,10 +50,13 @@ export async function GET(
   }
 
   try {
-    const { fromDate, toDate, fromBlock, toBlock, limit, token } =
+    const { fromDate, toDate, fromBlock, toBlock, limit } =
       schemaGetTransfersQuery.parse(
         Object.fromEntries(request.nextUrl.searchParams.entries()),
       );
+    const tokenFilter = resolveTransferTokenFilter(
+      request.nextUrl.searchParams.get('token'),
+    );
 
     const person = await findPersonBySlug(
       { slug: personSlug },
@@ -86,7 +90,7 @@ export async function GET(
 
     const fetchedTransfers = await getTransfersByAddress({
       address,
-      contractAddresses: token.length > 0 ? token : undefined,
+      contractAddresses: tokenFilter,
       fromDate,
       toDate,
       fromBlock,

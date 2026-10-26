@@ -7,9 +7,11 @@ const DEFAULT_PAGE_SIZE = 4;
 export const useUserTransfersSection = ({
   personSlug,
   pageSize = DEFAULT_PAGE_SIZE,
+  tokenFilter,
 }: {
   personSlug?: string;
   pageSize?: number;
+  tokenFilter?: string;
 }) => {
   const [activeSort, setSort] = React.useState('all');
   const [visibleCount, setVisibleCount] = React.useState(pageSize);
@@ -18,6 +20,7 @@ export const useUserTransfersSection = ({
   const { isLoading, transfers, error, retry } = useUserTransfers({
     ...(activeSort !== 'all' && { sort: { sort: activeSort } }),
     personSlug,
+    token: tokenFilter,
   });
 
   React.useEffect(() => {

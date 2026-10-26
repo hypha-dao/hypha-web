@@ -16,11 +16,14 @@ type MyWalletDashboardProps = {
   lang: string;
   /** Left-menu section. `wallet` is actions, assets, and transactions together. */
   section?: WalletSectionNavKey;
+  /** Raw `token=` query. Invalid values stay scoped — never drop the filter. */
+  tokenFilter?: string;
 };
 
 export function MyWalletDashboard({
   lang,
   section = 'wallet',
+  tokenFilter,
 }: MyWalletDashboardProps) {
   const { isAuthenticated } = useAuthentication();
   const { person, isLoading } = useMe();
@@ -69,7 +72,10 @@ export function MyWalletDashboard({
         isMyProfile
         showActionButtons={false}
       />
-      <UserTransactionsSection personSlug={personSlug} />
+      <UserTransactionsSection
+        personSlug={personSlug}
+        tokenFilter={tokenFilter}
+      />
     </div>
   );
 }

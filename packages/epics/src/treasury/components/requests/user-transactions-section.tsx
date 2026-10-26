@@ -13,11 +13,13 @@ import { useMe } from '@hypha-platform/core/client';
 type TransactionsSectionProps = {
   personSlug?: string;
   pageSize?: number;
+  tokenFilter?: string;
 };
 
 export const UserTransactionsSection: FC<TransactionsSectionProps> = ({
   personSlug,
   pageSize = 4,
+  tokenFilter,
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const {
@@ -31,7 +33,7 @@ export const UserTransactionsSection: FC<TransactionsSectionProps> = ({
     pageSize: usedPageSize,
     error,
     retry,
-  } = useUserTransfersSection({ personSlug, pageSize });
+  } = useUserTransfersSection({ personSlug, pageSize, tokenFilter });
 
   const { person } = useMe();
   const personAddress = person?.address as `0x${string}` | undefined;

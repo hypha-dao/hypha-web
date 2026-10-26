@@ -3,24 +3,32 @@ import React from 'react';
 import useSWR from 'swr';
 import { TransferWithEntity } from './types';
 import { useJwt } from '@hypha-platform/core/client';
+import { buildUserTransfersEndpoint } from './build-user-transfers-endpoint';
+
+export { buildUserTransfersEndpoint } from './build-user-transfers-endpoint';
 
 export const useUserTransfers = ({
   sort,
   refreshInterval = 10000,
   personSlug,
+  token,
 }: {
   sort?: { sort: string };
   refreshInterval?: number;
   personSlug?: string;
+  token?: string;
 }) => {
   const { jwt } = useJwt();
   const waitingForAuth = Boolean(personSlug) && !jwt;
 
   const endpoint = React.useMemo(() => {
     if (!personSlug) return '';
-    const base = `/api/v1/people/${personSlug}/transactions`;
-    return sort?.sort ? `${base}?sort=${encodeURIComponent(sort.sort)}` : base;
-  }, [personSlug, sort]);
+    return buildUserTransfersEndpoint({
+      personSlug,
+      sort: sort?.sort,
+      token,
+    });
+  }, [personSlug, sort, token]);
 
   const { data, isLoading, error, mutate } = useSWR(
     personSlug && jwt ? [endpoint, jwt] : null,

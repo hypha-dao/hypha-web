@@ -5,6 +5,30 @@ export const arrayOfAddresses = z
   .string()
   .transform((val) => val.split(',').filter((addr) => isAddress(addr)));
 
+/**
+ * Resolve the `token=` query for transfer list APIs.
+ * - omitted → unscoped (undefined)
+ * - at least one valid address → those addresses
+ * - present but empty / all-invalid → keep the raw parts so callers do not
+ *   fall back to an unscoped Alchemy query
+ */
+export function resolveTransferTokenFilter(
+  rawToken: string | null,
+): string[] | undefined {
+  if (rawToken === null) {
+    return undefined;
+  }
+  const parts = rawToken
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  const valid = parts.filter((address) => isAddress(address));
+  if (valid.length > 0) {
+    return valid;
+  }
+  return parts.length > 0 ? parts : ['invalid'];
+}
+
 export const stringifiedDate = z.string().transform((val, ctx) => {
   const timestamp = Number(val);
   const date = new Date(isNaN(timestamp) ? val : timestamp);
