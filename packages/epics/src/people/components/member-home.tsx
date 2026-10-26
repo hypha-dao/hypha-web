@@ -38,6 +38,11 @@ import {
   getSignalPath,
 } from '../../common/get-path-function';
 import { getMainColumnScrollRoot } from '../../common/main-column-scroll';
+import {
+  MAX_VISIBLE_RECENT_SPACES,
+  readRecentSpaceSlugs,
+  subscribeRecentSpaceSlugs,
+} from '../../common/recent-space-history';
 import type { SignupOrientation } from './signup-flow';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
@@ -97,6 +102,30 @@ function orientationLabelKey(orientation: SignupOrientation) {
   if (orientation === 'member') return 'orientationMember' as const;
   if (orientation === 'builder') return 'orientationBuilder' as const;
   return 'orientationInvestor' as const;
+}
+
+type HomeSpace = MemberIntelligence['spaces'][number];
+
+/** Up to five spaces from the visit queue that this member still belongs to. */
+function glanceSpaces(
+  spaces: readonly HomeSpace[],
+  recentSlugs: readonly string[],
+  limit = MAX_VISIBLE_RECENT_SPACES,
+): HomeSpace[] {
+  if (spaces.length === 0 || recentSlugs.length === 0 || limit <= 0) {
+    return [];
+  }
+  const bySlug = new Map(spaces.map((space) => [space.slug, space]));
+  const picked: HomeSpace[] = [];
+  const seen = new Set<string>();
+  for (const slug of recentSlugs) {
+    const space = bySlug.get(slug);
+    if (!space || seen.has(space.slug)) continue;
+    seen.add(space.slug);
+    picked.push(space);
+    if (picked.length >= limit) break;
+  }
+  return picked;
 }
 
 function greetingKey(date = new Date()) {
@@ -225,6 +254,10 @@ export function MemberHome({
   }, [home?.signals]);
   const [homeView, setHomeView] = useState<HomeView>('ai');
   const [viewReady, setViewReady] = useState(false);
+  const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
+    readRecentSpaceSlugs(),
+  );
+  useEffect(() => subscribeRecentSpaceSlugs(setRecentSpaceSlugs), []);
   useEffect(() => {
     const sync = () => setHomeView(readHomeView());
     sync();
@@ -236,6 +269,10 @@ export function MemberHome({
       window.removeEventListener('storage', sync);
     };
   }, []);
+  const atAGlanceSpaces = useMemo(
+    () => glanceSpaces(home?.spaces ?? [], recentSpaceSlugs),
+    [home?.spaces, recentSpaceSlugs],
+  );
   const showAssistant = viewReady && homeView === 'ai';
   const showField = viewReady && homeView === 'field';
   const showEnergy = viewReady && homeView === 'energy';
@@ -382,6 +419,29 @@ export function MemberHome({
                     />
                   </dl>
                 </div>
+                {railsBusy || atAGlanceSpaces.length > 0 ? (
+                  <div className="mt-4" aria-label={t('recentSpaces')}>
+                    <ResourceList
+                      isLoading={railsBusy}
+                      empty={t('noSpaces')}
+                      maxItems={MAX_VISIBLE_RECENT_SPACES}
+                      markSize={24}
+                      items={atAGlanceSpaces.map((space) => ({
+                        id: space.id,
+                        title: space.title,
+                        detail: '',
+                        href: `/${lang}/dho/${space.slug}/overview`,
+                        icon: {
+                          logoUrl: space.logoUrl,
+                          ecosystemLogoUrlLight:
+                            space.ecosystemLogoUrlLight ?? null,
+                          ecosystemLogoUrlDark:
+                            space.ecosystemLogoUrlDark ?? null,
+                        },
+                      }))}
+                    />
+                  </div>
+                ) : null}
               </section>
             )}
 
