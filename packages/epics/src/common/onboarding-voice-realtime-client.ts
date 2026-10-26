@@ -157,6 +157,8 @@ export type RealtimeVoiceConnection = {
   remoteAudio: HTMLAudioElement;
   /** Voice chosen when the session was created. Spoken replies reuse it. */
   voice: string;
+  /** The member's microphone, kept while a silent track stands in. */
+  liveMicTrack: MediaStreamTrack | null;
   sendEvent: (event: Record<string, unknown>) => void;
   close: () => void;
 };
@@ -171,7 +173,7 @@ function buildRealtimeSpeakInstructions(text: string): string {
   // The words after the marker are the only audio. Never name the marker
   // ("script", "here is the script") or invent an intro from session context.
   return [
-    'Read aloud only the chat reply below the marker. Start on its first word. Do not say script, here is the script, or any other label. Do not paraphrase. Do not add greetings, questions, or another item. Do not use earlier turns or the session summary.',
+    'Speak the chat reply below the marker and then stop. Start on its first word. Use those words in that order. Do not paraphrase, do not continue, and do not start another sentence. Do not say script, here is the script, or any other label. Do not use earlier turns, the session, or anything you think you heard.',
     buildRealtimeSpeakLanguageDirective(),
     'Warm, natural pace.',
     '',
@@ -218,13 +220,57 @@ export function isSubstantiveUserTranscript(text: string): boolean {
   return true;
 }
 
+let silentMicTrack: MediaStreamTrack | null = null;
+
+function silentStandInTrack(): MediaStreamTrack | null {
+  if (silentMicTrack && silentMicTrack.readyState === 'live') {
+    return silentMicTrack;
+  }
+  if (typeof AudioContext === 'undefined') return null;
+  const context = new AudioContext();
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  gain.gain.value = 0;
+  const destination = context.createMediaStreamDestination();
+  oscillator.connect(gain);
+  gain.connect(destination);
+  oscillator.start();
+  silentMicTrack = destination.stream.getAudioTracks()[0] ?? null;
+  return silentMicTrack;
+}
+
+function audioSender(connection: RealtimeVoiceConnection) {
+  return connection.peerConnection
+    .getSenders()
+    .find((sender) => sender.track?.kind === 'audio');
+}
+
 export function setLocalMicEnabled(
   connection: RealtimeVoiceConnection | null,
   enabled: boolean,
 ): void {
   if (!connection) return;
-  for (const track of connection.localStream.getAudioTracks()) {
-    track.enabled = enabled;
+  const sender = audioSender(connection);
+  if (!enabled) {
+    if (!connection.liveMicTrack) {
+      connection.liveMicTrack =
+        connection.localStream.getAudioTracks()[0] ?? null;
+    }
+    for (const track of connection.localStream.getAudioTracks()) {
+      track.enabled = false;
+    }
+    const silent = silentStandInTrack();
+    if (sender && silent) void sender.replaceTrack(silent);
+    clearRealtimeInputAudioBuffer(connection);
+    return;
+  }
+  const live = connection.liveMicTrack;
+  if (live) live.enabled = true;
+  if (sender && live) void sender.replaceTrack(live);
+  else {
+    for (const track of connection.localStream.getAudioTracks()) {
+      track.enabled = true;
+    }
   }
 }
 
@@ -489,6 +535,7 @@ export async function connectOpenAiRealtimeCall(params: {
       localStream,
       remoteAudio,
       voice,
+      liveMicTrack: null,
       sendEvent,
       close,
     };

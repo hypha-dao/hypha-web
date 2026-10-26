@@ -178,6 +178,25 @@ function unmuteMicrophone(connection: RealtimeVoiceConnection | null) {
   setLocalMicEnabled(connection, true);
 }
 
+/** The speaker playing back into an open mic must not start another turn. */
+function isEchoOfLastSpoken(transcript: string, spoken: string): boolean {
+  const fold = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  const heard = fold(transcript);
+  const said = fold(spoken);
+  if (!heard || !said || heard.length < 12) return false;
+  if (said.includes(heard) || heard.includes(said)) return true;
+  const heardWords = new Set(heard.split(' '));
+  const saidWords = said.split(' ').filter(Boolean);
+  if (saidWords.length < 4) return false;
+  const shared = saidWords.filter((word) => heardWords.has(word)).length;
+  return shared / saidWords.length >= 0.7;
+}
+
 function muteMicrophone(connection: RealtimeVoiceConnection | null) {
   if (!connection) return;
   setLocalMicEnabled(connection, false);
@@ -243,6 +262,8 @@ export function useOnboardingVoiceRealtime({
   const assistantMessageIdAtStreamStartRef = useRef('');
   const lastSpokenAssistantMessageIdRef = useRef('');
   const speakAssistantReplyRef = useRef<(spoken: string) => void>(() => {});
+  /** True only between our response.create and its response.created. */
+  const expectingRealtimeResponseRef = useRef(false);
   const lastAssistantTextRef = useRef(lastAssistantText);
   lastAssistantTextRef.current = lastAssistantText;
   const lastAssistantMessageIdRef = useRef(lastAssistantMessageId);
@@ -433,12 +454,14 @@ export function useOnboardingVoiceRealtime({
       interruptSpeechStartedAtRef.current = null;
       // Close the mic before the line starts so the open microphone cannot cut it off.
       muteMicrophone(connection);
+      expectingRealtimeResponseRef.current = true;
       if (
         !speakAssistantTextViaRealtime(connection, speakable, {
           activeResponseId: activeRealtimeResponseIdRef.current,
           locale,
         })
       ) {
+        expectingRealtimeResponseRef.current = false;
         if (replacing) replacingSpeechRef.current = false;
         releaseMic(connection);
         queuedSpeakableRef.current = speakable;
@@ -731,7 +754,10 @@ export function useOnboardingVoiceRealtime({
       }
 
       if (event.type === 'input_audio_buffer.speech_started') {
-        if (!captureMicrophoneRef.current) return;
+        if (!captureMicrophoneRef.current) {
+          clearRealtimeInputAudioBuffer(connectionRef.current);
+          return;
+        }
         setUserSpeaking(true);
         const assistantBusy =
           phaseRef.current === 'speaking' ||
@@ -778,11 +804,22 @@ export function useOnboardingVoiceRealtime({
       }
 
       if (event.type === 'response.created') {
-        replacingSpeechRef.current = false;
         const responseId =
           typeof event.response?.id === 'string'
             ? event.response.id.trim()
             : '';
+        // Server VAD can still open a turn from room noise or the speaker.
+        // Only the chat reply we just asked for may be heard.
+        if (!expectingRealtimeResponseRef.current) {
+          const connection = connectionRef.current;
+          if (responseId) {
+            cancelActiveRealtimeResponse(connection, responseId);
+          }
+          clearRealtimeOutputAudioBuffer(connection);
+          return;
+        }
+        expectingRealtimeResponseRef.current = false;
+        replacingSpeechRef.current = false;
         if (responseId) {
           activeRealtimeResponseIdRef.current = responseId;
         }
@@ -823,9 +860,16 @@ export function useOnboardingVoiceRealtime({
       if (
         event.type === 'conversation.item.input_audio_transcription.completed'
       ) {
-        if (!captureMicrophoneRef.current) return;
+        if (!captureMicrophoneRef.current) {
+          clearRealtimeInputAudioBuffer(connectionRef.current);
+          return;
+        }
         const transcript =
           typeof event.transcript === 'string' ? event.transcript.trim() : '';
+        if (isEchoOfLastSpoken(transcript, lastSpokenAssistantRef.current)) {
+          clearRealtimeInputAudioBuffer(connectionRef.current);
+          return;
+        }
         if (transcript) {
           void sendTranscriptToChat(transcript).catch(() => {
             setVoiceError('error');
