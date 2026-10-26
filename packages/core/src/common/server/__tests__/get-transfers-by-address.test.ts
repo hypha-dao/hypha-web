@@ -262,6 +262,61 @@ describe('getTransfersByAddress', () => {
     expect(transfers[1]?.symbol).toBe('SPACE');
   });
 
+  it('pages until enough allowlisted rows fall inside the date window', async () => {
+    const knownAddresses = new Set([DB_TOKEN]);
+    const fromDate = new Date('2026-01-01T00:00:00.000Z');
+    const toDate = new Date('2026-01-31T23:59:59.000Z');
+
+    getAssetTransfers.mockImplementation(
+      async (params: { fromAddress?: string; pageKey?: string }) => {
+        if (params.fromAddress) {
+          return { transfers: [] };
+        }
+        if (!params.pageKey) {
+          return {
+            transfers: [
+              rawTransfer({
+                token: DB_TOKEN,
+                blockNum: '0x64',
+                hash: '0xout-of-window',
+                timestamp: '2026-02-15T00:00:00.000Z',
+                asset: 'SPACE',
+              }),
+            ],
+            pageKey: 'page-2',
+          };
+        }
+        return {
+          transfers: [
+            rawTransfer({
+              token: DB_TOKEN,
+              blockNum: '0x10',
+              hash: '0xin-window',
+              timestamp: '2026-01-15T00:00:00.000Z',
+              asset: 'SPACE',
+            }),
+          ],
+        };
+      },
+    );
+
+    const transfers = await getTransfersByAddress({
+      address: WALLET,
+      knownAddresses,
+      fromDate,
+      toDate,
+      limit: 1,
+    });
+
+    expect(transfers).toHaveLength(1);
+    expect(transfers[0]?.transaction_hash).toBe('0xin-window');
+    expect(
+      getAssetTransfers.mock.calls.some(
+        (call) => call[0]?.pageKey === 'page-2',
+      ),
+    ).toBe(true);
+  });
+
   it('sends DESCENDING order, hex block bounds, and maxCount to Alchemy', async () => {
     getAssetTransfers.mockResolvedValue({ transfers: [] });
 

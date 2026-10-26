@@ -105,17 +105,37 @@ function isAllowlistedRaw(
   return isVisibleWalletToken(transfer.rawContract.address, knownAddresses);
 }
 
+function isInDateWindow(
+  transfer: AssetTransfersWithMetadataResult,
+  window?: { fromTime?: number; toTime?: number },
+): boolean {
+  if (
+    !window ||
+    (window.fromTime === undefined && window.toTime === undefined)
+  ) {
+    return true;
+  }
+  const time = Date.parse(transfer.metadata.blockTimestamp) || 0;
+  return (
+    (window.fromTime === undefined || time >= window.fromTime) &&
+    (window.toTime === undefined || time <= window.toTime)
+  );
+}
+
 function hasEnoughVisible(
   transfers: AssetTransfersWithMetadataResult[],
   knownAddresses: ReadonlySet<string> | undefined,
   limit: number | undefined,
+  window?: { fromTime?: number; toTime?: number },
 ): boolean {
   if (limit == null) {
     return false;
   }
-  const visible = knownAddresses
-    ? transfers.filter((transfer) => isAllowlistedRaw(transfer, knownAddresses))
-    : transfers;
+  const visible = transfers.filter(
+    (transfer) =>
+      isAllowlistedRaw(transfer, knownAddresses) &&
+      isInDateWindow(transfer, window),
+  );
   return visible.length >= limit;
 }
 
@@ -171,6 +191,8 @@ async function fetchAssetTransferPages(
   options: {
     knownAddresses?: ReadonlySet<string>;
     limit?: number;
+    fromDate?: Date;
+    toDate?: Date;
   },
 ): Promise<{
   transfers: AssetTransfersWithMetadataResult[];
@@ -194,7 +216,12 @@ async function fetchAssetTransferPages(
       break;
     }
     pages += 1;
-    if (hasEnoughVisible(collected, options.knownAddresses, options.limit)) {
+    if (
+      hasEnoughVisible(collected, options.knownAddresses, options.limit, {
+        fromTime: options.fromDate?.getTime(),
+        toTime: options.toDate?.getTime(),
+      })
+    ) {
       break;
     }
   } while (pageKey && pages < ALCHEMY_MAX_PAGES);
@@ -341,7 +368,7 @@ export async function getTransfersByAddress(
           fromBlock: hexFromBlock,
           toBlock: hexToBlock,
         },
-        { knownAddresses, limit },
+        { knownAddresses, limit, fromDate, toDate },
       ),
       fetchAssetTransferPages(
         alchemy,
@@ -351,7 +378,7 @@ export async function getTransfersByAddress(
           fromBlock: hexFromBlock,
           toBlock: hexToBlock,
         },
-        { knownAddresses, limit },
+        { knownAddresses, limit, fromDate, toDate },
       ),
     ]),
   );

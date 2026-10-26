@@ -76,15 +76,7 @@ export async function GET(
     const spaceAddress = spaceDetails.at(9) as `0x${string}`;
     const spaceId = BigInt(space.web3SpaceId as number);
 
-    const [transfers, rawDbTokens, issuedTokenResults] = await Promise.all([
-      getTransfersByAddress({
-        address: spaceAddress,
-        contractAddresses: token,
-        fromDate,
-        toDate,
-        fromBlock,
-        toBlock,
-      }),
+    const [rawDbTokens, issuedTokenResults] = await Promise.all([
       findAllTokens({ db }, { search: undefined }),
       web3Client
         .multicall({
@@ -111,6 +103,21 @@ export async function GET(
           response.result.length !== 0,
       )
       .flatMap((response) => response.result as `0x${string}`[]);
+
+    const dbKnownAddresses = buildKnownTreasuryAddressSet(rawDbTokens, [
+      ...getEnergyCommunityTokenAddresses(),
+      ...issuedTokenAddresses,
+    ]);
+
+    const transfers = await getTransfersByAddress({
+      address: spaceAddress,
+      contractAddresses: token,
+      fromDate,
+      toDate,
+      fromBlock,
+      toBlock,
+      knownAddresses: dbKnownAddresses,
+    });
 
     // Mints emit Transfer(0x0 -> recipient) and never reference the space
     // address, so the address-based query above misses tokens the space
@@ -148,11 +155,6 @@ export async function GET(
     // would otherwise leak out-of-range mints into the response.
     const fromTime = fromDate?.getTime();
     const toTime = toDate?.getTime();
-
-    const dbKnownAddresses = buildKnownTreasuryAddressSet(rawDbTokens, [
-      ...getEnergyCommunityTokenAddresses(),
-      ...issuedTokenAddresses,
-    ]);
 
     // Filter allowed tokens before `limit` so hidden airdrops do not eat
     // page slots. On-chain space-issued tokens stay visible even without a
