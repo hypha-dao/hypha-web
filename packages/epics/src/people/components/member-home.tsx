@@ -72,7 +72,6 @@ import {
   MemberHomeWalletWidget,
 } from './member-home-side-widgets';
 import { useAiPanel } from '../../common/human-chat-panel-context';
-import { MemberHomeSpacesRail } from './member-home-spaces-rail';
 import {
   MemberHomeEnergyPanel,
   useMemberEnergyCommunities,
@@ -83,6 +82,7 @@ import {
   writeHomeView,
   type HomeView,
 } from './member-home-view';
+import { MemberHomeViewRail } from './member-home-view-rail';
 import './member-home-banner.css';
 
 type MemberHomeProps = {
@@ -344,12 +344,7 @@ export function MemberHome({
       <MemberHomeBanner />
       <div className="flex min-h-0 w-full min-w-0 flex-1 flex-row overflow-hidden">
         <div className={cn(isAiOpen ? 'hidden xl:contents' : 'contents')}>
-          <MemberHomeSpacesRail
-            lang={lang}
-            spaces={home?.spaces ?? []}
-            isLoading={railsBusy}
-            persistOnWide
-          />
+          <MemberHomeViewRail view={homeView} ready={viewReady} />
         </div>
         <div
           className={cn(
@@ -561,11 +556,6 @@ export function MemberHome({
                     )}
                   </div>
                 </div>
-                <HomeViewSwitch
-                  view={homeView}
-                  ready={viewReady}
-                  onChange={writeHomeView}
-                />
               </div>
               <div className="min-w-0 pt-1 pl-[calc(24px+var(--spacing-3))]">
                 {showUnavailable ? (
@@ -832,48 +822,6 @@ function orientationBodyKey(orientation: SignupOrientation) {
   if (orientation === 'member') return 'orientation.member.body' as const;
   if (orientation === 'builder') return 'orientation.builder.body' as const;
   return 'orientation.investor.body' as const;
-}
-
-function HomeViewSwitch({
-  view,
-  ready,
-  onChange,
-}: {
-  view: HomeView;
-  ready: boolean;
-  onChange: (view: HomeView) => void;
-}) {
-  const t = useTranslations('MemberHome');
-  return (
-    <div
-      role="group"
-      aria-label={t('viewToggleLabel')}
-      className="ml-auto hidden shrink-0 border border-foreground xl:inline-flex"
-    >
-      {(['ai', 'classic'] as const).map((option) => {
-        const selected = ready && view === option;
-        return (
-          <button
-            key={option}
-            type="button"
-            aria-pressed={selected}
-            disabled={!ready}
-            onClick={() => {
-              if (option !== view) onChange(option);
-            }}
-            className={cn(
-              'px-3 py-1 text-1 disabled:opacity-60',
-              selected
-                ? 'bg-foreground text-background'
-                : 'bg-background text-foreground',
-            )}
-          >
-            {option === 'ai' ? t('viewAi') : t('viewClassic')}
-          </button>
-        );
-      })}
-    </div>
-  );
 }
 
 function itemKey(item: MemberHomeThreadItem) {
