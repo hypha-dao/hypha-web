@@ -279,6 +279,10 @@ export function HumanChatPanelMembers({
         <input
           value={memberQuery}
           onChange={(event) => setMemberQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') return;
+            event.stopPropagation();
+          }}
           placeholder={t('membersSearch')}
           data-testid="chat-panel-members-search"
           className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"

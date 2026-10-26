@@ -1302,6 +1302,39 @@ export function conversationsMatchingSearch<
   return rows.filter((row) => conversationMatchesSearch(row, query));
 }
 
+export type ListedConversationOpen =
+  | {
+      kind: 'listed-room';
+      roomId: string;
+      title: string;
+      peerSlug: string | null;
+    }
+  | { kind: 'ensure-person' };
+
+/**
+ * Tap a Messages row. Use the room already on the row. Only fall through to
+ * create/ensure when the directory person has no conversation yet.
+ */
+export function listedConversationOpenTarget(row: {
+  roomId: string | null | undefined;
+  name: string;
+  person: { id: number; slug?: string | null };
+}): ListedConversationOpen | null {
+  const roomId = row.roomId?.trim();
+  if (roomId) {
+    return {
+      kind: 'listed-room',
+      roomId,
+      title: row.name,
+      peerSlug: row.person.slug?.trim() || null,
+    };
+  }
+  if (row.person.id > 0) {
+    return { kind: 'ensure-person' };
+  }
+  return null;
+}
+
 /**
  * Group-pick candidates. Synthetic DM rows (`person.id <= 0`) stay on
  * Messages but cannot be selected — they have no directory person id.

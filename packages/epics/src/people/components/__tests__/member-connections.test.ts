@@ -10,6 +10,7 @@ import {
   conversationMatchesSearch,
   peopleMatchingSearch,
   conversationsMatchingSearch,
+  listedConversationOpenTarget,
   membersForGroupPicker,
   conversationsVisibleInSection,
   conversationUnreadTotal,
@@ -1176,6 +1177,50 @@ describe('nextSelectedMembers', () => {
     const afterSearchWouldHideAda = nextSelectedMembers(afterBoth, grace);
     expect([...afterSearchWouldHideAda.keys()]).toEqual([1]);
     expect(afterSearchWouldHideAda.get(1)?.name).toBe('Ada Lovelace');
+  });
+
+  it('opens listed DMs and groups by room id without creating', () => {
+    expect(
+      listedConversationOpenTarget({
+        roomId: '!dm',
+        name: 'Joachim Stroh',
+        person: { id: 12, slug: 'joachim' },
+      }),
+    ).toEqual({
+      kind: 'listed-room',
+      roomId: '!dm',
+      title: 'Joachim Stroh',
+      peerSlug: 'joachim',
+    });
+    expect(
+      listedConversationOpenTarget({
+        roomId: '!group',
+        name: 'Alex Prate/Joachim',
+        person: { id: -4, slug: null },
+      }),
+    ).toEqual({
+      kind: 'listed-room',
+      roomId: '!group',
+      title: 'Alex Prate/Joachim',
+      peerSlug: null,
+    });
+  });
+
+  it('only ensures a person room when the list row has no room yet', () => {
+    expect(
+      listedConversationOpenTarget({
+        roomId: null,
+        name: 'Ada Lovelace',
+        person: { id: 1, slug: 'ada' },
+      }),
+    ).toEqual({ kind: 'ensure-person' });
+    expect(
+      listedConversationOpenTarget({
+        roomId: '',
+        name: 'Unknown',
+        person: { id: -8, slug: null },
+      }),
+    ).toBeNull();
   });
 
   it('does not select a synthetic DM row', () => {

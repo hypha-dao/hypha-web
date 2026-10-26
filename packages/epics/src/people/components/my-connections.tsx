@@ -63,6 +63,7 @@ import {
   facesWithProfiles,
   groupRowsForConnections,
   conversationsMatchingSearch,
+  listedConversationOpenTarget,
   membersForGroupPicker,
   conversationsVisibleInSection,
   enrichSearchMembers,
@@ -1859,8 +1860,15 @@ export function MyConnections({
       return;
     }
     setNotice(null);
-    if (row.person.id < 0 && row.roomId) {
-      openCoherenceChat(row.roomId, row.name, '', null, null);
+    const target = listedConversationOpenTarget(row);
+    if (target?.kind === 'listed-room') {
+      openCoherenceChat(target.roomId, target.title, '', null, null, {
+        peerPerson: target.peerSlug ? { slug: target.peerSlug } : null,
+      });
+      return;
+    }
+    if (!target) {
+      setNotice(tChat('matrixUnavailable'));
       return;
     }
     const openChat = openChatRef.current;
@@ -2041,6 +2049,10 @@ export function MyConnections({
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') return;
+                    event.stopPropagation();
+                  }}
                   placeholder={t('search')}
                   className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
                 />

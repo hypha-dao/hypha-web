@@ -32,6 +32,21 @@ const SIDEBAR_WIDTH_MOBILE = '18rem';
 const SIDEBAR_WIDTH_ICON = '3rem';
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 
+function isEditableKeyboardTarget(
+  target: EventTarget | null,
+  event: KeyboardEvent,
+): boolean {
+  const nodes =
+    typeof event.composedPath === 'function' ? event.composedPath() : [target];
+  for (const node of nodes) {
+    if (!(node instanceof HTMLElement)) continue;
+    if (node.isContentEditable) return true;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(node.tagName)) return true;
+    if (node.tagName === 'EM-EMOJI-PICKER') return true;
+  }
+  return false;
+}
+
 type SidebarContextProps = {
   state: 'expanded' | 'collapsed';
   open: boolean;
@@ -104,13 +119,7 @@ const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
-        const target = event.target as HTMLElement | null;
-        const isEditable =
-          target instanceof HTMLElement &&
-          (target.isContentEditable ||
-            ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
-
-        if (isEditable) {
+        if (isEditableKeyboardTarget(event.target, event)) {
           return;
         }
 

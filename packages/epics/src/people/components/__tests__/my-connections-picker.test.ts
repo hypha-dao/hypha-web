@@ -34,4 +34,16 @@ describe('group picker chips and radio', () => {
     expect(source).toContain('event.stopPropagation()');
     expect(source).toContain('onOpen(row)');
   });
+
+  it('opens a listed conversation by its room id', () => {
+    expect(source).toContain('listedConversationOpenTarget(row)');
+    expect(source).toContain("target?.kind === 'listed-room'");
+    expect(source).toContain('openCoherenceChat(target.roomId, target.title');
+    expect(source).not.toContain('row.person.id < 0 && row.roomId');
+  });
+
+  it('lets every letter reach the messages search field', () => {
+    expect(source).toContain("if (event.key === 'Escape') return;");
+    expect(source).toContain('event.stopPropagation()');
+  });
 });

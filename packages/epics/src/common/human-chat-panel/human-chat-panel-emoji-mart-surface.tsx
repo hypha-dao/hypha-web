@@ -57,6 +57,13 @@ export function HumanChatPanelEmojiMartSurface({
         className,
       )}
       onWheel={(event) => event.stopPropagation()}
+      onKeyDown={(event) => {
+        // emoji-mart search lives in shadow DOM. Retargeted keys look like
+        // they hit the host, so Radix menu typeahead (e.g. "Copy") swallows
+        // letters such as "c". Escape still closes the picker.
+        if (event.key === 'Escape') return;
+        event.stopPropagation();
+      }}
     >
       {mounted && (
         <Picker

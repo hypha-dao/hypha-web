@@ -380,7 +380,7 @@ export function PanelWrapLayout({
   } = useAiPanel();
   const {
     open: rightOpen,
-    toggle: toggleRight,
+    openHumanChatPanel,
     closeHumanChatPanel,
   } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
@@ -624,7 +624,11 @@ export function PanelWrapLayout({
           if (open && isMutuallyExclusivePanels && leftExpanded) {
             closeAiPanel();
           }
-          if (open !== rightOpen) toggleRight();
+          if (open) {
+            openHumanChatPanel();
+          } else {
+            closeHumanChatPanel();
+          }
         }}
         rightSidebarWidth={rightSidebarWidth}
         leftContent={effectiveLeft.content}
@@ -642,7 +646,11 @@ export function PanelWrapLayout({
           if (open && isMutuallyExclusivePanels && leftExpanded) {
             closeAiPanel();
           }
-          if (open !== rightOpen) toggleRight();
+          if (open) {
+            openHumanChatPanel();
+          } else {
+            closeHumanChatPanel();
+          }
         }}
         style={
           {
