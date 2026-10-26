@@ -841,18 +841,26 @@ export function MemberHomeChat({
     });
   }, [homeMessages, onQueueMemory, threadItems]);
   const cardsByMessageId = useMemo(() => {
-    const seen = new Set<string>();
-    const map = new Map<string, MemberHomeThreadItem>();
+    // The card stays with the latest reply about that item. An earlier
+    // mention would scroll off while the member is reading the new line.
+    const latestByItem = new Map<
+      string,
+      { messageId: string; item: MemberHomeThreadItem }
+    >();
     for (const message of homeMessages) {
       if (message.role !== 'assistant' || message.metadata?.homeArrival) {
         continue;
       }
       const item = homeItemForMessage(cardItems, message);
       if (!item) continue;
-      const key = memberHomeThreadItemKey(item);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      map.set(message.id, item);
+      latestByItem.set(memberHomeThreadItemKey(item), {
+        messageId: message.id,
+        item,
+      });
+    }
+    const map = new Map<string, MemberHomeThreadItem>();
+    for (const placed of latestByItem.values()) {
+      map.set(placed.messageId, placed.item);
     }
     return map;
   }, [cardItems, homeMessages]);

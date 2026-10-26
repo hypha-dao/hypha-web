@@ -679,6 +679,13 @@ function creatorNamedInText(name: string | null, haystack: string): boolean {
   return required.every((token) => haystack.includes(token));
 }
 
+/** "Marieke's candidate review" names Marieke without the rest of the name. */
+function givenNameInText(name: string | null, haystack: string): boolean {
+  const given = creatorTokens(name ?? '')[0];
+  if (!given || given.length < 4) return false;
+  return haystack.includes(given);
+}
+
 function textOverlap(item: MemberHomeThreadItem, haystack: string): number {
   return creatorTokens(`${item.title} ${item.summary ?? ''}`).filter((token) =>
     haystack.includes(token),
@@ -863,6 +870,14 @@ function itemMentionedInText(
     pool[0]
   ) {
     return pool[0];
+  }
+  const byGivenNameAndSpace = items.filter(
+    (item) =>
+      givenNameInText(item.creatorName, haystack) &&
+      spaceNamedInText(item, haystack),
+  );
+  if (byGivenNameAndSpace.length === 1 && byGivenNameAndSpace[0]) {
+    return byGivenNameAndSpace[0];
   }
   return null;
 }

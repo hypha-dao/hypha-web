@@ -567,6 +567,48 @@ describe('memberHomeThreadItemForMessage', () => {
     expect(item?.slug).toBe('invite-member');
   });
 
+  it('uses a given name and the space when the title is paraphrased', () => {
+    const item = memberHomeThreadItemForMessage(
+      [
+        {
+          kind: 'proposal',
+          slug: 'candidate-review',
+          title: 'Friday candidate slate',
+          spaceSlug: 'hypha-energy',
+          spaceTitle: 'Hypha Energy',
+          action: 'decision',
+          documentKind: 'proposal',
+          authoredByMember: false,
+          category: null,
+          summary: null,
+          creatorId: 4,
+          creatorName: 'Marieke Post',
+          creatorAvatarUrl: null,
+        },
+        {
+          kind: 'proposal',
+          slug: 'other-review',
+          title: 'Another review',
+          spaceSlug: 'hypha-pollinate',
+          spaceTitle: 'Hypha Pollinate',
+          action: 'decision',
+          documentKind: 'proposal',
+          authoredByMember: false,
+          category: null,
+          summary: null,
+          creatorId: 5,
+          creatorName: 'Marieke Other',
+          creatorAvatarUrl: null,
+        },
+      ],
+      {
+        content:
+          "It should be up now — Marieke's candidate review in Hypha Energy.",
+      },
+    );
+    expect(item?.slug).toBe('candidate-review');
+  });
+
   it('leaves a greeting with no item empty', () => {
     const item = memberHomeThreadItemForMessage(items, {
       parts: [
