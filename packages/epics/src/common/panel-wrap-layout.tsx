@@ -34,6 +34,7 @@ import {
 import { isInteractiveCreatePath } from './get-path-function';
 import {
   isConnectionsPath,
+  isMemberHomePath,
   isMyWalletPath,
   showsHumanChatIcon,
   useIsNetworkContext,
@@ -134,10 +135,13 @@ export function AiSidebarTrigger() {
   const pathname = usePathname();
   const isWallet = isMyWalletPath(pathname);
   const isMessages = isConnectionsPath(pathname);
+  const isHome = isMemberHomePath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
 
-  if (!isSpace && !isNetwork && !isWallet && !isMessages) return null;
+  if (!isSpace && !isNetwork && !isWallet && !isMessages && !isHome) {
+    return null;
+  }
 
   const isMenuOpen = overlayVisible;
 
@@ -179,10 +183,13 @@ export function AiPanelTrigger() {
   const pathname = usePathname();
   const isWallet = isMyWalletPath(pathname);
   const isMessages = isConnectionsPath(pathname);
+  const isHome = isMemberHomePath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
 
-  if (!isSpace && !isNetwork && !isWallet && !isMessages) return null;
+  if (!isSpace && !isNetwork && !isWallet && !isMessages && !isHome) {
+    return null;
+  }
 
   return (
     <button
@@ -413,9 +420,10 @@ export function PanelWrapLayout({
   const isNetwork = useIsNetworkContext();
   const isWallet = isMyWalletPath(pathname);
   const isMessages = isConnectionsPath(pathname);
+  const isHome = isMemberHomePath(pathname);
   const isOnboarding = isInteractiveCreatePath(pathname);
-  /** Space, network, wallet, and messages. Messages uses the same icon rail. */
-  const showAiPanel = isSpace || isNetwork || isWallet || isMessages;
+  /** Space, network, wallet, messages, and home. Home uses AI and Classic. */
+  const showAiPanel = isSpace || isNetwork || isWallet || isMessages || isHome;
   const effectiveLeft = showAiPanel ? left : undefined;
   // The chat icon is on home, connections, my spaces, my wallet, a space, and the network.
   const showHumanChat = showsHumanChatIcon(pathname, isSpace, isNetwork);
