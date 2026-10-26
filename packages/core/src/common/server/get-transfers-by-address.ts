@@ -2,7 +2,7 @@ import 'server-only';
 import { getAlchemy } from './alchemy-client';
 import {
   type Alchemy,
-  type AssetTransfersParams,
+  type AssetTransfersWithMetadataParams,
   type AssetTransfersWithMetadataResult,
   AssetTransfersCategory,
   SortingOrder,
@@ -131,8 +131,8 @@ function buildAssetTransferParams(params: {
   fromBlock?: string;
   toBlock?: string;
   pageKey?: string;
-}): AssetTransfersParams {
-  const request: AssetTransfersParams = {
+}): AssetTransfersWithMetadataParams {
+  const request: AssetTransfersWithMetadataParams = {
     category: [AssetTransfersCategory.ERC20],
     withMetadata: true,
     order: SortingOrder.DESCENDING,
@@ -398,7 +398,7 @@ export async function getMintTransfersByTokens({
     return [];
   }
 
-  const request: AssetTransfersParams = {
+  const request: AssetTransfersWithMetadataParams = {
     fromAddress: ZERO_ADDRESS,
     category: [AssetTransfersCategory.ERC20],
     contractAddresses: sanitized,
