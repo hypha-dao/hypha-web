@@ -32,6 +32,20 @@ const SIDEBAR_WIDTH_MOBILE = '18rem';
 const SIDEBAR_WIDTH_ICON = '3rem';
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 
+function isEmojiMartEvent(event: Event) {
+  const path =
+    typeof event.composedPath === 'function'
+      ? event.composedPath()
+      : [event.target];
+  return path.some((node) => {
+    if (!(node instanceof Element)) return false;
+    return (
+      node.tagName === 'EM-EMOJI-PICKER' ||
+      Boolean(node.closest?.('[data-hypha-emoji-picker]'))
+    );
+  });
+}
+
 function isEditableKeyboardTarget(
   target: EventTarget | null,
   event: KeyboardEvent,
@@ -263,6 +277,14 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
               if (shouldPreventEscapeDismiss?.(event)) {
                 event.preventDefault();
               }
+            }}
+            onPointerDownOutside={(event) => {
+              const original = event.detail.originalEvent;
+              if (isEmojiMartEvent(original)) event.preventDefault();
+            }}
+            onInteractOutside={(event) => {
+              const original = event.detail.originalEvent;
+              if (isEmojiMartEvent(original)) event.preventDefault();
             }}
           >
             <SheetHeader className="sr-only">

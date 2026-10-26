@@ -10,6 +10,7 @@ import {
 
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
+import { rememberPersonDirectRoom } from './member-connections';
 import {
   noticeKeyForOpenPersonRoomError,
   openOrEnsurePersonRoom,
@@ -69,13 +70,16 @@ export function MemberHomePeople({
     for (const person of people) ids.add(person.id);
     return [...ids];
   }, [extraPersonIds, people]);
-  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
-    personIds,
-  });
+  const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
+    useMatrixUserIdsByPersonIds({
+      personIds,
+    });
   const matrixRef = useRef(matrix);
   matrixRef.current = matrix;
   const matrixIdsRef = useRef(personIdToMatrixUserId);
   matrixIdsRef.current = personIdToMatrixUserId;
+  const matrixIdsLoadingRef = useRef(matrixIdsLoading);
+  matrixIdsLoadingRef.current = matrixIdsLoading;
   const knownMatrixIdsRef = useRef<Record<number, string>>({});
   if (Object.keys(personIdToMatrixUserId).length > 0) {
     knownMatrixIdsRef.current = {
@@ -99,6 +103,7 @@ export function MemberHomePeople({
       const mxid =
         matrixIdsRef.current[personId] ?? knownMatrixIdsRef.current[personId];
       if (mxid) return mxid;
+      if (!matrixIdsLoadingRef.current && attempt > 2) return null;
       await new Promise((resolve) => window.setTimeout(resolve, 100));
     }
     return (
@@ -117,6 +122,11 @@ export function MemberHomePeople({
         waitForMatrixUserId,
       });
     } catch (error) {
+      if (
+        noticeKeyForOpenPersonRoomError(error) === 'matrixPersonUnavailable'
+      ) {
+        return null;
+      }
       setNotice(t(noticeKeyForOpenPersonRoomError(error)));
       return null;
     }
@@ -136,9 +146,11 @@ export function MemberHomePeople({
     const title = labelOf(person, fallbackName);
     try {
       const roomId = await resolvePersonRoom(person, title);
-      if (!roomId) return false;
+      if (roomId) rememberPersonDirectRoom(person.id, roomId);
+      // Listed people still open Start-a-conversation when no mxid/room yet.
+      // Never surface "That person does not have chat yet." for a list tap.
       showRoom(roomId, title, person);
-      return true;
+      return Boolean(roomId);
     } catch {
       setNotice(t('matrixFailed'));
       return false;

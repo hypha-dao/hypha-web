@@ -634,6 +634,33 @@ describe('personRowsFromDmRooms', () => {
     expect(rows[1]).toMatchObject({ name: 'Kate Bennett', roomId: null });
   });
 
+  it('attaches an empty typed DM to the directory person by unique name', () => {
+    const rows = personRowsFromDmRooms(
+      [person(7, 'Basil', 'Childers')],
+      [
+        room({
+          roomId: '!empty',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'Basil Childers',
+          otherUserId: '@prod_privy_did_privy_basil:matrix',
+          preview: '',
+          lastTs: null,
+        }),
+      ],
+      {},
+      null,
+      'Someone',
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      roomId: '!empty',
+      name: 'Basil Childers',
+      person: { id: 7 },
+    });
+  });
+
   it('attaches a directory profile from peopleBySub without a matrix-id map', () => {
     const rows = personRowsFromDmRooms(
       [person(7, 'Basil', 'Childers'), person(2, 'Kate', 'Bennett')],
@@ -1328,6 +1355,54 @@ describe('nextSelectedMembers', () => {
     ).toEqual({
       kind: 'listed-room',
       roomId: '!basil',
+      title: 'Basil Childers',
+      peerSlug: 'basil',
+    });
+  });
+
+  it('opens an empty listed DM by unique name or remembered room', () => {
+    const rooms = [
+      room({
+        roomId: '!empty',
+        kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
+        name: 'Basil Childers',
+        otherUserId: '@prod_privy_did_privy_basil:matrix',
+        preview: '',
+        lastTs: null,
+      }),
+    ];
+    expect(
+      listedConversationOpenTarget(
+        {
+          roomId: null,
+          name: 'Basil Childers',
+          preview: '',
+          lastTs: null,
+          person: { id: 7, slug: 'basil' },
+        },
+        { rooms },
+      ),
+    ).toEqual({
+      kind: 'listed-room',
+      roomId: '!empty',
+      title: 'Basil Childers',
+      peerSlug: 'basil',
+    });
+    expect(
+      listedConversationOpenTarget(
+        {
+          roomId: null,
+          name: 'Basil Childers',
+          preview: '',
+          lastTs: null,
+          person: { id: 7, slug: 'basil' },
+        },
+        { rememberedRoomId: '!remembered' },
+      ),
+    ).toEqual({
+      kind: 'listed-room',
+      roomId: '!remembered',
       title: 'Basil Childers',
       peerSlug: 'basil',
     });

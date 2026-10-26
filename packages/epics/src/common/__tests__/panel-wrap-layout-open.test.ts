@@ -9,7 +9,7 @@ const source = readFileSync(
 
 function rightPanelSidebarOnOpenChangeBody() {
   const match = source.match(
-    /open=\{rightOpen\}\s+onOpenChange=\{\(open\) => \{([\s\S]*?)\n        \}\}/,
+    /open=\{rightOpen\}\s+onOpenChange=\{\(open\) => \{([\s\S]*?)\n {8}\}\}/,
   );
   expect(match?.[1]).toBeTruthy();
   return match![1];

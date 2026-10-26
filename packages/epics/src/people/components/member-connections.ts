@@ -563,6 +563,46 @@ export function rememberDirectRoom(
   }
 }
 
+const PERSON_DIRECT_ROOMS_KEY = 'hypha.person-direct-rooms';
+
+function readPersonDirectRoomMap(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(PERSON_DIRECT_ROOMS_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : {};
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+    const map: Record<string, string> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (typeof value === 'string' && value.trim()) map[key] = value.trim();
+    }
+    return map;
+  } catch {
+    return {};
+  }
+}
+
+/** Last opened DM for this Hypha person, so a refresh can reopen it without mxid. */
+export function readRememberedPersonDirectRoom(personId: number) {
+  if (!Number.isFinite(personId) || personId <= 0) return null;
+  return readPersonDirectRoomMap()[String(personId)]?.trim() || null;
+}
+
+export function rememberPersonDirectRoom(personId: number, roomId: string) {
+  if (typeof window === 'undefined') return;
+  if (!Number.isFinite(personId) || personId <= 0) return;
+  const id = roomId.trim();
+  if (!id) return;
+  try {
+    const map = readPersonDirectRoomMap();
+    map[String(personId)] = id;
+    window.localStorage.setItem(PERSON_DIRECT_ROOMS_KEY, JSON.stringify(map));
+  } catch {
+    // Ignore quota and private-mode failures.
+  }
+}
+
 export function subscribeSignalThreadRooms(listener: () => void) {
   signalThreadRoomListeners.add(listener);
   return () => {
@@ -911,6 +951,26 @@ function directoryPersonForMxid<T extends ConnectionListPerson>(
   return undefined;
 }
 
+function uniqueDirectoryPersonByName<T extends ConnectionListPerson>(
+  directoryById: ReadonlyMap<number, T>,
+  roomName: string,
+  usedPersonIds: ReadonlySet<number>,
+  fallback: string,
+): T | undefined {
+  const needle = roomName.trim().toLowerCase();
+  if (!needle || looksLikeTechnicalMatrixDisplayName(roomName, '')) {
+    return undefined;
+  }
+  const matches: T[] = [];
+  for (const person of directoryById.values()) {
+    if (usedPersonIds.has(person.id)) continue;
+    if (personName(person, fallback).trim().toLowerCase() === needle) {
+      matches.push(person);
+    }
+  }
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
 /**
  * Person rows for Messages: one row per DM-typed room, then directory people
  * who do not yet have a room. Incoming DMs appear even when the sender shares
@@ -970,9 +1030,16 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
     if (technicalName && mxid && typedPeerHasHumanName.has(mxid)) {
       continue;
     }
-    const person = mxid
-      ? directoryPersonForMxid(mxid, personByMxid, directoryById, peopleBySub)
-      : undefined;
+    const person =
+      (mxid
+        ? directoryPersonForMxid(mxid, personByMxid, directoryById, peopleBySub)
+        : undefined) ??
+      uniqueDirectoryPersonByName(
+        directoryById,
+        room.name,
+        usedPersonIds,
+        fallback,
+      );
     if (person) {
       if (
         isHyphaBot(personIdToMatrixUserId[person.id], personName(person, ''))
@@ -1019,15 +1086,19 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
     if (isHyphaBot(personIdToMatrixUserId[person.id], personName(person, ''))) {
       continue;
     }
+    const remembered = readRememberedPersonDirectRoom(person.id);
+    const rememberedRoom = remembered
+      ? rooms.find((room) => room.roomId === remembered)
+      : undefined;
     withoutRoom.push({
       person,
       name: personName(person, fallback),
-      avatarUrl: person.avatarUrl || undefined,
-      preview: '',
-      mine: false,
-      lastTs: null,
-      unread: 0,
-      roomId: null,
+      avatarUrl: person.avatarUrl || rememberedRoom?.avatarUrl || undefined,
+      preview: rememberedRoom?.preview ?? '',
+      mine: rememberedRoom?.mine ?? false,
+      lastTs: rememberedRoom?.lastTs ?? null,
+      unread: rememberedRoom?.unread ?? 0,
+      roomId: remembered ?? null,
     });
   }
 
@@ -1346,6 +1417,7 @@ export type ListedConversationLookup = {
   >[];
   personIdToMatrixUserId?: Readonly<Record<number, string | undefined>>;
   peopleBySub?: ReadonlyMap<string, Pick<PeerProfileBySub, 'id'>>;
+  rememberedRoomId?: string | null;
 };
 
 function listedRowShowsConversation(row: {
@@ -1371,6 +1443,10 @@ export function resolveListedConversationRoomId(
 ): string | null {
   const listed = row.roomId?.trim();
   if (listed) return listed;
+  const remembered =
+    lookup?.rememberedRoomId?.trim() ||
+    readRememberedPersonDirectRoom(row.person.id);
+  if (remembered) return remembered;
   const rooms = lookup?.rooms;
   if (!rooms || row.person.id <= 0) return null;
   const mxid = lookup.personIdToMatrixUserId?.[row.person.id]
@@ -1389,10 +1465,12 @@ export function resolveListedConversationRoomId(
       if (fetchedId === row.person.id) return room.roomId;
     }
     if (
-      listedRowShowsConversation(row) &&
       needle &&
       room.name.trim().toLowerCase() === needle &&
-      listedRowShowsConversation(room)
+      !looksLikeTechnicalMatrixDisplayName(
+        room.name,
+        room.otherUserId ?? room.roomId,
+      )
     ) {
       nameMatches.push(room.roomId);
     }

@@ -3,7 +3,9 @@ import { findJoinedDirectRoomId, waitUntil } from '@hypha-platform/core/client';
 
 import {
   readRememberedDirectRoom,
+  readRememberedPersonDirectRoom,
   rememberDirectRoom,
+  rememberPersonDirectRoom,
 } from './member-connections';
 import {
   OpenPersonRoomFailure,
@@ -84,12 +86,20 @@ export async function openOrEnsurePersonRoom(options: {
   if (!client || !selfId) {
     throw new OpenPersonRoomFailure('not-connected');
   }
+  const rememberedByPerson = readRememberedPersonDirectRoom(options.personId);
+  if (
+    rememberedByPerson &&
+    client.getRoom(rememberedByPerson)?.getMyMembership() === 'join'
+  ) {
+    return rememberedByPerson;
+  }
   const mxid = (await options.waitForMatrixUserId(options.personId))?.trim();
   if (!mxid) {
     throw new OpenPersonRoomFailure('no-matrix-id');
   }
   const remembered = readRememberedDirectRoom(selfId, mxid);
   if (remembered && client.getRoom(remembered)?.getMyMembership() === 'join') {
+    rememberPersonDirectRoom(options.personId, remembered);
     return remembered;
   }
   const existing = findJoinedDirectRoomId(
@@ -103,6 +113,7 @@ export async function openOrEnsurePersonRoom(options: {
   );
   if (existing) {
     rememberDirectRoom(selfId, mxid, existing);
+    rememberPersonDirectRoom(options.personId, existing);
     return existing;
   }
   let lastError: unknown;
@@ -110,6 +121,7 @@ export async function openOrEnsurePersonRoom(options: {
     try {
       const { roomId } = await ready.ensureDirectRoom(mxid, options.title);
       rememberDirectRoom(selfId, mxid, roomId);
+      rememberPersonDirectRoom(options.personId, roomId);
       return roomId;
     } catch (error) {
       lastError = error;

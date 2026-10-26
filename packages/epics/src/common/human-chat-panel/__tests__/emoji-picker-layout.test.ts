@@ -53,9 +53,25 @@ describe('emoji picker layout', () => {
     expect(surface).toContain('[&_em-emoji-picker]:!w-full');
     expect(surface).toContain('data-hypha-emoji-picker');
     expect(surface).toContain('onWheel');
+    expect(surface).toContain('onPointerDown');
+    expect(surface).toContain('onTouchStart');
+    expect(surface).toContain('pointer-events-auto');
+    expect(surface).toContain('touch-manipulation');
     expect(surface).toContain('onKeyDown');
     expect(surface).toContain("if (event.key === 'Escape') return;");
     expect(surface).toContain('event.stopPropagation()');
+    const picker = read('human-chat-panel-emoji-picker.tsx');
+    expect(picker).toContain('container={');
+    expect(picker).toContain('z-[100]');
+    expect(picker).toContain('onPointerDownOutside');
+    expect(picker).toContain('onInteractOutside');
+    const sidebar = readFileSync(
+      resolve(dir, '../../../../ui/src/sidebar.tsx'),
+      'utf8',
+    );
+    expect(sidebar).toContain('isEmojiMartEvent');
+    expect(sidebar).toContain('onPointerDownOutside');
+    expect(sidebar).toContain('onInteractOutside');
     expect(surface).not.toContain('min-w-[280px]');
     expect(surface).not.toContain('--em-emoji-picker-width');
   });

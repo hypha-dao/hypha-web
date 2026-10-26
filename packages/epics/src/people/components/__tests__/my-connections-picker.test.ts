@@ -51,6 +51,19 @@ describe('group picker chips and radio', () => {
     expect(source).toContain('...peerPersonIds');
   });
 
+  it('opens a listed person even when Matrix id lookup fails', () => {
+    const home = readFileSync(
+      resolve(__dirname, '../member-home-people.tsx'),
+      'utf8',
+    );
+    expect(home).toContain(
+      "noticeKeyForOpenPersonRoomError(error) === 'matrixPersonUnavailable'",
+    );
+    expect(home).toContain('showRoom(roomId, title, person)');
+    expect(home).toContain('rememberPersonDirectRoom');
+    expect(source).toContain('readRememberedPersonDirectRoom(row.person.id)');
+  });
+
   it('lets every letter reach the messages search field', () => {
     expect(source).toContain("if (event.key === 'Escape') return;");
     expect(source).toContain('event.stopPropagation()');

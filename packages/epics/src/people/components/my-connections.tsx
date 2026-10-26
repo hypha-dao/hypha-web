@@ -64,6 +64,8 @@ import {
   groupRowsForConnections,
   conversationsMatchingSearch,
   listedConversationOpenTarget,
+  readRememberedPersonDirectRoom,
+  rememberPersonDirectRoom,
   membersForGroupPicker,
   conversationsVisibleInSection,
   enrichSearchMembers,
@@ -1931,8 +1933,10 @@ export function MyConnections({
       rooms: rows,
       personIdToMatrixUserId,
       peopleBySub,
+      rememberedRoomId: readRememberedPersonDirectRoom(row.person.id),
     });
     if (target?.kind === 'listed-room') {
+      rememberPersonDirectRoom(row.person.id, target.roomId);
       openCoherenceChat(target.roomId, target.title, '', null, null, {
         peerPerson: target.peerSlug ? { slug: target.peerSlug } : null,
       });
