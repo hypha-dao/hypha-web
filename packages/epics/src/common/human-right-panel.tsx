@@ -194,6 +194,11 @@ import {
 } from './human-chat-panel/build-space-roster-mention-candidates';
 import { directConversationWelcomeName } from './human-chat-panel/direct-conversation-welcome';
 import {
+  hasHumanTimelineMessages,
+  runPersonPanelCallStart,
+  shouldRefusePersonPanelCall,
+} from './human-chat-panel/person-panel-call';
+import {
   asTimelineDate,
   sortMessagesChronologically,
   upsertTimelineMessages,
@@ -1482,6 +1487,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     getRaiseHandOrder,
     floatingReactionsVersion,
   } = useGlobalCallDock();
+  const hasHumanMessages = hasHumanTimelineMessages(messages);
+  const refusePersonPanelCall = shouldRefusePersonPanelCall({
+    isDirectConversation,
+    roomId,
+    coherenceRoomId,
+    hasHumanMessages,
+  });
+  useEffect(() => {
+    if (!refusePersonPanelCall) return;
+    void leaveSpaceCall();
+    dismissSpaceCallError();
+  }, [dismissSpaceCallError, leaveSpaceCall, refusePersonPanelCall]);
   useEffect(() => {
     const activeSpaceSlug = spaceSlug?.trim() || null;
     const activeAuthToken = authToken?.trim() || null;
@@ -1489,8 +1506,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const canonicalRoomId =
       mode === 'space' ? space?.chatRoomId?.trim() || null : null;
     const bindRoomId = activeRoomId ?? canonicalRoomId;
-
-    if (bindRoomId) {
+    if (bindRoomId && !refusePersonPanelCall) {
       bindRoomContext(bindRoomId, activeSpaceSlug, activeAuthToken);
       return;
     }
@@ -1503,6 +1519,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     mode,
     roomId,
     showFloatingDock,
+    refusePersonPanelCall,
     space?.chatRoomId,
     spaceSlug,
   ]);
@@ -1833,84 +1850,94 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         })();
   }, [client, coherenceSlug, coherenceTitle, mode, roomId, space?.title]);
 
+  const refusePersonPanelCallStart = useCallback(() => {
+    setError(tMember('matrixPersonUnavailable'));
+    void leaveSpaceCall();
+    dismissSpaceCallError();
+  }, [dismissSpaceCallError, leaveSpaceCall, tMember]);
+
   const handleCallAudio = useCallback(() => {
-    if (inSpaceCall) return;
-    if (isStartConversation || !roomId?.trim()) {
-      setError(tMember('matrixPersonUnavailable'));
-      return;
-    }
-    markPendingCallStartNotify();
-    const launchContext = resolveCallLaunchContext();
-    if (spaceCallSelfStalePresence) {
-      refreshSpaceCall(
-        'audio',
-        roomId,
-        callSpaceSlug,
-        undefined,
-        authToken,
-        launchContext,
-      );
-      return;
-    }
-    void startAudioForRoom(
-      roomId,
-      callSpaceSlug,
-      undefined,
-      authToken,
-      launchContext,
-    );
+    runPersonPanelCallStart({
+      refuse: refusePersonPanelCall,
+      onRefuse: refusePersonPanelCallStart,
+      onStart: () => {
+        if (inSpaceCall) return;
+        markPendingCallStartNotify();
+        const launchContext = resolveCallLaunchContext();
+        if (spaceCallSelfStalePresence) {
+          refreshSpaceCall(
+            'audio',
+            roomId,
+            callSpaceSlug,
+            undefined,
+            authToken,
+            launchContext,
+          );
+          return;
+        }
+        void startAudioForRoom(
+          roomId,
+          callSpaceSlug,
+          undefined,
+          authToken,
+          launchContext,
+        );
+      },
+    });
   }, [
     authToken,
+    callSpaceSlug,
     inSpaceCall,
     markPendingCallStartNotify,
     refreshSpaceCall,
+    refusePersonPanelCall,
+    refusePersonPanelCallStart,
     resolveCallLaunchContext,
     roomId,
     spaceCallSelfStalePresence,
-    callSpaceSlug,
     startAudioForRoom,
-    isStartConversation,
-    tMember,
   ]);
 
   const handleCallVideo = useCallback(() => {
-    if (inSpaceCall) return;
-    if (isStartConversation || !roomId?.trim()) {
-      setError(tMember('matrixPersonUnavailable'));
-      return;
-    }
-    markPendingCallStartNotify();
-    const launchContext = resolveCallLaunchContext();
-    if (spaceCallSelfStalePresence) {
-      refreshSpaceCall(
-        'video',
-        roomId,
-        callSpaceSlug,
-        undefined,
-        authToken,
-        launchContext,
-      );
-      return;
-    }
-    void startVideoForRoom(
-      roomId,
-      callSpaceSlug,
-      undefined,
-      authToken,
-      launchContext,
-    );
+    runPersonPanelCallStart({
+      refuse: refusePersonPanelCall,
+      onRefuse: refusePersonPanelCallStart,
+      onStart: () => {
+        if (inSpaceCall) return;
+        markPendingCallStartNotify();
+        const launchContext = resolveCallLaunchContext();
+        if (spaceCallSelfStalePresence) {
+          refreshSpaceCall(
+            'video',
+            roomId,
+            callSpaceSlug,
+            undefined,
+            authToken,
+            launchContext,
+          );
+          return;
+        }
+        void startVideoForRoom(
+          roomId,
+          callSpaceSlug,
+          undefined,
+          authToken,
+          launchContext,
+        );
+      },
+    });
   }, [
     authToken,
+    callSpaceSlug,
     inSpaceCall,
     markPendingCallStartNotify,
     refreshSpaceCall,
+    refusePersonPanelCall,
+    refusePersonPanelCallStart,
     resolveCallLaunchContext,
     roomId,
     spaceCallSelfStalePresence,
-    callSpaceSlug,
     startVideoForRoom,
-    isStartConversation,
-    tMember,
   ]);
 
   /**

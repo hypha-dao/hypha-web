@@ -347,22 +347,20 @@ describe('CSH-QA-3–5 stability hardening (W7)', () => {
 
   it('does not start a call from Start-a-conversation without a Matrix peer', () => {
     const source = readCommonSource('human-right-panel.tsx');
-    expect(source).toContain('isStartConversation');
-    expect(source).toContain(
-      'isDirectConversation && !coherenceRoomId?.trim()',
-    );
+    expect(source).toContain('shouldRefusePersonPanelCall');
+    expect(source).toContain('runPersonPanelCallStart');
     expect(source).toContain("tMember('matrixPersonUnavailable')");
-    expect(source).toContain('if (isStartConversation || !roomId?.trim())');
     const audioAt = source.indexOf('const handleCallAudio = useCallback');
     const videoAt = source.indexOf('const handleCallVideo = useCallback');
     const audioStart = source.indexOf('startAudioForRoom', audioAt);
     const videoStart = source.indexOf('startVideoForRoom', videoAt);
-    expect(source.indexOf('isStartConversation', audioAt)).toBeLessThan(
+    expect(source.indexOf('runPersonPanelCallStart', audioAt)).toBeLessThan(
       audioStart,
     );
-    expect(source.indexOf('isStartConversation', videoAt)).toBeLessThan(
+    expect(source.indexOf('runPersonPanelCallStart', videoAt)).toBeLessThan(
       videoStart,
     );
+    expect(source).toContain('bindRoomId && !refusePersonPanelCall');
   });
 
   it('join invitation modal opens from Human panel', () => {
