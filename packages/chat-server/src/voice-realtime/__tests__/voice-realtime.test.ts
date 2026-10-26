@@ -122,7 +122,8 @@ describe('buildMemberHomeRealtimeInstructions', () => {
         'Assistant: Edgar in Hypha Energy needs projects.',
     });
     expect(instructions).toContain('voice relay');
-    expect(instructions).toContain('SCRIPT');
+    expect(instructions).toContain('---CHAT_REPLY---');
+    expect(instructions).toContain('never say "here is the script"');
     expect(instructions).toContain('listening context only');
     expect(instructions).not.toContain('Speak from those records');
     expect(instructions).not.toContain('member home facts are attached');

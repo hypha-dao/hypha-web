@@ -168,14 +168,14 @@ function buildRealtimeSpeakLanguageDirective(): string {
 }
 
 function buildRealtimeSpeakInstructions(text: string): string {
-  // Session instructions for member home look for a SCRIPT block. Without that
-  // label the model falls back to the session summary and repeats one line.
+  // The words after the marker are the only audio. Never name the marker
+  // ("script", "here is the script") or invent an intro from session context.
   return [
-    'Speak this SCRIPT verbatim — every word, in order. Do not paraphrase. Do not add greetings, questions, or another item. Do not use earlier turns or the session summary.',
+    'Read aloud only the chat reply below the marker. Start on its first word. Do not say script, here is the script, or any other label. Do not paraphrase. Do not add greetings, questions, or another item. Do not use earlier turns or the session summary.',
     buildRealtimeSpeakLanguageDirective(),
-    'Warm, natural pace. SCRIPT only.',
+    'Warm, natural pace.',
     '',
-    'SCRIPT:',
+    '---CHAT_REPLY---',
     text,
   ].join('\n');
 }
