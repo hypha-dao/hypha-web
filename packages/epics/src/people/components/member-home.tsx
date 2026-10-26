@@ -71,7 +71,6 @@ import {
   MemberHomeConnectionsWidget,
   MemberHomeWalletWidget,
 } from './member-home-side-widgets';
-import { useAiPanel } from '../../common/human-chat-panel-context';
 import {
   MemberHomeEnergyPanel,
   useMemberEnergyCommunities,
@@ -82,7 +81,6 @@ import {
   writeHomeView,
   type HomeView,
 } from './member-home-view';
-import { MemberHomeViewRail } from './member-home-view-rail';
 import './member-home-banner.css';
 
 type MemberHomeProps = {
@@ -207,7 +205,6 @@ export function MemberHome({
   onChooseOrientation,
 }: MemberHomeProps) {
   const t = useTranslations('MemberHome');
-  const { open: isAiOpen } = useAiPanel();
   useLayoutEffect(() => {
     const root = getMainColumnScrollRoot() ?? document.documentElement;
     const previousOverflow = root.style.overflowY;
@@ -343,9 +340,6 @@ export function MemberHome({
     <div className="@container/home relative isolate -mb-8 -mt-4 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] min-h-0 w-full min-w-0 flex-col overflow-hidden md:-mt-5 xl:h-[calc(100svh-var(--menu-top-height,4.5rem))] xl:pt-5">
       <MemberHomeBanner />
       <div className="flex min-h-0 w-full min-w-0 flex-1 flex-row overflow-hidden">
-        <div className={cn(isAiOpen ? 'hidden xl:contents' : 'contents')}>
-          <MemberHomeViewRail view={homeView} ready={viewReady} />
-        </div>
         <div
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[80rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]',

@@ -21,7 +21,9 @@ import {
   Globe2,
   Menu,
   PanelLeftClose,
+  Rows3,
   Settings,
+  Sparkles,
   Volume2,
   VolumeX,
 } from 'lucide-react';
@@ -77,10 +79,17 @@ import {
   isMessagesSectionNavActive,
   isMessagesSectionPath,
 } from '../people/components/messages-section-nav';
+import {
+  HOME_VIEW_EVENT,
+  readHomeView,
+  writeHomeView,
+  type HomeView,
+} from '../people/components/member-home-view';
 import { MobileSpacesSubnav } from '../people/components/mobile-spaces-subnav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
+import { isMemberHomePath } from './use-is-space-context';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 import {
   useCompactHeaderMode,
@@ -361,6 +370,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tNetwork = useTranslations('NetworkExchange');
   const tMyWallet = useTranslations('MyWallet');
   const tConnections = useTranslations('Connections');
+  const tHome = useTranslations('MemberHome');
+  const [homeView, setHomeView] = useState<HomeView>('ai');
+  useEffect(() => {
+    const sync = () => setHomeView(readHomeView());
+    sync();
+    window.addEventListener(HOME_VIEW_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(HOME_VIEW_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
   const router = useRouter();
   const config = useConfig();
   const { resolvedTheme } = useTheme();
@@ -707,6 +728,28 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     }));
   }, [lang, pathname, spaceSlug, tMyWallet]);
 
+  const homeNavItems = useMemo<NavItem[]>(() => {
+    if (spaceSlug || !isMemberHomePath(pathname)) return [];
+    return [
+      {
+        key: 'home-ai',
+        label: tHome('viewAi'),
+        icon: Sparkles,
+        href: '',
+        active: homeView === 'ai',
+        onSelect: () => writeHomeView('ai'),
+      },
+      {
+        key: 'home-classic',
+        label: tHome('viewClassic'),
+        icon: Rows3,
+        href: '',
+        active: homeView === 'classic',
+        onSelect: () => writeHomeView('classic'),
+      },
+    ];
+  }, [homeView, pathname, spaceSlug, tHome]);
+
   const messagesNavItems = useMemo<NavItem[]>(() => {
     if (spaceSlug || !lang) return [];
     if (!isMessagesSectionPath(pathname)) return [];
@@ -727,6 +770,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       ? networkNavItems
       : walletNavItems.length > 0
       ? walletNavItems
+      : homeNavItems.length > 0
+      ? homeNavItems
       : messagesNavItems;
 
   const isSpaceSettingsActive = useMemo(
@@ -899,6 +944,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           <button
             type="button"
             aria-label={item.label}
+            aria-current={item.active ? 'page' : undefined}
             disabled={isDisabled}
             onClick={() => {
               if (isDisabled) return;
