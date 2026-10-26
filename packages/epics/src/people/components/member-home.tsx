@@ -988,7 +988,7 @@ function ChatSkeleton() {
         </div>
       </div>
       <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
-        <div className="mx-5 mb-2 flex min-w-0 flex-wrap gap-1.5 pt-2 md:mx-4">
+        <div className="narrow-scrollbar mx-5 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto pt-2 md:mx-4">
           {chipWidths.map((width, index) => (
             <HomePulse
               key={width}
