@@ -205,7 +205,7 @@ type MemberRosterBundle = {
   }>;
   peopleRows: Array<{
     id: number;
-    slug: string;
+    slug: string | null;
     name: string | null;
     surname: string | null;
     nickname: string | null;

@@ -69,10 +69,14 @@ function assistantAskedForSignalPost(text: string | null | undefined): boolean {
 }
 
 function foldChip(text: string) {
-  return foldAsked(text)
-    .replace(/^[¿¡]+/u, '')
-    .replace(/[.!?]+$/u, '')
-    .trim();
+  let chip = foldAsked(text);
+  while (chip.startsWith('¿') || chip.startsWith('¡')) {
+    chip = chip.slice(1);
+  }
+  while (chip.endsWith('.') || chip.endsWith('!') || chip.endsWith('?')) {
+    chip = chip.slice(0, -1);
+  }
+  return chip.trim();
 }
 
 /** Chips that already put a list on screen. The reply must not open another item. */
