@@ -93,8 +93,10 @@ export function MemberHomePeople({
     // PM / group rooms are private — never attach a space slug or the AI and
     // @-mentions inherit that space's roster.
     const peerSlug = person?.slug?.trim();
+    const peerId = person?.id && person.id > 0 ? person.id : undefined;
     openCoherenceChat(roomId, title, '', null, null, {
-      peerPerson: peerSlug ? { slug: peerSlug } : null,
+      peerPerson:
+        peerSlug || peerId ? { slug: peerSlug || '', id: peerId } : null,
     });
   }
 

@@ -345,22 +345,26 @@ describe('CSH-QA-3–5 stability hardening (W7)', () => {
     expect(dock).toContain('showScaleWarning={showCallScaleWarning}');
   });
 
-  it('does not start a call from Start-a-conversation without a Matrix peer', () => {
+  it('ensures a DM room before starting a person-panel call', () => {
     const source = readCommonSource('human-right-panel.tsx');
     expect(source).toContain('shouldRefusePersonPanelCall');
     expect(source).toContain('shouldLeaveCallOnPersonPanelRefuse');
-    expect(source).toContain('runPersonPanelCallStart');
-    expect(source).toContain("tMember('matrixPersonUnavailable')");
+    expect(source).toContain('planPersonPanelCall');
+    expect(source).toContain('runPersonPanelCallPlan');
+    expect(source).toContain('openOrEnsurePersonRoom');
+    expect(source).toContain("tMember('callFailed')");
+    const ensureAt = source.indexOf('const ensurePersonPanelCallRoom');
+    const launchAt = source.indexOf('const launchPersonPanelCall');
     const audioAt = source.indexOf('const handleCallAudio = useCallback');
     const videoAt = source.indexOf('const handleCallVideo = useCallback');
-    const audioStart = source.indexOf('startAudioForRoom', audioAt);
-    const videoStart = source.indexOf('startVideoForRoom', videoAt);
-    expect(source.indexOf('runPersonPanelCallStart', audioAt)).toBeLessThan(
-      audioStart,
-    );
-    expect(source.indexOf('runPersonPanelCallStart', videoAt)).toBeLessThan(
-      videoStart,
-    );
+    const audioStart = source.indexOf('startAudioForRoom', launchAt);
+    const videoStart = source.indexOf('startVideoForRoom', launchAt);
+    expect(ensureAt).toBeGreaterThan(-1);
+    expect(launchAt).toBeGreaterThan(ensureAt);
+    expect(audioAt).toBeGreaterThan(launchAt);
+    expect(videoAt).toBeGreaterThan(audioAt);
+    expect(audioStart).toBeGreaterThan(launchAt);
+    expect(videoStart).toBeGreaterThan(audioStart);
     expect(source).toContain('bindRoomId && !refusePersonPanelCall');
   });
 

@@ -85,7 +85,11 @@ import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 import { Empty } from './empty';
 import { notifyConversationUnreadChanged } from '../people/components/conversation-unread-event';
-import { rememberSignalThreadRooms } from '../people/components/member-connections';
+import {
+  rememberPersonDirectRoom,
+  rememberSignalThreadRooms,
+} from '../people/components/member-connections';
+import { openOrEnsurePersonRoom } from '../people/components/open-person-room';
 import { getRootSpace } from './get-root-space';
 
 import {
@@ -196,7 +200,8 @@ import { directConversationWelcomeName } from './human-chat-panel/direct-convers
 import {
   callAppliesToCurrentChatRoom as chatRoomOwnsCallSession,
   hasHumanTimelineMessages,
-  runPersonPanelCallStart,
+  planPersonPanelCall,
+  runPersonPanelCallPlan,
   shouldLeaveCallOnPersonPanelRefuse,
   shouldRefusePersonPanelCall,
 } from './human-chat-panel/person-panel-call';
@@ -1858,6 +1863,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         })();
   }, [client, coherenceSlug, coherenceTitle, mode, roomId, space?.title]);
 
+  const peerPersonId =
+    isDirectConversation &&
+    coherencePeerPerson?.id &&
+    coherencePeerPerson.id > 0
+      ? coherencePeerPerson.id
+      : null;
+  const peerPersonIds = useMemo(
+    () => (peerPersonId ? [peerPersonId] : []),
+    [peerPersonId],
+  );
+  const {
+    personIdToMatrixUserId: peerPersonIdToMatrixUserId,
+    isLoading: peerMatrixIdsLoading,
+  } = useMatrixUserIdsByPersonIds({
+    personIds: peerPersonIds,
+  });
+  const peerMatrixIdsRef = useRef(peerPersonIdToMatrixUserId);
+  peerMatrixIdsRef.current = peerPersonIdToMatrixUserId;
+  const peerMatrixIdsLoadingRef = useRef(peerMatrixIdsLoading);
+  peerMatrixIdsLoadingRef.current = peerMatrixIdsLoading;
+  const personPanelCallEnsureRef = useRef(false);
+
   const refusePersonPanelCallStart = useCallback(() => {
     setError(tMember('matrixPersonUnavailable'));
     if (shouldLeaveCallOnPersonPanelRefuse(callSessionRoomId, roomId)) {
@@ -1872,89 +1899,151 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     tMember,
   ]);
 
-  const handleCallAudio = useCallback(() => {
-    runPersonPanelCallStart({
-      refuse: refusePersonPanelCall,
-      onRefuse: refusePersonPanelCallStart,
-      onStart: () => {
-        if (inSpaceCall) return;
-        markPendingCallStartNotify();
-        const launchContext = resolveCallLaunchContext();
-        if (spaceCallSelfStalePresence) {
-          refreshSpaceCall(
-            'audio',
-            roomId,
-            callSpaceSlug,
-            undefined,
-            authToken,
-            launchContext,
-          );
-          return;
-        }
-        void startAudioForRoom(
-          roomId,
-          callSpaceSlug,
-          undefined,
-          authToken,
-          launchContext,
-        );
-      },
-    });
+  const waitForPeerMatrixUserId = useCallback(async (personId: number) => {
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const mxid = peerMatrixIdsRef.current[personId]?.trim();
+      if (mxid) return mxid;
+      if (!peerMatrixIdsLoadingRef.current && attempt > 2) return null;
+      await new Promise((resolve) => window.setTimeout(resolve, 100));
+    }
+    return peerMatrixIdsRef.current[personId]?.trim() || null;
+  }, []);
+
+  const ensurePersonPanelCallRoom = useCallback(async () => {
+    const personId = peerPersonId;
+    const title = coherenceTitle?.trim() || '';
+    const fallback = roomId?.trim() || coherenceRoomId?.trim() || '';
+    if (personId) {
+      try {
+        const ensured = await openOrEnsurePersonRoom({
+          getMatrix: () => matrixRef.current,
+          personId,
+          title,
+          waitForMatrixUserId: waitForPeerMatrixUserId,
+        });
+        rememberPersonDirectRoom(personId, ensured);
+        openCoherenceChat(ensured, title, '', null, null, {
+          peerPerson: coherencePeerPerson,
+        });
+        setRoomId(ensured);
+        bindRoomContext(ensured, null, authToken?.trim() || null);
+        return ensured;
+      } catch (error) {
+        if (!fallback) throw error;
+      }
+    }
+    if (fallback) {
+      try {
+        await matrixRef.current.joinRoom(fallback);
+      } catch {
+        // Already joined, or join failed; still try the call on this room.
+      }
+      return fallback;
+    }
+    throw new Error('Person panel call has no DM room to ensure');
   }, [
     authToken,
-    callSpaceSlug,
-    inSpaceCall,
-    markPendingCallStartNotify,
-    refreshSpaceCall,
-    refusePersonPanelCall,
-    refusePersonPanelCallStart,
-    resolveCallLaunchContext,
+    bindRoomContext,
+    coherencePeerPerson,
+    coherenceRoomId,
+    coherenceTitle,
+    openCoherenceChat,
+    peerPersonId,
     roomId,
-    spaceCallSelfStalePresence,
-    startAudioForRoom,
+    waitForPeerMatrixUserId,
   ]);
 
-  const handleCallVideo = useCallback(() => {
-    runPersonPanelCallStart({
-      refuse: refusePersonPanelCall,
-      onRefuse: refusePersonPanelCallStart,
-      onStart: () => {
-        if (inSpaceCall) return;
-        markPendingCallStartNotify();
-        const launchContext = resolveCallLaunchContext();
-        if (spaceCallSelfStalePresence) {
-          refreshSpaceCall(
-            'video',
-            roomId,
-            callSpaceSlug,
-            undefined,
-            authToken,
-            launchContext,
-          );
-          return;
-        }
-        void startVideoForRoom(
-          roomId,
+  const launchPersonPanelCall = useCallback(
+    (kind: 'audio' | 'video', targetRoomId: string) => {
+      const callRoomId = targetRoomId.trim();
+      if (!callRoomId) return;
+      if (inSpaceCall) return;
+      markPendingCallStartNotify();
+      const launchContext = resolveCallLaunchContext();
+      if (spaceCallSelfStalePresence) {
+        refreshSpaceCall(
+          kind,
+          callRoomId,
           callSpaceSlug,
           undefined,
           authToken,
           launchContext,
         );
-      },
-    });
-  }, [
-    authToken,
-    callSpaceSlug,
-    inSpaceCall,
-    markPendingCallStartNotify,
-    refreshSpaceCall,
-    refusePersonPanelCall,
-    refusePersonPanelCallStart,
-    resolveCallLaunchContext,
-    roomId,
-    spaceCallSelfStalePresence,
-    startVideoForRoom,
-  ]);
+        return;
+      }
+      const start = kind === 'audio' ? startAudioForRoom : startVideoForRoom;
+      void start(
+        callRoomId,
+        callSpaceSlug,
+        undefined,
+        authToken,
+        launchContext,
+      );
+    },
+    [
+      authToken,
+      callSpaceSlug,
+      inSpaceCall,
+      markPendingCallStartNotify,
+      refreshSpaceCall,
+      resolveCallLaunchContext,
+      spaceCallSelfStalePresence,
+      startAudioForRoom,
+      startVideoForRoom,
+    ],
+  );
+
+  const startPersonPanelCall = useCallback(
+    (kind: 'audio' | 'video') => {
+      const plan = planPersonPanelCall({
+        isDirectConversation,
+        roomId,
+        coherenceRoomId,
+        hasHumanMessages,
+      });
+      if (
+        plan.action === 'ensure-then-start' &&
+        personPanelCallEnsureRef.current
+      ) {
+        return;
+      }
+      if (plan.action === 'ensure-then-start') {
+        personPanelCallEnsureRef.current = true;
+      }
+      void runPersonPanelCallPlan({
+        plan,
+        ensureRoom: ensurePersonPanelCallRoom,
+        onRefuse: refusePersonPanelCallStart,
+        onStart: (targetRoomId) => launchPersonPanelCall(kind, targetRoomId),
+      })
+        .catch(() => {
+          setError(tMember('callFailed'));
+        })
+        .finally(() => {
+          if (plan.action === 'ensure-then-start') {
+            personPanelCallEnsureRef.current = false;
+          }
+        });
+    },
+    [
+      coherenceRoomId,
+      ensurePersonPanelCallRoom,
+      hasHumanMessages,
+      isDirectConversation,
+      launchPersonPanelCall,
+      refusePersonPanelCallStart,
+      roomId,
+      tMember,
+    ],
+  );
+
+  const handleCallAudio = useCallback(() => {
+    startPersonPanelCall('audio');
+  }, [startPersonPanelCall]);
+
+  const handleCallVideo = useCallback(() => {
+    startPersonPanelCall('video');
+  }, [startPersonPanelCall]);
 
   /**
    * "Join this room's call instead" — for the case where the room being viewed has its own

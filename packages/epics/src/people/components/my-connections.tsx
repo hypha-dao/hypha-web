@@ -1938,7 +1938,13 @@ export function MyConnections({
     if (target?.kind === 'listed-room') {
       rememberPersonDirectRoom(row.person.id, target.roomId);
       openCoherenceChat(target.roomId, target.title, '', null, null, {
-        peerPerson: target.peerSlug ? { slug: target.peerSlug } : null,
+        peerPerson:
+          target.peerSlug || row.person.id > 0
+            ? {
+                slug: target.peerSlug || row.person.slug?.trim() || '',
+                id: row.person.id > 0 ? row.person.id : undefined,
+              }
+            : null,
       });
       return;
     }

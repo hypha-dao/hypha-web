@@ -5,23 +5,63 @@ export function hasHumanTimelineMessages(
   return messages.some((message) => !message.isSynthetic);
 }
 
-/**
- * Phone / video on a person panel must not start Element Call when the
- * direct conversation has no room yet, or when the panel room disagrees
- * with the coherence room (stale bind during a switch). An existing joined
- * DM is callable even if the timeline is still empty.
- * `hasHumanMessages` is unused for refusal; callers may still pass it.
- */
-export function shouldRefusePersonPanelCall(input: {
+export type PersonPanelCallPlan =
+  | { action: 'refuse' }
+  | { action: 'start'; roomId: string }
+  | { action: 'ensure-then-start' };
+
+export type PersonPanelCallInput = {
   isDirectConversation: boolean;
   roomId?: string | null;
   coherenceRoomId?: string | null;
   hasHumanMessages: boolean;
-}): boolean {
-  if (!input.isDirectConversation) return false;
-  if (!input.roomId?.trim() || !input.coherenceRoomId?.trim()) return true;
-  if (input.roomId.trim() !== input.coherenceRoomId.trim()) return true;
-  return false;
+};
+
+/**
+ * Start-a-conversation / empty DMs are callable: ensure a real DM first.
+ * Refuse only when the panel room and coherence room disagree (stale switch).
+ */
+export function planPersonPanelCall(
+  input: PersonPanelCallInput,
+): PersonPanelCallPlan {
+  const room = input.roomId?.trim() || '';
+  const coherence = input.coherenceRoomId?.trim() || '';
+  if (!input.isDirectConversation) {
+    return { action: 'start', roomId: room };
+  }
+  if (room && coherence && room !== coherence) return { action: 'refuse' };
+  if (room && coherence && room === coherence && input.hasHumanMessages) {
+    return { action: 'start', roomId: room };
+  }
+  return { action: 'ensure-then-start' };
+}
+
+export function shouldRefusePersonPanelCall(
+  input: PersonPanelCallInput,
+): boolean {
+  return planPersonPanelCall(input).action === 'refuse';
+}
+
+/** Ensure a usable DM, then start the call against that room. */
+export async function runPersonPanelCallPlan(input: {
+  plan: PersonPanelCallPlan;
+  ensureRoom: () => Promise<string>;
+  onRefuse: () => void;
+  onStart: (roomId: string) => void;
+}): Promise<void> {
+  if (input.plan.action === 'refuse') {
+    input.onRefuse();
+    return;
+  }
+  if (input.plan.action === 'start') {
+    input.onStart(input.plan.roomId);
+    return;
+  }
+  const roomId = (await input.ensureRoom()).trim();
+  if (!roomId) {
+    throw new Error('Person panel call requires a Matrix room');
+  }
+  input.onStart(roomId);
 }
 
 /**
