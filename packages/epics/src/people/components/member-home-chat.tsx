@@ -349,12 +349,6 @@ function straightforwardHomeText(text: string) {
     })
     .join(' ')
     .trim();
-  if (
-    cleaned.length === 0 &&
-    /approv|what would you like to decide|want to take a look/i.test(text)
-  ) {
-    return 'You can now decide on the proposal card.';
-  }
   return cleaned;
 }
 

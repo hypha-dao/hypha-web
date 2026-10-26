@@ -137,13 +137,16 @@ describe('formatMemberHomeFacts', () => {
     );
     expect(facts).toContain("I've approved");
     expect(facts).toContain('You can now decide on the proposal card.');
+    expect(facts).toContain("Have you seen Ronnie's proposal");
+    expect(facts).toContain('Kuan has asked to join');
+    expect(facts).toContain('Never say card, screen, or button.');
     expect(facts).toContain('speak to them by name');
     expect(facts).toContain('Never say they are on their home');
     expect(facts).toContain(
       'A proposal they have already voted on is absent from the waiting list.',
     );
     expect(facts).toContain(
-      'When action=outcome the vote is closed. Say the say= sentence and stop.',
+      'When action=outcome the vote is closed. Use passed, participation, and unity, and phrase them freshly.',
     );
     expect(facts).toContain("I don't want to look");
     expect(facts).toContain('You are not in the decision');
@@ -363,9 +366,7 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('slug=invite-pollinate');
     expect(facts).toContain('This is a new reply under their message');
     expect(facts).toContain('Do not rewrite an earlier reply');
-    expect(facts).not.toContain(
-      'This reply is about that card only. The card already shows the title',
-    );
+    expect(facts).not.toContain('This reply is about that content only');
   });
 
   it('names one decision and withholds the rest', () => {
