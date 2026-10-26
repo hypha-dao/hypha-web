@@ -1230,7 +1230,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   updateSpaceBySlugRef.current = updateSpaceBySlug;
   const updateCoherenceBySlugRef = useRef(updateCoherenceBySlug);
   updateCoherenceBySlugRef.current = updateCoherenceBySlug;
-  const { open: sidebarOpen, isMobile: isSidebarMobile } = useSidebar();
+  const {
+    open: sidebarOpen,
+    isMobile: isSidebarMobile,
+    setOpenMobile,
+  } = useSidebar();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuthentication();
 
   const currentUserAvatarUrl = me?.avatarUrl;
@@ -1773,7 +1777,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
 
     closeCoherenceChat();
-    if (isConnectionsPage) closeHumanChatPanel();
+    if (isConnectionsPage) {
+      closeHumanChatPanel();
+      setOpenMobile(false);
+    }
   }, [
     closeCoherenceChat,
     closeHumanChatPanel,
@@ -1781,6 +1788,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     pathname,
     router,
     searchParams,
+    setOpenMobile,
   ]);
 
   const pendingCallStartNotifyRef = useRef(false);

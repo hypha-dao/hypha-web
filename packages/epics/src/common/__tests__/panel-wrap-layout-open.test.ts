@@ -7,10 +7,20 @@ const source = readFileSync(
   'utf8',
 );
 
+function rightPanelSidebarOnOpenChangeBody() {
+  const match = source.match(
+    /open=\{rightOpen\}\s+onOpenChange=\{\(open\) => \{([\s\S]*?)\n        \}\}/,
+  );
+  expect(match?.[1]).toBeTruthy();
+  return match![1];
+}
+
 describe('chat panel open from Messages', () => {
   it('sets the right panel open instead of toggling it', () => {
-    expect(source).toContain('openHumanChatPanel()');
-    expect(source).toContain('closeHumanChatPanel()');
-    expect(source).not.toContain('if (open !== rightOpen) toggleRight()');
+    const body = rightPanelSidebarOnOpenChangeBody();
+    expect(body).toMatch(/if \(open\) \{\s*openHumanChatPanel\(\);/);
+    expect(body).toMatch(/else \{\s*closeHumanChatPanel\(\);/);
+    expect(body).not.toContain('toggleRight()');
+    expect(body).not.toContain('if (open !== rightOpen)');
   });
 });
