@@ -55,7 +55,7 @@
  */
 .richtext-editor-content-host .tiptap::selection,
 .richtext-editor-content-host .tiptap ::selection {
-  background-color: color-mix(in srgb, var(--accent-9) 36%, transparent);
+  background-color: color-mix(in srgb, var(--accent-9) 44%, transparent);
   color: var(--foreground);
 }
 
