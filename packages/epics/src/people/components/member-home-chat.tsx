@@ -36,7 +36,6 @@ import {
   convertFilesToParts,
   type AiPanelDraftAttachment,
 } from '../../common/ai-panel';
-import { prepareAssistantTextForSpeech } from '../../common/onboarding-voice-speech';
 import { buildRecentTranscriptSummaryFromChatMessages } from '../../common/onboarding-voice-transcript-bridge';
 import { buildMemberHomeVoiceSessionContext } from '../../common/space-voice-session-context';
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
@@ -316,12 +315,21 @@ function straightforwardHomeText(text: string) {
     /i['’]ll show you|here(?:'|’)s the proposal|here is the proposal|the proposal titled|if you approve|your approval|can you review|do you approve|would you approve|would you like to approve|what would you like to decide|want to take a look|i(?:'’)?ve approved|\bi approved\b|\bi have approved\b|\bi accepted\b|i(?:'’)?ve accepted|\bi voted\b|you can now see the message|think about it|approval is required|to proceed with|how (?:will|would) you vote|let me know if you|^sure[.!]?$/i.test(
       sentence,
     );
-  const cleaned = text
+  const sentences = text
     .replace(/\*\*/g, '')
     .split(/\n+/)
     .flatMap((paragraph) => paragraph.split(/(?<=[.!?])\s+/))
     .map((sentence) => sentence.trim())
-    .filter((sentence) => sentence.length > 0 && !steers(sentence))
+    .filter((sentence) => sentence.length > 0);
+  // A sentence still arriving has no ending mark. Hiding it as soon as it
+  // starts to look like narration blanks the bubble, then the next sentence
+  // mounts it again.
+  const cleaned = sentences
+    .filter((sentence, index) => {
+      const stillArriving =
+        index === sentences.length - 1 && !/[.!?]$/.test(sentence);
+      return stillArriving || !steers(sentence);
+    })
     .join(' ')
     .trim();
   if (
@@ -335,17 +343,16 @@ function straightforwardHomeText(text: string) {
 
 /**
  * Chat bubble and spoken voice must share one script. Board copy replaces a
- * catalogue dump; speech prep strips what TTS would skip or truncate.
+ * catalogue dump. Speech prep that waits for a full sentence hides the line
+ * and then shows it again, so the bubble keeps this text as it arrives.
  */
 function homeAssistantScript(input: {
   displayText: string;
   stripDecisionCue?: boolean;
 }) {
   const base = input.displayText.trim();
-  const withoutCue = input.stripDecisionCue
-    ? base.replace(/You can now decide on the proposal card\.?/gi, '').trim()
-    : base;
-  return prepareAssistantTextForSpeech(withoutCue);
+  if (!input.stripDecisionCue) return base;
+  return base.replace(/You can now decide on the proposal card\.?/gi, '').trim();
 }
 
 const HOME_LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
@@ -409,6 +416,9 @@ export function MemberHomeChat({
   const gliding = useRef(false);
   const pinnedToEnd = useRef(true);
   const settlingIds = useRef(new Set<string>());
+  // Last non-empty line for the message that is still streaming. A cleaner
+  // gap must not unmount the bubble and play the entrance animation again.
+  const heldBubbleText = useRef(new Map<string, string>());
   const droppedLine = useRef(t('threadDropped'));
   useLayoutEffect(() => {
     droppedLine.current = t('threadDropped');
@@ -709,34 +719,68 @@ export function MemberHomeChat({
     [intelligence],
   );
 
-  /** Same string the bubble shows — Realtime must speak this script. */
+  /**
+   * Same string the bubble shows. While the latest reply is still streaming,
+   * a momentary empty clean keeps the previous words so the row does not
+   * unmount. Realtime speaks this script, never the reply before it.
+   */
+  const shownAssistantText = useMemo(() => {
+    const shown = new Map<string, string>();
+    const lastMessage = homeMessages[homeMessages.length - 1];
+    const live = new Set<string>();
+    for (const message of homeMessages) {
+      if (message.role !== 'assistant') continue;
+      live.add(message.id);
+      const rawText = messageText(message).replace(/\*\*/g, '');
+      const board = rawText
+        ? (homeBoardFromMessage(message) ??
+          memberHomeSignalCatalogue(rawText, intelligence.spaces, lang))
+        : null;
+      const spokenItem = rawText
+        ? homeItemForMessage(cardItems, message)
+        : null;
+      const script = rawText
+        ? homeAssistantScript({
+            displayText: board
+              ? t('boardInstead', { space: board.title })
+              : straightforwardHomeText(rawText),
+            stripDecisionCue: Boolean(
+              spokenItem && spokenItem.action !== 'decision',
+            ),
+          })
+        : '';
+      if (script) heldBubbleText.current.set(message.id, script);
+      const streamingThis = isStreaming && message.id === lastMessage?.id;
+      const text =
+        script ||
+        (streamingThis
+          ? (heldBubbleText.current.get(message.id) ?? '')
+          : '');
+      if (!streamingThis && !script) heldBubbleText.current.delete(message.id);
+      if (text) shown.set(message.id, text);
+    }
+    for (const id of [...heldBubbleText.current.keys()]) {
+      if (!live.has(id)) heldBubbleText.current.delete(id);
+    }
+    return shown;
+  }, [cardItems, homeMessages, intelligence.spaces, isStreaming, lang, t]);
+
   const lastAssistantText = useMemo(() => {
     for (let i = homeMessages.length - 1; i >= 0; i -= 1) {
       const message = homeMessages[i];
       if (!message || message.role !== 'assistant') continue;
-      const rawText = messageText(message).replace(/\*\*/g, '');
-      if (!rawText) continue;
-      const board =
-        homeBoardFromMessage(message) ??
-        memberHomeSignalCatalogue(rawText, intelligence.spaces, lang);
-      const spokenItem = homeItemForMessage(cardItems, message);
-      return homeAssistantScript({
-        displayText: board
-          ? t('boardInstead', { space: board.title })
-          : straightforwardHomeText(rawText),
-        stripDecisionCue: Boolean(
-          spokenItem && spokenItem.action !== 'decision',
-        ),
-      });
+      if (!messageText(message)) continue;
+      return shownAssistantText.get(message.id) ?? '';
     }
     return '';
-  }, [cardItems, homeMessages, intelligence.spaces, lang, t]);
+  }, [homeMessages, shownAssistantText]);
 
   const voiceInterview = useOnboardingVoiceDiscovery({
     enabled: soundReady && dialogue && !isAuthLoading && isAuthenticated,
     captureMicrophone: micOn,
     speakReplies: soundOn,
     speakEarlyLeadIn: false,
+    speakDisplayedText: true,
     isStreaming,
     lastAssistantText,
     locale: lang,
@@ -1055,20 +1099,9 @@ export function MemberHomeChat({
                 ? homeBoardFromMessage(message) ??
                   memberHomeSignalCatalogue(rawText, intelligence.spaces, lang)
                 : null;
-            const spokenItem =
-              message.role === 'assistant'
-                ? homeItemForMessage(cardItems, message)
-                : null;
             const text =
               message.role === 'assistant'
-                ? homeAssistantScript({
-                    displayText: board
-                      ? t('boardInstead', { space: board.title })
-                      : straightforwardHomeText(rawText),
-                    stripDecisionCue: Boolean(
-                      spokenItem && spokenItem.action !== 'decision',
-                    ),
-                  })
+                ? (shownAssistantText.get(message.id) ?? '')
                 : rawText;
             const pinnedItem =
               message.role === 'assistant'

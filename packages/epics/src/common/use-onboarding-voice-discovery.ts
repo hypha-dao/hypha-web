@@ -41,6 +41,11 @@ type UseOnboardingVoiceDiscoveryOptions = {
   speakReplies?: boolean;
   /** When false, wait for the full reply before speaking (member home). */
   speakEarlyLeadIn?: boolean;
+  /**
+   * When true, read the chat line as shown. Home uses this so a short reply
+   * is spoken instead of the previous bubble.
+   */
+  speakDisplayedText?: boolean;
 };
 
 export function useOnboardingVoiceDiscovery(
@@ -77,6 +82,7 @@ export function useOnboardingVoiceDiscovery(
     captureMicrophone: options.captureMicrophone,
     speakReplies: options.speakReplies,
     speakEarlyLeadIn: options.speakEarlyLeadIn,
+    speakDisplayedText: options.speakDisplayedText,
   });
 
   const voice = useRealtime ? realtime : webSpeech;
