@@ -274,6 +274,7 @@ export function HumanSidebarTrigger() {
               slug: focusedSpaceChat.slug,
               title: focusedSpaceChat.title,
               description: focusedSpaceChat.description,
+              memberRoomId: focusedSpaceChat.roomId,
             });
             return;
           }

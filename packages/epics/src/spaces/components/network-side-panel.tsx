@@ -172,6 +172,7 @@ export function NetworkSidePanel({
       slug: focusedSlug,
       title: focusedTitle,
       description: focusedDescription,
+      memberRoomId: focusedRoomId,
     });
   };
 

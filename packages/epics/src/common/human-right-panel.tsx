@@ -33,6 +33,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import useSWR from 'swr';
 import {
   HYPHA_ROOM_TYPES,
+  distinctPublicRoomId,
   useMatrix,
   useCoherenceMutationsWeb2Rsc,
   useHookRegistry,
@@ -3750,7 +3751,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     const openingSpaceSlug = coherenceSpaceSlug?.trim() || '';
     // A selected space may only know its slug until the space record loads.
-    if (openingSpaceSlug && !coherenceRoomId?.trim() && isSpaceLoading) {
+    // Public map→chat also waits: we need `spaces.chatRoomId` so a misbound
+    // `#hypha-public-{slug}` alias is not joined as the member room.
+    if (
+      openingSpaceSlug &&
+      isSpaceLoading &&
+      (coherencePublic || !coherenceRoomId?.trim())
+    ) {
       return;
     }
 
@@ -3770,7 +3777,24 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       try {
         let targetRoomId = coherenceRoomId?.trim() || null;
         const openingSpaceSlug = coherenceSpaceSlug?.trim() || '';
-        if (!targetRoomId && openingSpaceSlug) {
+        if (coherencePublic) {
+          if (!openingSpaceSlug) {
+            throw new Error('Failed to open the public room');
+          }
+          const memberRoomId =
+            space?.chatRoomId?.trim() ||
+            getStoredRoomId(openingSpaceSlug) ||
+            null;
+          const { roomId: publicRoomId } =
+            await matrixRef.current.ensurePublicRoom(
+              openingSpaceSlug,
+              memberRoomId,
+            );
+          if (!distinctPublicRoomId(publicRoomId, memberRoomId)) {
+            throw new Error('Public channel resolved to the space channel');
+          }
+          targetRoomId = publicRoomId;
+        } else if (!targetRoomId && openingSpaceSlug) {
           targetRoomId =
             space?.chatRoomId?.trim() ||
             getStoredRoomId(openingSpaceSlug) ||
@@ -3778,7 +3802,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
 
         // A space room must not be created as a signal room.
-        if (!targetRoomId && openingSpaceSlug) {
+        // Public map→chat must not create/join `spaces.chatRoomId` either.
+        if (!targetRoomId && openingSpaceSlug && !coherencePublic) {
           if (blockSpaceChatForMembership) {
             setIsJoining(false);
             return;
@@ -3960,6 +3985,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceSlug,
     coherenceDescription,
     coherenceSpaceSlug,
+    coherencePublic,
     isSpaceLoading,
     space?.chatRoomId,
     space?.title,

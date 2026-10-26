@@ -10,12 +10,21 @@ const headerTrigger = readFileSync(
   resolve(__dirname, '../panel-wrap-layout.tsx'),
   'utf8',
 );
+const openPublicChatHook = readFileSync(
+  resolve(__dirname, '../use-open-space-public-chat.ts'),
+  'utf8',
+);
+const humanRightPanel = readFileSync(
+  resolve(__dirname, '../human-right-panel.tsx'),
+  'utf8',
+);
 
 describe('all-spaces map chat entry points', () => {
   it('opens the public channel from the map Connect button', () => {
     expect(sidePanel).toContain('useOpenSpacePublicChat');
     expect(sidePanel).toContain('void openPublicChat({');
     expect(sidePanel).toContain('slug: focusedSlug');
+    expect(sidePanel).toContain('memberRoomId: focusedRoomId');
     expect(sidePanel).not.toMatch(/openCoherenceChat\(\s*focusedRoomId/);
     expect(sidePanel).toContain("error === 'matrix'");
     expect(sidePanel).toContain("tCommon('signIn')");
@@ -28,6 +37,7 @@ describe('all-spaces map chat entry points', () => {
     expect(headerTrigger).toContain('if (focusedSpaceChat?.slug)');
     expect(headerTrigger).toContain('void openPublicChat({');
     expect(headerTrigger).toContain('slug: focusedSpaceChat.slug');
+    expect(headerTrigger).toContain('memberRoomId: focusedSpaceChat.roomId');
     expect(headerTrigger).not.toMatch(
       /openCoherenceChat\(\s*focusedSpaceChat\.roomId/,
     );
@@ -35,5 +45,27 @@ describe('all-spaces map chat entry points', () => {
     expect(headerTrigger).toContain("tCommon('signIn')");
     expect(headerTrigger).toContain("t('failedToJoinRoom')");
     expect(headerTrigger).not.toContain('alert(');
+  });
+
+  it('refuses a public alias that still points at the member room', () => {
+    expect(openPublicChatHook).toContain(
+      'ensurePublicRoom(slug, memberRoomId)',
+    );
+    expect(openPublicChatHook).toContain(
+      'distinctPublicRoomId(roomId, memberRoomId)',
+    );
+    expect(openPublicChatHook).toContain(
+      "throw new Error('Public channel resolved to the space channel')",
+    );
+    expect(humanRightPanel).toContain('if (coherencePublic)');
+    expect(humanRightPanel).toContain(
+      'await matrixRef.current.ensurePublicRoom(',
+    );
+    expect(humanRightPanel).toContain(
+      'if (!distinctPublicRoomId(publicRoomId, memberRoomId))',
+    );
+    expect(humanRightPanel).toContain(
+      '} else if (!targetRoomId && openingSpaceSlug) {',
+    );
   });
 });

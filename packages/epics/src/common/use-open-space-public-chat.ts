@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useMatrix } from '@hypha-platform/core/client';
+import { distinctPublicRoomId, useMatrix } from '@hypha-platform/core/client';
 
 import { useHumanChatPanel } from './human-chat-panel-context';
 
@@ -17,6 +17,8 @@ export function useOpenSpacePublicChat() {
       slug: string;
       title: string;
       description?: string | null;
+      /** `spaces.chatRoomId` — so a misbound public alias can be detached. */
+      memberRoomId?: string | null;
     }) => {
       const slug = space.slug.trim();
       if (!slug || opening) return false;
@@ -27,9 +29,14 @@ export function useOpenSpacePublicChat() {
       setOpening(true);
       setError(null);
       try {
-        const { roomId } = await ensurePublicRoom(slug);
+        const memberRoomId = space.memberRoomId?.trim() || null;
+        const { roomId } = await ensurePublicRoom(slug, memberRoomId);
+        const publicRoomId = distinctPublicRoomId(roomId, memberRoomId);
+        if (!publicRoomId) {
+          throw new Error('Public channel resolved to the space channel');
+        }
         openCoherenceChat(
-          roomId,
+          publicRoomId,
           space.title,
           '',
           space.description ?? null,
