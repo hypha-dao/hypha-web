@@ -1218,6 +1218,32 @@ export function MemberHomeChat({
                         mine ? 'max-w-[85%] text-right' : 'flex-1',
                       )}
                     >
+                      {!mine && pinnedItem ? (
+                        <MemberHomeThreadCard
+                          chat
+                          lang={lang}
+                          item={pinnedItem}
+                          done={actedKeySet.has(
+                            memberHomeThreadItemKey(pinnedItem),
+                          )}
+                          proposal={
+                            pinnedItem.kind === 'proposal'
+                              ? intelligence.proposals.find(
+                                  (proposal) =>
+                                    proposal.slug === pinnedItem.slug,
+                                ) ?? null
+                              : null
+                          }
+                          onAsk={(ask, hidden) => {
+                            void send(ask, Boolean(hidden));
+                          }}
+                          onReach={(person, mode) =>
+                            mode === 'call'
+                              ? onCallPerson(person)
+                              : onChatPerson(person)
+                          }
+                        />
+                      ) : null}
                       {text ? (
                         <p
                           className={cn(
@@ -1254,32 +1280,6 @@ export function MemberHomeChat({
                         >
                           {t('openSignalsBoard')}
                         </Link>
-                      ) : null}
-                      {!mine && pinnedItem ? (
-                        <MemberHomeThreadCard
-                          chat
-                          lang={lang}
-                          item={pinnedItem}
-                          done={actedKeySet.has(
-                            memberHomeThreadItemKey(pinnedItem),
-                          )}
-                          proposal={
-                            pinnedItem.kind === 'proposal'
-                              ? intelligence.proposals.find(
-                                  (proposal) =>
-                                    proposal.slug === pinnedItem.slug,
-                                ) ?? null
-                              : null
-                          }
-                          onAsk={(ask, hidden) => {
-                            void send(ask, Boolean(hidden));
-                          }}
-                          onReach={(person, mode) =>
-                            mode === 'call'
-                              ? onCallPerson(person)
-                              : onChatPerson(person)
-                          }
-                        />
                       ) : null}
                     </div>
                     {mine ? (

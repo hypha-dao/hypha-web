@@ -433,7 +433,7 @@ export function MemberHomeThreadCard({
             {summary}
           </p>
         ) : null}
-        {isProposal && !complete ? (
+        {isProposal ? (
           <MemberHomeProposalBody
             proposalId={proposal?.web3ProposalId ?? item.web3ProposalId ?? null}
             spaceId={proposal?.web3SpaceId ?? item.web3SpaceId ?? null}
@@ -441,6 +441,7 @@ export function MemberHomeThreadCard({
             documentSlug={proposal?.slug ?? item.slug}
             compact={compact}
             chat={chat}
+            settled={complete}
             onClosed={rememberOutcome}
           />
         ) : null}
