@@ -119,6 +119,8 @@ function botUserId() {
 const PREVIEW_TAIL = 24;
 /** People on screen are built before the browser paints. */
 const SYNC_ROOM_BUDGET = 16;
+/** Recent DMs from m.direct, so priority chats are tappable without Load more. */
+const PRIORITY_DM_BUDGET = 64;
 /** Everyone else fills while the browser is idle. */
 const IDLE_ROOM_CHUNK = 8;
 
@@ -786,6 +788,55 @@ function conversationIsFresh(client: MatrixClient, room: Room) {
   return hit.stamp === roomStamp(room, client.getUserId());
 }
 
+function recentDirectRoomIds(client: MatrixClient): string[] {
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+  const add = (roomId: string | undefined) => {
+    const id = roomId?.trim();
+    if (!id || seen.has(id)) return;
+    const room = client.getRoom(id);
+    if (room?.getMyMembership() !== 'join') return;
+    if (room.getType() !== HYPHA_ROOM_TYPES.dm) return;
+    seen.add(id);
+    ordered.push(id);
+  };
+  const direct = client.getAccountData(EventType.Direct)?.getContent() as
+    | Record<string, string[] | undefined>
+    | undefined;
+  if (direct) {
+    for (const roomIds of Object.values(direct)) {
+      if (!Array.isArray(roomIds)) continue;
+      for (const roomId of roomIds) add(roomId);
+    }
+  }
+  const recent: { id: string; ts: number }[] = [];
+  for (const room of client.getRooms()) {
+    if (seen.has(room.roomId)) continue;
+    if (room.getMyMembership() !== 'join') continue;
+    if (room.getType() !== HYPHA_ROOM_TYPES.dm) continue;
+    recent.push({
+      id: room.roomId,
+      ts:
+        typeof room.getLastActiveTimestamp === 'function'
+          ? room.getLastActiveTimestamp()
+          : 0,
+    });
+  }
+  recent.sort((left, right) => right.ts - left.ts);
+  for (const item of recent) add(item.id);
+  return ordered;
+}
+
+function pumpPriorityConversationRooms(
+  client: MatrixClient,
+  front: readonly string[],
+) {
+  enqueueConversationRooms(client, front);
+  pumpConversationRooms(
+    Math.min(PRIORITY_DM_BUDGET, Math.max(SYNC_ROOM_BUDGET, front.length, 1)),
+  );
+}
+
 function peopleGroupRoomIds(client: MatrixClient): string[] {
   const ids: string[] = [];
   for (const room of client.getRooms()) {
@@ -1192,8 +1243,10 @@ export function attachConversationList(
   listenForConversationRows(client);
   refreshBoundChatRooms(client);
   logRoomListingDump(client);
-  enqueueConversationRooms(client, peopleGroupRoomIds(client));
-  pumpConversationRooms(SYNC_ROOM_BUDGET);
+  pumpPriorityConversationRooms(client, [
+    ...peopleGroupRoomIds(client),
+    ...recentDirectRoomIds(client),
+  ]);
   scheduleConversationPump();
   onChange();
   return () => {
@@ -1207,18 +1260,16 @@ export function attachConversationList(
 /** Move these people's direct rooms to the front and build them immediately. */
 export function prioritizeConversationRooms(
   client: MatrixClient,
-  matrixUserIds: readonly string[],
+  matrixUserIds: readonly string[] = [],
 ) {
-  if (matrixUserIds.length === 0) return;
   useConversationClient(client);
   const roomIds = [
     ...peopleGroupRoomIds(client),
     ...priorityRoomIds(client, matrixUserIds),
+    ...recentDirectRoomIds(client),
   ];
-  enqueueConversationRooms(client, roomIds);
-  pumpConversationRooms(
-    Math.min(SYNC_ROOM_BUDGET + 8, Math.max(roomIds.length, 1)),
-  );
+  if (roomIds.length === 0) return;
+  pumpPriorityConversationRooms(client, roomIds);
 }
 
 export function readConversationRows(client: MatrixClient): ConversationRow[] {
@@ -1366,10 +1417,26 @@ export function MyConnections({
     connections,
     needle || picking ? searchDirectory : null,
   );
+  const peerSubs = useMemo(() => conversationPeerSubs(rows), [rows]);
+  const {
+    peopleBySub,
+    pendingSubs,
+    isLoading: peopleBySubLoading,
+  } = usePeopleBySubs({
+    subs: peerSubs,
+  });
+  const peerPersonIds = useMemo(() => {
+    const ids: number[] = [];
+    for (const person of peopleBySub.values()) {
+      if (typeof person.id === 'number' && person.id > 0) ids.push(person.id);
+    }
+    return ids;
+  }, [peopleBySub]);
   const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
     useMatrixUserIdsByPersonIds({
       personIds: [
         ...directoryPeople.map((person) => person.id),
+        ...peerPersonIds,
         ...[...selectedById.keys()].filter((id) => id > 0),
         ...(home?.person.id != null ? [home.person.id] : []),
       ],
@@ -1578,8 +1645,16 @@ export function MyConnections({
         home?.person.id ?? null,
         t('someone'),
         directoryPeople,
+        peopleBySub,
       ),
-    [directoryPeople, home?.person.id, personIdToMatrixUserId, rows, t],
+    [
+      directoryPeople,
+      home?.person.id,
+      peopleBySub,
+      personIdToMatrixUserId,
+      rows,
+      t,
+    ],
   );
 
   const memberPersonIds = useMemo(
@@ -1621,14 +1696,6 @@ export function MyConnections({
     [reachOut],
   );
 
-  const peerSubs = useMemo(() => conversationPeerSubs(rows), [rows]);
-  const {
-    peopleBySub,
-    pendingSubs,
-    isLoading: peopleBySubLoading,
-  } = usePeopleBySubs({
-    subs: peerSubs,
-  });
   const titlesLoading = peopleBySubLoading || (peerSubs.length > 0 && !jwt);
   const resolvedMembers = useMemo(
     () =>
@@ -1860,7 +1927,11 @@ export function MyConnections({
       return;
     }
     setNotice(null);
-    const target = listedConversationOpenTarget(row);
+    const target = listedConversationOpenTarget(row, {
+      rooms: rows,
+      personIdToMatrixUserId,
+      peopleBySub,
+    });
     if (target?.kind === 'listed-room') {
       openCoherenceChat(target.roomId, target.title, '', null, null, {
         peerPerson: target.peerSlug ? { slug: target.peerSlug } : null,
@@ -1978,7 +2049,7 @@ export function MyConnections({
     <div className="flex min-w-0 flex-col gap-6">
       <MemberHomePeople
         people={connections}
-        extraPersonIds={reachOutIds}
+        extraPersonIds={[...reachOutIds, ...peerPersonIds]}
         chatSpaceSlug={home?.chatSpaceSlug ?? null}
         fallbackName={t('someone')}
         onOpenChatReady={(openChat) => {

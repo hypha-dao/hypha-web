@@ -897,6 +897,20 @@ function memberRowFromPersonRoom<T extends ConnectionListPerson>(
   };
 }
 
+function directoryPersonForMxid<T extends ConnectionListPerson>(
+  mxid: string,
+  personByMxid: ReadonlyMap<string, T>,
+  directoryById: ReadonlyMap<number, T>,
+  peopleBySub?: ReadonlyMap<string, PeerProfileBySub>,
+): T | undefined {
+  const known = personByMxid.get(mxid.toLowerCase());
+  if (known) return known;
+  const sub = matrixUserIdToCanonicalPrivySub(mxid);
+  const fetchedId = sub ? peopleBySub?.get(sub)?.id : undefined;
+  if (fetchedId && fetchedId > 0) return directoryById.get(fetchedId);
+  return undefined;
+}
+
 /**
  * Person rows for Messages: one row per DM-typed room, then directory people
  * who do not yet have a room. Incoming DMs appear even when the sender shares
@@ -909,11 +923,14 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
   selfId: number | null,
   fallback: string,
   profiles?: readonly T[],
+  peopleBySub?: ReadonlyMap<string, PeerProfileBySub>,
 ): MemberRow<T>[] {
   const directory = profiles ?? connections;
   const personByMxid = new Map<string, T>();
+  const directoryById = new Map<number, T>();
   for (const person of directory) {
     if (person.id === selfId) continue;
+    if (person.id > 0) directoryById.set(person.id, person);
     const mxid = personIdToMatrixUserId[person.id]?.trim();
     if (mxid) personByMxid.set(mxid.toLowerCase(), person);
   }
@@ -921,6 +938,7 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
   const hiddenPairs = new Set(hiddenLegacyPairRoomIds(rooms));
   const usedMxids = new Set<string>();
   const usedRoomIds = new Set<string>();
+  const usedPersonIds = new Set<number>();
   const fromRooms: MemberRow<T>[] = [];
   const typedPeerHasHumanName = new Set<string>();
   for (const room of rooms) {
@@ -952,7 +970,9 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
     if (technicalName && mxid && typedPeerHasHumanName.has(mxid)) {
       continue;
     }
-    const person = mxid ? personByMxid.get(mxid) : undefined;
+    const person = mxid
+      ? directoryPersonForMxid(mxid, personByMxid, directoryById, peopleBySub)
+      : undefined;
     if (person) {
       if (
         isHyphaBot(personIdToMatrixUserId[person.id], personName(person, ''))
@@ -962,6 +982,7 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
       fromRooms.push(
         memberRowFromPersonRoom(room, person, personName(person, fallback)),
       );
+      if (person.id > 0) usedPersonIds.add(person.id);
     } else {
       if (technicalName && !mxid) continue;
       const title = resolvePeerRowTitle(room);
@@ -992,6 +1013,7 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
   const withoutRoom: MemberRow<T>[] = [];
   for (const person of connections) {
     if (person.id === selfId) continue;
+    if (person.id > 0 && usedPersonIds.has(person.id)) continue;
     const mxid = personIdToMatrixUserId[person.id]?.trim().toLowerCase();
     if (mxid && usedMxids.has(mxid)) continue;
     if (isHyphaBot(personIdToMatrixUserId[person.id], personName(person, ''))) {
@@ -1311,16 +1333,89 @@ export type ListedConversationOpen =
     }
   | { kind: 'ensure-person' };
 
+export type ListedConversationLookup = {
+  rooms?: readonly Pick<
+    ConversationRow,
+    | 'roomId'
+    | 'otherUserId'
+    | 'kind'
+    | 'roomType'
+    | 'preview'
+    | 'lastTs'
+    | 'name'
+  >[];
+  personIdToMatrixUserId?: Readonly<Record<number, string | undefined>>;
+  peopleBySub?: ReadonlyMap<string, Pick<PeerProfileBySub, 'id'>>;
+};
+
+function listedRowShowsConversation(row: {
+  preview?: string | null;
+  lastTs?: number | null;
+}) {
+  return Boolean(row.preview?.trim() || row.lastTs != null);
+}
+
 /**
- * Tap a Messages row. Use the room already on the row. Only fall through to
- * create/ensure when the directory person has no conversation yet.
+ * Room already on the row, or the typed DM that produced its preview.
+ * Never invents a room — create/ensure stays a separate path.
  */
-export function listedConversationOpenTarget(row: {
-  roomId: string | null | undefined;
-  name: string;
-  person: { id: number; slug?: string | null };
-}): ListedConversationOpen | null {
-  const roomId = row.roomId?.trim();
+export function resolveListedConversationRoomId(
+  row: {
+    roomId: string | null | undefined;
+    name: string;
+    preview?: string | null;
+    lastTs?: number | null;
+    person: { id: number };
+  },
+  lookup?: ListedConversationLookup,
+): string | null {
+  const listed = row.roomId?.trim();
+  if (listed) return listed;
+  const rooms = lookup?.rooms;
+  if (!rooms || row.person.id <= 0) return null;
+  const mxid = lookup.personIdToMatrixUserId?.[row.person.id]
+    ?.trim()
+    .toLowerCase();
+  const nameMatches: string[] = [];
+  const needle = row.name.trim().toLowerCase();
+  for (const room of rooms) {
+    if (!isTypedDmConversation(room as ConversationRow)) continue;
+    const other = room.otherUserId?.trim();
+    const otherKey = other?.toLowerCase();
+    if (mxid && otherKey === mxid) return room.roomId;
+    if (other) {
+      const sub = matrixUserIdToCanonicalPrivySub(other);
+      const fetchedId = sub ? lookup.peopleBySub?.get(sub)?.id : undefined;
+      if (fetchedId === row.person.id) return room.roomId;
+    }
+    if (
+      listedRowShowsConversation(row) &&
+      needle &&
+      room.name.trim().toLowerCase() === needle &&
+      listedRowShowsConversation(room)
+    ) {
+      nameMatches.push(room.roomId);
+    }
+  }
+  return nameMatches.length === 1 ? nameMatches[0] ?? null : null;
+}
+
+/**
+ * Tap a Messages row. Use the room already on the row (or the listed DM
+ * that produced its preview). Only fall through to create/ensure when the
+ * directory person has no conversation yet.
+ */
+export function listedConversationOpenTarget(
+  row: {
+    roomId: string | null | undefined;
+    name: string;
+    preview?: string | null;
+    lastTs?: number | null;
+    person: { id: number; slug?: string | null };
+  },
+  lookup?: ListedConversationLookup,
+): ListedConversationOpen | null {
+  const roomId = resolveListedConversationRoomId(row, lookup);
   if (roomId) {
     return {
       kind: 'listed-room',
@@ -1328,6 +1423,9 @@ export function listedConversationOpenTarget(row: {
       title: row.name,
       peerSlug: row.person.slug?.trim() || null,
     };
+  }
+  if (listedRowShowsConversation(row)) {
+    return null;
   }
   if (row.person.id > 0) {
     return { kind: 'ensure-person' };
