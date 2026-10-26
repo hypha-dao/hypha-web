@@ -608,12 +608,6 @@ export function MemberHome({
             {home && home.invites.length > 0 ? (
               <MemberHomeInviteBanners lang={lang} invites={home.invites} />
             ) : null}
-            {home?.person.slug ? (
-              <MemberHomeEnergyPanel
-                personSlug={home.person.slug}
-                className={cn(showField && 'max-xl:hidden')}
-              />
-            ) : null}
             {railsBusy ? (
               <section
                 className="border border-border bg-background p-4"
@@ -669,6 +663,12 @@ export function MemberHome({
                 onSelect={setFocusKey}
               />
             )}
+            {home?.person.slug ? (
+              <MemberHomeEnergyPanel
+                personSlug={home.person.slug}
+                className={cn(showField && 'max-xl:hidden')}
+              />
+            ) : null}
             {showUnavailable ? null : (
               <MemberHomeConnectionsWidget
                 lang={lang}
