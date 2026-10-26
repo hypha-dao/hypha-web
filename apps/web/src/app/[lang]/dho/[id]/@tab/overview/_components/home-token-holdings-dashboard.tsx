@@ -1417,7 +1417,7 @@ export function SpaceTokenHolderDiagrams({ spaceSlug }: { spaceSlug: string }) {
   const { getAccessToken, isAuthenticated, isAuthLoading, accessTokenReady } =
     useAccessTokenReady();
   const locale = useLocale();
-  const tModalAside = useTranslations('ModalAside');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const tCommon = useTranslations('Common');
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const portalStyles = useSpaceAccentPortalStyles();
@@ -1442,7 +1442,9 @@ export function SpaceTokenHolderDiagrams({ spaceSlug }: { spaceSlug: string }) {
     (type: string) => {
       const translationKey = `plugins.issueNewToken.general.tokenTypeOptions.${type}.label`;
       try {
-        const translated = tModalAside(translationKey);
+        const translated = tAgreementFlow(
+          translationKey as Parameters<typeof tAgreementFlow>[0],
+        );
         if (isLikelyI18nKey(translated)) {
           return prettifyTokenType(type);
         }
@@ -1451,7 +1453,7 @@ export function SpaceTokenHolderDiagrams({ spaceSlug }: { spaceSlug: string }) {
         return prettifyTokenType(type);
       }
     },
-    [tModalAside],
+    [tAgreementFlow],
   );
 
   if (holdingsLoading) return null;
