@@ -1063,6 +1063,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const t = useTranslations('HumanChatPanel');
   const tCommon = useTranslations('Common');
   const tSpaces = useTranslations('Spaces');
+  const tMember = useTranslations('MemberHome');
   const isMobile = useIsMobile() ?? false;
   const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
   const isTouchCallChrome = isMobile || prefersCoarsePointer;
@@ -1113,6 +1114,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   // Person-to-person rooms (PM / group) have a title and no signal slug — never
   // inherit a space from the route or a leftover home slug.
   const isDirectConversation = mode === 'coherence' && !coherenceSlug?.trim();
+  const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
   const spaceSlug = isDirectConversation
     ? undefined
     : routeSpaceSlug || coherenceSpaceSlug?.trim() || undefined;
@@ -1272,6 +1274,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     setGroupTitle(null);
   }, [coherenceRoomId]);
+
+  useEffect(() => {
+    if (!isStartConversation) return;
+    // Opening Start-a-conversation must not keep a previous room id — the
+    // call toolbar would start a live session in that leftover room.
+    setRoomId(null);
+    setMessages([]);
+  }, [isStartConversation, coherenceTitle]);
 
   useEffect(() => {
     if (mode !== 'coherence') {
@@ -1510,16 +1520,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
    */
   const callUiEnabled = useMemo(
     () =>
-      Boolean(roomId) &&
       isMatrixAvailable &&
       isMatrixAuthenticated &&
-      (isSpaceMember || isDirectConversation),
+      (isSpaceMember || isDirectConversation) &&
+      (Boolean(roomId) || isStartConversation),
     [
       roomId,
       isMatrixAvailable,
       isMatrixAuthenticated,
       isSpaceMember,
       isDirectConversation,
+      isStartConversation,
     ],
   );
 
@@ -1824,6 +1835,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const handleCallAudio = useCallback(() => {
     if (inSpaceCall) return;
+    if (isStartConversation || !roomId?.trim()) {
+      setError(tMember('matrixPersonUnavailable'));
+      return;
+    }
     markPendingCallStartNotify();
     const launchContext = resolveCallLaunchContext();
     if (spaceCallSelfStalePresence) {
@@ -1854,10 +1869,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallSelfStalePresence,
     callSpaceSlug,
     startAudioForRoom,
+    isStartConversation,
+    tMember,
   ]);
 
   const handleCallVideo = useCallback(() => {
     if (inSpaceCall) return;
+    if (isStartConversation || !roomId?.trim()) {
+      setError(tMember('matrixPersonUnavailable'));
+      return;
+    }
     markPendingCallStartNotify();
     const launchContext = resolveCallLaunchContext();
     if (spaceCallSelfStalePresence) {
@@ -1888,6 +1909,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallSelfStalePresence,
     callSpaceSlug,
     startVideoForRoom,
+    isStartConversation,
+    tMember,
   ]);
 
   /**
