@@ -53,10 +53,18 @@ export function HumanChatPanelEmojiMartSurface({
          * light-DOM width and then `dynamicWidth` measures ~130px.
          * Stretch the wrapper and force the host to the panel width.
          */
-        'flex h-[min(22.5rem,calc(100dvh-8rem))] w-full min-w-0 flex-col overflow-hidden [&>div]:h-full [&>div]:w-full [&>div]:min-w-0 [&_em-emoji-picker]:!h-full [&_em-emoji-picker]:!w-full [&_em-emoji-picker]:!max-w-none [&_em-emoji-picker]:!min-w-full',
+        'pointer-events-auto touch-manipulation flex h-[min(22.5rem,calc(100dvh-8rem))] w-full min-w-0 flex-col overflow-hidden [&>div]:h-full [&>div]:w-full [&>div]:min-w-0 [&_em-emoji-picker]:!h-full [&_em-emoji-picker]:!w-full [&_em-emoji-picker]:!max-w-none [&_em-emoji-picker]:!min-w-full',
         className,
       )}
       onWheel={(event) => event.stopPropagation()}
+      onTouchStart={(event) => event.stopPropagation()}
+      onKeyDown={(event) => {
+        // emoji-mart search lives in shadow DOM. Retargeted keys look like
+        // they hit the host, so Radix menu typeahead (e.g. "Copy") swallows
+        // letters such as "c". Escape still closes the picker.
+        if (event.key === 'Escape') return;
+        event.stopPropagation();
+      }}
     >
       {mounted && (
         <Picker

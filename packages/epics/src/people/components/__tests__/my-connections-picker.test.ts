@@ -34,4 +34,44 @@ describe('group picker chips and radio', () => {
     expect(source).toContain('event.stopPropagation()');
     expect(source).toContain('onOpen(row)');
   });
+
+  it('opens a listed conversation by its room id', () => {
+    expect(source).toContain('listedConversationOpenTarget(row, {');
+    expect(source).toContain("target?.kind === 'listed-room'");
+    expect(source).toContain('openCoherenceChat(target.roomId, target.title');
+    expect(source).toContain('peopleBySub');
+    expect(source).not.toContain('row.person.id < 0 && row.roomId');
+  });
+
+  it('summarises priority DMs without waiting for Load more', () => {
+    expect(source).toContain('recentDirectRoomIds');
+    expect(source).toContain('PRIORITY_DM_BUDGET');
+    expect(source).toContain('pumpPriorityConversationRooms');
+    expect(source).not.toMatch(/if \(matrixUserIds\.length === 0\) return;/);
+    expect(source).toContain('...peerPersonIds');
+  });
+
+  it('opens a listed person even when Matrix id lookup fails', () => {
+    const home = readFileSync(
+      resolve(__dirname, '../member-home-people.tsx'),
+      'utf8',
+    );
+    expect(home).toContain(
+      "noticeKeyForOpenPersonRoomError(error) === 'matrixPersonUnavailable'",
+    );
+    expect(home).toContain("status: 'start-conversation'");
+    expect(home).toContain("result.status === 'failed'");
+    expect(home).toContain("result.status === 'ready'");
+    expect(home).toContain("result.status === 'start-conversation'");
+    expect(home).toContain("setNotice(t('matrixPersonUnavailable'))");
+    expect(home).toContain('showRoom(null, title, person)');
+    expect(home).toContain('showRoom(result.roomId, title, person)');
+    expect(home).toContain('rememberPersonDirectRoom');
+    expect(source).toContain('readRememberedPersonDirectRoom(row.person.id)');
+  });
+
+  it('lets every letter reach the messages search field', () => {
+    expect(source).toContain("if (event.key === 'Escape') return;");
+    expect(source).toContain('event.stopPropagation()');
+  });
 });

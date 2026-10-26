@@ -60,10 +60,16 @@ export function useMemberDirectoryConnect(people: DirectoryPerson[]) {
     person: DirectoryPerson,
   ) {
     const peerSlug = person.slug?.trim();
+    const peerId = person.id > 0 ? person.id : undefined;
     openCoherenceChat(roomId, title, '', null, null, {
-      peerPerson: peerSlug
-        ? { slug: peerSlug, address: person.address ?? null }
-        : null,
+      peerPerson:
+        peerSlug || peerId
+          ? {
+              slug: peerSlug || '',
+              address: person.address ?? null,
+              id: peerId,
+            }
+          : null,
     });
   }
 

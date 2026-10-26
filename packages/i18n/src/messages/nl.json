@@ -3748,6 +3748,7 @@
     "dashboardRoomsLabel": "Kamers",
     "welcome": "Begin een gesprek met andere leden van deze ruimte.",
     "welcomeWith": "Begin een gesprek met {name}.",
+    "emptyDirectChat": "Nog geen berichten.",
     "placeholder": "Typ een bericht...",
     "placeholderChannel": "Bericht #{channel}",
     "sendButton": "Versturen",

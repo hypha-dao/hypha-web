@@ -32,14 +32,16 @@ describe('emoji picker layout', () => {
       /onEscapeKeyDown=\{\(event\) => \{[\s\S]*event\.preventDefault\(\)/,
     );
     const chatBar = read('human-chat-panel-chat-bar.tsx');
-    expect(chatBar).toContain("e.key === 'Escape' && emojiPickerOpen");
+    expect(chatBar).toContain(
+      "e.key === 'Escape' && closeComposerOverlayFromEscape(e)",
+    );
     expect(chatBar).toContain('e.stopPropagation()');
     const sidebar = readFileSync(
       resolve(dir, '../../../../ui/src/sidebar.tsx'),
       'utf8',
     );
     expect(sidebar).toContain('onEscapeKeyDown');
-    expect(sidebar).toContain('[data-hypha-emoji-picker]');
+    expect(sidebar).toContain('shouldPreventEscapeDismiss');
     expect(sidebar).toContain('event.preventDefault()');
   });
 
@@ -51,6 +53,28 @@ describe('emoji picker layout', () => {
     expect(surface).toContain('[&_em-emoji-picker]:!w-full');
     expect(surface).toContain('data-hypha-emoji-picker');
     expect(surface).toContain('onWheel');
+    expect(surface).not.toContain('onPointerDown');
+    expect(surface).toContain('onTouchStart');
+    expect(surface).toContain('pointer-events-auto');
+    expect(surface).toContain('touch-manipulation');
+    expect(surface).toContain('onKeyDown');
+    expect(surface).toContain("if (event.key === 'Escape') return;");
+    expect(surface).toContain('event.stopPropagation()');
+    const picker = read('human-chat-panel-emoji-picker.tsx');
+    expect(picker).toContain('container={');
+    expect(picker).toContain('z-[100]');
+    expect(picker).toContain('onPointerDownOutside');
+    expect(picker).toContain('onInteractOutside');
+    expect(picker).not.toContain(
+      'onPointerDown={(event) => event.stopPropagation()}',
+    );
+    const sidebar = readFileSync(
+      resolve(dir, '../../../../ui/src/sidebar.tsx'),
+      'utf8',
+    );
+    expect(sidebar).toContain('isEmojiMartEvent');
+    expect(sidebar).toContain('onPointerDownOutside');
+    expect(sidebar).toContain('onInteractOutside');
     expect(surface).not.toContain('min-w-[280px]');
     expect(surface).not.toContain('--em-emoji-picker-width');
   });

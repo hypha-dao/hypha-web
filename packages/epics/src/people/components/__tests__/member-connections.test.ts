@@ -10,6 +10,7 @@ import {
   conversationMatchesSearch,
   peopleMatchingSearch,
   conversationsMatchingSearch,
+  listedConversationOpenTarget,
   membersForGroupPicker,
   conversationsVisibleInSection,
   conversationUnreadTotal,
@@ -633,6 +634,143 @@ describe('personRowsFromDmRooms', () => {
     expect(rows[1]).toMatchObject({ name: 'Kate Bennett', roomId: null });
   });
 
+  it('does not attach a unique-name room when the person has a different MXID', () => {
+    const rows = personRowsFromDmRooms(
+      [person(7, 'Basil', 'Childers')],
+      [
+        room({
+          roomId: '!other',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'Basil Childers',
+          otherUserId: '@someone-else:matrix',
+          preview: '',
+          lastTs: null,
+        }),
+      ],
+      { 7: '@basil:matrix' },
+      null,
+      'Someone',
+    );
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({
+      roomId: '!other',
+      name: 'Basil Childers',
+    });
+    expect(rows[0]?.person.id).not.toBe(7);
+    expect(rows[1]).toMatchObject({
+      person: { id: 7 },
+      roomId: null,
+    });
+  });
+
+  it('does not treat a duplicate name as unique after one person is used', () => {
+    const rows = personRowsFromDmRooms(
+      [person(7, 'Basil', 'Childers'), person(8, 'Basil', 'Childers')],
+      [
+        room({
+          roomId: '!first',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'Basil Childers',
+          otherUserId: '@basil-one:matrix',
+          preview: 'hi',
+          lastTs: 10,
+        }),
+        room({
+          roomId: '!second',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'Basil Childers',
+          otherUserId: '@basil-two:matrix',
+          preview: '',
+          lastTs: null,
+        }),
+      ],
+      { 7: '@basil-one:matrix' },
+      null,
+      'Someone',
+    );
+
+    const attached = rows.filter((row) => row.person.id === 7);
+    expect(attached).toHaveLength(1);
+    expect(attached[0]).toMatchObject({ roomId: '!first' });
+    expect(
+      rows.some((row) => row.person.id === 8 && row.roomId === '!second'),
+    ).toBe(false);
+  });
+
+  it('attaches an empty typed DM to the directory person by unique name', () => {
+    const rows = personRowsFromDmRooms(
+      [person(7, 'Basil', 'Childers')],
+      [
+        room({
+          roomId: '!empty',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'Basil Childers',
+          otherUserId: '@prod_privy_did_privy_basil:matrix',
+          preview: '',
+          lastTs: null,
+        }),
+      ],
+      {},
+      null,
+      'Someone',
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      roomId: '!empty',
+      name: 'Basil Childers',
+      person: { id: 7 },
+    });
+  });
+
+  it('attaches a directory profile from peopleBySub without a matrix-id map', () => {
+    const rows = personRowsFromDmRooms(
+      [person(7, 'Basil', 'Childers'), person(2, 'Kate', 'Bennett')],
+      [
+        room({
+          roomId: '!basil',
+          kind: 'person',
+          roomType: HYPHA_ROOM_TYPES.dm,
+          name: 'prod_privy_did_privy_basil',
+          otherUserId: '@prod_privy_did_privy_basil:matrix',
+          preview: 'Hey @Basil Childers',
+          mine: true,
+          lastTs: 20,
+        }),
+      ],
+      {},
+      null,
+      'Someone',
+      undefined,
+      new Map([
+        [
+          'did:privy:basil',
+          {
+            id: 7,
+            name: 'Basil',
+            surname: 'Childers',
+            nickname: null,
+            slug: 'basil',
+          },
+        ],
+      ]),
+    );
+
+    expect(rows.map((row) => row.roomId)).toEqual(['!basil', null]);
+    expect(rows[0]).toMatchObject({
+      roomId: '!basil',
+      name: 'Basil Childers',
+      preview: 'Hey @Basil Childers',
+      person: { id: 7 },
+    });
+    expect(rows[1]).toMatchObject({ name: 'Kate Bennett', roomId: null });
+  });
+
   it('attaches a directory profile to a DM-typed room', () => {
     const rows = personRowsFromDmRooms(
       [person(1, 'Gerardo', 'Reza')],
@@ -1176,6 +1314,226 @@ describe('nextSelectedMembers', () => {
     const afterSearchWouldHideAda = nextSelectedMembers(afterBoth, grace);
     expect([...afterSearchWouldHideAda.keys()]).toEqual([1]);
     expect(afterSearchWouldHideAda.get(1)?.name).toBe('Ada Lovelace');
+  });
+
+  it('opens listed DMs and groups by room id without creating', () => {
+    expect(
+      listedConversationOpenTarget({
+        roomId: '!dm',
+        name: 'Joachim Stroh',
+        person: { id: 12, slug: 'joachim' },
+      }),
+    ).toEqual({
+      kind: 'listed-room',
+      roomId: '!dm',
+      title: 'Joachim Stroh',
+      peerSlug: 'joachim',
+    });
+    expect(
+      listedConversationOpenTarget({
+        roomId: '!group',
+        name: 'Alex Prate/Joachim',
+        person: { id: -4, slug: null },
+      }),
+    ).toEqual({
+      kind: 'listed-room',
+      roomId: '!group',
+      title: 'Alex Prate/Joachim',
+      peerSlug: null,
+    });
+  });
+
+  it('only ensures a person room when the list row has no room yet', () => {
+    expect(
+      listedConversationOpenTarget({
+        roomId: null,
+        name: 'Ada Lovelace',
+        person: { id: 1, slug: 'ada' },
+      }),
+    ).toEqual({ kind: 'ensure-person' });
+    expect(
+      listedConversationOpenTarget({
+        roomId: '',
+        name: 'Unknown',
+        person: { id: -8, slug: null },
+      }),
+    ).toBeNull();
+  });
+
+  it('recovers a listed DM when the row has a preview but no roomId yet', () => {
+    const rooms = [
+      room({
+        roomId: '!basil',
+        kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
+        name: 'Basil Childers',
+        otherUserId: '@prod_privy_did_privy_basil:matrix',
+        preview: 'Hey @Basil Childers',
+        mine: true,
+        lastTs: 20,
+      }),
+    ];
+    expect(
+      listedConversationOpenTarget(
+        {
+          roomId: null,
+          name: 'Basil Childers',
+          preview: 'Hey @Basil Childers',
+          lastTs: 20,
+          person: { id: 7, slug: 'basil' },
+        },
+        {
+          rooms,
+          peopleBySub: new Map([['did:privy:basil', { id: 7 }]]),
+        },
+      ),
+    ).toEqual({
+      kind: 'listed-room',
+      roomId: '!basil',
+      title: 'Basil Childers',
+      peerSlug: 'basil',
+    });
+    expect(
+      listedConversationOpenTarget(
+        {
+          roomId: null,
+          name: 'Vladramtsovoy',
+          preview: 'So I think you need to tell AI…',
+          lastTs: 10,
+          person: { id: 9, slug: 'vlad' },
+        },
+        {
+          rooms,
+          personIdToMatrixUserId: { 9: '@vlad:matrix' },
+        },
+      ),
+    ).toBeNull();
+    expect(
+      listedConversationOpenTarget(
+        {
+          roomId: null,
+          name: 'Basil Childers',
+          preview: 'Hey @Basil Childers',
+          lastTs: 20,
+          person: { id: 7, slug: 'basil' },
+        },
+        { rooms },
+      ),
+    ).toEqual({
+      kind: 'listed-room',
+      roomId: '!basil',
+      title: 'Basil Childers',
+      peerSlug: 'basil',
+    });
+  });
+
+  it('opens an empty listed DM by unique name or remembered room', () => {
+    const rooms = [
+      room({
+        roomId: '!empty',
+        kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
+        name: 'Basil Childers',
+        otherUserId: '@prod_privy_did_privy_basil:matrix',
+        preview: '',
+        lastTs: null,
+      }),
+    ];
+    expect(
+      listedConversationOpenTarget(
+        {
+          roomId: null,
+          name: 'Basil Childers',
+          preview: '',
+          lastTs: null,
+          person: { id: 7, slug: 'basil' },
+        },
+        { rooms },
+      ),
+    ).toEqual({
+      kind: 'listed-room',
+      roomId: '!empty',
+      title: 'Basil Childers',
+      peerSlug: 'basil',
+    });
+    expect(
+      listedConversationOpenTarget(
+        {
+          roomId: null,
+          name: 'Basil Childers',
+          preview: '',
+          lastTs: null,
+          person: { id: 7, slug: 'basil' },
+        },
+        { rememberedRoomId: '!remembered' },
+      ),
+    ).toEqual({
+      kind: 'listed-room',
+      roomId: '!remembered',
+      title: 'Basil Childers',
+      peerSlug: 'basil',
+    });
+    expect(
+      listedConversationOpenTarget(
+        {
+          roomId: null,
+          name: 'Basil Childers',
+          preview: '',
+          lastTs: null,
+          person: { id: 7, slug: 'basil' },
+        },
+        { rooms, rememberedRoomId: '!stale' },
+      ),
+    ).toEqual({
+      kind: 'listed-room',
+      roomId: '!empty',
+      title: 'Basil Childers',
+      peerSlug: 'basil',
+    });
+    expect(
+      listedConversationOpenTarget(
+        {
+          roomId: '!stale',
+          name: 'Basil Childers',
+          preview: '',
+          lastTs: null,
+          person: { id: 7, slug: 'basil' },
+        },
+        { rooms, rememberedRoomId: '!stale' },
+      ),
+    ).toEqual({
+      kind: 'listed-room',
+      roomId: '!empty',
+      title: 'Basil Childers',
+      peerSlug: 'basil',
+    });
+    expect(
+      listedConversationOpenTarget(
+        {
+          roomId: '!empty',
+          name: 'Basil Childers',
+          preview: '',
+          lastTs: null,
+          person: { id: 7, slug: 'basil' },
+        },
+        {
+          rooms,
+          personIdToMatrixUserId: { 7: '@basil-now:matrix' },
+        },
+      ),
+    ).toEqual({ kind: 'ensure-person' });
+  });
+
+  it('does not ensure a person room for a preview row', () => {
+    expect(
+      listedConversationOpenTarget({
+        roomId: null,
+        name: 'Basil Childers',
+        preview: 'Hey @Basil Childers',
+        lastTs: 20,
+        person: { id: 7, slug: 'basil' },
+      }),
+    ).toBeNull();
   });
 
   it('does not select a synthetic DM row', () => {

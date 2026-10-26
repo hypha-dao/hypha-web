@@ -75,14 +75,41 @@ export function HumanChatPanelEmojiPicker({
         sideOffset={8}
         collisionPadding={12}
         collisionBoundary={boundary ?? undefined}
+        container={boundary instanceof HTMLElement ? boundary : undefined}
         data-testid="hypha-emoji-picker-panel"
-        className="w-[min(22rem,var(--radix-popover-content-available-width),calc(100vw-2rem))] max-w-[min(22rem,var(--radix-popover-content-available-width),calc(100vw-2rem))] overflow-x-hidden overflow-hidden border-border p-0 shadow-lg"
+        className="pointer-events-auto z-[100] w-[min(22rem,var(--radix-popover-content-available-width),calc(100vw-2rem))] max-w-[min(22rem,var(--radix-popover-content-available-width),calc(100vw-2rem))] overflow-x-hidden overflow-hidden border-border p-0 shadow-lg"
         aria-label={ariaLabel}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
           e.preventDefault();
           e.stopPropagation();
           onOpenChange(false);
+        }}
+        onPointerDownOutside={(event) => {
+          const path = event.detail.originalEvent.composedPath();
+          if (
+            path.some(
+              (node) =>
+                node instanceof Element &&
+                (node.tagName === 'EM-EMOJI-PICKER' ||
+                  Boolean(node.closest?.('[data-hypha-emoji-picker]'))),
+            )
+          ) {
+            event.preventDefault();
+          }
+        }}
+        onInteractOutside={(event) => {
+          const path = event.detail.originalEvent.composedPath();
+          if (
+            path.some(
+              (node) =>
+                node instanceof Element &&
+                (node.tagName === 'EM-EMOJI-PICKER' ||
+                  Boolean(node.closest?.('[data-hypha-emoji-picker]'))),
+            )
+          ) {
+            event.preventDefault();
+          }
         }}
         onWheel={(event) => event.stopPropagation()}
       >

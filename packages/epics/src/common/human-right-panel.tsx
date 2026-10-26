@@ -85,7 +85,14 @@ import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 import { Empty } from './empty';
 import { notifyConversationUnreadChanged } from '../people/components/conversation-unread-event';
-import { rememberSignalThreadRooms } from '../people/components/member-connections';
+import {
+  rememberPersonDirectRoom,
+  rememberSignalThreadRooms,
+} from '../people/components/member-connections';
+import {
+  openOrEnsurePersonRoom,
+  OpenPersonRoomFailure,
+} from '../people/components/open-person-room';
 import { getRootSpace } from './get-root-space';
 
 import {
@@ -192,7 +199,22 @@ import {
   buildSpaceRosterMentionCandidates,
   buildSpaceRosterSignalTeamMembers,
 } from './human-chat-panel/build-space-roster-mention-candidates';
-import { directConversationWelcomeName } from './human-chat-panel/direct-conversation-welcome';
+import {
+  directConversationEmptyWelcomeKey,
+  directConversationWelcomeName,
+} from './human-chat-panel/direct-conversation-welcome';
+import {
+  callAppliesToCurrentChatRoom as chatRoomOwnsCallSession,
+  hasHumanTimelineMessages,
+  matchedDirectRoomId,
+  PersonPanelCallAborted,
+  personPanelCallSelectionMatches,
+  personPanelCallSelectionOf,
+  planPersonPanelCall,
+  runPersonPanelCallPlan,
+  shouldLeaveCallOnPersonPanelRefuse,
+  shouldRefusePersonPanelCall,
+} from './human-chat-panel/person-panel-call';
 import {
   asTimelineDate,
   sortMessagesChronologically,
@@ -1063,6 +1085,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const t = useTranslations('HumanChatPanel');
   const tCommon = useTranslations('Common');
   const tSpaces = useTranslations('Spaces');
+  const tMember = useTranslations('MemberHome');
   const isMobile = useIsMobile() ?? false;
   const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
   const isTouchCallChrome = isMobile || prefersCoarsePointer;
@@ -1113,6 +1136,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   // Person-to-person rooms (PM / group) have a title and no signal slug — never
   // inherit a space from the route or a leftover home slug.
   const isDirectConversation = mode === 'coherence' && !coherenceSlug?.trim();
+  const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
   const spaceSlug = isDirectConversation
     ? undefined
     : routeSpaceSlug || coherenceSpaceSlug?.trim() || undefined;
@@ -1230,7 +1254,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   updateSpaceBySlugRef.current = updateSpaceBySlug;
   const updateCoherenceBySlugRef = useRef(updateCoherenceBySlug);
   updateCoherenceBySlugRef.current = updateCoherenceBySlug;
-  const { open: sidebarOpen, isMobile: isSidebarMobile } = useSidebar();
+  const {
+    open: sidebarOpen,
+    isMobile: isSidebarMobile,
+    setOpenMobile,
+  } = useSidebar();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuthentication();
 
   const currentUserAvatarUrl = me?.avatarUrl;
@@ -1268,6 +1296,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     setGroupTitle(null);
   }, [coherenceRoomId]);
+
+  useEffect(() => {
+    if (!isStartConversation) return;
+    // Opening Start-a-conversation must not keep a previous room id — the
+    // call toolbar would start a live session in that leftover room.
+    setRoomId(null);
+    setMessages([]);
+  }, [isStartConversation, coherenceTitle]);
 
   useEffect(() => {
     if (mode !== 'coherence') {
@@ -1468,6 +1504,26 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     getRaiseHandOrder,
     floatingReactionsVersion,
   } = useGlobalCallDock();
+  const hasHumanMessages = hasHumanTimelineMessages(messages);
+  const refusePersonPanelCall = shouldRefusePersonPanelCall({
+    isDirectConversation,
+    roomId,
+    coherenceRoomId,
+    hasHumanMessages,
+  });
+  useEffect(() => {
+    if (!refusePersonPanelCall) return;
+    if (shouldLeaveCallOnPersonPanelRefuse(callSessionRoomId, roomId)) {
+      void leaveSpaceCall();
+    }
+    dismissSpaceCallError();
+  }, [
+    callSessionRoomId,
+    dismissSpaceCallError,
+    leaveSpaceCall,
+    refusePersonPanelCall,
+    roomId,
+  ]);
   useEffect(() => {
     const activeSpaceSlug = spaceSlug?.trim() || null;
     const activeAuthToken = authToken?.trim() || null;
@@ -1475,8 +1531,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const canonicalRoomId =
       mode === 'space' ? space?.chatRoomId?.trim() || null : null;
     const bindRoomId = activeRoomId ?? canonicalRoomId;
-
-    if (bindRoomId) {
+    if (bindRoomId && !refusePersonPanelCall) {
       bindRoomContext(bindRoomId, activeSpaceSlug, activeAuthToken);
       return;
     }
@@ -1489,6 +1544,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     mode,
     roomId,
     showFloatingDock,
+    refusePersonPanelCall,
     space?.chatRoomId,
     spaceSlug,
   ]);
@@ -1506,16 +1562,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
    */
   const callUiEnabled = useMemo(
     () =>
-      Boolean(roomId) &&
       isMatrixAvailable &&
       isMatrixAuthenticated &&
-      (isSpaceMember || isDirectConversation),
+      (isSpaceMember || isDirectConversation) &&
+      (Boolean(roomId) || isStartConversation),
     [
       roomId,
       isMatrixAvailable,
       isMatrixAuthenticated,
       isSpaceMember,
       isDirectConversation,
+      isStartConversation,
     ],
   );
 
@@ -1530,12 +1587,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
    */
   const callActionsChecked = inSpaceCall || spaceCallSelfPresenceChecked;
 
-  const callAppliesToCurrentChatRoom = useMemo(() => {
-    const chatRoomId = roomId?.trim() || null;
-    const sessionRoomId = callSessionRoomId?.trim() || null;
-    if (!sessionRoomId || !chatRoomId) return true;
-    return sessionRoomId === chatRoomId;
-  }, [callSessionRoomId, roomId]);
+  const callAppliesToCurrentChatRoom = useMemo(
+    () => chatRoomOwnsCallSession(roomId, callSessionRoomId),
+    [callSessionRoomId, roomId],
+  );
 
   /** Banner, join strip, and toolbar for the chat room that owns the active session. */
   const showSidebarCallChrome = callUiEnabled && callAppliesToCurrentChatRoom;
@@ -1773,7 +1828,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
 
     closeCoherenceChat();
-    if (isConnectionsPage) closeHumanChatPanel();
+    if (isConnectionsPage) {
+      closeHumanChatPanel();
+      setOpenMobile(false);
+    }
   }, [
     closeCoherenceChat,
     closeHumanChatPanel,
@@ -1781,6 +1839,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     pathname,
     router,
     searchParams,
+    setOpenMobile,
   ]);
 
   const pendingCallStartNotifyRef = useRef(false);
@@ -1814,73 +1873,226 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         })();
   }, [client, coherenceSlug, coherenceTitle, mode, roomId, space?.title]);
 
-  const handleCallAudio = useCallback(() => {
-    if (inSpaceCall) return;
-    markPendingCallStartNotify();
-    const launchContext = resolveCallLaunchContext();
-    if (spaceCallSelfStalePresence) {
-      refreshSpaceCall(
-        'audio',
-        roomId,
-        callSpaceSlug,
-        undefined,
-        authToken,
-        launchContext,
-      );
-      return;
-    }
-    void startAudioForRoom(
+  const peerPersonId =
+    isDirectConversation &&
+    coherencePeerPerson?.id &&
+    coherencePeerPerson.id > 0
+      ? coherencePeerPerson.id
+      : null;
+  const peerPersonIds = useMemo(
+    () => (peerPersonId ? [peerPersonId] : []),
+    [peerPersonId],
+  );
+  const {
+    personIdToMatrixUserId: peerPersonIdToMatrixUserId,
+    isLoading: peerMatrixIdsLoading,
+  } = useMatrixUserIdsByPersonIds({
+    personIds: peerPersonIds,
+  });
+  const peerMatrixIdsRef = useRef(peerPersonIdToMatrixUserId);
+  peerMatrixIdsRef.current = peerPersonIdToMatrixUserId;
+  const peerMatrixIdsLoadingRef = useRef(peerMatrixIdsLoading);
+  peerMatrixIdsLoadingRef.current = peerMatrixIdsLoading;
+  const personPanelCallEnsureGenerationRef = useRef(0);
+  const personPanelCallSelectionRef = useRef(
+    personPanelCallSelectionOf({
+      personId: peerPersonId,
+      title: coherenceTitle,
       roomId,
-      callSpaceSlug,
-      undefined,
-      authToken,
-      launchContext,
-    );
-  }, [
-    authToken,
-    inSpaceCall,
-    markPendingCallStartNotify,
-    refreshSpaceCall,
-    resolveCallLaunchContext,
+      coherenceRoomId,
+    }),
+  );
+  personPanelCallSelectionRef.current = personPanelCallSelectionOf({
+    personId: peerPersonId,
+    title: coherenceTitle,
     roomId,
-    spaceCallSelfStalePresence,
-    callSpaceSlug,
-    startAudioForRoom,
+    coherenceRoomId,
+  });
+
+  const refusePersonPanelCallStart = useCallback(() => {
+    setError(tMember('matrixPersonUnavailable'));
+    if (shouldLeaveCallOnPersonPanelRefuse(callSessionRoomId, roomId)) {
+      void leaveSpaceCall();
+    }
+    dismissSpaceCallError();
+  }, [
+    callSessionRoomId,
+    dismissSpaceCallError,
+    leaveSpaceCall,
+    roomId,
+    tMember,
   ]);
 
-  const handleCallVideo = useCallback(() => {
-    if (inSpaceCall) return;
-    markPendingCallStartNotify();
-    const launchContext = resolveCallLaunchContext();
-    if (spaceCallSelfStalePresence) {
-      refreshSpaceCall(
-        'video',
-        roomId,
+  const waitForPeerMatrixUserId = useCallback(async (personId: number) => {
+    let sawLoading = peerMatrixIdsLoadingRef.current;
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const mxid = peerMatrixIdsRef.current[personId]?.trim();
+      if (mxid) return mxid;
+      if (peerMatrixIdsLoadingRef.current) sawLoading = true;
+      if (sawLoading && !peerMatrixIdsLoadingRef.current) return null;
+      await new Promise((resolve) => window.setTimeout(resolve, 100));
+    }
+    return peerMatrixIdsRef.current[personId]?.trim() || null;
+  }, []);
+
+  const bindEnsuredPersonPanelRoom = useCallback(
+    (ensuredRoomId: string) => {
+      const title = coherenceTitle?.trim() || '';
+      openCoherenceChat(ensuredRoomId, title, '', null, null, {
+        peerPerson: coherencePeerPerson,
+      });
+      setRoomId(ensuredRoomId);
+      bindRoomContext(ensuredRoomId, null, authToken?.trim() || null);
+    },
+    [
+      authToken,
+      bindRoomContext,
+      coherencePeerPerson,
+      coherenceTitle,
+      openCoherenceChat,
+    ],
+  );
+
+  const ensurePersonPanelCallRoom = useCallback(
+    async (isSelectionCurrent: () => boolean) => {
+      const personId = peerPersonId;
+      const title = coherenceTitle?.trim() || '';
+      const matched = matchedDirectRoomId(roomId, coherenceRoomId);
+      if (personId) {
+        try {
+          const ensured = await openOrEnsurePersonRoom({
+            getMatrix: () => matrixRef.current,
+            personId,
+            title,
+            waitForMatrixUserId: waitForPeerMatrixUserId,
+          });
+          if (!isSelectionCurrent()) throw new PersonPanelCallAborted();
+          rememberPersonDirectRoom(personId, ensured);
+          bindEnsuredPersonPanelRoom(ensured);
+          return ensured;
+        } catch (error) {
+          if (error instanceof PersonPanelCallAborted) throw error;
+          if (!matched) throw error;
+        }
+      }
+      if (matched) {
+        try {
+          await matrixRef.current.joinRoom(matched);
+        } catch {
+          // Already joined; the ids already agree so this is a real current DM.
+        }
+        if (!isSelectionCurrent()) throw new PersonPanelCallAborted();
+        bindEnsuredPersonPanelRoom(matched);
+        return matched;
+      }
+      throw new Error('Person panel call has no DM room to ensure');
+    },
+    [
+      bindEnsuredPersonPanelRoom,
+      coherenceRoomId,
+      coherenceTitle,
+      peerPersonId,
+      roomId,
+      waitForPeerMatrixUserId,
+    ],
+  );
+
+  const launchPersonPanelCall = useCallback(
+    (kind: 'audio' | 'video', targetRoomId: string) => {
+      const callRoomId = targetRoomId.trim();
+      if (!callRoomId) return;
+      if (inSpaceCall) return;
+      markPendingCallStartNotify();
+      const launchContext = resolveCallLaunchContext();
+      if (spaceCallSelfStalePresence) {
+        refreshSpaceCall(
+          kind,
+          callRoomId,
+          callSpaceSlug,
+          undefined,
+          authToken,
+          launchContext,
+        );
+        return;
+      }
+      const start = kind === 'audio' ? startAudioForRoom : startVideoForRoom;
+      void start(
+        callRoomId,
         callSpaceSlug,
         undefined,
         authToken,
         launchContext,
       );
-      return;
-    }
-    void startVideoForRoom(
-      roomId,
-      callSpaceSlug,
-      undefined,
+    },
+    [
       authToken,
-      launchContext,
-    );
-  }, [
-    authToken,
-    inSpaceCall,
-    markPendingCallStartNotify,
-    refreshSpaceCall,
-    resolveCallLaunchContext,
-    roomId,
-    spaceCallSelfStalePresence,
-    callSpaceSlug,
-    startVideoForRoom,
-  ]);
+      callSpaceSlug,
+      inSpaceCall,
+      markPendingCallStartNotify,
+      refreshSpaceCall,
+      resolveCallLaunchContext,
+      spaceCallSelfStalePresence,
+      startAudioForRoom,
+      startVideoForRoom,
+    ],
+  );
+
+  const startPersonPanelCall = useCallback(
+    (kind: 'audio' | 'video') => {
+      const plan = planPersonPanelCall({
+        isDirectConversation,
+        roomId,
+        coherenceRoomId,
+        hasHumanMessages,
+      });
+      const generation = ++personPanelCallEnsureGenerationRef.current;
+      const started = personPanelCallSelectionRef.current;
+      const isSelectionCurrent = () =>
+        personPanelCallEnsureGenerationRef.current === generation &&
+        personPanelCallSelectionMatches(
+          started,
+          personPanelCallSelectionRef.current,
+        );
+      void runPersonPanelCallPlan({
+        plan,
+        ensureRoom: () => ensurePersonPanelCallRoom(isSelectionCurrent),
+        isSelectionCurrent,
+        onRefuse: refusePersonPanelCallStart,
+        onStart: (targetRoomId) => {
+          if (!isSelectionCurrent()) return;
+          launchPersonPanelCall(kind, targetRoomId);
+        },
+      }).catch((error) => {
+        if (error instanceof PersonPanelCallAborted) return;
+        if (
+          error instanceof OpenPersonRoomFailure &&
+          error.code === 'no-matrix-id'
+        ) {
+          setError(tMember('matrixPersonUnavailable'));
+          return;
+        }
+        setError(tMember('callFailed'));
+      });
+    },
+    [
+      coherenceRoomId,
+      ensurePersonPanelCallRoom,
+      hasHumanMessages,
+      isDirectConversation,
+      launchPersonPanelCall,
+      refusePersonPanelCallStart,
+      roomId,
+      tMember,
+    ],
+  );
+
+  const handleCallAudio = useCallback(() => {
+    startPersonPanelCall('audio');
+  }, [startPersonPanelCall]);
+
+  const handleCallVideo = useCallback(() => {
+    startPersonPanelCall('video');
+  }, [startPersonPanelCall]);
 
   /**
    * "Join this room's call instead" — for the case where the room being viewed has its own
@@ -5584,6 +5796,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       <SidebarContent
         ref={sidebarContentRef}
         className="flex min-h-0 flex-col gap-0 overflow-hidden bg-page-background dark:bg-background-2"
+        data-hypha-chat-panel=""
+        data-hypha-room-id={roomId?.trim() || undefined}
       >
         {sessionRestoring ? (
           <HumanChatPanelLoader />
@@ -5935,7 +6149,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                           : coherencePublic
                           ? t('publicWelcome')
                           : welcomePartner
-                          ? t('welcomeWith', { name: welcomePartner })
+                          ? t(
+                              directConversationEmptyWelcomeKey({
+                                isDirectConversation,
+                                isStartConversation,
+                              }),
+                              { name: welcomePartner },
+                            )
                           : undefined
                       }
                       welcomeSenderName={

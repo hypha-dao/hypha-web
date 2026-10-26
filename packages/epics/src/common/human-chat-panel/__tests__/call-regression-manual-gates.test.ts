@@ -345,6 +345,34 @@ describe('CSH-QA-3–5 stability hardening (W7)', () => {
     expect(dock).toContain('showScaleWarning={showCallScaleWarning}');
   });
 
+  it('ensures a DM room before starting a person-panel call', () => {
+    const source = readCommonSource('human-right-panel.tsx');
+    expect(source).toContain('shouldRefusePersonPanelCall');
+    expect(source).toContain('shouldLeaveCallOnPersonPanelRefuse');
+    expect(source).toContain('planPersonPanelCall');
+    expect(source).toContain('runPersonPanelCallPlan');
+    expect(source).toContain('openOrEnsurePersonRoom');
+    expect(source).toContain('bindEnsuredPersonPanelRoom');
+    expect(source).toContain('matchedDirectRoomId');
+    expect(source).toContain("tMember('callFailed')");
+    expect(source).toContain('data-hypha-room-id');
+    expect(source).toContain('directConversationEmptyWelcomeKey');
+    expect(source).toContain('personPanelCallSelectionMatches');
+    const ensureAt = source.indexOf('const ensurePersonPanelCallRoom');
+    const launchAt = source.indexOf('const launchPersonPanelCall');
+    const audioAt = source.indexOf('const handleCallAudio = useCallback');
+    const videoAt = source.indexOf('const handleCallVideo = useCallback');
+    const audioStart = source.indexOf('startAudioForRoom', launchAt);
+    const videoStart = source.indexOf('startVideoForRoom', launchAt);
+    expect(ensureAt).toBeGreaterThan(-1);
+    expect(launchAt).toBeGreaterThan(ensureAt);
+    expect(audioAt).toBeGreaterThan(launchAt);
+    expect(videoAt).toBeGreaterThan(audioAt);
+    expect(audioStart).toBeGreaterThan(launchAt);
+    expect(videoStart).toBeGreaterThan(audioStart);
+    expect(source).toContain('bindRoomId && !refusePersonPanelCall');
+  });
+
   it('join invitation modal opens from Human panel', () => {
     const source = readCommonSource('human-right-panel.tsx');
     expect(source).toContain('HumanChatPanelCallJoinInvitation');

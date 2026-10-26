@@ -56,6 +56,7 @@ export type FocusedSpaceChat = {
 export type CoherencePeerPerson = {
   slug: string;
   address?: string | null;
+  id?: number;
 };
 
 export type HumanChatPanelContextValue = {
@@ -187,11 +188,16 @@ export function HumanChatPanelProvider({
       setCoherenceSpaceSlug(spaceSlug?.trim() ? spaceSlug.trim() : null);
       setCoherencePublic(Boolean(options?.public));
       const peerSlug = options?.peerPerson?.slug?.trim();
+      const peerId =
+        options?.peerPerson?.id && options.peerPerson.id > 0
+          ? options.peerPerson.id
+          : undefined;
       setCoherencePeerPerson(
-        peerSlug
+        peerSlug || peerId
           ? {
-              slug: peerSlug,
+              slug: peerSlug || '',
               address: options?.peerPerson?.address ?? null,
+              id: peerId,
             }
           : null,
       );

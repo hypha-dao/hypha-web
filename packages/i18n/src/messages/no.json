@@ -3747,6 +3747,7 @@
     "dashboardRoomsLabel": "Rom",
     "welcome": "Start en samtale med andre medlemmer av dette rommet.",
     "welcomeWith": "Start en samtale med {name}.",
+    "emptyDirectChat": "Ingen meldinger ennå.",
     "placeholder": "Skriv en melding...",
     "placeholderChannel": "Melding til #{channel}",
     "sendButton": "Send",

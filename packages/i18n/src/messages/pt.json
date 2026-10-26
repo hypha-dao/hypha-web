@@ -3174,6 +3174,7 @@
     "dashboardRoomsLabel": "Salas",
     "welcome": "Inicie uma conversa com outros membros deste espaço.",
     "welcomeWith": "Inicie uma conversa com {name}.",
+    "emptyDirectChat": "Ainda não há mensagens.",
     "placeholder": "Digite uma mensagem...",
     "placeholderChannel": "Mensagem #{channel}",
     "sendButton": "Enviar",
