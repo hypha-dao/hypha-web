@@ -159,6 +159,10 @@ export type RealtimeVoiceConnection = {
   voice: string;
   /** The member's microphone, kept while a silent track stands in. */
   liveMicTrack: MediaStreamTrack | null;
+  /** The sender from addTrack. Its current track changes, so it cannot be looked up later. */
+  micSender: RTCRtpSender | null;
+  /** Serializes replaceTrack so an older mute cannot land after a newer unmute. */
+  micSwapQueue: Promise<void>;
   sendEvent: (event: Record<string, unknown>) => void;
   close: () => void;
 };
@@ -221,13 +225,20 @@ export function isSubstantiveUserTranscript(text: string): boolean {
 }
 
 let silentMicTrack: MediaStreamTrack | null = null;
+let silentMicContext: AudioContext | null = null;
 
 function silentStandInTrack(): MediaStreamTrack | null {
   if (silentMicTrack && silentMicTrack.readyState === 'live') {
+    if (silentMicContext?.state === 'suspended') {
+      void silentMicContext.resume();
+    }
     return silentMicTrack;
   }
   if (typeof AudioContext === 'undefined') return null;
+  if (silentMicContext) void silentMicContext.close().catch(() => undefined);
   const context = new AudioContext();
+  silentMicContext = context;
+  if (context.state === 'suspended') void context.resume();
   const oscillator = context.createOscillator();
   const gain = context.createGain();
   gain.gain.value = 0;
@@ -239,10 +250,35 @@ function silentStandInTrack(): MediaStreamTrack | null {
   return silentMicTrack;
 }
 
-function audioSender(connection: RealtimeVoiceConnection) {
-  return connection.peerConnection
-    .getSenders()
-    .find((sender) => sender.track?.kind === 'audio');
+function liveMicTrackOf(
+  connection: RealtimeVoiceConnection,
+): MediaStreamTrack | null {
+  const saved = connection.liveMicTrack;
+  if (saved && saved.readyState === 'live') return saved;
+  return (
+    connection.localStream
+      .getAudioTracks()
+      .find((track) => track.readyState === 'live') ?? null
+  );
+}
+
+async function ensureLiveMicTrack(
+  connection: RealtimeVoiceConnection,
+): Promise<MediaStreamTrack | null> {
+  const current = liveMicTrackOf(connection);
+  if (current) {
+    current.enabled = true;
+    connection.liveMicTrack = current;
+    return current;
+  }
+  const stream = await acquireWarmMicStream();
+  const track =
+    stream?.getAudioTracks().find((item) => item.readyState === 'live') ?? null;
+  if (!track) return null;
+  track.enabled = true;
+  connection.liveMicTrack = track;
+  if (stream) connection.localStream = stream;
+  return track;
 }
 
 export function setLocalMicEnabled(
@@ -250,28 +286,32 @@ export function setLocalMicEnabled(
   enabled: boolean,
 ): void {
   if (!connection) return;
-  const sender = audioSender(connection);
-  if (!enabled) {
-    if (!connection.liveMicTrack) {
-      connection.liveMicTrack =
-        connection.localStream.getAudioTracks()[0] ?? null;
-    }
+  const sender = connection.micSender;
+  if (!sender) {
     for (const track of connection.localStream.getAudioTracks()) {
-      track.enabled = false;
+      track.enabled = enabled;
     }
-    const silent = silentStandInTrack();
-    if (sender && silent) void sender.replaceTrack(silent);
-    clearRealtimeInputAudioBuffer(connection);
     return;
   }
-  const live = connection.liveMicTrack;
-  if (live) live.enabled = true;
-  if (sender && live) void sender.replaceTrack(live);
-  else {
-    for (const track of connection.localStream.getAudioTracks()) {
-      track.enabled = true;
-    }
-  }
+  // The hardware mic stays enabled. Turning the track off and on again
+  // leaves it silent when it is put back on the sender, so the session
+  // keeps hearing the stand-in.
+  connection.micSwapQueue = connection.micSwapQueue
+    .then(async () => {
+      if (!enabled) {
+        const live = liveMicTrackOf(connection);
+        if (live) connection.liveMicTrack = live;
+        const silent = silentStandInTrack();
+        if (!silent) return;
+        await sender.replaceTrack(silent);
+        clearRealtimeInputAudioBuffer(connection);
+        return;
+      }
+      const live = await ensureLiveMicTrack(connection);
+      if (!live) return;
+      await sender.replaceTrack(live);
+    })
+    .catch(() => undefined);
 }
 
 /** Drop buffered mic audio so ambient noise cannot start a turn during assistant speech. */
@@ -463,8 +503,10 @@ export async function connectOpenAiRealtimeCall(params: {
   };
 
   try {
+    let micSender: RTCRtpSender | null = null;
     for (const track of localStream.getTracks()) {
-      peerConnection.addTrack(track, localStream);
+      const added = peerConnection.addTrack(track, localStream);
+      if (track.kind === 'audio') micSender = added;
     }
 
     const dataChannel = peerConnection.createDataChannel('oai-events');
@@ -536,6 +578,8 @@ export async function connectOpenAiRealtimeCall(params: {
       remoteAudio,
       voice,
       liveMicTrack: null,
+      micSender,
+      micSwapQueue: Promise.resolve(),
       sendEvent,
       close,
     };
