@@ -27,6 +27,11 @@ import {
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
 import { getLinkByPrivyUserId } from './web3/get-link-by-privy-user-id';
 import { distinctPublicRoomId } from '../public-room-id';
+import {
+  actionForRequiredRoomTypeLookup,
+  lookupRequiredRoomType,
+  type RequiredRoomTypeLookup,
+} from '../required-room-type';
 import { directPairAliasLocalpart } from '../direct-pair-room';
 import { HYPHA_ROOM_TYPES, type HyphaRoomType } from '../room-types';
 import {
@@ -298,40 +303,30 @@ export async function createBotOwnedRoomAction({
   return { roomId };
 }
 
-/**
- * Get a real (Privy-backed) member into a room the bot owns, without that member's own client
- * ever calling `join`: the bot (PL100) invites them, then the AS puppets their accept — both
- * steps authenticated purely with the bot's own credentials (#2428 Decision 9). Works the same
- * whether the room is invite-only (new bot-owned rooms) or still open-join (legacy rooms predating
- * this change) — on an open room the invite step harmlessly no-ops/fails and the puppet-join
- * succeeds anyway via public `join_rules`. Soft-fails: never throws.
- */
+async function readRequiredRoomType(
+  roomId: string,
+  requiredType: HyphaRoomType,
+  botToken: string,
+  homeserver: string,
+): Promise<RequiredRoomTypeLookup> {
+  return lookupRequiredRoomType(
+    () => matrixGetRoomType(roomId, botToken, homeserver),
+    requiredType,
+    (error) => {
+      console.warn(
+        '[MatrixBot] Could not read the type of the aliased shared room:',
+        roomId,
+        error instanceof Error ? error.message : error,
+      );
+    },
+  );
+}
+
 /**
  * Open one shared room (`#alias:server`). The alias is looked up first so every member lands in
  * the same room. It is created only when the alias is missing. The caller is puppet-joined.
  * Soft-fails: returns null instead of throwing.
  */
-async function roomMatchesRequiredType(
-  roomId: string | null,
-  requiredType: HyphaRoomType | undefined,
-  botToken: string,
-  homeserver: string,
-): Promise<boolean> {
-  if (!requiredType) return true;
-  if (!roomId) return false;
-  try {
-    const type = await matrixGetRoomType(roomId, botToken, homeserver);
-    return type === requiredType;
-  } catch (error) {
-    console.warn(
-      '[MatrixBot] Could not read the type of the aliased shared room:',
-      roomId,
-      error instanceof Error ? error.message : error,
-    );
-    return false;
-  }
-}
-
 async function ensureAliasedChatRoomAction({
   matrixUserId,
   aliasLocalpart,
@@ -391,14 +386,28 @@ async function ensureAliasedChatRoomAction({
     return null;
   }
 
-  const typeOk = await roomMatchesRequiredType(
-    roomId,
-    requireRoomType,
-    botToken,
-    homeserver,
+  let typeLookup: RequiredRoomTypeLookup = 'match';
+  if (roomId && requireRoomType) {
+    typeLookup = await readRequiredRoomType(
+      roomId,
+      requireRoomType,
+      botToken,
+      homeserver,
+    );
+  }
+  const reuse = actionForRequiredRoomTypeLookup(
+    typeLookup,
+    Boolean(roomId && pointsAtMemberRoom(roomId, memberRoomIds)),
   );
-  if (roomId && (pointsAtMemberRoom(roomId, memberRoomIds) || !typeOk)) {
-    if (requireRoomType && !typeOk) {
+  if (reuse === 'abort') {
+    console.warn(
+      '[MatrixBot] Could not confirm the type of the aliased shared room; leaving the alias unchanged:',
+      alias,
+    );
+    return null;
+  }
+  if (reuse === 'detach' && roomId) {
+    if (requireRoomType && typeLookup === 'mismatch') {
       console.warn(
         '[MatrixBot] Shared room alias is not the required room type; detaching:',
         alias,
@@ -450,18 +459,28 @@ async function ensureAliasedChatRoomAction({
         );
         return null;
       }
-      if (
-        !(await roomMatchesRequiredType(
+      if (roomId && requireRoomType) {
+        const takenTypeLookup = await readRequiredRoomType(
           roomId,
           requireRoomType,
           botToken,
           homeserver,
-        ))
-      ) {
-        console.warn(
-          '[MatrixBot] Shared room alias is taken by a room of the wrong type:',
-          alias,
         );
+        if (takenTypeLookup === 'unknown') {
+          console.warn(
+            '[MatrixBot] Shared room alias is taken but its type could not be confirmed; leaving the alias unchanged:',
+            alias,
+          );
+          return null;
+        }
+        if (takenTypeLookup === 'mismatch') {
+          console.warn(
+            '[MatrixBot] Shared room alias is taken by a room of the wrong type:',
+            alias,
+          );
+          return null;
+        }
+      } else if (!roomId) {
         return null;
       }
     }
@@ -739,6 +758,14 @@ function pointsAtMemberRoom(
   );
 }
 
+/**
+ * Get a real (Privy-backed) member into a room the bot owns, without that member's own client
+ * ever calling `join`: the bot (PL100) invites them, then the AS puppets their accept — both
+ * steps authenticated purely with the bot's own credentials (#2428 Decision 9). Works the same
+ * whether the room is invite-only (new bot-owned rooms) or still open-join (legacy rooms predating
+ * this change) — on an open room the invite step harmlessly no-ops/fails and the puppet-join
+ * succeeds anyway via public `join_rules`. Soft-fails: never throws.
+ */
 export async function ensureMemberJoinedRoomAction({
   roomId,
   matrixUserId,

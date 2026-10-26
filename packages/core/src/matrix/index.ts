@@ -2,6 +2,7 @@ export * from './types';
 export * from './room-types';
 export * from './group-room';
 export * from './public-room-id';
+export * from './required-room-type';
 export * from './client';
 export * from './rich-reply';
 export * from './chat-markup';
