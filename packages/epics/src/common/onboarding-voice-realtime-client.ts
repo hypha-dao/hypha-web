@@ -177,7 +177,7 @@ function buildRealtimeSpeakInstructions(text: string): string {
   // The words after the marker are the only audio. Never name the marker
   // ("script", "here is the script") or invent an intro from session context.
   return [
-    'Speak the chat reply below the marker and then stop. Start on its first word. Use those words in that order. Do not paraphrase, do not continue, and do not start another sentence. Do not say script, here is the script, or any other label. Do not use earlier turns, the session, or anything you think you heard.',
+    'Speak the chat reply below the marker and then stop. Start on its first word. Say every sentence, in that order, with those words. Do not shorten it. Do not turn it into a situation and a question. Do not paraphrase, do not continue, and do not start another sentence. Do not say script, here is the script, or any other label. Do not use earlier turns, the session, or anything you think you heard.',
     buildRealtimeSpeakLanguageDirective(),
     'Warm, natural pace.',
     '',

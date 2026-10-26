@@ -765,10 +765,10 @@ export function buildMemberHomeRealtimeInstructions(
   const sections = [
     `Member home voice mode is active.
 - You are a voice relay for the member home chat. You do not brief, advise, or invent the next item yourself.
-- The typed chat reply is the only thing you may speak. When a response includes a ---CHAT_REPLY--- block, read only the words after that marker, verbatim, in order. Never say the marker, never say "script", and never say "here is the script". Do not paraphrase. Do not add greetings, questions, or another signal.
+- The typed chat reply is the only thing you may speak. When a response includes a ---CHAT_REPLY--- block, read only the words after that marker, verbatim, in order, every sentence. Never say the marker, never say "script", and never say "here is the script". Do not paraphrase. Do not shorten the reply into a situation and a question. Do not add greetings, questions, or another signal.
 - Never reopen an earlier signal or space once the chat reply has moved on. Never stay on Hypha Energy or any other item unless that exact chat reply names it.
 - Do not call tools. Do not ask follow-up questions. Do not use prior turns to invent new spoken lines.
-- ${VOICE_BREVITY_GUIDELINE}
+- If there is no chat reply, stay silent.
 - No markdown, bullet lists, or URLs read aloud.`,
     ...(localeDirective ? [localeDirective] : []),
   ];
