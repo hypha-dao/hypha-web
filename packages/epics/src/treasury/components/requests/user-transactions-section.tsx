@@ -4,6 +4,7 @@ import { TransactionsList } from './transactions-list';
 import { RefundableEscrowsList } from './refundable-escrows-list';
 import { Text } from '@radix-ui/themes';
 import { useUserTransfersSection } from '../../hooks';
+import { Button } from '@hypha-platform/ui';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Empty } from '../../../common';
 import { useTranslations } from 'next-intl';
@@ -28,6 +29,8 @@ export const UserTransactionsSection: FC<TransactionsSectionProps> = ({
     searchTerm,
     setSearchTerm,
     pageSize: usedPageSize,
+    error,
+    retry,
   } = useUserTransfersSection({ personSlug, pageSize });
 
   const { person } = useMe();
@@ -44,7 +47,23 @@ export const UserTransactionsSection: FC<TransactionsSectionProps> = ({
 
       <RefundableEscrowsList user={personAddress} />
 
-      {transfers.length === 0 && !isLoading ? (
+      {error ? (
+        <Empty>
+          <p>{tTreasury('failedToLoadTransactions')}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={() => {
+              void retry();
+            }}
+            disabled={isLoading}
+          >
+            {tTreasury('retryTransactions')}
+          </Button>
+        </Empty>
+      ) : transfers.length === 0 && !isLoading ? (
         <Empty>
           <p>{tTreasury('noTransactionsFound')}</p>
         </Empty>

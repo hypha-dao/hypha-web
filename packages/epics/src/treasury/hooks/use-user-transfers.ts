@@ -21,23 +21,18 @@ export const useUserTransfers = ({
     return sort?.sort ? `${base}?sort=${encodeURIComponent(sort.sort)}` : base;
   }, [personSlug, sort]);
 
-  const { data, isLoading, error } = useSWR(
+  const { data, isLoading, error, mutate } = useSWR(
     personSlug && jwt ? [endpoint, jwt] : null,
     async ([endpoint, jwt]) => {
-      try {
-        const res = await fetch(endpoint, {
-          headers: {
-            Authorization: `Bearer ${jwt}`,
-          },
-        });
-        if (!res.ok) {
-          throw new Error(`Failed to fetch transactions: ${res.statusText}`);
-        }
-        return await res.json();
-      } catch (err) {
-        console.error('Fetch error:', err);
-        throw err;
+      const res = await fetch(endpoint, {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch transactions: ${res.status}`);
       }
+      return await res.json();
     },
     {
       refreshInterval,
@@ -50,5 +45,6 @@ export const useUserTransfers = ({
     transfers: (data as TransferWithEntity[]) || [],
     isLoading,
     error,
+    retry: mutate,
   };
 };

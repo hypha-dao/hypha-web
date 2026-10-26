@@ -2217,6 +2217,8 @@
     "vaults": "Cofres",
     "searchTransactions": "Transações de pesquisa",
     "noTransactionsFound": "Nenhuma transação encontrada",
+    "failedToLoadTransactions": "Não foi possível carregar as transações",
+    "retryTransactions": "Tentar novamente",
     "loadMoreTransactions": "Carregar mais transações",
     "rewardsSection": {
       "title": "Recompensas",

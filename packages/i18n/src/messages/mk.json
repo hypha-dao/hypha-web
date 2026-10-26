@@ -1990,6 +1990,8 @@
     "vaults": "Трезори",
     "searchTransactions": "Пребарај трансакции",
     "noTransactionsFound": "Не се пронајдени трансакции",
+    "failedToLoadTransactions": "Неуспешно вчитување на трансакции",
+    "retryTransactions": "Обиди се повторно",
     "loadMoreTransactions": "Вчитај повеќе трансакции",
     "rewardsSection": {
       "title": "Награди",

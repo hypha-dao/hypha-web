@@ -2231,6 +2231,8 @@
     "vaults": "Bóvedas",
     "searchTransactions": "Buscar transacciones",
     "noTransactionsFound": "No se encontraron transacciones",
+    "failedToLoadTransactions": "No se pudieron cargar las transacciones",
+    "retryTransactions": "Reintentar",
     "loadMoreTransactions": "Cargar más transacciones",
     "rewardsSection": {
       "title": "Recompensas",

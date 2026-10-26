@@ -15,7 +15,7 @@ export const useUserTransfersSection = ({
   const [visibleCount, setVisibleCount] = React.useState(pageSize);
   const [searchTerm, setSearchTerm] = React.useState('');
 
-  const { isLoading, transfers } = useUserTransfers({
+  const { isLoading, transfers, error, retry } = useUserTransfers({
     ...(activeSort !== 'all' && { sort: { sort: activeSort } }),
     personSlug,
   });
@@ -73,5 +73,7 @@ export const useUserTransfersSection = ({
     searchTerm,
     setSearchTerm,
     pageSize,
+    error,
+    retry,
   };
 };

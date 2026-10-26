@@ -2010,6 +2010,8 @@
     "vaults": "Kluizen",
     "searchTransactions": "Transacties zoeken",
     "noTransactionsFound": "Geen transacties gevonden",
+    "failedToLoadTransactions": "Transacties konden niet worden geladen",
+    "retryTransactions": "Opnieuw proberen",
     "loadMoreTransactions": "Laad meer transacties",
     "rewardsSection": {
       "title": "Beloningen",
