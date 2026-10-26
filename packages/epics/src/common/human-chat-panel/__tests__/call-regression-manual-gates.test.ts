@@ -348,6 +348,7 @@ describe('CSH-QA-3–5 stability hardening (W7)', () => {
   it('does not start a call from Start-a-conversation without a Matrix peer', () => {
     const source = readCommonSource('human-right-panel.tsx');
     expect(source).toContain('shouldRefusePersonPanelCall');
+    expect(source).toContain('shouldLeaveCallOnPersonPanelRefuse');
     expect(source).toContain('runPersonPanelCallStart');
     expect(source).toContain("tMember('matrixPersonUnavailable')");
     const audioAt = source.indexOf('const handleCallAudio = useCallback');

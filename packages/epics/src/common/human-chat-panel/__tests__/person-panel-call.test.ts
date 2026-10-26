@@ -6,6 +6,7 @@ import {
   callAppliesToCurrentChatRoom,
   hasHumanTimelineMessages,
   runPersonPanelCallStart,
+  shouldLeaveCallOnPersonPanelRefuse,
   shouldRefusePersonPanelCall,
 } from '../person-panel-call';
 
@@ -21,13 +22,43 @@ describe('shouldRefusePersonPanelCall', () => {
     ).toBe(true);
   });
 
-  it('refuses Start-a-conversation even when an empty DM room id exists', () => {
+  it('refuses a listed DM that is missing only one of the room ids', () => {
+    expect(
+      shouldRefusePersonPanelCall({
+        isDirectConversation: true,
+        roomId: '!empty',
+        coherenceRoomId: null,
+        hasHumanMessages: false,
+      }),
+    ).toBe(true);
+    expect(
+      shouldRefusePersonPanelCall({
+        isDirectConversation: true,
+        roomId: null,
+        coherenceRoomId: '!empty',
+        hasHumanMessages: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('allows an existing joined direct room even if the timeline is empty', () => {
     expect(
       shouldRefusePersonPanelCall({
         isDirectConversation: true,
         roomId: '!empty',
         coherenceRoomId: '!empty',
         hasHumanMessages: false,
+      }),
+    ).toBe(false);
+  });
+
+  it('refuses when roomId and coherenceRoomId disagree during a switch', () => {
+    expect(
+      shouldRefusePersonPanelCall({
+        isDirectConversation: true,
+        roomId: '!stale',
+        coherenceRoomId: '!next',
+        hasHumanMessages: true,
       }),
     ).toBe(true);
   });
@@ -55,19 +86,53 @@ describe('shouldRefusePersonPanelCall', () => {
   });
 });
 
+describe('shouldLeaveCallOnPersonPanelRefuse', () => {
+  it('leaves when there is no active call session room', () => {
+    expect(shouldLeaveCallOnPersonPanelRefuse(null, '!dm')).toBe(true);
+    expect(shouldLeaveCallOnPersonPanelRefuse('', '!dm')).toBe(true);
+    expect(shouldLeaveCallOnPersonPanelRefuse(undefined, null)).toBe(true);
+  });
+
+  it('leaves leftover chrome for the current room', () => {
+    expect(shouldLeaveCallOnPersonPanelRefuse('!dm', '!dm')).toBe(true);
+  });
+
+  it('does not tear down a call owned by another room', () => {
+    expect(shouldLeaveCallOnPersonPanelRefuse('!other', '!dm')).toBe(false);
+    expect(shouldLeaveCallOnPersonPanelRefuse('!other', null)).toBe(false);
+  });
+});
+
 describe('runPersonPanelCallStart', () => {
-  it('phone and video refuse when Start-a-conversation / null room is active', () => {
+  it('phone and video refuse when the panel has no room yet', () => {
     const onRefuse = vi.fn();
     const onStart = vi.fn();
     const refuse = shouldRefusePersonPanelCall({
       isDirectConversation: true,
-      roomId: '!empty',
-      coherenceRoomId: '!empty',
+      roomId: null,
+      coherenceRoomId: null,
       hasHumanMessages: false,
     });
     runPersonPanelCallStart({ refuse, onRefuse, onStart });
     expect(onRefuse).toHaveBeenCalledOnce();
     expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it('starts the call in a joined direct room with an empty timeline', () => {
+    const onRefuse = vi.fn();
+    const onStart = vi.fn();
+    runPersonPanelCallStart({
+      refuse: shouldRefusePersonPanelCall({
+        isDirectConversation: true,
+        roomId: '!empty',
+        coherenceRoomId: '!empty',
+        hasHumanMessages: false,
+      }),
+      onRefuse,
+      onStart,
+    });
+    expect(onStart).toHaveBeenCalledOnce();
+    expect(onRefuse).not.toHaveBeenCalled();
   });
 
   it('starts the call when a peer conversation is already active', () => {

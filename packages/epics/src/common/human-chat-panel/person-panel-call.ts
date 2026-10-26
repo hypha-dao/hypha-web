@@ -6,8 +6,11 @@ export function hasHumanTimelineMessages(
 }
 
 /**
- * Phone / video on a person panel must not start Element Call when there is
- * no peer conversation yet (null room, Start-a-conversation, empty DM).
+ * Phone / video on a person panel must not start Element Call when the
+ * direct conversation has no room yet, or when the panel room disagrees
+ * with the coherence room (stale bind during a switch). An existing joined
+ * DM is callable even if the timeline is still empty.
+ * `hasHumanMessages` is unused for refusal; callers may still pass it.
  */
 export function shouldRefusePersonPanelCall(input: {
   isDirectConversation: boolean;
@@ -17,7 +20,22 @@ export function shouldRefusePersonPanelCall(input: {
 }): boolean {
   if (!input.isDirectConversation) return false;
   if (!input.roomId?.trim() || !input.coherenceRoomId?.trim()) return true;
-  return !input.hasHumanMessages;
+  if (input.roomId.trim() !== input.coherenceRoomId.trim()) return true;
+  return false;
+}
+
+/**
+ * On a refused person-panel call, leave only leftover chrome for this room
+ * (or no session). A live call owned by another room must stay up.
+ */
+export function shouldLeaveCallOnPersonPanelRefuse(
+  sessionRoomId: string | null | undefined,
+  currentRoomId: string | null | undefined,
+): boolean {
+  const session = sessionRoomId?.trim() || null;
+  if (!session) return true;
+  const current = currentRoomId?.trim() || null;
+  return session === current;
 }
 
 /**

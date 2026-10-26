@@ -197,6 +197,7 @@ import {
   callAppliesToCurrentChatRoom as chatRoomOwnsCallSession,
   hasHumanTimelineMessages,
   runPersonPanelCallStart,
+  shouldLeaveCallOnPersonPanelRefuse,
   shouldRefusePersonPanelCall,
 } from './human-chat-panel/person-panel-call';
 import {
@@ -1497,9 +1498,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   });
   useEffect(() => {
     if (!refusePersonPanelCall) return;
-    void leaveSpaceCall();
+    if (shouldLeaveCallOnPersonPanelRefuse(callSessionRoomId, roomId)) {
+      void leaveSpaceCall();
+    }
     dismissSpaceCallError();
-  }, [dismissSpaceCallError, leaveSpaceCall, refusePersonPanelCall]);
+  }, [
+    callSessionRoomId,
+    dismissSpaceCallError,
+    leaveSpaceCall,
+    refusePersonPanelCall,
+    roomId,
+  ]);
   useEffect(() => {
     const activeSpaceSlug = spaceSlug?.trim() || null;
     const activeAuthToken = authToken?.trim() || null;
@@ -1851,9 +1860,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const refusePersonPanelCallStart = useCallback(() => {
     setError(tMember('matrixPersonUnavailable'));
-    void leaveSpaceCall();
+    if (shouldLeaveCallOnPersonPanelRefuse(callSessionRoomId, roomId)) {
+      void leaveSpaceCall();
+    }
     dismissSpaceCallError();
-  }, [dismissSpaceCallError, leaveSpaceCall, tMember]);
+  }, [
+    callSessionRoomId,
+    dismissSpaceCallError,
+    leaveSpaceCall,
+    roomId,
+    tMember,
+  ]);
 
   const handleCallAudio = useCallback(() => {
     runPersonPanelCallStart({
