@@ -48,15 +48,30 @@ describe('directConversationWelcomeName', () => {
 });
 
 describe('directConversationEmptyWelcomeKey', () => {
-  it('keeps Start-a-conversation copy only on a room-less shell', () => {
+  it('keeps Start-a-conversation copy only on a room-less direct shell', () => {
     expect(
-      directConversationEmptyWelcomeKey({ isStartConversation: true }),
+      directConversationEmptyWelcomeKey({
+        isDirectConversation: true,
+        isStartConversation: true,
+      }),
     ).toBe('welcomeWith');
   });
 
-  it('uses the empty-DM copy after a real room is bound', () => {
+  it('uses the empty-DM copy after a real direct room is bound', () => {
     expect(
-      directConversationEmptyWelcomeKey({ isStartConversation: false }),
+      directConversationEmptyWelcomeKey({
+        isDirectConversation: true,
+        isStartConversation: false,
+      }),
     ).toBe('emptyDirectChat');
+  });
+
+  it('keeps welcomeWith for a space chat with a welcome partner', () => {
+    expect(
+      directConversationEmptyWelcomeKey({
+        isDirectConversation: false,
+        isStartConversation: false,
+      }),
+    ).toBe('welcomeWith');
   });
 });

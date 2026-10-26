@@ -53,18 +53,68 @@ export function matchedDirectRoomId(
   return null;
 }
 
+export type PersonPanelCallSelection = {
+  personId: number | null;
+  title: string;
+  roomId: string | null;
+  coherenceRoomId: string | null;
+};
+
+export function personPanelCallSelectionOf(input: {
+  personId?: number | null;
+  title?: string | null;
+  roomId?: string | null;
+  coherenceRoomId?: string | null;
+}): PersonPanelCallSelection {
+  return {
+    personId: input.personId && input.personId > 0 ? input.personId : null,
+    title: input.title?.trim() || '',
+    roomId: input.roomId?.trim() || null,
+    coherenceRoomId: input.coherenceRoomId?.trim() || null,
+  };
+}
+
+export function personPanelCallSelectionMatches(
+  started: PersonPanelCallSelection,
+  live: PersonPanelCallSelection,
+): boolean {
+  if (started.personId !== live.personId) return false;
+  if (started.title !== live.title) return false;
+  // Binding a room-less shell writes a room id — that is not a user switch.
+  if (
+    started.coherenceRoomId &&
+    live.coherenceRoomId &&
+    started.coherenceRoomId !== live.coherenceRoomId
+  ) {
+    return false;
+  }
+  if (started.roomId && live.roomId && started.roomId !== live.roomId) {
+    return false;
+  }
+  return true;
+}
+
+export class PersonPanelCallAborted extends Error {
+  readonly name = 'PersonPanelCallAborted';
+  constructor() {
+    super('Person panel call selection changed');
+  }
+}
+
 /** Ensure a usable DM, then start the call against that room. */
 export async function runPersonPanelCallPlan(input: {
   plan: PersonPanelCallPlan;
   ensureRoom: () => Promise<string>;
   onRefuse: () => void;
   onStart: (roomId: string) => void;
+  isSelectionCurrent?: () => boolean;
 }): Promise<void> {
   if (input.plan.action === 'refuse') {
     input.onRefuse();
     return;
   }
   if (input.plan.action === 'start') {
+    if (input.isSelectionCurrent && !input.isSelectionCurrent()) return;
     input.onStart(input.plan.roomId);
     return;
   }
@@ -72,6 +122,7 @@ export async function runPersonPanelCallPlan(input: {
   if (!roomId) {
     throw new Error('Person panel call requires a Matrix room');
   }
+  if (input.isSelectionCurrent && !input.isSelectionCurrent()) return;
   input.onStart(roomId);
 }
 

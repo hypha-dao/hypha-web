@@ -6,6 +6,8 @@ import {
   callAppliesToCurrentChatRoom,
   hasHumanTimelineMessages,
   matchedDirectRoomId,
+  personPanelCallSelectionMatches,
+  personPanelCallSelectionOf,
   planPersonPanelCall,
   runPersonPanelCallPlan,
   runPersonPanelCallStart,
@@ -135,6 +137,64 @@ describe('matchedDirectRoomId', () => {
   });
 });
 
+describe('personPanelCallSelectionMatches', () => {
+  it('treats the same person and title as current', () => {
+    const started = personPanelCallSelectionOf({
+      personId: 5,
+      title: 'Dmitry Ermolenko',
+      roomId: null,
+      coherenceRoomId: null,
+    });
+    expect(
+      personPanelCallSelectionMatches(
+        started,
+        personPanelCallSelectionOf({
+          personId: 5,
+          title: 'Dmitry Ermolenko',
+          roomId: null,
+          coherenceRoomId: null,
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it('still matches after a room-less shell is bound', () => {
+    const started = personPanelCallSelectionOf({
+      personId: 5,
+      title: 'Dmitry Ermolenko',
+    });
+    expect(
+      personPanelCallSelectionMatches(
+        started,
+        personPanelCallSelectionOf({
+          personId: 5,
+          title: 'Dmitry Ermolenko',
+          roomId: '!ensured',
+          coherenceRoomId: '!ensured',
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects a switch to another person', () => {
+    const started = personPanelCallSelectionOf({
+      personId: 5,
+      title: 'Dmitry Ermolenko',
+    });
+    expect(
+      personPanelCallSelectionMatches(
+        started,
+        personPanelCallSelectionOf({
+          personId: 9,
+          title: 'Gerardo Roza',
+          roomId: '!gerardo',
+          coherenceRoomId: '!gerardo',
+        }),
+      ),
+    ).toBe(false);
+  });
+});
+
 describe('shouldLeaveCallOnPersonPanelRefuse', () => {
   it('leaves when there is no active call session room', () => {
     expect(shouldLeaveCallOnPersonPanelRefuse(null, '!dm')).toBe(true);
@@ -189,6 +249,20 @@ describe('runPersonPanelCallPlan', () => {
       onStart,
     });
     expect(onStart).toHaveBeenCalledWith('!empty');
+    expect(onRefuse).not.toHaveBeenCalled();
+  });
+
+  it('does not start when the selection changed after ensure', async () => {
+    const onRefuse = vi.fn();
+    const onStart = vi.fn();
+    await runPersonPanelCallPlan({
+      plan: { action: 'ensure-then-start' },
+      ensureRoom: async () => '!ensured',
+      isSelectionCurrent: () => false,
+      onRefuse,
+      onStart,
+    });
+    expect(onStart).not.toHaveBeenCalled();
     expect(onRefuse).not.toHaveBeenCalled();
   });
 
@@ -290,7 +364,9 @@ describe('Start-a-conversation call toolbar', () => {
     expect(panel).toContain('matchedDirectRoomId(roomId, coherenceRoomId)');
     expect(panel).toContain('data-hypha-room-id={roomId?.trim() || undefined}');
     expect(panel).toContain('directConversationEmptyWelcomeKey');
-    expect(panel).toContain("t('emptyDirectChat')");
+    expect(panel).toContain('isDirectConversation');
+    expect(panel).toContain('personPanelCallSelectionMatches');
+    expect(panel).toContain('PersonPanelCallAborted');
     const toolbarAt = panel.indexOf('<HumanChatPanelCallToolbar');
     const checkedAt = panel.lastIndexOf('callActionsChecked ? (', toolbarAt);
     expect(toolbarAt).toBeGreaterThan(-1);

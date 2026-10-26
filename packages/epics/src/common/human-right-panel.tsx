@@ -204,6 +204,9 @@ import {
   callAppliesToCurrentChatRoom as chatRoomOwnsCallSession,
   hasHumanTimelineMessages,
   matchedDirectRoomId,
+  PersonPanelCallAborted,
+  personPanelCallSelectionMatches,
+  personPanelCallSelectionOf,
   planPersonPanelCall,
   runPersonPanelCallPlan,
   shouldLeaveCallOnPersonPanelRefuse,
@@ -1887,7 +1890,21 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   peerMatrixIdsRef.current = peerPersonIdToMatrixUserId;
   const peerMatrixIdsLoadingRef = useRef(peerMatrixIdsLoading);
   peerMatrixIdsLoadingRef.current = peerMatrixIdsLoading;
-  const personPanelCallEnsureRef = useRef(false);
+  const personPanelCallEnsureGenerationRef = useRef(0);
+  const personPanelCallSelectionRef = useRef(
+    personPanelCallSelectionOf({
+      personId: peerPersonId,
+      title: coherenceTitle,
+      roomId,
+      coherenceRoomId,
+    }),
+  );
+  personPanelCallSelectionRef.current = personPanelCallSelectionOf({
+    personId: peerPersonId,
+    title: coherenceTitle,
+    roomId,
+    coherenceRoomId,
+  });
 
   const refusePersonPanelCallStart = useCallback(() => {
     setError(tMember('matrixPersonUnavailable'));
@@ -1933,43 +1950,49 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     ],
   );
 
-  const ensurePersonPanelCallRoom = useCallback(async () => {
-    const personId = peerPersonId;
-    const title = coherenceTitle?.trim() || '';
-    const matched = matchedDirectRoomId(roomId, coherenceRoomId);
-    if (personId) {
-      try {
-        const ensured = await openOrEnsurePersonRoom({
-          getMatrix: () => matrixRef.current,
-          personId,
-          title,
-          waitForMatrixUserId: waitForPeerMatrixUserId,
-        });
-        rememberPersonDirectRoom(personId, ensured);
-        bindEnsuredPersonPanelRoom(ensured);
-        return ensured;
-      } catch (error) {
-        if (!matched) throw error;
+  const ensurePersonPanelCallRoom = useCallback(
+    async (isSelectionCurrent: () => boolean) => {
+      const personId = peerPersonId;
+      const title = coherenceTitle?.trim() || '';
+      const matched = matchedDirectRoomId(roomId, coherenceRoomId);
+      if (personId) {
+        try {
+          const ensured = await openOrEnsurePersonRoom({
+            getMatrix: () => matrixRef.current,
+            personId,
+            title,
+            waitForMatrixUserId: waitForPeerMatrixUserId,
+          });
+          if (!isSelectionCurrent()) throw new PersonPanelCallAborted();
+          rememberPersonDirectRoom(personId, ensured);
+          bindEnsuredPersonPanelRoom(ensured);
+          return ensured;
+        } catch (error) {
+          if (error instanceof PersonPanelCallAborted) throw error;
+          if (!matched) throw error;
+        }
       }
-    }
-    if (matched) {
-      try {
-        await matrixRef.current.joinRoom(matched);
-      } catch {
-        // Already joined; the ids already agree so this is a real current DM.
+      if (matched) {
+        try {
+          await matrixRef.current.joinRoom(matched);
+        } catch {
+          // Already joined; the ids already agree so this is a real current DM.
+        }
+        if (!isSelectionCurrent()) throw new PersonPanelCallAborted();
+        bindEnsuredPersonPanelRoom(matched);
+        return matched;
       }
-      bindEnsuredPersonPanelRoom(matched);
-      return matched;
-    }
-    throw new Error('Person panel call has no DM room to ensure');
-  }, [
-    bindEnsuredPersonPanelRoom,
-    coherenceRoomId,
-    coherenceTitle,
-    peerPersonId,
-    roomId,
-    waitForPeerMatrixUserId,
-  ]);
+      throw new Error('Person panel call has no DM room to ensure');
+    },
+    [
+      bindEnsuredPersonPanelRoom,
+      coherenceRoomId,
+      coherenceTitle,
+      peerPersonId,
+      roomId,
+      waitForPeerMatrixUserId,
+    ],
+  );
 
   const launchPersonPanelCall = useCallback(
     (kind: 'audio' | 'video', targetRoomId: string) => {
@@ -2019,29 +2042,27 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         coherenceRoomId,
         hasHumanMessages,
       });
-      if (
-        plan.action === 'ensure-then-start' &&
-        personPanelCallEnsureRef.current
-      ) {
-        return;
-      }
-      if (plan.action === 'ensure-then-start') {
-        personPanelCallEnsureRef.current = true;
-      }
+      const generation = ++personPanelCallEnsureGenerationRef.current;
+      const started = personPanelCallSelectionRef.current;
+      const isSelectionCurrent = () =>
+        personPanelCallEnsureGenerationRef.current === generation &&
+        personPanelCallSelectionMatches(
+          started,
+          personPanelCallSelectionRef.current,
+        );
       void runPersonPanelCallPlan({
         plan,
-        ensureRoom: ensurePersonPanelCallRoom,
+        ensureRoom: () => ensurePersonPanelCallRoom(isSelectionCurrent),
+        isSelectionCurrent,
         onRefuse: refusePersonPanelCallStart,
-        onStart: (targetRoomId) => launchPersonPanelCall(kind, targetRoomId),
-      })
-        .catch(() => {
-          setError(tMember('callFailed'));
-        })
-        .finally(() => {
-          if (plan.action === 'ensure-then-start') {
-            personPanelCallEnsureRef.current = false;
-          }
-        });
+        onStart: (targetRoomId) => {
+          if (!isSelectionCurrent()) return;
+          launchPersonPanelCall(kind, targetRoomId);
+        },
+      }).catch((error) => {
+        if (error instanceof PersonPanelCallAborted) return;
+        setError(tMember('callFailed'));
+      });
     },
     [
       coherenceRoomId,
@@ -6117,13 +6138,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                           ? t('publicWelcome')
                           : coherencePublic
                           ? t('publicWelcome')
-                          : welcomePartner &&
-                            directConversationEmptyWelcomeKey({
-                              isStartConversation,
-                            }) === 'welcomeWith'
-                          ? t('welcomeWith', { name: welcomePartner })
                           : welcomePartner
-                          ? t('emptyDirectChat')
+                          ? t(
+                              directConversationEmptyWelcomeKey({
+                                isDirectConversation,
+                                isStartConversation,
+                              }),
+                              { name: welcomePartner },
+                            )
                           : undefined
                       }
                       welcomeSenderName={
