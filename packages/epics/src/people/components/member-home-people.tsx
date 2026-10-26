@@ -184,6 +184,10 @@ export function MemberHomePeople({
     const title = labelOf(person, fallbackName);
     try {
       const result = await resolvePersonRoom(person, title);
+      if (result.status === 'start-conversation') {
+        setNotice(t('matrixPersonUnavailable'));
+        return false;
+      }
       if (result.status !== 'ready') return false;
       showRoom(result.roomId, title, person);
       const start = video ? startVideoForRoom : startAudioForRoom;

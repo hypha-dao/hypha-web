@@ -62,6 +62,8 @@ describe('group picker chips and radio', () => {
     expect(home).toContain("status: 'start-conversation'");
     expect(home).toContain("result.status === 'failed'");
     expect(home).toContain("result.status === 'ready'");
+    expect(home).toContain("result.status === 'start-conversation'");
+    expect(home).toContain("setNotice(t('matrixPersonUnavailable'))");
     expect(home).toContain('showRoom(null, title, person)');
     expect(home).toContain('showRoom(result.roomId, title, person)');
     expect(home).toContain('rememberPersonDirectRoom');
