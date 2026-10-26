@@ -1739,7 +1739,12 @@ export async function createChatStreamResult(
     stopWhen: memberHomeRecord
       ? ({ steps }) => {
           if (steps.length >= 2) return true;
-          return Boolean(steps[steps.length - 1]?.text?.trim());
+          const latest = steps[steps.length - 1];
+          const spoken = Boolean(latest?.text?.trim());
+          // A step that both spoke and called a tool often leaves the line
+          // unfinished (e.g. ending on an em dash). Let the next step finish.
+          const usedTools = (latest?.toolCalls?.length ?? 0) > 0;
+          return spoken && !usedTools;
         }
       : stepCountIs(6),
     onStepFinish: (event) => {
