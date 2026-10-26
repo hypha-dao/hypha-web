@@ -51,9 +51,7 @@ describe('all-spaces map chat entry points', () => {
     expect(openPublicChatHook).toContain(
       'ensurePublicRoom(slug, memberRoomId)',
     );
-    expect(openPublicChatHook).toContain(
-      'distinctPublicRoomId(roomId, memberRoomId)',
-    );
+    expect(openPublicChatHook).toContain('acceptEnsuredPublicRoomId(');
     expect(openPublicChatHook).toContain(
       "throw new Error('Public channel resolved to the space channel')",
     );
@@ -61,11 +59,13 @@ describe('all-spaces map chat entry points', () => {
     expect(humanRightPanel).toContain(
       'await matrixRef.current.ensurePublicRoom(',
     );
-    expect(humanRightPanel).toContain(
-      'if (!distinctPublicRoomId(publicRoomId, memberRoomId))',
-    );
+    expect(humanRightPanel).toContain('acceptEnsuredPublicRoomId(');
+    expect(humanRightPanel).toContain('!coherencePublic &&');
     expect(humanRightPanel).toContain(
       '} else if (!targetRoomId && openingSpaceSlug) {',
+    );
+    expect(humanRightPanel).toContain(
+      "{t('publicRoomTitle')} — {t('publicWelcome')}",
     );
   });
 });

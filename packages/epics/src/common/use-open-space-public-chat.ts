@@ -1,13 +1,18 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { distinctPublicRoomId, useMatrix } from '@hypha-platform/core/client';
+import {
+  acceptEnsuredPublicRoomId,
+  distinctPublicRoomId,
+  useMatrix,
+} from '@hypha-platform/core/client';
 
 import { useHumanChatPanel } from './human-chat-panel-context';
 
 /** Open a space’s public channel (network connect) — never the member room. */
 export function useOpenSpacePublicChat() {
-  const { ensurePublicRoom, isMatrixAvailable, isAuthenticated } = useMatrix();
+  const { ensurePublicRoom, isMatrixAvailable, isAuthenticated, client } =
+    useMatrix();
   const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +36,13 @@ export function useOpenSpacePublicChat() {
       try {
         const memberRoomId = space.memberRoomId?.trim() || null;
         const { roomId } = await ensurePublicRoom(slug, memberRoomId);
-        const publicRoomId = distinctPublicRoomId(roomId, memberRoomId);
+        const roomType = client?.getRoom(roomId)?.getType() ?? null;
+        // Untyped rooms are still syncing create state — id check only.
+        // A known member type, or an id that matches chatRoomId, is refused.
+        const publicRoomId =
+          roomType == null
+            ? distinctPublicRoomId(roomId, memberRoomId)
+            : acceptEnsuredPublicRoomId(roomId, memberRoomId, roomType);
         if (!publicRoomId) {
           throw new Error('Public channel resolved to the space channel');
         }
@@ -53,6 +64,7 @@ export function useOpenSpacePublicChat() {
       }
     },
     [
+      client,
       ensurePublicRoom,
       isAuthenticated,
       isMatrixAvailable,

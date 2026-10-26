@@ -33,6 +33,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import useSWR from 'swr';
 import {
   HYPHA_ROOM_TYPES,
+  acceptEnsuredPublicRoomId,
   distinctPublicRoomId,
   useMatrix,
   useCoherenceMutationsWeb2Rsc,
@@ -3790,10 +3791,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               openingSpaceSlug,
               memberRoomId,
             );
-          if (!distinctPublicRoomId(publicRoomId, memberRoomId)) {
+          const publicRoomType =
+            client?.getRoom(publicRoomId)?.getType() ?? null;
+          const acceptedPublicRoomId =
+            publicRoomType == null
+              ? distinctPublicRoomId(publicRoomId, memberRoomId)
+              : acceptEnsuredPublicRoomId(
+                  publicRoomId,
+                  memberRoomId,
+                  publicRoomType,
+                );
+          if (!acceptedPublicRoomId) {
             throw new Error('Public channel resolved to the space channel');
           }
-          targetRoomId = publicRoomId;
+          targetRoomId = acceptedPublicRoomId;
         } else if (!targetRoomId && openingSpaceSlug) {
           targetRoomId =
             space?.chatRoomId?.trim() ||
@@ -3951,7 +3962,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         const recovered = knownId
           ? matrixRef.current.client?.getRoom(knownId)
           : null;
-        if (!cancelled && recovered && recovered.getMyMembership() === 'join') {
+        // Public map→chat must not fall back to an already-joined member
+        // room after the bind check throws.
+        if (
+          !coherencePublic &&
+          !cancelled &&
+          recovered &&
+          recovered.getMyMembership() === 'join'
+        ) {
           console.warn(
             '[HumanRightPanel] Join reported a failure after the room was already open:',
             err,
@@ -6156,6 +6174,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     {deleteError}
                   </div>
                 )}
+                {coherencePublic && !isJoining ? (
+                  <p
+                    role="status"
+                    className="border-b border-border px-3 py-2 text-1 text-neutral-11"
+                  >
+                    {t('publicRoomTitle')} — {t('publicWelcome')}
+                  </p>
+                ) : null}
                 {isJoining ? (
                   <HumanChatPanelLoader showPreview />
                 ) : (

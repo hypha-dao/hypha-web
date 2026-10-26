@@ -311,12 +311,34 @@ export async function createBotOwnedRoomAction({
  * the same room. It is created only when the alias is missing. The caller is puppet-joined.
  * Soft-fails: returns null instead of throwing.
  */
+async function roomMatchesRequiredType(
+  roomId: string | null,
+  requiredType: HyphaRoomType | undefined,
+  botToken: string,
+  homeserver: string,
+): Promise<boolean> {
+  if (!requiredType) return true;
+  if (!roomId) return false;
+  try {
+    const type = await matrixGetRoomType(roomId, botToken, homeserver);
+    return type === requiredType;
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Could not read the type of the aliased shared room:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+    return false;
+  }
+}
+
 async function ensureAliasedChatRoomAction({
   matrixUserId,
   aliasLocalpart,
   roomName,
   memberRoomIds,
   roomType,
+  requireRoomType,
 }: {
   matrixUserId: string;
   aliasLocalpart: string;
@@ -327,6 +349,12 @@ async function ensureAliasedChatRoomAction({
    * points at one of them, detach it and create a separate room.
    */
   memberRoomIds?: string[];
+  /**
+   * When set, an existing alias must already have this `m.room.create`
+   * type. Used so `#hypha-public-{slug}` cannot stay bound to a member
+   * room whose id is missing or different from `spaces.chat_room_id`.
+   */
+  requireRoomType?: HyphaRoomType;
 }): Promise<{ roomId: string } | null> {
   const homeserver = getMatrixHomeserverUrl();
   const botToken = getMatrixBotAsToken();
@@ -363,7 +391,20 @@ async function ensureAliasedChatRoomAction({
     return null;
   }
 
-  if (pointsAtMemberRoom(roomId, memberRoomIds)) {
+  const typeOk = await roomMatchesRequiredType(
+    roomId,
+    requireRoomType,
+    botToken,
+    homeserver,
+  );
+  if (roomId && (pointsAtMemberRoom(roomId, memberRoomIds) || !typeOk)) {
+    if (requireRoomType && !typeOk) {
+      console.warn(
+        '[MatrixBot] Shared room alias is not the required room type; detaching:',
+        alias,
+        requireRoomType,
+      );
+    }
     try {
       await matrixDeleteRoomAlias(alias, botToken, homeserver);
     } catch (error) {
@@ -406,6 +447,20 @@ async function ensureAliasedChatRoomAction({
           '[MatrixBot] Shared room alias is taken but could not be resolved:',
           alias,
           lookupError instanceof Error ? lookupError.message : lookupError,
+        );
+        return null;
+      }
+      if (
+        !(await roomMatchesRequiredType(
+          roomId,
+          requireRoomType,
+          botToken,
+          homeserver,
+        ))
+      ) {
+        console.warn(
+          '[MatrixBot] Shared room alias is taken by a room of the wrong type:',
+          alias,
         );
         return null;
       }
@@ -520,6 +575,7 @@ export async function ensurePublicChatRoomAction({
     aliasLocalpart: matrixAliasLocalpart(PUBLIC_ROOM_ALIAS_PREFIX, slug),
     roomName: `Public · ${slug}`,
     roomType: HYPHA_ROOM_TYPES.spacePublic,
+    requireRoomType: HYPHA_ROOM_TYPES.spacePublic,
     memberRoomIds: [...memberRoomIds],
   });
 }
