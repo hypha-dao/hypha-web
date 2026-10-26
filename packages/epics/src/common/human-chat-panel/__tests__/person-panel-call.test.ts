@@ -1,6 +1,9 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  callAppliesToCurrentChatRoom,
   hasHumanTimelineMessages,
   runPersonPanelCallStart,
   shouldRefusePersonPanelCall,
@@ -82,6 +85,51 @@ describe('runPersonPanelCallStart', () => {
     });
     expect(onStart).toHaveBeenCalledOnce();
     expect(onRefuse).not.toHaveBeenCalled();
+  });
+});
+
+describe('callAppliesToCurrentChatRoom', () => {
+  it('treats a room-less Start-a-conversation as a match only with no session', () => {
+    expect(callAppliesToCurrentChatRoom(null, null)).toBe(true);
+    expect(callAppliesToCurrentChatRoom('', '')).toBe(true);
+    expect(callAppliesToCurrentChatRoom(null, '!other')).toBe(false);
+    expect(callAppliesToCurrentChatRoom('', '!other')).toBe(false);
+  });
+
+  it('requires the session room to match when a chat room is open', () => {
+    expect(callAppliesToCurrentChatRoom('!dm', null)).toBe(true);
+    expect(callAppliesToCurrentChatRoom('!dm', '!dm')).toBe(true);
+    expect(callAppliesToCurrentChatRoom('!dm', '!other')).toBe(false);
+  });
+});
+
+describe('Start-a-conversation call toolbar', () => {
+  it('marks self-presence checked when roomId is missing so phone/video render', () => {
+    const hook = readFileSync(
+      resolve(
+        __dirname,
+        '../../../../../core/src/matrix/client/hooks/use-space-group-call.ts',
+      ),
+      'utf8',
+    );
+    const panel = readFileSync(
+      resolve(__dirname, '../../human-right-panel.tsx'),
+      'utf8',
+    );
+    expect(hook).toContain('if (!client) return;');
+    expect(hook).toContain('if (!roomId?.trim()) {');
+    expect(hook).toContain('setSelfPresenceChecked(true);');
+    expect(panel).toContain(
+      'chatRoomOwnsCallSession(roomId, callSessionRoomId)',
+    );
+    expect(panel).toContain(
+      'const callActionsChecked = inSpaceCall || spaceCallSelfPresenceChecked;',
+    );
+    const toolbarAt = panel.indexOf('<HumanChatPanelCallToolbar');
+    const checkedAt = panel.lastIndexOf('callActionsChecked ? (', toolbarAt);
+    expect(toolbarAt).toBeGreaterThan(-1);
+    expect(checkedAt).toBeGreaterThan(-1);
+    expect(checkedAt).toBeLessThan(toolbarAt);
   });
 });
 

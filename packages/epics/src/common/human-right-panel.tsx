@@ -194,6 +194,7 @@ import {
 } from './human-chat-panel/build-space-roster-mention-candidates';
 import { directConversationWelcomeName } from './human-chat-panel/direct-conversation-welcome';
 import {
+  callAppliesToCurrentChatRoom as chatRoomOwnsCallSession,
   hasHumanTimelineMessages,
   runPersonPanelCallStart,
   shouldRefusePersonPanelCall,
@@ -1562,12 +1563,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
    */
   const callActionsChecked = inSpaceCall || spaceCallSelfPresenceChecked;
 
-  const callAppliesToCurrentChatRoom = useMemo(() => {
-    const chatRoomId = roomId?.trim() || null;
-    const sessionRoomId = callSessionRoomId?.trim() || null;
-    if (!sessionRoomId || !chatRoomId) return true;
-    return sessionRoomId === chatRoomId;
-  }, [callSessionRoomId, roomId]);
+  const callAppliesToCurrentChatRoom = useMemo(
+    () => chatRoomOwnsCallSession(roomId, callSessionRoomId),
+    [callSessionRoomId, roomId],
+  );
 
   /** Banner, join strip, and toolbar for the chat room that owns the active session. */
   const showSidebarCallChrome = callUiEnabled && callAppliesToCurrentChatRoom;

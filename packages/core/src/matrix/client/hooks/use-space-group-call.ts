@@ -2929,7 +2929,11 @@ export function useSpaceGroupCall(
     setSelfStaleCallPresence(false);
     setSelfPresenceChecked(false);
 
-    if (!client || !roomId?.trim()) return;
+    if (!client) return;
+    if (!roomId?.trim()) {
+      setSelfPresenceChecked(true);
+      return;
+    }
     /** Not our concern here — the connected-tab UI doesn't gate on this flag. */
     if (liveKitRoomRef.current) {
       setSelfPresenceChecked(true);
