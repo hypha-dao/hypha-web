@@ -133,6 +133,13 @@ function walletAddress(address: string | null | undefined): Hex | null {
  * has no on-chain spaces.
  */
 const MEMBER_SPACES_TIMEOUT_MS = 8_000;
+/** Repeat loads skip the chain read. A new membership shows up within this window. */
+const HOME_CHAIN_CACHE_MS = 30_000;
+const chainSpaceCache = new Map<string, { at: number; ids: number[] }>();
+const rosterCache = new Map<
+  string,
+  { at: number; bundle: MemberRosterBundle }
+>();
 
 async function withTimeout<T>(
   work: Promise<T>,
@@ -155,18 +162,29 @@ async function withTimeout<T>(
 async function chainWeb3SpaceIds(address: string | null | undefined) {
   const wallet = walletAddress(address);
   if (!wallet) return [];
+  const cacheKey = wallet.toLowerCase();
+  const cached = chainSpaceCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < HOME_CHAIN_CACHE_MS) {
+    return cached.ids;
+  }
   const web3SpaceIds = (await withTimeout(
     web3Client.readContract(getMemberSpaces({ memberAddress: wallet })),
     MEMBER_SPACES_TIMEOUT_MS,
     'member spaces',
   )) as readonly bigint[];
-  return [
+  const ids = [
     ...new Set(
       web3SpaceIds
         .map((id) => Number(id))
         .filter((id) => Number.isInteger(id) && id > 0),
     ),
   ];
+  chainSpaceCache.set(cacheKey, { at: Date.now(), ids });
+  if (chainSpaceCache.size > 32) {
+    const oldest = chainSpaceCache.keys().next().value;
+    if (oldest) chainSpaceCache.delete(oldest);
+  }
+  return ids;
 }
 
 /**
@@ -180,32 +198,34 @@ const CREATOR_PEER_LIMIT = 4;
 const OUTSIDE_CREATOR_LIMIT = 3;
 const OUTSIDE_SPACE_LIMIT = 2;
 
-async function loadSharedPeople(
-  {
-    personId,
-    spaceIds,
-    limit,
-    focusPersonIds,
-    query,
-  }: {
-    personId: number;
-    spaceIds: number[];
-    limit: number;
-    focusPersonIds: readonly number[];
-    query?: string;
-  },
+type MemberRosterBundle = {
+  membersBySpace: Array<{
+    spaceId: number;
+    addresses: readonly `0x${string}`[];
+  }>;
+  peopleRows: Array<{
+    id: number;
+    slug: string;
+    name: string | null;
+    surname: string | null;
+    nickname: string | null;
+    avatarUrl: string | null;
+    address: string | null;
+    sub: string | null;
+  }>;
+};
+
+/** Chain rosters for every space. Started before the other home queries. */
+async function loadMemberRosterBundle(
+  spaceIds: number[],
   { db }: DbConfig,
-): Promise<{
-  count: number;
-  connections: MemberIntelligence['connections'];
-  peers: Record<number, string[]>;
-}> {
-  const empty = {
-    count: 0,
-    connections: [] as MemberIntelligence['connections'],
-    peers: {} as Record<number, string[]>,
-  };
-  if (spaceIds.length === 0) return empty;
+): Promise<MemberRosterBundle | null> {
+  if (spaceIds.length === 0) return null;
+  const cacheKey = [...spaceIds].sort((left, right) => left - right).join(',');
+  const cached = rosterCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < HOME_CHAIN_CACHE_MS) {
+    return cached.bundle;
+  }
 
   const rosterSpaces = await db
     .select({
@@ -228,26 +248,12 @@ async function loadSharedPeople(
     seenChainIds.add(web3SpaceId);
     return true;
   });
-  if (chainSpaces.length === 0) return empty;
+  if (chainSpaces.length === 0) return null;
 
-  const membersBySpace = await Promise.all(
-    chainSpaces.map(async (row) => {
-      try {
-        const addresses = (await web3Client.readContract(
-          getSpaceMembers({ spaceId: BigInt(row.web3SpaceId as number) }),
-        )) as readonly `0x${string}`[];
-        return { spaceId: row.id, addresses };
-      } catch (error) {
-        console.error(
-          '[getMemberIntelligence] space members failed',
-          row.id,
-          error,
-        );
-        return {
-          spaceId: row.id,
-          addresses: [] as readonly `0x${string}`[],
-        };
-      }
+  const membersBySpace = await readSpaceMemberRosters(
+    chainSpaces.flatMap((row) => {
+      const web3SpaceId = row.web3SpaceId;
+      return web3SpaceId == null ? [] : [{ id: row.id, web3SpaceId }];
     }),
   );
 
@@ -258,7 +264,7 @@ async function loadSharedPeople(
       if (key) addressKeys.add(key);
     }
   }
-  if (addressKeys.size === 0) return empty;
+  if (addressKeys.size === 0) return null;
 
   const peopleRows = await db
     .select({
@@ -278,6 +284,49 @@ async function loadSharedPeople(
         [...addressKeys].map((address) => address.toUpperCase()),
       ),
     );
+
+  const bundle = { membersBySpace, peopleRows };
+  rosterCache.set(cacheKey, { at: Date.now(), bundle });
+  if (rosterCache.size > 32) {
+    const oldest = rosterCache.keys().next().value;
+    if (oldest) rosterCache.delete(oldest);
+  }
+  return bundle;
+}
+
+async function loadSharedPeople(
+  {
+    personId,
+    spaceIds,
+    limit,
+    focusPersonIds,
+    query,
+    roster,
+  }: {
+    personId: number;
+    spaceIds: number[];
+    limit: number;
+    focusPersonIds: readonly number[];
+    query?: string;
+    roster?: MemberRosterBundle | null;
+  },
+  { db }: DbConfig,
+): Promise<{
+  count: number;
+  connections: MemberIntelligence['connections'];
+  peers: Record<number, string[]>;
+}> {
+  const empty = {
+    count: 0,
+    connections: [] as MemberIntelligence['connections'],
+    peers: {} as Record<number, string[]>,
+  };
+  const bundle =
+    roster === undefined
+      ? await loadMemberRosterBundle(spaceIds, { db })
+      : roster;
+  if (!bundle) return empty;
+  const { membersBySpace, peopleRows } = bundle;
 
   const shared = peopleSharingMemberSpaces({
     callerPersonId: personId,
@@ -309,6 +358,45 @@ async function loadSharedPeople(
   };
 }
 
+/** One multicall page. A larger page blows the RPC gas cap on busy spaces. */
+const SPACE_MEMBER_CHUNK = 20;
+
+async function readSpaceMemberRosters(
+  chainSpaces: Array<{ id: number; web3SpaceId: number }>,
+): Promise<Array<{ spaceId: number; addresses: readonly `0x${string}`[] }>> {
+  const chunks: Array<Array<{ id: number; web3SpaceId: number }>> = [];
+  for (let index = 0; index < chainSpaces.length; index += SPACE_MEMBER_CHUNK) {
+    chunks.push(chainSpaces.slice(index, index + SPACE_MEMBER_CHUNK));
+  }
+  const pages = await Promise.all(
+    chunks.map(async (chunk) => {
+      try {
+        const results = await web3Client.multicall({
+          allowFailure: true,
+          contracts: chunk.map((row) =>
+            getSpaceMembers({ spaceId: BigInt(row.web3SpaceId) }),
+          ),
+        });
+        return chunk.map((row, index) => {
+          const result = results[index];
+          const addresses =
+            result?.status === 'success' && Array.isArray(result.result)
+              ? (result.result as readonly `0x${string}`[])
+              : [];
+          return { spaceId: row.id, addresses };
+        });
+      } catch (error) {
+        console.error('[getMemberIntelligence] space members failed', error);
+        return chunk.map((row) => ({
+          spaceId: row.id,
+          addresses: [] as readonly `0x${string}`[],
+        }));
+      }
+    }),
+  );
+  return pages.flat();
+}
+
 /**
  * People a creator shares a space with, when they are not already in the
  * caller's roster. Bounded chain reads. Postgres memberships are not the
@@ -320,58 +408,70 @@ async function loadOutsideCreatorPeers(
   { db }: DbConfig,
 ): Promise<Record<number, string[]>> {
   const peers: Record<number, string[]> = {};
-  for (const creator of creators.slice(0, OUTSIDE_CREATOR_LIMIT)) {
-    const wallet = walletAddress(creator.address);
-    if (!wallet || creator.id === excludePersonId) continue;
-    const web3SpaceIds = (await chainWeb3SpaceIds(wallet)).slice(
-      0,
-      OUTSIDE_SPACE_LIMIT,
-    );
-    if (web3SpaceIds.length === 0) continue;
-    const membersBySpace = await Promise.all(
-      web3SpaceIds.map(async (web3SpaceId) => {
-        const addresses = (await web3Client.readContract(
-          getSpaceMembers({ spaceId: BigInt(web3SpaceId) }),
-        )) as readonly `0x${string}`[];
-        return { spaceId: web3SpaceId, addresses };
-      }),
-    );
-    const addressKeys = new Set<string>();
-    for (const space of membersBySpace) {
-      for (const address of space.addresses) {
-        const key = address.trim().toLowerCase();
-        if (key) addressKeys.add(key);
+  await Promise.all(
+    creators.slice(0, OUTSIDE_CREATOR_LIMIT).map(async (creator) => {
+      const wallet = walletAddress(creator.address);
+      if (!wallet || creator.id === excludePersonId) return;
+      let web3SpaceIds: number[] = [];
+      try {
+        // Their other spaces are a caption, not the dashboard. Do not wait
+        // out the full member-spaces timeout for each creator.
+        web3SpaceIds = (
+          await withTimeout(
+            chainWeb3SpaceIds(wallet).catch(() => [] as number[]),
+            1_200,
+            'creator spaces',
+          )
+        ).slice(0, OUTSIDE_SPACE_LIMIT);
+      } catch {
+        return;
       }
-    }
-    if (addressKeys.size === 0) continue;
-    const peopleRows = await db
-      .select({
-        id: people.id,
-        slug: people.slug,
-        name: people.name,
-        surname: people.surname,
-        nickname: people.nickname,
-        avatarUrl: people.avatarUrl,
-        address: people.address,
-        sub: people.sub,
-      })
-      .from(people)
-      .where(
-        inArray(
-          sql`upper(${people.address})`,
-          [...addressKeys].map((address) => address.toUpperCase()),
-        ),
+      if (web3SpaceIds.length === 0) return;
+      const membersBySpace = await Promise.all(
+        web3SpaceIds.map(async (web3SpaceId) => {
+          const addresses = (await web3Client.readContract(
+            getSpaceMembers({ spaceId: BigInt(web3SpaceId) }),
+          )) as readonly `0x${string}`[];
+          return { spaceId: web3SpaceId, addresses };
+        }),
       );
-    const names = peerNamesByPerson({
-      callerPersonId: excludePersonId,
-      membersBySpace,
-      people: peopleRows,
-      spaceActorSubPrefix: SPACE_ACTOR_SUB_PREFIX,
-      focusPersonIds: [creator.id],
-      limit: CREATOR_PEER_LIMIT,
-    }).get(creator.id);
-    if (names && names.length > 0) peers[creator.id] = names;
-  }
+      const addressKeys = new Set<string>();
+      for (const space of membersBySpace) {
+        for (const address of space.addresses) {
+          const key = address.trim().toLowerCase();
+          if (key) addressKeys.add(key);
+        }
+      }
+      if (addressKeys.size === 0) return;
+      const peopleRows = await db
+        .select({
+          id: people.id,
+          slug: people.slug,
+          name: people.name,
+          surname: people.surname,
+          nickname: people.nickname,
+          avatarUrl: people.avatarUrl,
+          address: people.address,
+          sub: people.sub,
+        })
+        .from(people)
+        .where(
+          inArray(
+            sql`upper(${people.address})`,
+            [...addressKeys].map((address) => address.toUpperCase()),
+          ),
+        );
+      const names = peerNamesByPerson({
+        callerPersonId: excludePersonId,
+        membersBySpace,
+        people: peopleRows,
+        spaceActorSubPrefix: SPACE_ACTOR_SUB_PREFIX,
+        focusPersonIds: [creator.id],
+        limit: CREATOR_PEER_LIMIT,
+      }).get(creator.id);
+      if (names && names.length > 0) peers[creator.id] = names;
+    }),
+  );
   return peers;
 }
 
@@ -572,6 +672,16 @@ function proposalCoreValue(
   return record[index] ?? record[name];
 }
 
+function openChainProposalIds(
+  rows: ReadonlyArray<{ state?: string | null; web3ProposalId: number | null }>,
+): number[] {
+  return rows.flatMap((row) =>
+    row.state?.trim().toLowerCase() === 'proposal' && row.web3ProposalId != null
+      ? [row.web3ProposalId]
+      : [],
+  );
+}
+
 /** One failed query returns its fallback. The other slices still load. */
 async function readSlice<T>(
   label: string,
@@ -748,15 +858,17 @@ async function spaceActivityIsOpen(
       ),
     );
   if (Number(shared[0]?.value) > 0) return true;
-  for (const space of spaceRows.slice(0, 4)) {
-    const web3SpaceId = space.web3SpaceId;
-    if (web3SpaceId == null || web3SpaceId <= 0) continue;
-    const transparency = await readSpaceOnChainTransparency(web3SpaceId);
-    if (transparency && transparency.access <= SpaceTransparencyLevel.NETWORK) {
-      return true;
-    }
-  }
-  return false;
+  const opened = await Promise.all(
+    spaceRows.slice(0, 4).map(async (space) => {
+      const web3SpaceId = space.web3SpaceId;
+      if (web3SpaceId == null || web3SpaceId <= 0) return false;
+      const transparency = await readSpaceOnChainTransparency(web3SpaceId);
+      return Boolean(
+        transparency && transparency.access <= SpaceTransparencyLevel.NETWORK,
+      );
+    }),
+  );
+  return opened.some(Boolean);
 }
 
 async function loadMemberMovement(
@@ -1016,67 +1128,113 @@ export async function getMemberIntelligence(
     .where(eq(people.id, personId))
     .limit(1);
   if (!person?.slug) return null;
-  const primaryOrientation = await readSlice(
-    'orientation',
-    () => readPrimaryOrientation(db, person.id),
-    null,
+  const capitalAskCountPromise = readSlice(
+    'capitalAsks',
+    async () =>
+      (
+        await db
+          .select({ value: sql<number>`cast(count(*) as integer)` })
+          .from(documents)
+          .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+          .where(
+            and(
+              eq(documents.label, 'Investment'),
+              inArray(documents.state, ['proposal', 'agreement']),
+              eq(spaces.isArchived, false),
+            ),
+          )
+      )[0]?.value ?? 0,
+    0,
   );
-
-  const spaceRows = await readSlice(
-    'spaces',
-    () => loadChainMemberSpaces(person.address, { db }),
-    [],
-  );
+  const [primaryOrientation, spaceRows] = await Promise.all([
+    readSlice('orientation', () => readPrimaryOrientation(db, person.id), null),
+    readSlice(
+      'spaces',
+      () => loadChainMemberSpaces(person.address, { db }),
+      [],
+    ),
+  ]);
   const spaceIds = spaceRows.map((space) => space.id);
   const orientation = parseMemberOrientation(primaryOrientation);
+  const rosterPromise = readSlice(
+    'roster',
+    () => loadMemberRosterBundle(spaceIds, { db }),
+    null,
+  );
+  const expiringSpacesPromise = readSlice(
+    'expiring-spaces',
+    () => loadMemberSpacesAboutToExpire(spaceRows),
+    [],
+  );
+  const invitesPromise = readSlice(
+    'invites',
+    () =>
+      listPendingSpaceMemberInvites(
+        { personId, memberSpaceIds: spaceIds },
+        { db },
+      ),
+    [],
+  );
+  const movementPromise = readSlice(
+    'movement',
+    () =>
+      loadMemberMovement(
+        spaceRows,
+        {
+          address: person.address,
+          name: person.name,
+          surname: person.surname,
+          nickname: person.nickname,
+        },
+        { db },
+      ),
+    [],
+  );
 
-  const proposalSlice = await readSlice(
+  const proposalSlicePromise = readSlice(
     'proposals',
     async () => {
-      const proposalRows =
+      const [proposalRows, openProposalCount] =
         spaceIds.length === 0
-          ? []
-          : await db
-              .select({
-                id: documents.id,
-                slug: documents.slug,
-                title: documents.title,
-                state: documents.state,
-                label: documents.label,
-                description: documents.description,
-                creatorId: documents.creatorId,
-                createdAt: documents.createdAt,
-                web3ProposalId: documents.web3ProposalId,
-                web3SpaceId: spaces.web3SpaceId,
-                leadImage: documents.leadImage,
-                creatorName: people.name,
-                creatorSurname: people.surname,
-                creatorNickname: people.nickname,
-                creatorAvatarUrl: people.avatarUrl,
-                creatorAddress: people.address,
-                creatorDescription: people.description,
-                spaceSlug: spaces.slug,
-                spaceTitle: spaces.title,
-                logoUrl: spaces.logoUrl,
-                ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
-                ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
-              })
-              .from(documents)
-              .innerJoin(spaces, eq(documents.spaceId, spaces.id))
-              .leftJoin(people, eq(documents.creatorId, people.id))
-              .where(
-                and(
-                  inArray(documents.spaceId, spaceIds),
-                  inArray(documents.state, ['proposal', 'discussion']),
-                ),
-              )
-              .orderBy(desc(documents.createdAt))
-              .limit(listLimit);
-      const openProposalCount =
-        spaceIds.length === 0
-          ? 0
-          : (
-              await db
+          ? [[], 0]
+          : await Promise.all([
+              db
+                .select({
+                  id: documents.id,
+                  slug: documents.slug,
+                  title: documents.title,
+                  state: documents.state,
+                  label: documents.label,
+                  description: documents.description,
+                  creatorId: documents.creatorId,
+                  createdAt: documents.createdAt,
+                  web3ProposalId: documents.web3ProposalId,
+                  web3SpaceId: spaces.web3SpaceId,
+                  leadImage: documents.leadImage,
+                  creatorName: people.name,
+                  creatorSurname: people.surname,
+                  creatorNickname: people.nickname,
+                  creatorAvatarUrl: people.avatarUrl,
+                  creatorAddress: people.address,
+                  creatorDescription: people.description,
+                  spaceSlug: spaces.slug,
+                  spaceTitle: spaces.title,
+                  logoUrl: spaces.logoUrl,
+                  ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+                  ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
+                })
+                .from(documents)
+                .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+                .leftJoin(people, eq(documents.creatorId, people.id))
+                .where(
+                  and(
+                    inArray(documents.spaceId, spaceIds),
+                    inArray(documents.state, ['proposal', 'discussion']),
+                  ),
+                )
+                .orderBy(desc(documents.createdAt))
+                .limit(listLimit),
+              db
                 .select({
                   value: sql<number>`cast(count(*) as integer)`,
                 })
@@ -1087,7 +1245,8 @@ export async function getMemberIntelligence(
                     eq(documents.state, 'proposal'),
                   ),
                 )
-            )[0]?.value ?? 0;
+                .then((rows) => rows[0]?.value ?? 0),
+            ]);
       return {
         proposals: proposalRows.map((row) => ({
           id: row.id,
@@ -1128,58 +1287,55 @@ export async function getMemberIntelligence(
     },
   );
 
-  const signalSlice = await readSlice(
+  const signalSlicePromise = readSlice(
     'signals',
     async () => {
-      const signalRows =
+      const [signalRows, signalCount] =
         spaceIds.length === 0
-          ? []
-          : await db
-              .select({
-                id: coherences.id,
-                slug: coherences.slug,
-                roomId: coherences.roomId,
-                title: coherences.title,
-                type: coherences.type,
-                priority: coherences.priority,
-                dueAt: coherences.dueAt,
-                createdAt: coherences.createdAt,
-                progressStatus: coherences.progressStatus,
-                assigneeIds: coherences.assigneeIds,
-                description: coherences.description,
-                tags: coherences.tags,
-                creatorId: coherences.creatorId,
-                creatorName: people.name,
-                creatorSurname: people.surname,
-                creatorNickname: people.nickname,
-                creatorAvatarUrl: people.avatarUrl,
-                creatorAddress: people.address,
-                creatorDescription: people.description,
-                spaceSlug: spaces.slug,
-                spaceTitle: spaces.title,
-                logoUrl: spaces.logoUrl,
-                ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
-                ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
-              })
-              .from(coherences)
-              .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
-              .leftJoin(people, eq(coherences.creatorId, people.id))
-              .where(
-                and(
-                  inArray(coherences.spaceId, spaceIds),
-                  or(
-                    eq(coherences.archived, false),
-                    isNull(coherences.archived),
+          ? [[], 0]
+          : await Promise.all([
+              db
+                .select({
+                  id: coherences.id,
+                  slug: coherences.slug,
+                  roomId: coherences.roomId,
+                  title: coherences.title,
+                  type: coherences.type,
+                  priority: coherences.priority,
+                  dueAt: coherences.dueAt,
+                  createdAt: coherences.createdAt,
+                  progressStatus: coherences.progressStatus,
+                  assigneeIds: coherences.assigneeIds,
+                  description: coherences.description,
+                  tags: coherences.tags,
+                  creatorId: coherences.creatorId,
+                  creatorName: people.name,
+                  creatorSurname: people.surname,
+                  creatorNickname: people.nickname,
+                  creatorAvatarUrl: people.avatarUrl,
+                  creatorAddress: people.address,
+                  creatorDescription: people.description,
+                  spaceSlug: spaces.slug,
+                  spaceTitle: spaces.title,
+                  logoUrl: spaces.logoUrl,
+                  ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+                  ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
+                })
+                .from(coherences)
+                .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
+                .leftJoin(people, eq(coherences.creatorId, people.id))
+                .where(
+                  and(
+                    inArray(coherences.spaceId, spaceIds),
+                    or(
+                      eq(coherences.archived, false),
+                      isNull(coherences.archived),
+                    ),
                   ),
-                ),
-              )
-              .orderBy(desc(coherences.updatedAt))
-              .limit(listLimit);
-      const signalCount =
-        spaceIds.length === 0
-          ? 0
-          : (
-              await db
+                )
+                .orderBy(desc(coherences.updatedAt))
+                .limit(listLimit),
+              db
                 .select({
                   value: sql<number>`cast(count(*) as integer)`,
                 })
@@ -1193,7 +1349,8 @@ export async function getMemberIntelligence(
                     ),
                   ),
                 )
-            )[0]?.value ?? 0;
+                .then((rows) => rows[0]?.value ?? 0),
+            ]);
       return {
         signals: signalRows.map((row) => ({
           id: row.id,
@@ -1238,114 +1395,71 @@ export async function getMemberIntelligence(
     },
   );
 
-  const sharedPeople = await readSlice(
-    'connections',
-    () =>
-      loadSharedPeople(
-        {
-          personId,
-          spaceIds,
-          limit: resolveMemberConnectionLimit(
-            listLimit,
-            connectionQuery ? MEMBER_CONNECTION_SEARCH_MAX : connectionLimit,
-          ),
-          query: connectionQuery,
-          focusPersonIds: [
-            ...proposalSlice.creators.map((creator) => creator.id),
-            ...signalSlice.creators.map((creator) => creator.id),
-          ],
-        },
-        { db },
-      ),
-    { count: 0, connections: [], peers: {} },
-  );
-
-  const capitalAskCount = await readSlice(
-    'capitalAsks',
-    async () =>
-      (
-        await db
-          .select({ value: sql<number>`cast(count(*) as integer)` })
-          .from(documents)
-          .innerJoin(spaces, eq(documents.spaceId, spaces.id))
-          .where(
-            and(
-              eq(documents.label, 'Investment'),
-              inArray(documents.state, ['proposal', 'agreement']),
-              eq(spaces.isArchived, false),
-            ),
-          )
-      )[0]?.value ?? 0,
-    0,
-  );
-
-  const notificationSlice = await readSlice(
+  const notificationSlicePromise = readSlice(
     'notifications',
     async () => {
-      const notificationProposalRows =
+      const [notificationProposalRows, notificationSignalRows] =
         spaceIds.length === 0
-          ? []
-          : await db
-              .select({
-                id: documents.id,
-                slug: documents.slug,
-                title: documents.title,
-                createdAt: documents.createdAt,
-                spaceSlug: spaces.slug,
-                spaceTitle: spaces.title,
-                logoUrl: spaces.logoUrl,
-                ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
-                ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
-              })
-              .from(documents)
-              .innerJoin(spaces, eq(documents.spaceId, spaces.id))
-              .where(
-                and(
-                  inArray(documents.spaceId, spaceIds),
-                  eq(documents.state, 'proposal'),
-                  eq(spaces.isArchived, false),
-                  or(
-                    isNull(documents.creatorId),
-                    ne(documents.creatorId, personId),
+          ? [[], []]
+          : await Promise.all([
+              db
+                .select({
+                  id: documents.id,
+                  slug: documents.slug,
+                  title: documents.title,
+                  createdAt: documents.createdAt,
+                  spaceSlug: spaces.slug,
+                  spaceTitle: spaces.title,
+                  logoUrl: spaces.logoUrl,
+                  ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+                  ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
+                })
+                .from(documents)
+                .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+                .where(
+                  and(
+                    inArray(documents.spaceId, spaceIds),
+                    eq(documents.state, 'proposal'),
+                    eq(spaces.isArchived, false),
+                    or(
+                      isNull(documents.creatorId),
+                      ne(documents.creatorId, personId),
+                    ),
                   ),
-                ),
-              )
-              .orderBy(desc(documents.createdAt))
-              .limit(NOTIFICATION_FEED_LIMIT);
-
-      const notificationSignalRows =
-        spaceIds.length === 0
-          ? []
-          : await db
-              .select({
-                id: coherences.id,
-                slug: coherences.slug,
-                title: coherences.title,
-                type: coherences.type,
-                updatedAt: coherences.updatedAt,
-                spaceSlug: spaces.slug,
-                spaceTitle: spaces.title,
-                logoUrl: spaces.logoUrl,
-                ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
-                ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
-              })
-              .from(coherences)
-              .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
-              .where(
-                and(
-                  inArray(coherences.spaceId, spaceIds),
-                  eq(spaces.isArchived, false),
-                  or(
-                    eq(coherences.archived, false),
-                    isNull(coherences.archived),
+                )
+                .orderBy(desc(documents.createdAt))
+                .limit(NOTIFICATION_FEED_LIMIT),
+              db
+                .select({
+                  id: coherences.id,
+                  slug: coherences.slug,
+                  title: coherences.title,
+                  type: coherences.type,
+                  updatedAt: coherences.updatedAt,
+                  spaceSlug: spaces.slug,
+                  spaceTitle: spaces.title,
+                  logoUrl: spaces.logoUrl,
+                  ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+                  ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
+                })
+                .from(coherences)
+                .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
+                .where(
+                  and(
+                    inArray(coherences.spaceId, spaceIds),
+                    eq(spaces.isArchived, false),
+                    or(
+                      eq(coherences.archived, false),
+                      isNull(coherences.archived),
+                    ),
+                    sql`${coherences.assigneeIds} @> ${JSON.stringify([
+                      personId,
+                    ])}::jsonb`,
                   ),
-                  sql`${coherences.assigneeIds} @> ${JSON.stringify([
-                    personId,
-                  ])}::jsonb`,
-                ),
-              )
-              .orderBy(desc(coherences.updatedAt))
-              .limit(NOTIFICATION_FEED_LIMIT);
+                )
+                .orderBy(desc(coherences.updatedAt))
+                .limit(NOTIFICATION_FEED_LIMIT),
+            ]);
 
       const notificationCandidates = [
         ...notificationProposalRows.flatMap((row) =>
@@ -1398,45 +1512,93 @@ export async function getMemberIntelligence(
   );
 
   const firstName = person.name?.trim() || person.nickname?.trim() || 'there';
-  const networkHorizon = await readSlice(
+  const networkHorizonPromise = readSlice(
     'networkHorizon',
     () => readNetworkHorizon(db, person.id),
     'spaces' as const,
   );
-  const interestTags = signalSlice.interestTags;
   const networkTypes = signalTypesForOrientation(orientation);
-  const networkAllowed =
+  const networkAllowedPromise =
     networkTypes.length === 0
-      ? false
-      : await readSlice(
+      ? Promise.resolve(false)
+      : readSlice(
           'networkAccess',
           () => spaceActivityIsOpen(spaceRows, spaceIds, { db }),
           false,
         );
-  const networkSignals = networkAllowed
-    ? await readSlice(
-        'networkSignals',
-        () =>
-          loadNetworkHorizonSignals(
-            {
-              personId: person.id,
-              spaceIds,
-              allowedTypes: networkTypes,
-              profile: {
-                location: person.location,
-                description: person.description,
-                spaceTitles: spaceRows.map((space) => space.title),
-                spaceDescriptions: spaceRows.map(
-                  (space) => space.description ?? '',
-                ),
-                interestTags,
+
+  const [
+    proposalSlice,
+    signalSlice,
+    notificationSlice,
+    capitalAskCount,
+    networkHorizon,
+    networkAllowed,
+    roster,
+    expiringSpaces,
+    invites,
+    movement,
+  ] = await Promise.all([
+    proposalSlicePromise,
+    signalSlicePromise,
+    notificationSlicePromise,
+    capitalAskCountPromise,
+    networkHorizonPromise,
+    networkAllowedPromise,
+    rosterPromise,
+    expiringSpacesPromise,
+    invitesPromise,
+    movementPromise,
+  ]);
+  const interestTags = signalSlice.interestTags;
+  const [networkSignals, sharedPeople] = await Promise.all([
+    networkAllowed
+      ? readSlice(
+          'networkSignals',
+          () =>
+            loadNetworkHorizonSignals(
+              {
+                personId: person.id,
+                spaceIds,
+                allowedTypes: networkTypes,
+                profile: {
+                  location: person.location,
+                  description: person.description,
+                  spaceTitles: spaceRows.map((space) => space.title),
+                  spaceDescriptions: spaceRows.map(
+                    (space) => space.description ?? '',
+                  ),
+                  interestTags,
+                },
               },
-            },
-            { db },
-          ),
-        [] as NetworkHorizonSignal[],
-      )
-    : [];
+              { db },
+            ),
+          [] as NetworkHorizonSignal[],
+        )
+      : Promise.resolve([] as NetworkHorizonSignal[]),
+    readSlice(
+      'connections',
+      () =>
+        loadSharedPeople(
+          {
+            personId,
+            spaceIds,
+            limit: resolveMemberConnectionLimit(
+              listLimit,
+              connectionQuery ? MEMBER_CONNECTION_SEARCH_MAX : connectionLimit,
+            ),
+            query: connectionQuery,
+            focusPersonIds: [
+              ...proposalSlice.creators.map((creator) => creator.id),
+              ...signalSlice.creators.map((creator) => creator.id),
+            ],
+            roster,
+          },
+          { db },
+        ),
+      { count: 0, connections: [], peers: {} },
+    ),
+  ]);
 
   const listedProposalSlugs = new Set(
     proposalSlice.proposals.flatMap((proposal) =>
@@ -1449,6 +1611,36 @@ export async function getMemberIntelligence(
     !listedProposalSlugs.has(item.targetSlug)
       ? [item.targetSlug]
       : [],
+  );
+  const listedChainIds = openChainProposalIds(proposalSlice.proposals);
+  const votedListedPromise = readSlice(
+    'memberVotes',
+    () => proposalIdsAlreadyVoted(person.address, listedChainIds),
+    new Set<number>(),
+  );
+  const closedListedPromise = readSlice(
+    'proposalExpiry',
+    () => readClosedProposals(listedChainIds),
+    new Map<number, ClosedProposalOutcome>(),
+  );
+  const seenSliceCreators = new Set<number>();
+  const sliceOutsideCreators = [
+    ...proposalSlice.creators,
+    ...signalSlice.creators,
+  ].filter((creator) => {
+    if (
+      seenSliceCreators.has(creator.id) ||
+      sharedPeople.peers[creator.id]?.length
+    ) {
+      return false;
+    }
+    seenSliceCreators.add(creator.id);
+    return Boolean(creator.address);
+  });
+  const outsidePeersPromise = readSlice(
+    'creatorPeers',
+    () => loadOutsideCreatorPeers(sliceOutsideCreators, personId, { db }),
+    {} as Record<number, string[]>,
   );
   const missingProposals =
     missingProposalSlugs.length === 0
@@ -1509,24 +1701,30 @@ export async function getMemberIntelligence(
       creatorAbout: optionalExcerpt(row.creatorDescription),
     })),
   ];
-  const chainProposalIds = proposals.flatMap((proposal) =>
-    proposal.state?.trim().toLowerCase() === 'proposal' &&
-    proposal.web3ProposalId != null
-      ? [proposal.web3ProposalId]
-      : [],
+  const extraChainIds = openChainProposalIds(missingProposals).filter(
+    (id) => !listedChainIds.includes(id),
   );
-  const [votedProposalIds, closedProposals] = await Promise.all([
-    readSlice(
-      'memberVotes',
-      () => proposalIdsAlreadyVoted(person.address, chainProposalIds),
-      new Set<number>(),
-    ),
-    readSlice(
-      'proposalExpiry',
-      () => readClosedProposals(chainProposalIds),
-      new Map<number, ClosedProposalOutcome>(),
-    ),
-  ]);
+  const [votedListed, closedListed, extraVoted, extraClosed] =
+    await Promise.all([
+      votedListedPromise,
+      closedListedPromise,
+      extraChainIds.length === 0
+        ? Promise.resolve(new Set<number>())
+        : readSlice(
+            'memberVotes',
+            () => proposalIdsAlreadyVoted(person.address, extraChainIds),
+            new Set<number>(),
+          ),
+      extraChainIds.length === 0
+        ? Promise.resolve(new Map<number, ClosedProposalOutcome>())
+        : readSlice(
+            'proposalExpiry',
+            () => readClosedProposals(extraChainIds),
+            new Map<number, ClosedProposalOutcome>(),
+          ),
+    ]);
+  const votedProposalIds = new Set([...votedListed, ...extraVoted]);
+  const closedProposals = new Map([...closedListed, ...extraClosed]);
   const proposalsWithVotes = proposals.map((proposal) => {
     const closed =
       proposal.web3ProposalId != null
@@ -1638,33 +1836,33 @@ export async function getMemberIntelligence(
     ];
   });
   const signals = [...signalSlice.signals, ...missingSignals];
-  const creatorWallets = [
-    ...proposalSlice.creators,
-    ...signalSlice.creators,
-    ...missingSignalRows.flatMap((row) =>
-      row.creatorId == null
-        ? []
-        : [{ id: row.creatorId, address: row.creatorAddress }],
-    ),
-    ...missingProposals.flatMap((row) =>
-      row.creatorId == null
-        ? []
-        : [{ id: row.creatorId, address: row.creatorAddress }],
-    ),
-  ];
-  const seenCreators = new Set<number>();
-  const outsideCreators = creatorWallets.filter((creator) => {
-    if (seenCreators.has(creator.id) || sharedPeople.peers[creator.id]?.length)
-      return false;
-    seenCreators.add(creator.id);
-    return Boolean(creator.address);
-  });
-  const outsidePeers = await readSlice(
-    'creatorPeers',
-    () => loadOutsideCreatorPeers(outsideCreators, personId, { db }),
-    {} as Record<number, string[]>,
+  const extraCreators = [...missingSignalRows, ...missingProposals].flatMap(
+    (row) => {
+      if (row.creatorId == null || seenSliceCreators.has(row.creatorId)) {
+        return [];
+      }
+      seenSliceCreators.add(row.creatorId);
+      if (sharedPeople.peers[row.creatorId]?.length || !row.creatorAddress) {
+        return [];
+      }
+      return [{ id: row.creatorId, address: row.creatorAddress }];
+    },
   );
-  const creatorPeers = { ...sharedPeople.peers, ...outsidePeers };
+  const [outsidePeers, extraOutsidePeers] = await Promise.all([
+    outsidePeersPromise,
+    extraCreators.length === 0
+      ? Promise.resolve({} as Record<number, string[]>)
+      : readSlice(
+          'creatorPeers',
+          () => loadOutsideCreatorPeers(extraCreators, personId, { db }),
+          {} as Record<number, string[]>,
+        ),
+  ]);
+  const creatorPeers = {
+    ...sharedPeople.peers,
+    ...outsidePeers,
+    ...extraOutsidePeers,
+  };
   const withPeers = <T extends { creatorId: number | null }>(item: T) => {
     const names =
       item.creatorId == null ? undefined : creatorPeers[item.creatorId];
@@ -1722,35 +1920,9 @@ export async function getMemberIntelligence(
       preferredCurrency: person.preferredCurrency,
     },
     chatSpaceSlug: spaceRows[0]?.slug ?? null,
-    expiringSpaces: await readSlice(
-      'expiring-spaces',
-      () => loadMemberSpacesAboutToExpire(spaceRows),
-      [],
-    ),
-    invites: await readSlice(
-      'invites',
-      () =>
-        listPendingSpaceMemberInvites(
-          { personId, memberSpaceIds: spaceIds },
-          { db },
-        ),
-      [],
-    ),
-    movement: await readSlice(
-      'movement',
-      () =>
-        loadMemberMovement(
-          spaceRows,
-          {
-            address: person.address,
-            name: person.name,
-            surname: person.surname,
-            nickname: person.nickname,
-          },
-          { db },
-        ),
-      [],
-    ),
+    expiringSpaces,
+    invites,
+    movement,
   };
 }
 
