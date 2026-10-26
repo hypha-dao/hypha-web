@@ -29,6 +29,7 @@ import {
   forwardRef,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   type ComponentPropsWithoutRef,
@@ -49,6 +50,27 @@ import './editor.css';
 
 const EDITOR_CONTENT_CLASS =
   'richtext-editor-content prose max-w-full focus:outline-none';
+
+function createRichTextExtensions(placeholder: string) {
+  return [
+    StarterKit.configure({
+      // Replaced by AsteriskBold / UnderscoreUnderline for chat-compatible __/ **.
+      bold: false,
+      underline: false,
+      heading: { levels: [1, 2, 3, 4] },
+      link: {
+        openOnClick: false,
+        autolink: true,
+        defaultProtocol: 'https',
+      },
+    }),
+    AsteriskBold,
+    UnderscoreUnderline,
+    Placeholder.configure({ placeholder }),
+    Markdown,
+    PasteMarkdown,
+  ];
+}
 
 export type EditorTranslationFn = (
   key: string,
@@ -596,6 +618,7 @@ export function RichTextEditor({
   mentionCandidates,
 }: RichTextEditorProps) {
   const lastEmittedMarkdown = useRef(markdown);
+  const initialMarkdown = useRef(markdown);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -605,33 +628,21 @@ export function RichTextEditor({
     ariaLabel ??
     translateLabel(translation, 'editor.ariaLabel', 'Rich text editor');
 
-  const editor = useEditor({
-    immediatelyRender: false,
-    shouldRerenderOnTransaction: false,
-    editable,
-    content: markdown,
-    contentType: 'markdown',
-    extensions: [
-      StarterKit.configure({
-        // Replaced by AsteriskBold / UnderscoreUnderline for chat-compatible __/ **.
-        bold: false,
-        underline: false,
-        heading: { levels: [1, 2, 3, 4] },
-        link: {
-          openOnClick: false,
-          autolink: true,
-          defaultProtocol: 'https',
-        },
-      }),
-      AsteriskBold,
-      UnderscoreUnderline,
-      Placeholder.configure({
-        placeholder: placeholder ?? '',
-      }),
-      Markdown,
-      PasteMarkdown,
-    ],
-    editorProps: {
+  // TipTap v3 compares useEditor options by identity and calls setOptions →
+  // view.updateState when they differ. New content/extensions/editorProps on
+  // each render (form onChange, inlined arrays) reset the caret/selection.
+  // Placeholder text is patched in the effect below so this list can stay
+  // per-instance and render-stable.
+  const extensionsRef = useRef<ReturnType<
+    typeof createRichTextExtensions
+  > | null>(null);
+  if (extensionsRef.current === null) {
+    extensionsRef.current = createRichTextExtensions(placeholder ?? '');
+  }
+  const extensions = extensionsRef.current;
+
+  const editorProps = useMemo(
+    () => ({
       attributes: {
         class: EDITOR_CONTENT_CLASS,
         role: 'textbox',
@@ -640,7 +651,18 @@ export function RichTextEditor({
           ? { 'aria-labelledby': ariaLabelledBy }
           : { 'aria-label': resolvedAriaLabel }),
       },
-    },
+    }),
+    [ariaLabelledBy, resolvedAriaLabel],
+  );
+
+  const editor = useEditor({
+    immediatelyRender: false,
+    shouldRerenderOnTransaction: false,
+    editable,
+    content: initialMarkdown.current,
+    contentType: 'markdown',
+    extensions,
+    editorProps,
     onUpdate: ({ editor: ed }) => {
       const next = ed.getMarkdown();
       lastEmittedMarkdown.current = next;
@@ -677,22 +699,6 @@ export function RichTextEditor({
     ext.options.placeholder = placeholder ?? '';
     editor.view.dispatch(editor.state.tr);
   }, [editor, placeholder]);
-
-  useEffect(() => {
-    if (!editor) return;
-    editor.setOptions({
-      editorProps: {
-        attributes: {
-          class: EDITOR_CONTENT_CLASS,
-          role: 'textbox',
-          'aria-multiline': 'true',
-          ...(ariaLabelledBy
-            ? { 'aria-labelledby': ariaLabelledBy }
-            : { 'aria-label': resolvedAriaLabel }),
-        },
-      },
-    });
-  }, [editor, ariaLabelledBy, resolvedAriaLabel]);
 
   // Sync external markdown (form reset / resubmit) without stomping local typing.
   useEffect(() => {
