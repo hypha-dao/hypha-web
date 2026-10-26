@@ -72,15 +72,12 @@ function segmentActive(pathname: string, segment: string) {
 }
 
 function shouldShowMobileSpacesRail(pathname: string) {
-  if (
-    segmentActive(pathname, 'my-dashboard') ||
-    segmentActive(pathname, 'home')
-  )
-    return false;
   return (
     segmentActive(pathname, 'connections') ||
     segmentActive(pathname, 'messages') ||
     segmentActive(pathname, 'my-wallet') ||
+    segmentActive(pathname, 'my-dashboard') ||
+    segmentActive(pathname, 'home') ||
     Boolean(getDhoSpaceSlugFromPathname(pathname)) ||
     isNetworkPath(pathname)
   );

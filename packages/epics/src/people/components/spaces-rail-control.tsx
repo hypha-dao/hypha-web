@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { usePathname } from 'next/navigation';
 import { Circle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
@@ -82,26 +81,18 @@ export function SpacesRailProvider({ children }: { children: ReactNode }) {
   );
 }
 
-function isHomePath(pathname: string) {
-  return /\/(?:home|my-dashboard)\/?$/.test(pathname);
-}
-
 /**
  * Circle in the top bar, to the left of Hypha.
- * Mobile: every screen that has a spaces list. Desktop: Home only.
+ * Mobile only, on every screen that mounts a spaces list, including Home.
  */
 export function SpacesRailTopToggle() {
   const { active, open, toggle } = useSpacesRailControl();
-  const pathname = usePathname() ?? '';
   const t = useTranslations('MemberHome');
   if (!active) return null;
   return (
     <button
       type="button"
-      className={cn(
-        APP_CHROME_ICON_TRIGGER,
-        !isHomePath(pathname) && 'xl:hidden',
-      )}
+      className={cn(APP_CHROME_ICON_TRIGGER, 'xl:hidden')}
       aria-label={t('spacesRail')}
       aria-expanded={open}
       aria-controls={SPACES_RAIL_ID}
