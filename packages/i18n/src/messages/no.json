@@ -87,6 +87,7 @@
     "chipPeople": "Hvem er i nærheten?",
     "chipDecision": "Hva trenger en beslutning?",
     "chipTokens": "Send tokens til noen",
+    "peopleAroundLead": "{name} er nærmest. Dere deler {count, plural, one {# rom} other {# rom}}.",
     "spacesWidgetTitle": "Gå inn i et space",
     "spacesWidgetCount": "{count} dine",
     "spacesWidgetHint": "Trykk på et space for å gå inn.",

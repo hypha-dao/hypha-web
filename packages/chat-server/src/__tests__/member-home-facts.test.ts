@@ -528,4 +528,13 @@ describe('formatMemberHomeFacts', () => {
     );
     expect(card).toEqual({ kind: 'proposal', slug: 'invite-pollinate' });
   });
+
+  it('keeps who is around on the people list', () => {
+    const brief = formatMemberHomeFacts(home, { asked: 'Who is around?' });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toContain('The people list is already on screen');
+    expect(brief.text).toContain('Do not call any tool');
+    expect(brief.text).not.toContain('Card on screen:');
+    expect(brief.text).toContain('Noor');
+  });
 });

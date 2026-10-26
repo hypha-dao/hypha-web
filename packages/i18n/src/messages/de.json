@@ -87,6 +87,7 @@
     "chipPeople": "Wer ist da?",
     "chipDecision": "Was braucht eine Entscheidung?",
     "chipTokens": "Jemandem Token senden",
+    "peopleAroundLead": "{name} ist am nächsten. Ihr teilt {count, plural, one {# Space} other {# Spaces}}.",
     "spacesWidgetTitle": "In einen Space treten",
     "spacesWidgetCount": "{count} deine",
     "spacesWidgetHint": "Tippe einen Space an, um hineinzugehen.",

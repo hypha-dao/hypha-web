@@ -579,6 +579,7 @@
     "chipPeople": "Who is around?",
     "chipDecision": "What needs a decision?",
     "chipTokens": "Send someone tokens",
+    "peopleAroundLead": "{name} is the closest. You share {count, plural, one {# space} other {# spaces}}.",
     "spacesWidgetTitle": "Step into a space",
     "spacesWidgetCount": "{count} yours",
     "spacesWidgetHint": "Tap a space to step inside.",

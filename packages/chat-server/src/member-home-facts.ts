@@ -68,6 +68,69 @@ function assistantAskedForSignalPost(text: string | null | undefined): boolean {
   return /\b(?:few lines|a file|paste|drop it|short post)\b/.test(normalized);
 }
 
+function foldChip(text: string) {
+  return foldAsked(text)
+    .replace(/^[¿¡]+/u, '')
+    .replace(/[.!?]+$/u, '')
+    .trim();
+}
+
+/** Chips that already put a list on screen. The reply must not open another item. */
+export function memberHomeListAsk(
+  text: string | null | undefined,
+): 'people' | 'spaces' | 'tokens' | null {
+  const chip = foldChip(text ?? '');
+  if (!chip) return null;
+  const people = new Set([
+    'who is around',
+    "who's around",
+    'who are around',
+    'who should i connect with',
+    'quién está cerca',
+    'qui est là',
+    'quem está por perto',
+    'wer ist da',
+    'wie is er in de buurt',
+    'hvem er i nærheten',
+    'кој е во близина',
+  ]);
+  const spaces = new Set([
+    'step into a space',
+    'entrar en un espacio',
+    'entrer dans un espace',
+    'entrar num espaço',
+    'einen space betreten',
+    'stap een space binnen',
+    'gå inn i et rom',
+    'влези во простор',
+  ]);
+  const tokens = new Set([
+    'send someone tokens',
+    'enviar tokens a alguien',
+    'envoyer des tokens à quelqu’un',
+    "envoyer des tokens à quelqu'un",
+    'enviar tokens a alguém',
+    'jemandem token senden',
+    'iemand tokens sturen',
+    'send tokens til noen',
+    'испрати токени на некого',
+  ]);
+  if (people.has(chip)) return 'people';
+  if (spaces.has(chip)) return 'spaces';
+  if (tokens.has(chip)) return 'tokens';
+  return null;
+}
+
+function listTurnLine(kind: 'people' | 'spaces' | 'tokens') {
+  if (kind === 'people') {
+    return 'This turn: they asked who is around. The people list is already on screen. One or two short sentences. Name the closest person on the People line and how many spaces you share. You may name one more person. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not mention a signal, a proposal, or a decision.';
+  }
+  if (kind === 'spaces') {
+    return 'This turn: they asked to step into a space. The space list is already on screen. One short sentence naming one space they belong to. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
+  }
+  return 'This turn: they asked to send tokens. The send form is already on screen. One short sentence offering to send tokens to the closest person on the People line. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
+}
+
 function isShareControlPhrase(text: string): boolean {
   const normalized = foldAsked(text);
   if (!normalized) return false;
@@ -77,8 +140,9 @@ function isShareControlPhrase(text: string): boolean {
   ) {
     return true;
   }
+  if (memberHomeListAsk(normalized)) return true;
   return (
-    /^(?:where can i be useful|step into a space|who should i connect with|what needs a decision|send someone tokens|pause|stop|enough)[.!?]?$/.test(
+    /^(?:where can i be useful|step into a space|who should i connect with|who is around|what needs a decision|send someone tokens|pause|stop|enough)[.!?]?$/.test(
       normalized,
     ) || /\b(?:what needs a decision|needs a decision)\b/.test(normalized)
   );
@@ -230,6 +294,7 @@ export function formatMemberHomeFacts(
   const passedItems = waiting.filter((item) =>
     passed.has(memberHomeThreadItemKey(item)),
   );
+  const listAsk = memberHomeListAsk(options?.asked);
   const shareTurn = shareSignalTurn({
     asked: options?.asked,
     prior: options?.prior,
@@ -322,6 +387,7 @@ export function formatMemberHomeFacts(
       .join('; ') || 'none';
 
   const text = [
+    listAsk ? listTurnLine(listAsk) : null,
     'Member home facts for this signed-in person. These are records. Keep the Hypha AI voice from the instructions above. You already know this member, the spaces they belong to, and the people they share those spaces with. Accompany them. The collective is the point. Every reply ends on the next step. No open question about what they feel like doing. One specific question about this item is fine.',
     'LENGTH: Typed chat and spoken voice are the same script: at most 2 short sentences, then stop. Greeting counts as one. The waiting item is the other. Never a third sentence about movement, another space, or a separate upvote nudge. Never a paragraph. Never a wall of text. Never repeat the same idea in different words. Never say the same sentence twice. Do not dump about=. Do not list every name in with=. One person and one space is enough. The detail is already on screen, so do not describe an interface.',
     'INTRODUCE: You are a friend catching them up on one thing that needs them. Talk about the content, never the interface. Never say card, screen, or button. Never say "You can now decide on the proposal card." The person who raised it is the subject, in the active voice, by first name (the first word of creator=). Vary the wording every turn. Do not reuse one sentence shape. Two short sentences. Use only facts on that item\'s line. spoken= is he or she. When spoken=he, say he and his. When spoken=she, say she and her.',
@@ -398,7 +464,9 @@ export function formatMemberHomeFacts(
       : null,
     'Each thing they say starts a new reply underneath that message. Do not rewrite an earlier reply. Several proposals can share a title. The person and the space decide which one it is. The words and the tool slug are that same proposal.',
     'A space and its signals live on the signals board. When they agree to look, call mcp_navigation with destination_type space_screen, space_screen signals, and that space slug. One short line. Do not list signals, priorities, or descriptions. Do not say you opened the space. Do not describe what the space is building. Do not ask what they would like to focus on there.',
-    shareTurn && spoken
+    listAsk
+      ? null
+      : shareTurn && spoken
       ? `Record for the post, not a briefing: ${itemLine(
           spoken,
         )}. Do not read it out. Do not call show_member_home_item.`
@@ -429,20 +497,24 @@ export function formatMemberHomeFacts(
           "'",
         )}". This reply is about that content only. Introduce it. Do not announce an interface. Do not name any other title.`
       : null,
-    shareTurn === 'awaiting'
+    listAsk
+      ? listTurnLine(listAsk)
+      : shareTurn === 'awaiting'
       ? 'They chose to share. Do not read this record out:'
       : shareTurn === 'ready'
       ? 'Post target. Do not read this record out:'
       : askedItem
       ? 'Waiting items are context only. This reply stays on the one they just asked about. Do not summarise the list:'
       : 'The one item for this reply. There is no list to read out:',
-    waitingLines,
-    stillWaiting.length > 1
+    listAsk ? null : waitingLines,
+    !listAsk && stillWaiting.length > 1
       ? `${
           stillWaiting.length - 1
         } more are waiting. Withhold them. One at a time, and only the one relevant for this member.`
       : null,
-    alreadyShown.length > 0
+    listAsk
+      ? null
+      : alreadyShown.length > 0
       ? `Already placed in earlier replies. Do not call show_member_home_item for these again unless the person asks: ${alreadyShown.join(
           ', ',
         )}.`
@@ -476,7 +548,7 @@ export function formatMemberHomeFacts(
     .filter((line): line is string => Boolean(line))
     .join('\n');
   const card =
-    spoken != null && spoken.slug && shareTurn == null
+    listAsk == null && spoken != null && spoken.slug && shareTurn == null
       ? { kind: spoken.kind, slug: spoken.slug }
       : null;
   return { text, card };

@@ -87,6 +87,7 @@
     "chipPeople": "Quem está por perto?",
     "chipDecision": "O que precisa de uma decisão?",
     "chipTokens": "Enviar tokens a alguém",
+    "peopleAroundLead": "{name} é quem está mais perto. Partilham {count, plural, one {# espaço} other {# espaços}}.",
     "spacesWidgetTitle": "Entrar num espaço",
     "spacesWidgetCount": "{count} teus",
     "spacesWidgetHint": "Toca num espaço para entrar.",

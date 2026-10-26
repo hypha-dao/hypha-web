@@ -21,7 +21,7 @@ import {
   mergeMemberHomeMemory,
   shownMemberHomeItemKeys,
 } from '@hypha-platform/core/client';
-import { formatMemberHomeFacts } from './member-home-facts';
+import { formatMemberHomeFacts, memberHomeListAsk } from './member-home-facts';
 import { loadMemberHomeFacts } from './load-member-home-facts';
 import {
   buildSpaceContextSnapshot,
@@ -1457,6 +1457,7 @@ export async function createChatStreamResult(
     : null;
   const memberHomeFacts = memberHomeBrief?.text ?? null;
   const memberHomeCard = memberHomeBrief?.card ?? null;
+  const memberHomeList = memberHomeListAsk(memberHomeLastUserText);
   const modelMessages = await convertMessagesSafely(
     memberHomeRecord ? messages.slice(-8) : messages,
     debugRequestId,
@@ -1609,9 +1610,11 @@ export async function createChatStreamResult(
         ?.collectedFields ?? snapshotWalkthrough?.collectedFields,
   });
   const systemPrompt = memberHomeRecord
-    ? `${effectiveSystemPrompt}\n\nYou are Hypha, speaking to this member at home. Use only the brief below. Write at most two short sentences. Those sentences are read aloud word for word, so say them as you would to a friend. Introduce the content: the person is the subject, by first name, in the active voice. Vary the wording. Never mention a card, a screen, or a button. Call show_member_home_item once for the one item in the brief unless this turn is a share or a visual request, then write the sentences. You may also call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not mention tools, slugs, or instructions. Do not call any other tool. Do not think out loud.${
-        onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''
-      }`
+    ? `${effectiveSystemPrompt}\n\nYou are Hypha, speaking to this member at home. Use only the brief below. Write at most two short sentences. Those sentences are read aloud word for word, so say them as you would to a friend. Introduce the content: the person is the subject, by first name, in the active voice. Vary the wording. Never mention a card, a screen, or a button. ${
+        memberHomeList
+          ? 'The list they asked for is already on screen. Write at most two short sentences about that list, using the brief. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal. Do not think out loud.'
+          : 'Call show_member_home_item once for the one item in the brief unless this turn is a share or a visual request, then write the sentences. You may also call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not mention tools, slugs, or instructions. Do not call any other tool. Do not think out loud.'
+      }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
     : normalizedConversationContext?.mode === 'onboarding_setup'
     ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
         normalizedConversationContext.setupPhase ?? 'discover'
@@ -1731,10 +1734,14 @@ export async function createChatStreamResult(
     // After the waiting-item card, the next step is speech only. Share and
     // visual turns still need their tools on later steps.
     prepareStep: memberHomeRecord
-      ? ({ stepNumber }) =>
-          stepNumber > 0 && memberHomeCard
+      ? ({ stepNumber }) => {
+          // A list chip already has its own panel. A tool call here opens
+          // the next signal instead, or leaks the call as text.
+          if (memberHomeList) return { toolChoice: 'none' as const };
+          return stepNumber > 0 && memberHomeCard
             ? { toolChoice: 'none' as const }
-            : {}
+            : {};
+        }
       : undefined,
     stopWhen: memberHomeRecord
       ? ({ steps }) => {

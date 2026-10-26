@@ -87,6 +87,7 @@
     "chipPeople": "Кој е во близина?",
     "chipDecision": "Што бара одлука?",
     "chipTokens": "Испрати токени на некого",
+    "peopleAroundLead": "{name} е најблиску. Делите {count, plural, one {# простор} other {# простори}}.",
     "spacesWidgetTitle": "Влези во простор",
     "spacesWidgetCount": "{count} твои",
     "spacesWidgetHint": "Допри простор за да влезеш.",

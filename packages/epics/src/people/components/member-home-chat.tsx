@@ -305,6 +305,41 @@ function rewriteHomeStartLine(
   }
 }
 
+function userTextBefore(messages: readonly HomeMessage[], index: number) {
+  for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+    const message = messages[cursor];
+    if (message?.role === 'user') return messageText(message);
+  }
+  return '';
+}
+
+function connectionName(person: {
+  name: string | null;
+  surname: string | null;
+  nickname: string | null;
+}) {
+  const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
+  return full || person.nickname?.trim() || '';
+}
+
+function closestSharedPerson(intelligence: {
+  person: { id: number };
+  connections: ReadonlyArray<{
+    id: number;
+    name: string | null;
+    surname: string | null;
+    nickname: string | null;
+    sharedSpaceCount: number;
+  }>;
+}) {
+  return (
+    intelligence.connections.find(
+      (person) =>
+        person.id !== intelligence.person.id && connectionName(person),
+    ) ?? null
+  );
+}
+
 function messageText(message: HomeMessage) {
   return (message.parts ?? [])
     .filter(
@@ -346,13 +381,30 @@ function repeatsHomeSentence(sentence: string, earlier: string[]) {
   });
 }
 
+/** A model that cannot call a tool sometimes prints the call. Never show that. */
+function stripLeakedToolMarkup(text: string) {
+  return text
+    .replace(/<\s*\|?\s*DSML\b[\s\S]*?<\s*\/\s*\|?\s*DSML\b[^>]*>/gi, ' ')
+    .replace(/<\s*\|?\s*DSML\b[\s\S]*$/gi, ' ')
+    .replace(/<\/?\s*\|[^>\n]*>/g, ' ')
+    .replace(/<\/?(?:tool_call|invoke|parameter|function_call)\b[^>]*>/gi, ' ')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+function looksLikeToolLeak(sentence: string) {
+  return /DSML|invoke\s+name\s*=|parameter\s+name\s*=|get_people_by_space_slug|show_member_home_item|<\s*\|/i.test(
+    sentence,
+  );
+}
+
 /** A decision stays with the member. Drop narration and any ask for their choice. */
 function straightforwardHomeText(text: string) {
   const steers = (sentence: string) =>
     /i['’]ll show you|here(?:'|’)s the proposal|here is the proposal|the proposal titled|if you approve|your approval|can you review|do you approve|would you approve|would you like to approve|what would you like to decide|want to take a look|i(?:'’)?ve approved|\bi approved\b|\bi have approved\b|\bi accepted\b|i(?:'’)?ve accepted|\bi voted\b|you can now see the message|think about it|approval is required|to proceed with|how (?:will|would) you vote|let me know if you|^sure[.!]?$/i.test(
       sentence,
     );
-  const sentences = text
+  const sentences = stripLeakedToolMarkup(text)
     .replace(/\*\*/g, '')
     .split(/\n+/)
     .flatMap((paragraph) => paragraph.split(/(?<=[.!?])\s+/))
@@ -366,6 +418,7 @@ function straightforwardHomeText(text: string) {
     .filter((sentence, index) => {
       const stillArriving =
         index === sentences.length - 1 && !/[.!?]$/.test(sentence);
+      if (looksLikeToolLeak(sentence)) return false;
       if (!stillArriving && steers(sentence)) return false;
       if (repeatsHomeSentence(sentence, kept)) return false;
       kept.push(sentence);
@@ -829,18 +882,21 @@ export function MemberHomeChat({
     const shown = new Map<string, string>();
     const lastMessage = homeMessages[homeMessages.length - 1];
     const live = new Set<string>();
-    for (const message of homeMessages) {
-      if (message.role !== 'assistant') continue;
+    homeMessages.forEach((message, index) => {
+      if (message.role !== 'assistant') return;
       live.add(message.id);
-      const rawText = messageText(message).replace(/\*\*/g, '');
-      const board = rawText
-        ? homeBoardFromMessage(message) ??
-          memberHomeSignalCatalogue(rawText, intelligence.spaces, lang)
-        : null;
-      const spokenItem = rawText
-        ? homeItemForMessage(cardItems, message)
-        : null;
-      const script = rawText
+      const rawText = stripLeakedToolMarkup(
+        messageText(message).replace(/\*\*/g, ''),
+      );
+      const listAsk = widgetKindFor(userTextBefore(homeMessages, index));
+      const board =
+        rawText && !listAsk
+          ? homeBoardFromMessage(message) ??
+            memberHomeSignalCatalogue(rawText, intelligence.spaces, lang)
+          : null;
+      const spokenItem =
+        rawText && !listAsk ? homeItemForMessage(cardItems, message) : null;
+      const cleaned = rawText
         ? homeAssistantScript({
             displayText: board
               ? t('boardInstead', { space: board.title })
@@ -850,19 +906,41 @@ export function MemberHomeChat({
             ),
           })
         : '';
-      if (script) heldBubbleText.current.set(message.id, script);
       const streamingThis = isStreaming && message.id === lastMessage?.id;
+      const closest =
+        !streamingThis && listAsk === 'people' && !cleaned
+          ? closestSharedPerson(intelligence)
+          : null;
+      const script =
+        cleaned ||
+        (closest
+          ? t('peopleAroundLead', {
+              name: connectionName(closest),
+              count: closest.sharedSpaceCount,
+            })
+          : !streamingThis && listAsk === 'people'
+          ? t('peopleWidgetEmpty')
+          : '');
+      if (script) heldBubbleText.current.set(message.id, script);
       const text =
         script ||
         (streamingThis ? heldBubbleText.current.get(message.id) ?? '' : '');
       if (!streamingThis && !script) heldBubbleText.current.delete(message.id);
       if (text) shown.set(message.id, text);
-    }
+    });
     for (const id of [...heldBubbleText.current.keys()]) {
       if (!live.has(id)) heldBubbleText.current.delete(id);
     }
     return shown;
-  }, [cardItems, homeMessages, intelligence.spaces, isStreaming, lang, t]);
+  }, [
+    cardItems,
+    homeMessages,
+    intelligence,
+    isStreaming,
+    lang,
+    t,
+    widgetKindFor,
+  ]);
 
   /**
    * Latest assistant bubble only. Falling through to an older reply makes
@@ -997,17 +1075,21 @@ export function MemberHomeChat({
   }, [homeMessages, onQueueMemory, threadItems]);
   useEffect(() => {
     let remembered = false;
-    for (const message of homeMessages) {
+    homeMessages.forEach((message, index) => {
       if (message.role !== 'assistant' || message.metadata?.homeArrival) {
-        continue;
+        return;
+      }
+      const asked = widgetKindFor(userTextBefore(homeMessages, index));
+      if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
+        return;
       }
       const item = homeItemForMessage(liveCardItems, message);
-      if (!item) continue;
+      if (!item) return;
       rememberHomeShownItem(item);
       remembered = true;
-    }
+    });
     if (remembered) setShownCardItems(readHomeShownItems());
-  }, [homeMessages, liveCardItems]);
+  }, [homeMessages, liveCardItems, widgetKindFor]);
 
   const cardsByMessageId = useMemo(() => {
     // The card stays with the latest reply about that item. An earlier
@@ -1018,35 +1100,45 @@ export function MemberHomeChat({
       string,
       { messageId: string; item: MemberHomeThreadItem }
     >();
-    for (const message of homeMessages) {
+    homeMessages.forEach((message, index) => {
       if (message.role !== 'assistant' || message.metadata?.homeArrival) {
-        continue;
+        return;
+      }
+      // The people, spaces, and token chips already have their own panel.
+      // A tool call on that turn must not pin the next signal underneath.
+      const asked = widgetKindFor(userTextBefore(homeMessages, index));
+      if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
+        return;
       }
       const item = homeItemForMessage(cardItems, message);
-      if (!item) continue;
+      if (!item) return;
       const key = memberHomeThreadItemKey(item);
       const placed = latestByItem.get(key);
-      if (placed && actedKeySet.has(key)) continue;
+      if (placed && actedKeySet.has(key)) return;
       latestByItem.set(key, {
         messageId: message.id,
         item,
       });
-    }
+    });
     const map = new Map<string, MemberHomeThreadItem>();
     for (const placed of latestByItem.values()) {
       map.set(placed.messageId, placed.item);
     }
     return map;
-  }, [actedKeySet, cardItems, homeMessages]);
+  }, [actedKeySet, cardItems, homeMessages, widgetKindFor]);
   const cardMessageId = useMemo(() => {
     for (let index = homeMessages.length - 1; index >= 0; index -= 1) {
       const message = homeMessages[index];
       if (!message || message.role !== 'assistant') continue;
       if (message.metadata?.homeArrival) continue;
+      const asked = widgetKindFor(userTextBefore(homeMessages, index));
+      if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
+        continue;
+      }
       if (homeItemForMessage(cardItems, message)) return message.id;
     }
     return null;
-  }, [cardItems, homeMessages]);
+  }, [cardItems, homeMessages, widgetKindFor]);
   const focusedItem = useMemo(() => {
     const message = homeMessages.find((item) => item.id === cardMessageId);
     return message ? homeItemForMessage(cardItems, message) : null;
