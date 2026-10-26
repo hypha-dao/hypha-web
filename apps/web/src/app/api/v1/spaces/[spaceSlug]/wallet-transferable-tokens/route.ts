@@ -10,8 +10,8 @@ import {
   Token,
   validTokenTypes,
   TokenType,
-  isHiddenToken,
-  isKnownTreasuryToken,
+  isVisibleWalletToken,
+  buildKnownTreasuryAddressSet,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -84,20 +84,14 @@ export async function GET(
       console.warn('Failed to fetch wallet token balances:', error);
     }
 
-    const dbKnownAddresses = new Set(
-      rawDbTokens
-        .filter((t) => t.address && EVM_ADDRESS.test(t.address))
-        .map((t) => t.address!.toLowerCase()),
-    );
+    const dbKnownAddresses = buildKnownTreasuryAddressSet(rawDbTokens);
 
     const parsedExternalTokens: Token[] = externalTokens
       .filter(
         (token) =>
           token &&
           token.balance > 0 &&
-          token.tokenAddress &&
-          EVM_ADDRESS.test(token.tokenAddress) &&
-          isKnownTreasuryToken(token.tokenAddress, dbKnownAddresses),
+          isVisibleWalletToken(token.tokenAddress, dbKnownAddresses),
       )
       .map((token) => ({
         symbol: token.symbol || 'UNKNOWN',
@@ -112,8 +106,8 @@ export async function GET(
       addressMap.set(token.address.toLowerCase(), token);
     });
 
-    const allTokens: Token[] = Array.from(addressMap.values()).filter(
-      (token) => !isHiddenToken(token.address),
+    const allTokens: Token[] = Array.from(addressMap.values()).filter((token) =>
+      isVisibleWalletToken(token.address, dbKnownAddresses),
     );
 
     const assets = await Promise.all(

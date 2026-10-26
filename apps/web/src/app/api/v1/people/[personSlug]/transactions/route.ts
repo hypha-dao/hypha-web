@@ -8,6 +8,9 @@ import {
   schemaGetTransfersQuery,
   validTokenTypes,
   TokenType,
+  isVisibleWalletToken,
+  buildKnownTreasuryAddressSet,
+  getEnergyCommunityTokenAddresses,
 } from '@hypha-platform/core/client';
 import {
   findPeopleByWeb3Addresses,
@@ -109,8 +112,18 @@ export async function GET(
     // errors on profiles with long transfer histories. Tokens whose metadata
     // can't be resolved (e.g. spam tokens without symbol/name) are skipped
     // instead of failing the whole response.
+    const dbKnownAddresses = buildKnownTreasuryAddressSet(
+      rawDbTokens,
+      getEnergyCommunityTokenAddresses(),
+    );
+    // Same allowlist as the wallet token list: stables / Hypha-created /
+    // energy-community / HYPHA. Unknown inbound airdrops stay hidden.
     const uniqueTokenAddresses = Array.from(
-      new Set(transfers.map((transfer) => transfer.token.toLowerCase())),
+      new Set(
+        transfers
+          .map((transfer) => transfer.token.toLowerCase())
+          .filter((address) => isVisibleWalletToken(address, dbKnownAddresses)),
+      ),
     );
     const tokenMetaByAddress = new Map<
       string,

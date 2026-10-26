@@ -18,8 +18,8 @@ import {
   TokenType,
   getEnergyBalances,
   getMemberSpaces,
-  isHiddenToken,
-  isKnownTreasuryToken,
+  isVisibleWalletToken,
+  buildKnownTreasuryAddressSet,
   getEnergyCommunityTokenAddresses,
   getEnergyCommunityToken,
   getEnergyCommunityTokensForSpace,
@@ -150,7 +150,7 @@ export async function GET(
      * member-spaces, off-chain external token balances, and the in-DB tokens list. They
      * share no data dependencies and previously ran sequentially, dominating TTFB.
      * Alchemy balances are only used to surface held DB-registered / catalogue tokens —
-     * unknown ERC-20 spam is dropped via isKnownTreasuryToken.
+     * unknown ERC-20 spam is dropped via isVisibleWalletToken.
      */
     const [
       energySource,
@@ -206,24 +206,15 @@ export async function GET(
         )
       : new Set();
 
-    /** All DB token addresses — used to allow Alchemy-held registered tokens through. */
-    const dbKnownAddresses = new Set(
-      rawDbTokensForSeed
-        .filter((t) => t.address && /^0x[a-fA-F0-9]{40}$/i.test(t.address))
-        .map((t) => t.address!.toLowerCase()),
+    /** DB + energy-community addresses — Alchemy-held registered tokens pass. */
+    const dbKnownAddresses = buildKnownTreasuryAddressSet(
+      rawDbTokensForSeed,
+      getEnergyCommunityTokenAddresses(),
     );
-    // EnergyPPAv2 community tokens (not in Neon `tokens` yet) must still pass
-    // the Alchemy spam filter when the user holds a balance.
-    for (const address of getEnergyCommunityTokenAddresses()) {
-      dbKnownAddresses.add(address);
-    }
 
     const parsedExternalTokens: Token[] = externalTokens
-      .filter(
-        (token) =>
-          token?.tokenAddress &&
-          /^0x[a-fA-F0-9]{40}$/i.test(token.tokenAddress) &&
-          isKnownTreasuryToken(token.tokenAddress, dbKnownAddresses),
+      .filter((token) =>
+        isVisibleWalletToken(token?.tokenAddress, dbKnownAddresses),
       )
       .map((token) => ({
         symbol: token.symbol || 'UNKNOWN',
@@ -356,8 +347,14 @@ export async function GET(
       }
     }
 
-    const allTokens: Token[] = Array.from(addressMap.values()).filter(
-      (token) => !isHiddenToken(token.address),
+    // Final gate: even if a path other than Alchemy merge injects an address,
+    // unknown airdrop / spam tokens never reach the wallet token list.
+    const knownForDisplay = buildKnownTreasuryAddressSet(
+      [],
+      [...dbKnownAddresses, energyTokenAddress],
+    );
+    const allTokens: Token[] = Array.from(addressMap.values()).filter((token) =>
+      isVisibleWalletToken(token.address, knownForDisplay),
     );
 
     // Rates are needed to sum tokens priced in different currencies into one

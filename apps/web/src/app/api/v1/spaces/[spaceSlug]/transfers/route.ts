@@ -4,6 +4,9 @@ import {
   schemaGetTransfersQuery,
   validTokenTypes,
   type TokenType,
+  isVisibleWalletToken,
+  buildKnownTreasuryAddressSet,
+  getEnergyCommunityTokenAddresses,
 } from '@hypha-platform/core/client';
 import {
   findSpaceBySlug,
@@ -159,8 +162,17 @@ export async function GET(
     // errors on spaces with long transfer histories. Tokens whose metadata
     // can't be resolved (e.g. spam tokens without symbol/name) are skipped
     // instead of failing the whole response.
+    const dbKnownAddresses = buildKnownTreasuryAddressSet(
+      rawDbTokens,
+      getEnergyCommunityTokenAddresses(),
+    );
+    // Same allowlist as the treasury token list — hide spam airdrop rows.
     const uniqueTokenAddresses = Array.from(
-      new Set(allTransfers.map((transfer) => transfer.token.toLowerCase())),
+      new Set(
+        allTransfers
+          .map((transfer) => transfer.token.toLowerCase())
+          .filter((address) => isVisibleWalletToken(address, dbKnownAddresses)),
+      ),
     );
     const tokenMetaByAddress = new Map<
       string,
