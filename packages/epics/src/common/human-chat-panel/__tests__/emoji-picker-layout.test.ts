@@ -53,7 +53,7 @@ describe('emoji picker layout', () => {
     expect(surface).toContain('[&_em-emoji-picker]:!w-full');
     expect(surface).toContain('data-hypha-emoji-picker');
     expect(surface).toContain('onWheel');
-    expect(surface).toContain('onPointerDown');
+    expect(surface).not.toContain('onPointerDown');
     expect(surface).toContain('onTouchStart');
     expect(surface).toContain('pointer-events-auto');
     expect(surface).toContain('touch-manipulation');
@@ -65,6 +65,9 @@ describe('emoji picker layout', () => {
     expect(picker).toContain('z-[100]');
     expect(picker).toContain('onPointerDownOutside');
     expect(picker).toContain('onInteractOutside');
+    expect(picker).not.toContain(
+      'onPointerDown={(event) => event.stopPropagation()}',
+    );
     const sidebar = readFileSync(
       resolve(dir, '../../../../ui/src/sidebar.tsx'),
       'utf8',

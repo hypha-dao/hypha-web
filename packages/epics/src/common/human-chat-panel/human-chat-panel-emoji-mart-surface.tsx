@@ -57,7 +57,6 @@ export function HumanChatPanelEmojiMartSurface({
         className,
       )}
       onWheel={(event) => event.stopPropagation()}
-      onPointerDown={(event) => event.stopPropagation()}
       onTouchStart={(event) => event.stopPropagation()}
       onKeyDown={(event) => {
         // emoji-mart search lives in shadow DOM. Retargeted keys look like

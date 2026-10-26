@@ -111,7 +111,6 @@ export function HumanChatPanelEmojiPicker({
             event.preventDefault();
           }
         }}
-        onPointerDown={(event) => event.stopPropagation()}
         onWheel={(event) => event.stopPropagation()}
       >
         <HumanChatPanelEmojiMartSurface

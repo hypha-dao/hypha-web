@@ -6,6 +6,7 @@ import {
   readRememberedPersonDirectRoom,
   rememberDirectRoom,
   rememberPersonDirectRoom,
+  rememberedPersonRoomIsCurrentPeer,
 } from './member-connections';
 import {
   OpenPersonRoomFailure,
@@ -86,14 +87,19 @@ export async function openOrEnsurePersonRoom(options: {
   if (!client || !selfId) {
     throw new OpenPersonRoomFailure('not-connected');
   }
+  const mxid = (await options.waitForMatrixUserId(options.personId))?.trim();
   const rememberedByPerson = readRememberedPersonDirectRoom(options.personId);
   if (
+    mxid &&
     rememberedByPerson &&
-    client.getRoom(rememberedByPerson)?.getMyMembership() === 'join'
+    client.getRoom(rememberedByPerson)?.getMyMembership() === 'join' &&
+    rememberedPersonRoomIsCurrentPeer(
+      mxid,
+      otherUserIds(client, rememberedByPerson, selfId),
+    )
   ) {
     return rememberedByPerson;
   }
-  const mxid = (await options.waitForMatrixUserId(options.personId))?.trim();
   if (!mxid) {
     throw new OpenPersonRoomFailure('no-matrix-id');
   }

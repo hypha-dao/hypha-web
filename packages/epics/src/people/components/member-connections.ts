@@ -589,6 +589,16 @@ export function readRememberedPersonDirectRoom(personId: number) {
   return readPersonDirectRoomMap()[String(personId)]?.trim() || null;
 }
 
+/** Reuse a person-keyed room only when its joined peer is the current MXID. */
+export function rememberedPersonRoomIsCurrentPeer(
+  currentMxid: string | null | undefined,
+  joinedPeerIds: readonly string[],
+): boolean {
+  const mxid = currentMxid?.trim().toLowerCase();
+  if (!mxid) return false;
+  return joinedPeerIds.some((id) => id.trim().toLowerCase() === mxid);
+}
+
 export function rememberPersonDirectRoom(personId: number, roomId: string) {
   if (typeof window === 'undefined') return;
   if (!Number.isFinite(personId) || personId <= 0) return;
@@ -956,6 +966,8 @@ function uniqueDirectoryPersonByName<T extends ConnectionListPerson>(
   roomName: string,
   usedPersonIds: ReadonlySet<number>,
   fallback: string,
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+  roomMxid?: string | null,
 ): T | undefined {
   const needle = roomName.trim().toLowerCase();
   if (!needle || looksLikeTechnicalMatrixDisplayName(roomName, '')) {
@@ -963,12 +975,19 @@ function uniqueDirectoryPersonByName<T extends ConnectionListPerson>(
   }
   const matches: T[] = [];
   for (const person of directoryById.values()) {
-    if (usedPersonIds.has(person.id)) continue;
     if (personName(person, fallback).trim().toLowerCase() === needle) {
       matches.push(person);
     }
   }
-  return matches.length === 1 ? matches[0] : undefined;
+  // Uniqueness is across the full directory. usedPersonIds must not make an
+  // ambiguous same-name pair look unique.
+  if (matches.length !== 1) return undefined;
+  const person = matches[0];
+  if (!person || usedPersonIds.has(person.id)) return undefined;
+  const known = personIdToMatrixUserId[person.id]?.trim().toLowerCase();
+  const peer = roomMxid?.trim().toLowerCase();
+  if (known && peer && known !== peer) return undefined;
+  return person;
 }
 
 /**
@@ -1039,6 +1058,8 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
         room.name,
         usedPersonIds,
         fallback,
+        personIdToMatrixUserId,
+        mxid,
       );
     if (person) {
       if (
@@ -1090,6 +1111,11 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
     const rememberedRoom = remembered
       ? rooms.find((room) => room.roomId === remembered)
       : undefined;
+    const known = personIdToMatrixUserId[person.id]?.trim().toLowerCase();
+    const rememberedPeer = rememberedRoom?.otherUserId?.trim().toLowerCase();
+    const rememberedUsable =
+      Boolean(rememberedRoom) &&
+      !(known && rememberedPeer && known !== rememberedPeer);
     withoutRoom.push({
       person,
       name: personName(person, fallback),
@@ -1098,7 +1124,7 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
       mine: rememberedRoom?.mine ?? false,
       lastTs: rememberedRoom?.lastTs ?? null,
       unread: rememberedRoom?.unread ?? 0,
-      roomId: remembered ?? null,
+      roomId: rememberedUsable ? remembered : null,
     });
   }
 
@@ -1431,6 +1457,33 @@ function listedRowShowsConversation(row: {
  * Room already on the row, or the typed DM that produced its preview.
  * Never invents a room — create/ensure stays a separate path.
  */
+function listedRoomIdIsCurrentPeer(
+  roomId: string,
+  personId: number,
+  lookup?: ListedConversationLookup,
+): boolean {
+  const rooms = lookup?.rooms;
+  if (rooms && !rooms.some((room) => room.roomId.trim() === roomId)) {
+    return false;
+  }
+  const mxid = lookup?.personIdToMatrixUserId?.[personId]?.trim().toLowerCase();
+  if (!mxid) return true;
+  const room = rooms?.find((candidate) => candidate.roomId.trim() === roomId);
+  const other = room?.otherUserId?.trim().toLowerCase();
+  if (!other) return true;
+  return other === mxid;
+}
+
+function usableListedRoomId(
+  roomId: string | null | undefined,
+  personId: number,
+  lookup?: ListedConversationLookup,
+): string | null {
+  const id = roomId?.trim();
+  if (!id) return null;
+  return listedRoomIdIsCurrentPeer(id, personId, lookup) ? id : null;
+}
+
 export function resolveListedConversationRoomId(
   row: {
     roomId: string | null | undefined;
@@ -1441,11 +1494,14 @@ export function resolveListedConversationRoomId(
   },
   lookup?: ListedConversationLookup,
 ): string | null {
-  const listed = row.roomId?.trim();
+  const listed = usableListedRoomId(row.roomId, row.person.id, lookup);
   if (listed) return listed;
-  const remembered =
+  const remembered = usableListedRoomId(
     lookup?.rememberedRoomId?.trim() ||
-    readRememberedPersonDirectRoom(row.person.id);
+      readRememberedPersonDirectRoom(row.person.id),
+    row.person.id,
+    lookup,
+  );
   if (remembered) return remembered;
   const rooms = lookup?.rooms;
   if (!rooms || row.person.id <= 0) return null;
@@ -1456,6 +1512,9 @@ export function resolveListedConversationRoomId(
   const needle = row.name.trim().toLowerCase();
   for (const room of rooms) {
     if (!isTypedDmConversation(room as ConversationRow)) continue;
+    if (!listedRoomIdIsCurrentPeer(room.roomId, row.person.id, lookup)) {
+      continue;
+    }
     const other = room.otherUserId?.trim();
     const otherKey = other?.toLowerCase();
     if (mxid && otherKey === mxid) return room.roomId;

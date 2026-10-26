@@ -113,22 +113,30 @@ export function MemberHomePeople({
     );
   }
 
-  async function resolvePersonRoom(person: HomePerson, title: string) {
+  async function resolvePersonRoom(
+    person: HomePerson,
+    title: string,
+  ): Promise<
+    | { status: 'ready'; roomId: string }
+    | { status: 'start-conversation' }
+    | { status: 'failed' }
+  > {
     try {
-      return await openOrEnsurePersonRoom({
+      const roomId = await openOrEnsurePersonRoom({
         getMatrix: () => matrixRef.current,
         personId: person.id,
         title,
         waitForMatrixUserId,
       });
+      return { status: 'ready', roomId };
     } catch (error) {
       if (
         noticeKeyForOpenPersonRoomError(error) === 'matrixPersonUnavailable'
       ) {
-        return null;
+        return { status: 'start-conversation' };
       }
       setNotice(t(noticeKeyForOpenPersonRoomError(error)));
-      return null;
+      return { status: 'failed' };
     }
   }
 
@@ -145,12 +153,17 @@ export function MemberHomePeople({
     setNotice(null);
     const title = labelOf(person, fallbackName);
     try {
-      const roomId = await resolvePersonRoom(person, title);
-      if (roomId) rememberPersonDirectRoom(person.id, roomId);
+      const result = await resolvePersonRoom(person, title);
+      if (result.status === 'failed') return false;
+      if (result.status === 'ready') {
+        rememberPersonDirectRoom(person.id, result.roomId);
+        showRoom(result.roomId, title, person);
+        return true;
+      }
       // Listed people still open Start-a-conversation when no mxid/room yet.
       // Never surface "That person does not have chat yet." for a list tap.
-      showRoom(roomId, title, person);
-      return Boolean(roomId);
+      showRoom(null, title, person);
+      return false;
     } catch {
       setNotice(t('matrixFailed'));
       return false;
@@ -170,11 +183,11 @@ export function MemberHomePeople({
     setNotice(null);
     const title = labelOf(person, fallbackName);
     try {
-      const roomId = await resolvePersonRoom(person, title);
-      if (!roomId) return false;
-      showRoom(roomId, title, person);
+      const result = await resolvePersonRoom(person, title);
+      if (result.status !== 'ready') return false;
+      showRoom(result.roomId, title, person);
       const start = video ? startVideoForRoom : startAudioForRoom;
-      await start(roomId, null, undefined, jwt, {
+      await start(result.roomId, null, undefined, jwt, {
         roomTitle: title,
       });
       return true;
