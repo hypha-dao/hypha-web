@@ -88,6 +88,15 @@ const nextConfig: NextConfig = {
         destination: '/:lang/network',
         permanent: true,
       },
+      // The bare space URL lands on the overview tab. Next forwards the query string
+      // (`?signal=`, `?msg=`, `?invite=`). Done here rather than with `redirect()` in a
+      // `dho/[id]/page.tsx`: a page redirect stays in the layout's `children` slot after a soft
+      // navigation and Next replays it on later router updates (#2575).
+      {
+        source: `/:lang(${LOCALES.join('|')})/dho/:id`,
+        destination: '/:lang/dho/:id/overview',
+        permanent: false,
+      },
     ];
   },
   rewrites: async () => {
