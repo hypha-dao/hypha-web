@@ -1740,11 +1740,13 @@ export async function createChatStreamResult(
       ? ({ steps }) => {
           if (steps.length >= 2) return true;
           const latest = steps[steps.length - 1];
-          const spoken = Boolean(latest?.text?.trim());
-          // A step that both spoke and called a tool often leaves the line
-          // unfinished (e.g. ending on an em dash). Let the next step finish.
+          const spoken = latest?.text?.trim() ?? '';
+          if (!spoken) return false;
           const usedTools = (latest?.toolCalls?.length ?? 0) > 0;
-          return spoken && !usedTools;
+          if (!usedTools) return true;
+          // The card tool can cut a line off mid-sentence. A finished
+          // sentence must stop here, or the next step says it again.
+          return /[.!?]["')\]]*$/u.test(spoken);
         }
       : stepCountIs(6),
     onStepFinish: (event) => {

@@ -326,6 +326,26 @@ function homeTextIsOneLine(text: string) {
 export const HOME_CHAT_COLUMN =
   'mx-auto w-full min-w-0 lg:max-w-[min(75%,75vw,72rem)]';
 
+/** Compare lines after a lead-in so "Next up: …" and "…" count as one line. */
+function homeSentenceKey(sentence: string) {
+  return sentence
+    .toLowerCase()
+    .replace(/^(?:next up|up next)\s*:\s*/u, '')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function repeatsHomeSentence(sentence: string, earlier: string[]) {
+  const key = homeSentenceKey(sentence);
+  if (key.length < 24) return false;
+  return earlier.some((previous) => {
+    const other = homeSentenceKey(previous);
+    if (other.length < 24) return false;
+    return key === other || key.includes(other) || other.includes(key);
+  });
+}
+
 /** A decision stays with the member. Drop narration and any ask for their choice. */
 function straightforwardHomeText(text: string) {
   const steers = (sentence: string) =>
@@ -340,12 +360,16 @@ function straightforwardHomeText(text: string) {
     .filter((sentence) => sentence.length > 0);
   // A sentence still arriving has no ending mark. Hiding it as soon as it
   // starts to look like narration blanks the bubble, then the next sentence
-  // mounts it again.
+  // mounts it again. A second step often repeats the line it just finished.
+  const kept: string[] = [];
   const cleaned = sentences
     .filter((sentence, index) => {
       const stillArriving =
         index === sentences.length - 1 && !/[.!?]$/.test(sentence);
-      return stillArriving || !steers(sentence);
+      if (!stillArriving && steers(sentence)) return false;
+      if (repeatsHomeSentence(sentence, kept)) return false;
+      kept.push(sentence);
+      return true;
     })
     .join(' ')
     .trim();
@@ -1327,7 +1351,10 @@ export function MemberHomeChat({
                 {showMessage ? (
                   <article
                     data-home-arrival={
-                      arriving && !pinnedItem && !isStreaming ? '' : undefined
+                      arriving &&
+                      (pinnedItem || (!isStreaming && Boolean(text)))
+                        ? ''
+                        : undefined
                     }
                     className={cn(
                       'flex gap-3',
@@ -1347,56 +1374,6 @@ export function MemberHomeChat({
                         mine ? 'max-w-[85%] text-right' : 'flex-1',
                       )}
                     >
-                      {!mine && pinnedItem ? (
-                        <div data-home-arrival={arriving ? '' : undefined}>
-                          <MemberHomeThreadCard
-                            chat
-                            lang={lang}
-                            item={pinnedItem}
-                            done={actedKeySet.has(
-                              memberHomeThreadItemKey(pinnedItem),
-                            )}
-                            proposal={
-                              pinnedItem.kind === 'proposal'
-                                ? intelligence.proposals.find(
-                                    (proposal) =>
-                                      proposal.slug === pinnedItem.slug,
-                                  ) ?? null
-                                : null
-                            }
-                            onSettled={() => {
-                              voiceInterview.stopSpeaking();
-                            }}
-                            onAsk={(ask, hidden) => {
-                              if (hidden) {
-                                if (glideTimer.current != null) {
-                                  window.clearTimeout(glideTimer.current);
-                                  glideTimer.current = null;
-                                }
-                                if (arrivalFrame.current != null) {
-                                  cancelAnimationFrame(arrivalFrame.current);
-                                  arrivalFrame.current = null;
-                                }
-                                gliding.current = false;
-                                pinnedToEnd.current = false;
-                                arrivalBaselineIds.current = new Set(
-                                  messagesRef.current.map((entry) => entry.id),
-                                );
-                                arrivalScrollStarted.current = false;
-                                arrivalScrollFinished.current = false;
-                                holdVoiceRef.current = true;
-                                setHoldVoice(true);
-                              }
-                              void send(ask, Boolean(hidden));
-                            }}
-                            onReach={(person, mode) =>
-                              mode === 'call'
-                                ? onCallPerson(person)
-                                : onChatPerson(person)
-                            }
-                          />
-                        </div>
-                      ) : null}
                       {text ? (
                         <p
                           className={cn(
@@ -1433,6 +1410,54 @@ export function MemberHomeChat({
                         >
                           {t('openSignalsBoard')}
                         </Link>
+                      ) : null}
+                      {!mine && pinnedItem ? (
+                        <MemberHomeThreadCard
+                          chat
+                          lang={lang}
+                          item={pinnedItem}
+                          done={actedKeySet.has(
+                            memberHomeThreadItemKey(pinnedItem),
+                          )}
+                          proposal={
+                            pinnedItem.kind === 'proposal'
+                              ? intelligence.proposals.find(
+                                  (proposal) =>
+                                    proposal.slug === pinnedItem.slug,
+                                ) ?? null
+                              : null
+                          }
+                          onSettled={() => {
+                            voiceInterview.stopSpeaking();
+                          }}
+                          onAsk={(ask, hidden) => {
+                            if (hidden) {
+                              if (glideTimer.current != null) {
+                                window.clearTimeout(glideTimer.current);
+                                glideTimer.current = null;
+                              }
+                              if (arrivalFrame.current != null) {
+                                cancelAnimationFrame(arrivalFrame.current);
+                                arrivalFrame.current = null;
+                              }
+                              gliding.current = false;
+                              pinnedToEnd.current = false;
+                              arrivalBaselineIds.current = new Set(
+                                messagesRef.current.map((entry) => entry.id),
+                              );
+                              arrivalScrollStarted.current = false;
+                              arrivalScrollFinished.current = false;
+                              holdVoiceRef.current = true;
+                              setHoldVoice(true);
+                            }
+                            void send(ask, Boolean(hidden));
+                          }}
+                          onReach={(person, mode) =>
+                            mode === 'call'
+                              ? onCallPerson(person)
+                              : onChatPerson(person)
+                          }
+                        />
                       ) : null}
                     </div>
                     {mine ? (
