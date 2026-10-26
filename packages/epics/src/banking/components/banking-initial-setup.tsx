@@ -8,12 +8,20 @@ import { cn } from '@hypha-platform/ui-utils';
 import { isBypassEligible } from '@hypha-platform/core/client';
 
 import {
-  BANK_CURRENCY_METAS,
+  BANK_ONBOARDING_CURRENCY_METAS,
   getDefaultBankCurrencyCodes,
-  type BankCurrencyCode,
+  type BankOnboardingCurrencyCode,
 } from '../bank-currency-display';
-import { ownerText, type BankingOwnerContext } from '../banking-ui';
+import {
+  areOnboardingFieldsComplete,
+  getDynamicOnboardingFields,
+  getEnabledOnboardingCurrencies,
+  ownerText,
+  resolveOnboardingCurrencyProviders,
+  type BankingOwnerContext,
+} from '../banking-ui';
 import { CurrencyOptionRow } from './currency-option-row';
+import { OnboardingFieldsForm } from './onboarding-fields-form';
 
 export type BankingInitialSetupProps = {
   initialLegalName: string;
@@ -22,12 +30,30 @@ export type BankingInitialSetupProps = {
   error: string | null;
   /** Whether this setup is for a space or an individual member's profile. Defaults to 'space'. */
   ownerContext?: BankingOwnerContext;
+  /**
+   * Currencies to preselect (defaults to the enabled default set). Used when resending a pending
+   * email confirmation, so the form reflects the pending row's provider instead of Bridge's
+   * defaults — submitting unchanged would otherwise start a different provider's onboarding.
+   */
+  initialCurrencies?: readonly BankOnboardingCurrencyCode[];
   onSubmit: (input: {
     legalName: string;
     contactEmail: string;
-    currencies: BankCurrencyCode[];
+    currencies: BankOnboardingCurrencyCode[];
+    onboardingFields: Record<string, string>;
   }) => Promise<void>;
 };
+
+const enabledOnboardingCurrencies = new Set(getEnabledOnboardingCurrencies());
+const ONBOARDING_CURRENCY_METAS = BANK_ONBOARDING_CURRENCY_METAS.filter((m) =>
+  enabledOnboardingCurrencies.has(m.currency),
+);
+
+function getDefaultEnabledCurrencyCodes(): BankOnboardingCurrencyCode[] {
+  return getDefaultBankCurrencyCodes().filter((c) =>
+    enabledOnboardingCurrencies.has(c),
+  );
+}
 
 export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
   initialLegalName,
@@ -35,6 +61,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
   isSubmitting,
   error,
   ownerContext = 'space',
+  initialCurrencies,
   onSubmit,
 }) => {
   const t = useTranslations('BankingTab.initialSetup');
@@ -43,39 +70,90 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
 
   const [legalName, setLegalName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
-  const [selected, setSelected] = useState<BankCurrencyCode[]>(() => [
-    ...getDefaultBankCurrencyCodes(),
-  ]);
+  // Keyed by value so a refetch handing back an equal array doesn't wipe what's been typed.
+  const initialCurrenciesKey = initialCurrencies?.join(',') ?? '';
+  const startingCurrencies = () =>
+    initialCurrencies && initialCurrencies.length > 0
+      ? [...initialCurrencies]
+      : getDefaultEnabledCurrencyCodes();
+  const [selected, setSelected] =
+    useState<BankOnboardingCurrencyCode[]>(startingCurrencies);
+  const [onboardingFieldValues, setOnboardingFieldValues] = useState<
+    Record<string, string>
+  >({});
 
   useEffect(() => {
     setLegalName(initialLegalName.trim());
     setContactEmail(initialContactEmail.trim());
-    setSelected([...getDefaultBankCurrencyCodes()]);
-  }, [initialContactEmail, initialLegalName]);
+    setSelected(startingCurrencies());
+    setOnboardingFieldValues({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- startingCurrencies only reads the prop
+  }, [initialContactEmail, initialLegalName, initialCurrenciesKey]);
 
-  const toggleCurrency = (currency: BankCurrencyCode, checked: boolean) => {
-    setSelected((current) =>
-      checked ? [...current, currency] : current.filter((c) => c !== currency),
-    );
+  const toggleCurrency = (
+    currency: BankOnboardingCurrencyCode,
+    checked: boolean,
+  ) => {
+    setSelected((current) => {
+      if (!checked) {
+        return current.filter((c) => c !== currency);
+      }
+      // Onboarding is one-provider-per-call (D2/D3) — the server rejects a mixed-provider
+      // `requestedRails` set. Selecting a currency from a different provider than what's already
+      // picked starts a fresh selection instead of mixing (e.g. checking `aud` while Bridge
+      // currencies are still selected drops them, rather than producing a submission that would
+      // fail server-side).
+      const [currentProvider] =
+        current.length > 0 ? resolveOnboardingCurrencyProviders(current) : [];
+      const [newProvider] = resolveOnboardingCurrencyProviders([currency]);
+      if (currentProvider && newProvider && currentProvider !== newProvider) {
+        return [currency];
+      }
+      return [...current, currency];
+    });
+  };
+
+  // `contactEmail`/`legalName` already ride the fixed organization-details inputs above — the
+  // dynamic section only needs to add whatever else a resolved provider declares (D10).
+  const dynamicFields = getDynamicOnboardingFields(selected);
+
+  const handleOnboardingFieldChange = (key: string, value: string) => {
+    setOnboardingFieldValues((current) => ({ ...current, [key]: value }));
   };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (selected.length === 0 || !legalName.trim() || !contactEmail.trim()) {
+    if (
+      selected.length === 0 ||
+      !legalName.trim() ||
+      !contactEmail.trim() ||
+      !areOnboardingFieldsComplete(dynamicFields, onboardingFieldValues)
+    ) {
       return;
     }
+
+    // Drop values left over from a currency that's since been deselected — they'd otherwise ride
+    // along in the encrypted confirmation token for no reason (adapters ignore unknown keys, but
+    // there's no reason to carry stale form data that far).
+    const activeOnboardingFields = Object.fromEntries(
+      Object.entries(onboardingFieldValues).filter(([key]) =>
+        dynamicFields.some((field) => field.key === key),
+      ),
+    );
 
     await onSubmit({
       legalName: legalName.trim(),
       contactEmail: contactEmail.trim(),
       currencies: selected,
+      onboardingFields: activeOnboardingFields,
     });
   };
 
   const canSubmit =
     selected.length > 0 &&
     Boolean(legalName.trim()) &&
-    Boolean(contactEmail.trim());
+    Boolean(contactEmail.trim()) &&
+    areOnboardingFieldsComplete(dynamicFields, onboardingFieldValues);
 
   return (
     <form
@@ -157,7 +235,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
           <p className="text-1 text-muted-foreground">{t('currenciesHint')}</p>
         </div>
         <div className="flex flex-col gap-2">
-          {BANK_CURRENCY_METAS.map((meta) => (
+          {ONBOARDING_CURRENCY_METAS.map((meta) => (
             <CurrencyOptionRow
               key={meta.currency}
               currency={meta.currency}
@@ -171,7 +249,34 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
         </div>
       </section>
 
-      <div className="order-3 flex flex-col gap-3 lg:col-span-2 lg:row-start-2 lg:items-end">
+      {dynamicFields.length > 0 ? (
+        <section
+          className="order-3 flex flex-col gap-4 lg:col-span-2 lg:row-start-2"
+          aria-labelledby="banking-setup-provider-fields"
+        >
+          <div className="flex flex-col gap-1">
+            <h2
+              id="banking-setup-provider-fields"
+              className="text-3 font-semibold tracking-tight text-foreground"
+            >
+              {t('providerFieldsTitle')}
+            </h2>
+            <p className="text-2 text-muted-foreground">
+              {t('providerFieldsHint')}
+            </p>
+          </div>
+          <OnboardingFieldsForm
+            fields={dynamicFields}
+            values={onboardingFieldValues}
+            onChange={handleOnboardingFieldChange}
+            disabled={isSubmitting}
+            idPrefix="banking-setup"
+            entityType={ownerContext === 'person' ? 'individual' : 'business'}
+          />
+        </section>
+      ) : null}
+
+      <div className="order-4 flex flex-col gap-3 lg:col-span-2 lg:row-start-3 lg:items-end">
         {error ? (
           <p className="text-sm text-destructive" role="alert">
             {error}

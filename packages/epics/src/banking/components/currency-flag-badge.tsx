@@ -7,15 +7,16 @@ import GB from 'country-flag-icons/react/3x2/GB';
 import MX from 'country-flag-icons/react/3x2/MX';
 import BR from 'country-flag-icons/react/3x2/BR';
 import CO from 'country-flag-icons/react/3x2/CO';
+import AU from 'country-flag-icons/react/3x2/AU';
 
 import {
-  getBankCurrencyMeta,
-  type BankCurrencyCode,
+  getOnboardingCurrencyMeta,
+  type BankOnboardingCurrencyCode,
 } from '../bank-currency-display';
 import { getCountryCodeForBankCurrency } from '../bank-currency-flags';
 
 type CurrencyFlagBadgeProps = {
-  currency: BankCurrencyCode;
+  currency: BankOnboardingCurrencyCode;
   size?: 'sm' | 'md';
   className?: string;
 };
@@ -27,6 +28,7 @@ const FLAG_COMPONENTS: Record<string, FC<{ className?: string }>> = {
   MX,
   BR,
   CO,
+  AU,
 };
 
 const sizeClasses = {
@@ -41,7 +43,7 @@ export const CurrencyFlagBadge: FC<CurrencyFlagBadgeProps> = ({
 }) => {
   const countryCode = getCountryCodeForBankCurrency(currency);
   const Flag = FLAG_COMPONENTS[countryCode];
-  const meta = getBankCurrencyMeta(currency);
+  const meta = getOnboardingCurrencyMeta(currency);
 
   if (Flag) {
     return (

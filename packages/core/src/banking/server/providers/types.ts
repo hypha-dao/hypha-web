@@ -1,3 +1,5 @@
+import type { BankCustomer } from '@hypha-platform/storage-postgres';
+
 import type { BankEntityType, BankProvider } from '../../types';
 
 export type CreateKycLinkInput = {
@@ -7,6 +9,13 @@ export type CreateKycLinkInput = {
   idempotencyKey: string;
   endorsements?: string[];
   redirectUri?: string;
+  /**
+   * Provider-specific onboarding fields the dynamic form collected (D10), keyed by the
+   * `BankOnboardingFieldDescriptor.key` the adapter's manifest entry declares. Rides the #2288
+   * confirmation token the same way `legalName` / `contactEmail` do. Bridge ignores it; the AUDD
+   * adapter reads the customer-creation fields it needs from here and validates their presence.
+   */
+  onboardingFields?: Record<string, string>;
 };
 
 export type CreateKycLinkResult = {
@@ -67,9 +76,100 @@ export type CreateTransferResult = {
   };
 };
 
-export interface BankKycProvider {
+/**
+ * Provider-neutral onboarding-step descriptor (D12). Each adapter fills one in; a single shared
+ * renderer (epics) draws it for every provider — not per-provider UI components.
+ */
+export type BankOnboardingStepDescriptor = {
+  /** Discriminator for the shared renderer. Only a hosted external KYC link exists today. */
+  kind: 'external_kyc_link';
+  /** Hosted KYC/verification URL the user is sent to. `null` until a link has been created. */
+  url: string | null;
+  /** i18n message keys the shared renderer resolves for this step's copy. */
+  i18nKeys: {
+    title: string;
+    body?: string;
+  };
+};
+
+/**
+ * A single field an adapter needs collected to create a customer (D10). The onboarding form
+ * renders the deduped union of these across the providers for the currencies being onboarded.
+ */
+export type BankOnboardingFieldDescriptor = {
+  /** Stable field key — also the key this value travels under inside the #2288 confirmation token. */
+  key: string;
+  kind: 'text' | 'email' | 'select';
+  required: boolean;
+  /** i18n key for the field label. */
+  i18nLabelKey: string;
+  /** Present when `kind` is `'select'`. */
+  options?: ReadonlyArray<{
+    value: string;
+    i18nLabelKey: string;
+    /**
+     * Owner entity types this option is valid for. Omitted means valid for both. Lets an adapter
+     * keep options its own validation would reject (e.g. AUDD `INDIVIDUAL` for a business) out of
+     * the form, without the shared renderer knowing anything provider-specific.
+     */
+    entityTypes?: ReadonlyArray<'individual' | 'business'>;
+  }>;
+  /**
+   * Declarative conditional-requirement rule, evaluated against another field's collected value
+   * (e.g. AUDD's `registrationNumber` is only required for non-`INDIVIDUAL` `companyType`s). Kept
+   * generic so the shared form renderer never needs provider-specific knowledge — each adapter
+   * encodes its own conditional logic here. `required` still gates whether the field renders as
+   * optional-looking when `requiredIf` is absent or doesn't match.
+   */
+  requiredIf?: {
+    key: string;
+    equals?: readonly string[];
+    notEquals?: readonly string[];
+  };
+};
+
+export type GetKycStatusInput = {
+  /**
+   * Slice of the persisted `bank_customers` row. Each adapter reads only the fields it needs;
+   * `provider` lets an adapter assert it was handed its own row.
+   */
+  customer: Pick<
+    BankCustomer,
+    'provider' | 'providerKycLinkId' | 'providerCustomerId'
+  >;
+};
+
+/** Provider-neutral KYC status snapshot. */
+export type KycStatusResult = {
+  kycStatus: string;
+  isApproved: boolean;
+  tosStatus: string | null;
+  kycLink: string | null;
+};
+
+/**
+ * The narrow, identity/KYC-only capability every bank provider must implement (D6). Onboarding and
+ * the multi-provider status read depend only on this; `BankKycProvider` extends it with money
+ * movement. The AUDD adapter implements only `BankIdentityProvider`.
+ */
+export interface BankIdentityProvider {
   readonly provider: BankProvider;
+  /** Fields the onboarding form must collect for this provider to create a customer (D10). */
+  readonly requiredOnboardingFields: ReadonlyArray<BankOnboardingFieldDescriptor>;
   createKycLink(input: CreateKycLinkInput): Promise<CreateKycLinkResult>;
+  /**
+   * Live KYC status for a persisted customer. Returns `null` when the row has no provider-side
+   * KYC resource yet (e.g. a #2288 pending-email-confirmation row) — callers render the pending
+   * placeholder in that case.
+   */
+  getKycStatus(input: GetKycStatusInput): Promise<KycStatusResult | null>;
+  /** Structured descriptor for the shared onboarding-step renderer (D12). */
+  getOnboardingStepDescriptor(
+    result: Pick<CreateKycLinkResult, 'kycLink'>,
+  ): BankOnboardingStepDescriptor;
+}
+
+export interface BankKycProvider extends BankIdentityProvider {
   provisionVirtualAccount(
     input: ProvisionVirtualAccountInput,
   ): Promise<ProvisionVirtualAccountResult>;

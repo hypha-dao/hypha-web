@@ -1,8 +1,5 @@
 import type { DatabaseInstance } from '../../common/server/types';
-import {
-  DEFAULT_BANK_PROVIDER,
-  PENDING_EMAIL_CONFIRMATION_VALIDATION,
-} from '../constants';
+import { PENDING_EMAIL_CONFIRMATION_VALIDATION } from '../constants';
 import { findPersonBySlug, findPersonById } from '../../people/server/queries';
 import type {
   PersonalBankOnboardingResult,
@@ -10,15 +7,18 @@ import type {
 } from '../types';
 import { authorizePersonalBankOnboarding } from './authorize-personal-bank-onboarding';
 import { BankOnboardingError } from './errors';
-import { getBankKycProvider } from './providers';
-import type { BankKycProvider } from './providers/types';
+import {
+  getBankIdentityProvider,
+  resolveProviderForOnboarding,
+} from './providers';
+import type { BankIdentityProvider } from './providers/types';
 import {
   requestBankOnboardingWithConfirmation,
   type BankOnboardingOwnerRef,
 } from './bank-onboarding-confirmation';
 
 export type RequestPersonalBankOnboardingOptions = {
-  kycProvider?: BankKycProvider;
+  kycProvider?: BankIdentityProvider;
   /**
    * Sends the #2288 ownership-confirmation email. Never receives anything but the token to embed
    * in the link — the token itself must never appear in this function's return value (D6).
@@ -42,7 +42,12 @@ export async function requestPersonalBankOnboarding(
     contactEmail,
     requestedRails,
     redirectUri,
+    onboardingFields,
   } = input;
+
+  const kycProvider =
+    options.kycProvider ??
+    getBankIdentityProvider(resolveProviderForOnboarding(requestedRails));
 
   const person = await findPersonBySlug({ slug: personSlug }, { db });
   if (!person) {
@@ -75,20 +80,18 @@ export async function requestPersonalBankOnboarding(
       contactEmail,
       requestedRails,
       redirectUri,
+      onboardingFields,
       submitterPersonId: auth.person.id,
       submitterEmail: submitter?.email ?? null,
       sendConfirmationEmail: options.sendConfirmationEmail,
     },
     { db },
-    {
-      kycProvider:
-        options.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER),
-    },
+    { kycProvider },
   );
 
   if (result.kind === 'pendingConfirmation') {
     return {
-      provider: DEFAULT_BANK_PROVIDER,
+      provider: kycProvider.provider,
       created: false,
       pendingEmailConfirmation: true,
       ownerName: legalName,
@@ -103,7 +106,7 @@ export async function requestPersonalBankOnboarding(
   }
 
   return {
-    provider: DEFAULT_BANK_PROVIDER,
+    provider: kycProvider.provider,
     created: result.kind === 'created',
     ownerName: legalName,
     requesterSlug: auth.person.slug ?? null,

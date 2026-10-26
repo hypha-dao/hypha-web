@@ -14,6 +14,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
+import type { BankOnboardingCurrencyCode } from '../bank-currency-display';
 import type { BankCustomerPublicStatus } from '../hooks/types';
 import { type BankingOwnerContext } from '../banking-ui';
 import {
@@ -29,7 +30,7 @@ type BankingAdvancedDialogProps = {
   basePath?: string;
   /** Whether this dialog is for a space or an individual member's profile. Defaults to 'space'. */
   ownerContext?: BankingOwnerContext;
-  status: BankCustomerPublicStatus | null | undefined;
+  providers: BankCustomerPublicStatus[];
   isLoading: boolean;
   isRefreshing: boolean;
   canManage: boolean;
@@ -37,13 +38,17 @@ type BankingAdvancedDialogProps = {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   onRefreshStatus: () => Promise<BankCustomerPublicStatus | null | undefined>;
+  /** See `BankingProviderStatusPanelProps.onRequestCurrencyOnboarding`. */
+  onRequestCurrencyOnboarding?: (
+    currencies: BankOnboardingCurrencyCode[],
+  ) => void;
 };
 
 export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
   spaceSlug,
   basePath,
   ownerContext = 'space',
-  status,
+  providers,
   isLoading,
   isRefreshing,
   canManage,
@@ -51,6 +56,7 @@ export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
   open,
   onOpenChange,
   onRefreshStatus,
+  onRequestCurrencyOnboarding,
 }) => {
   const tAdvanced = useTranslations('BankingTab.advanced');
 
@@ -80,13 +86,14 @@ export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
             spaceSlug={spaceSlug}
             basePath={basePath}
             ownerContext={ownerContext}
-            status={status}
+            providers={providers}
             isLoading={isLoading}
             isRefreshing={isRefreshing}
             canManage={canManage}
             blockerMessage={blockerMessage}
             onRefreshStatus={onRefreshStatus}
             onOpenGear={() => onOpenChange?.(true)}
+            onRequestCurrencyOnboarding={onRequestCurrencyOnboarding}
           />
         </BankingDialogBody>
       </DialogContent>

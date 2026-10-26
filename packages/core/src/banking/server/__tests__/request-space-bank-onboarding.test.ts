@@ -56,6 +56,9 @@ const onboardingInput = {
 
 const mockProvider: BankKycProvider = {
   provider: 'bridge',
+  requiredOnboardingFields: [],
+  getKycStatus: vi.fn(),
+  getOnboardingStepDescriptor: vi.fn(),
   provisionVirtualAccount: vi.fn(),
   createTransfer: vi.fn(),
   registerExternalAccount: vi.fn(),

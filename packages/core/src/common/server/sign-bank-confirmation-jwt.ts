@@ -26,6 +26,11 @@ export type BankConfirmationJwtPayload = {
   redirectUri?: string;
   /** Person who submitted the onboarding request (already auth-gated, D4). */
   submitterPersonId: number;
+  /**
+   * Provider-specific onboarding fields the dynamic form collected (D10) — e.g. AUDD's 11-field
+   * customer-creation set. Rides the same encrypted round-trip as `legalName`/`contactEmail`.
+   */
+  onboardingFields?: Record<string, string>;
 };
 
 export type BankConfirmationJwtClaims = BankConfirmationJwtPayload & {

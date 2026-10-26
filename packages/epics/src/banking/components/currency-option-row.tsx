@@ -5,13 +5,13 @@ import { useTranslations } from 'next-intl';
 import { Checkbox } from '@hypha-platform/ui';
 
 import {
-  getBankCurrencyMeta,
-  type BankCurrencyCode,
+  getOnboardingCurrencyMeta,
+  type BankOnboardingCurrencyCode,
 } from '../bank-currency-display';
 import { CurrencyFlagBadge } from './currency-flag-badge';
 
 type CurrencyOptionRowProps = {
-  currency: BankCurrencyCode;
+  currency: BankOnboardingCurrencyCode;
   checked: boolean;
   disabled?: boolean;
   onCheckedChange: (checked: boolean) => void;
@@ -24,7 +24,7 @@ export const CurrencyOptionRow: FC<CurrencyOptionRowProps> = ({
   onCheckedChange,
 }) => {
   const t = useTranslations('BankingTab.currencies');
-  const meta = getBankCurrencyMeta(currency);
+  const meta = getOnboardingCurrencyMeta(currency);
   if (!meta) {
     return null;
   }
