@@ -86,12 +86,15 @@ function checksumWalletAddress(address: string): string {
 function resolveContractBatches(
   contractAddresses: string[] | undefined,
 ): Array<string[] | undefined> {
+  // No filter: one unscoped Alchemy query (contractAddresses omitted).
   if (!contractAddresses || contractAddresses.length === 0) {
     return [undefined];
   }
   const sanitized = checksumContractAddresses(contractAddresses);
+  // Caller supplied a token= filter but every address was invalid — do not
+  // fall back to an unscoped query (that would leak all transfers).
   return sanitized.length === 0
-    ? [undefined]
+    ? []
     : chunkAddresses(sanitized, ALCHEMY_CONTRACT_BATCH_SIZE);
 }
 
@@ -357,6 +360,9 @@ export async function getTransfersByAddress(
   const hexFromBlock = toHexBlock(fromBlock);
   const hexToBlock = toHexBlock(toBlock);
   const contractBatches = resolveContractBatches(contractAddresses);
+  if (contractBatches.length === 0) {
+    return [];
+  }
 
   const pages = await Promise.all(
     contractBatches.flatMap((batch) => [
@@ -387,8 +393,8 @@ export async function getTransfersByAddress(
     .flatMap((page) => page.transfers)
     .filter((transfer) => isAllowlistedRaw(transfer, knownAddresses));
 
-  if (rawTransfers.length === 0 && pages.every((page) => page.failed)) {
-    throw new Error('Alchemy getAssetTransfers failed for every request');
+  if (rawTransfers.length === 0 && pages.some((page) => page.failed)) {
+    throw new Error('Alchemy getAssetTransfers failed');
   }
 
   const withMetadata = await toTransfersWithMetadata(alchemy, rawTransfers);

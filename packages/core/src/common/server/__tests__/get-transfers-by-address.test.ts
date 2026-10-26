@@ -317,6 +317,33 @@ describe('getTransfersByAddress', () => {
     ).toBe(true);
   });
 
+  it('returns no transfers when every token= address is invalid', async () => {
+    await expect(
+      getTransfersByAddress({
+        address: WALLET,
+        contractAddresses: ['not-an-address', '0xdead'],
+      }),
+    ).resolves.toEqual([]);
+    expect(getAssetTransfers).not.toHaveBeenCalled();
+  });
+
+  it('throws when one direction fails and the other returns no rows', async () => {
+    getAssetTransfers.mockImplementation(
+      async (params: { fromAddress?: string }) => {
+        if (params.fromAddress) {
+          const error = new Error('Invalid contractAddresses');
+          (error as Error & { status: number }).status = 400;
+          throw error;
+        }
+        return { transfers: [] };
+      },
+    );
+
+    await expect(getTransfersByAddress({ address: WALLET })).rejects.toThrow(
+      'Alchemy getAssetTransfers failed',
+    );
+  });
+
   it('sends DESCENDING order, hex block bounds, and maxCount to Alchemy', async () => {
     getAssetTransfers.mockResolvedValue({ transfers: [] });
 
