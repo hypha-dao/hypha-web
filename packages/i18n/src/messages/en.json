@@ -728,6 +728,9 @@
     "retry": "Try again",
     "sendTokensChoose": "Choose a token. Currently {symbol}.",
     "gotItDone": "Thanks — I'm with you",
+    "threadCardNoted": "That's noted",
+    "threadCardVoted": "Your vote is in",
+    "threadCardKept": "Kept in this conversation.",
     "matrixPersonUnavailable": "That person does not have chat yet."
   },
   "Marketplace": {

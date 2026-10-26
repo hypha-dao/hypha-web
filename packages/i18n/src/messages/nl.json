@@ -307,6 +307,9 @@
     "retry": "Opnieuw proberen",
     "sendTokensChoose": "Kies een token. Nu {symbol}.",
     "gotItDone": "Bedankt — ik ben erbij",
+    "threadCardNoted": "Genoteerd",
+    "threadCardVoted": "Je stem is binnen",
+    "threadCardKept": "Blijft in dit gesprek.",
     "matrixPersonUnavailable": "Die persoon heeft nog geen chat."
   },
   "WelcomeFlow": {

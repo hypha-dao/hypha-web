@@ -307,6 +307,9 @@
     "retry": "Prøv igjen",
     "sendTokensChoose": "Velg et token. Nå {symbol}.",
     "gotItDone": "Takk — jeg er med",
+    "threadCardNoted": "Notert",
+    "threadCardVoted": "Stemmen din er inne",
+    "threadCardKept": "Beholdt i denne samtalen.",
     "matrixPersonUnavailable": "Den personen har ikke chat ennå."
   },
   "WelcomeFlow": {

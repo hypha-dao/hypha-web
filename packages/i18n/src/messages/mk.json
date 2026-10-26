@@ -307,6 +307,9 @@
     "retry": "Обиди се повторно",
     "sendTokensChoose": "Избери токен. Сега {symbol}.",
     "gotItDone": "Благодарам — сум со тебе",
+    "threadCardNoted": "Забележано",
+    "threadCardVoted": "Твојот глас е запишан",
+    "threadCardKept": "Останува во овој разговор.",
     "matrixPersonUnavailable": "Тоа лице сѐ уште нема разговор."
   },
   "WelcomeFlow": {

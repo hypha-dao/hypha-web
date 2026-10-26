@@ -19,7 +19,6 @@ import {
   Plus,
   Video,
 } from 'lucide-react';
-import './member-home-sent-tick.css';
 import {
   ERC20_TOKEN_TRANSFER_ADDRESSES,
   useJwt,
@@ -31,6 +30,7 @@ import {
   type Person,
   type Space,
 } from '@hypha-platform/core/client';
+import { SentTick } from './member-home-sent-tick';
 import type { AssetItem } from '../../treasury/hooks/use-user-assets';
 import {
   HYPHA_TOKEN_ADDRESS,
@@ -460,17 +460,6 @@ function tokenSpendable(
       ? token.mutualCredit.creditLimitLeft
       : 0;
   return { balance, creditLeft, spendable: balance + creditLeft };
-}
-
-function SentTick() {
-  return (
-    <span className="sent-tick text-foreground" aria-hidden>
-      <svg viewBox="0 0 48 48">
-        <circle className="sent-tick-ring" cx="24" cy="24" r="18" />
-        <path className="sent-tick-mark" d="M15.5 24.5 L21.2 30.2 L33 17.5" />
-      </svg>
-    </span>
-  );
 }
 
 export function MemberHomeSendTokensWidget({

@@ -43,10 +43,13 @@ import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
 import {
   bindHomePerson,
   consumeHomeReturn,
+  HOME_QUEUE_EVENT,
   homeReturnText,
   readHomeActed,
   readHomeChoices,
+  readHomeShownItems,
   readHomeThread,
+  rememberHomeShownItem,
   writeHomeChoices,
   writeHomeThread,
 } from './member-home-resume';
@@ -157,6 +160,21 @@ function homeItemForMessage(
     if (match) return match;
   }
   return memberHomeThreadItemForMessage(items, message);
+}
+
+/** Live catalog first, then cards already shown in this thread. */
+function mergeHomeCardItems(
+  live: readonly MemberHomeThreadItem[],
+  shown: readonly MemberHomeThreadItem[],
+) {
+  const byKey = new Map<string, MemberHomeThreadItem>();
+  for (const item of shown) {
+    byKey.set(memberHomeThreadItemKey(item), item);
+  }
+  for (const item of live) {
+    byKey.set(memberHomeThreadItemKey(item), item);
+  }
+  return [...byKey.values()];
 }
 
 function homeBoardFromMessage(message: HomeMessage) {
@@ -716,10 +734,34 @@ export function MemberHomeChat({
     [intelligence],
   );
   // The walk is short. The card can be any open item the brief names.
-  const cardItems = useMemo(
+  const liveCardItems = useMemo(
     () => listMemberHomeThreadCatalog(intelligence),
     [intelligence],
   );
+  const [shownCardItems, setShownCardItems] = useState<MemberHomeThreadItem[]>(
+    () => (typeof window === 'undefined' ? [] : readHomeShownItems()),
+  );
+  const [actedKeys, setActedKeys] = useState<string[]>(() =>
+    typeof window === 'undefined' ? [] : readHomeActed(),
+  );
+  useEffect(() => {
+    const sync = () => {
+      setShownCardItems(readHomeShownItems());
+      setActedKeys(readHomeActed());
+    };
+    sync();
+    window.addEventListener(HOME_QUEUE_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(HOME_QUEUE_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+  const cardItems = useMemo(
+    () => mergeHomeCardItems(liveCardItems, shownCardItems),
+    [liveCardItems, shownCardItems],
+  );
+  const actedKeySet = useMemo(() => new Set(actedKeys), [actedKeys]);
 
   /**
    * Same string the bubble shows. While the latest reply is still streaming,
@@ -884,9 +926,25 @@ export function MemberHomeChat({
       recalled: fromMessages.recalled,
     });
   }, [homeMessages, onQueueMemory, threadItems]);
+  useEffect(() => {
+    let remembered = false;
+    for (const message of homeMessages) {
+      if (message.role !== 'assistant' || message.metadata?.homeArrival) {
+        continue;
+      }
+      const item = homeItemForMessage(liveCardItems, message);
+      if (!item) continue;
+      rememberHomeShownItem(item);
+      remembered = true;
+    }
+    if (remembered) setShownCardItems(readHomeShownItems());
+  }, [homeMessages, liveCardItems]);
+
   const cardsByMessageId = useMemo(() => {
     // The card stays with the latest reply about that item. An earlier
     // mention would scroll off while the member is reading the new line.
+    // After the member acts, that placement stays so the tick remains in
+    // the history instead of vanishing with the live catalog.
     const latestByItem = new Map<
       string,
       { messageId: string; item: MemberHomeThreadItem }
@@ -897,7 +955,10 @@ export function MemberHomeChat({
       }
       const item = homeItemForMessage(cardItems, message);
       if (!item) continue;
-      latestByItem.set(memberHomeThreadItemKey(item), {
+      const key = memberHomeThreadItemKey(item);
+      const placed = latestByItem.get(key);
+      if (placed && actedKeySet.has(key)) continue;
+      latestByItem.set(key, {
         messageId: message.id,
         item,
       });
@@ -907,7 +968,7 @@ export function MemberHomeChat({
       map.set(placed.messageId, placed.item);
     }
     return map;
-  }, [cardItems, homeMessages]);
+  }, [actedKeySet, cardItems, homeMessages]);
   const cardMessageId = useMemo(() => {
     for (let index = homeMessages.length - 1; index >= 0; index -= 1) {
       const message = homeMessages[index];
@@ -1194,6 +1255,9 @@ export function MemberHomeChat({
                           chat
                           lang={lang}
                           item={pinnedItem}
+                          done={actedKeySet.has(
+                            memberHomeThreadItemKey(pinnedItem),
+                          )}
                           proposal={
                             pinnedItem.kind === 'proposal'
                               ? intelligence.proposals.find(

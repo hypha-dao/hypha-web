@@ -29,6 +29,7 @@ import {
 } from './member-home-resume';
 import { MemberHomeProposalBody } from './member-home-proposal-body';
 import { PersonAvatar } from './person-avatar';
+import { SentTick } from './member-home-sent-tick';
 import './member-home-banner.css';
 
 const SIGNAL_TYPES = [
@@ -68,6 +69,11 @@ type MemberHomeThreadCardProps = {
   assistant?: boolean;
   /** Classic lead card: title opens the item, picture sits beside the text. */
   board?: boolean;
+  /**
+   * The member already acted. The card stays in the thread with a tick
+   * instead of leaving when the live queue moves on.
+   */
+  done?: boolean;
 };
 
 function kindLabel(
@@ -115,6 +121,7 @@ export function MemberHomeThreadCard({
   chat = false,
   assistant = true,
   board = false,
+  done = false,
 }: MemberHomeThreadCardProps) {
   const t = useTranslations('MemberHome');
   const tTypes = useTranslations('CoherenceTab');
@@ -123,7 +130,10 @@ export function MemberHomeThreadCard({
   const { resolvedTheme } = useTheme();
   const [busy, setBusy] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
+  const [kept, setKept] = useState(false);
   const held = useRef(false);
+  // Local keep paints the tick before storage catches up.
+  const complete = done || kept;
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const spaceIconUrl = resolveSpaceDisplayLogoUrl(
     item.spaceLogo ?? proposal?.spaceLogo,
@@ -214,6 +224,7 @@ export function MemberHomeThreadCard({
   }
 
   function noteAction() {
+    setKept(true);
     rememberHomeAction(memberHomeThreadItemKey(item), item.title);
   }
 
@@ -221,6 +232,7 @@ export function MemberHomeThreadCard({
   function moveOn(leaves: boolean) {
     if (!assistant || !isSignal) return;
     const key = memberHomeThreadItemKey(item);
+    setKept(true);
     if (leaves) {
       rememberHomeAction(key, item.title);
       return;
@@ -421,7 +433,7 @@ export function MemberHomeThreadCard({
             {summary}
           </p>
         ) : null}
-        {isProposal ? (
+        {isProposal && !complete ? (
           <MemberHomeProposalBody
             proposalId={proposal?.web3ProposalId ?? item.web3ProposalId ?? null}
             spaceId={proposal?.web3SpaceId ?? item.web3SpaceId ?? null}
@@ -449,7 +461,31 @@ export function MemberHomeThreadCard({
           </p>
         ) : null}
         <div className={cn('flex flex-col gap-2', chat ? 'mt-2' : 'mt-3')}>
-          {outcome ? (
+          {complete ? (
+            <div
+              className="flex flex-col items-center px-2 py-4 text-center"
+              aria-live="polite"
+            >
+              <SentTick />
+              <p
+                className={cn(
+                  'mt-3 font-medium tracking-[-0.03em] text-foreground',
+                  chat ? 'text-2' : 'text-3',
+                )}
+                style={{ fontFamily: 'var(--font-family-heading)' }}
+              >
+                {outcome
+                  ? t('gotItDone')
+                  : isProposal
+                  ? t('threadCardVoted')
+                  : t('threadCardNoted')}
+              </p>
+              <p className="mt-1 text-1 text-neutral-11">
+                {t('threadCardKept')}
+              </p>
+            </div>
+          ) : null}
+          {!complete && outcome ? (
             <Button
               type="button"
               {...choiceProps('got-it', true)}
@@ -459,19 +495,16 @@ export function MemberHomeThreadCard({
                 if (!confirm('got-it')) return;
                 const key = memberHomeThreadItemKey(item);
                 const title = item.title;
-                // Hold the card briefly so the button can show it was received
-                // before the queue advances and unmounts this card.
-                window.setTimeout(() => {
-                  markHomeActed(key);
-                  if (!assistant) return;
-                  onAsk(t('gotItChosen', { title }), true);
-                }, 700);
+                setKept(true);
+                markHomeActed(key);
+                if (!assistant) return;
+                onAsk(t('gotItChosen', { title }), true);
               }}
             >
-              {chosen === 'got-it' ? t('gotItDone') : t('gotIt')}
+              {t('gotIt')}
             </Button>
           ) : null}
-          {!outcome && ownDeadline ? (
+          {!complete && !outcome && ownDeadline ? (
             <Button asChild {...choiceProps('update', true)}>
               <Link
                 href={signalHref}
@@ -484,7 +517,7 @@ export function MemberHomeThreadCard({
               </Link>
             </Button>
           ) : null}
-          {!outcome && leadCta ? (
+          {!complete && !outcome && leadCta ? (
             <Button
               type="button"
               {...choiceProps(leadCta, true)}
@@ -496,7 +529,7 @@ export function MemberHomeThreadCard({
               {labelFor(leadCta)}
             </Button>
           ) : null}
-          {!outcome && !isSignal && assistant ? (
+          {!complete && !outcome && !isSignal && assistant ? (
             <div
               className={cn(
                 'grid gap-2',
@@ -538,7 +571,7 @@ export function MemberHomeThreadCard({
               </Button>
             </div>
           ) : null}
-          {!outcome && (companionCta || assistant) ? (
+          {!complete && !outcome && (companionCta || assistant) ? (
             <div
               className={cn(
                 'grid gap-2',
@@ -573,30 +606,41 @@ export function MemberHomeThreadCard({
               ) : null}
             </div>
           ) : null}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            {!outcome && assistant ? (
-              <button
-                type="button"
-                className="text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
+          {!complete ? (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              {!outcome && assistant ? (
+                <button
+                  type="button"
+                  className="text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
+                  onClick={() => {
+                    if (!confirm('no')) return;
+                    ask(t('noChosen', { title: item.title }));
+                  }}
+                >
+                  {t('noThanks')}
+                </button>
+              ) : null}
+              <Link
+                href={visitHref}
                 onClick={() => {
-                  if (!confirm('no')) return;
-                  ask(t('noChosen', { title: item.title }));
+                  if (isSignal) moveOn(true);
+                  else noteAction();
                 }}
+                className="text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
               >
-                {t('noThanks')}
-              </button>
-            ) : null}
-            <Link
-              href={visitHref}
-              onClick={() => {
-                if (isSignal) moveOn(true);
-                else noteAction();
-              }}
-              className="text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
-            >
-              {t('visitSpace')}
-            </Link>
-          </div>
+                {t('visitSpace')}
+              </Link>
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <Link
+                href={visitHref}
+                className="text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
+              >
+                {t('visitSpace')}
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </section>

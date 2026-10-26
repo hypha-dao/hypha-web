@@ -1,9 +1,15 @@
 import type { UIMessage } from 'ai';
+import {
+  memberHomeThreadItemKey,
+  type MemberHomeThreadItem,
+} from '@hypha-platform/core/client';
 
 const THREAD_KEY = 'hypha-member-home-thread';
 const RETURN_KEY = 'hypha-member-home-return';
 const ACTED_KEY = 'hypha-member-home-acted';
 const CHOICES_KEY = 'hypha-member-home-choices';
+/** Cards already shown in the thread. Kept after the live queue moves on. */
+const SHOWN_KEY = 'hypha-member-home-shown-items';
 
 /** The signed-in member. Storage is per person so a shared browser does not mix threads. */
 let boundPerson = '';
@@ -120,6 +126,54 @@ export function rememberHomeAction(key: string, title: string) {
 
 export function readHomeActed() {
   return readList(ACTED_KEY);
+}
+
+function isStoredThreadItem(value: unknown): value is MemberHomeThreadItem {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Partial<MemberHomeThreadItem>;
+  return (
+    (item.kind === 'proposal' || item.kind === 'signal') &&
+    typeof item.slug === 'string' &&
+    item.slug.trim().length > 0 &&
+    typeof item.title === 'string' &&
+    typeof item.spaceSlug === 'string' &&
+    typeof item.spaceTitle === 'string' &&
+    typeof item.documentKind === 'string' &&
+    typeof item.authoredByMember === 'boolean' &&
+    (item.action === 'decision' ||
+      item.action === 'validate' ||
+      item.action === 'outcome')
+  );
+}
+
+/** Cards that already appeared in chat. The live catalog may have moved on. */
+export function readHomeShownItems(): MemberHomeThreadItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = readStored(SHOWN_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isStoredThreadItem).slice(-40);
+  } catch {
+    return [];
+  }
+}
+
+/** Keep a shown card so the thread can confirm it after the member acts. */
+export function rememberHomeShownItem(item: MemberHomeThreadItem) {
+  if (typeof window === 'undefined') return;
+  const key = memberHomeThreadItemKey(item);
+  if (!key) return;
+  try {
+    const next = readHomeShownItems().filter(
+      (shown) => memberHomeThreadItemKey(shown) !== key,
+    );
+    next.push(item);
+    writeStored(SHOWN_KEY, JSON.stringify(next.slice(-40)));
+  } catch {
+    // The open catalog still carries the card for this visit.
+  }
 }
 
 export function readHomeChoices(): {

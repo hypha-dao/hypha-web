@@ -307,6 +307,9 @@
     "retry": "Nochmal versuchen",
     "sendTokensChoose": "Wähle einen Token. Aktuell {symbol}.",
     "gotItDone": "Danke — ich bin dabei",
+    "threadCardNoted": "Notiert",
+    "threadCardVoted": "Deine Stimme ist drin",
+    "threadCardKept": "Bleibt in diesem Gespräch.",
     "matrixPersonUnavailable": "Diese Person hat noch keinen Chat."
   },
   "WelcomeFlow": {
