@@ -52,7 +52,6 @@ import {
 import { useConversationUnreadCount } from './my-connections';
 import { shouldShowMessagesAndSpacesNav } from './app-nav-visibility';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
-import { useSpacesRailControl } from './spaces-rail-control';
 
 const OPEN_MOBILE_CREATE = 'hypha:open-mobile-create';
 
@@ -92,7 +91,6 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { open: isAiOpen } = useAiPanel();
-  const { open: spacesRailOpen } = useSpacesRailControl();
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
   // While the AI panel is open the spaces list takes the left menu slot.
   const showSpacesRail = shouldShowMobileSpacesRail(pathname) && !isAiOpen;
@@ -125,22 +123,16 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
     <div
       className={cn(
         showSpacesRail &&
-          'max-xl:flex max-xl:w-full max-xl:min-w-0 max-xl:flex-row max-xl:items-start',
+          'max-xl:flex max-xl:w-full max-xl:min-w-0 max-xl:flex-col',
         slideIn &&
           'max-md:animate-in max-md:slide-in-from-right max-md:duration-300 max-md:ease-out',
       )}
     >
       {showSpacesRail ? (
-        <div
-          className={cn(
-            // Sit under the sticky MenuTop — top-0 clipped the first icons.
-            // Stay mounted while closed so the top-bar control can open it.
-            spacesRailOpen
-              ? 'sticky top-[var(--menu-top-height,4.5rem)] z-10 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] w-[44px] shrink-0 bg-background xl:hidden'
-              : 'hidden',
-          )}
-        >
-          <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} />
+        // One row under the header circle — same chrome as the top toggle,
+        // not a side column that floats next to the page.
+        <div className="w-full shrink-0 xl:hidden">
+          <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} layout="row" />
         </div>
       ) : null}
       <div className={cn(showSpacesRail && 'min-w-0 flex-1')}>{children}</div>

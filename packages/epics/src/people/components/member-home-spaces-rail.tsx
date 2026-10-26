@@ -146,6 +146,8 @@ export function MemberHomeSpacesRail({
   activeSlug,
   embedded = false,
   persistOnWide = false,
+  /** Mobile menu: one scrolling row under the header. Desktop AI panel: column. */
+  layout = 'column',
 }: {
   lang: Locale;
   spaces: HomeSpace[];
@@ -158,10 +160,12 @@ export function MemberHomeSpacesRail({
    * including the wide layout where the bottom menu is gone. It starts closed.
    */
   persistOnWide?: boolean;
+  layout?: 'column' | 'row';
 }) {
   const t = useTranslations('MemberHome');
   const { resolvedTheme } = useTheme();
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
+  const row = layout === 'row';
   const [recentSlugs, setRecentSlugs] = useState<string[]>(() =>
     readRecentSpaceSlugs(),
   );
@@ -177,13 +181,19 @@ export function MemberHomeSpacesRail({
     0,
   );
   const canToggle = !embedded && (isLoading || spaceCount > 0);
+  const tipSide = row ? 'bottom' : 'right';
 
   const rail = (
     <TooltipProvider delayDuration={200}>
       <nav
         aria-label={t('spacesRail')}
         tabIndex={-1}
-        className="narrow-scrollbar flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col items-center gap-1 overflow-y-auto px-0 py-2 outline-none"
+        className={cn(
+          'narrow-scrollbar flex min-h-0 w-full min-w-0 shrink-0 outline-none',
+          row
+            ? 'flex-row items-center gap-1.5 overflow-x-auto px-3 py-2'
+            : 'h-full flex-col items-center gap-1 overflow-y-auto px-0 py-2',
+        )}
       >
         {isLoading ? (
           <>
@@ -215,19 +225,25 @@ export function MemberHomeSpacesRail({
                 />
               </Link>
             </TooltipTrigger>
-            <TooltipContent side="right">{t('openMySpaces')}</TooltipContent>
+            <TooltipContent side={tipSide}>{t('openMySpaces')}</TooltipContent>
           </Tooltip>
         ) : (
           <>
             {ecosystemGroups.map((group, groupIndex) => (
               <div
                 key={group.rootId}
-                className="flex shrink-0 flex-col items-center gap-1"
+                className={cn(
+                  'flex shrink-0 items-center gap-1',
+                  row ? 'flex-row' : 'flex-col',
+                )}
               >
                 {groupIndex > 0 ? (
                   <span
                     aria-hidden
-                    className="my-0.5 h-px w-4 shrink-0 bg-border/80"
+                    className={cn(
+                      'shrink-0 bg-border/80',
+                      row ? 'mx-0.5 h-4 w-px' : 'my-0.5 h-px w-4',
+                    )}
                   />
                 ) : null}
                 {group.spaces.map((space) => {
@@ -271,7 +287,7 @@ export function MemberHomeSpacesRail({
                           )}
                         </Link>
                       </TooltipTrigger>
-                      <TooltipContent side="right">
+                      <TooltipContent side={tipSide}>
                         {space.title}
                       </TooltipContent>
                     </Tooltip>
@@ -285,8 +301,9 @@ export function MemberHomeSpacesRail({
                   href={`/${lang}/my-spaces`}
                   aria-label={t('openMySpaces')}
                   className={cn(
-                    'mt-1 grid shrink-0 place-items-center rounded-full border border-border text-neutral-11',
+                    'grid shrink-0 place-items-center rounded-full border border-border text-neutral-11',
                     'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                    row ? null : 'mt-1',
                   )}
                   style={{ width: RAIL_ICON, height: RAIL_ICON }}
                 >
@@ -297,7 +314,9 @@ export function MemberHomeSpacesRail({
                   />
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right">{t('openMySpaces')}</TooltipContent>
+              <TooltipContent side={tipSide}>
+                {t('openMySpaces')}
+              </TooltipContent>
             </Tooltip>
           </>
         )}
@@ -307,22 +326,38 @@ export function MemberHomeSpacesRail({
 
   if (embedded) {
     return (
-      <div className="h-full w-full shrink-0 border-r-0 bg-transparent">
+      <div
+        className={cn(
+          'w-full shrink-0 border-r-0 bg-transparent',
+          row ? null : 'h-full',
+        )}
+      >
         {rail}
       </div>
     );
   }
 
   if (!canToggle) {
-    return <div className={railShellClass(persistOnWide)}>{rail}</div>;
+    return <div className={railShellClass(persistOnWide, layout)}>{rail}</div>;
   }
 
   return (
-    <SpacesRailHandle persistOnWide={persistOnWide}>{rail}</SpacesRailHandle>
+    <SpacesRailHandle persistOnWide={persistOnWide} layout={layout}>
+      {rail}
+    </SpacesRailHandle>
   );
 }
 
-function railShellClass(showOnWide: boolean) {
+function railShellClass(
+  showOnWide: boolean,
+  layout: 'column' | 'row' = 'column',
+) {
+  if (layout === 'row') {
+    return cn(
+      'sticky top-[var(--menu-top-height,4.5rem)] z-10 w-full shrink-0 border-b border-border bg-background',
+      showOnWide ? null : 'xl:hidden',
+    );
+  }
   return cn(
     'flex h-full min-h-0 w-[44px] shrink-0 flex-col overflow-hidden border-r border-border bg-background',
     showOnWide ? null : 'xl:hidden',
@@ -332,15 +367,17 @@ function railShellClass(showOnWide: boolean) {
 function SpacesRailHandle({
   children,
   persistOnWide = false,
+  layout = 'column',
 }: {
   children: ReactNode;
   persistOnWide?: boolean;
+  layout?: 'column' | 'row';
 }) {
   const { open, register } = useSpacesRailControl();
   useLayoutEffect(() => register(), [register]);
   if (!open) return null;
   return (
-    <div id={SPACES_RAIL_ID} className={railShellClass(persistOnWide)}>
+    <div id={SPACES_RAIL_ID} className={railShellClass(persistOnWide, layout)}>
       {children}
     </div>
   );
