@@ -46,6 +46,7 @@ import {
 import type { SignupOrientation } from './signup-flow';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
+import { requestMemberHomeAsk } from './member-home-ask';
 import { HOME_CHAT_COLUMN, MemberHomeChat } from './member-home-chat';
 import { rememberSignalThreadRooms } from './member-connections';
 import {
@@ -324,6 +325,32 @@ export function MemberHome({
   }, [attentionSource, chatMemory, queueSnapshot]);
   attentionOrder.current = attentionQueue;
   const [focusKey, setFocusKey] = useState<string | null>(null);
+  const selectAttention = useCallback(
+    (key: string) => {
+      if (!showAssistant) {
+        setFocusKey(key);
+        return;
+      }
+      const item = attentionQueue.find(
+        (entry) => `${entry.kind}:${entry.slug}` === key,
+      );
+      if (!item) return;
+      const name = item.creatorName?.trim();
+      requestMemberHomeAsk(
+        name
+          ? t('thinkChosenBy', {
+              title: item.title,
+              space: item.spaceTitle,
+              name,
+            })
+          : t('thinkChosen', {
+              title: item.title,
+              space: item.spaceTitle,
+            }),
+      );
+    },
+    [attentionQueue, showAssistant, t],
+  );
   const reachIds = useMemo(() => {
     if (!home) return [];
     const ids = new Set<number>();
@@ -704,7 +731,7 @@ export function MemberHome({
                 lang={lang}
                 home={home}
                 queue={attentionQueue}
-                onSelect={setFocusKey}
+                onSelect={selectAttention}
               />
             )}
             {home?.person.slug ? (
