@@ -108,9 +108,16 @@ export function NetworkSidePanel({
 }) {
   const t = useTranslations('NetworkExchange');
   const tCommon = useTranslations('Common');
+  const tChat = useTranslations('HumanChatPanel');
   const tWallet = useTranslations('MyWallet');
   const { setFocusedSpaceChat } = useHumanChatPanel();
-  const { openPublicChat, opening } = useOpenSpacePublicChat();
+  const { openPublicChat, opening, error } = useOpenSpacePublicChat();
+  const chatErrorMessage =
+    error === 'matrix'
+      ? tCommon('signIn')
+      : error === 'failed'
+      ? tChat('failedToJoinRoom')
+      : null;
   const panelRef = useRef<HTMLDivElement>(null);
   const [fundOpen, setFundOpen] = useState(false);
   const seeks = parseCapitalKeys(capitals?.seeks);
@@ -281,6 +288,14 @@ export function NetworkSidePanel({
               <span />
             )}
           </div>
+          {chatErrorMessage ? (
+            <p
+              role="status"
+              className="border-t border-border px-4 py-2 text-1 text-neutral-11"
+            >
+              {chatErrorMessage}
+            </p>
+          ) : null}
         </section>
       ) : null}
       <Dialog open={fundOpen} onOpenChange={setFundOpen}>

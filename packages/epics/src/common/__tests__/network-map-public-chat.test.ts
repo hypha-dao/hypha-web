@@ -17,6 +17,10 @@ describe('all-spaces map chat entry points', () => {
     expect(sidePanel).toContain('void openPublicChat({');
     expect(sidePanel).toContain('slug: focusedSlug');
     expect(sidePanel).not.toMatch(/openCoherenceChat\(\s*focusedRoomId/);
+    expect(sidePanel).toContain("error === 'matrix'");
+    expect(sidePanel).toContain("tCommon('signIn')");
+    expect(sidePanel).toContain("tChat('failedToJoinRoom')");
+    expect(sidePanel).not.toContain('alert(');
   });
 
   it('opens the public channel from the header icon for a map-selected space', () => {
@@ -27,5 +31,9 @@ describe('all-spaces map chat entry points', () => {
     expect(headerTrigger).not.toMatch(
       /openCoherenceChat\(\s*focusedSpaceChat\.roomId/,
     );
+    expect(headerTrigger).toContain("publicChatError === 'matrix'");
+    expect(headerTrigger).toContain("tCommon('signIn')");
+    expect(headerTrigger).toContain("t('failedToJoinRoom')");
+    expect(headerTrigger).not.toContain('alert(');
   });
 });

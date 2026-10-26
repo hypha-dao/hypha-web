@@ -216,10 +216,20 @@ export function HumanSidebarTrigger() {
     focusedSpaceChat,
     unreadMentionCount,
   } = useHumanChatPanel();
-  const { openPublicChat, opening: openingPublicChat } =
-    useOpenSpacePublicChat();
+  const {
+    openPublicChat,
+    opening: openingPublicChat,
+    error: publicChatError,
+  } = useOpenSpacePublicChat();
   const { open: leftOpen, overlayVisible, closeAiPanel } = useAiPanel();
   const t = useTranslations('HumanChatPanel');
+  const tCommon = useTranslations('Common');
+  const publicChatErrorMessage =
+    publicChatError === 'matrix'
+      ? tCommon('signIn')
+      : publicChatError === 'failed'
+      ? t('failedToJoinRoom')
+      : null;
   const pathname = usePathname();
   const isSpace = useIsSpaceContext();
   const isNetwork = useIsNetworkContext();
@@ -270,12 +280,24 @@ export function HumanSidebarTrigger() {
           openHumanChatPanel();
         }}
         aria-expanded={open}
+        aria-describedby={
+          publicChatErrorMessage ? 'map-space-public-chat-error' : undefined
+        }
         className={APP_CHROME_ICON_TRIGGER}
         title={openPanelLabel}
         aria-label={openPanelLabel}
       >
         <MessageCircle className="craft-icon" />
       </button>
+      {publicChatErrorMessage ? (
+        <p
+          id="map-space-public-chat-error"
+          role="status"
+          className="absolute right-0 top-full z-20 mt-1 w-max max-w-56 border border-border bg-background px-2 py-1 text-1 text-neutral-11"
+        >
+          {publicChatErrorMessage}
+        </p>
+      ) : null}
       {hasCallElsewhere ? (
         <span className="pointer-events-none absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-9 opacity-60" />
