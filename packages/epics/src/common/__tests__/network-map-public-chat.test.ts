@@ -60,7 +60,12 @@ describe('all-spaces map chat entry points', () => {
       'await matrixRef.current.ensurePublicRoom(',
     );
     expect(humanRightPanel).toContain('acceptEnsuredPublicRoomId(');
-    expect(humanRightPanel).toContain('!coherencePublic &&');
+    expect(humanRightPanel).toContain(
+      "mode === 'coherence' && !coherencePublic && !coherenceSlug?.trim()",
+    );
+    expect(humanRightPanel).toContain(
+      'distinctPublicRoomId(recovered?.roomId, recoveredMemberRoomId)',
+    );
     expect(humanRightPanel).toContain(
       '} else if (!targetRoomId && openingSpaceSlug) {',
     );

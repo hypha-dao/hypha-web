@@ -1136,8 +1136,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setUnreadMentionCount,
   } = useHumanChatPanel();
   // Person-to-person rooms (PM / group) have a title and no signal slug — never
-  // inherit a space from the route or a leftover home slug.
-  const isDirectConversation = mode === 'coherence' && !coherenceSlug?.trim();
+  // inherit a space from the route or a leftover home slug. Map public chat
+  // also opens with an empty signal slug; it is not a DM and must still load
+  // the space so `spaces.chatRoomId` can be checked.
+  const isDirectConversation =
+    mode === 'coherence' && !coherencePublic && !coherenceSlug?.trim();
   const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
   const spaceSlug = isDirectConversation
     ? undefined
@@ -3962,13 +3965,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         const recovered = knownId
           ? matrixRef.current.client?.getRoom(knownId)
           : null;
-        // Public map→chat must not fall back to an already-joined member
-        // room after the bind check throws.
+        const recoveredMemberRoomId =
+          space?.chatRoomId?.trim() ||
+          getStoredRoomId(openingSpaceSlug) ||
+          null;
+        const recoveredIsPublic =
+          !coherencePublic ||
+          Boolean(
+            distinctPublicRoomId(recovered?.roomId, recoveredMemberRoomId),
+          );
+        // Joined-room recovery stays for DMs / signals. Public map→chat
+        // may recover only when the joined room is not the member channel.
         if (
-          !coherencePublic &&
           !cancelled &&
           recovered &&
-          recovered.getMyMembership() === 'join'
+          recovered.getMyMembership() === 'join' &&
+          recoveredIsPublic
         ) {
           console.warn(
             '[HumanRightPanel] Join reported a failure after the room was already open:',
