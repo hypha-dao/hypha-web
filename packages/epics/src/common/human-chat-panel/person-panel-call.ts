@@ -42,6 +42,17 @@ export function shouldRefusePersonPanelCall(
   return planPersonPanelCall(input).action === 'refuse';
 }
 
+/** A usable current DM: both ids present and they agree. */
+export function matchedDirectRoomId(
+  roomId?: string | null,
+  coherenceRoomId?: string | null,
+): string | null {
+  const room = roomId?.trim() || '';
+  const coherence = coherenceRoomId?.trim() || '';
+  if (room && coherence && room === coherence) return room;
+  return null;
+}
+
 /** Ensure a usable DM, then start the call against that room. */
 export async function runPersonPanelCallPlan(input: {
   plan: PersonPanelCallPlan;

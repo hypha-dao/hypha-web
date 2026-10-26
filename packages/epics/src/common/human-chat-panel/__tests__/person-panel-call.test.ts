@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   callAppliesToCurrentChatRoom,
   hasHumanTimelineMessages,
+  matchedDirectRoomId,
   planPersonPanelCall,
   runPersonPanelCallPlan,
   runPersonPanelCallStart,
@@ -120,6 +121,20 @@ describe('shouldRefusePersonPanelCall', () => {
   });
 });
 
+describe('matchedDirectRoomId', () => {
+  it('returns the room only when both ids agree', () => {
+    expect(matchedDirectRoomId('!dm', '!dm')).toBe('!dm');
+    expect(matchedDirectRoomId(' !dm ', '!dm')).toBe('!dm');
+  });
+
+  it('rejects leftover or room-less ids', () => {
+    expect(matchedDirectRoomId('!leftover', null)).toBeNull();
+    expect(matchedDirectRoomId(null, '!next')).toBeNull();
+    expect(matchedDirectRoomId('!stale', '!next')).toBeNull();
+    expect(matchedDirectRoomId(null, null)).toBeNull();
+  });
+});
+
 describe('shouldLeaveCallOnPersonPanelRefuse', () => {
   it('leaves when there is no active call session room', () => {
     expect(shouldLeaveCallOnPersonPanelRefuse(null, '!dm')).toBe(true);
@@ -174,6 +189,23 @@ describe('runPersonPanelCallPlan', () => {
       onStart,
     });
     expect(onStart).toHaveBeenCalledWith('!empty');
+    expect(onRefuse).not.toHaveBeenCalled();
+  });
+
+  it('does not start when ensure fails to produce a room', async () => {
+    const onRefuse = vi.fn();
+    const onStart = vi.fn();
+    await expect(
+      runPersonPanelCallPlan({
+        plan: { action: 'ensure-then-start' },
+        ensureRoom: async () => {
+          throw new Error('no-matrix-id');
+        },
+        onRefuse,
+        onStart,
+      }),
+    ).rejects.toThrow('no-matrix-id');
+    expect(onStart).not.toHaveBeenCalled();
     expect(onRefuse).not.toHaveBeenCalled();
   });
 
@@ -254,6 +286,11 @@ describe('Start-a-conversation call toolbar', () => {
     expect(panel).toContain(
       'const callActionsChecked = inSpaceCall || spaceCallSelfPresenceChecked;',
     );
+    expect(panel).toContain('bindEnsuredPersonPanelRoom');
+    expect(panel).toContain('matchedDirectRoomId(roomId, coherenceRoomId)');
+    expect(panel).toContain('data-hypha-room-id={roomId?.trim() || undefined}');
+    expect(panel).toContain('directConversationEmptyWelcomeKey');
+    expect(panel).toContain("t('emptyDirectChat')");
     const toolbarAt = panel.indexOf('<HumanChatPanelCallToolbar');
     const checkedAt = panel.lastIndexOf('callActionsChecked ? (', toolbarAt);
     expect(toolbarAt).toBeGreaterThan(-1);

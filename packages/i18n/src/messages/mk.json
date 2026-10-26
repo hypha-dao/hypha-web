@@ -3728,6 +3728,7 @@
     "dashboardRoomsLabel": "Соби",
     "welcome": "Започни разговор со другите членови на овој простор.",
     "welcomeWith": "Започни разговор со {name}.",
+    "emptyDirectChat": "Сè уште нема пораки.",
     "placeholder": "Напиши порака...",
     "placeholderChannel": "Порака во #{channel}",
     "sendButton": "Испрати",

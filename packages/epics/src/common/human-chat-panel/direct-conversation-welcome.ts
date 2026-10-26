@@ -22,3 +22,13 @@ export function directConversationWelcomeName({
     .filter(Boolean);
   return names.join(', ') || null;
 }
+
+/**
+ * Start-a-conversation copy is only for a room-less shell. After a DM is
+ * bound, the empty timeline must not still say "Start a conversation".
+ */
+export function directConversationEmptyWelcomeKey(input: {
+  isStartConversation: boolean;
+}): 'welcomeWith' | 'emptyDirectChat' {
+  return input.isStartConversation ? 'welcomeWith' : 'emptyDirectChat';
+}

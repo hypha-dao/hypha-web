@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { directConversationWelcomeName } from '../direct-conversation-welcome';
+import {
+  directConversationEmptyWelcomeKey,
+  directConversationWelcomeName,
+} from '../direct-conversation-welcome';
 
 describe('directConversationWelcomeName', () => {
   it('uses the first name of the person on the chat', () => {
@@ -41,5 +44,19 @@ describe('directConversationWelcomeName', () => {
         coherenceTitle: 'Vlad Hramtsov',
       }),
     ).toBeNull();
+  });
+});
+
+describe('directConversationEmptyWelcomeKey', () => {
+  it('keeps Start-a-conversation copy only on a room-less shell', () => {
+    expect(
+      directConversationEmptyWelcomeKey({ isStartConversation: true }),
+    ).toBe('welcomeWith');
+  });
+
+  it('uses the empty-DM copy after a real room is bound', () => {
+    expect(
+      directConversationEmptyWelcomeKey({ isStartConversation: false }),
+    ).toBe('emptyDirectChat');
   });
 });

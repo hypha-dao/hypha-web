@@ -352,7 +352,11 @@ describe('CSH-QA-3–5 stability hardening (W7)', () => {
     expect(source).toContain('planPersonPanelCall');
     expect(source).toContain('runPersonPanelCallPlan');
     expect(source).toContain('openOrEnsurePersonRoom');
+    expect(source).toContain('bindEnsuredPersonPanelRoom');
+    expect(source).toContain('matchedDirectRoomId');
     expect(source).toContain("tMember('callFailed')");
+    expect(source).toContain('data-hypha-room-id');
+    expect(source).toContain('emptyDirectChat');
     const ensureAt = source.indexOf('const ensurePersonPanelCallRoom');
     const launchAt = source.indexOf('const launchPersonPanelCall');
     const audioAt = source.indexOf('const handleCallAudio = useCallback');

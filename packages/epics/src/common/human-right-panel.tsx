@@ -196,10 +196,14 @@ import {
   buildSpaceRosterMentionCandidates,
   buildSpaceRosterSignalTeamMembers,
 } from './human-chat-panel/build-space-roster-mention-candidates';
-import { directConversationWelcomeName } from './human-chat-panel/direct-conversation-welcome';
+import {
+  directConversationEmptyWelcomeKey,
+  directConversationWelcomeName,
+} from './human-chat-panel/direct-conversation-welcome';
 import {
   callAppliesToCurrentChatRoom as chatRoomOwnsCallSession,
   hasHumanTimelineMessages,
+  matchedDirectRoomId,
   planPersonPanelCall,
   runPersonPanelCallPlan,
   shouldLeaveCallOnPersonPanelRefuse,
@@ -1900,19 +1904,39 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   ]);
 
   const waitForPeerMatrixUserId = useCallback(async (personId: number) => {
+    let sawLoading = peerMatrixIdsLoadingRef.current;
     for (let attempt = 0; attempt < 40; attempt += 1) {
       const mxid = peerMatrixIdsRef.current[personId]?.trim();
       if (mxid) return mxid;
-      if (!peerMatrixIdsLoadingRef.current && attempt > 2) return null;
+      if (peerMatrixIdsLoadingRef.current) sawLoading = true;
+      if (sawLoading && !peerMatrixIdsLoadingRef.current) return null;
       await new Promise((resolve) => window.setTimeout(resolve, 100));
     }
     return peerMatrixIdsRef.current[personId]?.trim() || null;
   }, []);
 
+  const bindEnsuredPersonPanelRoom = useCallback(
+    (ensuredRoomId: string) => {
+      const title = coherenceTitle?.trim() || '';
+      openCoherenceChat(ensuredRoomId, title, '', null, null, {
+        peerPerson: coherencePeerPerson,
+      });
+      setRoomId(ensuredRoomId);
+      bindRoomContext(ensuredRoomId, null, authToken?.trim() || null);
+    },
+    [
+      authToken,
+      bindRoomContext,
+      coherencePeerPerson,
+      coherenceTitle,
+      openCoherenceChat,
+    ],
+  );
+
   const ensurePersonPanelCallRoom = useCallback(async () => {
     const personId = peerPersonId;
     const title = coherenceTitle?.trim() || '';
-    const fallback = roomId?.trim() || coherenceRoomId?.trim() || '';
+    const matched = matchedDirectRoomId(roomId, coherenceRoomId);
     if (personId) {
       try {
         const ensured = await openOrEnsurePersonRoom({
@@ -1922,32 +1946,26 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           waitForMatrixUserId: waitForPeerMatrixUserId,
         });
         rememberPersonDirectRoom(personId, ensured);
-        openCoherenceChat(ensured, title, '', null, null, {
-          peerPerson: coherencePeerPerson,
-        });
-        setRoomId(ensured);
-        bindRoomContext(ensured, null, authToken?.trim() || null);
+        bindEnsuredPersonPanelRoom(ensured);
         return ensured;
       } catch (error) {
-        if (!fallback) throw error;
+        if (!matched) throw error;
       }
     }
-    if (fallback) {
+    if (matched) {
       try {
-        await matrixRef.current.joinRoom(fallback);
+        await matrixRef.current.joinRoom(matched);
       } catch {
-        // Already joined, or join failed; still try the call on this room.
+        // Already joined; the ids already agree so this is a real current DM.
       }
-      return fallback;
+      bindEnsuredPersonPanelRoom(matched);
+      return matched;
     }
     throw new Error('Person panel call has no DM room to ensure');
   }, [
-    authToken,
-    bindRoomContext,
-    coherencePeerPerson,
+    bindEnsuredPersonPanelRoom,
     coherenceRoomId,
     coherenceTitle,
-    openCoherenceChat,
     peerPersonId,
     roomId,
     waitForPeerMatrixUserId,
@@ -5747,6 +5765,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       <SidebarContent
         ref={sidebarContentRef}
         className="flex min-h-0 flex-col gap-0 overflow-hidden bg-page-background dark:bg-background-2"
+        data-hypha-chat-panel=""
+        data-hypha-room-id={roomId?.trim() || undefined}
       >
         {sessionRestoring ? (
           <HumanChatPanelLoader />
@@ -6097,8 +6117,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                           ? t('publicWelcome')
                           : coherencePublic
                           ? t('publicWelcome')
-                          : welcomePartner
+                          : welcomePartner &&
+                            directConversationEmptyWelcomeKey({
+                              isStartConversation,
+                            }) === 'welcomeWith'
                           ? t('welcomeWith', { name: welcomePartner })
+                          : welcomePartner
+                          ? t('emptyDirectChat')
                           : undefined
                       }
                       welcomeSenderName={

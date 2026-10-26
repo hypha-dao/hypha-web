@@ -3746,6 +3746,7 @@
     "dashboardRoomsLabel": "Räume",
     "welcome": "Starten Sie eine Unterhaltung mit anderen Mitgliedern dieses Spaces.",
     "welcomeWith": "Starten Sie eine Unterhaltung mit {name}.",
+    "emptyDirectChat": "Noch keine Nachrichten.",
     "placeholder": "Nachricht eingeben...",
     "placeholderChannel": "Nachricht #{channel}",
     "sendButton": "Senden",
