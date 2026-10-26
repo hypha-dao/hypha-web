@@ -36,7 +36,6 @@ import {
   convertFilesToParts,
   type AiPanelDraftAttachment,
 } from '../../common/ai-panel';
-import { buildRecentTranscriptSummaryFromChatMessages } from '../../common/onboarding-voice-transcript-bridge';
 import { buildMemberHomeVoiceSessionContext } from '../../common/space-voice-session-context';
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
 import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
@@ -711,14 +710,6 @@ export function MemberHomeChat({
     [isStreaming, send],
   );
 
-  const recentTranscriptSummary = useMemo(
-    () =>
-      buildRecentTranscriptSummaryFromChatMessages(
-        homeMessages.filter((message) => !message.metadata?.homeArrival),
-      ),
-    [homeMessages],
-  );
-
   const dialogue = micOn || soundOn;
 
   const voiceSessionContext = useMemo(
@@ -807,15 +798,24 @@ export function MemberHomeChat({
     return shown;
   }, [cardItems, homeMessages, intelligence.spaces, isStreaming, lang, t]);
 
-  const lastAssistantText = useMemo(() => {
+  /**
+   * Latest assistant bubble only. Falling through to an older reply makes
+   * voice re-read that line on every turn while the chat has moved on.
+   */
+  const lastAssistantMessage = useMemo(() => {
     for (let i = homeMessages.length - 1; i >= 0; i -= 1) {
       const message = homeMessages[i];
       if (!message || message.role !== 'assistant') continue;
-      if (!messageText(message)) continue;
-      return shownAssistantText.get(message.id) ?? '';
+      if (message.metadata?.homeArrival) continue;
+      return message;
     }
-    return '';
-  }, [homeMessages, shownAssistantText]);
+    return null;
+  }, [homeMessages]);
+
+  const lastAssistantText = lastAssistantMessage
+    ? shownAssistantText.get(lastAssistantMessage.id) ?? ''
+    : '';
+  const lastAssistantMessageId = lastAssistantMessage?.id ?? '';
 
   const voiceInterview = useOnboardingVoiceDiscovery({
     enabled: soundReady && dialogue && !isAuthLoading && isAuthenticated,
@@ -825,10 +825,13 @@ export function MemberHomeChat({
     speakDisplayedText: true,
     isStreaming,
     lastAssistantText,
+    lastAssistantMessageId,
     locale: lang,
     activeSpaceSlug: HOME_VOICE_PREFERENCE_KEY,
     conversationContext: voiceSessionContext,
-    recentTranscriptSummary,
+    // Home voice is a relay for the bubble. A transcript summary in the
+    // session makes Realtime repeat the first briefing instead of the chat.
+    recentTranscriptSummary: undefined,
     getAccessToken,
     // The open mic stays on. send() ends the previous turn when a real
     // transcript is submitted.

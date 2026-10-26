@@ -50,6 +50,8 @@ type UseOnboardingVoiceRealtimeOptions = {
   enabled: boolean;
   isChatStreaming?: boolean;
   lastAssistantText?: string;
+  /** Latest assistant bubble id — empty while the next reply has not started. */
+  lastAssistantMessageId?: string;
   locale?: string;
   conversationContext?: VoiceSessionContext;
   recentTranscriptSummary?: string;
@@ -186,6 +188,7 @@ export function useOnboardingVoiceRealtime({
   enabled,
   isChatStreaming = false,
   lastAssistantText = '',
+  lastAssistantMessageId = '',
   locale,
   conversationContext,
   recentTranscriptSummary,
@@ -237,9 +240,13 @@ export function useOnboardingVoiceRealtime({
   const replacingSpeechRef = useRef(false);
   const realtimeRespeakCountRef = useRef(0);
   const assistantTextAtStreamStartRef = useRef('');
+  const assistantMessageIdAtStreamStartRef = useRef('');
+  const lastSpokenAssistantMessageIdRef = useRef('');
   const speakAssistantReplyRef = useRef<(spoken: string) => void>(() => {});
   const lastAssistantTextRef = useRef(lastAssistantText);
   lastAssistantTextRef.current = lastAssistantText;
+  const lastAssistantMessageIdRef = useRef(lastAssistantMessageId);
+  lastAssistantMessageIdRef.current = lastAssistantMessageId;
   const onFallbackRef = useRef(onFallback);
   const onStopChatRef = useRef(onStopChat);
   const onSendTranscriptRef = useRef(onSendTranscript);
@@ -440,7 +447,16 @@ export function useOnboardingVoiceRealtime({
         return false;
       }
       queuedSpeakableRef.current = null;
-      rememberUnheardSpeech(speakable);
+      // Only keep a click-to-replay when autoplay is blocked. Always remembering
+      // the line re-speaks the previous bubble on the next pointerdown.
+      void connection.remoteAudio.play().then(
+        () => {
+          replayOnUnlockRef.current = null;
+        },
+        () => {
+          rememberUnheardSpeech(speakable);
+        },
+      );
       realtimeSpeakInFlightRef.current = true;
       setPhase('speaking');
       return true;
@@ -453,13 +469,17 @@ export function useOnboardingVoiceRealtime({
   const scriptForSpeech = useCallback((spoken: string) => {
     const trimmed = spoken.trim();
     if (!trimmed) return '';
-    // A cancelled line must not be said again while the new reply is still
-    // the previous bubble.
-    if (
-      awaitingAssistantSpeakRef.current &&
-      trimmed === assistantTextAtStreamStartRef.current.trim()
-    ) {
-      return '';
+    // Still the unchanged bubble from before this turn — do not read it again.
+    if (awaitingAssistantSpeakRef.current) {
+      const startedId = assistantMessageIdAtStreamStartRef.current;
+      const startedText = assistantTextAtStreamStartRef.current.trim();
+      const stillPriorBubble =
+        Boolean(startedId) &&
+        lastAssistantMessageIdRef.current === startedId &&
+        trimmed === startedText;
+      if (stillPriorBubble || (!startedId && trimmed === startedText)) {
+        return '';
+      }
     }
     if (speakDisplayedTextRef.current) return stripMarkdownForSpeech(trimmed);
     return prepareAssistantTextForSpeech(trimmed);
@@ -480,12 +500,17 @@ export function useOnboardingVoiceRealtime({
       interimAckSpokenRef.current = false;
 
       const speakable = scriptForSpeech(spoken);
-      if (!speakable || spoken === lastSpokenAssistantRef.current) {
+      const messageId = lastAssistantMessageIdRef.current;
+      const alreadySaid =
+        spoken === lastSpokenAssistantRef.current &&
+        messageId === lastSpokenAssistantMessageIdRef.current;
+      if (!speakable || alreadySaid) {
         setPhase(connectionRef.current ? 'listening' : 'idle');
         return;
       }
 
       lastSpokenAssistantRef.current = spoken;
+      lastSpokenAssistantMessageIdRef.current = messageId;
       realtimeAudioHeardRef.current = false;
       realtimeRespeakCountRef.current = 0;
       speakViaRealtime(speakable);
@@ -1221,7 +1246,10 @@ export function useOnboardingVoiceRealtime({
     queuedSpeakableRef.current = null;
     replayOnUnlockRef.current = null;
     lastSpokenAssistantRef.current = '';
+    lastSpokenAssistantMessageIdRef.current = '';
     assistantTextAtStreamStartRef.current = lastAssistantTextRef.current;
+    assistantMessageIdAtStreamStartRef.current =
+      lastAssistantMessageIdRef.current;
     const connection = connectionRef.current;
     // The previous line keeps playing after its response has finished.
     // Stop that audio before this turn, or the member hears the old reply.
@@ -1250,12 +1278,18 @@ export function useOnboardingVoiceRealtime({
     }
     if (!speakEarlyLeadIn) return;
     if (earlySpeechStartedRef.current) return;
-    // Until the new assistant message arrives, lastAssistantText is still the
-    // previous turn — do not re-speak it as an "early" lead-in.
-    if (
-      lastAssistantText.trim() === assistantTextAtStreamStartRef.current.trim()
-    ) {
-      return;
+    // Until the new assistant message arrives, do not re-speak the previous
+    // turn as an "early" lead-in.
+    {
+      const startedId = assistantMessageIdAtStreamStartRef.current;
+      const startedText = assistantTextAtStreamStartRef.current.trim();
+      const stillPriorBubble =
+        Boolean(startedId) &&
+        lastAssistantMessageId === startedId &&
+        lastAssistantText.trim() === startedText;
+      if (stillPriorBubble || lastAssistantText.trim() === startedText) {
+        return;
+      }
     }
 
     const earlySentence = extractEarlySpeakableSentence(lastAssistantText);
@@ -1273,6 +1307,7 @@ export function useOnboardingVoiceRealtime({
   }, [
     enabled,
     isChatStreaming,
+    lastAssistantMessageId,
     lastAssistantText,
     speakAssistantReply,
     speakEarlyLeadIn,
@@ -1284,10 +1319,13 @@ export function useOnboardingVoiceRealtime({
 
     const spoken = lastAssistantText.trim();
     const startedFrom = assistantTextAtStreamStartRef.current.trim();
-    // The reply often lands after the stream flag drops, and until it does
-    // lastAssistantText is still the previous turn. Keep this turn until the
-    // new text is here, or the opening greeting is never spoken.
-    if (!spoken || spoken === startedFrom) {
+    const startedId = assistantMessageIdAtStreamStartRef.current;
+    const stillPriorBubble =
+      Boolean(startedId) &&
+      lastAssistantMessageId === startedId &&
+      spoken === startedFrom;
+    // Wait for a new bubble (or new words) before speaking.
+    if (!spoken || stillPriorBubble || spoken === startedFrom) {
       const timer = window.setTimeout(() => {
         if (!enabledRef.current || isChatStreamingRef.current) return;
         if (!awaitingAssistantSpeakRef.current && !wasStreamingRef.current) {
@@ -1295,7 +1333,15 @@ export function useOnboardingVoiceRealtime({
         }
         const latest = lastAssistantTextRef.current.trim();
         const started = assistantTextAtStreamStartRef.current.trim();
-        if (latest && latest !== started) return;
+        const latestId = lastAssistantMessageIdRef.current;
+        const startedMessageId = assistantMessageIdAtStreamStartRef.current;
+        const stillWaiting =
+          !latest ||
+          latest === started ||
+          (Boolean(startedMessageId) &&
+            latestId === startedMessageId &&
+            latest === started);
+        if (!stillWaiting) return;
         awaitingAssistantSpeakRef.current = false;
         wasStreamingRef.current = false;
         if (!realtimeSpeakInFlightRef.current && connectionRef.current) {
@@ -1361,6 +1407,7 @@ export function useOnboardingVoiceRealtime({
   }, [
     enabled,
     isChatStreaming,
+    lastAssistantMessageId,
     lastAssistantText,
     scheduleMicRestoreForUserTurn,
     scriptForSpeech,

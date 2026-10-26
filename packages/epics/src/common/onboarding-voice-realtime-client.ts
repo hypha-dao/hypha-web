@@ -168,10 +168,14 @@ function buildRealtimeSpeakLanguageDirective(): string {
 }
 
 function buildRealtimeSpeakInstructions(text: string): string {
+  // Session instructions for member home look for a SCRIPT block. Without that
+  // label the model falls back to the session summary and repeats one line.
   return [
-    'Say the words below and nothing else. Same language. Warm, natural pace.',
+    'Speak this SCRIPT verbatim — every word, in order. Do not paraphrase. Do not add greetings, questions, or another item. Do not use earlier turns or the session summary.',
     buildRealtimeSpeakLanguageDirective(),
+    'Warm, natural pace. SCRIPT only.',
     '',
+    'SCRIPT:',
     text,
   ].join('\n');
 }

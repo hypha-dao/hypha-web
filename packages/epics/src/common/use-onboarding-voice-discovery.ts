@@ -22,6 +22,8 @@ type UseOnboardingVoiceDiscoveryOptions = {
   enabled: boolean;
   isStreaming: boolean;
   lastAssistantText: string;
+  /** Latest assistant bubble id so voice does not re-read an older line. */
+  lastAssistantMessageId?: string;
   locale?: string;
   activeSpaceSlug?: string;
   conversationContext?: VoiceSessionContext;
@@ -71,6 +73,7 @@ export function useOnboardingVoiceDiscovery(
     enabled: options.enabled && useRealtime,
     isChatStreaming: options.isStreaming,
     lastAssistantText: options.lastAssistantText,
+    lastAssistantMessageId: options.lastAssistantMessageId,
     locale: options.locale,
     conversationContext: options.conversationContext,
     recentTranscriptSummary: options.recentTranscriptSummary,
