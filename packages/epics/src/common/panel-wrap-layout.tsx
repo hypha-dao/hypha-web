@@ -46,6 +46,7 @@ import { shouldPreventChatSheetEscapeDismiss } from './human-chat-panel/composer
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
 import { PanelScrollInset } from './panel-scroll-inset';
 import { APP_CHROME_ICON_TRIGGER } from './chrome-radius';
+import { useOpenSpacePublicChat } from './use-open-space-public-chat';
 
 // ─── Panel Providers ─────────────────────────────────────────────────────────
 // Owns the open/close state for both panels and wraps children with the
@@ -212,12 +213,23 @@ export function HumanSidebarTrigger() {
     open,
     toggle,
     openHumanChatPanel,
-    openCoherenceChat,
     focusedSpaceChat,
     unreadMentionCount,
   } = useHumanChatPanel();
+  const {
+    openPublicChat,
+    opening: openingPublicChat,
+    error: publicChatError,
+  } = useOpenSpacePublicChat();
   const { open: leftOpen, overlayVisible, closeAiPanel } = useAiPanel();
   const t = useTranslations('HumanChatPanel');
+  const tCommon = useTranslations('Common');
+  const publicChatErrorMessage =
+    publicChatError === 'matrix'
+      ? tCommon('signIn')
+      : publicChatError === 'failed'
+      ? t('failedToJoinRoom')
+      : null;
   const pathname = usePathname();
   const isSpace = useIsSpaceContext();
   const isNetwork = useIsNetworkContext();
@@ -255,24 +267,38 @@ export function HumanSidebarTrigger() {
             closeAiPanel();
           }
           if (focusedSpaceChat?.slug) {
-            openCoherenceChat(
-              focusedSpaceChat.roomId,
-              focusedSpaceChat.title,
-              '',
-              focusedSpaceChat.description,
-              focusedSpaceChat.slug,
-            );
+            if (openingPublicChat) return;
+            // Map-selected space: same public channel as Connect, not the
+            // member room stored on `focusedSpaceChat.roomId`.
+            void openPublicChat({
+              slug: focusedSpaceChat.slug,
+              title: focusedSpaceChat.title,
+              description: focusedSpaceChat.description,
+              memberRoomId: focusedSpaceChat.roomId,
+            });
             return;
           }
           openHumanChatPanel();
         }}
         aria-expanded={open}
+        aria-describedby={
+          publicChatErrorMessage ? 'map-space-public-chat-error' : undefined
+        }
         className={APP_CHROME_ICON_TRIGGER}
         title={openPanelLabel}
         aria-label={openPanelLabel}
       >
         <MessageCircle className="craft-icon" />
       </button>
+      {publicChatErrorMessage ? (
+        <p
+          id="map-space-public-chat-error"
+          role="status"
+          className="absolute right-0 top-full z-20 mt-1 w-max max-w-56 border border-border bg-background px-2 py-1 text-1 text-neutral-11"
+        >
+          {publicChatErrorMessage}
+        </p>
+      ) : null}
       {hasCallElsewhere ? (
         <span className="pointer-events-none absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-9 opacity-60" />

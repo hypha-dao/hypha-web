@@ -44,7 +44,11 @@ export function useAiPanel() {
 
 // ─── Human Chat Panel Context ────────────────────────────────────────────────
 
-/** Space picked on the network map, so the header chat icon can open its room. */
+/**
+ * Space picked on the network map. `roomId` may be the member room
+ * (`spaces.chatRoomId`); map chat entry points must open the public
+ * channel via `useOpenSpacePublicChat` and the slug, not this id.
+ */
 export type FocusedSpaceChat = {
   roomId: string | null;
   title: string;

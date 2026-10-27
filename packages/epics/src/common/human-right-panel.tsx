@@ -33,6 +33,8 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import useSWR from 'swr';
 import {
   HYPHA_ROOM_TYPES,
+  acceptEnsuredPublicRoomId,
+  distinctPublicRoomId,
   useMatrix,
   useCoherenceMutationsWeb2Rsc,
   useHookRegistry,
@@ -1134,11 +1136,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setUnreadMentionCount,
   } = useHumanChatPanel();
   // Person-to-person rooms (PM / group) have a title and no signal slug — never
-  // inherit a space from the route or a leftover home slug.
-  const isDirectConversation = mode === 'coherence' && !coherenceSlug?.trim();
+  // inherit a space from the route or a leftover home slug. Map public chat
+  // also opens with an empty signal slug; it is not a DM and must still load
+  // the selected space so `spaces.chatRoomId` can be checked — prefer the
+  // opened space over the current DHO route.
+  const isDirectConversation =
+    mode === 'coherence' && !coherencePublic && !coherenceSlug?.trim();
   const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
   const spaceSlug = isDirectConversation
     ? undefined
+    : coherencePublic
+    ? coherenceSpaceSlug?.trim() || routeSpaceSlug || undefined
     : routeSpaceSlug || coherenceSpaceSlug?.trim() || undefined;
   const { spaces: peerMemberSpaces, isLoading: peerMemberSpacesLoading } =
     usePersonMemberSpaces({
@@ -2599,6 +2607,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isDirectConversation &&
     isArchivedGroupRoom(client?.getRoom(roomId ?? undefined));
   const chatComposerLocked =
+    isJoining ||
     blockSpaceChatForMembership ||
     !canInteractWithSignalThread ||
     archivedGroup;
@@ -3749,15 +3758,31 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       return;
 
     const openingSpaceSlug = coherenceSpaceSlug?.trim() || '';
+    const previousRoomId = roomIdRef.current?.trim();
+    if (previousRoomId) {
+      matrixRef.current.unregisterRoomListener(previousRoomId);
+    }
+    roomIdRef.current = null;
+    setRoomId(null);
+    setIsJoining(true);
     // A selected space may only know its slug until the space record loads.
-    if (openingSpaceSlug && !coherenceRoomId?.trim() && isSpaceLoading) {
-      return;
+    // Public map→chat also waits: we need `spaces.chatRoomId` so a misbound
+    // `#hypha-public-{slug}` alias is not joined as the member room.
+    // Detach and lock first — the previous effect's cleanup sets
+    // `isJoining` false, and a send must not hit the old room.
+    if (
+      openingSpaceSlug &&
+      isSpaceLoading &&
+      (coherencePublic || !coherenceRoomId?.trim())
+    ) {
+      return () => {
+        setIsJoining(false);
+      };
     }
 
     let cancelled = false;
 
     const init = async () => {
-      setIsJoining(true);
       setError(null);
       setMessages([]);
       setReplyDraft(null);
@@ -3770,7 +3795,34 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       try {
         let targetRoomId = coherenceRoomId?.trim() || null;
         const openingSpaceSlug = coherenceSpaceSlug?.trim() || '';
-        if (!targetRoomId && openingSpaceSlug) {
+        if (coherencePublic) {
+          if (!openingSpaceSlug) {
+            throw new Error('Failed to open the public room');
+          }
+          const memberRoomId =
+            space?.chatRoomId?.trim() ||
+            getStoredRoomId(openingSpaceSlug) ||
+            null;
+          const { roomId: publicRoomId } =
+            await matrixRef.current.ensurePublicRoom(
+              openingSpaceSlug,
+              memberRoomId,
+            );
+          const publicRoomType =
+            client?.getRoom(publicRoomId)?.getType() ?? null;
+          const acceptedPublicRoomId =
+            publicRoomType == null
+              ? distinctPublicRoomId(publicRoomId, memberRoomId)
+              : acceptEnsuredPublicRoomId(
+                  publicRoomId,
+                  memberRoomId,
+                  publicRoomType,
+                );
+          if (!acceptedPublicRoomId) {
+            throw new Error('Public channel resolved to the space channel');
+          }
+          targetRoomId = acceptedPublicRoomId;
+        } else if (!targetRoomId && openingSpaceSlug) {
           targetRoomId =
             space?.chatRoomId?.trim() ||
             getStoredRoomId(openingSpaceSlug) ||
@@ -3778,7 +3830,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
 
         // A space room must not be created as a signal room.
-        if (!targetRoomId && openingSpaceSlug) {
+        // Public map→chat must not create/join `spaces.chatRoomId` either.
+        if (!targetRoomId && openingSpaceSlug && !coherencePublic) {
           if (blockSpaceChatForMembership) {
             setIsJoining(false);
             return;
@@ -3926,7 +3979,27 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         const recovered = knownId
           ? matrixRef.current.client?.getRoom(knownId)
           : null;
-        if (!cancelled && recovered && recovered.getMyMembership() === 'join') {
+        const recoveredMemberRoomId =
+          space?.chatRoomId?.trim() ||
+          getStoredRoomId(openingSpaceSlug) ||
+          null;
+        const recoveredIsPublic =
+          !coherencePublic ||
+          Boolean(
+            acceptEnsuredPublicRoomId(
+              recovered?.roomId,
+              recoveredMemberRoomId,
+              recovered?.getType() ?? null,
+            ),
+          );
+        // Joined-room recovery stays for DMs / signals. Public map→chat
+        // may recover only when the joined room is not the member channel.
+        if (
+          !cancelled &&
+          recovered &&
+          recovered.getMyMembership() === 'join' &&
+          recoveredIsPublic
+        ) {
           console.warn(
             '[HumanRightPanel] Join reported a failure after the room was already open:',
             err,
@@ -3960,6 +4033,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceSlug,
     coherenceDescription,
     coherenceSpaceSlug,
+    coherencePublic,
     isSpaceLoading,
     space?.chatRoomId,
     space?.title,
@@ -6130,6 +6204,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     {deleteError}
                   </div>
                 )}
+                {coherencePublic && !isJoining && roomId && !error ? (
+                  <p
+                    role="status"
+                    className="border-b border-border px-3 py-2 text-1 text-neutral-11"
+                  >
+                    {t('publicRoomTitle')} — {t('publicWelcome')}
+                  </p>
+                ) : null}
                 {isJoining ? (
                   <HumanChatPanelLoader showPreview />
                 ) : (
