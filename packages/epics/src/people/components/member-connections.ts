@@ -1666,6 +1666,34 @@ export function listedConversationOpenTarget(
 }
 
 /**
+ * The open chat stays on the row that was opened. A direct chat can join a
+ * room id that is not the one stored on the row, so the person id counts too.
+ */
+export function listedConversationIsOpen(
+  row: {
+    roomId: string | null | undefined;
+    name: string;
+    preview?: string | null;
+    lastTs?: number | null;
+    person: { id: number };
+  },
+  open: {
+    roomId: string | null | undefined;
+    personId: number | null | undefined;
+  },
+  lookup?: ListedConversationLookup,
+): boolean {
+  const personId = open.personId;
+  if (personId != null && personId > 0 && row.person.id === personId) {
+    return true;
+  }
+  const roomId = open.roomId?.trim();
+  if (!roomId) return false;
+  if (row.roomId?.trim() === roomId) return true;
+  return resolveListedConversationRoomId(row, lookup) === roomId;
+}
+
+/**
  * Group-pick candidates. Synthetic DM rows (`person.id <= 0`) stay on
  * Messages but cannot be selected — they have no directory person id.
  */

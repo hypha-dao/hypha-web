@@ -10,6 +10,7 @@ import {
   conversationMatchesSearch,
   peopleMatchingSearch,
   conversationsMatchingSearch,
+  listedConversationIsOpen,
   listedConversationOpenTarget,
   membersForGroupPicker,
   conversationsVisibleInSection,
@@ -1406,6 +1407,35 @@ describe('nextSelectedMembers', () => {
       title: 'Alex Prate/Joachim',
       peerSlug: null,
     });
+  });
+
+  it('keeps the open row when the joined room id is not the one stored on the row', () => {
+    const ronnie = {
+      roomId: '!stale',
+      name: 'Ronnie Xerxes Potel',
+      person: { id: 4 },
+    };
+    expect(
+      listedConversationIsOpen(ronnie, { roomId: '!live', personId: 4 }),
+    ).toBe(true);
+    expect(
+      listedConversationIsOpen(
+        { roomId: '!live', name: 'Ronnie Xerxes Potel', person: { id: 4 } },
+        { roomId: '!live', personId: null },
+      ),
+    ).toBe(true);
+    expect(
+      listedConversationIsOpen(
+        { roomId: '!other', name: 'Marieke Post', person: { id: 5 } },
+        { roomId: '!live', personId: 4 },
+      ),
+    ).toBe(false);
+    expect(
+      listedConversationIsOpen(
+        { roomId: '!group', name: 'Core Hypha Team', person: { id: -8 } },
+        { roomId: '!group', personId: 4 },
+      ),
+    ).toBe(true);
   });
 
   it('only ensures a person room when the list row has no room yet', () => {

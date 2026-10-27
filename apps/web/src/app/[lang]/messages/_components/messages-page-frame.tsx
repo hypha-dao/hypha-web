@@ -26,8 +26,7 @@ export async function MessagesPageFrame({
     <div
       className={cn(
         'w-full min-w-0 overflow-x-clip',
-        fillViewport &&
-          '-mt-4 -mb-8 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] min-h-0 flex-col overflow-hidden md:-mt-5 xl:h-[calc(100svh-var(--menu-top-height,4.5rem))]',
+        fillViewport && 'flex h-full min-h-0 flex-1 flex-col overflow-hidden',
       )}
     >
       <Container
@@ -57,7 +56,11 @@ export async function MessagesPageFrame({
           <span>{t('titleLineOne')}</span>
           <span>{titleLineTwo}</span>
         </Heading>
-        <div className={cn(fillViewport && 'flex min-h-0 flex-1 flex-col')}>
+        <div
+          className={cn(
+            fillViewport && 'flex min-h-0 flex-1 flex-col overflow-hidden',
+          )}
+        >
           {children}
         </div>
       </Container>

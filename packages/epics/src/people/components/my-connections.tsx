@@ -61,6 +61,7 @@ import {
 import { countIncomingUnreadMessages } from '../../common/human-chat-panel/conversation-unread-count';
 import { contentMentionsMatrixUser } from '../../../../core/src/matrix/mentions';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
+import { scrollMainColumnTo } from '../../common/main-column-scroll';
 import {
   CONVERSATION_UNREAD_EVENT,
   notifyConversationUnreadChanged,
@@ -77,6 +78,7 @@ import {
   facesWithProfiles,
   groupRowsForConnections,
   conversationsMatchingSearch,
+  listedConversationIsOpen,
   listedConversationOpenTarget,
   readRememberedPersonDirectRoom,
   rememberPersonDirectRoom,
@@ -1667,7 +1669,8 @@ export function MyConnections({
     setConversationBoundLookupToken(jwt);
     if (client && jwt?.trim()) refreshBoundChatRooms(client);
   }, [client, jwt]);
-  const { openCoherenceChat, coherenceRoomId } = useHumanChatPanel();
+  const { openCoherenceChat, coherenceRoomId, coherencePeerPerson } =
+    useHumanChatPanel();
   const searchParams = useSearchParams();
   const debugRooms = searchParams.get('debugRooms') === '1';
   const openedDirectChatRef = useRef<string | null>(null);
@@ -1740,6 +1743,7 @@ export function MyConnections({
       inboxNavReady.current = true;
       return;
     }
+    scrollMainColumnTo(0);
     if (window.matchMedia('(min-width: 64rem)').matches) return;
     const target = inboxChannelOpen
       ? inboxListRef.current
@@ -2328,6 +2332,29 @@ export function MyConnections({
     if (section !== 'messages' || picking || listLoading) return;
     publishMessagesScreenCount(inboxView.counts.all.total);
   }, [inboxView.counts.all.total, listLoading, picking, section]);
+  useEffect(() => {
+    const root = inboxListRef.current;
+    if (!root || section !== 'messages' || picking) return;
+    const row = root.querySelector<HTMLElement>(
+      '[data-active-conversation="true"]',
+    );
+    if (!row) return;
+    const rootRect = root.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    if (rowRect.top < rootRect.top) {
+      root.scrollTop -= rootRect.top - rowRect.top;
+    } else if (rowRect.bottom > rootRect.bottom) {
+      root.scrollTop += rowRect.bottom - rootRect.bottom;
+    }
+  }, [
+    coherencePeerPerson?.id,
+    coherenceRoomId,
+    inboxChannelOpen,
+    inboxFilter,
+    picking,
+    section,
+    shownRows,
+  ]);
   const listTitle =
     section === 'archived'
       ? t('tabs.archived')
@@ -2544,7 +2571,7 @@ export function MyConnections({
     <div
       className={cn(
         'flex min-w-0 flex-col gap-6',
-        section === 'messages' && 'min-h-0 flex-1',
+        section === 'messages' && 'min-h-0 flex-1 overflow-hidden',
       )}
     >
       <MemberHomePeople
@@ -2610,7 +2637,8 @@ export function MyConnections({
         <div
           className={cn(
             'flex min-w-0 flex-col gap-6',
-            section === 'messages' && 'min-h-0 flex-1 lg:flex-row',
+            section === 'messages' &&
+              'min-h-0 flex-1 overflow-hidden lg:flex-row',
           )}
         >
           {section === 'messages' && !picking ? (
@@ -2867,6 +2895,12 @@ export function MyConnections({
                 picking={picking}
                 selected={selected}
                 activeRoomId={coherenceRoomId}
+                activePersonId={coherencePeerPerson?.id ?? null}
+                openLookup={{
+                  rooms: rows,
+                  personIdToMatrixUserId,
+                  peopleBySub,
+                }}
                 onOpen={(row) => void openMember(row)}
               />
             ) : null}
@@ -2909,7 +2943,7 @@ function GroupFaces({ faces }: { faces: GroupFace[] }) {
         <span
           key={`${face.name}-${index}`}
           className={cn(
-            'absolute block size-[22px] overflow-hidden rounded-full bg-neutral-3 ring-2 ring-background group-hover/row:ring-accent-2',
+            'absolute block size-[22px] overflow-hidden rounded-full bg-neutral-3 ring-2 ring-background group-hover/row:ring-accent-2 group-data-[active=true]/row:ring-accent-2',
             index === 0 ? 'top-0 left-0' : 'right-0 bottom-0',
           )}
         >
@@ -3030,6 +3064,8 @@ function MemberList({
   picking,
   selected,
   activeRoomId = null,
+  activePersonId = null,
+  openLookup,
   onOpen,
   showChannelTags = false,
 }: {
@@ -3049,6 +3085,8 @@ function MemberList({
   picking: boolean;
   selected: Set<number>;
   activeRoomId?: string | null;
+  activePersonId?: number | null;
+  openLookup?: Parameters<typeof listedConversationIsOpen>[2];
   onOpen: (row: ConnectionMemberRow) => void;
   showChannelTags?: boolean;
 }) {
@@ -3081,9 +3119,11 @@ function MemberList({
           const checked = selected.has(row.person.id);
           const active =
             !picking &&
-            Boolean(activeRoomId) &&
-            row.roomId != null &&
-            row.roomId === activeRoomId;
+            listedConversationIsOpen(
+              row,
+              { roomId: activeRoomId, personId: activePersonId },
+              openLookup,
+            );
           const presence = presenceById.get(row.person.id) ?? 'offline';
           const ChannelIcon = row.inbox
             ? CHANNEL_MARK_ICONS[row.inbox.kind]
@@ -3103,6 +3143,7 @@ function MemberList({
           return (
             <li
               key={row.roomId ?? row.person.id}
+              data-active-conversation={active ? 'true' : undefined}
               className="relative border-b border-border last:border-b-0"
             >
               <button
@@ -3111,6 +3152,7 @@ function MemberList({
                 aria-pressed={picking ? checked : undefined}
                 aria-current={active ? 'true' : undefined}
                 aria-label={picking ? selectLabel(row.name) : undefined}
+                data-active={active ? 'true' : undefined}
                 className={cn(
                   'group/row flex w-full min-w-0 items-center gap-3 px-4 py-3 text-left hover:bg-accent-2',
                   active && 'bg-accent-2',
