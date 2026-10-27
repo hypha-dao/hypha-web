@@ -35,7 +35,28 @@ async function main(): Promise<void> {
     .connect(relayer)
     .recordUpvoteRemoval(241, 123, await voter.getAddress());
   await tx2.wait();
-  console.log('removal ok');
+  console.log('upvote removal ok');
+
+  // Relayer records a downvote
+  const tx3 = await signals
+    .connect(relayer)
+    .recordDownvote(241, 456, await voter.getAddress(), 250n * 10n ** 18n);
+  const receipt3 = await tx3.wait();
+  const downvoteEvent = receipt3.logs
+    .map((log: { topics: string[]; data: string }) =>
+      signals.interface.parseLog(log),
+    )
+    .find(
+      (parsed: { name: string } | null) => parsed?.name === 'SignalDownvoted',
+    );
+  console.log('SignalDownvoted:', downvoteEvent?.args.toString());
+
+  // Relayer records a downvote removal
+  const tx4 = await signals
+    .connect(relayer)
+    .recordDownvoteRemoval(241, 456, await voter.getAddress());
+  await tx4.wait();
+  console.log('downvote removal ok');
 
   // Unauthorized caller must revert
   try {
