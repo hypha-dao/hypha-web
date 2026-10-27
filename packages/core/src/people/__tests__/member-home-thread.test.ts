@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { MemberIntelligence } from '../member-intelligence';
 import {
   SHOW_MEMBER_HOME_ITEM_TOOL,
+  type MemberHomeThreadItem,
   listMemberHomeAttentionItems,
   listMemberHomeThreadItems,
   memberHomeDirectReply,
@@ -610,6 +611,74 @@ describe('memberHomeThreadItemForMessage', () => {
       },
     );
     expect(item?.slug).toBe('candidate-review');
+  });
+
+  it('keeps the card when the reply names the person and the space, not the title', () => {
+    const signal = (
+      slug: string,
+      creatorName: string,
+      spaceTitle: string,
+      summary: string,
+    ): MemberHomeThreadItem => ({
+      kind: 'signal',
+      slug,
+      title: slug,
+      spaceSlug: spaceTitle.toLowerCase().replace(/\s+/g, '-'),
+      spaceTitle,
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: false,
+      category: null,
+      summary,
+      creatorId: null,
+      creatorName,
+      creatorAvatarUrl: null,
+    });
+    const flywheel = memberHomeThreadItemForMessage(
+      [
+        signal(
+          'older-flywheel',
+          'Vlad Hramtsov',
+          'Hypha Flywheel',
+          'Something already discussed.',
+        ),
+        signal(
+          'community-meet',
+          'Vlad Hramtsov',
+          'Hypha Flywheel',
+          'A signal the community can meet.',
+        ),
+        signal('hypha-only', 'Vlad Hramtsov', 'Hypha', 'A different space.'),
+      ],
+      {
+        content:
+          'Nice one, Alex. Vlad has something open in Hypha Flywheel — a signal the community can meet, and it would mean a lot if you stayed with it for a moment.',
+      },
+    );
+    expect(flywheel?.slug).toBe('community-meet');
+
+    const energy = memberHomeThreadItemForMessage(
+      [
+        signal(
+          'surya-goal',
+          'Surya Raman',
+          'Hypha Energy',
+          "L'objectif à définir.",
+        ),
+        signal(
+          'philippe-note',
+          'Philippe Martin',
+          'Hypha Energy',
+          'Another note.',
+        ),
+        signal('joachim-note', 'Joachim Berg', 'Hypha Energy', 'A third note.'),
+      ],
+      {
+        content:
+          "Bien joué, Alex. Surya en a ouvert une autre dans Hypha Energy — sa note sur l'objectif à définir, avec Philippe et Joachim qui y contribuent aussi.",
+      },
+    );
+    expect(energy?.slug).toBe('surya-goal');
   });
 
   it('keeps the card on the person the sentence names when the tool is the item just finished', () => {

@@ -28,6 +28,7 @@ import {
   memberHomeItemMemory,
   memberHomeSignalCatalogue,
   mergeMemberHomeMemory,
+  memberHomeTextBelongsToItem,
   memberHomeThreadItemForMessage,
   memberHomeThreadItemKey,
   type MemberHomeThreadItem,
@@ -202,18 +203,19 @@ function homeItemForMessage(
             })
           : null)
       : null;
-  // The sentence wins when it names someone else. A hint or a tool call
-  // can still be the item they just finished.
-  if (
-    wordsOnly &&
-    ((fromHint &&
-      memberHomeThreadItemKey(wordsOnly) !==
-        memberHomeThreadItemKey(fromHint)) ||
-      (named &&
-        memberHomeThreadItemKey(wordsOnly) !== memberHomeThreadItemKey(named)))
-  ) {
-    return wordsOnly;
-  }
+  // The sentence wins when it names someone else. A hint can still be the
+  // item they just finished, and a loose guess must not replace that hint
+  // when the sentence also belongs to it.
+  const text = messageText(message);
+  const sentencePrefers = (item: MemberHomeThreadItem | null) =>
+    Boolean(
+      wordsOnly &&
+        item &&
+        memberHomeThreadItemKey(wordsOnly) !== memberHomeThreadItemKey(item) &&
+        memberHomeTextBelongsToItem(wordsOnly, text) &&
+        !memberHomeTextBelongsToItem(item, text),
+    );
+  if (sentencePrefers(fromHint) || sentencePrefers(named)) return wordsOnly;
   return fromHint ?? wordsOnly ?? named;
 }
 

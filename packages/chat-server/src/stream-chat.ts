@@ -1766,15 +1766,19 @@ export async function createChatStreamResult(
     // visual turns still need their tools on later steps.
     prepareStep: memberHomeRecord
       ? ({ stepNumber, steps }) => {
-          const previous = steps[steps.length - 1]?.text?.trim() ?? '';
+          const previous = steps[steps.length - 1];
+          const previousText = previous?.text?.trim() ?? '';
           const unfinished =
-            previous.length > 0 && !homeSpokenScriptIsComplete(previous);
+            previousText.length > 0 &&
+            !homeSpokenScriptIsComplete(previousText);
+          const cardShown = steps.some((step) =>
+            (step.toolCalls ?? []).some(
+              (call) => call.toolName === 'show_member_home_item',
+            ),
+          );
           // A list chip already has its own panel. A tool call here opens
           // the next signal instead, or leaks the call as text.
-          if (
-            memberHomeList ||
-            (stepNumber > 0 && (memberHomeCard || unfinished))
-          ) {
+          if (memberHomeList || (stepNumber > 0 && unfinished)) {
             return {
               toolChoice: 'none' as const,
               ...(unfinished
@@ -1783,6 +1787,16 @@ export async function createChatStreamResult(
                   }
                 : {}),
             };
+          }
+          // The sentences are written first. The next step only attaches
+          // the card. Forcing the tool makes the model say the line twice.
+          if (stepNumber > 0 && memberHomeCard && !cardShown) {
+            return {
+              system: `${homeSystem}\n\nThe sentences for this reply are already written. Do not write them again. Do not add a sentence. Call show_member_home_item once for the card in the brief, then stop.`,
+            };
+          }
+          if (stepNumber > 0 && memberHomeCard) {
+            return { toolChoice: 'none' as const };
           }
           return {};
         }

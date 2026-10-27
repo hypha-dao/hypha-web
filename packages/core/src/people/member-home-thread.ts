@@ -817,6 +817,72 @@ function textBelongsTo(item: MemberHomeThreadItem, text: string): boolean {
   );
 }
 
+/** The reply is about this item, even when it never says the title. */
+export function memberHomeTextBelongsToItem(
+  item: MemberHomeThreadItem,
+  text: string,
+): boolean {
+  return textBelongsTo(item, text);
+}
+
+function spokenKind(haystack: string): MemberHomeCardKind | null {
+  const signal = /\b(signals?|notes?|tensions?)\b/.test(haystack);
+  const proposal = /\b(proposals?|invites?|votes?|decisions?)\b/.test(haystack);
+  if (signal === proposal) return null;
+  return signal ? 'signal' : 'proposal';
+}
+
+/**
+ * A reply names the person and the space, and leaves the title out.
+ * Several open items can share that person. The one they are talking
+ * about is the name that comes first, in the space named most specifically.
+ */
+function pickNamedPersonItem(
+  items: readonly MemberHomeThreadItem[],
+  haystack: string,
+): MemberHomeThreadItem | null {
+  const named = items.filter((item) => spaceNamedInText(item, haystack));
+  const longest = named.reduce(
+    (max, item) => Math.max(max, foldHomeText(item.spaceTitle).length),
+    0,
+  );
+  const inSpace =
+    longest === 0
+      ? []
+      : named.filter(
+          (item) => foldHomeText(item.spaceTitle).length === longest,
+        );
+  const byPerson = inSpace.filter((item) =>
+    givenNameInText(item.creatorName, haystack),
+  );
+  if (byPerson.length === 0) return null;
+  if (byPerson.length === 1) return byPerson[0] ?? null;
+  let earliest = Number.POSITIVE_INFINITY;
+  for (const item of byPerson) {
+    const given = creatorTokens(item.creatorName ?? '')[0];
+    if (!given) continue;
+    const index = haystack.indexOf(given);
+    if (index >= 0 && index < earliest) earliest = index;
+  }
+  const subject =
+    earliest === Number.POSITIVE_INFINITY
+      ? byPerson
+      : byPerson.filter((item) => {
+          const given = creatorTokens(item.creatorName ?? '')[0];
+          return given != null && haystack.indexOf(given) === earliest;
+        });
+  const kind = spokenKind(haystack);
+  const ofKind = kind ? subject.filter((item) => item.kind === kind) : [];
+  const pool = ofKind.length > 0 ? ofKind : subject;
+  if (pool.length === 1) return pool[0] ?? null;
+  const ranked = [...pool].sort(
+    (left, right) =>
+      textOverlap(right, haystack) - textOverlap(left, haystack) ||
+      (left.slug < right.slug ? -1 : left.slug > right.slug ? 1 : 0),
+  );
+  return ranked[0] ?? null;
+}
+
 function itemMentionedInText(
   items: readonly MemberHomeThreadItem[],
   text: string,
@@ -879,15 +945,7 @@ function itemMentionedInText(
   ) {
     return pool[0];
   }
-  const byGivenNameAndSpace = items.filter(
-    (item) =>
-      givenNameInText(item.creatorName, haystack) &&
-      spaceNamedInText(item, haystack),
-  );
-  if (byGivenNameAndSpace.length === 1 && byGivenNameAndSpace[0]) {
-    return byGivenNameAndSpace[0];
-  }
-  return null;
+  return pickNamedPersonItem(items, haystack);
 }
 
 /**

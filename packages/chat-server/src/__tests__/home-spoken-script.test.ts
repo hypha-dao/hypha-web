@@ -41,6 +41,27 @@ describe('homeTurnShouldStop', () => {
     ).toBe(true);
   });
 
+  it('leaves one more step when the sentence is finished and the card was not called', () => {
+    expect(
+      homeTurnShouldStop([
+        {
+          text: 'Nice one, Alex. Vlad has something open in Hypha Flywheel.',
+        },
+      ]),
+    ).toBe(false);
+  });
+
+  it('stops when the finished sentence already called the card', () => {
+    expect(
+      homeTurnShouldStop([
+        {
+          text: 'Nice one, Alex. Vlad has something open in Hypha Flywheel.',
+          toolCalls: [{ toolName: 'show_member_home_item' }],
+        },
+      ]),
+    ).toBe(true);
+  });
+
   it('waits for words when a step has not spoken yet', () => {
     expect(homeTurnShouldStop([{ text: '' }])).toBe(false);
   });
