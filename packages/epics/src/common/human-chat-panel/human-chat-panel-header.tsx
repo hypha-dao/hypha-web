@@ -4,6 +4,7 @@ import type { ComponentType, ReactNode } from 'react';
 import {
   ArrowLeft,
   Circle,
+  Globe,
   Globe2,
   PanelRightClose,
   Settings,
@@ -30,7 +31,7 @@ type RoomChoiceIcon = ComponentType<{
 const ROOM_CHOICE_ICONS: Record<string, RoomChoiceIcon> = {
   space: Circle,
   ecosystem: Target,
-  public: Globe2,
+  public: Globe,
 };
 
 type RoomChoiceOption = {

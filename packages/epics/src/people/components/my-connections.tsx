@@ -50,6 +50,7 @@ import {
   ArrowUpRight,
   ChevronLeft,
   Circle,
+  Globe,
   Globe2,
   Radio,
   Search,
@@ -3066,7 +3067,7 @@ function MemberListSkeleton({
 
 const CHANNEL_MARK_ICONS: Partial<Record<InboxChannelKind, typeof Circle>> = {
   space: Circle,
-  'space-public': Globe2,
+  'space-public': Globe,
   signal: Radio,
   ecosystem: Target,
   network: Globe2,
