@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { resolveSpeechVoice, SPEECH_TONE_INSTRUCTIONS } from '../speech-voice';
+import {
+  resolveHomeSpeechVoice,
+  resolveSpeechVoice,
+  SPEECH_TONE_INSTRUCTIONS,
+} from '../speech-voice';
 
 describe('resolveSpeechVoice', () => {
   const previous = process.env.OPENAI_REALTIME_VOICE;
@@ -13,9 +17,9 @@ describe('resolveSpeechVoice', () => {
     expect(resolveSpeechVoice('Cedar')).toBe('cedar');
   });
 
-  it('falls back to coral for a voice the speech model cannot speak', () => {
+  it('falls back to shimmer for a voice the speech model cannot speak', () => {
     delete process.env.OPENAI_REALTIME_VOICE;
-    expect(resolveSpeechVoice('not-a-voice')).toBe('coral');
+    expect(resolveSpeechVoice('not-a-voice')).toBe('shimmer');
   });
 
   it('uses the configured realtime voice when none is passed', () => {
@@ -23,8 +27,14 @@ describe('resolveSpeechVoice', () => {
     expect(resolveSpeechVoice()).toBe('sage');
   });
 
-  it('asks the speaker for an easy close voice', () => {
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/warm/i);
+  it('keeps the home speaker light even when realtime is a low voice', () => {
+    process.env.OPENAI_REALTIME_VOICE = 'cedar';
+    expect(resolveHomeSpeechVoice()).toBe('shimmer');
+  });
+
+  it('asks the speaker for a light voice at an easy pace', () => {
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/light, bright voice/i);
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/not a deep voice/i);
     expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/everyday pace/i);
     expect(SPEECH_TONE_INSTRUCTIONS).not.toMatch(/pause between sentences/i);
   });

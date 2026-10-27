@@ -14,7 +14,7 @@ import {
   resolveRealtimeAudioInputConfig,
   type RealtimeAudioInputConfig,
 } from './audio-input-config';
-import { resolveSpeechVoice } from './speech-voice';
+import { resolveHomeSpeechVoice, resolveSpeechVoice } from './speech-voice';
 
 export const MISSING_OPENAI_KEY_MESSAGE =
   'Hypha voice Realtime is not configured: OPENAI_API_KEY is missing.';
@@ -52,7 +52,10 @@ function resolveOpenAiRealtimeModel(): string {
   );
 }
 
-function resolveOpenAiRealtimeVoice(): string {
+function resolveOpenAiRealtimeVoice(
+  mode: RealtimeVoiceSessionRequest['conversationContext']['mode'],
+): string {
+  if (mode === 'member_home') return resolveHomeSpeechVoice();
   return resolveSpeechVoice();
 }
 
@@ -113,7 +116,7 @@ export async function createRealtimeVoiceSession(
   }
 
   const model = resolveOpenAiRealtimeModel();
-  const voice = resolveOpenAiRealtimeVoice();
+  const voice = resolveOpenAiRealtimeVoice(payload.conversationContext.mode);
   const transcriptionModel = resolveOpenAiRealtimeTranscriptionModel();
   const audioInput = resolveRealtimeAudioInputConfig(transcriptionModel);
   const locale =

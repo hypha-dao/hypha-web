@@ -4,11 +4,15 @@ import {
   MISSING_OPENAI_KEY_MESSAGE,
   RealtimeVoiceSessionError,
 } from './session';
-import { resolveSpeechVoice, SPEECH_TONE_INSTRUCTIONS } from './speech-voice';
+import {
+  resolveHomeSpeechVoice,
+  resolveSpeechVoice,
+  SPEECH_TONE_INSTRUCTIONS,
+} from './speech-voice';
 
 const SPEECH_MODEL = 'gpt-4o-mini-tts';
 
-export { resolveSpeechVoice };
+export { resolveHomeSpeechVoice, resolveSpeechVoice };
 
 /**
  * Speak `text` as audio. This is synthesis, not a chat model: the bytes are
@@ -40,7 +44,7 @@ export async function synthesizeSpeechScript(
     },
     body: JSON.stringify({
       model: SPEECH_MODEL,
-      voice: resolveSpeechVoice(),
+      voice: resolveHomeSpeechVoice(),
       input,
       instructions: SPEECH_TONE_INSTRUCTIONS,
       response_format: 'mp3',
