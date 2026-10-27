@@ -1,8 +1,6 @@
 import {
   EscrowDepositBanners,
-  isSafeImageUrl,
   MFABanner,
-  PersonHead,
   ProfileMemberSpaces,
   ProfilePageParams,
 } from '@hypha-platform/epics';
@@ -16,11 +14,7 @@ import {
   getSpacesByWeb3Ids,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import {
-  DEFAULT_SPACE_LEAD_IMAGE,
-  getMemberSpaces,
-  Space,
-} from '@hypha-platform/core/client';
+import { getMemberSpaces, Space } from '@hypha-platform/core/client';
 import { web3Client } from '@hypha-platform/core/server';
 import { Hex, zeroAddress } from 'viem';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
@@ -51,9 +45,6 @@ export default async function ProfilePage(props: PageProps) {
   }
 
   const person = await findPersonBySlug({ slug: personSlug }, { db });
-  const rawLead = person?.leadImageUrl?.trim();
-  const profileBannerPreload =
-    rawLead && isSafeImageUrl(rawLead) ? rawLead : null;
   const personAddress = (person?.address as Hex) || zeroAddress;
   let spaces: Space[] = [];
   try {
@@ -69,15 +60,6 @@ export default async function ProfilePage(props: PageProps) {
 
   return (
     <Container className="w-full">
-      {profileBannerPreload &&
-      profileBannerPreload !== DEFAULT_SPACE_LEAD_IMAGE ? (
-        <link
-          rel="preload"
-          as="image"
-          href={profileBannerPreload}
-          fetchPriority="high"
-        />
-      ) : null}
       <div className="mb-6 flex items-center w-full">
         <ProfileBackLink lang={lang} />
         <Text className="text-sm text-neutral-11 ml-1">
@@ -85,22 +67,7 @@ export default async function ProfilePage(props: PageProps) {
         </Text>
       </div>
       {person ? (
-        <div className="flex flex-col gap-5">
-          <PersonHead
-            id={person.id}
-            avatar={person?.avatarUrl ?? '/placeholder/default-profile.svg'}
-            name={person?.name ?? ''}
-            surname={person?.surname ?? ''}
-            background={person?.leadImageUrl ?? ''}
-            links={person?.links ?? []}
-            about={person?.description ?? ''}
-            location={person?.location ?? ''}
-            email={person?.email ?? ''}
-            slug={person?.slug ?? ''}
-            createdAt={person?.createdAt}
-            primaryOrientation={person?.primaryOrientation}
-            exportEmbeddedWallet={true}
-          />
+        <div className="flex flex-col gap-8">
           <ProfileStoryConnected
             lang={lang}
             person={{
@@ -119,17 +86,20 @@ export default async function ProfilePage(props: PageProps) {
               avatarUrl: person.avatarUrl,
               leadImageUrl: person.leadImageUrl,
             }}
+            afterHeader={
+              <ProfileMemberSpaces
+                person={person}
+                spaces={spaces}
+                profileView={true}
+                className="mb-0 mt-1"
+              />
+            }
           />
           <Separator />
           <MFABanner />
           <EscrowDepositBanners
             personSlug={person.slug ?? ''}
             personAddress={(person.address as `0x${string}`) ?? null}
-          />
-          <ProfileMemberSpaces
-            person={person}
-            spaces={spaces}
-            profileView={true}
           />
         </div>
       ) : (

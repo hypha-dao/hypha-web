@@ -11,6 +11,7 @@ import { Empty } from '@hypha-platform/epics';
 import { ExitIcon, GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
 import { getOnboardingPath } from '../../common/get-path-function';
 
 export type ProfileMemberSpacesProps = {
@@ -25,7 +26,8 @@ export const ProfileMemberSpaces = ({
   spaces,
   isLoading,
   profileView = false,
-}: ProfileMemberSpacesProps) => {
+  className,
+}: ProfileMemberSpacesProps & { className?: string }) => {
   const tCommon = useTranslations('Common');
   const tSpaces = useTranslations('Spaces');
   const { lang } = useParams();
@@ -37,7 +39,9 @@ export const ProfileMemberSpaces = ({
   const { isAuthenticated } = useAuthentication();
 
   return (
-    <div className="flex justify-between items-center mt-4 mb-4">
+    <div
+      className={cn('mb-4 mt-4 flex items-center justify-between', className)}
+    >
       {!spaces?.length ? (
         <Empty>
           <div className="flex flex-col gap-7">

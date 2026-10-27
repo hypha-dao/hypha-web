@@ -1,11 +1,16 @@
 'use client';
 
+import { type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   TOKEN_PRICE_REFERENCE_CURRENCIES,
   useMe,
 } from '@hypha-platform/core/client';
 import {
+  ButtonCopyUserId,
+  ExportEmbeddedWalletButton,
   ProfileStory,
   type ProfileStoryPatch,
   type ProfileStoryPerson,
@@ -15,11 +20,15 @@ import { useEditProfile } from '@web/hooks/use-edit-profile';
 export function ProfileStoryConnected({
   person,
   lang,
+  afterHeader,
 }: {
   person: ProfileStoryPerson;
   lang: string;
+  afterHeader?: ReactNode;
 }) {
   const router = useRouter();
+  const tProfile = useTranslations('Profile');
+  const { exportWallet, isEmbeddedWallet } = useAuthentication();
   const { person: me, revalidate } = useMe();
   const { editProfile, isEditing, error } = useEditProfile();
   const isSelf = me?.id === person.id;
@@ -81,6 +90,7 @@ export function ProfileStoryConnected({
         : null,
     networkOffer: source.networkOffer,
     slug: source.slug,
+    avatarUrl: source.avatarUrl,
   };
 
   return (
@@ -89,7 +99,29 @@ export function ProfileStoryConnected({
       isSelf={isSelf}
       saving={isEditing}
       error={error}
+      afterHeader={afterHeader}
       onSave={isSelf ? onSave : undefined}
+      actions={
+        <>
+          {isSelf ? (
+            <ExportEmbeddedWalletButton
+              isLoading={false}
+              isEmbeddedWallet={isEmbeddedWallet}
+              label={tProfile('exportKeys')}
+              onExportEmbeddedWallet={
+                isEmbeddedWallet ? exportWallet : undefined
+              }
+            />
+          ) : null}
+          {shown.slug ? (
+            <ButtonCopyUserId
+              title={tProfile('copyUserId')}
+              successMessage={tProfile('copied')}
+              slug={shown.slug}
+            />
+          ) : null}
+        </>
+      }
     />
   );
 }
