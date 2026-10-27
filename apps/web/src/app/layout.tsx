@@ -301,6 +301,50 @@ export default async function RootLayout({
                                   }
                                   mobileAction={
                                     <>
+                                      <Suspense fallback={null}>
+                                        <ConnectedButtonProfile
+                                          newUserRedirectPath="/profile/signup"
+                                          baseRedirectPath={`/${locale}/home`}
+                                          navItems={[
+                                            {
+                                              label: navHomeLabel,
+                                              href: `/${locale}/home`,
+                                            },
+                                            {
+                                              label: navMessagesLabel,
+                                              href: `/${locale}/messages`,
+                                            },
+                                            {
+                                              label: navMyWalletLabel,
+                                              href: `/${locale}/my-wallet`,
+                                            },
+                                            {
+                                              label: navMySpacesLabel,
+                                              href: `/${locale}/my-spaces`,
+                                            },
+                                            {
+                                              label: navNetworkLabel,
+                                              href: `/${locale}/network`,
+                                            },
+                                          ]}
+                                          showNetworkFeedback
+                                          trailingBeforeProfile={
+                                            isLanguageSelectVisible ? (
+                                              <ConnectedLanguageSelect
+                                                selectLanguageLabel={
+                                                  navSelectLanguageLabel
+                                                }
+                                              />
+                                            ) : undefined
+                                          }
+                                          compact
+                                        />
+                                      </Suspense>
+                                    </>
+                                  }
+                                >
+                                  <div className="hidden xl:flex">
+                                    <Suspense fallback={null}>
                                       <ConnectedButtonProfile
                                         newUserRedirectPath="/profile/signup"
                                         baseRedirectPath={`/${locale}/home`}
@@ -336,48 +380,8 @@ export default async function RootLayout({
                                             />
                                           ) : undefined
                                         }
-                                        compact
                                       />
-                                    </>
-                                  }
-                                >
-                                  <div className="hidden xl:flex">
-                                    <ConnectedButtonProfile
-                                      newUserRedirectPath="/profile/signup"
-                                      baseRedirectPath={`/${locale}/home`}
-                                      navItems={[
-                                        {
-                                          label: navHomeLabel,
-                                          href: `/${locale}/home`,
-                                        },
-                                        {
-                                          label: navMessagesLabel,
-                                          href: `/${locale}/messages`,
-                                        },
-                                        {
-                                          label: navMyWalletLabel,
-                                          href: `/${locale}/my-wallet`,
-                                        },
-                                        {
-                                          label: navMySpacesLabel,
-                                          href: `/${locale}/my-spaces`,
-                                        },
-                                        {
-                                          label: navNetworkLabel,
-                                          href: `/${locale}/network`,
-                                        },
-                                      ]}
-                                      showNetworkFeedback
-                                      trailingBeforeProfile={
-                                        isLanguageSelectVisible ? (
-                                          <ConnectedLanguageSelect
-                                            selectLanguageLabel={
-                                              navSelectLanguageLabel
-                                            }
-                                          />
-                                        ) : undefined
-                                      }
-                                    />
+                                    </Suspense>
                                   </div>
                                 </ConnectedMenuTop>
                               </div>
