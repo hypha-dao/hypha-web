@@ -7,8 +7,8 @@ import {
   LayoutGrid,
   MessageSquare,
   MessagesSquare,
-  Network,
   Radio,
+  Target,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
@@ -26,7 +26,7 @@ const FILTER_ICONS: Record<InboxFilter, ElementType> = {
   spaces: LayoutGrid,
   rooms: Circle,
   signals: Radio,
-  ecosystem: Network,
+  ecosystem: Target,
   network: Globe2,
 };
 
