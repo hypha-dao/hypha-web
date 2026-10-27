@@ -278,6 +278,37 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).not.toContain('Bring back the deferred item once');
   });
 
+  it('show keeps the card from the reply above instead of the next item', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          {
+            ...home.proposals[0]!,
+            creatorName: 'Surya Raman',
+            title: 'Objectif à définir',
+          },
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'tariff',
+            title: 'Tariff table',
+            creatorName: 'Zekeriya Aydin',
+            web3ProposalId: 13,
+          },
+        ],
+      },
+      {
+        asked: 'show',
+        prior:
+          "Bien joué, Alex. Surya en a ouvert une autre dans Grove — sa note sur l'objectif à définir.",
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'path' });
+    expect(brief.text).toContain('reply just above');
+    expect(brief.text).not.toContain('slug=tariff');
+  });
+
   it('keeps the card when they ask to see a brought-back invite', () => {
     const brief = formatMemberHomeFacts(home, {
       recalled: ['proposal:path'],

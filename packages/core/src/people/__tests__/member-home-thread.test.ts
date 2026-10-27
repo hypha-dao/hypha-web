@@ -17,6 +17,7 @@ import {
   memberHomeThreadItemForMessage,
   resolveMemberHomeThreadItem,
   memberHomeItemMemory,
+  isMemberHomeItemLook,
   memberHomeLookItem,
   passedMemberHomeItemKeys,
   shownMemberHomeItemKeys,
@@ -1007,6 +1008,43 @@ describe('passedMemberHomeItemKeys', () => {
     expect(
       memberHomeLookItem(items, broughtBack, 'Tell me about the budget'),
     ).toBeNull();
+  });
+
+  it('show brings back the card from the reply above', () => {
+    expect(isMemberHomeItemLook('show')).toBe(true);
+    expect(isMemberHomeItemLook('montre')).toBe(true);
+    expect(isMemberHomeItemLook('Tell me about the budget')).toBe(false);
+    const surya: MemberHomeThreadItem = {
+      kind: 'signal',
+      slug: 'surya-goal',
+      title: 'Objectif à définir',
+      spaceSlug: 'hypha-energy',
+      spaceTitle: 'Hypha Energy',
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: false,
+      category: null,
+      summary: "L'objectif à définir.",
+      creatorId: 4,
+      creatorName: 'Surya Raman',
+      creatorAvatarUrl: null,
+    };
+    const zekeriya: MemberHomeThreadItem = {
+      ...surya,
+      slug: 'tariff-table',
+      title: 'Tariff table related with country and customer',
+      summary: 'Same tariff for everyone.',
+      creatorId: 5,
+      creatorName: 'Zekeriya Aydin',
+    };
+    const previous = {
+      role: 'assistant' as const,
+      content:
+        "Bien joué, Alex. Surya en a ouvert une autre dans Hypha Energy — sa note sur l'objectif à définir, avec Philippe et Joachim qui y contribuent aussi.",
+    };
+    expect(
+      memberHomeLookItem([surya, zekeriya], [previous], 'show')?.slug,
+    ).toBe('surya-goal');
   });
 });
 

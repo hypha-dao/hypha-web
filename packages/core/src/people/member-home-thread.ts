@@ -1064,9 +1064,20 @@ export function isMemberHomeItemDeferral(text: string): boolean {
  * They are asking to see the item. That is not a yes that drops it,
  * and it is not a no.
  */
+/** "show" on its own means the card from the reply just above. */
+function isBareCardLook(text: string): boolean {
+  const folded = foldHomeText(text)
+    .replace(/[.!?]+$/g, '')
+    .trim();
+  return /^(?:show(?: (?:it|that|this|the card))?|montre(?:-(?:le|la|moi)| (?:le|la|moi|ca|la carte))?|affiche(?:-(?:le|la)| (?:la carte))?|zeig(?: (?:es|die karte))?|muestra(?:lo| (?:la tarjeta))?|mostra(?: (?:isso|a carta))?|toon(?: het)?|laat zien|vis(?: det)?|покажи(?: ја)?)$/.test(
+    folded,
+  );
+}
+
 export function isMemberHomeItemLook(text: string): boolean {
   const normalized = memberHomeChoiceText(text);
   if (!normalized) return false;
+  if (isBareCardLook(text)) return true;
   if (
     /\b(don't see|do not see|dont see|can't see|cannot see|not seeing)\b/.test(
       normalized,

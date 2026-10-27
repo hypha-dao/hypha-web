@@ -367,6 +367,11 @@ export function formatMemberHomeFacts(
   const lookAsk = Boolean(
     options?.asked?.trim() && isMemberHomeItemLook(options.asked),
   );
+  const looked = lookAsk
+    ? memberHomeThreadItemForMessage(listMemberHomeThreadCatalog(home), {
+        content: options?.prior ?? '',
+      })
+    : null;
   const itemLine = (
     item: (typeof stillWaiting)[number] | NonNullable<typeof askedItem>,
   ) => {
@@ -409,6 +414,12 @@ export function formatMemberHomeFacts(
         : passedItems.length > 0
         ? 'Nothing left in the queue. They already passed on the items below. Say that in one line. Do not ask what else they would like, and do not bring a passed item back.'
         : 'Nothing in their spaces needs them. No judgement. The network stays open. If a network signal is listed below, you may offer one. Otherwise invite them to activate a space. Do not imply the quiet is a problem. Do not call show_member_home_item unless you are offering that one network signal.'
+      : lookAsk
+      ? looked
+        ? `They asked to see the card from the reply just above. ${itemLine(
+            looked,
+          )} One short line naming the title and the space. Do not introduce a different person. Do not open the next waiting item.`
+        : 'They asked to see the card from the reply just above. One short line that it is that same item. Do not introduce a different person. Do not open the next waiting item.'
       : openingAsk && !spoken
       ? 'Every waiting item was already introduced. Do not repeat a title or a space. One sentence asking if they would like to pause for now, or keep going. Do not restate one that was already placed.'
       : itemLine(spoken ?? unspoken[0] ?? stillWaiting[0]!);
@@ -535,6 +546,18 @@ export function formatMemberHomeFacts(
         )}. Do not read it out. Do not call show_member_home_item.`
       : shareTurn
       ? 'No signal is in this brief. Do not invent one. Do not restate a briefing.'
+      : lookAsk
+      ? looked
+        ? `They asked to see the card from the reply just above. This is not the next item. kind=${
+            looked.kind
+          } slug=${looked.slug} title="${(looked.title ?? '').replace(
+            /"/g,
+            "'",
+          )}" space="${looked.spaceTitle.replace(
+            /"/g,
+            "'",
+          )}". One short line naming the title and the space. Do not introduce a different person. Call show_member_home_item once for this card.`
+        : 'They asked to see the card from the reply just above. One short line that it is that same item. Do not introduce a different person. Do not call show_member_home_item for a different item.'
       : askedItem
       ? `They just asked about this one. This is a new reply under their message. Leave every earlier reply as it was. kind=${
           askedItem.kind
@@ -577,7 +600,7 @@ export function formatMemberHomeFacts(
       ? 'Waiting items are context only. This reply stays on the one they just asked about. Do not summarise the list:'
       : 'The one item for this reply. There is no list to read out:',
     listAsk ? null : waitingLines,
-    !listAsk && stillWaiting.length > 1
+    !listAsk && !lookAsk && stillWaiting.length > 1
       ? `${
           stillWaiting.length - 1
         } more are waiting. Withhold them. One at a time, and only the one relevant for this member.`
@@ -617,7 +640,9 @@ export function formatMemberHomeFacts(
   ]
     .filter((line): line is string => Boolean(line))
     .join('\n');
-  const broughtBack = askedItem ?? spoken ?? recall ?? recalledItems[0] ?? null;
+  const broughtBack = lookAsk
+    ? looked ?? recalledItems[0] ?? null
+    : askedItem ?? spoken ?? recall ?? recalledItems[0] ?? null;
   const card =
     listAsk == null && broughtBack?.slug && shareTurn == null
       ? { kind: broughtBack.kind, slug: broughtBack.slug }
