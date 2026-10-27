@@ -31,6 +31,7 @@ import {
   visibleMemberRowsAfterTitleResolve,
   messagesPeopleListReady,
   messagePreview,
+  senderFirstName,
   orphanedDirectRoomIds,
   previewWithNames,
   suggestConnections,
@@ -2174,5 +2175,36 @@ describe('previewWithNames', () => {
     expect(previewWithNames(`You wrote @${local}`, names)).toBe(
       'You wrote @Vlad Hramtsov',
     );
+  });
+});
+
+describe('senderFirstName', () => {
+  it('uses the profile first name and ignores a privy id', () => {
+    expect(
+      senderFirstName({
+        profileName: 'Maria',
+        matrixLabel: GERARDO,
+        senderUserId: GERARDO,
+      }),
+    ).toBe('Maria');
+  });
+
+  it('takes the first word of a human display name', () => {
+    expect(
+      senderFirstName({
+        memberName: 'Maria Santos',
+        senderUserId: '@maria:matrix.example',
+      }),
+    ).toBe('Maria');
+  });
+
+  it('stays blank when the only label is a privy id', () => {
+    expect(
+      senderFirstName({
+        matrixLabel: GERARDO,
+        memberName: 'prod_privy_did_privy_cmceozhp9017hjx0mjq0aets5',
+        senderUserId: GERARDO,
+      }),
+    ).toBe('');
   });
 });
