@@ -78,7 +78,8 @@ type HomeSpace = MemberIntelligence['spaces'][number];
 
 const AMOUNTS = [5, 10, 25, 50, 100] as const;
 const AMOUNT_INPUT = /^\d*\.?\d{0,2}$/;
-const SPACE_PREVIEW = 5;
+/** Two rows of four. Find more holds the rest. */
+const SPACE_PREVIEW = 8;
 /** Quick picks. A wide screen wraps these into rows instead of one strip. */
 const RECIPIENT_PREVIEW = 10;
 
@@ -216,7 +217,12 @@ export function MemberHomeSpacesWidgetCard({
       <p className="text-2 text-neutral-11">{t('spacesWidgetEmpty')}</p>
     ) : (
       <>
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <ul
+          className={cn(
+            'grid gap-3',
+            framed ? 'grid-cols-4' : 'grid-cols-2 sm:grid-cols-4',
+          )}
+        >
           {shown.map((space) => {
             const icon = resolveSpaceDisplayLogoUrl(space, logoVariant);
             return (
