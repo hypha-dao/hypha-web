@@ -43,7 +43,7 @@ export function isSignalTeamRosterContent(
 
 export function readSignalTeamRosterFromEvents(
   events: readonly SignalTeamTimelineEvent[],
-  coherenceSlug?: string,
+  coherenceSlug?: string | null,
 ): {
   hasPolicy: boolean;
   memberMatrixUserIds: string[];
@@ -79,7 +79,7 @@ export function getSignalTeamMembersFromRoom(options: {
       getEvents: () => SignalTeamTimelineEvent[];
     };
   } | null;
-  coherenceSlug?: string;
+  coherenceSlug?: string | null;
 }): {
   hasPolicy: boolean;
   memberMatrixUserIds: string[];
