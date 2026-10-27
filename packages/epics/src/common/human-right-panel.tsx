@@ -129,10 +129,7 @@ import {
 } from './human-chat-panel/use-resolved-mention-candidate-label';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
-import {
-  applyConversationRoomTitle,
-  MyConnections,
-} from '../people/components/my-connections';
+import { applyConversationRoomTitle } from '../people/components/my-connections';
 import {
   MemberSpaceIcons,
   memberProfileAsideHref,
@@ -1110,7 +1107,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const isTouchCallChrome = isMobile || prefersCoarsePointer;
   const params = useParams<{ id?: string }>();
   const pathname = usePathname() ?? '';
-  const isMemberHome = /^\/[^/]+\/(?:my-dashboard|home)(?:\/|$)/.test(pathname);
   const isConnectionsPage = /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(
     pathname,
   );
@@ -3955,7 +3951,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (mode !== 'space') return;
     if (spaceSlug?.trim()) return;
-    if (isMemberHome) return;
     if (!isMatrixAvailable || !isMatrixAuthenticated) return;
     if (joinedRef.current === NETWORK_JOINED_SENTINEL) return;
 
@@ -3989,7 +3984,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     mode,
     spaceSlug,
-    isMemberHome,
     isMatrixAvailable,
     isMatrixAuthenticated,
     revealRoomTimeline,
@@ -5839,30 +5833,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
     };
   }, []);
-
-  if (isMemberHome && mode === 'space' && !spaceSlug?.trim()) {
-    return (
-      <div className="flex h-full min-h-0 flex-col bg-page-background dark:bg-background-2">
-        <HumanChatPanelHeader
-          title=""
-          notificationSettingsHref={notificationCentreHref}
-          trailingStart={
-            showAuthedUi ? (
-              <HumanChatPanelMentionBell
-                unreadCount={bellMentionCount}
-                countIsCapped={bellMentionCapped}
-                mentionsTabActive={false}
-                onOpenMentions={() => setActiveTab('mentions')}
-              />
-            ) : null
-          }
-        />
-        <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-4">
-          <MyConnections />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
