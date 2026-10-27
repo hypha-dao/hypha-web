@@ -1725,8 +1725,8 @@ export function MyConnections({
     peopleBySubLoading,
   });
   useEffect(() => {
-    if (dataReady) setListSettled(true);
-  }, [dataReady]);
+    if (dataReady && isMatrixAvailable) setListSettled(true);
+  }, [dataReady, isMatrixAvailable]);
   const listLoading = !listSettled && !dataReady;
   const resolvedMembers = useMemo(
     () =>

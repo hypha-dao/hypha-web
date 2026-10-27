@@ -82,6 +82,10 @@ describe('group picker chips and radio', () => {
     expect(source).toContain('data-testid="messages-people-loader"');
     expect(source).toContain('previewLoading={false}');
     expect(source).toContain('!listLoading && people.length > 0');
+    expect(source).toContain(
+      'if (dataReady && isMatrixAvailable) setListSettled(true)',
+    );
+    expect(source).not.toMatch(/if \(dataReady\) setListSettled\(true\)/);
     expect(source).not.toMatch(/isConnecting \? t\('loading'\)/);
   });
 });
