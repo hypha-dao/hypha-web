@@ -267,6 +267,10 @@ import {
   saveSpaceAiChatMessages,
 } from './space-ai-chat-persistence';
 import { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
+import {
+  readHomeActed,
+  readHomeChoices,
+} from '../people/components/member-home-resume';
 import type { SpaceLocationValue } from '../spaces/components/space-location-picker';
 
 function extractAssistantTextFromMessage(
@@ -1393,7 +1397,21 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         activeProposalFormSnapshot: readActiveProposalFormSnapshot(pathname),
         locale: lang,
       });
-      return { body, headers: hdrs };
+      // Network screens share the member brief. The open tool set answers
+      // with hidden tool calls and the bubble stays empty.
+      return {
+        body: isMemberAiSurface
+          ? {
+              ...body,
+              memberHome: true,
+              memberHomeMemory: {
+                ...readHomeChoices(),
+                acted: readHomeActed(),
+              },
+            }
+          : body,
+        headers: hdrs,
+      };
     },
     [
       activeSpaceName,
