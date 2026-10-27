@@ -9,6 +9,20 @@ import { isPersonRole, type PersonRole } from './person-badges';
 
 const ROLES: PersonRole[] = ['member', 'builder', 'investor'];
 
+/** One @ and a dotted domain, with no whitespace. Kept off a regular
+ * expression so a long dotted address cannot make the check backtrack. */
+function isStoryEmail(value: string): boolean {
+  const at = value.indexOf('@');
+  if (at <= 0 || value.lastIndexOf('@') !== at) return false;
+  const domain = value.slice(at + 1);
+  const dot = domain.indexOf('.');
+  if (dot <= 0 || dot >= domain.length - 1) return false;
+  for (const char of value) {
+    if (char.trim() === '') return false;
+  }
+  return true;
+}
+
 export type ProfileStoryPerson = {
   id: number;
   name?: string | null;
@@ -465,7 +479,7 @@ export function ProfileStory({
             label={t('editForm.labels.email')}
             value={person.email ?? ''}
             onSave={(email) => {
-              if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+              if (email && !isStoryEmail(email)) {
                 setLocalError(t('editForm.errors.emailInvalid'));
                 return;
               }
