@@ -142,6 +142,14 @@ export function readSignalTeamRosterFromEvents(
  * only carries `client.getUserId()` (a different linked MXID) is unusable
  * even if the event itself is trusted.
  */
+/** Person ids that have no linked Matrix user id in the space map. */
+export function unmappedPersonIds(
+  personIds: readonly number[],
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+): number[] {
+  return personIds.filter((id) => !personIdToMatrixUserId[id]?.trim());
+}
+
 export function rosterIdsIntersectSpaceMap(
   memberMatrixUserIds: readonly string[],
   personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,

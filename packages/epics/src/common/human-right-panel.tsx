@@ -68,7 +68,6 @@ import {
   requestRemoteGroupCallLeave,
   calledSpecialistIds,
   matrixUserIdsForPersonIds,
-  publishSignalTeamNotice,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -1399,7 +1398,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [signalTeamBusy, setSignalTeamBusy] = useState(false);
   const [signalTeamRosterResolved, setSignalTeamRosterResolved] =
     useState(true);
-  const signalTeamAutoSeededRoomIdsRef = useRef<Set<string>>(new Set());
 
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
@@ -3329,25 +3327,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (memberIds.length === 0) return false;
         setSignalTeamMemberIds(memberIds);
         setSignalTeamOwnerId(ownerId);
-        if (!signalTeamAutoSeededRoomIdsRef.current.has(roomId) && client) {
-          signalTeamAutoSeededRoomIdsRef.current.add(roomId);
-          try {
-            await publishSignalTeamNotice({
-              client,
-              roomId,
-              coherenceSlug: slug,
-              memberMatrixUserIds: memberIds,
-              ownerMatrixUserId: ownerId,
-              actorMatrixUserId: ownerId,
-              addedMemberMatrixUserIds: memberIds,
-            });
-          } catch (publishError) {
-            console.warn(
-              '[HumanRightPanel] Failed to publish document signal team seed:',
-              publishError,
-            );
-          }
-        }
         return true;
       } catch (error) {
         console.warn(
@@ -3360,47 +3339,46 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     const hydrateRosterHistory = async () => {
       let foundUsableRoster = applyFromTimeline();
-      let historyExhausted = false;
-      const maxRosterHistoryBatches = 50;
-      for (
-        let i = 0;
-        i < maxRosterHistoryBatches && !cancelled && !foundUsableRoster;
-        i += 1
-      ) {
-        try {
-          const result = await matrixRef.current.loadRoomHistory(roomId, {
-            pageSize: 30,
-            maxBatches: 1,
-            force: i > 0,
-          });
-          if (cancelled) return;
-          foundUsableRoster = applyFromTimeline();
-          if (!result.hasMoreOlder) {
-            historyExhausted = true;
+      if (isLoadingMatrixUserIds) {
+        return;
+      }
+      if (!foundUsableRoster) {
+        const maxRosterHistoryBatches = 50;
+        for (
+          let i = 0;
+          i < maxRosterHistoryBatches && !cancelled && !foundUsableRoster;
+          i += 1
+        ) {
+          try {
+            const result = await matrixRef.current.loadRoomHistory(roomId, {
+              pageSize: 30,
+              maxBatches: 1,
+              force: i > 0,
+            });
+            if (cancelled) return;
+            foundUsableRoster = applyFromTimeline();
+            if (!result.hasMoreOlder) {
+              break;
+            }
+          } catch (error) {
+            if (!cancelled) {
+              console.warn(
+                '[HumanRightPanel] Signal team roster history load failed:',
+                error,
+              );
+            }
             break;
           }
-        } catch (error) {
-          if (!cancelled) {
-            console.warn(
-              '[HumanRightPanel] Signal team roster history load failed:',
-              error,
-            );
-          }
-          break;
         }
       }
       if (cancelled) return;
-      if (!foundUsableRoster && !isLoadingMatrixUserIds) {
-        foundUsableRoster = await seedFromDocumentAssignees();
+      if (!foundUsableRoster) {
+        await seedFromDocumentAssignees();
       }
-      // Do not treat the Signal as having no policy until a usable roster is
-      // found, document assignees are mapped, or scrollback is exhausted and
-      // the Manage person→Matrix map is ready.
-      if (
-        !cancelled &&
-        !isLoadingMatrixUserIds &&
-        (foundUsableRoster || historyExhausted)
-      ) {
+      // Always resolve once the person→Matrix map is ready so a history-load
+      // failure cannot latch the composer locked. Prefer a usable timeline or
+      // document-assignee roster when we have one.
+      if (!cancelled) {
         setSignalTeamRosterResolved(true);
       }
     };

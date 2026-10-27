@@ -99,6 +99,7 @@ import {
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
 } from '../constants';
 import { upsertSignalDescriptionInRoom } from '../utils/signal-chat-description';
+import { unmappedPersonIds } from '../utils/signal-team-access';
 import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
 import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
 import { toLocalDueDateInputValue } from '../utils/signal-due-date';
@@ -1072,6 +1073,12 @@ export const CreateSignalForm = ({
         const resolveTeamMatrixIds = resolveMatrixUserIdsByPersonIds({
           personIds: teamPersonIds,
           authToken,
+        }).catch((resolveError) => {
+          console.warn(
+            'Signal room created but failed to resolve team Matrix ids:',
+            resolveError,
+          );
+          return {} as Record<number, string>;
         });
         // Close the panel as soon as the signal exists — everything below is
         // best-effort follow-up work that must not hold the form open.
@@ -1150,37 +1157,40 @@ export const CreateSignalForm = ({
               // Later assignee edits do not rewrite that roster (team picker).
               if (matrixClient) {
                 try {
-                  let personIdToMatrixUserId: Record<number, string> = {};
-                  try {
-                    personIdToMatrixUserId = await resolveTeamMatrixIds;
-                  } catch (resolveError) {
-                    console.warn(
-                      'Signal room created but failed to resolve team Matrix ids:',
-                      resolveError,
-                    );
-                  }
-                  const teamIdsToSeed = matrixUserIdsForPersonIds(
-                    teamPersonIds,
-                    personIdToMatrixUserId,
-                  );
-                  const ownerMatrixUserId =
-                    personIdToMatrixUserId[creatorId]?.trim() ||
-                    matrixClient.getUserId?.()?.trim() ||
-                    null;
-                  const addedMemberMatrixUserIds = matrixUserIdsForPersonIds(
+                  const personIdToMatrixUserId = await resolveTeamMatrixIds;
+                  const missingAssigneeIds = unmappedPersonIds(
                     assigneePersonIds,
                     personIdToMatrixUserId,
                   );
-                  if (teamIdsToSeed.length > 0 || ownerMatrixUserId) {
-                    await publishSignalTeamNotice({
-                      client: matrixClient,
-                      roomId: canonicalRoomId,
-                      coherenceSlug,
-                      memberMatrixUserIds: teamIdsToSeed,
-                      ownerMatrixUserId,
-                      actorMatrixUserId: ownerMatrixUserId,
-                      addedMemberMatrixUserIds,
-                    });
+                  if (missingAssigneeIds.length > 0) {
+                    console.warn(
+                      'Skipping signal team notice: assignee(s) missing Matrix ids',
+                      missingAssigneeIds,
+                    );
+                  } else {
+                    const teamIdsToSeed = matrixUserIdsForPersonIds(
+                      teamPersonIds,
+                      personIdToMatrixUserId,
+                    );
+                    const ownerMatrixUserId =
+                      personIdToMatrixUserId[creatorId]?.trim() ||
+                      matrixClient.getUserId?.()?.trim() ||
+                      null;
+                    const addedMemberMatrixUserIds = matrixUserIdsForPersonIds(
+                      assigneePersonIds,
+                      personIdToMatrixUserId,
+                    );
+                    if (teamIdsToSeed.length > 0 || ownerMatrixUserId) {
+                      await publishSignalTeamNotice({
+                        client: matrixClient,
+                        roomId: canonicalRoomId,
+                        coherenceSlug,
+                        memberMatrixUserIds: teamIdsToSeed,
+                        ownerMatrixUserId,
+                        actorMatrixUserId: ownerMatrixUserId,
+                        addedMemberMatrixUserIds,
+                      });
+                    }
                   }
                 } catch (teamSeedError) {
                   console.warn(

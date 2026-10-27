@@ -9,6 +9,7 @@ import {
   isTrustedSignalTeamSender,
   readSignalTeamRosterFromEvents,
   rosterIdsIntersectSpaceMap,
+  unmappedPersonIds,
 } from '../../utils/signal-team-access';
 
 function messageEvent(
@@ -206,6 +207,18 @@ describe('signal-team-access', () => {
         },
       ),
     ).toBe(true);
+  });
+
+  it('lists assignees that are missing from the person→Matrix map', () => {
+    expect(
+      unmappedPersonIds([10, 20, 30], {
+        10: '@prod_privy_grok:example.org',
+        20: '  ',
+      }),
+    ).toEqual([20, 30]);
+    expect(
+      unmappedPersonIds([10], { 10: '@prod_privy_grok:example.org' }),
+    ).toEqual([]);
   });
 
   it('skips roster notices for a different signal slug', () => {
