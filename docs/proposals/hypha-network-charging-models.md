@@ -77,7 +77,7 @@ Illustrative card tiers (not live): Starter $12 / space / month, Team $29, Netwo
 | Step | Proposed behaviour |
 |---|---|
 | **Checkout** | Authenticated member or delegate starts Checkout / Portal. Success webhook activates `Subscription` and extends entitlement (§6) |
-| **Renewals** | Auto-charge. Processing `invoice.paid` **must be idempotent**: require a unique provider invoice or event key; record `Invoice` and extend space expiry (same add-days rule as `updateSpacePayment`) **atomically only on first processing**. Duplicate deliveries must not add another invoice or more access days |
+| **Renewals** | Auto-charge. Processing `invoice.paid` **must be idempotent** on a unique provider invoice or event key (duplicates must not add another invoice or more access days). Invoice lives in Postgres and expiry is on-chain (`SpacePaymentTracker`), so they cannot share one transaction: record the invoice as **pending**, extend expiry via an outbox/reconciliation step (same add-days rule as `updateSpacePayment`), store the chain tx hash, and mark the invoice **applied** only after that update is confirmed |
 | **Failed payments** | Grace (e.g. 7 days, **assumption**) → dunning via `sendEmailByAlias` (person `slug` = OneSignal `external_id`) → lapse. Mirror lapse so proposals and AI stop together |
 | **Plan changes** | Upgrade now + proration; downgrade at period end. Changing space = cancel + new Checkout |
 | **Cancellation** | At period end. Badge stays “active until {date}” |
@@ -130,7 +130,7 @@ Reuse `bank_customers` **shape** (XOR owner, provider ids only) — do not overl
 | Single space, single payer | `Allocation(space) = Invoice.total`; `Allocation(payer) = Invoice.total` as payer; consumers get $0 |
 | Parent invoice covering children | Weight by **child-months** (same idea as `allocateUsdByDuration` in `paying-spaces-timeline.ts`). Child *i*: `total * months_i / sum(months)` |
 | Equal member split | If membership count is 0, the full amount stays allocated to the space. Otherwise `Allocation(person) = LineItem.amount / count(memberships at period end)` — document the snapshot rule |
-| Seat pack | If `assigned_count` is 0, the full amount stays allocated to the space. Otherwise each assigned seat: `base_share = space_base / assigned_count`; unused seats stay on the space |
+| Seat pack | If `purchased_seats` (`Subscription.quantity`) is 0, the full amount stays allocated to the space. Otherwise each assigned seat gets `space_base / purchased_seats`; remainder `space_base * (purchased_seats - assigned_count) / purchased_seats` stays on the space (unused seats, including when `assigned_count` is 0) |
 | Usage add-on | `Allocation(person) = usage_line * (person_usage / space_usage)` |
 
 On-chain and card spend should share a **canonical USD number** in the ops dashboard (card: invoice total; chain: existing HYPHA/USDC conversion). Do not double-count if a card charge is later used to `payForSpaces`.
