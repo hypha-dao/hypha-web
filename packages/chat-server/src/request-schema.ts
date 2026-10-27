@@ -82,6 +82,11 @@ export const chatRequestSchema = z.object({
    * member are loaded server-side from `getMemberIntelligence`.
    */
   memberHome: z.boolean().optional(),
+  /**
+   * Left network panel for a member. Opportunities on the wider network that
+   * fit this person. Home keeps the personal queue.
+   */
+  networkOutlook: z.boolean().optional(),
   /** Choices remembered on this browser from earlier home visits. */
   memberHomeMemory: z
     .object({

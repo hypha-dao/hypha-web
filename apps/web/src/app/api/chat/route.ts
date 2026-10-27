@@ -106,6 +106,7 @@ export async function POST(req: Request) {
   const activeProposalFormSnapshot = parsed.data.activeProposalFormSnapshot;
   const locale = parsed.data.locale;
   const memberHome = parsed.data.memberHome === true;
+  const networkOutlook = parsed.data.networkOutlook === true;
   const memberHomeMemory = parsed.data.memberHomeMemory;
 
   if (spaceSlug?.trim()) {
@@ -141,6 +142,7 @@ export async function POST(req: Request) {
       onboardingWriteToolsEnabled,
       ecosystemAutomationEnabled,
       memberHome,
+      networkOutlook,
       memberHomeMemory,
     });
   } catch (error) {

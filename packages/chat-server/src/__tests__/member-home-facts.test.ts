@@ -6,7 +6,10 @@ vi.mock('server-only', () => ({}));
 
 import type { MemberIntelligence } from '@hypha-platform/core/client';
 
-import { formatMemberHomeFacts } from '../member-home-facts';
+import {
+  formatMemberHomeFacts,
+  formatNetworkOutlookFacts,
+} from '../member-home-facts';
 
 function formatMemberHomeFactsText(
   ...args: Parameters<typeof formatMemberHomeFacts>
@@ -548,5 +551,46 @@ describe('formatMemberHomeFacts', () => {
     expect(brief.text).toContain('Do not call any tool');
     expect(brief.text).not.toContain('Card on screen:');
     expect(brief.text).toContain('Noor');
+  });
+
+  it('offers one network opportunity and leaves the home queue alone', () => {
+    const brief = formatNetworkOutlookFacts({
+      ...home,
+      networkSignals: [
+        {
+          id: 3,
+          slug: 'orchard-talks',
+          title: 'Orchard interviews',
+          type: 'Opportunity',
+          description: 'First conversations with growers',
+          tags: [],
+          updatedAt: '2026-02-01T00:00:00.000Z',
+          spaceSlug: 'orchard',
+          spaceTitle: 'Orchard',
+          spaceDescription: null,
+          spaceLocation: 'Lisbon',
+          creatorId: 8,
+          creatorName: 'Marieke',
+          creatorAvatarUrl: null,
+          relevance: { score: 4, reasons: ['interest', 'location'] },
+        },
+      ],
+    });
+    expect(brief.text).toContain('Network outlook');
+    expect(brief.text).toContain('slug=orchard-talks');
+    expect(brief.text).toContain('Marieke');
+    expect(brief.text).toContain('reasons=interest,location');
+    expect(brief.text).toContain('close to what they care about');
+    expect(brief.text).not.toContain('slug=path');
+    expect(brief.card).toEqual({ kind: 'signal', slug: 'orchard-talks' });
+  });
+
+  it('does not invent a network opportunity when none fits', () => {
+    const brief = formatNetworkOutlookFacts(home);
+    expect(brief.card).toBeNull();
+    expect(brief.text).toContain(
+      'No opportunity on the network fits them right now',
+    );
+    expect(brief.text).not.toContain('slug=path');
   });
 });

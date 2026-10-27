@@ -21,7 +21,11 @@ import {
   mergeMemberHomeMemory,
   shownMemberHomeItemKeys,
 } from '@hypha-platform/core/client';
-import { formatMemberHomeFacts, memberHomeListAsk } from './member-home-facts';
+import {
+  formatMemberHomeFacts,
+  formatNetworkOutlookFacts,
+  memberHomeListAsk,
+} from './member-home-facts';
 import { loadMemberHomeFacts } from './load-member-home-facts';
 import {
   buildSpaceContextSnapshot,
@@ -1136,6 +1140,8 @@ export type ChatStreamCallbacks = {
   ecosystemAutomationEnabled?: boolean;
   /** Personal home: same Hypha AI voice, plus this member's records. */
   memberHome?: boolean;
+  /** Member left panel: one network opportunity that fits them, not the home queue. */
+  networkOutlook?: boolean;
   memberHomeMemory?: {
     passed?: string[];
     deferred?: string[];
@@ -1411,6 +1417,7 @@ export async function createChatStreamResult(
     ecosystemAutomationEnabled,
     locale,
     memberHome,
+    networkOutlook,
     memberHomeMemory,
   }: ChatStreamCallbacks,
 ): Promise<
@@ -1435,29 +1442,43 @@ export async function createChatStreamResult(
   const memberHomeLastUserText = memberHomeRecord
     ? extractLastUserText(messages)
     : null;
+  const memberHomeShown = memberHomeRecord
+    ? shownMemberHomeItemKeys(memberHomeItems, messages)
+    : [];
   const memberHomeBrief = memberHomeRecord
-    ? formatMemberHomeFacts(memberHomeRecord.home, {
-        alreadyShown: shownMemberHomeItemKeys(memberHomeItems, messages),
-        passed: memberHomeChoices?.passed,
-        deferred: memberHomeChoices?.deferred,
-        recalled: memberHomeMemoryFromMessages?.recalled,
-        settled: memberHomeChoices?.settled,
-        held: memberHomeMemoryFromMessages?.held,
-        acted: memberHomeMemory?.acted,
-        resumed: /carried out the recommended action/i.test(
-          memberHomeLastUserText ?? '',
-        ),
-        notADecision: /not a proposal|nothing to decide/i.test(
-          memberHomeLastUserText ?? '',
-        ),
-        asked: memberHomeLastUserText,
-        prior: extractLastAssistantText(messages),
-        attached: lastUserAttachedFile(messages),
-      })
+    ? networkOutlook
+      ? formatNetworkOutlookFacts(memberHomeRecord.home, {
+          alreadyShown: memberHomeShown,
+          passed: memberHomeChoices?.passed,
+          deferred: memberHomeChoices?.deferred,
+          settled: memberHomeChoices?.settled,
+          acted: memberHomeMemory?.acted,
+          asked: memberHomeLastUserText,
+        })
+      : formatMemberHomeFacts(memberHomeRecord.home, {
+          alreadyShown: memberHomeShown,
+          passed: memberHomeChoices?.passed,
+          deferred: memberHomeChoices?.deferred,
+          recalled: memberHomeMemoryFromMessages?.recalled,
+          settled: memberHomeChoices?.settled,
+          held: memberHomeMemoryFromMessages?.held,
+          acted: memberHomeMemory?.acted,
+          resumed: /carried out the recommended action/i.test(
+            memberHomeLastUserText ?? '',
+          ),
+          notADecision: /not a proposal|nothing to decide/i.test(
+            memberHomeLastUserText ?? '',
+          ),
+          asked: memberHomeLastUserText,
+          prior: extractLastAssistantText(messages),
+          attached: lastUserAttachedFile(messages),
+        })
     : null;
   const memberHomeFacts = memberHomeBrief?.text ?? null;
   const memberHomeCard = memberHomeBrief?.card ?? null;
-  const memberHomeList = memberHomeListAsk(memberHomeLastUserText);
+  const memberHomeList = networkOutlook
+    ? null
+    : memberHomeListAsk(memberHomeLastUserText);
   const modelMessages = await convertMessagesSafely(
     memberHomeRecord ? messages.slice(-8) : messages,
     debugRequestId,
@@ -1608,11 +1629,17 @@ export async function createChatStreamResult(
         ?.collectedFields ?? snapshotWalkthrough?.collectedFields,
   });
   const systemPrompt = memberHomeRecord
-    ? `${effectiveSystemPrompt}\n\nYou are Hypha, a friend in this community, speaking to this member at home. Use only the brief below. Write three or four short sentences, the way you would catch up a friend. Those sentences are read aloud word for word, so they must sound warm, unhurried, and human. Address them by first name. The person asking for attention is the subject, by first name, in the active voice. Say what the community needs, not what task to complete. Every name, number, and place must be written in the brief. Do not add one that is not. Never mention a card, a screen, or a button. Never sound like a checklist. ${
-        memberHomeList
-          ? 'The list they asked for is already on screen. Write at most two short sentences about that list, using the brief. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal. Do not think out loud.'
-          : 'Call show_member_home_item once for the one item in the brief unless this turn is a share or a visual request, then write the sentences. You may also call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not mention tools, slugs, or instructions. Do not call any other tool. Do not think out loud.'
-      }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
+    ? networkOutlook
+      ? `${effectiveSystemPrompt}\n\nYou are Hypha, a friend looking across the network with this member. This is the network outlook, not their home. Home already walks what needs them in the spaces they belong to. Here you offer one opportunity on the wider network that fits how they show up. Use only the brief below. Write three or four short sentences, warm and specific. Address them by first name. Name who raised the opportunity, the space, and why it fits this member. Every name and place must be written in the brief. Do not add one that is not. Do not walk their personal decisions, the people around them, or what is happening in their own spaces. Never mention a card, a screen, or a button. ${
+          memberHomeCard
+            ? 'Call show_member_home_item once for the one opportunity in the brief, then write the sentences. Do not call any other tool. Do not think out loud.'
+            : 'Nothing on the network fits them. One sentence. Do not call a tool. Do not invent an opportunity. Do not open something from their own spaces.'
+        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
+      : `${effectiveSystemPrompt}\n\nYou are Hypha, a friend in this community, speaking to this member at home. Use only the brief below. Write three or four short sentences, the way you would catch up a friend. Those sentences are read aloud word for word, so they must sound warm, unhurried, and human. Address them by first name. The person asking for attention is the subject, by first name, in the active voice. Say what the community needs, not what task to complete. Every name, number, and place must be written in the brief. Do not add one that is not. Never mention a card, a screen, or a button. Never sound like a checklist. ${
+          memberHomeList
+            ? 'The list they asked for is already on screen. Write at most two short sentences about that list, using the brief. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal. Do not think out loud.'
+            : 'Call show_member_home_item once for the one item in the brief unless this turn is a share or a visual request, then write the sentences. You may also call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not mention tools, slugs, or instructions. Do not call any other tool. Do not think out loud.'
+        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
     : normalizedConversationContext?.mode === 'onboarding_setup'
     ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
         normalizedConversationContext.setupPhase ?? 'discover'

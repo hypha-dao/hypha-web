@@ -604,3 +604,97 @@ export function formatMemberHomeFacts(
       : null;
   return { text, card };
 }
+
+function quoteFact(value: string | null | undefined) {
+  return (value ?? '').replace(/"/g, "'");
+}
+
+function networkFit(reasons: readonly string[]) {
+  const words = reasons.flatMap((reason) => {
+    if (reason === 'location') return ['near where they are'];
+    if (reason === 'interest') return ['close to what they care about'];
+    if (reason === 'experience') return ['close to work they already do'];
+    return [];
+  });
+  return words.join('; ') || 'shared with the network';
+}
+
+/**
+ * Left network panel. One opportunity outside the member's own spaces.
+ * Home keeps the personal queue.
+ */
+export function formatNetworkOutlookFacts(
+  home: MemberIntelligence,
+  options?: {
+    alreadyShown?: readonly string[];
+    passed?: readonly string[];
+    deferred?: readonly string[];
+    settled?: readonly string[];
+    acted?: readonly string[];
+    asked?: string | null;
+  },
+): { text: string; card: { kind: string; slug: string } | null } {
+  const bySlug = new Map(
+    (home.networkSignals ?? []).flatMap((signal) =>
+      signal.slug ? [[signal.slug, signal] as const] : [],
+    ),
+  );
+  const closed = new Set(
+    [
+      ...(options?.alreadyShown ?? []),
+      ...(options?.passed ?? []),
+      ...(options?.deferred ?? []),
+      ...(options?.settled ?? []),
+      ...(options?.acted ?? []),
+    ]
+      .map((key) => key.trim())
+      .filter(Boolean),
+  );
+  const open = listMemberHomeThreadCatalog(home).filter((item) => {
+    if (item.kind !== 'signal' || !item.slug || !bySlug.has(item.slug)) {
+      return false;
+    }
+    return !closed.has(memberHomeThreadItemKey(item));
+  });
+  const asked = options?.asked?.trim()
+    ? memberHomeThreadItemForMessage(open, { content: options.asked })
+    : null;
+  const chosen = asked ?? open[0] ?? null;
+  const signal = chosen?.slug ? bySlug.get(chosen.slug) : undefined;
+  const first = givenName(home.person);
+  const line =
+    signal && chosen
+      ? `kind=signal slug=${
+          signal.slug ?? ''
+        } reasons=${signal.relevance.reasons.join(',')} fit="${quoteFact(
+          networkFit(signal.relevance.reasons),
+        )}" title="${quoteFact(signal.title)}" summary="${quoteFact(
+          signal.description,
+        )}" space="${quoteFact(signal.spaceTitle)}" creator="${quoteFact(
+          signal.creatorName,
+        )}"`
+      : null;
+  const text = [
+    'Network outlook for this signed-in member. This is not their home. Home already covers decisions, people, and activity in the spaces they belong to. Here the subject is one opportunity on the wider network that fits them.',
+    'LENGTH: three or four short sentences, then stop. Never a list. Never a second opportunity.',
+    'Say who raised it, by the first name in creator=, the space, and why it fits. fit= is the reason, in ordinary words. Use only facts on the opportunity line. Do not invent a person, a space, a need, or a reason.',
+    'Do not ask where they can be useful in their own spaces. Do not ask who is around them. Do not ask what needs their decision. Do not describe their home.',
+    `Person: ${personName(
+      home.person,
+    )}. First name: ${first}. Address them as ${first}.`,
+    line
+      ? `Opportunity for this reply. Call show_member_home_item once with this kind and slug. Do not name another:\n${line}`
+      : 'No opportunity on the network fits them right now. One sentence. Do not invent one. Do not open a proposal or a signal from their own spaces. Do not call show_member_home_item.',
+    line && open.length > 1
+      ? `${
+          open.length - 1
+        } more opportunities fit them. Withhold them. One at a time.`
+      : null,
+  ]
+    .filter((entry): entry is string => Boolean(entry))
+    .join('\n');
+  return {
+    text,
+    card: chosen?.slug ? { kind: chosen.kind, slug: chosen.slug } : null,
+  };
+}

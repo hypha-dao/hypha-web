@@ -910,8 +910,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       prompt: t(`suggestions.${id}`),
       tagLabel: t(`suggestionTags.${id}`),
     });
-    // Member surfaces speak to the person and their persona. Space and the
-    // interactive create screen keep the space prompts below.
+    // Member surfaces: the left panel is the network outlook. Home keeps the
+    // personal prompts. Builder and funder keep their own network prompts.
     if (isMemberAiSurface) {
       const orientation = me?.primaryOrientation;
       const ids =
@@ -1452,6 +1452,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           ? {
               ...body,
               memberHome: true,
+              // Member left panel is the network outlook. Home keeps the
+              // personal queue. Builder and funder prompts stay on their own.
+              ...(me?.primaryOrientation === 'builder' ||
+              me?.primaryOrientation === 'investor'
+                ? {}
+                : { networkOutlook: true }),
               memberHomeMemory: {
                 ...readHomeChoices(),
                 acted: readHomeActed(),
@@ -1469,6 +1475,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       isOnboardingPath,
       isOnboardingSetup,
       lang,
+      me?.primaryOrientation,
       onboardingContext,
       pathname,
       spaceSlug,
