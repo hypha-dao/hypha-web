@@ -427,14 +427,28 @@ async function loadOutsideCreatorPeers(
         return;
       }
       if (web3SpaceIds.length === 0) return;
-      const membersBySpace = await Promise.all(
-        web3SpaceIds.map(async (web3SpaceId) => {
-          const addresses = (await web3Client.readContract(
+      let membersBySpace: Array<{
+        spaceId: number;
+        addresses: readonly `0x${string}`[];
+      }> = [];
+      try {
+        const results = await web3Client.multicall({
+          allowFailure: true,
+          contracts: web3SpaceIds.map((web3SpaceId) =>
             getSpaceMembers({ spaceId: BigInt(web3SpaceId) }),
-          )) as readonly `0x${string}`[];
+          ),
+        });
+        membersBySpace = web3SpaceIds.map((web3SpaceId, index) => {
+          const result = results[index];
+          const addresses =
+            result?.status === 'success' && Array.isArray(result.result)
+              ? (result.result as readonly `0x${string}`[])
+              : [];
           return { spaceId: web3SpaceId, addresses };
-        }),
-      );
+        });
+      } catch (error) {
+        console.error('[getMemberIntelligence] creator roster failed', error);
+      }
       const addressKeys = new Set<string>();
       for (const space of membersBySpace) {
         for (const address of space.addresses) {
@@ -688,10 +702,19 @@ async function readSlice<T>(
   read: () => Promise<T>,
   fallback: NoInfer<T>,
 ): Promise<T> {
+  const started = Date.now();
   try {
-    return await read();
+    const value = await read();
+    const ms = Date.now() - started;
+    if (ms >= 500) {
+      console.info(`[getMemberIntelligence] ${label} ${ms}ms`);
+    }
+    return value;
   } catch (error) {
-    console.error(`[getMemberIntelligence] ${label} failed`, error);
+    console.error(
+      `[getMemberIntelligence] ${label} failed after ${Date.now() - started}ms`,
+      error,
+    );
     return fallback;
   }
 }
@@ -1112,11 +1135,17 @@ export async function getMemberIntelligence(
     limit = LIST_LIMIT,
     connectionLimit,
     connectionQuery,
+    scope = 'full',
   }: {
     personId: number;
     limit?: number;
     connectionLimit?: number;
     connectionQuery?: string;
+    /**
+     * `shell` returns spaces, proposals, and signals without the chain
+     * roster, vote checks, or creator captions. Home paints that first.
+     */
+    scope?: 'shell' | 'full';
   },
   { db }: DbConfig,
 ): Promise<MemberIntelligence | null> {
@@ -1156,16 +1185,17 @@ export async function getMemberIntelligence(
   ]);
   const spaceIds = spaceRows.map((space) => space.id);
   const orientation = parseMemberOrientation(primaryOrientation);
-  const rosterPromise = readSlice(
-    'roster',
-    () => loadMemberRosterBundle(spaceIds, { db }),
-    null,
-  );
-  const expiringSpacesPromise = readSlice(
-    'expiring-spaces',
-    () => loadMemberSpacesAboutToExpire(spaceRows),
-    [],
-  );
+  const shell = scope === 'shell';
+  const rosterPromise = shell
+    ? Promise.resolve(null)
+    : readSlice('roster', () => loadMemberRosterBundle(spaceIds, { db }), null);
+  const expiringSpacesPromise = shell
+    ? Promise.resolve([])
+    : readSlice(
+        'expiring-spaces',
+        () => loadMemberSpacesAboutToExpire(spaceRows),
+        [],
+      );
   const invitesPromise = readSlice(
     'invites',
     () =>
@@ -1519,13 +1549,39 @@ export async function getMemberIntelligence(
   );
   const networkTypes = signalTypesForOrientation(orientation);
   const networkAllowedPromise =
-    networkTypes.length === 0
+    shell || networkTypes.length === 0
       ? Promise.resolve(false)
       : readSlice(
           'networkAccess',
           () => spaceActivityIsOpen(spaceRows, spaceIds, { db }),
           false,
         );
+  // Vote reads only need the proposal ids. Start them with the roster
+  // instead of after connections, the way the wallet batches token reads
+  // with the other fetches.
+  const listedVoteIdsPromise = shell
+    ? Promise.resolve([] as number[])
+    : proposalSlicePromise.then((slice) =>
+        openChainProposalIds(slice.proposals),
+      );
+  const votedListedPromise = shell
+    ? Promise.resolve(new Set<number>())
+    : listedVoteIdsPromise.then((ids) =>
+        readSlice(
+          'memberVotes',
+          () => proposalIdsAlreadyVoted(person.address, ids),
+          new Set<number>(),
+        ),
+      );
+  const closedListedPromise = shell
+    ? Promise.resolve(new Map<number, ClosedProposalOutcome>())
+    : listedVoteIdsPromise.then((ids) =>
+        readSlice(
+          'proposalExpiry',
+          () => readClosedProposals(ids),
+          new Map<number, ClosedProposalOutcome>(),
+        ),
+      );
 
   const [
     proposalSlice,
@@ -1613,16 +1669,6 @@ export async function getMemberIntelligence(
       : [],
   );
   const listedChainIds = openChainProposalIds(proposalSlice.proposals);
-  const votedListedPromise = readSlice(
-    'memberVotes',
-    () => proposalIdsAlreadyVoted(person.address, listedChainIds),
-    new Set<number>(),
-  );
-  const closedListedPromise = readSlice(
-    'proposalExpiry',
-    () => readClosedProposals(listedChainIds),
-    new Map<number, ClosedProposalOutcome>(),
-  );
   const seenSliceCreators = new Set<number>();
   const sliceOutsideCreators = [
     ...proposalSlice.creators,
@@ -1637,11 +1683,13 @@ export async function getMemberIntelligence(
     seenSliceCreators.add(creator.id);
     return Boolean(creator.address);
   });
-  const outsidePeersPromise = readSlice(
-    'creatorPeers',
-    () => loadOutsideCreatorPeers(sliceOutsideCreators, personId, { db }),
-    {} as Record<number, string[]>,
-  );
+  const outsidePeersPromise = shell
+    ? Promise.resolve({} as Record<number, string[]>)
+    : readSlice(
+        'creatorPeers',
+        () => loadOutsideCreatorPeers(sliceOutsideCreators, personId, { db }),
+        {} as Record<number, string[]>,
+      );
   const missingProposals =
     missingProposalSlugs.length === 0
       ? []
@@ -1708,14 +1756,14 @@ export async function getMemberIntelligence(
     await Promise.all([
       votedListedPromise,
       closedListedPromise,
-      extraChainIds.length === 0
+      extraChainIds.length === 0 || shell
         ? Promise.resolve(new Set<number>())
         : readSlice(
             'memberVotes',
             () => proposalIdsAlreadyVoted(person.address, extraChainIds),
             new Set<number>(),
           ),
-      extraChainIds.length === 0
+      extraChainIds.length === 0 || shell
         ? Promise.resolve(new Map<number, ClosedProposalOutcome>())
         : readSlice(
             'proposalExpiry',
@@ -1850,7 +1898,7 @@ export async function getMemberIntelligence(
   );
   const [outsidePeers, extraOutsidePeers] = await Promise.all([
     outsidePeersPromise,
-    extraCreators.length === 0
+    extraCreators.length === 0 || shell
       ? Promise.resolve({} as Record<number, string[]>)
       : readSlice(
           'creatorPeers',
@@ -1923,6 +1971,7 @@ export async function getMemberIntelligence(
     expiringSpaces,
     invites,
     movement,
+    ...(shell ? { partial: true as const } : {}),
   };
 }
 

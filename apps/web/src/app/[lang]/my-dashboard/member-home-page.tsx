@@ -91,24 +91,16 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     Boolean(tokenOwner) &&
     tokenOwner === memberId &&
     (Boolean(jwt) || keepHomeKey.current);
-  const {
-    data,
-    error,
-    isLoading: isLoadingHome,
-    mutate,
-  } = useSWR<MemberIntelligence | null>(
-    // The token string rotates. Keying on it dropped the cached home, unmounted
-    // the assistant, and started a new turn a few seconds later. useJwt can
-    // keep the previous member's token via keepPreviousData — only fetch when
-    // that token's sub matches the current member.
-    homeKeyReady
-      ? (['/api/v1/people/me/intelligence', memberId] as const)
-      : null,
-    async ([url]: readonly [string, string]) => {
+  const fetchHome = useCallback(
+    async (scope: 'shell' | 'full') => {
       const token = jwtRef.current;
       if (!token || jwtOwnerRef.current !== memberId) {
         throw new Error('Access token not ready');
       }
+      const url =
+        scope === 'shell'
+          ? '/api/v1/people/me/intelligence?scope=shell'
+          : '/api/v1/people/me/intelligence';
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store',
@@ -120,16 +112,52 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
       }
       return (await response.json()) as MemberIntelligence;
     },
+    [memberId],
+  );
+  const {
+    data: shell,
+    error: shellError,
+    isLoading: isLoadingShell,
+  } = useSWR<MemberIntelligence | null>(
+    // The token string rotates. Keying on it dropped the cached home, unmounted
+    // the assistant, and started a new turn a few seconds later. useJwt can
+    // keep the previous member's token via keepPreviousData — only fetch when
+    // that token's sub matches the current member.
+    // Shell is the wallet pattern: spaces, proposals, and the chat, without
+    // waiting for the chain roster and vote reads.
+    homeKeyReady
+      ? (['/api/v1/people/me/intelligence', memberId, 'shell'] as const)
+      : null,
+    () => fetchHome('shell'),
     {
-      refreshInterval: 10_000,
-      revalidateOnFocus: true,
-      // Key is the Privy member id, so token rotation keeps the cache. A
-      // different member must not inherit the previous Home payload.
+      revalidateOnFocus: false,
+      refreshInterval: 0,
       keepPreviousData: false,
       isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
       compare: sameMemberHome,
     },
   );
+  const {
+    data: full,
+    error: fullError,
+    isLoading: isLoadingFull,
+    mutate,
+  } = useSWR<MemberIntelligence | null>(
+    homeKeyReady && shell
+      ? (['/api/v1/people/me/intelligence', memberId, 'full'] as const)
+      : null,
+    () => fetchHome('full'),
+    {
+      refreshInterval: 10_000,
+      revalidateOnFocus: true,
+      keepPreviousData: false,
+      isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
+      compare: sameMemberHome,
+    },
+  );
+  const data = full === undefined ? shell : full;
+  const error = data ? null : shellError ?? fullError;
+  const isLoadingHome = !data && (isLoadingShell || isLoadingFull);
 
   useEffect(() => {
     let timer = 0;
@@ -336,7 +364,9 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   return (
     <MemberHome
       lang={lang}
-      intelligence={data}
+      intelligence={
+        fullError && data.partial ? { ...data, partial: false } : data
+      }
       isSavingOrientation={isSavingOrientation}
       orientationError={orientationError}
       onChooseOrientation={(orientation) => {

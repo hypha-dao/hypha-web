@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
     const requested =
       rawConnections == null ? undefined : Number(rawConnections);
     const connectionQuery = request.nextUrl.searchParams.get('q')?.trim();
+    const scope =
+      request.nextUrl.searchParams.get('scope') === 'shell' ? 'shell' : 'full';
     let deadlineTimer: ReturnType<typeof setTimeout> | undefined;
     const intelligence = await Promise.race([
       getMemberIntelligence(
@@ -39,6 +41,7 @@ export async function GET(request: NextRequest) {
           connectionQuery: connectionQuery
             ? connectionQuery.slice(0, 80)
             : undefined,
+          scope,
         },
         { db: caller.db },
       ).finally(() => {

@@ -394,7 +394,7 @@ export function MemberHome({
                     <Stat
                       label={t('counts.people')}
                       value={home?.counts.connections ?? 0}
-                      isLoading={railsBusy}
+                      isLoading={railsBusy || Boolean(home?.partial)}
                     />
                   </dl>
                 </div>
@@ -538,12 +538,24 @@ export function MemberHome({
                   </div>
                 ) : (
                   <>
-                    <MemberHomeClosest
-                      lang={lang}
-                      people={home.connections}
-                      fallbackName={memberFallback}
-                      onOpenChat={openChat}
-                    />
+                    {home.partial ? (
+                      <div className="mt-2 flex gap-2" aria-hidden>
+                        {Array.from({ length: 5 }, (_, index) => (
+                          <HomePulse
+                            key={index}
+                            className="h-8 w-8 rounded-full"
+                            delayMs={index * 70}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <MemberHomeClosest
+                        lang={lang}
+                        people={home.connections}
+                        fallbackName={memberFallback}
+                        onOpenChat={openChat}
+                      />
+                    )}
                     <MemberHomePeople
                       people={home.connections}
                       chatSpaceSlug={home.chatSpaceSlug}
