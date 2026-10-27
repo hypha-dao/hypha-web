@@ -50,7 +50,10 @@ import {
   type HomeView,
 } from './member-home-view';
 import { useConversationUnreadCount } from './my-connections';
-import { shouldShowMessagesAndSpacesNav } from './app-nav-visibility';
+import {
+  shouldShowMessagesNav,
+  shouldShowSpacesScreen,
+} from './app-nav-visibility';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
 
 const OPEN_MOBILE_CREATE = 'hypha:open-mobile-create';
@@ -155,9 +158,9 @@ export function MobileTabBar({
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { person } = useMe();
-  const showMessagesAndSpaces = shouldShowMessagesAndSpacesNav(
-    person?.primaryOrientation,
-  );
+  const showMessages = shouldShowMessagesNav(person?.primaryOrientation);
+  const showSpaces = shouldShowSpacesScreen(person?.primaryOrientation);
+  const appTabCount = 3 + Number(showMessages) + Number(showSpaces);
   const onHome =
     pathname === `/${lang}/my-dashboard` ||
     pathname === `/${lang}/my-dashboard/` ||
@@ -554,9 +557,7 @@ export function MobileTabBar({
             className="mx-auto grid max-w-lg items-end px-1"
             style={{
               height: TAB_BAR_PX,
-              gridTemplateColumns: showMessagesAndSpaces
-                ? 'repeat(5, minmax(0, 1fr))'
-                : 'repeat(3, minmax(0, 1fr))',
+              gridTemplateColumns: `repeat(${appTabCount}, minmax(0, 1fr))`,
             }}
           >
             <TabLink
@@ -566,7 +567,7 @@ export function MobileTabBar({
               onClick={() => setCreateOpen(false)}
               icon={<House className={iconClass} strokeWidth={1.25} />}
             />
-            {showMessagesAndSpaces ? (
+            {showMessages ? (
               <TabLink
                 href={connectionsHref}
                 label={t('chat')}
@@ -588,7 +589,7 @@ export function MobileTabBar({
                 <Wallet className="block h-5 w-5 shrink-0" strokeWidth={1.25} />
               }
             />
-            {showMessagesAndSpaces ? (
+            {showSpaces ? (
               <TabLink
                 href={spacesHref}
                 label={t('mySpaces')}

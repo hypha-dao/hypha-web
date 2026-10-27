@@ -19,7 +19,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import type { Locale } from '@hypha-platform/i18n';
-import type { MemberIntelligence } from '@hypha-platform/core/client';
+import { useMe, type MemberIntelligence } from '@hypha-platform/core/client';
 
 import {
   readRecentSpaceSlugs,
@@ -163,6 +163,8 @@ export function MemberHomeSpacesRail({
   layout?: 'column' | 'row';
 }) {
   const t = useTranslations('MemberHome');
+  const { person } = useMe();
+  const hideSpacesListing = person?.primaryOrientation === 'member';
   const { resolvedTheme } = useTheme();
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const row = layout === 'row';
@@ -207,26 +209,30 @@ export function MemberHomeSpacesRail({
             ))}
           </>
         ) : spaceCount === 0 ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href={`/${lang}/my-spaces`}
-                aria-label={t('openMySpaces')}
-                className={cn(
-                  'grid place-items-center rounded-full border border-dashed border-border text-neutral-11',
-                  'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                )}
-                style={{ width: RAIL_ICON, height: RAIL_ICON }}
-              >
-                <LayoutGrid
-                  className="h-3.5 w-3.5"
-                  strokeWidth={1.5}
-                  aria-hidden
-                />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side={tipSide}>{t('openMySpaces')}</TooltipContent>
-          </Tooltip>
+          hideSpacesListing ? null : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href={`/${lang}/my-spaces`}
+                  aria-label={t('openMySpaces')}
+                  className={cn(
+                    'grid place-items-center rounded-full border border-dashed border-border text-neutral-11',
+                    'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  )}
+                  style={{ width: RAIL_ICON, height: RAIL_ICON }}
+                >
+                  <LayoutGrid
+                    className="h-3.5 w-3.5"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side={tipSide}>
+                {t('openMySpaces')}
+              </TooltipContent>
+            </Tooltip>
+          )
         ) : (
           <>
             {ecosystemGroups.map((group, groupIndex) => (
@@ -295,29 +301,31 @@ export function MemberHomeSpacesRail({
                 })}
               </div>
             ))}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href={`/${lang}/my-spaces`}
-                  aria-label={t('openMySpaces')}
-                  className={cn(
-                    'grid shrink-0 place-items-center rounded-full border border-border text-neutral-11',
-                    'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                    row ? null : 'mt-1',
-                  )}
-                  style={{ width: RAIL_ICON, height: RAIL_ICON }}
-                >
-                  <LayoutGrid
-                    className="h-3.5 w-3.5"
-                    strokeWidth={1.5}
-                    aria-hidden
-                  />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side={tipSide}>
-                {t('openMySpaces')}
-              </TooltipContent>
-            </Tooltip>
+            {hideSpacesListing ? null : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={`/${lang}/my-spaces`}
+                    aria-label={t('openMySpaces')}
+                    className={cn(
+                      'grid shrink-0 place-items-center rounded-full border border-border text-neutral-11',
+                      'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                      row ? null : 'mt-1',
+                    )}
+                    style={{ width: RAIL_ICON, height: RAIL_ICON }}
+                  >
+                    <LayoutGrid
+                      className="h-3.5 w-3.5"
+                      strokeWidth={1.5}
+                      aria-hidden
+                    />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side={tipSide}>
+                  {t('openMySpaces')}
+                </TooltipContent>
+              </Tooltip>
+            )}
           </>
         )}
       </nav>

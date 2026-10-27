@@ -6,8 +6,7 @@ import {
   UserAssetsSection,
   UserTransactionsSection,
 } from '@hypha-platform/epics';
-import Link from 'next/link';
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
+import { ProfileBackLink } from '@web/components/profile-back-link';
 import { Text } from '@radix-ui/themes';
 import { Container } from '@hypha-platform/ui';
 import { useMe } from '@hypha-platform/core/client';
@@ -22,7 +21,6 @@ import {
 import { useTranslations } from 'next-intl';
 
 export default function Profile() {
-  const tNav = useTranslations('Navigation');
   const tProfile = useTranslations('Profile');
   const tCommon = useTranslations('Common');
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
@@ -51,13 +49,7 @@ export default function Profile() {
   return (
     <Container className="flex flex-col space-y-6 py-4">
       <div className="flex items-center">
-        <Link
-          href={`/${lang}/my-spaces`}
-          className="cursor-pointer flex items-center"
-        >
-          <ChevronLeftIcon width={16} height={16} />
-          <Text className="text-sm">{tNav('mySpaces')}</Text>
-        </Link>
+        <ProfileBackLink lang={String(lang)} />
         <Text className="text-sm text-neutral-11 ml-1">
           / {tProfile('profilePage')}
         </Text>

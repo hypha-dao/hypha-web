@@ -1,14 +1,19 @@
 /**
- * App chrome (desktop profile nav + mobile tab bar) shows Messages and Spaces
- * for member/builder. Investors only get Home · Wallet · Network.
+ * Messages stays in the app chrome for everyone except investors.
+ * The spaces screen stays for everyone except investors and members.
  */
-export function shouldShowMessagesAndSpacesNav(
-  orientation: string | null | undefined,
-) {
+export function shouldShowMessagesNav(orientation: string | null | undefined) {
   return orientation !== 'investor';
 }
 
-export function isMessagesOrSpacesNavHref(href: string | undefined) {
-  if (!href) return false;
-  return href.includes('/messages') || href.includes('/my-spaces');
+export function shouldShowSpacesScreen(orientation: string | null | undefined) {
+  return orientation !== 'investor' && orientation !== 'member';
+}
+
+export function isMessagesNavHref(href: string | undefined) {
+  return Boolean(href?.includes('/messages'));
+}
+
+export function isSpacesNavHref(href: string | undefined) {
+  return Boolean(href?.includes('/my-spaces'));
 }

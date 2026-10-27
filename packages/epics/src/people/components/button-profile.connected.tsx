@@ -34,8 +34,10 @@ import {
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
 import {
-  isMessagesOrSpacesNavHref,
-  shouldShowMessagesAndSpacesNav,
+  isMessagesNavHref,
+  isSpacesNavHref,
+  shouldShowMessagesNav,
+  shouldShowSpacesScreen,
 } from './app-nav-visibility';
 
 type ConnectedButtonProfileProps = {
@@ -213,10 +215,16 @@ export const ConnectedButtonProfile = ({
   };
 
   const visibleNavItems = useMemo(() => {
-    if (shouldShowMessagesAndSpacesNav(person?.primaryOrientation)) {
-      return navItems;
-    }
-    return navItems.filter((item) => !isMessagesOrSpacesNavHref(item.href));
+    const orientation = person?.primaryOrientation;
+    return navItems.filter((item) => {
+      if (isMessagesNavHref(item.href) && !shouldShowMessagesNav(orientation)) {
+        return false;
+      }
+      if (isSpacesNavHref(item.href) && !shouldShowSpacesScreen(orientation)) {
+        return false;
+      }
+      return true;
+    });
   }, [navItems, person?.primaryOrientation]);
 
   return (

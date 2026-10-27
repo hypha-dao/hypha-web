@@ -6,8 +6,7 @@ import {
   ProfileMemberSpaces,
   ProfilePageParams,
 } from '@hypha-platform/epics';
-import Link from 'next/link';
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
+import { ProfileBackLink } from '@web/components/profile-back-link';
 import { Text } from '@radix-ui/themes';
 import { Container, Separator } from '@hypha-platform/ui';
 import React from 'react';
@@ -41,7 +40,6 @@ export default async function ProfilePage(props: PageProps) {
   const params = await props.params;
 
   const { lang, personSlug: personSlugRaw } = params;
-  const tNav = await getTranslations('Navigation');
   const tProfile = await getTranslations('Profile');
   const personSlug = tryDecodeUriPart(personSlugRaw);
 
@@ -80,13 +78,7 @@ export default async function ProfilePage(props: PageProps) {
         />
       ) : null}
       <div className="mb-6 flex items-center w-full">
-        <Link
-          href={`/${lang}/my-spaces`}
-          className="cursor-pointer flex items-center"
-        >
-          <ChevronLeftIcon width={16} height={16} />
-          <Text className="text-sm">{tNav('mySpaces')}</Text>
-        </Link>
+        <ProfileBackLink lang={lang} />
         <Text className="text-sm text-neutral-11 ml-1">
           / {tProfile('profilePage')}
         </Text>

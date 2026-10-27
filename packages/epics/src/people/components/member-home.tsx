@@ -592,8 +592,6 @@ export function MemberHome({
               <PersonaCard
                 title={t('memberTitle')}
                 body={t('memberBody')}
-                action={t('memberAction')}
-                href={`/${lang}/my-spaces`}
                 meta={t('memberCount', { count: home.counts.spaces })}
               />
             ) : null}
@@ -1247,8 +1245,8 @@ function PersonaCard({
 }: {
   title: string;
   body: string;
-  action: string;
-  href: string;
+  action?: string;
+  href?: string;
   meta?: string;
 }) {
   return (
@@ -1263,9 +1261,11 @@ function PersonaCard({
         {body}
       </p>
       {meta ? <p className="mt-2 text-1 text-neutral-11">{meta}</p> : null}
-      <Button asChild className="mt-4 w-full text-sm">
-        <Link href={href}>{action}</Link>
-      </Button>
+      {action && href ? (
+        <Button asChild className="mt-4 w-full text-sm">
+          <Link href={href}>{action}</Link>
+        </Button>
+      ) : null}
     </section>
   );
 }
