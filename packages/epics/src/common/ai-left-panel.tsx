@@ -479,10 +479,16 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     spaceSlug?.trim() || (isMemberAiSurface ? 'member' : undefined);
 
   useEffect(() => {
-    setMicOn(readSpaceVoiceOn(voicePrefSlug, 'mic'));
+    // Member screens keep the mic off until the person asks to talk. An open
+    // mic was aborting replies that were still streaming.
+    setMicOn(
+      readSpaceVoiceOn(voicePrefSlug, 'mic', {
+        defaultOn: !isMemberAiSurface,
+      }),
+    );
     setSoundOn(readSpaceVoiceOn(voicePrefSlug, 'sound'));
     setVoiceReady(true);
-  }, [voicePrefSlug]);
+  }, [isMemberAiSurface, voicePrefSlug]);
 
   const conversationOpen =
     isAiOpen &&
@@ -1330,7 +1336,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         activeSpaceTitle: activeSpaceName,
         onboardingContext: activeContext,
         isOnboardingPath,
-        discoveryMode: isVoiceInterview ? 'voice_interview' : undefined,
+        // Member screens read the bubble aloud. Space and interactive create
+        // keep the live voice interview path.
+        discoveryMode:
+          isVoiceInterview && !isMemberAiSurface
+            ? 'voice_interview'
+            : undefined,
         activeProposalFormSnapshot: readActiveProposalFormSnapshot(pathname),
         locale: lang,
       });
@@ -1339,6 +1350,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [
       activeSpaceName,
       getAccessToken,
+      isMemberAiSurface,
       isVoiceInterview,
       isOnboardingPath,
       isOnboardingSetup,
@@ -2921,15 +2933,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     };
   }, [handleOnboardingVotingMethodSelect, isStreaming, onboardingContext]);
 
-  const lastAssistantText = useMemo(() => {
+  const lastAssistantMessage = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i -= 1) {
-      const text = extractAssistantTextFromMessage(
-        messages[i] as ChatUIMessage,
-      );
-      if (text) return text;
+      const message = messages[i] as ChatUIMessage | undefined;
+      const text = extractAssistantTextFromMessage(message);
+      if (text && message) return message;
     }
-    return '';
+    return null;
   }, [messages]);
+  const lastAssistantText = lastAssistantMessage
+    ? extractAssistantTextFromMessage(lastAssistantMessage)
+    : '';
+  const lastAssistantMessageId = lastAssistantMessage?.id ?? '';
 
   const handleVoiceTranscriptSend = useCallback(
     async (text: string) => {
@@ -3034,16 +3049,22 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     enabled: isVoiceInterview && !isLoading && isAuthenticated,
     isStreaming,
     lastAssistantText,
+    lastAssistantMessageId,
     locale: lang,
     activeSpaceSlug: voicePrefSlug,
     conversationContext: voiceSessionContext,
-    recentTranscriptSummary,
+    recentTranscriptSummary: isMemberAiSurface
+      ? undefined
+      : recentTranscriptSummary,
     getAccessToken,
-    onStopChat: stop,
+    // An open mic must not cancel a member-panel reply that is still writing.
+    onStopChat: isMemberAiSurface ? undefined : stop,
     onSendTranscript: handleVoiceTranscriptSend,
     onTranscriptTurn: handleVoiceTranscriptTurn,
     captureMicrophone: micOn,
     speakReplies: soundOn,
+    speakEarlyLeadIn: !isMemberAiSurface,
+    speakDisplayedText: isMemberAiSurface,
   });
 
   const toggleSound = useCallback(() => {

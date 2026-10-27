@@ -45,15 +45,20 @@ const VOICE_SOUND_KEY_PREFIX = 'hypha:ai-panel-voice-sound:v1:';
 export function readSpaceVoiceOn(
   spaceSlug: string | undefined,
   kind: 'mic' | 'sound',
+  options?: { defaultOn?: boolean },
 ): boolean {
+  const defaultOn = options?.defaultOn !== false;
   const slug = normalizeSpaceSlug(spaceSlug);
-  if (!slug || typeof window === 'undefined') return true;
+  if (!slug || typeof window === 'undefined') return defaultOn;
   try {
     const prefix =
       kind === 'mic' ? VOICE_MIC_KEY_PREFIX : VOICE_SOUND_KEY_PREFIX;
-    return window.localStorage.getItem(`${prefix}${slug}`) !== 'off';
+    const stored = window.localStorage.getItem(`${prefix}${slug}`);
+    if (stored === 'on') return true;
+    if (stored === 'off') return false;
+    return defaultOn;
   } catch {
-    return true;
+    return defaultOn;
   }
 }
 
