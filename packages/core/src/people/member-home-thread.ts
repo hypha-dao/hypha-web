@@ -1175,3 +1175,266 @@ export function shownMemberHomeItemKeys(
   }
   return keys;
 }
+
+export type MemberHomeDirectAsk =
+  | 'people'
+  | 'spaces'
+  | 'tokens'
+  | 'decision'
+  | 'useful';
+
+export type MemberHomeDirectLine =
+  | { key: 'people'; name: string; count: number }
+  | { key: 'peopleEmpty' }
+  | { key: 'space'; space: string }
+  | { key: 'spaceEmpty' }
+  | { key: 'tokens'; name: string }
+  | { key: 'tokensEmpty' }
+  | { key: 'decisionOpen'; title: string; space: string }
+  | { key: 'decisionListed'; title: string; space: string }
+  | { key: 'decisionQuiet' }
+  | { key: 'itemOpen'; title: string; space: string }
+  | { key: 'usefulQuiet' };
+
+/** A chip the screen already answered. Null means the model may speak. */
+export type MemberHomeDirectReply = {
+  ask: MemberHomeDirectAsk;
+  widget: 'people' | 'spaces' | 'tokens' | null;
+  item: { kind: MemberHomeCardKind; slug: string } | null;
+  line: MemberHomeDirectLine;
+};
+
+const DIRECT_PHRASES: Record<MemberHomeDirectAsk, readonly string[]> = {
+  people: [
+    'who is around',
+    "who's around",
+    'who are around',
+    'who should i connect with',
+    'quién está cerca',
+    'qui est là',
+    'quem está por perto',
+    'wer ist da',
+    'wie is er in de buurt',
+    'hvem er i nærheten',
+    'кој е во близина',
+  ],
+  spaces: [
+    'step into a space',
+    'entrar en un espacio',
+    'entrer dans un espace',
+    'entrar num espaço',
+    'einen space betreten',
+    'stap een space binnen',
+    'gå inn i et rom',
+    'влези во простор',
+  ],
+  tokens: [
+    'send someone tokens',
+    'enviar tokens a alguien',
+    'envoyer des tokens à quelqu’un',
+    "envoyer des tokens à quelqu'un",
+    'enviar tokens a alguém',
+    'jemandem token senden',
+    'iemand tokens sturen',
+    'send tokens til noen',
+    'испрати токени на некого',
+  ],
+  decision: ['what needs a decision'],
+  useful: ['where can i be useful', 'i am on my home'],
+};
+
+function foldDirectAsk(text: string) {
+  let chip = text
+    .trim()
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/\s+/g, ' ');
+  while (chip.startsWith('¿') || chip.startsWith('¡')) chip = chip.slice(1);
+  while (chip.endsWith('.') || chip.endsWith('!') || chip.endsWith('?')) {
+    chip = chip.slice(0, -1);
+  }
+  return chip.trim();
+}
+
+function classifyDirectAsk(
+  asked: string,
+  phrases?: Partial<Record<MemberHomeDirectAsk, readonly string[]>>,
+): MemberHomeDirectAsk | null {
+  const chip = foldDirectAsk(asked);
+  if (!chip) return null;
+  const order: MemberHomeDirectAsk[] = [
+    'people',
+    'spaces',
+    'tokens',
+    'decision',
+    'useful',
+  ];
+  for (const ask of order) {
+    const extra = phrases?.[ask] ?? [];
+    const known = [...DIRECT_PHRASES[ask], ...extra];
+    if (known.some((phrase) => foldDirectAsk(phrase) === chip)) return ask;
+  }
+  if (chip.includes('what needs a decision')) return 'decision';
+  return null;
+}
+
+function closestDirectPerson(home: MemberIntelligence) {
+  const named = home.connections.filter((person) => {
+    if (person.id === home.person.id) return false;
+    const name = [person.name, person.surname].filter(Boolean).join(' ').trim();
+    return Boolean(name || person.nickname?.trim());
+  });
+  named.sort((left, right) => right.sharedSpaceCount - left.sharedSpaceCount);
+  const person = named[0];
+  if (!person) return null;
+  const name =
+    [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+    person.nickname?.trim() ||
+    '';
+  if (!name) return null;
+  return { name, count: person.sharedSpaceCount };
+}
+
+function leadDirectSpace(
+  home: MemberIntelligence,
+  recentSpaceSlugs: readonly string[],
+) {
+  const bySlug = new Map(home.spaces.map((space) => [space.slug, space]));
+  for (const slug of recentSpaceSlugs) {
+    const space = bySlug.get(slug);
+    if (space?.title.trim()) return space.title.trim();
+  }
+  return home.spaces.find((space) => space.title.trim())?.title.trim() ?? null;
+}
+
+function notificationProposals(home: MemberIntelligence) {
+  return [...home.notifications]
+    .filter(
+      (item) =>
+        item.kind === 'proposal' &&
+        item.title.trim() &&
+        item.spaceTitle.trim() &&
+        item.targetSlug.trim(),
+    )
+    .sort((left, right) => {
+      const leftAt = left.at ?? '';
+      const rightAt = right.at ?? '';
+      if (leftAt !== rightAt) return leftAt < rightAt ? 1 : -1;
+      return left.id < right.id ? -1 : 1;
+    });
+}
+
+function openDecisions(home: MemberIntelligence) {
+  return listMemberHomeThreadCatalog(home).filter(
+    (item) =>
+      item.kind === 'proposal' &&
+      item.action === 'decision' &&
+      item.slug.trim() &&
+      item.title.trim() &&
+      item.spaceTitle.trim(),
+  );
+}
+
+/**
+ * Chips the member can see. The reply is the record on screen, so the model
+ * cannot send them to another space or call an open invite a closed queue.
+ */
+export function memberHomeDirectReply(
+  home: MemberIntelligence,
+  asked: string,
+  options?: {
+    recentSpaceSlugs?: readonly string[];
+    phrases?: Partial<Record<MemberHomeDirectAsk, readonly string[]>>;
+  },
+): MemberHomeDirectReply | null {
+  const ask = classifyDirectAsk(asked, options?.phrases);
+  if (!ask) return null;
+  if (ask === 'people') {
+    const person = closestDirectPerson(home);
+    return {
+      ask,
+      widget: 'people',
+      item: null,
+      line: person
+        ? { key: 'people', name: person.name, count: person.count }
+        : { key: 'peopleEmpty' },
+    };
+  }
+  if (ask === 'spaces') {
+    const space = leadDirectSpace(home, options?.recentSpaceSlugs ?? []);
+    return {
+      ask,
+      widget: 'spaces',
+      item: null,
+      line: space ? { key: 'space', space } : { key: 'spaceEmpty' },
+    };
+  }
+  if (ask === 'tokens') {
+    const person = closestDirectPerson(home);
+    return {
+      ask,
+      widget: 'tokens',
+      item: null,
+      line: person
+        ? { key: 'tokens', name: person.name }
+        : { key: 'tokensEmpty' },
+    };
+  }
+  if (ask === 'decision') {
+    const open = openDecisions(home);
+    const notes = notificationProposals(home);
+    const listedOpen = notes.find((note) =>
+      open.some((item) => item.slug === note.targetSlug),
+    );
+    const chosen = listedOpen
+      ? open.find((item) => item.slug === listedOpen.targetSlug)
+      : open[0];
+    if (chosen) {
+      return {
+        ask,
+        widget: null,
+        item: { kind: 'proposal', slug: chosen.slug },
+        line: {
+          key: 'decisionOpen',
+          title: chosen.title.trim(),
+          space: chosen.spaceTitle.trim(),
+        },
+      };
+    }
+    const listed = notes[0];
+    if (listed) {
+      return {
+        ask,
+        widget: null,
+        item: null,
+        line: {
+          key: 'decisionListed',
+          title: listed.title.trim(),
+          space: listed.spaceTitle.trim(),
+        },
+      };
+    }
+    return {
+      ask,
+      widget: null,
+      item: null,
+      line: { key: 'decisionQuiet' },
+    };
+  }
+  const waiting = listMemberHomeThreadItems(home).find(
+    (item) => item.slug.trim() && item.title.trim() && item.spaceTitle.trim(),
+  );
+  if (!waiting) {
+    return { ask, widget: null, item: null, line: { key: 'usefulQuiet' } };
+  }
+  return {
+    ask,
+    widget: null,
+    item: { kind: waiting.kind, slug: waiting.slug },
+    line: {
+      key: 'itemOpen',
+      title: waiting.title.trim(),
+      space: waiting.spaceTitle.trim(),
+    },
+  };
+}

@@ -19,6 +19,8 @@ import {
   listMemberHomeThreadCatalog,
   listMemberHomeThreadItems,
   memberHomeBoardDestination,
+  memberHomeDirectReply,
+  type MemberHomeDirectReply,
   memberHomeItemMemory,
   memberHomeSignalCatalogue,
   mergeMemberHomeMemory,
@@ -38,6 +40,7 @@ import {
 } from '../../common/ai-panel';
 import { buildMemberHomeVoiceSessionContext } from '../../common/space-voice-session-context';
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
+import { readRecentSpaceSlugs } from '../../common/recent-space-history';
 import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
 import {
   bindHomePerson,
@@ -320,6 +323,48 @@ function connectionName(person: {
 }) {
   const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
   return full || person.nickname?.trim() || '';
+}
+
+function directReplyText(
+  reply: MemberHomeDirectReply,
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
+  switch (reply.line.key) {
+    case 'people':
+      return t('peopleAroundLead', {
+        name: reply.line.name,
+        count: reply.line.count,
+      });
+    case 'peopleEmpty':
+      return t('peopleWidgetEmpty');
+    case 'space':
+      return t('spaceLead', { space: reply.line.space });
+    case 'spaceEmpty':
+      return t('spacesWidgetEmpty');
+    case 'tokens':
+      return t('tokensLead', { name: reply.line.name });
+    case 'tokensEmpty':
+      return t('tokensLeadEmpty');
+    case 'decisionOpen':
+      return t('decisionOpen', {
+        title: reply.line.title,
+        space: reply.line.space,
+      });
+    case 'decisionListed':
+      return t('decisionListed', {
+        title: reply.line.title,
+        space: reply.line.space,
+      });
+    case 'decisionQuiet':
+      return t('decisionQuiet');
+    case 'itemOpen':
+      return t('itemOpen', {
+        title: reply.line.title,
+        space: reply.line.space,
+      });
+    case 'usefulQuiet':
+      return t('usefulQuiet');
+  }
 }
 
 function closestSharedPerson(intelligence: {
@@ -725,6 +770,60 @@ export function MemberHomeChat({
           return;
         }
       }
+      const direct =
+        trimmed && files.length === 0
+          ? memberHomeDirectReply(intelligence, trimmed, {
+              recentSpaceSlugs: readRecentSpaceSlugs(),
+              phrases: {
+                people: [t('chipPeople')],
+                spaces: [t('chipSpace')],
+                tokens: [t('chipTokens')],
+                decision: [t('chipDecision')],
+                useful: [t('chipUseful'), t('homeArrival')],
+              },
+            })
+          : null;
+      if (direct) {
+        const base = messagesRef.current.filter(
+          (message) => !isHomeErrorMessage(message),
+        );
+        const next: HomeMessage[] = [
+          ...base,
+          {
+            id: `home-user-${crypto.randomUUID()}`,
+            role: 'user',
+            metadata: hidden ? { homeArrival: true } : undefined,
+            parts: [{ type: 'text', text: trimmed }],
+          },
+          {
+            id: `home-assistant-${crypto.randomUUID()}`,
+            role: 'assistant',
+            metadata: direct.item ? { homeItem: direct.item } : undefined,
+            parts: [{ type: 'text', text: directReplyText(direct, t) }],
+          },
+        ];
+        const widget = direct.widget;
+        if (!hidden && widget) {
+          setWidgets((current) => [
+            ...current,
+            {
+              id: `${widget}-${Date.now()}`,
+              kind: widget,
+              after: base.length + 1,
+            },
+          ]);
+        }
+        if (reveal) {
+          setInput('');
+          if (includeDrafts) setDrafts([]);
+          settleSend.current = true;
+          glideScroll.current = true;
+          pinnedToEnd.current = true;
+        }
+        setMessages(next);
+        writeHomeThread(next);
+        return;
+      }
       if (!hidden && trimmed) {
         const kind = widgetKindFor(trimmed);
         if (kind) {
@@ -789,6 +888,7 @@ export function MemberHomeChat({
       drafts,
       getAccessToken,
       homeMessages.length,
+      intelligence,
       intelligence.spaces,
       lang,
       sendMessage,

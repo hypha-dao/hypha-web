@@ -1513,8 +1513,6 @@ export async function createChatStreamResult(
         debugRequestId,
       });
   const requestedSpaceSlug = spaceSlug?.trim() || '';
-  const voiceSpaceSlug =
-    requestedSpaceSlug || memberHomeRecord?.chatSpaceSlug || '';
   const spaceContextSnapshot =
     memberHomeRecord || !requestedSpaceSlug
       ? null
@@ -1528,7 +1526,7 @@ export async function createChatStreamResult(
       ? null
       : await loadSignedInMemberBrief(authToken);
   const effectiveSystemPrompt = buildEffectiveSystemPrompt(
-    voiceSpaceSlug || spaceSlug,
+    memberHomeRecord ? null : requestedSpaceSlug || spaceSlug,
     lastUserText,
     normalizedConversationContext,
     spaceContextSnapshot,
@@ -1610,7 +1608,7 @@ export async function createChatStreamResult(
         ?.collectedFields ?? snapshotWalkthrough?.collectedFields,
   });
   const systemPrompt = memberHomeRecord
-    ? `${effectiveSystemPrompt}\n\nYou are Hypha, speaking to this member at home. Use only the brief below. Write at most two short sentences. Those sentences are read aloud word for word, so say them as you would to a friend. Introduce the content: the person is the subject, by first name, in the active voice. Vary the wording. Never mention a card, a screen, or a button. ${
+    ? `${effectiveSystemPrompt}\n\nYou are Hypha, speaking to this member at home. Use only the brief below. Write at most two short sentences. Those sentences are read aloud word for word. Introduce the content: the person is the subject, by first name, in the active voice. Every name, number, and place must be written in the brief. Do not add one that is not. Never mention a card, a screen, or a button. ${
         memberHomeList
           ? 'The list they asked for is already on screen. Write at most two short sentences about that list, using the brief. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal. Do not think out loud.'
           : 'Call show_member_home_item once for the one item in the brief unless this turn is a share or a visual request, then write the sentences. You may also call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not mention tools, slugs, or instructions. Do not call any other tool. Do not think out loud.'

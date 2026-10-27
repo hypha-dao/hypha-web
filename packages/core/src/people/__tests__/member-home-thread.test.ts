@@ -5,6 +5,7 @@ import {
   SHOW_MEMBER_HOME_ITEM_TOOL,
   listMemberHomeAttentionItems,
   listMemberHomeThreadItems,
+  memberHomeDirectReply,
   mergeMemberHomeAttention,
   memberHomeBoardDestination,
   memberHomeItemsStillWaiting,
@@ -898,5 +899,151 @@ describe('memberHomeBoardDestination', () => {
       'en',
     );
     expect(destination?.href).toBe('/en/dho/hypha-energy/coherence');
+  });
+});
+
+describe('memberHomeDirectReply', () => {
+  it('names the open decision instead of an empty queue', () => {
+    const reply = memberHomeDirectReply(home, 'What needs a decision?');
+    expect(reply).toMatchObject({
+      ask: 'decision',
+      widget: null,
+      item: { kind: 'proposal', slug: 'invite-member' },
+      line: {
+        key: 'decisionOpen',
+        title: 'Invite Member',
+        space: 'Hypha Pollinate',
+      },
+    });
+  });
+
+  it('names the notification when that decision is not waiting on a vote', () => {
+    const reply = memberHomeDirectReply(
+      {
+        ...home,
+        proposals: [{ ...home.proposals[0]!, memberHasVoted: true }],
+        attention: [],
+        notifications: [
+          {
+            id: 'proposal-9',
+            kind: 'proposal',
+            title: 'Invite Member',
+            detail: 'Live Earth Pitch · a decision',
+            spaceSlug: 'live-earth-pitch',
+            spaceTitle: 'Live Earth Pitch',
+            targetSlug: 'invite-member',
+            at: '2026-10-27T00:00:00.000Z',
+          },
+        ],
+      },
+      'What needs a decision?',
+    );
+    expect(reply?.line).toEqual({
+      key: 'decisionListed',
+      title: 'Invite Member',
+      space: 'Live Earth Pitch',
+    });
+    expect(reply?.item).toBeNull();
+  });
+
+  it('keeps who is around on the people list', () => {
+    const reply = memberHomeDirectReply(
+      {
+        ...home,
+        connections: [
+          {
+            id: 2,
+            slug: 'vlad',
+            name: 'Vlad',
+            surname: 'Hramtsov',
+            nickname: null,
+            avatarUrl: null,
+            sharedSpaceCount: 12,
+          },
+          {
+            id: 3,
+            slug: 'edgar',
+            name: 'Edgar',
+            surname: 'Kampers',
+            nickname: null,
+            avatarUrl: null,
+            sharedSpaceCount: 4,
+          },
+        ],
+      },
+      'Who is around?',
+    );
+    expect(reply).toMatchObject({
+      ask: 'people',
+      widget: 'people',
+      item: null,
+      line: { key: 'people', name: 'Vlad Hramtsov', count: 12 },
+    });
+  });
+
+  it('names a space that is actually on the list', () => {
+    const reply = memberHomeDirectReply(
+      {
+        ...home,
+        spaces: [
+          {
+            id: 1,
+            slug: 'commercial-energy-hub',
+            title: 'Commercial Energy Hub',
+            description: '',
+            logoUrl: null,
+          },
+          {
+            id: 2,
+            slug: 'hypha-platform',
+            title: 'Hypha Platform',
+            description: '',
+            logoUrl: null,
+          },
+        ],
+      },
+      'Step into a space',
+      { recentSpaceSlugs: ['hypha-platform'] },
+    );
+    expect(reply).toMatchObject({
+      widget: 'spaces',
+      line: { key: 'space', space: 'Hypha Platform' },
+    });
+  });
+
+  it('offers tokens only for the token chip', () => {
+    const reply = memberHomeDirectReply(
+      {
+        ...home,
+        connections: [
+          {
+            id: 2,
+            slug: 'vlad',
+            name: 'Vlad',
+            surname: null,
+            nickname: null,
+            avatarUrl: null,
+            sharedSpaceCount: 3,
+          },
+        ],
+      },
+      'Send someone tokens',
+    );
+    expect(reply).toMatchObject({
+      ask: 'tokens',
+      widget: 'tokens',
+      line: { key: 'tokens', name: 'Vlad' },
+    });
+  });
+
+  it('introduces the waiting item instead of a space hop', () => {
+    const reply = memberHomeDirectReply(home, 'I am on my home.');
+    expect(reply?.line.key).toBe('itemOpen');
+    expect(reply?.line).not.toMatchObject({ space: 'Commercial Energy Hub' });
+    expect(reply?.item?.slug).toBeTruthy();
+  });
+
+  it('leaves an ordinary message to the model', () => {
+    expect(memberHomeDirectReply(home, 'Tell me about the budget')).toBeNull();
   });
 });

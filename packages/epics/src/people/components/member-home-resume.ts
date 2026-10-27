@@ -4,7 +4,7 @@ import {
   type MemberHomeThreadItem,
 } from '@hypha-platform/core/client';
 
-const THREAD_KEY = 'hypha-member-home-thread';
+const THREAD_KEY = 'hypha-member-home-thread-v2';
 const RETURN_KEY = 'hypha-member-home-return';
 const ACTED_KEY = 'hypha-member-home-acted';
 const CHOICES_KEY = 'hypha-member-home-choices';
