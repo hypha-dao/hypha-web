@@ -980,7 +980,10 @@ describe('memberHomeDirectReply', () => {
       title: 'Invite Member',
       space: 'Live Earth Pitch',
     });
-    expect(reply?.item).toBeNull();
+    expect(reply?.item).toEqual({
+      kind: 'proposal',
+      slug: 'invite-member',
+    });
   });
 
   it('keeps who is around on the people list', () => {

@@ -21,6 +21,7 @@ import {
   memberHomeBoardDestination,
   memberHomeDirectReply,
   memberHomeLookItem,
+  memberHomeThreadItemForRef,
   type MemberHomeDirectReply,
   memberHomeItemMemory,
   memberHomeSignalCatalogue,
@@ -154,13 +155,25 @@ function isHomeErrorMessage(message: { metadata?: unknown }) {
 function homeItemForMessage(
   items: readonly MemberHomeThreadItem[],
   message: HomeMessage,
+  home?: MemberIntelligence,
 ): MemberHomeThreadItem | null {
   const hinted = message.metadata?.homeItem;
-  if (hinted?.kind && hinted.slug) {
+  if (
+    hinted &&
+    (hinted.kind === 'proposal' || hinted.kind === 'signal') &&
+    hinted.slug
+  ) {
     const match = items.find(
       (item) => item.kind === hinted.kind && item.slug === hinted.slug,
     );
     if (match) return match;
+    if (home) {
+      const built = memberHomeThreadItemForRef(home, {
+        kind: hinted.kind,
+        slug: hinted.slug,
+      });
+      if (built) return built;
+    }
   }
   return memberHomeThreadItemForMessage(items, message);
 }
@@ -397,10 +410,10 @@ function messageText(message: HomeMessage) {
     .trim();
 }
 
-/** One line of copy: no break, and at most one sentence-ending mark. */
+/** Short copy beside the mark. Two short sentences still sit on one row. */
 function homeTextIsOneLine(text: string) {
-  if (text.includes('\n')) return false;
-  return (text.match(/[.!?]/g)?.length ?? 0) <= 1;
+  if (text.includes('\n') || text.length > 220) return false;
+  return (text.match(/[.!?]/g)?.length ?? 0) <= 2;
 }
 
 /** From `lg`: ~3/4 of the screen, inset in the main pane, capped at 72rem. */
@@ -793,6 +806,13 @@ export function MemberHomeChat({
         const base = messagesRef.current.filter(
           (message) => !isHomeErrorMessage(message),
         );
+        if (direct.item) {
+          const full = memberHomeThreadItemForRef(intelligence, direct.item);
+          if (full) {
+            rememberHomeShownItem(full);
+            setShownCardItems(readHomeShownItems());
+          }
+        }
         const next: HomeMessage[] = [
           ...base,
           {
@@ -842,6 +862,8 @@ export function MemberHomeChat({
         const base = messagesRef.current.filter(
           (message) => !isHomeErrorMessage(message),
         );
+        rememberHomeShownItem(lookedUp);
+        setShownCardItems(readHomeShownItems());
         const next: HomeMessage[] = [
           ...base,
           {
@@ -1048,7 +1070,9 @@ export function MemberHomeChat({
             memberHomeSignalCatalogue(rawText, intelligence.spaces, lang)
           : null;
       const spokenItem =
-        rawText && !listAsk ? homeItemForMessage(cardItems, message) : null;
+        rawText && !listAsk
+          ? homeItemForMessage(cardItems, message, intelligence)
+          : null;
       const cleaned = rawText
         ? homeAssistantScript({
             displayText: board
@@ -1252,13 +1276,13 @@ export function MemberHomeChat({
       if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
         return;
       }
-      const item = homeItemForMessage(liveCardItems, message);
+      const item = homeItemForMessage(liveCardItems, message, intelligence);
       if (!item) return;
       rememberHomeShownItem(item);
       remembered = true;
     });
     if (remembered) setShownCardItems(readHomeShownItems());
-  }, [homeMessages, liveCardItems, widgetKindFor]);
+  }, [homeMessages, intelligence, liveCardItems, widgetKindFor]);
 
   const cardsByMessageId = useMemo(() => {
     // The card stays with the latest reply about that item. An earlier
@@ -1279,7 +1303,7 @@ export function MemberHomeChat({
       if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
         return;
       }
-      const item = homeItemForMessage(cardItems, message);
+      const item = homeItemForMessage(cardItems, message, intelligence);
       if (!item) return;
       const key = memberHomeThreadItemKey(item);
       const placed = latestByItem.get(key);
@@ -1294,7 +1318,7 @@ export function MemberHomeChat({
       map.set(placed.messageId, placed.item);
     }
     return map;
-  }, [actedKeySet, cardItems, homeMessages, widgetKindFor]);
+  }, [actedKeySet, cardItems, homeMessages, intelligence, widgetKindFor]);
   const cardMessageId = useMemo(() => {
     for (let index = homeMessages.length - 1; index >= 0; index -= 1) {
       const message = homeMessages[index];
@@ -1304,14 +1328,18 @@ export function MemberHomeChat({
       if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
         continue;
       }
-      if (homeItemForMessage(cardItems, message)) return message.id;
+      if (homeItemForMessage(cardItems, message, intelligence)) {
+        return message.id;
+      }
     }
     return null;
-  }, [cardItems, homeMessages, widgetKindFor]);
+  }, [cardItems, homeMessages, intelligence, widgetKindFor]);
   const focusedItem = useMemo(() => {
     const message = homeMessages.find((item) => item.id === cardMessageId);
-    return message ? homeItemForMessage(cardItems, message) : null;
-  }, [cardItems, cardMessageId, homeMessages]);
+    return message
+      ? homeItemForMessage(cardItems, message, intelligence)
+      : null;
+  }, [cardItems, cardMessageId, homeMessages, intelligence]);
   useEffect(() => {
     const node = scroller.current;
     if (!node) return;
@@ -1333,10 +1361,10 @@ export function MemberHomeChat({
       if (!message || message.metadata?.homeArrival) continue;
       if (message.role !== 'assistant') return true;
       if (messageText(message)) return false;
-      return homeItemForMessage(cardItems, message) == null;
+      return homeItemForMessage(cardItems, message, intelligence) == null;
     }
     return true;
-  }, [cardItems, homeMessages, isStreaming]);
+  }, [cardItems, homeMessages, intelligence, isStreaming]);
   const hasSpoken = homeMessages.some(
     (message) => message.role === 'user' && !message.metadata?.homeArrival,
   );

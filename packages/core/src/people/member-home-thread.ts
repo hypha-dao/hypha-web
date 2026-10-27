@@ -1420,6 +1420,82 @@ function openDecisions(home: MemberIntelligence) {
 }
 
 /**
+ * The card for a kind and slug. Open items come from the catalog. A
+ * notification that is no longer waiting still gets a card from the proposal.
+ */
+export function memberHomeThreadItemForRef(
+  home: MemberIntelligence,
+  ref: { kind: MemberHomeCardKind; slug: string },
+): MemberHomeThreadItem | null {
+  const slug = ref.slug.trim();
+  if (!slug) return null;
+  const fromCatalog = listMemberHomeThreadCatalog(home).find(
+    (item) => item.kind === ref.kind && item.slug === slug,
+  );
+  if (fromCatalog) return fromCatalog;
+  if (ref.kind !== 'proposal') return null;
+  const proposal = home.proposals.find((row) => row.slug === slug);
+  const note = [...home.notifications, ...home.attention].find(
+    (row) => row.kind === 'proposal' && row.targetSlug === slug,
+  );
+  if (!proposal && !note) return null;
+  const title = (proposal?.title ?? note?.title ?? '').trim();
+  const spaceTitle = (proposal?.spaceTitle ?? note?.spaceTitle ?? '').trim();
+  if (!title || !spaceTitle) return null;
+  if (proposal?.expired && proposal.outcome) {
+    return {
+      kind: 'proposal',
+      slug,
+      title,
+      spaceSlug: proposal.spaceSlug || note?.spaceSlug || '',
+      spaceTitle,
+      action: 'outcome',
+      documentKind: memberHomeDocumentKind({
+        kind: 'proposal',
+        state: proposal.state,
+        label: proposal.label,
+      }),
+      authoredByMember: proposal.authoredByMember,
+      spaceLogo: proposal.spaceLogo ?? note?.spaceLogo ?? null,
+      category: proposal.label,
+      summary: proposal.description,
+      creatorId: proposal.creatorId,
+      creatorName: proposal.creatorName,
+      creatorAvatarUrl: proposal.creatorAvatarUrl,
+      documentId: proposal.id,
+      web3ProposalId: proposal.web3ProposalId,
+      web3SpaceId: proposal.web3SpaceId ?? null,
+      participation: proposal.outcome.participation,
+      unity: proposal.outcome.unity,
+      passed: proposal.outcome.passed,
+    };
+  }
+  return {
+    kind: 'proposal',
+    slug,
+    title,
+    spaceSlug: proposal?.spaceSlug || note?.spaceSlug || '',
+    spaceTitle,
+    action: 'decision',
+    documentKind: memberHomeDocumentKind({
+      kind: 'proposal',
+      state: proposal?.state,
+      label: proposal?.label,
+    }),
+    authoredByMember: proposal?.authoredByMember ?? false,
+    spaceLogo: proposal?.spaceLogo ?? note?.spaceLogo ?? null,
+    category: proposal?.label ?? null,
+    summary: proposal?.description ?? null,
+    creatorId: proposal?.creatorId ?? null,
+    creatorName: proposal?.creatorName ?? null,
+    creatorAvatarUrl: proposal?.creatorAvatarUrl ?? null,
+    documentId: proposal?.id ?? null,
+    web3ProposalId: proposal?.web3ProposalId ?? null,
+    web3SpaceId: proposal?.web3SpaceId ?? null,
+  };
+}
+
+/**
  * Chips the member can see. The reply is the record on screen, so the model
  * cannot send them to another space or call an open invite a closed queue.
  */
@@ -1490,7 +1566,7 @@ export function memberHomeDirectReply(
       return {
         ask,
         widget: null,
-        item: null,
+        item: { kind: 'proposal', slug: listed.targetSlug },
         line: {
           key: 'decisionListed',
           title: listed.title.trim(),
