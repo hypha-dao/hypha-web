@@ -173,6 +173,10 @@ import {
 import { HumanChatPanelElsewhereCallIndicator } from './human-chat-panel/human-chat-panel-elsewhere-call-indicator';
 import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
 import { upsertSignalDescriptionInRoom } from '../coherence/utils/signal-chat-description';
+import {
+  isSignalTeamRosterContent,
+  readSignalTeamRosterFromEvents,
+} from '../coherence/utils/signal-team-access';
 import { SignalTurnIntoProposalButton } from '../coherence/components/signal-turn-into-proposal-button';
 import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
 import { SignalIndicativeAmounts } from '../coherence/components/signal-indicative-amounts';
@@ -567,9 +571,14 @@ function deriveSignalTeamStateFromEvents(
         : '';
     if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
     const senderId = ev.getSender()?.trim() || null;
+    const contentOwnerId =
+      typeof content.ownerMatrixUserId === 'string'
+        ? content.ownerMatrixUserId.trim()
+        : '';
     const isKnownTrustedSender = Boolean(
       senderId &&
         (senderId === ownerMatrixUserId ||
+          senderId === contentOwnerId ||
           memberMatrixUserIds.includes(senderId)),
     );
     const hasElevatedRoomPower = roomPowerLevelForUser(room, senderId) >= 50;
@@ -3233,6 +3242,68 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       t,
     ],
   );
+
+  useEffect(() => {
+    if (!client || !roomId || !isSignalThread) {
+      setSignalTeamMemberIds([]);
+      setSignalTeamOwnerId(null);
+      setSignalTeamPendingRequesterIds([]);
+      setSignalTeamDraftMemberIds(null);
+      return;
+    }
+    const room = client.getRoom(roomId);
+    if (!room) {
+      setSignalTeamMemberIds([]);
+      setSignalTeamOwnerId(null);
+      setSignalTeamPendingRequesterIds([]);
+      return;
+    }
+
+    const applyFromTimeline = () => {
+      const timeline = room.getLiveTimeline().getEvents();
+      const roster = readSignalTeamRosterFromEvents(timeline, coherenceSlug);
+      setSignalTeamMemberIds(roster.memberMatrixUserIds);
+      setSignalTeamOwnerId(roster.ownerMatrixUserId);
+      const next = deriveSignalTeamStateFromEvents(
+        timeline,
+        coherenceSlug,
+        room,
+      );
+      setSignalTeamPendingRequesterIds(next.pendingRequesterIds);
+      if (!signalTeamPanelOpen) {
+        setSignalTeamDraftMemberIds(null);
+      }
+    };
+
+    applyFromTimeline();
+
+    const onTimeline = (event: MatrixEvent, eventRoom?: Room) => {
+      if (eventRoom?.roomId !== roomId) return;
+      if (event.getType() !== EventType.RoomMessage) return;
+      const content = event.getContent() as Record<string, unknown> | null;
+      const body =
+        content && typeof content.body === 'string' ? content.body.trim() : '';
+      if (
+        !isSignalTeamRosterContent(content) &&
+        !body.startsWith(SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER)
+      ) {
+        return;
+      }
+      applyFromTimeline();
+    };
+
+    room.on(RoomEvent.Timeline, onTimeline);
+    return () => {
+      room.off(RoomEvent.Timeline, onTimeline);
+    };
+  }, [
+    client,
+    roomId,
+    isSignalThread,
+    coherenceSlug,
+    signalTeamPanelOpen,
+    isJoining,
+  ]);
 
   useEffect(() => {
     if (!isDirectConversation || !client || !roomId) return;

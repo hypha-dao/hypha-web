@@ -118,5 +118,7 @@ describe('signal-team-events', () => {
       '@bob:example.org',
     ]);
     expect(content.ownerMatrixUserId).toBe('@creator:example.org');
+    expect(content.msgtype).toBe('m.notice');
+    expect(content.body).toBe('[hypha:signal-team]');
   });
 });
