@@ -350,7 +350,9 @@ export async function replyToMatrixAgentMention({
     text = await writeAgentText({
       system,
       prompt,
-      tools: readTools as unknown as Parameters<typeof generateText>[0]['tools'],
+      tools: readTools as unknown as Parameters<
+        typeof generateText
+      >[0]['tools'],
     });
   } catch (error) {
     console.warn(
