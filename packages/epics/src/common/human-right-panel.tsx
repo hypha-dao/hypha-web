@@ -67,6 +67,8 @@ import {
   type SignalTeamNotice,
   requestRemoteGroupCallLeave,
   calledSpecialistIds,
+  matrixUserIdsForPersonIds,
+  publishSignalTeamNotice,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -174,8 +176,10 @@ import { HumanChatPanelElsewhereCallIndicator } from './human-chat-panel/human-c
 import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
 import { upsertSignalDescriptionInRoom } from '../coherence/utils/signal-chat-description';
 import {
+  isSignalTeamRequestContent,
   isSignalTeamRosterContent,
-  readSignalTeamRosterFromEvents,
+  isTrustedSignalTeamSender,
+  rosterIdsIntersectSpaceMap,
 } from '../coherence/utils/signal-team-access';
 import { SignalTurnIntoProposalButton } from '../coherence/components/signal-turn-into-proposal-button';
 import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
@@ -571,18 +575,12 @@ function deriveSignalTeamStateFromEvents(
         : '';
     if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
     const senderId = ev.getSender()?.trim() || null;
-    const contentOwnerId =
-      typeof content.ownerMatrixUserId === 'string'
-        ? content.ownerMatrixUserId.trim()
-        : '';
-    const isKnownTrustedSender = Boolean(
-      senderId &&
-        (senderId === ownerMatrixUserId ||
-          senderId === contentOwnerId ||
-          memberMatrixUserIds.includes(senderId)),
-    );
-    const hasElevatedRoomPower = roomPowerLevelForUser(room, senderId) >= 50;
-    const isTrustedActor = isKnownTrustedSender || hasElevatedRoomPower;
+    const isTrustedActor = isTrustedSignalTeamSender({
+      senderId,
+      establishedOwnerMatrixUserId: ownerMatrixUserId,
+      establishedMemberMatrixUserIds: memberMatrixUserIds,
+      powerLevel: roomPowerLevelForUser(room, senderId),
+    });
 
     if (eventKind === SIGNAL_TEAM_EVENT_KIND) {
       if (!isTrustedActor) continue;
@@ -1399,6 +1397,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     string[] | null
   >(null);
   const [signalTeamBusy, setSignalTeamBusy] = useState(false);
+  const [signalTeamRosterResolved, setSignalTeamRosterResolved] =
+    useState(true);
   const signalTeamAutoSeededRoomIdsRef = useRef<Set<string>>(new Set());
 
   const currentUserId = client?.getUserId?.() ?? null;
@@ -2602,7 +2602,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const isSignalThread = mode === 'coherence' && Boolean(coherenceSlug?.trim());
-  const hasSignalTeamPolicy = isSignalThread && signalTeamMemberIds.length > 0;
+  const hasSignalTeamPolicy =
+    isSignalThread &&
+    (signalTeamMemberIds.length > 0 || !signalTeamRosterResolved);
   const signalTeamMemberIdSet = useMemo(
     () => new Set(signalTeamMemberIds),
     [signalTeamMemberIds],
@@ -3249,6 +3251,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setSignalTeamOwnerId(null);
       setSignalTeamPendingRequesterIds([]);
       setSignalTeamDraftMemberIds(null);
+      setSignalTeamRosterResolved(true);
       return;
     }
     const room = client.getRoom(roomId);
@@ -3256,36 +3259,161 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setSignalTeamMemberIds([]);
       setSignalTeamOwnerId(null);
       setSignalTeamPendingRequesterIds([]);
+      setSignalTeamRosterResolved(false);
       return;
     }
 
-    const applyFromTimeline = () => {
+    let cancelled = false;
+    setSignalTeamRosterResolved(false);
+    const documentSeedRef = {
+      memberIds: [] as string[],
+      ownerId: null as string | null,
+    };
+
+    const applyFromTimeline = (): boolean => {
       const timeline = room.getLiveTimeline().getEvents();
-      const roster = readSignalTeamRosterFromEvents(timeline, coherenceSlug);
-      setSignalTeamMemberIds(roster.memberMatrixUserIds);
-      setSignalTeamOwnerId(roster.ownerMatrixUserId);
       const next = deriveSignalTeamStateFromEvents(
         timeline,
         coherenceSlug,
         room,
       );
+      const usable = rosterIdsIntersectSpaceMap(
+        next.memberMatrixUserIds,
+        personIdToMatrixUserId,
+      );
+      if (usable) {
+        setSignalTeamMemberIds(next.memberMatrixUserIds);
+        setSignalTeamOwnerId(next.ownerMatrixUserId);
+      } else if (documentSeedRef.memberIds.length > 0) {
+        setSignalTeamMemberIds(documentSeedRef.memberIds);
+        setSignalTeamOwnerId(documentSeedRef.ownerId);
+      } else {
+        setSignalTeamMemberIds([]);
+        setSignalTeamOwnerId(null);
+      }
       setSignalTeamPendingRequesterIds(next.pendingRequesterIds);
       if (!signalTeamPanelOpen) {
         setSignalTeamDraftMemberIds(null);
       }
+      return usable;
     };
 
-    applyFromTimeline();
+    const seedFromDocumentAssignees = async (): Promise<boolean> => {
+      const slug = coherenceSlug?.trim();
+      if (!slug) return false;
+      try {
+        const signal = await getCoherenceBySlug({ slug });
+        if (cancelled) return false;
+        const personIds = [
+          ...new Set(
+            [...(signal?.assigneeIds ?? []), signal?.creatorId, me?.id].filter(
+              (id): id is number => typeof id === 'number' && id > 0,
+            ),
+          ),
+        ];
+        const memberIds = matrixUserIdsForPersonIds(
+          personIds,
+          personIdToMatrixUserId,
+        );
+        const ownerId =
+          (typeof signal?.creatorId === 'number'
+            ? personIdToMatrixUserId[signal.creatorId]?.trim()
+            : '') ||
+          (typeof me?.id === 'number'
+            ? personIdToMatrixUserId[me.id]?.trim()
+            : '') ||
+          memberIds[0] ||
+          null;
+        documentSeedRef.memberIds = memberIds;
+        documentSeedRef.ownerId = ownerId;
+        if (memberIds.length === 0) return false;
+        setSignalTeamMemberIds(memberIds);
+        setSignalTeamOwnerId(ownerId);
+        if (!signalTeamAutoSeededRoomIdsRef.current.has(roomId) && client) {
+          signalTeamAutoSeededRoomIdsRef.current.add(roomId);
+          try {
+            await publishSignalTeamNotice({
+              client,
+              roomId,
+              coherenceSlug: slug,
+              memberMatrixUserIds: memberIds,
+              ownerMatrixUserId: ownerId,
+              actorMatrixUserId: ownerId,
+              addedMemberMatrixUserIds: memberIds,
+            });
+          } catch (publishError) {
+            console.warn(
+              '[HumanRightPanel] Failed to publish document signal team seed:',
+              publishError,
+            );
+          }
+        }
+        return true;
+      } catch (error) {
+        console.warn(
+          '[HumanRightPanel] Failed to seed signal team from assignees:',
+          error,
+        );
+        return false;
+      }
+    };
+
+    const hydrateRosterHistory = async () => {
+      let foundUsableRoster = applyFromTimeline();
+      let historyExhausted = false;
+      const maxRosterHistoryBatches = 50;
+      for (
+        let i = 0;
+        i < maxRosterHistoryBatches && !cancelled && !foundUsableRoster;
+        i += 1
+      ) {
+        try {
+          const result = await matrixRef.current.loadRoomHistory(roomId, {
+            pageSize: 30,
+            maxBatches: 1,
+            force: i > 0,
+          });
+          if (cancelled) return;
+          foundUsableRoster = applyFromTimeline();
+          if (!result.hasMoreOlder) {
+            historyExhausted = true;
+            break;
+          }
+        } catch (error) {
+          if (!cancelled) {
+            console.warn(
+              '[HumanRightPanel] Signal team roster history load failed:',
+              error,
+            );
+          }
+          break;
+        }
+      }
+      if (cancelled) return;
+      if (!foundUsableRoster && !isLoadingMatrixUserIds) {
+        foundUsableRoster = await seedFromDocumentAssignees();
+      }
+      // Do not treat the Signal as having no policy until a usable roster is
+      // found, document assignees are mapped, or scrollback is exhausted and
+      // the Manage person→Matrix map is ready.
+      if (
+        !cancelled &&
+        !isLoadingMatrixUserIds &&
+        (foundUsableRoster || historyExhausted)
+      ) {
+        setSignalTeamRosterResolved(true);
+      }
+    };
+
+    void hydrateRosterHistory();
 
     const onTimeline = (event: MatrixEvent, eventRoom?: Room) => {
       if (eventRoom?.roomId !== roomId) return;
       if (event.getType() !== EventType.RoomMessage) return;
       const content = event.getContent() as Record<string, unknown> | null;
-      const body =
-        content && typeof content.body === 'string' ? content.body.trim() : '';
       if (
         !isSignalTeamRosterContent(content) &&
-        !body.startsWith(SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER)
+        !isSignalTeamRequestContent(content)
       ) {
         return;
       }
@@ -3294,6 +3422,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     room.on(RoomEvent.Timeline, onTimeline);
     return () => {
+      cancelled = true;
       room.off(RoomEvent.Timeline, onTimeline);
     };
   }, [
@@ -3303,6 +3432,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceSlug,
     signalTeamPanelOpen,
     isJoining,
+    personIdToMatrixUserId,
+    isLoadingMatrixUserIds,
+    me?.id,
   ]);
 
   useEffect(() => {

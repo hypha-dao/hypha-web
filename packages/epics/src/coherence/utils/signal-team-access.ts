@@ -3,6 +3,8 @@ export const SIGNAL_TEAM_REQUEST_EVENT_KIND = 'io.hypha.signal.team.request.v1';
 export const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
 export const SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER =
   '[hypha:signal-team-request]';
+/** Matrix room admin / moderator power — trusted to publish team policy. */
+export const SIGNAL_TEAM_TRUSTED_POWER_LEVEL = 50;
 
 function normalizeMatrixUserIds(ids: unknown): string[] {
   if (!Array.isArray(ids)) return [];
@@ -21,7 +23,38 @@ function normalizeMatrixUserIds(ids: unknown): string[] {
 export type SignalTeamTimelineEvent = {
   getType: () => string;
   getContent: () => Record<string, unknown> | null;
+  getSender?: () => string | null | undefined;
 };
+
+export type ReadSignalTeamRosterOptions = {
+  /** Room power level for the event sender. Defaults to 0 when omitted. */
+  getPowerLevel?: (userId: string | null) => number;
+};
+
+/**
+ * True when the sender may change Signal Team policy: already-established
+ * owner or member, or verified room power ≥ 50. Never trust an owner MXID
+ * claimed only in the event content.
+ */
+export function isTrustedSignalTeamSender(options: {
+  senderId?: string | null;
+  establishedOwnerMatrixUserId?: string | null;
+  establishedMemberMatrixUserIds?: readonly string[];
+  powerLevel?: number | null;
+}): boolean {
+  const senderId = options.senderId?.trim() || null;
+  if (!senderId) return false;
+  if (
+    options.establishedOwnerMatrixUserId &&
+    options.establishedOwnerMatrixUserId === senderId
+  ) {
+    return true;
+  }
+  if (options.establishedMemberMatrixUserIds?.includes(senderId)) {
+    return true;
+  }
+  return (options.powerLevel ?? 0) >= SIGNAL_TEAM_TRUSTED_POWER_LEVEL;
+}
 
 /**
  * True for the roster event the Signal Team picker writes:
@@ -41,9 +74,27 @@ export function isSignalTeamRosterContent(
   );
 }
 
+/**
+ * True for a join-request notice: body `[hypha:signal-team-request]`, or the
+ * older `io.hypha.signal.team.request.v1` msgtype.
+ */
+export function isSignalTeamRequestContent(
+  content: Record<string, unknown> | null | undefined,
+): boolean {
+  if (!content || typeof content !== 'object') return false;
+  const msgtype =
+    typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
+  const body = typeof content.body === 'string' ? content.body.trim() : '';
+  return (
+    body.startsWith(SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER) ||
+    msgtype === SIGNAL_TEAM_REQUEST_EVENT_KIND
+  );
+}
+
 export function readSignalTeamRosterFromEvents(
   events: readonly SignalTeamTimelineEvent[],
   coherenceSlug?: string | null,
+  options?: ReadSignalTeamRosterOptions,
 ): {
   hasPolicy: boolean;
   memberMatrixUserIds: string[];
@@ -62,6 +113,18 @@ export function readSignalTeamRosterFromEvents(
         ? content.coherenceSlug.trim()
         : '';
     if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
+    const senderId = event.getSender?.()?.trim() || null;
+    const powerLevel = options?.getPowerLevel?.(senderId) ?? 0;
+    if (
+      !isTrustedSignalTeamSender({
+        senderId,
+        establishedOwnerMatrixUserId: ownerMatrixUserId,
+        establishedMemberMatrixUserIds: members,
+        powerLevel,
+      })
+    ) {
+      continue;
+    }
     members = normalizeMatrixUserIds(content?.memberMatrixUserIds);
     const nextOwner =
       typeof content?.ownerMatrixUserId === 'string'
@@ -73,6 +136,25 @@ export function readSignalTeamRosterFromEvents(
   return { hasPolicy, memberMatrixUserIds: members, ownerMatrixUserId };
 }
 
+/**
+ * True when at least one roster MXID is one the Manage picker can mark
+ * selected — i.e. it appears in the space person→Matrix map. A notice that
+ * only carries `client.getUserId()` (a different linked MXID) is unusable
+ * even if the event itself is trusted.
+ */
+export function rosterIdsIntersectSpaceMap(
+  memberMatrixUserIds: readonly string[],
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+): boolean {
+  const mapped = new Set<string>();
+  for (const value of Object.values(personIdToMatrixUserId)) {
+    const trimmed = value?.trim();
+    if (trimmed) mapped.add(trimmed);
+  }
+  if (mapped.size === 0) return false;
+  return memberMatrixUserIds.some((id) => mapped.has(id.trim()));
+}
+
 export function getSignalTeamMembersFromRoom(options: {
   room: {
     getLiveTimeline: () => {
@@ -80,12 +162,13 @@ export function getSignalTeamMembersFromRoom(options: {
     };
   } | null;
   coherenceSlug?: string | null;
+  getPowerLevel?: (userId: string | null) => number;
 }): {
   hasPolicy: boolean;
   memberMatrixUserIds: string[];
   ownerMatrixUserId: string | null;
 } {
-  const { room, coherenceSlug } = options;
+  const { room, coherenceSlug, getPowerLevel } = options;
   if (!room) {
     return {
       hasPolicy: false,
@@ -96,5 +179,6 @@ export function getSignalTeamMembersFromRoom(options: {
   return readSignalTeamRosterFromEvents(
     room.getLiveTimeline().getEvents(),
     coherenceSlug,
+    { getPowerLevel },
   );
 }

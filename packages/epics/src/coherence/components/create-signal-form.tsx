@@ -1050,6 +1050,29 @@ export const CreateSignalForm = ({
         const coherence = await createCoherence({ ...parsed, ...media });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
+        const teamPersonIds = [
+          ...new Set(
+            [
+              ...(parsed.assigneeIds ?? []),
+              ...(coherence.assigneeIds ?? []),
+              creatorId,
+            ].filter((id): id is number => typeof id === 'number' && id > 0),
+          ),
+        ];
+        const assigneePersonIds = [
+          ...new Set(
+            [
+              ...(parsed.assigneeIds ?? []),
+              ...(coherence.assigneeIds ?? []),
+            ].filter((id): id is number => typeof id === 'number' && id > 0),
+          ),
+        ];
+        // Resolve MXIDs before navigate so we use the same person→Matrix map
+        // Manage compares against — not client.getUserId(), which can differ.
+        const resolveTeamMatrixIds = resolveMatrixUserIdsByPersonIds({
+          personIds: teamPersonIds,
+          authToken,
+        });
         // Close the panel as soon as the signal exists — everything below is
         // best-effort follow-up work that must not hold the form open.
         setIsClosingAfterPublish(true);
@@ -1103,7 +1126,10 @@ export const CreateSignalForm = ({
               }
 
               try {
-                await updateCoherenceBySlug({ slug: coherenceSlug, roomId });
+                await updateCoherenceBySlug({
+                  slug: coherenceSlug,
+                  roomId: canonicalRoomId,
+                });
               } catch (linkError) {
                 const linkErrorMessage =
                   linkError instanceof Error
@@ -1119,31 +1145,41 @@ export const CreateSignalForm = ({
                 );
               }
 
-              // Seed the Matrix signal-team roster from create-time assignees.
+              // Seed the Matrix signal-team roster from create-time assignees
+              // + creator using the same person→MXID map Manage reads.
               // Later assignee edits do not rewrite that roster (team picker).
               if (matrixClient) {
                 try {
-                  const assigneePersonIds = coherence.assigneeIds ?? [];
-                  const personIdToMatrixUserId =
-                    await resolveMatrixUserIdsByPersonIds({
-                      personIds: assigneePersonIds,
-                      authToken,
-                    });
+                  let personIdToMatrixUserId: Record<number, string> = {};
+                  try {
+                    personIdToMatrixUserId = await resolveTeamMatrixIds;
+                  } catch (resolveError) {
+                    console.warn(
+                      'Signal room created but failed to resolve team Matrix ids:',
+                      resolveError,
+                    );
+                  }
                   const teamIdsToSeed = matrixUserIdsForPersonIds(
+                    teamPersonIds,
+                    personIdToMatrixUserId,
+                  );
+                  const ownerMatrixUserId =
+                    personIdToMatrixUserId[creatorId]?.trim() ||
+                    matrixClient.getUserId?.()?.trim() ||
+                    null;
+                  const addedMemberMatrixUserIds = matrixUserIdsForPersonIds(
                     assigneePersonIds,
                     personIdToMatrixUserId,
                   );
-                  const currentUserMatrixId =
-                    matrixClient.getUserId?.()?.trim() || null;
-                  if (teamIdsToSeed.length > 0 || currentUserMatrixId) {
+                  if (teamIdsToSeed.length > 0 || ownerMatrixUserId) {
                     await publishSignalTeamNotice({
                       client: matrixClient,
                       roomId: canonicalRoomId,
                       coherenceSlug,
                       memberMatrixUserIds: teamIdsToSeed,
-                      ownerMatrixUserId: currentUserMatrixId,
-                      actorMatrixUserId: currentUserMatrixId,
-                      addedMemberMatrixUserIds: teamIdsToSeed,
+                      ownerMatrixUserId,
+                      actorMatrixUserId: ownerMatrixUserId,
+                      addedMemberMatrixUserIds,
                     });
                   }
                 } catch (teamSeedError) {

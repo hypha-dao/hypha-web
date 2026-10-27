@@ -93,6 +93,15 @@ describe('signal-team-events', () => {
     );
   });
 
+  it('maps create-time creator + assignee person ids for the Manage picker', () => {
+    expect(
+      matrixUserIdsForPersonIds([20, 10], {
+        10: '@prod_privy_grok:example.org',
+        20: '@prod_privy_vlad:example.org',
+      }),
+    ).toEqual(['@prod_privy_vlad:example.org', '@prod_privy_grok:example.org']);
+  });
+
   it('publishes create-time assignees as the signal team roster', async () => {
     const sendEvent = vi.fn().mockResolvedValue({ event_id: '$evt' });
     await publishSignalTeamNotice({
