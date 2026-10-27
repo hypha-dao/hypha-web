@@ -89,7 +89,12 @@ import { MobileSpacesSubnav } from '../people/components/mobile-spaces-subnav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
-import { isMemberHomePath } from './use-is-space-context';
+import {
+  isConnectionsPath,
+  isMemberHomePath,
+  isMyWalletPath,
+  isNetworkPath,
+} from './use-is-space-context';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 import {
   useCompactHeaderMode,
@@ -217,6 +222,7 @@ import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
 import { isInteractiveCreatePath } from './get-path-function';
 import { readSpaceVoiceOn, writeSpaceVoiceOn } from './ai-panel-discovery-mode';
 import {
+  buildMemberHomeVoiceSessionContext,
   buildSpaceAdvisorVoiceSessionContext,
   type VoiceSessionContext,
 } from './space-voice-session-context';
@@ -460,17 +466,29 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [soundOn, setSoundOn] = useState(true);
   const [voiceReady, setVoiceReady] = useState(false);
 
+  // Home, messages, wallet, and network share the member AI. Space and the
+  // interactive create screen keep their own paths.
+  const isMemberAiSurface =
+    !spaceSlug?.trim() &&
+    !isOnboardingPath &&
+    (isMemberHomePath(pathname) ||
+      isConnectionsPath(pathname) ||
+      isMyWalletPath(pathname) ||
+      isNetworkPath(pathname));
+  const voicePrefSlug =
+    spaceSlug?.trim() || (isMemberAiSurface ? 'member' : undefined);
+
   useEffect(() => {
-    setMicOn(readSpaceVoiceOn(spaceSlug, 'mic'));
-    setSoundOn(readSpaceVoiceOn(spaceSlug, 'sound'));
+    setMicOn(readSpaceVoiceOn(voicePrefSlug, 'mic'));
+    setSoundOn(readSpaceVoiceOn(voicePrefSlug, 'sound'));
     setVoiceReady(true);
-  }, [spaceSlug]);
+  }, [voicePrefSlug]);
 
   const conversationOpen =
-    Boolean(spaceSlug?.trim()) &&
     isAiOpen &&
     !blockSpaceAiForActivityAccess &&
-    !blockSpaceAiForInteraction;
+    !blockSpaceAiForInteraction &&
+    (Boolean(spaceSlug?.trim()) || isMemberAiSurface);
   const dialogue = conversationOpen && voiceReady && (micOn || soundOn);
   const isVoiceInterview = dialogue;
   const {
@@ -840,7 +858,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       prompt: t(`suggestions.${id}`),
       tagLabel: t(`suggestionTags.${id}`),
     });
-    if (pathname.includes('/network') && !spaceSlug) {
+    // Member surfaces speak to the person and their persona. Space and the
+    // interactive create screen keep the space prompts below.
+    if (isMemberAiSurface) {
       const orientation = me?.primaryOrientation;
       const ids =
         orientation === 'builder'
@@ -868,16 +888,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             ];
       return ids.map(card);
     }
-    // Member wallet: personal assistant, not space-scoped tools.
-    if (pathname.includes('/my-wallet') && !spaceSlug) {
-      return [
-        'networkMemberUseful',
-        'networkMemberPeople',
-        'networkMemberSpaces',
-        'createSpace',
-        'sharedNeeds',
-      ].map(card);
-    }
     return [
       ...(!spaceSlug ? [card('createSpace'), card('createEcosystem')] : []),
       card('spaceHealth'),
@@ -887,13 +897,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       card('spaceMemory'),
       card('valueFlows'),
     ];
-  }, [me?.primaryOrientation, pathname, spaceSlug, t]);
+  }, [isMemberAiSurface, me?.primaryOrientation, spaceSlug, t]);
 
   const welcomeText = useMemo(() => {
-    if (pathname.includes('/my-wallet') && !spaceSlug) {
-      return t('welcomeNetworkMember');
-    }
-    if (!(pathname.includes('/network') && !spaceSlug)) return t('welcome');
+    if (!isMemberAiSurface) return t('welcome');
     if (me?.primaryOrientation === 'builder') {
       return t('welcomeNetworkBuilder');
     }
@@ -901,7 +908,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       return t('welcomeNetworkFunder');
     }
     return t('welcomeNetworkMember');
-  }, [me?.primaryOrientation, pathname, spaceSlug, t]);
+  }, [isMemberAiSurface, me?.primaryOrientation, t]);
 
   const handleOverlayClose = useCallback(() => {
     hideAiOverlay();
@@ -3000,22 +3007,35 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   );
 
   const voiceSessionContext = useMemo((): VoiceSessionContext | undefined => {
-    if (!isVoiceInterview || !spaceSlug?.trim()) return undefined;
-    if (isOnboardingSetup && onboardingContext) {
-      return { ...onboardingContext, discoveryMode: 'voice_interview' };
+    if (!isVoiceInterview) return undefined;
+    if (spaceSlug?.trim()) {
+      if (isOnboardingSetup && onboardingContext) {
+        return { ...onboardingContext, discoveryMode: 'voice_interview' };
+      }
+      return buildSpaceAdvisorVoiceSessionContext({
+        spaceSlug,
+        locale: lang,
+      });
     }
-    return buildSpaceAdvisorVoiceSessionContext({
-      spaceSlug,
-      locale: lang,
-    });
-  }, [isOnboardingSetup, isVoiceInterview, lang, onboardingContext, spaceSlug]);
+    if (isMemberAiSurface) {
+      return buildMemberHomeVoiceSessionContext({ locale: lang });
+    }
+    return undefined;
+  }, [
+    isMemberAiSurface,
+    isOnboardingSetup,
+    isVoiceInterview,
+    lang,
+    onboardingContext,
+    spaceSlug,
+  ]);
 
   const voiceInterview = useOnboardingVoiceDiscovery({
     enabled: isVoiceInterview && !isLoading && isAuthenticated,
     isStreaming,
     lastAssistantText,
     locale: lang,
-    activeSpaceSlug: spaceSlug,
+    activeSpaceSlug: voicePrefSlug,
     conversationContext: voiceSessionContext,
     recentTranscriptSummary,
     getAccessToken,
@@ -3031,10 +3051,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       const next = !current;
       if (next) void voiceInterview.startListening();
       else voiceInterview.stopSpeaking();
-      writeSpaceVoiceOn(spaceSlug, 'sound', next);
+      writeSpaceVoiceOn(voicePrefSlug, 'sound', next);
       return next;
     });
-  }, [spaceSlug, voiceInterview.startListening, voiceInterview.stopSpeaking]);
+  }, [
+    voiceInterview.startListening,
+    voiceInterview.stopSpeaking,
+    voicePrefSlug,
+  ]);
 
   const toggleMic = useCallback(() => {
     const micNeedsGrant =
@@ -3047,14 +3071,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     setMicOn((current) => {
       const next = !current;
       if (next) void voiceInterview.startListening();
-      writeSpaceVoiceOn(spaceSlug, 'mic', next);
+      writeSpaceVoiceOn(voicePrefSlug, 'mic', next);
       return next;
     });
   }, [
     micOn,
-    spaceSlug,
     voiceInterview.startListening,
     voiceInterview.voiceError,
+    voicePrefSlug,
   ]);
 
   const handleTriggerClick = useCallback(() => {
