@@ -218,6 +218,7 @@ import {
 import {
   buildSpaceRosterMentionCandidates,
   buildSpaceRosterSignalTeamMembers,
+  mentionCandidatesForSignalTeam,
 } from './human-chat-panel/build-space-roster-mention-candidates';
 import {
   directConversationEmptyWelcomeKey,
@@ -2751,9 +2752,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
     const roster = isSignalThread
-      ? rawMentionCandidates.filter((candidate) =>
-          signalTeamMemberIdSet.has(candidate.userId),
-        )
+      ? mentionCandidatesForSignalTeam({
+          roster: rawMentionCandidates,
+          teamMemberIds: signalTeamMemberIds,
+          currentUserId,
+          labelFor: resolveMemberLabel,
+        })
       : rawMentionCandidates;
     const networkRoom = mode === 'space' && !spaceSlug?.trim();
     const agentIcon: ChatMentionAgentIcon =
@@ -2773,12 +2777,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       agentIcon,
     );
   }, [
+    currentUserId,
     isDirectConversation,
     isSignalThread,
     mode,
     rawMentionCandidates,
+    resolveMemberLabel,
     resolvedTheme,
-    signalTeamMemberIdSet,
+    signalTeamMemberIds,
     space,
     spaceSlug,
     t,

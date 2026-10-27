@@ -49,6 +49,42 @@ export function buildSpaceRosterMentionCandidates({
   );
 }
 
+/** Signal @ list is the team, including people the space roster has not mapped yet. */
+export function mentionCandidatesForSignalTeam({
+  roster,
+  teamMemberIds,
+  currentUserId,
+  labelFor,
+}: {
+  roster: ChatMentionCandidate[];
+  teamMemberIds: readonly string[];
+  currentUserId: string | null;
+  labelFor: (userId: string) => string;
+}): ChatMentionCandidate[] {
+  const self = currentUserId?.trim() || null;
+  const team = new Set(
+    teamMemberIds.map((id) => id.trim()).filter((id) => id && id !== self),
+  );
+  const byUserId = new Map<string, ChatMentionCandidate>();
+  for (const candidate of roster) {
+    const userId = candidate.userId.trim();
+    if (!team.has(userId)) continue;
+    byUserId.set(userId, candidate);
+  }
+  for (const userId of team) {
+    if (byUserId.has(userId)) continue;
+    byUserId.set(userId, {
+      userId,
+      displayLabel: labelFor(userId),
+    });
+  }
+  return [...byUserId.values()].sort((a, b) =>
+    a.displayLabel.localeCompare(b.displayLabel, undefined, {
+      sensitivity: 'base',
+    }),
+  );
+}
+
 export type SignalTeamRosterMember = {
   personId: number;
   matrixUserId: string | null;
