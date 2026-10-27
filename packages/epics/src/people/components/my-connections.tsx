@@ -2358,6 +2358,11 @@ export function MyConnections({
     t,
   ]);
   function selectInboxFilter(next: InboxFilter) {
+    if (picking) {
+      setPicking(false);
+      setSelectedById(new Map());
+      setQuery('');
+    }
     setInboxFilter(next);
     setInboxChannelOpen(true);
     try {
@@ -2686,12 +2691,12 @@ export function MyConnections({
               'min-h-0 flex-1 overflow-hidden lg:flex-row',
           )}
         >
-          {section === 'messages' && !picking ? (
+          {section === 'messages' ? (
             <div
               ref={inboxFiltersRef}
               className={cn(
                 'narrow-scrollbar w-full shrink-0 overscroll-contain lg:h-full lg:w-80 lg:overflow-y-auto',
-                inboxChannelOpen
+                picking || inboxChannelOpen
                   ? 'hidden lg:block'
                   : 'min-h-0 flex-1 overflow-y-auto lg:flex-none',
               )}
