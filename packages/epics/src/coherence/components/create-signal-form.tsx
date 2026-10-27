@@ -1102,6 +1102,23 @@ export const CreateSignalForm = ({
                 );
               }
 
+              try {
+                await updateCoherenceBySlug({ slug: coherenceSlug, roomId });
+              } catch (linkError) {
+                const linkErrorMessage =
+                  linkError instanceof Error
+                    ? linkError.message
+                    : String(linkError);
+                setSignalProvisioningNotice(
+                  t('provisioning.roomLinkFailedRetry'),
+                  linkErrorMessage,
+                );
+                console.warn(
+                  'Signal created and room provisioned but room linking failed:',
+                  linkError,
+                );
+              }
+
               // Seed the Matrix signal-team roster from create-time assignees.
               // Later assignee edits do not rewrite that roster (team picker).
               if (matrixClient) {
@@ -1150,23 +1167,6 @@ export const CreateSignalForm = ({
                 matrixError,
               );
               return;
-            }
-
-            try {
-              await updateCoherenceBySlug({ slug: coherenceSlug, roomId });
-            } catch (linkError) {
-              const linkErrorMessage =
-                linkError instanceof Error
-                  ? linkError.message
-                  : String(linkError);
-              setSignalProvisioningNotice(
-                t('provisioning.roomLinkFailedRetry'),
-                linkErrorMessage,
-              );
-              console.warn(
-                'Signal created and room provisioned but room linking failed:',
-                linkError,
-              );
             }
           })();
         } else {
