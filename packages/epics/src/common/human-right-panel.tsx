@@ -3350,6 +3350,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (isLoadingMatrixUserIds) {
         return;
       }
+      let historyExhausted = false;
       if (!applied.usable && !applied.keptValidatedRoster) {
         const maxRosterHistoryBatches = 50;
         for (
@@ -3369,6 +3370,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             if (cancelled) return;
             applied = applyFromTimeline();
             if (!result.hasMoreOlder) {
+              historyExhausted = true;
               break;
             }
           } catch (error) {
@@ -3383,13 +3385,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
       }
       if (cancelled) return;
-      if (!applied.usable && !applied.keptValidatedRoster) {
-        await seedFromDocumentAssignees();
+      if (applied.usable || applied.keptValidatedRoster) {
+        setSignalTeamRosterResolved(true);
+        return;
       }
-      const hasAnyRoster =
-        applied.usable ||
-        applied.keptValidatedRoster ||
-        documentSeedRef.memberIds.length > 0;
+      // Incomplete scrollback (soft-fail, cap, or catch) — do not seed the
+      // viewer as a member. Stay unresolved so hydrate can retry.
+      if (!historyExhausted) {
+        return;
+      }
+      await seedFromDocumentAssignees();
+      const hasAnyRoster = documentSeedRef.memberIds.length > 0;
       // Map lookup failed with no timeline roster — stay unresolved
       // (fail closed) until the lookup succeeds.
       if (matrixUserIdsError && !hasAnyRoster) {
