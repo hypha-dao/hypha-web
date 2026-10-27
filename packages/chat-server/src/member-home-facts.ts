@@ -2,6 +2,7 @@ import {
   HYPHA_ACTIVATION_PER_MONTH,
   isMemberHomeItemDecline,
   isMemberHomeItemDeferral,
+  isMemberHomeItemLook,
   listMemberHomeThreadCatalog,
   listMemberHomeThreadItems,
   memberHomeThreadItemForMessage,
@@ -337,6 +338,9 @@ export function formatMemberHomeFacts(
       : undefined) ??
     stillWaiting[0] ??
     null;
+  const lookAsk = Boolean(
+    options?.asked?.trim() && isMemberHomeItemLook(options.asked),
+  );
   const itemLine = (
     item: (typeof stillWaiting)[number] | NonNullable<typeof askedItem>,
   ) => {
@@ -366,7 +370,16 @@ export function formatMemberHomeFacts(
         : holding
         ? 'They just said not now, and nothing else is waiting. One line that you will come back to it and ask if it is a good time. Do not ask that now. Do not call show_member_home_item.'
         : recalledItems.length > 0
-        ? 'Already asked once if this is a good time. Do not ask again in this conversation. If they just agreed, be glad and name the next item. If nothing else is waiting, say so in one line. Do not present the item as new.'
+        ? lookAsk && recalledItems[0]
+          ? `They asked to see this card. It is under this reply: kind=${
+              recalledItems[0].kind
+            } slug=${recalledItems[0].slug} title="${(
+              recalledItems[0].title ?? ''
+            ).replace(/"/g, "'")}" space="${recalledItems[0].spaceTitle.replace(
+              /"/g,
+              "'",
+            )}". One short line naming the title and the space. Do not say the space is open. Do not say they can vote right there. Do not say you opened it. Call show_member_home_item once.`
+          : 'Already asked once if this is a good time. Do not ask again in this conversation. If they just agreed, be glad and name the next item. If nothing else is waiting, say so in one line. Do not present the item as new.'
         : passedItems.length > 0
         ? 'Nothing left in the queue. They already passed on the items below. Say that in one line. Do not ask what else they would like, and do not bring a passed item back.'
         : 'Nothing in their spaces needs them. No judgement. The network stays open. If a network signal is listed below, you may offer one. Otherwise invite them to activate a space. Do not imply the quiet is a problem. Do not call show_member_home_item unless you are offering that one network signal.'
@@ -466,7 +479,7 @@ export function formatMemberHomeFacts(
           .join('; ')}.`
       : null,
     'Each thing they say starts a new reply underneath that message. Do not rewrite an earlier reply. Several proposals can share a title. The person and the space decide which one it is. The words and the tool slug are that same proposal.',
-    'A space and its signals live on the signals board. When they agree to look, call mcp_navigation with destination_type space_screen, space_screen signals, and that space slug. One short line. Do not list signals, priorities, or descriptions. Do not say you opened the space. Do not describe what the space is building. Do not ask what they would like to focus on there.',
+    'A space and its signals live on the signals board. When they agree to look, call mcp_navigation with destination_type space_screen, space_screen signals, and that space slug. One short line. Do not list signals, priorities, or descriptions. Do not say you opened the space. Do not say the space is open. Do not say the card is right there. The card is under this reply only when this brief names it. Do not describe what the space is building. Do not ask what they would like to focus on there.',
     listAsk
       ? null
       : shareTurn && spoken
@@ -486,19 +499,26 @@ export function formatMemberHomeFacts(
           "'",
         )}". Call show_member_home_item once with this kind and slug. Do not describe a different person, even when another proposal has the same title.`
       : recall
-      ? `Card on screen: kind=${recall.kind} slug=${recall.slug} title="${(
+      ? `Card for this reply: kind=${recall.kind} slug=${recall.slug} title="${(
           recall.title ?? ''
         ).replace(
           /"/g,
           "'",
         )}". They said not now earlier. Ask "is this a good time?" Do not present it as a new item. Call show_member_home_item once for this card.`
       : spoken
-      ? `Card on screen: kind=${spoken.kind} slug=${spoken.slug} action=${
+      ? `Card for this reply: kind=${spoken.kind} slug=${spoken.slug} action=${
           spoken.action === 'validate' ? 'signal' : spoken.action
         } title="${(spoken.title ?? '').replace(
           /"/g,
           "'",
         )}". This reply is about that content only. Introduce it. Do not announce an interface. Do not name any other title.`
+      : lookAsk && recalledItems[0]
+      ? `Card for this reply: kind=${recalledItems[0].kind} slug=${
+          recalledItems[0].slug
+        } title="${(recalledItems[0].title ?? '').replace(
+          /"/g,
+          "'",
+        )}". They asked to see it. One short line naming the title and the space. Do not say the space is open. Do not say they can vote right there. Do not say you opened it. Call show_member_home_item once.`
       : null,
     listAsk
       ? listTurnLine(listAsk)
@@ -548,9 +568,10 @@ export function formatMemberHomeFacts(
   ]
     .filter((line): line is string => Boolean(line))
     .join('\n');
+  const broughtBack = askedItem ?? spoken ?? recall ?? recalledItems[0] ?? null;
   const card =
-    listAsk == null && spoken != null && spoken.slug && shareTurn == null
-      ? { kind: spoken.kind, slug: spoken.slug }
+    listAsk == null && broughtBack?.slug && shareTurn == null
+      ? { kind: broughtBack.kind, slug: broughtBack.slug }
       : null;
   return { text, card };
 }

@@ -15,6 +15,7 @@ import {
   memberHomeThreadItemForMessage,
   resolveMemberHomeThreadItem,
   memberHomeItemMemory,
+  memberHomeLookItem,
   passedMemberHomeItemKeys,
   shownMemberHomeItemKeys,
 } from '../member-home-thread';
@@ -849,6 +850,42 @@ describe('passedMemberHomeItemKeys', () => {
     expect(agreed.recalled).toEqual([]);
     expect(agreed.passed).toEqual([]);
     expect(agreed.held).toBeNull();
+
+    const looking = memberHomeItemMemory(items, [
+      offer('invite-member', 'proposal'),
+      { role: 'user', content: 'Not now for Invite Member.' },
+      offer('invite-member', 'proposal'),
+      { role: 'user', content: 'Can you show me the proposal?' },
+      { role: 'user', content: "I don't see." },
+      { role: 'user', content: 'Yes, open the flywheel.' },
+    ]);
+    expect(looking.settled).toEqual([]);
+    expect(looking.recalled).toEqual(['proposal:invite-member']);
+    const broughtBack = [
+      offer('invite-member', 'proposal'),
+      { role: 'user' as const, content: 'Not now for Invite Member.' },
+      offer('invite-member', 'proposal'),
+    ];
+    expect(
+      memberHomeLookItem(items, broughtBack, 'Can you show me the proposal?')
+        ?.slug,
+    ).toBe('invite-member');
+    expect(memberHomeLookItem(items, broughtBack, "I don't see.")?.slug).toBe(
+      'invite-member',
+    );
+    const flywheel = {
+      ...items.find((item) => item.kind === 'proposal')!,
+      slug: 'join-flywheel',
+      title: 'Invite to join',
+      spaceSlug: 'hypha-flywheel',
+      spaceTitle: 'Hypha Flywheel',
+    };
+    expect(
+      memberHomeLookItem([flywheel], [], 'Yes, open the flywheel.')?.slug,
+    ).toBe('join-flywheel');
+    expect(
+      memberHomeLookItem(items, broughtBack, 'Tell me about the budget'),
+    ).toBeNull();
   });
 });
 

@@ -146,7 +146,7 @@ describe('formatMemberHomeFacts', () => {
       'A proposal they have already voted on is absent from the waiting list.',
     );
     expect(facts).toContain(
-      'When action=outcome the vote is closed. Use passed, participation, and unity, and phrase them freshly.',
+      'When action=outcome the vote is closed. Use passed, participation, and unity exactly as written.',
     );
     expect(facts).toContain("I don't want to look");
     expect(facts).toContain('You are not in the decision');
@@ -257,12 +257,13 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('brings a deferred item back only as a good time', () => {
-    const facts = formatMemberHomeFactsText(home, {
+    const brief = formatMemberHomeFacts(home, {
       deferred: ['proposal:path'],
     });
-    expect(facts).toContain('is this a good time');
-    expect(facts).toContain('Deferred.');
-    expect(facts).not.toContain('1. kind=proposal slug=path');
+    expect(brief.text).toContain('is this a good time');
+    expect(brief.text).toContain('Deferred.');
+    expect(brief.text).not.toContain('1. kind=proposal slug=path');
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'path' });
   });
 
   it('does not ask if this is a good time a second time', () => {
@@ -272,6 +273,17 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Already asked once if this is a good time');
     expect(facts).not.toContain('1. kind=proposal slug=path');
     expect(facts).not.toContain('Bring back the deferred item once');
+  });
+
+  it('keeps the card when they ask to see a brought-back invite', () => {
+    const brief = formatMemberHomeFacts(home, {
+      recalled: ['proposal:path'],
+      asked: 'Can you show me the proposal?',
+    });
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'path' });
+    expect(brief.text).toContain('They asked to see this card');
+    expect(brief.text).toContain('Do not say the space is open');
+    expect(brief.text).not.toContain('Bring back the deferred item once');
   });
 
   it('continues with the next item after they come back', () => {
@@ -321,7 +333,7 @@ describe('formatMemberHomeFacts', () => {
       ],
     });
     expect(facts).toContain(
-      'Card on screen: kind=proposal slug=path action=outcome',
+      'Card for this reply: kind=proposal slug=path action=outcome',
     );
     expect(facts).toContain('say="It passed — 62% took part, with 91% unity."');
     expect(facts).not.toContain('slug=path document=proposal action=decision');

@@ -940,6 +940,86 @@ export function isMemberHomeItemDeferral(text: string): boolean {
 }
 
 /**
+ * They are asking to see the item. That is not a yes that drops it,
+ * and it is not a no.
+ */
+export function isMemberHomeItemLook(text: string): boolean {
+  const normalized = memberHomeChoiceText(text);
+  if (!normalized) return false;
+  if (
+    /\b(don't see|do not see|dont see|can't see|cannot see|not seeing)\b/.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+  if (
+    /\b(show me|let me see|where is it|where is the|where is that)\b/.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+  if (
+    /\b(show|see|open)\b/.test(normalized) &&
+    /\b(proposal|invite|card|it)\b/.test(normalized)
+  ) {
+    return true;
+  }
+  if (/\bopen\b/.test(normalized)) return true;
+  return (
+    /\b(go to|take me)\b/.test(normalized) &&
+    /\b(proposal|invite|card|it|there|space)\b/.test(normalized)
+  );
+}
+
+/** The item they are asking to see, from the reply before this message. */
+export function memberHomeLookItem(
+  items: readonly MemberHomeThreadItem[],
+  messages: ReadonlyArray<MemberHomeMemoryMessage>,
+  asked: string,
+): MemberHomeThreadItem | null {
+  if (!isMemberHomeItemLook(asked)) return null;
+  const previous = [...messages]
+    .reverse()
+    .find((message) => message.role === 'assistant');
+  const hinted = previous?.metadata?.homeItem;
+  if (hinted?.kind && hinted.slug) {
+    const match = items.find(
+      (item) => item.kind === hinted.kind && item.slug === hinted.slug,
+    );
+    if (match) return match;
+  }
+  const fromWords = previous
+    ? memberHomeThreadItemForMessage(items, previous)
+    : null;
+  if (fromWords) return fromWords;
+  const memory = memberHomeItemMemory(items, messages);
+  const key = memory.recalled[0] ?? memory.deferred[0] ?? null;
+  if (key) {
+    const remembered = items.find(
+      (item) => memberHomeThreadItemKey(item) === key,
+    );
+    if (remembered) return remembered;
+  }
+  const askedText = memberHomeChoiceText(asked);
+  const bySpace = items.filter((item) =>
+    foldHomeText(item.spaceTitle)
+      .split(/[^a-z0-9]+/)
+      .filter((token) => token.length >= 5)
+      .some((token) => askedText.includes(token)),
+  );
+  if (bySpace.length === 1) return bySpace[0] ?? null;
+  const decisions = items.filter(
+    (item) => item.kind === 'proposal' && item.action === 'decision',
+  );
+  if (decisions.length === 1 && /\b(proposal|invite|card)\b/.test(askedText)) {
+    return decisions[0] ?? null;
+  }
+  return bySpace[0] ?? null;
+}
+
+/**
  * A reply that drops the item just offered.
  * "I don't want to decide on it" counts. "Not now" does not. A pause does not.
  */
@@ -988,6 +1068,9 @@ type MemberHomeMemoryMessage = {
   role?: string;
   parts?: readonly unknown[];
   content?: string;
+  metadata?: {
+    homeItem?: { kind?: string; slug?: string };
+  };
 };
 
 /**
@@ -1033,6 +1116,7 @@ export function memberHomeItemMemory(
       held = currentKey;
       continue;
     }
+    if (isMemberHomeItemLook(text)) continue;
     if (isMemberHomeItemDecline(text)) {
       const named = itemsReferencedInText(items, text);
       const offered = itemsReferencedInText(items, assistantText);

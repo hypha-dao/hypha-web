@@ -20,6 +20,7 @@ import {
   listMemberHomeThreadItems,
   memberHomeBoardDestination,
   memberHomeDirectReply,
+  memberHomeLookItem,
   type MemberHomeDirectReply,
   memberHomeItemMemory,
   memberHomeSignalCatalogue,
@@ -813,6 +814,53 @@ export function MemberHomeChat({
             },
           ]);
         }
+        if (reveal) {
+          setInput('');
+          if (includeDrafts) setDrafts([]);
+          settleSend.current = true;
+          glideScroll.current = true;
+          pinnedToEnd.current = true;
+        }
+        setMessages(next);
+        writeHomeThread(next);
+        return;
+      }
+      const lookedUp =
+        trimmed && files.length === 0
+          ? memberHomeLookItem(
+              listMemberHomeThreadCatalog(intelligence),
+              messagesRef.current,
+              trimmed,
+            )
+          : null;
+      if (lookedUp) {
+        const base = messagesRef.current.filter(
+          (message) => !isHomeErrorMessage(message),
+        );
+        const next: HomeMessage[] = [
+          ...base,
+          {
+            id: `home-user-${crypto.randomUUID()}`,
+            role: 'user',
+            parts: [{ type: 'text', text: trimmed }],
+          },
+          {
+            id: `home-assistant-${crypto.randomUUID()}`,
+            role: 'assistant',
+            metadata: {
+              homeItem: { kind: lookedUp.kind, slug: lookedUp.slug },
+            },
+            parts: [
+              {
+                type: 'text',
+                text: t('itemOpen', {
+                  title: lookedUp.title,
+                  space: lookedUp.spaceTitle,
+                }),
+              },
+            ],
+          },
+        ];
         if (reveal) {
           setInput('');
           if (includeDrafts) setDrafts([]);
