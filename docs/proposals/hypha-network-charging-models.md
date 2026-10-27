@@ -77,11 +77,13 @@ Illustrative card tiers (not live): Starter $12 / space / month, Team $29, Netwo
 | Step | Proposed behaviour |
 |---|---|
 | **Checkout** | Authenticated member or delegate starts Checkout / Portal. Success webhook activates `Subscription` and extends entitlement (§6) |
-| **Renewals** | Auto-charge. Processing `invoice.paid` **must be idempotent** on a unique provider invoice or event key (duplicates must not add another invoice or more access days). Invoice lives in Postgres and expiry is on-chain (`SpacePaymentTracker`), so they cannot share one transaction: record the invoice as **pending**, extend expiry via an outbox/reconciliation step (same add-days rule as `updateSpacePayment`), store the chain tx hash, and mark the invoice **applied** only after that update is confirmed |
+| **Renewals** | Auto-charge. Processing `invoice.paid` **must be idempotent** on a unique provider invoice or event key (duplicates must not add another invoice or more access days). Invoice lives in Postgres and expiry is on-chain (`SpacePaymentTracker`), so they cannot share one transaction: record the invoice as **pending**, extend expiry via an outbox/reconciliation step (owner / owner-controlled relayer + `setCustomExpiryTime` — see below), store the chain tx hash, and mark the invoice **applied** only after that update is confirmed |
 | **Failed payments** | Grace (e.g. 7 days, **assumption**) → dunning via `sendEmailByAlias` (person `slug` = OneSignal `external_id`) → lapse. Mirror lapse so proposals and AI stop together |
 | **Plan changes** | Upgrade now + proration; downgrade at period end. Changing space = cancel + new Checkout |
 | **Cancellation** | At period end. Badge stays “active until {date}” |
 | **Taxes / receipts** | Processor-owned. Store provider IDs plus required billing metadata (invoices and line items per §5); never store payment instrument data (ADR 0002 spirit) |
+
+**Phase 1 authority to extend expiry (fact + assumption).** `updateSpacePayment` is callable only by `HyphaToken` (add-days). `setCustomExpiryTime` is `onlyOwner` and writes an **absolute** timestamp, not added days. Phase 1 backend therefore cannot call `updateSpacePayment`. **Assumption:** the contract owner (or an owner-controlled relayer the owner authorizes to submit txs) is the signer. The backend reads current `expiryTime`, computes the new absolute value itself (if expired or unset: now + period; else current expiry + period), then calls `setCustomExpiryTime`. Without that owner/relayer path, a successful card payment cannot extend an expired space.
 
 Failed-payment UX should reuse the existing **expired / renew-before** badge and activate CTA (`subscription-badge.tsx`, `sales-banner.tsx`), not a new billing-only chrome in Phase 1.
 
@@ -163,7 +165,7 @@ On-chain and card spend should share a **canonical USD number** in the ops dashb
 
 Governance still reads **only** `isSpaceActive`. So a card payment that does not extend `SpacePaymentTracker` would leave proposals blocked while AI (if dual-read) stayed up.
 
-**Assumption for Phase 1:** after `invoice.paid`, a privileged backend path extends on-chain expiry (owner `setCustomExpiryTime`, or a small authorized “billing operator” added later). Crypto users keep `payForSpaces` / `payInHypha`. Entitlement stays one boolean: the space is active until a timestamp.
+**Assumption for Phase 1:** after `invoice.paid`, the owner or owner-controlled relayer calls `setCustomExpiryTime` with a backend-computed **absolute** `expiryTime` (§3). Crypto users keep `payForSpaces` / `payInHypha`. Entitlement stays one boolean: the space is active until a timestamp.
 
 Do not put card state in the contract. Do not use HYPHA as the card settlement asset.
 
