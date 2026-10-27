@@ -1,14 +1,18 @@
 import type { ReactNode } from 'react';
 import { Container, Heading } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 
 export async function MessagesPageFrame({
   children,
   heading = 'messages',
+  fillViewport = false,
 }: {
   children: ReactNode;
   /** Suggestions uses its own title. The messages screen keeps "Share messages". */
   heading?: 'messages' | 'suggestions' | 'archived';
+  /** The channel menu stays put. Only the conversation list scrolls. */
+  fillViewport?: boolean;
 }) {
   const t = await getTranslations('Connections');
   const titleLineTwo =
@@ -19,9 +23,20 @@ export async function MessagesPageFrame({
       : t('titleLineTwo');
 
   return (
-    <div className="w-full min-w-0 overflow-x-hidden overflow-y-auto">
-      <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9">
-        <header className="xl:hidden">
+    <div
+      className={cn(
+        'w-full min-w-0 overflow-x-clip',
+        fillViewport &&
+          '-mt-4 -mb-8 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] min-h-0 flex-col overflow-hidden md:-mt-5 xl:h-[calc(100svh-var(--menu-top-height,4.5rem))]',
+      )}
+    >
+      <Container
+        className={cn(
+          'flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9',
+          fillViewport && 'h-full min-h-0',
+        )}
+      >
+        <header className="shrink-0 xl:hidden">
           <p className="mb-2 text-1 font-bold uppercase text-foreground">
             {t('titleLineOne')}
           </p>
@@ -37,12 +52,14 @@ export async function MessagesPageFrame({
           color="secondary"
           weight="medium"
           align="center"
-          className="hidden flex-col xl:flex"
+          className="hidden shrink-0 flex-col xl:flex"
         >
           <span>{t('titleLineOne')}</span>
           <span>{titleLineTwo}</span>
         </Heading>
-        {children}
+        <div className={cn(fillViewport && 'flex min-h-0 flex-1 flex-col')}>
+          {children}
+        </div>
       </Container>
     </div>
   );

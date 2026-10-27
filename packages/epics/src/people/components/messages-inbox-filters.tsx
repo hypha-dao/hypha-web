@@ -1,7 +1,15 @@
 'use client';
 
 import type { ElementType } from 'react';
-import { Circle, Radio } from 'lucide-react';
+import {
+  Circle,
+  Globe2,
+  LayoutGrid,
+  MessageSquare,
+  MessagesSquare,
+  Network,
+  Radio,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -11,9 +19,15 @@ type FilterCounts = Record<InboxFilter, { total: number; unread: number }>;
 
 const NESTED = new Set<InboxFilter>(['rooms', 'signals']);
 
-const FILTER_ICONS: Partial<Record<InboxFilter, ElementType>> = {
+/** Same marks the rest of the app already uses for these places. */
+const FILTER_ICONS: Record<InboxFilter, ElementType> = {
+  all: MessagesSquare,
+  direct: MessageSquare,
+  spaces: LayoutGrid,
   rooms: Circle,
   signals: Radio,
+  ecosystem: Network,
+  network: Globe2,
 };
 
 function FilterRow({
@@ -48,13 +62,11 @@ function FilterRow({
         selected && 'bg-accent-2',
       )}
     >
-      {Icon ? (
-        <Icon
-          className="mt-0.5 size-4 shrink-0 text-foreground"
-          strokeWidth={1.5}
-          aria-hidden
-        />
-      ) : null}
+      <Icon
+        className="mt-0.5 size-4 shrink-0 text-foreground"
+        strokeWidth={1.5}
+        aria-hidden
+      />
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline gap-3">
           <span
@@ -94,10 +106,7 @@ export function MessagesInboxFilters({
 }) {
   const t = useTranslations('Connections');
   return (
-    <nav
-      aria-label={t('inbox.filterLabel')}
-      className="min-w-0 lg:w-80 lg:shrink-0"
-    >
+    <nav aria-label={t('inbox.filterLabel')} className="min-w-0 lg:w-full">
       <div className="overflow-hidden border border-border bg-background">
         {(
           [

@@ -45,7 +45,16 @@ import {
 import { listBoundChatRoomIdsAmongAction } from '@hypha-platform/core/matrix/server/actions';
 import { Badge, Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { Circle, Globe2, Radio, Search, Target, Users, X } from 'lucide-react';
+import {
+  ChevronLeft,
+  Circle,
+  Globe2,
+  Radio,
+  Search,
+  Target,
+  Users,
+  X,
+} from 'lucide-react';
 
 import { countIncomingUnreadMessages } from '../../common/human-chat-panel/conversation-unread-count';
 import { contentMentionsMatrixUser } from '../../../../core/src/matrix/mentions';
@@ -1634,10 +1643,15 @@ export function MyConnections({
   const debugRooms = searchParams.get('debugRooms') === '1';
   const openedDirectChatRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
+  const inboxFiltersRef = useRef<HTMLDivElement | null>(null);
+  const inboxListRef = useRef<HTMLDivElement | null>(null);
+  const inboxNavReady = useRef(false);
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
   const [channels, setChannels] = useState<JoinedChannelSnapshot[]>([]);
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>('all');
+  /** Below the side-by-side layout, a channel tap replaces the menu with its messages. */
+  const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
   const [synced, setSynced] = useState(false);
   const [initialSyncComplete, setInitialSyncComplete] = useState(false);
   const [rowsPending, setRowsPending] = useState(true);
@@ -1692,6 +1706,17 @@ export function MyConnections({
       // Private mode can block session storage. The default filter still works.
     }
   }, []);
+  useEffect(() => {
+    if (!inboxNavReady.current) {
+      inboxNavReady.current = true;
+      return;
+    }
+    if (window.matchMedia('(min-width: 64rem)').matches) return;
+    const target = inboxChannelOpen
+      ? inboxListRef.current
+      : inboxFiltersRef.current;
+    target?.scrollTo({ top: 0 });
+  }, [inboxChannelOpen]);
 
   const connections =
     directory && directory.length >= (home?.connections.length ?? 0)
@@ -2261,6 +2286,7 @@ export function MyConnections({
   ]);
   function selectInboxFilter(next: InboxFilter) {
     setInboxFilter(next);
+    setInboxChannelOpen(true);
     try {
       window.sessionStorage.setItem(INBOX_FILTER_KEY, next);
     } catch {
@@ -2482,7 +2508,12 @@ export function MyConnections({
   }
 
   return (
-    <div className="flex min-w-0 flex-col gap-6">
+    <div
+      className={cn(
+        'flex min-w-0 flex-col gap-6',
+        section === 'messages' && 'min-h-0 flex-1',
+      )}
+    >
       <MemberHomePeople
         people={connections}
         extraPersonIds={[...reachOutIds, ...peerPersonIds]}
@@ -2546,17 +2577,48 @@ export function MyConnections({
         <div
           className={cn(
             'flex min-w-0 flex-col gap-6',
-            section === 'messages' && !picking && 'lg:flex-row lg:items-start',
+            section === 'messages' && 'min-h-0 flex-1 lg:flex-row',
           )}
         >
           {section === 'messages' && !picking ? (
-            <MessagesInboxFilters
-              value={inboxFilter}
-              counts={inboxView.counts}
-              onChange={selectInboxFilter}
-            />
+            <div
+              ref={inboxFiltersRef}
+              className={cn(
+                'narrow-scrollbar min-h-0 w-full shrink-0 overflow-y-auto overscroll-contain lg:w-80',
+                inboxChannelOpen ? 'hidden lg:block' : 'flex-1 lg:flex-none',
+              )}
+            >
+              <MessagesInboxFilters
+                value={inboxFilter}
+                counts={inboxView.counts}
+                onChange={selectInboxFilter}
+              />
+            </div>
           ) : null}
-          <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <div
+            ref={inboxListRef}
+            className={cn(
+              'narrow-scrollbar min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain',
+              section === 'messages' && !picking && !inboxChannelOpen
+                ? 'hidden lg:flex'
+                : 'flex',
+            )}
+          >
+            {section === 'messages' && !picking ? (
+              <button
+                type="button"
+                aria-label={tCommon('back')}
+                className="flex items-center gap-1 self-start text-3 text-foreground lg:hidden"
+                onClick={() => setInboxChannelOpen(false)}
+              >
+                <ChevronLeft
+                  className="size-4 shrink-0"
+                  strokeWidth={1.5}
+                  aria-hidden
+                />
+                {t(`inbox.${inboxFilter}Title`)}
+              </button>
+            ) : null}
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
                 <label className="relative min-w-0 flex-1">

@@ -10,7 +10,7 @@ import { MessagesPageFrame } from './_components/messages-page-frame';
 export default function MessagesPage() {
   return (
     <AccountRequiredGate>
-      <MessagesPageFrame>
+      <MessagesPageFrame fillViewport>
         <Suspense fallback={<MessagesPeopleListSkeleton />}>
           <MyConnections section="messages" />
         </Suspense>
