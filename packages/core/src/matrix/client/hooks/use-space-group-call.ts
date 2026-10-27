@@ -79,9 +79,7 @@ import {
   applyScreenShareCaptureRootRestrictionWithRetry,
   clearScreenShareCaptureRootRestriction,
 } from './screenshare-capture-exclusion';
-import {
-  applyScreenshareTrackContentHints,
-} from './screenshare-voice-boost';
+import { applyScreenshareTrackContentHints } from './screenshare-voice-boost';
 import {
   clearPersistedPendingRecordingUpload,
   persistPendingRecordingUpload,
