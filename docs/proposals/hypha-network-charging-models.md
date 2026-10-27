@@ -75,11 +75,11 @@ Illustrative card tiers (not live): Starter $12 / space / month, Team $29, Netwo
 | Step | Proposed behaviour |
 |---|---|
 | **Checkout** | Authenticated member or delegate starts Checkout / Portal. Success webhook activates `Subscription` and extends entitlement (§6) |
-| **Renewals** | Auto-charge. `invoice.paid` writes `Invoice` and adds days to expiry (same rule as `updateSpacePayment`) |
+| **Renewals** | Auto-charge. Processing `invoice.paid` **must be idempotent**: require a unique provider invoice or event key; record `Invoice` and extend space expiry (same add-days rule as `updateSpacePayment`) **atomically only on first processing**. Duplicate deliveries must not add another invoice or more access days |
 | **Failed payments** | Grace (e.g. 7 days, **assumption**) → dunning via `sendEmailByAlias` (person `slug` = OneSignal `external_id`) → lapse. Mirror lapse so proposals and AI stop together |
 | **Plan changes** | Upgrade now + proration; downgrade at period end. Changing space = cancel + new Checkout |
 | **Cancellation** | At period end. Badge stays “active until {date}” |
-| **Taxes / receipts** | Processor-owned. Store customer + subscription ids only (ADR 0002 spirit); never card PANs |
+| **Taxes / receipts** | Processor-owned. Store provider IDs plus required billing metadata (invoices and line items per §5); never store payment instrument data (ADR 0002 spirit) |
 
 Failed-payment UX should reuse the existing **expired / renew-before** badge and activate CTA (`subscription-badge.tsx`, `sales-banner.tsx`), not a new billing-only chrome in Phase 1.
 
@@ -127,8 +127,8 @@ Reuse `bank_customers` **shape** (XOR owner, provider ids only) — do not overl
 |---|---|
 | Single space, single payer | `Allocation(space) = Invoice.total`; `Allocation(payer) = Invoice.total` as payer; consumers get $0 |
 | Parent invoice covering children | Weight by **child-months** (same idea as `allocateUsdByDuration` in `paying-spaces-timeline.ts`). Child *i*: `total * months_i / sum(months)` |
-| Equal member split | `Allocation(person) = LineItem.amount / count(memberships at period end)` — document the snapshot rule |
-| Seat pack | Each assigned seat: `base_share = space_base / assigned_count`; unused seats stay on the space |
+| Equal member split | If membership count is 0, the full amount stays allocated to the space. Otherwise `Allocation(person) = LineItem.amount / count(memberships at period end)` — document the snapshot rule |
+| Seat pack | If `assigned_count` is 0, the full amount stays allocated to the space. Otherwise each assigned seat: `base_share = space_base / assigned_count`; unused seats stay on the space |
 | Usage add-on | `Allocation(person) = usage_line * (person_usage / space_usage)` |
 
 On-chain and card spend should share a **canonical USD number** in the ops dashboard (card: invoice total; chain: existing HYPHA/USDC conversion). Do not double-count if a card charge is later used to `payForSpaces`.
@@ -172,7 +172,7 @@ Do not put card state in the contract. Do not use HYPHA as the card settlement a
 ### Phase 1 — per-space card subscription, single payer, spend dashboard
 
 - One card SKU ≈ current activation (illustrative **$11–12 / space / month**, aligned with the 11 USDC figure — **not** a price decision).
-- Payer = authenticated person; entitlement = that space (and optional extra `spaceIds` in one Checkout, matching `payForSpaces`).
+- Payer = authenticated person; **one space per subscription** (one Checkout → one `Subscription.space_id`). A person who sponsors several spaces starts a Checkout per space.
 - Webhook extends `SpacePaymentTracker` so proposal gates and badges stay consistent.
 - Ops: paying-spaces dashboard gains a **card vs on-chain** split and payer person.
 - Failed pay / cancel: existing expired/renew banner + email.
