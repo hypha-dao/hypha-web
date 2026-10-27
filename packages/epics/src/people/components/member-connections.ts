@@ -304,6 +304,47 @@ export function visibleMemberRowsAfterTitleResolve<
   return rows.filter((row) => !row.titlePending);
 }
 
+export type MessagesPeopleListReadyInput = {
+  isMatrixAvailable: boolean;
+  isConnecting: boolean;
+  /** Matrix has reached Prepared/Syncing. Not enough on its own — Syncing can be empty. */
+  synced: boolean;
+  /**
+   * First /sync finished (`Prepared` or `isInitialSyncComplete`). Without this,
+   * the 12-person directory paints as PEOPLE AROUND before rooms exist.
+   */
+  initialSyncComplete: boolean;
+  /** Joined rooms still waiting for a conversation summary. */
+  rowsPending: boolean;
+  /** Intelligence fetch finished (or there is no JWT to fetch). */
+  homeLoaded: boolean;
+  /** Person → Matrix ids still loading, so DMs cannot attach to directory rows. */
+  matrixIdsLoading: boolean;
+  /** Peer profiles still loading; unresolved DMs would drop when this settles. */
+  peopleBySubLoading: boolean;
+};
+
+/**
+ * The Messages people list is safe to paint. Until then the directory (or a
+ * partial Matrix store) would flash the wrong set of people.
+ *
+ * Matrix unavailable and not connecting is "ready" so the empty/unavailable
+ * copy can show. Callers latch this so a later room pump does not hide the list.
+ */
+export function messagesPeopleListReady(
+  input: MessagesPeopleListReadyInput,
+): boolean {
+  if (!input.isMatrixAvailable) return !input.isConnecting;
+  return (
+    input.synced &&
+    input.initialSyncComplete &&
+    !input.rowsPending &&
+    input.homeLoaded &&
+    !input.matrixIdsLoading &&
+    !input.peopleBySubLoading
+  );
+}
+
 /** Union directory pages / search hits by person id. Synthetics stay out. */
 export function mergeDirectoryPeople<T extends { id: number }>(
   ...lists: Array<readonly T[] | null | undefined>

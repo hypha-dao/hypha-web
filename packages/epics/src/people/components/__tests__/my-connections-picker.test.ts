@@ -74,4 +74,18 @@ describe('group picker chips and radio', () => {
     expect(source).toContain("if (event.key === 'Escape') return;");
     expect(source).toContain('event.stopPropagation()');
   });
+
+  it('holds PEOPLE AROUND behind a list skeleton until the conversation list settles', () => {
+    expect(source).toContain('messagesPeopleListReady');
+    expect(source).toContain('initialSyncComplete');
+    expect(source).toContain('MemberListSkeleton');
+    expect(source).toContain('data-testid="messages-people-loader"');
+    expect(source).toContain('previewLoading={false}');
+    expect(source).toContain('!listLoading && people.length > 0');
+    expect(source).toContain(
+      'if (dataReady && isMatrixAvailable) setListSettled(true)',
+    );
+    expect(source).not.toMatch(/if \(dataReady\) setListSettled\(true\)/);
+    expect(source).not.toMatch(/isConnecting \? t\('loading'\)/);
+  });
 });

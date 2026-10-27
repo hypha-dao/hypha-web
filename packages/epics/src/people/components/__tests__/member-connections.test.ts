@@ -29,6 +29,7 @@ import {
   resolvePeerRowTitle,
   conversationDisplayName,
   visibleMemberRowsAfterTitleResolve,
+  messagesPeopleListReady,
   messagePreview,
   orphanedDirectRoomIds,
   previewWithNames,
@@ -1137,6 +1138,69 @@ describe('applyResolvedPeerTitles', () => {
       name: 'Bob Duindam',
       titlePending: false,
     });
+  });
+});
+
+describe('messagesPeopleListReady', () => {
+  const ready = {
+    isMatrixAvailable: true,
+    isConnecting: false,
+    synced: true,
+    initialSyncComplete: true,
+    rowsPending: false,
+    homeLoaded: true,
+    matrixIdsLoading: false,
+    peopleBySubLoading: false,
+  };
+
+  it('waits while Matrix is connecting or the room list has not settled', () => {
+    expect(
+      messagesPeopleListReady({
+        ...ready,
+        isMatrixAvailable: false,
+        isConnecting: true,
+        synced: false,
+        initialSyncComplete: false,
+        rowsPending: true,
+        homeLoaded: false,
+      }),
+    ).toBe(false);
+    expect(messagesPeopleListReady({ ...ready, synced: false })).toBe(false);
+    expect(messagesPeopleListReady({ ...ready, rowsPending: true })).toBe(
+      false,
+    );
+  });
+
+  it('does not treat Syncing-without-Prepared as ready (directory flash)', () => {
+    expect(
+      messagesPeopleListReady({ ...ready, initialSyncComplete: false }),
+    ).toBe(false);
+  });
+
+  it('waits for directory, Matrix ids, and peer profiles so the set of people does not swap', () => {
+    expect(messagesPeopleListReady({ ...ready, homeLoaded: false })).toBe(
+      false,
+    );
+    expect(messagesPeopleListReady({ ...ready, matrixIdsLoading: true })).toBe(
+      false,
+    );
+    expect(
+      messagesPeopleListReady({ ...ready, peopleBySubLoading: true }),
+    ).toBe(false);
+    expect(messagesPeopleListReady(ready)).toBe(true);
+  });
+
+  it('is ready when Matrix is unavailable so the empty copy can show', () => {
+    expect(
+      messagesPeopleListReady({
+        ...ready,
+        isMatrixAvailable: false,
+        synced: false,
+        initialSyncComplete: false,
+        rowsPending: true,
+        homeLoaded: false,
+      }),
+    ).toBe(true);
   });
 });
 
