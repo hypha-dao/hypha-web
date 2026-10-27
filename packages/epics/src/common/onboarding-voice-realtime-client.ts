@@ -329,6 +329,76 @@ export function setRealtimeRemoteAudioMuted(
   connection.remoteAudio.volume = muted ? 0 : 1;
 }
 
+/**
+ * Play the chat script as synthesized speech. The realtime model is not asked
+ * to say it: that call generates a new reply, and the words drift.
+ */
+export function startExactSpeechPlayback({
+  text,
+  authToken,
+}: {
+  text: string;
+  authToken: string;
+}): { stop: () => void; done: Promise<boolean> } {
+  const abort = new AbortController();
+  let audio: HTMLAudioElement | null = null;
+  let objectUrl: string | null = null;
+  let settled = false;
+  let resolveDone: (spoken: boolean) => void = () => undefined;
+  const done = new Promise<boolean>((resolve) => {
+    resolveDone = resolve;
+  });
+  const finish = (spoken: boolean) => {
+    if (settled) return;
+    settled = true;
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+      objectUrl = null;
+    }
+    resolveDone(spoken);
+  };
+  const stop = () => {
+    abort.abort();
+    if (audio) {
+      audio.onended = null;
+      audio.pause();
+      audio.src = '';
+    }
+    finish(false);
+  };
+
+  void (async () => {
+    try {
+      const response = await fetch('/api/voice/speak', {
+        method: 'POST',
+        signal: abort.signal,
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+      if (!response.ok || abort.signal.aborted) {
+        finish(false);
+        return;
+      }
+      const bytes = await response.blob();
+      if (abort.signal.aborted) {
+        finish(false);
+        return;
+      }
+      objectUrl = URL.createObjectURL(bytes);
+      audio = new Audio(objectUrl);
+      audio.onended = () => finish(true);
+      await audio.play();
+    } catch {
+      finish(false);
+    }
+  })();
+
+  return { stop, done };
+}
+
 /** Play assistant chat text through the Realtime voice (WebRTC audio), not browser TTS. */
 export function speakAssistantTextViaRealtime(
   connection: RealtimeVoiceConnection,
