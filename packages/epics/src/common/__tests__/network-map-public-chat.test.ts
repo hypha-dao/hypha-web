@@ -63,8 +63,15 @@ describe('all-spaces map chat entry points', () => {
     expect(humanRightPanel).toContain(
       "mode === 'coherence' && !coherencePublic && !coherenceSlug?.trim()",
     );
-    expect(humanRightPanel).toContain(
-      'distinctPublicRoomId(recovered?.roomId, recoveredMemberRoomId)',
+    expect(humanRightPanel).toContain('recovered?.getType() ?? null');
+    expect(
+      humanRightPanel.indexOf(
+        'matrixRef.current.unregisterRoomListener(previousRoomId)',
+      ),
+    ).toBeLessThan(
+      humanRightPanel.indexOf(
+        'openingSpaceSlug &&\n      isSpaceLoading &&\n      (coherencePublic || !coherenceRoomId?.trim())',
+      ),
     );
     expect(humanRightPanel).toContain(
       '} else if (!targetRoomId && openingSpaceSlug) {',

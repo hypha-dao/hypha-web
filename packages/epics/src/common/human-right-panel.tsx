@@ -3758,27 +3758,31 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       return;
 
     const openingSpaceSlug = coherenceSpaceSlug?.trim() || '';
+    const previousRoomId = roomIdRef.current?.trim();
+    if (previousRoomId) {
+      matrixRef.current.unregisterRoomListener(previousRoomId);
+    }
+    roomIdRef.current = null;
+    setRoomId(null);
+    setIsJoining(true);
     // A selected space may only know its slug until the space record loads.
     // Public map→chat also waits: we need `spaces.chatRoomId` so a misbound
     // `#hypha-public-{slug}` alias is not joined as the member room.
+    // Detach and lock first — the previous effect's cleanup sets
+    // `isJoining` false, and a send must not hit the old room.
     if (
       openingSpaceSlug &&
       isSpaceLoading &&
       (coherencePublic || !coherenceRoomId?.trim())
     ) {
-      return;
+      return () => {
+        setIsJoining(false);
+      };
     }
 
     let cancelled = false;
 
     const init = async () => {
-      const previousRoomId = roomIdRef.current?.trim();
-      if (previousRoomId) {
-        matrixRef.current.unregisterRoomListener(previousRoomId);
-      }
-      roomIdRef.current = null;
-      setRoomId(null);
-      setIsJoining(true);
       setError(null);
       setMessages([]);
       setReplyDraft(null);
@@ -3982,7 +3986,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         const recoveredIsPublic =
           !coherencePublic ||
           Boolean(
-            distinctPublicRoomId(recovered?.roomId, recoveredMemberRoomId),
+            acceptEnsuredPublicRoomId(
+              recovered?.roomId,
+              recoveredMemberRoomId,
+              recovered?.getType() ?? null,
+            ),
           );
         // Joined-room recovery stays for DMs / signals. Public map→chat
         // may recover only when the joined room is not the member channel.
