@@ -2179,6 +2179,32 @@
         "fileTooLarge": "Uw bestand is te groot en overschrijdt de limiet van 16 MB. Upload een kleiner bestand",
         "fileMustBeImage": "Bestand moet een afbeelding zijn (JPEG, PNG, GIF, WEBP)"
       }
+    },
+    "story": {
+      "placeIntro": "Hypha schikt zich naar hoe je hier komt. Kies hieronder een plek. Je kunt die altijd veranderen, en meer van deze keuzes komen hier te staan naarmate ze groeien.",
+      "placeLabel": "Hoe je hier komt",
+      "showsUp": "{name} komt als {role}.",
+      "memberOpens": "Je thuis blijft bij de spaces waar je bij hoort: de besluiten, de mensen en het werk dat al gaande is. Berichten blijven bij je. De lijst van alle spaces blijft uit de weg, en je loopt nog steeds elke space binnen waar je deel van uitmaakt.",
+      "builderOpens": "Je thuis vraagt wat je wilt vormgeven en wie je wilt meenemen. Je ziet je spaces bij elkaar en kunt een nieuwe beginnen. Berichten blijven bij je.",
+      "investorOpens": "Je thuis en het netwerk leggen de vragen voor je. Je wallet is waar de steun zit. Berichten en de lijst van spaces blijven uit de weg.",
+      "descriptionEmpty": "Een regel over wat je komt doen.",
+      "basedIn": "Gevestigd in {place}.",
+      "basedInEmpty": "Voeg toe waar je bent.",
+      "knownAs": "Op Hypha ben je {nickname}.",
+      "knownAsOther": "Op Hypha is deze persoon {nickname}.",
+      "knownAsEmpty": "Kies de naam waarmee mensen je vinden.",
+      "reachYou": "Mensen kunnen je bereiken op {email}.",
+      "reachYouEmpty": "Voeg een e-mail toe, zodat mensen je kunnen bereiken.",
+      "money": "Als geld getoond wordt, zie je het in {currency}.",
+      "moneyEmpty": "Kies hoe geld aan jou getoond wordt.",
+      "alsoAt": "Ook op {links}.",
+      "alsoAtEmpty": "Voeg een link toe naar een andere plek waar je bent.",
+      "changePicture": "Verander je foto",
+      "changeBanner": "Verander de banner",
+      "saving": "Opslaan",
+      "nameLabel": "Je naam",
+      "offerLabel": "Wat je meebrengt",
+      "offerTooLong": "Houd het onder 500 tekens"
     }
   },
   "ProfileActions": {

@@ -7,6 +7,7 @@ import {
   ProfilePageParams,
 } from '@hypha-platform/epics';
 import { ProfileBackLink } from '@web/components/profile-back-link';
+import { ProfileStoryConnected } from '@web/components/profile-story-connected';
 import { Text } from '@radix-ui/themes';
 import { Container, Separator } from '@hypha-platform/ui';
 import React from 'react';
@@ -99,6 +100,25 @@ export default async function ProfilePage(props: PageProps) {
             createdAt={person?.createdAt}
             primaryOrientation={person?.primaryOrientation}
             exportEmbeddedWallet={true}
+          />
+          <ProfileStoryConnected
+            lang={lang}
+            person={{
+              id: person.id,
+              name: person.name,
+              surname: person.surname,
+              nickname: person.nickname,
+              description: person.description,
+              location: person.location,
+              email: person.email,
+              links: person.links,
+              preferredCurrency: person.preferredCurrency,
+              primaryOrientation: person.primaryOrientation,
+              networkOffer: person.networkOffer,
+              slug: person.slug,
+              avatarUrl: person.avatarUrl,
+              leadImageUrl: person.leadImageUrl,
+            }}
           />
           <Separator />
           <MFABanner />

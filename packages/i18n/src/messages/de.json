@@ -2180,6 +2180,32 @@
         "fileTooLarge": "Ihre Datei ist zu groß und überschreitet das 16MB-Limit. Bitte laden Sie eine kleinere Datei hoch",
         "fileMustBeImage": "Die Datei muss ein Bild sein (JPEG, PNG, GIF, WEBP)"
       }
+    },
+    "story": {
+      "placeIntro": "Hypha richtet sich danach, wie du hier bist. Wähle unten einen Platz. Du kannst ihn jederzeit ändern, und weitere solcher Entscheidungen kommen hier dazu.",
+      "placeLabel": "Wie du hier bist",
+      "showsUp": "{name} ist als {role} hier.",
+      "memberOpens": "Dein Zuhause bleibt bei den Spaces, zu denen du gehörst: die Entscheidungen, die Menschen und die Arbeit, die schon läuft. Nachrichten bleiben bei dir. Die Liste aller Spaces bleibt aus dem Weg, und du gehst trotzdem in jeden Space, zu dem du gehörst.",
+      "builderOpens": "Dein Zuhause fragt, was du gestalten willst und wen du mitbringen willst. Du siehst deine Spaces zusammen und kannst einen neuen beginnen. Nachrichten bleiben bei dir.",
+      "investorOpens": "Dein Zuhause und das Netzwerk legen die Anfragen vor dich. Deine Wallet ist der Ort, an dem Unterstützung liegt. Nachrichten und die Space-Liste bleiben aus dem Weg.",
+      "descriptionEmpty": "Eine Zeile dazu, weshalb du hier bist.",
+      "basedIn": "Du bist in {place}.",
+      "basedInEmpty": "Füge hinzu, wo du bist.",
+      "knownAs": "Auf Hypha bist du {nickname}.",
+      "knownAsOther": "Auf Hypha heißt diese Person {nickname}.",
+      "knownAsEmpty": "Wähle den Namen, unter dem man dich findet.",
+      "reachYou": "Menschen erreichen dich unter {email}.",
+      "reachYouEmpty": "Füge eine E-Mail hinzu, damit Menschen dich erreichen.",
+      "money": "Wenn Geld gezeigt wird, siehst du es in {currency}.",
+      "moneyEmpty": "Wähle, wie Geld für dich gezeigt wird.",
+      "alsoAt": "Auch unter {links}.",
+      "alsoAtEmpty": "Füge einen Link zu einem anderen Ort hinzu, an dem du bist.",
+      "changePicture": "Bild ändern",
+      "changeBanner": "Titelbild ändern",
+      "saving": "Speichert",
+      "nameLabel": "Dein Name",
+      "offerLabel": "Was du mitbringst",
+      "offerTooLong": "Höchstens 500 Zeichen"
     }
   },
   "ProfileActions": {

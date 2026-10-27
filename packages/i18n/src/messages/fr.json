@@ -1608,6 +1608,32 @@
         "fileTooLarge": "Votre fichier est trop volumineux et dépasse la limite de 16 Mo. Veuillez téléverser un fichier plus petit",
         "fileMustBeImage": "Le fichier doit être une image (JPEG, PNG, GIF, WEBP)"
       }
+    },
+    "story": {
+      "placeIntro": "Hypha s'organise autour de la façon dont tu arrives. Choisis une place ci-dessous. Tu peux la changer quand tu veux, et d'autres choix de ce genre viendront ici en grandissant.",
+      "placeLabel": "Comment tu arrives",
+      "showsUp": "{name} arrive en tant que {role}.",
+      "memberOpens": "Ton accueil reste avec les espaces dont tu fais partie : les décisions, les personnes et le travail déjà en cours. Les messages restent avec toi. La liste de tous les espaces s'efface, et tu entres quand même dans chaque espace dont tu fais partie.",
+      "builderOpens": "Ton accueil demande ce que tu veux façonner, et qui tu veux amener. Tu vois tes espaces ensemble et tu peux en commencer un nouveau. Les messages restent avec toi.",
+      "investorOpens": "Ton accueil et le réseau mettent les demandes devant toi. Ton portefeuille est là où se trouve le soutien. Les messages et la liste des espaces s'effacent.",
+      "descriptionEmpty": "Une ligne sur ce que tu viens faire.",
+      "basedIn": "Basé à {place}.",
+      "basedInEmpty": "Ajoute où tu es.",
+      "knownAs": "Sur Hypha, tu es {nickname}.",
+      "knownAsOther": "Sur Hypha, cette personne est {nickname}.",
+      "knownAsEmpty": "Choisis le nom sous lequel on te trouve.",
+      "reachYou": "On peut t'écrire à {email}.",
+      "reachYouEmpty": "Ajoute un e-mail pour qu'on puisse t'écrire.",
+      "money": "Quand l'argent s'affiche, tu le vois en {currency}.",
+      "moneyEmpty": "Choisis comment l'argent t'est montré.",
+      "alsoAt": "Aussi sur {links}.",
+      "alsoAtEmpty": "Ajoute un lien vers un autre endroit où tu es.",
+      "changePicture": "Changer ta photo",
+      "changeBanner": "Changer la bannière",
+      "saving": "Enregistrement",
+      "nameLabel": "Ton nom",
+      "offerLabel": "Ce que tu apportes",
+      "offerTooLong": "Reste sous 500 caractères"
     }
   },
   "ProfileActions": {

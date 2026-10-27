@@ -159,7 +159,10 @@ export const useEditProfile = (endpoint = '/api/v1/people/edit-profile') => {
   const [lastStartedTask, setLastStartedTask] = useState<TaskName | null>(null);
 
   const editProfile = useCallback(
-    async (data: ProfileFormData): Promise<Person | null> => {
+    async (
+      data: ProfileFormData,
+      options?: { quiet?: boolean },
+    ): Promise<Person | null> => {
       if (!headers) {
         throw new Error('No auth headers available');
       }
@@ -207,12 +210,14 @@ export const useEditProfile = (endpoint = '/api/v1/people/edit-profile') => {
 
         dispatch({ type: 'COMPLETE_TASK', taskName: 'EDIT_PROFILE' });
 
-        await new Promise((res) => setTimeout(res, 600));
+        if (!options?.quiet) {
+          await new Promise((res) => setTimeout(res, 600));
 
-        dispatch({ type: 'START_TASK', taskName: 'CONFIRM_CHANGES' });
-        setLastStartedTask('CONFIRM_CHANGES');
+          dispatch({ type: 'START_TASK', taskName: 'CONFIRM_CHANGES' });
+          setLastStartedTask('CONFIRM_CHANGES');
 
-        await new Promise((res) => setTimeout(res, 1000));
+          await new Promise((res) => setTimeout(res, 1000));
+        }
         dispatch({ type: 'COMPLETE_TASK', taskName: 'CONFIRM_CHANGES' });
 
         router.refresh();

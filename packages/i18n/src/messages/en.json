@@ -2207,6 +2207,32 @@
         "fileTooLarge": "Your file is too large and exceeds the 16 MB limit. Please upload a smaller file",
         "fileMustBeImage": "File must be an image (JPEG, PNG, GIF, WEBP)"
       }
+    },
+    "story": {
+      "placeIntro": "Hypha arranges itself around how you show up. Choose a place below. You can change it whenever you want, and more of these choices will live here as they grow.",
+      "placeLabel": "How you show up",
+      "showsUp": "{name} shows up as a {role}.",
+      "memberOpens": "Your home stays with the spaces you belong to: the decisions, the people, and the work already happening. Messages stay with you. The list of every space stays out of the way, and you still walk into any space you are part of.",
+      "builderOpens": "Your home asks what you want to shape, and who to bring with you. You can see your spaces together and start a new one. Messages stay with you.",
+      "investorOpens": "Your home and the network put the asks in front of you. Your wallet is where support sits. Messages and the spaces list stay out of the way.",
+      "descriptionEmpty": "A line about what you are here to do.",
+      "basedIn": "Based in {place}.",
+      "basedInEmpty": "Add where you are based.",
+      "knownAs": "On Hypha, you are {nickname}.",
+      "knownAsOther": "On Hypha, they are {nickname}.",
+      "knownAsEmpty": "Choose the name people use to find you.",
+      "reachYou": "People can reach you at {email}.",
+      "reachYouEmpty": "Add an email, so people can reach you.",
+      "money": "When money is shown, you see it in {currency}.",
+      "moneyEmpty": "Choose how money is shown to you.",
+      "alsoAt": "Also at {links}.",
+      "alsoAtEmpty": "Add a link to somewhere else you are.",
+      "changePicture": "Change your picture",
+      "changeBanner": "Change the banner",
+      "saving": "Saving",
+      "nameLabel": "Your name",
+      "offerLabel": "What you bring",
+      "offerTooLong": "Keep it under 500 characters"
     }
   },
   "ProfileActions": {

@@ -20,6 +20,7 @@ export {
   useRegisteredPresence,
 } from './member-presence-provider';
 export * from './person-head';
+export * from './profile-story';
 export * from './person-label';
 export * from './signup-panel';
 export * from './signup-flow';

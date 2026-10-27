@@ -2178,6 +2178,32 @@
         "fileTooLarge": "Filen din er for stor og overskrider grensen på 16 MB. Last opp en mindre fil",
         "fileMustBeImage": "Filen må være et bilde (JPEG, PNG, GIF, WEBP)"
       }
+    },
+    "story": {
+      "placeIntro": "Hypha ordner seg etter hvordan du kommer hit. Velg et sted under. Du kan endre det når du vil, og flere slike valg kommer til å bo her etter hvert.",
+      "placeLabel": "Hvordan du kommer hit",
+      "showsUp": "{name} kommer som {role}.",
+      "memberOpens": "Hjemmet ditt blir hos rommene du hører til: beslutningene, menneskene og arbeidet som allerede skjer. Meldinger blir hos deg. Listen over alle rom holder seg unna, og du går likevel inn i hvert rom du er en del av.",
+      "builderOpens": "Hjemmet ditt spør hva du vil forme, og hvem du vil ta med. Du ser rommene dine samlet og kan starte et nytt. Meldinger blir hos deg.",
+      "investorOpens": "Hjemmet ditt og nettverket legger forespørslene foran deg. Lommeboken din er der støtten ligger. Meldinger og romlisten holder seg unna.",
+      "descriptionEmpty": "En linje om hva du kommer for å gjøre.",
+      "basedIn": "Holder til i {place}.",
+      "basedInEmpty": "Legg til hvor du er.",
+      "knownAs": "På Hypha er du {nickname}.",
+      "knownAsOther": "På Hypha er denne personen {nickname}.",
+      "knownAsEmpty": "Velg navnet folk finner deg med.",
+      "reachYou": "Folk kan nå deg på {email}.",
+      "reachYouEmpty": "Legg til en e-post, så folk kan nå deg.",
+      "money": "Når penger vises, ser du dem i {currency}.",
+      "moneyEmpty": "Velg hvordan penger vises for deg.",
+      "alsoAt": "Også på {links}.",
+      "alsoAtEmpty": "Legg til en lenke til et annet sted du er.",
+      "changePicture": "Bytt bildet ditt",
+      "changeBanner": "Bytt banneret",
+      "saving": "Lagrer",
+      "nameLabel": "Navnet ditt",
+      "offerLabel": "Det du har med deg",
+      "offerTooLong": "Hold det under 500 tegn"
     }
   },
   "ProfileActions": {
