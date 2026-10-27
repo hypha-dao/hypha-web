@@ -34,8 +34,9 @@ import useSWR from 'swr';
 import {
   HYPHA_ROOM_TYPES,
   acceptEnsuredPublicRoomId,
-  distinctPublicRoomId,
+  isSpacePublicRoomType,
   useMatrix,
+  waitForAcceptedPublicRoomId,
   useCoherenceMutationsWeb2Rsc,
   useHookRegistry,
   useJwt,
@@ -3831,16 +3832,30 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           );
           targetRoomId = ecosystemRoomId;
         } else if (openingPublic) {
+          const previousRoomId = roomIdRef.current?.trim();
+          if (previousRoomId) {
+            matrixRef.current.unregisterRoomListener(previousRoomId);
+          }
+          roomIdRef.current = null;
+          messagesRoomIdRef.current = null;
+          setRoomId(null);
+          setMessages([]);
           const memberRoomId =
             space?.chatRoomId?.trim() || getStoredRoomId(spaceSlug) || null;
-          const { roomId: publicRoomId } = await ensurePublicRoom(
+          const { roomId: ensuredRoomId } = await ensurePublicRoom(
             spaceSlug,
             memberRoomId,
           );
-          if (memberRoomId && publicRoomId === memberRoomId) {
+          const acceptedPublicRoomId = await waitForAcceptedPublicRoomId({
+            roomId: ensuredRoomId,
+            memberRoomId,
+            readRoomType: () =>
+              client?.getRoom(ensuredRoomId)?.getType() ?? null,
+          });
+          if (!acceptedPublicRoomId) {
             throw new Error('Public channel resolved to the space channel');
           }
-          targetRoomId = publicRoomId;
+          targetRoomId = acceptedPublicRoomId;
         } else {
           const canonicalRoomId = space?.chatRoomId?.trim() || null;
           const storedRoomId = getStoredRoomId(spaceSlug);
@@ -4092,16 +4107,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               openingSpaceSlug,
               memberRoomId,
             );
-          const publicRoomType =
-            client?.getRoom(publicRoomId)?.getType() ?? null;
-          const acceptedPublicRoomId =
-            publicRoomType == null
-              ? distinctPublicRoomId(publicRoomId, memberRoomId)
-              : acceptEnsuredPublicRoomId(
-                  publicRoomId,
-                  memberRoomId,
-                  publicRoomType,
-                );
+          const acceptedPublicRoomId = await waitForAcceptedPublicRoomId({
+            roomId: publicRoomId,
+            memberRoomId,
+            readRoomType: () =>
+              client?.getRoom(publicRoomId)?.getType() ?? null,
+          });
           if (!acceptedPublicRoomId) {
             throw new Error('Public channel resolved to the space channel');
           }
@@ -5834,6 +5845,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     };
   }, []);
 
+  const loadedRoomIsPublic = isSpacePublicRoomType(
+    roomId ? client?.getRoom(roomId)?.getType() : null,
+  );
+
   return (
     <>
       {screenshareTabAudioPromptDialog}
@@ -6531,7 +6546,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     {deleteError}
                   </div>
                 )}
-                {coherencePublic && !isJoining && roomId && !error ? (
+                {coherencePublic &&
+                loadedRoomIsPublic &&
+                !isJoining &&
+                roomId &&
+                !error ? (
                   <p
                     role="status"
                     className="border-b border-border px-3 py-2 text-1 text-neutral-11"
@@ -6553,9 +6572,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                           ? t('networkWelcome')
                           : mode === 'space' && spaceRoom === 'ecosystem'
                           ? t('ecosystemWelcome')
-                          : mode === 'space' && spaceRoom === 'public'
+                          : mode === 'space' &&
+                            spaceRoom === 'public' &&
+                            loadedRoomIsPublic
                           ? t('publicWelcome')
-                          : coherencePublic
+                          : coherencePublic && loadedRoomIsPublic
                           ? t('publicWelcome')
                           : welcomePartner
                           ? t(
@@ -6572,9 +6593,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                           ? t('networkRoomTitle')
                           : mode === 'space' && spaceRoom === 'ecosystem'
                           ? t('ecosystemRoomTitle')
-                          : mode === 'space' && spaceRoom === 'public'
+                          : mode === 'space' &&
+                            spaceRoom === 'public' &&
+                            loadedRoomIsPublic
                           ? t('publicRoomTitle')
-                          : coherencePublic
+                          : coherencePublic && loadedRoomIsPublic
                           ? t('publicRoomTitle')
                           : welcomePartner ?? undefined
                       }

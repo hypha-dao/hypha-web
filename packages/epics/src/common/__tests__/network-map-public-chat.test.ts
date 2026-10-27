@@ -48,10 +48,8 @@ describe('all-spaces map chat entry points', () => {
   });
 
   it('refuses a public alias that still points at the member room', () => {
-    expect(openPublicChatHook).toContain(
-      'ensurePublicRoom(slug, memberRoomId)',
-    );
-    expect(openPublicChatHook).toContain('acceptEnsuredPublicRoomId(');
+    expect(openPublicChatHook).toContain('waitForAcceptedPublicRoomId({');
+    expect(openPublicChatHook).not.toContain('distinctPublicRoomId');
     expect(openPublicChatHook).toContain(
       "throw new Error('Public channel resolved to the space channel')",
     );
@@ -59,6 +57,8 @@ describe('all-spaces map chat entry points', () => {
     expect(humanRightPanel).toContain(
       'await matrixRef.current.ensurePublicRoom(',
     );
+    expect(humanRightPanel).toContain('waitForAcceptedPublicRoomId({');
+    expect(humanRightPanel).not.toContain('distinctPublicRoomId');
     expect(humanRightPanel).toContain('acceptEnsuredPublicRoomId(');
     expect(humanRightPanel).toContain(
       "mode === 'coherence' && !coherencePublic && !coherenceSlug?.trim()",
@@ -80,7 +80,7 @@ describe('all-spaces map chat entry points', () => {
       'coherenceSpaceSlug?.trim() || routeSpaceSlug || undefined',
     );
     expect(humanRightPanel).toContain(
-      'coherencePublic && !isJoining && roomId && !error',
+      'coherencePublic &&\n                loadedRoomIsPublic &&',
     );
     expect(humanRightPanel).toContain(
       "{t('publicRoomTitle')} — {t('publicWelcome')}",
