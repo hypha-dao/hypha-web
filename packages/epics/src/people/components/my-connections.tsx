@@ -1372,7 +1372,7 @@ export { notifyConversationUnreadChanged };
 let messagesScreenCount = 0;
 const messagesScreenCountListeners = new Set<() => void>();
 
-/** Inbox size shown beside All messages. The nav badge reads this, not mentions. */
+/** New messages in All messages. The nav badge reads this, not the inbox size. */
 export function publishMessagesScreenCount(count: number) {
   const next = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
   if (next === messagesScreenCount) return;
@@ -2370,8 +2370,8 @@ export function MyConnections({
     section === 'messages' && !picking ? inboxView.rows : people;
   useEffect(() => {
     if (section !== 'messages' || picking || listLoading) return;
-    publishMessagesScreenCount(inboxView.counts.all.total);
-  }, [inboxView.counts.all.total, listLoading, picking, section]);
+    publishMessagesScreenCount(inboxView.counts.all.unread);
+  }, [inboxView.counts.all.unread, listLoading, picking, section]);
   useEffect(() => {
     const root = inboxListRef.current;
     if (!root || section !== 'messages' || picking) return;

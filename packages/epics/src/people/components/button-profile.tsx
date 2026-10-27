@@ -154,7 +154,7 @@ export const ButtonProfile = ({
   const messageAria = (href?: string, label?: string) => {
     const badge = messageBadge(href);
     if (!label || badge <= 0) return undefined;
-    return `${label}, ${tConnections('screenCount', { count: badge })}`;
+    return `${label}, ${tConnections('unread', { count: badge })}`;
   };
   const pathname = usePathname();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
