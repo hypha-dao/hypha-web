@@ -1544,6 +1544,7 @@
       "tagEcosystem": "Canal del ecosistema",
       "tagNetwork": "Canal de la red",
       "filterLabel": "Filtros de mensajes",
+      "openContext": "Abrir {name}",
       "empty": "Nada en este filtro todavía."
     }
   },

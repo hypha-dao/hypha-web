@@ -383,6 +383,33 @@ export function peopleInboxKind(row: {
   return row.faces ? 'group' : 'dm';
 }
 
+/** Where the channel icon sends someone. Direct chats stay in the inbox. */
+export function inboxContextHref(
+  lang: string,
+  place: InboxPlace | null | undefined,
+): string | null {
+  const locale = lang.trim();
+  if (!locale || !place) return null;
+  if (place.kind === 'dm' || place.kind === 'group') return null;
+  if (place.kind === 'network') return `/${locale}/network`;
+  const space = place.spaceSlug?.trim() || '';
+  if (place.kind === 'signal') {
+    if (!space) return null;
+    const signal = place.signalSlug?.trim();
+    if (!signal) return `/${locale}/dho/${space}/coherence`;
+    return `/${locale}/dho/${space}/coherence?signal=${encodeURIComponent(
+      signal,
+    )}`;
+  }
+  if (place.kind === 'space' || place.kind === 'space-public') {
+    return space ? `/${locale}/dho/${space}/overview` : null;
+  }
+  const ecosystemSpace = space || place.ecosystemSlug?.trim() || '';
+  return ecosystemSpace
+    ? `/${locale}/dho/${ecosystemSpace}/ecosystem-navigation`
+    : null;
+}
+
 export function directInboxPlace(kind: 'dm' | 'group'): InboxPlace {
   return {
     kind,

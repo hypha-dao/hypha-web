@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
@@ -46,6 +47,7 @@ import { listBoundChatRoomIdsAmongAction } from '@hypha-platform/core/matrix/ser
 import { Badge, Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
+  ArrowUpRight,
   ChevronLeft,
   Circle,
   Globe2,
@@ -119,6 +121,7 @@ import { MessagesInboxFilters } from './messages-inbox-filters';
 import {
   channelRowsFromSnapshots,
   directInboxPlace,
+  inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
   isInboxFilter,
@@ -3085,6 +3088,10 @@ function MemberList({
           const ChannelIcon = row.inbox
             ? CHANNEL_MARK_ICONS[row.inbox.kind]
             : undefined;
+          const contextHref =
+            showChannelTags && !picking && ChannelIcon
+              ? inboxContextHref(locale, row.inbox)
+              : null;
           const signalType =
             row.inbox?.signalType && SIGNAL_TYPE_KEYS.has(row.inbox.signalType)
               ? tTypes(row.inbox.signalType as 'Need')
@@ -3096,7 +3103,7 @@ function MemberList({
           return (
             <li
               key={row.roomId ?? row.person.id}
-              className="border-b border-border last:border-b-0"
+              className="relative border-b border-border last:border-b-0"
             >
               <button
                 type="button"
@@ -3229,6 +3236,19 @@ function MemberList({
                   </span>
                 </span>
               </button>
+              {contextHref && ChannelIcon ? (
+                <Link
+                  href={contextHref}
+                  aria-label={tInbox('inbox.openContext', { name: row.name })}
+                  className="absolute top-3 left-4 z-10 size-10 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+                >
+                  <ArrowUpRight
+                    className="absolute top-0.5 right-0.5 size-2.5 text-foreground"
+                    strokeWidth={1.75}
+                    aria-hidden
+                  />
+                </Link>
+              ) : null}
             </li>
           );
         })}

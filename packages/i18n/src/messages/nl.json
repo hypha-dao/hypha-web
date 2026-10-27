@@ -766,6 +766,7 @@
       "tagEcosystem": "Ecosysteemkanaal",
       "tagNetwork": "Netwerkkanaal",
       "filterLabel": "Berichtfilters",
+      "openContext": "Open {name}",
       "empty": "Nog niets in dit filter."
     }
   },

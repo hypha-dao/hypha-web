@@ -766,6 +766,7 @@
       "tagEcosystem": "Ökosystem-Kanal",
       "tagNetwork": "Netzwerk-Kanal",
       "filterLabel": "Nachrichtenfilter",
+      "openContext": "{name} öffnen",
       "empty": "In diesem Filter ist noch nichts."
     }
   },

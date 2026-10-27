@@ -6,6 +6,7 @@ import {
   channelHasRecentActivity,
   channelIsRelevantToMember,
   channelRowsFromSnapshots,
+  inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
   inboxKindForRoomType,
@@ -334,5 +335,44 @@ describe('messages inbox context', () => {
       now,
     );
     expect(rows.map((row) => row.roomId)).toEqual(['!net:hs']);
+  });
+});
+
+describe('inboxContextHref', () => {
+  const place = {
+    spaceTitle: 'Hypha Platform',
+    spaceSlug: 'hypha-platform',
+    ecosystemTitle: 'Hypha',
+    ecosystemSlug: 'hypha',
+    signalTitle: 'Roadmap page',
+    signalType: 'Need',
+    signalSlug: 'roadmap-page',
+  };
+
+  it('opens a signal, a space room, an ecosystem the member can enter, and the network', () => {
+    expect(inboxContextHref('en', { ...place, kind: 'signal' })).toBe(
+      '/en/dho/hypha-platform/coherence?signal=roadmap-page',
+    );
+    expect(inboxContextHref('en', { ...place, kind: 'space' })).toBe(
+      '/en/dho/hypha-platform/overview',
+    );
+    expect(inboxContextHref('en', { ...place, kind: 'space-public' })).toBe(
+      '/en/dho/hypha-platform/overview',
+    );
+    expect(inboxContextHref('en', { ...place, kind: 'ecosystem' })).toBe(
+      '/en/dho/hypha-platform/ecosystem-navigation',
+    );
+    expect(
+      inboxContextHref('en', {
+        ...place,
+        kind: 'network',
+        spaceSlug: null,
+        ecosystemSlug: null,
+      }),
+    ).toBe('/en/network');
+  });
+
+  it('leaves direct chats in the inbox', () => {
+    expect(inboxContextHref('en', { ...place, kind: 'dm' })).toBeNull();
   });
 });

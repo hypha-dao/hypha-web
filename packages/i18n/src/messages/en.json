@@ -179,6 +179,7 @@
       "tagEcosystem": "Ecosystem Channel",
       "tagNetwork": "Network Channel",
       "filterLabel": "Message filters",
+      "openContext": "Open {name}",
       "empty": "Nothing in this filter yet."
     }
   },

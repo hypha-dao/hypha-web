@@ -765,6 +765,7 @@
       "tagEcosystem": "Økosystemkanal",
       "tagNetwork": "Nettverkskanal",
       "filterLabel": "Meldingsfiltre",
+      "openContext": "Åpne {name}",
       "empty": "Ingenting i dette filteret ennå."
     }
   },
