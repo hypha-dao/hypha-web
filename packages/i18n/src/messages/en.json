@@ -2529,6 +2529,8 @@
     "viewToggleLabel": "How to show this ecosystem",
     "viewSpaces": "Spaces",
     "viewDiagram": "Ecosystem",
+    "navSpaces": "Spaces",
+    "navEcosystems": "Ecosystems",
     "searchEcosystemOrSpace": "Search an ecosystem or a space",
     "creating": "Creating Space...",
     "expiredToday": "today",

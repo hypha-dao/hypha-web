@@ -21,6 +21,12 @@ import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-disc
 import { Checkbox } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import { SpaceOrderCombobox } from './space-order-combobox';
+import {
+  MY_SPACES_LISTING_EVENT,
+  MY_SPACES_LISTING_KEY,
+  readMySpacesListing,
+  type MySpacesListing,
+} from './my-spaces-listing';
 
 export function filterSpaces(
   spaces: Space[],
@@ -153,9 +159,28 @@ export function MyFilteredSpaces({
       personAddress: person?.address as Address | undefined,
     });
   const [hideArchivedSpaces, setHideArchivedSpaces] = React.useState(true);
-  const [diagramRootIds, setDiagramRootIds] = React.useState<
-    ReadonlySet<number>
-  >(() => new Set());
+  const [listing, setListing] = React.useState<MySpacesListing>('spaces');
+  /** Per-group toggle. Cleared when the left menu picks Spaces or Ecosystems. */
+  const [diagramOverrides, setDiagramOverrides] = React.useState<
+    ReadonlyMap<number, boolean>
+  >(() => new Map());
+  React.useEffect(() => {
+    const sync = () => {
+      setListing(readMySpacesListing());
+      setDiagramOverrides(new Map());
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key && event.key !== MY_SPACES_LISTING_KEY) return;
+      sync();
+    };
+    sync();
+    window.addEventListener(MY_SPACES_LISTING_EVENT, sync);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener(MY_SPACES_LISTING_EVENT, sync);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
   const tSpaces = useTranslations('Spaces');
   const tMyWallet = useTranslations('MyWallet');
 
@@ -231,7 +256,9 @@ export function MyFilteredSpaces({
             const showDiagram =
               Boolean(renderDiagram) &&
               Boolean(group.root.slug) &&
-              diagramRootIds.has(group.root.id);
+              (diagramOverrides.has(group.root.id)
+                ? diagramOverrides.get(group.root.id) === true
+                : listing === 'ecosystems');
             return (
               <section key={group.root.id} className="flex flex-col gap-3">
                 <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
@@ -267,13 +294,9 @@ export function MyFilteredSpaces({
                             type="button"
                             aria-pressed={selected}
                             onClick={() => {
-                              setDiagramRootIds((current) => {
-                                const next = new Set(current);
-                                if (option === 'diagram') {
-                                  next.add(group.root.id);
-                                } else {
-                                  next.delete(group.root.id);
-                                }
+                              setDiagramOverrides((current) => {
+                                const next = new Map(current);
+                                next.set(group.root.id, option === 'diagram');
                                 return next;
                               });
                             }}

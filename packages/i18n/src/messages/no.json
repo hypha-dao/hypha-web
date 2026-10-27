@@ -2500,6 +2500,8 @@
     "viewToggleLabel": "Hvordan dette økosystemet vises",
     "viewSpaces": "Rom",
     "viewDiagram": "Økosystem",
+    "navSpaces": "Områder",
+    "navEcosystems": "Økosystemer",
     "searchEcosystemOrSpace": "Søk i et økosystem eller et rom",
     "creating": "Oppretter rom...",
     "expiredToday": "i dag",

@@ -19,7 +19,9 @@ import Link from 'next/link';
 import {
   ArrowLeftRight,
   Globe2,
+  LayoutGrid,
   Menu,
+  Network,
   PanelLeftClose,
   Rows3,
   Settings,
@@ -89,7 +91,17 @@ import { MobileSpacesSubnav } from '../people/components/mobile-spaces-subnav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
-import { isMemberHomePath, isNetworkAiPath } from './use-is-space-context';
+import {
+  isMemberHomePath,
+  isMySpacesPath,
+  isNetworkAiPath,
+} from './use-is-space-context';
+import {
+  MY_SPACES_LISTING_EVENT,
+  readMySpacesListing,
+  writeMySpacesListing,
+  type MySpacesListing,
+} from '../spaces/components/my-spaces-listing';
 import {
   NETWORK_AI_CHAT_ID,
   readNetworkAiChatMessages,
@@ -381,6 +393,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tConnections = useTranslations('Connections');
   const tHome = useTranslations('MemberHome');
   const [homeView, setHomeView] = useState<HomeView>('ai');
+  const [mySpacesListing, setMySpacesListing] =
+    useState<MySpacesListing>('spaces');
   useEffect(() => {
     const sync = () => setHomeView(readHomeView());
     sync();
@@ -388,6 +402,16 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     window.addEventListener('storage', sync);
     return () => {
       window.removeEventListener(HOME_VIEW_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+  useEffect(() => {
+    const sync = () => setMySpacesListing(readMySpacesListing());
+    sync();
+    window.addEventListener(MY_SPACES_LISTING_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(MY_SPACES_LISTING_EVENT, sync);
       window.removeEventListener('storage', sync);
     };
   }, []);
@@ -772,6 +796,28 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ];
   }, [homeView, pathname, spaceSlug, tHome]);
 
+  const spacesNavItems = useMemo<NavItem[]>(() => {
+    if (spaceSlug || !isMySpacesPath(pathname)) return [];
+    return [
+      {
+        key: 'my-spaces-cards',
+        label: tSpaces('navSpaces'),
+        icon: LayoutGrid,
+        href: '',
+        active: mySpacesListing === 'spaces',
+        onSelect: () => writeMySpacesListing('spaces'),
+      },
+      {
+        key: 'my-spaces-ecosystems',
+        label: tSpaces('navEcosystems'),
+        icon: Network,
+        href: '',
+        active: mySpacesListing === 'ecosystems',
+        onSelect: () => writeMySpacesListing('ecosystems'),
+      },
+    ];
+  }, [mySpacesListing, pathname, spaceSlug, tSpaces]);
+
   const messagesNavItems = useMemo<NavItem[]>(() => {
     if (spaceSlug || !lang) return [];
     if (!isMessagesSectionPath(pathname)) return [];
@@ -794,6 +840,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       ? walletNavItems
       : homeNavItems.length > 0
       ? homeNavItems
+      : spacesNavItems.length > 0
+      ? spacesNavItems
       : messagesNavItems;
 
   const isSpaceSettingsActive = useMemo(
