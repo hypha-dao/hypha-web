@@ -66,6 +66,9 @@ import {
   usePersonById,
   useSignalWorkflow,
   useSpaceBySlug,
+  matrixUserIdsForPersonIds,
+  publishSignalTeamNotice,
+  resolveMatrixUserIdsByPersonIds,
 } from '@hypha-platform/core/client';
 import React from 'react';
 import {
@@ -1098,6 +1101,41 @@ export const CreateSignalForm = ({
                   messageSeedError,
                 );
               }
+
+              // Seed the Matrix signal-team roster from create-time assignees.
+              // Later assignee edits do not rewrite that roster (team picker).
+              if (matrixClient) {
+                try {
+                  const assigneePersonIds = coherence.assigneeIds ?? [];
+                  const personIdToMatrixUserId =
+                    await resolveMatrixUserIdsByPersonIds({
+                      personIds: assigneePersonIds,
+                      authToken,
+                    });
+                  const teamIdsToSeed = matrixUserIdsForPersonIds(
+                    assigneePersonIds,
+                    personIdToMatrixUserId,
+                  );
+                  const currentUserMatrixId =
+                    matrixClient.getUserId?.()?.trim() || null;
+                  if (teamIdsToSeed.length > 0 || currentUserMatrixId) {
+                    await publishSignalTeamNotice({
+                      client: matrixClient,
+                      roomId: canonicalRoomId,
+                      coherenceSlug,
+                      memberMatrixUserIds: teamIdsToSeed,
+                      ownerMatrixUserId: currentUserMatrixId,
+                      actorMatrixUserId: currentUserMatrixId,
+                      addedMemberMatrixUserIds: teamIdsToSeed,
+                    });
+                  }
+                } catch (teamSeedError) {
+                  console.warn(
+                    'Signal room created but failed to seed signal team:',
+                    teamSeedError,
+                  );
+                }
+              }
             } catch (matrixError) {
               const matrixErrorMessage =
                 matrixError instanceof Error
@@ -1158,6 +1196,7 @@ export const CreateSignalForm = ({
       isEditAuthorized,
       joinRoom,
       loadRoomHistory,
+      matrixClient,
       updateCoherenceBySlug,
       updateCoherenceSignalBySlug,
       isMatrixAvailable,

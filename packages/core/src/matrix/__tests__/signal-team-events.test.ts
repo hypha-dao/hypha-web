@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   formatSignalTeamUpdateDisplayBody,
+  matrixUserIdsForPersonIds,
   parseSignalTeamNoticeFromWireContent,
+  publishSignalTeamNotice,
   resolveSignalTeamUpdateDisplayBody,
   shouldIncludeSignalTeamNoticeInChatTimeline,
 } from '../signal-team-events';
@@ -76,5 +78,45 @@ describe('signal-team-events', () => {
         removedMemberMatrixUserIds: [],
       }),
     ).toBe(true);
+  });
+
+  it('maps assignee person ids onto unique Matrix user ids', () => {
+    expect(
+      matrixUserIdsForPersonIds([3, 7, 3, 9], {
+        3: '@alice:example.org',
+        7: '  @bob:example.org  ',
+        9: '',
+      }),
+    ).toEqual(['@alice:example.org', '@bob:example.org']);
+    expect(matrixUserIdsForPersonIds([], { 3: '@alice:example.org' })).toEqual(
+      [],
+    );
+  });
+
+  it('publishes create-time assignees as the signal team roster', async () => {
+    const sendEvent = vi.fn().mockResolvedValue({ event_id: '$evt' });
+    await publishSignalTeamNotice({
+      client: { sendEvent },
+      roomId: '!signal:example.org',
+      coherenceSlug: 'coh-abc123',
+      memberMatrixUserIds: ['@alice:example.org', '@bob:example.org'],
+      ownerMatrixUserId: '@creator:example.org',
+      actorMatrixUserId: '@creator:example.org',
+      addedMemberMatrixUserIds: ['@alice:example.org', '@bob:example.org'],
+    });
+
+    expect(sendEvent).toHaveBeenCalledTimes(1);
+    const [, , content] = sendEvent.mock.calls[0]!;
+    expect(content.coherenceSlug).toBe('coh-abc123');
+    expect(content.memberMatrixUserIds).toEqual([
+      '@alice:example.org',
+      '@bob:example.org',
+      '@creator:example.org',
+    ]);
+    expect(content.addedMemberMatrixUserIds).toEqual([
+      '@alice:example.org',
+      '@bob:example.org',
+    ]);
+    expect(content.ownerMatrixUserId).toBe('@creator:example.org');
   });
 });
