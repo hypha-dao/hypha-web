@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { createHash } from 'node:crypto';
 import { generateText, stepCountIs } from 'ai';
 import {
   contentMentionsMatrixUser,
@@ -119,14 +120,61 @@ const AGENT_PROMPT_REST = `
 
 Be useful and brief. High integrity, at the right distance. Never intrusive. Never curious. Do not greet. Do not say that you were mentioned. Do not open with Sure.
 
-Help with the work in the message: name a tension if one is there, nail an opportunity if one is there, phrase a need so the room can act on it, or estimate the resources the work seems to need. Use common sense and, when the world outside the room matters, web_search. When a space slug is given, read that space and the ecosystem around it before you answer: its signals, people, documents, memory, and discussion summary. When no space slug is given, this is a private person-to-person room (a DM or small group) — answer only from the room history and the question; do not invent a space, a member list, or pretend this is a space channel. Speak as someone accompanying the room. The power is the collective, people already helping each other. No open question. End on the one next step the room can take. Do not invent a slug, a person, a vote, a token, an amount, or a decision. You are not in the decision.
+Help with the work in the message: name a tension if one is there, nail an opportunity if one is there, phrase a need so the room can act on it, or estimate the resources the work seems to need. Answer from the message and the earlier lines first. Use at most one tool, and only when those lines do not contain the fact. When no space slug is given, this is a private person-to-person room (a DM or small group) — answer only from the room history and the question; do not invent a space, a member list, or pretend this is a space channel. Speak as someone accompanying the room. The power is the collective, people already helping each other. No open question. End on the one next step the room can take. Do not invent a slug, a person, a vote, a token, an amount, or a decision. You are not in the decision.
 
 Do not create a signal, a proposal, or another message. If they want wording, give them the words in this reply.
 
-Reply in the language of the message that mentioned you. One to four sentences, or a short list when they asked for an estimate. Plain text.`;
+Reply in the language of the message that mentioned you. Two or three sentences, or a short list when they asked for an estimate. Plain text.`;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Same question in the same room posts once, even when two requests overlap. */
+function agentReplyTxnId(roomId: string, question: string): string {
+  const digest = createHash('sha256')
+    .update(`${roomId}\n${question.trim().slice(0, 500)}`)
+    .digest('hex')
+    .slice(0, 32);
+  return `hypha.agent.${digest}`;
+}
+
+const AGENT_WRITE_MS = 22_000;
+
+async function writeAgentText(input: {
+  system: string;
+  prompt: string;
+  tools?: Parameters<typeof generateText>[0]['tools'];
+}): Promise<string> {
+  const run = (tools?: Parameters<typeof generateText>[0]['tools']) => {
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), AGENT_WRITE_MS);
+    return generateText({
+      model: getHyphaChatModel(),
+      system: input.system,
+      prompt: input.prompt,
+      abortSignal: abort.signal,
+      ...(tools
+        ? { tools, stopWhen: stepCountIs(2) }
+        : { stopWhen: stepCountIs(1) }),
+    }).finally(() => clearTimeout(timer));
+  };
+
+  if (input.tools) {
+    try {
+      const lookedUp = await run(input.tools);
+      const text = lookedUp.text.trim().slice(0, 2000);
+      if (text) return text;
+    } catch (error) {
+      console.warn(
+        '[MatrixAgent] Lookup did not finish, answering from the room:',
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  const plain = await run();
+  return plain.text.trim().slice(0, 2000);
 }
 
 /**
@@ -162,7 +210,7 @@ function describeRoomContext(
       title ? `Proposal title: ${title}` : null,
       slug ? `Proposal document slug: ${slug}` : null,
       spaceSlug
-        ? `Space slug: ${spaceSlug}. Read this proposal and the space around it before you answer.`
+        ? `Space slug: ${spaceSlug}. Answer from the message. Look the proposal up only when the room text does not already say it.`
         : 'Space slug is unknown — answer from the room and the proposal title only.',
     ]
       .filter(Boolean)
@@ -176,7 +224,7 @@ function describeRoomContext(
       title ? `Signal title: ${title}` : null,
       slug ? `Signal slug: ${slug}` : null,
       spaceSlug
-        ? `Space slug: ${spaceSlug}. Read this signal and the space around it before you answer.`
+        ? `Space slug: ${spaceSlug}. Answer from the message. Look the signal up only when the room text does not already say it.`
         : 'Space slug is unknown — answer from the room and the signal title only.',
     ]
       .filter(Boolean)
@@ -184,12 +232,12 @@ function describeRoomContext(
   }
   if (kind === 'ecosystem') {
     return spaceSlug
-      ? `You are in the ecosystem room for space slug ${spaceSlug}. This is shared by every space in that ecosystem — not the root space’s private member room. Read that space and the ecosystem around it before you answer.`
+      ? `You are in the ecosystem room for space slug ${spaceSlug}. This is shared by every space in that ecosystem — not the root space’s private member room. Answer from the message.`
       : 'You are in an ecosystem room. Answer from the room history; look up ecosystem tools when a space slug appears.';
   }
   if (kind === 'public') {
     return spaceSlug
-      ? `You are in the public channel for space slug ${spaceSlug}. Anyone on the network can write here; the members-only space room is separate. Read that space before you answer, and keep the tone open to visitors.`
+      ? `You are in the public channel for space slug ${spaceSlug}. Anyone on the network can write here; the members-only space room is separate. Answer from the message, and keep the tone open to visitors.`
       : 'You are in a public space channel open to network visitors. Answer from the room history; look up the space when a slug appears.';
   }
   if (kind === 'network') {
@@ -199,7 +247,7 @@ function describeRoomContext(
     return 'Space slug: none. This is a private person-to-person room. Do not look up a space or quote a space member list.';
   }
   if (spaceSlug) {
-    return `You are in a space room. Space slug: ${spaceSlug}. Read that space and the ecosystem around it before you answer.`;
+    return `You are in a space room. Space slug: ${spaceSlug}. Answer from the message. Look the space up only when the room text does not already say it.`;
   }
   return 'Space slug: none. This is a private person-to-person room. Do not look up a space or quote a space member list.';
 }
@@ -238,8 +286,8 @@ export async function replyToMatrixAgentMention({
   });
 
   let turn: { question: string; earlier: string } | null = null;
-  for (let attempt = 0; attempt < 4 && !turn; attempt += 1) {
-    if (attempt > 0) await sleep(400);
+  for (let attempt = 0; attempt < 8 && !turn; attempt += 1) {
+    if (attempt > 0) await sleep(350);
     try {
       const history = await matrixListRoomMessages(
         trimmedRoom,
@@ -280,45 +328,30 @@ export async function replyToMatrixAgentMention({
   );
   const readTools = allowSpaceTools
     ? {
-        get_signals_by_space_slug: tools.get_signals_by_space_slug,
-        get_people_by_space_slug: tools.get_people_by_space_slug,
-        get_documents_by_space_slug: tools.get_documents_by_space_slug,
-        get_ecosystem_by_space_slug: tools.get_ecosystem_by_space_slug,
-        get_org_memory_by_space_slug: tools.get_org_memory_by_space_slug,
         summarize_space_discussion_by_slug:
           tools.summarize_space_discussion_by_slug,
         web_search: tools.web_search,
       }
-    : roomKind === 'network'
-    ? {
-        get_ecosystem_by_space_slug: tools.get_ecosystem_by_space_slug,
-        web_search: tools.web_search,
-      }
     : { web_search: tools.web_search };
+
+  const prompt = [
+    describeRoomContext(context ?? { kind: roomKind, spaceSlug: slug }, slug),
+    turn.earlier
+      ? `Earlier in the room:\n${turn.earlier}`
+      : 'No earlier messages.',
+    `The message that mentioned you:\n${turn.question}`,
+  ].join('\n\n');
+  const system = `${agentPrompt(
+    specialist?.role ?? 'AI Agents',
+  )}\n\n${AGENT_PROMPT_REST}`;
 
   let text = '';
   try {
-    const result = await generateText({
-      model: getHyphaChatModel(),
-      system: `${agentPrompt(
-        specialist?.role ?? 'AI Agents',
-      )}\n\n${AGENT_PROMPT_REST}`,
-      prompt: [
-        describeRoomContext(
-          context ?? { kind: roomKind, spaceSlug: slug },
-          slug,
-        ),
-        turn.earlier
-          ? `Earlier in the room:\n${turn.earlier}`
-          : 'No earlier messages.',
-        `The message that mentioned you:\n${turn.question}`,
-      ].join('\n\n'),
-      tools: readTools as unknown as Parameters<
-        typeof generateText
-      >[0]['tools'],
-      stopWhen: stepCountIs(4),
+    text = await writeAgentText({
+      system,
+      prompt,
+      tools: readTools as unknown as Parameters<typeof generateText>[0]['tools'],
     });
-    text = result.text.trim().slice(0, 2000);
   } catch (error) {
     console.warn(
       '[MatrixAgent] Failed to write a reply:',
@@ -344,6 +377,7 @@ export async function replyToMatrixAgentMention({
       specialist
         ? { [HYPHA_AGENT_SPECIALIST_FIELD]: specialist.id }
         : undefined,
+      agentReplyTxnId(trimmedRoom, turn.question),
     );
   } catch (error) {
     console.warn(
