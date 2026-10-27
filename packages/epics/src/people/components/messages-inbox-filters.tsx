@@ -57,7 +57,7 @@ function FilterRow({
       data-testid={`inbox-filter-${filter}`}
       onClick={() => onSelect(filter)}
       className={cn(
-        'flex w-full min-w-0 items-start gap-3 border-b border-border px-4 py-4 text-left',
+        'flex w-full min-w-0 items-start gap-3 border-b border-border px-4 py-4 text-left hover:bg-accent-2',
         nested && 'py-3 pl-8',
         selected && 'bg-accent-2',
       )}
