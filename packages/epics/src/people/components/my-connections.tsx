@@ -1664,7 +1664,7 @@ export function MyConnections({
     setConversationBoundLookupToken(jwt);
     if (client && jwt?.trim()) refreshBoundChatRooms(client);
   }, [client, jwt]);
-  const { openCoherenceChat } = useHumanChatPanel();
+  const { openCoherenceChat, coherenceRoomId } = useHumanChatPanel();
   const searchParams = useSearchParams();
   const debugRooms = searchParams.get('debugRooms') === '1';
   const openedDirectChatRef = useRef<string | null>(null);
@@ -2863,6 +2863,7 @@ export function MyConnections({
                 selectLabel={(name) => t('selectMember', { name })}
                 picking={picking}
                 selected={selected}
+                activeRoomId={coherenceRoomId}
                 onOpen={(row) => void openMember(row)}
               />
             ) : null}
@@ -3025,6 +3026,7 @@ function MemberList({
   selectLabel,
   picking,
   selected,
+  activeRoomId = null,
   onOpen,
   showChannelTags = false,
 }: {
@@ -3043,6 +3045,7 @@ function MemberList({
   selectLabel: (name: string) => string;
   picking: boolean;
   selected: Set<number>;
+  activeRoomId?: string | null;
   onOpen: (row: ConnectionMemberRow) => void;
   showChannelTags?: boolean;
 }) {
@@ -3073,6 +3076,11 @@ function MemberList({
             ? formatWhen(row.lastTs, locale, justNow)
             : '';
           const checked = selected.has(row.person.id);
+          const active =
+            !picking &&
+            Boolean(activeRoomId) &&
+            row.roomId != null &&
+            row.roomId === activeRoomId;
           const presence = presenceById.get(row.person.id) ?? 'offline';
           const ChannelIcon = row.inbox
             ? CHANNEL_MARK_ICONS[row.inbox.kind]
@@ -3094,9 +3102,11 @@ function MemberList({
                 type="button"
                 onClick={() => onOpen(row)}
                 aria-pressed={picking ? checked : undefined}
+                aria-current={active ? 'true' : undefined}
                 aria-label={picking ? selectLabel(row.name) : undefined}
                 className={cn(
                   'group/row flex w-full min-w-0 items-center gap-3 px-4 py-3 text-left hover:bg-accent-2',
+                  active && 'bg-accent-2',
                   picking && checked && 'bg-accent-2/60',
                 )}
               >
