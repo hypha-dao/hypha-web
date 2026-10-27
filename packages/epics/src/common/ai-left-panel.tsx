@@ -89,12 +89,12 @@ import { MobileSpacesSubnav } from '../people/components/mobile-spaces-subnav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
+import { isMemberHomePath, isNetworkAiPath } from './use-is-space-context';
 import {
-  isConnectionsPath,
-  isMemberHomePath,
-  isMyWalletPath,
-  isNetworkPath,
-} from './use-is-space-context';
+  NETWORK_AI_CHAT_ID,
+  readNetworkAiChatMessages,
+  saveNetworkAiChatMessages,
+} from './network-ai-chat-persistence';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 import {
   useCompactHeaderMode,
@@ -466,15 +466,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [soundOn, setSoundOn] = useState(true);
   const [voiceReady, setVoiceReady] = useState(false);
 
-  // Home, messages, wallet, and network share the member AI. Space and the
-  // interactive create screen keep their own paths.
+  // Home, messages, wallet, my spaces, and network share one Network AI
+  // discussion. Space / ecosystem and interactive create keep their own paths.
   const isMemberAiSurface =
-    !spaceSlug?.trim() &&
-    !isOnboardingPath &&
-    (isMemberHomePath(pathname) ||
-      isConnectionsPath(pathname) ||
-      isMyWalletPath(pathname) ||
-      isNetworkPath(pathname));
+    !spaceSlug?.trim() && !isOnboardingPath && isNetworkAiPath(pathname);
   const voicePrefSlug =
     spaceSlug?.trim() || (isMemberAiSurface ? 'member' : undefined);
 
@@ -556,11 +551,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const skipNextChatResetRef = useRef(false);
   const onboardingHandoffHydratedRef = useRef(false);
   const chatHydratedForSlugRef = useRef<string | null>(null);
+  // One shared id across network screens so the discussion continues.
+  // Space / ecosystem stays slug-keyed and unchanged.
   const spaceChatId = spaceSlug?.trim()
     ? `space-ai-${spaceSlug.trim()}`
-    : pathname.includes('/my-wallet')
-    ? 'member-ai'
-    : 'space-ai-global';
+    : NETWORK_AI_CHAT_ID;
   const {
     createSpace: createSpaceWithWalletFlow,
     space: walletCreatedSpace,
@@ -1231,6 +1226,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       return;
     }
 
+    // Leaving Network AI for a space: keep the planetary discussion for return.
+    if (!previousSlug && nextSlug) {
+      const networkStored = toStoredOnboardingChatMessages(messagesRef.current);
+      if (networkStored.length) {
+        saveNetworkAiChatMessages(networkStored);
+      }
+    }
+
     if (previousSlug && isSpaceSetupContext(onboardingContext)) {
       const { staleOnboardingContext } = resolveChatTransportBody({
         spaceSlug: nextSlug ?? undefined,
@@ -1256,6 +1259,24 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     sealedNavigationKeyRef.current = null;
     stop();
     clearError();
+
+    if (!nextSlug) {
+      const stored = readNetworkAiChatMessages();
+      if (stored?.length) {
+        chatHydratedForSlugRef.current = NETWORK_AI_CHAT_ID;
+        setMessages(
+          stored.map((message) => ({
+            id: message.id,
+            role: message.role,
+            parts: message.parts ?? [],
+          })) as Parameters<typeof setMessages>[0],
+        );
+      } else {
+        setMessages([]);
+      }
+      return;
+    }
+
     setMessages([]);
   }, [
     activeSpaceName,
@@ -1304,6 +1325,29 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     }
   }, [isOnboardingSetup, messages.length, setMessages, spaceSlug]);
 
+  // Network AI hydrate (home / messages / wallet / my-spaces / network).
+  useEffect(() => {
+    if (spaceSlug?.trim()) return;
+    if (chatHydratedForSlugRef.current === NETWORK_AI_CHAT_ID) return;
+
+    if (messages.length > 0) {
+      chatHydratedForSlugRef.current = NETWORK_AI_CHAT_ID;
+      return;
+    }
+
+    chatHydratedForSlugRef.current = NETWORK_AI_CHAT_ID;
+    const stored = readNetworkAiChatMessages();
+    if (stored?.length) {
+      setMessages(
+        stored.map((message) => ({
+          id: message.id,
+          role: message.role,
+          parts: message.parts ?? [],
+        })) as Parameters<typeof setMessages>[0],
+      );
+    }
+  }, [messages.length, setMessages, spaceSlug]);
+
   useEffect(() => {
     const slug = spaceSlug?.trim();
     if (!slug || !messages.length) return;
@@ -1314,6 +1358,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     }
     saveSpaceAiChatMessages(slug, stored);
   }, [isOnboardingSetup, messages, spaceSlug]);
+
+  useEffect(() => {
+    if (spaceSlug?.trim() || !messages.length) return;
+    saveNetworkAiChatMessages(toStoredOnboardingChatMessages(messages));
+  }, [messages, spaceSlug]);
 
   const buildMessageOptions = useCallback(
     async (contextOverride?: OnboardingConversationContext | undefined) => {

@@ -65,6 +65,20 @@ export function isNetworkPath(pathname: string | null | undefined): boolean {
   return /^\/[^/]+\/network(?:\/|$)/.test(pathname);
 }
 
+/**
+ * Member/network screens that share one Network AI discussion
+ * (home, messages, wallet, my spaces, network). Space/ecosystem is separate.
+ */
+export function isNetworkAiPath(pathname: string | null | undefined): boolean {
+  return (
+    isMemberHomePath(pathname) ||
+    isConnectionsPath(pathname) ||
+    isMyWalletPath(pathname) ||
+    isMySpacesPath(pathname) ||
+    isNetworkPath(pathname)
+  );
+}
+
 export function useIsNetworkContext(): boolean {
   const pathname = usePathname();
   return isNetworkPath(pathname);

@@ -33,9 +33,7 @@ import {
 } from './human-chat-panel-context';
 import { isInteractiveCreatePath } from './get-path-function';
 import {
-  isConnectionsPath,
-  isMemberHomePath,
-  isMyWalletPath,
+  isNetworkAiPath,
   showsHumanChatIcon,
   useIsNetworkContext,
   useIsSpaceContext,
@@ -131,15 +129,12 @@ export function AiSidebarTrigger() {
     useAiPanel();
   const { open: rightOpen, closeHumanChatPanel } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
-  const isNetwork = useIsNetworkContext();
   const pathname = usePathname();
-  const isWallet = isMyWalletPath(pathname);
-  const isMessages = isConnectionsPath(pathname);
-  const isHome = isMemberHomePath(pathname);
+  const isNetworkAi = isNetworkAiPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
 
-  if (!isSpace && !isNetwork && !isWallet && !isMessages && !isHome) {
+  if (!isSpace && !isNetworkAi) {
     return null;
   }
 
@@ -179,15 +174,12 @@ export function AiPanelTrigger() {
   const { open, openAiPanel, closeAiPanel, setAiOverlayVisible } = useAiPanel();
   const { open: rightOpen, closeHumanChatPanel } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
-  const isNetwork = useIsNetworkContext();
   const pathname = usePathname();
-  const isWallet = isMyWalletPath(pathname);
-  const isMessages = isConnectionsPath(pathname);
-  const isHome = isMemberHomePath(pathname);
+  const isNetworkAi = isNetworkAiPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
 
-  if (!isSpace && !isNetwork && !isWallet && !isMessages && !isHome) {
+  if (!isSpace && !isNetworkAi) {
     return null;
   }
 
@@ -418,12 +410,9 @@ export function PanelWrapLayout({
   } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
   const isNetwork = useIsNetworkContext();
-  const isWallet = isMyWalletPath(pathname);
-  const isMessages = isConnectionsPath(pathname);
-  const isHome = isMemberHomePath(pathname);
   const isOnboarding = isInteractiveCreatePath(pathname);
-  /** Space, network, wallet, messages, and home. Home uses AI and Classic. */
-  const showAiPanel = isSpace || isNetwork || isWallet || isMessages || isHome;
+  /** Space ecosystem AI, or shared Network AI (home / messages / wallet / my-spaces / network). */
+  const showAiPanel = isSpace || isNetworkAiPath(pathname);
   const effectiveLeft = showAiPanel ? left : undefined;
   // The chat icon is on home, connections, my spaces, my wallet, a space, and the network.
   const showHumanChat = showsHumanChatIcon(pathname, isSpace, isNetwork);
