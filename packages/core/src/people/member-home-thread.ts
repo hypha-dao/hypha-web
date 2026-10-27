@@ -934,6 +934,16 @@ const HOME_STOP =
 const HOME_PAUSE_YES =
   /^(?:yes|yeah|yep|yup|sure|ok|okay|please|let's pause|lets pause|pause)[.!?]?$/i;
 
+function messageIsHomeArrival(message: { metadata?: unknown }): boolean {
+  const metadata = message.metadata;
+  return (
+    metadata != null &&
+    typeof metadata === 'object' &&
+    'homeArrival' in metadata &&
+    (metadata as { homeArrival?: unknown }).homeArrival === true
+  );
+}
+
 /**
  * The talk rests only when they asked to stop, or agreed to a pause the
  * assistant just offered. Anything else means home should keep going.
@@ -943,7 +953,7 @@ export function memberHomeTalkIsResting(
     role: string;
     parts?: readonly unknown[];
     content?: string;
-    metadata?: { homeArrival?: boolean };
+    metadata?: unknown;
   }>,
 ): boolean {
   let offeredPause = false;
@@ -954,7 +964,7 @@ export function memberHomeTalkIsResting(
       offeredPause = /pause for now/i.test(text);
       continue;
     }
-    if (message.role !== 'user' || message.metadata?.homeArrival) continue;
+    if (message.role !== 'user' || messageIsHomeArrival(message)) continue;
     const normalized = memberHomeChoiceText(text);
     if (!normalized) continue;
     if (

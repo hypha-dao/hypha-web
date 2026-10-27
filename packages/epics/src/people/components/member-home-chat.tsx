@@ -154,15 +154,25 @@ function isHomeErrorMessage(message: { metadata?: unknown }) {
   );
 }
 
+function messageIsHomeArrival(message: { metadata?: unknown }) {
+  const metadata = message.metadata;
+  return (
+    metadata != null &&
+    typeof metadata === 'object' &&
+    'homeArrival' in metadata &&
+    (metadata as { homeArrival?: unknown }).homeArrival === true
+  );
+}
+
 function lastHomeTurnIsAssistant(
   messages: ReadonlyArray<{
     role: string;
-    metadata?: { homeArrival?: boolean };
+    metadata?: unknown;
   }>,
 ) {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index];
-    if (!message || message.metadata?.homeArrival) continue;
+    if (!message || messageIsHomeArrival(message)) continue;
     return message.role === 'assistant';
   }
   return false;
