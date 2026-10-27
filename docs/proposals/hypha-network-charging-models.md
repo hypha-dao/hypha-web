@@ -4,6 +4,8 @@
 **Scope:** how Hypha Network could charge for platform access. No product code in this PR.  
 **Prices below are illustrations only** — not live commitments. The only numeric rates cited as repo facts are the existing on-chain activation constants.
 
+Short cost-driver overview: [hypha-costs-and-charging-overview.md](./hypha-costs-and-charging-overview.md).
+
 Legend: **Fact** = present in this repo today. **Assumption** = product/ops choice this document makes explicit.
 
 ---
