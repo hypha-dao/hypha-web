@@ -30,8 +30,8 @@ import {
 } from 'react';
 import useSWR from 'swr';
 
-/** Fail before the ~40s Vercel 504 so Home can render the person shell. */
-const HOME_INTELLIGENCE_TIMEOUT_MS = 8_000;
+/** Past the server deadline, and before the ~40s function limit. */
+const HOME_INTELLIGENCE_TIMEOUT_MS = 20_000;
 
 /** Privy access tokens are JWTs; `sub` is the member id (`did:privy:…`). */
 function readJwtSubject(token: string): string | null {
@@ -77,13 +77,18 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   const jwtOwnerRef = useRef<string | null>(null);
   const keepHomeKey = useRef(false);
   const jwtSubject = jwt ? readJwtSubject(jwt) : null;
-  useLayoutEffect(() => {
-    if (!jwt) return;
+  // SWR decides whether to fetch during render. The owner has to be visible
+  // then, or the first request is skipped and nothing asks again.
+  if (jwt && jwtSubject && memberId && jwtSubject === memberId) {
     jwtRef.current = jwt;
-    if (jwtSubject) jwtOwnerRef.current = jwtSubject;
-    keepHomeKey.current = Boolean(
-      jwtSubject && memberId && jwtSubject === memberId,
-    );
+    jwtOwnerRef.current = jwtSubject;
+    keepHomeKey.current = true;
+  }
+  useLayoutEffect(() => {
+    if (!jwt || !jwtSubject || !memberId || jwtSubject !== memberId) return;
+    jwtRef.current = jwt;
+    jwtOwnerRef.current = jwtSubject;
+    keepHomeKey.current = true;
   }, [jwt, jwtSubject, memberId]);
   const tokenOwner = jwtSubject ?? jwtOwnerRef.current;
   const homeKeyReady =
@@ -118,6 +123,7 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     data: shell,
     error: shellError,
     isLoading: isLoadingShell,
+    mutate: reloadShell,
   } = useSWR<MemberIntelligence | null>(
     // The token string rotates. Keying on it dropped the cached home, unmounted
     // the assistant, and started a new turn a few seconds later. useJwt can
@@ -158,6 +164,12 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   const data = full === undefined ? shell : full;
   const error = data ? null : shellError ?? fullError;
   const isLoadingHome = !data && (isLoadingShell || isLoadingFull);
+  useEffect(() => {
+    if (!homeKeyReady || shell !== undefined || shellError || isLoadingShell) {
+      return;
+    }
+    void reloadShell();
+  }, [homeKeyReady, isLoadingShell, reloadShell, shell, shellError]);
 
   useEffect(() => {
     let timer = 0;
