@@ -4,6 +4,8 @@ import {
   MemberHome,
   resolveMemberHomeGreetingName,
   resolveMemberHomePhase,
+  SpaceAccessDenied,
+  UserSpaceState,
   type MemberHomeRecord,
   type SignupOrientation,
 } from '@hypha-platform/epics';
@@ -63,7 +65,6 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
   const {
     isAuthenticated,
     isLoading: isAuthLoading,
-    login,
     user,
   } = useAuthentication();
   const { jwt, isLoadingJwt } = useJwt();
@@ -259,17 +260,8 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
 
   if (phase === 'signed-out') {
     return (
-      <div className="mx-auto max-w-lg px-5 py-20 text-center">
-        <h1
-          className="text-7 font-medium tracking-[-0.03em]"
-          style={{ fontFamily: 'var(--font-family-heading)' }}
-        >
-          {t('signInTitle')}
-        </h1>
-        <p className="mt-3 text-2 text-neutral-11">{t('signInBody')}</p>
-        <Button className="mt-6" type="button" onClick={() => void login?.()}>
-          {t('signIn')}
-        </Button>
+      <div className="flex min-h-[60vh] w-full items-center justify-center px-5 py-16">
+        <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />
       </div>
     );
   }

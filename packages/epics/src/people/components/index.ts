@@ -33,6 +33,7 @@ export * from './member-home-notifications';
 export * from './mobile-tab-bar';
 export * from './spaces-rail-control';
 export * from './my-connections';
+export * from './account-required-gate';
 export * from './member-home-phase';
 export { MemberHomeSendTokensWidget } from './member-home-chat-widgets';
 export * from './people-transfer-form';
