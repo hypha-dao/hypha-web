@@ -11,7 +11,7 @@ import {
 
 const links = {
   url: 'https://app.hypha.earth/en/dho/acme/agreements/p1',
-  settingsUrl: 'https://app.hypha.earth/en/network/notification-centre',
+  settingsUrl: 'https://app.hypha.earth/en/network?dialog=notification-centre',
 };
 
 describe('emailProposalExecutionForCreator (dashboard: Proposals - Accepted - for creator)', () => {

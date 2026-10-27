@@ -19,7 +19,7 @@ const event = (
     spaceTitle: 'Acme',
     whenLabel: 'Oct 16, 2026, 10:00 AM',
     url: 'https://meet.test/room',
-    settingsUrl: 'https://app.hypha.earth/en/network/notification-centre',
+    settingsUrl: 'https://app.hypha.earth/en/network?dialog=notification-centre',
     channels,
   },
 });

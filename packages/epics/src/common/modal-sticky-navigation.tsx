@@ -25,6 +25,8 @@ export type ModalStickyNavigationProps = {
   /** Rendered immediately before Back / Close (e.g. space settings gear). */
   beforeNavActions?: ReactNode;
   className?: string;
+  /** Close without link navigation (see ButtonClose). */
+  onClose?: () => void;
 };
 
 /**
@@ -41,6 +43,7 @@ export function ModalStickyNavigation({
   showBack = true,
   beforeNavActions,
   className,
+  onClose,
 }: ModalStickyNavigationProps) {
   const pathname = usePathname();
   const tCommon = useTranslations('Common');
@@ -146,6 +149,7 @@ export function ModalStickyNavigation({
           <ButtonClose
             closeUrl={closeUrl}
             preferBack={true}
+            onClose={onClose}
             className="px-0 md:px-3"
           />
         </div>

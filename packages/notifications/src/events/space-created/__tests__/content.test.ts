@@ -18,7 +18,7 @@ const recipient: Recipient = {
     spacesCount: 1,
     url: 'https://app.hypha.earth/en/my-spaces',
     notificationSettingsUrl:
-      'https://app.hypha.earth/en/network/notification-centre',
+      'https://app.hypha.earth/en/network?dialog=notification-centre',
   },
 };
 
@@ -42,7 +42,7 @@ describe('buildSpaceCreatedContent', () => {
     expect(body).toContain('Hey Alice,');
     expect(body).toContain('Go to my spaces');
     expect(body).toContain('[unsubscribe_url]');
-    expect(body).toContain('/en/network/notification-centre');
+    expect(body).toContain('/en/network?dialog=notification-centre');
     expect(result.content.push).toMatchObject({
       kind: 'plain',
       contents: { en: "You've successfully created a space." },

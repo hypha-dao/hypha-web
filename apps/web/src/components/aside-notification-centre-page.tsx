@@ -8,15 +8,18 @@ import {
 } from '@hypha-platform/epics';
 import { useNotifications } from '@hypha-platform/notifications/client';
 import { LoadingBackdrop } from '@hypha-platform/ui';
-import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
-export default function AsideNotificationCentrePage() {
+export default function AsideNotificationCentrePage({
+  closeUrl,
+  onClose,
+}: {
+  closeUrl: string;
+  onClose?: () => void;
+}) {
   const tNotificationCentre = useTranslations('NotificationCentre');
   const { person, isLoading } = useMe();
   const { isAuthenticated, isLoading: authLoading } = useAuthentication();
-  const pathname = usePathname();
-  const closeUrl = pathname.substring(0, pathname.lastIndexOf('/'));
   const {
     subscribed,
     pushActive,
@@ -42,6 +45,7 @@ export default function AsideNotificationCentrePage() {
         <NotificationCentreForm
           person={person ?? undefined}
           closeUrl={closeUrl}
+          onClose={onClose}
           isLoading={isBusy}
           signedOut={!authLoading && !isAuthenticated}
           error={error}

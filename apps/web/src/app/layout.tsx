@@ -27,6 +27,7 @@ import {
 
 import { DeferredFooter } from '@web/components/deferred-footer';
 import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
+import { NotificationCentreDialogHost } from '@web/components/notification-centre-dialog-host';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
 import { ConnectedGlobalCallDock } from '@web/components/connected-global-call-dock';
 import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
@@ -425,6 +426,9 @@ export default async function RootLayout({
                                 spaceMemoryEnabled={spaceMemoryEnabled}
                               />
                             </PanelWrapLayout>
+                            <Suspense fallback={null}>
+                              <NotificationCentreDialogHost />
+                            </Suspense>
                             {/* Outside capture root so tab screen share excludes the floating dock. */}
                             {humanChatEnabled && <ConnectedGlobalCallDock />}
                           </GlobalCallDockProvider>

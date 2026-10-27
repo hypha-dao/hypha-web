@@ -14,7 +14,7 @@ const event = (
     actorDisplayName: 'Alice <A>',
     contextLabel: 'General',
     url: 'https://app.hypha.earth/en/dho/acme?joinCall=1',
-    settingsUrl: 'https://app.hypha.earth/en/network/notification-centre',
+    settingsUrl: 'https://app.hypha.earth/en/network?dialog=notification-centre',
     ...payload,
   },
 });

@@ -1,10 +1,11 @@
-import AsideNotificationCentrePage from '@web/components/aside-notification-centre-page';
+import { redirect } from 'next/navigation';
 
-/**
- * Explicit agreements-tab slot so `/dho/[id]/agreements/notification-centre`
- * renders the notification centre in {@link ProposalOverlayShell} (same as
- * `@aside/[tab]/notification-centre` when tab is agreements).
- */
-export default function DhoAgreementsNotificationCentrePage() {
-  return <AsideNotificationCentrePage />;
+// TODO: remove once old emails linking to /dho/<id>/<tab>/notification-centre are no longer in circulation.
+export default async function LegacyNotificationCentrePage({
+  params,
+}: {
+  params: Promise<{ lang: string; id: string }>;
+}) {
+  const { lang, id } = await params;
+  redirect(`/${lang}/dho/${id}/agreements?dialog=notification-centre`);
 }
