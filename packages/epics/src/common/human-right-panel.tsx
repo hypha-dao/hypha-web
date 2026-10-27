@@ -2607,6 +2607,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isDirectConversation &&
     isArchivedGroupRoom(client?.getRoom(roomId ?? undefined));
   const chatComposerLocked =
+    isJoining ||
     blockSpaceChatForMembership ||
     !canInteractWithSignalThread ||
     archivedGroup;
@@ -3771,6 +3772,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     let cancelled = false;
 
     const init = async () => {
+      const previousRoomId = roomIdRef.current?.trim();
+      if (previousRoomId) {
+        matrixRef.current.unregisterRoomListener(previousRoomId);
+      }
+      roomIdRef.current = null;
+      setRoomId(null);
       setIsJoining(true);
       setError(null);
       setMessages([]);

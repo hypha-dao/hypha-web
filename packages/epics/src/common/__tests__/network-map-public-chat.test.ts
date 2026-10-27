@@ -78,5 +78,11 @@ describe('all-spaces map chat entry points', () => {
     expect(humanRightPanel).toContain(
       "{t('publicRoomTitle')} — {t('publicWelcome')}",
     );
+    expect(humanRightPanel).toContain(
+      'matrixRef.current.unregisterRoomListener(previousRoomId)',
+    );
+    expect(humanRightPanel).toMatch(
+      /const chatComposerLocked =\s+isJoining \|\|/,
+    );
   });
 });
