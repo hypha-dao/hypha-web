@@ -183,7 +183,7 @@ export function channelIsRelevantToMember(
         normalizedSlug(space.slug) === slug,
     );
   }
-  if (place.kind === 'space' || place.kind === 'space-public') {
+  if (place.kind === 'space-public') {
     const slug = normalizedSlug(place.spaceSlug);
     const roomId = snapshot.roomId.trim();
     return context.spaces.some(

@@ -6,12 +6,14 @@ import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
 import {
   ClientEvent,
+  Direction,
   EventType,
   MatrixEventEvent,
   NotificationCountType,
   RoomEvent,
   RoomStateEvent,
   SyncState,
+  type EventTimeline,
   type MatrixClient,
   type MatrixEvent,
   type Room,
@@ -1443,10 +1445,7 @@ function isSignalTeamNoticeBody(body: string): boolean {
 function loadedRoomEvents(room: Room): MatrixEvent[] {
   const collected: MatrixEvent[] = [];
   const seen = new Set<string>();
-  let timeline: {
-    getEvents: () => MatrixEvent[];
-    getNeighbouringTimeline?: (direction: string) => unknown;
-  } | null = room.getLiveTimeline();
+  let timeline: EventTimeline | null = room.getLiveTimeline();
   for (let hop = 0; timeline && hop < 6; hop += 1) {
     for (const event of timeline.getEvents()) {
       const id = event.getId();
@@ -1456,11 +1455,8 @@ function loadedRoomEvents(room: Room): MatrixEvent[] {
       }
       collected.push(event);
     }
-    const previous = timeline.getNeighbouringTimeline?.('b');
-    timeline =
-      previous && typeof previous === 'object' && previous !== timeline
-        ? (previous as typeof timeline)
-        : null;
+    const previous = timeline.getNeighbouringTimeline(Direction.Backward);
+    timeline = previous && previous !== timeline ? previous : null;
   }
   return collected;
 }
@@ -1472,7 +1468,12 @@ function loadedRoomEvents(room: Room): MatrixEvent[] {
 function latestChannelMessage(
   room: Room,
   selfId: string | null,
-): { preview: string; mine: boolean; ts: number | null } {
+): {
+  preview: string;
+  mine: boolean;
+  ts: number | null;
+  sender: string | null;
+} {
   const events = room.getLiveTimeline().getEvents();
   for (let index = events.length - 1; index >= 0; index -= 1) {
     const event = events[index];
@@ -1488,7 +1489,7 @@ function latestChannelMessage(
       if (looksLikeTechnicalMatrixDisplayName(label, matrixUserId)) return '';
       return label;
     });
-    const sender = event.getSender();
+    const sender = event.getSender() ?? null;
     return {
       preview,
       mine: Boolean(selfId && sender === selfId),
