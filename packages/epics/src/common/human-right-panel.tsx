@@ -1138,12 +1138,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   // Person-to-person rooms (PM / group) have a title and no signal slug — never
   // inherit a space from the route or a leftover home slug. Map public chat
   // also opens with an empty signal slug; it is not a DM and must still load
-  // the space so `spaces.chatRoomId` can be checked.
+  // the selected space so `spaces.chatRoomId` can be checked — prefer the
+  // opened space over the current DHO route.
   const isDirectConversation =
     mode === 'coherence' && !coherencePublic && !coherenceSlug?.trim();
   const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
   const spaceSlug = isDirectConversation
     ? undefined
+    : coherencePublic
+    ? coherenceSpaceSlug?.trim() || routeSpaceSlug || undefined
     : routeSpaceSlug || coherenceSpaceSlug?.trim() || undefined;
   const { spaces: peerMemberSpaces, isLoading: peerMemberSpacesLoading } =
     usePersonMemberSpaces({
@@ -6186,7 +6189,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     {deleteError}
                   </div>
                 )}
-                {coherencePublic && !isJoining ? (
+                {coherencePublic && !isJoining && roomId && !error ? (
                   <p
                     role="status"
                     className="border-b border-border px-3 py-2 text-1 text-neutral-11"

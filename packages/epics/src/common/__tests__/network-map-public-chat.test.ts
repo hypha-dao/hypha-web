@@ -70,6 +70,12 @@ describe('all-spaces map chat entry points', () => {
       '} else if (!targetRoomId && openingSpaceSlug) {',
     );
     expect(humanRightPanel).toContain(
+      'coherenceSpaceSlug?.trim() || routeSpaceSlug || undefined',
+    );
+    expect(humanRightPanel).toContain(
+      'coherencePublic && !isJoining && roomId && !error',
+    );
+    expect(humanRightPanel).toContain(
       "{t('publicRoomTitle')} — {t('publicWelcome')}",
     );
   });
