@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { resolveSpeechVoice } from '../speech-voice';
+import { resolveSpeechVoice, SPEECH_TONE_INSTRUCTIONS } from '../speech-voice';
 
 describe('resolveSpeechVoice', () => {
   const previous = process.env.OPENAI_REALTIME_VOICE;
@@ -21,5 +21,11 @@ describe('resolveSpeechVoice', () => {
   it('uses the configured realtime voice when none is passed', () => {
     process.env.OPENAI_REALTIME_VOICE = 'sage';
     expect(resolveSpeechVoice()).toBe('sage');
+  });
+
+  it('asks the speaker for a warm unhurried friend', () => {
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/warm/i);
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/unhurried/i);
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/pause between sentences/i);
   });
 });

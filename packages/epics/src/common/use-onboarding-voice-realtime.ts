@@ -488,9 +488,11 @@ export function useOnboardingVoiceRealtime({
           stopped = true;
           live?.stop();
         };
+        // Stop the previous recording before this one starts. Its completion
+        // must not cancel the line that is about to play.
+        cancelSpeechRef.current?.();
         cancelSpeechRef.current = stop;
         realtimeSpeakInFlightRef.current = true;
-        schedulePlaybackEndFallback(playbackToken);
         void (async () => {
           const token = (await getAccessTokenRef.current?.())?.trim();
           if (stopped || !realtimeSpeakInFlightRef.current) return;
@@ -624,6 +626,15 @@ export function useOnboardingVoiceRealtime({
     async (text: string) => {
       const normalized = text.trim();
       if (!normalized || sendInFlightRef.current) {
+        return;
+      }
+
+      // Let the chat script finish. A real interruption still gets through.
+      if (
+        speakDisplayedTextRef.current &&
+        realtimeSpeakInFlightRef.current &&
+        !hasClearInterruptIntentFromTranscript(normalized)
+      ) {
         return;
       }
 
@@ -837,6 +848,12 @@ export function useOnboardingVoiceRealtime({
 
       if (event.type === 'input_audio_buffer.speech_started') {
         if (!captureMicrophoneRef.current) {
+          clearRealtimeInputAudioBuffer(connectionRef.current);
+          return;
+        }
+        // Home is reading the chat script. Speaker bleed into the mic must
+        // not cut that recording off mid-sentence.
+        if (speakDisplayedTextRef.current && realtimeSpeakInFlightRef.current) {
           clearRealtimeInputAudioBuffer(connectionRef.current);
           return;
         }

@@ -357,6 +357,7 @@ export function startExactSpeechPlayback({
 }): { stop: () => void; done: Promise<boolean> } {
   const abort = new AbortController();
   let source: AudioBufferSourceNode | null = null;
+  let endTimer: number | null = null;
   let settled = false;
   let resolveDone: (spoken: boolean) => void = () => undefined;
   const done = new Promise<boolean>((resolve) => {
@@ -369,6 +370,10 @@ export function startExactSpeechPlayback({
   };
   const stop = () => {
     abort.abort();
+    if (endTimer !== null) {
+      window.clearTimeout(endTimer);
+      endTimer = null;
+    }
     if (source) {
       source.onended = null;
       try {
@@ -421,7 +426,19 @@ export function startExactSpeechPlayback({
       source = context.createBufferSource();
       source.buffer = decoded;
       source.connect(context.destination);
-      source.onended = () => finish(true);
+      // The buffer length is the script. End the turn just after it, and
+      // never from a guess made before the audio has started.
+      endTimer = window.setTimeout(() => {
+        endTimer = null;
+        finish(true);
+      }, Math.ceil(decoded.duration * 1000) + 1500);
+      source.onended = () => {
+        if (endTimer !== null) {
+          window.clearTimeout(endTimer);
+          endTimer = null;
+        }
+        finish(true);
+      };
       source.start();
     } catch {
       finish(false);

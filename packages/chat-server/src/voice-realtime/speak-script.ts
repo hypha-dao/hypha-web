@@ -4,7 +4,7 @@ import {
   MISSING_OPENAI_KEY_MESSAGE,
   RealtimeVoiceSessionError,
 } from './session';
-import { resolveSpeechVoice } from './speech-voice';
+import { resolveSpeechVoice, SPEECH_TONE_INSTRUCTIONS } from './speech-voice';
 
 const SPEECH_MODEL = 'gpt-4o-mini-tts';
 
@@ -42,6 +42,7 @@ export async function synthesizeSpeechScript(
       model: SPEECH_MODEL,
       voice: resolveSpeechVoice(),
       input,
+      instructions: SPEECH_TONE_INSTRUCTIONS,
       response_format: 'mp3',
     }),
   });

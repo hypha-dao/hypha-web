@@ -137,7 +137,7 @@ describe('formatMemberHomeFacts', () => {
     );
     expect(facts).toContain("I've approved");
     expect(facts).toContain('You can now decide on the proposal card.');
-    expect(facts).toContain("Have you seen Ronnie's proposal");
+    expect(facts).toContain('Ronnie has been sitting with the studio costs');
     expect(facts).toContain('Kuan has asked to join');
     expect(facts).toContain('Never say card, screen, or button.');
     expect(facts).toContain('speak to them by name');
@@ -160,7 +160,7 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Do not list signals');
     expect(facts).toContain('Do not say you opened the space');
     expect(facts).toContain(
-      'LENGTH: Typed chat and spoken voice are the same script: at most 2 short sentences, then stop.',
+      'LENGTH: Typed chat and spoken voice are the same script: three or four short sentences, like a friend catching them up, then stop.',
     );
     expect(facts).toContain('Never a wall of text');
     expect(facts).toContain('never the full list');
