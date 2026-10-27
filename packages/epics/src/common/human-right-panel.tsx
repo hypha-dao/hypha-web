@@ -3268,7 +3268,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       ownerId: null as string | null,
     };
 
-    const applyFromTimeline = (): boolean => {
+    const applyFromTimeline = (): {
+      usable: boolean;
+      keptValidatedRoster: boolean;
+    } => {
       const timeline = room.getLiveTimeline().getEvents();
       const next = deriveSignalTeamStateFromEvents(
         timeline,
@@ -3279,7 +3282,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         next.memberMatrixUserIds,
         personIdToMatrixUserId,
       );
-      if (usable) {
+      const hasValidatedTimelineRoster = next.memberMatrixUserIds.length > 0;
+      // Map lookup failed: keep sender-validated timeline MXIDs so
+      // currentUserId membership checks still apply. Do not clear.
+      const keepDespiteMapFailure =
+        Boolean(matrixUserIdsError) && hasValidatedTimelineRoster;
+      if (usable || keepDespiteMapFailure) {
         setSignalTeamMemberIds(next.memberMatrixUserIds);
         setSignalTeamOwnerId(next.ownerMatrixUserId);
       } else if (documentSeedRef.memberIds.length > 0) {
@@ -3293,7 +3301,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (!signalTeamPanelOpen) {
         setSignalTeamDraftMemberIds(null);
       }
-      return usable;
+      return { usable, keptValidatedRoster: keepDespiteMapFailure };
     };
 
     const seedFromDocumentAssignees = async (): Promise<boolean> => {
@@ -3338,15 +3346,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     };
 
     const hydrateRosterHistory = async () => {
-      let foundUsableRoster = applyFromTimeline();
+      let applied = applyFromTimeline();
       if (isLoadingMatrixUserIds) {
         return;
       }
-      if (!foundUsableRoster) {
+      if (!applied.usable && !applied.keptValidatedRoster) {
         const maxRosterHistoryBatches = 50;
         for (
           let i = 0;
-          i < maxRosterHistoryBatches && !cancelled && !foundUsableRoster;
+          i < maxRosterHistoryBatches &&
+          !cancelled &&
+          !applied.usable &&
+          !applied.keptValidatedRoster;
           i += 1
         ) {
           try {
@@ -3356,7 +3367,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               force: i > 0,
             });
             if (cancelled) return;
-            foundUsableRoster = applyFromTimeline();
+            applied = applyFromTimeline();
             if (!result.hasMoreOlder) {
               break;
             }
@@ -3372,12 +3383,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
       }
       if (cancelled) return;
-      if (!foundUsableRoster) {
+      if (!applied.usable && !applied.keptValidatedRoster) {
         await seedFromDocumentAssignees();
       }
-      // Always resolve once the person→Matrix map is ready so a history-load
-      // failure cannot latch the composer locked. Prefer a usable timeline or
-      // document-assignee roster when we have one.
+      const hasAnyRoster =
+        applied.usable ||
+        applied.keptValidatedRoster ||
+        documentSeedRef.memberIds.length > 0;
+      // Map lookup failed with no timeline roster — stay unresolved
+      // (fail closed) until the lookup succeeds.
+      if (matrixUserIdsError && !hasAnyRoster) {
+        return;
+      }
       if (!cancelled) {
         setSignalTeamRosterResolved(true);
       }
@@ -3412,6 +3429,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isJoining,
     personIdToMatrixUserId,
     isLoadingMatrixUserIds,
+    matrixUserIdsError,
     me?.id,
   ]);
 
