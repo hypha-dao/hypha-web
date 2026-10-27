@@ -8,6 +8,8 @@ export const dynamic = 'force-dynamic';
 
 /** Stop before the preview/prod function 504 (~40s) so Home can render. */
 const INTELLIGENCE_DEADLINE_MS = 12_000;
+/** A later connections page still skips the heavy home reads, but needs longer than the first paint. */
+const INTELLIGENCE_PAGE_DEADLINE_MS = 25_000;
 
 export async function GET(request: NextRequest) {
   const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
@@ -26,6 +28,7 @@ export async function GET(request: NextRequest) {
     const rawConnections = request.nextUrl.searchParams.get('connections');
     const requested =
       rawConnections == null ? undefined : Number(rawConnections);
+    const paging = requested != null && Number.isFinite(requested);
     const connectionQuery = request.nextUrl.searchParams.get('q')?.trim();
     const scope =
       request.nextUrl.searchParams.get('scope') === 'shell' ? 'shell' : 'full';
@@ -48,13 +51,16 @@ export async function GET(request: NextRequest) {
         if (deadlineTimer) clearTimeout(deadlineTimer);
       }),
       new Promise<never>((_, reject) => {
-        deadlineTimer = setTimeout(() => {
-          reject(
-            Object.assign(new Error('intelligence deadline'), {
-              name: 'TimeoutError',
-            }),
-          );
-        }, INTELLIGENCE_DEADLINE_MS);
+        deadlineTimer = setTimeout(
+          () => {
+            reject(
+              Object.assign(new Error('intelligence deadline'), {
+                name: 'TimeoutError',
+              }),
+            );
+          },
+          paging ? INTELLIGENCE_PAGE_DEADLINE_MS : INTELLIGENCE_DEADLINE_MS,
+        );
       }),
     ]);
     if (!intelligence) {

@@ -14,11 +14,11 @@ const DESKTOP_MENU = '(min-width: 80rem)';
 export function messagesFrameHeight(input: {
   frameTop: number;
   scrollBottom: number;
+  viewportBottom: number;
   tabOffset: number;
 }): number {
-  const next = Math.floor(
-    input.scrollBottom - input.frameTop - input.tabOffset,
-  );
+  const visibleBottom = Math.min(input.scrollBottom, input.viewportBottom);
+  const next = Math.floor(visibleBottom - input.frameTop - input.tabOffset);
   return Number.isFinite(next) ? Math.max(0, next) : 0;
 }
 
@@ -55,12 +55,14 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
       const frame = ref.current;
       if (!frame) return;
       const scrollEl = getMainColumnScrollElement();
-      const scrollBottom = scrollEl
-        ? scrollEl.getBoundingClientRect().bottom
+      const scrollRect = scrollEl?.getBoundingClientRect();
+      const viewportBottom = window.visualViewport
+        ? window.visualViewport.offsetTop + window.visualViewport.height
         : window.innerHeight;
       const height = messagesFrameHeight({
         frameTop: frame.getBoundingClientRect().top,
-        scrollBottom,
+        scrollBottom: scrollRect?.bottom ?? viewportBottom,
+        viewportBottom,
         tabOffset: mobileTabOffset(),
       });
       if (height < 160) return;
@@ -73,11 +75,15 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
     if (scrollEl) observer.observe(scrollEl);
     observer.observe(document.documentElement);
     window.addEventListener('resize', fit);
+    window.addEventListener('scroll', fit, { passive: true });
+    scrollEl?.addEventListener('scroll', fit, { passive: true });
     window.visualViewport?.addEventListener('resize', fit);
 
     return () => {
       observer.disconnect();
       window.removeEventListener('resize', fit);
+      window.removeEventListener('scroll', fit);
+      scrollEl?.removeEventListener('scroll', fit);
       window.visualViewport?.removeEventListener('resize', fit);
       const frame = ref.current;
       if (frame) frame.style.height = '';

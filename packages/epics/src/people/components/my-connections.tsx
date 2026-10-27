@@ -2421,7 +2421,7 @@ export function MyConnections({
     );
     try {
       const response = await fetch(
-        `/api/v1/people/me/intelligence?connections=${next}`,
+        `/api/v1/people/me/intelligence?connections=${next}&scope=shell`,
         { headers: { Authorization: `Bearer ${jwt}` } },
       );
       if (!response.ok) {
@@ -2430,7 +2430,12 @@ export function MyConnections({
       }
       const body = (await response.json()) as MemberIntelligence;
       const page = body.connections ?? [];
+      const total = body.counts?.connections ?? connectionTotal;
       if (page.length <= connections.length) {
+        if (connections.length < total) {
+          setMoreFailed(true);
+          return;
+        }
         setDirectoryComplete(true);
         return;
       }
@@ -2685,8 +2690,10 @@ export function MyConnections({
             <div
               ref={inboxFiltersRef}
               className={cn(
-                'narrow-scrollbar min-h-0 w-full shrink-0 overflow-y-auto overscroll-contain lg:w-80',
-                inboxChannelOpen ? 'hidden lg:block' : 'flex-1 lg:flex-none',
+                'narrow-scrollbar w-full shrink-0 overscroll-contain lg:h-full lg:w-80 lg:overflow-y-auto',
+                inboxChannelOpen
+                  ? 'hidden lg:block'
+                  : 'min-h-0 flex-1 overflow-y-auto lg:flex-none',
               )}
             >
               <MessagesInboxFilters
@@ -2697,9 +2704,8 @@ export function MyConnections({
             </div>
           ) : null}
           <div
-            ref={inboxListRef}
             className={cn(
-              'narrow-scrollbar min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain',
+              'min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
               section === 'messages' && !picking && !inboxChannelOpen
                 ? 'hidden lg:flex'
                 : 'flex',
@@ -2720,7 +2726,7 @@ export function MyConnections({
                 {t(`inbox.${inboxFilter}Title`)}
               </button>
             ) : null}
-            <div className="flex flex-col gap-3">
+            <div className="flex shrink-0 flex-col gap-3">
               <div className="flex items-center gap-2">
                 <label className="relative min-w-0 flex-1">
                   <span className="sr-only">{t('search')}</span>
@@ -2883,91 +2889,96 @@ export function MyConnections({
               </p>
             ) : null}
 
-            {listLoading ? (
-              <MemberListSkeleton
-                title={
-                  section === 'archived' ? t('tabs.archived') : t('people')
-                }
-                loadingLabel={t('loading')}
-              />
-            ) : null}
+            <div
+              ref={inboxListRef}
+              className="narrow-scrollbar flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain"
+            >
+              {listLoading ? (
+                <MemberListSkeleton
+                  title={
+                    section === 'archived' ? t('tabs.archived') : t('people')
+                  }
+                  loadingLabel={t('loading')}
+                />
+              ) : null}
 
-            {!listLoading &&
-            section === 'archived' &&
-            isMatrixAvailable &&
-            people.length === 0 &&
-            !searching ? (
-              <p className="text-2 text-muted-foreground">
-                {needle ? t('noMatches') : t('archivedEmpty')}
-              </p>
-            ) : null}
+              {!listLoading &&
+              section === 'archived' &&
+              isMatrixAvailable &&
+              people.length === 0 &&
+              !searching ? (
+                <p className="text-2 text-muted-foreground">
+                  {needle ? t('noMatches') : t('archivedEmpty')}
+                </p>
+              ) : null}
 
-            {!listLoading &&
-            section !== 'archived' &&
-            isMatrixAvailable &&
-            home != null &&
-            shownRows.length === 0 &&
-            !searching ? (
-              <p className="text-2 text-muted-foreground">
-                {needle
-                  ? t('noMatches')
-                  : showChannelTags && inboxFilter !== 'direct'
-                  ? t('inbox.empty')
-                  : t('empty')}
-              </p>
-            ) : null}
+              {!listLoading &&
+              section !== 'archived' &&
+              isMatrixAvailable &&
+              home != null &&
+              shownRows.length === 0 &&
+              !searching ? (
+                <p className="text-2 text-muted-foreground">
+                  {needle
+                    ? t('noMatches')
+                    : showChannelTags && inboxFilter !== 'direct'
+                    ? t('inbox.empty')
+                    : t('empty')}
+                </p>
+              ) : null}
 
-            {!listLoading && shownRows.length > 0 ? (
-              <MemberList
-                title={listTitle}
-                rows={shownRows}
-                showChannelTags={showChannelTags}
-                presenceById={presenceById}
-                locale={locale}
-                justNow={t('justNow')}
-                noMessage={t('noMessage')}
-                archivedLabel={t('tabs.archived')}
-                previewLoading={false}
-                loadingLabel={t('loading')}
-                youLabel={(message) => t('youWrote', { message })}
-                unreadLabel={(count) => t('unread', { count })}
-                selectLabel={(name) => t('selectMember', { name })}
-                picking={picking}
-                selected={selected}
-                activeRoomId={coherenceRoomId}
-                activePersonId={coherencePeerPerson?.id ?? null}
-                openLookup={{
-                  rooms: rows,
-                  personIdToMatrixUserId,
-                  peopleBySub,
-                }}
-                onOpen={(row) => void openMember(row)}
-              />
-            ) : null}
+              {!listLoading && shownRows.length > 0 ? (
+                <MemberList
+                  title={listTitle}
+                  rows={shownRows}
+                  showChannelTags={showChannelTags}
+                  presenceById={presenceById}
+                  locale={locale}
+                  justNow={t('justNow')}
+                  noMessage={t('noMessage')}
+                  archivedLabel={t('tabs.archived')}
+                  previewLoading={false}
+                  loadingLabel={t('loading')}
+                  youLabel={(message) => t('youWrote', { message })}
+                  unreadLabel={(count) => t('unread', { count })}
+                  selectLabel={(name) => t('selectMember', { name })}
+                  picking={picking}
+                  selected={selected}
+                  activeRoomId={coherenceRoomId}
+                  activePersonId={coherencePeerPerson?.id ?? null}
+                  openLookup={{
+                    rooms: rows,
+                    personIdToMatrixUserId,
+                    peopleBySub,
+                  }}
+                  onOpen={(row) => void openMember(row)}
+                />
+              ) : null}
 
-            {!listLoading &&
-            hasMorePeople &&
-            !needle &&
-            section !== 'archived' &&
-            (picking || inboxFilter === 'all' || inboxFilter === 'direct') ? (
-              <div className="flex justify-center">
-                <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  disabled={loadingMore}
-                  onClick={() => void loadMorePeople()}
-                >
-                  {tCommon('loadMore')}
-                </Button>
-              </div>
-            ) : null}
+              {!listLoading &&
+              hasMorePeople &&
+              !needle &&
+              section !== 'archived' &&
+              (picking || inboxFilter === 'all' || inboxFilter === 'direct') ? (
+                <div className="flex justify-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    colorVariant="neutral"
+                    disabled={loadingMore}
+                    onClick={() => void loadMorePeople()}
+                  >
+                    {tCommon('loadMore')}
+                  </Button>
+                </div>
+              ) : null}
 
-            {moreFailed ? (
-              <p className="text-center text-1 text-error-11" role="alert">
-                {t('loadMoreFailed')}
-              </p>
-            ) : null}
+              {moreFailed ? (
+                <p className="text-center text-1 text-error-11" role="alert">
+                  {t('loadMoreFailed')}
+                </p>
+              ) : null}
+            </div>
           </div>
         </div>
       ) : null}
