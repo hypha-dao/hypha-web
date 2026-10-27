@@ -738,6 +738,7 @@
     "youWrote": "Du: {message}",
     "theyWrote": "{name}: {message}",
     "unread": "{count} nye",
+    "screenCount": "{count} meldinger",
     "members": "{count} medlemmer",
     "loadMoreFailed": "Resten av listen ble ikke lastet. Du kan prøve igjen.",
     "archivedEmpty": "Arkiverte grupper vises her.",

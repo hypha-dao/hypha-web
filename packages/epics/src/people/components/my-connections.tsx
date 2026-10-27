@@ -1364,6 +1364,32 @@ export function sumConversationUnread(client: MatrixClient | null) {
 
 export { notifyConversationUnreadChanged };
 
+let messagesScreenCount = 0;
+const messagesScreenCountListeners = new Set<() => void>();
+
+/** Inbox size shown beside All messages. The nav badge reads this, not mentions. */
+export function publishMessagesScreenCount(count: number) {
+  const next = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
+  if (next === messagesScreenCount) return;
+  messagesScreenCount = next;
+  for (const listener of messagesScreenCountListeners) listener();
+}
+
+export function useMessagesScreenCount() {
+  const [count, setCount] = useState(messagesScreenCount);
+
+  useEffect(() => {
+    const sync = () => setCount(messagesScreenCount);
+    messagesScreenCountListeners.add(sync);
+    sync();
+    return () => {
+      messagesScreenCountListeners.delete(sync);
+    };
+  }, []);
+
+  return count;
+}
+
 export function useConversationUnreadCount() {
   const { client } = useMatrix();
   const [count, setCount] = useState(0);
@@ -2295,6 +2321,10 @@ export function MyConnections({
   }
   const shownRows =
     section === 'messages' && !picking ? inboxView.rows : people;
+  useEffect(() => {
+    if (section !== 'messages' || picking || listLoading) return;
+    publishMessagesScreenCount(inboxView.counts.all.total);
+  }, [inboxView.counts.all.total, listLoading, picking, section]);
   const listTitle =
     section === 'archived'
       ? t('tabs.archived')

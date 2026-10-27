@@ -49,7 +49,7 @@ import {
   writeHomeView,
   type HomeView,
 } from './member-home-view';
-import { useConversationUnreadCount } from './my-connections';
+import { useMessagesScreenCount } from './my-connections';
 import {
   shouldShowMessagesNav,
   shouldShowSpacesScreen,
@@ -174,7 +174,7 @@ export function MobileTabBar({
   const [createOpen, setCreateOpen] = useState(false);
   const [homeView, setHomeView] = useState<HomeView>('ai');
   const [mounted, setMounted] = useState(false);
-  const unreadCount = useConversationUnreadCount();
+  const unreadCount = useMessagesScreenCount();
 
   useEffect(() => {
     setMounted(true);

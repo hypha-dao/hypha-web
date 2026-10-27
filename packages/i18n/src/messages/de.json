@@ -739,6 +739,7 @@
     "youWrote": "Du: {message}",
     "theyWrote": "{name}: {message}",
     "unread": "{count} neu",
+    "screenCount": "{count} Nachrichten",
     "members": "{count} Mitglieder",
     "loadMoreFailed": "Der Rest der Liste wurde nicht geladen. Du kannst es erneut versuchen.",
     "archivedEmpty": "Archivierte Gruppen erscheinen hier.",

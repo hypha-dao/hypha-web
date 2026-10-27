@@ -36,7 +36,7 @@ import {
 import { ButtonNavItem, ButtonNavItemProps } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { Person } from '@hypha-platform/core/client';
-import { useConversationUnreadCount } from './my-connections';
+import { useMessagesScreenCount } from './my-connections';
 import { usePrivy, useMfaEnrollment } from '@privy-io/react-auth';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
@@ -146,15 +146,15 @@ export const ButtonProfile = ({
   const t = useTranslations('Navigation');
   const tCommon = useTranslations('Common');
   const tConnections = useTranslations('Connections');
-  const unreadMessages = useConversationUnreadCount();
+  const messagesOnScreen = useMessagesScreenCount();
   const messageBadge = (href?: string) =>
     href?.includes('/messages') || href?.includes('/connections')
-      ? unreadMessages
+      ? messagesOnScreen
       : 0;
   const messageAria = (href?: string, label?: string) => {
     const badge = messageBadge(href);
     if (!label || badge <= 0) return undefined;
-    return `${label}, ${tConnections('unread', { count: badge })}`;
+    return `${label}, ${tConnections('screenCount', { count: badge })}`;
   };
   const pathname = usePathname();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);

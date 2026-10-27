@@ -739,6 +739,7 @@
     "youWrote": "Toi : {message}",
     "theyWrote": "{name} : {message}",
     "unread": "{count} nouveaux",
+    "screenCount": "{count} messages",
     "members": "{count} membres",
     "loadMoreFailed": "Le reste de la liste ne s'est pas chargé. Tu peux réessayer.",
     "archivedEmpty": "Les groupes archivés apparaissent ici.",

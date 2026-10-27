@@ -152,6 +152,7 @@
     "youWrote": "You: {message}",
     "theyWrote": "{name}: {message}",
     "unread": "{count} new",
+    "screenCount": "{count} messages",
     "members": "{count} members",
     "loadMoreFailed": "The rest of the list did not load. You can try again.",
     "archivedEmpty": "Archived groups show up here.",

@@ -739,6 +739,7 @@
     "youWrote": "Ти: {message}",
     "theyWrote": "{name}: {message}",
     "unread": "{count} нови",
+    "screenCount": "{count} пораки",
     "members": "{count} членови",
     "loadMoreFailed": "Остатокот од листата не се вчита. Можеш да пробаш повторно.",
     "archivedEmpty": "Архивираните групи се појавуваат тука.",

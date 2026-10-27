@@ -739,6 +739,7 @@
     "youWrote": "Jij: {message}",
     "theyWrote": "{name}: {message}",
     "unread": "{count} nieuw",
+    "screenCount": "{count} berichten",
     "members": "{count} leden",
     "loadMoreFailed": "De rest van de lijst is niet geladen. Je kunt het opnieuw proberen.",
     "archivedEmpty": "Gearchiveerde groepen verschijnen hier.",
