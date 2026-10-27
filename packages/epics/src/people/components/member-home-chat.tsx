@@ -1191,7 +1191,9 @@ export function MemberHomeChat({
       isAuthenticated,
     captureMicrophone: micOn,
     speakReplies: soundOn,
-    speakEarlyLeadIn: false,
+    // Speak the first finished sentence while the rest of the reply is still
+    // being written, instead of waiting for the whole turn.
+    speakEarlyLeadIn: true,
     speakDisplayedText: true,
     isStreaming,
     lastAssistantText: holdVoice ? '' : lastAssistantText,

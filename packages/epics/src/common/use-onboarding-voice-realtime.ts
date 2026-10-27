@@ -28,7 +28,7 @@ import {
   resumeSilentAudioStream,
 } from './onboarding-voice-mic';
 import {
-  extractEarlySpeakableSentence,
+  firstCompletedSpeakableSentence,
   prepareAssistantTextForSpeech,
   resolveSpeechRemainderAfterEarlyPrefix,
   stripMarkdownForSpeech,
@@ -297,6 +297,7 @@ export function useOnboardingVoiceRealtime({
   const speakRepliesRef = useRef(speakReplies);
   const speakDisplayedTextRef = useRef(speakDisplayedText);
   const getAccessTokenRef = useRef(getAccessToken);
+  const speechAuthTokenRef = useRef<Promise<string | null> | null>(null);
   const micNeedsGestureRef = useRef(false);
   captureMicrophoneRef.current = captureMicrophone;
   speakDisplayedTextRef.current = speakDisplayedText;
@@ -494,7 +495,13 @@ export function useOnboardingVoiceRealtime({
         cancelSpeechRef.current = stop;
         realtimeSpeakInFlightRef.current = true;
         void (async () => {
-          const token = (await getAccessTokenRef.current?.())?.trim();
+          if (!speechAuthTokenRef.current) {
+            speechAuthTokenRef.current = Promise.resolve(
+              getAccessTokenRef.current?.() ?? null,
+            ).then((token) => token?.trim() || null);
+          }
+          const token = await speechAuthTokenRef.current;
+          if (!token) speechAuthTokenRef.current = null;
           if (stopped || !realtimeSpeakInFlightRef.current) return;
           if (!token) {
             realtimeSpeakInFlightRef.current = false;
@@ -1396,6 +1403,11 @@ export function useOnboardingVoiceRealtime({
     assistantTextAtStreamStartRef.current = lastAssistantTextRef.current;
     assistantMessageIdAtStreamStartRef.current =
       lastAssistantMessageIdRef.current;
+    if (!speechAuthTokenRef.current) {
+      speechAuthTokenRef.current = Promise.resolve(
+        getAccessTokenRef.current?.() ?? null,
+      ).then((token) => token?.trim() || null);
+    }
     const connection = connectionRef.current;
     // The previous line keeps playing after its response has finished.
     // Stop that audio before this turn, or the member hears the old reply.
@@ -1438,7 +1450,9 @@ export function useOnboardingVoiceRealtime({
       }
     }
 
-    const earlySentence = extractEarlySpeakableSentence(lastAssistantText);
+    const earlySentence = firstCompletedSpeakableSentence(
+      scriptForSpeech(lastAssistantText),
+    );
     if (!earlySentence) return;
 
     earlySpeechStartedRef.current = true;
@@ -1455,6 +1469,7 @@ export function useOnboardingVoiceRealtime({
     isChatStreaming,
     lastAssistantMessageId,
     lastAssistantText,
+    scriptForSpeech,
     speakAssistantReply,
     speakEarlyLeadIn,
   ]);

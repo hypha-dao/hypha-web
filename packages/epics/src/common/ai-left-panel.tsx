@@ -3184,7 +3184,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     onTranscriptTurn: handleVoiceTranscriptTurn,
     captureMicrophone: micOn,
     speakReplies: soundOn,
-    speakEarlyLeadIn: !isMemberAiSurface,
+    speakEarlyLeadIn: true,
     speakDisplayedText: isMemberAiSurface,
   });
 

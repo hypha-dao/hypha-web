@@ -200,20 +200,29 @@ function isTrivialSpeechRemainder(remainder: string): boolean {
 }
 
 /**
- * First completed speakable sentence ready for early TTS while chat is still
- * streaming (covers voice tool-ack lead-ins before tools finish).
+ * First completed sentence of an already-prepared script. Used so early speech
+ * and the later remainder share the same words.
  */
-export function extractEarlySpeakableSentence(text: string): string | null {
-  const speakable = prepareAssistantTextForSpeech(text);
-  if (!speakable) return null;
-
-  const firstSentence = speakable.match(/^(.+?[.!?])(?:\s|$)/)?.[1]?.trim();
+export function firstCompletedSpeakableSentence(
+  speakable: string,
+): string | null {
+  const text = speakable.replace(/\s+/g, ' ').trim();
+  if (!text) return null;
+  const firstSentence = text.match(/^(.+?[.!?])(?:\s|$)/)?.[1]?.trim();
   if (!firstSentence) return null;
   if (firstSentence.length < EARLY_SPEECH_MIN_SENTENCE_CHARS) return null;
   if (countSpeechWords(firstSentence) < EARLY_SPEECH_MIN_SENTENCE_WORDS) {
     return null;
   }
   return firstSentence;
+}
+
+/**
+ * First completed speakable sentence ready for early TTS while chat is still
+ * streaming (covers voice tool-ack lead-ins before tools finish).
+ */
+export function extractEarlySpeakableSentence(text: string): string | null {
+  return firstCompletedSpeakableSentence(prepareAssistantTextForSpeech(text));
 }
 
 /**
