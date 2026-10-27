@@ -485,7 +485,7 @@ export function MemberHomeThreadCard({
           <p
             className={
               chat
-                ? 'mt-2 line-clamp-2 text-1 leading-relaxed text-neutral-12'
+                ? 'mt-2 text-1 leading-relaxed text-neutral-12'
                 : compact
                 ? 'mt-3 text-1 leading-relaxed text-neutral-12'
                 : 'mt-3 text-2 leading-relaxed text-neutral-12'

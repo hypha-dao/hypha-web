@@ -26,6 +26,10 @@ import {
   formatNetworkOutlookFacts,
   memberHomeListAsk,
 } from './member-home-facts';
+import {
+  homeSpokenScriptIsComplete,
+  homeTurnShouldStop,
+} from './home-spoken-script';
 import { loadMemberHomeFacts } from './load-member-home-facts';
 import {
   buildSpaceContextSnapshot,
@@ -1632,13 +1636,13 @@ export async function createChatStreamResult(
     ? networkOutlook
       ? `${effectiveSystemPrompt}\n\nYou are Hypha, a friend looking across the network with this member. This is the network outlook, not their home. Home already walks what needs them in the spaces they belong to. Here you offer one opportunity on the wider network that fits how they show up. Use only the brief below. Write three or four short sentences, warm and specific. Address them by first name. Name who raised the opportunity, the space, and why it fits this member. Every name and place must be written in the brief. Do not add one that is not. Do not walk their personal decisions, the people around them, or what is happening in their own spaces. Never mention a card, a screen, or a button. ${
           memberHomeCard
-            ? 'Call show_member_home_item once for the one opportunity in the brief, then write the sentences. Do not call any other tool. Do not think out loud.'
+            ? 'Write the sentences first. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Then call show_member_home_item once for the one opportunity in the brief. Do not call any other tool. Do not think out loud.'
             : 'Nothing on the network fits them. One sentence that nothing is open to join right now. Do not call a tool. Do not open something from their own spaces. Do not comment on making something up.'
         }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
       : `${effectiveSystemPrompt}\n\nYou are Hypha, a friend in this community, speaking to this member at home. Use only the brief below. Write three or four short sentences, the way you would catch up a friend. Those sentences are read aloud word for word, so write them the way you would say them to a friend: easy, close, and specific. Contractions are welcome. Do not sound like you are reading a notice. Address them by first name. The person asking for attention is the subject, by first name, in the active voice. Say what the community needs, not what task to complete. Every name, number, and place must be written in the brief. Do not add one that is not. Never mention a card, a screen, or a button. Never sound like a checklist. ${
           memberHomeList
             ? 'The list they asked for is already on screen. Write at most two short sentences about that list, using the brief. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal. Do not think out loud.'
-            : 'Call show_member_home_item once for the one item in the brief unless this turn is a share or a visual request, then write the sentences. You may also call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not mention tools, slugs, or instructions. Do not call any other tool. Do not think out loud.'
+            : 'Write the sentences first. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Then call show_member_home_item once for the one item in the brief unless this turn is a share or a visual request. You may also call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not mention tools, slugs, or instructions. Do not call any other tool. Do not think out loud.'
         }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
     : normalizedConversationContext?.mode === 'onboarding_setup'
     ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
@@ -1730,6 +1734,10 @@ export async function createChatStreamResult(
       ? 'The member wants a logo and a banner generated now. You MUST call generate_space_visual_assets in this turn before describing any image. Do not say the images exist until that tool returns logo_url and lead_image_url. Describe them only after the tool succeeds. Never paste the URLs.'
       : '';
 
+  const homeSystem = [systemPrompt, memberHomeFacts, homeVisualDirective]
+    .filter(Boolean)
+    .join('\n\n');
+
   const result = streamText({
     model: memberHomeRecord
       ? openrouterWithHyphaHeaders(openRouterModelId, {
@@ -1740,9 +1748,7 @@ export async function createChatStreamResult(
       : openrouterWithHyphaHeaders(openRouterModelId),
     // The fetch wrapper already retries. Another SDK retry would stack on a slow turn.
     maxRetries: 0,
-    system: [systemPrompt, memberHomeFacts, homeVisualDirective]
-      .filter(Boolean)
-      .join('\n\n'),
+    system: homeSystem,
     messages:
       modelMessages.length > 0
         ? modelMessages
@@ -1759,27 +1765,30 @@ export async function createChatStreamResult(
     // After the waiting-item card, the next step is speech only. Share and
     // visual turns still need their tools on later steps.
     prepareStep: memberHomeRecord
-      ? ({ stepNumber }) => {
+      ? ({ stepNumber, steps }) => {
+          const previous = steps[steps.length - 1]?.text?.trim() ?? '';
+          const unfinished =
+            previous.length > 0 && !homeSpokenScriptIsComplete(previous);
           // A list chip already has its own panel. A tool call here opens
           // the next signal instead, or leaks the call as text.
-          if (memberHomeList) return { toolChoice: 'none' as const };
-          return stepNumber > 0 && memberHomeCard
-            ? { toolChoice: 'none' as const }
-            : {};
+          if (
+            memberHomeList ||
+            (stepNumber > 0 && (memberHomeCard || unfinished))
+          ) {
+            return {
+              toolChoice: 'none' as const,
+              ...(unfinished
+                ? {
+                    system: `${homeSystem}\n\nThe last sentence was cut off. Finish that sentence with a full stop, using only the brief, then stop. Do not repeat the sentences already written. Do not call a tool.`,
+                  }
+                : {}),
+            };
+          }
+          return {};
         }
       : undefined,
     stopWhen: memberHomeRecord
-      ? ({ steps }) => {
-          if (steps.length >= 2) return true;
-          const latest = steps[steps.length - 1];
-          const spoken = latest?.text?.trim() ?? '';
-          if (!spoken) return false;
-          const usedTools = (latest?.toolCalls?.length ?? 0) > 0;
-          if (!usedTools) return true;
-          // The card tool can cut a line off mid-sentence. A finished
-          // sentence must stop here, or the next step says it again.
-          return /[.!?]["')\]]*$/u.test(spoken);
-        }
+      ? ({ steps }) => homeTurnShouldStop(steps)
       : stepCountIs(6),
     onStepFinish: (event) => {
       if (!OPENROUTER_DEBUG) return;
