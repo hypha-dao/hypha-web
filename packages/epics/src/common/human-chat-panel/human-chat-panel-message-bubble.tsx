@@ -1324,7 +1324,8 @@ function MxidMentionPill({
   const t = useTranslations('HumanChatPanel');
   const displayLabel = useMemo(() => {
     if (isHyphaBotMatrixIdentity(fullMxid, syncLabel)) {
-      return t('agentMentionLabel');
+      const label = t('agentMentionLabel').trim();
+      return label.startsWith('@') ? label : `@${label}`;
     }
     const fromPerson = person ? formatPersonDisplayName(person) : '';
     const visible = visibleMatrixMemberName(fullMxid, fromPerson, syncLabel);
