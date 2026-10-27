@@ -336,6 +336,76 @@ describe('messages inbox context', () => {
     );
     expect(rows.map((row) => row.roomId)).toEqual(['!net:hs']);
   });
+
+  it('shows a Hypha room, its ecosystem, and the network when they were created before room types', () => {
+    const hypha: InboxContext = {
+      spaces: [
+        ...context.spaces,
+        {
+          id: 1,
+          slug: 'hypha',
+          title: 'Hypha',
+          parentId: null,
+          chatRoomId: '!hypha-space:hs',
+          rootSlug: 'hypha',
+          rootTitle: 'Hypha',
+        },
+      ],
+      signals: context.signals,
+    };
+    const rows = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!hypha-space:hs',
+          roomType: '',
+          name: 'Hypha',
+          aliases: [],
+          preview: 'from Gerardo',
+          mine: false,
+          lastTs: recent,
+          unread: 2,
+        },
+        {
+          roomId: '!eco:hs',
+          roomType: '',
+          name: 'Ecosystem',
+          aliases: ['#hypha-ecosystem-hypha:example.org'],
+          preview: 'across spaces',
+          mine: false,
+          lastTs: recent,
+          unread: 0,
+        },
+        {
+          roomId: '!net:hs',
+          roomType: '',
+          name: 'Network',
+          aliases: ['#hypha-network:example.org'],
+          preview: 'announcement',
+          mine: false,
+          lastTs: recent,
+          unread: 1,
+        },
+        {
+          roomId: '!dm:hs',
+          roomType: 'io.hypha.room.dm',
+          name: 'Gerardo',
+          aliases: ['#hypha-network:example.org'],
+          preview: 'hello',
+          mine: false,
+          lastTs: recent,
+          unread: 0,
+        },
+      ],
+      hypha,
+      'Network',
+      now,
+    );
+    expect(rows.map((row) => [row.roomId, row.inbox.kind])).toEqual([
+      ['!hypha-space:hs', 'space'],
+      ['!eco:hs', 'ecosystem'],
+      ['!net:hs', 'network'],
+    ]);
+  });
 });
 
 describe('inboxContextHref', () => {

@@ -1,7 +1,9 @@
 /**
  * How an existing conversation is shown on Messages.
- * Kinds follow `m.room.create` types that already exist. This module does not
- * create rooms or change those types.
+ * Kinds follow `m.room.create` types when those exist. Rooms created before
+ * that type was written are still recognized from their alias, or from the
+ * space and signal room ids already stored. This module does not create
+ * rooms or change those types.
  */
 export type InboxChannelKind =
   | 'dm'
@@ -298,11 +300,42 @@ function clean(value: string | null | undefined): string | null {
   return text || null;
 }
 
+/**
+ * Channel kind for a room the member has already joined.
+ * A direct or group type is never a channel. A room with no type can still
+ * be the network, an ecosystem, a public room, or a stored space or signal room.
+ */
+export function inboxKindForJoinedRoom(input: {
+  roomType?: string | null;
+  aliases?: readonly string[];
+  roomId: string;
+  context?: InboxContext;
+}): InboxChannelKind | null {
+  const typed = inboxKindForRoomType(input.roomType);
+  if (typed === 'dm' || typed === 'group') return null;
+  if (isInboxChannelKind(typed)) return typed;
+  if (input.roomType?.trim()) return null;
+  const fromAlias = placeFromAliases(input.aliases ?? []);
+  if (fromAlias?.kind && isInboxChannelKind(fromAlias.kind)) {
+    return fromAlias.kind;
+  }
+  const context = input.context;
+  if (!context) return null;
+  if (spaceByRoomId(context.spaces, input.roomId)) return 'space';
+  if (signalByRoomId(context.signals, input.roomId)) return 'signal';
+  return null;
+}
+
 export function resolveInboxPlace(
   snapshot: Pick<JoinedChannelSnapshot, 'roomId' | 'roomType' | 'aliases'>,
   context: InboxContext = EMPTY_CONTEXT,
 ): InboxPlace | null {
-  const kind = inboxKindForRoomType(snapshot.roomType);
+  const kind = inboxKindForJoinedRoom({
+    roomType: snapshot.roomType,
+    aliases: snapshot.aliases,
+    roomId: snapshot.roomId,
+    context,
+  });
   if (!isInboxChannelKind(kind)) return null;
   const alias = placeFromAliases(snapshot.aliases);
   const signal = signalByRoomId(context.signals, snapshot.roomId);

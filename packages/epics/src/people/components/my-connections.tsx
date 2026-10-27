@@ -1514,14 +1514,29 @@ function latestChannelMessage(
   ts: number | null;
   sender: string | null;
 } {
-  const events = room.getLiveTimeline().getEvents();
-  for (let index = events.length - 1; index >= 0; index -= 1) {
-    const event = events[index];
+  const events = loadedRoomEvents(room);
+  let best: {
+    preview: string;
+    mine: boolean;
+    ts: number;
+    sender: string | null;
+  } | null = null;
+  let encryptedTs = 0;
+  for (const event of events) {
     if (!event || event.isRedacted()) continue;
-    if (event.getType() !== EventType.RoomMessage) continue;
+    const ts = event.getTs() || 0;
+    const type = event.getType();
+    // A new message can still be encrypted when the list is built. Its time
+    // is enough to keep the channel; the words appear once it decrypts.
+    if (type === 'm.room.encrypted') {
+      if (ts > encryptedTs) encryptedTs = ts;
+      continue;
+    }
+    if (type !== EventType.RoomMessage) continue;
     const content = event.getContent() as { body?: unknown } | undefined;
     const body = typeof content?.body === 'string' ? content.body.trim() : '';
     if (!body || isSignalTeamNoticeBody(body)) continue;
+    if (best && ts <= best.ts) continue;
     const preview = messagePreview(body, (matrixUserId) => {
       const member = room.getMember(matrixUserId);
       if (!member) return '';
@@ -1530,11 +1545,33 @@ function latestChannelMessage(
       return label;
     });
     const sender = event.getSender() ?? null;
-    return {
+    const activity = conversationActivityTs(ts);
+    if (!activity) continue;
+    best = {
       preview,
       mine: Boolean(selfId && sender === selfId),
-      ts: conversationActivityTs(event.getTs()),
+      ts: activity,
       sender,
+    };
+  }
+  if (best) return best;
+  if (encryptedTs > 0) {
+    return { preview: '', mine: false, ts: encryptedTs, sender: null };
+  }
+  const notified =
+    typeof room.getUnreadNotificationCount === 'function'
+      ? room.getUnreadNotificationCount(NotificationCountType.Total)
+      : 0;
+  if (notified > 0) {
+    const active =
+      typeof room.getLastActiveTimestamp === 'function'
+        ? room.getLastActiveTimestamp()
+        : 0;
+    return {
+      preview: '',
+      mine: false,
+      ts: active > 0 ? active : Date.now(),
+      sender: null,
     };
   }
   return { preview: '', mine: false, ts: null, sender: null };
@@ -1593,7 +1630,10 @@ function joinedChannelSnapshots(client: MatrixClient): JoinedChannelSnapshot[] {
   for (const room of client.getRooms()) {
     if (room.getMyMembership() !== 'join') continue;
     const roomType = room.getType()?.trim() || '';
-    if (!INBOX_CHANNEL_TYPES.has(roomType)) continue;
+    // Older Hypha, ecosystem, and network rooms have no create-event type.
+    // They stay in the snapshot so an alias or a stored room id can name them.
+    // A typed direct, group, or proposal room is not a channel.
+    if (roomType && !INBOX_CHANNEL_TYPES.has(roomType)) continue;
     const named = (readRoomNameState(room) || room.name || '').trim();
     const last = latestChannelMessage(room, selfId);
     const signal =
