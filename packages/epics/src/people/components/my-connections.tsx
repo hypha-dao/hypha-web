@@ -69,6 +69,7 @@ import {
   membersForGroupPicker,
   conversationsVisibleInSection,
   enrichSearchMembers,
+  messagesPeopleListReady,
   isPeopleListGroup,
   isRememberedBoundChatRoom,
   isRememberedGroupChatRoom,
@@ -1372,6 +1373,7 @@ export function MyConnections({
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
   const [synced, setSynced] = useState(false);
+  const [initialSyncComplete, setInitialSyncComplete] = useState(false);
   const [rowsPending, setRowsPending] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedById, setSelectedById] = useState<
@@ -1391,16 +1393,19 @@ export function MyConnections({
   const [directoryComplete, setDirectoryComplete] = useState(false);
   const fullDirectoryRequested = useRef(false);
 
-  const { data: home } = useSWR<MemberIntelligence | null>(
-    jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
-    async ([url, token]) => {
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) return null;
-      return (await response.json()) as MemberIntelligence;
-    },
-  );
+  const [listSettled, setListSettled] = useState(false);
+  const { data: home, isLoading: homeLoading } =
+    useSWR<MemberIntelligence | null>(
+      jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
+      async ([url, token]) => {
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) return null;
+        return (await response.json()) as MemberIntelligence;
+      },
+    );
+  const homeLoaded = !jwt || home !== undefined || !homeLoading;
 
   const connections =
     directory && directory.length >= (home?.connections.length ?? 0)
@@ -1608,7 +1613,9 @@ export function MyConnections({
     if (!client) {
       setRows([]);
       setSynced(false);
+      setInitialSyncComplete(false);
       setRowsPending(true);
+      setListSettled(false);
       return;
     }
     return attachConversationList(client, () => {
@@ -1619,6 +1626,13 @@ export function MyConnections({
       const state = client.getSyncState();
       if (state === SyncState.Prepared || state === SyncState.Syncing) {
         setSynced(true);
+      }
+      if (
+        state === SyncState.Prepared ||
+        (typeof client.isInitialSyncComplete === 'function' &&
+          client.isInitialSyncComplete())
+      ) {
+        setInitialSyncComplete(true);
       }
       setRowsPending(conversationRowsPending(client));
     });
@@ -1698,7 +1712,22 @@ export function MyConnections({
     [reachOut],
   );
 
-  const titlesLoading = peopleBySubLoading || (peerSubs.length > 0 && !jwt);
+  const titlesLoading =
+    !listSettled && (peopleBySubLoading || (peerSubs.length > 0 && !jwt));
+  const dataReady = messagesPeopleListReady({
+    isMatrixAvailable,
+    isConnecting,
+    synced,
+    initialSyncComplete,
+    rowsPending,
+    homeLoaded,
+    matrixIdsLoading,
+    peopleBySubLoading,
+  });
+  useEffect(() => {
+    if (dataReady) setListSettled(true);
+  }, [dataReady]);
+  const listLoading = !listSettled && !dataReady;
   const resolvedMembers = useMemo(
     () =>
       applyResolvedPeerTitles(
@@ -2272,13 +2301,21 @@ export function MyConnections({
             </div>
           ) : null}
 
-          {!isMatrixAvailable && !notice ? (
+          {!isMatrixAvailable && !isConnecting && !notice ? (
             <p className="text-2 text-muted-foreground">
-              {isConnecting ? t('loading') : tChat('matrixUnavailable')}
+              {tChat('matrixUnavailable')}
             </p>
           ) : null}
 
-          {section === 'archived' &&
+          {listLoading ? (
+            <MemberListSkeleton
+              title={section === 'archived' ? t('tabs.archived') : t('people')}
+              loadingLabel={t('loading')}
+            />
+          ) : null}
+
+          {!listLoading &&
+          section === 'archived' &&
           isMatrixAvailable &&
           people.length === 0 &&
           !searching ? (
@@ -2287,7 +2324,8 @@ export function MyConnections({
             </p>
           ) : null}
 
-          {section !== 'archived' &&
+          {!listLoading &&
+          section !== 'archived' &&
           isMatrixAvailable &&
           home != null &&
           people.length === 0 &&
@@ -2297,7 +2335,7 @@ export function MyConnections({
             </p>
           ) : null}
 
-          {people.length > 0 ? (
+          {!listLoading && people.length > 0 ? (
             <MemberList
               title={section === 'archived' ? t('tabs.archived') : t('people')}
               rows={people}
@@ -2305,9 +2343,7 @@ export function MyConnections({
               locale={locale}
               justNow={t('justNow')}
               noMessage={t('noMessage')}
-              previewLoading={
-                !synced || rowsPending || matrixIdsLoading || peopleBySubLoading
-              }
+              previewLoading={false}
               loadingLabel={t('loading')}
               youLabel={(message) => t('youWrote', { message })}
               unreadLabel={(count) => t('unread', { count })}
@@ -2318,7 +2354,10 @@ export function MyConnections({
             />
           ) : null}
 
-          {hasMorePeople && !needle && section !== 'archived' ? (
+          {!listLoading &&
+          hasMorePeople &&
+          !needle &&
+          section !== 'archived' ? (
             <div className="flex justify-center">
               <Button
                 type="button"
@@ -2370,6 +2409,49 @@ function GroupFaces({ faces }: { faces: GroupFace[] }) {
         </span>
       ))}
     </span>
+  );
+}
+
+const MEMBER_LIST_SKELETON_ROWS = 6;
+
+export function MessagesPeopleListSkeleton() {
+  const t = useTranslations('Connections');
+  return <MemberListSkeleton title={t('people')} loadingLabel={t('loading')} />;
+}
+
+function MemberListSkeleton({
+  title,
+  loadingLabel,
+}: {
+  title: string;
+  loadingLabel: string;
+}) {
+  return (
+    <section
+      className="overflow-hidden rounded-none border border-border bg-background"
+      role="status"
+      aria-busy="true"
+      aria-label={loadingLabel}
+      data-testid="messages-people-loader"
+    >
+      <h2 className="border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
+        {title}
+      </h2>
+      <ul aria-hidden>
+        {Array.from({ length: MEMBER_LIST_SKELETON_ROWS }, (_, index) => (
+          <li
+            key={index}
+            className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0"
+          >
+            <span className="size-10 shrink-0 animate-pulse rounded-full bg-neutral-5" />
+            <span className="min-w-0 flex-1">
+              <span className="my-0.5 block h-4 w-32 max-w-[60%] animate-pulse rounded-sm bg-neutral-5" />
+              <span className="mt-1.5 block h-3 w-40 max-w-full animate-pulse rounded-sm bg-neutral-5" />
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
