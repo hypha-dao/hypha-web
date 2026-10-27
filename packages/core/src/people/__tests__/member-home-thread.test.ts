@@ -6,6 +6,7 @@ import {
   listMemberHomeAttentionItems,
   listMemberHomeThreadItems,
   memberHomeDirectReply,
+  memberHomeTalkIsResting,
   mergeMemberHomeAttention,
   memberHomeBoardDestination,
   memberHomeItemsStillWaiting,
@@ -611,6 +612,57 @@ describe('memberHomeThreadItemForMessage', () => {
     expect(item?.slug).toBe('candidate-review');
   });
 
+  it('keeps the card on the person the sentence names when the tool is the item just finished', () => {
+    const item = memberHomeThreadItemForMessage(
+      [
+        {
+          kind: 'proposal',
+          slug: 'studio-costs',
+          title: 'Studio costs',
+          spaceSlug: 'hypha',
+          spaceTitle: 'Hypha',
+          action: 'decision',
+          documentKind: 'proposal',
+          authoredByMember: false,
+          category: null,
+          summary: null,
+          creatorId: 3,
+          creatorName: 'Ronnie Hale',
+          creatorAvatarUrl: null,
+        },
+        {
+          kind: 'proposal',
+          slug: 'invite-marco',
+          title: 'Invite Member',
+          spaceSlug: 'hypha-energy',
+          spaceTitle: 'Hypha Energy',
+          action: 'decision',
+          documentKind: 'proposal',
+          authoredByMember: false,
+          category: 'invite',
+          summary: null,
+          creatorId: 8,
+          creatorName: 'Marco Rossi',
+          creatorAvatarUrl: null,
+        },
+      ],
+      {
+        parts: [
+          {
+            type: 'text',
+            text: "Glad that's done, Alex. Now Marco in Hypha Energy has asked to join — the people already there are the ones who can welcome him, if it feels right to you.",
+          },
+          {
+            type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+            state: 'output-available',
+            input: { kind: 'proposal', slug: 'studio-costs' },
+          },
+        ],
+      },
+    );
+    expect(item?.slug).toBe('invite-marco');
+  });
+
   it('leaves a greeting with no item empty', () => {
     const item = memberHomeThreadItemForMessage(items, {
       parts: [
@@ -1076,14 +1128,66 @@ describe('memberHomeDirectReply', () => {
     });
   });
 
-  it('introduces the waiting item instead of a space hop', () => {
-    const reply = memberHomeDirectReply(home, 'I am on my home.');
-    expect(reply?.line.key).toBe('itemOpen');
-    expect(reply?.line).not.toMatchObject({ space: 'Commercial Energy Hub' });
-    expect(reply?.item?.slug).toBeTruthy();
+  it('leaves arrival and where they can be useful to the conversation', () => {
+    expect(memberHomeDirectReply(home, 'I am on my home.')).toBeNull();
+    expect(memberHomeDirectReply(home, 'Where can I be useful?')).toBeNull();
   });
 
   it('leaves an ordinary message to the model', () => {
     expect(memberHomeDirectReply(home, 'Tell me about the budget')).toBeNull();
+  });
+});
+
+describe('memberHomeTalkIsResting', () => {
+  it('keeps going until they stop or accept a pause', () => {
+    expect(
+      memberHomeTalkIsResting([
+        { role: 'assistant', content: 'Alex, Marco has asked to join.' },
+        { role: 'user', content: 'Where can I be useful?' },
+      ]),
+    ).toBe(false);
+    expect(
+      memberHomeTalkIsResting([
+        { role: 'assistant', content: 'Alex, Marco has asked to join.' },
+        { role: 'user', content: 'Stop' },
+      ]),
+    ).toBe(true);
+    expect(
+      memberHomeTalkIsResting([
+        {
+          role: 'assistant',
+          content:
+            'Would you like to pause for now, or continue going through what still needs you?',
+        },
+        { role: 'user', content: 'Yes' },
+      ]),
+    ).toBe(true);
+    expect(
+      memberHomeTalkIsResting([
+        {
+          role: 'assistant',
+          content:
+            'Would you like to pause for now, or continue going through what still needs you?',
+        },
+        { role: 'user', content: 'Continue' },
+      ]),
+    ).toBe(false);
+    expect(
+      memberHomeTalkIsResting([
+        { role: 'assistant', content: 'Alex, Marco has asked to join.' },
+        { role: 'user', content: 'Stop' },
+        { role: 'user', content: 'Where can I be useful?' },
+      ]),
+    ).toBe(false);
+    expect(
+      memberHomeTalkIsResting([
+        {
+          role: 'user',
+          content: 'I am on my home.',
+          metadata: { homeArrival: true },
+        },
+        { role: 'assistant', content: 'Alex, Marco has asked to join.' },
+      ]),
+    ).toBe(false);
   });
 });

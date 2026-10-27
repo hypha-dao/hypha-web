@@ -21,6 +21,8 @@ import {
   memberHomeBoardDestination,
   memberHomeDirectReply,
   memberHomeLookItem,
+  memberHomeTalkIsResting,
+  MEMBER_HOME_CONTINUE_ASK,
   memberHomeThreadItemForRef,
   type MemberHomeDirectReply,
   memberHomeItemMemory,
@@ -152,30 +154,57 @@ function isHomeErrorMessage(message: { metadata?: unknown }) {
   );
 }
 
+function lastHomeTurnIsAssistant(
+  messages: ReadonlyArray<{
+    role: string;
+    metadata?: { homeArrival?: boolean };
+  }>,
+) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (!message || message.metadata?.homeArrival) continue;
+    return message.role === 'assistant';
+  }
+  return false;
+}
+
 function homeItemForMessage(
   items: readonly MemberHomeThreadItem[],
   message: HomeMessage,
   home?: MemberIntelligence,
 ): MemberHomeThreadItem | null {
+  const named = memberHomeThreadItemForMessage(items, message);
+  const wordsOnly = memberHomeThreadItemForMessage(items, {
+    content: messageText(message),
+  });
   const hinted = message.metadata?.homeItem;
-  if (
+  const fromHint =
     hinted &&
     (hinted.kind === 'proposal' || hinted.kind === 'signal') &&
     hinted.slug
+      ? items.find(
+          (item) => item.kind === hinted.kind && item.slug === hinted.slug,
+        ) ??
+        (home
+          ? memberHomeThreadItemForRef(home, {
+              kind: hinted.kind,
+              slug: hinted.slug,
+            })
+          : null)
+      : null;
+  // The sentence wins when it names someone else. A hint or a tool call
+  // can still be the item they just finished.
+  if (
+    wordsOnly &&
+    ((fromHint &&
+      memberHomeThreadItemKey(wordsOnly) !==
+        memberHomeThreadItemKey(fromHint)) ||
+      (named &&
+        memberHomeThreadItemKey(wordsOnly) !== memberHomeThreadItemKey(named)))
   ) {
-    const match = items.find(
-      (item) => item.kind === hinted.kind && item.slug === hinted.slug,
-    );
-    if (match) return match;
-    if (home) {
-      const built = memberHomeThreadItemForRef(home, {
-        kind: hinted.kind,
-        slug: hinted.slug,
-      });
-      if (built) return built;
-    }
+    return wordsOnly;
   }
-  return memberHomeThreadItemForMessage(items, message);
+  return fromHint ?? wordsOnly ?? named;
 }
 
 /** Live catalog first, then cards already shown in this thread. */
@@ -590,7 +619,10 @@ export function MemberHomeChat({
   const opened = useRef(false);
   const startedTalk = useRef(false);
   const pendingStart = useRef<
-    { kind: 'return'; text: string } | { kind: 'arrival' } | null
+    | { kind: 'return'; text: string }
+    | { kind: 'arrival' }
+    | { kind: 'continue' }
+    | null
   >(null);
   const scroller = useRef<HTMLDivElement>(null);
   const seenMotionIds = useRef(new Set<string>());
@@ -1210,10 +1242,16 @@ export function MemberHomeChat({
         kind: 'return',
         text: homeReturnText(returned),
       };
-    } else if (stored.length === 0 && threadItems.length > 0) {
-      // Nothing is waiting yet. A fixed prompt starts the conversation
-      // instead of asking the model to greet an empty home.
-      pendingStart.current = { kind: 'arrival' };
+    } else if (
+      !memberHomeTalkIsResting(stored) &&
+      (stored.length === 0
+        ? threadItems.length > 0
+        : lastHomeTurnIsAssistant(stored))
+    ) {
+      // Home starts the talk, and keeps it going, unless they stopped
+      // or accepted a pause. A stored thread that is still open continues.
+      pendingStart.current =
+        stored.length === 0 ? { kind: 'arrival' } : { kind: 'continue' };
     }
     // Voice baselines this thread first, then the next effect speaks a start.
     setVoiceHydrated(true);
@@ -1233,7 +1271,9 @@ export function MemberHomeChat({
     pendingStart.current = null;
     if (!pending) return;
     if (pending.kind === 'return') void send(pending.text, true);
-    else void send(t('homeArrival'), true);
+    else if (pending.kind === 'continue') {
+      void send(MEMBER_HOME_CONTINUE_ASK, true);
+    } else void send(t('homeArrival'), true);
   }, [send, t, voiceHydrated]);
 
   useEffect(() => {

@@ -804,6 +804,14 @@ function textBelongsTo(item: MemberHomeThreadItem, text: string): boolean {
   const haystack = foldHomeText(text);
   if (!haystack) return false;
   if (creatorNamedInText(item.creatorName, haystack)) return true;
+  // "Marco in Hypha Energy has asked to join" names him without the title
+  // or the rest of his name. That sentence still belongs to his card.
+  if (
+    givenNameInText(item.creatorName, haystack) &&
+    spaceNamedInText(item, haystack)
+  ) {
+    return true;
+  }
   return (
     titleNamedInText(item.title, haystack) && spaceNamedInText(item, haystack)
   );
@@ -915,6 +923,51 @@ export function memberHomeThreadItemForMessage(
 
 function memberHomeChoiceText(text: string) {
   return text.trim().toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' ');
+}
+
+/** Hidden prompt when home opens and the talk should keep going. */
+export const MEMBER_HOME_CONTINUE_ASK = 'Continue with what still needs me.';
+
+const HOME_STOP =
+  /^(?:stop|pause|enough|that(?:'| i)?s enough|i(?:'| a)?m done|stop for now|enough for now|let's pause|lets pause|pause for now)[.!?]?$/i;
+
+const HOME_PAUSE_YES =
+  /^(?:yes|yeah|yep|yup|sure|ok|okay|please|let's pause|lets pause|pause)[.!?]?$/i;
+
+/**
+ * The talk rests only when they asked to stop, or agreed to a pause the
+ * assistant just offered. Anything else means home should keep going.
+ */
+export function memberHomeTalkIsResting(
+  messages: ReadonlyArray<{
+    role: string;
+    parts?: readonly unknown[];
+    content?: string;
+    metadata?: { homeArrival?: boolean };
+  }>,
+): boolean {
+  let offeredPause = false;
+  let resting = false;
+  for (const message of messages) {
+    const text = textFromParts(message.parts) || message.content?.trim() || '';
+    if (message.role === 'assistant') {
+      offeredPause = /pause for now/i.test(text);
+      continue;
+    }
+    if (message.role !== 'user' || message.metadata?.homeArrival) continue;
+    const normalized = memberHomeChoiceText(text);
+    if (!normalized) continue;
+    if (
+      HOME_STOP.test(normalized) ||
+      (offeredPause && HOME_PAUSE_YES.test(normalized))
+    ) {
+      resting = true;
+    } else {
+      resting = false;
+    }
+    offeredPause = false;
+  }
+  return resting;
 }
 
 /**
@@ -1581,20 +1634,7 @@ export function memberHomeDirectReply(
       line: { key: 'decisionQuiet' },
     };
   }
-  const waiting = listMemberHomeThreadItems(home).find(
-    (item) => item.slug.trim() && item.title.trim() && item.spaceTitle.trim(),
-  );
-  if (!waiting) {
-    return { ask, widget: null, item: null, line: { key: 'usefulQuiet' } };
-  }
-  return {
-    ask,
-    widget: null,
-    item: { kind: waiting.kind, slug: waiting.slug },
-    line: {
-      key: 'itemOpen',
-      title: waiting.title.trim(),
-      space: waiting.spaceTitle.trim(),
-    },
-  };
+  // Arrival and "where can I be useful" are a conversation, not a label.
+  // The model starts it. A title-and-space line is what kept coming back.
+  return null;
 }

@@ -313,6 +313,91 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('proposal:path');
   });
 
+  it('pins the card to the next item when they just finished one', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+          },
+        ],
+      },
+      {
+        acted: ['proposal:path'],
+        resumed: true,
+        asked:
+          'I carried out the recommended action on "Open the path". Continue with the next.',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toContain('slug=bridge');
+    expect(brief.text).not.toContain('slug=path');
+  });
+
+  it('does not bring back an item the talk already introduced', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+          },
+        ],
+      },
+      {
+        alreadyShown: ['proposal:path'],
+        asked: 'Continue with what still needs me.',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toContain('slug=bridge');
+    expect(brief.text).not.toContain('slug=path');
+    expect(brief.text).toContain(
+      'Never make the whole reply a title and a space',
+    );
+  });
+
+  it('skips a title already placed when they ask where they can be useful', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+          },
+        ],
+      },
+      {
+        alreadyShown: ['proposal:path'],
+        asked: 'Where can I be useful?',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).not.toContain('slug=path');
+  });
+
   it('speaks a closed vote as the outcome', () => {
     const facts = formatMemberHomeFactsText({
       ...home,
