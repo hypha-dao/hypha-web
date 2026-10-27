@@ -118,7 +118,6 @@ import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 import { AiPanelSubscriptionBanner } from '../spaces/components/ai-panel-subscription-banner';
 import { useSalesBanner } from '../spaces/hooks/use-sales-banner';
 import {
-  MAX_RECENT_SPACE_HISTORY,
   MAX_VISIBLE_RECENT_SPACES,
   readRecentSpaceSlugs,
   subscribeRecentSpaceSlugs,
@@ -607,7 +606,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     () =>
       recentSpaceSlugs
         .filter((slug): slug is string => typeof slug === 'string' && !!slug)
-        .slice(0, MAX_RECENT_SPACE_HISTORY),
+        .slice(0, MAX_VISIBLE_RECENT_SPACES),
     [recentSpaceSlugs],
   );
   const { spaces: recentSpacesData, error: recentSpacesError } =
