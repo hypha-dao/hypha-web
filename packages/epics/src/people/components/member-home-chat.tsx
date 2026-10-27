@@ -572,8 +572,13 @@ export function MemberHomeChat({
   const [soundOn, setSoundOn] = useState(true);
   const [micOn, setMicOn] = useState(true);
   const [soundReady, setSoundReady] = useState(false);
+  const [voiceHydrated, setVoiceHydrated] = useState(false);
   const [widgets, setWidgets] = useState<HomeWidget[]>([]);
   const opened = useRef(false);
+  const startedTalk = useRef(false);
+  const pendingStart = useRef<
+    { kind: 'return'; text: string } | { kind: 'arrival' } | null
+  >(null);
   const scroller = useRef<HTMLDivElement>(null);
   const seenMotionIds = useRef(new Set<string>());
   const settleSend = useRef(false);
@@ -1110,7 +1115,12 @@ export function MemberHomeChat({
   const lastAssistantMessageId = lastAssistantMessage?.id ?? '';
 
   const voiceInterview = useOnboardingVoiceDiscovery({
-    enabled: soundReady && dialogue && !isAuthLoading && isAuthenticated,
+    enabled:
+      soundReady &&
+      voiceHydrated &&
+      dialogue &&
+      !isAuthLoading &&
+      isAuthenticated,
     captureMicrophone: micOn,
     speakReplies: soundOn,
     speakEarlyLeadIn: false,
@@ -1172,24 +1182,35 @@ export function MemberHomeChat({
     const returned = consumeHomeReturn();
     if (stored.length > 0) setMessages(stored);
     if (returned != null) {
-      void send(homeReturnText(returned), true);
-      return;
+      pendingStart.current = {
+        kind: 'return',
+        text: homeReturnText(returned),
+      };
+    } else if (stored.length === 0 && threadItems.length > 0) {
+      // Nothing is waiting yet. A fixed prompt starts the conversation
+      // instead of asking the model to greet an empty home.
+      pendingStart.current = { kind: 'arrival' };
     }
-    if (stored.length > 0) return;
-    // Nothing is waiting yet. A fixed prompt starts the conversation
-    // instead of asking the model to greet an empty home.
-    if (threadItems.length === 0) return;
-    void send(t('homeArrival'), true);
+    // Voice baselines this thread first, then the next effect speaks a start.
+    setVoiceHydrated(true);
   }, [
     intelligence.person.slug,
     isAuthenticated,
     isAuthLoading,
-    send,
     setMessages,
     soundReady,
-    t,
     threadItems.length,
   ]);
+
+  useEffect(() => {
+    if (!voiceHydrated || startedTalk.current) return;
+    startedTalk.current = true;
+    const pending = pendingStart.current;
+    pendingStart.current = null;
+    if (!pending) return;
+    if (pending.kind === 'return') void send(pending.text, true);
+    else void send(t('homeArrival'), true);
+  }, [send, t, voiceHydrated]);
 
   useEffect(() => {
     if (!opened.current) return;

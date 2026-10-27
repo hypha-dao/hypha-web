@@ -18,6 +18,7 @@ import {
   setRealtimeRemoteAudioMuted,
   speakAssistantTextViaRealtime,
   startExactSpeechPlayback,
+  unlockExactSpeechPlayback,
   type RealtimeServerEvent,
   type RealtimeVoiceConnection,
 } from './onboarding-voice-realtime-client';
@@ -262,6 +263,9 @@ export function useOnboardingVoiceRealtime({
   const assistantTextAtStreamStartRef = useRef('');
   const assistantMessageIdAtStreamStartRef = useRef('');
   const lastSpokenAssistantMessageIdRef = useRef('');
+  /** The bubble on screen when speech turned on. Later bubbles are read. */
+  const speechBaselinedRef = useRef(false);
+  const seenAssistantMessageIdRef = useRef('');
   const speakAssistantReplyRef = useRef<(spoken: string) => void>(() => {});
   /** True only between our response.create and its response.created. */
   const expectingRealtimeResponseRef = useRef(false);
@@ -469,6 +473,7 @@ export function useOnboardingVoiceRealtime({
       if (speakDisplayedTextRef.current) {
         // Home reads the bubble. response.create writes a new line, so this
         // path synthesizes the script and cancels any model speech.
+        unlockExactSpeechPlayback();
         expectingRealtimeResponseRef.current = false;
         cancelActiveRealtimeResponse(
           connection,
@@ -819,10 +824,14 @@ export function useOnboardingVoiceRealtime({
         event.type === 'output_audio_buffer.stopped' &&
         connectionRef.current
       ) {
-        if (gracefulInterruptPendingRef.current) {
-          completeUserBargeInInterrupt();
-        } else if (realtimeSpeakInFlightRef.current) {
-          finishRealtimeSpeakPlayback();
+        // Home is speaking the chat line through its own audio. Clearing the
+        // realtime buffer must not cancel that recording.
+        if (!speakDisplayedTextRef.current) {
+          if (gracefulInterruptPendingRef.current) {
+            completeUserBargeInInterrupt();
+          } else if (realtimeSpeakInFlightRef.current) {
+            finishRealtimeSpeakPlayback();
+          }
         }
       }
 
@@ -1306,6 +1315,7 @@ export function useOnboardingVoiceRealtime({
   useEffect(() => {
     if (!enabled) return;
     const unlock = () => {
+      unlockExactSpeechPlayback();
       const connection = connectionRef.current;
       if (connection) resumeSilentAudioStream(connection.localStream);
       if (connection && speakRepliesRef.current) {
@@ -1433,10 +1443,34 @@ export function useOnboardingVoiceRealtime({
   ]);
 
   useEffect(() => {
-    if (!enabled || isChatStreaming) return;
-    if (!awaitingAssistantSpeakRef.current && !wasStreamingRef.current) return;
+    if (!enabled) return;
+    if (!speechBaselinedRef.current) {
+      speechBaselinedRef.current = true;
+      seenAssistantMessageIdRef.current = lastAssistantMessageId;
+      return;
+    }
+    if (isChatStreaming) return;
 
     const spoken = lastAssistantText.trim();
+    // A chip or a card reply is written here, with no model stream. Read it.
+    if (
+      speakDisplayedText &&
+      !awaitingAssistantSpeakRef.current &&
+      !wasStreamingRef.current
+    ) {
+      if (
+        !spoken ||
+        !lastAssistantMessageId ||
+        lastAssistantMessageId === seenAssistantMessageIdRef.current
+      ) {
+        return;
+      }
+      seenAssistantMessageIdRef.current = lastAssistantMessageId;
+      speakAssistantReply(spoken);
+      return;
+    }
+
+    if (!awaitingAssistantSpeakRef.current && !wasStreamingRef.current) return;
     const startedFrom = assistantTextAtStreamStartRef.current.trim();
     const startedId = assistantMessageIdAtStreamStartRef.current;
     const stillPriorBubble =
@@ -1470,6 +1504,7 @@ export function useOnboardingVoiceRealtime({
       return () => window.clearTimeout(timer);
     }
 
+    seenAssistantMessageIdRef.current = lastAssistantMessageId;
     awaitingAssistantSpeakRef.current = false;
     wasStreamingRef.current = false;
 
@@ -1529,6 +1564,7 @@ export function useOnboardingVoiceRealtime({
     lastAssistantMessageId,
     lastAssistantText,
     scheduleMicRestoreForUserTurn,
+    speakDisplayedText,
     scriptForSpeech,
     speakAssistantReply,
   ]);

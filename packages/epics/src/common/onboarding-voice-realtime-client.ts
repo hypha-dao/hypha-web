@@ -329,6 +329,21 @@ export function setRealtimeRemoteAudioMuted(
   connection.remoteAudio.volume = muted ? 0 : 1;
 }
 
+let speechContext: AudioContext | null = null;
+
+/** Resume the speaker during a click so a later recording can play. */
+export function unlockExactSpeechPlayback(): void {
+  const Context =
+    window.AudioContext ||
+    (window as Window & { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext;
+  if (!Context) return;
+  if (!speechContext) speechContext = new Context();
+  if (speechContext.state === 'suspended') {
+    void speechContext.resume().catch(() => undefined);
+  }
+}
+
 /**
  * Play the chat script as synthesized speech. The realtime model is not asked
  * to say it: that call generates a new reply, and the words drift.
@@ -341,8 +356,7 @@ export function startExactSpeechPlayback({
   authToken: string;
 }): { stop: () => void; done: Promise<boolean> } {
   const abort = new AbortController();
-  let audio: HTMLAudioElement | null = null;
-  let objectUrl: string | null = null;
+  let source: AudioBufferSourceNode | null = null;
   let settled = false;
   let resolveDone: (spoken: boolean) => void = () => undefined;
   const done = new Promise<boolean>((resolve) => {
@@ -351,24 +365,24 @@ export function startExactSpeechPlayback({
   const finish = (spoken: boolean) => {
     if (settled) return;
     settled = true;
-    if (objectUrl) {
-      URL.revokeObjectURL(objectUrl);
-      objectUrl = null;
-    }
     resolveDone(spoken);
   };
   const stop = () => {
     abort.abort();
-    if (audio) {
-      audio.onended = null;
-      audio.pause();
-      audio.src = '';
+    if (source) {
+      source.onended = null;
+      try {
+        source.stop();
+      } catch {
+        // The buffer already finished.
+      }
     }
     finish(false);
   };
 
   void (async () => {
     try {
+      unlockExactSpeechPlayback();
       const response = await fetch('/api/voice/speak', {
         method: 'POST',
         signal: abort.signal,
@@ -382,15 +396,33 @@ export function startExactSpeechPlayback({
         finish(false);
         return;
       }
-      const bytes = await response.blob();
+      const bytes = await response.arrayBuffer();
       if (abort.signal.aborted) {
         finish(false);
         return;
       }
-      objectUrl = URL.createObjectURL(bytes);
-      audio = new Audio(objectUrl);
-      audio.onended = () => finish(true);
-      await audio.play();
+      const context = speechContext;
+      if (!context) {
+        finish(false);
+        return;
+      }
+      if (context.state === 'suspended') {
+        await context.resume();
+      }
+      if (abort.signal.aborted || context.state !== 'running') {
+        finish(false);
+        return;
+      }
+      const decoded = await context.decodeAudioData(bytes.slice(0));
+      if (abort.signal.aborted) {
+        finish(false);
+        return;
+      }
+      source = context.createBufferSource();
+      source.buffer = decoded;
+      source.connect(context.destination);
+      source.onended = () => finish(true);
+      source.start();
     } catch {
       finish(false);
     }
