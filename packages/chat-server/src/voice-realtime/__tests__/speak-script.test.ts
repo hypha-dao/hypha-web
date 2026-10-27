@@ -13,9 +13,9 @@ describe('resolveSpeechVoice', () => {
     expect(resolveSpeechVoice('Cedar')).toBe('cedar');
   });
 
-  it('falls back to marin for a voice the speech model cannot speak', () => {
+  it('falls back to coral for a voice the speech model cannot speak', () => {
     delete process.env.OPENAI_REALTIME_VOICE;
-    expect(resolveSpeechVoice('not-a-voice')).toBe('marin');
+    expect(resolveSpeechVoice('not-a-voice')).toBe('coral');
   });
 
   it('uses the configured realtime voice when none is passed', () => {
@@ -23,9 +23,9 @@ describe('resolveSpeechVoice', () => {
     expect(resolveSpeechVoice()).toBe('sage');
   });
 
-  it('asks the speaker for a warm unhurried friend', () => {
+  it('asks the speaker for an easy close voice', () => {
     expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/warm/i);
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/unhurried/i);
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/pause between sentences/i);
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/everyday pace/i);
+    expect(SPEECH_TONE_INSTRUCTIONS).not.toMatch(/pause between sentences/i);
   });
 });
