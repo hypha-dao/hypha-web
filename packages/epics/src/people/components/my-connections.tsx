@@ -3218,12 +3218,19 @@ function MemberList({
                   </span>
                 ) : null}
                 {showChannelTags && ChannelIcon ? (
-                  <span className="grid size-10 shrink-0 place-items-center border border-foreground text-foreground">
+                  <span className="relative grid size-10 shrink-0 place-items-center border border-foreground text-foreground">
                     <ChannelIcon
                       className="size-4"
                       strokeWidth={1.5}
                       aria-hidden
                     />
+                    {contextHref ? (
+                      <ArrowUpRight
+                        className="pointer-events-none absolute top-px right-px size-2.5"
+                        strokeWidth={1.75}
+                        aria-hidden
+                      />
+                    ) : null}
                   </span>
                 ) : row.faces && row.faces.length > 0 ? (
                   <GroupFaces faces={row.faces} />
@@ -3322,14 +3329,8 @@ function MemberList({
                 <Link
                   href={contextHref}
                   aria-label={tInbox('inbox.openContext', { name: row.name })}
-                  className="absolute top-3 left-4 z-10 size-10 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-foreground"
-                >
-                  <ArrowUpRight
-                    className="absolute top-0.5 right-0.5 size-2.5 text-foreground"
-                    strokeWidth={1.75}
-                    aria-hidden
-                  />
-                </Link>
+                  className="absolute top-1/2 left-4 z-10 size-10 -translate-y-1/2 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+                />
               ) : null}
             </li>
           );
