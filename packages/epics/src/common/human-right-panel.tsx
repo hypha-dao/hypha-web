@@ -1491,7 +1491,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setVoiceProcessingPreset: setSpaceCallVoiceProcessingPreset,
     unsupportedVoiceProcessingConstraints:
       spaceCallUnsupportedVoiceProcessingConstraints,
-    presenterVoiceBoostActive: spaceCallPresenterVoiceBoostActive,
     tabBackgroundWhileInCall: spaceCallTabBackground,
     retryFromError: retrySpaceCall,
     dismissCallError: dismissSpaceCallError,
@@ -5805,7 +5804,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 onVoiceProcessingPresetChange={
                   handleCallVoiceProcessingPresetChange
                 }
-                presenterVoiceBoostActive={spaceCallPresenterVoiceBoostActive}
                 unsupportedVoiceProcessingConstraints={
                   spaceCallUnsupportedVoiceProcessingConstraints
                 }

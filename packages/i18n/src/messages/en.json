@@ -3990,7 +3990,6 @@
     "callRemoteMediaWarmingHint": "Waiting for others' audio and video to connect…",
     "callRemoteMediaStallRetry": "Retry connection",
     "callScaleWarningMessage": "This call has many participants. Quality may be reduced.",
-    "callVoiceBoostWhilePresenting": "Voice boost active while presenting",
     "callSessionRefreshFailedDescription": "Your call session expired. Reconnect to stay in the meeting.",
     "callSessionRefreshFailedReconnect": "Reconnect",
     "callShareTabAudioNotShared": "Tab audio not shared — others may not hear sound from your shared tab or window.",
