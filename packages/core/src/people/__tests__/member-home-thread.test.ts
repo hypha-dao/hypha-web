@@ -15,6 +15,7 @@ import {
   memberHomeSignalCatalogue,
   memberHomeSignalCtas,
   memberHomeCardForSpeech,
+  memberHomeSpeechConflictsWithItem,
   memberHomeThreadItemForMessage,
   resolveMemberHomeThreadItem,
   memberHomeItemMemory,
@@ -861,6 +862,93 @@ describe('memberHomeThreadItemForMessage', () => {
         },
         hinted: vladFlywheel,
         spaceTitles: ['Hypha Energy', 'Hypha Flywheel'],
+      }),
+    ).toBeNull();
+  });
+
+  it('never keeps a Flywheel invite under Bioregion signal speech about the same person', () => {
+    const bioregionSignal: MemberHomeThreadItem = {
+      kind: 'signal',
+      slug: 'legumes-cagettes',
+      title: 'Légumes et Cagettes Rebelles',
+      spaceSlug: 'bioregion-bassin-annecien',
+      spaceTitle: 'Biorégion du Bassin Annécien',
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: false,
+      category: 'opportunity',
+      summary: 'Aider à distribuer des produits frais dans les cercles étudiants.',
+      creatorId: 8,
+      creatorName: 'Someone Else',
+      creatorAvatarUrl: null,
+    };
+    const vladInvite: MemberHomeThreadItem = {
+      kind: 'proposal',
+      slug: 'invite-vlad-flywheel',
+      title: 'Invite Member',
+      spaceSlug: 'hypha-flywheel',
+      spaceTitle: 'Hypha Flywheel',
+      action: 'outcome',
+      documentKind: 'proposal',
+      authoredByMember: false,
+      category: 'invite',
+      summary: 'Vlad Hramtsov has just requested to join as a member!',
+      creatorId: 2,
+      creatorName: 'Vlad Hramtsov',
+      creatorAvatarUrl: null,
+      passed: true,
+      participation: 0.5,
+      unity: 1,
+    };
+    const text =
+      'Alex, si tu veux te rendre utile autrement, Vlad porte un signal dans la Biorégion du Bassin Annécien : collaborer avec Légumes et Cagettes Rebelles pour aider à distribuer des produits frais dans les cercles étudiants. Dis-moi si ce fil te parle et je t\'emmène aux signaux de cet espace.';
+    const spaceTitles = [
+      'Biorégion du Bassin Annécien',
+      'Hypha Flywheel',
+      'Hypha Platform',
+    ];
+    expect(
+      memberHomeSpeechConflictsWithItem(
+        vladInvite,
+        text,
+        spaceTitles,
+        [vladInvite.creatorName, bioregionSignal.creatorName],
+      ),
+    ).toBe(true);
+    expect(
+      memberHomeCardForSpeech({
+        items: [bioregionSignal, vladInvite],
+        message: {
+          parts: [
+            { type: 'text', text },
+            {
+              type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+              state: 'output-available',
+              input: { kind: 'proposal', slug: 'invite-vlad-flywheel' },
+            },
+          ],
+        },
+        hinted: vladInvite,
+        spaceTitles,
+      })?.slug,
+    ).toBe('legumes-cagettes');
+    // Tool showed the invite, words are a signal in Bioregion, and that
+    // signal is not in the pool: show nothing rather than the wrong card.
+    expect(
+      memberHomeCardForSpeech({
+        items: [vladInvite],
+        message: {
+          parts: [
+            { type: 'text', text },
+            {
+              type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+              state: 'output-available',
+              input: { kind: 'proposal', slug: 'invite-vlad-flywheel' },
+            },
+          ],
+        },
+        hinted: vladInvite,
+        spaceTitles,
       }),
     ).toBeNull();
   });

@@ -857,8 +857,12 @@ export function memberHomeTextBelongsToItem(
 }
 
 function spokenKind(haystack: string): MemberHomeCardKind | null {
-  const signal = /\b(signals?|notes?|tensions?)\b/.test(haystack);
-  const proposal = /\b(proposals?|invites?|votes?|decisions?)\b/.test(haystack);
+  // Include FR stems so "porte un signal" cannot keep an invite card.
+  const signal = /\b(signals?|signaux|notes?|tensions?)\b/.test(haystack);
+  const proposal =
+    /\b(proposals?|propositions?|invites?|invitations?|votes?|decisions?|d[ée]cisions?)\b/.test(
+      haystack,
+    );
   if (signal === proposal) return null;
   return signal ? 'signal' : 'proposal';
 }
@@ -1065,8 +1069,12 @@ function textClaimsOtherCreator(
 }
 
 /**
- * The reply names a space this card is not in, or attributes the work to
- * another person. A greeting that names no space does not conflict.
+ * The reply names a space this card is not in, attributes the work to
+ * another person, or speaks a different kind (signal vs proposal). A greeting
+ * that names no space does not conflict.
+ *
+ * Naming the creator alone must NOT clear a conflict: "Vlad porte un signal
+ * dans la Biorégion…" must never keep Vlad's Flywheel invite card.
  */
 export function memberHomeSpeechConflictsWithItem(
   item: MemberHomeThreadItem,
@@ -1077,10 +1085,18 @@ export function memberHomeSpeechConflictsWithItem(
   // Person attribution first: "Edgar's thread …, Alex." must not keep Alex's
   // card just because the listener is named and the space matches.
   if (textClaimsOtherCreator(item, text, peerNames)) return true;
-  if (textBelongsTo(item, text)) return false;
+  const haystack = foldHomeText(text);
   const named = mostSpecificSpaceTitles(text, spaceTitles);
-  if (named.length === 0) return false;
-  return !named.includes(foldHomeText(item.spaceTitle));
+  if (
+    named.length > 0 &&
+    !named.includes(foldHomeText(item.spaceTitle))
+  ) {
+    return true;
+  }
+  const kind = spokenKind(haystack);
+  if (kind && kind !== item.kind) return true;
+  if (textBelongsTo(item, text)) return false;
+  return false;
 }
 
 /** The one item in the space the reply actually names. */
