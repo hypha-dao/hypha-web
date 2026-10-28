@@ -38,6 +38,19 @@ export function resolveMemberHomePhase(input: {
   return 'ready';
 }
 
+/**
+ * The loader stays up for the whole reply. Words and the card land together
+ * when the stream finishes, so a tool result cannot flash a card first.
+ */
+export function memberHomeReplyReady(input: {
+  text: string;
+  hasCard: boolean;
+  streaming: boolean;
+}): boolean {
+  if (input.streaming) return false;
+  return input.text.trim().length > 0 || input.hasCard;
+}
+
 /** Name only when /me is the signed-in member (`person.sub === memberId`). */
 export function resolveMemberHomeGreetingName(input: {
   personName?: string | null;

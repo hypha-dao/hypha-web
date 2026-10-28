@@ -64,6 +64,8 @@ import { MemberHomeOnboardingCards } from './member-home-onboarding-cards';
 import { generatedVisualsFromParts } from '../../common/onboarding-visual-assets';
 import { useOnboardingSpaceSignature } from '../../common/use-onboarding-space-signature';
 import { MemberHomeMark } from './member-home-mark';
+import { memberHomeReplyReady } from './member-home-phase';
+import { HomeWave } from './member-home-wave';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { PersonAvatar } from './person-avatar';
 import {
@@ -1395,17 +1397,19 @@ export function MemberHomeChat({
   useEffect(() => {
     onFocusItem?.(focusedItem);
   }, [focusedItem, onFocusItem]);
-  const showSensing = useMemo(() => {
-    if (!isStreaming) return false;
+  const liveReplyPending = useMemo(() => {
     for (let i = homeMessages.length - 1; i >= 0; i -= 1) {
       const message = homeMessages[i];
       if (!message || message.metadata?.homeArrival) continue;
-      if (message.role !== 'assistant') return true;
-      if (messageText(message)) return false;
-      return homeItemForMessage(cardItems, message, intelligence) == null;
+      if (message.role !== 'assistant') return isStreaming;
+      return !memberHomeReplyReady({
+        text: shownAssistantText.get(message.id) ?? '',
+        hasCard: cardsByMessageId.has(message.id),
+        streaming: isStreaming,
+      });
     }
-    return true;
-  }, [cardItems, homeMessages, intelligence, isStreaming]);
+    return isStreaming;
+  }, [cardsByMessageId, homeMessages, isStreaming, shownAssistantText]);
   const hasSpoken = homeMessages.some(
     (message) => message.role === 'user' && !message.metadata?.homeArrival,
   );
@@ -1430,14 +1434,14 @@ export function MemberHomeChat({
   const showArrivalMask = useMemo(() => {
     if (freshStart) return false;
     if (error) return false;
+    if (liveReplyPending) return true;
     const hasVisible = homeMessages.some((message) => {
       if (message.metadata?.homeArrival) return false;
       if (message.role === 'user') return true;
       return Boolean(messageText(message));
     });
-    if (hasVisible && !showSensing) return false;
-    return true;
-  }, [error, freshStart, homeMessages, showSensing]);
+    return !hasVisible;
+  }, [error, freshStart, homeMessages, liveReplyPending]);
 
   for (const message of homeMessages) {
     if (seenMotionIds.current.has(message.id)) continue;
@@ -1654,11 +1658,23 @@ export function MemberHomeChat({
                 ? generatedVisualsFromParts(message.parts)
                 : null;
             const keepsCard = pinnedItem != null;
+            const replyReady =
+              message.role !== 'assistant' ||
+              memberHomeReplyReady({
+                text,
+                hasCard: keepsCard || Boolean(visuals),
+                streaming:
+                  isStreaming &&
+                  message.id === homeMessages[homeMessages.length - 1]?.id,
+              });
             const showMessage =
-              (!message.metadata?.homeArrival && Boolean(text)) ||
-              keepsCard ||
-              Boolean(visuals);
-            if (!showMessage && attached.length === 0) return null;
+              replyReady &&
+              ((!message.metadata?.homeArrival && Boolean(text)) ||
+                keepsCard ||
+                Boolean(visuals));
+            if (!replyReady || (!showMessage && attached.length === 0)) {
+              return null;
+            }
             const mine = message.role === 'user';
             const arriving =
               holdVoice &&
@@ -1832,10 +1848,27 @@ export function MemberHomeChat({
               aria-live="polite"
               aria-busy="true"
             >
-              <MemberHomeMark className="home-send-breathe mt-0.5 h-8 w-8 shrink-0" />
-              <p className="home-send-breathe text-2 leading-relaxed text-neutral-11">
-                {t('thinking')}
-              </p>
+              <MemberHomeMark className="mt-0.5 h-8 w-8 shrink-0" />
+              <div className="grid min-w-0 flex-1 gap-4">
+                <div className="grid gap-2">
+                  <HomeWave className="h-3 w-11/12" delayMs={40} />
+                  <HomeWave className="h-3 w-4/5" delayMs={90} />
+                  <HomeWave className="h-3 w-2/3" delayMs={140} />
+                </div>
+                <div className="border border-border bg-background p-3">
+                  <HomeWave
+                    className="w-full"
+                    delayMs={80}
+                    style={{ height: 56 }}
+                  />
+                  <HomeWave className="mt-3 h-4 w-1/2" delayMs={150} />
+                  <HomeWave className="mt-2 h-3 w-2/5" delayMs={200} />
+                  <div className="mt-4 flex gap-2">
+                    <HomeWave className="h-10 w-28" delayMs={240} />
+                    <HomeWave className="h-10 w-24" delayMs={290} />
+                  </div>
+                </div>
+              </div>
             </article>
           ) : null}
         </div>

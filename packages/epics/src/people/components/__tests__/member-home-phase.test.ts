@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  memberHomeReplyReady,
   resolveMemberHomeGreetingName,
   resolveMemberHomePhase,
 } from '../member-home-phase';
@@ -96,6 +97,41 @@ describe('resolveMemberHomePhase', () => {
 
   it('shows member home when the person and intelligence both loaded', () => {
     expect(resolveMemberHomePhase(settled)).toBe('ready');
+  });
+});
+
+describe('memberHomeReplyReady', () => {
+  it('keeps the loader up until the reply has finished', () => {
+    expect(
+      memberHomeReplyReady({ text: '', hasCard: true, streaming: true }),
+    ).toBe(false);
+    expect(
+      memberHomeReplyReady({
+        text: 'Océane asked to join.',
+        hasCard: true,
+        streaming: true,
+      }),
+    ).toBe(false);
+  });
+
+  it('shows the finished words and card together', () => {
+    expect(
+      memberHomeReplyReady({
+        text: 'Océane asked to join.',
+        hasCard: true,
+        streaming: false,
+      }),
+    ).toBe(true);
+    expect(
+      memberHomeReplyReady({
+        text: 'Nothing is waiting.',
+        hasCard: false,
+        streaming: false,
+      }),
+    ).toBe(true);
+    expect(
+      memberHomeReplyReady({ text: '', hasCard: false, streaming: false }),
+    ).toBe(false);
   });
 });
 
