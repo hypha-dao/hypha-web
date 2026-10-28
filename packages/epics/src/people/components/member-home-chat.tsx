@@ -1270,9 +1270,9 @@ export function MemberHomeChat({
     captureMicrophone: micOn,
     // The left panel is the Home speaker while its sound is on.
     speakReplies: soundOn && !leftPanelVoice,
-    // Speak the first finished sentence while the rest of the reply is still
-    // being written, instead of waiting for the whole turn.
-    speakEarlyLeadIn: true,
+    // Wait for the finished bubble. An early first sentence plus the cleaned
+    // final script was stacking two voices on the same reply.
+    speakEarlyLeadIn: false,
     speakDisplayedText: true,
     isStreaming,
     lastAssistantText: holdVoice ? '' : lastAssistantText,

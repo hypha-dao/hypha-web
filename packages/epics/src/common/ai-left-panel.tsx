@@ -3183,7 +3183,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     // On Home the center chat yields while this panel's sound is on, so the
     // two speakers do not play at once.
     speakReplies: soundOn,
-    speakEarlyLeadIn: true,
+    // Home reads one finished bubble. Early lead-in + the final script was
+    // two voices on the same text when the displayed line was cleaned.
+    speakEarlyLeadIn: !isMemberAiSurface,
     speakDisplayedText: isMemberAiSurface,
   });
 

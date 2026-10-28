@@ -1704,6 +1704,17 @@ export function useOnboardingVoiceRealtime({
       speakable,
       earlyPrefix,
     );
+    const earlyStillPlaying = Boolean(
+      earlyPrefix &&
+        (realtimeSpeakInFlightRef.current || speechPlaybackRef.current),
+    );
+    // Prefix no longer matches the finished bubble (cleaned/rewritten). Speaking
+    // the full script while the lead-in is still playing is two voices on one
+    // reply — stop the lead-in and read the finished line once.
+    const prefixLost =
+      Boolean(earlyPrefix) &&
+      remainder === speakable.trim() &&
+      !speakable.trim().startsWith(earlyPrefix);
     earlySpeechStartedRef.current = false;
     earlySpokenPrefixRef.current = '';
 
@@ -1727,12 +1738,16 @@ export function useOnboardingVoiceRealtime({
       return;
     }
 
+    if (prefixLost && earlyStillPlaying) {
+      pendingRemainderSpeakRef.current = null;
+      clearRemainderPrefetch();
+      speakAssistantReply(speakable);
+      return;
+    }
+
     // An early lead-in is still this turn: finish it, then say the rest.
     // Any other audio is the previous bubble. The chat has moved on.
-    if (
-      earlyPrefix &&
-      (realtimeSpeakInFlightRef.current || speechPlaybackRef.current)
-    ) {
+    if (earlyStillPlaying) {
       pendingRemainderSpeakRef.current = remainder;
       warmRemainderSpeech(remainder);
       lastSpokenAssistantRef.current = spoken;
