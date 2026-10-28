@@ -17,6 +17,60 @@ import {
 } from '@hypha-platform/epics';
 import { useEditProfile } from '@web/hooks/use-edit-profile';
 
+function pickText(
+  next: string | null | undefined,
+  fallback: string | null | undefined,
+): string | null | undefined {
+  if (typeof next === 'string') return next;
+  return fallback;
+}
+
+function pickLinks(
+  next: string[] | null | undefined,
+  fallback: string[] | null | undefined,
+): string[] | null | undefined {
+  if (Array.isArray(next)) return next;
+  return fallback;
+}
+
+function mergeStoryPerson(
+  pagePerson: ProfileStoryPerson,
+  me: ProfileStoryPerson | null | undefined,
+  isSelf: boolean,
+): ProfileStoryPerson {
+  if (!isSelf || !me) return pagePerson;
+  // Prefer the live `/me` row, but keep page fields when `/me` omitted them.
+  // Otherwise an incomplete cache wipe wipes the banner, currency, and links.
+  return {
+    id: me.id,
+    name: pickText(me.name, pagePerson.name),
+    surname: pickText(me.surname, pagePerson.surname),
+    nickname: pickText(me.nickname, pagePerson.nickname),
+    description: pickText(me.description, pagePerson.description),
+    location: pickText(me.location, pagePerson.location),
+    email: pickText(me.email, pagePerson.email),
+    links: pickLinks(me.links, pagePerson.links),
+    preferredCurrency: pickText(
+      me.preferredCurrency,
+      pagePerson.preferredCurrency,
+    ),
+    primaryOrientation:
+      me.primaryOrientation === 'member' ||
+      me.primaryOrientation === 'builder' ||
+      me.primaryOrientation === 'investor'
+        ? me.primaryOrientation
+        : pagePerson.primaryOrientation === 'member' ||
+          pagePerson.primaryOrientation === 'builder' ||
+          pagePerson.primaryOrientation === 'investor'
+        ? pagePerson.primaryOrientation
+        : null,
+    networkOffer: pickText(me.networkOffer, pagePerson.networkOffer),
+    slug: pickText(me.slug, pagePerson.slug),
+    avatarUrl: pickText(me.avatarUrl, pagePerson.avatarUrl),
+    leadImageUrl: pickText(me.leadImageUrl, pagePerson.leadImageUrl),
+  };
+}
+
 export function ProfileStoryConnected({
   person,
   lang,
@@ -32,12 +86,13 @@ export function ProfileStoryConnected({
   const { person: me, revalidate } = useMe();
   const { editProfile, isEditing, error } = useEditProfile();
   const isSelf = me?.id === person.id;
-  const source = isSelf && me ? me : person;
+  const source = mergeStoryPerson(person, me, isSelf);
 
   const onSave = async (patch: ProfileStoryPatch) => {
+    const preferredCurrencyCode =
+      patch.preferredCurrency ?? source.preferredCurrency ?? '';
     const currency = TOKEN_PRICE_REFERENCE_CURRENCIES.find(
-      (code) =>
-        code === (patch.preferredCurrency ?? source.preferredCurrency ?? ''),
+      (code) => code === preferredCurrencyCode,
     );
     const orientation =
       patch.primaryOrientation ??
@@ -59,43 +114,41 @@ export function ProfileStoryConnected({
         preferredCurrency: currency,
         primaryOrientation: orientation,
         networkOffer: patch.networkOffer ?? source.networkOffer ?? '',
-        avatarUrl: patch.avatarFile ?? source.avatarUrl ?? '',
-        leadImageUrl: patch.leadFile ?? source.leadImageUrl ?? '',
+        // Keep the current URLs unless a new file was chosen. An empty string
+        // here used to clear the portrait and banner on every other edit.
+        avatarUrl: patch.avatarFile ?? source.avatarUrl,
+        leadImageUrl: patch.leadFile ?? source.leadImageUrl,
       },
       { quiet: true },
     );
-    if (saved) await revalidate(saved);
-    else await revalidate();
+    if (saved) {
+      await revalidate({
+        ...source,
+        ...saved,
+        links: saved.links ?? source.links,
+        preferredCurrency: saved.preferredCurrency ?? source.preferredCurrency,
+        avatarUrl: saved.avatarUrl ?? source.avatarUrl,
+        leadImageUrl: saved.leadImageUrl ?? source.leadImageUrl,
+        networkOffer: saved.networkOffer ?? source.networkOffer,
+        primaryOrientation:
+          saved.primaryOrientation === 'member' ||
+          saved.primaryOrientation === 'builder' ||
+          saved.primaryOrientation === 'investor'
+            ? saved.primaryOrientation
+            : source.primaryOrientation,
+      });
+    } else {
+      await revalidate();
+    }
     const slug = saved?.slug?.trim();
     if (slug && slug !== source.slug) {
       router.push(`/${lang}/profile/${encodeURIComponent(slug)}`);
     }
   };
 
-  const shown: ProfileStoryPerson = {
-    id: source.id,
-    name: source.name,
-    surname: source.surname,
-    nickname: source.nickname,
-    description: source.description,
-    location: source.location,
-    email: source.email,
-    links: source.links,
-    preferredCurrency: source.preferredCurrency,
-    primaryOrientation:
-      source.primaryOrientation === 'member' ||
-      source.primaryOrientation === 'builder' ||
-      source.primaryOrientation === 'investor'
-        ? source.primaryOrientation
-        : null,
-    networkOffer: source.networkOffer,
-    slug: source.slug,
-    avatarUrl: source.avatarUrl,
-  };
-
   return (
     <ProfileStory
-      person={shown}
+      person={source}
       isSelf={isSelf}
       saving={isEditing}
       error={error}
@@ -113,11 +166,11 @@ export function ProfileStoryConnected({
               }
             />
           ) : null}
-          {shown.slug ? (
+          {source.slug ? (
             <ButtonCopyUserId
               title={tProfile('copyUserId')}
               successMessage={tProfile('copied')}
-              slug={shown.slug}
+              slug={source.slug}
             />
           ) : null}
         </>

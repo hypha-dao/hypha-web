@@ -174,24 +174,27 @@ export const useEditProfile = (endpoint = '/api/v1/people/edit-profile') => {
       setLastStartedTask('EDIT_PROFILE');
 
       try {
-        let uploadedFiles: Partial<PersonFiles> = {
-          avatarUrl: undefined,
-          leadImageUrl: undefined,
-        };
-
         const filesToUpload: Partial<PersonFiles> = {
           avatarUrl: data.avatarUrl,
           leadImageUrl: data.leadImageUrl,
         };
+        const uploadedFiles =
+          filesToUpload.avatarUrl || filesToUpload.leadImageUrl
+            ? await upload(filesToUpload)
+            : {};
 
-        if (filesToUpload.avatarUrl || filesToUpload.leadImageUrl) {
-          uploadedFiles = await upload(filesToUpload);
-        }
-
+        // Keep the existing picture when this edit did not replace it.
+        // Writing `undefined` here used to clear the portrait and banner.
         const payload = {
           ...data,
-          avatarUrl: uploadedFiles.avatarUrl,
-          leadImageUrl: uploadedFiles.leadImageUrl,
+          avatarUrl:
+            uploadedFiles.avatarUrl ??
+            (typeof data.avatarUrl === 'string' ? data.avatarUrl : undefined),
+          leadImageUrl:
+            uploadedFiles.leadImageUrl ??
+            (typeof data.leadImageUrl === 'string'
+              ? data.leadImageUrl
+              : undefined),
         };
 
         const response = await fetch(endpoint, {
