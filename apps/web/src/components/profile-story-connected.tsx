@@ -33,6 +33,19 @@ function pickLinks(
   return fallback;
 }
 
+/** Person and the edit payload reject `null`; keep empty as `undefined`. */
+function asOptionalString(
+  value: string | null | undefined,
+): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function asOptionalLinks(
+  value: string[] | null | undefined,
+): string[] | undefined {
+  return Array.isArray(value) ? value : undefined;
+}
+
 function mergeStoryPerson(
   pagePerson: ProfileStoryPerson,
   me: ProfileStoryPerson | null | undefined,
@@ -116,26 +129,33 @@ export function ProfileStoryConnected({
         networkOffer: patch.networkOffer ?? source.networkOffer ?? '',
         // Keep the current URLs unless a new file was chosen. An empty string
         // here used to clear the portrait and banner on every other edit.
-        avatarUrl: patch.avatarFile ?? source.avatarUrl,
-        leadImageUrl: patch.leadFile ?? source.leadImageUrl,
+        avatarUrl: patch.avatarFile ?? asOptionalString(source.avatarUrl),
+        leadImageUrl: patch.leadFile ?? asOptionalString(source.leadImageUrl),
       },
       { quiet: true },
     );
     if (saved) {
+      // `saved` is already a Person; only backfill fields `/me` may have omitted.
+      // Do not spread `source` — its `| null` fields are not assignable to Person.
       await revalidate({
-        ...source,
         ...saved,
-        links: saved.links ?? source.links,
-        preferredCurrency: saved.preferredCurrency ?? source.preferredCurrency,
-        avatarUrl: saved.avatarUrl ?? source.avatarUrl,
-        leadImageUrl: saved.leadImageUrl ?? source.leadImageUrl,
-        networkOffer: saved.networkOffer ?? source.networkOffer,
+        links: saved.links ?? asOptionalLinks(source.links),
+        preferredCurrency:
+          saved.preferredCurrency ?? asOptionalString(source.preferredCurrency),
+        avatarUrl: saved.avatarUrl ?? asOptionalString(source.avatarUrl),
+        leadImageUrl:
+          saved.leadImageUrl ?? asOptionalString(source.leadImageUrl),
+        networkOffer: saved.networkOffer ?? source.networkOffer ?? null,
         primaryOrientation:
           saved.primaryOrientation === 'member' ||
           saved.primaryOrientation === 'builder' ||
           saved.primaryOrientation === 'investor'
             ? saved.primaryOrientation
-            : source.primaryOrientation,
+            : source.primaryOrientation === 'member' ||
+              source.primaryOrientation === 'builder' ||
+              source.primaryOrientation === 'investor'
+            ? source.primaryOrientation
+            : null,
       });
     } else {
       await revalidate();
