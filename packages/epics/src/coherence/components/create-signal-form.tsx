@@ -89,6 +89,7 @@ import {
   type SignalMediaItem,
 } from '../utils/signal-media';
 import { useScrollToErrors } from '../../hooks';
+import { mutate } from 'swr';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -1019,6 +1020,10 @@ export const CreateSignalForm = ({
           // list refresh finish in the background.
           setIsClosingAfterPublish(true);
           router.push(successfulUrl);
+          const attributionSlug = signalSlug?.trim() || '';
+          if (attributionSlug) {
+            void mutate([attributionSlug, 'signal-creator-attribution']);
+          }
           if (updatedSignal?.roomId) {
             void upsertSignalDescriptionMessage({
               roomId: updatedSignal.roomId,

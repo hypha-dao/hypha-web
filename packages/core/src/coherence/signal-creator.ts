@@ -83,10 +83,13 @@ export function resolveSignalCreatorDisplayName({
 }
 
 function collapseSignalText(value: string): string {
-  return value
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    value
+      // `[^<>]` cannot cross another delimiter, so a long run of '<' is linear.
+      .replace(/<[^<>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 }
 
 /**
@@ -113,8 +116,8 @@ export function isSignalDescriptionAnchorMessage({
 
 /**
  * Reattribute the description seed to the stored creator. Assignees keep
- * seeing the author, not "You". When the viewer is the creator, return null
- * so the existing "You" label stays.
+ * seeing the author, not "You". When the viewer is the creator, still
+ * override — a non-creator editor may have reseeded the Matrix message.
  */
 export function applySignalCreatorToChatAuthor({
   isDescriptionAnchor,
@@ -130,9 +133,6 @@ export function applySignalCreatorToChatAuthor({
   viewerName?: string | null;
 }): { role: 'user' | 'member'; senderName?: string } | null {
   if (!isDescriptionAnchor || !isPersistedPersonId(creatorId)) return null;
-  if (isPersistedPersonId(viewerPersonId) && viewerPersonId === creatorId) {
-    return null;
-  }
   const senderName = resolveSignalCreatorDisplayName({
     viewerPersonId,
     creatorId,
@@ -140,6 +140,12 @@ export function applySignalCreatorToChatAuthor({
     creatorName,
   });
   if (!creatorName?.trim() && senderName === 'Member') return null;
+  if (isPersistedPersonId(viewerPersonId) && viewerPersonId === creatorId) {
+    return {
+      role: 'user',
+      senderName,
+    };
+  }
   return {
     role: 'member',
     senderName,

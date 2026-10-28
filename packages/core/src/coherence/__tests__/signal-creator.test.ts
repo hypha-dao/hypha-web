@@ -190,6 +190,27 @@ describe('isSignalDescriptionAnchorMessage', () => {
       }),
     ).toBe(false);
   });
+
+  it('strips tags so a rich-text description matches the seeded body', () => {
+    expect(
+      isSignalDescriptionAnchorMessage({
+        isFirstChatTextMessage: true,
+        messageContent: 'hello world',
+        signalDescription: '<p>hello</p> world',
+      }),
+    ).toBe(true);
+  });
+
+  it('collapses a long run of unclosed < without quadratic backtracking', () => {
+    const pathological = '<'.repeat(20_000);
+    expect(
+      isSignalDescriptionAnchorMessage({
+        isFirstChatTextMessage: true,
+        messageContent: pathological,
+        signalDescription: pathological,
+      }),
+    ).toBe(true);
+  });
 });
 
 describe('applySignalCreatorToChatAuthor', () => {
@@ -208,15 +229,23 @@ describe('applySignalCreatorToChatAuthor', () => {
     });
   });
 
-  it('leaves You in place when the viewer is the stored creator', () => {
+  it('labels the seed You when the viewer is the stored creator', () => {
+    const input = {
+      isDescriptionAnchor: true,
+      viewerPersonId: VLAD_ID,
+      creatorId: VLAD_ID,
+      creatorName: 'Vlad Hramtsov',
+      viewerName: 'Vlad Hramtsov',
+    };
+    expect(applySignalCreatorToChatAuthor(input)).toEqual({
+      role: 'user',
+      senderName: 'Vlad Hramtsov',
+    });
     expect(
-      applySignalCreatorToChatAuthor({
-        isDescriptionAnchor: true,
-        viewerPersonId: VLAD_ID,
-        creatorId: VLAD_ID,
-        creatorName: 'Vlad Hramtsov',
-        viewerName: 'Vlad Hramtsov',
-      }),
-    ).toBeNull();
+      applySignalCreatorToChatAuthor({ ...input, viewerName: '' }),
+    ).toEqual({
+      role: 'user',
+      senderName: 'You',
+    });
   });
 });
