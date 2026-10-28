@@ -39,16 +39,18 @@ export function resolveMemberHomePhase(input: {
 }
 
 /**
- * The loader stays up for the whole reply. Words and the card land together
- * when the stream finishes, so a tool result cannot flash a card first.
+ * Show words as soon as they arrive. Holding the whole reply until the stream
+ * finished left a 6–7s skeleton on every turn. A card alone still waits for
+ * the stream (or for words) so a tool result cannot flash first.
  */
 export function memberHomeReplyReady(input: {
   text: string;
   hasCard: boolean;
   streaming: boolean;
 }): boolean {
+  if (input.text.trim().length > 0) return true;
   if (input.streaming) return false;
-  return input.text.trim().length > 0 || input.hasCard;
+  return input.hasCard;
 }
 
 /** Name only when /me is the signed-in member (`person.sub === memberId`). */

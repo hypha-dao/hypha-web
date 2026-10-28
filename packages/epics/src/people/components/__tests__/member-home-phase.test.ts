@@ -101,7 +101,7 @@ describe('resolveMemberHomePhase', () => {
 });
 
 describe('memberHomeReplyReady', () => {
-  it('keeps the loader up until the reply has finished', () => {
+  it('shows words as they stream and holds a card-only flash', () => {
     expect(
       memberHomeReplyReady({ text: '', hasCard: true, streaming: true }),
     ).toBe(false);
@@ -111,10 +111,17 @@ describe('memberHomeReplyReady', () => {
         hasCard: true,
         streaming: true,
       }),
-    ).toBe(false);
+    ).toBe(true);
+    expect(
+      memberHomeReplyReady({
+        text: 'Océane asked to join.',
+        hasCard: false,
+        streaming: true,
+      }),
+    ).toBe(true);
   });
 
-  it('shows the finished words and card together', () => {
+  it('shows finished words or a finished card', () => {
     expect(
       memberHomeReplyReady({
         text: 'Océane asked to join.',
@@ -128,6 +135,9 @@ describe('memberHomeReplyReady', () => {
         hasCard: false,
         streaming: false,
       }),
+    ).toBe(true);
+    expect(
+      memberHomeReplyReady({ text: '', hasCard: true, streaming: false }),
     ).toBe(true);
     expect(
       memberHomeReplyReady({ text: '', hasCard: false, streaming: false }),

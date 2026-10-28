@@ -1544,11 +1544,11 @@ export function MemberHomeChat({
       const message = homeMessages[i];
       if (!message || message.metadata?.homeArrival) continue;
       if (message.role !== 'assistant') return isStreaming;
-      return !memberHomeReplyReady({
-        text: shownAssistantText.get(message.id) ?? '',
-        hasCard: cardsByMessageId.has(message.id),
-        streaming: isStreaming,
-      });
+      const text = shownAssistantText.get(message.id) ?? '';
+      const hasCard = cardsByMessageId.has(message.id);
+      // Skeleton only until the first words land — not for the whole stream.
+      if (text.trim() || hasCard) return false;
+      return isStreaming;
     }
     return isStreaming;
   }, [cardsByMessageId, homeMessages, isStreaming, shownAssistantText]);
