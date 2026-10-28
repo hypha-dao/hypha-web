@@ -4067,12 +4067,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     // A selected space may only know its slug until the space record loads.
     // Public map→chat also waits: we need `spaces.chatRoomId` so a misbound
     // `#hypha-public-{slug}` alias is not joined as the member room.
+    // A public room already open from Messages has its own id and type, so
+    // it does not wait on that space record.
     // Detach and lock first — the previous effect's cleanup sets
     // `isJoining` false, and a send must not hit the old room.
+    const knownPublicRoomId = coherencePublic
+      ? acceptEnsuredPublicRoomId(
+          coherenceRoomId,
+          space?.chatRoomId,
+          client?.getRoom(coherenceRoomId ?? '')?.getType() ?? null,
+        )
+      : null;
     if (
       openingSpaceSlug &&
       isSpaceLoading &&
-      (coherencePublic || !coherenceRoomId?.trim())
+      (coherencePublic || !coherenceRoomId?.trim()) &&
+      !knownPublicRoomId
     ) {
       return () => {
         setIsJoining(false);
@@ -4095,26 +4105,40 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         let targetRoomId = coherenceRoomId?.trim() || null;
         const openingSpaceSlug = coherenceSpaceSlug?.trim() || '';
         if (coherencePublic) {
-          if (!openingSpaceSlug) {
-            throw new Error('Failed to open the public room');
-          }
           const memberRoomId =
             space?.chatRoomId?.trim() ||
-            getStoredRoomId(openingSpaceSlug) ||
+            (openingSpaceSlug ? getStoredRoomId(openingSpaceSlug) : null) ||
             null;
-          const { roomId: publicRoomId } =
-            await matrixRef.current.ensurePublicRoom(
-              openingSpaceSlug,
+          const knownId = coherenceRoomId?.trim() || '';
+          // Messages already joined this public room. Open that room. Resolving
+          // the alias again can fail, or land on the member channel, and the
+          // inbox row would then look like an error.
+          let acceptedPublicRoomId = knownId
+            ? await waitForAcceptedPublicRoomId({
+                roomId: knownId,
+                memberRoomId,
+                readRoomType: () => client?.getRoom(knownId)?.getType() ?? null,
+              })
+            : null;
+          if (!acceptedPublicRoomId && openingSpaceSlug) {
+            const { roomId: publicRoomId } =
+              await matrixRef.current.ensurePublicRoom(
+                openingSpaceSlug,
+                memberRoomId,
+              );
+            acceptedPublicRoomId = await waitForAcceptedPublicRoomId({
+              roomId: publicRoomId,
               memberRoomId,
-            );
-          const acceptedPublicRoomId = await waitForAcceptedPublicRoomId({
-            roomId: publicRoomId,
-            memberRoomId,
-            readRoomType: () =>
-              client?.getRoom(publicRoomId)?.getType() ?? null,
-          });
+              readRoomType: () =>
+                client?.getRoom(publicRoomId)?.getType() ?? null,
+            });
+          }
           if (!acceptedPublicRoomId) {
-            throw new Error('Public channel resolved to the space channel');
+            throw new Error(
+              openingSpaceSlug
+                ? 'Public channel resolved to the space channel'
+                : 'Failed to open the public room',
+            );
           }
           targetRoomId = acceptedPublicRoomId;
         } else if (!targetRoomId && openingSpaceSlug) {
@@ -6225,7 +6249,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               spaceSlug={spaceSlug ?? undefined}
             />
           </div>
-        ) : !spaceSlug?.trim() && !isDirectConversation && mode !== 'space' ? (
+        ) : !spaceSlug?.trim() &&
+          !isDirectConversation &&
+          mode !== 'space' &&
+          !coherencePublic ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
             <Empty>
               <p>{t('notInSpaceEmptyState')}</p>
