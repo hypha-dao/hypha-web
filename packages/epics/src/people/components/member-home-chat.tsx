@@ -28,7 +28,10 @@ import {
   memberHomeItemMemory,
   memberHomeSignalCatalogue,
   mergeMemberHomeMemory,
+  isMemberHomeItemDecline,
+  isMemberHomeItemDeferral,
   memberHomeCardForSpeech,
+  memberHomeThreadItemForMessage,
   memberHomeThreadItemKey,
   type MemberHomeThreadItem,
   type MemberIntelligence,
@@ -200,12 +203,50 @@ function homeItemForMessage(
             })
           : null)
       : null;
-  return memberHomeCardForSpeech({
+  // The brief chooses the card before the model speaks, and that choice is
+  // stored on the message. Speech can replace it when the sentence names a
+  // different item. It cannot leave the reply with no card.
+  const matched = memberHomeCardForSpeech({
     items,
     message,
     hinted: fromHint,
     spaceTitles: home?.spaces.map((space) => space.title) ?? [],
   });
+  return matched ?? fromHint;
+}
+
+/** The card under this reply. The item they just set aside stays off it. */
+function pinnedHomeItem(
+  items: readonly MemberHomeThreadItem[],
+  messages: readonly HomeMessage[],
+  index: number,
+  home?: MemberIntelligence,
+): MemberHomeThreadItem | null {
+  const message = messages[index];
+  if (!message || message.role !== 'assistant') return null;
+  const item = homeItemForMessage(items, message, home);
+  if (!item) return null;
+  const asked = userTextBefore(messages, index);
+  if (!isMemberHomeItemDeferral(asked) && !isMemberHomeItemDecline(asked)) {
+    return item;
+  }
+  const named = memberHomeThreadItemForMessage(items, { content: asked });
+  let aside = named;
+  if (!aside) {
+    for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+      const earlier = messages[cursor];
+      if (earlier?.role !== 'assistant') continue;
+      aside = homeItemForMessage(items, earlier, home);
+      break;
+    }
+  }
+  if (
+    aside &&
+    memberHomeThreadItemKey(aside) === memberHomeThreadItemKey(item)
+  ) {
+    return null;
+  }
+  return item;
 }
 
 /** Live catalog first, then cards already shown in this thread. */
@@ -1346,7 +1387,7 @@ export function MemberHomeChat({
       if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
         return;
       }
-      const item = homeItemForMessage(cardItems, message, intelligence);
+      const item = pinnedHomeItem(cardItems, homeMessages, index, intelligence);
       if (!item) return;
       const key = memberHomeThreadItemKey(item);
       const placed = latestByItem.get(key);
@@ -1371,7 +1412,7 @@ export function MemberHomeChat({
       if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
         continue;
       }
-      if (homeItemForMessage(cardItems, message, intelligence)) {
+      if (pinnedHomeItem(cardItems, homeMessages, index, intelligence)) {
         return message.id;
       }
     }
@@ -1379,9 +1420,11 @@ export function MemberHomeChat({
   }, [cardItems, homeMessages, intelligence, widgetKindFor]);
   const focusedItem = useMemo(() => {
     const message = homeMessages.find((item) => item.id === cardMessageId);
-    return message
-      ? homeItemForMessage(cardItems, message, intelligence)
-      : null;
+    if (!message) return null;
+    const index = homeMessages.indexOf(message);
+    return index < 0
+      ? null
+      : pinnedHomeItem(cardItems, homeMessages, index, intelligence);
   }, [cardItems, cardMessageId, homeMessages, intelligence]);
   useEffect(() => {
     const node = scroller.current;

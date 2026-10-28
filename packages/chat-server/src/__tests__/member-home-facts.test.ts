@@ -143,7 +143,7 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Ronnie has been sitting with the studio costs');
     expect(facts).toContain('Kuan has asked to join');
     expect(facts).toContain('Never say card, screen, or button.');
-    expect(facts).toContain('speak to them by name');
+    expect(facts).toContain('Speak to them by name');
     expect(facts).toContain('Never say they are on their home');
     expect(facts).toContain(
       'A proposal they have already voted on is absent from the waiting list.',
@@ -431,14 +431,55 @@ describe('formatMemberHomeFacts', () => {
     expect(brief.text).not.toMatch(/Card for this reply:[\s\S]*slug=path/);
   });
 
-  it('does not force a card when every waiting item was already placed', () => {
+  it('does not pin the card they just set aside', () => {
+    const brief = formatMemberHomeFacts(home, {
+      held: 'proposal:path',
+      deferred: ['proposal:path'],
+      asked: 'Not now for Open the path.',
+    });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toMatch(/leave it for another time/i);
+    expect(brief.text).toMatch(/Do not call show_member_home_item/);
+    expect(brief.text).not.toMatch(/Card for this reply:/);
+  });
+
+  it('moves to the next card when they set one aside', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+          },
+        ],
+      },
+      {
+        held: 'proposal:path',
+        deferred: ['proposal:path'],
+        asked: 'Not now for Open the path.',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toMatch(/Card for this reply:[\s\S]*slug=bridge/);
+    expect(brief.text).not.toMatch(/Card for this reply:[\s\S]*slug=path/);
+  });
+
+  it('still attaches the waiting card when every item was already placed', () => {
     const brief = formatMemberHomeFacts(home, {
       alreadyShown: ['proposal:path'],
       asked: 'ok',
     });
-    expect(brief.card).toBeNull();
-    expect(brief.text).toMatch(/already introduced/i);
-    expect(brief.text).not.toMatch(/Card for this reply:/);
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'path' });
+    expect(brief.text).toMatch(/Card for this reply:[\s\S]*slug=path/);
+    expect(brief.text).toMatch(/Do not pretend an item in this list is new/);
+    expect(brief.text).toMatch(/Call show_member_home_item once for that card/);
   });
 
   it('skips a title already placed when they ask where they can be useful', () => {

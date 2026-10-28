@@ -321,8 +321,15 @@ export function formatMemberHomeFacts(
   const continueAsk =
     /carried out the recommended action/i.test(options?.asked ?? '') ||
     /continue with what still needs me/i.test(options?.asked ?? '');
+  // "Not now for Fiat Balance" names the item in order to set it aside.
+  // Treating that name as the card puts the same card under the reply.
+  const settingAside = Boolean(
+    options?.asked?.trim() &&
+      (isMemberHomeItemDeferral(options.asked) ||
+        isMemberHomeItemDecline(options.asked)),
+  );
   const askedItem =
-    shareTurn || continueAsk || !options?.asked?.trim()
+    shareTurn || continueAsk || settingAside || !options?.asked?.trim()
       ? null
       : memberHomeThreadItemForMessage(listMemberHomeThreadCatalog(home), {
           content: options.asked,
@@ -349,22 +356,42 @@ export function formatMemberHomeFacts(
   const shownKeys = new Set(
     (options?.alreadyShown ?? []).map((key) => key.trim()).filter(Boolean),
   );
-  // Prefer items not yet placed in this talk. Re-picking stillWaiting[0] after
-  // the first card was shown is what kept pushing the same one as "new".
+  // Prefer an item that is not in the thread yet. When every waiting item
+  // was already placed, keep the first one so the reply still has a card.
   const unspoken = stillWaiting.filter(
     (item) => !shownKeys.has(memberHomeThreadItemKey(item)),
   );
-  const spoken =
-    askedItem ??
-    (decisionAsk
-      ? unspoken.find((item) => item.action === 'decision') ??
-        stillWaiting.find((item) => item.action === 'decision')
-      : undefined) ??
-    unspoken[0] ??
-    null;
   const lookAsk = Boolean(
-    options?.asked?.trim() && isMemberHomeItemLook(options.asked),
+    !continueAsk &&
+      !settingAside &&
+      options?.asked?.trim() &&
+      isMemberHomeItemLook(options.asked),
   );
+  const namedAside =
+    settingAside && options?.asked
+      ? memberHomeThreadItemForMessage(listMemberHomeThreadCatalog(home), {
+          content: options.asked,
+        })
+      : null;
+  const asideKey =
+    options?.held?.trim() ||
+    (namedAside ? memberHomeThreadItemKey(namedAside) : '');
+  const stillOpen = (item: { kind: string; slug: string | null }) =>
+    !asideKey || memberHomeThreadItemKey(item) !== asideKey;
+  // A new waiting item comes first. When every one was already placed, the
+  // reply still carries that card. The item they just set aside is not it.
+  const spoken =
+    (askedItem && stillOpen(askedItem) ? askedItem : null) ??
+    (decisionAsk
+      ? unspoken.find(
+          (item) => item.action === 'decision' && stillOpen(item),
+        ) ??
+        stillWaiting.find(
+          (item) => item.action === 'decision' && stillOpen(item),
+        )
+      : undefined) ??
+    unspoken.find(stillOpen) ??
+    (!shareTurn && !lookAsk ? stillWaiting.find(stillOpen) ?? null : null);
   const looked = lookAsk
     ? memberHomeThreadItemForMessage(listMemberHomeThreadCatalog(home), {
         content: options?.prior ?? '',
@@ -418,9 +445,11 @@ export function formatMemberHomeFacts(
             looked,
           )} One short line naming the title and the space. Do not introduce a different person. Do not open the next waiting item.`
         : 'They asked to see the card from the reply just above. One short line that it is that same item. Do not introduce a different person. Do not open the next waiting item.'
-      : !spoken
-      ? 'Every waiting item was already introduced. Do not place those cards again unless they ask for one by name. Say the open ones are the ones they already saw, in one short line, and ask if they want to revisit one or pause. Do not present an already-placed item as new.'
-      : itemLine(spoken);
+      : settingAside && !spoken
+      ? 'They just set that one aside. One line that you will leave it for another time. Do not call show_member_home_item. Do not place that card under this reply.'
+      : spoken
+      ? itemLine(spoken)
+      : 'This turn is not a card. Do not call show_member_home_item.';
   const recallKey = recall ? memberHomeThreadItemKey(recall) : null;
   const alreadyShown = (options?.alreadyShown ?? [])
     .map((key) => key.trim())
@@ -606,9 +635,9 @@ export function formatMemberHomeFacts(
     listAsk
       ? null
       : alreadyShown.length > 0
-      ? `Already placed in earlier replies. Never present these as new. Do not call show_member_home_item for them again unless the person asks for that card by name: ${alreadyShown.join(
+      ? `Already placed in earlier replies: ${alreadyShown.join(
           ', ',
-        )}. Prefer any waiting item that is not in this list.`
+        )}. Do not pretend an item in this list is new. Prefer one that is not in this list when it is still waiting. This reply still has the card named above. Call show_member_home_item once for that card.`
       : 'No card has been placed in this conversation yet.',
     actedKeys.size > 0
       ? `Carried out this visit. Do not open these again unless they ask: ${[
@@ -627,6 +656,11 @@ export function formatMemberHomeFacts(
     home.wallet.preferredCurrency
       ? `Preferred currency: ${home.wallet.preferredCurrency}.`
       : 'Preferred currency: none set.',
+    settingAside && spoken
+      ? 'They just set one item aside. One short line that you will leave it, then only the card in this brief. Call show_member_home_item for that card, not the one they set aside.'
+      : settingAside
+      ? 'They just set that one aside. One line that you will leave it for another time. Do not call show_member_home_item. Do not place that card under this reply.'
+      : null,
     null,
     shareTurn === 'awaiting'
       ? askedForPost
@@ -638,7 +672,9 @@ export function formatMemberHomeFacts(
   ]
     .filter((line): line is string => Boolean(line))
     .join('\n');
-  const broughtBack = lookAsk
+  const broughtBack = settingAside
+    ? spoken
+    : lookAsk
     ? looked ?? recalledItems[0] ?? null
     : askedItem ?? spoken ?? recall ?? recalledItems[0] ?? null;
   const card =
