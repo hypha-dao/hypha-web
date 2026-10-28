@@ -330,6 +330,8 @@ export function setRealtimeRemoteAudioMuted(
 }
 
 let speechContext: AudioContext | null = null;
+/** One spoken line at a time. A second start stops the line already playing. */
+let activeExactSpeechStop: (() => void) | null = null;
 
 /** Resume the speaker during a click so a later recording can play. */
 export function unlockExactSpeechPlayback(): void {
@@ -355,6 +357,8 @@ export function startExactSpeechPlayback({
   text: string;
   authToken: string;
 }): { stop: () => void; done: Promise<boolean> } {
+  activeExactSpeechStop?.();
+  activeExactSpeechStop = null;
   const abort = new AbortController();
   let source: AudioBufferSourceNode | null = null;
   let endTimer: number | null = null;
@@ -382,8 +386,10 @@ export function startExactSpeechPlayback({
         // The buffer already finished.
       }
     }
+    if (activeExactSpeechStop === stop) activeExactSpeechStop = null;
     finish(false);
   };
+  activeExactSpeechStop = stop;
 
   void (async () => {
     try {

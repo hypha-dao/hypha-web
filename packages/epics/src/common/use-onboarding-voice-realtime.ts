@@ -464,14 +464,16 @@ export function useOnboardingVoiceRealtime({
       }
       const replacing = Boolean(activeRealtimeResponseIdRef.current);
       if (replacing) replacingSpeechRef.current = true;
-      setRealtimeRemoteAudioMuted(connection, false);
-      void connection.remoteAudio.play().catch(() => undefined);
       // A blip heard before this line must not cancel it.
       clearInterruptTimer();
       interruptSpeechStartedAtRef.current = null;
       // Close the mic before the line starts so the open microphone cannot cut it off.
       muteMicrophone(connection);
       if (speakDisplayedTextRef.current) {
+        // The chat script is the only voice. The realtime model must stay
+        // silent, or the member hears two speakers at once.
+        setRealtimeRemoteAudioMuted(connection, true);
+        connection.remoteAudio.pause();
         // Home reads the bubble. response.create writes a new line, so this
         // path synthesizes the script and cancels any model speech.
         unlockExactSpeechPlayback();
@@ -535,6 +537,8 @@ export function useOnboardingVoiceRealtime({
         setPhase('speaking');
         return true;
       }
+      setRealtimeRemoteAudioMuted(connection, false);
+      void connection.remoteAudio.play().catch(() => undefined);
       expectingRealtimeResponseRef.current = true;
       if (
         !speakAssistantTextViaRealtime(connection, speakable, {
@@ -807,6 +811,20 @@ export function useOnboardingVoiceRealtime({
         event.type === 'response.output_audio.delta' ||
         event.type === 'response.audio.delta'
       ) {
+        if (speakDisplayedTextRef.current) {
+          const connection = connectionRef.current;
+          const responseId =
+            (typeof event.response_id === 'string' && event.response_id) ||
+            event.response?.id ||
+            activeRealtimeResponseIdRef.current;
+          cancelActiveRealtimeResponse(connection, responseId);
+          clearRealtimeOutputAudioBuffer(connection);
+          if (connection) {
+            setRealtimeRemoteAudioMuted(connection, true);
+            connection.remoteAudio.pause();
+          }
+          return;
+        }
         realtimeAudioHeardRef.current = true;
         const audio = connectionRef.current?.remoteAudio;
         if (audio && speakRepliesRef.current) {
@@ -914,6 +932,16 @@ export function useOnboardingVoiceRealtime({
           typeof event.response?.id === 'string'
             ? event.response.id.trim()
             : '';
+        if (speakDisplayedTextRef.current) {
+          const connection = connectionRef.current;
+          cancelActiveRealtimeResponse(connection, responseId);
+          clearRealtimeOutputAudioBuffer(connection);
+          if (connection) {
+            setRealtimeRemoteAudioMuted(connection, true);
+            connection.remoteAudio.pause();
+          }
+          return;
+        }
         // Server VAD can still open a turn from room noise or the speaker.
         // Only the chat reply we just asked for may be heard.
         if (!expectingRealtimeResponseRef.current) {
@@ -1145,10 +1173,13 @@ export function useOnboardingVoiceRealtime({
       setVoiceError(null);
       micNeedsGestureRef.current = false;
       resumeSilentAudioStream(connection.localStream);
-      if (speakRepliesRef.current) {
+      if (speakDisplayedTextRef.current) {
+        setRealtimeRemoteAudioMuted(connection, true);
+        connection.remoteAudio.pause();
+      } else if (speakRepliesRef.current) {
         setRealtimeRemoteAudioMuted(connection, false);
+        void connection.remoteAudio.play().catch(() => undefined);
       }
-      void connection.remoteAudio.play().catch(() => undefined);
       // Leave the mic closed when a line is already waiting. Opening it now
       // lets the room cut the reply off before the speaker starts.
       if (queuedSpeakableRef.current) {

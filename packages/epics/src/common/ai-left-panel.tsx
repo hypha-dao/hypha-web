@@ -3183,7 +3183,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     onSendTranscript: handleVoiceTranscriptSend,
     onTranscriptTurn: handleVoiceTranscriptTurn,
     captureMicrophone: micOn,
-    speakReplies: soundOn,
+    // Home already speaks from the center conversation. A second session
+    // here talks over it.
+    speakReplies: soundOn && !isMemberHomePath(pathname),
     speakEarlyLeadIn: true,
     speakDisplayedText: isMemberAiSurface,
   });
