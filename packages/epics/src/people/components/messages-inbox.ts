@@ -236,6 +236,24 @@ export function inboxFilterCounts(
   return counts;
 }
 
+/** About one screen of conversations beside the channel menu. */
+export const INBOX_LIST_PAGE = 8;
+
+/**
+ * The rows to paint. Counts and unread badges stay on the full list;
+ * this only shortens what is on screen until Load more.
+ */
+export function inboxListWindow<T>(
+  rows: readonly T[],
+  visibleCount: number,
+): { rows: T[]; hasMore: boolean } {
+  const count = Number.isFinite(visibleCount)
+    ? Math.max(0, Math.floor(visibleCount))
+    : 0;
+  const shown = rows.slice(0, count);
+  return { rows: shown, hasMore: shown.length < rows.length };
+}
+
 export function aliasLocalpart(
   alias: string | null | undefined,
 ): string | null {

@@ -9,6 +9,8 @@ import {
   inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
+  inboxListWindow,
+  INBOX_LIST_PAGE,
   inboxKindForRoomType,
   isInboxChannelKind,
   resolveInboxPlace,
@@ -82,6 +84,19 @@ describe('messages inbox filters', () => {
     expect(counts.signals).toEqual({ total: 1, unread: 1 });
     expect(counts.spaces).toEqual({ total: 1, unread: 1 });
     expect(counts.network).toEqual({ total: 1, unread: 0 });
+  });
+
+  it('keeps unread totals when the painted list is only the first screen', () => {
+    const rows = Array.from({ length: 20 }, (_, index) => ({
+      kind: 'dm' as const,
+      unread: index === 0 || index === 14 ? 3 : 0,
+    }));
+    const counts = inboxFilterCounts(rows);
+    const page = inboxListWindow(rows, INBOX_LIST_PAGE);
+    expect(page.rows).toHaveLength(INBOX_LIST_PAGE);
+    expect(page.hasMore).toBe(true);
+    expect(counts.all.unread).toBe(6);
+    expect(inboxFilterCounts(page.rows).all.unread).toBe(3);
   });
 });
 

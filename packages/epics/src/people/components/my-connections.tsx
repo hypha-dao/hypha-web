@@ -127,6 +127,8 @@ import {
   inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
+  inboxListWindow,
+  INBOX_LIST_PAGE,
   isInboxFilter,
   peopleInboxKind,
   rowMatchesInboxFilter,
@@ -1723,6 +1725,7 @@ export function MyConnections({
   const [rows, setRows] = useState<ConversationRow[]>([]);
   const [channels, setChannels] = useState<JoinedChannelSnapshot[]>([]);
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>('all');
+  const [inboxVisibleCount, setInboxVisibleCount] = useState(INBOX_LIST_PAGE);
   /** Below the side-by-side layout, a channel tap replaces the menu with its messages. */
   const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
   const [synced, setSynced] = useState(false);
@@ -2365,6 +2368,7 @@ export function MyConnections({
       setQuery('');
     }
     setInboxFilter(next);
+    setInboxVisibleCount(INBOX_LIST_PAGE);
     setInboxChannelOpen(true);
     try {
       window.sessionStorage.setItem(INBOX_FILTER_KEY, next);
@@ -2372,8 +2376,19 @@ export function MyConnections({
       // The choice still applies for this visit.
     }
   }
-  const shownRows =
-    section === 'messages' && !picking ? inboxView.rows : people;
+  // Newest chats stay first, so a new message lands in this first screen.
+  // Filter badges and the nav count still use every row, including ones
+  // waiting behind Load more.
+  const pagingInbox = section === 'messages' && !picking && needle.length === 0;
+  const inboxWindow = pagingInbox
+    ? inboxListWindow(inboxView.rows, inboxVisibleCount)
+    : null;
+  const shownRows = inboxWindow
+    ? inboxWindow.rows
+    : section === 'messages' && !picking
+    ? inboxView.rows
+    : people;
+  const hasMoreInboxRows = inboxWindow?.hasMore ?? false;
   useEffect(() => {
     if (section !== 'messages' || picking || listLoading) return;
     publishMessagesScreenCount(inboxView.counts.all.unread);
@@ -2960,19 +2975,28 @@ export function MyConnections({
                 ) : null}
 
                 {!listLoading &&
-                hasMorePeople &&
-                !needle &&
-                section !== 'archived' &&
-                (picking ||
-                  inboxFilter === 'all' ||
-                  inboxFilter === 'direct') ? (
+                (hasMoreInboxRows ||
+                  (hasMorePeople &&
+                    !needle &&
+                    section !== 'archived' &&
+                    (picking ||
+                      inboxFilter === 'all' ||
+                      inboxFilter === 'direct'))) ? (
                   <div className="flex justify-center">
                     <Button
                       type="button"
                       variant="outline"
                       colorVariant="neutral"
                       disabled={loadingMore}
-                      onClick={() => void loadMorePeople()}
+                      onClick={() => {
+                        if (hasMoreInboxRows) {
+                          setInboxVisibleCount(
+                            (current) => current + INBOX_LIST_PAGE,
+                          );
+                          return;
+                        }
+                        void loadMorePeople();
+                      }}
                     >
                       {tCommon('loadMore')}
                     </Button>
