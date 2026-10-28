@@ -17,6 +17,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -73,6 +74,11 @@ export const ConnectedButtonProfile = ({
     isLoading: isAuthLoading,
   } = useAuthentication();
   const { person, isLoading: isPersonLoading, meError } = useMe();
+  // After inactivity a /me refresh can briefly look like "no profile". Once
+  // this session has seen a person, do not send them to the welcome flow.
+  const hadPersonRef = useRef(false);
+  if (person) hadPersonRef.current = true;
+  if (!isAuthenticated) hadPersonRef.current = false;
 
   const router = useRouter();
   const pathname = usePathname();
@@ -114,6 +120,9 @@ export const ConnectedButtonProfile = ({
       return;
     }
     if (person === null) {
+      if (hadPersonRef.current) {
+        return;
+      }
       if (
         pathname !== newUserRedirectPath &&
         pathname !== signupPath &&
