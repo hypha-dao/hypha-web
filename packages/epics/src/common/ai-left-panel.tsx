@@ -21,11 +21,11 @@ import {
   Globe2,
   LayoutGrid,
   Menu,
-  Network,
   PanelLeftClose,
   Rows3,
   Settings,
   Sparkles,
+  Target,
   Volume2,
   VolumeX,
 } from 'lucide-react';
@@ -805,7 +805,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       {
         key: 'my-spaces-ecosystems',
         label: tSpaces('navEcosystems'),
-        icon: Network,
+        icon: Target,
         href: '',
         active: mySpacesListing === 'ecosystems',
         onSelect: () => writeMySpacesListing('ecosystems'),
