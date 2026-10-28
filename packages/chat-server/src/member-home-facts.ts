@@ -20,9 +20,9 @@ function outcomeSentence(item: {
   const participation = item.participation ?? 0;
   const unity = item.unity ?? 0;
   if (item.passed) {
-    return `It passed — ${participation}% took part, with ${unity}% unity.`;
+    return `It passed — ${participation}% participation, with ${unity}% unity.`;
   }
-  return `It didn't pass this time. ${participation}% took part, with ${unity}% unity.`;
+  return `It didn't pass this time. ${participation}% participation, with ${unity}% unity.`;
 }
 
 function personName(person: {
