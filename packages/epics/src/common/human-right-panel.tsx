@@ -3304,12 +3304,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       return { usable, keptValidatedRoster: keepDespiteMapFailure };
     };
 
-    const seedFromDocumentAssignees = async (): Promise<boolean> => {
+    const seedFromDocumentAssignees = async (): Promise<
+      'seeded' | 'empty' | 'failed' | 'kept-timeline'
+    > => {
       const slug = coherenceSlug?.trim();
-      if (!slug) return false;
+      if (!slug) return 'failed';
       try {
         const signal = await getCoherenceBySlug({ slug });
-        if (cancelled) return false;
+        if (cancelled) return 'failed';
+        // A roster notice may have landed during the lookup — keep it.
+        const applied = applyFromTimeline();
+        if (applied.usable || applied.keptValidatedRoster) {
+          return 'kept-timeline';
+        }
         const personIds = [
           ...new Set(
             [...(signal?.assigneeIds ?? []), signal?.creatorId, me?.id].filter(
@@ -3330,18 +3337,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             : '') ||
           memberIds[0] ||
           null;
+        if (memberIds.length === 0) return 'empty';
         documentSeedRef.memberIds = memberIds;
         documentSeedRef.ownerId = ownerId;
-        if (memberIds.length === 0) return false;
         setSignalTeamMemberIds(memberIds);
         setSignalTeamOwnerId(ownerId);
-        return true;
+        return 'seeded';
       } catch (error) {
         console.warn(
           '[HumanRightPanel] Failed to seed signal team from assignees:',
           error,
         );
-        return false;
+        return 'failed';
       }
     };
 
@@ -3394,11 +3401,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (!historyExhausted) {
         return;
       }
-      await seedFromDocumentAssignees();
-      const hasAnyRoster = documentSeedRef.memberIds.length > 0;
-      // Map lookup failed with no timeline roster — stay unresolved
-      // (fail closed) until the lookup succeeds.
-      if (matrixUserIdsError && !hasAnyRoster) {
+      const seedResult = await seedFromDocumentAssignees();
+      if (cancelled) return;
+      // Lookup threw — stay unresolved (fail closed) so hydrate can retry.
+      if (seedResult === 'failed') {
+        return;
+      }
+      // Map lookup failed with no mapped assignees — stay unresolved.
+      if (seedResult === 'empty' && matrixUserIdsError) {
         return;
       }
       if (!cancelled) {
