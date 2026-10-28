@@ -442,7 +442,9 @@ function directReplyText(
     case 'peopleEmpty':
       return t('peopleWidgetEmpty');
     case 'space':
-      return t('spaceLead', { space: reply.line.space });
+      // Do not name a lead space — picking Hypha Platform (or any parent)
+      // as "start here" is bad advice. The widget already lists them.
+      return t('spaceLead');
     case 'spaceEmpty':
       return t('spacesWidgetEmpty');
     case 'tokens':

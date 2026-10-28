@@ -89,7 +89,7 @@
     "decisionOpen": "{title} er åpen i {space}.",
     "decisionListed": "{title} er i {space}. Den venter ikke på stemmen din.",
     "decisionQuiet": "Ingenting i rommene dine venter på stemmen din.",
-    "spaceLead": "Start med {space}.",
+    "spaceLead": "Romene dine er nedenfor — velg det du trenger.",
     "tokensLead": "{name} er den nærmeste å sende tokens til.",
     "tokensLeadEmpty": "Velg noen å sende tokens til.",
     "itemOpen": "{title} er i {space}.",
