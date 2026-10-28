@@ -26,10 +26,10 @@ import {
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
-import { MemoryProse, firstMemoryParagraph } from './memory-prose';
+import { MemoryProse } from './memory-prose';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
-import { cn } from '@hypha-platform/ui-utils';
+import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import {
   getMainColumnScrollElement,
   subscribeMainColumnScroll,
@@ -176,39 +176,26 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     () => filterSpaceMemoryItems(items, searchTerm),
     [items, searchTerm],
   );
-  const lead = React.useMemo(() => {
-    const written = items.find(
-      (row) =>
-        row.source === 'discussion_summary' &&
-        Boolean(row.context.textExcerpt?.trim()),
-    );
-    if (written) return written;
-    return (
-      items.find(
-        (row) =>
-          row.source === 'call_transcript' &&
-          Boolean(row.context.textExcerpt?.trim()),
-      ) ?? null
-    );
-  }, [items]);
+
+  // Space orientation — the space's own description, not the latest memory item.
+  const spaceOrientation = React.useMemo(() => {
+    const raw = space?.description?.trim() ?? '';
+    if (!raw) return '';
+    return stripMarkdown(stripDescription(raw), {
+      extraNewlines: true,
+    }).trim();
+  }, [space?.description]);
 
   const conversations = React.useMemo(
     () =>
       visible.filter(
-        (row) =>
-          spaceMemoryBranchForItem(row) === 'conversations' &&
-          // Featured above — listing it again looked like a duplicate.
-          row.id !== lead?.id,
+        (row) => spaceMemoryBranchForItem(row) === 'conversations',
       ),
-    [lead?.id, visible],
+    [visible],
   );
   const calls = React.useMemo(
-    () =>
-      visible.filter(
-        (row) =>
-          spaceMemoryBranchForItem(row) === 'calls' && row.id !== lead?.id,
-      ),
-    [lead?.id, visible],
+    () => visible.filter((row) => spaceMemoryBranchForItem(row) === 'calls'),
+    [visible],
   );
   const aiDiscussions = React.useMemo(
     () => visible.filter((row) => spaceMemoryBranchForItem(row) === 'ai'),
@@ -218,9 +205,6 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     () => visible.filter((row) => spaceMemoryBranchForItem(row) === 'files'),
     [visible],
   );
-
-  const leadExcerpt = lead?.context.textExcerpt?.trim() ?? '';
-  const leadText = leadExcerpt ? firstMemoryParagraph(leadExcerpt) : '';
   const branches: Array<{
     id: SpaceMemoryBranch;
     label: string;
@@ -315,7 +299,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       window.visualViewport?.removeEventListener('resize', fit);
       frame.style.height = '';
     };
-  }, [isLoading, leadText, searchTerm]);
+  }, [isLoading, spaceOrientation, searchTerm]);
 
   React.useEffect(() => {
     if (isLoading || !hasMore) return;
@@ -401,17 +385,10 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
             <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
               {t('spaceMemoryWhere')}
             </p>
-            {lead && leadText ? (
-              <>
-                <div className="mt-3 max-w-3xl text-3 leading-relaxed">
-                  <MemoryProse source={leadText} />
-                </div>
-                <p className="mt-3 text-1 text-neutral-11">
-                  {format.dateTime(new Date(lead.uploadedAt), {
-                    dateStyle: 'medium',
-                  })}
-                </p>
-              </>
+            {spaceOrientation ? (
+              <div className="mt-3 max-w-3xl text-3 leading-relaxed">
+                <MemoryProse source={spaceOrientation} />
+              </div>
             ) : (
               <p className="mt-3 max-w-3xl text-2 leading-relaxed text-neutral-11">
                 {t('spaceMemoryWhereEmpty')}
