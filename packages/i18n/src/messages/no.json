@@ -95,7 +95,7 @@
     "itemOpen": "{title} er i {space}.",
     "usefulQuiet": "Ingenting venter på deg.",
     "chipTokens": "Send tokens til noen",
-    "peopleAroundLead": "{name} er nærmest. Dere deler {count, plural, one {# rom} other {# rom}}.",
+    "peopleAroundLead": "{name} deler flest med deg: {count, plural, one {# rom} other {# rom}}.",
     "spacesWidgetTitle": "Gå inn i et space",
     "spacesWidgetCount": "{count} dine",
     "spacesWidgetHint": "Trykk på et space for å gå inn.",

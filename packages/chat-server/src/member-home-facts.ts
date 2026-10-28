@@ -138,7 +138,7 @@ export function memberHomeListAsk(
 
 function listTurnLine(kind: 'people' | 'spaces' | 'tokens') {
   if (kind === 'people') {
-    return 'This turn: they asked who is around. The people list is already on screen. One or two short sentences. Name the closest person on the People line and how many spaces you share. You may name one more person. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not mention a signal, a proposal, or a decision.';
+    return 'This turn: they asked who is around. The people list is already on screen. One or two short sentences. Name the person who shares the most spaces with them, and that shared count. You may name one more person. Do not say "the closest" without saying closest by shared spaces. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not mention a signal, a proposal, or a decision.';
   }
   if (kind === 'spaces') {
     return 'This turn: they asked to step into a space. The space list is already on screen. One short sentence: the list is theirs. Do not name a space. Do not suggest they leave one space for another. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
