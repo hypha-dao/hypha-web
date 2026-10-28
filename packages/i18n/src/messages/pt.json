@@ -3408,7 +3408,6 @@
     "callVoiceProcessingMusic": "Música",
     "callVoiceProcessingNoiseSuppressionUnsupported": "Cancelamento de ruído não suportado neste dispositivo",
     "callVoiceProcessingAutoGainUnsupported": "Controle automático de ganho não suportado neste dispositivo",
-    "callVoiceBoostWhilePresenting": "Reforço de voz ativo durante a apresentação",
     "callCameraOn": "Ligar câmara",
     "callCameraOff": "Desligar câmara",
     "callErrorPermission": "Acesso à câmara ou microfone recusado. Verifique o navegador.",

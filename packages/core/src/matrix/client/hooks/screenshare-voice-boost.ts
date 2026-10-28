@@ -1,26 +1,3 @@
-import type { SpaceGroupCallVoiceProcessingPreset } from './voice-processing-constraints';
-
-export type ScreenshareVoicePresetPlan = {
-  effectivePreset: SpaceGroupCallVoiceProcessingPreset;
-  restorePreset: SpaceGroupCallVoiceProcessingPreset | null;
-};
-
-/** WCUX-SHARE-VOICE-1: auto voice_isolation while presenting from standard preset. */
-export function resolveScreenshareVoicePresetPlan(
-  currentPreset: SpaceGroupCallVoiceProcessingPreset,
-): ScreenshareVoicePresetPlan {
-  if (currentPreset === 'standard') {
-    return {
-      effectivePreset: 'voice_isolation',
-      restorePreset: 'standard',
-    };
-  }
-  return {
-    effectivePreset: currentPreset,
-    restorePreset: null,
-  };
-}
-
 /** WCUX-SHARE-VOICE-3: content hints for mic speech vs tab audio music. */
 export function applyScreenshareTrackContentHints(args: {
   micTrack?: MediaStreamTrack | null;

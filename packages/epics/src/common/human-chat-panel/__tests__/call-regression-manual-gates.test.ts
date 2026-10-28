@@ -741,7 +741,6 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
       'callShareTabAudioPromptDescription',
       'callShareTabAudioPromptContinue',
       'callShareTabAudioPromptCancel',
-      'callVoiceBoostWhilePresenting',
     ];
     for (const locale of ['en', 'de', 'es', 'fr', 'pt']) {
       const raw = readFileSync(

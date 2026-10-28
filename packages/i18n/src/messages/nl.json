@@ -3962,7 +3962,6 @@
     "callRemoteMediaWarmingHint": "Wachten tot de audio en video van anderen verbinding maken...",
     "callRemoteMediaStallRetry": "Probeer de verbinding opnieuw",
     "callScaleWarningMessage": "Deze oproep heeft veel deelnemers. De kwaliteit kan afnemen.",
-    "callVoiceBoostWhilePresenting": "Stemversterking actief tijdens presenteren",
     "callSessionRefreshFailedDescription": "Uw belsessie is verlopen. Maak opnieuw verbinding om in de vergadering te blijven.",
     "callSessionRefreshFailedReconnect": "Maak opnieuw verbinding",
     "callShareTabAudioNotShared": "Tabbladaudio niet gedeeld: anderen horen mogelijk geen geluid via uw gedeelde tabblad of venster.",

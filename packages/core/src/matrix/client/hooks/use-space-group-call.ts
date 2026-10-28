@@ -79,10 +79,7 @@ import {
   applyScreenShareCaptureRootRestrictionWithRetry,
   clearScreenShareCaptureRootRestriction,
 } from './screenshare-capture-exclusion';
-import {
-  applyScreenshareTrackContentHints,
-  resolveScreenshareVoicePresetPlan,
-} from './screenshare-voice-boost';
+import { applyScreenshareTrackContentHints } from './screenshare-voice-boost';
 import {
   clearPersistedPendingRecordingUpload,
   persistPendingRecordingUpload,
@@ -471,8 +468,6 @@ export function useSpaceGroupCall(
     useState<SpaceGroupCallVoiceProcessingPreset>('standard');
   const voiceProcessingPresetRef =
     useRef<SpaceGroupCallVoiceProcessingPreset>('standard');
-  const voicePresetRestoreAfterScreenshareRef =
-    useRef<SpaceGroupCallVoiceProcessingPreset | null>(null);
   const [
     unsupportedVoiceProcessingConstraints,
     setUnsupportedVoiceProcessingConstraints,
@@ -481,8 +476,6 @@ export function useSpaceGroupCall(
     echoCancellation: boolean;
     noiseSuppression: boolean;
   } | null>(null);
-  const [presenterVoiceBoostActive, setPresenterVoiceBoostActive] =
-    useState(false);
   const [isMicrophoneMuted, setIsMicrophoneMuted] = useState(false);
   const [isLocalVideoMuted, setIsLocalVideoMuted] = useState(true);
   /** Active LiveKit room for UI (tiles); cleared on leave. */
@@ -1406,18 +1399,8 @@ export function useSpaceGroupCall(
     setLocalPreviewStream(localPreviewStreamFromRoom(lkRoom));
   }, []);
 
-  const applyPresenterVoiceBoostForScreenshare = useCallback(
-    async (lkRoom: LiveKitRoom) => {
-      const plan = resolveScreenshareVoicePresetPlan(
-        voiceProcessingPresetRef.current,
-      );
-      voicePresetRestoreAfterScreenshareRef.current = plan.restorePreset;
-      setPresenterVoiceBoostActive(plan.restorePreset !== null);
-      if (plan.effectivePreset !== voiceProcessingPresetRef.current) {
-        setVoiceProcessingPresetState(plan.effectivePreset);
-        voiceProcessingPresetRef.current = plan.effectivePreset;
-        await applyVoiceProcessingPresetToRoom(lkRoom, plan.effectivePreset);
-      }
+  const applyScreenshareContentHints = useCallback(
+    (lkRoom: LiveKitRoom) => {
       const micPub = lkRoom.localParticipant.getTrackPublication(
         Track.Source.Microphone,
       );
@@ -1464,7 +1447,7 @@ export function useSpaceGroupCall(
           screenshareStreamIsBrowserTab(shareStream) &&
             !screenshareStreamHasTabAudio(shareStream),
         );
-        await applyPresenterVoiceBoostForScreenshare(lkRoom);
+        applyScreenshareContentHints(lkRoom);
         void applyScreenShareCaptureRootRestrictionWithRetry(shareStream);
         screenshareStopHandlersCleanupRef.current?.();
         screenshareStopHandlersCleanupRef.current =
@@ -1487,25 +1470,8 @@ export function useSpaceGroupCall(
       client,
       scheduleFeedBatched,
       syncLocalScreenshareState,
-      applyPresenterVoiceBoostForScreenshare,
+      applyScreenshareContentHints,
     ],
-  );
-
-  const restorePresenterVoiceAfterScreenshare = useCallback(
-    async (lkRoom: LiveKitRoom) => {
-      const restore = voicePresetRestoreAfterScreenshareRef.current;
-      voicePresetRestoreAfterScreenshareRef.current = null;
-      setPresenterVoiceBoostActive(false);
-      if (restore) {
-        setVoiceProcessingPresetState(restore);
-        persistVoiceProcessingPreset(restore);
-        voiceProcessingPresetRef.current = restore;
-        await applyVoiceProcessingPresetToRoom(lkRoom, restore);
-      }
-      scheduleFeedBatched();
-      refreshLocalPreview();
-    },
-    [refreshLocalPreview, scheduleFeedBatched],
   );
 
   const reconcileLocalScreenshareStop = useCallback(
@@ -1537,7 +1503,6 @@ export function useSpaceGroupCall(
 
       if (lkRoom) {
         syncLocalScreenshareState(lkRoom);
-        await restorePresenterVoiceAfterScreenshare(lkRoom);
       } else {
         setIsScreensharing(false);
       }
@@ -1545,12 +1510,7 @@ export function useSpaceGroupCall(
       setScreenshareTakeoverIncoming(null);
       scheduleFeedBatched();
     },
-    [
-      client,
-      restorePresenterVoiceAfterScreenshare,
-      scheduleFeedBatched,
-      syncLocalScreenshareState,
-    ],
+    [client, scheduleFeedBatched, syncLocalScreenshareState],
   );
 
   const updateParticipantCount = useCallback(() => {
@@ -2147,51 +2107,15 @@ export function useSpaceGroupCall(
     setThreadContext(null);
     setParticipantCount(0);
     setTabBackgroundWhileInCall(false);
-    setPresenterVoiceBoostActive(false);
-    voicePresetRestoreAfterScreenshareRef.current = null;
   }, [runCleanup]);
-
-  const restoreVoiceBeforeLeaveIfNeeded = useCallback(
-    async (lkRoom: LiveKitRoom) => {
-      if (
-        voicePresetRestoreAfterScreenshareRef.current == null &&
-        !isScreensharingRef.current
-      ) {
-        setPresenterVoiceBoostActive(false);
-        return;
-      }
-      try {
-        await Promise.race([
-          restorePresenterVoiceAfterScreenshare(lkRoom),
-          new Promise<void>((resolve) => {
-            window.setTimeout(resolve, 2_000);
-          }),
-        ]);
-      } catch {
-        // Never block leave on voice preset restore.
-      }
-    },
-    [restorePresenterVoiceAfterScreenshare],
-  );
 
   const leave = useCallback(async () => {
     if (callState === 'idle') return;
     if (callState === 'disconnecting') {
-      const lkRoom = liveKitRoomRef.current;
-      if (lkRoom) {
-        void restoreVoiceBeforeLeaveIfNeeded(lkRoom);
-      }
       resetAfterLeave();
       return;
     }
     setCallState('disconnecting');
-    const lkBeforeLeave = liveKitRoomRef.current;
-    if (lkBeforeLeave) {
-      await restoreVoiceBeforeLeaveIfNeeded(lkBeforeLeave);
-    } else {
-      setPresenterVoiceBoostActive(false);
-      voicePresetRestoreAfterScreenshareRef.current = null;
-    }
     if (lastRoomIdForTelemetryRef.current) {
       emitCallSessionEnd('user');
       logSpaceGroupCallEvent({
@@ -2202,12 +2126,7 @@ export function useSpaceGroupCall(
       });
     }
     resetAfterLeave();
-  }, [
-    callState,
-    emitCallSessionEnd,
-    resetAfterLeave,
-    restoreVoiceBeforeLeaveIfNeeded,
-  ]);
+  }, [callState, emitCallSessionEnd, resetAfterLeave]);
 
   const setMicrophoneMuted = useCallback(
     async (muted: boolean) => {
@@ -2369,7 +2288,6 @@ export function useSpaceGroupCall(
         // continue — still notify requester
       }
       syncLocalScreenshareState(lkRoom);
-      await restorePresenterVoiceAfterScreenshare(lkRoom);
       await sendScreenshareTakeoverEvent(
         'approve',
         request.requestId.trim(),
@@ -2382,7 +2300,6 @@ export function useSpaceGroupCall(
     },
     [
       client,
-      restorePresenterVoiceAfterScreenshare,
       scheduleFeedBatched,
       sendScreenshareTakeoverEvent,
       syncLocalScreenshareState,
@@ -2424,8 +2341,6 @@ export function useSpaceGroupCall(
 
   const setVoiceProcessingPreset = useCallback(
     async (preset: SpaceGroupCallVoiceProcessingPreset) => {
-      voicePresetRestoreAfterScreenshareRef.current = null;
-      setPresenterVoiceBoostActive(false);
       setVoiceProcessingPresetState(preset);
       persistVoiceProcessingPreset(preset);
       voiceProcessingPresetRef.current = preset;
@@ -3238,7 +3153,6 @@ export function useSpaceGroupCall(
     setVoiceProcessingPreset,
     unsupportedVoiceProcessingConstraints,
     /** WCUX-SHARE-VOICE-5: auto voice boost while presenting from Speech preset. */
-    presenterVoiceBoostActive,
     isScreensharing,
     /** Another participant is presenting — local share start is blocked (one at a time). */
     remoteScreenshareActive,

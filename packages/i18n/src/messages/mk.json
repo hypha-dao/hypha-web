@@ -3942,7 +3942,6 @@
     "callRemoteMediaWarmingHint": "Се чека аудиото и видеото на другите да се поврзат…",
     "callRemoteMediaStallRetry": "Повторно поврзување",
     "callScaleWarningMessage": "Овој повик има многу учесници. Квалитетот може да биде намален.",
-    "callVoiceBoostWhilePresenting": "Засилувањето на гласот е активно додека презентираш",
     "callSessionRefreshFailedDescription": "Сесијата на повикот истече. Поврзи се повторно за да останеш на состанокот.",
     "callSessionRefreshFailedReconnect": "Поврзи се повторно",
     "callShareTabAudioNotShared": "Звукот од јазичето не се споделува — другите може да не слушаат звук од споделеното јазиче или прозорец.",

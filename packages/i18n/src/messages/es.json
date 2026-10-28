@@ -3422,7 +3422,6 @@
     "callVoiceProcessingMusic": "Música",
     "callVoiceProcessingNoiseSuppressionUnsupported": "Cancelación de ruido no compatible con este dispositivo",
     "callVoiceProcessingAutoGainUnsupported": "Control automático de ganancia no compatible con este dispositivo",
-    "callVoiceBoostWhilePresenting": "Refuerzo de voz activo mientras presentas",
     "callCameraOn": "Encender cámara",
     "callCameraOff": "Apagar cámara",
     "callErrorPermission": "Se denegó el acceso a la cámara o al micrófono. Revisa la configuración del navegador.",

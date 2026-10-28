@@ -1,9 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { constraintsForVoicePreset } from '../voice-processing-constraints';
-import {
-  applyScreenshareTrackContentHints,
-  resolveScreenshareVoicePresetPlan,
-} from '../screenshare-voice-boost';
+import * as screenshareVoiceBoost from '../screenshare-voice-boost';
+
+const { applyScreenshareTrackContentHints } = screenshareVoiceBoost;
 
 describe('constraintsForVoicePreset', () => {
   it('returns standard preset constraints', () => {
@@ -34,19 +33,25 @@ describe('constraintsForVoicePreset', () => {
   });
 });
 
-describe('resolveScreenshareVoicePresetPlan', () => {
-  it('switches standard to voice_isolation with restore', () => {
-    expect(resolveScreenshareVoicePresetPlan('standard')).toEqual({
-      effectivePreset: 'voice_isolation',
-      restorePreset: 'standard',
-    });
+describe('screenshare keeps the mic setup unchanged (#2564)', () => {
+  it('exposes no preset switching for screenshare', () => {
+    expect(Object.keys(screenshareVoiceBoost)).toEqual([
+      'applyScreenshareTrackContentHints',
+    ]);
   });
 
-  it('keeps explicit music preset without restore', () => {
-    expect(resolveScreenshareVoicePresetPlan('music')).toEqual({
-      effectivePreset: 'music',
-      restorePreset: null,
-    });
+  it('leaves mic constraints untouched when applying content hints', () => {
+    const applyConstraints = vi.fn();
+    const micTrack = {
+      contentHint: '',
+      applyConstraints,
+      stop: vi.fn(),
+    } as unknown as MediaStreamTrack;
+
+    applyScreenshareTrackContentHints({ micTrack, screenshareStream: null });
+
+    expect(applyConstraints).not.toHaveBeenCalled();
+    expect(micTrack.stop).not.toHaveBeenCalled();
   });
 });
 

@@ -572,7 +572,6 @@ export function GlobalCallDockOverlay({
     voiceProcessingPreset,
     setVoiceProcessingPreset,
     unsupportedVoiceProcessingConstraints,
-    presenterVoiceBoostActive,
     captureMode,
     capturePreference,
     capturePreferenceSelected,
@@ -1634,7 +1633,6 @@ export function GlobalCallDockOverlay({
                   unsupportedVoiceProcessingConstraints={
                     unsupportedVoiceProcessingConstraints
                   }
-                  presenterVoiceBoostActive={presenterVoiceBoostActive}
                   captureMode={captureMode}
                   capturePreference={capturePreference}
                   capturePreferenceSelected={capturePreferenceSelected}
@@ -1709,7 +1707,6 @@ export function GlobalCallDockOverlay({
                     unsupportedVoiceProcessingConstraints={
                       unsupportedVoiceProcessingConstraints
                     }
-                    presenterVoiceBoostActive={presenterVoiceBoostActive}
                     captureMode={captureMode}
                     capturePreference={capturePreference}
                     capturePreferenceSelected={capturePreferenceSelected}
@@ -1756,7 +1753,6 @@ export function GlobalCallDockOverlay({
                 unsupportedVoiceProcessingConstraints={
                   unsupportedVoiceProcessingConstraints
                 }
-                presenterVoiceBoostActive={presenterVoiceBoostActive}
                 captureMode={captureMode}
                 capturePreference={capturePreference}
                 capturePreferenceSelected={capturePreferenceSelected}
