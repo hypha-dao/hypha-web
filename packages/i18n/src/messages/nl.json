@@ -4541,7 +4541,7 @@
     "signalAssigneeUnknown": "Onbekend lid",
     "signalAssigneeCount": "{count, plural, one {# verantwoordelijke} other {# verantwoordelijken}}",
     "signalFormAssignees": "Verantwoordelijken",
-    "signalFormAssigneeHint": "Leden van de space die verantwoordelijk zijn voor dit signaal. Iedereen die je toevoegt krijgt een e-mail wanneer het signaal wordt aangemaakt. Standaard ben jij als aanmaker geselecteerd.",
+    "signalFormAssigneeHint": "Leden van de space die verantwoordelijk zijn voor dit signaal. Iedereen die je toevoegt krijgt een e-mail wanneer het signaal wordt aangemaakt. Standaard wordt de aanmaker geselecteerd.",
     "signalFormAssigneeUnassigned": "Niet toegewezen",
     "signalFormAssigneeLoading": "Leden laden…",
     "signalFormAssigneeSearch": "Leden zoeken…",

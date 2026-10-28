@@ -46,6 +46,7 @@ import {
   dueAtHasChanged,
   newlyAssignedPersonIds,
 } from '../signal-notification-triggers';
+import { creatorIdForAuthenticatedCreate } from '../signal-creator';
 import {
   getSignalAssignedNotifier,
   getSignalLifecycleNotifier,
@@ -185,7 +186,13 @@ export async function createCoherenceAction(
       'Could not resolve authenticated user for create coherence',
     );
   }
-  const newSignal = await createCoherence({ ...data }, { db });
+  const newSignal = await createCoherence(
+    {
+      ...data,
+      creatorId: creatorIdForAuthenticatedCreate(self.id, data.creatorId),
+    },
+    { db },
+  );
   if (newSignal.spaceId != null) {
     await notifySignalAssigned({
       spaceId: newSignal.spaceId,

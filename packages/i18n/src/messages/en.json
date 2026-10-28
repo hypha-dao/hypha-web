@@ -4571,7 +4571,7 @@
     "signalAssigneeUnknown": "Unknown member",
     "signalAssigneeCount": "{count, plural, one {# assignee} other {# assignees}}",
     "signalFormAssignees": "Assignees",
-    "signalFormAssigneeHint": "Space members responsible for this signal. Everyone you add is emailed when the signal is created. Defaults to you as its creator.",
+    "signalFormAssigneeHint": "Space members responsible for this signal. Everyone you add is emailed when the signal is created. Defaults to the signal creator.",
     "signalFormAssigneeUnassigned": "Unassigned",
     "signalFormAssigneeLoading": "Loading members…",
     "signalFormAssigneeSearch": "Search members…",

@@ -3981,7 +3981,7 @@
     "signalAssigneeUnknown": "Miembro desconocido",
     "signalAssigneeCount": "{count, plural, one {# responsable} other {# responsables}}",
     "signalFormAssignees": "Responsables",
-    "signalFormAssigneeHint": "Miembros del espacio responsables de esta señal. Todas las personas que añadas reciben un correo cuando se crea la señal. Por defecto eres tú, como creador.",
+    "signalFormAssigneeHint": "Miembros del espacio responsables de esta señal. Todas las personas que añadas reciben un correo cuando se crea la señal. Por defecto se selecciona a quien creó la señal.",
     "signalFormAssigneeUnassigned": "Sin asignar",
     "signalFormAssigneeLoading": "Cargando miembros…",
     "signalFormAssigneeSearch": "Buscar miembros…",

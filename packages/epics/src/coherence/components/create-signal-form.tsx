@@ -48,6 +48,7 @@ import {
   Person,
   resolveDefaultBoard,
   schemaCreateCoherenceForm,
+  resolveSignalFormCreatorId,
   parseCapitalKeys,
   type CapitalKey,
   collectExistingTags,
@@ -466,7 +467,12 @@ export const CreateSignalForm = ({
     () => ({
       title: initialValues?.title ?? '',
       description: initialValues?.description ?? '',
-      creatorId: initialValues?.creatorId ?? person?.id ?? 0,
+      creatorId:
+        resolveSignalFormCreatorId({
+          mode,
+          storedCreatorId: initialValues?.creatorId,
+          viewerId: person?.id,
+        }) ?? 0,
       spaceId: initialValues?.spaceId ?? spaceId,
       archived: initialValues?.archived ?? false,
       type:
@@ -522,8 +528,18 @@ export const CreateSignalForm = ({
   }, [form, formDefaults, mode, signalSlug]);
   React.useEffect(() => {
     if (mode === 'edit' || !person?.id) return;
-    if (form.getValues('creatorId') === person.id) return;
-    form.setValue('creatorId', person.id);
+    const nextCreatorId = resolveSignalFormCreatorId({
+      mode: 'create',
+      storedCreatorId: form.getValues('creatorId'),
+      viewerId: person.id,
+    });
+    if (
+      nextCreatorId == null ||
+      form.getValues('creatorId') === nextCreatorId
+    ) {
+      return;
+    }
+    form.setValue('creatorId', nextCreatorId);
   }, [form, mode, person?.id]);
   React.useEffect(() => {
     const videoUrl = createMediaDraft.current?.videoUrl?.trim();
@@ -738,19 +754,9 @@ export const CreateSignalForm = ({
     ];
   }, [existingBoardTags, t]);
 
-  React.useEffect(() => {
-    const { isDirty } = form.getFieldState('creatorId');
-    if (!isDirty && person?.id) {
-      form.setValue('creatorId', person.id, {
-        shouldDirty: false,
-        shouldTouch: false,
-        shouldValidate: true,
-      });
-    }
-  }, [person, form]);
-
   // `person` can resolve after mount, so the creator default has to be applied
-  // once it lands rather than only through `defaultValues`.
+  // once it lands rather than only through `defaultValues`. Never copy the
+  // viewer onto creatorId in edit — that reattributes someone else's signal.
   React.useEffect(() => {
     if (mode !== 'create' || !person?.id) return;
     const { isDirty } = form.getFieldState('assigneeIds');
