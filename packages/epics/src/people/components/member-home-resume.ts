@@ -215,7 +215,11 @@ export function writeHomeChoices(choices: {
 }) {
   if (typeof window === 'undefined') return;
   try {
-    writeStored(CHOICES_KEY, JSON.stringify(choices));
+    const serialized = JSON.stringify(choices);
+    // Same payload must not notify — listeners setState and can loop with
+    // the chat effect that writes choices on every homeMessages change.
+    if (readStored(CHOICES_KEY) === serialized) return;
+    writeStored(CHOICES_KEY, serialized);
     notifyHomeQueue();
   } catch {
     // The conversation still carries the choice when storage is blocked.

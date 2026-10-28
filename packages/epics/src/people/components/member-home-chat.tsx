@@ -273,6 +273,20 @@ function mergeHomeCardItems(
   return [...byKey.values()];
 }
 
+function sameHomeShownItemKeys(
+  left: readonly MemberHomeThreadItem[],
+  right: readonly MemberHomeThreadItem[],
+) {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    const a = left[index];
+    const b = right[index];
+    if (!a || !b) return false;
+    if (memberHomeThreadItemKey(a) !== memberHomeThreadItemKey(b)) return false;
+  }
+  return true;
+}
+
 function homeBoardFromMessage(message: HomeMessage) {
   const board = message.metadata?.homeBoard;
   if (
@@ -1351,11 +1365,6 @@ export function MemberHomeChat({
   }, [send, t, voiceHydrated]);
 
   useEffect(() => {
-    if (!opened.current) return;
-    writeHomeThread(homeMessages);
-  }, [homeMessages]);
-
-  useEffect(() => {
     const fromMessages = memberHomeItemMemory(threadItems, homeMessages);
     const merged = mergeMemberHomeMemory(fromMessages, readHomeChoices());
     const deferred = [...merged.deferred];
@@ -1395,43 +1404,12 @@ export function MemberHomeChat({
       rememberHomeShownItem(item);
       remembered = true;
     });
-    if (remembered) setShownCardItems(readHomeShownItems());
+    if (!remembered) return;
+    const next = readHomeShownItems();
+    setShownCardItems((current) =>
+      sameHomeShownItemKeys(current, next) ? current : next,
+    );
   }, [homeMessages, intelligence, liveCardItems, widgetKindFor]);
-
-  // Stamp the card on the message so the next reply cannot clear it when
-  // speech matching or tool parts drift after the live catalog moves on.
-  useEffect(() => {
-    let changed = false;
-    const next = homeMessages.map((message, index) => {
-      if (message.role !== 'assistant' || message.metadata?.homeArrival) {
-        return message;
-      }
-      const existing = message.metadata?.homeItem;
-      if (
-        existing &&
-        (existing.kind === 'proposal' || existing.kind === 'signal') &&
-        existing.slug
-      ) {
-        return message;
-      }
-      const asked = widgetKindFor(userTextBefore(homeMessages, index));
-      if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
-        return message;
-      }
-      const item = pinnedHomeItem(cardItems, homeMessages, index, intelligence);
-      if (!item) return message;
-      changed = true;
-      return {
-        ...message,
-        metadata: {
-          ...message.metadata,
-          homeItem: { kind: item.kind, slug: item.slug },
-        },
-      };
-    });
-    if (!changed) return;
-    setMessages(next);
-  }, [cardItems, homeMessages, intelligence, setMessages, widgetKindFor]);
 
   const cardsByMessageId = useMemo(() => {
     // Each reply keeps its own card when the next message arrives. Moving
@@ -1454,6 +1432,33 @@ export function MemberHomeChat({
     });
     return map;
   }, [cardItems, homeMessages, intelligence, widgetKindFor]);
+
+  // Persist cards on disk only — never setMessages here. Stamping via
+  // setMessages looped into React #185; the crash remount then hit #310.
+  useEffect(() => {
+    if (!opened.current) return;
+    const persisted = homeMessages.map((message) => {
+      const existing = message.metadata?.homeItem;
+      if (
+        existing &&
+        (existing.kind === 'proposal' || existing.kind === 'signal') &&
+        existing.slug
+      ) {
+        return message;
+      }
+      const item = cardsByMessageId.get(message.id);
+      if (!item) return message;
+      return {
+        ...message,
+        metadata: {
+          ...message.metadata,
+          homeItem: { kind: item.kind, slug: item.slug },
+        },
+      };
+    });
+    writeHomeThread(persisted);
+  }, [cardsByMessageId, homeMessages]);
+
   const cardMessageId = useMemo(() => {
     for (let index = homeMessages.length - 1; index >= 0; index -= 1) {
       const message = homeMessages[index];
