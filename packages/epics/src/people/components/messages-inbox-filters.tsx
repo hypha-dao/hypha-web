@@ -107,7 +107,7 @@ export function MessagesInboxFilters({
   const t = useTranslations('Connections');
   return (
     <nav aria-label={t('inbox.filterLabel')} className="min-w-0 lg:w-full">
-      <div className="overflow-hidden border border-border bg-background">
+      <div className="border border-border bg-background">
         {(
           [
             'all',

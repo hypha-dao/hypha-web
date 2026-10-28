@@ -2880,15 +2880,20 @@ export function MyConnections({
         <div
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col gap-6',
-            section === 'messages' && 'gap-4 lg:flex-row lg:gap-6',
+            section === 'messages' &&
+              'gap-4 lg:flex-row lg:items-stretch lg:gap-6',
           )}
         >
           {section === 'messages' ? (
             <div
               ref={inboxFiltersRef}
               className={cn(
-                'w-full shrink-0 lg:w-80 lg:shrink-0',
-                picking || inboxChannelOpen ? 'hidden lg:block' : null,
+                // Fill the locked frame and scroll so Network is reachable
+                // under the phone tab bar and beside the desktop list.
+                'narrow-scrollbar min-h-0 w-full overflow-y-auto overscroll-contain',
+                picking || inboxChannelOpen
+                  ? 'hidden lg:block lg:h-full lg:w-80 lg:shrink-0'
+                  : 'flex-1 lg:h-full lg:w-80 lg:flex-none lg:shrink-0',
               )}
             >
               <MessagesInboxFilters
