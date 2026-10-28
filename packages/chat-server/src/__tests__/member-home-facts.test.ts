@@ -403,6 +403,44 @@ describe('formatMemberHomeFacts', () => {
     );
   });
 
+  it('skips an already-placed card on a follow-up that is not an opening ask', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+          },
+        ],
+      },
+      {
+        alreadyShown: ['proposal:path'],
+        asked: 'What else is waiting?',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toContain('slug=bridge');
+    expect(brief.text).toMatch(/Card for this reply:[\s\S]*slug=bridge/);
+    expect(brief.text).not.toMatch(/Card for this reply:[\s\S]*slug=path/);
+  });
+
+  it('does not force a card when every waiting item was already placed', () => {
+    const brief = formatMemberHomeFacts(home, {
+      alreadyShown: ['proposal:path'],
+      asked: 'ok',
+    });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toMatch(/already introduced/i);
+    expect(brief.text).not.toMatch(/Card for this reply:/);
+  });
+
   it('skips a title already placed when they ask where they can be useful', () => {
     const brief = formatMemberHomeFacts(
       {

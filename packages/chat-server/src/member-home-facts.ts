@@ -349,20 +349,18 @@ export function formatMemberHomeFacts(
   const shownKeys = new Set(
     (options?.alreadyShown ?? []).map((key) => key.trim()).filter(Boolean),
   );
+  // Prefer items not yet placed in this talk. Re-picking stillWaiting[0] after
+  // the first card was shown is what kept pushing the same one as "new".
   const unspoken = stillWaiting.filter(
     (item) => !shownKeys.has(memberHomeThreadItemKey(item)),
   );
-  const openingAsk =
-    continueAsk ||
-    /^(?:i am on my home|where can i be useful)[.!?]?$/i.test(
-      (options?.asked ?? '').trim(),
-    );
   const spoken =
     askedItem ??
     (decisionAsk
-      ? stillWaiting.find((item) => item.action === 'decision')
+      ? unspoken.find((item) => item.action === 'decision') ??
+        stillWaiting.find((item) => item.action === 'decision')
       : undefined) ??
-    (openingAsk ? unspoken[0] : stillWaiting[0]) ??
+    unspoken[0] ??
     null;
   const lookAsk = Boolean(
     options?.asked?.trim() && isMemberHomeItemLook(options.asked),
@@ -420,9 +418,9 @@ export function formatMemberHomeFacts(
             looked,
           )} One short line naming the title and the space. Do not introduce a different person. Do not open the next waiting item.`
         : 'They asked to see the card from the reply just above. One short line that it is that same item. Do not introduce a different person. Do not open the next waiting item.'
-      : openingAsk && !spoken
-      ? 'Every waiting item was already introduced. Do not repeat a title or a space. One sentence asking if they would like to pause for now, or keep going. Do not restate one that was already placed.'
-      : itemLine(spoken ?? unspoken[0] ?? stillWaiting[0]!);
+      : !spoken
+      ? 'Every waiting item was already introduced. Do not place those cards again unless they ask for one by name. Say the open ones are the ones they already saw, in one short line, and ask if they want to revisit one or pause. Do not present an already-placed item as new.'
+      : itemLine(spoken);
   const recallKey = recall ? memberHomeThreadItemKey(recall) : null;
   const alreadyShown = (options?.alreadyShown ?? [])
     .map((key) => key.trim())
@@ -608,9 +606,9 @@ export function formatMemberHomeFacts(
     listAsk
       ? null
       : alreadyShown.length > 0
-      ? `Already placed in earlier replies. Do not call show_member_home_item for these again unless the person asks: ${alreadyShown.join(
+      ? `Already placed in earlier replies. Never present these as new. Do not call show_member_home_item for them again unless the person asks for that card by name: ${alreadyShown.join(
           ', ',
-        )}.`
+        )}. Prefer any waiting item that is not in this list.`
       : 'No card has been placed in this conversation yet.',
     actedKeys.size > 0
       ? `Carried out this visit. Do not open these again unless they ask: ${[
