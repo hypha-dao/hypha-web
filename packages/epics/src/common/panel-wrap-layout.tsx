@@ -44,6 +44,7 @@ import { HumanChatPanelErrorBoundary } from './human-chat-panel/human-chat-panel
 import { shouldPreventChatSheetEscapeDismiss } from './human-chat-panel/composer-escape';
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
 import { PanelScrollInset } from './panel-scroll-inset';
+import { resolveSidebarInsetPx } from './panel-scroll-insets';
 import { APP_CHROME_ICON_TRIGGER } from './chrome-radius';
 import { useOpenSpacePublicChat } from './use-open-space-public-chat';
 
@@ -446,14 +447,18 @@ export function PanelWrapLayout({
     !isOnboarding && !isMobileViewport && leftOpen && !leftOverlayVisible;
   const leftIconRailPx = dockIconRailBesideAi ? LEFT_SIDEBAR_ICON_WIDTH_PX : 0;
   const leftExpandedWidthPx = LEFT_AI_PANEL_WIDTH_PX + leftIconRailPx;
-  const leftFootprintPx = isOnboarding
-    ? 0
-    : leftExpanded
-    ? leftExpandedWidthPx
-    : showAiPanel
-    ? LEFT_SIDEBAR_ICON_WIDTH_PX
-    : 0;
-  const rightFootprintPx = rightOpen && effectiveRight ? 320 : 0;
+  // Mobile sheets do not reserve a column — footprint stays 0 so dual-panel
+  // compact math and fixed chrome insets stay aligned with the full-width column.
+  const leftFootprintPx =
+    isOnboarding || isMobileViewport
+      ? 0
+      : leftExpanded
+      ? leftExpandedWidthPx
+      : showAiPanel
+      ? LEFT_SIDEBAR_ICON_WIDTH_PX
+      : 0;
+  const rightFootprintPx =
+    isMobileViewport || !(rightOpen && effectiveRight) ? 0 : 320;
   const forceCompactPanels =
     Boolean(effectiveLeft && effectiveRight) &&
     (viewportWidth < DUAL_PANEL_MIN_VIEWPORT_PX ||
@@ -476,17 +481,18 @@ export function PanelWrapLayout({
     : dockIconRailBesideAi
     ? `${leftExpandedWidthPx}px`
     : LEFT_SIDEBAR_EXPANDED_WIDTH;
-  const fallbackSidebarLeftPx = effectiveLeft
-    ? isOnboarding
+  const fallbackSidebarLeftPx =
+    !effectiveLeft || isOnboarding || isMobileViewport
       ? '0px'
       : leftExpanded
       ? leftExpandedSidebarWidth
       : showAiPanel
       ? LEFT_SIDEBAR_ICON_WIDTH
-      : '0px'
-    : '0px';
+      : '0px';
   const fallbackSidebarRightPx =
-    rightOpen && effectiveRight ? rightSidebarWidth : '0px';
+    isMobileViewport || !(rightOpen && effectiveRight)
+      ? '0px'
+      : rightSidebarWidth;
   const [sidebarLeftPx, setSidebarLeftPx] = useState(fallbackSidebarLeftPx);
   const [sidebarRightPx, setSidebarRightPx] = useState(fallbackSidebarRightPx);
 
@@ -552,28 +558,39 @@ export function PanelWrapLayout({
       const gaps = root.querySelectorAll<HTMLElement>('[data-sidebar-gap]');
       let nextLeft = 0;
       let nextRight = 0;
+      let hasLeftGap = false;
+      let hasRightGap = false;
 
       gaps.forEach((gap) => {
         const host = gap.closest<HTMLElement>('[data-side]');
         const side = host?.getAttribute('data-side');
         const width = Math.round(gap.getBoundingClientRect().width);
-        if (!Number.isFinite(width) || width <= 0) return;
+        if (!Number.isFinite(width) || width < 0) return;
         if (side === 'right') {
+          hasRightGap = true;
           nextRight = Math.max(nextRight, width);
           return;
         }
+        hasLeftGap = true;
         nextLeft = Math.max(nextLeft, width);
       });
 
-      const resolvedLeft = isOnboarding
-        ? '0px'
-        : effectiveLeft && nextLeft > 0
-        ? `${nextLeft}px`
-        : fallbackSidebarLeftPx;
-      const resolvedRight =
-        effectiveRight && nextRight > 0
-          ? `${nextRight}px`
-          : fallbackSidebarRightPx;
+      const resolvedLeft = resolveSidebarInsetPx({
+        isOnboarding,
+        isMobileViewport,
+        sideActive: Boolean(effectiveLeft),
+        measuredPx: nextLeft,
+        hasGapNodes: hasLeftGap,
+        fallbackPx: fallbackSidebarLeftPx,
+      });
+      const resolvedRight = resolveSidebarInsetPx({
+        isOnboarding: false,
+        isMobileViewport,
+        sideActive: Boolean(effectiveRight),
+        measuredPx: nextRight,
+        hasGapNodes: hasRightGap,
+        fallbackPx: fallbackSidebarRightPx,
+      });
 
       setSidebarLeftPx((prev) => (prev === resolvedLeft ? prev : resolvedLeft));
       setSidebarRightPx((prev) =>
@@ -610,6 +627,7 @@ export function PanelWrapLayout({
     effectiveRight,
     fallbackSidebarLeftPx,
     fallbackSidebarRightPx,
+    isMobileViewport,
     isOnboarding,
   ]);
 

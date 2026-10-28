@@ -200,6 +200,8 @@ export {
   AiPanelTrigger,
   HumanSidebarTrigger,
 } from './panel-wrap-layout';
+export { resolveSidebarInsetPx } from './panel-scroll-insets';
+export type { ResolveSidebarInsetPxInput } from './panel-scroll-insets';
 export { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 export {
   HYPHA_SPACE_SWITCH_LINK_ATTR,
