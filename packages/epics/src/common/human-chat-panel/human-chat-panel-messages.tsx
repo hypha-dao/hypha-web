@@ -92,6 +92,24 @@ function formatDateDividerLabel(
   }
 }
 
+/** Compact date for the unread strip — full weekday wraps poorly beside the action. */
+function formatUnreadBannerDateLabel(
+  date: Date,
+  formatter: ReturnType<typeof useFormatter>,
+): string {
+  const safe = asTimelineDate(date);
+  if (!safe) return '';
+  try {
+    return formatter.dateTime(safe, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return '';
+  }
+}
+
 type TimelineRow =
   | { kind: 'date'; key: string; date: Date }
   | { kind: 'unread'; key: 'unread-divider' }
@@ -296,7 +314,7 @@ export function HumanChatPanelMessages({
       };
     }
     try {
-      const dateLabel = formatDateDividerLabel(ts, formatter);
+      const dateLabel = formatUnreadBannerDateLabel(ts, formatter);
       const timeLabel = formatter.dateTime(ts, {
         timeStyle: 'short',
         dateStyle: undefined,
@@ -579,10 +597,10 @@ export function HumanChatPanelMessages({
         <div
           role="status"
           aria-live="polite"
-          className="border-b border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_40%,transparent)] bg-[color:var(--color-accent-9,var(--space-accent,#4a65d8))] px-3 py-2 shadow-sm"
+          className="shrink-0 border-b border-border bg-muted/40 px-4 py-2.5"
         >
-          <div className="flex items-start justify-between gap-2">
-            <p className="min-w-0 flex-1 text-xs font-medium leading-snug text-[color:var(--color-accent-contrast,#f8fafc)]">
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-w-0 flex-1 text-xs leading-snug text-muted-foreground">
               {unreadNotificationCount <= 0
                 ? t('unreadBannerSince', {
                     date: firstUnreadMeta.dateLabel,
@@ -602,8 +620,9 @@ export function HumanChatPanelMessages({
             <Button
               type="button"
               variant="outline"
+              colorVariant="neutral"
               size="sm"
-              className="h-7 shrink-0 border-[color:color-mix(in_srgb,var(--color-accent-contrast,#f8fafc)_35%,transparent)] bg-[color:color-mix(in_srgb,var(--color-accent-contrast,#f8fafc)_12%,transparent)] text-xs text-[color:var(--color-accent-contrast,#f8fafc)] hover:bg-[color:color-mix(in_srgb,var(--color-accent-contrast,#f8fafc)_22%,transparent)]"
+              className="h-8 shrink-0 px-3 text-xs"
               onClick={() => {
                 onMarkAsReadFromBanner?.();
               }}
