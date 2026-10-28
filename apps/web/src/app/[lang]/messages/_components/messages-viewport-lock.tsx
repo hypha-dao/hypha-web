@@ -6,6 +6,7 @@ import {
   popMainColumnOverlayScrollLock,
   pushMainColumnOverlayScrollLock,
   scrollMainColumnTo,
+  subscribeMainColumnScroll,
 } from '@hypha-platform/epics';
 
 const DESKTOP_MENU = '(min-width: 80rem)';
@@ -49,12 +50,25 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     scrollMainColumnTo(0);
-    pushMainColumnOverlayScrollLock();
+    let locked = false;
+    let observed: HTMLElement | null = null;
+
+    const armLock = () => {
+      if (locked || !getMainColumnScrollElement()) return;
+      pushMainColumnOverlayScrollLock();
+      locked = true;
+    };
 
     const fit = () => {
+      armLock();
       const frame = ref.current;
       if (!frame) return;
       const scrollEl = getMainColumnScrollElement();
+      if (scrollEl && scrollEl !== observed) {
+        if (observed) observer.unobserve(observed);
+        observer.observe(scrollEl);
+        observed = scrollEl;
+      }
       const scrollRect = scrollEl?.getBoundingClientRect();
       const viewportBottom = window.visualViewport
         ? window.visualViewport.offsetTop + window.visualViewport.height
@@ -69,25 +83,23 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
       frame.style.height = `${height}px`;
     };
 
-    fit();
     const observer = new ResizeObserver(fit);
-    const scrollEl = getMainColumnScrollElement();
-    if (scrollEl) observer.observe(scrollEl);
+    fit();
     observer.observe(document.documentElement);
+    const stopWatchingScrollRoot = subscribeMainColumnScroll(fit);
     window.addEventListener('resize', fit);
     window.addEventListener('scroll', fit, { passive: true });
-    scrollEl?.addEventListener('scroll', fit, { passive: true });
     window.visualViewport?.addEventListener('resize', fit);
 
     return () => {
+      stopWatchingScrollRoot();
       observer.disconnect();
       window.removeEventListener('resize', fit);
       window.removeEventListener('scroll', fit);
-      scrollEl?.removeEventListener('scroll', fit);
       window.visualViewport?.removeEventListener('resize', fit);
       const frame = ref.current;
       if (frame) frame.style.height = '';
-      popMainColumnOverlayScrollLock();
+      if (locked) popMainColumnOverlayScrollLock();
     };
   }, []);
 

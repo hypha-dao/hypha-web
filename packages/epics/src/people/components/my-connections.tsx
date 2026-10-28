@@ -2696,10 +2696,10 @@ export function MyConnections({
             <div
               ref={inboxFiltersRef}
               className={cn(
-                'narrow-scrollbar w-full shrink-0 overscroll-contain lg:h-full lg:w-80 lg:overflow-y-auto',
+                'narrow-scrollbar w-full shrink-0 overscroll-contain lg:h-full lg:min-h-0 lg:w-80 lg:overflow-y-auto',
                 picking || inboxChannelOpen
                   ? 'hidden lg:block'
-                  : 'min-h-0 flex-1 overflow-y-auto lg:flex-none',
+                  : 'min-h-0 flex-1 overflow-y-auto',
               )}
             >
               <MessagesInboxFilters
@@ -2711,7 +2711,7 @@ export function MyConnections({
           ) : null}
           <div
             className={cn(
-              'min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+              'relative min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
               section === 'messages' && !picking && !inboxChannelOpen
                 ? 'hidden lg:flex'
                 : 'flex',
@@ -2732,258 +2732,270 @@ export function MyConnections({
                 {t(`inbox.${inboxFilter}Title`)}
               </button>
             ) : null}
-            <div className="flex shrink-0 flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <label className="relative min-w-0 flex-1">
-                  <span className="sr-only">{t('search')}</span>
-                  <Search
-                    className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
-                    strokeWidth={1.5}
-                    aria-hidden
-                  />
-                  <input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Escape') return;
-                      event.stopPropagation();
-                    }}
-                    placeholder={t('search')}
-                    className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
-                  />
-                </label>
-                {section === 'archived' ? null : picking ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    colorVariant="neutral"
-                    className="shrink-0"
-                    onClick={exitPicking}
-                  >
-                    {t('cancelPick')}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    colorVariant="neutral"
-                    className="shrink-0 gap-1.5"
-                    disabled={!isMatrixAvailable || people.length < 2}
-                    onClick={() => setPicking(true)}
-                  >
-                    <Users className="size-3.5" strokeWidth={1.5} aria-hidden />
-                    {t('groupCall')}
-                  </Button>
-                )}
-              </div>
-
-              {picking && selectedPeople.length > 0 ? (
-                <div
-                  className="flex gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                  aria-label={t('selectedCount', {
-                    count: selectedPeople.length,
-                  })}
-                >
-                  {selectedPeople.map((row) => (
-                    <button
-                      key={row.person.id}
+            <div className="flex min-h-0 flex-1 flex-col lg:absolute lg:inset-0">
+              <div className="flex shrink-0 flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="relative min-w-0 flex-1">
+                    <span className="sr-only">{t('search')}</span>
+                    <Search
+                      className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
+                      strokeWidth={1.5}
+                      aria-hidden
+                    />
+                    <input
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') return;
+                        event.stopPropagation();
+                      }}
+                      placeholder={t('search')}
+                      className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+                    />
+                  </label>
+                  {section === 'archived' ? null : picking ? (
+                    <Button
                       type="button"
-                      className="flex w-16 shrink-0 flex-col items-center gap-1 text-center"
-                      aria-label={t('removeSelected', { name: row.name })}
-                      onClick={() => toggleSelected(row)}
+                      variant="outline"
+                      colorVariant="neutral"
+                      className="shrink-0"
+                      onClick={exitPicking}
                     >
-                      <span className="relative inline-flex">
-                        <PersonAvatar
-                          size="chat"
-                          shape="circle"
-                          avatarSrc={row.avatarUrl}
-                          userName={row.name}
-                          personId={row.person.id}
-                        />
-                        <span
-                          className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-foreground text-background"
-                          aria-hidden
-                        >
-                          <X className="size-2.5" strokeWidth={2.5} />
-                        </span>
-                      </span>
-                      <span className="w-full truncate text-1 text-neutral-11">
-                        {row.name.split(' ')[0] || row.name}
-                      </span>
-                    </button>
-                  ))}
+                      {t('cancelPick')}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      className="shrink-0 gap-1.5"
+                      disabled={!isMatrixAvailable || people.length < 2}
+                      onClick={() => setPicking(true)}
+                    >
+                      <Users
+                        className="size-3.5"
+                        strokeWidth={1.5}
+                        aria-hidden
+                      />
+                      {t('groupCall')}
+                    </Button>
+                  )}
                 </div>
-              ) : null}
 
-              {picking ? (
-                <div className="flex items-center justify-between gap-3">
-                  <p className="min-w-0 flex-1 truncate text-1 text-neutral-11">
-                    {selectedPeople.length > 0
-                      ? t('selectedCount', { count: selectedPeople.length })
-                      : t('pickMembers')}
-                  </p>
-                  <Button
-                    type="button"
-                    disabled={!canStartGroup}
-                    className="shrink-0 gap-1.5"
-                    onClick={() => void startGroupChat()}
+                {picking && selectedPeople.length > 0 ? (
+                  <div
+                    className="flex gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    aria-label={t('selectedCount', {
+                      count: selectedPeople.length,
+                    })}
                   >
-                    <Users className="size-3.5" strokeWidth={1.5} aria-hidden />
-                    {t('startGroupCall')}
-                  </Button>
-                </div>
-              ) : null}
-            </div>
-
-            {notice ? (
-              <p className="text-1 text-error-11" role="alert">
-                {notice}
-              </p>
-            ) : null}
-
-            {debugRooms ? (
-              <div
-                className="overflow-x-auto border border-border bg-muted/30 p-3 text-[11px] leading-4 text-muted-foreground"
-                data-testid="debug-rooms"
-              >
-                <p className="mb-2 font-medium text-foreground">
-                  debugRooms ({roomDiagnostics.length})
-                </p>
-                <table className="w-full border-collapse text-left">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="py-1 pr-2">reason</th>
-                      <th className="py-1 pr-2">cache</th>
-                      <th className="py-1 pr-2">membership</th>
-                      <th className="py-1 pr-2">type</th>
-                      <th className="py-1 pr-2">members</th>
-                      <th className="py-1 pr-2">name</th>
-                      <th className="py-1">roomId</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {roomDiagnostics.map((room) => (
-                      <tr
-                        key={room.roomId}
-                        className="border-b border-border/60"
+                    {selectedPeople.map((row) => (
+                      <button
+                        key={row.person.id}
+                        type="button"
+                        className="flex w-16 shrink-0 flex-col items-center gap-1 text-center"
+                        aria-label={t('removeSelected', { name: row.name })}
+                        onClick={() => toggleSelected(row)}
                       >
-                        <td className="py-1 pr-2 whitespace-nowrap">
-                          {room.reason}
-                        </td>
-                        <td className="py-1 pr-2">
-                          {room.cached ? 'row' : 'missing'}
-                        </td>
-                        <td className="py-1 pr-2">{room.membership}</td>
-                        <td className="py-1 pr-2">{room.roomType || '—'}</td>
-                        <td className="py-1 pr-2 whitespace-nowrap">
-                          {room.loadedHumanCount}/{room.summaryJoinedCount} o
-                          {room.othersCount}
-                          {room.archived ? ' archived' : ''}
-                        </td>
-                        <td className="py-1 pr-2">{room.name || '—'}</td>
-                        <td className="py-1 break-all">{room.roomId}</td>
-                      </tr>
+                        <span className="relative inline-flex">
+                          <PersonAvatar
+                            size="chat"
+                            shape="circle"
+                            avatarSrc={row.avatarUrl}
+                            userName={row.name}
+                            personId={row.person.id}
+                          />
+                          <span
+                            className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-foreground text-background"
+                            aria-hidden
+                          >
+                            <X className="size-2.5" strokeWidth={2.5} />
+                          </span>
+                        </span>
+                        <span className="w-full truncate text-1 text-neutral-11">
+                          {row.name.split(' ')[0] || row.name}
+                        </span>
+                      </button>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                ) : null}
+
+                {picking ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="min-w-0 flex-1 truncate text-1 text-neutral-11">
+                      {selectedPeople.length > 0
+                        ? t('selectedCount', { count: selectedPeople.length })
+                        : t('pickMembers')}
+                    </p>
+                    <Button
+                      type="button"
+                      disabled={!canStartGroup}
+                      className="shrink-0 gap-1.5"
+                      onClick={() => void startGroupChat()}
+                    >
+                      <Users
+                        className="size-3.5"
+                        strokeWidth={1.5}
+                        aria-hidden
+                      />
+                      {t('startGroupCall')}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
 
-            {!isMatrixAvailable && !isConnecting && !notice ? (
-              <p className="text-2 text-muted-foreground">
-                {tChat('matrixUnavailable')}
-              </p>
-            ) : null}
-
-            <div
-              ref={inboxListRef}
-              className="narrow-scrollbar flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain"
-            >
-              {listLoading ? (
-                <MemberListSkeleton
-                  title={
-                    section === 'archived' ? t('tabs.archived') : t('people')
-                  }
-                  loadingLabel={t('loading')}
-                />
-              ) : null}
-
-              {!listLoading &&
-              section === 'archived' &&
-              isMatrixAvailable &&
-              people.length === 0 &&
-              !searching ? (
-                <p className="text-2 text-muted-foreground">
-                  {needle ? t('noMatches') : t('archivedEmpty')}
+              {notice ? (
+                <p className="text-1 text-error-11" role="alert">
+                  {notice}
                 </p>
               ) : null}
 
-              {!listLoading &&
-              section !== 'archived' &&
-              isMatrixAvailable &&
-              home != null &&
-              shownRows.length === 0 &&
-              !searching ? (
-                <p className="text-2 text-muted-foreground">
-                  {needle
-                    ? t('noMatches')
-                    : showChannelTags && inboxFilter !== 'direct'
-                    ? t('inbox.empty')
-                    : t('empty')}
-                </p>
-              ) : null}
-
-              {!listLoading && shownRows.length > 0 ? (
-                <MemberList
-                  title={listTitle}
-                  rows={shownRows}
-                  showChannelTags={showChannelTags}
-                  presenceById={presenceById}
-                  locale={locale}
-                  justNow={t('justNow')}
-                  noMessage={t('noMessage')}
-                  archivedLabel={t('tabs.archived')}
-                  previewLoading={false}
-                  loadingLabel={t('loading')}
-                  youLabel={(message) => t('youWrote', { message })}
-                  unreadLabel={(count) => t('unread', { count })}
-                  selectLabel={(name) => t('selectMember', { name })}
-                  picking={picking}
-                  selected={selected}
-                  activeRoomId={coherenceRoomId}
-                  activePersonId={coherencePeerPerson?.id ?? null}
-                  openLookup={{
-                    rooms: rows,
-                    personIdToMatrixUserId,
-                    peopleBySub,
-                  }}
-                  onOpen={(row) => void openMember(row)}
-                />
-              ) : null}
-
-              {!listLoading &&
-              hasMorePeople &&
-              !needle &&
-              section !== 'archived' &&
-              (picking || inboxFilter === 'all' || inboxFilter === 'direct') ? (
-                <div className="flex justify-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    colorVariant="neutral"
-                    disabled={loadingMore}
-                    onClick={() => void loadMorePeople()}
-                  >
-                    {tCommon('loadMore')}
-                  </Button>
+              {debugRooms ? (
+                <div
+                  className="overflow-x-auto border border-border bg-muted/30 p-3 text-[11px] leading-4 text-muted-foreground"
+                  data-testid="debug-rooms"
+                >
+                  <p className="mb-2 font-medium text-foreground">
+                    debugRooms ({roomDiagnostics.length})
+                  </p>
+                  <table className="w-full border-collapse text-left">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="py-1 pr-2">reason</th>
+                        <th className="py-1 pr-2">cache</th>
+                        <th className="py-1 pr-2">membership</th>
+                        <th className="py-1 pr-2">type</th>
+                        <th className="py-1 pr-2">members</th>
+                        <th className="py-1 pr-2">name</th>
+                        <th className="py-1">roomId</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {roomDiagnostics.map((room) => (
+                        <tr
+                          key={room.roomId}
+                          className="border-b border-border/60"
+                        >
+                          <td className="py-1 pr-2 whitespace-nowrap">
+                            {room.reason}
+                          </td>
+                          <td className="py-1 pr-2">
+                            {room.cached ? 'row' : 'missing'}
+                          </td>
+                          <td className="py-1 pr-2">{room.membership}</td>
+                          <td className="py-1 pr-2">{room.roomType || '—'}</td>
+                          <td className="py-1 pr-2 whitespace-nowrap">
+                            {room.loadedHumanCount}/{room.summaryJoinedCount} o
+                            {room.othersCount}
+                            {room.archived ? ' archived' : ''}
+                          </td>
+                          <td className="py-1 pr-2">{room.name || '—'}</td>
+                          <td className="py-1 break-all">{room.roomId}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : null}
 
-              {moreFailed ? (
-                <p className="text-center text-1 text-error-11" role="alert">
-                  {t('loadMoreFailed')}
+              {!isMatrixAvailable && !isConnecting && !notice ? (
+                <p className="text-2 text-muted-foreground">
+                  {tChat('matrixUnavailable')}
                 </p>
               ) : null}
+
+              <div
+                ref={inboxListRef}
+                className="narrow-scrollbar flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain"
+              >
+                {listLoading ? (
+                  <MemberListSkeleton
+                    title={
+                      section === 'archived' ? t('tabs.archived') : t('people')
+                    }
+                    loadingLabel={t('loading')}
+                  />
+                ) : null}
+
+                {!listLoading &&
+                section === 'archived' &&
+                isMatrixAvailable &&
+                people.length === 0 &&
+                !searching ? (
+                  <p className="text-2 text-muted-foreground">
+                    {needle ? t('noMatches') : t('archivedEmpty')}
+                  </p>
+                ) : null}
+
+                {!listLoading &&
+                section !== 'archived' &&
+                isMatrixAvailable &&
+                home != null &&
+                shownRows.length === 0 &&
+                !searching ? (
+                  <p className="text-2 text-muted-foreground">
+                    {needle
+                      ? t('noMatches')
+                      : showChannelTags && inboxFilter !== 'direct'
+                      ? t('inbox.empty')
+                      : t('empty')}
+                  </p>
+                ) : null}
+
+                {!listLoading && shownRows.length > 0 ? (
+                  <MemberList
+                    title={listTitle}
+                    rows={shownRows}
+                    showChannelTags={showChannelTags}
+                    presenceById={presenceById}
+                    locale={locale}
+                    justNow={t('justNow')}
+                    noMessage={t('noMessage')}
+                    archivedLabel={t('tabs.archived')}
+                    previewLoading={false}
+                    loadingLabel={t('loading')}
+                    youLabel={(message) => t('youWrote', { message })}
+                    unreadLabel={(count) => t('unread', { count })}
+                    selectLabel={(name) => t('selectMember', { name })}
+                    picking={picking}
+                    selected={selected}
+                    activeRoomId={coherenceRoomId}
+                    activePersonId={coherencePeerPerson?.id ?? null}
+                    openLookup={{
+                      rooms: rows,
+                      personIdToMatrixUserId,
+                      peopleBySub,
+                    }}
+                    onOpen={(row) => void openMember(row)}
+                  />
+                ) : null}
+
+                {!listLoading &&
+                hasMorePeople &&
+                !needle &&
+                section !== 'archived' &&
+                (picking ||
+                  inboxFilter === 'all' ||
+                  inboxFilter === 'direct') ? (
+                  <div className="flex justify-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      disabled={loadingMore}
+                      onClick={() => void loadMorePeople()}
+                    >
+                      {tCommon('loadMore')}
+                    </Button>
+                  </div>
+                ) : null}
+
+                {moreFailed ? (
+                  <p className="text-center text-1 text-error-11" role="alert">
+                    {t('loadMoreFailed')}
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
