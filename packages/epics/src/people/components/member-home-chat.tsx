@@ -66,6 +66,7 @@ import {
 import {
   MEMBER_HOME_PEOPLE_LEAD_KEYS,
   MEMBER_HOME_SPACE_LEAD_KEYS,
+  MEMBER_HOME_TOKENS_LEAD_KEYS,
   nextMemberHomeLeadKey,
 } from './member-home-leads';
 import { MemberHomeActivationCard } from './member-home-activation-card';
@@ -447,7 +448,9 @@ function directReplyText(
     case 'spaceEmpty':
       return t('spacesWidgetEmpty');
     case 'tokens':
-      return t('tokensLead', { name: reply.line.name });
+      // Same trap as naming a lead space: "Vlad is closest" clashes with
+      // "Pick someone first" on the widget. Point at the list; rotate copy.
+      return t(nextMemberHomeLeadKey('tokens', MEMBER_HOME_TOKENS_LEAD_KEYS));
     case 'tokensEmpty':
       return t('tokensLeadEmpty');
     case 'decisionOpen':

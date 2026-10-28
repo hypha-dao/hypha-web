@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   MEMBER_HOME_PEOPLE_LEAD_KEYS,
   MEMBER_HOME_SPACE_LEAD_KEYS,
+  MEMBER_HOME_TOKENS_LEAD_KEYS,
   nextMemberHomeLeadKey,
 } from '../member-home-leads';
 
@@ -44,6 +45,12 @@ describe('nextMemberHomeLeadKey', () => {
     );
     expect(nextMemberHomeLeadKey('people', MEMBER_HOME_PEOPLE_LEAD_KEYS)).toBe(
       'peopleAroundLeadAlt2',
+    );
+    expect(nextMemberHomeLeadKey('tokens', MEMBER_HOME_TOKENS_LEAD_KEYS)).toBe(
+      'tokensLead',
+    );
+    expect(nextMemberHomeLeadKey('tokens', MEMBER_HOME_TOKENS_LEAD_KEYS)).toBe(
+      'tokensLeadAlt2',
     );
   });
 });
