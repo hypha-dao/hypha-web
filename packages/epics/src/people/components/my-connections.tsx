@@ -2622,7 +2622,7 @@ export function MyConnections({
     <div
       className={cn(
         'flex min-w-0 flex-col gap-6',
-        section === 'messages' && 'min-h-0 flex-1 overflow-hidden',
+        section === 'messages' && 'h-full min-h-0 flex-1 gap-0 overflow-hidden',
       )}
     >
       <MemberHomePeople
@@ -2689,17 +2689,17 @@ export function MyConnections({
           className={cn(
             'flex min-w-0 flex-col gap-6',
             section === 'messages' &&
-              'min-h-0 flex-1 overflow-hidden lg:flex-row',
+              'h-full min-h-0 flex-1 gap-4 overflow-hidden lg:flex-row lg:gap-6',
           )}
         >
           {section === 'messages' ? (
             <div
               ref={inboxFiltersRef}
               className={cn(
-                'narrow-scrollbar w-full shrink-0 overscroll-contain lg:h-full lg:min-h-0 lg:w-80 lg:overflow-y-auto',
+                'narrow-scrollbar w-full shrink-0 overscroll-contain lg:h-full lg:w-80 lg:shrink-0 lg:overflow-y-auto',
                 picking || inboxChannelOpen
                   ? 'hidden lg:block'
-                  : 'min-h-0 flex-1 overflow-y-auto',
+                  : 'min-h-0 flex-1 overflow-y-auto lg:flex-none',
               )}
             >
               <MessagesInboxFilters
@@ -2711,7 +2711,7 @@ export function MyConnections({
           ) : null}
           <div
             className={cn(
-              'relative min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+              'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
               section === 'messages' && !picking && !inboxChannelOpen
                 ? 'hidden lg:flex'
                 : 'flex',
@@ -2732,7 +2732,7 @@ export function MyConnections({
                 {t(`inbox.${inboxFilter}Title`)}
               </button>
             ) : null}
-            <div className="flex min-h-0 flex-1 flex-col lg:absolute lg:inset-0">
+            <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
               <div className="flex shrink-0 flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <label className="relative min-w-0 flex-1">

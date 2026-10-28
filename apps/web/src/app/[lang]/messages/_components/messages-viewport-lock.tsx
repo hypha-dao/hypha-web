@@ -79,8 +79,10 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
         viewportBottom,
         tabOffset: mobileTabOffset(),
       });
-      if (height < 160) return;
-      frame.style.height = `${height}px`;
+      // Always pin a height. Skipping left the frame content-sized while the
+      // main column was overflow-locked, so neither the page nor the list
+      // could scroll and the inbox looked clipped.
+      frame.style.height = `${Math.max(height, 160)}px`;
     };
 
     const observer = new ResizeObserver(fit);
@@ -104,7 +106,10 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div ref={ref} className="flex w-full min-w-0 flex-col overflow-hidden">
+    <div
+      ref={ref}
+      className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
+    >
       {children}
     </div>
   );

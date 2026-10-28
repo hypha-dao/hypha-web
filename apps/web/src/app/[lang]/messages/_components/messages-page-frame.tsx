@@ -58,7 +58,8 @@ export async function MessagesPageFrame({
         </Heading>
         <div
           className={cn(
-            fillViewport && 'flex min-h-0 flex-1 flex-col overflow-hidden',
+            fillViewport &&
+              'flex h-full min-h-0 flex-1 flex-col overflow-hidden',
           )}
         >
           {children}
