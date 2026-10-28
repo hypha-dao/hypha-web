@@ -948,6 +948,88 @@ function itemMentionedInText(
   return pickNamedPersonItem(items, haystack);
 }
 
+/** Longer space titles win, so "Hypha" does not swallow "Hypha Energy". */
+function mostSpecificSpaceTitles(
+  text: string,
+  spaceTitles: readonly string[],
+): string[] {
+  const haystack = foldHomeText(text);
+  if (!haystack) return [];
+  const hits = [
+    ...new Set(
+      spaceTitles
+        .map((title) => foldHomeText(title))
+        .filter((title) => title.length >= 3 && haystack.includes(title)),
+    ),
+  ];
+  return hits.filter(
+    (title) =>
+      !hits.some(
+        (other) =>
+          other !== title &&
+          other.includes(title) &&
+          other.length > title.length,
+      ),
+  );
+}
+
+/**
+ * The reply names a space this card is not in.
+ * A greeting that names no space does not conflict.
+ */
+export function memberHomeSpeechConflictsWithItem(
+  item: MemberHomeThreadItem,
+  text: string,
+  spaceTitles: readonly string[],
+): boolean {
+  if (textBelongsTo(item, text)) return false;
+  const named = mostSpecificSpaceTitles(text, spaceTitles);
+  if (named.length === 0) return false;
+  return !named.includes(foldHomeText(item.spaceTitle));
+}
+
+/** The one item in the space the reply actually names. */
+function itemInSpokenSpace(
+  items: readonly MemberHomeThreadItem[],
+  text: string,
+): MemberHomeThreadItem | null {
+  const named = mostSpecificSpaceTitles(
+    text,
+    items.map((item) => item.spaceTitle),
+  );
+  if (named.length !== 1) return null;
+  const space = named[0]!;
+  const candidates = items.filter(
+    (item) => foldHomeText(item.spaceTitle) === space,
+  );
+  if (candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0] ?? null;
+  const haystack = foldHomeText(text);
+  const byPerson = candidates.filter(
+    (item) =>
+      creatorNamedInText(item.creatorName, haystack) ||
+      givenNameInText(item.creatorName, haystack),
+  );
+  const pool = byPerson.length > 0 ? byPerson : candidates;
+  if (pool.length === 1) return pool[0] ?? null;
+  const nameAt = (item: MemberHomeThreadItem) => {
+    const given = creatorTokens(item.creatorName ?? '')[0];
+    if (!given) return Number.POSITIVE_INFINITY;
+    const index = haystack.indexOf(given);
+    return index >= 0 ? index : Number.POSITIVE_INFINITY;
+  };
+  const ranked = [...pool].sort(
+    (left, right) =>
+      nameAt(left) - nameAt(right) ||
+      textOverlap(right, haystack) - textOverlap(left, haystack) ||
+      (left.slug < right.slug ? -1 : left.slug > right.slug ? 1 : 0),
+  );
+  const best = ranked[0];
+  if (!best) return null;
+  if (byPerson.length > 0 || textOverlap(best, haystack) > 0) return best;
+  return null;
+}
+
 /**
  * The card for this assistant reply.
  * A `show_member_home_item` call wins, unless the words name a different
@@ -966,6 +1048,19 @@ export function memberHomeThreadItemForMessage(
     toolItem = item;
     break;
   }
+  const spaceTitles = items.map((item) => item.spaceTitle);
+  if (
+    toolItem &&
+    memberHomeSpeechConflictsWithItem(toolItem, text, spaceTitles)
+  ) {
+    if (
+      mentioned &&
+      !memberHomeSpeechConflictsWithItem(mentioned, text, spaceTitles)
+    ) {
+      return mentioned;
+    }
+    return itemInSpokenSpace(items, text);
+  }
   if (
     mentioned &&
     toolItem &&
@@ -977,6 +1072,46 @@ export function memberHomeThreadItemForMessage(
   }
   if (toolItem) return toolItem;
   return mentioned;
+}
+
+/**
+ * The card that belongs with these words.
+ * A hint attached before the model speaks loses when the reply names
+ * another space. No card is better than the wrong space.
+ */
+export function memberHomeCardForSpeech(input: {
+  items: readonly MemberHomeThreadItem[];
+  message: { parts?: readonly unknown[]; content?: string };
+  hinted?: MemberHomeThreadItem | null;
+  spaceTitles?: readonly string[];
+}): MemberHomeThreadItem | null {
+  const { items, message } = input;
+  const text = textFromParts(message.parts) || message.content?.trim() || '';
+  const spaceTitles = [
+    ...items.map((item) => item.spaceTitle),
+    ...(input.spaceTitles ?? []),
+  ];
+  const named = memberHomeThreadItemForMessage(items, message);
+  const wordsOnly = memberHomeThreadItemForMessage(items, { content: text });
+  const fromHint = input.hinted ?? null;
+  const conflicts = (item: MemberHomeThreadItem | null) =>
+    Boolean(item && memberHomeSpeechConflictsWithItem(item, text, spaceTitles));
+  if (conflicts(fromHint) || conflicts(named)) {
+    if (wordsOnly && !conflicts(wordsOnly)) return wordsOnly;
+    const spoken = itemInSpokenSpace(items, text);
+    if (spoken && !conflicts(spoken)) return spoken;
+    return null;
+  }
+  const sentencePrefers = (item: MemberHomeThreadItem | null) =>
+    Boolean(
+      wordsOnly &&
+        item &&
+        memberHomeThreadItemKey(wordsOnly) !== memberHomeThreadItemKey(item) &&
+        textBelongsTo(wordsOnly, text) &&
+        !textBelongsTo(item, text),
+    );
+  if (sentencePrefers(fromHint) || sentencePrefers(named)) return wordsOnly;
+  return fromHint ?? wordsOnly ?? named;
 }
 
 function memberHomeChoiceText(text: string) {

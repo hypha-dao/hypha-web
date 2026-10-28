@@ -14,6 +14,7 @@ import {
   memberHomeSignalAction,
   memberHomeSignalCatalogue,
   memberHomeSignalCtas,
+  memberHomeCardForSpeech,
   memberHomeThreadItemForMessage,
   resolveMemberHomeThreadItem,
   memberHomeItemMemory,
@@ -731,6 +732,70 @@ describe('memberHomeThreadItemForMessage', () => {
       },
     );
     expect(item?.slug).toBe('invite-marco');
+  });
+
+  it('keeps the card on the space the reply names, not the hinted one', () => {
+    const energy: MemberHomeThreadItem = {
+      kind: 'proposal',
+      slug: 'invite-oceane',
+      title: 'Invite Member',
+      spaceSlug: 'hypha-energy',
+      spaceTitle: 'Hypha Energy',
+      action: 'decision',
+      documentKind: 'proposal',
+      authoredByMember: false,
+      category: 'invite',
+      summary: 'Océane asked to join as a member.',
+      creatorId: 12,
+      creatorName: 'Océane Martin',
+      creatorAvatarUrl: null,
+    };
+    const flywheel: MemberHomeThreadItem = {
+      kind: 'proposal',
+      slug: 'invite-edgar',
+      title: 'Invite Member',
+      spaceSlug: 'hypha-flywheel',
+      spaceTitle: 'Hypha Flywheel',
+      action: 'outcome',
+      documentKind: 'proposal',
+      authoredByMember: false,
+      category: 'invite',
+      summary: 'Edgar Kampers has just requested to join as a member.',
+      creatorId: 9,
+      creatorName: 'Edgar Kampers',
+      creatorAvatarUrl: null,
+    };
+    const text =
+      "Bien noté, Alex. Océane a demandé à rejoindre Hypha Energy comme membre — une invitation qu'on peut accueillir.";
+    const message = {
+      parts: [
+        { type: 'text', text },
+        {
+          type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+          state: 'output-available',
+          input: { kind: 'proposal', slug: 'invite-edgar' },
+        },
+      ],
+    };
+    expect(
+      memberHomeThreadItemForMessage([energy, flywheel], message)?.slug,
+    ).toBe('invite-oceane');
+    expect(
+      memberHomeCardForSpeech({
+        items: [energy, flywheel],
+        message,
+        hinted: flywheel,
+        spaceTitles: ['Hypha Energy', 'Hypha Flywheel', 'Hypha'],
+      })?.slug,
+    ).toBe('invite-oceane');
+    expect(
+      memberHomeCardForSpeech({
+        items: [flywheel],
+        message: { content: text },
+        hinted: flywheel,
+        spaceTitles: ['Hypha Energy', 'Hypha Flywheel'],
+      }),
+    ).toBeNull();
   });
 
   it('leaves a greeting with no item empty', () => {

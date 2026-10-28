@@ -28,8 +28,7 @@ import {
   memberHomeItemMemory,
   memberHomeSignalCatalogue,
   mergeMemberHomeMemory,
-  memberHomeTextBelongsToItem,
-  memberHomeThreadItemForMessage,
+  memberHomeCardForSpeech,
   memberHomeThreadItemKey,
   type MemberHomeThreadItem,
   type MemberIntelligence,
@@ -184,10 +183,6 @@ function homeItemForMessage(
   message: HomeMessage,
   home?: MemberIntelligence,
 ): MemberHomeThreadItem | null {
-  const named = memberHomeThreadItemForMessage(items, message);
-  const wordsOnly = memberHomeThreadItemForMessage(items, {
-    content: messageText(message),
-  });
   const hinted = message.metadata?.homeItem;
   const fromHint =
     hinted &&
@@ -203,20 +198,12 @@ function homeItemForMessage(
             })
           : null)
       : null;
-  // The sentence wins when it names someone else. A hint can still be the
-  // item they just finished, and a loose guess must not replace that hint
-  // when the sentence also belongs to it.
-  const text = messageText(message);
-  const sentencePrefers = (item: MemberHomeThreadItem | null) =>
-    Boolean(
-      wordsOnly &&
-        item &&
-        memberHomeThreadItemKey(wordsOnly) !== memberHomeThreadItemKey(item) &&
-        memberHomeTextBelongsToItem(wordsOnly, text) &&
-        !memberHomeTextBelongsToItem(item, text),
-    );
-  if (sentencePrefers(fromHint) || sentencePrefers(named)) return wordsOnly;
-  return fromHint ?? wordsOnly ?? named;
+  return memberHomeCardForSpeech({
+    items,
+    message,
+    hinted: fromHint,
+    spaceTitles: home?.spaces.map((space) => space.title) ?? [],
+  });
 }
 
 /** Live catalog first, then cards already shown in this thread. */
