@@ -66,6 +66,9 @@ import {
   usePersonById,
   useSignalWorkflow,
   useSpaceBySlug,
+  matrixUserIdsForPersonIds,
+  publishSignalTeamNotice,
+  resolveMatrixUserIdsByPersonIds,
 } from '@hypha-platform/core/client';
 import React from 'react';
 import {
@@ -96,6 +99,7 @@ import {
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
 } from '../constants';
 import { upsertSignalDescriptionInRoom } from '../utils/signal-chat-description';
+import { unmappedPersonIds } from '../utils/signal-team-access';
 import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
 import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
 import { toLocalDueDateInputValue } from '../utils/signal-due-date';
@@ -1047,6 +1051,35 @@ export const CreateSignalForm = ({
         const coherence = await createCoherence({ ...parsed, ...media });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
+        const teamPersonIds = [
+          ...new Set(
+            [
+              ...(parsed.assigneeIds ?? []),
+              ...(coherence.assigneeIds ?? []),
+              creatorId,
+            ].filter((id): id is number => typeof id === 'number' && id > 0),
+          ),
+        ];
+        const assigneePersonIds = [
+          ...new Set(
+            [
+              ...(parsed.assigneeIds ?? []),
+              ...(coherence.assigneeIds ?? []),
+            ].filter((id): id is number => typeof id === 'number' && id > 0),
+          ),
+        ];
+        // Resolve MXIDs before navigate so we use the same person→Matrix map
+        // Manage compares against — not client.getUserId(), which can differ.
+        const resolveTeamMatrixIds = resolveMatrixUserIdsByPersonIds({
+          personIds: teamPersonIds,
+          authToken,
+        }).catch((resolveError) => {
+          console.warn(
+            'Signal room created but failed to resolve team Matrix ids:',
+            resolveError,
+          );
+          return {} as Record<number, string>;
+        });
         // Close the panel as soon as the signal exists — everything below is
         // best-effort follow-up work that must not hold the form open.
         setIsClosingAfterPublish(true);
@@ -1098,6 +1131,76 @@ export const CreateSignalForm = ({
                   messageSeedError,
                 );
               }
+
+              try {
+                await updateCoherenceBySlug({
+                  slug: coherenceSlug,
+                  roomId: canonicalRoomId,
+                });
+              } catch (linkError) {
+                const linkErrorMessage =
+                  linkError instanceof Error
+                    ? linkError.message
+                    : String(linkError);
+                setSignalProvisioningNotice(
+                  t('provisioning.roomLinkFailedRetry'),
+                  linkErrorMessage,
+                );
+                console.warn(
+                  'Signal created and room provisioned but room linking failed:',
+                  linkError,
+                );
+              }
+
+              // Seed the Matrix signal-team roster from create-time assignees
+              // + creator using the same person→MXID map Manage reads.
+              // Later assignee edits do not rewrite that roster (team picker).
+              if (matrixClient) {
+                try {
+                  const personIdToMatrixUserId = await resolveTeamMatrixIds;
+                  const missingAssigneeIds = unmappedPersonIds(
+                    assigneePersonIds,
+                    personIdToMatrixUserId,
+                  );
+                  if (missingAssigneeIds.length > 0) {
+                    console.warn(
+                      'Skipping signal team notice: assignee(s) missing Matrix ids',
+                      missingAssigneeIds,
+                    );
+                  } else {
+                    const teamIdsToSeed = matrixUserIdsForPersonIds(
+                      teamPersonIds,
+                      personIdToMatrixUserId,
+                    );
+                    const ownerMatrixUserId =
+                      personIdToMatrixUserId[creatorId]?.trim() ||
+                      matrixClient.getUserId?.()?.trim() ||
+                      null;
+                    const addedMemberMatrixUserIds = matrixUserIdsForPersonIds(
+                      assigneePersonIds,
+                      personIdToMatrixUserId,
+                    );
+                    if (teamIdsToSeed.length > 0 || ownerMatrixUserId) {
+                      await publishSignalTeamNotice({
+                        client: matrixClient,
+                        roomId: canonicalRoomId,
+                        coherenceSlug,
+                        memberMatrixUserIds: teamIdsToSeed,
+                        ownerMatrixUserId,
+                        actorMatrixUserId:
+                          matrixClient.getUserId?.()?.trim() ||
+                          ownerMatrixUserId,
+                        addedMemberMatrixUserIds,
+                      });
+                    }
+                  }
+                } catch (teamSeedError) {
+                  console.warn(
+                    'Signal room created but failed to seed signal team:',
+                    teamSeedError,
+                  );
+                }
+              }
             } catch (matrixError) {
               const matrixErrorMessage =
                 matrixError instanceof Error
@@ -1112,23 +1215,6 @@ export const CreateSignalForm = ({
                 matrixError,
               );
               return;
-            }
-
-            try {
-              await updateCoherenceBySlug({ slug: coherenceSlug, roomId });
-            } catch (linkError) {
-              const linkErrorMessage =
-                linkError instanceof Error
-                  ? linkError.message
-                  : String(linkError);
-              setSignalProvisioningNotice(
-                t('provisioning.roomLinkFailedRetry'),
-                linkErrorMessage,
-              );
-              console.warn(
-                'Signal created and room provisioned but room linking failed:',
-                linkError,
-              );
             }
           })();
         } else {
@@ -1158,6 +1244,7 @@ export const CreateSignalForm = ({
       isEditAuthorized,
       joinRoom,
       loadRoomHistory,
+      matrixClient,
       updateCoherenceBySlug,
       updateCoherenceSignalBySlug,
       isMatrixAvailable,
