@@ -435,42 +435,28 @@ export function MemberHome({
                             }
                             return left.id < right.id ? -1 : 1;
                           })
-                          .flatMap((item) => {
-                            const match = queue.find(
-                              (entry) =>
-                                entry.kind === item.kind &&
-                                entry.slug === item.targetSlug,
-                            );
-                            return [
-                              {
-                                id: item.id,
-                                kind: item.kind,
-                                title: item.title,
-                                detail: item.detail,
-                                icon: item.spaceLogo ?? null,
-                                href:
-                                  item.kind === 'signal'
-                                    ? getSignalPath(
-                                        lang,
-                                        item.spaceSlug,
-                                        item.targetSlug,
-                                      )
-                                    : getProposalPath(
-                                        lang,
-                                        item.spaceSlug,
-                                        item.targetSlug,
-                                      ),
-                                ...(match
-                                  ? {
-                                      onSelect: () =>
-                                        setFocusKey(
-                                          `${match.kind}:${match.slug}`,
-                                        ),
-                                    }
-                                  : {}),
-                              },
-                            ];
-                          })
+                          .map((item) => ({
+                            id: item.id,
+                            kind: item.kind,
+                            title: item.title,
+                            detail: item.detail,
+                            icon: item.spaceLogo ?? null,
+                            // Always navigate. Intercepting with onSelect when
+                            // the item was also in the home queue stole the
+                            // click and often no-op'd (attention lookup miss).
+                            href:
+                              item.kind === 'signal'
+                                ? getSignalPath(
+                                    lang,
+                                    item.spaceSlug,
+                                    item.targetSlug,
+                                  )
+                                : getProposalPath(
+                                    lang,
+                                    item.spaceSlug,
+                                    item.targetSlug,
+                                  ),
+                          }))
                       : []
                   }
                 />
