@@ -166,7 +166,12 @@ export function rememberHomeShownItem(item: MemberHomeThreadItem) {
   const key = memberHomeThreadItemKey(item);
   if (!key) return;
   try {
-    const next = readHomeShownItems().filter(
+    const current = readHomeShownItems();
+    // Already last with this key — rewriting would only reshuffle storage and
+    // wake queue listeners for no reason.
+    const last = current[current.length - 1];
+    if (last && memberHomeThreadItemKey(last) === key) return;
+    const next = current.filter(
       (shown) => memberHomeThreadItemKey(shown) !== key,
     );
     next.push(item);

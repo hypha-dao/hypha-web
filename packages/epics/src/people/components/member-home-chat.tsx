@@ -1143,8 +1143,17 @@ export function MemberHomeChat({
   );
   useEffect(() => {
     const sync = () => {
-      setShownCardItems(readHomeShownItems());
-      setActedKeys(readHomeActed());
+      const nextShown = readHomeShownItems();
+      const nextActed = readHomeActed();
+      setShownCardItems((current) =>
+        sameHomeShownItemKeys(current, nextShown) ? current : nextShown,
+      );
+      setActedKeys((current) =>
+        current.length === nextActed.length &&
+        current.every((key, index) => key === nextActed[index])
+          ? current
+          : nextActed,
+      );
     };
     sync();
     window.addEventListener(HOME_QUEUE_EVENT, sync);

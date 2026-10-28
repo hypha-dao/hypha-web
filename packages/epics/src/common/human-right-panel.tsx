@@ -1841,6 +1841,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     string | null
   >(null);
   const signalDeepLinkEpochRef = useRef(0);
+  /** Slugs that 404'd this visit — do not put them back into `?signal=`. */
+  const rejectedSignalSlugsRef = useRef(new Set<string>());
   const previousSignalChatSlugRef = useRef<string | null | undefined>(
     undefined,
   );
@@ -5244,6 +5246,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (!shouldWriteOpenChatToSignalUrl(choice, slug, urlSignal)) {
         return;
       }
+      if (rejectedSignalSlugsRef.current.has(slug)) {
+        return;
+      }
       const href = setSignalSearchParam(
         pathname,
         typeof window !== 'undefined'
@@ -5347,10 +5352,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             : result.reason === 'not_found'
             ? 'signalDeepLinkNotFound'
             : 'signalDeepLinkNetworkError';
+        if (result.reason === 'not_found') {
+          rejectedSignalSlugsRef.current.add(qpSignal);
+        }
         setSignalDeepLinkNotice(t(messageKey));
         stripInvalidSignalFromUrl();
         return;
       }
+      rejectedSignalSlugsRef.current.delete(result.signalSlug);
 
       if (result.roomId) {
         rememberRoomToCoherenceSession(
