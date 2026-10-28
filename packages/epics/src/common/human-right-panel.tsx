@@ -68,6 +68,9 @@ import {
   requestRemoteGroupCallLeave,
   calledSpecialistIds,
   matrixUserIdsForPersonIds,
+  applySignalCreatorToChatAuthor,
+  isSignalDescriptionAnchorMessage,
+  usePersonById,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -1185,6 +1188,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     authToken,
   });
   const { person: me } = useMe();
+  const signalCreatorLookupSlug =
+    mode === 'coherence' ? coherenceSlug?.trim() || '' : '';
+  const { data: openSignalForCreator } = useSWR(
+    signalCreatorLookupSlug
+      ? [signalCreatorLookupSlug, 'signal-creator-attribution']
+      : null,
+    ([slug]) => getCoherenceBySlug({ slug }),
+    { revalidateOnFocus: false },
+  );
+  const { person: signalCreatorPerson } = usePersonById({
+    id: openSignalForCreator?.creatorId ?? undefined,
+  });
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
   const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
     useOrganisationSpacesBySingleSlug(spaceSlug ?? '');
@@ -4714,21 +4729,69 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const mergedMessages = useMemo(() => {
-    if (!sendingPending) return messages;
-    const pendingRow: UIMessage = {
-      id: sendingPending.id,
-      role: 'user',
-      isSynthetic: true,
-      parts: [],
-      sendPending: {
-        attachmentCount: sendingPending.attachmentCount,
-        captionPreview: sendingPending.captionPreview,
-        uploadedCount: sendingPending.uploadedCount,
-      },
-      avatarUrl: currentUserAvatarUrl,
-    };
-    return sortMessagesChronologically([...messages, pendingRow]);
-  }, [messages, sendingPending, currentUserAvatarUrl]);
+    const withPending = (() => {
+      if (!sendingPending) return messages;
+      const pendingRow: UIMessage = {
+        id: sendingPending.id,
+        role: 'user',
+        isSynthetic: true,
+        parts: [],
+        sendPending: {
+          attachmentCount: sendingPending.attachmentCount,
+          captionPreview: sendingPending.captionPreview,
+          uploadedCount: sendingPending.uploadedCount,
+        },
+        avatarUrl: currentUserAvatarUrl,
+      };
+      return sortMessagesChronologically([...messages, pendingRow]);
+    })();
+    if (mode !== 'coherence' || !coherenceSlug?.trim()) return withPending;
+    const firstTextIndex = withPending.findIndex(
+      (row) => !row.isSynthetic && getMessagePlainText(row).trim().length > 0,
+    );
+    if (firstTextIndex < 0) return withPending;
+    const first = withPending[firstTextIndex]!;
+    const attribution = applySignalCreatorToChatAuthor({
+      isDescriptionAnchor: isSignalDescriptionAnchorMessage({
+        isFirstChatTextMessage: true,
+        messageContent: getMessagePlainText(first),
+        signalDescription:
+          openSignalForCreator?.description ?? coherenceDescription,
+      }),
+      viewerPersonId: me?.id,
+      creatorId: openSignalForCreator?.creatorId,
+      creatorName: [signalCreatorPerson?.name, signalCreatorPerson?.surname]
+        .filter(Boolean)
+        .join(' '),
+      viewerName: [me?.name, me?.surname].filter(Boolean).join(' '),
+    });
+    if (!attribution) return withPending;
+    return withPending.map((row, index) =>
+      index === firstTextIndex
+        ? {
+            ...row,
+            ...attribution,
+            senderMatrixId: undefined,
+            avatarUrl: signalCreatorPerson?.avatarUrl?.trim() || row.avatarUrl,
+          }
+        : row,
+    );
+  }, [
+    messages,
+    sendingPending,
+    currentUserAvatarUrl,
+    mode,
+    coherenceSlug,
+    coherenceDescription,
+    me?.id,
+    me?.name,
+    me?.surname,
+    openSignalForCreator?.creatorId,
+    openSignalForCreator?.description,
+    signalCreatorPerson?.name,
+    signalCreatorPerson?.surname,
+    signalCreatorPerson?.avatarUrl,
+  ]);
 
   const calledAgents = useMemo(
     () => calledSpecialistIds(mergedMessages),

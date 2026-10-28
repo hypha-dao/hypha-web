@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applySignalCreatorToChatAuthor,
   creatorIdForAuthenticatedCreate,
+  isSignalDescriptionAnchorMessage,
   omitCreatorId,
   resolveSignalCreatorDisplayName,
   resolveSignalFormCreatorId,
@@ -9,6 +11,8 @@ import { schemaUpdateCoherenceSignalBySlug } from '../validation';
 
 const GERARDO_ID = 8;
 const ALEX_ID = 21;
+const VLAD_ID = 15;
+const GROK_TEST_ID = 99;
 
 describe('resolveSignalFormCreatorId', () => {
   it('keeps the stored creator on edit even when the viewer is the assignee', () => {
@@ -99,5 +103,68 @@ describe('schemaUpdateCoherenceSignalBySlug', () => {
     });
     expect(parsed).not.toHaveProperty('creatorId');
     expect(parsed.assigneeIds).toEqual([ALEX_ID]);
+  });
+});
+
+describe('edit-modal person', () => {
+  it('uses stored creatorId, not the assignee viewer', () => {
+    expect(
+      resolveSignalFormCreatorId({
+        mode: 'edit',
+        storedCreatorId: VLAD_ID,
+        viewerId: GROK_TEST_ID,
+      }),
+    ).toBe(VLAD_ID);
+  });
+});
+
+describe('isSignalDescriptionAnchorMessage', () => {
+  it('treats the first matching description as the creator attribution', () => {
+    expect(
+      isSignalDescriptionAnchorMessage({
+        isFirstChatTextMessage: true,
+        messageContent: 'throwaway creator after',
+        signalDescription: 'throwaway creator after',
+      }),
+    ).toBe(true);
+  });
+
+  it('does not reattribute later chat', () => {
+    expect(
+      isSignalDescriptionAnchorMessage({
+        isFirstChatTextMessage: false,
+        messageContent: 'throwaway creator after',
+        signalDescription: 'throwaway creator after',
+      }),
+    ).toBe(false);
+  });
+});
+
+describe('applySignalCreatorToChatAuthor', () => {
+  it('labels the description as the stored creator for an assignee viewer', () => {
+    expect(
+      applySignalCreatorToChatAuthor({
+        isDescriptionAnchor: true,
+        viewerPersonId: GROK_TEST_ID,
+        creatorId: VLAD_ID,
+        creatorName: 'Vlad Hramtsov',
+        viewerName: 'Grok Test',
+      }),
+    ).toEqual({
+      role: 'member',
+      senderName: 'Vlad Hramtsov',
+    });
+  });
+
+  it('leaves You in place when the viewer is the stored creator', () => {
+    expect(
+      applySignalCreatorToChatAuthor({
+        isDescriptionAnchor: true,
+        viewerPersonId: VLAD_ID,
+        creatorId: VLAD_ID,
+        creatorName: 'Vlad Hramtsov',
+        viewerName: 'Vlad Hramtsov',
+      }),
+    ).toBeNull();
   });
 });

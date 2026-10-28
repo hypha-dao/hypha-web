@@ -81,3 +81,67 @@ export function resolveSignalCreatorDisplayName({
   }
   return creatorName?.trim() || 'Member';
 }
+
+function collapseSignalText(value: string): string {
+  return value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * The first text row in a signal room is the description seed. Later chat
+ * keeps its Matrix sender. Content is compared after stripping tags so a
+ * rich-text description still matches the seeded body.
+ */
+export function isSignalDescriptionAnchorMessage({
+  isFirstChatTextMessage,
+  messageContent,
+  signalDescription,
+}: {
+  isFirstChatTextMessage: boolean;
+  messageContent?: string | null;
+  signalDescription?: string | null;
+}): boolean {
+  if (!isFirstChatTextMessage) return false;
+  const message = collapseSignalText(messageContent ?? '');
+  if (!message) return false;
+  const description = collapseSignalText(signalDescription ?? '');
+  if (!description) return true;
+  return message === description;
+}
+
+/**
+ * Reattribute the description seed to the stored creator. Assignees keep
+ * seeing the author, not "You". When the viewer is the creator, return null
+ * so the existing "You" label stays.
+ */
+export function applySignalCreatorToChatAuthor({
+  isDescriptionAnchor,
+  viewerPersonId,
+  creatorId,
+  creatorName,
+  viewerName,
+}: {
+  isDescriptionAnchor: boolean;
+  viewerPersonId?: number | null;
+  creatorId?: number | null;
+  creatorName?: string | null;
+  viewerName?: string | null;
+}): { role: 'user' | 'member'; senderName?: string } | null {
+  if (!isDescriptionAnchor || !isPersistedPersonId(creatorId)) return null;
+  if (isPersistedPersonId(viewerPersonId) && viewerPersonId === creatorId) {
+    return null;
+  }
+  const senderName = resolveSignalCreatorDisplayName({
+    viewerPersonId,
+    creatorId,
+    viewerName,
+    creatorName,
+  });
+  if (!creatorName?.trim() && senderName === 'Member') return null;
+  return {
+    role: 'member',
+    senderName,
+  };
+}

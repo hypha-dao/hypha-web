@@ -356,6 +356,16 @@ export const CreateSignalForm = ({
     spaceSlug,
     web3SpaceId: space?.web3SpaceId ?? undefined,
   });
+  const headerCreatorId = resolveSignalFormCreatorId({
+    mode,
+    storedCreatorId: initialValues?.creatorId,
+    viewerId: person?.id,
+  });
+  const { person: storedCreatorPerson } = usePersonById({
+    id: headerCreatorId ?? undefined,
+  });
+  const headerPerson =
+    mode === 'edit' ? storedCreatorPerson ?? undefined : person;
   const isSignalCreator =
     mode === 'edit' &&
     typeof initialValues?.creatorId === 'number' &&
@@ -1381,11 +1391,11 @@ export const CreateSignalForm = ({
                 size="lg"
                 shape="circle"
                 isLoading={isMutating}
-                avatarSrc={person?.avatarUrl || ''}
-                userName={[person?.name, person?.surname]
+                avatarSrc={headerPerson?.avatarUrl || ''}
+                userName={[headerPerson?.name, headerPerson?.surname]
                   .filter(Boolean)
                   .join(' ')}
-                personId={person?.id}
+                personId={headerPerson?.id}
               />
               <div className="flex w-full min-w-0 flex-col gap-1.5 sm:gap-2">
                 <FormField
@@ -1410,7 +1420,7 @@ export const CreateSignalForm = ({
                   )}
                 />
                 <Text className="text-1 text-neutral-11">
-                  {person?.name} {person?.surname}
+                  {headerPerson?.name} {headerPerson?.surname}
                 </Text>
               </div>
             </div>
