@@ -718,19 +718,39 @@ function CurrencyLine({
     'AgreementFlow.plugins.issueNewToken.value.currencies',
   );
   const [editing, setEditing] = useState(false);
-  const text = currency
-    ? `${currency}${label ? ` — ${label}` : ''}`
+  // Keep the chosen code locally so a slow /me refresh cannot blank the row.
+  const [draft, setDraft] = useState(currency ?? '');
+  useEffect(() => {
+    if (!editing) setDraft(currency ?? '');
+  }, [currency, editing]);
+
+  const shown = draft || currency || '';
+  const shownLabel =
+    shown && shown === currency
+      ? label
+      : shown
+      ? tCurrencies(shown.toLowerCase())
+      : '';
+  const text = shown
+    ? t('story.money', { currency: shownLabel || shown })
     : t('story.moneyEmpty');
   const editor = (
     <Select
-      value={currency || undefined}
-      open
+      value={draft || undefined}
+      open={editing}
       onOpenChange={(open) => {
         if (!open) setEditing(false);
       }}
       onValueChange={(value) => {
+        if (!value) {
+          setEditing(false);
+          return;
+        }
+        // Apply before unmounting the select so a close race cannot drop the
+        // choice (forced `open` used to dismiss before onValueChange ran).
+        setDraft(value);
         setEditing(false);
-        if (value) onSave(value);
+        onSave(value);
       }}
     >
       <SelectTrigger
@@ -753,7 +773,7 @@ function CurrencyLine({
     <StoryRow
       label={t('editForm.labels.preferredCurrency')}
       text={text}
-      muted={!currency}
+      muted={!shown}
       canEdit
       editing={editing}
       onEdit={() => setEditing(true)}

@@ -102,11 +102,14 @@ export function ProfileStoryConnected({
   const source = mergeStoryPerson(person, me, isSelf);
 
   const onSave = async (patch: ProfileStoryPatch) => {
-    const preferredCurrencyCode =
-      patch.preferredCurrency ?? source.preferredCurrency ?? '';
-    const currency = TOKEN_PRICE_REFERENCE_CURRENCIES.find(
-      (code) => code === preferredCurrencyCode,
+    const chosenCurrency = TOKEN_PRICE_REFERENCE_CURRENCIES.find(
+      (code) => code === patch.preferredCurrency,
     );
+    const currency =
+      chosenCurrency ??
+      TOKEN_PRICE_REFERENCE_CURRENCIES.find(
+        (code) => code === (source.preferredCurrency ?? ''),
+      );
     const orientation =
       patch.primaryOrientation ??
       (source.primaryOrientation === 'member' ||
@@ -137,11 +140,14 @@ export function ProfileStoryConnected({
     if (saved) {
       // `saved` is already a Person; only backfill fields `/me` may have omitted.
       // Do not spread `source` — its `| null` fields are not assignable to Person.
+      // Prefer the currency just chosen so a sparse API body cannot blank the row.
       await revalidate({
         ...saved,
         links: saved.links ?? asOptionalLinks(source.links),
         preferredCurrency:
-          saved.preferredCurrency ?? asOptionalString(source.preferredCurrency),
+          chosenCurrency ??
+          saved.preferredCurrency ??
+          asOptionalString(source.preferredCurrency),
         avatarUrl: saved.avatarUrl ?? asOptionalString(source.avatarUrl),
         leadImageUrl:
           saved.leadImageUrl ?? asOptionalString(source.leadImageUrl),
