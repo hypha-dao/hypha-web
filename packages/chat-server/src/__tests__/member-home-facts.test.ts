@@ -241,7 +241,7 @@ describe('formatMemberHomeFacts', () => {
           description: 'What would be involved to RWA?',
           spaceSlug: 'grove',
           spaceTitle: 'Grove',
-          spaceLogoUrl: null,
+          spaceLogo: null,
           createdAt: '2026-01-01T00:00.000Z',
           dueAt: due,
           signalType: 'opportunity',
