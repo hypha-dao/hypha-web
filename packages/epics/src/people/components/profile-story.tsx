@@ -591,27 +591,31 @@ export function ProfileStory({
         ) : null}
       </section>
 
-      <StoryLine
-        row
-        text={
-          person.networkOffer?.trim() ||
-          (canEdit ? tWelcome('offer.placeholder') : '')
-        }
-        muted={!person.networkOffer?.trim()}
-        canEdit={canEdit}
-        label={offerPrompt}
-        value={person.networkOffer ?? ''}
-        multiline
-        onSave={(networkOffer) => {
-          if (networkOffer.length > 500) {
-            setLocalError(t('story.offerTooLong'));
-            return;
-          }
-          void save({ networkOffer });
-        }}
-      />
-
       <div className="flex max-w-[62ch] flex-col">
+        {/*
+          Keep offer + contact fields in one stack. A sibling under the
+          article's gap-10 left a blank band above Location after the offer
+          hairline.
+        */}
+        <StoryLine
+          row
+          text={
+            person.networkOffer?.trim() ||
+            (canEdit ? tWelcome('offer.placeholder') : '')
+          }
+          muted={!person.networkOffer?.trim()}
+          canEdit={canEdit}
+          label={offerPrompt}
+          value={person.networkOffer ?? ''}
+          multiline
+          onSave={(networkOffer) => {
+            if (networkOffer.length > 500) {
+              setLocalError(t('story.offerTooLong'));
+              return;
+            }
+            void save({ networkOffer });
+          }}
+        />
         <StoryLine
           row
           text={
