@@ -95,7 +95,7 @@
     "itemOpen": "{title} está em {space}.",
     "usefulQuiet": "Nada está à tua espera.",
     "chipTokens": "Enviar tokens a alguém",
-    "peopleAroundLead": "{name} é com quem partilhas mais: {count, plural, one {# espaço} other {# espaços}}.",
+    "peopleAroundLead": "As pessoas à tua volta estão abaixo — online primeiro. Toca em alguém para conversar ou ligar.",
     "spacesWidgetTitle": "Entrar num espaço",
     "spacesWidgetCount": "{count} teus",
     "spacesWidgetHint": "Toca num espaço para entrar.",

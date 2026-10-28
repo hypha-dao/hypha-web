@@ -420,25 +420,15 @@ function userTextBefore(messages: readonly HomeMessage[], index: number) {
   return '';
 }
 
-function connectionName(person: {
-  name: string | null;
-  surname: string | null;
-  nickname: string | null;
-}) {
-  const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
-  return full || person.nickname?.trim() || '';
-}
-
 function directReplyText(
   reply: MemberHomeDirectReply,
   t: (key: string, values?: Record<string, string | number>) => string,
 ): string {
   switch (reply.line.key) {
     case 'people':
-      return t('peopleAroundLead', {
-        name: reply.line.name,
-        count: reply.line.count,
-      });
+      // Shared-space ranking is not what "Who is around?" asks. The widget
+      // already sorts by presence — just point at the list.
+      return t('peopleAroundLead');
     case 'peopleEmpty':
       return t('peopleWidgetEmpty');
     case 'space':
@@ -1189,19 +1179,14 @@ export function MemberHomeChat({
           })
         : '';
       const streamingThis = isStreaming && message.id === lastMessage?.id;
-      const closest =
-        !streamingThis && listAsk === 'people' && !cleaned
-          ? closestSharedPerson(intelligence)
-          : null;
       const script =
         cleaned ||
-        (closest
-          ? t('peopleAroundLead', {
-              name: connectionName(closest),
-              count: closest.sharedSpaceCount,
-            })
-          : !streamingThis && listAsk === 'people'
-          ? t('peopleWidgetEmpty')
+        (!streamingThis && listAsk === 'people'
+          ? intelligence.connections.some(
+              (person) => person.id !== intelligence.person.id,
+            )
+            ? t('peopleAroundLead')
+            : t('peopleWidgetEmpty')
           : '');
       if (script) heldBubbleText.current.set(message.id, script);
       const text =

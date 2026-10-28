@@ -95,7 +95,7 @@
     "itemOpen": "{title} staat in {space}.",
     "usefulQuiet": "Er wacht niets op jou.",
     "chipTokens": "Iemand tokens sturen",
-    "peopleAroundLead": "{name} deelt het meest met jou: {count, plural, one {# space} other {# spaces}}.",
+    "peopleAroundLead": "De mensen om je heen staan hieronder — online eerst. Tik iemand aan om te chatten of te bellen.",
     "spacesWidgetTitle": "Stap een space binnen",
     "spacesWidgetCount": "{count} van jou",
     "spacesWidgetHint": "Tik een space aan om binnen te stappen.",

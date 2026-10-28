@@ -95,7 +95,7 @@
     "itemOpen": "{title} е во {space}.",
     "usefulQuiet": "Ништо не те чека.",
     "chipTokens": "Испрати токени на некого",
-    "peopleAroundLead": "{name} дели најмногу со тебе: {count, plural, one {# простор} other {# простори}}.",
+    "peopleAroundLead": "Луѓето околу тебе се подолу — прво онлајн. Допри некого за разговор или повик.",
     "spacesWidgetTitle": "Влези во простор",
     "spacesWidgetCount": "{count} твои",
     "spacesWidgetHint": "Допри простор за да влезеш.",
