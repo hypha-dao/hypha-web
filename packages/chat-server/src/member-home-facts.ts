@@ -376,7 +376,7 @@ export function formatMemberHomeFacts(
   const asideKey =
     options?.held?.trim() ||
     (namedAside ? memberHomeThreadItemKey(namedAside) : '');
-  const stillOpen = (item: { kind: string; slug: string | null }) =>
+  const stillOpen = (item: { kind: string; slug: string }) =>
     !asideKey || memberHomeThreadItemKey(item) !== asideKey;
   // A new waiting item comes first. When every one was already placed, the
   // reply still carries that card. The item they just set aside is not it.
