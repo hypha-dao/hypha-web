@@ -505,6 +505,8 @@ type SignalTeamTimelineState = {
   memberMatrixUserIds: string[];
   pendingRequesterIds: string[];
   ownerMatrixUserId: string | null;
+  /** True after a sender-trusted roster notice, even if members later left the space. */
+  hasTrustedRoster: boolean;
 };
 
 type SignalTeamEventContent = {
@@ -553,6 +555,7 @@ function deriveSignalTeamStateFromEvents(
   let memberMatrixUserIds: string[] = [];
   const pending = new Set<string>();
   let ownerMatrixUserId: string | null = null;
+  let hasTrustedRoster = false;
   const targetSlug = coherenceSlug?.trim() || null;
 
   for (const ev of events) {
@@ -583,6 +586,7 @@ function deriveSignalTeamStateFromEvents(
 
     if (eventKind === SIGNAL_TEAM_EVENT_KIND) {
       if (!isTrustedActor) continue;
+      hasTrustedRoster = true;
       memberMatrixUserIds = normalizeMatrixUserIds(content.memberMatrixUserIds);
       const nextOwnerId =
         typeof content.ownerMatrixUserId === 'string'
@@ -615,6 +619,7 @@ function deriveSignalTeamStateFromEvents(
     memberMatrixUserIds,
     pendingRequesterIds: [...pending],
     ownerMatrixUserId,
+    hasTrustedRoster,
   };
 }
 
@@ -3271,6 +3276,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const applyFromTimeline = (): {
       usable: boolean;
       keptValidatedRoster: boolean;
+      hasTrustedRoster: boolean;
+      hasTrustedMembers: boolean;
     } => {
       const timeline = room.getLiveTimeline().getEvents();
       const next = deriveSignalTeamStateFromEvents(
@@ -3282,12 +3289,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         next.memberMatrixUserIds,
         personIdToMatrixUserId,
       );
-      const hasValidatedTimelineRoster = next.memberMatrixUserIds.length > 0;
+      const hasTrustedMembers =
+        next.hasTrustedRoster && next.memberMatrixUserIds.length > 0;
       // Map lookup failed: keep sender-validated timeline MXIDs so
       // currentUserId membership checks still apply. Do not clear.
       const keepDespiteMapFailure =
-        Boolean(matrixUserIdsError) && hasValidatedTimelineRoster;
-      if (usable || keepDespiteMapFailure) {
+        Boolean(matrixUserIdsError) && hasTrustedMembers;
+      // Trusted notice whose members left the space: still keep those MXIDs
+      // so a non-member viewer cannot pass the membership check.
+      if (usable || keepDespiteMapFailure || hasTrustedMembers) {
         setSignalTeamMemberIds(next.memberMatrixUserIds);
         setSignalTeamOwnerId(next.ownerMatrixUserId);
       } else if (documentSeedRef.memberIds.length > 0) {
@@ -3301,7 +3311,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (!signalTeamPanelOpen) {
         setSignalTeamDraftMemberIds(null);
       }
-      return { usable, keptValidatedRoster: keepDespiteMapFailure };
+      return {
+        usable,
+        keptValidatedRoster: keepDespiteMapFailure,
+        hasTrustedRoster: next.hasTrustedRoster,
+        hasTrustedMembers,
+      };
     };
 
     const seedFromDocumentAssignees = async (): Promise<
@@ -3314,7 +3329,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (cancelled) return 'failed';
         // A roster notice may have landed during the lookup — keep it.
         const applied = applyFromTimeline();
-        if (applied.usable || applied.keptValidatedRoster) {
+        if (
+          applied.usable ||
+          applied.keptValidatedRoster ||
+          applied.hasTrustedRoster
+        ) {
           return 'kept-timeline';
         }
         const personIds = [
@@ -3358,14 +3377,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         return;
       }
       let historyExhausted = false;
-      if (!applied.usable && !applied.keptValidatedRoster) {
+      if (
+        !applied.usable &&
+        !applied.keptValidatedRoster &&
+        !applied.hasTrustedRoster
+      ) {
         const maxRosterHistoryBatches = 50;
         for (
           let i = 0;
           i < maxRosterHistoryBatches &&
           !cancelled &&
           !applied.usable &&
-          !applied.keptValidatedRoster;
+          !applied.keptValidatedRoster &&
+          !applied.hasTrustedRoster;
           i += 1
         ) {
           try {
@@ -3392,8 +3416,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
       }
       if (cancelled) return;
-      if (applied.usable || applied.keptValidatedRoster) {
+      if (
+        applied.usable ||
+        applied.keptValidatedRoster ||
+        applied.hasTrustedMembers
+      ) {
         setSignalTeamRosterResolved(true);
+        return;
+      }
+      // Trusted empty roster — do not seed the viewer; stay unresolved.
+      if (applied.hasTrustedRoster) {
         return;
       }
       // Incomplete scrollback (soft-fail, cap, or catch) — do not seed the

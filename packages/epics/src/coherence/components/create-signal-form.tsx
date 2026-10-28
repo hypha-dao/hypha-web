@@ -1187,7 +1187,9 @@ export const CreateSignalForm = ({
                         coherenceSlug,
                         memberMatrixUserIds: teamIdsToSeed,
                         ownerMatrixUserId,
-                        actorMatrixUserId: ownerMatrixUserId,
+                        actorMatrixUserId:
+                          matrixClient.getUserId?.()?.trim() ||
+                          ownerMatrixUserId,
                         addedMemberMatrixUserIds,
                       });
                     }
