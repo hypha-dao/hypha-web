@@ -175,6 +175,7 @@ import { HumanChatPanelElsewhereCallIndicator } from './human-chat-panel/human-c
 import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
 import { upsertSignalDescriptionInRoom } from '../coherence/utils/signal-chat-description';
 import {
+  hasExplicitSignalTeamMemberList,
   isSignalTeamRequestContent,
   isSignalTeamRosterContent,
   isTrustedSignalTeamSender,
@@ -430,8 +431,6 @@ const SESSION_ROOM_TO_COHERENCE_SPACE_PREFIX = 'hypha-room-to-coherence-space-';
 const COHERENCE_ROOM_REVERSE_PREFIX = 'hypha-room-id-to-coherence-';
 const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
 const CHAT_HISTORY_MAX_ITEMS = 250;
-const SIGNAL_TEAM_EVENT_KIND = 'io.hypha.signal.team.v1';
-const SIGNAL_TEAM_REQUEST_EVENT_KIND = 'io.hypha.signal.team.request.v1';
 const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
 const SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER = '[hypha:signal-team-request]';
 
@@ -563,14 +562,6 @@ function deriveSignalTeamStateFromEvents(
     if (eventType !== EventType.RoomMessage) continue;
     const content = ev.getContent() as Record<string, unknown> | null;
     if (!content || typeof content !== 'object') continue;
-    const msgtype =
-      typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
-    const body = typeof content.body === 'string' ? content.body.trim() : '';
-    const eventKind = body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER)
-      ? SIGNAL_TEAM_EVENT_KIND
-      : body.startsWith(SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER)
-      ? SIGNAL_TEAM_REQUEST_EVENT_KIND
-      : msgtype;
     const eventSlug =
       typeof content.coherenceSlug === 'string'
         ? content.coherenceSlug.trim()
@@ -584,34 +575,37 @@ function deriveSignalTeamStateFromEvents(
       powerLevel: roomPowerLevelForUser(room, senderId),
     });
 
-    if (eventKind === SIGNAL_TEAM_EVENT_KIND) {
-      if (!isTrustedActor) continue;
-      hasTrustedRoster = true;
-      memberMatrixUserIds = normalizeMatrixUserIds(content.memberMatrixUserIds);
-      const nextOwnerId =
-        typeof content.ownerMatrixUserId === 'string'
-          ? content.ownerMatrixUserId.trim()
+    // Request marker starts with the roster marker — classify request first.
+    if (isSignalTeamRequestContent(content)) {
+      const requesterId =
+        typeof content.requesterMatrixUserId === 'string'
+          ? content.requesterMatrixUserId.trim()
           : '';
-      if (nextOwnerId) {
-        ownerMatrixUserId = nextOwnerId;
+      if (!requesterId) continue;
+      const status =
+        typeof content.status === 'string' ? content.status.trim() : 'pending';
+      const requesterIsSender = senderId === requesterId;
+      if (!requesterIsSender && !isTrustedActor) continue;
+      if (status === 'pending') {
+        pending.add(requesterId);
+      } else {
+        pending.delete(requesterId);
       }
       continue;
     }
 
-    if (eventKind !== SIGNAL_TEAM_REQUEST_EVENT_KIND) continue;
-    const requesterId =
-      typeof content.requesterMatrixUserId === 'string'
-        ? content.requesterMatrixUserId.trim()
+    if (!isSignalTeamRosterContent(content)) continue;
+    // Marker-only / local-echo events without an explicit member array are
+    // not a trusted-empty policy. A real empty roster sends `[]`.
+    if (!hasExplicitSignalTeamMemberList(content) || !isTrustedActor) continue;
+    hasTrustedRoster = true;
+    memberMatrixUserIds = normalizeMatrixUserIds(content.memberMatrixUserIds);
+    const nextOwnerId =
+      typeof content.ownerMatrixUserId === 'string'
+        ? content.ownerMatrixUserId.trim()
         : '';
-    if (!requesterId) continue;
-    const status =
-      typeof content.status === 'string' ? content.status.trim() : 'pending';
-    const requesterIsSender = senderId === requesterId;
-    if (!requesterIsSender && !isTrustedActor) continue;
-    if (status === 'pending') {
-      pending.add(requesterId);
-    } else {
-      pending.delete(requesterId);
+    if (nextOwnerId) {
+      ownerMatrixUserId = nextOwnerId;
     }
   }
 
@@ -3301,8 +3295,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         setSignalTeamMemberIds(next.memberMatrixUserIds);
         setSignalTeamOwnerId(next.ownerMatrixUserId);
       } else if (next.hasTrustedRoster) {
-        // Live trusted-empty notice: drop any document seed (incl. viewer)
-        // and stay unresolved so hasSignalTeamPolicy stays fail-closed.
+        // Explicit trusted-empty `memberMatrixUserIds: []` only. Marker-only
+        // or request notices must not clear a fresh create seed.
         documentSeedRef.memberIds = [];
         documentSeedRef.ownerId = null;
         setSignalTeamMemberIds([]);

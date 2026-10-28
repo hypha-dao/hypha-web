@@ -4,6 +4,7 @@ import {
   SIGNAL_TEAM_EVENT_KIND,
   SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER,
   SIGNAL_TEAM_REQUEST_EVENT_KIND,
+  hasExplicitSignalTeamMemberList,
   isSignalTeamRequestContent,
   isSignalTeamRosterContent,
   isTrustedSignalTeamSender,
@@ -237,5 +238,101 @@ describe('signal-team-access', () => {
     );
     expect(roster.hasPolicy).toBe(false);
     expect(roster.memberMatrixUserIds).toEqual([]);
+  });
+
+  it('does not treat a request notice as roster content', () => {
+    const request = {
+      msgtype: 'm.notice',
+      body: SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER,
+      requesterMatrixUserId: '@vlad:example.org',
+      status: 'pending',
+    };
+    expect(isSignalTeamRequestContent(request)).toBe(true);
+    expect(isSignalTeamRosterContent(request)).toBe(false);
+    expect(hasExplicitSignalTeamMemberList(request)).toBe(false);
+  });
+
+  it('does not treat a trusted request as an empty roster policy', () => {
+    const roster = readSignalTeamRosterFromEvents(
+      [
+        messageEvent({
+          msgtype: 'm.notice',
+          body: SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER,
+          coherenceSlug: 'coh-2773e412',
+          requesterMatrixUserId: '@vlad:example.org',
+          status: 'pending',
+        }),
+      ],
+      'coh-2773e412',
+      { getPowerLevel: roomPower },
+    );
+    expect(roster.hasPolicy).toBe(false);
+    expect(roster.memberMatrixUserIds).toEqual([]);
+    expect(roster.ownerMatrixUserId).toBeNull();
+  });
+
+  it('does not treat a marker-only notice as a trusted empty roster', () => {
+    const markerOnly = {
+      msgtype: 'm.notice',
+      body: SIGNAL_TEAM_EVENT_BODY_MARKER,
+      coherenceSlug: 'coh-2773e412',
+      ownerMatrixUserId: '@vlad:example.org',
+    };
+    expect(isSignalTeamRosterContent(markerOnly)).toBe(true);
+    expect(hasExplicitSignalTeamMemberList(markerOnly)).toBe(false);
+    const roster = readSignalTeamRosterFromEvents(
+      [messageEvent(markerOnly)],
+      'coh-2773e412',
+      { getPowerLevel: roomPower },
+    );
+    expect(roster.hasPolicy).toBe(false);
+    expect(roster.memberMatrixUserIds).toEqual([]);
+  });
+
+  it('keeps a create roster when a later trusted request arrives', () => {
+    const roster = readSignalTeamRosterFromEvents(
+      [
+        messageEvent(
+          rosterContent(
+            ['@grok:example.org', '@vlad:example.org'],
+            '@vlad:example.org',
+          ),
+        ),
+        messageEvent({
+          msgtype: 'm.notice',
+          body: SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER,
+          coherenceSlug: 'coh-2773e412',
+          requesterMatrixUserId: '@vlad:example.org',
+          status: 'pending',
+        }),
+      ],
+      'coh-2773e412',
+      { getPowerLevel: roomPower },
+    );
+    expect(roster.hasPolicy).toBe(true);
+    expect(roster.memberMatrixUserIds).toEqual([
+      '@grok:example.org',
+      '@vlad:example.org',
+    ]);
+    expect(roster.ownerMatrixUserId).toBe('@vlad:example.org');
+  });
+
+  it('treats an explicit trusted empty member list as policy', () => {
+    const roster = readSignalTeamRosterFromEvents(
+      [
+        messageEvent({
+          msgtype: 'm.notice',
+          body: SIGNAL_TEAM_EVENT_BODY_MARKER,
+          coherenceSlug: 'coh-2773e412',
+          memberMatrixUserIds: [],
+          ownerMatrixUserId: '@vlad:example.org',
+        }),
+      ],
+      'coh-2773e412',
+      { getPowerLevel: roomPower },
+    );
+    expect(roster.hasPolicy).toBe(true);
+    expect(roster.memberMatrixUserIds).toEqual([]);
+    expect(roster.ownerMatrixUserId).toBe('@vlad:example.org');
   });
 });

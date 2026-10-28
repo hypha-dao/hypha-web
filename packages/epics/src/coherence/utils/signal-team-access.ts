@@ -57,26 +57,11 @@ export function isTrustedSignalTeamSender(options: {
 }
 
 /**
- * True for the roster event the Signal Team picker writes:
- * `m.room.message` + `m.notice` body `[hypha:signal-team]`, or the older
- * `io.hypha.signal.team.v1` msgtype.
- */
-export function isSignalTeamRosterContent(
-  content: Record<string, unknown> | null | undefined,
-): boolean {
-  if (!content || typeof content !== 'object') return false;
-  const msgtype =
-    typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
-  const body = typeof content.body === 'string' ? content.body.trim() : '';
-  return (
-    body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER) ||
-    msgtype === SIGNAL_TEAM_EVENT_KIND
-  );
-}
-
-/**
  * True for a join-request notice: body `[hypha:signal-team-request]`, or the
  * older `io.hypha.signal.team.request.v1` msgtype.
+ *
+ * Check this before roster content — the request marker starts with
+ * `[hypha:signal-team]`.
  */
 export function isSignalTeamRequestContent(
   content: Record<string, unknown> | null | undefined,
@@ -89,6 +74,36 @@ export function isSignalTeamRequestContent(
     body.startsWith(SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER) ||
     msgtype === SIGNAL_TEAM_REQUEST_EVENT_KIND
   );
+}
+
+/**
+ * True for the roster event the Signal Team picker writes:
+ * `m.room.message` + `m.notice` body `[hypha:signal-team]`, or the older
+ * `io.hypha.signal.team.v1` msgtype. Request notices are not roster notices.
+ */
+export function isSignalTeamRosterContent(
+  content: Record<string, unknown> | null | undefined,
+): boolean {
+  if (!content || typeof content !== 'object') return false;
+  if (isSignalTeamRequestContent(content)) return false;
+  const msgtype =
+    typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
+  const body = typeof content.body === 'string' ? content.body.trim() : '';
+  return (
+    body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER) ||
+    msgtype === SIGNAL_TEAM_EVENT_KIND
+  );
+}
+
+/**
+ * A real roster policy notice always sends `memberMatrixUserIds` as an array,
+ * including `[]` for a trusted empty team. A missing field is an incomplete
+ * local echo / misclassified event — not a fail-closed empty policy.
+ */
+export function hasExplicitSignalTeamMemberList(
+  content: Record<string, unknown> | null | undefined,
+): boolean {
+  return Array.isArray(content?.memberMatrixUserIds);
 }
 
 export function readSignalTeamRosterFromEvents(
@@ -108,6 +123,7 @@ export function readSignalTeamRosterFromEvents(
     if (event.getType() !== 'm.room.message') continue;
     const content = event.getContent();
     if (!isSignalTeamRosterContent(content)) continue;
+    if (!hasExplicitSignalTeamMemberList(content)) continue;
     const eventSlug =
       typeof content?.coherenceSlug === 'string'
         ? content.coherenceSlug.trim()
