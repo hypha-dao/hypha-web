@@ -513,6 +513,17 @@ describe('formatMemberHomeFacts', () => {
     expect(brief.text).toMatch(/Call show_member_home_item once for that card/);
   });
 
+  it('does not re-brief the same card on a continue when every item was already placed', () => {
+    const brief = formatMemberHomeFacts(home, {
+      alreadyShown: ['proposal:path'],
+      asked: 'Continue with what still needs me.',
+    });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toMatch(/already covered what is open/i);
+    expect(brief.text).toMatch(/Do not call show_member_home_item/);
+    expect(brief.text).not.toMatch(/Card for this reply:/);
+  });
+
   it('skips a title already placed when they ask where they can be useful', () => {
     const brief = formatMemberHomeFacts(
       {

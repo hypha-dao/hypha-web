@@ -385,8 +385,9 @@ export function formatMemberHomeFacts(
     (namedAside ? memberHomeThreadItemKey(namedAside) : '');
   const stillOpen = (item: { kind: string; slug: string }) =>
     !asideKey || memberHomeThreadItemKey(item) !== asideKey;
-  // A new waiting item comes first. When every one was already placed, the
-  // reply still carries that card. The item they just set aside is not it.
+  // A new waiting item comes first. When every one was already placed, a
+  // normal follow-up still carries that card — except a continue/return ask,
+  // which must not re-brief the same item in a loop.
   const spoken =
     (askedItem && stillOpen(askedItem) ? askedItem : null) ??
     (decisionAsk
@@ -398,7 +399,9 @@ export function formatMemberHomeFacts(
         )
       : undefined) ??
     unspoken.find(stillOpen) ??
-    (!shareTurn && !lookAsk ? stillWaiting.find(stillOpen) ?? null : null);
+    (!shareTurn && !lookAsk && !continueAsk
+      ? stillWaiting.find(stillOpen) ?? null
+      : null);
   const looked = lookAsk
     ? memberHomeThreadItemForMessage(listMemberHomeThreadCatalog(home), {
         content: options?.prior ?? '',
@@ -454,6 +457,8 @@ export function formatMemberHomeFacts(
         : 'They asked to see the card from the reply just above. One short line that it is that same item. Do not introduce a different person. Do not open the next waiting item.'
       : settingAside && !spoken
       ? 'They just set that one aside. One line that you will leave it for another time. Do not call show_member_home_item. Do not place that card under this reply.'
+      : continueAsk && !spoken
+      ? 'They asked to continue. Every waiting item was already placed in earlier replies. One short line that you already covered what is open for now. Do not place the same card again. Do not invent a new person or item. Do not call show_member_home_item.'
       : spoken
       ? itemLine(spoken)
       : 'This turn is not a card. Do not call show_member_home_item.';

@@ -22,7 +22,6 @@ import {
   memberHomeDirectReply,
   memberHomeLookItem,
   memberHomeTalkIsResting,
-  MEMBER_HOME_CONTINUE_ASK,
   memberHomeThreadItemForRef,
   type MemberHomeDirectReply,
   memberHomeItemMemory,
@@ -171,20 +170,6 @@ function messageIsHomeArrival(message: { metadata?: unknown }) {
     'homeArrival' in metadata &&
     (metadata as { homeArrival?: unknown }).homeArrival === true
   );
-}
-
-function lastHomeTurnIsAssistant(
-  messages: ReadonlyArray<{
-    role: string;
-    metadata?: unknown;
-  }>,
-) {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-    if (!message || messageIsHomeArrival(message)) continue;
-    return message.role === 'assistant';
-  }
-  return false;
 }
 
 function homeItemRef(
@@ -695,10 +680,7 @@ export function MemberHomeChat({
   const opened = useRef(false);
   const startedTalk = useRef(false);
   const pendingStart = useRef<
-    | { kind: 'return'; text: string }
-    | { kind: 'arrival' }
-    | { kind: 'continue' }
-    | null
+    { kind: 'return'; text: string } | { kind: 'arrival' } | null
   >(null);
   const scroller = useRef<HTMLDivElement>(null);
   const seenMotionIds = useRef(new Set<string>());
@@ -1356,14 +1338,13 @@ export function MemberHomeChat({
       };
     } else if (
       !memberHomeTalkIsResting(stored) &&
-      (stored.length === 0
-        ? threadItems.length > 0
-        : lastHomeTurnIsAssistant(stored))
+      stored.length === 0 &&
+      threadItems.length > 0
     ) {
-      // Home starts the talk, and keeps it going, unless they stopped
-      // or accepted a pause. A stored thread that is still open continues.
-      pendingStart.current =
-        stored.length === 0 ? { kind: 'arrival' } : { kind: 'continue' };
+      // First open with an empty thread: greet and brief. Returning from an
+      // action uses consumeHomeReturn above. Do not auto-continue on remount —
+      // that re-sent the same briefing every crash/navigation remount.
+      pendingStart.current = { kind: 'arrival' };
     }
     // Voice baselines this thread first, then the next effect speaks a start.
     setVoiceHydrated(true);
@@ -1383,9 +1364,7 @@ export function MemberHomeChat({
     pendingStart.current = null;
     if (!pending) return;
     if (pending.kind === 'return') void send(pending.text, true);
-    else if (pending.kind === 'continue') {
-      void send(MEMBER_HOME_CONTINUE_ASK, true);
-    } else void send(t('homeArrival'), true);
+    else void send(t('homeArrival'), true);
   }, [send, t, voiceHydrated]);
 
   useEffect(() => {
