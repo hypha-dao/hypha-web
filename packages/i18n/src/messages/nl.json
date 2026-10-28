@@ -89,7 +89,7 @@
     "decisionOpen": "{title} staat open in {space}.",
     "decisionListed": "{title} staat in {space}. Je stem is daar niet meer nodig.",
     "decisionQuiet": "In je spaces wacht geen stemming op jou.",
-    "spaceLead": "{space} is van jou.",
+    "spaceLead": "Begin met {space}.",
     "tokensLead": "{name} is de dichtstbijzijnde persoon om tokens naartoe te sturen.",
     "tokensLeadEmpty": "Kies iemand om tokens naartoe te sturen.",
     "itemOpen": "{title} staat in {space}.",

@@ -89,7 +89,7 @@
     "decisionOpen": "{title} е отворен во {space}.",
     "decisionListed": "{title} е во {space}. Не чека на твојот глас.",
     "decisionQuiet": "Ништо во твоите простори не чека на твојот глас.",
-    "spaceLead": "{space} е еден од твоите.",
+    "spaceLead": "Започни со {space}.",
     "tokensLead": "{name} е најблиската личност за испраќање токени.",
     "tokensLeadEmpty": "Избери некого за испраќање токени.",
     "itemOpen": "{title} е во {space}.",

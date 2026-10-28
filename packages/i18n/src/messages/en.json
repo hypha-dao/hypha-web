@@ -611,7 +611,7 @@
     "decisionOpen": "{title} is open in {space}.",
     "decisionListed": "{title} is in {space}. It isn't waiting on your vote.",
     "decisionQuiet": "Nothing in your spaces is waiting on a vote from you.",
-    "spaceLead": "{space} is one of yours.",
+    "spaceLead": "Start with {space}.",
     "tokensLead": "{name} is the closest person to send tokens to.",
     "tokensLeadEmpty": "Pick someone to send tokens to.",
     "itemOpen": "{title} is in {space}.",

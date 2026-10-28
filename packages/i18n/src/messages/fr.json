@@ -89,7 +89,7 @@
     "decisionOpen": "{title} est ouvert dans {space}.",
     "decisionListed": "{title} est dans {space}. Ton vote n’y est plus attendu.",
     "decisionQuiet": "Rien dans tes espaces n’attend ton vote.",
-    "spaceLead": "{space} est à toi.",
+    "spaceLead": "Commence par {space}.",
     "tokensLead": "{name} est la personne la plus proche à qui envoyer des tokens.",
     "tokensLeadEmpty": "Choisis quelqu’un à qui envoyer des tokens.",
     "itemOpen": "{title} est dans {space}.",
