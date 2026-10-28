@@ -17,7 +17,7 @@ import {
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
-import { Button } from '@hypha-platform/ui';
+import { Button, Container, Heading } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { HOME_REFRESH_EVENT } from '@hypha-platform/epics';
@@ -263,9 +263,14 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     person === null ? 'none' : person ? 'present' : 'missing';
   const homeRecord: MemberHomeRecord =
     data === null ? 'none' : data ? 'present' : 'missing';
+  // After a profile has loaded this visit, a brief /me 404 must not reopen
+  // the welcome flow (common after idle JWT refresh or a notification click).
+  const hadPersonRef = useRef(false);
+  if (person) hadPersonRef.current = true;
+  if (!isAuthenticated) hadPersonRef.current = false;
   // Privy `authenticated` (what the header uses) can be true before a Bearer
   // token exists. Only a GET /me 404 is "no profile". A 500 stays signed in.
-  const phase = resolveMemberHomePhase({
+  const resolvedPhase = resolveMemberHomePhase({
     authLoading: isAuthLoading,
     jwtLoading: isLoadingJwt,
     authenticated: isAuthenticated,
@@ -276,6 +281,10 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     home: homeRecord,
     homeError: Boolean(error),
   });
+  const phase =
+    resolvedPhase === 'signup' && hadPersonRef.current
+      ? 'loading'
+      : resolvedPhase;
 
   useEffect(() => {
     if (phase !== 'signup') return;
@@ -300,8 +309,33 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
 
   if (phase === 'signed-out') {
     return (
-      <div className="flex min-h-[60vh] w-full items-center justify-center px-5 py-16">
-        <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />
+      <div className="w-full min-w-0 overflow-x-clip">
+        <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9">
+          <header className="xl:hidden">
+            <p className="mb-2 text-1 font-bold uppercase text-foreground">
+              {t('pageTitleLineOne')}
+            </p>
+            <h1
+              className="text-7 leading-tight sm:text-8"
+              style={{ fontFamily: 'var(--font-family-heading)' }}
+            >
+              {t('pageTitleLineTwo')}
+            </h1>
+          </header>
+          <Heading
+            size="9"
+            color="secondary"
+            weight="medium"
+            align="center"
+            className="hidden flex-col xl:flex"
+          >
+            <span>{t('pageTitleLineOne')}</span>
+            <span>{t('pageTitleLineTwo')}</span>
+          </Heading>
+          <div className="flex min-h-[50vh] w-full items-center justify-center px-5 py-16">
+            <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />
+          </div>
+        </Container>
       </div>
     );
   }

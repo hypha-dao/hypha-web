@@ -543,6 +543,8 @@
     "signInTitle": "Your home is waiting",
     "signInBody": "Sign in to see where you can be useful.",
     "signIn": "Sign in",
+    "pageTitleLineOne": "Your home,",
+    "pageTitleLineTwo": "where you can be useful",
     "loading": "Gathering your home…",
     "metaTitle": "Home | Hypha",
     "metaDescription": "Where you can be useful: your spaces, people, proposals, and wallet.",

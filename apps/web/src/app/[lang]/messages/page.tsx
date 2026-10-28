@@ -9,12 +9,12 @@ import { MessagesPageFrame } from './_components/messages-page-frame';
 
 export default function MessagesPage() {
   return (
-    <AccountRequiredGate>
-      <MessagesPageFrame>
+    <MessagesPageFrame>
+      <AccountRequiredGate>
         <Suspense fallback={<MessagesPeopleListSkeleton />}>
           <MyConnections section="messages" />
         </Suspense>
-      </MessagesPageFrame>
-    </AccountRequiredGate>
+      </AccountRequiredGate>
+    </MessagesPageFrame>
   );
 }
