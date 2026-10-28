@@ -440,6 +440,8 @@ const SESSION_ROOM_TO_COHERENCE_SPACE_PREFIX = 'hypha-room-to-coherence-space-';
 const COHERENCE_ROOM_REVERSE_PREFIX = 'hypha-room-id-to-coherence-';
 const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
 const CHAT_HISTORY_MAX_ITEMS = 250;
+const CHAT_COMPOSER_DRAFT_PREFIX = 'hypha-chat-composer-draft-v1-';
+const CHAT_COMPOSER_DRAFT_MAX = 8000;
 const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
 const SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER = '[hypha:signal-team-request]';
 
@@ -666,6 +668,42 @@ function writePersistedChatHistory(
       `${CHAT_HISTORY_SESSION_PREFIX}${roomId}`,
       JSON.stringify(payload),
     );
+  } catch {
+    // ignore
+  }
+}
+
+function readComposerDraft(roomId: string): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    return (
+      window.sessionStorage.getItem(`${CHAT_COMPOSER_DRAFT_PREFIX}${roomId}`) ??
+      ''
+    );
+  } catch {
+    return '';
+  }
+}
+
+function writeComposerDraft(roomId: string, text: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = `${CHAT_COMPOSER_DRAFT_PREFIX}${roomId}`;
+    const clipped = text.slice(0, CHAT_COMPOSER_DRAFT_MAX);
+    if (!clipped.trim()) {
+      window.sessionStorage.removeItem(key);
+      return;
+    }
+    window.sessionStorage.setItem(key, clipped);
+  } catch {
+    // ignore
+  }
+}
+
+function clearComposerDraft(roomId: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(`${CHAT_COMPOSER_DRAFT_PREFIX}${roomId}`);
   } catch {
     // ignore
   }
@@ -1300,6 +1338,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   currentUserAvatarUrlRef.current = currentUserAvatarUrl;
 
   const [input, setInput] = useState('');
+  const inputRef = useRef(input);
+  inputRef.current = input;
+  /** Room whose composer draft is currently loaded into `input`. */
+  const draftRoomIdRef = useRef<string | null>(null);
+  /** Skip one persist after restore so an empty pre-restore input cannot wipe storage. */
+  const skipDraftPersistRef = useRef(false);
   /** Hypha-resolved names from the mention picker (may differ from Matrix fallback displayLabel). */
   const [mentionDisplayOverride, setMentionDisplayOverride] = useState<
     Record<string, string>
@@ -1326,6 +1370,48 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   editDraftRef.current = editDraft;
   const [roomId, setRoomId] = useState<string | null>(null);
   const [groupTitle, setGroupTitle] = useState<string | null>(null);
+
+  // Keep unsent composer text per room across channel switches and navigation.
+  useEffect(() => {
+    const prev = draftRoomIdRef.current;
+    const next = roomId?.trim() || null;
+    if (prev && prev !== next && !editDraftRef.current) {
+      // Typing already persists; only flush a non-empty box here so a
+      // room-switch `setInput('')` cannot wipe a draft already on disk.
+      const text = inputRef.current;
+      if (text.trim()) writeComposerDraft(prev, text);
+    }
+    draftRoomIdRef.current = next;
+    if (prev === next) return;
+    if (!next) {
+      skipDraftPersistRef.current = true;
+      setInput('');
+      return;
+    }
+    if (editDraftRef.current) return;
+    skipDraftPersistRef.current = true;
+    setInput(readComposerDraft(next));
+  }, [roomId]);
+
+  useEffect(() => {
+    if (skipDraftPersistRef.current) {
+      skipDraftPersistRef.current = false;
+      return;
+    }
+    const rid = roomId?.trim();
+    if (!rid || editDraft) return;
+    writeComposerDraft(rid, input);
+  }, [editDraft, input, roomId]);
+
+  useEffect(() => {
+    return () => {
+      const rid = draftRoomIdRef.current;
+      if (rid && !editDraftRef.current) {
+        const text = inputRef.current;
+        if (text.trim()) writeComposerDraft(rid, text);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setGroupTitle(null);
@@ -5648,6 +5734,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     sendOperationTokenRef.current = sendToken;
     setComposerError(null);
     setInput('');
+    clearComposerDraft(roomId);
     setDraftAttachments([]);
     const pendingId =
       savedAttachments.length > 0 ? `hypha-send-pending-${Date.now()}` : null;
@@ -6778,7 +6865,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                           excerpt: editDraft.excerpt,
                           onDismiss: () => {
                             setEditDraft(null);
-                            setInput('');
+                            setInput(
+                              roomId?.trim()
+                                ? readComposerDraft(roomId.trim())
+                                : '',
+                            );
                             disposeDraftAttachmentUrls(
                               draftAttachmentsRef.current,
                             );
