@@ -108,7 +108,9 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Open the path');
     expect(facts).toContain('kind=proposal slug=path document=proposal');
     expect(facts).toContain('show_member_home_item');
-    expect(facts).toContain('Noor');
+    // Connections roster is tokens-chip only — keeps useful/decision briefs
+    // from inventing "who shares the most spaces" dumps.
+    expect(facts).not.toContain('People who share a space');
     expect(facts).toContain('Never suggest they connect with themselves');
     expect(facts).toContain('No network signal is in this brief');
     expect(facts).not.toContain('Circle');
@@ -263,23 +265,37 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('does not offer the signed-in member as someone to meet', () => {
-    const facts = formatMemberHomeFactsText({
-      ...home,
-      connections: [
-        ...home.connections,
-        {
-          id: home.person.id,
-          slug: home.person.slug,
-          name: home.person.name,
-          surname: home.person.surname,
-          nickname: null,
-          avatarUrl: null,
-          sharedSpaceCount: 4,
-        },
-      ],
-    });
+    const facts = formatMemberHomeFactsText(
+      {
+        ...home,
+        connections: [
+          ...home.connections,
+          {
+            id: home.person.id,
+            slug: home.person.slug,
+            name: home.person.name,
+            surname: home.person.surname,
+            nickname: null,
+            avatarUrl: null,
+            sharedSpaceCount: 4,
+          },
+        ],
+      },
+      { asked: 'Send someone tokens' },
+    );
     expect(facts).toContain('People who share a space, closest first: Noor');
     expect(facts).not.toContain('Ada Lovelace (shared spaces:');
+  });
+
+  it('omits the connections roster on a useful ask', () => {
+    const facts = formatMemberHomeFactsText(home, {
+      asked: 'Where can I be useful?',
+    });
+    expect(facts).toMatch(/Brief ONLY the one waiting item/i);
+    expect(facts).toMatch(/One item\. One card/i);
+    expect(facts).not.toContain('People who share a space');
+    expect(facts).toContain('Card for this reply:');
+    expect(facts).toContain('slug=path');
   });
 
   it('removes an item the member already refused from the queue', () => {
@@ -550,6 +566,20 @@ describe('formatMemberHomeFacts', () => {
     );
     expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
     expect(brief.text).not.toContain('slug=path');
+    expect(brief.text).toMatch(/Brief ONLY the one waiting item/i);
+    expect(brief.text).not.toContain('People who share a space');
+  });
+
+  it('does not re-place an already-shown card on a useful ask', () => {
+    const brief = formatMemberHomeFacts(home, {
+      alreadyShown: ['proposal:path'],
+      asked: 'Where can I be useful?',
+    });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toMatch(/nothing needs them right now/i);
+    expect(brief.text).toMatch(/Do not call show_member_home_item/);
+    expect(brief.text).not.toMatch(/Card for this reply:/);
+    expect(brief.text).not.toContain('People who share a space');
   });
 
   it('speaks a closed vote as the outcome', () => {
@@ -788,8 +818,9 @@ describe('formatMemberHomeFacts', () => {
     expect(brief.card).toBeNull();
     expect(brief.text).toContain('The people list is already on screen');
     expect(brief.text).toContain('Do not call any tool');
+    expect(brief.text).toContain('Do not rank anyone by shared spaces');
     expect(brief.text).not.toContain('Card on screen:');
-    expect(brief.text).toContain('Noor');
+    expect(brief.text).not.toContain('People who share a space');
   });
 
   it('offers one network opportunity and leaves the home queue alone', () => {

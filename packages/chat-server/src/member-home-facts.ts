@@ -328,6 +328,11 @@ export function formatMemberHomeFacts(
   const continueAsk =
     /carried out the recommended action/i.test(options?.asked ?? '') ||
     /continue with what still needs me/i.test(options?.asked ?? '');
+  const usefulAsk =
+    !listAsk &&
+    /^(?:where can i be useful|i am on my home)[.!?]?$/i.test(
+      foldChip(options?.asked ?? ''),
+    );
   // "Not now for Fiat Balance" names the item in order to set it aside.
   // Treating that name as the card puts the same card under the reply.
   const settingAside = Boolean(
@@ -336,7 +341,11 @@ export function formatMemberHomeFacts(
         isMemberHomeItemDecline(options.asked)),
   );
   const askedItem =
-    shareTurn || continueAsk || settingAside || !options?.asked?.trim()
+    shareTurn ||
+    continueAsk ||
+    usefulAsk ||
+    settingAside ||
+    !options?.asked?.trim()
       ? null
       : memberHomeThreadItemForMessage(listMemberHomeThreadCatalog(home), {
           content: options.asked,
@@ -399,7 +408,7 @@ export function formatMemberHomeFacts(
         )
       : undefined) ??
     unspoken.find(stillOpen) ??
-    (!shareTurn && !lookAsk && !continueAsk
+    (!shareTurn && !lookAsk && !continueAsk && !usefulAsk
       ? stillWaiting.find(stillOpen) ?? null
       : null);
   const looked = lookAsk
@@ -459,6 +468,8 @@ export function formatMemberHomeFacts(
       ? 'They just set that one aside. One line that you will leave it for another time. Do not call show_member_home_item. Do not place that card under this reply.'
       : continueAsk && !spoken
       ? 'They asked to continue. Every waiting item was already placed in earlier replies. One short line that you already covered what is open for now. Do not place the same card again. Do not invent a new person or item. Do not call show_member_home_item.'
+      : usefulAsk && !spoken
+      ? 'They asked where they can be useful. Nothing fresh is waiting that has not already been placed. One short line that nothing needs them right now. Do not place a card. Do not invent a person or item. Do not call show_member_home_item. Do not rank people by shared spaces.'
       : spoken
       ? itemLine(spoken)
       : 'This turn is not a card. Do not call show_member_home_item.';
@@ -482,6 +493,9 @@ export function formatMemberHomeFacts(
 
   const text = [
     listAsk ? listTurnLine(listAsk) : null,
+    usefulAsk
+      ? 'This turn: they asked where they can be useful. Brief ONLY the one waiting item in this brief. Three or four short sentences about that one person and that one need, then stop. Call show_member_home_item once for that card. One item. One card. Forbidden, including close paraphrases: ranking people by shared spaces, "keeps showing up across the most spaces", bundling a roster person with a signal, offering to navigate to signals, inventing collaboration details not on the item line, a second topic. Do not use the connections roster for this reply.'
+      : null,
     'Member home facts for this signed-in person. These are records. Keep the Hypha AI voice from the instructions above. You already know this member, the spaces they belong to, and the people they share those spaces with. Accompany them. The collective is the point. Everyone here can be helpful. No open question about what they feel like doing. One gentle opening about this item is enough. Never a command.',
     'LENGTH: Typed chat and spoken voice are the same script: three or four short sentences, like a friend catching them up, then stop. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Never a paragraph. Never a wall of text. Never a second topic, another space, or a separate upvote nudge. Never repeat the same idea in different words. Never say the same sentence twice. Do not dump about=. Do not list every name in with=. One person and one space is enough. The detail is already on screen, so do not describe an interface.',
     'INTRODUCE: You are a friend in this community, catching them up on one person who is asking for attention. Talk about the people, never the interface. Never say card, screen, or button. Never say "You can now decide on the proposal card." Address the member by first name. Speak to them by name. The person who raised it is the subject, in the active voice, by first name (the first word of creator=). Sound like care, not a task. Observation, what the community needs, then one gentle opening. Use only facts on that item\'s line. creator= and space= on one line belong together — never put a person from one line into another line\'s space. Example shapes below are shapes only: never copy their names (Suzana, Kuan, Ronnie, Marieke, Flywheel, Energy) onto a real item. Do not add a person, a number, a place, or a reason that is not written on that line. spoken= is he or she. When spoken=he, say he and his. When spoken=she, say she and her.',
@@ -664,7 +678,11 @@ export function formatMemberHomeFacts(
     options?.notADecision
       ? 'They just said this is not a proposal and there is nothing to decide. Agree in one short line. Then the next waiting item in the same reply. Call show_member_home_item for that next item. Do not explain the signal. Do not say "You can now decide on the proposal card."'
       : null,
-    `People who share a space, closest first: ${people}.`,
+    // Only the tokens chip needs the roster. On useful / decision / continue
+    // briefings it made the model invent "Vlad shares the most spaces" dumps.
+    listAsk === 'tokens'
+      ? `People who share a space, closest first: ${people}.`
+      : null,
     home.wallet.preferredCurrency
       ? `Preferred currency: ${home.wallet.preferredCurrency}.`
       : 'Preferred currency: none set.',
