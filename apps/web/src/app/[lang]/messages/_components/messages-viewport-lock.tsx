@@ -9,19 +9,11 @@ import {
   subscribeMainColumnScroll,
 } from '@hypha-platform/epics';
 
-const DESKTOP_MENU = '(min-width: 80rem)';
+import { messagesFrameHeight } from './messages-frame-height';
 
-/** Height of the messages frame: the visible column under the menu, above the phone tab bar. */
-export function messagesFrameHeight(input: {
-  frameTop: number;
-  scrollBottom: number;
-  viewportBottom: number;
-  tabOffset: number;
-}): number {
-  const visibleBottom = Math.min(input.scrollBottom, input.viewportBottom);
-  const next = Math.floor(visibleBottom - input.frameTop - input.tabOffset);
-  return Number.isFinite(next) ? Math.max(0, next) : 0;
-}
+export { messagesFrameHeight } from './messages-frame-height';
+
+const DESKTOP_MENU = '(min-width: 80rem)';
 
 function mobileTabOffset(): number {
   if (window.matchMedia(DESKTOP_MENU).matches) return 0;
@@ -37,6 +29,15 @@ function mobileTabOffset(): number {
   const height = probe.getBoundingClientRect().height;
   probe.remove();
   return height || 96;
+}
+
+/** Site footer is a sibling under the page; pin must leave room or it vanishes. */
+function desktopFooterOffset(): number {
+  if (!window.matchMedia(DESKTOP_MENU).matches) return 0;
+  const footer = document.querySelector('footer');
+  if (!footer) return 0;
+  const height = footer.getBoundingClientRect().height;
+  return Number.isFinite(height) ? Math.ceil(height) : 0;
 }
 
 /**
@@ -78,16 +79,20 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
         scrollBottom: scrollRect?.bottom ?? viewportBottom,
         viewportBottom,
         tabOffset: mobileTabOffset(),
+        footerOffset: desktopFooterOffset(),
       });
       // Always pin a height. Skipping left the frame content-sized while the
       // main column was overflow-locked, so neither the page nor the list
-      // could scroll and the inbox looked clipped.
+      // could scroll and the inbox looked clipped. Leave room for the site
+      // footer — overflow is locked, so a full-bleed pin hid it.
       frame.style.height = `${Math.max(height, 160)}px`;
     };
 
     const observer = new ResizeObserver(fit);
     fit();
     observer.observe(document.documentElement);
+    const footer = document.querySelector('footer');
+    if (footer) observer.observe(footer);
     const stopWatchingScrollRoot = subscribeMainColumnScroll(fit);
     window.addEventListener('resize', fit);
     window.addEventListener('scroll', fit, { passive: true });
