@@ -2881,7 +2881,7 @@ export function MyConnections({
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col gap-6',
             section === 'messages' &&
-              'gap-4 lg:flex-row lg:items-start lg:gap-6',
+              'min-h-0 flex-1 gap-4 overflow-hidden lg:flex-row lg:items-stretch lg:gap-6',
           )}
         >
           {section === 'messages' ? (
@@ -2889,12 +2889,11 @@ export function MyConnections({
               ref={inboxFiltersRef}
               data-messages-filters=""
               className={cn(
-                // Phone: scroll the channel menu in the pinned screen.
-                // Desktop: leave it in page flow — no left scrollbar.
-                'w-full lg:w-80 lg:shrink-0 lg:self-start',
+                // Channel menu stays put. Only the conversation list scrolls.
+                'w-full shrink-0 lg:w-80 lg:overflow-hidden',
                 picking || inboxChannelOpen
                   ? 'hidden lg:block'
-                  : 'narrow-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain lg:overflow-visible',
+                  : 'narrow-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain lg:flex-none lg:overflow-hidden',
               )}
             >
               <MessagesInboxFilters

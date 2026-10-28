@@ -4,6 +4,7 @@ import {
   humanizeMemoryExcerpt,
   looksLikeTechnicalSpaceMemoryName,
   memoryBodyWithoutRepeatedTitle,
+  scrubTechnicalIdentityTokens,
   stripTechnicalSpeakerFromExcerpt,
 } from '../space-memory-display';
 
@@ -53,6 +54,14 @@ describe('stripTechnicalSpeakerFromExcerpt', () => {
   });
 });
 
+describe('scrubTechnicalIdentityTokens', () => {
+  it('removes bare bridged privy locals from free text', () => {
+    expect(
+      scrubTechnicalIdentityTokens('hello prod_privy_did_privy_cmabc123 there'),
+    ).toBe('hello there');
+  });
+});
+
 describe('humanizeMemoryExcerpt', () => {
   it('keeps the sentences from a Matrix reply dump', () => {
     expect(
@@ -62,6 +71,14 @@ describe('humanizeMemoryExcerpt', () => {
     ).toBe(
       'How was the call yesterday Did you notice any improvement, or still had issues during the call? The changes I made were mainly to be able to recover correctly when ther...',
     );
+  });
+
+  it('strips bridged speakers from call transcript excerpts', () => {
+    expect(
+      humanizeMemoryExcerpt(
+        'prod_privy_did_privy_abc: ok recording with voice only\nprod_privy_did_privy_def: then we switched to video',
+      ),
+    ).toBe('ok recording with voice only\nthen we switched to video');
   });
 
   it('leaves ordinary markdown alone', () => {

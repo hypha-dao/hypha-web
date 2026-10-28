@@ -65,16 +65,52 @@ function firstSentence(text: string, maxLen = 120): string {
   return (stop > 40 ? cut.slice(0, stop + 1) : `${cut}…`).trim();
 }
 
+const BRIDGED_PRIVY_ID =
+  /@?(?:dev|prev|prod)_privy_did_privy_[a-z0-9]+(?::[^\s:,]+)?/gi;
+const DID_PRIVY = /did:privy:[a-z0-9]+/gi;
+
+/** Drop bridged Privy / Matrix ids that leak into memory titles and bodies. */
+export function scrubTechnicalIdentityTokens(text: string): string {
+  return text
+    .replace(BRIDGED_PRIVY_ID, ' ')
+    .replace(DID_PRIVY, ' ')
+    .replace(/[^\S\n]{2,}/g, ' ')
+    .replace(/[^\S\n]+\n/g, '\n')
+    .replace(/\n[^\S\n]+/g, '\n')
+    .trim();
+}
+
 /**
  * Discussion summaries are markdown, but Matrix reply fallbacks land in them
  * as `<@user:server>` mentions and `>` quotes. Keep the sentences.
+ * Call transcripts often start with bridged `prod_privy_…:` speaker labels.
  */
 export function humanizeMemoryExcerpt(source: string): string {
   const trimmed = source.replace(/\r\n/g, '\n').trim();
   if (!trimmed) return '';
+
+  const rawLines = trimmed.split('\n');
+  const hasTechnicalSpeakers = rawLines.some((line) => {
+    const parsed = splitSpeakerLabeledTranscriptLine(line.trim());
+    if (!parsed || !looksLikeTechnicalSpeakerLabel(parsed.speaker)) {
+      return false;
+    }
+    // Reply dumps wrap MXIDs in `<@…>` / `>`; real transcript lines are bare.
+    return !/[<>]/.test(parsed.speaker);
+  });
+  if (hasTechnicalSpeakers) {
+    return rawLines
+      .map((line) =>
+        scrubTechnicalIdentityTokens(stripTechnicalSpeakerFromExcerpt(line)),
+      )
+      .filter(Boolean)
+      .join('\n')
+      .trim();
+  }
+
   const mention = /<?@[A-Za-z0-9._=\-/]+:[A-Za-z0-9.\-]+(?::\d+)?>?/;
   if (!mention.test(trimmed) && !/(?:^|\s)>+/.test(trimmed)) {
-    return trimmed;
+    return scrubTechnicalIdentityTokens(trimmed);
   }
   const withoutMentions = trimmed.replace(new RegExp(mention.source, 'g'), ' ');
   const lines = withoutMentions
@@ -87,7 +123,7 @@ export function humanizeMemoryExcerpt(source: string): string {
         .trim(),
     )
     .filter(Boolean);
-  return lines.join(' ');
+  return scrubTechnicalIdentityTokens(lines.join(' '));
 }
 
 /** Strip a technical speaker prefix from a transcript excerpt line. */
@@ -95,11 +131,13 @@ export function stripTechnicalSpeakerFromExcerpt(excerpt: string): string {
   const trimmed = excerpt.trim();
   if (!trimmed) return '';
   const parsed = splitSpeakerLabeledTranscriptLine(trimmed);
-  if (!parsed) return trimmed;
+  if (!parsed) return scrubTechnicalIdentityTokens(trimmed);
   const body = parsed.body.trim();
-  if (!body) return trimmed;
-  if (looksLikeTechnicalSpeakerLabel(parsed.speaker)) return body;
-  return trimmed;
+  if (!body) return '';
+  if (looksLikeTechnicalSpeakerLabel(parsed.speaker)) {
+    return scrubTechnicalIdentityTokens(body);
+  }
+  return scrubTechnicalIdentityTokens(trimmed);
 }
 
 function pickHumanReadableCandidate(

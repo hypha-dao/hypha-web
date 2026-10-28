@@ -55,10 +55,8 @@ function clearListFrameHeight(root: HTMLElement) {
 }
 
 /**
- * Desktop: channel menu stays in page flow (no left scrollbar). Only the
- * conversation list gets a fixed frame — at least as tall as the menu, and
- * tall enough to fill the visible column.
- * Phone: pin the whole screen so the menu or list can scroll under the tabs.
+ * Only the conversation list scrolls. The channel menu stays put in the
+ * pinned screen, and the site footer stays visible under that frame.
  */
 export function MessagesViewportLock({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -66,7 +64,6 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
   useEffect(() => {
     scrollMainColumnTo(0);
     let observedScroll: HTMLElement | null = null;
-    let observedFilters: HTMLElement | null = null;
     let observedList: HTMLElement | null = null;
 
     const watch = (node: HTMLElement | null, previous: HTMLElement | null) => {
@@ -82,14 +79,9 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
       const scrollEl = getMainColumnScrollElement();
       observedScroll = watch(scrollEl, observedScroll);
       const list = root.querySelector('[data-messages-list-frame]');
-      const filters = root.querySelector('[data-messages-filters]');
       observedList = watch(
         list instanceof HTMLElement ? list : null,
         observedList,
-      );
-      observedFilters = watch(
-        filters instanceof HTMLElement ? filters : null,
-        observedFilters,
       );
       const scrollRect = scrollEl?.getBoundingClientRect();
       const viewportBottom = window.visualViewport
@@ -99,38 +91,34 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
       const footerOffset = desktopFooterOffset();
       const desktopInbox = window.matchMedia(DESKTOP_INBOX).matches;
 
-      if (desktopInbox && list instanceof HTMLElement) {
-        root.style.height = '';
-        root.style.maxHeight = '';
-        const available = messagesFrameHeight({
-          frameTop: list.getBoundingClientRect().top,
-          scrollBottom: scrollRect?.bottom ?? viewportBottom,
-          viewportBottom,
-          tabOffset,
-          footerOffset,
-        });
-        const leftHeight =
-          filters instanceof HTMLElement
-            ? filters.getBoundingClientRect().height
-            : 0;
-        list.style.height = `${messagesListFrameHeight({
-          available,
-          leftHeight,
-        })}px`;
-        list.style.maxHeight = '';
-        return;
-      }
-
-      clearListFrameHeight(root);
-      const height = messagesFrameHeight({
+      const rootAvailable = messagesFrameHeight({
         frameTop: root.getBoundingClientRect().top,
         scrollBottom: scrollRect?.bottom ?? viewportBottom,
         viewportBottom,
         tabOffset,
         footerOffset,
       });
-      root.style.height = `${Math.max(height, 160)}px`;
+      // Pin the whole messages screen above the footer so the page does not
+      // grow past it. Only the right list scrolls inside that pin.
+      root.style.height = `${Math.max(rootAvailable, 160)}px`;
       root.style.maxHeight = '';
+
+      if (desktopInbox && list instanceof HTMLElement) {
+        const listAvailable = messagesFrameHeight({
+          frameTop: list.getBoundingClientRect().top,
+          scrollBottom: scrollRect?.bottom ?? viewportBottom,
+          viewportBottom,
+          tabOffset,
+          footerOffset,
+        });
+        list.style.height = `${messagesListFrameHeight({
+          available: listAvailable,
+        })}px`;
+        list.style.maxHeight = '';
+        return;
+      }
+
+      clearListFrameHeight(root);
     };
 
     const observer = new ResizeObserver(fit);
@@ -163,7 +151,7 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
   return (
     <div
       ref={ref}
-      className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden lg:overflow-visible"
+      className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
     >
       {children}
     </div>

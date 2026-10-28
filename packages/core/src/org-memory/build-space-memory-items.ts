@@ -463,10 +463,9 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
       const signalTitle = a.signal_title?.trim() || undefined;
       const roomTitle = a.room_title?.trim() || undefined;
       const rawExcerpt = a.text_excerpt?.trim() || undefined;
-      const excerpt =
-        a.source === 'discussion_summary' && rawExcerpt
-          ? humanizeMemoryExcerpt(rawExcerpt) || undefined
-          : rawExcerpt;
+      const excerpt = rawExcerpt
+        ? humanizeMemoryExcerpt(rawExcerpt) || undefined
+        : undefined;
       const displayTitle = deriveSpaceMemoryDisplayTitle({
         source: a.source,
         name:

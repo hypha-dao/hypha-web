@@ -32,21 +32,11 @@ describe('messagesFrameHeight', () => {
 });
 
 describe('messagesListFrameHeight', () => {
-  it('fills the visible column when that is taller than the channel menu', () => {
-    expect(
-      messagesListFrameHeight({
-        available: 640,
-        leftHeight: 420,
-      }),
-    ).toBe(640);
+  it('fills the visible column above the footer', () => {
+    expect(messagesListFrameHeight({ available: 640 })).toBe(640);
   });
 
-  it('grows with the channel menu so the list frame stays at least as tall', () => {
-    expect(
-      messagesListFrameHeight({
-        available: 480,
-        leftHeight: 560,
-      }),
-    ).toBe(560);
+  it('keeps a usable minimum when the column is short', () => {
+    expect(messagesListFrameHeight({ available: 40 })).toBe(160);
   });
 });

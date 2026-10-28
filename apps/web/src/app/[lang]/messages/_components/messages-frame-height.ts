@@ -14,18 +14,12 @@ export function messagesFrameHeight(input: {
 }
 
 /**
- * Conversation list frame: at least as tall as the channel menu, and tall
- * enough to fill the visible column so the list can scroll on its own.
+ * Conversation list frame: fill the visible column above the site footer.
+ * Do not grow with the channel menu — that pushed the footer off-screen.
  */
-export function messagesListFrameHeight(input: {
-  available: number;
-  leftHeight: number;
-}): number {
+export function messagesListFrameHeight(input: { available: number }): number {
   const available = Number.isFinite(input.available)
     ? Math.max(0, input.available)
     : 0;
-  const leftHeight = Number.isFinite(input.leftHeight)
-    ? Math.max(0, input.leftHeight)
-    : 0;
-  return Math.max(160, available, leftHeight);
+  return Math.max(160, available);
 }
