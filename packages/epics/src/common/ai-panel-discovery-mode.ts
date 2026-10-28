@@ -41,13 +41,13 @@ export function saveSpaceDiscoveryMode(
 const VOICE_MIC_KEY_PREFIX = 'hypha:ai-panel-voice-mic:v1:';
 const VOICE_SOUND_KEY_PREFIX = 'hypha:ai-panel-voice-sound:v1:';
 
-/** Conversation starts on. A stored "off" is the only way it stays quiet. */
+/** Mic and sound stay off until they turn them on. That choice is kept. */
 export function readSpaceVoiceOn(
   spaceSlug: string | undefined,
   kind: 'mic' | 'sound',
   options?: { defaultOn?: boolean },
 ): boolean {
-  const defaultOn = options?.defaultOn !== false;
+  const defaultOn = options?.defaultOn === true;
   const slug = normalizeSpaceSlug(spaceSlug);
   if (!slug || typeof window === 'undefined') return defaultOn;
   try {

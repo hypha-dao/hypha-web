@@ -94,9 +94,10 @@ const HOME_SOUND_KEY = 'hypha-member-home-sound';
 const HOME_MIC_KEY = 'hypha-member-home-mic';
 function readHomeSoundOn() {
   try {
-    return window.localStorage.getItem(HOME_SOUND_KEY) !== 'off';
+    // Off until they turn it on. That choice stays until they turn it off.
+    return window.localStorage.getItem(HOME_SOUND_KEY) === 'on';
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -110,9 +111,10 @@ function writeHomeSoundOn(on: boolean) {
 
 function readHomeMicOn() {
   try {
-    return window.localStorage.getItem(HOME_MIC_KEY) !== 'off';
+    // Off until they turn it on. That choice stays until they turn it off.
+    return window.localStorage.getItem(HOME_MIC_KEY) === 'on';
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -653,8 +655,8 @@ export function MemberHomeChat({
   const [input, setInput] = useState('');
   const [drafts, setDrafts] = useState<AiPanelDraftAttachment[]>([]);
   const [dismissedError, setDismissedError] = useState(false);
-  const [soundOn, setSoundOn] = useState(true);
-  const [micOn, setMicOn] = useState(true);
+  const [soundOn, setSoundOn] = useState(false);
+  const [micOn, setMicOn] = useState(false);
   const [soundReady, setSoundReady] = useState(false);
   const [voiceHydrated, setVoiceHydrated] = useState(false);
   const [widgets, setWidgets] = useState<HomeWidget[]>([]);

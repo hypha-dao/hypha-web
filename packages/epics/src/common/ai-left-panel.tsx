@@ -489,8 +489,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
-  const [micOn, setMicOn] = useState(true);
-  const [soundOn, setSoundOn] = useState(true);
+  const [micOn, setMicOn] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
   const [voiceReady, setVoiceReady] = useState(false);
 
   // Home, messages, wallet, my spaces, and network share one Network AI
@@ -501,16 +501,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     spaceSlug?.trim() || (isMemberAiSurface ? 'member' : undefined);
 
   useEffect(() => {
-    // Member screens keep the mic off until the person asks to talk. An open
-    // mic was aborting replies that were still streaming.
-    setMicOn(
-      readSpaceVoiceOn(voicePrefSlug, 'mic', {
-        defaultOn: !isMemberAiSurface,
-      }),
-    );
+    // Both start off. Turning either on keeps that choice until they turn it off.
+    setMicOn(readSpaceVoiceOn(voicePrefSlug, 'mic'));
     setSoundOn(readSpaceVoiceOn(voicePrefSlug, 'sound'));
     setVoiceReady(true);
-  }, [isMemberAiSurface, voicePrefSlug]);
+  }, [voicePrefSlug]);
 
   const conversationOpen =
     isAiOpen &&
