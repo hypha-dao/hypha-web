@@ -31,6 +31,7 @@ import {
   isMemberHomeItemDecline,
   isMemberHomeItemDeferral,
   memberHomeCardForSpeech,
+  memberHomeSpeechConflictsWithItem,
   memberHomeThreadItemForMessage,
   memberHomeThreadItemKey,
   type MemberHomeThreadItem,
@@ -186,36 +187,39 @@ function lastHomeTurnIsAssistant(
   return false;
 }
 
+function homeItemRef(
+  items: readonly MemberHomeThreadItem[],
+  home: MemberIntelligence | undefined,
+  ref: { kind: string; slug: string } | null | undefined,
+): MemberHomeThreadItem | null {
+  if (!ref || (ref.kind !== 'proposal' && ref.kind !== 'signal') || !ref.slug) {
+    return null;
+  }
+  return (
+    items.find((item) => item.kind === ref.kind && item.slug === ref.slug) ??
+    (home
+      ? memberHomeThreadItemForRef(home, {
+          kind: ref.kind,
+          slug: ref.slug,
+        })
+      : null)
+  );
+}
+
 function homeItemForMessage(
   items: readonly MemberHomeThreadItem[],
   message: HomeMessage,
   home?: MemberIntelligence,
 ): MemberHomeThreadItem | null {
-  const hinted = message.metadata?.homeItem;
-  const fromHint =
-    hinted &&
-    (hinted.kind === 'proposal' || hinted.kind === 'signal') &&
-    hinted.slug
-      ? items.find(
-          (item) => item.kind === hinted.kind && item.slug === hinted.slug,
-        ) ??
-        (home
-          ? memberHomeThreadItemForRef(home, {
-              kind: hinted.kind,
-              slug: hinted.slug,
-            })
-          : null)
-      : null;
-  // The brief chooses the card before the model speaks, and that choice is
-  // stored on the message. Speech can replace it when the sentence names a
-  // different item. It cannot leave the reply with no card.
-  const matched = memberHomeCardForSpeech({
+  const fromHint = homeItemRef(items, home, message.metadata?.homeItem);
+  // Speech matching already keeps or drops the hint. Never force a hint
+  // after a conflict — that put the previous/next signal under this reply.
+  return memberHomeCardForSpeech({
     items,
     message,
     hinted: fromHint,
     spaceTitles: home?.spaces.map((space) => space.title) ?? [],
   });
-  return matched ?? fromHint;
 }
 
 /** The card under this reply. The item they just set aside stays off it. */
@@ -249,13 +253,20 @@ function pinnedHomeItem(
   ) {
     return item;
   }
-  // The ack named the set-aside item first. Prefer the next item this
-  // reply also carries, so the card under it does not vanish.
+  // The ack named the set-aside item. Only move on when this reply also
+  // names another open item — never grab the next catalog row by default.
   const remaining = items.filter(
     (entry) =>
       memberHomeThreadItemKey(entry) !== memberHomeThreadItemKey(aside),
   );
-  return homeItemForMessage(remaining, message, home);
+  const next = homeItemForMessage(remaining, message, home);
+  if (
+    next &&
+    memberHomeThreadItemKey(next) !== memberHomeThreadItemKey(aside)
+  ) {
+    return next;
+  }
+  return null;
 }
 
 /** Live catalog first, then cards already shown in this thread. */
@@ -707,6 +718,10 @@ export function MemberHomeChat({
   // Last non-empty line for the message that is still streaming. A cleaner
   // gap must not unmount the bubble and play the entrance animation again.
   const heldBubbleText = useRef(new Map<string, string>());
+  /** Card frozen under each finished reply. Live rematch was jumping links. */
+  const frozenHomeCards = useRef(
+    new Map<string, { kind: string; slug: string }>(),
+  );
   const droppedLine = useRef(t('threadDropped'));
   useLayoutEffect(() => {
     droppedLine.current = t('threadDropped');
@@ -1412,10 +1427,18 @@ export function MemberHomeChat({
   }, [homeMessages, intelligence, liveCardItems, widgetKindFor]);
 
   const cardsByMessageId = useMemo(() => {
-    // Each reply keeps its own card when the next message arrives. Moving
-    // the card to the latest mention made earlier cards vanish from the
-    // thread the member is still reading.
+    // Each finished reply keeps the card it earned. Rematching every
+    // catalog tweak moved older links onto the previous or next signal.
     const map = new Map<string, MemberHomeThreadItem>();
+    const liveIds = new Set(homeMessages.map((message) => message.id));
+    for (const id of frozenHomeCards.current.keys()) {
+      if (!liveIds.has(id)) frozenHomeCards.current.delete(id);
+    }
+    const lastMessage = homeMessages[homeMessages.length - 1];
+    const spaceTitles = [
+      ...cardItems.map((item) => item.spaceTitle),
+      ...intelligence.spaces.map((space) => space.title),
+    ];
     homeMessages.forEach((message, index) => {
       if (message.role !== 'assistant' || message.metadata?.homeArrival) {
         return;
@@ -1426,12 +1449,32 @@ export function MemberHomeChat({
       if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
         return;
       }
+      const streamingThis = isStreaming && message.id === lastMessage?.id;
+      const text = messageText(message);
+      const frozen = frozenHomeCards.current.get(message.id);
+      if (frozen && !streamingThis) {
+        const kept = homeItemRef(cardItems, intelligence, frozen);
+        if (
+          kept &&
+          !memberHomeSpeechConflictsWithItem(kept, text, spaceTitles)
+        ) {
+          map.set(message.id, kept);
+          return;
+        }
+        frozenHomeCards.current.delete(message.id);
+      }
       const item = pinnedHomeItem(cardItems, homeMessages, index, intelligence);
       if (!item) return;
       map.set(message.id, item);
+      if (!streamingThis) {
+        frozenHomeCards.current.set(message.id, {
+          kind: item.kind,
+          slug: item.slug,
+        });
+      }
     });
     return map;
-  }, [cardItems, homeMessages, intelligence, widgetKindFor]);
+  }, [cardItems, homeMessages, intelligence, isStreaming, widgetKindFor]);
 
   // Persist cards on disk only — never setMessages here. Stamping via
   // setMessages looped into React #185; the crash remount then hit #310.
@@ -1464,24 +1507,14 @@ export function MemberHomeChat({
       const message = homeMessages[index];
       if (!message || message.role !== 'assistant') continue;
       if (message.metadata?.homeArrival) continue;
-      const asked = widgetKindFor(userTextBefore(homeMessages, index));
-      if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
-        continue;
-      }
-      if (pinnedHomeItem(cardItems, homeMessages, index, intelligence)) {
-        return message.id;
-      }
+      if (cardsByMessageId.has(message.id)) return message.id;
     }
     return null;
-  }, [cardItems, homeMessages, intelligence, widgetKindFor]);
+  }, [cardsByMessageId, homeMessages]);
   const focusedItem = useMemo(() => {
-    const message = homeMessages.find((item) => item.id === cardMessageId);
-    if (!message) return null;
-    const index = homeMessages.indexOf(message);
-    return index < 0
-      ? null
-      : pinnedHomeItem(cardItems, homeMessages, index, intelligence);
-  }, [cardItems, cardMessageId, homeMessages, intelligence]);
+    if (!cardMessageId) return null;
+    return cardsByMessageId.get(cardMessageId) ?? null;
+  }, [cardMessageId, cardsByMessageId]);
   useEffect(() => {
     const node = scroller.current;
     if (!node) return;

@@ -809,6 +809,61 @@ describe('memberHomeThreadItemForMessage', () => {
     });
     expect(item).toBeNull();
   });
+
+  it('does not keep a hinted card when the reply names another person and space', () => {
+    const suzanaEnergy: MemberHomeThreadItem = {
+      kind: 'signal',
+      slug: 'suzana-tension',
+      title: 'How decisions land',
+      spaceSlug: 'hypha-energy',
+      spaceTitle: 'Hypha Energy',
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: false,
+      category: null,
+      summary: 'A tension about how decisions land.',
+      creatorId: 4,
+      creatorName: 'Suzana Mota',
+      creatorAvatarUrl: null,
+    };
+    const vladFlywheel: MemberHomeThreadItem = {
+      kind: 'signal',
+      slug: 'vlad-meet',
+      title: 'Community meet',
+      spaceSlug: 'hypha-flywheel',
+      spaceTitle: 'Hypha Flywheel',
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: false,
+      category: null,
+      summary: 'A signal the community can meet.',
+      creatorId: 2,
+      creatorName: 'Vlad Hramtsov',
+      creatorAvatarUrl: null,
+    };
+    const text =
+      'Nice one, Alex. Vlad has something open in Hypha Flywheel — a signal the community can meet.';
+    expect(
+      memberHomeCardForSpeech({
+        items: [suzanaEnergy, vladFlywheel],
+        message: { content: text },
+        hinted: suzanaEnergy,
+        spaceTitles: ['Hypha Energy', 'Hypha Flywheel'],
+      })?.slug,
+    ).toBe('vlad-meet');
+    // Wrong hint, right words, and the right item is not in the pool: no card.
+    expect(
+      memberHomeCardForSpeech({
+        items: [vladFlywheel],
+        message: {
+          content:
+            'Alex, Suzana is naming a tension in Hypha Energy about how decisions land.',
+        },
+        hinted: vladFlywheel,
+        spaceTitles: ['Hypha Energy', 'Hypha Flywheel'],
+      }),
+    ).toBeNull();
+  });
 });
 
 describe('shownMemberHomeItemKeys', () => {
