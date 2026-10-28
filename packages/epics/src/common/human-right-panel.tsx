@@ -3320,7 +3320,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     };
 
     const seedFromDocumentAssignees = async (): Promise<
-      'seeded' | 'empty' | 'failed' | 'kept-timeline'
+      'seeded' | 'empty' | 'failed' | 'kept-timeline' | 'kept-empty-trusted'
     > => {
       const slug = coherenceSlug?.trim();
       if (!slug) return 'failed';
@@ -3332,9 +3332,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (
           applied.usable ||
           applied.keptValidatedRoster ||
-          applied.hasTrustedRoster
+          applied.hasTrustedMembers
         ) {
           return 'kept-timeline';
+        }
+        // Trusted empty roster — do not seed the viewer or resolve open.
+        if (applied.hasTrustedRoster) {
+          return 'kept-empty-trusted';
         }
         const personIds = [
           ...new Set(
@@ -3435,8 +3439,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       }
       const seedResult = await seedFromDocumentAssignees();
       if (cancelled) return;
-      // Lookup threw — stay unresolved (fail closed) so hydrate can retry.
-      if (seedResult === 'failed') {
+      // Lookup threw or a trusted empty roster arrived during lookup —
+      // stay unresolved (fail closed).
+      if (seedResult === 'failed' || seedResult === 'kept-empty-trusted') {
         return;
       }
       // Map lookup failed with no mapped assignees — stay unresolved.
