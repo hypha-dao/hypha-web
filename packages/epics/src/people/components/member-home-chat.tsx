@@ -1454,9 +1454,10 @@ export function MemberHomeChat({
       const frozen = frozenHomeCards.current.get(message.id);
       if (frozen && !streamingThis) {
         const kept = homeItemRef(cardItems, intelligence, frozen);
+        const peerNames = cardItems.map((entry) => entry.creatorName);
         if (
           kept &&
-          !memberHomeSpeechConflictsWithItem(kept, text, spaceTitles)
+          !memberHomeSpeechConflictsWithItem(kept, text, spaceTitles, peerNames)
         ) {
           map.set(message.id, kept);
           return;

@@ -686,6 +686,35 @@ function givenNameInText(name: string | null, haystack: string): boolean {
   return haystack.includes(given);
 }
 
+/**
+ * ", Alex." at the end of a sentence is address, not authorship.
+ * "Edgar's thread …, Alex." must not count as Alex owning the card.
+ */
+function givenNameOnlyAsVocative(
+  name: string | null,
+  haystack: string,
+): boolean {
+  const given = creatorTokens(name ?? '')[0];
+  if (!given || given.length < 4) return false;
+  if (!haystack.includes(given)) return false;
+  const vocative = new RegExp(`,\\s*${given}\\b`);
+  const first = haystack.indexOf(given);
+  const match = vocative.exec(haystack);
+  if (!match || match.index !== first) return false;
+  // Every occurrence is the same trailing address (or repeats of it).
+  let from = 0;
+  while (from < haystack.length) {
+    const at = haystack.indexOf(given, from);
+    if (at < 0) break;
+    const before = haystack.slice(Math.max(0, at - 2), at);
+    if (!/,\s*$/.test(before) && !(at > 0 && haystack[at - 1] === ',')) {
+      return false;
+    }
+    from = at + given.length;
+  }
+  return true;
+}
+
 function textOverlap(item: MemberHomeThreadItem, haystack: string): number {
   return creatorTokens(`${item.title} ${item.summary ?? ''}`).filter((token) =>
     haystack.includes(token),
@@ -806,8 +835,10 @@ function textBelongsTo(item: MemberHomeThreadItem, text: string): boolean {
   if (creatorNamedInText(item.creatorName, haystack)) return true;
   // "Marco in Hypha Energy has asked to join" names him without the title
   // or the rest of his name. That sentence still belongs to his card.
+  // Skip when the name is only a vocative (", Alex.") — that is address.
   if (
     givenNameInText(item.creatorName, haystack) &&
+    !givenNameOnlyAsVocative(item.creatorName, haystack) &&
     spaceNamedInText(item, haystack)
   ) {
     return true;
@@ -852,8 +883,10 @@ function pickNamedPersonItem(
       : named.filter(
           (item) => foldHomeText(item.spaceTitle).length === longest,
         );
-  const byPerson = inSpace.filter((item) =>
-    givenNameInText(item.creatorName, haystack),
+  const byPerson = inSpace.filter(
+    (item) =>
+      givenNameInText(item.creatorName, haystack) &&
+      !givenNameOnlyAsVocative(item.creatorName, haystack),
   );
   if (byPerson.length === 0) return null;
   if (byPerson.length === 1) return byPerson[0] ?? null;
@@ -974,14 +1007,76 @@ function mostSpecificSpaceTitles(
 }
 
 /**
- * The reply names a space this card is not in.
- * A greeting that names no space does not conflict.
+ * Given names the reply treats as authors ("Edgar's thread", "Edgar has put…").
+ * Uses capital letters in the original so "space's agreements" is not a person.
+ */
+function claimedCreatorGivens(text: string): string[] {
+  const found = new Set<string>();
+  const patterns = [
+    /\b([A-Z][a-zA-Z]{3,})'s\b/g,
+    /\b([A-Z][a-zA-Z]{3,})’s\b/g,
+    /\b([A-Z][a-zA-Z]{3,}) has\b/g,
+    /\b([A-Z][a-zA-Z]{3,}) put\b/g,
+    /\b([A-Z][a-zA-Z]{3,}) raised\b/g,
+    /\b([A-Z][a-zA-Z]{3,}) opened\b/g,
+    /\b([A-Z][a-zA-Z]{3,}) is naming\b/g,
+  ];
+  for (const pattern of patterns) {
+    for (const match of text.matchAll(pattern)) {
+      const given = foldHomeText(match[1] ?? '');
+      if (given.length >= 4) found.add(given);
+    }
+  }
+  return [...found];
+}
+
+/**
+ * The reply attributes this work to someone else ("Edgar's thread",
+ * "Edgar has put…") while the card belongs to a different creator.
+ * Works even when that person has no open item in the queue today.
+ */
+function textClaimsOtherCreator(
+  item: MemberHomeThreadItem,
+  text: string,
+  peerNames: readonly (string | null | undefined)[],
+): boolean {
+  const haystack = foldHomeText(text);
+  if (!haystack) return false;
+  const own = new Set(creatorTokens(item.creatorName ?? ''));
+  const claimed = new Set(claimedCreatorGivens(text));
+  for (const name of peerNames) {
+    const given = creatorTokens(name ?? '')[0];
+    if (!given || given.length < 4) continue;
+    if (
+      haystack.includes(`${given}'s`) ||
+      haystack.includes(`${given} has`) ||
+      haystack.includes(`${given} put`) ||
+      haystack.includes(`${given} raised`) ||
+      haystack.includes(`${given} opened`) ||
+      haystack.includes(`${given} is naming`)
+    ) {
+      claimed.add(given);
+    }
+  }
+  for (const given of claimed) {
+    if (!own.has(given)) return true;
+  }
+  return false;
+}
+
+/**
+ * The reply names a space this card is not in, or attributes the work to
+ * another person. A greeting that names no space does not conflict.
  */
 export function memberHomeSpeechConflictsWithItem(
   item: MemberHomeThreadItem,
   text: string,
   spaceTitles: readonly string[],
+  peerNames: readonly (string | null | undefined)[] = [],
 ): boolean {
+  // Person attribution first: "Edgar's thread …, Alex." must not keep Alex's
+  // card just because the listener is named and the space matches.
+  if (textClaimsOtherCreator(item, text, peerNames)) return true;
   if (textBelongsTo(item, text)) return false;
   const named = mostSpecificSpaceTitles(text, spaceTitles);
   if (named.length === 0) return false;
@@ -1008,8 +1103,21 @@ function itemInSpokenSpace(
   const byPerson = candidates.filter(
     (item) =>
       creatorNamedInText(item.creatorName, haystack) ||
-      givenNameInText(item.creatorName, haystack),
+      (givenNameInText(item.creatorName, haystack) &&
+        !givenNameOnlyAsVocative(item.creatorName, haystack)),
   );
+  // "Edgar's thread" with no Edgar item: do not fall back to another card.
+  const claimed = claimedCreatorGivens(text);
+  if (
+    claimed.length > 0 &&
+    byPerson.length === 0 &&
+    !candidates.some((item) => {
+      const given = creatorTokens(item.creatorName ?? '')[0];
+      return given != null && claimed.includes(given);
+    })
+  ) {
+    return null;
+  }
   const pool = byPerson.length > 0 ? byPerson : candidates;
   if (pool.length === 1) return pool[0] ?? null;
   const nameAt = (item: MemberHomeThreadItem) => {
@@ -1049,13 +1157,19 @@ export function memberHomeThreadItemForMessage(
     break;
   }
   const spaceTitles = items.map((item) => item.spaceTitle);
+  const peerNames = items.map((item) => item.creatorName);
   if (
     toolItem &&
-    memberHomeSpeechConflictsWithItem(toolItem, text, spaceTitles)
+    memberHomeSpeechConflictsWithItem(toolItem, text, spaceTitles, peerNames)
   ) {
     if (
       mentioned &&
-      !memberHomeSpeechConflictsWithItem(mentioned, text, spaceTitles)
+      !memberHomeSpeechConflictsWithItem(
+        mentioned,
+        text,
+        spaceTitles,
+        peerNames,
+      )
     ) {
       return mentioned;
     }
@@ -1094,8 +1208,15 @@ export function memberHomeCardForSpeech(input: {
   const named = memberHomeThreadItemForMessage(items, message);
   const wordsOnly = memberHomeThreadItemForMessage(items, { content: text });
   const fromHint = input.hinted ?? null;
+  const peerNames = [
+    ...items.map((item) => item.creatorName),
+    fromHint?.creatorName,
+  ];
   const conflicts = (item: MemberHomeThreadItem | null) =>
-    Boolean(item && memberHomeSpeechConflictsWithItem(item, text, spaceTitles));
+    Boolean(
+      item &&
+        memberHomeSpeechConflictsWithItem(item, text, spaceTitles, peerNames),
+    );
   if (conflicts(fromHint) || conflicts(named)) {
     if (wordsOnly && !conflicts(wordsOnly)) return wordsOnly;
     const spoken = itemInSpokenSpace(items, text);

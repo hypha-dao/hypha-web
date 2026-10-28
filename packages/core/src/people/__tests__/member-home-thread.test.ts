@@ -864,6 +864,66 @@ describe('memberHomeThreadItemForMessage', () => {
       }),
     ).toBeNull();
   });
+
+  it('does not keep a member-raised card under text that credits someone else', () => {
+    const ownDesktop: MemberHomeThreadItem = {
+      kind: 'signal',
+      slug: 'hypha-desktop-app',
+      title: 'Hypha Desktop App',
+      spaceSlug: 'hypha-platform',
+      spaceTitle: 'Hypha Platform',
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: true,
+      category: 'opportunity',
+      summary: 'What would be involved to RWA?',
+      creatorId: 1,
+      creatorName: 'Alex Prate',
+      creatorAvatarUrl: null,
+    };
+    const edgarInvite: MemberHomeThreadItem = {
+      kind: 'proposal',
+      slug: 'invite-edgar',
+      title: 'Invite Member',
+      spaceSlug: 'hypha-platform',
+      spaceTitle: 'Hypha Platform',
+      action: 'decision',
+      documentKind: 'proposal',
+      authoredByMember: false,
+      category: 'invite',
+      summary: 'Edgar asked to join.',
+      creatorId: 9,
+      creatorName: 'Edgar Kampers',
+      creatorAvatarUrl: null,
+    };
+    const text =
+      "Edgar's thread in Hypha Platform is the one still open, Alex. He has put something on the table there about how the space's agreements are read and shared.";
+    expect(
+      memberHomeCardForSpeech({
+        items: [ownDesktop, edgarInvite],
+        message: {
+          parts: [
+            { type: 'text', text },
+            {
+              type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+              state: 'output-available',
+              input: { kind: 'signal', slug: 'hypha-desktop-app' },
+            },
+          ],
+        },
+        hinted: ownDesktop,
+        spaceTitles: ['Hypha Platform'],
+      })?.slug,
+    ).toBe('invite-edgar');
+    expect(
+      memberHomeCardForSpeech({
+        items: [ownDesktop],
+        message: { content: text },
+        hinted: ownDesktop,
+        spaceTitles: ['Hypha Platform'],
+      }),
+    ).toBeNull();
+  });
 });
 
 describe('shownMemberHomeItemKeys', () => {

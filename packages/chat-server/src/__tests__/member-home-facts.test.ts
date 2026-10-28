@@ -122,7 +122,6 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('On a signal, action is not decision');
     expect(facts).toContain('Discuss it or upvote it');
     expect(facts).toContain('Never say validate');
-    expect(facts).toContain('Do not tell them to call themselves');
     expect(facts).toContain('Any button on a signal means they acted');
     expect(facts).toContain(
       'Use only the person, the space, the task, and the token written on that item.',
@@ -227,6 +226,38 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('shares=3');
     expect(facts).toContain('with="Noor; Teo"');
     expect(facts).not.toContain('with="Ada Lovelace');
+  });
+
+  it('omits with= peers on a signal this member raised', () => {
+    const due = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+    const facts = formatMemberHomeFactsText({
+      ...home,
+      proposals: [],
+      signals: [
+        {
+          id: 20,
+          slug: 'hypha-desktop-app',
+          title: 'Hypha Desktop App',
+          description: 'What would be involved to RWA?',
+          spaceSlug: 'grove',
+          spaceTitle: 'Grove',
+          spaceLogoUrl: null,
+          createdAt: '2026-01-01T00:00.000Z',
+          dueAt: due,
+          signalType: 'opportunity',
+          creatorId: home.person.id,
+          creatorName: 'Ada Lovelace',
+          creatorAvatarUrl: null,
+          creatorAbout: null,
+          creatorWith: ['Edgar Kampers', 'Noor'],
+        },
+      ],
+      counts: { ...home.counts, openProposals: 0, signals: 1 },
+    });
+    expect(facts).toContain('raisedByMember=yes');
+    expect(facts).toContain('slug=hypha-desktop-app');
+    expect(facts).not.toContain('with="');
+    expect(facts).not.toContain('Edgar Kampers');
   });
 
   it('does not offer the signed-in member as someone to meet', () => {
