@@ -19,8 +19,8 @@ export async function MessagesPageFrame({
       : t('titleLineTwo');
 
   return (
-    <div className="w-full min-w-0 overflow-x-clip">
-      <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden overflow-x-clip">
+      <Container className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-6 xl:pt-3 xl:pb-6">
         <header className="shrink-0 xl:hidden">
           <p className="mb-2 text-1 font-bold uppercase text-foreground">
             {t('titleLineOne')}
@@ -42,7 +42,7 @@ export async function MessagesPageFrame({
           <span>{t('titleLineOne')}</span>
           <span>{titleLineTwo}</span>
         </Heading>
-        {children}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
       </Container>
     </div>
   );

@@ -32,6 +32,7 @@ import {
   visibleMemberRowsAfterTitleResolve,
   messagesPeopleListReady,
   messagePreview,
+  previewForInboxDisplay,
   senderFirstName,
   orphanedDirectRoomIds,
   previewWithNames,
@@ -2204,6 +2205,23 @@ describe('previewWithNames', () => {
     ]);
     expect(previewWithNames(`You wrote @${local}`, names)).toBe(
       'You wrote @Vlad Hramtsov',
+    );
+  });
+});
+
+describe('previewForInboxDisplay', () => {
+  it('keeps a resolved mention line', () => {
+    const names = new Map<string, string>([
+      [GERARDO.toLowerCase(), 'Gerardo Roza'],
+    ]);
+    expect(previewForInboxDisplay(`Hey ${GERARDO} ready?`, names)).toBe(
+      'Hey @Gerardo Roza ready?',
+    );
+  });
+
+  it('strips unresolved privy tokens so the row is not stuck loading', () => {
+    expect(previewForInboxDisplay(`Hey ${GERARDO} ready for the call?`)).toBe(
+      'Hey ready for the call?',
     );
   });
 });

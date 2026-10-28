@@ -459,6 +459,29 @@ export function previewWithNames(
   return previewLine(preview, namesByMatrixId);
 }
 
+/**
+ * Inbox row text: resolve known names, then drop any leftover bridged privy
+ * mention tokens so the list never sticks on a skeleton or hides a real line.
+ */
+export function previewForInboxDisplay(
+  preview: string,
+  namesByMatrixId?: ReadonlyMap<string, string>,
+): string {
+  const named = namesByMatrixId
+    ? previewWithNames(preview, namesByMatrixId)
+    : preview;
+  if (!/privy_did_privy/i.test(named)) return named;
+  const cleaned = named
+    .replace(
+      /@?(?:dev|prev|prod)_privy_did_privy_[A-Za-z0-9]+(?::[^\s]*)?/gi,
+      ' ',
+    )
+    .replace(/@[^:\s]*privy_did_privy[^:\s]*:[^\s]+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return truncateMessagePreview(cleaned);
+}
+
 function previewLine(
   body: string,
   namesByMatrixId?: ReadonlyMap<string, string>,

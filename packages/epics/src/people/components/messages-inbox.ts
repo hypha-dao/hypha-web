@@ -241,7 +241,7 @@ export const INBOX_LIST_PAGE = 8;
 
 /**
  * The rows to paint. Counts and unread badges stay on the full list;
- * this only shortens what is on screen until Load more.
+ * this only shortens what is on screen until the list scrolls to the end.
  */
 export function inboxListWindow<T>(
   rows: readonly T[],

@@ -1,6 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -91,7 +99,7 @@ import {
   isRememberedBoundChatRoom,
   isRememberedGroupChatRoom,
   messagePreview,
-  previewWithNames,
+  previewForInboxDisplay,
   senderFirstName,
   rememberGroupChatMembers,
   rememberBoundChatRooms,
@@ -161,6 +169,10 @@ const SYNC_ROOM_BUDGET = 16;
 const PRIORITY_DM_BUDGET = 64;
 /** Everyone else fills while the browser is idle. */
 const IDLE_ROOM_CHUNK = 8;
+/** One short history pull so a quiet channel still shows its last line. */
+const CHANNEL_PREVIEW_SCROLLBACK = 30;
+/** Space requests so channel preview backfill does not trip homeserver 429s. */
+const CHANNEL_PREVIEW_STAGGER_MS = 350;
 
 function eventsForPreview(room: Room): MatrixEvent[] {
   const live = room.getLiveTimeline().getEvents();
@@ -1663,6 +1675,49 @@ function joinedChannelSnapshots(client: MatrixClient): JoinedChannelSnapshot[] {
   return snapshots;
 }
 
+const channelPreviewAttempted = new Set<string>();
+let channelPreviewBackfillInFlight = false;
+
+/**
+ * Visible channel rows with a timestamp but no readable line yet: pull a short
+ * scrollback once so "No messages yet" is not lying about an empty timeline.
+ */
+async function backfillChannelPreviews(
+  client: MatrixClient,
+  roomIds: readonly string[],
+): Promise<boolean> {
+  const needed = roomIds.filter((roomId) => {
+    if (!roomId || channelPreviewAttempted.has(roomId)) return false;
+    const room = client.getRoom(roomId);
+    if (!room || room.getMyMembership() !== 'join') return false;
+    return !latestChannelMessage(room, client.getUserId()).preview;
+  });
+  if (needed.length === 0) return false;
+  if (channelPreviewBackfillInFlight) return true;
+  channelPreviewBackfillInFlight = true;
+  let changed = false;
+  try {
+    for (const roomId of needed) {
+      channelPreviewAttempted.add(roomId);
+      const room = client.getRoom(roomId);
+      if (!room) continue;
+      try {
+        await client.scrollback(room, CHANNEL_PREVIEW_SCROLLBACK);
+        changed = true;
+      } catch {
+        // Keep the row; a later sync or open may still fill the preview.
+      }
+      await new Promise((resolve) =>
+        window.setTimeout(resolve, CHANNEL_PREVIEW_STAGGER_MS),
+      );
+    }
+  } finally {
+    channelPreviewBackfillInFlight = false;
+  }
+  if (changed) notifyConversationListeners();
+  return false;
+}
+
 function sameChannelSnapshots(
   current: readonly JoinedChannelSnapshot[],
   next: readonly JoinedChannelSnapshot[],
@@ -1719,7 +1774,8 @@ export function MyConnections({
   const openedDirectChatRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
   const inboxFiltersRef = useRef<HTMLDivElement | null>(null);
-  const inboxListRef = useRef<HTMLDivElement | null>(null);
+  const inboxListRef = useRef<HTMLUListElement | null>(null);
+  const inboxEndRef = useRef<HTMLLIElement | null>(null);
   const inboxNavReady = useRef(false);
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
@@ -2279,11 +2335,11 @@ export function MyConnections({
         ? matchingGroups
         : [...matchingGroups, ...matchingMembers];
     const named = source.map((row) => {
-      const preview = previewWithNames(row.preview, mentionNames);
+      const preview = previewForInboxDisplay(row.preview, mentionNames);
       return withSenderName(
         {
           ...row,
-          preview: /privy_did_privy/i.test(preview) ? '' : preview,
+          preview,
         },
         peopleBySub,
         client,
@@ -2304,6 +2360,42 @@ export function MyConnections({
     t,
     titledMembers,
   ]);
+  const inboxMentionNames = useMemo(() => {
+    const mentionNames = new Map<string, string>();
+    const rememberName = (mxid: string, name: string) => {
+      const clean = name.trim();
+      const id = mxid.trim();
+      if (!id || !clean) return;
+      if (looksLikeTechnicalMatrixDisplayName(clean, id)) return;
+      mentionNames.set(id.toLowerCase(), clean);
+      const local = id.replace(/^@/, '').split(':')[0]?.toLowerCase();
+      if (local) mentionNames.set(local, clean);
+    };
+    for (const [personId, mxid] of Object.entries(personIdToMatrixUserId)) {
+      if (!mxid) continue;
+      const id = Number(personId);
+      const fromDirectory = directoryPeople.find((person) => person.id === id);
+      const sub = matrixUserIdToCanonicalPrivySub(mxid);
+      const fromSub = sub ? peopleBySub.get(sub) : undefined;
+      const person = fromDirectory ?? fromSub;
+      if (!person) continue;
+      const name =
+        [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+        person.nickname?.trim() ||
+        '';
+      if (name) rememberName(mxid, name);
+    }
+    for (const channel of channels) {
+      const mxid = channel.senderUserId?.trim();
+      if (!mxid) continue;
+      const room = client?.getRoom(channel.roomId);
+      const member = room?.getMember(mxid);
+      if (!member) continue;
+      const label = matrixMemberDisplayLabel(member, mxid);
+      if (label) rememberName(mxid, label);
+    }
+    return mentionNames;
+  }, [channels, client, directoryPeople, peopleBySub, personIdToMatrixUserId]);
   const inboxView = useMemo(() => {
     const direct = people.map((row) =>
       row.inbox
@@ -2319,7 +2411,16 @@ export function MyConnections({
               t('inbox.networkTitle'),
             ) as ConnectionMemberRow[],
             needle,
-          ).map((row) => withSenderName(row, peopleBySub, client))
+          ).map((row) =>
+            withSenderName(
+              {
+                ...row,
+                preview: previewForInboxDisplay(row.preview, inboxMentionNames),
+              },
+              peopleBySub,
+              client,
+            ),
+          )
         : [];
     const counts = inboxFilterCounts([
       ...direct.map((row) => ({
@@ -2354,6 +2455,7 @@ export function MyConnections({
     client,
     inboxContext,
     inboxFilter,
+    inboxMentionNames,
     needle,
     people,
     peopleBySub,
@@ -2378,7 +2480,7 @@ export function MyConnections({
   }
   // Newest chats stay first, so a new message lands in this first screen.
   // Filter badges and the nav count still use every row, including ones
-  // waiting behind Load more.
+  // waiting until the list scrolls to the end.
   const pagingInbox = section === 'messages' && !picking && needle.length === 0;
   const inboxWindow = pagingInbox
     ? inboxListWindow(inboxView.rows, inboxVisibleCount)
@@ -2388,7 +2490,51 @@ export function MyConnections({
     : section === 'messages' && !picking
     ? inboxView.rows
     : people;
+  const missingChannelPreviewIds = useMemo(() => {
+    if (section !== 'messages' || picking) return [] as string[];
+    return shownRows
+      .filter(
+        (row) =>
+          row.inbox &&
+          row.inbox.kind !== 'dm' &&
+          row.inbox.kind !== 'group' &&
+          row.roomId &&
+          !row.preview.trim() &&
+          row.lastTs != null &&
+          !channelPreviewAttempted.has(row.roomId),
+      )
+      .map((row) => row.roomId as string)
+      .slice(0, IDLE_ROOM_CHUNK);
+  }, [picking, section, shownRows]);
+  const [channelPreviewsPending, setChannelPreviewsPending] = useState(false);
+  useEffect(() => {
+    if (!client || listLoading || missingChannelPreviewIds.length === 0) {
+      setChannelPreviewsPending(false);
+      return;
+    }
+    if (channelPreviewBackfillInFlight) {
+      setChannelPreviewsPending(true);
+      return;
+    }
+    let cancelled = false;
+    setChannelPreviewsPending(true);
+    void backfillChannelPreviews(client, missingChannelPreviewIds).finally(
+      () => {
+        if (!cancelled) setChannelPreviewsPending(false);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [client, listLoading, missingChannelPreviewIds]);
   const hasMoreInboxRows = inboxWindow?.hasMore ?? false;
+  const canLoadMoreInbox =
+    !moreFailed &&
+    (hasMoreInboxRows ||
+      (hasMorePeople &&
+        !needle &&
+        section !== 'archived' &&
+        (picking || inboxFilter === 'all' || inboxFilter === 'direct')));
   useEffect(() => {
     if (section !== 'messages' || picking || listLoading) return;
     publishMessagesScreenCount(inboxView.counts.all.unread);
@@ -2431,6 +2577,37 @@ export function MyConnections({
     () => (debugRooms && client ? inspectJoinedAndInvitedRooms(client) : []),
     [client, debugRooms, rows, synced],
   );
+
+  const loadMoreInbox = useCallback(() => {
+    if (hasMoreInboxRows) {
+      setInboxVisibleCount((current) => current + INBOX_LIST_PAGE);
+      return;
+    }
+    if (loadingMore || !jwt || !hasMorePeople) return;
+    void loadMorePeople();
+  }, [hasMoreInboxRows, hasMorePeople, jwt, loadingMore]);
+
+  useEffect(() => {
+    if (listLoading || !canLoadMoreInbox) return;
+    const root = inboxListRef.current;
+    const sentinel = inboxEndRef.current;
+    if (!root || !sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        loadMoreInbox();
+      },
+      { root, rootMargin: '160px 0px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [
+    canLoadMoreInbox,
+    listLoading,
+    loadMoreInbox,
+    loadingMore,
+    shownRows.length,
+  ]);
 
   async function loadMorePeople() {
     if (loadingMore || !jwt || !hasMorePeople) return;
@@ -2634,7 +2811,12 @@ export function MyConnections({
   }
 
   return (
-    <div className="flex min-w-0 flex-col gap-6">
+    <div
+      className={cn(
+        'flex min-w-0 flex-col gap-6',
+        (section === 'messages' || section === 'archived') && 'min-h-0 flex-1',
+      )}
+    >
       <MemberHomePeople
         people={connections}
         extraPersonIds={[...reachOutIds, ...peerPersonIds]}
@@ -2697,7 +2879,7 @@ export function MyConnections({
       {section === 'messages' || section === 'archived' ? (
         <div
           className={cn(
-            'flex min-w-0 flex-col gap-6',
+            'flex min-h-0 min-w-0 flex-1 flex-col gap-6',
             section === 'messages' && 'gap-4 lg:flex-row lg:gap-6',
           )}
         >
@@ -2718,7 +2900,7 @@ export function MyConnections({
           ) : null}
           <div
             className={cn(
-              'flex min-w-0 flex-1 flex-col gap-3',
+              'min-h-0 min-w-0 flex-1 flex-col gap-3',
               section === 'messages' && !picking && !inboxChannelOpen
                 ? 'hidden lg:flex'
                 : 'flex',
@@ -2728,7 +2910,7 @@ export function MyConnections({
               <button
                 type="button"
                 aria-label={tCommon('back')}
-                className="flex items-center gap-1 self-start text-3 text-foreground lg:hidden"
+                className="flex shrink-0 items-center gap-1 self-start text-3 text-foreground lg:hidden"
                 onClick={() => setInboxChannelOpen(false)}
               >
                 <ChevronLeft
@@ -2739,8 +2921,8 @@ export function MyConnections({
                 {t(`inbox.${inboxFilter}Title`)}
               </button>
             ) : null}
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-3">
+            <div className="flex min-h-0 flex-1 flex-col gap-6">
+              <div className="flex shrink-0 flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <label className="relative min-w-0 flex-1">
                     <span className="sr-only">{t('search')}</span>
@@ -2911,7 +3093,7 @@ export function MyConnections({
                 </p>
               ) : null}
 
-              <div ref={inboxListRef} className="flex flex-col gap-3">
+              <div className="flex min-h-0 flex-1 flex-col gap-3">
                 {listLoading ? (
                   <MemberListSkeleton
                     title={
@@ -2956,7 +3138,9 @@ export function MyConnections({
                     justNow={t('justNow')}
                     noMessage={t('noMessage')}
                     archivedLabel={t('tabs.archived')}
-                    previewLoading={false}
+                    previewLoading={
+                      !initialSyncComplete || channelPreviewsPending
+                    }
                     loadingLabel={t('loading')}
                     youLabel={(message) => t('youWrote', { message })}
                     unreadLabel={(count) => t('unread', { count })}
@@ -2971,42 +3155,40 @@ export function MyConnections({
                       peopleBySub,
                     }}
                     onOpen={(row) => void openMember(row)}
+                    scrollRef={inboxListRef}
+                    footer={
+                      canLoadMoreInbox ? (
+                        <li
+                          ref={inboxEndRef}
+                          className="h-px w-full list-none"
+                          aria-hidden
+                        />
+                      ) : null
+                    }
                   />
                 ) : null}
 
-                {!listLoading &&
-                (hasMoreInboxRows ||
-                  (hasMorePeople &&
-                    !needle &&
-                    section !== 'archived' &&
-                    (picking ||
-                      inboxFilter === 'all' ||
-                      inboxFilter === 'direct'))) ? (
-                  <div className="flex justify-center">
+                {moreFailed ? (
+                  <div className="flex shrink-0 flex-col items-center gap-2">
+                    <p
+                      className="text-center text-1 text-error-11"
+                      role="alert"
+                    >
+                      {t('loadMoreFailed')}
+                    </p>
                     <Button
                       type="button"
                       variant="outline"
                       colorVariant="neutral"
                       disabled={loadingMore}
                       onClick={() => {
-                        if (hasMoreInboxRows) {
-                          setInboxVisibleCount(
-                            (current) => current + INBOX_LIST_PAGE,
-                          );
-                          return;
-                        }
+                        setMoreFailed(false);
                         void loadMorePeople();
                       }}
                     >
                       {tCommon('loadMore')}
                     </Button>
                   </div>
-                ) : null}
-
-                {moreFailed ? (
-                  <p className="text-center text-1 text-error-11" role="alert">
-                    {t('loadMoreFailed')}
-                  </p>
                 ) : null}
               </div>
             </div>
@@ -3063,16 +3245,16 @@ function MemberListSkeleton({
 }) {
   return (
     <section
-      className="overflow-hidden rounded-none border border-border bg-background"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-none border border-border bg-background"
       role="status"
       aria-busy="true"
       aria-label={loadingLabel}
       data-testid="messages-people-loader"
     >
-      <h2 className="border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
+      <h2 className="shrink-0 border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {title}
       </h2>
-      <ul aria-hidden>
+      <ul className="min-h-0 flex-1 overflow-y-auto" aria-hidden>
         {Array.from({ length: MEMBER_LIST_SKELETON_ROWS }, (_, index) => (
           <li
             key={index}
@@ -3150,6 +3332,8 @@ function MemberList({
   openLookup,
   onOpen,
   showChannelTags = false,
+  scrollRef,
+  footer = null,
 }: {
   title: string;
   rows: ConnectionMemberRow[];
@@ -3158,7 +3342,7 @@ function MemberList({
   justNow: string;
   noMessage: string;
   archivedLabel: string;
-  /** Rooms are still loading, so a missing conversation is not yet "empty". */
+  /** Channel history or sync is still filling in — show a skeleton, not "empty". */
   previewLoading: boolean;
   loadingLabel: string;
   youLabel: (message: string) => string;
@@ -3171,20 +3355,28 @@ function MemberList({
   openLookup?: Parameters<typeof listedConversationIsOpen>[2];
   onOpen: (row: ConnectionMemberRow) => void;
   showChannelTags?: boolean;
+  /** Scrollport for the conversation rows. The title stays fixed above it. */
+  scrollRef?: Ref<HTMLUListElement>;
+  footer?: ReactNode;
 }) {
   const tInbox = useTranslations('Connections');
   const tTypes = useTranslations('CoherenceTab.types');
   return (
-    <section className="overflow-hidden rounded-none border border-border bg-background">
-      <h2 className="border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
+    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-none border border-border bg-background">
+      <h2 className="shrink-0 border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {title}
       </h2>
-      <ul>
+      <ul
+        ref={scrollRef}
+        className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain"
+      >
         {rows.map((row) => {
-          const leftoverPrivy = /privy_did_privy/i.test(row.preview);
-          const previewText = leftoverPrivy ? '' : row.preview;
+          const previewText = previewForInboxDisplay(row.preview);
           const loadingPreview =
-            leftoverPrivy || (previewLoading && (!row.roomId || !previewText));
+            previewLoading &&
+            Boolean(row.roomId) &&
+            !previewText &&
+            row.lastTs != null;
           const preview = previewText
             ? row.mine
               ? youLabel(previewText)
@@ -3377,6 +3569,7 @@ function MemberList({
             </li>
           );
         })}
+        {footer}
       </ul>
     </section>
   );
