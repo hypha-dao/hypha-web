@@ -3300,6 +3300,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (usable || keepDespiteMapFailure || hasTrustedMembers) {
         setSignalTeamMemberIds(next.memberMatrixUserIds);
         setSignalTeamOwnerId(next.ownerMatrixUserId);
+      } else if (next.hasTrustedRoster) {
+        // Live trusted-empty notice: drop any document seed (incl. viewer)
+        // and stay unresolved so hasSignalTeamPolicy stays fail-closed.
+        documentSeedRef.memberIds = [];
+        documentSeedRef.ownerId = null;
+        setSignalTeamMemberIds([]);
+        setSignalTeamOwnerId(null);
+        setSignalTeamRosterResolved(false);
       } else if (documentSeedRef.memberIds.length > 0) {
         setSignalTeamMemberIds(documentSeedRef.memberIds);
         setSignalTeamOwnerId(documentSeedRef.ownerId);
