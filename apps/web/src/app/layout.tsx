@@ -27,6 +27,7 @@ import {
 
 import { DeferredFooter } from '@web/components/deferred-footer';
 import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
+import { NotificationCentreDialogHost } from '@web/components/notification-centre-dialog-host';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
 import { ConnectedGlobalCallDock } from '@web/components/connected-global-call-dock';
 import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
@@ -300,6 +301,50 @@ export default async function RootLayout({
                                   }
                                   mobileAction={
                                     <>
+                                      <Suspense fallback={null}>
+                                        <ConnectedButtonProfile
+                                          newUserRedirectPath="/profile/signup"
+                                          baseRedirectPath={`/${locale}/home`}
+                                          navItems={[
+                                            {
+                                              label: navHomeLabel,
+                                              href: `/${locale}/home`,
+                                            },
+                                            {
+                                              label: navMessagesLabel,
+                                              href: `/${locale}/messages`,
+                                            },
+                                            {
+                                              label: navMyWalletLabel,
+                                              href: `/${locale}/my-wallet`,
+                                            },
+                                            {
+                                              label: navMySpacesLabel,
+                                              href: `/${locale}/my-spaces`,
+                                            },
+                                            {
+                                              label: navNetworkLabel,
+                                              href: `/${locale}/network`,
+                                            },
+                                          ]}
+                                          showNetworkFeedback
+                                          trailingBeforeProfile={
+                                            isLanguageSelectVisible ? (
+                                              <ConnectedLanguageSelect
+                                                selectLanguageLabel={
+                                                  navSelectLanguageLabel
+                                                }
+                                              />
+                                            ) : undefined
+                                          }
+                                          compact
+                                        />
+                                      </Suspense>
+                                    </>
+                                  }
+                                >
+                                  <div className="hidden xl:flex">
+                                    <Suspense fallback={null}>
                                       <ConnectedButtonProfile
                                         newUserRedirectPath="/profile/signup"
                                         baseRedirectPath={`/${locale}/home`}
@@ -335,48 +380,8 @@ export default async function RootLayout({
                                             />
                                           ) : undefined
                                         }
-                                        compact
                                       />
-                                    </>
-                                  }
-                                >
-                                  <div className="hidden xl:flex">
-                                    <ConnectedButtonProfile
-                                      newUserRedirectPath="/profile/signup"
-                                      baseRedirectPath={`/${locale}/home`}
-                                      navItems={[
-                                        {
-                                          label: navHomeLabel,
-                                          href: `/${locale}/home`,
-                                        },
-                                        {
-                                          label: navMessagesLabel,
-                                          href: `/${locale}/messages`,
-                                        },
-                                        {
-                                          label: navMyWalletLabel,
-                                          href: `/${locale}/my-wallet`,
-                                        },
-                                        {
-                                          label: navMySpacesLabel,
-                                          href: `/${locale}/my-spaces`,
-                                        },
-                                        {
-                                          label: navNetworkLabel,
-                                          href: `/${locale}/network`,
-                                        },
-                                      ]}
-                                      showNetworkFeedback
-                                      trailingBeforeProfile={
-                                        isLanguageSelectVisible ? (
-                                          <ConnectedLanguageSelect
-                                            selectLanguageLabel={
-                                              navSelectLanguageLabel
-                                            }
-                                          />
-                                        ) : undefined
-                                      }
-                                    />
+                                    </Suspense>
                                   </div>
                                 </ConnectedMenuTop>
                               </div>
@@ -425,6 +430,9 @@ export default async function RootLayout({
                                 spaceMemoryEnabled={spaceMemoryEnabled}
                               />
                             </PanelWrapLayout>
+                            <Suspense fallback={null}>
+                              <NotificationCentreDialogHost />
+                            </Suspense>
                             {/* Outside capture root so tab screen share excludes the floating dock. */}
                             {humanChatEnabled && <ConnectedGlobalCallDock />}
                           </GlobalCallDockProvider>

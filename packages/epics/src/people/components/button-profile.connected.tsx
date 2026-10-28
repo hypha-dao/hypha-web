@@ -1,7 +1,13 @@
 'use client';
 
 import { ButtonProfile } from './button-profile';
-import { useRouter, useParams, usePathname } from 'next/navigation';
+import {
+  useRouter,
+  useParams,
+  usePathname,
+  useSearchParams,
+} from 'next/navigation';
+import { buildDialogHref } from '../../notifications/dialog-url';
 import {
   ProfileUseAuthentication,
   ResolvePostAuthRedirectPathOrDefault,
@@ -68,7 +74,8 @@ export const ConnectedButtonProfile = ({
 
   const router = useRouter();
   const pathname = usePathname();
-  const { lang, id } = useParams();
+  const { lang } = useParams();
+  const searchParams = useSearchParams();
   const { resolvedTheme, setTheme } = useTheme();
   const locale = typeof lang === 'string' ? lang : undefined;
   const onboardingUrl = locale
@@ -84,23 +91,13 @@ export const ConnectedButtonProfile = ({
       ? baseRedirectPath
       : resolveAccountEntryPath({ lang: locale, hasProfile: true });
 
-  const notificationCentrePath = useMemo(() => {
-    if (!isPersonLoading && person?.slug) {
-      if (pathname.includes('/network')) {
-        return `/${lang}/network/notification-centre`;
-      } else if (pathname.includes('/my-wallet')) {
-        return `/${lang}/my-wallet/notification-centre`;
-      } else if (pathname.includes('/my-spaces')) {
-        return `/${lang}/my-spaces/notification-centre`;
-      } else if (pathname.includes('/dho/')) {
-        return `/${lang}/dho/${id}/agreements/notification-centre`;
-      } else {
-        return `/${lang}/profile/${person.slug}/notification-centre`;
-      }
-    } else {
-      return undefined;
-    }
-  }, [lang, id, person, isPersonLoading, pathname]);
+  const notificationCentrePath = useMemo(
+    () =>
+      !isPersonLoading && person?.slug
+        ? buildDialogHref(pathname, searchParams)
+        : undefined,
+    [person, isPersonLoading, pathname, searchParams],
+  );
 
   useEffect(() => {
     if (isAuthLoading || isPersonLoading || !isAuthenticated) {

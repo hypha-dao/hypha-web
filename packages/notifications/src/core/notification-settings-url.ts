@@ -10,5 +10,5 @@ import { getAbsoluteAppUrl } from '@hypha-platform/core/server';
  * `| default:` fallback to the production URL.
  */
 export function buildNotificationSettingsUrl(): string {
-  return getAbsoluteAppUrl('/en/network/notification-centre');
+  return getAbsoluteAppUrl('/en/network?dialog=notification-centre');
 }

@@ -16,6 +16,11 @@ type ProposalOverlayShellProps = {
   children: ReactNode;
   /** Merged onto the inner scroll panel (after defaults) — use for narrower modals e.g. member profile. */
   className?: string;
+  /**
+   * Stack above another open overlay (e.g. a `?dialog=` host opened from the nav bar while an
+   * `@aside` overlay is open). Stays below the side panels (`z-[50]`).
+   */
+  elevated?: boolean;
 };
 
 /**
@@ -58,6 +63,7 @@ type ProposalOverlayShellProps = {
 export function ProposalOverlayShell({
   children,
   className,
+  elevated = false,
 }: ProposalOverlayShellProps) {
   const tModalAside = useTranslations('ModalAside');
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
@@ -114,7 +120,8 @@ export function ProposalOverlayShell({
           {/* Plain scrim below MenuTop (z-30); starts under --menu-top-height */}
           <div
             className={cn(
-              'fixed bottom-0 z-40 hidden bg-black/45 md:block',
+              'fixed bottom-0 hidden bg-black/45 md:block',
+              elevated ? 'z-[42]' : 'z-40',
               'left-[var(--sidebar-left-width,0px)] right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))]',
               'top-[var(--menu-top-height,70px)]',
             )}
@@ -125,7 +132,8 @@ export function ProposalOverlayShell({
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
             className={cn(
-              'fixed z-[41] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-0 max-md:top-[var(--menu-top-height,70px)] max-md:right-0 max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-page-background max-md:shadow-none max-md:dark:bg-background-2',
+              elevated ? 'z-[43]' : 'z-[41]',
+              'fixed outline-none max-md:inset-auto max-md:bottom-0 max-md:left-0 max-md:top-[var(--menu-top-height,70px)] max-md:right-0 max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-page-background max-md:shadow-none max-md:dark:bg-background-2',
               /* Host is click-through on desktop so MenuTop (z-30) stays usable; modal surface re-enables hits */
               'pointer-events-auto md:pointer-events-none',
               'md:left-[var(--sidebar-left-width,0px)] md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] md:bottom-0 md:top-[var(--menu-top-height,70px)] md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-5',

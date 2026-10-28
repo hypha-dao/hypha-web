@@ -155,6 +155,7 @@ import {
   visibleMatrixMemberName,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
+import { buildDialogHref } from '../notifications/dialog-url';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { getDhoPathOverview, getSignalPath } from './get-path-function';
@@ -4501,35 +4502,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [roomId, t],
   );
 
-  const notificationCentreHref = useMemo(() => {
-    const parts = pathname.split('/').filter(Boolean);
-    if (parts.length === 0) return '/notification-centre';
-    const lang = getLocaleFromPath(pathname);
-
-    /** Match `ConnectedButtonProfile` / aside routes under `apps/web/src/app/[lang]/…/@aside/`. */
-    if (pathname.includes('/network')) {
-      return `/${lang}/network/notification-centre`;
-    }
-    if (pathname.includes('/my-wallet')) {
-      return `/${lang}/my-wallet/notification-centre`;
-    }
-    if (pathname.includes('/my-spaces')) {
-      return `/${lang}/my-spaces/notification-centre`;
-    }
-    if (pathname.includes('/dho/')) {
-      const dhoId = spaceSlug ?? params?.id ?? parts[2];
-      if (!dhoId) return `/${lang}/notification-centre`;
-      const activeTab = getActiveTabFromPath(pathname);
-      return `/${lang}/dho/${dhoId}/${activeTab}/notification-centre`;
-    }
-    if (parts[1] === 'profile' && parts.length >= 3) {
-      return `/${lang}/profile/${parts[2]}/notification-centre`;
-    }
-    if (parts.length >= 2) {
-      return `/${lang}/${parts[1]}/notification-centre`;
-    }
-    return `/${lang}/notification-centre`;
-  }, [pathname, params?.id, spaceSlug]);
+  const notificationCentreHref = useMemo(
+    () => buildDialogHref(pathname, searchParams),
+    [pathname, searchParams],
+  );
 
   const handleSelectMentionFromInbox = useCallback(
     async (eventId: string, fromRoomId?: string) => {
