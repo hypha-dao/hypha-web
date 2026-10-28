@@ -914,11 +914,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       const ids =
         orientation === 'builder'
           ? [
+              'networkBuilderKnow',
               'findResources',
-              'createSpace',
               'networkBuilderNeeds',
               'networkBuilderPeople',
-              'createEcosystem',
+              'networkBuilderWatch',
             ]
           : orientation === 'investor'
           ? [
