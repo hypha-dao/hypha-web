@@ -7,11 +7,19 @@ import {
   subscribeMainColumnScroll,
 } from '@hypha-platform/epics';
 
-import { messagesFrameHeight } from './messages-frame-height';
+import {
+  messagesFrameHeight,
+  messagesListFrameHeight,
+} from './messages-frame-height';
 
-export { messagesFrameHeight } from './messages-frame-height';
+export {
+  messagesFrameHeight,
+  messagesListFrameHeight,
+} from './messages-frame-height';
 
 const DESKTOP_MENU = '(min-width: 80rem)';
+/** Side-by-side channel menu + conversation list (Tailwind `lg`). */
+const DESKTOP_INBOX = '(min-width: 64rem)';
 
 function mobileTabOffset(): number {
   if (window.matchMedia(DESKTOP_MENU).matches) return 0;
@@ -38,44 +46,91 @@ function desktopFooterOffset(): number {
   return Number.isFinite(height) ? Math.ceil(height) : 0;
 }
 
+function clearListFrameHeight(root: HTMLElement) {
+  const list = root.querySelector('[data-messages-list-frame]');
+  if (list instanceof HTMLElement) {
+    list.style.height = '';
+    list.style.maxHeight = '';
+  }
+}
+
 /**
- * The site menu lives inside the scrolling column. A content-sized inbox
- * grows past the screen, so wheel events over an unbounded
- * `overflow-y-auto` list neither scroll the page nor the list. Pin the
- * frame to the visible column and let only the conversation list scroll.
+ * Desktop: channel menu stays in page flow (no left scrollbar). Only the
+ * conversation list gets a fixed frame — at least as tall as the menu, and
+ * tall enough to fill the visible column.
+ * Phone: pin the whole screen so the menu or list can scroll under the tabs.
  */
 export function MessagesViewportLock({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollMainColumnTo(0);
-    let observed: HTMLElement | null = null;
+    let observedScroll: HTMLElement | null = null;
+    let observedFilters: HTMLElement | null = null;
+    let observedList: HTMLElement | null = null;
+
+    const watch = (node: HTMLElement | null, previous: HTMLElement | null) => {
+      if (node === previous) return node;
+      if (previous) observer.unobserve(previous);
+      if (node) observer.observe(node);
+      return node;
+    };
 
     const fit = () => {
-      const frame = ref.current;
-      if (!frame) return;
+      const root = ref.current;
+      if (!root) return;
       const scrollEl = getMainColumnScrollElement();
-      if (scrollEl && scrollEl !== observed) {
-        if (observed) observer.unobserve(observed);
-        observer.observe(scrollEl);
-        observed = scrollEl;
-      }
+      observedScroll = watch(scrollEl, observedScroll);
+      const list = root.querySelector('[data-messages-list-frame]');
+      const filters = root.querySelector('[data-messages-filters]');
+      observedList = watch(
+        list instanceof HTMLElement ? list : null,
+        observedList,
+      );
+      observedFilters = watch(
+        filters instanceof HTMLElement ? filters : null,
+        observedFilters,
+      );
       const scrollRect = scrollEl?.getBoundingClientRect();
       const viewportBottom = window.visualViewport
         ? window.visualViewport.offsetTop + window.visualViewport.height
         : window.innerHeight;
+      const tabOffset = mobileTabOffset();
+      const footerOffset = desktopFooterOffset();
+      const desktopInbox = window.matchMedia(DESKTOP_INBOX).matches;
+
+      if (desktopInbox && list instanceof HTMLElement) {
+        root.style.height = '';
+        root.style.maxHeight = '';
+        const available = messagesFrameHeight({
+          frameTop: list.getBoundingClientRect().top,
+          scrollBottom: scrollRect?.bottom ?? viewportBottom,
+          viewportBottom,
+          tabOffset,
+          footerOffset,
+        });
+        const leftHeight =
+          filters instanceof HTMLElement
+            ? filters.getBoundingClientRect().height
+            : 0;
+        list.style.height = `${messagesListFrameHeight({
+          available,
+          leftHeight,
+        })}px`;
+        list.style.maxHeight = '';
+        return;
+      }
+
+      clearListFrameHeight(root);
       const height = messagesFrameHeight({
-        frameTop: frame.getBoundingClientRect().top,
+        frameTop: root.getBoundingClientRect().top,
         scrollBottom: scrollRect?.bottom ?? viewportBottom,
         viewportBottom,
-        tabOffset: mobileTabOffset(),
-        footerOffset: desktopFooterOffset(),
+        tabOffset,
+        footerOffset,
       });
-      // Cap the list so it can scroll inside, but do NOT freeze the main
-      // column — the page must still move (title spacing, footer). A hard
-      // overflow lock made Share messages feel stuck under the title.
-      frame.style.maxHeight = `${Math.max(height, 160)}px`;
-      frame.style.height = '';
+      root.style.height = `${Math.max(height, 160)}px`;
+      root.style.maxHeight = '';
     };
 
     const observer = new ResizeObserver(fit);
@@ -83,6 +138,8 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
     observer.observe(document.documentElement);
     const footer = document.querySelector('footer');
     if (footer) observer.observe(footer);
+    const root = ref.current;
+    if (root) observer.observe(root);
     const stopWatchingScrollRoot = subscribeMainColumnScroll(fit);
     window.addEventListener('resize', fit);
     window.addEventListener('scroll', fit, { passive: true });
@@ -98,6 +155,7 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
       if (frame) {
         frame.style.height = '';
         frame.style.maxHeight = '';
+        clearListFrameHeight(frame);
       }
     };
   }, []);
@@ -105,7 +163,7 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
   return (
     <div
       ref={ref}
-      className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
+      className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden lg:overflow-visible"
     >
       {children}
     </div>

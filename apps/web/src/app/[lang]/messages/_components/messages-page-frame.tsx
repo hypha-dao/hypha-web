@@ -26,14 +26,17 @@ export async function MessagesPageFrame({
     <div
       className={cn(
         'w-full min-w-0 overflow-x-clip',
-        fillViewport && 'flex h-full min-h-0 flex-1 flex-col overflow-hidden',
+        // Phone keeps a pinned screen. Desktop lets the channel menu sit in
+        // page flow while only the conversation list uses a fixed frame.
+        fillViewport &&
+          'flex h-full min-h-0 flex-1 flex-col overflow-hidden lg:h-auto lg:overflow-visible',
       )}
     >
       <Container
         className={cn(
           // Match One Wallet: xl:gap-9 under the title, even when the list scrolls.
           'flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9',
-          fillViewport && 'h-full min-h-0 flex-1',
+          fillViewport && 'h-full min-h-0 flex-1 lg:h-auto',
         )}
       >
         <header className="shrink-0 xl:hidden">
@@ -60,7 +63,7 @@ export async function MessagesPageFrame({
         <div
           className={cn(
             fillViewport &&
-              'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+              'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:overflow-visible',
           )}
         >
           {children}

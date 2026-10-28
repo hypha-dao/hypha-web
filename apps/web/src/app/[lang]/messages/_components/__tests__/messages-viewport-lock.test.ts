@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { messagesFrameHeight } from '../messages-frame-height';
+import {
+  messagesFrameHeight,
+  messagesListFrameHeight,
+} from '../messages-frame-height';
 
 describe('messagesFrameHeight', () => {
   it('leaves room for the desktop site footer while the column is locked', () => {
@@ -25,5 +28,25 @@ describe('messagesFrameHeight', () => {
         footerOffset: 0,
       }),
     ).toBe(624);
+  });
+});
+
+describe('messagesListFrameHeight', () => {
+  it('fills the visible column when that is taller than the channel menu', () => {
+    expect(
+      messagesListFrameHeight({
+        available: 640,
+        leftHeight: 420,
+      }),
+    ).toBe(640);
+  });
+
+  it('grows with the channel menu so the list frame stays at least as tall', () => {
+    expect(
+      messagesListFrameHeight({
+        available: 480,
+        leftHeight: 560,
+      }),
+    ).toBe(560);
   });
 });
