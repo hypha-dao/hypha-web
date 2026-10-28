@@ -323,10 +323,10 @@
     "homeUnavailable": "Sigues con la sesión iniciada. No se pudo cargar quién está cerca ni las actualizaciones de inicio.",
     "retry": "Intentar de nuevo",
     "sendTokensChoose": "Elige un token. Ahora: {symbol}.",
-    "gotItDone": "Gracias — estoy contigo",
+    "gotItDone": "Gracias, entendido.",
     "threadCardNoted": "Anotado",
     "threadCardVoted": "Tu voto está registrado",
-    "threadCardKept": "Se queda en esta conversación.",
+    "threadCardKept": "Se queda en este chat.",
     "matrixPersonUnavailable": "Esa persona todavía no tiene chat."
   },
   "WelcomeFlow": {

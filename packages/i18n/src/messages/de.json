@@ -323,10 +323,10 @@
     "homeUnavailable": "Du bist noch angemeldet. Wer da ist und die Home-Updates konnten nicht geladen werden.",
     "retry": "Nochmal versuchen",
     "sendTokensChoose": "Wähle einen Token. Aktuell {symbol}.",
-    "gotItDone": "Danke — ich bin dabei",
+    "gotItDone": "Danke, verstanden.",
     "threadCardNoted": "Notiert",
     "threadCardVoted": "Deine Stimme ist drin",
-    "threadCardKept": "Bleibt in diesem Gespräch.",
+    "threadCardKept": "Bleibt in diesem Chat.",
     "matrixPersonUnavailable": "Diese Person hat noch keinen Chat."
   },
   "WelcomeFlow": {

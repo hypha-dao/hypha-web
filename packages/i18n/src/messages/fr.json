@@ -323,10 +323,10 @@
     "homeUnavailable": "Tu es toujours connecté. Impossible de charger qui est là et les mises à jour de l'accueil.",
     "retry": "Réessayer",
     "sendTokensChoose": "Choisis un token. Actuellement {symbol}.",
-    "gotItDone": "Merci — je suis avec vous",
+    "gotItDone": "Merci, c’est noté.",
     "threadCardNoted": "C’est noté",
     "threadCardVoted": "Votre vote est enregistré",
-    "threadCardKept": "Conservé dans cette conversation.",
+    "threadCardKept": "Ça reste dans ce chat.",
     "matrixPersonUnavailable": "Cette personne n’a pas encore de chat."
   },
   "WelcomeFlow": {

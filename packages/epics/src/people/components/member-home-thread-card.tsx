@@ -531,10 +531,11 @@ export function MemberHomeThreadCard({
               <SentTick />
               <p
                 className={cn(
-                  'mt-3 font-medium tracking-[-0.03em] text-foreground',
+                  // Body face + normal tracking: heading + tight tracking
+                  // mashed the em dash / apostrophe in "Thanks — I'm with you".
+                  'mt-3 font-medium text-foreground',
                   chat ? 'text-2' : 'text-3',
                 )}
-                style={{ fontFamily: 'var(--font-family-heading)' }}
               >
                 {outcome
                   ? t('gotItDone')

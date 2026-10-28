@@ -323,10 +323,10 @@
     "homeUnavailable": "Du er fortsatt innlogget. Hvem som er her og hjemmeoppdateringer kunne ikke lastes.",
     "retry": "Prøv igjen",
     "sendTokensChoose": "Velg et token. Nå {symbol}.",
-    "gotItDone": "Takk — jeg er med",
+    "gotItDone": "Takk, skjønner.",
     "threadCardNoted": "Notert",
     "threadCardVoted": "Stemmen din er inne",
-    "threadCardKept": "Beholdt i denne samtalen.",
+    "threadCardKept": "Blir i denne chatten.",
     "matrixPersonUnavailable": "Den personen har ikke chat ennå."
   },
   "WelcomeFlow": {

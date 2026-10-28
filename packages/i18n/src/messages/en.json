@@ -772,10 +772,10 @@
     "homeUnavailable": "You are still signed in. Who is around and home updates could not be loaded.",
     "retry": "Try again",
     "sendTokensChoose": "Choose a token. Currently {symbol}.",
-    "gotItDone": "Thanks — I'm with you",
+    "gotItDone": "Thanks, got it.",
     "threadCardNoted": "That's noted",
     "threadCardVoted": "Your vote is in",
-    "threadCardKept": "Kept in this conversation.",
+    "threadCardKept": "It stays in this chat.",
     "matrixPersonUnavailable": "That person does not have chat yet."
   },
   "Marketplace": {

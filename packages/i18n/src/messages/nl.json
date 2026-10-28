@@ -323,10 +323,10 @@
     "homeUnavailable": "Je bent nog aangemeld. Wie er is en de home-updates konden niet worden geladen.",
     "retry": "Opnieuw proberen",
     "sendTokensChoose": "Kies een token. Nu {symbol}.",
-    "gotItDone": "Bedankt — ik ben erbij",
+    "gotItDone": "Bedankt, begrepen.",
     "threadCardNoted": "Genoteerd",
     "threadCardVoted": "Je stem is binnen",
-    "threadCardKept": "Blijft in dit gesprek.",
+    "threadCardKept": "Blijft in deze chat.",
     "matrixPersonUnavailable": "Die persoon heeft nog geen chat."
   },
   "WelcomeFlow": {
