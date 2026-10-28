@@ -2944,7 +2944,7 @@ export function MyConnections({
                         event.stopPropagation();
                       }}
                       placeholder={t('search')}
-                      className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+                      className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-foreground focus-visible:ring-0"
                     />
                   </label>
                   {section === 'archived' ? null : picking ? (
