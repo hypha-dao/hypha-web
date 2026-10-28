@@ -86,6 +86,42 @@ describe('home thread resume', () => {
     expect(readHomeThread()).toEqual([]);
   });
 
+  it('keeps the home item card under a reply after the next message', () => {
+    writeHomeThread([
+      {
+        id: 'a1',
+        role: 'assistant',
+        metadata: { homeItem: { kind: 'proposal', slug: 'garden-vote' } },
+        parts: [
+          { type: 'text', text: 'Vlad brought a vote in Hypha Flywheel.' },
+          {
+            type: 'tool-show_member_home_item',
+            state: 'output-available',
+            input: { kind: 'proposal', slug: 'garden-vote' },
+            output: { kind: 'proposal', slug: 'garden-vote' },
+          },
+        ],
+      } as never,
+      {
+        id: 'a2',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Suzana raised a tension next.' }],
+      },
+    ]);
+
+    const [first] = readHomeThread();
+    expect(first?.metadata).toEqual({
+      homeItem: { kind: 'proposal', slug: 'garden-vote' },
+    });
+    const tool = first?.parts?.find(
+      (part) => part.type === 'tool-show_member_home_item',
+    ) as { output?: { kind?: string; slug?: string } } | undefined;
+    expect(tool?.output).toEqual({
+      kind: 'proposal',
+      slug: 'garden-vote',
+    });
+  });
+
   it('keeps the onboarding card that belongs under the reply', () => {
     writeHomeThread([
       {

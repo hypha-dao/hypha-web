@@ -351,9 +351,48 @@ function visualPartForStorage(part: UIMessage['parts'][number]) {
 type StoredThreadPart =
   | { type: 'text'; text: string }
   | NonNullable<ReturnType<typeof guidancePartForStorage>>
-  | NonNullable<ReturnType<typeof visualPartForStorage>>;
+  | NonNullable<ReturnType<typeof visualPartForStorage>>
+  | NonNullable<ReturnType<typeof homeItemPartForStorage>>;
 
 /** One array type. A union of arrays is not a valid `flatMap` result. */
+function isHomeItemPart(part: { type?: unknown; toolName?: unknown }) {
+  if (part.type === 'tool-show_member_home_item') return true;
+  return (
+    part.type === 'dynamic-tool' && part.toolName === 'show_member_home_item'
+  );
+}
+
+function homeItemRef(value: unknown): { kind: string; slug: string } | null {
+  if (!value || typeof value !== 'object') return null;
+  const row = value as { kind?: unknown; slug?: unknown };
+  if (row.kind !== 'proposal' && row.kind !== 'signal') return null;
+  if (typeof row.slug !== 'string' || !row.slug.trim()) return null;
+  return { kind: row.kind, slug: row.slug.trim() };
+}
+
+/** Keep the card kind and slug. The full tool payload is not needed to restore it. */
+function homeItemPartForStorage(part: UIMessage['parts'][number]) {
+  if (!isHomeItemPart(part)) return null;
+  const record = part as {
+    state?: unknown;
+    output?: unknown;
+    input?: unknown;
+    args?: unknown;
+  };
+  if (record.state === 'input-streaming') return null;
+  const ref =
+    homeItemRef(record.output) ??
+    homeItemRef(record.input) ??
+    homeItemRef(record.args);
+  if (!ref) return null;
+  return {
+    type: 'tool-show_member_home_item' as const,
+    state: 'output-available' as const,
+    input: ref,
+    output: ref,
+  };
+}
+
 function storedThreadParts(
   part: UIMessage['parts'][number] | object,
 ): StoredThreadPart[] {
@@ -365,7 +404,9 @@ function storedThreadParts(
   const guidance = guidancePartForStorage(messagePart);
   if (guidance) return [guidance];
   const visuals = visualPartForStorage(messagePart);
-  return visuals ? [visuals] : [];
+  if (visuals) return [visuals];
+  const homeItem = homeItemPartForStorage(messagePart);
+  return homeItem ? [homeItem] : [];
 }
 
 export function readHomeThread(): UIMessage[] {

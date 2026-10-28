@@ -5,6 +5,7 @@ import {
   useCallback,
   useMemo,
   useEffect,
+  useLayoutEffect,
   useRef,
   type ElementType,
   type ReactNode,
@@ -278,6 +279,7 @@ import {
   readSpaceAiChatMessages,
   saveSpaceAiChatMessages,
 } from './space-ai-chat-persistence';
+import { setHomeLeftPanelVoiceActive } from './home-left-panel-voice';
 import { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
 import {
   readHomeActed,
@@ -3178,12 +3180,39 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     onSendTranscript: handleVoiceTranscriptSend,
     onTranscriptTurn: handleVoiceTranscriptTurn,
     captureMicrophone: micOn,
-    // Home already speaks from the center conversation. A second session
-    // here talks over it.
-    speakReplies: soundOn && !isMemberHomePath(pathname),
+    // On Home the center chat yields while this panel's sound is on, so the
+    // two speakers do not play at once.
+    speakReplies: soundOn,
     speakEarlyLeadIn: true,
     speakDisplayedText: isMemberAiSurface,
   });
+
+  useLayoutEffect(() => {
+    const speaking = isMemberHomePath(pathname) && conversationOpen && soundOn;
+    setHomeLeftPanelVoiceActive(speaking);
+    return () => {
+      if (speaking) setHomeLeftPanelVoiceActive(false);
+    };
+  }, [conversationOpen, pathname, soundOn]);
+
+  // Show dictation in the composer while they speak, so they can see it land.
+  const lastDictationRef = useRef('');
+  useEffect(() => {
+    if (!conversationOpen || !micOn) {
+      lastDictationRef.current = '';
+      return;
+    }
+    const live = voiceInterview.liveTranscript.trim();
+    if (live) {
+      lastDictationRef.current = live;
+      setInput(live);
+      return;
+    }
+    if (!lastDictationRef.current) return;
+    const previous = lastDictationRef.current;
+    lastDictationRef.current = '';
+    setInput((current) => (current.trim() === previous ? '' : current));
+  }, [conversationOpen, micOn, voiceInterview.liveTranscript]);
 
   const toggleSound = useCallback(() => {
     setSoundOn((current) => {
@@ -3620,11 +3649,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             onSelect={handleSuggestionSelect}
             variant="tags"
           />
-        ) : null}
-        {conversationOpen && micOn && voiceInterview.liveTranscript ? (
-          <p className="px-4 pb-1 text-1 text-neutral-11">
-            “{voiceInterview.liveTranscript}”
-          </p>
         ) : null}
         {dialogue && voiceInterview.voiceError ? (
           <p className="px-4 pb-1 text-1 text-neutral-11">

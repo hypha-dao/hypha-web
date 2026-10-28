@@ -46,6 +46,7 @@ import {
   type AiPanelDraftAttachment,
 } from '../../common/ai-panel';
 import { buildMemberHomeVoiceSessionContext } from '../../common/space-voice-session-context';
+import { useHomeLeftPanelVoiceActive } from '../../common/home-left-panel-voice';
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
 import { readRecentSpaceSlugs } from '../../common/recent-space-history';
 import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
@@ -243,12 +244,18 @@ function pinnedHomeItem(
     }
   }
   if (
-    aside &&
-    memberHomeThreadItemKey(aside) === memberHomeThreadItemKey(item)
+    !aside ||
+    memberHomeThreadItemKey(aside) !== memberHomeThreadItemKey(item)
   ) {
-    return null;
+    return item;
   }
-  return item;
+  // The ack named the set-aside item first. Prefer the next item this
+  // reply also carries, so the card under it does not vanish.
+  const remaining = items.filter(
+    (entry) =>
+      memberHomeThreadItemKey(entry) !== memberHomeThreadItemKey(aside),
+  );
+  return homeItemForMessage(remaining, message, home);
 }
 
 /** Live catalog first, then cards already shown in this thread. */
@@ -1214,6 +1221,7 @@ export function MemberHomeChat({
     : '';
   const lastAssistantMessageId = lastAssistantMessage?.id ?? '';
 
+  const leftPanelVoice = useHomeLeftPanelVoiceActive();
   const voiceInterview = useOnboardingVoiceDiscovery({
     enabled:
       soundReady &&
@@ -1222,7 +1230,8 @@ export function MemberHomeChat({
       !isAuthLoading &&
       isAuthenticated,
     captureMicrophone: micOn,
-    speakReplies: soundOn,
+    // The left panel is the Home speaker while its sound is on.
+    speakReplies: soundOn && !leftPanelVoice,
     // Speak the first finished sentence while the rest of the reply is still
     // being written, instead of waiting for the whole turn.
     speakEarlyLeadIn: true,
@@ -1241,6 +1250,25 @@ export function MemberHomeChat({
     // transcript is submitted.
     onSendTranscript: handleVoiceTranscriptSend,
   });
+
+  // Show dictation in the composer while they speak, so they can see it land.
+  const lastDictationRef = useRef('');
+  useEffect(() => {
+    if (!micOn) {
+      lastDictationRef.current = '';
+      return;
+    }
+    const live = voiceInterview.liveTranscript.trim();
+    if (live) {
+      lastDictationRef.current = live;
+      setInput(live);
+      return;
+    }
+    if (!lastDictationRef.current) return;
+    const previous = lastDictationRef.current;
+    lastDictationRef.current = '';
+    setInput((current) => (current.trim() === previous ? '' : current));
+  }, [micOn, voiceInterview.liveTranscript]);
 
   const toggleSound = useCallback(() => {
     setSoundOn((current) => {
@@ -1370,15 +1398,46 @@ export function MemberHomeChat({
     if (remembered) setShownCardItems(readHomeShownItems());
   }, [homeMessages, intelligence, liveCardItems, widgetKindFor]);
 
+  // Stamp the card on the message so the next reply cannot clear it when
+  // speech matching or tool parts drift after the live catalog moves on.
+  useEffect(() => {
+    let changed = false;
+    const next = homeMessages.map((message, index) => {
+      if (message.role !== 'assistant' || message.metadata?.homeArrival) {
+        return message;
+      }
+      const existing = message.metadata?.homeItem;
+      if (
+        existing &&
+        (existing.kind === 'proposal' || existing.kind === 'signal') &&
+        existing.slug
+      ) {
+        return message;
+      }
+      const asked = widgetKindFor(userTextBefore(homeMessages, index));
+      if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
+        return message;
+      }
+      const item = pinnedHomeItem(cardItems, homeMessages, index, intelligence);
+      if (!item) return message;
+      changed = true;
+      return {
+        ...message,
+        metadata: {
+          ...message.metadata,
+          homeItem: { kind: item.kind, slug: item.slug },
+        },
+      };
+    });
+    if (!changed) return;
+    setMessages(next);
+  }, [cardItems, homeMessages, intelligence, setMessages, widgetKindFor]);
+
   const cardsByMessageId = useMemo(() => {
-    // The card stays with the latest reply about that item. An earlier
-    // mention would scroll off while the member is reading the new line.
-    // After the member acts, that placement stays so the tick remains in
-    // the history instead of vanishing with the live catalog.
-    const latestByItem = new Map<
-      string,
-      { messageId: string; item: MemberHomeThreadItem }
-    >();
+    // Each reply keeps its own card when the next message arrives. Moving
+    // the card to the latest mention made earlier cards vanish from the
+    // thread the member is still reading.
+    const map = new Map<string, MemberHomeThreadItem>();
     homeMessages.forEach((message, index) => {
       if (message.role !== 'assistant' || message.metadata?.homeArrival) {
         return;
@@ -1391,20 +1450,10 @@ export function MemberHomeChat({
       }
       const item = pinnedHomeItem(cardItems, homeMessages, index, intelligence);
       if (!item) return;
-      const key = memberHomeThreadItemKey(item);
-      const placed = latestByItem.get(key);
-      if (placed && actedKeySet.has(key)) return;
-      latestByItem.set(key, {
-        messageId: message.id,
-        item,
-      });
+      map.set(message.id, item);
     });
-    const map = new Map<string, MemberHomeThreadItem>();
-    for (const placed of latestByItem.values()) {
-      map.set(placed.messageId, placed.item);
-    }
     return map;
-  }, [actedKeySet, cardItems, homeMessages, intelligence, widgetKindFor]);
+  }, [cardItems, homeMessages, intelligence, widgetKindFor]);
   const cardMessageId = useMemo(() => {
     for (let index = homeMessages.length - 1; index >= 0; index -= 1) {
       const message = homeMessages[index];
@@ -1987,11 +2036,6 @@ export function MemberHomeChat({
               </button>
             ))}
         </div>
-        {micOn && voiceInterview.liveTranscript ? (
-          <p className="px-5 pb-1 text-1 text-neutral-11 md:px-4">
-            “{voiceInterview.liveTranscript}”
-          </p>
-        ) : null}
         {dialogue && micNeedsGrant ? (
           <button
             type="button"
