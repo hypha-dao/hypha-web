@@ -32,6 +32,11 @@ import {
   deriveSpaceMemoryDisplayTitle,
   looksLikeTechnicalSpaceMemoryName,
 } from '../../org-memory/space-memory-display';
+import {
+  countSpaceMemoryBranches,
+  EMPTY_SPACE_MEMORY_BRANCH_COUNTS,
+  type SpaceMemoryBranchCounts,
+} from '../../org-memory/space-memory-branches';
 
 /** Aligned with MCP §8.1 / architecture org memory rows. */
 export type OrgMemoryAsset = {
@@ -149,6 +154,12 @@ export type OrgMemoryBySpaceSlugSuccess = {
     has_next_page: boolean;
     has_previous_page: boolean;
   };
+  assets_category_counts: {
+    conversations: number;
+    calls: number;
+    ai: number;
+    files: number;
+  };
 };
 
 export type OrgMemoryBySpaceSlugNotFound = {
@@ -163,6 +174,7 @@ export type OrgMemoryBySpaceSlugNotFound = {
   matrix_fetch: MatrixOrgMemoryFetchMeta;
   pagination: OrgMemoryBySpaceSlugSuccess['pagination'];
   assets_pagination: OrgMemoryBySpaceSlugSuccess['assets_pagination'];
+  assets_category_counts: SpaceMemoryBranchCounts;
 };
 
 export type GetOrgMemoryBySpaceSlugResult =
@@ -952,6 +964,7 @@ export async function getOrgMemoryBySpaceSlug(
           safeAssetsPage,
           safeAssetsPageSize,
         ),
+        assets_category_counts: { ...EMPTY_SPACE_MEMORY_BRANCH_COUNTS },
       },
     };
   }
@@ -999,6 +1012,7 @@ export async function getOrgMemoryBySpaceSlug(
           safeAssetsPage,
           safeAssetsPageSize,
         ),
+        assets_category_counts: { ...EMPTY_SPACE_MEMORY_BRANCH_COUNTS },
       },
     };
   }
@@ -1224,6 +1238,13 @@ export async function getOrgMemoryBySpaceSlug(
   }
   combined = filterAssetsBySearch(combined, assetsSearch);
 
+  const assets_category_counts = countSpaceMemoryBranches(
+    combined.map((asset) => ({
+      source: asset.source,
+      documentLabel: asset.document_label,
+    })),
+  );
+
   const total = combined.length;
   const totalPages = total === 0 ? 0 : Math.ceil(total / safeAssetsPageSize);
   const offset = (safeAssetsPage - 1) * safeAssetsPageSize;
@@ -1251,6 +1272,7 @@ export async function getOrgMemoryBySpaceSlug(
         has_next_page: totalPages > 0 && safeAssetsPage < totalPages,
         has_previous_page: totalPages > 0 && safeAssetsPage > 1,
       },
+      assets_category_counts,
     },
   };
 }

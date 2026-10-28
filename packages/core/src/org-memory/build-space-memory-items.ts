@@ -81,6 +81,13 @@ export type OrgMemorySpaceMemoryPayload = {
     has_next_page: boolean;
     has_previous_page: boolean;
   };
+  /** Full-catalog branch totals (not just the current page). */
+  assets_category_counts?: {
+    conversations: number;
+    calls: number;
+    ai: number;
+    files: number;
+  };
   matrix_fetch?: {
     used_bot_access_token?: boolean;
     used_session_matrix_token?: boolean;
