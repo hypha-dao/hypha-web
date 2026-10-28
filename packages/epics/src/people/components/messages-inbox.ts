@@ -447,10 +447,8 @@ export function inboxContextHref(
   if (place.kind === 'signal') {
     if (!space) return null;
     const signal = place.signalSlug?.trim();
-    if (!signal) return `/${locale}/dho/${space}/coherence`;
-    return `/${locale}/dho/${space}/coherence?signal=${encodeURIComponent(
-      signal,
-    )}`;
+    if (!signal) return `/${locale}/dho/${space}/overview`;
+    return `/${locale}/dho/${space}?signal=${encodeURIComponent(signal)}`;
   }
   if (place.kind === 'space' || place.kind === 'space-public') {
     return space ? `/${locale}/dho/${space}/overview` : null;

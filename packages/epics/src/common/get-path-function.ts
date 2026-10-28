@@ -25,9 +25,10 @@ export const getSignalPath = (
   spaceSlug: string,
   signalSlug: string,
 ) => {
-  return `/${lang}/dho/${spaceSlug}/coherence?signal=${encodeURIComponent(
-    signalSlug,
-  )}`;
+  // Human chat opens from `?signal=` on the space route. `/coherence?signal=`
+  // was ignored (and redirected away when Coherence is off), so notification
+  // and card links looked dead.
+  return `/${lang}/dho/${spaceSlug}?signal=${encodeURIComponent(signalSlug)}`;
 };
 
 export const getProposalUrl = (
