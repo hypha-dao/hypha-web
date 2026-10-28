@@ -29,9 +29,11 @@ export type RealtimeAudioInputConfig = {
 export const DEFAULT_REALTIME_AUDIO_INPUT: RealtimeAudioInputConfig = {
   turnDetection: {
     type: 'server_vad',
-    threshold: 0.72,
+    // Lower than room-noise tuning so a quiet "yes" still opens a turn.
+    threshold: 0.55,
     prefix_padding_ms: 350,
-    silence_duration_ms: 1000,
+    // End the turn sooner after a short answer.
+    silence_duration_ms: 700,
     create_response: false,
     interrupt_response: false,
   },
@@ -198,6 +200,10 @@ const NOISE_FILLER_TOKEN_PATTERNS = [
   /^e+r+$/,
 ] as const;
 
+/** One-word answers that must reach chat. Not um/uh noise. */
+const SHORT_DECISION_TRANSCRIPT =
+  /^(?:yes|no|yeah|yep|yup|ok|okay|oui|non|si|sí|ja|nein|sure|nope|nah|pass|later|maybe|sim|não|nao|da|nyet|right|correct|true|false|absolutely|definitely)(?:\s+(?:please|thanks|thank you|bitte|merci|por favor))?[\s.!?,-]*$/i;
+
 function isNoiseFillerToken(token: string): boolean {
   const letters = token.toLowerCase().replace(/[^a-z]/g, '');
   if (!letters) return true;
@@ -213,9 +219,16 @@ function isNoiseOnlyTranscript(text: string): boolean {
   return tokens.every(isNoiseFillerToken);
 }
 
+/** Short yes / no / ok answers are real turns, not ambient blips. */
+export function isShortDecisionTranscript(text: string): boolean {
+  return SHORT_DECISION_TRANSCRIPT.test(text.trim());
+}
+
 /** Ignore VAD false positives — barge-in and /api/chat only on real user speech. */
 export function isSubstantiveUserTranscript(text: string): boolean {
   const normalized = text.trim();
+  if (!normalized) return false;
+  if (isShortDecisionTranscript(normalized)) return true;
   if (normalized.length < 3) return false;
   if (isNoiseOnlyTranscript(normalized)) return false;
   if (!/\p{L}/u.test(normalized)) return false;
@@ -333,6 +346,14 @@ let speechContext: AudioContext | null = null;
 /** One spoken line at a time. A second start stops the line already playing. */
 let activeExactSpeechStop: (() => void) | null = null;
 
+/** Must match OpenAI `response_format: 'pcm'` (24 kHz mono s16le). */
+const SPEECH_PCM_SAMPLE_RATE = 24_000;
+/** Start after ~80ms of audio so the first word is not clipped by an empty buffer. */
+const SPEECH_PCM_FIRST_PLAY_BYTES =
+  Math.floor(SPEECH_PCM_SAMPLE_RATE * 0.08) * 2;
+/** Schedule ~100ms slices once playback has begun. */
+const SPEECH_PCM_SLICE_BYTES = Math.floor(SPEECH_PCM_SAMPLE_RATE * 0.1) * 2;
+
 /** Resume the speaker during a click so a later recording can play. */
 export function unlockExactSpeechPlayback(): void {
   const Context =
@@ -346,21 +367,72 @@ export function unlockExactSpeechPlayback(): void {
   }
 }
 
+function pcm16LeToFloat32(bytes: Uint8Array): Float32Array {
+  const samples = Math.floor(bytes.byteLength / 2);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, samples * 2);
+  const out = new Float32Array(samples);
+  for (let i = 0; i < samples; i += 1) {
+    out[i] = view.getInt16(i * 2, true) / 32768;
+  }
+  return out;
+}
+
+function concatUint8(a: Uint8Array, b: Uint8Array): Uint8Array {
+  if (a.byteLength === 0) return b;
+  if (b.byteLength === 0) return a;
+  const out = new Uint8Array(a.byteLength + b.byteLength);
+  out.set(a, 0);
+  out.set(b, a.byteLength);
+  return out;
+}
+
+/** Fetch TTS PCM without playing — used to warm the next sentence while the first finishes. */
+export async function prefetchExactSpeechPcm({
+  text,
+  authToken,
+  signal,
+}: {
+  text: string;
+  authToken: string;
+  signal?: AbortSignal;
+}): Promise<ArrayBuffer | null> {
+  try {
+    const response = await fetch('/api/voice/speak', {
+      method: 'POST',
+      signal,
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
+    if (!response.ok || signal?.aborted) return null;
+    return response.arrayBuffer();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Play the chat script as synthesized speech. The realtime model is not asked
  * to say it: that call generates a new reply, and the words drift.
+ * Streams PCM from `/api/voice/speak` so the first samples play before the
+ * full clip arrives (avoids waiting on arrayBuffer + decodeAudioData).
+ * Pass `pcm` when the bytes were already prefetched for a seamless handoff.
  */
 export function startExactSpeechPlayback({
   text,
   authToken,
+  pcm,
 }: {
   text: string;
   authToken: string;
+  pcm?: ArrayBuffer | null;
 }): { stop: () => void; done: Promise<boolean> } {
   activeExactSpeechStop?.();
   activeExactSpeechStop = null;
   const abort = new AbortController();
-  let source: AudioBufferSourceNode | null = null;
+  const liveSources = new Set<AudioBufferSourceNode>();
   let endTimer: number | null = null;
   let settled = false;
   let resolveDone: (spoken: boolean) => void = () => undefined;
@@ -378,14 +450,15 @@ export function startExactSpeechPlayback({
       window.clearTimeout(endTimer);
       endTimer = null;
     }
-    if (source) {
+    for (const source of liveSources) {
       source.onended = null;
       try {
         source.stop();
       } catch {
-        // The buffer already finished.
+        // Already finished.
       }
     }
+    liveSources.clear();
     if (activeExactSpeechStop === stop) activeExactSpeechStop = null;
     finish(false);
   };
@@ -394,24 +467,6 @@ export function startExactSpeechPlayback({
   void (async () => {
     try {
       unlockExactSpeechPlayback();
-      const response = await fetch('/api/voice/speak', {
-        method: 'POST',
-        signal: abort.signal,
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text }),
-      });
-      if (!response.ok || abort.signal.aborted) {
-        finish(false);
-        return;
-      }
-      const bytes = await response.arrayBuffer();
-      if (abort.signal.aborted) {
-        finish(false);
-        return;
-      }
       const context = speechContext;
       if (!context) {
         finish(false);
@@ -424,28 +479,127 @@ export function startExactSpeechPlayback({
         finish(false);
         return;
       }
-      const decoded = await context.decodeAudioData(bytes.slice(0));
-      if (abort.signal.aborted) {
+
+      let body: ReadableStream<Uint8Array> | null = null;
+      if (pcm && pcm.byteLength >= 2) {
+        body = new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array(pcm));
+            controller.close();
+          },
+        });
+      } else {
+        const response = await fetch('/api/voice/speak', {
+          method: 'POST',
+          signal: abort.signal,
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text }),
+        });
+        if (!response.ok || abort.signal.aborted || !response.body) {
+          finish(false);
+          return;
+        }
+        body = response.body;
+      }
+
+      const reader = body.getReader();
+      let pending = new Uint8Array(0);
+      let nextStart = context.currentTime + 0.05;
+      let heardAudio = false;
+      let lastSource: AudioBufferSourceNode | null = null;
+
+      const schedulePcm = (pcmBytes: Uint8Array) => {
+        if (pcmBytes.byteLength < 2) return;
+        const samples = pcm16LeToFloat32(pcmBytes);
+        if (samples.length === 0) return;
+        const buffer = context.createBuffer(
+          1,
+          samples.length,
+          SPEECH_PCM_SAMPLE_RATE,
+        );
+        buffer.copyToChannel(samples, 0);
+        const source = context.createBufferSource();
+        source.buffer = buffer;
+        source.connect(context.destination);
+        const startAt = Math.max(nextStart, context.currentTime + 0.02);
+        source.start(startAt);
+        nextStart = startAt + buffer.duration;
+        heardAudio = true;
+        liveSources.add(source);
+        lastSource = source;
+        source.onended = () => {
+          liveSources.delete(source);
+          if (source !== lastSource || abort.signal.aborted) return;
+          if (endTimer !== null) {
+            window.clearTimeout(endTimer);
+            endTimer = null;
+          }
+          if (activeExactSpeechStop === stop) activeExactSpeechStop = null;
+          finish(true);
+        };
+      };
+
+      const flushPending = (force: boolean) => {
+        while (true) {
+          const aligned = pending.byteLength - (pending.byteLength % 2);
+          if (aligned < 2) return;
+          if (!heardAudio) {
+            if (!force && aligned < SPEECH_PCM_FIRST_PLAY_BYTES) return;
+            const take = force
+              ? aligned
+              : Math.min(
+                  aligned,
+                  Math.max(SPEECH_PCM_FIRST_PLAY_BYTES, SPEECH_PCM_SLICE_BYTES),
+                );
+            const slice = pending.subarray(0, take);
+            pending = pending.subarray(take);
+            schedulePcm(slice);
+            continue;
+          }
+          if (!force && aligned < SPEECH_PCM_SLICE_BYTES) return;
+          const take = force
+            ? aligned
+            : Math.min(aligned, SPEECH_PCM_SLICE_BYTES);
+          const slice = pending.subarray(0, take);
+          pending = pending.subarray(take);
+          schedulePcm(slice);
+          if (!force) return;
+        }
+      };
+
+      while (true) {
+        const { done: streamDone, value } = await reader.read();
+        if (abort.signal.aborted) {
+          void reader.cancel().catch(() => undefined);
+          finish(false);
+          return;
+        }
+        if (streamDone) break;
+        if (value?.byteLength) {
+          pending = concatUint8(pending, value);
+          flushPending(false);
+        }
+      }
+      flushPending(true);
+
+      if (!heardAudio) {
         finish(false);
         return;
       }
-      source = context.createBufferSource();
-      source.buffer = decoded;
-      source.connect(context.destination);
-      // The buffer length is the script. End the turn just after it, and
-      // never from a guess made before the audio has started.
+
+      // Fallback if onended is delayed or dropped after the last slice.
+      const remainingMs = Math.max(
+        0,
+        Math.ceil((nextStart - context.currentTime) * 1000),
+      );
       endTimer = window.setTimeout(() => {
         endTimer = null;
+        if (activeExactSpeechStop === stop) activeExactSpeechStop = null;
         finish(true);
-      }, Math.ceil(decoded.duration * 1000) + 1500);
-      source.onended = () => {
-        if (endTimer !== null) {
-          window.clearTimeout(endTimer);
-          endTimer = null;
-        }
-        finish(true);
-      };
-      source.start();
+      }, remainingMs + 1500);
     } catch {
       finish(false);
     }

@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 
 import {
   RealtimeVoiceSessionError,
-  synthesizeSpeechScript,
+  SPEECH_PCM_SAMPLE_RATE,
+  streamSpeechScript,
   verifyPrivyAuthToken,
 } from '@hypha-platform/chat-server';
 import { getEnableOnboardingVoiceRealtime } from '@hypha-platform/feature-flags';
@@ -60,11 +61,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    const audio = await synthesizeSpeechScript(text);
-    return new NextResponse(new Uint8Array(audio), {
+    const stream = await streamSpeechScript(text);
+    return new NextResponse(stream, {
       headers: {
-        'Content-Type': 'audio/mpeg',
+        'Content-Type': `audio/L16;rate=${SPEECH_PCM_SAMPLE_RATE};channels=1`,
         'Cache-Control': 'no-store',
+        // Hint proxies not to buffer the whole body before forwarding.
+        'X-Accel-Buffering': 'no',
       },
     });
   } catch (error) {

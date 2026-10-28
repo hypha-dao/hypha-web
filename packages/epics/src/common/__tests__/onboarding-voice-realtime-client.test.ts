@@ -74,6 +74,15 @@ describe('isSubstantiveUserTranscript', () => {
     expect(isSubstantiveUserTranscript('Tu peux reprendre.')).toBe(true);
   });
 
+  it('accepts short yes and no answers', () => {
+    expect(isSubstantiveUserTranscript('yes')).toBe(true);
+    expect(isSubstantiveUserTranscript('Yes.')).toBe(true);
+    expect(isSubstantiveUserTranscript('no')).toBe(true);
+    expect(isSubstantiveUserTranscript('ok')).toBe(true);
+    expect(isSubstantiveUserTranscript('oui')).toBe(true);
+    expect(isSubstantiveUserTranscript('não')).toBe(true);
+  });
+
   it('rejects noise and filler transcripts', () => {
     expect(isSubstantiveUserTranscript('')).toBe(false);
     expect(isSubstantiveUserTranscript('uh')).toBe(false);

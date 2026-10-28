@@ -12,15 +12,12 @@ import {
 
 const SPEECH_MODEL = 'gpt-4o-mini-tts';
 
+/** OpenAI `pcm` is 24 kHz mono signed 16-bit little-endian. */
+export const SPEECH_PCM_SAMPLE_RATE = 24_000;
+
 export { resolveHomeSpeechVoice, resolveSpeechVoice };
 
-/**
- * Speak `text` as audio. This is synthesis, not a chat model: the bytes are
- * those words, and nothing else gets added.
- */
-export async function synthesizeSpeechScript(
-  text: string,
-): Promise<ArrayBuffer> {
+async function openSpeechStream(text: string): Promise<Response> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
     throw new RealtimeVoiceSessionError(
@@ -36,20 +33,29 @@ export async function synthesizeSpeechScript(
     );
   }
 
-  const response = await fetch('https://api.openai.com/v1/audio/speech', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: SPEECH_MODEL,
-      voice: resolveHomeSpeechVoice(),
-      input,
-      instructions: SPEECH_TONE_INSTRUCTIONS,
-      response_format: 'mp3',
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: SPEECH_MODEL,
+        voice: resolveHomeSpeechVoice(),
+        input,
+        instructions: SPEECH_TONE_INSTRUCTIONS,
+        // Raw PCM streams immediately; mp3 forced a full-file wait before play.
+        response_format: 'pcm',
+      }),
+    });
+  } catch (error) {
+    throw new RealtimeVoiceSessionError(
+      'upstream_error',
+      error instanceof Error ? error.message : 'OpenAI speech request failed',
+    );
+  }
 
   if (!response.ok) {
     const detail = await response.text().catch(() => '');
@@ -61,5 +67,30 @@ export async function synthesizeSpeechScript(
     );
   }
 
+  return response;
+}
+
+/**
+ * Speak `text` as audio. This is synthesis, not a chat model: the bytes are
+ * those words, and nothing else gets added.
+ */
+export async function synthesizeSpeechScript(
+  text: string,
+): Promise<ArrayBuffer> {
+  const response = await openSpeechStream(text);
   return response.arrayBuffer();
+}
+
+/** Streams OpenAI TTS PCM so the client can start playback before the full clip arrives. */
+export async function streamSpeechScript(
+  text: string,
+): Promise<ReadableStream<Uint8Array>> {
+  const response = await openSpeechStream(text);
+  if (!response.body) {
+    throw new RealtimeVoiceSessionError(
+      'invalid_response',
+      'OpenAI speech returned an empty body',
+    );
+  }
+  return response.body;
 }
