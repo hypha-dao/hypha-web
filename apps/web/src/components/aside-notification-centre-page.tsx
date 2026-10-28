@@ -33,7 +33,7 @@ export default function AsideNotificationCentrePage({
   const progress = 0;
   const isBusy = isLoading;
   return (
-    <ProposalOverlayShell>
+    <ProposalOverlayShell elevated>
       <LoadingBackdrop
         showKeepWindowOpenMessage={true}
         keepWindowOpenMessage={tNotificationCentre('loading.keepWindowOpen')}
