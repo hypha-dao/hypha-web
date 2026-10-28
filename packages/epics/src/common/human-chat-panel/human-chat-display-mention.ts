@@ -97,16 +97,18 @@ export function replaceMxidsWithVisibleMentionLabels(
 ): string {
   if (!plain.trim()) return plain;
   if (userIdToLabel.size === 0 && !fallbackLabel) return plain;
-  return replacePlainTextMatrixMxidsWithLabels(plain, (id) => {
+  const rewritten = replacePlainTextMatrixMxidsWithLabels(plain, (id) => {
     const name =
       userIdToLabel.get(id)?.trim() ||
       userIdToLabel.get(id.toLowerCase())?.trim() ||
       fallbackLabel?.(id)?.trim() ||
       '';
     const safe = sanitizeMentionDisplayLabel(name);
-    if (!safe || looksLikeTechnicalMatrixDisplayName(safe, id)) return id;
+    // Never leave a bridged Privy MXID in banner/preview text.
+    if (!safe || looksLikeTechnicalMatrixDisplayName(safe, id)) return '';
     return `@${safe}`;
   });
+  return rewritten.replace(/\s{2,}/g, ' ').trim();
 }
 
 /**

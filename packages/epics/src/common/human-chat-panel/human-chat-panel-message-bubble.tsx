@@ -2025,9 +2025,20 @@ export function HumanChatPanelMessageBubble({
                 : `@${replyAuthorLabelForUi}`}
             </span>
             {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
-              <span className="min-w-0 truncate font-normal">
-                {replyTo.excerpt}
-              </span>
+              // Keep MXIDs / @handles so mention pills can resolve Privy locals to
+              // names; omit only bare technical slugs with no mention syntax.
+              needsHyphaProfileResolutionForMatrixLabel(replyTo.excerpt) &&
+              !replyTo.excerpt.includes('@') &&
+              !/\s/.test(replyTo.excerpt.trim()) ? null : (
+                <span className="min-w-0 truncate font-normal">
+                  {renderTextWithMentions(
+                    replyTo.excerpt,
+                    bodyResolveMx,
+                    false,
+                    roomMemberUserIds,
+                  )}
+                </span>
+              )
             ) : (
               <span className="italic">{t('replyOriginalUnavailable')}</span>
             )}
