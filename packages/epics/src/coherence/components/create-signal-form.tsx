@@ -48,6 +48,8 @@ import {
   Person,
   resolveDefaultBoard,
   schemaCreateCoherenceForm,
+  schemaEditCoherenceForm,
+  signalFormSchemaForMode,
   resolveSignalFormCreatorId,
   parseCapitalKeys,
   type CapitalKey,
@@ -529,7 +531,9 @@ export const CreateSignalForm = ({
     // Keep typed title/description as-is while editing. Zod `.trim()` still
     // applies on submit via the resolver; `raw: true` stops it from writing
     // the trimmed value back into the field on validate.
-    resolver: zodResolver(schemaCreateCoherenceForm, undefined, { raw: true }),
+    resolver: zodResolver(signalFormSchemaForMode(mode), undefined, {
+      raw: true,
+    }),
     defaultValues: formDefaults,
   });
   React.useEffect(() => {
@@ -919,11 +923,16 @@ export const CreateSignalForm = ({
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
       form.clearErrors('root');
-      const creatorId =
+      const storedCreatorId =
         typeof data.creatorId === 'number' && data.creatorId > 0
           ? data.creatorId
-          : person?.id;
-      if (!creatorId) {
+          : null;
+      // Create attributes the signed-in viewer. Edit never substitutes them.
+      const creatorId =
+        mode === 'create'
+          ? storedCreatorId ?? person?.id ?? null
+          : storedCreatorId;
+      if (mode === 'create' && !creatorId) {
         reportPublishFailure(
           new Error('authToken is required'),
           'Your session expired. Please sign in again before saving.',
@@ -939,11 +948,15 @@ export const CreateSignalForm = ({
       }
       let parsed: FormValues;
       try {
-        parsed = schemaCreateCoherenceForm.parse({
+        parsed = (
+          mode === 'edit' ? schemaEditCoherenceForm : schemaCreateCoherenceForm
+        ).parse({
           ...data,
-          creatorId,
+          ...(mode === 'create'
+            ? { creatorId }
+            : { creatorId: storedCreatorId }),
           spaceId: data.spaceId > 0 ? data.spaceId : spaceId,
-        });
+        }) as FormValues;
       } catch (error) {
         reportPublishFailure(
           error,

@@ -7,7 +7,11 @@ import {
   resolveSignalCreatorDisplayName,
   resolveSignalFormCreatorId,
 } from '../signal-creator';
-import { schemaUpdateCoherenceSignalBySlug } from '../validation';
+import {
+  schemaCreateCoherenceForm,
+  schemaEditCoherenceForm,
+  schemaUpdateCoherenceSignalBySlug,
+} from '../validation';
 
 const GERARDO_ID = 8;
 const ALEX_ID = 21;
@@ -87,6 +91,54 @@ describe('resolveSignalCreatorDisplayName', () => {
         creatorName: 'Gerardo Roza',
       }),
     ).toBe('You');
+  });
+});
+
+const editWithoutCreator = {
+  type: 'Need' as const,
+  priority: 'medium' as const,
+  title: 'System signal',
+  description: 'No recorded author.',
+  spaceId: 1,
+  archived: false,
+};
+
+describe('schemaEditCoherenceForm', () => {
+  it('lets edit save when stored creatorId is missing', () => {
+    const parsed = schemaEditCoherenceForm.parse({
+      ...editWithoutCreator,
+      creatorId: 0,
+    });
+    expect(parsed.creatorId).toBeNull();
+  });
+
+  it('lets edit save when stored creatorId is null', () => {
+    const parsed = schemaEditCoherenceForm.parse({
+      ...editWithoutCreator,
+      creatorId: null,
+    });
+    expect(parsed.creatorId).toBeNull();
+  });
+
+  it('lets edit save when creatorId is omitted', () => {
+    const parsed = schemaEditCoherenceForm.parse(editWithoutCreator);
+    expect(parsed.creatorId).toBeNull();
+  });
+
+  it('keeps a persisted creatorId on edit', () => {
+    const parsed = schemaEditCoherenceForm.parse({
+      ...editWithoutCreator,
+      creatorId: VLAD_ID,
+    });
+    expect(parsed.creatorId).toBe(VLAD_ID);
+  });
+
+  it('still requires a positive creatorId on create', () => {
+    const result = schemaCreateCoherenceForm.safeParse({
+      ...editWithoutCreator,
+      creatorId: 0,
+    });
+    expect(result.success).toBe(false);
   });
 });
 
