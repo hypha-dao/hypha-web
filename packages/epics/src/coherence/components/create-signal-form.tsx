@@ -50,6 +50,7 @@ import {
   schemaCreateCoherenceForm,
   schemaEditCoherenceForm,
   signalFormSchemaForMode,
+  type SignalFormValues,
   resolveSignalFormCreatorId,
   parseCapitalKeys,
   type CapitalKey,
@@ -117,7 +118,7 @@ import { useTokens } from '../../treasury/hooks/use-tokens';
 import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
 import { EXCHANGE_SIGNAL_CAPITALS_KEY } from '../../network-exchange/exchange-draft-keys';
 
-type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
+type FormValues = SignalFormValues;
 
 export interface CreateSignalFormProps {
   spaceId: number;
@@ -1207,7 +1208,9 @@ export const CreateSignalForm = ({
                       personIdToMatrixUserId,
                     );
                     const ownerMatrixUserId =
-                      personIdToMatrixUserId[creatorId]?.trim() ||
+                      (typeof creatorId === 'number'
+                        ? personIdToMatrixUserId[creatorId]?.trim()
+                        : undefined) ||
                       matrixClient.getUserId?.()?.trim() ||
                       null;
                     const addedMemberMatrixUserIds = matrixUserIdsForPersonIds(

@@ -190,8 +190,15 @@ export const schemaEditCoherenceForm = schemaCreateCoherenceWeb2.extend({
     .transform((id) => (typeof id === 'number' && id > 0 ? id : null)),
 });
 
-export function signalFormSchemaForMode(mode: 'create' | 'edit') {
-  return mode === 'edit' ? schemaEditCoherenceForm : schemaCreateCoherenceForm;
+/** Shared create/edit form values. `creatorId` is null for system signals. */
+export type SignalFormValues = z.infer<typeof schemaEditCoherenceForm>;
+
+export function signalFormSchemaForMode(
+  mode: 'create' | 'edit',
+): z.ZodType<SignalFormValues> {
+  return (
+    mode === 'edit' ? schemaEditCoherenceForm : schemaCreateCoherenceForm
+  ) as z.ZodType<SignalFormValues>;
 }
 
 export const schemaUpdateCoherenceSignalBySlug = z.object({
