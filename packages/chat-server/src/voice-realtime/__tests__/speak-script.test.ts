@@ -17,9 +17,9 @@ describe('resolveSpeechVoice', () => {
     expect(resolveSpeechVoice('Cedar')).toBe('cedar');
   });
 
-  it('falls back to shimmer for a voice the speech model cannot speak', () => {
+  it('falls back to marin for a voice the speech model cannot speak', () => {
     delete process.env.OPENAI_REALTIME_VOICE;
-    expect(resolveSpeechVoice('not-a-voice')).toBe('shimmer');
+    expect(resolveSpeechVoice('not-a-voice')).toBe('marin');
   });
 
   it('uses the configured realtime voice when none is passed', () => {
@@ -27,9 +27,9 @@ describe('resolveSpeechVoice', () => {
     expect(resolveSpeechVoice()).toBe('sage');
   });
 
-  it('keeps the home speaker youthful even when realtime is a low voice', () => {
+  it('keeps the LIVE home speaker even when realtime is a low voice', () => {
     process.env.OPENAI_REALTIME_VOICE = 'cedar';
-    expect(resolveHomeSpeechVoice()).toBe('shimmer');
+    expect(resolveHomeSpeechVoice()).toBe('marin');
   });
 
   it('asks the speaker for joyful enthusiastic delivery at an easy pace', () => {

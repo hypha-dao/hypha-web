@@ -1,4 +1,4 @@
-/** Voices gpt-4o-mini-tts can speak. Shimmer is the home speaker. */
+/** Voices gpt-4o-mini-tts can speak. Marin is the home / LIVE speaker. */
 const SPEECH_VOICES = new Set([
   'alloy',
   'ash',
@@ -13,12 +13,12 @@ const SPEECH_VOICES = new Set([
 ]);
 
 /**
- * Home speaker. Shimmer is the young, enthusiastic feminine voice.
- * Coral was landing mature. A deployed OPENAI_REALTIME_VOICE is often a
- * low voice, so home speech does not use it. Do not push pitch in the
- * tone prompt — that made Shimmer sound strained.
+ * Home speaker — same as LIVE Realtime (`OPENAI_REALTIME_VOICE` default).
+ * Marin is the young, feminine, joyful voice on production. Do not swap to
+ * shimmer/coral again; those were the circle that drifted from LIVE.
+ * Home speech ignores a low deployed OPENAI_REALTIME_VOICE override.
  */
-export const HOME_SPEECH_VOICE = 'shimmer';
+export const HOME_SPEECH_VOICE = 'marin';
 
 /**
  * Tone for synthesized home speech. The words stay the chat script.
@@ -39,7 +39,7 @@ export function resolveSpeechVoice(requested?: string | null): string {
   return SPEECH_VOICES.has(voice) ? voice : HOME_SPEECH_VOICE;
 }
 
-/** Home chat and home speech. Ignores OPENAI_REALTIME_VOICE. */
+/** Home chat and home speech. Ignores OPENAI_REALTIME_VOICE. Matches LIVE. */
 export function resolveHomeSpeechVoice(): string {
   return HOME_SPEECH_VOICE;
 }
