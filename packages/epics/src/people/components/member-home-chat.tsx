@@ -63,6 +63,11 @@ import {
   writeHomeChoices,
   writeHomeThread,
 } from './member-home-resume';
+import {
+  MEMBER_HOME_PEOPLE_LEAD_KEYS,
+  MEMBER_HOME_SPACE_LEAD_KEYS,
+  nextMemberHomeLeadKey,
+} from './member-home-leads';
 import { MemberHomeActivationCard } from './member-home-activation-card';
 import { MemberHomeOnboardingCards } from './member-home-onboarding-cards';
 import { generatedVisualsFromParts } from '../../common/onboarding-visual-assets';
@@ -427,14 +432,18 @@ function directReplyText(
   switch (reply.line.key) {
     case 'people':
       // Shared-space ranking is not what "Who is around?" asks. The widget
-      // already sorts by presence — just point at the list.
-      return t('peopleAroundLead');
+      // already sorts by presence — just point at the list. Rotate copy so
+      // the same chip does not always speak the same sentence.
+      return t(
+        nextMemberHomeLeadKey('people', MEMBER_HOME_PEOPLE_LEAD_KEYS),
+      );
     case 'peopleEmpty':
       return t('peopleWidgetEmpty');
     case 'space':
       // Do not name a lead space — picking Hypha Platform (or any parent)
       // as "start here" is bad advice. The widget already lists them.
-      return t('spaceLead');
+      // Rotate neutral list leads across the session.
+      return t(nextMemberHomeLeadKey('space', MEMBER_HOME_SPACE_LEAD_KEYS));
     case 'spaceEmpty':
       return t('spacesWidgetEmpty');
     case 'tokens':
@@ -461,24 +470,6 @@ function directReplyText(
     case 'usefulQuiet':
       return t('usefulQuiet');
   }
-}
-
-function closestSharedPerson(intelligence: {
-  person: { id: number };
-  connections: ReadonlyArray<{
-    id: number;
-    name: string | null;
-    surname: string | null;
-    nickname: string | null;
-    sharedSpaceCount: number;
-  }>;
-}) {
-  return (
-    intelligence.connections.find(
-      (person) =>
-        person.id !== intelligence.person.id && connectionName(person),
-    ) ?? null
-  );
 }
 
 function messageText(message: HomeMessage) {
@@ -1185,7 +1176,9 @@ export function MemberHomeChat({
           ? intelligence.connections.some(
               (person) => person.id !== intelligence.person.id,
             )
-            ? t('peopleAroundLead')
+            ? // Direct replies already rotated at send time. This is only a
+              // stream-empty fallback — keep the primary lead, do not advance.
+              t('peopleAroundLead')
             : t('peopleWidgetEmpty')
           : '');
       if (script) heldBubbleText.current.set(message.id, script);
