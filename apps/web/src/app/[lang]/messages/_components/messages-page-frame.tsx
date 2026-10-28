@@ -1,18 +1,14 @@
 import type { ReactNode } from 'react';
 import { Container, Heading } from '@hypha-platform/ui';
-import { cn } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 
 export async function MessagesPageFrame({
   children,
   heading = 'messages',
-  fillViewport = false,
 }: {
   children: ReactNode;
   /** Suggestions uses its own title. The messages screen keeps "Share messages". */
   heading?: 'messages' | 'suggestions' | 'archived';
-  /** The channel menu stays put. Only the conversation list scrolls. */
-  fillViewport?: boolean;
 }) {
   const t = await getTranslations('Connections');
   const titleLineTwo =
@@ -23,18 +19,8 @@ export async function MessagesPageFrame({
       : t('titleLineTwo');
 
   return (
-    <div
-      className={cn(
-        'w-full min-w-0 overflow-x-clip',
-        fillViewport && 'flex h-full min-h-0 flex-1 flex-col overflow-hidden',
-      )}
-    >
-      <Container
-        className={cn(
-          'flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9',
-          fillViewport && 'h-full min-h-0',
-        )}
-      >
+    <div className="w-full min-w-0 overflow-x-clip">
+      <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9">
         <header className="shrink-0 xl:hidden">
           <p className="mb-2 text-1 font-bold uppercase text-foreground">
             {t('titleLineOne')}
@@ -56,14 +42,7 @@ export async function MessagesPageFrame({
           <span>{t('titleLineOne')}</span>
           <span>{titleLineTwo}</span>
         </Heading>
-        <div
-          className={cn(
-            fillViewport &&
-              'flex h-full min-h-0 flex-1 flex-col overflow-hidden',
-          )}
-        >
-          {children}
-        </div>
+        {children}
       </Container>
     </div>
   );

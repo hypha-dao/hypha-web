@@ -2619,12 +2619,7 @@ export function MyConnections({
   }
 
   return (
-    <div
-      className={cn(
-        'flex min-w-0 flex-col gap-6',
-        section === 'messages' && 'h-full min-h-0 flex-1 gap-0 overflow-hidden',
-      )}
-    >
+    <div className="flex min-w-0 flex-col gap-6">
       <MemberHomePeople
         people={connections}
         extraPersonIds={[...reachOutIds, ...peerPersonIds]}
@@ -2688,18 +2683,15 @@ export function MyConnections({
         <div
           className={cn(
             'flex min-w-0 flex-col gap-6',
-            section === 'messages' &&
-              'h-full min-h-0 flex-1 gap-4 overflow-hidden lg:flex-row lg:gap-6',
+            section === 'messages' && 'gap-4 lg:flex-row lg:gap-6',
           )}
         >
           {section === 'messages' ? (
             <div
               ref={inboxFiltersRef}
               className={cn(
-                'narrow-scrollbar w-full shrink-0 overscroll-contain lg:h-full lg:w-80 lg:shrink-0 lg:overflow-y-auto',
-                picking || inboxChannelOpen
-                  ? 'hidden lg:block'
-                  : 'min-h-0 flex-1 overflow-y-auto lg:flex-none',
+                'w-full shrink-0 lg:w-80 lg:shrink-0',
+                picking || inboxChannelOpen ? 'hidden lg:block' : null,
               )}
             >
               <MessagesInboxFilters
@@ -2711,7 +2703,7 @@ export function MyConnections({
           ) : null}
           <div
             className={cn(
-              'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+              'flex min-w-0 flex-1 flex-col gap-3',
               section === 'messages' && !picking && !inboxChannelOpen
                 ? 'hidden lg:flex'
                 : 'flex',
@@ -2732,8 +2724,8 @@ export function MyConnections({
                 {t(`inbox.${inboxFilter}Title`)}
               </button>
             ) : null}
-            <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-              <div className="flex shrink-0 flex-col gap-3">
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <label className="relative min-w-0 flex-1">
                     <span className="sr-only">{t('search')}</span>
@@ -2904,10 +2896,7 @@ export function MyConnections({
                 </p>
               ) : null}
 
-              <div
-                ref={inboxListRef}
-                className="narrow-scrollbar flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain"
-              >
+              <div ref={inboxListRef} className="flex flex-col gap-3">
                 {listLoading ? (
                   <MemberListSkeleton
                     title={
