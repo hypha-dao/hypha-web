@@ -91,7 +91,6 @@ export default async function ProfilePage(props: PageProps) {
                 person={person}
                 spaces={spaces}
                 profileView={true}
-                className="mb-0 mt-1"
               />
             }
           />

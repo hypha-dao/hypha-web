@@ -435,7 +435,7 @@ export function ProfileStory({
     );
 
   return (
-    <article className="flex flex-col gap-10">
+    <article className="flex flex-col gap-5">
       {canEdit ? (
         <UploadLeadImage
           defaultImage={leadImage || null}

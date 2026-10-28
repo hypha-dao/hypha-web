@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   flattenEcosystemSpaceGroups,
   groupSpacesByEcosystemRecency,
-} from '../member-home-spaces-rail';
+} from '../order-spaces-by-ecosystem';
 
 type Row = {
   id: number;
