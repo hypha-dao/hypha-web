@@ -29,6 +29,27 @@ export function looksLikeTechnicalSpaceMemoryName(value: string): boolean {
   return false;
 }
 
+/**
+ * Drop a title that was derived from the opening of the same body so the
+ * Space Memory card does not repeat the first sentence under the heading.
+ */
+export function memoryBodyWithoutRepeatedTitle(
+  title: string,
+  body: string,
+): string {
+  const heading = title.replace(/\s+/g, ' ').trim();
+  const text = body.replace(/\s+/g, ' ').trim();
+  if (!heading || !text) return body.trim();
+  if (text.toLowerCase() === heading.toLowerCase()) return '';
+  if (text.toLowerCase().startsWith(heading.toLowerCase())) {
+    return text
+      .slice(heading.length)
+      .replace(/^[\s—–\-:.,]+/u, '')
+      .trim();
+  }
+  return body.trim();
+}
+
 function firstSentence(text: string, maxLen = 120): string {
   const compact = text.replace(/\s+/g, ' ').trim();
   if (!compact) return '';

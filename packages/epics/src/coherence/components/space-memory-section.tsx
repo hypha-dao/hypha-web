@@ -13,6 +13,7 @@ import {
   SpaceMemoryItem,
   deriveSpaceMemoryDisplayTitle,
   filterSpaceMemoryItems,
+  memoryBodyWithoutRepeatedTitle,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
@@ -117,33 +118,6 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     () => filterSpaceMemoryItems(items, searchTerm),
     [items, searchTerm],
   );
-  const conversations = React.useMemo(
-    () => visible.filter((row) => row.source === 'discussion_summary'),
-    [visible],
-  );
-  const calls = React.useMemo(
-    () =>
-      visible.filter(
-        (row) =>
-          row.source === 'call_recording' || row.source === 'call_transcript',
-      ),
-    [visible],
-  );
-  const aiDiscussions = React.useMemo(
-    () => visible.filter((row) => isAiChatItem(row)),
-    [isAiChatItem, visible],
-  );
-  const readingIds = React.useMemo(() => {
-    const ids = new Set<string>();
-    for (const row of conversations) ids.add(row.id);
-    for (const row of calls) ids.add(row.id);
-    for (const row of aiDiscussions) ids.add(row.id);
-    return ids;
-  }, [aiDiscussions, calls, conversations]);
-  const files = React.useMemo(
-    () => visible.filter((row) => !readingIds.has(row.id)),
-    [readingIds, visible],
-  );
   const lead = React.useMemo(() => {
     const written = items.find(
       (row) =>
@@ -159,6 +133,42 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       ) ?? null
     );
   }, [items]);
+  const conversations = React.useMemo(
+    () =>
+      visible.filter(
+        (row) =>
+          row.source === 'discussion_summary' &&
+          // Already featured above — listing it again looked like a duplicate.
+          row.id !== lead?.id,
+      ),
+    [lead?.id, visible],
+  );
+  const calls = React.useMemo(
+    () =>
+      visible.filter(
+        (row) =>
+          (row.source === 'call_recording' ||
+            row.source === 'call_transcript') &&
+          row.id !== lead?.id,
+      ),
+    [lead?.id, visible],
+  );
+  const aiDiscussions = React.useMemo(
+    () => visible.filter((row) => isAiChatItem(row)),
+    [isAiChatItem, visible],
+  );
+  const readingIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    for (const row of conversations) ids.add(row.id);
+    for (const row of calls) ids.add(row.id);
+    for (const row of aiDiscussions) ids.add(row.id);
+    if (lead) ids.add(lead.id);
+    return ids;
+  }, [aiDiscussions, calls, conversations, lead]);
+  const files = React.useMemo(
+    () => visible.filter((row) => !readingIds.has(row.id)),
+    [readingIds, visible],
+  );
   const leadExcerpt = lead?.context.textExcerpt?.trim() ?? '';
   const leadText = leadExcerpt ? firstMemoryParagraph(leadExcerpt) : '';
   const branches: Array<{
@@ -358,12 +368,23 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                       textExcerpt: row.context.textExcerpt,
                       documentTitle: row.context.documentTitle,
                     });
-                    const body = row.context.textExcerpt?.trim() ?? '';
-                    const media =
-                      row.url.startsWith('http://') ||
-                      row.url.startsWith('https://')
-                        ? row.url
-                        : null;
+                    const rawBody = row.context.textExcerpt?.trim() ?? '';
+                    const body = memoryBodyWithoutRepeatedTitle(title, rawBody);
+                    // Recordings use the timeline player so Matrix mxc:// URLs
+                    // resolve — a bare <video src="mxc://…"> never plays.
+                    if (row.source === 'call_recording') {
+                      return (
+                        <SpaceMemoryTimelineItem
+                          key={row.id}
+                          item={row}
+                          contextLine={contextLineForItem(row)}
+                          matrixChatRoomId={matrixChatRoomId}
+                          openLabel={t('spaceMemoryOpenAsset', {
+                            name: row.name,
+                          })}
+                        />
+                      );
+                    }
                     return (
                       <li
                         key={row.id}
@@ -383,27 +404,6 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                             dateStyle: 'medium',
                           })}
                         </p>
-                        {row.source === 'call_recording' && media ? (
-                          row.kind === 'video' ? (
-                            <video
-                              controls
-                              src={media}
-                              className="mt-4 max-h-72 w-full bg-background"
-                              preload="metadata"
-                            >
-                              <track kind="captions" />
-                            </video>
-                          ) : (
-                            <audio
-                              controls
-                              src={media}
-                              className="mt-4 w-full"
-                              preload="metadata"
-                            >
-                              <track kind="captions" />
-                            </audio>
-                          )
-                        ) : null}
                         {body ? (
                           <div className="mt-4 max-w-3xl">
                             <MemoryProse source={body} />

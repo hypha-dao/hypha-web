@@ -410,6 +410,12 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
       const mxc = resolveOrgMemoryMxcUri(a);
       const safeUrl = !mxc && a.app_url ? normalizeHttpUrl(a.app_url) : null;
       const sessionId = a.call_session_id ?? a.filename;
+      // Prefer recording id — several takes can share one call session, and
+      // keying only on session collapsed them so Space Memory looked empty.
+      const recordingKey =
+        a.call_recording_id != null
+          ? String(a.call_recording_id)
+          : String(sessionId);
       const mime = a.mime?.toLowerCase() ?? '';
       const recordingKind: SpaceMemoryAssetKind =
         mime.startsWith('video/') || mime.startsWith('audio/')
@@ -422,14 +428,14 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
       const roomTitle = a.room_title?.trim() || undefined;
       const displayTitle = deriveSpaceMemoryDisplayTitle({
         source: 'call_recording',
-        name: `call-recording-${sessionId}.webm`,
+        name: `call-recording-${recordingKey}.webm`,
         contextTitle: signalTitle ?? roomTitle ?? contextTitle,
         textExcerpt: a.text_excerpt,
       });
       items.push({
-        id: `call-recording:${sessionId}`,
+        id: `call-recording:${recordingKey}`,
         name: displayTitle,
-        url: mxc ?? safeUrl ?? `memory://call-recording/${sessionId}`,
+        url: mxc ?? safeUrl ?? `memory://call-recording/${recordingKey}`,
         kind: recordingKind,
         source: 'call_recording',
         uploadedAt,
@@ -450,6 +456,8 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
       const syntheticId =
         a.source === 'discussion_summary'
           ? String(a.discussion_summary_id ?? a.filename)
+          : a.call_transcript_id != null
+          ? String(a.call_transcript_id)
           : String(a.call_session_id ?? a.filename);
       const contextTitle = a.context_title?.trim() || undefined;
       const signalTitle = a.signal_title?.trim() || undefined;

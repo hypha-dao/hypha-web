@@ -108,9 +108,18 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
   const lastLoadedPage = loadedPages[loadedPages.length - 1];
 
   const items = React.useMemo(() => {
-    return loadedPages.flatMap((page) =>
+    const merged = loadedPages.flatMap((page) =>
       buildSpaceMemoryItemsFromOrgMemoryPayload(page),
     );
+    // Guard against overlapping infinite pages repeating the same asset.
+    const seen = new Set<string>();
+    const unique: SpaceMemoryItem[] = [];
+    for (const row of merged) {
+      if (seen.has(row.id)) continue;
+      seen.add(row.id);
+      unique.push(row);
+    }
+    return unique;
   }, [loadedPages]);
 
   const totalCount = React.useMemo(() => {

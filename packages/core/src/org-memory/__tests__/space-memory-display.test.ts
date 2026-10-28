@@ -3,6 +3,7 @@ import {
   deriveSpaceMemoryDisplayTitle,
   humanizeMemoryExcerpt,
   looksLikeTechnicalSpaceMemoryName,
+  memoryBodyWithoutRepeatedTitle,
   stripTechnicalSpeakerFromExcerpt,
 } from '../space-memory-display';
 
@@ -89,5 +90,36 @@ describe('deriveSpaceMemoryDisplayTitle', () => {
           'prod_privy_did_privy_abc: ok recording with voice only and then shifting to video',
       }),
     ).toBe('ok recording with voice only and then shifting to video');
+  });
+});
+
+describe('memoryBodyWithoutRepeatedTitle', () => {
+  it('strips a title that was derived from the opening of the body', () => {
+    const body =
+      'We aligned on shipping the memory timeline next. Then we reviewed recordings.';
+    expect(
+      memoryBodyWithoutRepeatedTitle(
+        'We aligned on shipping the memory timeline next.',
+        body,
+      ),
+    ).toBe('Then we reviewed recordings.');
+  });
+
+  it('returns empty when title and body are the same sentence', () => {
+    expect(
+      memoryBodyWithoutRepeatedTitle(
+        'Short summary only.',
+        'Short summary only.',
+      ),
+    ).toBe('');
+  });
+
+  it('leaves unrelated bodies intact', () => {
+    expect(
+      memoryBodyWithoutRepeatedTitle(
+        'Hypha Core Team',
+        'Notes from the weekly sync.',
+      ),
+    ).toBe('Notes from the weekly sync.');
   });
 });
