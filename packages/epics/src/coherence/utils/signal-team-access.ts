@@ -166,6 +166,32 @@ export function unmappedPersonIds(
   return personIds.filter((id) => !personIdToMatrixUserId[id]?.trim());
 }
 
+export type SignalTeamDocumentSeed = {
+  key: string;
+  memberIds: string[];
+  ownerId: string | null;
+};
+
+/** Room + signal slug key for the document-derived roster seed. */
+export function signalTeamDocumentSeedKey(
+  roomId: string,
+  coherenceSlug?: string | null,
+): string {
+  return `${roomId}:${coherenceSlug ?? ''}`;
+}
+
+/**
+ * Keep the create/document seed across hydration reruns (e.g. opening Manage).
+ * Reset only when the room or signal slug changes.
+ */
+export function retainSignalTeamDocumentSeed(
+  seed: SignalTeamDocumentSeed,
+  key: string,
+): SignalTeamDocumentSeed {
+  if (seed.key === key) return seed;
+  return { key, memberIds: [], ownerId: null };
+}
+
 export function rosterIdsIntersectSpaceMap(
   memberMatrixUserIds: readonly string[],
   personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,

@@ -179,7 +179,10 @@ import {
   isSignalTeamRequestContent,
   isSignalTeamRosterContent,
   isTrustedSignalTeamSender,
+  retainSignalTeamDocumentSeed,
   rosterIdsIntersectSpaceMap,
+  signalTeamDocumentSeedKey,
+  type SignalTeamDocumentSeed,
 } from '../coherence/utils/signal-team-access';
 import { SignalTurnIntoProposalButton } from '../coherence/components/signal-turn-into-proposal-button';
 import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
@@ -1391,6 +1394,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [signalTeamPendingRequesterIds, setSignalTeamPendingRequesterIds] =
     useState<string[]>([]);
   const [signalTeamPanelOpen, setSignalTeamPanelOpen] = useState(false);
+  const signalTeamPanelOpenRef = useRef(signalTeamPanelOpen);
+  signalTeamPanelOpenRef.current = signalTeamPanelOpen;
+  const documentSeedRef = useRef<SignalTeamDocumentSeed>({
+    key: '',
+    memberIds: [],
+    ownerId: null,
+  });
   const [signalTeamDraftMemberIds, setSignalTeamDraftMemberIds] = useState<
     string[] | null
   >(null);
@@ -3262,10 +3272,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     let cancelled = false;
     setSignalTeamRosterResolved(false);
-    const documentSeedRef = {
-      memberIds: [] as string[],
-      ownerId: null as string | null,
-    };
+    const seedKey = signalTeamDocumentSeedKey(roomId, coherenceSlug);
+    documentSeedRef.current = retainSignalTeamDocumentSeed(
+      documentSeedRef.current,
+      seedKey,
+    );
+    const documentSeed = documentSeedRef.current;
 
     const applyFromTimeline = (): {
       usable: boolean;
@@ -3297,20 +3309,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       } else if (next.hasTrustedRoster) {
         // Explicit trusted-empty `memberMatrixUserIds: []` only. Marker-only
         // or request notices must not clear a fresh create seed.
-        documentSeedRef.memberIds = [];
-        documentSeedRef.ownerId = null;
+        documentSeed.memberIds = [];
+        documentSeed.ownerId = null;
         setSignalTeamMemberIds([]);
         setSignalTeamOwnerId(null);
         setSignalTeamRosterResolved(false);
-      } else if (documentSeedRef.memberIds.length > 0) {
-        setSignalTeamMemberIds(documentSeedRef.memberIds);
-        setSignalTeamOwnerId(documentSeedRef.ownerId);
+      } else if (documentSeed.memberIds.length > 0) {
+        setSignalTeamMemberIds(documentSeed.memberIds);
+        setSignalTeamOwnerId(documentSeed.ownerId);
       } else {
         setSignalTeamMemberIds([]);
         setSignalTeamOwnerId(null);
       }
       setSignalTeamPendingRequesterIds(next.pendingRequesterIds);
-      if (!signalTeamPanelOpen) {
+      if (!signalTeamPanelOpenRef.current) {
         setSignalTeamDraftMemberIds(null);
       }
       return {
@@ -3363,8 +3375,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           memberIds[0] ||
           null;
         if (memberIds.length === 0) return 'empty';
-        documentSeedRef.memberIds = memberIds;
-        documentSeedRef.ownerId = ownerId;
+        documentSeed.memberIds = memberIds;
+        documentSeed.ownerId = ownerId;
         setSignalTeamMemberIds(memberIds);
         setSignalTeamOwnerId(ownerId);
         return 'seeded';
@@ -3480,7 +3492,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     roomId,
     isSignalThread,
     coherenceSlug,
-    signalTeamPanelOpen,
     isJoining,
     personIdToMatrixUserId,
     isLoadingMatrixUserIds,

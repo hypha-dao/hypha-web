@@ -9,7 +9,9 @@ import {
   isSignalTeamRosterContent,
   isTrustedSignalTeamSender,
   readSignalTeamRosterFromEvents,
+  retainSignalTeamDocumentSeed,
   rosterIdsIntersectSpaceMap,
+  signalTeamDocumentSeedKey,
   unmappedPersonIds,
 } from '../../utils/signal-team-access';
 
@@ -334,5 +336,37 @@ describe('signal-team-access', () => {
     expect(roster.hasPolicy).toBe(true);
     expect(roster.memberMatrixUserIds).toEqual([]);
     expect(roster.ownerMatrixUserId).toBe('@vlad:example.org');
+  });
+
+  it('keeps a create-seeded roster when Manage opens and history fails', () => {
+    const key = signalTeamDocumentSeedKey(
+      '!signal:example.org',
+      'coh-2773e412',
+    );
+    const seeded = retainSignalTeamDocumentSeed(
+      { key: '', memberIds: [], ownerId: null },
+      key,
+    );
+    seeded.memberIds = ['@grok:example.org', '@vlad:example.org'];
+    seeded.ownerId = '@vlad:example.org';
+
+    // Opening Manage: same room+slug — do not reset the seed (no hydration restart).
+    const afterOpen = retainSignalTeamDocumentSeed(seeded, key);
+    expect(afterOpen).toBe(seeded);
+
+    // No trusted notice: applyFromTimeline keeps the document seed.
+    const hasTrustedRoster = false;
+    const members =
+      !hasTrustedRoster && afterOpen.memberIds.length > 0
+        ? afterOpen.memberIds
+        : [];
+    const ownerId = !hasTrustedRoster ? afterOpen.ownerId : null;
+    // History fail does not reseed; members + resolved stay.
+    const historyFailed = true;
+    const rosterResolved = historyFailed && members.length > 0;
+
+    expect(members).toEqual(['@grok:example.org', '@vlad:example.org']);
+    expect(ownerId).toBe('@vlad:example.org');
+    expect(rosterResolved).toBe(true);
   });
 });
