@@ -435,9 +435,7 @@ function directReplyText(
       // Shared-space ranking is not what "Who is around?" asks. The widget
       // already sorts by presence — just point at the list. Rotate copy so
       // the same chip does not always speak the same sentence.
-      return t(
-        nextMemberHomeLeadKey('people', MEMBER_HOME_PEOPLE_LEAD_KEYS),
-      );
+      return t(nextMemberHomeLeadKey('people', MEMBER_HOME_PEOPLE_LEAD_KEYS));
     case 'peopleEmpty':
       return t('peopleWidgetEmpty');
     case 'space':

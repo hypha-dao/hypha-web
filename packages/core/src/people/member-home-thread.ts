@@ -1087,10 +1087,7 @@ export function memberHomeSpeechConflictsWithItem(
   if (textClaimsOtherCreator(item, text, peerNames)) return true;
   const haystack = foldHomeText(text);
   const named = mostSpecificSpaceTitles(text, spaceTitles);
-  if (
-    named.length > 0 &&
-    !named.includes(foldHomeText(item.spaceTitle))
-  ) {
+  if (named.length > 0 && !named.includes(foldHomeText(item.spaceTitle))) {
     return true;
   }
   const kind = spokenKind(haystack);

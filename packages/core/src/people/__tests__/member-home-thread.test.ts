@@ -877,7 +877,8 @@ describe('memberHomeThreadItemForMessage', () => {
       documentKind: 'signal',
       authoredByMember: false,
       category: 'opportunity',
-      summary: 'Aider à distribuer des produits frais dans les cercles étudiants.',
+      summary:
+        'Aider à distribuer des produits frais dans les cercles étudiants.',
       creatorId: 8,
       creatorName: 'Someone Else',
       creatorAvatarUrl: null,
@@ -901,19 +902,17 @@ describe('memberHomeThreadItemForMessage', () => {
       unity: 1,
     };
     const text =
-      'Alex, si tu veux te rendre utile autrement, Vlad porte un signal dans la Biorégion du Bassin Annécien : collaborer avec Légumes et Cagettes Rebelles pour aider à distribuer des produits frais dans les cercles étudiants. Dis-moi si ce fil te parle et je t\'emmène aux signaux de cet espace.';
+      "Alex, si tu veux te rendre utile autrement, Vlad porte un signal dans la Biorégion du Bassin Annécien : collaborer avec Légumes et Cagettes Rebelles pour aider à distribuer des produits frais dans les cercles étudiants. Dis-moi si ce fil te parle et je t'emmène aux signaux de cet espace.";
     const spaceTitles = [
       'Biorégion du Bassin Annécien',
       'Hypha Flywheel',
       'Hypha Platform',
     ];
     expect(
-      memberHomeSpeechConflictsWithItem(
-        vladInvite,
-        text,
-        spaceTitles,
-        [vladInvite.creatorName, bioregionSignal.creatorName],
-      ),
+      memberHomeSpeechConflictsWithItem(vladInvite, text, spaceTitles, [
+        vladInvite.creatorName,
+        bioregionSignal.creatorName,
+      ]),
     ).toBe(true);
     expect(
       memberHomeCardForSpeech({
