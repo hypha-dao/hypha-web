@@ -14,6 +14,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
+import { Links } from '../../common/links';
 import { isPersonRole, RoleGlyph, type PersonRole } from './person-badges';
 import { PersonAvatar } from './person-avatar';
 
@@ -90,7 +91,9 @@ function StoryRow({
     return (
       <div className="flex max-w-[62ch] flex-col gap-1 border-b border-border/60 py-3">
         <span className="text-1 text-neutral-11">{label}</span>
-        <span className="text-2 leading-6 text-foreground">{text}</span>
+        <span className="whitespace-pre-line text-2 leading-6 text-foreground">
+          {text}
+        </span>
       </div>
     );
   }
@@ -114,7 +117,7 @@ function StoryRow({
         <span className="block text-1 text-neutral-11">{label}</span>
         <span
           className={cn(
-            'mt-1 block text-2 leading-6',
+            'mt-1 block whitespace-pre-line text-2 leading-6',
             muted ? 'text-neutral-11' : 'text-foreground',
           )}
         >
@@ -347,15 +350,7 @@ export function ProfileStory({
   );
   const currencyLabel = currency ? tCurrencies(currency.toLowerCase()) : '';
   const links = (person.links ?? []).filter(Boolean);
-  const linkText = links
-    .map((link) => {
-      try {
-        return new URL(link).hostname.replace(/^www\./, '');
-      } catch {
-        return link;
-      }
-    })
-    .join(', ');
+  const linkText = links.join('\n');
 
   const cropDialogLabels = {
     title: tCommon('uploadLeadImage.cropTitle'),
@@ -781,18 +776,24 @@ function LinksLine({
   onSave: (links: string[]) => void;
 }) {
   const t = useTranslations('Profile');
+  const tSpaces = useTranslations('Spaces');
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(links.join('\n'));
+  const [draft, setDraft] = useState(links);
   const [invalid, setInvalid] = useState(false);
+  const committed = useRef(false);
 
   useEffect(() => {
-    if (!editing) setDraft(links.join('\n'));
+    if (!editing) {
+      setDraft(links);
+      committed.current = false;
+    }
   }, [editing, links]);
 
   const commit = () => {
+    if (committed.current) return;
+    committed.current = true;
     const next = draft
-      .split('\n')
-      .map((line) => line.trim())
+      .map((link) => link.trim())
       .filter(Boolean)
       .slice(0, 3);
     const invalidLink = next.find((link) => {
@@ -804,6 +805,7 @@ function LinksLine({
       }
     });
     if (invalidLink) {
+      committed.current = false;
       setInvalid(true);
       return;
     }
@@ -821,29 +823,32 @@ function LinksLine({
       editing={editing}
       onEdit={() => setEditing(true)}
       editor={
-        <>
-          <textarea
-            autoFocus
-            aria-label={t('story.alsoAtEmpty')}
-            value={draft}
-            rows={3}
-            className={fieldClass}
-            onChange={(event) => setDraft(event.target.value)}
-            onBlur={commit}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') {
-                setDraft(links.join('\n'));
-                setInvalid(false);
-                setEditing(false);
-              }
-            }}
+        <div
+          className="flex flex-col gap-2"
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+              commit();
+            }
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              setDraft(links);
+              setInvalid(false);
+              setEditing(false);
+            }
+          }}
+        >
+          <Links
+            links={draft}
+            onChange={setDraft}
+            placeholder={tSpaces('addYourUrl')}
           />
           {invalid ? (
             <p className="text-1 text-error-11" role="alert">
               {t('editForm.errors.urlInvalid')}
             </p>
           ) : null}
-        </>
+        </div>
       }
     />
   );
