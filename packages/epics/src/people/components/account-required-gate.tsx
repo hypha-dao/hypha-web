@@ -11,13 +11,13 @@ export function AccountRequiredGate({ children }: { children: ReactNode }) {
   if (isLoading) return null;
   if (!isAuthenticated) {
     return (
-      <div className="flex min-h-0 w-full flex-1 items-center justify-center px-5 py-16">
+      <div className="flex min-h-[60vh] w-full items-center justify-center px-5 py-16">
         <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />
       </div>
     );
   }
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+    <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col">
       {children}
     </div>
   );

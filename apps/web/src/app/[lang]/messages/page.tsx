@@ -6,15 +6,18 @@ import {
 } from '@hypha-platform/epics';
 
 import { MessagesPageFrame } from './_components/messages-page-frame';
+import { MessagesViewportLock } from './_components/messages-viewport-lock';
 
 export default function MessagesPage() {
   return (
-    <MessagesPageFrame>
-      <AccountRequiredGate>
-        <Suspense fallback={<MessagesPeopleListSkeleton />}>
-          <MyConnections section="messages" />
-        </Suspense>
-      </AccountRequiredGate>
-    </MessagesPageFrame>
+    <MessagesViewportLock>
+      <MessagesPageFrame fillViewport>
+        <AccountRequiredGate>
+          <Suspense fallback={<MessagesPeopleListSkeleton />}>
+            <MyConnections section="messages" />
+          </Suspense>
+        </AccountRequiredGate>
+      </MessagesPageFrame>
+    </MessagesViewportLock>
   );
 }
