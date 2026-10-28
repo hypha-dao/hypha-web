@@ -143,7 +143,7 @@ function listTurnLine(kind: 'people' | 'spaces' | 'tokens') {
   if (kind === 'spaces') {
     return 'This turn: they asked to step into a space. The space list is already on screen. One short sentence: the list is theirs. Do not name a space. Do not suggest they leave one space for another. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
   }
-  return 'This turn: they asked to send tokens. The send form is already on screen. One short sentence offering to send tokens to the closest person on the People line. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
+  return 'This turn: they asked to send tokens. The send form is already on screen. One short sentence that people they can send to are below and they should pick someone. Do not name a closest person. Do not rank anyone by shared spaces. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
 }
 
 function isShareControlPhrase(text: string): boolean {
@@ -478,18 +478,6 @@ export function formatMemberHomeFacts(
     .map((key) => key.trim())
     .filter((key) => Boolean(key) && key !== recallKey);
   const member = personName(home.person);
-  const people =
-    home.connections
-      .filter(
-        (person) =>
-          person.id !== home.person.id &&
-          !isThisMember(home, personName(person)),
-      )
-      .map(
-        (person) =>
-          `${personName(person)} (shared spaces: ${person.sharedSpaceCount})`,
-      )
-      .join('; ') || 'none';
 
   const text = [
     listAsk ? listTurnLine(listAsk) : null,
@@ -678,11 +666,9 @@ export function formatMemberHomeFacts(
     options?.notADecision
       ? 'They just said this is not a proposal and there is nothing to decide. Agree in one short line. Then the next waiting item in the same reply. Call show_member_home_item for that next item. Do not explain the signal. Do not say "You can now decide on the proposal card."'
       : null,
-    // Only the tokens chip needs the roster. On useful / decision / continue
-    // briefings it made the model invent "Vlad shares the most spaces" dumps.
-    listAsk === 'tokens'
-      ? `People who share a space, closest first: ${people}.`
-      : null,
+    // Roster naming made the model invent "closest person" dumps on tokens
+    // and useful/decision briefings. The send widget already lists people.
+    null,
     home.wallet.preferredCurrency
       ? `Preferred currency: ${home.wallet.preferredCurrency}.`
       : 'Preferred currency: none set.',

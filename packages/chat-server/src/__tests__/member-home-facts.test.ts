@@ -283,7 +283,9 @@ describe('formatMemberHomeFacts', () => {
       },
       { asked: 'Send someone tokens' },
     );
-    expect(facts).toContain('People who share a space, closest first: Noor');
+    expect(facts).toMatch(/pick someone/i);
+    expect(facts).toMatch(/Do not name a closest person/i);
+    expect(facts).not.toContain('People who share a space');
     expect(facts).not.toContain('Ada Lovelace (shared spaces:');
   });
 
