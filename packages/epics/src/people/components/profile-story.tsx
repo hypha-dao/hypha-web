@@ -14,7 +14,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
-import { isPersonRole, type PersonRole } from './person-badges';
+import { isPersonRole, RoleGlyph, type PersonRole } from './person-badges';
 import { PersonAvatar } from './person-avatar';
 
 const ROLES: PersonRole[] = ['member', 'builder', 'investor'];
@@ -533,7 +533,7 @@ export function ProfileStory({
           </p>
         ) : null}
         {canEdit ? (
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-3">
             {ROLES.map((option) => {
               const selected = option === role;
               return (
@@ -547,35 +547,46 @@ export function ProfileStory({
                       void save({ primaryOrientation: option });
                   }}
                   className={cn(
-                    'border px-5 py-5 text-left transition-colors disabled:opacity-60',
+                    'flex flex-col gap-3 border px-4 py-4 text-left transition-colors disabled:opacity-60',
                     selected
                       ? 'border-foreground bg-accent-2'
                       : 'border-border hover:border-foreground/45',
                   )}
                 >
-                  <span className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-3">
+                    <span className="grid size-8 shrink-0 place-items-center text-foreground">
+                      <RoleGlyph role={option} size={28} />
+                    </span>
                     <span
-                      className="text-3"
+                      className="min-w-0 flex-1 text-3 leading-none"
                       style={{ fontFamily: 'var(--font-family-heading)' }}
                     >
                       {roleTitle(option)}
                     </span>
                     {selected ? (
-                      <span className="inline-flex shrink-0 items-center gap-1 text-1 text-foreground">
+                      <span
+                        className="inline-flex size-6 shrink-0 items-center justify-center border border-foreground text-foreground"
+                        title={t('story.selected')}
+                        aria-label={t('story.selected')}
+                      >
                         <Check className="size-3.5" aria-hidden />
-                        {t('story.selected')}
                       </span>
-                    ) : null}
+                    ) : (
+                      <span
+                        className="size-6 shrink-0 border border-border"
+                        aria-hidden
+                      />
+                    )}
                   </span>
                   <span
                     className={cn(
-                      'mt-4 block text-2 leading-6',
+                      'text-2 leading-snug',
                       selected ? 'text-foreground' : 'text-neutral-11',
                     )}
                   >
                     {roleBody(option)}
                   </span>
-                  <span className="mt-5 block border-t border-border/70 pt-4 text-1 leading-6 text-neutral-11">
+                  <span className="border-t border-border/70 pt-3 text-1 leading-snug text-neutral-11">
                     {roleOpens(option)}
                   </span>
                 </button>
