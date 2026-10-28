@@ -4707,7 +4707,11 @@
     "signalOwnerSeen": "Видено",
     "signalOwnerUnseen": "Невидено",
     "signalOwnerSeenHint": "Сопственикот ја отворил оваа карта",
-    "signalOwnerUnseenHint": "Сопственикот сè уште не ја отворил оваа карта"
+    "signalOwnerUnseenHint": "Сопственикот сè уште не ја отворил оваа карта",
+    "spaceMemoryConversationsBody": "Запишани резимеа од разговори.",
+    "spaceMemoryCallsBody": "Снимки и транскрипти од повици.",
+    "spaceMemoryAiDiscussionsBody": "Мемории од AI разговор.",
+    "spaceMemoryFilesBody": "Прикачувања и прилози."
   },
   "GlobalCallDock": {
     "callTitle": "Повик - {count, plural, one {# член} other {# членови}}",

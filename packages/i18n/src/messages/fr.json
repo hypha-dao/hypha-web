@@ -4148,7 +4148,11 @@
     "signalOwnerSeen": "Vu",
     "signalOwnerUnseen": "Non vu",
     "signalOwnerSeenHint": "Le propriétaire a ouvert cette carte",
-    "signalOwnerUnseenHint": "Le propriétaire n’a pas encore ouvert cette carte"
+    "signalOwnerUnseenHint": "Le propriétaire n’a pas encore ouvert cette carte",
+    "spaceMemoryConversationsBody": "Résumés écrits de conversations.",
+    "spaceMemoryCallsBody": "Enregistrements et transcriptions d’appels.",
+    "spaceMemoryAiDiscussionsBody": "Mémoires du chat IA.",
+    "spaceMemoryFilesBody": "Téléversements et pièces jointes."
   },
   "GlobalCallDock": {
     "callTitle": "Appel - {count, plural, one {# membre} other {# membres}}",

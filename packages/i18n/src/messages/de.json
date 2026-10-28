@@ -4724,7 +4724,11 @@
     "signalOwnerSeen": "Gesehen",
     "signalOwnerUnseen": "Ungesehen",
     "signalOwnerSeenHint": "Die zuständige Person hat diese Karte geöffnet",
-    "signalOwnerUnseenHint": "Die zuständige Person hat diese Karte noch nicht geöffnet"
+    "signalOwnerUnseenHint": "Die zuständige Person hat diese Karte noch nicht geöffnet",
+    "spaceMemoryConversationsBody": "Geschriebene Gesprächszusammenfassungen.",
+    "spaceMemoryCallsBody": "Anrufaufzeichnungen und Transkripte.",
+    "spaceMemoryAiDiscussionsBody": "Erinnerungen aus dem KI-Chat.",
+    "spaceMemoryFilesBody": "Uploads und Anhänge."
   },
   "GlobalCallDock": {
     "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",

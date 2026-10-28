@@ -4725,7 +4725,11 @@
     "signalOwnerSeen": "Sett",
     "signalOwnerUnseen": "Ikke sett",
     "signalOwnerSeenHint": "Eieren har åpnet dette kortet",
-    "signalOwnerUnseenHint": "Eieren har ikke åpnet dette kortet ennå"
+    "signalOwnerUnseenHint": "Eieren har ikke åpnet dette kortet ennå",
+    "spaceMemoryConversationsBody": "Skrevne samtalesammendrag.",
+    "spaceMemoryCallsBody": "Samtaleopptak og transkripsjoner.",
+    "spaceMemoryAiDiscussionsBody": "Minner fra AI-chat.",
+    "spaceMemoryFilesBody": "Opplastinger og vedlegg."
   },
   "GlobalCallDock": {
     "callTitle": "Samtale - {count, plural, one {# medlem} other {# medlemmer}}",

@@ -4166,7 +4166,11 @@
     "signalOwnerSeen": "Visto",
     "signalOwnerUnseen": "Sin ver",
     "signalOwnerSeenHint": "La persona asignada ha abierto esta tarjeta",
-    "signalOwnerUnseenHint": "La persona asignada aún no ha abierto esta tarjeta"
+    "signalOwnerUnseenHint": "La persona asignada aún no ha abierto esta tarjeta",
+    "spaceMemoryConversationsBody": "Resúmenes escritos de conversaciones.",
+    "spaceMemoryCallsBody": "Grabaciones y transcripciones de llamadas.",
+    "spaceMemoryAiDiscussionsBody": "Memorias del chat con IA.",
+    "spaceMemoryFilesBody": "Cargas y archivos adjuntos."
   },
   "GlobalCallDock": {
     "callTitle": "Llamada - {count, plural, one {# miembro} other {# miembros}}",

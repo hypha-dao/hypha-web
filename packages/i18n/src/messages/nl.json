@@ -4726,7 +4726,11 @@
     "signalOwnerSeen": "Gezien",
     "signalOwnerUnseen": "Niet gezien",
     "signalOwnerSeenHint": "De eigenaar heeft deze kaart geopend",
-    "signalOwnerUnseenHint": "De eigenaar heeft deze kaart nog niet geopend"
+    "signalOwnerUnseenHint": "De eigenaar heeft deze kaart nog niet geopend",
+    "spaceMemoryConversationsBody": "Geschreven gespreksamenvattingen.",
+    "spaceMemoryCallsBody": "Gespreksopnamen en transcripties.",
+    "spaceMemoryAiDiscussionsBody": "Herinneringen uit AI-chat.",
+    "spaceMemoryFilesBody": "Uploads en bijlagen."
   },
   "GlobalCallDock": {
     "callTitle": "Oproep - {count, plural, one {# lid} other {# leden}}",

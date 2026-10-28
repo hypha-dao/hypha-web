@@ -4756,7 +4756,11 @@
     "signalOwnerSeen": "Seen",
     "signalOwnerUnseen": "Unseen",
     "signalOwnerSeenHint": "The owner has opened this card",
-    "signalOwnerUnseenHint": "The owner has not opened this card yet"
+    "signalOwnerUnseenHint": "The owner has not opened this card yet",
+    "spaceMemoryConversationsBody": "Written conversation summaries.",
+    "spaceMemoryCallsBody": "Call recordings and transcripts.",
+    "spaceMemoryAiDiscussionsBody": "Memories from AI chat.",
+    "spaceMemoryFilesBody": "Uploads and attachments."
   },
   "GlobalCallDock": {
     "callTitle": "Call - {count, plural, one {# member} other {# members}}",

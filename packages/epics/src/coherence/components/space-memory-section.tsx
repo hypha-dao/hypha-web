@@ -1,8 +1,14 @@
 'use client';
 
-import { FC } from 'react';
+import { type ElementType, type FC } from 'react';
 import Link from 'next/link';
-import { SearchIcon } from 'lucide-react';
+import {
+  FileText,
+  MessagesSquare,
+  Radio,
+  SearchIcon,
+  Sparkles,
+} from 'lucide-react';
 import { Button, Input } from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import React from 'react';
@@ -35,6 +41,13 @@ type SpaceMemorySectionProps = {
 
 const DESKTOP_MENU = '(min-width: 80rem)';
 const DESKTOP_SPLIT = '(min-width: 64rem)';
+
+const BRANCH_ICONS: Record<SpaceMemoryBranch, ElementType> = {
+  conversations: MessagesSquare,
+  calls: Radio,
+  ai: Sparkles,
+  files: FileText,
+};
 
 function mobileTabOffset(): number {
   if (typeof window === 'undefined') return 0;
@@ -211,26 +224,31 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   const branches: Array<{
     id: SpaceMemoryBranch;
     label: string;
+    body: string;
     count: number;
   }> = [
     {
       id: 'conversations',
       label: t('spaceMemoryConversations'),
+      body: t('spaceMemoryConversationsBody'),
       count: categoryCounts.conversations,
     },
     {
       id: 'calls',
       label: t('spaceMemoryCalls'),
+      body: t('spaceMemoryCallsBody'),
       count: categoryCounts.calls,
     },
     {
       id: 'ai',
       label: t('spaceMemoryAiDiscussions'),
+      body: t('spaceMemoryAiDiscussionsBody'),
       count: categoryCounts.ai,
     },
     {
       id: 'files',
       label: t('spaceMemoryFiles'),
+      body: t('spaceMemoryFilesBody'),
       count: categoryCounts.files,
     },
   ];
@@ -409,29 +427,55 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
           >
             <nav
               aria-label={t('spaceMemoryOutline')}
-              className="grid w-full shrink-0 gap-px self-start lg:w-56"
+              className="w-full shrink-0 self-start lg:w-80"
             >
-              {branches.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  aria-current={branch === item.id ? 'true' : undefined}
-                  onClick={() => {
-                    branchChosen.current = true;
-                    setBranch(item.id);
-                    listScrollRef.current?.scrollTo({ top: 0 });
-                  }}
-                  className={cn(
-                    'flex items-baseline justify-between gap-3 border border-transparent px-3 py-2 text-left text-1',
-                    branch === item.id
-                      ? 'border-foreground text-foreground'
-                      : 'text-neutral-11 hover:text-foreground',
-                  )}
-                >
-                  <span>{item.label}</span>
-                  <span className="tabular-nums">{item.count}</span>
-                </button>
-              ))}
+              <div className="border border-border bg-background">
+                {branches.map((item) => {
+                  const Icon = BRANCH_ICONS[item.id];
+                  const selected = branch === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      aria-current={selected ? 'true' : undefined}
+                      aria-pressed={selected}
+                      onClick={() => {
+                        branchChosen.current = true;
+                        setBranch(item.id);
+                        listScrollRef.current?.scrollTo({ top: 0 });
+                      }}
+                      className={cn(
+                        'flex w-full min-w-0 items-start gap-3 border-b border-border px-4 py-4 text-left hover:bg-accent-2',
+                        selected && 'bg-accent-2',
+                      )}
+                    >
+                      <Icon
+                        className="mt-0.5 size-4 shrink-0 text-foreground"
+                        strokeWidth={1.5}
+                        aria-hidden
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-baseline gap-3">
+                          <span
+                            className={cn(
+                              'min-w-0 truncate text-3 text-foreground',
+                              selected && 'font-medium',
+                            )}
+                          >
+                            {item.label}
+                          </span>
+                          <span className="ml-auto shrink-0 text-1 text-muted-foreground">
+                            {item.count}
+                          </span>
+                        </span>
+                        <span className="mt-1 block text-2 text-muted-foreground">
+                          {item.body}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </nav>
 
             <div
@@ -439,11 +483,6 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
               data-space-memory-list-frame=""
               className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-border bg-background"
             >
-              {branch === 'files' ? (
-                <p className="shrink-0 border-b border-border px-4 py-3 text-1 text-neutral-11">
-                  {t('spaceMemoryFilesHint')}
-                </p>
-              ) : null}
               <div
                 ref={listScrollRef}
                 className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain"

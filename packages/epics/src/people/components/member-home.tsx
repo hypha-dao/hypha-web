@@ -409,6 +409,12 @@ export function MemberHome({
                 isHomeLoading={railsBusy}
               />
             )}
+            {home?.person.slug ? (
+              <MemberHomeEnergyPanel
+                personSlug={home.person.slug}
+                className={cn(showField && 'max-xl:hidden')}
+              />
+            ) : null}
             {showUnavailable ? null : (
               <Tile
                 title={t('notifications')}
@@ -670,12 +676,6 @@ export function MemberHome({
                 onSelect={selectAttention}
               />
             )}
-            {home?.person.slug ? (
-              <MemberHomeEnergyPanel
-                personSlug={home.person.slug}
-                className={cn(showField && 'max-xl:hidden')}
-              />
-            ) : null}
             {showUnavailable ? null : (
               <MemberHomeConnectionsWidget
                 lang={lang}

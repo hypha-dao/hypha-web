@@ -4150,7 +4150,11 @@
     "signalOwnerSeen": "Visto",
     "signalOwnerUnseen": "Não visto",
     "signalOwnerSeenHint": "O responsável abriu este cartão",
-    "signalOwnerUnseenHint": "O responsável ainda não abriu este cartão"
+    "signalOwnerUnseenHint": "O responsável ainda não abriu este cartão",
+    "spaceMemoryConversationsBody": "Resumos escritos de conversas.",
+    "spaceMemoryCallsBody": "Gravações e transcrições de chamadas.",
+    "spaceMemoryAiDiscussionsBody": "Memórias do chat com IA.",
+    "spaceMemoryFilesBody": "Envios e anexos."
   },
   "GlobalCallDock": {
     "callTitle": "Chamada - {count, plural, one {# membro} other {# membros}}",
