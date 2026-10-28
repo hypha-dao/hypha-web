@@ -31,7 +31,8 @@ export async function MessagesPageFrame({
     >
       <Container
         className={cn(
-          'flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-6 xl:pt-3 xl:pb-6',
+          // Match One Wallet: xl:gap-9 under the title, even when the list scrolls.
+          'flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9',
           fillViewport && 'h-full min-h-0 flex-1',
         )}
       >

@@ -3,8 +3,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import {
   getMainColumnScrollElement,
-  popMainColumnOverlayScrollLock,
-  pushMainColumnOverlayScrollLock,
   scrollMainColumnTo,
   subscribeMainColumnScroll,
 } from '@hypha-platform/epics';
@@ -51,17 +49,9 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     scrollMainColumnTo(0);
-    let locked = false;
     let observed: HTMLElement | null = null;
 
-    const armLock = () => {
-      if (locked || !getMainColumnScrollElement()) return;
-      pushMainColumnOverlayScrollLock();
-      locked = true;
-    };
-
     const fit = () => {
-      armLock();
       const frame = ref.current;
       if (!frame) return;
       const scrollEl = getMainColumnScrollElement();
@@ -81,11 +71,11 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
         tabOffset: mobileTabOffset(),
         footerOffset: desktopFooterOffset(),
       });
-      // Always pin a height. Skipping left the frame content-sized while the
-      // main column was overflow-locked, so neither the page nor the list
-      // could scroll and the inbox looked clipped. Leave room for the site
-      // footer — overflow is locked, so a full-bleed pin hid it.
-      frame.style.height = `${Math.max(height, 160)}px`;
+      // Cap the list so it can scroll inside, but do NOT freeze the main
+      // column — the page must still move (title spacing, footer). A hard
+      // overflow lock made Share messages feel stuck under the title.
+      frame.style.maxHeight = `${Math.max(height, 160)}px`;
+      frame.style.height = '';
     };
 
     const observer = new ResizeObserver(fit);
@@ -105,15 +95,17 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
       window.removeEventListener('scroll', fit);
       window.visualViewport?.removeEventListener('resize', fit);
       const frame = ref.current;
-      if (frame) frame.style.height = '';
-      if (locked) popMainColumnOverlayScrollLock();
+      if (frame) {
+        frame.style.height = '';
+        frame.style.maxHeight = '';
+      }
     };
   }, []);
 
   return (
     <div
       ref={ref}
-      className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
+      className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
     >
       {children}
     </div>
