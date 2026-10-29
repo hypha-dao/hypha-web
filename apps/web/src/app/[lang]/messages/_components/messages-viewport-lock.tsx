@@ -2,9 +2,15 @@
 
 import { useEffect, useRef, type ReactNode } from 'react';
 
-import { messagesListFrameHeight } from './messages-frame-height';
+import {
+  messagesListFrameHeight,
+  messagesVisibleViewportHeight,
+} from './messages-frame-height';
 
-export { messagesListFrameHeight } from './messages-frame-height';
+export {
+  messagesListFrameHeight,
+  messagesVisibleViewportHeight,
+} from './messages-frame-height';
 
 const DESKTOP_MENU = '(min-width: 80rem)';
 /** Side-by-side channel menu + conversation list (Tailwind `lg`). */
@@ -63,9 +69,15 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
       if (!root) return;
       const list = root.querySelector('[data-messages-list-frame]');
       const desktopInbox = window.matchMedia(DESKTOP_INBOX).matches;
-      const viewportBottom = window.visualViewport
-        ? window.visualViewport.offsetTop + window.visualViewport.height
-        : window.innerHeight;
+      const viewportBottom = messagesVisibleViewportHeight({
+        innerHeight: window.innerHeight,
+        visualHeight: window.visualViewport?.height,
+        hidden: document.hidden,
+      });
+      // Keep the last good cap while the tab is hidden or the window
+      // reports a collapsed height. Clearing it here is what left the
+      // menu behind after inactivity.
+      if (viewportBottom == null) return;
 
       if (desktopInbox && list instanceof HTMLElement) {
         const height = messagesListFrameHeight({
@@ -81,15 +93,24 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
       clearListFrameHeight(root);
     };
 
+    const onVisible = () => {
+      if (!document.hidden) fit();
+    };
     const observer = new ResizeObserver(fit);
     fit();
     observer.observe(document.documentElement);
     window.addEventListener('resize', fit);
+    window.addEventListener('focus', fit);
+    window.addEventListener('pageshow', fit);
+    document.addEventListener('visibilitychange', onVisible);
     window.visualViewport?.addEventListener('resize', fit);
 
     return () => {
       observer.disconnect();
       window.removeEventListener('resize', fit);
+      window.removeEventListener('focus', fit);
+      window.removeEventListener('pageshow', fit);
+      document.removeEventListener('visibilitychange', onVisible);
       window.visualViewport?.removeEventListener('resize', fit);
       const frame = ref.current;
       if (frame) clearListFrameHeight(frame);
