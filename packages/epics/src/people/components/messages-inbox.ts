@@ -513,8 +513,11 @@ export function inboxContextHref(
   if (place.kind === 'signal') {
     if (!space) return null;
     const signal = place.signalSlug?.trim();
-    if (!signal) return `/${locale}/dho/${space}/overview`;
-    return `/${locale}/dho/${space}?signal=${encodeURIComponent(signal)}`;
+    if (!signal) return `/${locale}/dho/${space}/overview?spaceChat=space`;
+    // Space dashboard + that signal selected with its chat open.
+    return `/${locale}/dho/${space}/overview?signal=${encodeURIComponent(
+      signal,
+    )}`;
   }
   if (place.kind === 'proposal') {
     const proposal = place.proposalSlug?.trim();
@@ -523,12 +526,17 @@ export function inboxContextHref(
       proposal,
     )}`;
   }
-  if (place.kind === 'space' || place.kind === 'space-public') {
-    return space ? `/${locale}/dho/${space}/overview` : null;
+  if (place.kind === 'space') {
+    // Space dashboard with the member space room open.
+    return space ? `/${locale}/dho/${space}/overview?spaceChat=space` : null;
   }
+  if (place.kind === 'space-public') {
+    return space ? `/${locale}/dho/${space}/overview?spaceChat=public` : null;
+  }
+  // Ecosystem channel → space dashboard with the ecosystem room open.
   const ecosystemSpace = space || place.ecosystemSlug?.trim() || '';
   return ecosystemSpace
-    ? `/${locale}/dho/${ecosystemSpace}/ecosystem-navigation`
+    ? `/${locale}/dho/${ecosystemSpace}/overview?spaceChat=ecosystem`
     : null;
 }
 

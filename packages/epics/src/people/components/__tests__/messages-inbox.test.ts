@@ -497,16 +497,16 @@ describe('inboxContextHref', () => {
 
   it('opens a signal, a space room, an ecosystem the member can enter, and the network', () => {
     expect(inboxContextHref('en', { ...place, kind: 'signal' })).toBe(
-      '/en/dho/hypha-platform?signal=roadmap-page',
+      '/en/dho/hypha-platform/overview?signal=roadmap-page',
     );
     expect(inboxContextHref('en', { ...place, kind: 'space' })).toBe(
-      '/en/dho/hypha-platform/overview',
+      '/en/dho/hypha-platform/overview?spaceChat=space',
     );
     expect(inboxContextHref('en', { ...place, kind: 'space-public' })).toBe(
-      '/en/dho/hypha-platform/overview',
+      '/en/dho/hypha-platform/overview?spaceChat=public',
     );
     expect(inboxContextHref('en', { ...place, kind: 'ecosystem' })).toBe(
-      '/en/dho/hypha-platform/ecosystem-navigation',
+      '/en/dho/hypha-platform/overview?spaceChat=ecosystem',
     );
     expect(
       inboxContextHref('en', {

@@ -1219,6 +1219,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [spaceRoom, setSpaceRoom] = useState<'space' | 'ecosystem' | 'public'>(
     'space',
   );
+  /** Last `?spaceChat=` deep link applied for this pathname (avoid re-entry). */
+  const appliedSpaceChatRef = useRef<string | null>(null);
   const callSpaceSlug =
     (typeof spaceSlug === 'string' ? spaceSlug.trim() : '') ||
     (!isDirectConversation ? coherenceSpaceSlug?.trim() : null) ||
@@ -4757,7 +4759,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
 
         router.push(
-          `/${lang}/dho/${signalTarget.spaceSlug}?signal=${encodeURIComponent(
+          `/${lang}/dho/${
+            signalTarget.spaceSlug
+          }/overview?signal=${encodeURIComponent(
             signalTarget.signalSlug,
           )}&msg=${encodeURIComponent(eventId)}`,
         );
@@ -5495,6 +5499,57 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const qs = next.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [spaceSlug, pathname, router, searchParams, openHumanChatPanel]);
+
+  /**
+   * Messages inbox (and similar) deep-links:
+   * `?spaceChat=space|ecosystem|public` opens the panel on that channel room.
+   */
+  useEffect(() => {
+    if (!spaceSlug?.trim()) return;
+    if (readSignalDeepLinkSlug(searchParams)) return;
+    const raw =
+      readLiveSearchParam('spaceChat') ??
+      searchParams?.get('spaceChat')?.trim() ??
+      null;
+    if (raw !== 'space' && raw !== 'ecosystem' && raw !== 'public') {
+      appliedSpaceChatRef.current = null;
+      return;
+    }
+    const applyKey = `${pathname}|${raw}`;
+    if (appliedSpaceChatRef.current === applyKey) return;
+    appliedSpaceChatRef.current = applyKey;
+
+    exitCoherenceChat();
+    joinedRef.current = null;
+    messagesRoomIdRef.current = null;
+    if (timelineFlushRafRef.current != null) {
+      cancelAnimationFrame(timelineFlushRafRef.current);
+      timelineFlushRafRef.current = null;
+    }
+    pendingTimelineRedactIdsRef.current = new Set();
+    pendingTimelineMessagesRef.current = new Map();
+    const currentRoomId = roomIdRef.current;
+    if (currentRoomId) {
+      matrixRef.current.unregisterRoomListener(currentRoomId);
+    }
+    setRoomId(null);
+    setMessages([]);
+    setSpaceRoom(raw);
+    openHumanChatPanel();
+    setActiveTab('chat');
+
+    const next = new URLSearchParams(searchParams?.toString() ?? '');
+    next.delete('spaceChat');
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [
+    spaceSlug,
+    pathname,
+    router,
+    searchParams,
+    openHumanChatPanel,
+    exitCoherenceChat,
+  ]);
 
   /**
    * When `?msg=` is present, retry locating the row after the timeline grows (initial effect may run
