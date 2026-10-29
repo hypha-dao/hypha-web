@@ -49,6 +49,8 @@ export type EnergyCommunityOnChainSnapshot = {
   memberAddresses: `0x${string}`[];
   /** False when `getMemberAddresses` failed — do not seed the 30s roster cache. */
   memberAddressesOk: boolean;
+  /** False when `getSourceIds` failed — do not cache a zero-source snapshot. */
+  sourcesOk: boolean;
   memberDetails: EnergySnapshotMemberDetail[];
   sources: EnergySnapshotSource[];
   overview: {
@@ -175,6 +177,7 @@ export function assembleEnergyCommunitySnapshot(input: {
   zeroSumStatus: readonly [boolean, bigint] | null;
   memberAddresses: readonly `0x${string}`[];
   memberAddressesOk?: boolean;
+  sourcesOk?: boolean;
   sourceCount?: number;
   sources: EnergySnapshotSource[];
   memberDetails: EnergySnapshotMemberDetail[];
@@ -190,6 +193,7 @@ export function assembleEnergyCommunitySnapshot(input: {
   return {
     memberAddresses,
     memberAddressesOk: input.memberAddressesOk ?? true,
+    sourcesOk: input.sourcesOk ?? true,
     memberDetails: input.memberDetails,
     sources: input.sources,
     overview: {

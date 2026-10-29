@@ -263,7 +263,7 @@ async function readCommunitySnapshotUncached(
         settledBalance: multicallValue<bigint>(results[3]),
         contractStablecoinBalance: multicallValue<bigint>(results[4]),
         zeroSumStatus: multicallValue<readonly [boolean, bigint]>(results[5]),
-        sourceIds: multicallValue<readonly `0x${string}`[]>(results[6]) ?? [],
+        sourceIdsRaw: multicallValue<readonly `0x${string}`[]>(results[6]),
         memberAddressesRaw: multicallValue<readonly `0x${string}`[]>(
           results[7],
         ),
@@ -317,7 +317,7 @@ async function readCommunitySnapshotUncached(
       settledBalance,
       contractStablecoinBalance,
       zeroSumStatus,
-      sourceIds: sourceIds ?? [],
+      sourceIdsRaw: sourceIds,
       memberAddressesRaw: memberAddresses,
       communityAddress,
       aggregatorAddress,
@@ -345,7 +345,7 @@ async function readCommunitySnapshotUncached(
   try {
     sourcesAndMembers = await readSourcesAndMembers(
       proxy,
-      communityViews.sourceIds,
+      communityViews.sourceIdsRaw ?? [],
       communityViews.memberAddressesRaw ?? [],
       usedMulticall,
     );
@@ -357,7 +357,7 @@ async function readCommunitySnapshotUncached(
     );
     sourcesAndMembers = await readSourcesAndMembers(
       proxy,
-      communityViews.sourceIds,
+      communityViews.sourceIdsRaw ?? [],
       communityViews.memberAddressesRaw ?? [],
       false,
     );
@@ -372,7 +372,8 @@ async function readCommunitySnapshotUncached(
     zeroSumStatus: communityViews.zeroSumStatus,
     memberAddresses: communityViews.memberAddressesRaw ?? [],
     memberAddressesOk: communityViews.memberAddressesRaw !== null,
-    sourceCount: communityViews.sourceIds.length,
+    sourcesOk: communityViews.sourceIdsRaw !== null,
+    sourceCount: (communityViews.sourceIdsRaw ?? []).length,
     sources: sourcesAndMembers.sources,
     memberDetails: sourcesAndMembers.memberDetails,
     communityAddress: communityViews.communityAddress,
@@ -396,8 +397,10 @@ export async function readEnergyCommunitySnapshot(
   communityProxyAddress: string,
 ): Promise<EnergyCommunityOnChainSnapshot> {
   const cacheKey = communityProxyAddress.trim().toLowerCase();
-  const snapshot = await snapshotCache.getOrLoad(cacheKey, () =>
-    readCommunitySnapshotUncached(communityProxyAddress),
+  const snapshot = await snapshotCache.getOrLoad(
+    cacheKey,
+    () => readCommunitySnapshotUncached(communityProxyAddress),
+    (value) => value.memberAddressesOk && value.sourcesOk,
   );
   return structuredClone(snapshot);
 }

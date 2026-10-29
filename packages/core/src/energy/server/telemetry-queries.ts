@@ -74,8 +74,14 @@ async function queryEnergyTelemetryUncached(input: {
         end as kind,
         meter_id,
         sum(energy_wh)::bigint as total_wh,
-        min(interval_start at time zone 'UTC')::text as first_reading,
-        max(interval_start at time zone 'UTC')::text as last_reading
+        to_char(
+          min(interval_start at time zone 'UTC') at time zone 'UTC',
+          'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+        ) as first_reading,
+        to_char(
+          max(interval_start at time zone 'UTC') at time zone 'UTC',
+          'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+        ) as last_reading
       from accounting.interval_readings
       where community_id = $1
         and interval_start >= (now() at time zone 'utc') - ${cfg.intervalSql}

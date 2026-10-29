@@ -97,4 +97,28 @@ describe('energy community snapshot mapping', () => {
       'LOWEST_PRICE',
     ]);
   });
+
+  it('keeps a failed member roster empty and unmarked', () => {
+    const snapshot = assembleEnergyCommunitySnapshot({
+      communityFeeBps: null,
+      aggregatorFeeBps: null,
+      gridBalance: null,
+      settledBalance: null,
+      contractStablecoinBalance: null,
+      zeroSumStatus: null,
+      memberAddresses: [],
+      memberAddressesOk: false,
+      sources: [],
+      memberDetails: [],
+      communityAddress: null,
+      aggregatorAddress: null,
+      gridOperator: null,
+      exportDeviceId: null,
+      optimization: null,
+    });
+
+    expect(snapshot.memberAddressesOk).toBe(false);
+    expect(snapshot.memberAddresses).toEqual([]);
+    expect(snapshot.overview.memberCount).toBe(0);
+  });
 });
