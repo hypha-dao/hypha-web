@@ -1631,12 +1631,11 @@ export function useOnboardingVoiceRealtime({
     if (isChatStreaming) return;
 
     const spoken = lastAssistantText.trim();
-    // A chip or a card reply is written here, with no model stream. Read it.
-    if (
-      speakDisplayedText &&
-      !awaitingAssistantSpeakRef.current &&
-      !wasStreamingRef.current
-    ) {
+    // A chip or a card reply is written here, with no model stream. Read it
+    // even when Home uses Realtime (speakDisplayedText=false) for streamed
+    // turns — otherwise "Step into a space" / tokens / people stay silent
+    // while "Where can I be useful?" (streamed) still speaks.
+    if (!awaitingAssistantSpeakRef.current && !wasStreamingRef.current) {
       if (
         !spoken ||
         !lastAssistantMessageId ||
@@ -1648,8 +1647,6 @@ export function useOnboardingVoiceRealtime({
       speakAssistantReply(spoken);
       return;
     }
-
-    if (!awaitingAssistantSpeakRef.current && !wasStreamingRef.current) return;
     const startedFrom = assistantTextAtStreamStartRef.current.trim();
     const startedId = assistantMessageIdAtStreamStartRef.current;
     const stillPriorBubble =
@@ -1764,7 +1761,6 @@ export function useOnboardingVoiceRealtime({
     lastAssistantMessageId,
     lastAssistantText,
     scheduleMicRestoreForUserTurn,
-    speakDisplayedText,
     scriptForSpeech,
     speakAssistantReply,
     warmRemainderSpeech,
