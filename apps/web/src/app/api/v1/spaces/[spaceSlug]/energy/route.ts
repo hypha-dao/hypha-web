@@ -162,6 +162,13 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function protectedJson(body: unknown, status = 200) {
+  return NextResponse.json(body, {
+    status,
+    headers: { 'Cache-Control': 'no-store' },
+  });
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
@@ -249,7 +256,7 @@ export async function GET(
       { db },
     );
 
-    return json({
+    return protectedJson({
       enabled: true,
       activation: {
         spaceId: mapping.spaceId,

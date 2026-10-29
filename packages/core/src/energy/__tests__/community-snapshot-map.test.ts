@@ -154,17 +154,43 @@ describe('energy community snapshot mapping', () => {
       getOptimizationConfig: [[], 0, 0n, 0, false],
       getSocialWallets: [],
     };
+    let communityReads = 0;
     multicall.mockImplementation(
       async ({
         contracts,
       }: {
         contracts: ReadonlyArray<{ functionName: string }>;
-      }) =>
-        contracts.map((contract) =>
-          contract.functionName === 'getSourceIds'
-            ? { status: 'failure' }
-            : { status: 'success', result: viewResults[contract.functionName] },
-        ),
+      }) => {
+        const isCommunityWave = contracts.some(
+          (contract) => contract.functionName === 'getSourceIds',
+        );
+        if (isCommunityWave) communityReads += 1;
+        return contracts.map((contract) => {
+          if (contract.functionName === 'getSourceIds') {
+            return communityReads === 1
+              ? { status: 'failure' }
+              : { status: 'success', result: [sourceId] };
+          }
+          if (contract.functionName === 'getSource') {
+            return {
+              status: 'success',
+              result: [
+                0,
+                '0x2222222222222222222222222222222222222222',
+                10n,
+                true,
+              ],
+            };
+          }
+          if (contract.functionName === 'name') {
+            return { status: 'success', result: 'School PV' };
+          }
+          return {
+            status: 'success',
+            result: viewResults[contract.functionName],
+          };
+        });
+      },
     );
 
     clearEnergyCommunitySnapshotCache();
@@ -174,8 +200,9 @@ describe('energy community snapshot mapping', () => {
     expect(peekEnergyCommunitySnapshot(community)).toBeUndefined();
 
     const second = await readEnergyCommunitySnapshot(community);
-    expect(second.sourcesOk).toBe(false);
-    expect(multicall).toHaveBeenCalledTimes(2);
+    expect(second.sourcesOk).toBe(true);
+    expect(second.overview.sourceCount).toBeGreaterThan(0);
+    expect(second.sources.length).toBeGreaterThan(0);
   });
 });
 
