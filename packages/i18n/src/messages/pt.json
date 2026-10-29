@@ -3688,7 +3688,10 @@
     "unarchiveGroupConfirm": "Sim, restaurar",
     "unarchiveGroupCancel": "Cancelar",
     "unarchiveGroupFailed": "Não foi possível restaurar este grupo. Tenta novamente.",
-    "archivedGroupReadOnly": "Este grupo está arquivado. Restaura-o para enviar mensagens."
+    "archivedGroupReadOnly": "Este grupo está arquivado. Restaura-o para enviar mensagens.",
+    "typingOne": "{name} está a escrever…",
+    "typingTwo": "{name} e {other} estão a escrever…",
+    "typingMany": "{count} pessoas estão a escrever…"
   },
   "CoherenceTab": {
     "signals": "Sinais",

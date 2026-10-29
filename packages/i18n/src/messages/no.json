@@ -4261,7 +4261,10 @@
     "unarchiveGroupConfirm": "Ja, gjenopprett",
     "unarchiveGroupCancel": "Avbryt",
     "unarchiveGroupFailed": "Kunne ikke gjenopprette denne gruppen. Prøv igjen.",
-    "archivedGroupReadOnly": "Denne gruppen er arkivert. Gjenopprett den for å sende meldinger."
+    "archivedGroupReadOnly": "Denne gruppen er arkivert. Gjenopprett den for å sende meldinger.",
+    "typingOne": "{name} skriver…",
+    "typingTwo": "{name} og {other} skriver…",
+    "typingMany": "{count} personer skriver…"
   },
   "CoherenceTab": {
     "signals": "Signaler",
