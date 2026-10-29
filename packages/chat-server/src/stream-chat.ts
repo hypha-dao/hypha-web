@@ -73,10 +73,12 @@ import {
   safeChatTool,
   createGetDocumentsBySpaceSlugTool,
   createGetEcosystemBySpaceSlugTool,
+  createGetNetworkEcosystemPatternsTool,
   createGetSignalsBySpaceSlugTool,
   createGetTokenHoldingsBySpaceSlugTool,
   createHumanChatMessageTool,
   createMcpNavigationTool,
+  createSearchSpacesTool,
   getSpaceBySlugTool,
 } from './tools/index';
 import { createGenerateSpaceVisualAssetsTool } from './tools/generate-space-visual-assets';
@@ -1497,25 +1499,43 @@ export async function createChatStreamResult(
     locale,
     conversationContext: normalizedConversationContext,
   });
+  // Network outlook must not see the home waiting queue. show_member_home_item
+  // lists signal/proposal slugs in its description, which pulls the model back
+  // into the home loop the left panel was meant to leave behind.
   const tools = memberHomeRecord
-    ? {
-        [SHOW_MEMBER_HOME_ITEM_TOOL]: safeChatTool(
-          SHOW_MEMBER_HOME_ITEM_TOOL,
-          createShowMemberHomeItemTool(memberHomeItems),
-        ),
-        create_human_chat_message: safeChatTool(
-          'create_human_chat_message',
-          createHumanChatMessageTool(authToken, requestUrlForSessionMatrix),
-        ),
-        mcp_navigation: safeChatTool(
-          'mcp_navigation',
-          createMcpNavigationTool(authToken),
-        ),
-        generate_space_visual_assets: safeChatTool(
-          'generate_space_visual_assets',
-          createGenerateSpaceVisualAssetsTool(),
-        ),
-      }
+    ? networkOutlook
+      ? {
+          search_spaces: safeChatTool(
+            'search_spaces',
+            createSearchSpacesTool(),
+          ),
+          get_network_ecosystem_patterns: safeChatTool(
+            'get_network_ecosystem_patterns',
+            createGetNetworkEcosystemPatternsTool(),
+          ),
+          mcp_navigation: safeChatTool(
+            'mcp_navigation',
+            createMcpNavigationTool(authToken),
+          ),
+        }
+      : {
+          [SHOW_MEMBER_HOME_ITEM_TOOL]: safeChatTool(
+            SHOW_MEMBER_HOME_ITEM_TOOL,
+            createShowMemberHomeItemTool(memberHomeItems),
+          ),
+          create_human_chat_message: safeChatTool(
+            'create_human_chat_message',
+            createHumanChatMessageTool(authToken, requestUrlForSessionMatrix),
+          ),
+          mcp_navigation: safeChatTool(
+            'mcp_navigation',
+            createMcpNavigationTool(authToken),
+          ),
+          generate_space_visual_assets: safeChatTool(
+            'generate_space_visual_assets',
+            createGenerateSpaceVisualAssetsTool(),
+          ),
+        }
     : createChatTools(
         authToken,
         requestUrlForSessionMatrix,
@@ -1634,7 +1654,13 @@ export async function createChatStreamResult(
   });
   const systemPrompt = memberHomeRecord
     ? networkOutlook
-      ? `${effectiveSystemPrompt}\n\nYou are Hypha, a friend looking across the network with this member. This is the network outlook, not their home. Home already walks proposals, signals, and decisions in the spaces they belong to. Here you help them navigate the wider network by how they show up: a builder finds skills and resources; a funder finds projects to fund; a member finds work, experience, and community engagement. Use only the brief below. Write three or four short sentences, warm and specific. Address them by first name. Offer one concrete navigation step on the network. Do not brief a specific home signal or proposal. Do not call show_member_home_item. Never mention a card, a screen, or a button. Every sentence ends with a full stop. Never stop in the middle of a sentence. Do not think out loud.${
+      ? // Lean prompt only. The full advisor prompt trains signal/proposal
+        // briefing and fights the network brief when concatenated.
+        `You are Hypha, a friend looking across the wider Hypha network with this member. This left panel is network navigation by how they show up — builder, funder, or member. It is not their home. Do not continue any earlier turn that briefed a personal signal, proposal, or decision from their own spaces.
+
+Use only the brief below. Write three or four short sentences, warm and specific. Address them by first name. Offer one concrete navigation step on the network: a kind of place to look, people to meet, or ask to search for. You may call search_spaces, get_network_ecosystem_patterns, or mcp_navigation when that helps them move. Prefer ordinary language over tool talk.
+
+Forbidden, including close paraphrases: naming or continuing a signal or proposal they raised, "your signal", "the signal you raised", "still open on", briefing any home-queue title, calling show_member_home_item, inventing that a card is on screen, ranking people by shared spaces from home, walking what needs a decision in their spaces. Never mention a card, a screen, or a button. Every sentence ends with a full stop. Never stop in the middle of a sentence. Do not think out loud.${
           onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''
         }`
       : `${effectiveSystemPrompt}\n\nYou are Hypha, a friend in this community, speaking to this member at home. Use only the brief below. Write three or four short sentences, the way you would catch up a friend. Those sentences are read aloud word for word, so write them the way you would say them to a friend: easy, close, and specific. Contractions are welcome. Do not sound like you are reading a notice. Address them by first name. The person asking for attention is the subject, by first name, in the active voice. Say what the community needs, not what task to complete. Every name, number, and place must be written in the brief. Do not add one that is not. Never mention a card, a screen, or a button. Never sound like a checklist. ${
@@ -1729,6 +1755,7 @@ export async function createChatStreamResult(
 
   const homeVisualDirective =
     memberHomeRecord &&
+    !networkOutlook &&
     (resolveLatestVisualGenerationIntent(recentUserTexts) ||
       agreedToGeneratedVisuals(lastUserText, lastAssistantText))
       ? 'The member wants a logo and a banner generated now. You MUST call generate_space_visual_assets in this turn before describing any image. Do not say the images exist until that tool returns logo_url and lead_image_url. Describe them only after the tool succeeds. Never paste the URLs.'
@@ -1771,6 +1798,17 @@ export async function createChatStreamResult(
           const unfinished =
             previousText.length > 0 &&
             !homeSpokenScriptIsComplete(previousText);
+          // Network outlook has no home cards. After speech starts, finish
+          // the sentences without falling back into a home tool.
+          if (networkOutlook) {
+            if (stepNumber > 0 && unfinished) {
+              return {
+                toolChoice: 'none' as const,
+                system: `${homeSystem}\n\nThe last sentence was cut off. Finish that sentence with a full stop, using only the brief, then stop. Do not repeat the sentences already written. Do not call a tool. Do not name a personal signal or proposal.`,
+              };
+            }
+            return {};
+          }
           const cardShown = steps.some((step) =>
             (step.toolCalls ?? []).some(
               (call) => call.toolName === 'show_member_home_item',

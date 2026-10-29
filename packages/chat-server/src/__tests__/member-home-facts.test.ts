@@ -854,10 +854,12 @@ describe('formatMemberHomeFacts', () => {
     expect(brief.text).toContain('Network outlook');
     expect(brief.text).toContain('builder');
     expect(brief.text).toContain('skills');
-    expect(brief.text).toContain('show_member_home_item');
+    expect(brief.text).toContain('your signal');
     expect(brief.text).toContain('Forbidden');
+    expect(brief.text).toContain('Ignore those');
     expect(brief.text).not.toContain('slug=orchard-talks');
     expect(brief.text).not.toContain('Marieke');
+    expect(brief.text).not.toContain('Orchard interviews');
     expect(brief.card).toBeNull();
   });
 
@@ -866,5 +868,6 @@ describe('formatMemberHomeFacts', () => {
     expect(brief.card).toBeNull();
     expect(brief.text).toContain('navigate the wider Hypha network');
     expect(brief.text).not.toContain('slug=path');
+    expect(brief.text).toContain('search_spaces');
   });
 });

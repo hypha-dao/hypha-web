@@ -732,11 +732,12 @@ export function formatNetworkOutlookFacts(
   const orientation = home.person.primaryOrientation;
   const spaceCount = home.counts.spaces;
   const text = [
-    'Network outlook for this signed-in member. This is not their home. Home already prompts them with proposals, signals, and decisions in the spaces they belong to. Here you help them navigate the wider Hypha network.',
+    'Network outlook for this signed-in member. This left panel helps them navigate the wider Hypha network by how they show up. It is not their home queue.',
     networkOrientationLens(orientation),
     'LENGTH: three or four short sentences, then stop. Every sentence ends with a full stop. Never stop in the middle of a sentence. Never a list. Never a wall of text.',
-    'Offer one concrete next step on the network: a kind of place to look, a kind of people to meet, or a kind of ask to search for — matched to how they show up. Stay general enough to navigate; do not brief one specific signal, proposal, or thread from their home queue.',
-    'Forbidden: calling show_member_home_item, naming a home proposal or signal by title, looping on one opportunity, walking what needs a decision in their spaces, asking who is around them at home, or describing their home screen.',
+    'Offer one concrete next step on the network: a kind of place to look, a kind of people to meet, or a kind of ask to search for — matched to how they show up. Stay general enough to navigate. Search the network with tools when a topic is clear; do not invent a personal thread to reopen.',
+    'Earlier turns in this thread may have briefed a personal signal or proposal. Ignore those. Never continue them.',
+    'Forbidden, including close paraphrases: calling show_member_home_item, "your signal", "the signal you raised", "still open on", naming any signal or proposal by title, looping on one opportunity, walking what needs a decision in their spaces, ranking people by shared spaces, asking who is around them at home, or describing their home screen.',
     'Allowed tools when useful: search_spaces, get_network_ecosystem_patterns, mcp_navigation — to help them move into the network. Prefer ordinary language over tool talk.',
     `Person: ${personName(
       home.person,
