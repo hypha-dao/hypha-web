@@ -4878,7 +4878,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (
           document.querySelector(`[data-matrix-event-id="${escaped}"]`) != null
         ) {
-          setScrollToEventId(eventId);
+          setScrollToEventId(null);
+          requestAnimationFrame(() => setScrollToEventId(eventId));
           return;
         }
 
@@ -6814,7 +6815,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       onJumpToOriginalMessage={(eventId) => {
                         const id = eventId.trim();
                         if (!id) return;
-                        setScrollToEventId(id);
+                        // Clear first so clicking the same quote again still jumps.
+                        setScrollToEventId(null);
+                        requestAnimationFrame(() => setScrollToEventId(id));
                       }}
                       onEditMessage={
                         blockSpaceChatForMembership

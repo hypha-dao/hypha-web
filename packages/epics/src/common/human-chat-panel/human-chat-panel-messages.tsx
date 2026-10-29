@@ -535,30 +535,46 @@ export function HumanChatPanelMessages({
     if (scrollTargetConsumedRef.current === scrollTargetEventId) return;
     const root = containerRef.current;
     if (!root) return;
+
     const esc =
       typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
         ? CSS.escape(scrollTargetEventId)
         : scrollTargetEventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    const row = root.querySelector(`[data-matrix-event-id="${esc}"]`);
-    if (row instanceof HTMLElement) {
-      scrollChildIntoTimeline(root, row);
-      stickToBottomRef.current = false;
-      onTimelineAtBottomChange?.(false);
-      scrollTargetConsumedRef.current = scrollTargetEventId;
-      scrollTargetMissCountRef.current = 0;
-      scrollTargetMissHandledRef.current = null;
-      onConsumedScrollTarget?.();
-      return;
-    }
 
-    scrollTargetMissCountRef.current += 1;
-    if (
-      scrollTargetMissCountRef.current >= 12 &&
-      scrollTargetMissHandledRef.current !== scrollTargetEventId
-    ) {
-      scrollTargetMissHandledRef.current = scrollTargetEventId;
-      onScrollTargetNotFound?.(scrollTargetEventId);
-    }
+    let cancelled = false;
+    let frames = 0;
+    const maxFrames = 24;
+
+    const tryJump = () => {
+      if (cancelled) return;
+      const row = root.querySelector(`[data-matrix-event-id="${esc}"]`);
+      if (row instanceof HTMLElement) {
+        stickToBottomRef.current = false;
+        onTimelineAtBottomChange?.(false);
+        scrollChildIntoTimeline(root, row);
+        scrollTargetConsumedRef.current = scrollTargetEventId;
+        scrollTargetMissCountRef.current = 0;
+        scrollTargetMissHandledRef.current = null;
+        onConsumedScrollTarget?.();
+        return;
+      }
+
+      frames += 1;
+      if (frames >= maxFrames) {
+        if (scrollTargetMissHandledRef.current !== scrollTargetEventId) {
+          scrollTargetMissHandledRef.current = scrollTargetEventId;
+          onScrollTargetNotFound?.(scrollTargetEventId);
+        }
+        return;
+      }
+      scrollTargetMissCountRef.current = frames;
+      requestAnimationFrame(tryJump);
+    };
+
+    tryJump();
+    return () => {
+      cancelled = true;
+    };
   }, [
     scrollTargetEventId,
     onConsumedScrollTarget,

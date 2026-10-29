@@ -992,10 +992,48 @@ export function ProposalDiscussionChat({
               onJumpToOriginalMessage={(eventId) => {
                 const id = eventId.trim();
                 if (!id) return;
-                setScrollToEventId(id);
+                setScrollToEventId(null);
+                requestAnimationFrame(() => setScrollToEventId(id));
               }}
               scrollTargetEventId={scrollToEventId}
               onConsumedScrollTarget={() => setScrollToEventId(null)}
+              onScrollTargetNotFound={(eventId) => {
+                const targetRoomId = roomId?.trim();
+                if (!targetRoomId) {
+                  setScrollToEventId(null);
+                  return;
+                }
+                void (async () => {
+                  let hasMore = true;
+                  for (let attempt = 0; attempt < 12 && hasMore; attempt += 1) {
+                    const result = await loadRoomHistoryRef.current(
+                      targetRoomId,
+                      {
+                        force: true,
+                        maxBatches: 3,
+                      },
+                    );
+                    hasMore = result.hasMoreOlder;
+                    refreshRoomMessages(targetRoomId);
+                    const escaped =
+                      typeof CSS !== 'undefined' &&
+                      typeof CSS.escape === 'function'
+                        ? CSS.escape(eventId)
+                        : eventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                    if (
+                      document.querySelector(
+                        `[data-matrix-event-id="${escaped}"]`,
+                      ) != null
+                    ) {
+                      setScrollToEventId(null);
+                      requestAnimationFrame(() => setScrollToEventId(eventId));
+                      return;
+                    }
+                    if (!hasMore) break;
+                  }
+                  setScrollToEventId(null);
+                })();
+              }}
               onEditMessage={handleEditMessage}
               onDeleteMessage={handleDeleteMessage}
               onToggleReaction={handleToggleReaction}
