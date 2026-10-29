@@ -226,7 +226,44 @@ function useMxcUrls(
   }, [client, mxc]);
 }
 
-/** Single-image timeline row: preserve intrinsic aspect when known. */
+/** True when Matrix info says the image is taller than it is wide. */
+function isPortraitChatImage(
+  mediaInfo?: {
+    w?: number;
+    h?: number;
+  } | null,
+): boolean {
+  const w = mediaInfo?.w;
+  const h = mediaInfo?.h;
+  return Boolean(w && h && w > 0 && h > 0 && h > w);
+}
+
+/**
+ * Single-image frame: shrink-wrap the bitmap so portrait shots are not
+ * letterboxed inside a full-width aspect box (`max-h` + `object-contain`).
+ */
+function timelineImageFrameClass(
+  mediaInfo?: { w?: number; h?: number } | null,
+) {
+  const w = mediaInfo?.w;
+  const h = mediaInfo?.h;
+  const known = Boolean(w && h && w > 0 && h > 0);
+  const portrait = known && (h as number) > (w as number);
+  // Unknown dims: allow a taller max so portrait screenshots still read well.
+  const tall = portrait || !known;
+  return {
+    frame: cn(
+      'relative w-fit overflow-hidden rounded-lg border border-border/60 bg-muted/30',
+      tall ? 'max-w-[min(100%,20rem)]' : 'max-w-md',
+    ),
+    img: cn(
+      'block h-auto w-auto max-w-full object-contain',
+      tall ? 'max-h-[min(28rem,65vh)]' : 'max-h-72',
+    ),
+  };
+}
+
+/** Single-image timeline row: shrink-wrap intrinsic size within max bounds. */
 function TimelineImageSlot({
   media,
   tOpen,
@@ -240,19 +277,10 @@ function TimelineImageSlot({
     client,
     media.mxcUrl,
   );
+  const frame = timelineImageFrameClass(media.mediaInfo);
 
   return (
-    <div
-      className="relative shrink-0 overflow-hidden rounded-lg border border-border bg-muted/30"
-      style={
-        media.mediaInfo?.w &&
-        media.mediaInfo?.h &&
-        media.mediaInfo.w > 0 &&
-        media.mediaInfo.h > 0
-          ? { aspectRatio: `${media.mediaInfo.w} / ${media.mediaInfo.h}` }
-          : { width: 'min(200px, 72vw)', minHeight: '120px' }
-      }
-    >
+    <div className={cn('relative shrink-0', frame.frame)}>
       {mediaPreviewUrl && mediaDownloadUrl ? (
         <>
           <a
@@ -272,7 +300,7 @@ function TimelineImageSlot({
               }
             }}
             className={cn(
-              'block h-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+              'block cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
               media.spoiler && !spoilerRevealed && 'pointer-events-none',
             )}
             aria-label={tOpen('openAttachmentInNewTab')}
@@ -283,7 +311,7 @@ function TimelineImageSlot({
               downloadUrl={mediaDownloadUrl}
               alt={media.filename ?? ''}
               className={cn(
-                'h-full max-h-72 w-full object-contain',
+                frame.img,
                 media.spoiler && !spoilerRevealed && 'blur-2xl',
               )}
             />
@@ -2253,6 +2281,13 @@ export function HumanChatPanelMessageBubble({
             </button>
           ) : null}
 
+          {message.mediaSlots?.length === 1 &&
+            message.mediaSlots[0]?.msgtype === 'm.image' && (
+              <div className="mt-0.5" data-testid="chat-message-media-image">
+                <TimelineImageSlot media={message.mediaSlots[0]} tOpen={t} />
+              </div>
+            )}
+
           {message.mediaSlots && message.mediaSlots.length > 1 && (
             <div
               className="mt-0.5 max-w-md space-y-1.5"
@@ -2325,18 +2360,11 @@ export function HumanChatPanelMessageBubble({
             message.media &&
             message.media.msgtype === 'm.image' && (
               <div
-                className="relative mt-0.5 max-w-md overflow-hidden rounded-lg border border-border/60 bg-muted/30"
+                className={cn(
+                  'mt-0.5',
+                  timelineImageFrameClass(message.media.mediaInfo).frame,
+                )}
                 data-testid="chat-message-media-image"
-                style={
-                  message.media.mediaInfo?.w &&
-                  message.media.mediaInfo?.h &&
-                  message.media.mediaInfo.w > 0 &&
-                  message.media.mediaInfo.h > 0
-                    ? {
-                        aspectRatio: `${message.media.mediaInfo.w} / ${message.media.mediaInfo.h}`,
-                      }
-                    : undefined
-                }
               >
                 {mediaPreviewUrl && mediaDownloadUrl ? (
                   <>
@@ -2374,7 +2402,7 @@ export function HumanChatPanelMessageBubble({
                         downloadUrl={mediaDownloadUrl}
                         alt={message.media.filename ?? ''}
                         className={cn(
-                          'max-h-72 w-full object-contain',
+                          timelineImageFrameClass(message.media.mediaInfo).img,
                           message.media.spoiler &&
                             !spoilerRevealed &&
                             'blur-2xl',
