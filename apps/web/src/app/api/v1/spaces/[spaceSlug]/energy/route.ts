@@ -188,7 +188,10 @@ export async function GET(
      * verifier infrastructure failure we fall through and treat the request
      * as anonymous-public rather than serving a misleading 500.
      */
-    const access = await checkSpaceAccess(request, space.web3SpaceId as number);
+    const [access, mappingFromDb] = await Promise.all([
+      checkSpaceAccess(request, space.web3SpaceId as number),
+      findEnergyCommunityBySpaceId(space.id, { db }),
+    ]);
     if (!access.hasAccess && access.response) {
       const status = access.response.status;
       if (status === 401 || status === 403) {
@@ -199,8 +202,7 @@ export async function GET(
       );
     }
 
-    let mapping: EnergyCommunityActivation | null =
-      await findEnergyCommunityBySpaceId(space.id, { db });
+    let mapping: EnergyCommunityActivation | null = mappingFromDb;
 
     if (!mapping) {
       try {

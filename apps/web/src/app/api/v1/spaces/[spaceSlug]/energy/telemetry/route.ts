@@ -9,6 +9,9 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 
+/** Azure PG connect + windowed aggregate can exceed the 15s default. */
+export const maxDuration = 60;
+
 const disabledTelemetryPayload = (
   period: ReturnType<typeof parseEnergyTelemetryPeriod>,
 ) => ({
@@ -52,15 +55,23 @@ export async function GET(
       return NextResponse.json(disabledTelemetryPayload(period));
     }
 
-    const access = await checkSpaceAccess(request, space.web3SpaceId as number);
+    const [access, mapping] = await Promise.all([
+      checkSpaceAccess(request, space.web3SpaceId as number),
+      findEnergyCommunityBySpaceId(space.id, { db }),
+    ]);
     if (!access.hasAccess) {
-      return (
-        access.response ??
-        NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      const status = access.response?.status;
+      if (status === 401 || status === 403 || !access.response) {
+        return (
+          access.response ??
+          NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        );
+      }
+      console.warn(
+        `[spaces/energy/telemetry] checkSpaceAccess returned ${status} — falling through.`,
       );
     }
 
-    const mapping = await findEnergyCommunityBySpaceId(space.id, { db });
     if (!mapping) {
       return NextResponse.json(disabledTelemetryPayload(period));
     }

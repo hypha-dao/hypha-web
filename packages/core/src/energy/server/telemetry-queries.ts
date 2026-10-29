@@ -35,8 +35,9 @@ function getEnergyDbPool(): Pool | null {
       ssl: dbConfig.ssl ? { rejectUnauthorized: false } : undefined,
       max: 4,
       idleTimeoutMillis: 15_000,
-      connectionTimeoutMillis: 15_000,
-      query_timeout: 20_000,
+      // Leave most of the 60s route budget for the windowed aggregate.
+      connectionTimeoutMillis: 8_000,
+      query_timeout: 25_000,
     });
     energyDbPool.on('error', (error) => {
       console.warn('[energy/telemetry] pool error', error);
@@ -104,9 +105,15 @@ async function queryEnergyTelemetryUncached(input: {
       order by 1 asc
     `;
 
+  const started = Date.now();
   const result = await pool.query<EnergyTelemetryAggregateRow>(aggregateSql, [
     input.communityId,
   ]);
+  console.info(
+    `[energy/telemetry] community ${input.communityId} ${input.period} ${
+      result.rowCount
+    } rows in ${Date.now() - started}ms`,
+  );
 
   return assembleEnergyTelemetry({
     period: input.period,
