@@ -39,11 +39,10 @@ export const getSignalPath = (
   spaceSlug: string,
   signalSlug: string,
 ) => {
-  // Land on the space dashboard and open that signal's chat. `/coherence?signal=`
-  // was ignored (and redirected away when Coherence is off), so notification
-  // and card links looked dead. Bare `/dho/{slug}?signal=` also skips the
-  // overview tab slot.
-  return `/${lang}/dho/${spaceSlug}/overview?signal=${encodeURIComponent(
+  // Signals board with that card selected. `useCoherenceSignalDeepLink` scrolls
+  // to the card and opens its chat when Human chat is on. Coherence-off still
+  // redirects this tab to overview.
+  return `/${lang}/dho/${spaceSlug}/coherence?signal=${encodeURIComponent(
     signalSlug,
   )}`;
 };

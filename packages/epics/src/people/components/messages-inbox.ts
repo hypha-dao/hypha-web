@@ -514,8 +514,8 @@ export function inboxContextHref(
     if (!space) return null;
     const signal = place.signalSlug?.trim();
     if (!signal) return `/${locale}/dho/${space}/overview?spaceChat=space`;
-    // Space dashboard + that signal selected with its chat open.
-    return `/${locale}/dho/${space}/overview?signal=${encodeURIComponent(
+    // Signals board with that card selected (and its chat opened when enabled).
+    return `/${locale}/dho/${space}/coherence?signal=${encodeURIComponent(
       signal,
     )}`;
   }

@@ -551,7 +551,7 @@ describe('inboxContextHref', () => {
 
   it('opens a signal, a space room, an ecosystem the member can enter, and the network', () => {
     expect(inboxContextHref('en', { ...place, kind: 'signal' })).toBe(
-      '/en/dho/hypha-platform/overview?signal=roadmap-page',
+      '/en/dho/hypha-platform/coherence?signal=roadmap-page',
     );
     expect(inboxContextHref('en', { ...place, kind: 'space' })).toBe(
       '/en/dho/hypha-platform/overview?spaceChat=space',
