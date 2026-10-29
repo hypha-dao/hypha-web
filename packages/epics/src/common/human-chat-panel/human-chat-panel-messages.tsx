@@ -29,6 +29,8 @@ import {
 /**
  * Scroll a row inside the timeline scroller only — never call `scrollIntoView`,
  * which also moves ancestor panels (e.g. the proposal overlay).
+ * Pin near the top so a reply that is already “just above” still moves
+ * clearly instead of centering in place with no visible jump.
  */
 function scrollChildIntoTimeline(
   container: HTMLElement,
@@ -37,11 +39,8 @@ function scrollChildIntoTimeline(
 ) {
   const cRect = container.getBoundingClientRect();
   const eRect = child.getBoundingClientRect();
-  const next =
-    container.scrollTop +
-    (eRect.top - cRect.top) -
-    cRect.height / 2 +
-    eRect.height / 2;
+  const topPad = Math.min(72, Math.max(24, cRect.height * 0.12));
+  const next = container.scrollTop + (eRect.top - cRect.top) - topPad;
   container.scrollTo({
     top: Math.max(0, next),
     behavior,
@@ -305,6 +304,34 @@ export function HumanChatPanelMessages({
   /** Retry deep-link target lookup across timeline growth before falling back. */
   const scrollTargetMissCountRef = useRef(0);
   const scrollTargetMissHandledRef = useRef<string | null>(null);
+  /** Brief flash on the jumped-to row so a nearby original is still obvious. */
+  const [jumpFlashMessageId, setJumpFlashMessageId] = useState<string | null>(
+    null,
+  );
+  const jumpFlashClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flashJumpedMessage = useCallback((messageId: string) => {
+    if (jumpFlashClearRef.current != null) {
+      clearTimeout(jumpFlashClearRef.current);
+      jumpFlashClearRef.current = null;
+    }
+    setJumpFlashMessageId(messageId);
+    jumpFlashClearRef.current = setTimeout(() => {
+      jumpFlashClearRef.current = null;
+      setJumpFlashMessageId((current) =>
+        current === messageId ? null : current,
+      );
+    }, 1400);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (jumpFlashClearRef.current != null) {
+        clearTimeout(jumpFlashClearRef.current);
+      }
+    },
+    [],
+  );
 
   /** At most one floating action bar: pointer hover, or locked while that row's hover emoji picker is open. */
   const [hoverActionMessageId, setHoverActionMessageId] = useState<
@@ -552,6 +579,7 @@ export function HumanChatPanelMessages({
         stickToBottomRef.current = false;
         onTimelineAtBottomChange?.(false);
         scrollChildIntoTimeline(root, row);
+        flashJumpedMessage(scrollTargetEventId);
         scrollTargetConsumedRef.current = scrollTargetEventId;
         scrollTargetMissCountRef.current = 0;
         scrollTargetMissHandledRef.current = null;
@@ -577,6 +605,7 @@ export function HumanChatPanelMessages({
     };
   }, [
     scrollTargetEventId,
+    flashJumpedMessage,
     onConsumedScrollTarget,
     onScrollTargetNotFound,
     onTimelineAtBottomChange,
@@ -780,6 +809,7 @@ export function HumanChatPanelMessages({
                 resolveMatrixMemberLabel={resolveMatrixMemberLabel}
                 resolveSenderDisplayLabel={resolveSenderDisplayLabel}
                 isActionBarVisible={isActionBarVisible}
+                jumpFlash={jumpFlashMessageId === msg.id}
                 unreadBoundary={row.isFirstUnread}
                 isTouchComposer={isTouchComposer}
                 onRowPointerEnter={

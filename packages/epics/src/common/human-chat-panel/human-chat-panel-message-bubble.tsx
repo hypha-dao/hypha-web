@@ -777,6 +777,8 @@ type HumanChatPanelMessageBubbleProps = {
   onCancelSendPending?: () => void;
   /** Timeline chrome: first unread row (Discord-style emphasis). */
   unreadBoundary?: boolean;
+  /** Brief flash after jumping here from a reply quote. */
+  jumpFlash?: boolean;
 };
 
 const MAX_VISIBLE_REACTIONS = 12;
@@ -1634,6 +1636,7 @@ export function HumanChatPanelMessageBubble({
   onReact,
   onCancelSendPending,
   unreadBoundary = false,
+  jumpFlash = false,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
   const tCoherence = useTranslations('CoherenceTab');
@@ -2030,6 +2033,7 @@ export function HumanChatPanelMessageBubble({
         'hover:bg-foreground/[0.04] focus-within:bg-foreground/[0.04]',
         // Keep the floating action bar above neighbouring rows while it is open.
         isActionBarVisible && 'z-20',
+        jumpFlash && 'bg-accent-3',
         highlightMentionForViewer && 'border-l-2 border-l-accent-9',
         unreadBoundary &&
           !highlightMentionForViewer &&
