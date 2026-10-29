@@ -279,6 +279,8 @@ export function MobileTabBar({
             return tTreasury('rewardsSection.title');
           case 'memory':
             return tCoherence('spaceMemory');
+          case 'context':
+            return tCommon('context');
           default:
             return key;
         }

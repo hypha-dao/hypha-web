@@ -650,6 +650,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         | 'energy'
         | 'rewards'
         | 'memory'
+        | 'context'
         | 'wallet',
     ) => {
       if (!spaceSlug) return false;
@@ -691,6 +692,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           return tTreasury('rewardsSection.title');
         case 'memory':
           return tCoherence('spaceMemory');
+        case 'context':
+          return tCommon('context');
         case 'ecosystem-navigation':
           return tSelectNavigation('ecosystem');
         default:

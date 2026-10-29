@@ -15,3 +15,4 @@ export * from './network-exchange';
 export * from './schedule';
 export * from './pipeline';
 export * from './wallet';
+export * from './space-context';

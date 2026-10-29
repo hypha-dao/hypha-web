@@ -667,7 +667,8 @@
     "durationDays": "{count, plural, one {# jour} other {# jours}}",
     "spaceBannerRevealMeta": "Détails",
     "moreNav": "Plus",
-    "bankingTab": "Banque"
+    "bankingTab": "Banque",
+    "context": "Contexte"
   },
   "ModalAside": {
     "spaceSettings": "Paramètres de l’espace",
@@ -2078,7 +2079,8 @@
       "registerEnergySource": "Enregistrer une source d'énergie",
       "addEnergyMember": "Ajouter un membre énergie",
       "changeEnergyOptimization": "Modifier l'optimisation énergétique",
-      "whitelistEnergySettlement": "Liste blanche de règlement énergétique"
+      "whitelistEnergySettlement": "Liste blanche de règlement énergétique",
+      "spaceContext": "Contexte de l'espace"
     },
     "documentBadges": {
       "invite": "Invitation",
@@ -5583,5 +5585,89 @@
     "proposal": "Proposition",
     "agreement": "Accord",
     "backHome": "Retour à l'accueil"
+  },
+  "SpaceContext": {
+    "title": "Contexte",
+    "subtitle": "Une source de vérité partagée pour cet espace. Rédigez chaque section avec un agent, puis ratifiez-la par un accord.",
+    "progress": "{ratified} sur {total} ratifiées",
+    "propose": "Proposer à la ratification",
+    "filters": {
+      "all": "Toutes",
+      "ratified": "Ratifiées",
+      "proposed": "En vote",
+      "drafts": "Brouillons"
+    },
+    "leads": {
+      "mission": "Why the space exists.",
+      "vision": "The future we are building toward.",
+      "strategy": "How we get there over the next 2–3 years.",
+      "objectives": "Measurable goals for this season.",
+      "projects": "Active initiatives and who leads them.",
+      "key_repositories": "Code, docs and data the space relies on.",
+      "tools": "Inventory of tools the space uses.",
+      "how_we_decide": "How this space accepts work and chooses features."
+    },
+    "status": {
+      "ratified": "Ratifiée",
+      "onVoting": "En vote",
+      "draft": "Brouillon",
+      "notStarted": "Non commencée"
+    },
+    "card": {
+      "emptyBody": "No draft yet.",
+      "ratifiedMeta": "Ratified · Agreement #{agreement}",
+      "proposedMeta": "On voting · {title}",
+      "proposalFallback": "Proposal",
+      "draftContributors": "Draft · {count} contributors",
+      "draftEditor": "Draft · {name}",
+      "draftMeta": "Draft",
+      "viewProposal": "View proposal",
+      "view": "View",
+      "open": "Open",
+      "continue": "Continue",
+      "startWithAgent": "Start with agent"
+    },
+    "empty": {
+      "title": "Pas encore de contexte",
+      "description": "Define who this space is — mission, vision, strategy and more. Pick a section and an agent will help members draft it; ratify it with a proposal when it is ready.",
+      "startMission": "Commencer par la mission",
+      "importMemory": "Importer depuis Memory",
+      "importing": "Importing…",
+      "filter": "No sections in this filter."
+    },
+    "chat": {
+      "title": "Context section chat",
+      "close": "Close chat",
+      "specialist": "{role} · helper agent",
+      "empty": "Ask the specialist whether this draft is a good section, or paste text to refine together.",
+      "loadError": "Could not load this section chat.",
+      "thinking": "Thinking…",
+      "member": "Member",
+      "draftLabel": "Draft",
+      "saveDraft": "Save draft",
+      "propose": "Propose to ratify",
+      "keepDrafting": "Keep drafting",
+      "placeholder": "Ask the agent about this section…",
+      "send": "Send"
+    },
+    "proposeForm": {
+      "header": "Créer une proposition",
+      "title": "Ratifier le contexte : {sections}",
+      "titleShort": "Ratifier des sections de contexte",
+      "sections": "Sections to ratify",
+      "hint": "Only drafted sections can be included. On voting and ratified sections stay out of this proposal.",
+      "alreadyVoting": "Already on voting",
+      "alreadyRatified": "Already ratified",
+      "noDraft": "No draft yet",
+      "draftReady": "Draft ready"
+    },
+    "error": {
+      "load": "Could not load Space Context.",
+      "retry": "Try again",
+      "import": "Could not import from Space Memory."
+    },
+    "success": {
+      "imported": "Imported a Mission draft from Space Memory."
+    }
   }
 }

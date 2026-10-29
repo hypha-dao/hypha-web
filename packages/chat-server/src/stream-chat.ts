@@ -32,6 +32,11 @@ import {
 } from './home-spoken-script';
 import { loadMemberHomeFacts } from './load-member-home-facts';
 import {
+  buildSpaceContextSpecialistPrompt,
+  getSpaceContextSection,
+} from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
+import {
   buildSpaceContextSnapshot,
   loadSignedInMemberBrief,
 } from './presence-brief';
@@ -1156,6 +1161,7 @@ export type ChatStreamCallbacks = {
   };
   memberHomeVisit?: 'welcome_back' | 'first_open' | null;
   memberHomePartOfDay?: 'morning' | 'afternoon' | 'evening' | 'night' | null;
+  spaceContext?: ChatRequestPayload['spaceContext'];
 };
 
 function sanitizeMessagesToTextOnly(
@@ -1429,6 +1435,7 @@ export async function createChatStreamResult(
     memberHomeMemory,
     memberHomeVisit,
     memberHomePartOfDay,
+    spaceContext,
   }: ChatStreamCallbacks,
 ): Promise<
   ReturnType<typeof streamText> & {
@@ -1583,6 +1590,32 @@ export async function createChatStreamResult(
     spaceContextSnapshot,
     memberBrief,
   );
+  let spaceContextSpecialistPrompt: string | null = null;
+  if (!memberHomeRecord && requestedSpaceSlug && spaceContext?.sectionKey) {
+    try {
+      const detail = await getSpaceContextSection(
+        {
+          spaceSlug: requestedSpaceSlug,
+          sectionKey: spaceContext.sectionKey,
+        },
+        { db },
+      );
+      if (detail) {
+        spaceContextSpecialistPrompt = buildSpaceContextSpecialistPrompt({
+          sectionKey: spaceContext.sectionKey,
+          spaceTitle: activeSpaceTitle?.trim() || requestedSpaceSlug,
+          spaceSlug: requestedSpaceSlug,
+          currentMarkdown: detail.section.markdown,
+          specialistMemory: detail.specialistMemory?.memoryMarkdown ?? '',
+        });
+      }
+    } catch (error) {
+      console.warn('[chat][space-context-specialist] failed', {
+        debugRequestId,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
   const onboardingLocaleDirective = buildOnboardingLocaleDirective(
     normalizedConversationContext?.mode === 'onboarding_setup'
       ? normalizedConversationContext.locale
@@ -1723,6 +1756,10 @@ Forbidden, including close paraphrases: naming or continuing a signal or proposa
           : ''
       }`
     : `${effectiveSystemPrompt}${
+        spaceContextSpecialistPrompt
+          ? `\n\n${spaceContextSpecialistPrompt}`
+          : ''
+      }${
         proposalFormStateDirective ? `\n\n${proposalFormStateDirective}` : ''
       }${
         activeGovernanceProposalDirective

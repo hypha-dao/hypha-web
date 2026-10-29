@@ -76,6 +76,8 @@ export function NavigationTabs({
           return tTreasury('rewardsSection.title');
         case 'memory':
           return tCoherence('spaceMemory');
+        case 'context':
+          return t('context');
         case 'ecosystem-navigation':
           return tNav('ecosystem');
         default:
