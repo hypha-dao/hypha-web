@@ -1386,30 +1386,13 @@ export function sumConversationUnread(client: MatrixClient | null) {
 
 export { notifyConversationUnreadChanged };
 
-let messagesScreenCount = 0;
-const messagesScreenCountListeners = new Set<() => void>();
-
-/** New messages in All messages. The nav badge reads this, not the inbox size. */
-export function publishMessagesScreenCount(count: number) {
-  const next = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
-  if (next === messagesScreenCount) return;
-  messagesScreenCount = next;
-  for (const listener of messagesScreenCountListeners) listener();
-}
-
+/**
+ * Unread total for the Messages nav badge. Follows Matrix receipts live so the
+ * badge updates when a message arrives — not only after opening Messages.
+ * Same rooms as the All-messages people list (typed DMs / People groups).
+ */
 export function useMessagesScreenCount() {
-  const [count, setCount] = useState(messagesScreenCount);
-
-  useEffect(() => {
-    const sync = () => setCount(messagesScreenCount);
-    messagesScreenCountListeners.add(sync);
-    sync();
-    return () => {
-      messagesScreenCountListeners.delete(sync);
-    };
-  }, []);
-
-  return count;
+  return useConversationUnreadCount();
 }
 
 export function useConversationUnreadCount() {
@@ -2550,10 +2533,6 @@ export function MyConnections({
         !needle &&
         section !== 'archived' &&
         (picking || inboxFilter === 'all' || inboxFilter === 'direct')));
-  useEffect(() => {
-    if (section !== 'messages' || picking || listLoading) return;
-    publishMessagesScreenCount(inboxView.counts.all.unread);
-  }, [inboxView.counts.all.unread, listLoading, picking, section]);
   useEffect(() => {
     const root = inboxListRef.current;
     if (!root || section !== 'messages' || picking) return;
