@@ -1803,7 +1803,7 @@ export async function createChatStreamResult(
           if (stepNumber > 0 && memberHomeCard && cardShown) {
             return {
               toolChoice: 'none' as const,
-              system: `${homeSystem}\n\nThe card is already placed above. Write three or four short sentences now. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Do not call a tool. Do not mention the card.`,
+              system: `${homeSystem}\n\nThe item is already on screen. Write three or four short sentences about the person and what they need now. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Do not call a tool. Never say card, screen, above, below, or button.`,
             };
           }
           return {};

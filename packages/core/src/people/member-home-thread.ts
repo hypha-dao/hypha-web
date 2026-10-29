@@ -1011,6 +1011,42 @@ function mostSpecificSpaceTitles(
 }
 
 /**
+ * English contractions and fillers that look like "Name's" / "Name has".
+ * "Here's the card…" must not claim a creator named "Here".
+ */
+const CLAIMED_CREATOR_STOPWORDS = new Set([
+  'here',
+  'there',
+  'that',
+  'this',
+  'what',
+  'when',
+  'where',
+  'which',
+  'who',
+  'why',
+  'how',
+  'it',
+  'he',
+  'she',
+  'we',
+  'they',
+  'let',
+  'one',
+  'someone',
+  'anyone',
+  'everyone',
+  'somebody',
+  'anybody',
+  'everybody',
+  'nobody',
+  'something',
+  'anything',
+  'everything',
+  'nothing',
+]);
+
+/**
  * Given names the reply treats as authors ("Edgar's thread", "Edgar has put…").
  * Uses capital letters in the original so "space's agreements" is not a person.
  */
@@ -1028,7 +1064,8 @@ function claimedCreatorGivens(text: string): string[] {
   for (const pattern of patterns) {
     for (const match of text.matchAll(pattern)) {
       const given = foldHomeText(match[1] ?? '');
-      if (given.length >= 4) found.add(given);
+      if (given.length < 4 || CLAIMED_CREATOR_STOPWORDS.has(given)) continue;
+      found.add(given);
     }
   }
   return [...found];
