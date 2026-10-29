@@ -825,7 +825,7 @@ function CurrencyLine({
 
 function LinksLine({
   text,
-  muted,
+  muted: _muted,
   canEdit,
   links,
   onSave,
