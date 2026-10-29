@@ -71,6 +71,7 @@ import { countIncomingUnreadMessages } from '../../common/human-chat-panel/conve
 import { contentMentionsMatrixUser } from '../../../../core/src/matrix/mentions';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { scrollMainColumnTo } from '../../common/main-column-scroll';
+import { useChainScrollAtEdge } from '../../common/chain-scroll-at-edge';
 import {
   CONVERSATION_UNREAD_EVENT,
   notifyConversationUnreadChanged,
@@ -2889,7 +2890,7 @@ export function MyConnections({
                 'w-full shrink-0 lg:w-80',
                 picking || inboxChannelOpen
                   ? 'hidden lg:block'
-                  : 'narrow-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain lg:flex-none lg:overflow-visible',
+                  : 'lg:flex-none lg:overflow-visible',
               )}
             >
               <MessagesInboxFilters
@@ -2902,7 +2903,7 @@ export function MyConnections({
           <div
             data-messages-list-frame=""
             className={cn(
-              'min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden',
+              'min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-visible lg:overflow-hidden',
               // Sticky + viewport height from MessagesViewportLock so the
               // list scrolls inside while the page still moves.
               'lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]',
@@ -3366,14 +3367,23 @@ function MemberList({
 }) {
   const tInbox = useTranslations('Connections');
   const tTypes = useTranslations('CoherenceTab.types');
+  const chainScroll = useChainScrollAtEdge();
+  const setListRef = useCallback(
+    (node: HTMLUListElement | null) => {
+      chainScroll(node);
+      if (typeof scrollRef === 'function') scrollRef(node);
+      else if (scrollRef) scrollRef.current = node;
+    },
+    [chainScroll, scrollRef],
+  );
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-none border border-border bg-background">
+    <section className="flex min-h-0 flex-1 flex-col overflow-visible rounded-none border border-border bg-background lg:overflow-hidden">
       <h2 className="shrink-0 border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {title}
       </h2>
       <ul
-        ref={scrollRef}
-        className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        ref={setListRef}
+        className="narrow-scrollbar min-h-0 flex-1 overflow-visible lg:overflow-y-auto lg:overscroll-contain"
       >
         {rows.map((row) => {
           const previewText = previewForInboxDisplay(row.preview);

@@ -31,6 +31,7 @@ import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { spaceMemoryListHeight } from './space-memory-list-height';
+import { useChainScrollAtEdge } from '../../common/chain-scroll-at-edge';
 
 type SpaceMemorySectionProps = {
   spaceSlug: string;
@@ -95,6 +96,14 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   const branchChosen = React.useRef(false);
   const listFrameRef = React.useRef<HTMLDivElement | null>(null);
   const listScrollRef = React.useRef<HTMLDivElement | null>(null);
+  const chainScroll = useChainScrollAtEdge();
+  const setListScroll = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      listScrollRef.current = node;
+      chainScroll(node);
+    },
+    [chainScroll],
+  );
   const listEndRef = React.useRef<HTMLLIElement | null>(null);
 
   const stateLabel = React.useCallback(
@@ -453,11 +462,11 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
             <div
               ref={listFrameRef}
               data-space-memory-list-frame=""
-              className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-border bg-background lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]"
+              className="flex min-h-0 min-w-0 flex-1 flex-col overflow-visible border border-border bg-background lg:overflow-hidden lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]"
             >
               <div
-                ref={listScrollRef}
-                className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain"
+                ref={setListScroll}
+                className="narrow-scrollbar min-h-0 flex-1 overflow-visible lg:overflow-y-auto lg:overscroll-contain"
               >
                 {activeRows.length === 0 ? (
                   <div className="px-4 py-6">
