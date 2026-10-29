@@ -617,12 +617,14 @@ export function channelRowsFromSnapshots(
       continue;
     }
     // Assignees, the signal team, and people who were mentioned are notified
-    // even when nobody has written in the room lately. Open proposal chats
-    // stay visible the same way for members who can vote. Other channels stay
-    // hidden until they have a message in the last three months.
-    if (
+    // even when nobody has written in the room lately. Proposal chats stay
+    // visible the same way once someone has written — empty rooms would flood
+    // the inbox. Other channels stay hidden until they have a message in the
+    // last three months.
+    if (place.kind === 'proposal') {
+      if (!snapshot.preview.trim()) continue;
+    } else if (
       place.kind !== 'signal' &&
-      place.kind !== 'proposal' &&
       !channelHasRecentActivity(snapshot.lastTs, now)
     ) {
       continue;
