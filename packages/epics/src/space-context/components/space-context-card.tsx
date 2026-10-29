@@ -2,6 +2,7 @@
 
 import {
   headingForSectionKey,
+  stripMatchingLeadingHeading,
   type SpaceContextSectionKey,
   type SpaceContextSectionRecord,
 } from '@hypha-platform/core/client';
@@ -69,7 +70,7 @@ export function SpaceContextCard({
                 )}
               >
                 <MemoryProse
-                  source={section.markdown}
+                  source={stripMatchingLeadingHeading(section.markdown, title)}
                   className="text-2 leading-relaxed text-neutral-12"
                 />
               </div>
@@ -124,11 +125,11 @@ function footerCopy(
     });
   }
   if (section.status === 'draft') {
-    if (section.contributorCount > 0) {
-      return t('card.draftContributors', { count: section.contributorCount });
-    }
     if (section.lastEditorName) {
       return t('card.draftEditor', { name: section.lastEditorName });
+    }
+    if (section.contributorCount > 0) {
+      return t('card.draftContributors', { count: section.contributorCount });
     }
     return t('card.draftMeta');
   }

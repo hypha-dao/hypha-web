@@ -39,16 +39,37 @@ import {
   getCreateRouteSegmentForProposalLabel,
 } from '../../utils/resubmit-proposal-template';
 
+function isVoteFinalized(
+  executed?: boolean,
+  expired?: boolean,
+  proposalStatus?: string | null,
+): boolean {
+  return Boolean(
+    executed ||
+      expired ||
+      proposalStatus === 'accepted' ||
+      proposalStatus === 'rejected',
+  );
+}
+
 function formatTimeRemaining(
   endTime: string,
   tProposalDetails: any,
   executed?: boolean,
   expired?: boolean,
+  proposalStatus?: string | null,
 ): string {
-  const end = new Date(endTime);
-
-  if (isPast(end) || executed || expired) {
+  if (isVoteFinalized(executed, expired, proposalStatus)) {
     return tProposalDetails('voting.voteClosed');
+  }
+
+  const end = new Date(endTime);
+  if (!endTime || Number.isNaN(end.getTime())) {
+    return tProposalDetails('voting.voteClosingSoon');
+  }
+
+  if (isPast(end)) {
+    return tProposalDetails('voting.voteClosingSoon');
   }
 
   const duration = intervalToDuration({
@@ -592,10 +613,11 @@ export const FormVoting = ({
                 tProposalDetails,
                 executed,
                 expired,
+                proposalStatus,
               )}
             </div>
           </div>
-          {executed || expired || isPast(new Date(endTime)) ? null : (
+          {isVoteFinalized(executed, expired, proposalStatus) ? null : (
             <div className="flex flex-col gap-2 items-end">
               <div className="flex gap-2">
                 <Button

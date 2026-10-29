@@ -5609,7 +5609,7 @@
       "ratifiedMeta": "Ratified · Agreement #{agreement}",
       "proposedMeta": "On voting · {title}",
       "proposalFallback": "Proposal",
-      "draftContributors": "Draft · {count} contributors",
+      "draftContributors": "Нацрт · {count, plural, one {# соработник} other {# соработници}}",
       "draftEditor": "Draft · {name}",
       "draftMeta": "Draft",
       "viewProposal": "View proposal",

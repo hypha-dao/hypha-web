@@ -125,7 +125,13 @@ export function useSpaceContext(spaceSlug: string | undefined) {
       }
       return (await response.json()) as SpaceContextOverview;
     },
-    { revalidateOnFocus: true },
+    {
+      revalidateOnFocus: true,
+      refreshInterval: (latest) =>
+        latest?.sections.some((section) => section.status === 'proposed')
+          ? 15_000
+          : 0,
+    },
   );
 
   return {

@@ -153,18 +153,18 @@ export function SpaceContextChatPanel({
         markdown: draft,
         getAccessToken,
       });
-      await refresh();
-      await onDraftSaved?.();
       setDraftDirty(false);
       setSavedFlash(true);
+      setSaving(false);
       if (savedFlashTimer.current) clearTimeout(savedFlashTimer.current);
       savedFlashTimer.current = setTimeout(() => setSavedFlash(false), 2500);
+      await refresh();
+      await onDraftSaved?.();
       return true;
     } catch {
       setSaveError(t('error.save'));
-      return false;
-    } finally {
       setSaving(false);
+      return false;
     }
   };
 
@@ -289,7 +289,9 @@ export function SpaceContextChatPanel({
           <p className="text-2 text-success-11">{t('success.saved')}</p>
         ) : null}
 
-        {canMutate && detail?.section.status !== 'proposed' ? (
+        {canMutate &&
+        detail?.section.status !== 'proposed' &&
+        detail?.section.status !== 'ratified' ? (
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
@@ -338,10 +340,8 @@ function ChatComposer({
         const next = value.trim();
         if (!next || pending || disabled) return;
         setPending(true);
+        setValue('');
         void onSend(next)
-          .then(() => {
-            setValue('');
-          })
           .catch(() => {
             setValue(next);
           })

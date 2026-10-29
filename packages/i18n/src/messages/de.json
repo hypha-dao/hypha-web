@@ -5622,7 +5622,7 @@
       "ratifiedMeta": "Ratifiziert · Agreement #{agreement}",
       "proposedMeta": "In Abstimmung · {title}",
       "proposalFallback": "Vorschlag",
-      "draftContributors": "Entwurf · {count} Beitragende",
+      "draftContributors": "Entwurf · {count, plural, one {# Beitragender} other {# Beitragende}}",
       "draftEditor": "Entwurf · {name}",
       "draftMeta": "Entwurf",
       "viewProposal": "Vorschlag ansehen",

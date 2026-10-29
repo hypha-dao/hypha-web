@@ -5627,7 +5627,7 @@
       "ratifiedMeta": "Ratified · Agreement #{agreement}",
       "proposedMeta": "On voting · {title}",
       "proposalFallback": "Proposal",
-      "draftContributors": "Draft · {count} contributors",
+      "draftContributors": "Utkast · {count, plural, one {# bidragsyter} other {# bidragsytere}}",
       "draftEditor": "Draft · {name}",
       "draftMeta": "Draft",
       "viewProposal": "View proposal",

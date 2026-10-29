@@ -5636,7 +5636,7 @@
       "ratifiedMeta": "Ratified · Agreement #{agreement}",
       "proposedMeta": "On voting · {title}",
       "proposalFallback": "Proposal",
-      "draftContributors": "Draft · {count} contributors",
+      "draftContributors": "Borrador · {count, plural, one {# colaborador} other {# colaboradores}}",
       "draftEditor": "Draft · {name}",
       "draftMeta": "Draft",
       "viewProposal": "View proposal",

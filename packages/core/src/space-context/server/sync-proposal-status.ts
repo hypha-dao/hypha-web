@@ -45,7 +45,9 @@ export async function syncSpaceContextProposalStatuses(
   const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
   const outcomes =
     space?.web3SpaceId != null
-      ? await fetchProposalOutcomeSetsForSpace(space.web3SpaceId)
+      ? await fetchProposalOutcomeSetsForSpace(space.web3SpaceId, {
+          blockTag: 'latest',
+        })
       : null;
 
   for (const doc of docs) {

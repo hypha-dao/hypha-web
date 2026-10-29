@@ -5618,7 +5618,7 @@
       "ratifiedMeta": "Ratified · Agreement #{agreement}",
       "proposedMeta": "On voting · {title}",
       "proposalFallback": "Proposal",
-      "draftContributors": "Draft · {count} contributors",
+      "draftContributors": "Brouillon · {count, plural, one {# contributeur} other {# contributeurs}}",
       "draftEditor": "Draft · {name}",
       "draftMeta": "Draft",
       "viewProposal": "View proposal",
