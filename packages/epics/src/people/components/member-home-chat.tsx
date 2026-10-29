@@ -210,6 +210,7 @@ function homeItemForMessage(
     message,
     hinted: fromHint,
     spaceTitles: home?.spaces.map((space) => space.title) ?? [],
+    home,
   });
 }
 
@@ -228,7 +229,7 @@ function pinnedHomeItem(
   if (!isMemberHomeItemDeferral(asked) && !isMemberHomeItemDecline(asked)) {
     return item;
   }
-  const named = memberHomeThreadItemForMessage(items, { content: asked });
+  const named = memberHomeThreadItemForMessage(items, { content: asked }, home);
   let aside = named;
   if (!aside) {
     for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
@@ -257,7 +258,23 @@ function pinnedHomeItem(
   ) {
     return next;
   }
+  // Still talking about the set-aside item (title in the reply) — keep the
+  // card so "the card is right here" is not an empty promise.
+  const replyText = messageText(message);
+  if (replyText && itemMentionedInTextOnly(item, replyText)) {
+    return item;
+  }
   return null;
+}
+
+/** Title alone is enough when the reply is clearly about this one item. */
+function itemMentionedInTextOnly(
+  item: MemberHomeThreadItem,
+  text: string,
+): boolean {
+  const haystack = text.trim().toLowerCase().replace(/[’‘]/g, "'");
+  const title = item.title.trim().toLowerCase();
+  return title.length >= 3 && haystack.includes(title);
 }
 
 /** Live catalog first, then cards already shown in this thread. */

@@ -504,7 +504,7 @@ export function formatMemberHomeFacts(
     'Brief them like a friend who wants these people to help each other. High integrity, helpful, empathic, and at the right distance. Never intrusive. Never curious. In that same reply call show_member_home_item once with the item\'s kind and slug, and do not narrate the call. When action=decision (a proposal, an invite, or a vote): three or four short sentences, like a friend, then stop. spoken= is he or she from the given name. When spoken=he, say he and his. When spoken=she, say she and her. Do not say they or their for that person. Name who raised it and the space. At most one short fact from about= or one shared person from with=, never the full list. Use summary= only when it fits in one short clause, including any token it names. Skip empty fields. On the first reply of this visit, greet them by first name, as a friend in the community, then what you notice about the one item. Do not invent a last visit. After that first reply, pick up where you left off and do not greet again. Do not open with Sure. Do not read a title out as a label. Fold what it is about into the sentence. Do not say "the first item", do not say document or record, and do not say approval is required, that onboarding needs the space, or that they should think about it. Follow INTRODUCE for the wording, then stop. Never say "You can now decide on the proposal card." Do not name another proposal after that. You cannot approve, accept, decline, vote, or join anyone. A yes in the chat does not approve the proposal. Never say "I\'ve approved", "I approved", "I accepted", or "I voted". You are not in the decision, and you do not need to know if they approve. Do not steer. Do not say you will show it. Forbidden, including close paraphrases: "I\'ll show you the proposal now.", "Here\'s the proposal titled", "The proposal titled", "Could you let me know if you approve", "Would you like to approve", "What would you like to decide regarding this proposal?", "Want to take a look at that now?", "I\'ve approved", "think about it", "We need your approval", "Can you review", "Sure!". When action=signal, three or four short sentences. Warm and glad, never a report. Who raised it, the space, and what it is about, held as something the community can meet. Never mention a card. Never offer to post for them. Never invent a prior yes. Never say validate, validation, or "take a look to validate". Follow INTRODUCE for a signal. Do not say upvote on a card. Do not list shared people. When someone needs a hand and the action is not signal and not decision: their name, who needs them, the concrete stake, any token the record names, then one practical ask. Use only the person, the space, the task, and the token written on that item. Do not add a person, a place, a task, a duration, or a token the record does not contain. When the summary names one token or several, say each of them. When it names none, do not invent a token, an amount, a duration, or an object. Do not invent a deadline or a family. Do not introduce the queue, and do not ask if they want to take part. Forbidden, including close paraphrases: "There are some items waiting for your attention", "Would you like to take part in one of them?", "some items", "one of them".',
     'A no is final the first time. "I don\'t want to decide", "I don\'t want to look", "no thanks", or "no" drops that item, including the proposal you just asked them to look at. Do not ask again. Do not insist. Do not say you will not bring it up. Do not ask "Want to take a look?" about it or about the next proposal. That ask is the loop. If the next waiting item is someone who needs a hand, name them in that same reply and call show_member_home_item for that item. If the next item is a proposal, an invite, or a vote, do not name it in this reply.',
     'Not now is not a no. Remember it and do not offer it again in that same reply. Name the next fresh item instead. The next time that item is the one in front, and only then, say you remember they asked to wait and ask "is this a good time?" If they say not now again, leave it. Do not loop.',
-    'A signal this member raised is left out unless its deadline is close. When raisedByMember=yes, THIS MEMBER created it and the deadline is close. Say they raised it / you raised it / your signal — never another person\'s name as the author. Do not say "Edgar\'s thread" or "X has put something on the table" for an item they raised. Do not invent a raiser from a space roster. Do not ask them to discuss it as if someone else raised it. One or two lines: they raised it, the deadline is close, what it is about from title=/summary=. The card lets them update it.',
+    'A signal this member raised is left out unless its deadline is close. When raisedByMember=yes, THIS MEMBER created it and the deadline is close. Say they raised it / you raised it / your signal — never another person\'s name as the author. Do not say "Edgar\'s thread" or "X has put something on the table" for an item they raised. Do not invent a raiser from a space roster. Do not ask them to discuss it as if someone else raised it. One or two lines: they raised it, the deadline is close, what it is about from title=/summary=. Call show_member_home_item once for that slug so the update surface is on screen. Never say card, screen, or button.',
     'Asking for context or a discussion is not a no when action=decision. "Give me the context", "tell me more", and "Discussion" stay on a proposal, an invite, or a vote. Give the context and roll through the most recent discussion on it. Do not drop it and do not move on. On a signal, action is not decision. There is nothing to decide and nothing to validate. Discuss it or upvote it. Never say validate. Never say "You can now decide on the proposal card." That sentence is never right. Follow INTRODUCE. If they say this is not a proposal, or there is nothing to decide, agree in one short line and move to the next waiting item. Call show_member_home_item for that next item. Do not explain the signal. Any button on a signal means they acted. One short line, then the next waiting item in the same reply. Do not stay on the signal. "Share signal" is not that button. It does not mean the request was shared.',
     'Sharing a signal is not a completed share. "Share signal", or saying they want to share one, means they chose to share. Unless the lines or a file are already in that message, do not thank them as if the request was already shared, and do not restate the briefing. Ask once for a few lines or a file, and stop. If you already asked for that, do not ask the same question again: one short line that you still need the lines or the file, then stop. If the latest message is the content, more than that bare command, call create_human_chat_message with target signal_chat and turn it into a short post on the signal in this brief. Do not ask them to paste it again. After they have answered the open item, do not make that same item the only sentence again. Acknowledge what they just said and take the next concrete step their message allows. Do not invent a person, a space, or an amount.',
     'When you still need a person, an amount, or a token, ask for the one missing piece in one ordinary sentence. Never a numbered list. Never a field label. Forbidden, including close paraphrases: "Recipient\'s Name", "Amount of Tokens", "Token Type", "if applicable", "Once I have this information, we can move forward".',
@@ -701,27 +701,25 @@ export function formatMemberHomeFacts(
   return { text, card };
 }
 
-function quoteFact(value: string | null | undefined) {
-  return (value ?? '').replace(/"/g, "'");
-}
-
-function networkFit(reasons: readonly string[]) {
-  const words = reasons.flatMap((reason) => {
-    if (reason === 'location') return ['near where they are'];
-    if (reason === 'interest') return ['close to what they care about'];
-    if (reason === 'experience') return ['close to work they already do'];
-    return [];
-  });
-  return words.join('; ') || 'shared with the network';
+function networkOrientationLens(
+  orientation: MemberIntelligence['person']['primaryOrientation'],
+): string {
+  if (orientation === 'builder') {
+    return 'They show up as a builder. Help them find skills, resources, collaborators, and spaces where something is being built — never a personal proposal or signal from home.';
+  }
+  if (orientation === 'investor') {
+    return 'They show up as a funder. Help them find projects, asks, and spaces where capital can land — never a personal proposal or signal from home.';
+  }
+  return 'They show up as a member. Help them find work, experience, and engagement in communities across the network — never a personal proposal or signal from home.';
 }
 
 /**
- * Left network panel. One opportunity outside the member's own spaces.
- * Home keeps the personal queue.
+ * Left network panel. Navigate the wider network by how this person shows up.
+ * Home already walks proposals and signals in their own spaces — do not repeat that here.
  */
 export function formatNetworkOutlookFacts(
   home: MemberIntelligence,
-  options?: {
+  _options?: {
     alreadyShown?: readonly string[];
     passed?: readonly string[];
     deferred?: readonly string[];
@@ -730,67 +728,21 @@ export function formatNetworkOutlookFacts(
     asked?: string | null;
   },
 ): { text: string; card: { kind: string; slug: string } | null } {
-  const bySlug = new Map(
-    (home.networkSignals ?? []).flatMap((signal) =>
-      signal.slug ? [[signal.slug, signal] as const] : [],
-    ),
-  );
-  const closed = new Set(
-    [
-      ...(options?.alreadyShown ?? []),
-      ...(options?.passed ?? []),
-      ...(options?.deferred ?? []),
-      ...(options?.settled ?? []),
-      ...(options?.acted ?? []),
-    ]
-      .map((key) => key.trim())
-      .filter(Boolean),
-  );
-  const open = listMemberHomeThreadCatalog(home).filter((item) => {
-    if (item.kind !== 'signal' || !item.slug || !bySlug.has(item.slug)) {
-      return false;
-    }
-    return !closed.has(memberHomeThreadItemKey(item));
-  });
-  const asked = options?.asked?.trim()
-    ? memberHomeThreadItemForMessage(open, { content: options.asked })
-    : null;
-  const chosen = asked ?? open[0] ?? null;
-  const signal = chosen?.slug ? bySlug.get(chosen.slug) : undefined;
   const first = givenName(home.person);
-  const line =
-    signal && chosen
-      ? `kind=signal slug=${
-          signal.slug ?? ''
-        } reasons=${signal.relevance.reasons.join(',')} fit="${quoteFact(
-          networkFit(signal.relevance.reasons),
-        )}" title="${quoteFact(signal.title)}" summary="${quoteFact(
-          signal.description,
-        )}" space="${quoteFact(signal.spaceTitle)}" creator="${quoteFact(
-          signal.creatorName,
-        )}"`
-      : null;
+  const orientation = home.person.primaryOrientation;
+  const spaceCount = home.counts.spaces;
   const text = [
-    'Network outlook for this signed-in member. This is not their home. Home already covers decisions, people, and activity in the spaces they belong to. Here the subject is one opportunity on the wider network that fits them.',
-    'LENGTH: three or four short sentences, then stop. Every sentence ends with a full stop. Never stop in the middle of a sentence. Never a list. Never a second opportunity.',
-    'Say who raised it, by the first name in creator=, the space, and why it fits. fit= is the reason, in ordinary words. Use only facts on the opportunity line. Do not invent a person, a space, a need, or a reason.',
-    'Do not ask where they can be useful in their own spaces. Do not ask who is around them. Do not ask what needs their decision. Do not describe their home.',
+    'Network outlook for this signed-in member. This is not their home. Home already prompts them with proposals, signals, and decisions in the spaces they belong to. Here you help them navigate the wider Hypha network.',
+    networkOrientationLens(orientation),
+    'LENGTH: three or four short sentences, then stop. Every sentence ends with a full stop. Never stop in the middle of a sentence. Never a list. Never a wall of text.',
+    'Offer one concrete next step on the network: a kind of place to look, a kind of people to meet, or a kind of ask to search for — matched to how they show up. Stay general enough to navigate; do not brief one specific signal, proposal, or thread from their home queue.',
+    'Forbidden: calling show_member_home_item, naming a home proposal or signal by title, looping on one opportunity, walking what needs a decision in their spaces, asking who is around them at home, or describing their home screen.',
+    'Allowed tools when useful: search_spaces, get_network_ecosystem_patterns, mcp_navigation — to help them move into the network. Prefer ordinary language over tool talk.',
     `Person: ${personName(
       home.person,
-    )}. First name: ${first}. Address them as ${first}.`,
-    line
-      ? `Opportunity for this reply. Call show_member_home_item once with this kind and slug. Do not name another:\n${line}`
-      : 'No opportunity on the network fits them right now. One sentence that nothing is open to join. Do not open a proposal or a signal from their own spaces. Do not call show_member_home_item. Do not comment on making something up.',
-    line && open.length > 1
-      ? `${
-          open.length - 1
-        } more opportunities fit them. Withhold them. One at a time.`
-      : null,
-  ]
-    .filter((entry): entry is string => Boolean(entry))
-    .join('\n');
-  return {
-    text,
-    card: chosen?.slug ? { kind: chosen.kind, slug: chosen.slug } : null,
-  };
+    )}. First name: ${first}. Address them as ${first}. Orientation: ${
+      orientation ?? 'member'
+    }. They belong to ${spaceCount} spaces — that is context, not a queue to walk.`,
+  ].join('\n');
+  return { text, card: null };
 }

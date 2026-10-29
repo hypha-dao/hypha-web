@@ -1196,12 +1196,27 @@ function itemInSpokenSpace(
 export function memberHomeThreadItemForMessage(
   items: readonly MemberHomeThreadItem[],
   message: { parts?: readonly unknown[]; content?: string },
+  home?: MemberIntelligence,
 ): MemberHomeThreadItem | null {
   const text = textFromParts(message.parts) || message.content?.trim() || '';
   const mentioned = itemMentionedInText(items, text);
   let toolItem: MemberHomeThreadItem | null = null;
   for (const input of toolInputs(message.parts)) {
-    const item = itemFromToolInput(items, input);
+    let item = itemFromToolInput(items, input);
+    if (
+      !item &&
+      home &&
+      input &&
+      typeof input === 'object' &&
+      ((input as { kind?: unknown }).kind === 'proposal' ||
+        (input as { kind?: unknown }).kind === 'signal') &&
+      typeof (input as { slug?: unknown }).slug === 'string'
+    ) {
+      item = memberHomeThreadItemForRef(home, {
+        kind: (input as { kind: MemberHomeCardKind }).kind,
+        slug: (input as { slug: string }).slug,
+      });
+    }
     if (!item) continue;
     toolItem = item;
     break;
@@ -1248,6 +1263,7 @@ export function memberHomeCardForSpeech(input: {
   message: { parts?: readonly unknown[]; content?: string };
   hinted?: MemberHomeThreadItem | null;
   spaceTitles?: readonly string[];
+  home?: MemberIntelligence;
 }): MemberHomeThreadItem | null {
   const { items, message } = input;
   const text = textFromParts(message.parts) || message.content?.trim() || '';
@@ -1255,8 +1271,12 @@ export function memberHomeCardForSpeech(input: {
     ...items.map((item) => item.spaceTitle),
     ...(input.spaceTitles ?? []),
   ];
-  const named = memberHomeThreadItemForMessage(items, message);
-  const wordsOnly = memberHomeThreadItemForMessage(items, { content: text });
+  const named = memberHomeThreadItemForMessage(items, message, input.home);
+  const wordsOnly = memberHomeThreadItemForMessage(
+    items,
+    { content: text },
+    input.home,
+  );
   const fromHint = input.hinted ?? null;
   const peerNames = [
     ...items.map((item) => item.creatorName),
@@ -1871,6 +1891,39 @@ export function memberHomeThreadItemForRef(
     (item) => item.kind === ref.kind && item.slug === slug,
   );
   if (fromCatalog) return fromCatalog;
+  if (ref.kind === 'signal') {
+    const signal =
+      home.signals.find((row) => row.slug === slug) ??
+      (home.networkSignals ?? []).find((row) => row.slug === slug);
+    const note = [...home.notifications, ...home.attention].find(
+      (row) => row.kind === 'signal' && row.targetSlug === slug,
+    );
+    if (!signal && !note) return null;
+    const title = (signal?.title ?? note?.title ?? '').trim();
+    const spaceTitle = (signal?.spaceTitle ?? note?.spaceTitle ?? '').trim();
+    if (!title || !spaceTitle) return null;
+    const creatorId = signal?.creatorId ?? note?.creatorId ?? null;
+    return {
+      kind: 'signal',
+      slug,
+      title,
+      spaceSlug: signal?.spaceSlug || note?.spaceSlug || '',
+      spaceTitle,
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: raisedByMember(home, creatorId),
+      spaceLogo: signal?.spaceLogo ?? note?.spaceLogo ?? null,
+      category: memberHomeSignalCategory(signal?.type, note?.category),
+      summary: signal?.description ?? note?.summary ?? null,
+      dueAt: signal?.dueAt ?? null,
+      creatorId,
+      creatorName: signal?.creatorName ?? note?.creatorName ?? null,
+      creatorAvatarUrl:
+        signal?.creatorAvatarUrl ?? note?.creatorAvatarUrl ?? null,
+      ...(typeof signal?.id === 'number' ? { signalId: signal.id } : {}),
+      ...(signal?.roomId?.trim() ? { roomId: signal.roomId.trim() } : {}),
+    };
+  }
   if (ref.kind !== 'proposal') return null;
   const proposal = home.proposals.find((row) => row.slug === slug);
   const note = [...home.notifications, ...home.attention].find(
