@@ -1843,6 +1843,89 @@ export function MemberHomeChat({
               intelligence.person.nickname ||
               t('fallbackMember');
             const promptCard = Boolean(pinnedItem || visuals || board);
+            // Card above the reply: keep the mark with the spoken line, not
+            // stranded at the top of a tall card. Card-only (still streaming)
+            // keeps the mark beside the card.
+            const markWithReply = Boolean(!mine && promptCard && visibleText);
+            const promptMedia =
+              !mine && promptCard ? (
+                <>
+                  {visuals ? (
+                    <div className="grid gap-3">
+                      {visuals.logoUrl ? (
+                        <img
+                          src={visuals.logoUrl}
+                          alt={t('generatedLogo')}
+                          className="h-24 w-24 border border-border object-cover"
+                        />
+                      ) : null}
+                      {visuals.bannerUrl ? (
+                        <img
+                          src={visuals.bannerUrl}
+                          alt={t('generatedBanner')}
+                          className="w-full max-w-md border border-border object-cover"
+                          style={{ maxHeight: 160 }}
+                        />
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {board ? (
+                    <Link
+                      href={board.href}
+                      className="inline-flex h-10 w-fit items-center border border-foreground bg-foreground px-3 text-1 tracking-[0.12em] text-background uppercase"
+                    >
+                      {t('openSignalsBoard')}
+                    </Link>
+                  ) : null}
+                  {pinnedItem ? (
+                    <MemberHomeThreadCard
+                      chat
+                      lang={lang}
+                      item={pinnedItem}
+                      done={actedKeySet.has(
+                        memberHomeThreadItemKey(pinnedItem),
+                      )}
+                      proposal={
+                        pinnedItem.kind === 'proposal'
+                          ? intelligence.proposals.find(
+                              (proposal) => proposal.slug === pinnedItem.slug,
+                            ) ?? null
+                          : null
+                      }
+                      onSettled={() => {
+                        voiceInterview.stopSpeaking();
+                      }}
+                      onAsk={(ask, hidden) => {
+                        if (hidden) {
+                          if (glideTimer.current != null) {
+                            window.clearTimeout(glideTimer.current);
+                            glideTimer.current = null;
+                          }
+                          if (arrivalFrame.current != null) {
+                            cancelAnimationFrame(arrivalFrame.current);
+                            arrivalFrame.current = null;
+                          }
+                          gliding.current = false;
+                          pinnedToEnd.current = false;
+                          arrivalBaselineIds.current = new Set(
+                            messagesRef.current.map((entry) => entry.id),
+                          );
+                          arrivalScrollStarted.current = false;
+                          arrivalScrollFinished.current = false;
+                          holdVoiceRef.current = true;
+                          setHoldVoice(true);
+                        }
+                        void send(ask, Boolean(hidden));
+                      }}
+                      onReach={(person, mode) =>
+                        mode === 'call'
+                          ? onCallPerson(person)
+                          : onChatPerson(person)
+                      }
+                    />
+                  ) : null}
+                </>
+              ) : null;
             return (
               <div key={message.id} className="grid gap-4">
                 {attached.map((widget) => (
@@ -1868,124 +1951,64 @@ export function MemberHomeChat({
                         : undefined
                     }
                     className={cn(
-                      'flex gap-3',
+                      'grid gap-3',
                       settlingIds.current.has(message.id) && 'home-send-settle',
-                      mine ? 'justify-end' : 'justify-start',
-                      oneLine ? 'items-center' : 'items-start',
                     )}
                   >
-                    {mine ? null : (
-                      <MemberHomeMark
-                        className={cn('h-8 w-8 shrink-0', !oneLine && 'mt-0.5')}
-                      />
-                    )}
+                    {markWithReply ? (
+                      <div className="grid min-w-0 gap-3 pl-11">
+                        {promptMedia}
+                      </div>
+                    ) : null}
                     <div
                       className={cn(
-                        'grid min-w-0 gap-3',
-                        mine ? 'max-w-[85%] text-right' : 'flex-1',
+                        'flex gap-3',
+                        mine ? 'justify-end' : 'justify-start',
+                        oneLine ? 'items-center' : 'items-start',
                       )}
                     >
-                      {visuals ? (
-                        <div className="grid gap-3">
-                          {visuals.logoUrl ? (
-                            <img
-                              src={visuals.logoUrl}
-                              alt={t('generatedLogo')}
-                              className="h-24 w-24 border border-border object-cover"
-                            />
-                          ) : null}
-                          {visuals.bannerUrl ? (
-                            <img
-                              src={visuals.bannerUrl}
-                              alt={t('generatedBanner')}
-                              className="w-full max-w-md border border-border object-cover"
-                              style={{ maxHeight: 160 }}
-                            />
-                          ) : null}
-                        </div>
-                      ) : null}
-                      {!mine && board ? (
-                        <Link
-                          href={board.href}
-                          className="inline-flex h-10 w-fit items-center border border-foreground bg-foreground px-3 text-1 tracking-[0.12em] text-background uppercase"
-                        >
-                          {t('openSignalsBoard')}
-                        </Link>
-                      ) : null}
-                      {!mine && pinnedItem ? (
-                        <MemberHomeThreadCard
-                          chat
-                          lang={lang}
-                          item={pinnedItem}
-                          done={actedKeySet.has(
-                            memberHomeThreadItemKey(pinnedItem),
+                      {mine ? null : (
+                        <MemberHomeMark
+                          className={cn(
+                            'h-8 w-8 shrink-0',
+                            !oneLine && 'mt-0.5',
                           )}
-                          proposal={
-                            pinnedItem.kind === 'proposal'
-                              ? intelligence.proposals.find(
-                                  (proposal) =>
-                                    proposal.slug === pinnedItem.slug,
-                                ) ?? null
-                              : null
-                          }
-                          onSettled={() => {
-                            voiceInterview.stopSpeaking();
-                          }}
-                          onAsk={(ask, hidden) => {
-                            if (hidden) {
-                              if (glideTimer.current != null) {
-                                window.clearTimeout(glideTimer.current);
-                                glideTimer.current = null;
-                              }
-                              if (arrivalFrame.current != null) {
-                                cancelAnimationFrame(arrivalFrame.current);
-                                arrivalFrame.current = null;
-                              }
-                              gliding.current = false;
-                              pinnedToEnd.current = false;
-                              arrivalBaselineIds.current = new Set(
-                                messagesRef.current.map((entry) => entry.id),
-                              );
-                              arrivalScrollStarted.current = false;
-                              arrivalScrollFinished.current = false;
-                              holdVoiceRef.current = true;
-                              setHoldVoice(true);
+                        />
+                      )}
+                      <div
+                        className={cn(
+                          'grid min-w-0 gap-3',
+                          mine ? 'max-w-[85%] text-right' : 'flex-1',
+                        )}
+                      >
+                        {!markWithReply ? promptMedia : null}
+                        {visibleText ? (
+                          <p
+                            data-home-reply-text={
+                              !mine && (promptCard || attached.length > 0)
+                                ? ''
+                                : undefined
                             }
-                            void send(ask, Boolean(hidden));
-                          }}
-                          onReach={(person, mode) =>
-                            mode === 'call'
-                              ? onCallPerson(person)
-                              : onChatPerson(person)
-                          }
+                            className={cn(
+                              'text-2 leading-relaxed whitespace-pre-wrap text-foreground',
+                              mine && 'text-right',
+                            )}
+                          >
+                            {homeMessageNodes(visibleText)}
+                          </p>
+                        ) : null}
+                      </div>
+                      {mine ? (
+                        <PersonAvatar
+                          avatarSrc={intelligence.person.avatarUrl ?? undefined}
+                          userName={memberName}
+                          size="md"
+                          shape="circle"
+                          className={cn('shrink-0', !oneLine && 'mt-0.5')}
+                          personId={intelligence.person.id}
                         />
                       ) : null}
-                      {visibleText ? (
-                        <p
-                          data-home-reply-text={
-                            !mine && (promptCard || attached.length > 0)
-                              ? ''
-                              : undefined
-                          }
-                          className={cn(
-                            'text-2 leading-relaxed whitespace-pre-wrap text-foreground',
-                            mine && 'text-right',
-                          )}
-                        >
-                          {homeMessageNodes(visibleText)}
-                        </p>
-                      ) : null}
                     </div>
-                    {mine ? (
-                      <PersonAvatar
-                        avatarSrc={intelligence.person.avatarUrl ?? undefined}
-                        userName={memberName}
-                        size="md"
-                        shape="circle"
-                        className={cn('shrink-0', !oneLine && 'mt-0.5')}
-                        personId={intelligence.person.id}
-                      />
-                    ) : null}
                   </article>
                 ) : null}
               </div>
