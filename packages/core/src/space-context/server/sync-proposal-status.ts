@@ -53,12 +53,15 @@ export async function syncSpaceContextProposalStatuses(
       doc as Document,
       outcomes,
     );
+    const withdrawn =
+      doc.web3ProposalId != null &&
+      outcomes?.withdrawn.has(Number(doc.web3ProposalId));
     if (withStatus.status === 'accepted') {
       await ratifySpaceContextSectionsByDocumentId(
         { documentId: doc.id },
         { db },
       );
-    } else if (withStatus.status === 'rejected') {
+    } else if (withStatus.status === 'rejected' || withdrawn) {
       await revertSpaceContextSectionsByDocumentId(
         { documentId: doc.id },
         { db },

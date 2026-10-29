@@ -32,8 +32,11 @@ import {
 } from './home-spoken-script';
 import { loadMemberHomeFacts } from './load-member-home-facts';
 import {
+  appendSpaceContextMessage,
   buildSpaceContextSpecialistPrompt,
+  findSpaceBySlug,
   getSpaceContextSection,
+  SPACE_CONTEXT_SPECIALISTS,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import {
@@ -105,6 +108,9 @@ export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 /** Thrown before `streamText` when deployment is missing OpenRouter credentials (matches provider default env). */
 export const MISSING_OPENROUTER_KEY_MESSAGE =
   'Hypha AI is not configured: OPENROUTER_API_KEY is missing.';
+
+export const SPACE_CONTEXT_SPECIALIST_LOAD_FAILED =
+  'Failed to load Space Context for this section.';
 
 /** Default chat model. A small model drops the home instructions. */
 const DEFAULT_OPENROUTER_CHAT_MODEL = 'deepseek/deepseek-v4.1-flash';
@@ -1593,27 +1599,32 @@ export async function createChatStreamResult(
   let spaceContextSpecialistPrompt: string | null = null;
   if (!memberHomeRecord && requestedSpaceSlug && spaceContext?.sectionKey) {
     try {
-      const detail = await getSpaceContextSection(
-        {
-          spaceSlug: requestedSpaceSlug,
-          sectionKey: spaceContext.sectionKey,
-        },
-        { db },
-      );
-      if (detail) {
-        spaceContextSpecialistPrompt = buildSpaceContextSpecialistPrompt({
-          sectionKey: spaceContext.sectionKey,
-          spaceTitle: activeSpaceTitle?.trim() || requestedSpaceSlug,
-          spaceSlug: requestedSpaceSlug,
-          currentMarkdown: detail.section.markdown,
-          specialistMemory: detail.specialistMemory?.memoryMarkdown ?? '',
-        });
+      const [space, detail] = await Promise.all([
+        findSpaceBySlug({ slug: requestedSpaceSlug }, { db }),
+        getSpaceContextSection(
+          {
+            spaceSlug: requestedSpaceSlug,
+            sectionKey: spaceContext.sectionKey,
+          },
+          { db },
+        ),
+      ]);
+      if (!space || !detail) {
+        throw new Error(SPACE_CONTEXT_SPECIALIST_LOAD_FAILED);
       }
+      spaceContextSpecialistPrompt = buildSpaceContextSpecialistPrompt({
+        sectionKey: spaceContext.sectionKey,
+        spaceTitle: space.title?.trim() || requestedSpaceSlug,
+        spaceSlug: requestedSpaceSlug,
+        currentMarkdown: detail.section.markdown,
+        specialistMemory: detail.specialistMemory?.memoryMarkdown ?? '',
+      });
     } catch (error) {
       console.warn('[chat][space-context-specialist] failed', {
         debugRequestId,
         message: error instanceof Error ? error.message : String(error),
       });
+      throw new Error(SPACE_CONTEXT_SPECIALIST_LOAD_FAILED);
     }
   }
   const onboardingLocaleDirective = buildOnboardingLocaleDirective(
@@ -1911,6 +1922,27 @@ Forbidden, including close paraphrases: naming or continuing a signal or proposa
       });
     },
     onFinish: (event) => {
+      const assistantText =
+        typeof event.text === 'string' ? event.text.trim() : '';
+      if (assistantText && requestedSpaceSlug && spaceContext?.sectionKey) {
+        void appendSpaceContextMessage(
+          {
+            spaceSlug: requestedSpaceSlug,
+            sectionKey: spaceContext.sectionKey,
+            role: 'assistant',
+            content: assistantText,
+            agentKey:
+              SPACE_CONTEXT_SPECIALISTS[spaceContext.sectionKey].agentKey,
+          },
+          { db },
+        ).catch((error) => {
+          console.warn('[chat][space-context-specialist] persist failed', {
+            debugRequestId,
+            message: error instanceof Error ? error.message : String(error),
+          });
+        });
+      }
+
       if (!OPENROUTER_DEBUG) return;
 
       const generationId = event.response?.id;

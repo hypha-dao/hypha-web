@@ -205,7 +205,7 @@ export async function appendSpaceContextMessageRequest({
 }: {
   spaceSlug: string;
   sectionKey: SpaceContextSectionKey;
-  role: 'user' | 'assistant' | 'system';
+  role: 'user';
   content: string;
   agentKey?: string;
   getAccessToken?: () => Promise<string | null | undefined>;

@@ -21,7 +21,7 @@ import { useTranslations } from 'next-intl';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useLocalizedProposalResolver } from '../../governance/hooks/use-localized-proposal-resolver';
-import { useScrollToErrors } from '../../hooks';
+import { useResubmitProposalData, useScrollToErrors } from '../../hooks';
 import {
   proposeSpaceContextSectionsRequest,
   useSpaceContext,
@@ -55,7 +55,7 @@ export function CreateContextRatifyForm({
   const { jwt } = useJwt();
   const { getAccessToken } = useAuthentication();
   const config = useConfig();
-  const { overview } = useSpaceContext(spaceSlug);
+  const { overview, error, refresh } = useSpaceContext(spaceSlug);
   const {
     createAgreement,
     reset,
@@ -84,9 +84,15 @@ export function CreateContextRatifyForm({
       (section.status === 'not_started' && section.markdown.trim()),
   );
   const [selected, setSelected] = React.useState<SpaceContextSectionKey[]>([]);
+  const initializedRef = React.useRef(false);
+  const titleTouchedRef = React.useRef(false);
+  const descriptionTouchedRef = React.useRef(false);
+  const linkedRef = React.useRef(false);
+  const [linkError, setLinkError] = React.useState(false);
 
   React.useEffect(() => {
-    if (selected.length > 0 || !overview) return;
+    if (initializedRef.current || !overview) return;
+    initializedRef.current = true;
     const fromQuery = selectable
       .map((section) => section.sectionKey)
       .filter((key) => preselected.includes(key));
@@ -95,7 +101,7 @@ export function CreateContextRatifyForm({
         ? fromQuery
         : selectable.map((section) => section.sectionKey),
     );
-  }, [overview, preselected, selectable, selected.length]);
+  }, [overview, preselected, selectable]);
 
   const form = useForm<FormValues>({
     resolver,
@@ -107,7 +113,36 @@ export function CreateContextRatifyForm({
     },
   });
 
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    'ratify-context',
+  );
+
   useScrollToErrors(form, formRef);
+
+  React.useEffect(() => {
+    if (person?.id) {
+      form.setValue('creatorId', person.id);
+    }
+  }, [form, person?.id]);
+
+  React.useEffect(() => {
+    if (resubmitKey) {
+      titleTouchedRef.current = true;
+      descriptionTouchedRef.current = true;
+    }
+  }, [resubmitKey]);
+
+  React.useEffect(() => {
+    const subscription = form.watch((_values, info) => {
+      if (info?.type !== 'change') return;
+      if (info.name === 'title') titleTouchedRef.current = true;
+      if (info.name === 'description') descriptionTouchedRef.current = true;
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   React.useEffect(() => {
     if (!overview) return;
@@ -118,39 +153,55 @@ export function CreateContextRatifyForm({
     const titles = chosen.map((section) =>
       headingForSectionKey(section.sectionKey),
     );
-    if (!form.getValues('title')) {
+    if (!titleTouchedRef.current) {
       const generated = t('proposeForm.title', {
         sections: titles.join(', '),
       });
       form.setValue(
         'title',
         generated.length > 50 ? t('proposeForm.titleShort') : generated,
+        { shouldDirty: false },
       );
     }
-    form.setValue(
-      'description',
-      buildProposalMarkdown(
-        chosen.map((section) => ({
-          key: section.sectionKey,
-          title: headingForSectionKey(section.sectionKey),
-          markdown: section.markdown,
-        })),
-      ).slice(0, 4000),
-    );
+    if (!descriptionTouchedRef.current) {
+      form.setValue(
+        'description',
+        buildProposalMarkdown(
+          chosen.map((section) => ({
+            key: section.sectionKey,
+            title: headingForSectionKey(section.sectionKey),
+            markdown: section.markdown,
+          })),
+        ).slice(0, 4000),
+        { shouldDirty: false },
+      );
+    }
   }, [form, overview, selected, t]);
 
-  const linkedRef = React.useRef(false);
+  const linkSectionsToProposal = React.useCallback(
+    async (documentId: number) => {
+      if (linkedRef.current || selected.length === 0) return;
+      setLinkError(false);
+      try {
+        await proposeSpaceContextSectionsRequest({
+          spaceSlug,
+          sectionKeys: selected,
+          documentId,
+          getAccessToken,
+        });
+        linkedRef.current = true;
+      } catch {
+        setLinkError(true);
+      }
+    },
+    [getAccessToken, selected, spaceSlug],
+  );
+
   React.useEffect(() => {
     const documentId = agreement?.id;
     if (!documentId || linkedRef.current || selected.length === 0) return;
-    linkedRef.current = true;
-    void proposeSpaceContextSectionsRequest({
-      spaceSlug,
-      sectionKeys: selected,
-      documentId,
-      getAccessToken,
-    });
-  }, [agreement?.id, getAccessToken, selected, spaceSlug]);
+    void linkSectionsToProposal(documentId);
+  }, [agreement?.id, linkSectionsToProposal, selected.length]);
 
   const handleCreate = async (data: FormValues) => {
     if (selected.length === 0) return;
@@ -201,6 +252,36 @@ export function CreateContextRatifyForm({
             stickyHeaderTitle={t('proposeForm.header')}
             progress={progress}
           />
+
+          {error ? (
+            <div className="border border-error-6 bg-background-2 px-4 py-6">
+              <p className="text-2 text-error-11">{t('error.load')}</p>
+              <Button
+                type="button"
+                className="mt-3"
+                variant="outline"
+                colorVariant="neutral"
+                onClick={() => void refresh()}
+              >
+                {t('error.retry')}
+              </Button>
+            </div>
+          ) : null}
+
+          {linkError && agreement?.id ? (
+            <div className="border border-error-6 bg-background-2 px-4 py-6">
+              <p className="text-2 text-error-11">{t('error.link')}</p>
+              <Button
+                type="button"
+                className="mt-3"
+                variant="outline"
+                colorVariant="neutral"
+                onClick={() => void linkSectionsToProposal(agreement.id)}
+              >
+                {t('error.retry')}
+              </Button>
+            </div>
+          ) : null}
 
           <fieldset className="space-y-3">
             <legend className="text-[11px] font-semibold uppercase tracking-[0.12em]">

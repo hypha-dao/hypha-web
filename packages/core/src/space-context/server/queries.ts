@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import {
   documents,
   people,
@@ -158,22 +158,25 @@ export async function getSpaceContextSection(
     .from(spaceContextSectionMessages)
     .leftJoin(people, eq(people.id, spaceContextSectionMessages.personId))
     .where(eq(spaceContextSectionMessages.sectionId, section.id))
-    .orderBy(asc(spaceContextSectionMessages.createdAt))
+    .orderBy(desc(spaceContextSectionMessages.createdAt))
     .limit(200);
 
-  const messages: SpaceContextMessageRecord[] = messageRows.map((row) => ({
-    id: row.id,
-    sectionId: row.sectionId,
-    personId: row.personId,
-    personName: row.personName,
-    agentKey: row.agentKey,
-    role: row.role === 'assistant' || row.role === 'system' ? row.role : 'user',
-    content: row.content,
-    createdAt:
-      row.createdAt instanceof Date
-        ? row.createdAt.toISOString()
-        : new Date(row.createdAt).toISOString(),
-  }));
+  const messages: SpaceContextMessageRecord[] = messageRows
+    .reverse()
+    .map((row) => ({
+      id: row.id,
+      sectionId: row.sectionId,
+      personId: row.personId,
+      personName: row.personName,
+      agentKey: row.agentKey,
+      role:
+        row.role === 'assistant' || row.role === 'system' ? row.role : 'user',
+      content: row.content,
+      createdAt:
+        row.createdAt instanceof Date
+          ? row.createdAt.toISOString()
+          : new Date(row.createdAt).toISOString(),
+    }));
 
   const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
   if (!space) return null;

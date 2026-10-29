@@ -966,6 +966,36 @@ server.registerTool(
       };
     }
     try {
+      const host = await findSpaceBySlug(
+        { slug: parsed.data.space_slug },
+        { db },
+      );
+      if (!host) {
+        const data = {
+          found: false,
+          space_slug: parsed.data.space_slug,
+          error: 'Space not found',
+        };
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `No space found for slug "${parsed.data.space_slug}".`,
+            },
+          ],
+          structuredContent: data,
+        };
+      }
+
+      const authToken = process.env.HYPHA_MCP_AUTH_TOKEN;
+      const access = await checkSpaceAccessForSpace(host, authToken);
+      if (!access.hasAccess) {
+        return {
+          content: [{ type: 'text', text: access.message }],
+          isError: true,
+        };
+      }
+
       const overview = await listSpaceContextSections(
         { spaceSlug: parsed.data.space_slug },
         { db },

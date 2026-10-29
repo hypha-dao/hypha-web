@@ -68,7 +68,6 @@ export function SpaceContextChatPanel({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
   const hydratedKey = useRef<string | null>(null);
-  const persistedAssistantIds = useRef(new Set<string>());
   const savedFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const transport = useMemo(
@@ -120,32 +119,6 @@ export function SpaceContextChatPanel({
   }, []);
 
   const isStreaming = status === 'streaming' || status === 'submitted';
-  const lastAssistant = [...messages]
-    .reverse()
-    .find((message) => message.role === 'assistant');
-
-  useEffect(() => {
-    if (!lastAssistant || isStreaming) return;
-    const text = textFromMessage(lastAssistant as ChatUIMessage);
-    if (!text || persistedAssistantIds.current.has(lastAssistant.id)) return;
-    persistedAssistantIds.current.add(lastAssistant.id);
-    void appendSpaceContextMessageRequest({
-      spaceSlug,
-      sectionKey,
-      role: 'assistant',
-      content: text,
-      agentKey: specialist.agentKey,
-      getAccessToken,
-    }).then(() => refresh());
-  }, [
-    getAccessToken,
-    isStreaming,
-    lastAssistant,
-    refresh,
-    sectionKey,
-    spaceSlug,
-    specialist.agentKey,
-  ]);
 
   const handleSend = async (text: string) => {
     const trimmed = text.trim();
@@ -161,7 +134,7 @@ export function SpaceContextChatPanel({
   };
 
   const handleSaveDraft = async () => {
-    if (!canMutate || saving) return;
+    if (!canMutate || saving) return false;
     setSaveError(null);
     setSaving(true);
     try {
@@ -176,11 +149,18 @@ export function SpaceContextChatPanel({
       setSavedFlash(true);
       if (savedFlashTimer.current) clearTimeout(savedFlashTimer.current);
       savedFlashTimer.current = setTimeout(() => setSavedFlash(false), 2500);
+      return true;
     } catch {
       setSaveError(t('error.save'));
+      return false;
     } finally {
       setSaving(false);
     }
+  };
+
+  const handlePropose = async () => {
+    const saved = await handleSaveDraft();
+    if (saved) onPropose([sectionKey]);
   };
 
   return (
@@ -299,7 +279,7 @@ export function SpaceContextChatPanel({
             <Button
               type="button"
               disabled={!draft.trim() || saving}
-              onClick={() => onPropose([sectionKey])}
+              onClick={() => void handlePropose()}
             >
               {t('chat.propose')}
             </Button>
@@ -333,20 +313,31 @@ function ChatComposer({
 }) {
   const t = useTranslations('SpaceContext');
   const [value, setValue] = useState('');
+  const [pending, setPending] = useState(false);
 
   return (
     <form
       className="flex items-center gap-2"
       onSubmit={(event) => {
         event.preventDefault();
-        const next = value;
-        setValue('');
-        void onSend(next);
+        const next = value.trim();
+        if (!next || pending || disabled) return;
+        setPending(true);
+        void onSend(next)
+          .then(() => {
+            setValue('');
+          })
+          .catch(() => {
+            setValue(next);
+          })
+          .finally(() => {
+            setPending(false);
+          });
       }}
     >
       <Input
         value={value}
-        disabled={disabled}
+        disabled={disabled || pending}
         onChange={(event) => setValue(event.target.value)}
         placeholder={t('chat.placeholder')}
         className="h-10"
@@ -354,7 +345,7 @@ function ChatComposer({
       <Button
         type="submit"
         size="icon"
-        disabled={disabled || !value.trim()}
+        disabled={disabled || pending || !value.trim()}
         aria-label={t('chat.send')}
       >
         <Send className="size-4" strokeWidth={1.25} />
