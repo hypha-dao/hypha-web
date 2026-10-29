@@ -22,6 +22,7 @@ import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-back
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useLocalizedProposalResolver } from '../../governance/hooks/use-localized-proposal-resolver';
 import { useResubmitProposalData, useScrollToErrors } from '../../hooks';
+import { getResubmitPayloadForTemplate } from '../../utils/resubmit-proposal-template';
 import {
   proposeSpaceContextSectionsRequest,
   useSpaceContext,
@@ -129,11 +130,27 @@ export function CreateContextRatifyForm({
   }, [form, person?.id]);
 
   React.useEffect(() => {
-    if (resubmitKey) {
+    const restored = getResubmitPayloadForTemplate('ratify-context');
+    if (typeof restored?.title === 'string' && restored.title) {
       titleTouchedRef.current = true;
+    }
+    if (typeof restored?.description === 'string' && restored.description) {
       descriptionTouchedRef.current = true;
     }
-  }, [resubmitKey]);
+  }, []);
+
+  React.useEffect(() => {
+    if (resubmitKey || form.formState.dirtyFields.title) {
+      titleTouchedRef.current = true;
+    }
+    if (resubmitKey || form.formState.dirtyFields.description) {
+      descriptionTouchedRef.current = true;
+    }
+  }, [
+    form.formState.dirtyFields.description,
+    form.formState.dirtyFields.title,
+    resubmitKey,
+  ]);
 
   React.useEffect(() => {
     const subscription = form.watch((_values, info) => {
@@ -153,7 +170,7 @@ export function CreateContextRatifyForm({
     const titles = chosen.map((section) =>
       headingForSectionKey(section.sectionKey),
     );
-    if (!titleTouchedRef.current) {
+    if (!titleTouchedRef.current && !form.formState.dirtyFields.title) {
       const generated = t('proposeForm.title', {
         sections: titles.join(', '),
       });
@@ -163,7 +180,10 @@ export function CreateContextRatifyForm({
         { shouldDirty: false },
       );
     }
-    if (!descriptionTouchedRef.current) {
+    if (
+      !descriptionTouchedRef.current &&
+      !form.formState.dirtyFields.description
+    ) {
       form.setValue(
         'description',
         buildProposalMarkdown(
@@ -176,7 +196,14 @@ export function CreateContextRatifyForm({
         { shouldDirty: false },
       );
     }
-  }, [form, overview, selected, t]);
+  }, [
+    form,
+    form.formState.dirtyFields.description,
+    form.formState.dirtyFields.title,
+    overview,
+    selected,
+    t,
+  ]);
 
   const linkSectionsToProposal = React.useCallback(
     async (documentId: number) => {
@@ -212,6 +239,8 @@ export function CreateContextRatifyForm({
       ...(typeof web3SpaceId === 'number' ? { web3SpaceId } : {}),
     });
   };
+
+  const retryDocumentId = agreement?.id;
 
   const loadingMessage = isError ? (
     <div className="flex flex-col">
@@ -268,7 +297,7 @@ export function CreateContextRatifyForm({
             </div>
           ) : null}
 
-          {linkError && agreement?.id ? (
+          {linkError && typeof retryDocumentId === 'number' ? (
             <div className="border border-error-6 bg-background-2 px-4 py-6">
               <p className="text-2 text-error-11">{t('error.link')}</p>
               <Button
@@ -276,7 +305,7 @@ export function CreateContextRatifyForm({
                 className="mt-3"
                 variant="outline"
                 colorVariant="neutral"
-                onClick={() => void linkSectionsToProposal(agreement.id)}
+                onClick={() => void linkSectionsToProposal(retryDocumentId)}
               >
                 {t('error.retry')}
               </Button>

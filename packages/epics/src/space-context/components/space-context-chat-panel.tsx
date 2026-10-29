@@ -64,6 +64,7 @@ export function SpaceContextChatPanel({
   );
   const specialist = SPACE_CONTEXT_SPECIALISTS[sectionKey];
   const [draft, setDraft] = useState('');
+  const [draftDirty, setDraftDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -98,11 +99,19 @@ export function SpaceContextChatPanel({
   });
 
   useEffect(() => {
+    setDraftDirty(false);
+  }, [sectionKey]);
+
+  useEffect(() => {
     if (!detail) return;
     const hydrateId = `${sectionKey}:${detail.messages.length}:${detail.section.updatedAt}`;
     if (hydratedKey.current === hydrateId) return;
+    const previousSection = hydratedKey.current?.split(':')[0];
+    const sectionChanged = previousSection !== sectionKey;
     hydratedKey.current = hydrateId;
-    setDraft(detail.section.markdown);
+    if (!draftDirty || sectionChanged) {
+      setDraft(detail.section.markdown);
+    }
     setMessages(
       detail.messages.map((message) => ({
         id: `ctx-${message.id}`,
@@ -110,7 +119,7 @@ export function SpaceContextChatPanel({
         parts: [{ type: 'text' as const, text: message.content }],
       })),
     );
-  }, [detail, sectionKey, setMessages]);
+  }, [detail, draftDirty, sectionKey, setMessages]);
 
   useEffect(() => {
     return () => {
@@ -146,6 +155,7 @@ export function SpaceContextChatPanel({
       });
       await refresh();
       await onDraftSaved?.();
+      setDraftDirty(false);
       setSavedFlash(true);
       if (savedFlashTimer.current) clearTimeout(savedFlashTimer.current);
       savedFlashTimer.current = setTimeout(() => setSavedFlash(false), 2500);
@@ -261,8 +271,13 @@ export function SpaceContextChatPanel({
           </div>
           <textarea
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            disabled={!canMutate || detail?.section.status === 'proposed'}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              setDraftDirty(true);
+            }}
+            disabled={
+              !canMutate || saving || detail?.section.status === 'proposed'
+            }
             rows={6}
             className="w-full resize-y bg-transparent text-2 outline-none"
             aria-label={t('chat.draftLabel')}
