@@ -5,6 +5,7 @@ import {
   RealtimeVoiceSessionError,
 } from './session';
 import {
+  HOME_SPEECH_SPEED,
   resolveHomeSpeechVoice,
   resolveSpeechVoice,
   SPEECH_TONE_INSTRUCTIONS,
@@ -46,6 +47,7 @@ async function openSpeechStream(text: string): Promise<Response> {
         voice: resolveHomeSpeechVoice(),
         input,
         instructions: SPEECH_TONE_INSTRUCTIONS,
+        speed: HOME_SPEECH_SPEED,
         // Raw PCM streams immediately; mp3 forced a full-file wait before play.
         response_format: 'pcm',
       }),

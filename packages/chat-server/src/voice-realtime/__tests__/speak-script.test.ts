@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  HOME_SPEECH_SPEED,
+  HOME_SPEECH_VOICE,
   resolveHomeSpeechVoice,
   resolveSpeechVoice,
   SPEECH_TONE_INSTRUCTIONS,
@@ -17,9 +19,9 @@ describe('resolveSpeechVoice', () => {
     expect(resolveSpeechVoice('Cedar')).toBe('cedar');
   });
 
-  it('falls back to marin for a voice the speech model cannot speak', () => {
+  it('falls back to coral for a voice the speech model cannot speak', () => {
     delete process.env.OPENAI_REALTIME_VOICE;
-    expect(resolveSpeechVoice('not-a-voice')).toBe('marin');
+    expect(resolveSpeechVoice('not-a-voice')).toBe('coral');
   });
 
   it('uses the configured realtime voice when none is passed', () => {
@@ -27,24 +29,20 @@ describe('resolveSpeechVoice', () => {
     expect(resolveSpeechVoice()).toBe('sage');
   });
 
-  it('keeps the LIVE home speaker even when realtime is a low voice', () => {
+  it('keeps the joyful home speaker even when realtime is a low voice', () => {
     process.env.OPENAI_REALTIME_VOICE = 'cedar';
-    expect(resolveHomeSpeechVoice()).toBe('marin');
+    expect(resolveHomeSpeechVoice()).toBe(HOME_SPEECH_VOICE);
+    expect(HOME_SPEECH_VOICE).toBe('coral');
   });
 
-  it('asks the speaker for close joyful delivery that keeps openings intact', () => {
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(
-      /young woman talking with a close friend/i,
-    );
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/joy/i);
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/enthusiasm/i);
+  it('asks for a short cheerful joyful delivery', () => {
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/cheerful/i);
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/joyful/i);
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/warm and close/i);
     expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/never serious/i);
     expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/never distant/i);
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/youthful feminine/i);
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/everyday pace/i);
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/half a second/i);
     expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/ease into the first word/i);
-    expect(SPEECH_TONE_INSTRUCTIONS).not.toMatch(/pause between sentences/i);
-    expect(SPEECH_TONE_INSTRUCTIONS).not.toMatch(/higher than a narrator/i);
+    expect(HOME_SPEECH_SPEED).toBeGreaterThan(1);
+    expect(HOME_SPEECH_SPEED).toBeLessThan(1.2);
   });
 });
