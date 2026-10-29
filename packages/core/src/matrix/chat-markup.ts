@@ -46,7 +46,8 @@ export function chatMarkupLooksFormatted(plain: string): boolean {
     /(^|\n)>\s?/m.test(plain) ||
     /(^|\n)#{1,4}\s+\S/m.test(plain) ||
     /(^|\n)(\s{0,3})([-*+]|\d+\.)\s+\S/m.test(plain) ||
-    /\*[^*\n]+\*/.test(plain)
+    /\*[^*\n]+\*/.test(plain) ||
+    /\n/.test(plain)
   );
 }
 

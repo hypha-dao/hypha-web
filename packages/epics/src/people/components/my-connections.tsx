@@ -58,6 +58,7 @@ import {
   ArrowUpRight,
   ChevronLeft,
   Circle,
+  FileText,
   Globe,
   Globe2,
   Radio,
@@ -1465,13 +1466,18 @@ const INBOX_CHANNEL_TYPES = new Set<string>([
   HYPHA_ROOM_TYPES.space,
   HYPHA_ROOM_TYPES.spacePublic,
   HYPHA_ROOM_TYPES.signal,
+  HYPHA_ROOM_TYPES.proposal,
   HYPHA_ROOM_TYPES.ecosystem,
   HYPHA_ROOM_TYPES.network,
 ]);
 
 const INBOX_FILTER_KEY = 'hypha.messages-inbox-filter';
 
-const EMPTY_INBOX_CONTEXT: InboxContext = { spaces: [], signals: [] };
+const EMPTY_INBOX_CONTEXT: InboxContext = {
+  spaces: [],
+  signals: [],
+  proposals: [],
+};
 
 function roomAliases(room: Room): string[] {
   const aliased = room as Room & {
@@ -1648,7 +1654,7 @@ function joinedChannelSnapshots(client: MatrixClient): JoinedChannelSnapshot[] {
     const roomType = room.getType()?.trim() || '';
     // Older Hypha, ecosystem, and network rooms have no create-event type.
     // They stay in the snapshot so an alias or a stored room id can name them.
-    // A typed direct, group, or proposal room is not a channel.
+    // A typed direct or group room is not a channel. Proposal rooms are.
     if (roomType && !INBOX_CHANNEL_TYPES.has(roomType)) continue;
     const named = (readRoomNameState(room) || room.name || '').trim();
     const last = latestChannelMessage(room, selfId);
@@ -3282,6 +3288,7 @@ const CHANNEL_MARK_ICONS: Partial<Record<InboxChannelKind, typeof Circle>> = {
   space: Circle,
   'space-public': Globe,
   signal: Radio,
+  proposal: FileText,
   ecosystem: Target,
   network: Globe2,
 };
@@ -3311,6 +3318,8 @@ function channelTagKey(kind: InboxChannelKind) {
       return 'inbox.tagSpacePublic';
     case 'signal':
       return 'inbox.tagSignal';
+    case 'proposal':
+      return 'inbox.tagProposal';
     case 'ecosystem':
       return 'inbox.tagEcosystem';
     case 'network':

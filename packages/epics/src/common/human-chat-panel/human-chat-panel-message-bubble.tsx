@@ -1930,7 +1930,7 @@ export function HumanChatPanelMessageBubble({
     Boolean(message.mediaSlots && message.mediaSlots.length > 0);
   const textBodyClassName = cn(
     /* Shared with the AI panel: 13px, a little tighter than body text. */
-    'text-[13px] leading-[1.35] text-foreground',
+    'text-[13px] leading-[1.35] whitespace-pre-wrap break-words text-foreground',
     hasInlineMedia ? 'mt-0.5' : 'mt-0',
     !textExpanded && 'line-clamp-10',
   );

@@ -60,13 +60,20 @@ describe('messages inbox filters', () => {
     expect(rowMatchesInboxFilter('signal', 'rooms')).toBe(false);
     expect(rowMatchesInboxFilter('signal', 'signals')).toBe(true);
     expect(rowMatchesInboxFilter('signal', 'spaces')).toBe(true);
+    expect(rowMatchesInboxFilter('proposal', 'proposals')).toBe(true);
+    expect(rowMatchesInboxFilter('proposal', 'rooms')).toBe(false);
+    expect(rowMatchesInboxFilter('proposal', 'signals')).toBe(false);
+    expect(rowMatchesInboxFilter('proposal', 'spaces')).toBe(true);
     expect(rowMatchesInboxFilter('ecosystem', 'ecosystem')).toBe(true);
     expect(rowMatchesInboxFilter('network', 'network')).toBe(true);
     expect(rowMatchesInboxFilter('space', 'all')).toBe(true);
   });
 
-  it('does not treat proposal rooms as a messages channel', () => {
-    expect(inboxKindForRoomType('io.hypha.room.proposal')).toBeNull();
+  it('treats proposal rooms as their own messages channel', () => {
+    expect(inboxKindForRoomType('io.hypha.room.proposal')).toBe('proposal');
+    expect(
+      isInboxChannelKind(inboxKindForRoomType('io.hypha.room.proposal')),
+    ).toBe(true);
     expect(
       isInboxChannelKind(inboxKindForRoomType('io.hypha.room.space')),
     ).toBe(true);
@@ -161,6 +168,58 @@ describe('messages inbox context', () => {
     expect(row?.name).toBe('Roadmap page');
     expect(row?.inbox.kind).toBe('signal');
     expect(row?.person.id).toBeLessThan(0);
+  });
+
+  it('shows a proposal chat only to a member who can vote on it', () => {
+    const voting = {
+      ...context,
+      proposals: [
+        {
+          roomId: '!proposal:hs',
+          title: 'Garden vote',
+          slug: 'garden-vote',
+          spaceSlug: 'hypha-platform',
+          spaceTitle: 'Hypha Platform',
+          rootSlug: 'hypha',
+          rootTitle: 'Hypha',
+        },
+      ],
+    };
+    const rows = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!proposal:hs',
+          roomType: 'io.hypha.room.proposal',
+          name: 'old room name',
+          aliases: [],
+          preview: 'please vote',
+          mine: false,
+          lastTs: recent,
+          unread: 1,
+        },
+        {
+          roomId: '!other:hs',
+          roomType: 'io.hypha.room.proposal',
+          name: 'Other',
+          aliases: [],
+          preview: 'hidden',
+          mine: false,
+          lastTs: recent,
+          unread: 0,
+        },
+      ],
+      voting,
+      'Network',
+      now,
+    );
+    expect(rows.map((row) => row.roomId)).toEqual(['!proposal:hs']);
+    expect(rows[0]?.name).toBe('Garden vote');
+    expect(inboxContextHref('en', rows[0]?.inbox)).toBe(
+      '/en/dho/hypha-platform/agreements/proposal/garden-vote',
+    );
+    expect(inboxContextLine(rows[0]!.inbox, null)).toBe(
+      'Hypha Platform · Hypha',
+    );
   });
 
   it('hides a signal the member is not on and has not been notified about', () => {
@@ -432,6 +491,8 @@ describe('inboxContextHref', () => {
     signalTitle: 'Roadmap page',
     signalType: 'Need',
     signalSlug: 'roadmap-page',
+    proposalTitle: 'Garden vote',
+    proposalSlug: 'garden-vote',
   };
 
   it('opens a signal, a space room, an ecosystem the member can enter, and the network', () => {
@@ -455,6 +516,9 @@ describe('inboxContextHref', () => {
         ecosystemSlug: null,
       }),
     ).toBe('/en/network');
+    expect(inboxContextHref('en', { ...place, kind: 'proposal' })).toBe(
+      '/en/dho/hypha-platform/agreements/proposal/garden-vote',
+    );
   });
 
   it('leaves direct chats in the inbox', () => {

@@ -11,6 +11,7 @@ export type InboxChannelKind =
   | 'space'
   | 'space-public'
   | 'signal'
+  | 'proposal'
   | 'ecosystem'
   | 'network';
 
@@ -19,6 +20,7 @@ export type InboxFilter =
   | 'direct'
   | 'spaces'
   | 'rooms'
+  | 'proposals'
   | 'signals'
   | 'ecosystem'
   | 'network';
@@ -28,6 +30,7 @@ export const INBOX_FILTERS: readonly InboxFilter[] = [
   'direct',
   'spaces',
   'rooms',
+  'proposals',
   'signals',
   'ecosystem',
   'network',
@@ -44,6 +47,7 @@ const ROOM_TYPE_KIND: Record<string, InboxChannelKind> = {
   'io.hypha.room.space': 'space',
   'io.hypha.room.space-public': 'space-public',
   'io.hypha.room.signal': 'signal',
+  'io.hypha.room.proposal': 'proposal',
   'io.hypha.room.ecosystem': 'ecosystem',
   'io.hypha.room.network': 'network',
 };
@@ -57,6 +61,8 @@ export type InboxPlace = {
   signalTitle: string | null;
   signalType: string | null;
   signalSlug: string | null;
+  proposalTitle: string | null;
+  proposalSlug: string | null;
 };
 
 export type InboxSpaceLabel = {
@@ -82,9 +88,21 @@ export type InboxSignalLabel = {
   notified: boolean;
 };
 
+/** Open proposal (`documents.state = proposal`) the member can vote on. */
+export type InboxProposalLabel = {
+  roomId: string;
+  title: string;
+  slug: string;
+  spaceSlug: string;
+  spaceTitle: string;
+  rootSlug: string;
+  rootTitle: string;
+};
+
 export type InboxContext = {
   spaces: readonly InboxSpaceLabel[];
   signals: readonly InboxSignalLabel[];
+  proposals?: readonly InboxProposalLabel[];
 };
 
 export type JoinedChannelSnapshot = {
@@ -107,7 +125,11 @@ export type JoinedChannelSnapshot = {
 /** Channels with no message in this window stay out of the inbox. */
 export const INBOX_CHANNEL_ACTIVE_MONTHS = 3;
 
-const EMPTY_CONTEXT: InboxContext = { spaces: [], signals: [] };
+const EMPTY_CONTEXT: InboxContext = {
+  spaces: [],
+  signals: [],
+  proposals: [],
+};
 
 export function isInboxFilter(
   value: string | null | undefined,
@@ -131,6 +153,7 @@ export function isInboxChannelKind(
     kind === 'space' ||
     kind === 'space-public' ||
     kind === 'signal' ||
+    kind === 'proposal' ||
     kind === 'ecosystem' ||
     kind === 'network'
   );
@@ -201,6 +224,12 @@ export function channelIsRelevantToMember(
       (signal) => signal.notified && signal.roomId.trim() === roomId,
     );
   }
+  if (place.kind === 'proposal') {
+    const roomId = snapshot.roomId.trim();
+    return (context.proposals ?? []).some(
+      (proposal) => proposal.roomId.trim() === roomId,
+    );
+  }
   return false;
 }
 
@@ -211,9 +240,15 @@ export function rowMatchesInboxFilter(
   if (filter === 'all') return true;
   if (filter === 'direct') return kind === 'dm' || kind === 'group';
   if (filter === 'spaces') {
-    return kind === 'space' || kind === 'space-public' || kind === 'signal';
+    return (
+      kind === 'space' ||
+      kind === 'space-public' ||
+      kind === 'signal' ||
+      kind === 'proposal'
+    );
   }
   if (filter === 'rooms') return kind === 'space' || kind === 'space-public';
+  if (filter === 'proposals') return kind === 'proposal';
   if (filter === 'signals') return kind === 'signal';
   if (filter === 'ecosystem') return kind === 'ecosystem';
   return kind === 'network';
@@ -313,6 +348,15 @@ function signalByRoomId(signals: readonly InboxSignalLabel[], roomId: string) {
   return signals.find((signal) => signal.roomId.trim() === id) ?? null;
 }
 
+function proposalByRoomId(
+  proposals: readonly InboxProposalLabel[] | undefined,
+  roomId: string,
+) {
+  const id = roomId.trim();
+  if (!id) return null;
+  return proposals?.find((proposal) => proposal.roomId.trim() === id) ?? null;
+}
+
 function clean(value: string | null | undefined): string | null {
   const text = value?.trim();
   return text || null;
@@ -341,6 +385,7 @@ export function inboxKindForJoinedRoom(input: {
   if (!context) return null;
   if (spaceByRoomId(context.spaces, input.roomId)) return 'space';
   if (signalByRoomId(context.signals, input.roomId)) return 'signal';
+  if (proposalByRoomId(context.proposals, input.roomId)) return 'proposal';
   return null;
 }
 
@@ -357,10 +402,12 @@ export function resolveInboxPlace(
   if (!isInboxChannelKind(kind)) return null;
   const alias = placeFromAliases(snapshot.aliases);
   const signal = signalByRoomId(context.signals, snapshot.roomId);
+  const proposal = proposalByRoomId(context.proposals, snapshot.roomId);
   const byRoom = spaceByRoomId(context.spaces, snapshot.roomId);
   const bySlug = spaceBySlug(
     context.spaces,
     signal?.spaceSlug ??
+      proposal?.spaceSlug ??
       (alias?.spaceSlug as string | undefined) ??
       (alias?.ecosystemSlug as string | undefined) ??
       null,
@@ -368,19 +415,31 @@ export function resolveInboxPlace(
   const space = byRoom ?? bySlug;
   const ecosystemSlug =
     clean(signal?.rootSlug) ??
+    clean(proposal?.rootSlug) ??
     clean(space?.rootSlug) ??
     clean(alias?.ecosystemSlug as string | undefined);
   const ecosystemTitle =
-    clean(signal?.rootTitle) ?? clean(space?.rootTitle) ?? null;
+    clean(signal?.rootTitle) ??
+    clean(proposal?.rootTitle) ??
+    clean(space?.rootTitle) ??
+    null;
   return {
     kind,
-    spaceTitle: clean(signal?.spaceTitle) ?? clean(space?.title),
-    spaceSlug: clean(signal?.spaceSlug) ?? clean(space?.slug),
+    spaceTitle:
+      clean(signal?.spaceTitle) ??
+      clean(proposal?.spaceTitle) ??
+      clean(space?.title),
+    spaceSlug:
+      clean(signal?.spaceSlug) ??
+      clean(proposal?.spaceSlug) ??
+      clean(space?.slug),
     ecosystemTitle,
     ecosystemSlug,
     signalTitle: clean(signal?.title),
     signalType: clean(signal?.type),
     signalSlug: clean(signal?.slug),
+    proposalTitle: clean(proposal?.title),
+    proposalSlug: clean(proposal?.slug),
   };
 }
 
@@ -399,7 +458,11 @@ export function inboxContextLine(
     );
     return parts.length > 0 ? parts.join(' · ') : null;
   }
-  if (place.kind === 'space' || place.kind === 'space-public') {
+  if (
+    place.kind === 'space' ||
+    place.kind === 'space-public' ||
+    place.kind === 'proposal'
+  ) {
     const parts = [space, root].filter((part): part is string => Boolean(part));
     return parts.length > 0 ? parts.join(' · ') : null;
   }
@@ -412,6 +475,9 @@ export function channelDisplayName(
   networkFallback: string,
 ): string {
   if (place.kind === 'signal' && place.signalTitle) return place.signalTitle;
+  if (place.kind === 'proposal' && place.proposalTitle) {
+    return place.proposalTitle;
+  }
   if (place.kind === 'network') {
     const named = snapshot.name.trim();
     return named || networkFallback;
@@ -450,6 +516,13 @@ export function inboxContextHref(
     if (!signal) return `/${locale}/dho/${space}/overview`;
     return `/${locale}/dho/${space}?signal=${encodeURIComponent(signal)}`;
   }
+  if (place.kind === 'proposal') {
+    const proposal = place.proposalSlug?.trim();
+    if (!space || !proposal) return null;
+    return `/${locale}/dho/${space}/agreements/proposal/${encodeURIComponent(
+      proposal,
+    )}`;
+  }
   if (place.kind === 'space' || place.kind === 'space-public') {
     return space ? `/${locale}/dho/${space}/overview` : null;
   }
@@ -469,6 +542,8 @@ export function directInboxPlace(kind: 'dm' | 'group'): InboxPlace {
     signalTitle: null,
     signalType: null,
     signalSlug: null,
+    proposalTitle: null,
+    proposalSlug: null,
   };
 }
 
@@ -534,10 +609,12 @@ export function channelRowsFromSnapshots(
       continue;
     }
     // Assignees, the signal team, and people who were mentioned are notified
-    // even when nobody has written in the room lately. Other channels stay
+    // even when nobody has written in the room lately. Open proposal chats
+    // stay visible the same way for members who can vote. Other channels stay
     // hidden until they have a message in the last three months.
     if (
       place.kind !== 'signal' &&
+      place.kind !== 'proposal' &&
       !channelHasRecentActivity(snapshot.lastTs, now)
     ) {
       continue;
@@ -570,6 +647,8 @@ export function channelRowsFromSnapshots(
       place.signalTitle,
       place.signalType,
       place.signalSlug,
+      place.proposalTitle,
+      place.proposalSlug,
     ].filter((value): value is string => Boolean(value));
     rows.push({
       person: {

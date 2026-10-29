@@ -23,6 +23,12 @@ describe('chatMarkupLooksFormatted', () => {
   it('detects underline', () => {
     expect(chatMarkupLooksFormatted('__hi__')).toBe(true);
   });
+  it('detects a paragraph break', () => {
+    expect(chatMarkupLooksFormatted('one line')).toBe(false);
+    expect(
+      chatMarkupLooksFormatted('first paragraph\n\nsecond paragraph'),
+    ).toBe(true);
+  });
 });
 
 describe('matrixTextEventContentWithOptionalFormatting', () => {
@@ -48,6 +54,18 @@ describe('matrixTextEventContentWithOptionalFormatting', () => {
   it('adds underline to formatted_body', () => {
     const r = matrixTextEventContentWithOptionalFormatting('__hi__');
     expect('formatted_body' in r && r.formatted_body).toContain('<u>');
+  });
+  it('keeps paragraph breaks in formatted_body', () => {
+    const r = matrixTextEventContentWithOptionalFormatting(
+      'first paragraph\n\nsecond paragraph',
+    );
+    expect('formatted_body' in r && r.formatted_body).toContain('<br />');
+    expect('formatted_body' in r && r.formatted_body).toContain(
+      'first paragraph',
+    );
+    expect('formatted_body' in r && r.formatted_body).toContain(
+      'second paragraph',
+    );
   });
 });
 

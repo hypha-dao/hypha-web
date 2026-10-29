@@ -3,6 +3,7 @@
 import type { ElementType } from 'react';
 import {
   Circle,
+  FileText,
   Globe2,
   LayoutGrid,
   MessageSquare,
@@ -13,11 +14,11 @@ import {
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 
-import { type InboxFilter } from './messages-inbox';
+import { INBOX_FILTERS, type InboxFilter } from './messages-inbox';
 
 type FilterCounts = Record<InboxFilter, { total: number; unread: number }>;
 
-const NESTED = new Set<InboxFilter>(['rooms', 'signals']);
+const NESTED = new Set<InboxFilter>(['rooms', 'proposals', 'signals']);
 
 /** Same marks the rest of the app already uses for these places. */
 const FILTER_ICONS: Record<InboxFilter, ElementType> = {
@@ -25,6 +26,7 @@ const FILTER_ICONS: Record<InboxFilter, ElementType> = {
   direct: MessageSquare,
   spaces: LayoutGrid,
   rooms: Circle,
+  proposals: FileText,
   signals: Radio,
   ecosystem: Target,
   network: Globe2,
@@ -108,17 +110,7 @@ export function MessagesInboxFilters({
   return (
     <nav aria-label={t('inbox.filterLabel')} className="min-w-0 lg:w-full">
       <div className="border border-border bg-background">
-        {(
-          [
-            'all',
-            'direct',
-            'spaces',
-            'rooms',
-            'signals',
-            'ecosystem',
-            'network',
-          ] as const
-        ).map((filter) => (
+        {INBOX_FILTERS.map((filter) => (
           <FilterRow
             key={filter}
             filter={filter}

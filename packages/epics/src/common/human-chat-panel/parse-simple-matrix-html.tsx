@@ -36,7 +36,15 @@ export function parseSimpleMatrixHtml(html: string): SimpleHtmlNode[] {
   const walk = (node: Node): SimpleHtmlNode[] => {
     if (node.nodeType === Node.TEXT_NODE) {
       const v = node.textContent ?? '';
-      return v ? [{ type: 'text', value: v }] : [];
+      if (!v) return [];
+      if (!v.includes('\n')) return [{ type: 'text', value: v }];
+      const parts: SimpleHtmlNode[] = [];
+      const lines = v.split('\n');
+      lines.forEach((line, index) => {
+        if (line) parts.push({ type: 'text', value: line });
+        if (index < lines.length - 1) parts.push({ type: 'linebreak' });
+      });
+      return parts;
     }
     if (node.nodeType !== Node.ELEMENT_NODE) {
       return [];
@@ -99,7 +107,9 @@ export function parseSimpleMatrixHtml(html: string): SimpleHtmlNode[] {
       }
       case 'p':
       case 'div':
-        return childNodes;
+        return childNodes.length > 0
+          ? [...childNodes, { type: 'linebreak' as const }]
+          : [];
       default:
         return childNodes.length > 0
           ? childNodes
@@ -107,7 +117,11 @@ export function parseSimpleMatrixHtml(html: string): SimpleHtmlNode[] {
     }
   };
 
-  return Array.from(body.childNodes).flatMap(walk);
+  const nodes = Array.from(body.childNodes).flatMap(walk);
+  while (nodes.length > 0 && nodes[nodes.length - 1]?.type === 'linebreak') {
+    nodes.pop();
+  }
+  return nodes;
 }
 
 function SpoilerSpan({ children }: { children: React.ReactNode }) {

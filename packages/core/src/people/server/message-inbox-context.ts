@@ -8,7 +8,11 @@ import {
   or,
   sql,
 } from 'drizzle-orm';
-import { coherences, spaces } from '@hypha-platform/storage-postgres';
+import {
+  coherences,
+  documents,
+  spaces,
+} from '@hypha-platform/storage-postgres';
 
 import { web3Client } from '../../common/server/web3-rpc/client';
 import type { DbConfig } from '../../common/server/types';
@@ -38,12 +42,24 @@ export type MessageInboxSignalLabel = {
   notified: boolean;
 };
 
+export type MessageInboxProposalLabel = {
+  roomId: string;
+  title: string;
+  slug: string;
+  spaceSlug: string;
+  spaceTitle: string;
+  rootSlug: string;
+  rootTitle: string;
+};
+
 export type MessageInboxContext = {
   spaces: MessageInboxSpaceLabel[];
   signals: MessageInboxSignalLabel[];
+  proposals: MessageInboxProposalLabel[];
 };
 
 const SIGNAL_LABEL_LIMIT = 400;
+const PROPOSAL_LABEL_LIMIT = 400;
 /** Every signal that emails or pushes this member. Do not drop one of these. */
 const NOTIFIED_SIGNAL_LIMIT = 1000;
 const MEMBER_SPACES_TIMEOUT_MS = 8_000;
@@ -165,7 +181,8 @@ function openSignalFilter() {
  *
  * Spaces are the ones this wallet is a member of. Signals are the ones
  * that notify this member, plus other signals in those spaces so a team
- * thread can still be named. Joining a room is not enough.
+ * thread can still be named. Proposals are the open votes in those spaces.
+ * Joining a room is not enough.
  */
 export async function getMessageInboxContext(
   {
@@ -279,6 +296,50 @@ export async function getMessageInboxContext(
   }
 
   const byId = new Map(labeled.map((space) => [space.id, space]));
+  const proposalRows =
+    spaceIds.length === 0
+      ? []
+      : await db
+          .select({
+            chatRoomId: documents.chatRoomId,
+            title: documents.title,
+            slug: documents.slug,
+            spaceId: documents.spaceId,
+          })
+          .from(documents)
+          .where(
+            and(
+              eq(documents.state, 'proposal'),
+              isNotNull(documents.chatRoomId),
+              inArray(documents.spaceId, spaceIds),
+            ),
+          )
+          .orderBy(desc(documents.updatedAt))
+          .limit(PROPOSAL_LABEL_LIMIT);
+
+  const seenProposalRooms = new Set<string>();
+  const proposals = proposalRows.flatMap((row) => {
+    const roomId = row.chatRoomId?.trim();
+    const slug = row.slug?.trim();
+    const title = row.title?.trim();
+    const space = row.spaceId == null ? null : byId.get(row.spaceId);
+    if (!roomId || !slug || !title || !space || seenProposalRooms.has(roomId)) {
+      return [];
+    }
+    seenProposalRooms.add(roomId);
+    return [
+      {
+        roomId,
+        title,
+        slug,
+        spaceSlug: space.slug,
+        spaceTitle: space.title,
+        rootSlug: space.rootSlug,
+        rootTitle: space.rootTitle,
+      },
+    ];
+  });
+
   const signals = [...signalRows.values()].flatMap((row) => {
     const roomId = row.roomId?.trim();
     const slug = row.slug?.trim();
@@ -300,5 +361,5 @@ export async function getMessageInboxContext(
     ];
   });
 
-  return { spaces: memberSpaces, signals };
+  return { spaces: memberSpaces, signals, proposals };
 }
