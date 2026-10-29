@@ -1459,6 +1459,21 @@ export function MemberHomeChat({
           kept &&
           !memberHomeSpeechConflictsWithItem(kept, text, spaceTitles, peerNames)
         ) {
+          // Speech may name a different open item without conflicting on
+          // space/kind — prefer that card so the reply is not stuck on
+          // the previous "That's noted" card.
+          const rematch = homeItemForMessage(cardItems, message, intelligence);
+          if (
+            rematch &&
+            memberHomeThreadItemKey(rematch) !== memberHomeThreadItemKey(kept)
+          ) {
+            map.set(message.id, rematch);
+            frozenHomeCards.current.set(message.id, {
+              kind: rematch.kind,
+              slug: rematch.slug,
+            });
+            return;
+          }
           map.set(message.id, kept);
           return;
         }
@@ -1843,10 +1858,15 @@ export function MemberHomeChat({
               intelligence.person.nickname ||
               t('fallbackMember');
             const promptCard = Boolean(pinnedItem || visuals || board);
-            // Card above the reply: keep the mark with the spoken line, not
-            // stranded at the top of a tall card. Card-only (still streaming)
-            // keeps the mark beside the card.
+            const cardDone =
+              pinnedItem != null &&
+              actedKeySet.has(memberHomeThreadItemKey(pinnedItem));
+            // Card above the reply: mark stays with the spoken line. A finished
+            // card with no words on this turn needs no mark — the next reply
+            // owns the mycelium stamp so text is not orphaned under an old card.
             const markWithReply = Boolean(!mine && promptCard && visibleText);
+            const showAssistantMark =
+              !mine && (Boolean(visibleText) || (promptCard && !cardDone));
             const promptMedia =
               !mine && promptCard ? (
                 <>
@@ -1960,55 +1980,64 @@ export function MemberHomeChat({
                         {promptMedia}
                       </div>
                     ) : null}
-                    <div
-                      className={cn(
-                        'flex gap-3',
-                        mine ? 'justify-end' : 'justify-start',
-                        oneLine ? 'items-center' : 'items-start',
-                      )}
-                    >
-                      {mine ? null : (
-                        <MemberHomeMark
-                          className={cn(
-                            'h-8 w-8 shrink-0',
-                            !oneLine && 'mt-0.5',
-                          )}
-                        />
-                      )}
+                    {!markWithReply && promptCard && !showAssistantMark ? (
+                      <div className="grid min-w-0 gap-3">{promptMedia}</div>
+                    ) : null}
+                    {mine || visibleText || showAssistantMark ? (
                       <div
                         className={cn(
-                          'grid min-w-0 gap-3',
-                          mine ? 'max-w-[85%] text-right' : 'flex-1',
+                          'flex gap-3',
+                          mine ? 'justify-end' : 'justify-start',
+                          oneLine ? 'items-center' : 'items-start',
                         )}
                       >
-                        {!markWithReply ? promptMedia : null}
-                        {visibleText ? (
-                          <p
-                            data-home-reply-text={
-                              !mine && (promptCard || attached.length > 0)
-                                ? ''
-                                : undefined
-                            }
+                        {showAssistantMark ? (
+                          <MemberHomeMark
                             className={cn(
-                              'text-2 leading-relaxed whitespace-pre-wrap text-foreground',
-                              mine && 'text-right',
+                              'h-8 w-8 shrink-0',
+                              !oneLine && 'mt-0.5',
                             )}
-                          >
-                            {homeMessageNodes(visibleText)}
-                          </p>
+                          />
+                        ) : null}
+                        <div
+                          className={cn(
+                            'grid min-w-0 gap-3',
+                            mine ? 'max-w-[85%] text-right' : 'flex-1',
+                          )}
+                        >
+                          {!markWithReply && showAssistantMark
+                            ? promptMedia
+                            : null}
+                          {visibleText ? (
+                            <p
+                              data-home-reply-text={
+                                !mine && (promptCard || attached.length > 0)
+                                  ? ''
+                                  : undefined
+                              }
+                              className={cn(
+                                'text-2 leading-relaxed whitespace-pre-wrap text-foreground',
+                                mine && 'text-right',
+                              )}
+                            >
+                              {homeMessageNodes(visibleText)}
+                            </p>
+                          ) : null}
+                        </div>
+                        {mine ? (
+                          <PersonAvatar
+                            avatarSrc={
+                              intelligence.person.avatarUrl ?? undefined
+                            }
+                            userName={memberName}
+                            size="md"
+                            shape="circle"
+                            className={cn('shrink-0', !oneLine && 'mt-0.5')}
+                            personId={intelligence.person.id}
+                          />
                         ) : null}
                       </div>
-                      {mine ? (
-                        <PersonAvatar
-                          avatarSrc={intelligence.person.avatarUrl ?? undefined}
-                          userName={memberName}
-                          size="md"
-                          shape="circle"
-                          className={cn('shrink-0', !oneLine && 'mt-0.5')}
-                          personId={intelligence.person.id}
-                        />
-                      ) : null}
-                    </div>
+                    ) : null}
                   </article>
                 ) : null}
               </div>
@@ -2030,30 +2059,27 @@ export function MemberHomeChat({
             }}
           />
           {showArrivalMask ? (
-            <article
-              className="flex items-start gap-3"
-              aria-live="polite"
-              aria-busy="true"
-            >
-              <MemberHomeMark className="mt-0.5 h-8 w-8 shrink-0" />
-              <div className="grid min-w-0 flex-1 gap-4">
-                <div className="grid gap-2">
+            <article className="grid gap-3" aria-live="polite" aria-busy="true">
+              {/* Card first — then mark + words underneath, same as a live reply. */}
+              <div className="border border-border bg-background p-3 pl-11">
+                <HomeWave
+                  className="w-full"
+                  delayMs={80}
+                  style={{ height: 56 }}
+                />
+                <HomeWave className="mt-3 h-4 w-1/2" delayMs={150} />
+                <HomeWave className="mt-2 h-3 w-2/5" delayMs={200} />
+                <div className="mt-4 flex gap-2">
+                  <HomeWave className="h-10 w-28" delayMs={240} />
+                  <HomeWave className="h-10 w-24" delayMs={290} />
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <MemberHomeMark className="mt-0.5 h-8 w-8 shrink-0" />
+                <div className="grid min-w-0 flex-1 gap-2">
                   <HomeWave className="h-3 w-11/12" delayMs={40} />
                   <HomeWave className="h-3 w-4/5" delayMs={90} />
                   <HomeWave className="h-3 w-2/3" delayMs={140} />
-                </div>
-                <div className="border border-border bg-background p-3">
-                  <HomeWave
-                    className="w-full"
-                    delayMs={80}
-                    style={{ height: 56 }}
-                  />
-                  <HomeWave className="mt-3 h-4 w-1/2" delayMs={150} />
-                  <HomeWave className="mt-2 h-3 w-2/5" delayMs={200} />
-                  <div className="mt-4 flex gap-2">
-                    <HomeWave className="h-10 w-28" delayMs={240} />
-                    <HomeWave className="h-10 w-24" delayMs={290} />
-                  </div>
                 </div>
               </div>
             </article>
