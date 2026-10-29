@@ -9,5 +9,6 @@ export * from '../signal-tags';
 export * from '../signal-mentions';
 export * from '../signal-due-date';
 export * from '../signal-notification-triggers';
+export * from '../signal-creator';
 export * from '../lib/get-prefix-by-environment';
 export * from '../lib/determine-environment';

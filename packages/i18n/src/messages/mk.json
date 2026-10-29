@@ -4522,7 +4522,7 @@
     "signalAssigneeUnknown": "Непознат член",
     "signalAssigneeCount": "{count, plural, one {# одговорен} other {# одговорни}}",
     "signalFormAssignees": "Одговорни",
-    "signalFormAssigneeHint": "Членови на просторот одговорни за овој сигнал. Секој што ќе го додадете добива е-пошта кога сигналот е создаден. Стандардно тоа сте вие, како создавач.",
+    "signalFormAssigneeHint": "Членови на просторот одговорни за овој сигнал. Секој што ќе го додадете добива е-пошта кога сигналот е создаден. Стандардно се избира создавачот.",
     "signalFormAssigneeUnassigned": "Недоделено",
     "signalFormAssigneeLoading": "Се вчитуваат членови…",
     "signalFormAssigneeSearch": "Барај членови…",

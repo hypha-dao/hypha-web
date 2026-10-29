@@ -11,7 +11,6 @@ import {
 } from '@hypha-platform/core/client';
 import { Badge } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalCardActions } from './signal-card-actions';
 import { SignalDescriptionButton } from './signal-description-dialog';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
@@ -97,11 +96,6 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
 }: SignalTaskCardProps) {
   const t = useTranslations('CoherenceTab');
   const intlFormat = useFormatter();
-  const hasPersonSlot =
-    resolveSignalPersonIds({
-      assigneeIds: signal.assigneeIds,
-      fallbackPersonId: signal.creatorId,
-    }).length > 0;
   const dueDate =
     signal.dueAt instanceof Date
       ? signal.dueAt
@@ -123,7 +117,7 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
       | 'priorities.low',
   );
 
-  const { createdAtRelative } = useSignalCreatorMeta({
+  const { createdAtRelative, creatorDisplayName } = useSignalCreatorMeta({
     creatorId: signal.creatorId,
     createdAt: signal.createdAt,
     description: signal.description,
@@ -149,17 +143,10 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
       ),
     });
   }
-  if (hasPersonSlot) {
+  if (creatorDisplayName) {
     metaParts.push({
-      key: 'assignee',
-      node: (
-        <SignalAssignee
-          assigneeIds={signal.assigneeIds}
-          fallbackPersonId={signal.creatorId}
-          variant="meta"
-          className="min-w-0 truncate"
-        />
-      ),
+      key: 'creator',
+      node: <span className="min-w-0 truncate">{creatorDisplayName}</span>,
     });
   }
   if (createdAtRelative) {

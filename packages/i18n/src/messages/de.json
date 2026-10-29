@@ -4539,7 +4539,7 @@
     "signalAssigneeUnknown": "Unbekanntes Mitglied",
     "signalAssigneeCount": "{count, plural, one {# Zuständige*r} other {# Zuständige}}",
     "signalFormAssignees": "Zuständige",
-    "signalFormAssigneeHint": "Space-Mitglieder, die für dieses Signal verantwortlich sind. Alle Hinzugefügten erhalten eine E-Mail, sobald das Signal erstellt wurde. Standardmäßig bist du als Ersteller*in ausgewählt.",
+    "signalFormAssigneeHint": "Space-Mitglieder, die für dieses Signal verantwortlich sind. Alle Hinzugefügten erhalten eine E-Mail, sobald das Signal erstellt wurde. Standardmäßig ist die Erstellerin oder der Ersteller ausgewählt.",
     "signalFormAssigneeUnassigned": "Nicht zugewiesen",
     "signalFormAssigneeLoading": "Mitglieder werden geladen …",
     "signalFormAssigneeSearch": "Mitglieder suchen …",

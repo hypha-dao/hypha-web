@@ -36,8 +36,8 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
-import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalDescriptionButton } from './signal-description-dialog';
+import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalOwnerSeen } from './signal-owner-seen';
 import { SignalUpvoteControl } from './signal-upvote-control';
@@ -128,11 +128,13 @@ function SignalCardComponent({
   const [isArchiveMutating, setIsArchiveMutating] = React.useState(false);
   const [archiveError, setArchiveError] = React.useState<string | null>(null);
 
-  const hasPersonSlot =
-    resolveSignalPersonIds({
-      assigneeIds,
-      fallbackPersonId: creatorId,
-    }).length > 0;
+  const { creatorDisplayName } = useSignalCreatorMeta({
+    creatorId,
+    createdAt,
+    description,
+    title,
+    tags,
+  });
   const priorityMeta = React.useMemo(
     () => COHERENCE_PRIORITY_OPTIONS.find((o) => o.priority === priority),
     [priority],
@@ -199,17 +201,10 @@ function SignalCardComponent({
   };
 
   const metaParts: Array<{ key: string; node: React.ReactNode }> = [];
-  if (hasPersonSlot) {
+  if (creatorDisplayName) {
     metaParts.push({
-      key: 'assignee',
-      node: (
-        <SignalAssignee
-          assigneeIds={assigneeIds}
-          fallbackPersonId={creatorId}
-          variant="meta"
-          className="min-w-0 truncate"
-        />
-      ),
+      key: 'creator',
+      node: <span className="min-w-0 truncate">{creatorDisplayName}</span>,
     });
   }
   if (createdAtShort) {

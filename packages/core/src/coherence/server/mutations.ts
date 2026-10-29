@@ -30,6 +30,7 @@ import {
   attachCoherenceCapitals,
   writeCoherenceCapitals,
 } from '../../network/capital-columns';
+import { omitCreatorId } from '../signal-creator';
 
 export async function assertCanEditCoherence(
   { slug, requesterPersonId }: { slug: string; requesterPersonId: number },
@@ -203,7 +204,7 @@ export const updateCoherenceBySlug = async (
   }
   const [updatedCoherence] = await db
     .update(coherences)
-    .set({ ...rest })
+    .set({ ...omitCreatorId(rest) })
     .where(eq(coherences.id, existing[0]!.id))
     .returning();
 
