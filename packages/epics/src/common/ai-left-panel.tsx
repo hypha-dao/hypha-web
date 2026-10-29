@@ -1449,12 +1449,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           ? {
               ...body,
               memberHome: true,
-              // Member left panel is the network outlook. Home keeps the
-              // personal queue. Builder and funder prompts stay on their own.
-              ...(me?.primaryOrientation === 'builder' ||
-              me?.primaryOrientation === 'investor'
-                ? {}
-                : { networkOutlook: true }),
+              // Left panel is always network navigation. Home owns the
+              // personal proposal/signal queue for every orientation.
+              networkOutlook: true,
               memberHomeMemory: {
                 ...readHomeChoices(),
                 acted: readHomeActed(),
@@ -1472,7 +1469,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       isOnboardingPath,
       isOnboardingSetup,
       lang,
-      me?.primaryOrientation,
       onboardingContext,
       pathname,
       spaceSlug,

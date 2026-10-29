@@ -827,9 +827,10 @@ describe('formatMemberHomeFacts', () => {
     expect(brief.text).not.toContain('People who share a space');
   });
 
-  it('offers one network opportunity and leaves the home queue alone', () => {
+  it('navigates the network by orientation and leaves the home queue alone', () => {
     const brief = formatNetworkOutlookFacts({
       ...home,
+      person: { ...home.person, primaryOrientation: 'builder' },
       networkSignals: [
         {
           id: 3,
@@ -851,20 +852,19 @@ describe('formatMemberHomeFacts', () => {
       ],
     });
     expect(brief.text).toContain('Network outlook');
-    expect(brief.text).toContain('slug=orchard-talks');
-    expect(brief.text).toContain('Marieke');
-    expect(brief.text).toContain('reasons=interest,location');
-    expect(brief.text).toContain('close to what they care about');
-    expect(brief.text).not.toContain('slug=path');
-    expect(brief.card).toEqual({ kind: 'signal', slug: 'orchard-talks' });
+    expect(brief.text).toContain('builder');
+    expect(brief.text).toContain('skills');
+    expect(brief.text).toContain('show_member_home_item');
+    expect(brief.text).toContain('Forbidden');
+    expect(brief.text).not.toContain('slug=orchard-talks');
+    expect(brief.text).not.toContain('Marieke');
+    expect(brief.card).toBeNull();
   });
 
-  it('does not invent a network opportunity when none fits', () => {
+  it('does not attach a signal card on the network panel', () => {
     const brief = formatNetworkOutlookFacts(home);
     expect(brief.card).toBeNull();
-    expect(brief.text).toContain(
-      'No opportunity on the network fits them right now',
-    );
+    expect(brief.text).toContain('navigate the wider Hypha network');
     expect(brief.text).not.toContain('slug=path');
   });
 });
