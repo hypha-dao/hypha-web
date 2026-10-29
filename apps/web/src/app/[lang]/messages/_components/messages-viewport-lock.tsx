@@ -3,6 +3,8 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import {
   getMainColumnScrollElement,
+  popMainColumnOverlayScrollLock,
+  pushMainColumnOverlayScrollLock,
   scrollMainColumnTo,
   subscribeMainColumnScroll,
 } from '@hypha-platform/epics';
@@ -37,15 +39,6 @@ function mobileTabOffset(): number {
   return height || 96;
 }
 
-/** Site footer is a sibling under the page; pin must leave room or it vanishes. */
-function desktopFooterOffset(): number {
-  if (!window.matchMedia(DESKTOP_MENU).matches) return 0;
-  const footer = document.querySelector('footer');
-  if (!footer) return 0;
-  const height = footer.getBoundingClientRect().height;
-  return Number.isFinite(height) ? Math.ceil(height) : 0;
-}
-
 function clearListFrameHeight(root: HTMLElement) {
   const list = root.querySelector('[data-messages-list-frame]');
   if (list instanceof HTMLElement) {
@@ -55,16 +48,37 @@ function clearListFrameHeight(root: HTMLElement) {
 }
 
 /**
- * Only the conversation list scrolls. The channel menu stays put in the
- * pinned screen, and the site footer stays visible under that frame.
+ * Channel menu stays put. Only the conversation list scrolls inside the
+ * pinned frame. The site footer stays below the fold — do not reserve it
+ * inside this screen or it covers the list scroll.
  */
 export function MessagesViewportLock({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollMainColumnTo(0);
+    let locked = false;
+    let documentLocked = false;
+    let previousDocumentOverflow = '';
     let observedScroll: HTMLElement | null = null;
     let observedList: HTMLElement | null = null;
+
+    const armLock = () => {
+      if (locked) return;
+      const scrollEl = getMainColumnScrollElement();
+      if (scrollEl) {
+        pushMainColumnOverlayScrollLock();
+        locked = true;
+        return;
+      }
+      // No inset scroller — freeze the document so the page cannot carry
+      // the channel menu away while the list scrolls in its frame.
+      if (documentLocked) return;
+      previousDocumentOverflow = document.documentElement.style.overflowY;
+      document.documentElement.style.overflowY = 'hidden';
+      document.documentElement.scrollTop = 0;
+      documentLocked = true;
+    };
 
     const watch = (node: HTMLElement | null, previous: HTMLElement | null) => {
       if (node === previous) return node;
@@ -74,6 +88,7 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
     };
 
     const fit = () => {
+      armLock();
       const root = ref.current;
       if (!root) return;
       const scrollEl = getMainColumnScrollElement();
@@ -88,18 +103,16 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
         ? window.visualViewport.offsetTop + window.visualViewport.height
         : window.innerHeight;
       const tabOffset = mobileTabOffset();
-      const footerOffset = desktopFooterOffset();
       const desktopInbox = window.matchMedia(DESKTOP_INBOX).matches;
 
+      // Fill to the viewport bottom. Footer is below the fold — do not
+      // shrink this frame for it, or a white band covers the list scroll.
       const rootAvailable = messagesFrameHeight({
         frameTop: root.getBoundingClientRect().top,
         scrollBottom: scrollRect?.bottom ?? viewportBottom,
         viewportBottom,
         tabOffset,
-        footerOffset,
       });
-      // Pin the whole messages screen above the footer so the page does not
-      // grow past it. Only the right list scrolls inside that pin.
       root.style.height = `${Math.max(rootAvailable, 160)}px`;
       root.style.maxHeight = '';
 
@@ -109,7 +122,6 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
           scrollBottom: scrollRect?.bottom ?? viewportBottom,
           viewportBottom,
           tabOffset,
-          footerOffset,
         });
         list.style.height = `${messagesListFrameHeight({
           available: listAvailable,
@@ -124,8 +136,6 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
     const observer = new ResizeObserver(fit);
     fit();
     observer.observe(document.documentElement);
-    const footer = document.querySelector('footer');
-    if (footer) observer.observe(footer);
     const root = ref.current;
     if (root) observer.observe(root);
     const stopWatchingScrollRoot = subscribeMainColumnScroll(fit);
@@ -144,6 +154,10 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
         frame.style.height = '';
         frame.style.maxHeight = '';
         clearListFrameHeight(frame);
+      }
+      if (locked) popMainColumnOverlayScrollLock();
+      if (documentLocked) {
+        document.documentElement.style.overflowY = previousDocumentOverflow;
       }
     };
   }, []);

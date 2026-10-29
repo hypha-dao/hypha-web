@@ -2889,11 +2889,12 @@ export function MyConnections({
               ref={inboxFiltersRef}
               data-messages-filters=""
               className={cn(
-                // Channel menu stays put. Only the conversation list scrolls.
-                'w-full shrink-0 lg:w-80 lg:overflow-hidden',
+                // Channel menu stays put in the pinned frame. Only the
+                // conversation list on the right loads more while scrolling.
+                'w-full shrink-0 lg:w-80 lg:overflow-y-auto lg:overscroll-contain',
                 picking || inboxChannelOpen
                   ? 'hidden lg:block'
-                  : 'narrow-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain lg:flex-none lg:overflow-hidden',
+                  : 'narrow-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain lg:flex-none',
               )}
             >
               <MessagesInboxFilters

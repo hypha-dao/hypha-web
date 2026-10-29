@@ -31,9 +31,10 @@ export async function MessagesPageFrame({
     >
       <Container
         className={cn(
-          // Match One Wallet: xl:gap-9 under the title, even when the list scrolls.
-          'flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9',
-          fillViewport && 'h-full min-h-0 flex-1',
+          // Match One Wallet: xl:gap-9 under the title. When the inbox is
+          // pinned, drop bottom padding — that band ate the list scroll.
+          'flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3',
+          fillViewport ? 'h-full min-h-0 flex-1 xl:pb-0' : 'xl:pb-9',
         )}
       >
         <header className="shrink-0 xl:hidden">

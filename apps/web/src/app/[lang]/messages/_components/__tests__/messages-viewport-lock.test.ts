@@ -6,16 +6,15 @@ import {
 } from '../messages-frame-height';
 
 describe('messagesFrameHeight', () => {
-  it('leaves room for the desktop site footer while the column is locked', () => {
+  it('fills to the viewport bottom so the footer stays below the fold', () => {
     expect(
       messagesFrameHeight({
         frameTop: 100,
         scrollBottom: 900,
         viewportBottom: 900,
         tabOffset: 0,
-        footerOffset: 72,
       }),
-    ).toBe(728);
+    ).toBe(800);
   });
 
   it('still accounts for the phone tab bar', () => {
@@ -25,14 +24,13 @@ describe('messagesFrameHeight', () => {
         scrollBottom: 800,
         viewportBottom: 800,
         tabOffset: 96,
-        footerOffset: 0,
       }),
     ).toBe(624);
   });
 });
 
 describe('messagesListFrameHeight', () => {
-  it('fills the visible column above the footer', () => {
+  it('fills the pinned column so the list can scroll', () => {
     expect(messagesListFrameHeight({ available: 640 })).toBe(640);
   });
 
