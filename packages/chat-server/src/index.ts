@@ -42,6 +42,12 @@ export {
   MISSING_OPENAI_KEY_MESSAGE,
   RealtimeVoiceSessionError,
 } from './voice-realtime/session';
+export {
+  resolveSpeechVoice,
+  SPEECH_PCM_SAMPLE_RATE,
+  streamSpeechScript,
+  synthesizeSpeechScript,
+} from './voice-realtime/speak-script';
 export type {
   RealtimeVoiceSessionResult,
   RealtimeVoiceSessionErrorCode,

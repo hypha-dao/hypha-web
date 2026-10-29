@@ -2,6 +2,7 @@
 
 import {
   Fragment,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -48,6 +49,8 @@ import { MemberHomeMark } from '../../people/components/member-home-mark';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
+import { looksLikeTechnicalMatrixDisplayName } from './matrix-room-member-display';
+import { useResolvedMatrixMemberLabel } from './use-resolved-matrix-member-label';
 import {
   HumanChatPanelMessageOverflow,
   pushRecentChatReaction,
@@ -1321,7 +1324,8 @@ function MxidMentionPill({
   const t = useTranslations('HumanChatPanel');
   const displayLabel = useMemo(() => {
     if (isHyphaBotMatrixIdentity(fullMxid, syncLabel)) {
-      return t('agentMentionLabel');
+      const label = t('agentMentionLabel').trim();
+      return label.startsWith('@') ? label : `@${label}`;
     }
     const fromPerson = person ? formatPersonDisplayName(person) : '';
     const visible = visibleMatrixMemberName(fullMxid, fromPerson, syncLabel);
@@ -1489,18 +1493,103 @@ function resolveMatrixPlainAndHtmlFragments(
   );
 }
 
-function reactionTooltipText(
-  reaction: Reaction,
-  resolveLabel: (userId: string) => string,
-  t: (key: string, values?: TranslationValues) => string,
-): string | undefined {
-  const ids = reaction.reactorUserIds;
-  if (!ids?.length) return undefined;
-  const names = ids.map((id) => resolveLabel(id));
-  return t('reactionReactorsTooltip', {
-    names: names.join(', '),
-    emoji: reaction.emoji,
+function visibleReactionName(userId: string, label: string): string {
+  const name = label.trim();
+  if (!name || looksLikeTechnicalMatrixDisplayName(name, userId)) return '';
+  return name;
+}
+
+function ReactionReactorName({
+  userId,
+  roomId,
+  resolveLabel,
+  onResolved,
+}: {
+  userId: string;
+  roomId?: string | null;
+  resolveLabel: (userId: string) => string;
+  onResolved: (userId: string, name: string) => void;
+}) {
+  const fallback = resolveLabel(userId);
+  const resolved = useResolvedMatrixMemberLabel({
+    matrixUserId: userId,
+    roomId,
+    fallbackLabel: fallback,
   });
+  const name = visibleReactionName(userId, resolved || fallback);
+  useEffect(() => {
+    onResolved(userId, name);
+  }, [name, onResolved, userId]);
+  return null;
+}
+
+function ReactionReactorsTooltip({
+  reaction,
+  roomId,
+  resolveLabel,
+  t,
+  children,
+}: {
+  reaction: Reaction;
+  roomId?: string | null;
+  resolveLabel: (userId: string) => string;
+  t: (key: string, values?: TranslationValues) => string;
+  children: ReactNode;
+}) {
+  const ids = reaction.reactorUserIds ?? [];
+  const [names, setNames] = useState<ReadonlyMap<string, string>>(() => {
+    const initial = new Map<string, string>();
+    for (const userId of ids) {
+      const name = visibleReactionName(userId, resolveLabel(userId));
+      if (name) initial.set(userId, name);
+    }
+    return initial;
+  });
+  const onResolved = useCallback((userId: string, name: string) => {
+    setNames((prev) => {
+      if ((prev.get(userId) ?? '') === name) return prev;
+      const next = new Map(prev);
+      if (name) next.set(userId, name);
+      else next.delete(userId);
+      return next;
+    });
+  }, []);
+  const shown = ids
+    .map((userId) => names.get(userId)?.trim() ?? '')
+    .filter(Boolean);
+  const label =
+    shown.length > 0
+      ? t('reactionReactorsTooltip', {
+          names: shown.join(', '),
+          emoji: reaction.emoji,
+        })
+      : null;
+  return (
+    <>
+      {ids.map((userId) => (
+        <ReactionReactorName
+          key={userId}
+          userId={userId}
+          roomId={roomId}
+          resolveLabel={resolveLabel}
+          onResolved={onResolved}
+        />
+      ))}
+      {label ? (
+        <Tooltip delayDuration={300}>
+          <TooltipTrigger asChild>{children}</TooltipTrigger>
+          <TooltipContent
+            side="top"
+            className="max-w-xs text-left text-xs leading-snug"
+          >
+            {label}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        children
+      )}
+    </>
+  );
 }
 
 export function HumanChatPanelMessageBubble({
@@ -1841,7 +1930,7 @@ export function HumanChatPanelMessageBubble({
     Boolean(message.mediaSlots && message.mediaSlots.length > 0);
   const textBodyClassName = cn(
     /* Shared with the AI panel: 13px, a little tighter than body text. */
-    'text-[13px] leading-[1.35] text-foreground',
+    'text-[13px] leading-[1.35] whitespace-pre-wrap break-words text-foreground',
     hasInlineMedia ? 'mt-0.5' : 'mt-0',
     !textExpanded && 'line-clamp-10',
   );
@@ -1936,9 +2025,20 @@ export function HumanChatPanelMessageBubble({
                 : `@${replyAuthorLabelForUi}`}
             </span>
             {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
-              <span className="min-w-0 truncate font-normal">
-                {replyTo.excerpt}
-              </span>
+              // Keep MXIDs / @handles so mention pills can resolve Privy locals to
+              // names; omit only bare technical slugs with no mention syntax.
+              needsHyphaProfileResolutionForMatrixLabel(replyTo.excerpt) &&
+              !replyTo.excerpt.includes('@') &&
+              !/\s/.test(replyTo.excerpt.trim()) ? null : (
+                <span className="min-w-0 truncate font-normal">
+                  {renderTextWithMentions(
+                    replyTo.excerpt,
+                    bodyResolveMx,
+                    false,
+                    roomMemberUserIds,
+                  )}
+                </span>
+              )
             ) : (
               <span className="italic">{t('replyOriginalUnavailable')}</span>
             )}
@@ -2370,9 +2470,6 @@ export function HumanChatPanelMessageBubble({
               className="mt-0.5 flex flex-wrap items-center gap-0.5"
             >
               {visibleReactions.map((reaction) => {
-                const tooltip =
-                  resolveReactionReactorLabel &&
-                  reactionTooltipText(reaction, resolveReactionReactorLabel, t);
                 const pill = (
                   <button
                     type="button"
@@ -2408,17 +2505,20 @@ export function HumanChatPanelMessageBubble({
                   </button>
                 );
 
-                if (tooltip) {
+                if (
+                  resolveReactionReactorLabel &&
+                  reaction.reactorUserIds?.length
+                ) {
                   return (
-                    <Tooltip key={reaction.emoji} delayDuration={300}>
-                      <TooltipTrigger asChild>{pill}</TooltipTrigger>
-                      <TooltipContent
-                        side="top"
-                        className="max-w-xs text-left text-xs leading-snug"
-                      >
-                        {tooltip}
-                      </TooltipContent>
-                    </Tooltip>
+                    <ReactionReactorsTooltip
+                      key={reaction.emoji}
+                      reaction={reaction}
+                      roomId={roomId}
+                      resolveLabel={resolveReactionReactorLabel}
+                      t={t}
+                    >
+                      {pill}
+                    </ReactionReactorsTooltip>
                   );
                 }
                 return <Fragment key={reaction.emoji}>{pill}</Fragment>;

@@ -24,6 +24,8 @@ type HomePerson = {
   nickname: string | null;
   avatarUrl: string | null;
   sharedSpaceCount?: number;
+  /** Wallet used when the chat panel loads this person's spaces. */
+  address?: string | null;
   /** Space this conversation belongs to, when it was opened from one. */
   spaceSlug?: string | null;
 };
@@ -38,6 +40,7 @@ type MemberHomePeopleProps = {
   onOpenChatReady?: (openChat: MemberHomeOpenChat) => void;
   onOpenCallReady?: (openCall: MemberHomeOpenChat) => void;
   onOpenVideoReady?: (openVideo: MemberHomeOpenChat) => void;
+  onNotice?: (notice: string | null) => void;
 };
 
 function labelOf(person: HomePerson, fallback: string) {
@@ -54,6 +57,7 @@ export function MemberHomePeople({
   onOpenChatReady,
   onOpenCallReady,
   onOpenVideoReady,
+  onNotice,
 }: MemberHomePeopleProps) {
   const t = useTranslations('MemberHome');
   const { openCoherenceChat } = useHumanChatPanel();
@@ -92,11 +96,18 @@ export function MemberHomePeople({
   function showRoom(roomId: string | null, title: string, person?: HomePerson) {
     // PM / group rooms are private — never attach a space slug or the AI and
     // @-mentions inherit that space's roster.
-    const peerSlug = person?.slug?.trim();
+    const peerSlug = person?.slug?.trim() ?? '';
+    const peerAddress = person?.address?.trim() || null;
     const peerId = person?.id && person.id > 0 ? person.id : undefined;
     openCoherenceChat(roomId, title, '', null, null, {
       peerPerson:
-        peerSlug || peerId ? { slug: peerSlug || '', id: peerId } : null,
+        peerSlug || peerId || peerAddress
+          ? {
+              slug: peerSlug,
+              id: peerId,
+              address: peerAddress,
+            }
+          : null,
     });
   }
 
@@ -214,10 +225,15 @@ export function MemberHomePeople({
     onOpenVideoReady?.((person) => openPersonVideoRef.current(person));
   }, [onOpenVideoReady]);
 
+  useEffect(() => {
+    onNotice?.(notice);
+    return () => onNotice?.(null);
+  }, [notice, onNotice]);
+
   if (!notice) return null;
 
   return (
-    <p className="text-1 text-error-11" role="alert">
+    <p className="text-1 text-error-11 @min-[68rem]/home:hidden" role="alert">
       {notice}
     </p>
   );

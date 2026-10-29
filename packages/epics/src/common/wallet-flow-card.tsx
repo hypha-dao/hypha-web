@@ -62,6 +62,21 @@ export function formatWalletAmount(value: number) {
   }).format(value);
 }
 
+/**
+ * Shorten a 0x address for labels: `0xAB8D…E17C`.
+ * Non-address strings (people and space names) pass through unchanged.
+ */
+export function shortenWalletAddress(
+  value: string,
+  options?: { lead?: number; tail?: number },
+) {
+  const trimmed = value.trim();
+  if (!/^0x[a-fA-F0-9]{40}$/i.test(trimmed)) return value;
+  const lead = options?.lead ?? 6;
+  const tail = options?.tail ?? 4;
+  return `${trimmed.slice(0, lead)}…${trimmed.slice(-tail)}`;
+}
+
 /** What the member holds, set against the amount this action would move. */
 export function WalletHoldingLine({
   label,

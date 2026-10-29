@@ -6,7 +6,16 @@ vi.mock('server-only', () => ({}));
 
 import type { MemberIntelligence } from '@hypha-platform/core/client';
 
-import { formatMemberHomeFacts } from '../member-home-facts';
+import {
+  formatMemberHomeFacts,
+  formatNetworkOutlookFacts,
+} from '../member-home-facts';
+
+function formatMemberHomeFactsText(
+  ...args: Parameters<typeof formatMemberHomeFacts>
+) {
+  return formatMemberHomeFacts(...args).text;
+}
 
 const home: MemberIntelligence = {
   person: {
@@ -78,7 +87,7 @@ const home: MemberIntelligence = {
 
 describe('formatMemberHomeFacts', () => {
   it('offers activation when a space is about to expire', () => {
-    const facts = formatMemberHomeFacts({
+    const facts = formatMemberHomeFactsText({
       ...home,
       expiringSpaces: [
         { slug: 'grove', title: 'Grove', web3SpaceId: 4, daysLeft: 6 },
@@ -90,7 +99,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('keeps Hypha AI voice and lists this member’s world', () => {
-    const facts = formatMemberHomeFacts(home);
+    const facts = formatMemberHomeFactsText(home);
     expect(facts).toContain('Keep the Hypha AI voice');
     expect(facts).toContain('The collective is the point');
     expect(facts).toContain('No open question');
@@ -99,7 +108,9 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Open the path');
     expect(facts).toContain('kind=proposal slug=path document=proposal');
     expect(facts).toContain('show_member_home_item');
-    expect(facts).toContain('Noor');
+    // Connections roster is tokens-chip only — keeps useful/decision briefs
+    // from inventing "who shares the most spaces" dumps.
+    expect(facts).not.toContain('People who share a space');
     expect(facts).toContain('Never suggest they connect with themselves');
     expect(facts).toContain('No network signal is in this brief');
     expect(facts).not.toContain('Circle');
@@ -113,7 +124,6 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('On a signal, action is not decision');
     expect(facts).toContain('Discuss it or upvote it');
     expect(facts).toContain('Never say validate');
-    expect(facts).toContain('Do not tell them to call themselves');
     expect(facts).toContain('Any button on a signal means they acted');
     expect(facts).toContain(
       'Use only the person, the space, the task, and the token written on that item.',
@@ -131,13 +141,16 @@ describe('formatMemberHomeFacts', () => {
     );
     expect(facts).toContain("I've approved");
     expect(facts).toContain('You can now decide on the proposal card.');
-    expect(facts).toContain('speak to them by name');
+    expect(facts).toContain('Ronnie has been sitting with the studio costs');
+    expect(facts).toContain('Kuan has asked to join');
+    expect(facts).toContain('Never say card, screen, or button.');
+    expect(facts).toContain('Speak to them by name');
     expect(facts).toContain('Never say they are on their home');
     expect(facts).toContain(
       'A proposal they have already voted on is absent from the waiting list.',
     );
     expect(facts).toContain(
-      'When action=outcome the vote is closed. Say the say= sentence and stop.',
+      'When action=outcome the vote is closed. Use passed, participation, and unity exactly as written.',
     );
     expect(facts).toContain("I don't want to look");
     expect(facts).toContain('You are not in the decision');
@@ -151,7 +164,7 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Do not list signals');
     expect(facts).toContain('Do not say you opened the space');
     expect(facts).toContain(
-      'LENGTH: Typed chat and spoken voice are the same script: at most 2 short sentences, then stop.',
+      'LENGTH: Typed chat and spoken voice are the same script: three or four short sentences, like a friend catching them up, then stop.',
     );
     expect(facts).toContain('Never a wall of text');
     expect(facts).toContain('never the full list');
@@ -164,7 +177,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('keeps walking when the short focus item is cleared but attention remains', () => {
-    const facts = formatMemberHomeFacts(
+    const facts = formatMemberHomeFactsText(
       {
         ...home,
         proposals: [
@@ -186,7 +199,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('puts who they are and who they share a space with on the decision line', () => {
-    const facts = formatMemberHomeFacts({
+    const facts = formatMemberHomeFactsText({
       ...home,
       proposals: [
         {
@@ -217,28 +230,104 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).not.toContain('with="Ada Lovelace');
   });
 
-  it('does not offer the signed-in member as someone to meet', () => {
-    const facts = formatMemberHomeFacts({
+  it('omits with= peers on a signal this member raised', () => {
+    const due = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+    const facts = formatMemberHomeFactsText({
       ...home,
-      connections: [
-        ...home.connections,
+      proposals: [],
+      signals: [
         {
-          id: home.person.id,
-          slug: home.person.slug,
-          name: home.person.name,
-          surname: home.person.surname,
-          nickname: null,
-          avatarUrl: null,
-          sharedSpaceCount: 4,
+          id: 20,
+          slug: 'hypha-desktop-app',
+          title: 'Hypha Desktop App',
+          description: 'What would be involved to RWA?',
+          spaceSlug: 'grove',
+          spaceTitle: 'Grove',
+          spaceLogo: null,
+          createdAt: '2026-01-01T00:00.000Z',
+          dueAt: due,
+          type: 'opportunity',
+          priority: 'high',
+          assignedToMember: false,
+          creatorId: home.person.id,
+          creatorName: 'Ada Lovelace',
+          creatorAvatarUrl: null,
+          creatorAbout: null,
+          creatorWith: ['Edgar Kampers', 'Noor'],
         },
       ],
+      counts: { ...home.counts, openProposals: 0, signals: 1 },
     });
-    expect(facts).toContain('People who share a space, closest first: Noor');
+    expect(facts).toContain('raisedByMember=yes');
+    expect(facts).toContain('slug=hypha-desktop-app');
+    expect(facts).not.toContain('with="');
+    expect(facts).not.toContain('Edgar Kampers');
+  });
+
+  it('does not offer the signed-in member as someone to meet', () => {
+    const facts = formatMemberHomeFactsText(
+      {
+        ...home,
+        connections: [
+          ...home.connections,
+          {
+            id: home.person.id,
+            slug: home.person.slug,
+            name: home.person.name,
+            surname: home.person.surname,
+            nickname: null,
+            avatarUrl: null,
+            sharedSpaceCount: 4,
+          },
+        ],
+      },
+      { asked: 'Send someone tokens' },
+    );
+    expect(facts).toMatch(/pick someone/i);
+    expect(facts).toMatch(/Do not name a closest person/i);
+    expect(facts).not.toContain('People who share a space');
     expect(facts).not.toContain('Ada Lovelace (shared spaces:');
   });
 
+  it('omits the connections roster on a useful ask', () => {
+    const facts = formatMemberHomeFactsText(home, {
+      asked: 'Where can I be useful?',
+    });
+    expect(facts).toMatch(/Brief ONLY the one waiting item/i);
+    expect(facts).toMatch(/One item\. One card/i);
+    expect(facts).not.toContain('People who share a space');
+    expect(facts).toContain('Card for this reply:');
+    expect(facts).toContain('slug=path');
+  });
+
+  it('welcomes them back by time of day after an absence', () => {
+    const facts = formatMemberHomeFactsText(home, {
+      visit: 'welcome_back',
+      partOfDay: 'morning',
+      asked:
+        "I'm back on my home. Catch me up on what needs my attention this morning.",
+      prior: 'Earlier we looked at something else.',
+    });
+    expect(facts).toMatch(/Welcome them back/i);
+    expect(facts).toContain('partOfDay=morning');
+    expect(facts).toContain('this morning');
+    expect(facts).toContain('slug=path');
+    expect(facts).not.toContain('Your previous reply was:');
+  });
+
+  it('greets on first open without inventing a last visit', () => {
+    const facts = formatMemberHomeFactsText(home, {
+      visit: 'first_open',
+      partOfDay: 'afternoon',
+      asked: 'I am on my home.',
+    });
+    expect(facts).toMatch(/first thing you say this visit/i);
+    expect(facts).toContain('partOfDay=afternoon');
+    expect(facts).toContain('slug=path');
+  });
+
   it('removes an item the member already refused from the queue', () => {
-    const facts = formatMemberHomeFacts(home, {
+    const facts = formatMemberHomeFactsText(home, {
       passed: ['proposal:path'],
     });
     expect(facts).toContain('Passed.');
@@ -248,16 +337,17 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('brings a deferred item back only as a good time', () => {
-    const facts = formatMemberHomeFacts(home, {
+    const brief = formatMemberHomeFacts(home, {
       deferred: ['proposal:path'],
     });
-    expect(facts).toContain('is this a good time');
-    expect(facts).toContain('Deferred.');
-    expect(facts).not.toContain('1. kind=proposal slug=path');
+    expect(brief.text).toContain('is this a good time');
+    expect(brief.text).toContain('Deferred.');
+    expect(brief.text).not.toContain('1. kind=proposal slug=path');
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'path' });
   });
 
   it('does not ask if this is a good time a second time', () => {
-    const facts = formatMemberHomeFacts(home, {
+    const facts = formatMemberHomeFactsText(home, {
       recalled: ['proposal:path'],
     });
     expect(facts).toContain('Already asked once if this is a good time');
@@ -265,8 +355,50 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).not.toContain('Bring back the deferred item once');
   });
 
+  it('show keeps the card from the reply above instead of the next item', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          {
+            ...home.proposals[0]!,
+            creatorName: 'Surya Raman',
+            title: 'Objectif à définir',
+          },
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'tariff',
+            title: 'Tariff table',
+            creatorName: 'Zekeriya Aydin',
+            web3ProposalId: 13,
+          },
+        ],
+      },
+      {
+        asked: 'show',
+        prior:
+          "Bien joué, Alex. Surya en a ouvert une autre dans Grove — sa note sur l'objectif à définir.",
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'path' });
+    expect(brief.text).toContain('reply just above');
+    expect(brief.text).not.toContain('slug=tariff');
+  });
+
+  it('keeps the card when they ask to see a brought-back invite', () => {
+    const brief = formatMemberHomeFacts(home, {
+      recalled: ['proposal:path'],
+      asked: 'Can you show me the proposal?',
+    });
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'path' });
+    expect(brief.text).toContain('They asked to see this card');
+    expect(brief.text).toContain('Do not say the space is open');
+    expect(brief.text).not.toContain('Bring back the deferred item once');
+  });
+
   it('continues with the next item after they come back', () => {
-    const facts = formatMemberHomeFacts(
+    const facts = formatMemberHomeFactsText(
       {
         ...home,
         proposals: [
@@ -289,8 +421,197 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('proposal:path');
   });
 
+  it('pins the card to the next item when they just finished one', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+          },
+        ],
+      },
+      {
+        acted: ['proposal:path'],
+        resumed: true,
+        asked:
+          'I carried out the recommended action on "Open the path". Continue with the next.',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toContain('slug=bridge');
+    expect(brief.text).not.toContain('slug=path');
+  });
+
+  it('does not bring back an item the talk already introduced', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+          },
+        ],
+      },
+      {
+        alreadyShown: ['proposal:path'],
+        asked: 'Continue with what still needs me.',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toContain('slug=bridge');
+    expect(brief.text).not.toContain('slug=path');
+    expect(brief.text).toContain(
+      'Never make the whole reply a title and a space',
+    );
+  });
+
+  it('skips an already-placed card on a follow-up that is not an opening ask', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+          },
+        ],
+      },
+      {
+        alreadyShown: ['proposal:path'],
+        asked: 'What else is waiting?',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toContain('slug=bridge');
+    expect(brief.text).toMatch(/Card for this reply:[\s\S]*slug=bridge/);
+    expect(brief.text).not.toMatch(/Card for this reply:[\s\S]*slug=path/);
+  });
+
+  it('does not pin the card they just set aside', () => {
+    const brief = formatMemberHomeFacts(home, {
+      held: 'proposal:path',
+      deferred: ['proposal:path'],
+      asked: 'Not now for Open the path.',
+    });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toMatch(/leave it for another time/i);
+    expect(brief.text).toMatch(/Do not call show_member_home_item/);
+    expect(brief.text).not.toMatch(/Card for this reply:/);
+  });
+
+  it('moves to the next card when they set one aside', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+          },
+        ],
+      },
+      {
+        held: 'proposal:path',
+        deferred: ['proposal:path'],
+        asked: 'Not now for Open the path.',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toMatch(/Card for this reply:[\s\S]*slug=bridge/);
+    expect(brief.text).not.toMatch(/Card for this reply:[\s\S]*slug=path/);
+  });
+
+  it('still attaches the waiting card when every item was already placed', () => {
+    const brief = formatMemberHomeFacts(home, {
+      alreadyShown: ['proposal:path'],
+      asked: 'ok',
+    });
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'path' });
+    expect(brief.text).toMatch(/Card for this reply:[\s\S]*slug=path/);
+    expect(brief.text).toMatch(/Do not pretend an item in this list is new/);
+    expect(brief.text).toMatch(/Call show_member_home_item once for that card/);
+  });
+
+  it('does not re-brief the same card on a continue when every item was already placed', () => {
+    const brief = formatMemberHomeFacts(home, {
+      alreadyShown: ['proposal:path'],
+      asked: 'Continue with what still needs me.',
+    });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toMatch(/already covered what is open/i);
+    expect(brief.text).toMatch(/Do not call show_member_home_item/);
+    expect(brief.text).not.toMatch(/Card for this reply:/);
+  });
+
+  it('skips a title already placed when they ask where they can be useful', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+          },
+        ],
+      },
+      {
+        alreadyShown: ['proposal:path'],
+        asked: 'Where can I be useful?',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).not.toContain('slug=path');
+    expect(brief.text).toMatch(/Brief ONLY the one waiting item/i);
+    expect(brief.text).not.toContain('People who share a space');
+  });
+
+  it('does not re-place an already-shown card on a useful ask', () => {
+    const brief = formatMemberHomeFacts(home, {
+      alreadyShown: ['proposal:path'],
+      asked: 'Where can I be useful?',
+    });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toMatch(/nothing needs them right now/i);
+    expect(brief.text).toMatch(/Do not call show_member_home_item/);
+    expect(brief.text).not.toMatch(/Card for this reply:/);
+    expect(brief.text).not.toContain('People who share a space');
+  });
+
   it('speaks a closed vote as the outcome', () => {
-    const facts = formatMemberHomeFacts({
+    const facts = formatMemberHomeFactsText({
       ...home,
       attention: [
         {
@@ -312,14 +633,16 @@ describe('formatMemberHomeFacts', () => {
       ],
     });
     expect(facts).toContain(
-      'Card on screen: kind=proposal slug=path action=outcome',
+      'Card for this reply: kind=proposal slug=path action=outcome',
     );
-    expect(facts).toContain('say="It passed — 62% took part, with 91% unity."');
+    expect(facts).toContain(
+      'say="It passed — 62% participation, with 91% unity."',
+    );
     expect(facts).not.toContain('slug=path document=proposal action=decision');
   });
 
   it('stays on the proposal they just asked about when titles collide', () => {
-    const facts = formatMemberHomeFacts(
+    const facts = formatMemberHomeFactsText(
       {
         ...home,
         proposals: [
@@ -357,13 +680,11 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('slug=invite-pollinate');
     expect(facts).toContain('This is a new reply under their message');
     expect(facts).toContain('Do not rewrite an earlier reply');
-    expect(facts).not.toContain(
-      'This reply is about that card only. The card already shows the title',
-    );
+    expect(facts).not.toContain('This reply is about that content only');
   });
 
   it('names one decision and withholds the rest', () => {
-    const facts = formatMemberHomeFacts(
+    const facts = formatMemberHomeFactsText(
       {
         ...home,
         signals: [
@@ -407,7 +728,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('moves on when they say the card is not a proposal', () => {
-    const facts = formatMemberHomeFacts(home, { notADecision: true });
+    const facts = formatMemberHomeFactsText(home, { notADecision: true });
     expect(facts).toContain('nothing to decide');
     expect(facts).toContain(
       'Do not say "You can now decide on the proposal card."',
@@ -416,7 +737,7 @@ describe('formatMemberHomeFacts', () => {
   });
 
   it('treats Share signal as a missing body, and a longer message as the post', () => {
-    const command = formatMemberHomeFacts(home, { asked: 'Share signal' });
+    const command = formatMemberHomeFactsText(home, { asked: 'Share signal' });
     expect(command).toContain('The body is not in this message');
     expect(command).toContain('Ask once for a few lines or a file, and stop');
     expect(command).toContain(
@@ -425,12 +746,12 @@ describe('formatMemberHomeFacts', () => {
     expect(command).toContain('Do not restate the briefing');
     expect(command).not.toContain('This reply is about that card only');
 
-    const intent = formatMemberHomeFacts(home, {
+    const intent = formatMemberHomeFactsText(home, {
       asked: 'I want to share a signal',
     });
     expect(intent).toContain('The body is not in this message');
 
-    const alreadyAsked = formatMemberHomeFacts(home, {
+    const alreadyAsked = formatMemberHomeFactsText(home, {
       asked: 'Share signal',
       prior:
         "Drop it in here, either a few lines or a file. I'll turn it into a short post on Edgar's signal.",
@@ -441,7 +762,7 @@ describe('formatMemberHomeFacts', () => {
     expect(alreadyAsked).toContain('Do not ask that same question again');
     expect(alreadyAsked).not.toContain('The body is not in this message');
 
-    const content = formatMemberHomeFacts(home, {
+    const content = formatMemberHomeFactsText(home, {
       asked: 'We shipped the energy ledger and two spaces are paying.',
       prior:
         "Drop it in here, either a few lines or a file. I'll turn it into a short post on Edgar's signal.",
@@ -451,18 +772,128 @@ describe('formatMemberHomeFacts', () => {
     expect(content).toContain('target signal_chat');
     expect(content).toContain('Do not ask them to paste it again');
 
-    const withBody = formatMemberHomeFacts(home, {
+    const withBody = formatMemberHomeFactsText(home, {
       asked:
         'Share signal. We shipped the energy ledger and two spaces are paying.',
     });
     expect(withBody).toContain('This turn: this message is the content');
     expect(withBody).not.toContain('The body is not in this message');
 
-    const declined = formatMemberHomeFacts(home, {
+    const declined = formatMemberHomeFactsText(home, {
       asked: 'No thanks',
       prior:
         "Drop it in here, either a few lines or a file. I'll turn it into a short post on Edgar's signal.",
     });
     expect(declined).not.toContain('This turn: this message is the content');
+  });
+
+  it('returns no card while a share turn is open', () => {
+    const awaiting = formatMemberHomeFacts(home, { asked: 'Share signal' });
+    expect(awaiting.card).toBeNull();
+
+    const ready = formatMemberHomeFacts(home, {
+      asked: 'We shipped the energy ledger and two spaces are paying.',
+      prior:
+        "Drop it in here, either a few lines or a file. I'll turn it into a short post on Edgar's signal.",
+    });
+    expect(ready.card).toBeNull();
+  });
+
+  it('returns the waiting item as the card', () => {
+    const { card } = formatMemberHomeFacts(home);
+    expect(card).toEqual({ kind: 'proposal', slug: 'path' });
+  });
+
+  it('returns the asked item as the card', () => {
+    const { card } = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          {
+            ...home.proposals[0]!,
+            creatorName: 'Gerardo Roza',
+          },
+          {
+            ...home.proposals[0]!,
+            id: 11,
+            slug: 'invite-energy',
+            title: 'Invite Member',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Welime Haitsma',
+            web3ProposalId: 42,
+          },
+          {
+            ...home.proposals[0]!,
+            id: 12,
+            slug: 'invite-pollinate',
+            title: 'Invite Member',
+            spaceSlug: 'hypha-pollinate',
+            spaceTitle: 'Hypha Pollinate',
+            creatorName: 'Gerardo Roza',
+            web3ProposalId: 43,
+          },
+        ],
+      },
+      {
+        asked:
+          'Help me think about Invite Member in Hypha Pollinate, proposed by Gerardo Roza. Summarise it, and leave the decision with me.',
+      },
+    );
+    expect(card).toEqual({ kind: 'proposal', slug: 'invite-pollinate' });
+  });
+
+  it('keeps who is around on the people list', () => {
+    const brief = formatMemberHomeFacts(home, { asked: 'Who is around?' });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toContain('The people list is already on screen');
+    expect(brief.text).toContain('Do not call any tool');
+    expect(brief.text).toContain('Do not rank anyone by shared spaces');
+    expect(brief.text).not.toContain('Card on screen:');
+    expect(brief.text).not.toContain('People who share a space');
+  });
+
+  it('navigates the network by orientation and leaves the home queue alone', () => {
+    const brief = formatNetworkOutlookFacts({
+      ...home,
+      person: { ...home.person, primaryOrientation: 'builder' },
+      networkSignals: [
+        {
+          id: 3,
+          slug: 'orchard-talks',
+          title: 'Orchard interviews',
+          type: 'Opportunity',
+          description: 'First conversations with growers',
+          tags: [],
+          updatedAt: '2026-02-01T00:00:00.000Z',
+          spaceSlug: 'orchard',
+          spaceTitle: 'Orchard',
+          spaceDescription: null,
+          spaceLocation: 'Lisbon',
+          creatorId: 8,
+          creatorName: 'Marieke',
+          creatorAvatarUrl: null,
+          relevance: { score: 4, reasons: ['interest', 'location'] },
+        },
+      ],
+    });
+    expect(brief.text).toContain('Network outlook');
+    expect(brief.text).toContain('builder');
+    expect(brief.text).toContain('skills');
+    expect(brief.text).toContain('your signal');
+    expect(brief.text).toContain('Forbidden');
+    expect(brief.text).toContain('Ignore those');
+    expect(brief.text).not.toContain('slug=orchard-talks');
+    expect(brief.text).not.toContain('Marieke');
+    expect(brief.text).not.toContain('Orchard interviews');
+    expect(brief.card).toBeNull();
+  });
+
+  it('does not attach a signal card on the network panel', () => {
+    const brief = formatNetworkOutlookFacts(home);
+    expect(brief.card).toBeNull();
+    expect(brief.text).toContain('navigate the wider Hypha network');
+    expect(brief.text).not.toContain('slug=path');
+    expect(brief.text).toContain('search_spaces');
   });
 });

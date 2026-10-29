@@ -3,7 +3,7 @@
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { mutate as mutateCache } from 'swr';
+import useSWR, { mutate as mutateCache } from 'swr';
 import {
   RoomEvent,
   RoomStateEvent,
@@ -20,8 +20,10 @@ import {
   useAgreementMutationsWeb2Rsc,
   useJwt,
   useMatrix,
+  useMatrixUserIdsByPersonIds,
   useMe,
   useSpaceBySlug,
+  type Person,
 } from '@hypha-platform/core/client';
 import { Separator } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -48,7 +50,39 @@ import {
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
 } from '../../common/human-chat-panel/human-chat-display-mention';
+import { buildSpaceRosterMentionCandidates } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
+
+async function loadSpaceMembers(
+  spaceSlug: string,
+  authToken: string | null,
+): Promise<Person[]> {
+  const headers: HeadersInit = {};
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  const people: Person[] = [];
+  const pageSize = 100;
+  for (let page = 1; page <= 20; page += 1) {
+    const response = await fetch(
+      `/api/v1/spaces/${encodeURIComponent(
+        spaceSlug,
+      )}/members?page=${page}&pageSize=${pageSize}`,
+      { headers },
+    );
+    if (!response.ok) break;
+    const body = (await response.json()) as {
+      persons?: {
+        data?: Person[];
+        pagination?: { pageCount?: number };
+      };
+    };
+    const batch = body.persons?.data ?? [];
+    people.push(...batch);
+    const pageCount = body.persons?.pagination?.pageCount;
+    if (batch.length < pageSize) break;
+    if (pageCount != null && page >= pageCount) break;
+  }
+  return people;
+}
 
 function matrixMemberAvatarSquare(
   client: MatrixClient | null | undefined,
@@ -194,6 +228,7 @@ export function ProposalDiscussionChat({
     registerRoomListener,
     unregisterRoomListener,
     sendMessage: sendMatrixMessage,
+    ensureRoomMembers,
     editRoomMessage,
     redactRoomEvent,
     toggleReaction,
@@ -252,6 +287,32 @@ export function ProposalDiscussionChat({
 
   const currentUserId = client?.getUserId() ?? null;
   const agentLabel = tChat('agentMentionLabel');
+  const memberSpaceSlug = spaceSlug?.trim() || '';
+  const { data: spaceMembers = [] } = useSWR(
+    memberSpaceSlug
+      ? ['proposal-chat-members', memberSpaceSlug, authToken ?? null]
+      : null,
+    () => loadSpaceMembers(memberSpaceSlug, authToken ?? null),
+  );
+  const rosterPersonIds = React.useMemo(
+    () =>
+      spaceMembers
+        .map((member) => member.id)
+        .filter((id): id is number => Number.isFinite(id) && id > 0),
+    [spaceMembers],
+  );
+  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
+    personIds: rosterPersonIds,
+  });
+  const voterMatrixIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    for (const matrixUserId of Object.values(personIdToMatrixUserId)) {
+      const id = matrixUserId?.trim();
+      if (id) ids.add(id);
+    }
+    return [...ids].sort();
+  }, [personIdToMatrixUserId]);
+  const invitedVotersKeyRef = React.useRef('');
 
   const resolveMemberLabel = React.useCallback(
     (userId: string | undefined) => {
@@ -610,42 +671,58 @@ export function ProposalDiscussionChat({
   }, [client, roomId]);
 
   const mentionCandidates = React.useMemo((): ChatMentionCandidate[] => {
-    if (!client || !roomId) return [];
-    const room = client.getRoom(roomId);
-    if (!room) return [];
-    const list: ChatMentionCandidate[] = [];
-    for (const member of room.getJoinedMembers()) {
-      const userId = member.userId;
-      if (!userId) continue;
-      if (currentUserId && userId === currentUserId) continue;
-      list.push({
-        userId,
-        displayLabel: matrixMemberDisplayLabel(member, userId),
-      });
+    const joined: ChatMentionCandidate[] = [];
+    const room = client && roomId ? client.getRoom(roomId) : null;
+    if (room) {
+      for (const member of room.getJoinedMembers()) {
+        const userId = member.userId;
+        if (!userId) continue;
+        if (currentUserId && userId === currentUserId) continue;
+        joined.push({
+          userId,
+          displayLabel: matrixMemberDisplayLabel(member, userId),
+        });
+      }
     }
-    list.sort((a, b) =>
-      a.displayLabel.localeCompare(b.displayLabel, undefined, {
-        sensitivity: 'base',
-      }),
-    );
+    const roster = buildSpaceRosterMentionCandidates({
+      spaceMembers,
+      personIdToMatrixUserId,
+      unknownLabel: tChat('unknownMember'),
+      extraCandidates: joined,
+    }).filter((candidate) => candidate.userId !== currentUserId);
     const logoUrl = resolveSpaceDisplayLogoUrl(
       space,
       resolvedTheme === 'dark' ? 'dark' : 'light',
     );
-    return withMatrixAgentMention(list, agentLabel, matrixAgentSkills(tChat), {
-      kind: 'space',
-      logoUrl,
-    });
+    return withMatrixAgentMention(
+      roster,
+      agentLabel,
+      matrixAgentSkills(tChat),
+      {
+        kind: 'space',
+        logoUrl,
+      },
+    );
   }, [
     agentLabel,
     client,
     currentUserId,
     mentionMembershipEpoch,
+    personIdToMatrixUserId,
     resolvedTheme,
     roomId,
     space,
+    spaceMembers,
     tChat,
   ]);
+
+  React.useEffect(() => {
+    if (!roomId || voterMatrixIds.length === 0) return;
+    const key = `${roomId}:${voterMatrixIds.join(',')}`;
+    if (invitedVotersKeyRef.current === key) return;
+    invitedVotersKeyRef.current = key;
+    void ensureRoomMembers(roomId, voterMatrixIds);
+  }, [ensureRoomMembers, roomId, voterMatrixIds]);
 
   const mentionLabelByUserId = React.useMemo(
     () =>
@@ -813,6 +890,9 @@ export function ProposalDiscussionChat({
           mentionUserIds,
           ...(replyToEventId ? { replyToEventId } : {}),
         });
+        if (mentionUserIds.length > 0) {
+          void ensureRoomMembers(targetRoom, mentionUserIds);
+        }
         await inviteMatrixAgentIfNeeded(client, targetRoom, mentionUserIds);
         requestMatrixAgentReply({
           authToken,
@@ -840,6 +920,7 @@ export function ProposalDiscussionChat({
   }, [
     authToken,
     client,
+    ensureRoomMembers,
     documentSlug,
     editDraft,
     editRoomMessage,

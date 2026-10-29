@@ -200,6 +200,8 @@ export {
   AiPanelTrigger,
   HumanSidebarTrigger,
 } from './panel-wrap-layout';
+export { resolveSidebarInsetPx } from './panel-scroll-insets';
+export type { ResolveSidebarInsetPxInput } from './panel-scroll-insets';
 export { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 export {
   HYPHA_SPACE_SWITCH_LINK_ATTR,
@@ -232,7 +234,11 @@ export {
   HumanChatPanelEmojiPicker,
 } from './human-chat-panel';
 export { HumanRightPanel } from './human-right-panel';
-export { useIsNetworkContext, useIsSpaceContext } from './use-is-space-context';
+export {
+  isNetworkAiPath,
+  useIsNetworkContext,
+  useIsSpaceContext,
+} from './use-is-space-context';
 export {
   GlobalCallDockProvider,
   useGlobalCallDock,

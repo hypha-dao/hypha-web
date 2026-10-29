@@ -82,6 +82,11 @@ export const chatRequestSchema = z.object({
    * member are loaded server-side from `getMemberIntelligence`.
    */
   memberHome: z.boolean().optional(),
+  /**
+   * Left network panel for a member. Opportunities on the wider network that
+   * fit this person. Home keeps the personal queue.
+   */
+  networkOutlook: z.boolean().optional(),
   /** Choices remembered on this browser from earlier home visits. */
   memberHomeMemory: z
     .object({
@@ -91,6 +96,15 @@ export const chatRequestSchema = z.object({
       acted: z.array(z.string().trim().min(1).max(160)).max(80).optional(),
     })
     .optional(),
+  /**
+   * How this home open started. Client-only cue for the first reply of a
+   * visit — welcome back after absence, or the first greeting of a quiet thread.
+   */
+  memberHomeVisit: z.enum(['welcome_back', 'first_open']).nullish(),
+  /** Local morning / afternoon / evening / night from the member's browser. */
+  memberHomePartOfDay: z
+    .enum(['morning', 'afternoon', 'evening', 'night'])
+    .nullish(),
   /** Live proposal form snapshot from the open Agreements create overlay. */
   activeProposalFormSnapshot: z
     .object({

@@ -1,9 +1,13 @@
 const RECENT_SPACE_STORAGE_KEY = 'hypha:recent-space-slugs';
 const RECENT_SPACE_HISTORY_EVENT = 'hypha:recent-space-slugs:changed';
 const LAST_ACTIVE_SPACE_STORAGE_KEY = 'hypha:last-active-space-slug';
+/** How many recent spaces the left rail / AI “recent” chips show. */
 export const MAX_VISIBLE_RECENT_SPACES = 5;
-/** Rolling MRU queue of spaces the member opened (most recent first). */
-export const MAX_RECENT_SPACE_HISTORY = MAX_VISIBLE_RECENT_SPACES;
+/**
+ * Rolling MRU queue of spaces the member opened (most recent first).
+ * Longer than the visible rail so home “Step into a space” can order by visit.
+ */
+export const MAX_RECENT_SPACE_HISTORY = 64;
 
 function normalizeSlug(slug?: string | null): string | null {
   if (typeof slug !== 'string') return null;
@@ -89,7 +93,7 @@ export function recordRecentSpaceVisit(slug?: string | null): string[] {
  * Route transition queue update (from -> to):
  * - prepend exited space (`from`) to top
  * - remove active destination (`to`) from queue
- * - keep the last 5 entries
+ * - keep the last {@link MAX_RECENT_SPACE_HISTORY} entries
  *
  * @deprecated Prefer `recordRecentSpaceVisit` / `syncRecentSpacesForActiveSlug`.
  */

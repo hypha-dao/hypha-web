@@ -36,7 +36,7 @@ import {
 import { ButtonNavItem, ButtonNavItemProps } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { Person } from '@hypha-platform/core/client';
-import { useConversationUnreadCount } from './my-connections';
+import { useMessagesScreenCount } from './my-connections';
 import { usePrivy, useMfaEnrollment } from '@privy-io/react-auth';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
@@ -124,6 +124,23 @@ function resolveNavItemIcon(href?: string) {
   return null;
 }
 
+/**
+ * Home / Messages / Wallet / Spaces / Network already sit in the mobile tab
+ * bar. Keep them out of the profile sheet so the menu is not a second nav.
+ */
+function isMobileTabBarNavHref(href?: string) {
+  if (!href) return false;
+  return (
+    href.includes('/my-dashboard') ||
+    href.includes('/home') ||
+    href.includes('/messages') ||
+    href.includes('/connections') ||
+    href.includes('/my-spaces') ||
+    href.includes('/my-wallet') ||
+    href.includes('/network')
+  );
+}
+
 export const ButtonProfile = ({
   person,
   isConnected,
@@ -146,10 +163,10 @@ export const ButtonProfile = ({
   const t = useTranslations('Navigation');
   const tCommon = useTranslations('Common');
   const tConnections = useTranslations('Connections');
-  const unreadMessages = useConversationUnreadCount();
+  const messagesOnScreen = useMessagesScreenCount();
   const messageBadge = (href?: string) =>
     href?.includes('/messages') || href?.includes('/connections')
-      ? unreadMessages
+      ? messagesOnScreen
       : 0;
   const messageAria = (href?: string, label?: string) => {
     const badge = messageBadge(href);
@@ -201,6 +218,10 @@ export const ButtonProfile = ({
   const isMobile = useIsMobile();
   /** Full-width sheet menu only on narrow viewports or compact panel layout. */
   const useSheetProfileMenu = compact && (isCompactPanels || isMobile === true);
+  /** Sheet sits above the tab bar — drop destinations that bar already covers. */
+  const sheetNavItems = useSheetProfileMenu
+    ? navItems.filter((item) => !isMobileTabBarNavHref(item.href))
+    : navItems;
 
   useEffect(() => {
     setProfileMenuOpen(false);
@@ -522,7 +543,7 @@ export const ButtonProfile = ({
                       onOpen={openNetworkFeedbackFromProfileMenu}
                     />
                   ) : null}
-                  {navItems.map((item) => (
+                  {sheetNavItems.map((item) => (
                     <Fragment key={item.href ?? item.label}>
                       {item.href ? (
                         <Link

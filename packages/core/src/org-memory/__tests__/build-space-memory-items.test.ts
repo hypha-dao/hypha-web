@@ -223,8 +223,39 @@ describe('buildSpaceMemoryItemsFromOrgMemoryPayload', () => {
     });
     expect(rows).toHaveLength(1);
     expect(rows[0]!.source).toBe('call_recording');
+    expect(rows[0]!.id).toBe('call-recording:10');
     expect(rows[0]!.url).toBe('https://utfs.io/f/recording-key');
     expect(rows[0]!.kind).toBe('video');
+  });
+
+  it('keeps multiple recordings from the same call session', () => {
+    const rows = buildSpaceMemoryItemsFromOrgMemoryPayload({
+      org_memory_assets: [
+        {
+          source: 'call_recording',
+          filename: 'take-a.webm',
+          app_url: 'https://utfs.io/f/a',
+          mime: 'video/webm',
+          call_session_id: 'shared-session',
+          call_recording_id: 21,
+          occurred_at: '2024-07-02T01:00:00.000Z',
+        },
+        {
+          source: 'call_recording',
+          filename: 'take-b.webm',
+          app_url: 'https://utfs.io/f/b',
+          mime: 'video/webm',
+          call_session_id: 'shared-session',
+          call_recording_id: 22,
+          occurred_at: '2024-07-02T02:00:00.000Z',
+        },
+      ],
+    });
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.id).sort()).toEqual([
+      'call-recording:21',
+      'call-recording:22',
+    ]);
   });
 
   it('includes call_recording rows with mxc URL for Matrix playback', () => {
@@ -243,6 +274,7 @@ describe('buildSpaceMemoryItemsFromOrgMemoryPayload', () => {
     });
     expect(rows).toHaveLength(1);
     expect(rows[0]!.source).toBe('call_recording');
+    expect(rows[0]!.id).toBe('call-recording:9');
     expect(rows[0]!.url).toBe('mxc://example.org/recording123');
     expect(rows[0]!.kind).toBe('video');
   });

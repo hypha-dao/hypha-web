@@ -62,6 +62,11 @@ export type MemberIntelligence = {
     notifications: number;
     capitalAsks: number;
   };
+  /**
+   * Shell payload: spaces, proposals, and signals are in. The chain roster,
+   * vote checks, and creator captions are still loading.
+   */
+  partial?: boolean;
   guidance: {
     narrative: string;
   };

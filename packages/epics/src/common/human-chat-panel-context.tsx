@@ -191,16 +191,17 @@ export function HumanChatPanelProvider({
       setCoherenceDescription(description?.trim() ? description.trim() : null);
       setCoherenceSpaceSlug(spaceSlug?.trim() ? spaceSlug.trim() : null);
       setCoherencePublic(Boolean(options?.public));
-      const peerSlug = options?.peerPerson?.slug?.trim();
+      const peerSlug = options?.peerPerson?.slug?.trim() ?? '';
+      const peerAddress = options?.peerPerson?.address?.trim() || null;
       const peerId =
         options?.peerPerson?.id && options.peerPerson.id > 0
           ? options.peerPerson.id
           : undefined;
       setCoherencePeerPerson(
-        peerSlug || peerId
+        peerSlug || peerId || peerAddress
           ? {
-              slug: peerSlug || '',
-              address: options?.peerPerson?.address ?? null,
+              slug: peerSlug,
+              address: peerAddress,
               id: peerId,
             }
           : null,

@@ -17,6 +17,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -34,8 +35,10 @@ import {
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
 import {
-  isMessagesOrSpacesNavHref,
-  shouldShowMessagesAndSpacesNav,
+  isMessagesNavHref,
+  isSpacesNavHref,
+  shouldShowMessagesNav,
+  shouldShowSpacesScreen,
 } from './app-nav-visibility';
 
 type ConnectedButtonProfileProps = {
@@ -71,6 +74,11 @@ export const ConnectedButtonProfile = ({
     isLoading: isAuthLoading,
   } = useAuthentication();
   const { person, isLoading: isPersonLoading, meError } = useMe();
+  // After inactivity a /me refresh can briefly look like "no profile". Once
+  // this session has seen a person, do not send them to the welcome flow.
+  const hadPersonRef = useRef(false);
+  if (person) hadPersonRef.current = true;
+  if (!isAuthenticated) hadPersonRef.current = false;
 
   const router = useRouter();
   const pathname = usePathname();
@@ -112,6 +120,9 @@ export const ConnectedButtonProfile = ({
       return;
     }
     if (person === null) {
+      if (hadPersonRef.current) {
+        return;
+      }
       if (
         pathname !== newUserRedirectPath &&
         pathname !== signupPath &&
@@ -213,10 +224,16 @@ export const ConnectedButtonProfile = ({
   };
 
   const visibleNavItems = useMemo(() => {
-    if (shouldShowMessagesAndSpacesNav(person?.primaryOrientation)) {
-      return navItems;
-    }
-    return navItems.filter((item) => !isMessagesOrSpacesNavHref(item.href));
+    const orientation = person?.primaryOrientation;
+    return navItems.filter((item) => {
+      if (isMessagesNavHref(item.href) && !shouldShowMessagesNav(orientation)) {
+        return false;
+      }
+      if (isSpacesNavHref(item.href) && !shouldShowSpacesScreen(orientation)) {
+        return false;
+      }
+      return true;
+    });
   }, [navItems, person?.primaryOrientation]);
 
   return (

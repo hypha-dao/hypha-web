@@ -20,12 +20,30 @@ export const getProposalPath = (
   return `/${lang}/dho/${spaceSlug}/agreements/proposal/${proposalSlug}`;
 };
 
+export type SpaceChatRoom = 'space' | 'ecosystem' | 'public';
+
+/**
+ * Space dashboard with the human-chat panel on a channel room
+ * (member space, ecosystem, or public).
+ */
+export const getSpaceChatPath = (
+  lang: Locale,
+  spaceSlug: string,
+  room: SpaceChatRoom = 'space',
+) => {
+  return `/${lang}/dho/${spaceSlug}/overview?spaceChat=${room}`;
+};
+
 export const getSignalPath = (
   lang: Locale,
   spaceSlug: string,
   signalSlug: string,
 ) => {
-  return `/${lang}/dho/${spaceSlug}/coherence?signal=${encodeURIComponent(
+  // Land on the space dashboard and open that signal's chat. `/coherence?signal=`
+  // was ignored (and redirected away when Coherence is off), so notification
+  // and card links looked dead. Bare `/dho/{slug}?signal=` also skips the
+  // overview tab slot.
+  return `/${lang}/dho/${spaceSlug}/overview?signal=${encodeURIComponent(
     signalSlug,
   )}`;
 };

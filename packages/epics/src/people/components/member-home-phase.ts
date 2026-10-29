@@ -37,3 +37,32 @@ export function resolveMemberHomePhase(input: {
   if (input.homeLoading || input.home === 'missing') return 'loading';
   return 'ready';
 }
+
+/**
+ * Show words as soon as they stream. A card turn may still be waiting on
+ * `show_member_home_item` — do not hold the spoken line behind that tool,
+ * or the bubble feels several seconds late. The card lands above when ready.
+ * Text-only turns show as soon as they have words.
+ */
+export function memberHomeReplyReady(input: {
+  text: string;
+  hasCard: boolean;
+  streaming: boolean;
+  expectsCard?: boolean;
+}): boolean {
+  void input.expectsCard;
+  void input.streaming;
+  if (input.hasCard) return true;
+  if (input.text.trim().length > 0) return true;
+  return false;
+}
+
+/** Name only when /me is the signed-in member (`person.sub === memberId`). */
+export function resolveMemberHomeGreetingName(input: {
+  personName?: string | null;
+  personNickname?: string | null;
+  personIsCurrentMember: boolean;
+}): string | null {
+  if (!input.personIsCurrentMember) return null;
+  return input.personName?.trim() || input.personNickname?.trim() || null;
+}

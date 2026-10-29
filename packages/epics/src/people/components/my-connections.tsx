@@ -1,17 +1,28 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
 import {
   ClientEvent,
+  Direction,
   EventType,
   MatrixEventEvent,
   NotificationCountType,
   RoomEvent,
   RoomStateEvent,
   SyncState,
+  type EventTimeline,
   type MatrixClient,
   type MatrixEvent,
   type Room,
@@ -41,12 +52,27 @@ import {
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import { listBoundChatRoomIdsAmongAction } from '@hypha-platform/core/matrix/server/actions';
-import { Button } from '@hypha-platform/ui';
+import { Badge, Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { Search, Users, X } from 'lucide-react';
+import {
+  ArrowUpRight,
+  ChevronLeft,
+  Circle,
+  FileText,
+  Globe,
+  Globe2,
+  Radio,
+  Search,
+  Target,
+  Users,
+  X,
+} from 'lucide-react';
 
 import { countIncomingUnreadMessages } from '../../common/human-chat-panel/conversation-unread-count';
+import { contentMentionsMatrixUser } from '../../../../core/src/matrix/mentions';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
+import { scrollMainColumnTo } from '../../common/main-column-scroll';
+import { useChainScrollAtEdge } from '../../common/chain-scroll-at-edge';
 import {
   CONVERSATION_UNREAD_EVENT,
   notifyConversationUnreadChanged,
@@ -63,6 +89,7 @@ import {
   facesWithProfiles,
   groupRowsForConnections,
   conversationsMatchingSearch,
+  listedConversationIsOpen,
   listedConversationOpenTarget,
   readRememberedPersonDirectRoom,
   rememberPersonDirectRoom,
@@ -74,7 +101,8 @@ import {
   isRememberedBoundChatRoom,
   isRememberedGroupChatRoom,
   messagePreview,
-  previewWithNames,
+  previewForInboxDisplay,
+  senderFirstName,
   rememberGroupChatMembers,
   rememberBoundChatRooms,
   rememberGroupChatRooms,
@@ -102,6 +130,23 @@ import {
   type MemberRow,
   type NewcomerCandidate,
 } from './member-connections';
+import { MessagesInboxFilters } from './messages-inbox-filters';
+import {
+  channelRowsFromSnapshots,
+  directInboxPlace,
+  inboxContextHref,
+  inboxContextLine,
+  inboxFilterCounts,
+  inboxListWindow,
+  INBOX_LIST_PAGE,
+  isInboxFilter,
+  peopleInboxKind,
+  rowMatchesInboxFilter,
+  type InboxChannelKind,
+  type InboxContext,
+  type InboxFilter,
+  type JoinedChannelSnapshot,
+} from './messages-inbox';
 import { type PresenceLevel } from './member-presence';
 import { PersonAvatar } from './person-avatar';
 import { useMemberPresence } from './use-member-presence';
@@ -126,6 +171,10 @@ const SYNC_ROOM_BUDGET = 16;
 const PRIORITY_DM_BUDGET = 64;
 /** Everyone else fills while the browser is idle. */
 const IDLE_ROOM_CHUNK = 8;
+/** One short history pull so a quiet channel still shows its last line. */
+const CHANNEL_PREVIEW_SCROLLBACK = 30;
+/** Space requests so channel preview backfill does not trip homeserver 429s. */
+const CHANNEL_PREVIEW_STAGGER_MS = 350;
 
 function eventsForPreview(room: Room): MatrixEvent[] {
   const live = room.getLiveTimeline().getEvents();
@@ -181,13 +230,56 @@ function lastRoomMessage(room: Room, selfId: string | null) {
       preview,
       mine: Boolean(selfId && sender === selfId),
       ts: conversationActivityTs(event.getTs()),
+      sender,
     };
   }
   return {
     preview: '',
     mine: false,
     ts: null,
+    sender: null,
   };
+}
+
+function withSenderName<
+  T extends {
+    faces?: readonly unknown[];
+    inbox?: { kind: string };
+    senderUserId?: string | null;
+    roomId?: string | null;
+    searchMembers?: readonly { name: string; userId?: string }[];
+    senderName?: string;
+  },
+>(
+  row: T,
+  peopleBySub: {
+    get(
+      key: string,
+    ): { name?: string | null; nickname?: string | null } | undefined;
+  },
+  client: MatrixClient | null,
+): T {
+  const shared =
+    Boolean(row.faces) || (row.inbox != null && row.inbox.kind !== 'dm');
+  if (!shared) return row;
+  const mxid = row.senderUserId?.trim();
+  if (!mxid) return { ...row, senderName: undefined };
+  const sub = matrixUserIdToCanonicalPrivySub(mxid);
+  const person = sub ? peopleBySub.get(sub) : undefined;
+  const listed = row.searchMembers?.find(
+    (member) => member.userId?.trim().toLowerCase() === mxid.toLowerCase(),
+  );
+  const member = row.roomId
+    ? client?.getRoom(row.roomId)?.getMember(mxid)
+    : null;
+  const senderName = senderFirstName({
+    profileName: person?.name,
+    profileNickname: person?.nickname,
+    memberName: listed?.name,
+    matrixLabel: member ? matrixMemberDisplayLabel(member, mxid) : '',
+    senderUserId: mxid,
+  });
+  return { ...row, senderName: senderName || undefined };
 }
 
 function debugRoomsEnabled() {
@@ -451,6 +543,7 @@ function classifyConversationRoom(
     avatarUrl: avatarHttp(client, mxc),
     preview: last.preview,
     mine: last.mine,
+    senderUserId: last.sender,
     lastTs: last.ts ?? (kind === 'group' ? groupFallbackTimestamp(room) : null),
     unread,
     memberCount: base.members.length,
@@ -1293,6 +1386,32 @@ export function sumConversationUnread(client: MatrixClient | null) {
 
 export { notifyConversationUnreadChanged };
 
+let messagesScreenCount = 0;
+const messagesScreenCountListeners = new Set<() => void>();
+
+/** New messages in All messages. The nav badge reads this, not the inbox size. */
+export function publishMessagesScreenCount(count: number) {
+  const next = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
+  if (next === messagesScreenCount) return;
+  messagesScreenCount = next;
+  for (const listener of messagesScreenCountListeners) listener();
+}
+
+export function useMessagesScreenCount() {
+  const [count, setCount] = useState(messagesScreenCount);
+
+  useEffect(() => {
+    const sync = () => setCount(messagesScreenCount);
+    messagesScreenCountListeners.add(sync);
+    sync();
+    return () => {
+      messagesScreenCountListeners.delete(sync);
+    };
+  }, []);
+
+  return count;
+}
+
 export function useConversationUnreadCount() {
   const { client } = useMatrix();
   const [count, setCount] = useState(0);
@@ -1343,6 +1462,296 @@ function formatWhen(ts: number, locale: string, justNow: string) {
   }).format(ts);
 }
 
+const INBOX_CHANNEL_TYPES = new Set<string>([
+  HYPHA_ROOM_TYPES.space,
+  HYPHA_ROOM_TYPES.spacePublic,
+  HYPHA_ROOM_TYPES.signal,
+  HYPHA_ROOM_TYPES.proposal,
+  HYPHA_ROOM_TYPES.ecosystem,
+  HYPHA_ROOM_TYPES.network,
+]);
+
+const INBOX_FILTER_KEY = 'hypha.messages-inbox-filter';
+
+const EMPTY_INBOX_CONTEXT: InboxContext = {
+  spaces: [],
+  signals: [],
+  proposals: [],
+};
+
+function roomAliases(room: Room): string[] {
+  const aliased = room as Room & {
+    getCanonicalAlias?: () => string | null | undefined;
+    getAltAliases?: () => readonly string[] | null | undefined;
+  };
+  const aliases: string[] = [];
+  const canonical = aliased.getCanonicalAlias?.()?.trim();
+  if (canonical) aliases.push(canonical);
+  for (const alias of aliased.getAltAliases?.() ?? []) {
+    if (typeof alias === 'string' && alias.trim()) aliases.push(alias.trim());
+  }
+  return aliases;
+}
+
+const SIGNAL_TEAM_BODY_MARKER = '[hypha:signal-team]';
+const SIGNAL_TEAM_REQUEST_BODY_MARKER = '[hypha:signal-team-request]';
+
+function isSignalTeamNoticeBody(body: string): boolean {
+  return (
+    body.startsWith(SIGNAL_TEAM_BODY_MARKER) ||
+    body.startsWith(SIGNAL_TEAM_REQUEST_BODY_MARKER)
+  );
+}
+
+/** Events already in memory. Does not paginate or create anything. */
+function loadedRoomEvents(room: Room): MatrixEvent[] {
+  const collected: MatrixEvent[] = [];
+  const seen = new Set<string>();
+  let timeline: EventTimeline | null = room.getLiveTimeline();
+  for (let hop = 0; timeline && hop < 6; hop += 1) {
+    for (const event of timeline.getEvents()) {
+      const id = event.getId();
+      if (id) {
+        if (seen.has(id)) continue;
+        seen.add(id);
+      }
+      collected.push(event);
+    }
+    const previous = timeline.getNeighbouringTimeline(Direction.Backward);
+    timeline = previous && previous !== timeline ? previous : null;
+  }
+  return collected;
+}
+
+/**
+ * Time of the latest real message already loaded. Team bookkeeping notices
+ * are not conversation, so they do not keep a quiet channel on screen.
+ */
+function latestChannelMessage(
+  room: Room,
+  selfId: string | null,
+): {
+  preview: string;
+  mine: boolean;
+  ts: number | null;
+  sender: string | null;
+} {
+  const events = loadedRoomEvents(room);
+  let best: {
+    preview: string;
+    mine: boolean;
+    ts: number;
+    sender: string | null;
+  } | null = null;
+  let encryptedTs = 0;
+  for (const event of events) {
+    if (!event || event.isRedacted()) continue;
+    const ts = event.getTs() || 0;
+    const type = event.getType();
+    // A new message can still be encrypted when the list is built. Its time
+    // is enough to keep the channel; the words appear once it decrypts.
+    if (type === 'm.room.encrypted') {
+      if (ts > encryptedTs) encryptedTs = ts;
+      continue;
+    }
+    if (type !== EventType.RoomMessage) continue;
+    const content = event.getContent() as { body?: unknown } | undefined;
+    const body = typeof content?.body === 'string' ? content.body.trim() : '';
+    if (!body || isSignalTeamNoticeBody(body)) continue;
+    if (best && ts <= best.ts) continue;
+    const preview = messagePreview(body, (matrixUserId) => {
+      const member = room.getMember(matrixUserId);
+      if (!member) return '';
+      const label = matrixMemberDisplayLabel(member, matrixUserId);
+      if (looksLikeTechnicalMatrixDisplayName(label, matrixUserId)) return '';
+      return label;
+    });
+    const sender = event.getSender() ?? null;
+    const activity = conversationActivityTs(ts);
+    if (!activity) continue;
+    best = {
+      preview,
+      mine: Boolean(selfId && sender === selfId),
+      ts: activity,
+      sender,
+    };
+  }
+  if (best) return best;
+  if (encryptedTs > 0) {
+    return { preview: '', mine: false, ts: encryptedTs, sender: null };
+  }
+  const notified =
+    typeof room.getUnreadNotificationCount === 'function'
+      ? room.getUnreadNotificationCount(NotificationCountType.Total)
+      : 0;
+  if (notified > 0) {
+    const active =
+      typeof room.getLastActiveTimestamp === 'function'
+        ? room.getLastActiveTimestamp()
+        : 0;
+    return {
+      preview: '',
+      mine: false,
+      ts: active > 0 ? active : Date.now(),
+      sender: null,
+    };
+  }
+  return { preview: '', mine: false, ts: null, sender: null };
+}
+
+function signalMembershipHint(
+  room: Room,
+  selfId: string | null,
+): { onSignalTeam: boolean; mentioned: boolean } {
+  if (!selfId) return { onSignalTeam: false, mentioned: false };
+  let team: { ts: number; members: string[]; owner: string | null } | null =
+    null;
+  let mentioned = false;
+  for (const event of loadedRoomEvents(room)) {
+    if (event.isRedacted() || event.getType() !== EventType.RoomMessage) {
+      continue;
+    }
+    const content = event.getContent() as Record<string, unknown> | undefined;
+    if (!content) continue;
+    const body = typeof content.body === 'string' ? content.body.trim() : '';
+    const msgtype =
+      typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
+    if (
+      body.startsWith(SIGNAL_TEAM_BODY_MARKER) ||
+      msgtype === 'io.hypha.signal.team.v1'
+    ) {
+      const members = Array.isArray(content.memberMatrixUserIds)
+        ? content.memberMatrixUserIds.filter(
+            (id): id is string =>
+              typeof id === 'string' && id.trim().length > 0,
+          )
+        : [];
+      const owner =
+        typeof content.ownerMatrixUserId === 'string'
+          ? content.ownerMatrixUserId.trim()
+          : null;
+      const ts = event.getTs() || 0;
+      if (!team || ts >= team.ts) team = { ts, members, owner };
+    }
+    if (!mentioned && contentMentionsMatrixUser(content, selfId)) {
+      mentioned = true;
+    }
+  }
+  const onSignalTeam = Boolean(
+    team &&
+      (team.owner === selfId ||
+        team.members.some((id) => id.trim() === selfId)),
+  );
+  return { onSignalTeam, mentioned };
+}
+
+/** Joined space, signal, ecosystem, and network rooms. Direct chats stay out. */
+function joinedChannelSnapshots(client: MatrixClient): JoinedChannelSnapshot[] {
+  const selfId = client.getUserId();
+  const snapshots: JoinedChannelSnapshot[] = [];
+  for (const room of client.getRooms()) {
+    if (room.getMyMembership() !== 'join') continue;
+    const roomType = room.getType()?.trim() || '';
+    // Older Hypha, ecosystem, and network rooms have no create-event type.
+    // They stay in the snapshot so an alias or a stored room id can name them.
+    // A typed direct or group room is not a channel. Proposal rooms are.
+    if (roomType && !INBOX_CHANNEL_TYPES.has(roomType)) continue;
+    const named = (readRoomNameState(room) || room.name || '').trim();
+    const last = latestChannelMessage(room, selfId);
+    const signal =
+      roomType === HYPHA_ROOM_TYPES.signal
+        ? signalMembershipHint(room, selfId)
+        : { onSignalTeam: false, mentioned: false };
+    snapshots.push({
+      roomId: room.roomId,
+      roomType,
+      name: looksLikeTechnicalMatrixDisplayName(named, room.roomId)
+        ? ''
+        : named,
+      aliases: roomAliases(room),
+      preview: last.preview,
+      mine: last.mine,
+      senderUserId: last.sender,
+      lastTs: last.ts,
+      unread: countIncomingUnreadMessages(room, selfId, isHyphaBot),
+      onSignalTeam: signal.onSignalTeam,
+      mentioned: signal.mentioned,
+    });
+  }
+  snapshots.sort((left, right) => left.roomId.localeCompare(right.roomId));
+  return snapshots;
+}
+
+const channelPreviewAttempted = new Set<string>();
+let channelPreviewBackfillInFlight = false;
+
+/**
+ * Visible channel rows with a timestamp but no readable line yet: pull a short
+ * scrollback once so "No messages yet" is not lying about an empty timeline.
+ */
+async function backfillChannelPreviews(
+  client: MatrixClient,
+  roomIds: readonly string[],
+): Promise<boolean> {
+  const needed = roomIds.filter((roomId) => {
+    if (!roomId || channelPreviewAttempted.has(roomId)) return false;
+    const room = client.getRoom(roomId);
+    if (!room || room.getMyMembership() !== 'join') return false;
+    return !latestChannelMessage(room, client.getUserId()).preview;
+  });
+  if (needed.length === 0) return false;
+  if (channelPreviewBackfillInFlight) return true;
+  channelPreviewBackfillInFlight = true;
+  let changed = false;
+  try {
+    for (const roomId of needed) {
+      channelPreviewAttempted.add(roomId);
+      const room = client.getRoom(roomId);
+      if (!room) continue;
+      try {
+        await client.scrollback(room, CHANNEL_PREVIEW_SCROLLBACK);
+        changed = true;
+      } catch {
+        // Keep the row; a later sync or open may still fill the preview.
+      }
+      await new Promise((resolve) =>
+        window.setTimeout(resolve, CHANNEL_PREVIEW_STAGGER_MS),
+      );
+    }
+  } finally {
+    channelPreviewBackfillInFlight = false;
+  }
+  if (changed) notifyConversationListeners();
+  return false;
+}
+
+function sameChannelSnapshots(
+  current: readonly JoinedChannelSnapshot[],
+  next: readonly JoinedChannelSnapshot[],
+) {
+  if (current.length !== next.length) return false;
+  for (let index = 0; index < current.length; index += 1) {
+    const left = current[index];
+    const right = next[index];
+    if (!left || !right) return false;
+    if (
+      left.roomId !== right.roomId ||
+      left.roomType !== right.roomType ||
+      left.name !== right.name ||
+      left.preview !== right.preview ||
+      left.senderUserId !== right.senderUserId ||
+      left.mine !== right.mine ||
+      left.unread !== right.unread ||
+      left.lastTs !== right.lastTs ||
+      left.onSignalTeam !== right.onSignalTeam ||
+      left.mentioned !== right.mentioned
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function MyConnections({
   section = 'messages',
 }: {
@@ -1365,13 +1774,23 @@ export function MyConnections({
     setConversationBoundLookupToken(jwt);
     if (client && jwt?.trim()) refreshBoundChatRooms(client);
   }, [client, jwt]);
-  const { openCoherenceChat } = useHumanChatPanel();
+  const { openCoherenceChat, coherenceRoomId, coherencePeerPerson } =
+    useHumanChatPanel();
   const searchParams = useSearchParams();
   const debugRooms = searchParams.get('debugRooms') === '1';
   const openedDirectChatRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
+  const inboxFiltersRef = useRef<HTMLDivElement | null>(null);
+  const inboxListRef = useRef<HTMLUListElement | null>(null);
+  const inboxEndRef = useRef<HTMLLIElement | null>(null);
+  const inboxNavReady = useRef(false);
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
+  const [channels, setChannels] = useState<JoinedChannelSnapshot[]>([]);
+  const [inboxFilter, setInboxFilter] = useState<InboxFilter>('all');
+  const [inboxVisibleCount, setInboxVisibleCount] = useState(INBOX_LIST_PAGE);
+  /** Below the side-by-side layout, a channel tap replaces the menu with its messages. */
+  const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
   const [synced, setSynced] = useState(false);
   const [initialSyncComplete, setInitialSyncComplete] = useState(false);
   const [rowsPending, setRowsPending] = useState(true);
@@ -1406,6 +1825,38 @@ export function MyConnections({
       },
     );
   const homeLoaded = !jwt || home !== undefined || !homeLoading;
+  const { data: inboxContext } = useSWR<InboxContext>(
+    section === 'messages' && jwt
+      ? ['/api/v1/people/me/message-inbox-context', jwt]
+      : null,
+    async ([url, token]) => {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return EMPTY_INBOX_CONTEXT;
+      return (await response.json()) as InboxContext;
+    },
+  );
+  useEffect(() => {
+    try {
+      const stored = window.sessionStorage.getItem(INBOX_FILTER_KEY);
+      if (isInboxFilter(stored)) setInboxFilter(stored);
+    } catch {
+      // Private mode can block session storage. The default filter still works.
+    }
+  }, []);
+  useEffect(() => {
+    if (!inboxNavReady.current) {
+      inboxNavReady.current = true;
+      return;
+    }
+    scrollMainColumnTo(0);
+    if (window.matchMedia('(min-width: 64rem)').matches) return;
+    const target = inboxChannelOpen
+      ? inboxListRef.current
+      : inboxFiltersRef.current;
+    target?.scrollTo({ top: 0 });
+  }, [inboxChannelOpen]);
 
   const connections =
     directory && directory.length >= (home?.connections.length ?? 0)
@@ -1424,7 +1875,15 @@ export function MyConnections({
     connections,
     needle || picking ? searchDirectory : null,
   );
-  const peerSubs = useMemo(() => conversationPeerSubs(rows), [rows]);
+  const peerSubs = useMemo(() => {
+    const fromChannels = channels.flatMap((channel) => {
+      const sub = channel.senderUserId
+        ? matrixUserIdToCanonicalPrivySub(channel.senderUserId)
+        : null;
+      return sub ? [sub] : [];
+    });
+    return [...new Set([...conversationPeerSubs(rows), ...fromChannels])];
+  }, [channels, rows]);
   const {
     peopleBySub,
     pendingSubs,
@@ -1612,6 +2071,7 @@ export function MyConnections({
   useEffect(() => {
     if (!client) {
       setRows([]);
+      setChannels([]);
       setSynced(false);
       setInitialSyncComplete(false);
       setRowsPending(true);
@@ -1622,6 +2082,10 @@ export function MyConnections({
       setRows((current) => {
         const next = conversationRowsSnapshot(client);
         return sameConversationRows(current, next) ? current : next;
+      });
+      setChannels((current) => {
+        const next = joinedChannelSnapshots(client);
+        return sameChannelSnapshots(current, next) ? current : next;
       });
       const state = client.getSyncState();
       if (state === SyncState.Prepared || state === SyncState.Syncing) {
@@ -1878,11 +2342,15 @@ export function MyConnections({
         ? matchingGroups
         : [...matchingGroups, ...matchingMembers];
     const named = source.map((row) => {
-      const preview = previewWithNames(row.preview, mentionNames);
-      return {
-        ...row,
-        preview: /privy_did_privy/i.test(preview) ? '' : preview,
-      };
+      const preview = previewForInboxDisplay(row.preview, mentionNames);
+      return withSenderName(
+        {
+          ...row,
+          preview,
+        },
+        peopleBySub,
+        client,
+      );
     });
     return sortConversationsByLastMessage(named);
   }, [
@@ -1899,6 +2367,215 @@ export function MyConnections({
     t,
     titledMembers,
   ]);
+  const inboxMentionNames = useMemo(() => {
+    const mentionNames = new Map<string, string>();
+    const rememberName = (mxid: string, name: string) => {
+      const clean = name.trim();
+      const id = mxid.trim();
+      if (!id || !clean) return;
+      if (looksLikeTechnicalMatrixDisplayName(clean, id)) return;
+      mentionNames.set(id.toLowerCase(), clean);
+      const local = id.replace(/^@/, '').split(':')[0]?.toLowerCase();
+      if (local) mentionNames.set(local, clean);
+    };
+    for (const [personId, mxid] of Object.entries(personIdToMatrixUserId)) {
+      if (!mxid) continue;
+      const id = Number(personId);
+      const fromDirectory = directoryPeople.find((person) => person.id === id);
+      const sub = matrixUserIdToCanonicalPrivySub(mxid);
+      const fromSub = sub ? peopleBySub.get(sub) : undefined;
+      const person = fromDirectory ?? fromSub;
+      if (!person) continue;
+      const name =
+        [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+        person.nickname?.trim() ||
+        '';
+      if (name) rememberName(mxid, name);
+    }
+    for (const channel of channels) {
+      const mxid = channel.senderUserId?.trim();
+      if (!mxid) continue;
+      const room = client?.getRoom(channel.roomId);
+      const member = room?.getMember(mxid);
+      if (!member) continue;
+      const label = matrixMemberDisplayLabel(member, mxid);
+      if (label) rememberName(mxid, label);
+    }
+    return mentionNames;
+  }, [channels, client, directoryPeople, peopleBySub, personIdToMatrixUserId]);
+  const inboxView = useMemo(() => {
+    const direct = people.map((row) =>
+      row.inbox
+        ? row
+        : { ...row, inbox: directInboxPlace(peopleInboxKind(row)) },
+    );
+    const channelRows =
+      section === 'messages' && !picking
+        ? conversationsMatchingSearch(
+            channelRowsFromSnapshots(
+              channels,
+              inboxContext ?? EMPTY_INBOX_CONTEXT,
+              t('inbox.networkTitle'),
+            ) as ConnectionMemberRow[],
+            needle,
+          ).map((row) =>
+            withSenderName(
+              {
+                ...row,
+                preview: previewForInboxDisplay(row.preview, inboxMentionNames),
+              },
+              peopleBySub,
+              client,
+            ),
+          )
+        : [];
+    const counts = inboxFilterCounts([
+      ...direct.map((row) => ({
+        kind: row.inbox?.kind ?? 'dm',
+        unread: row.unread,
+      })),
+      ...channelRows.flatMap((row) =>
+        row.inbox ? [{ kind: row.inbox.kind, unread: row.unread }] : [],
+      ),
+    ]);
+    if (section !== 'messages' || picking || inboxFilter === 'direct') {
+      return { rows: direct, counts };
+    }
+    if (inboxFilter === 'all') {
+      return {
+        rows: sortConversationsByLastMessage([...direct, ...channelRows]),
+        counts,
+      };
+    }
+    return {
+      rows: sortConversationsByLastMessage(
+        channelRows.filter(
+          (row) =>
+            row.inbox != null &&
+            rowMatchesInboxFilter(row.inbox.kind, inboxFilter),
+        ),
+      ),
+      counts,
+    };
+  }, [
+    channels,
+    client,
+    inboxContext,
+    inboxFilter,
+    inboxMentionNames,
+    needle,
+    people,
+    peopleBySub,
+    picking,
+    section,
+    t,
+  ]);
+  function selectInboxFilter(next: InboxFilter) {
+    if (picking) {
+      setPicking(false);
+      setSelectedById(new Map());
+      setQuery('');
+    }
+    setInboxFilter(next);
+    setInboxVisibleCount(INBOX_LIST_PAGE);
+    setInboxChannelOpen(true);
+    try {
+      window.sessionStorage.setItem(INBOX_FILTER_KEY, next);
+    } catch {
+      // The choice still applies for this visit.
+    }
+  }
+  // Newest chats stay first, so a new message lands in this first screen.
+  // Filter badges and the nav count still use every row, including ones
+  // waiting until the list scrolls to the end.
+  const pagingInbox = section === 'messages' && !picking && needle.length === 0;
+  const inboxWindow = pagingInbox
+    ? inboxListWindow(inboxView.rows, inboxVisibleCount)
+    : null;
+  const shownRows = inboxWindow
+    ? inboxWindow.rows
+    : section === 'messages' && !picking
+    ? inboxView.rows
+    : people;
+  const missingChannelPreviewIds = useMemo(() => {
+    if (section !== 'messages' || picking) return [] as string[];
+    return shownRows
+      .filter(
+        (row) =>
+          row.inbox &&
+          row.inbox.kind !== 'dm' &&
+          row.inbox.kind !== 'group' &&
+          row.roomId &&
+          !row.preview.trim() &&
+          row.lastTs != null &&
+          !channelPreviewAttempted.has(row.roomId),
+      )
+      .map((row) => row.roomId as string)
+      .slice(0, IDLE_ROOM_CHUNK);
+  }, [picking, section, shownRows]);
+  const [channelPreviewsPending, setChannelPreviewsPending] = useState(false);
+  useEffect(() => {
+    if (!client || listLoading || missingChannelPreviewIds.length === 0) {
+      setChannelPreviewsPending(false);
+      return;
+    }
+    if (channelPreviewBackfillInFlight) {
+      setChannelPreviewsPending(true);
+      return;
+    }
+    let cancelled = false;
+    setChannelPreviewsPending(true);
+    void backfillChannelPreviews(client, missingChannelPreviewIds).finally(
+      () => {
+        if (!cancelled) setChannelPreviewsPending(false);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [client, listLoading, missingChannelPreviewIds]);
+  const hasMoreInboxRows = inboxWindow?.hasMore ?? false;
+  const canLoadMoreInbox =
+    !moreFailed &&
+    (hasMoreInboxRows ||
+      (hasMorePeople &&
+        !needle &&
+        section !== 'archived' &&
+        (picking || inboxFilter === 'all' || inboxFilter === 'direct')));
+  useEffect(() => {
+    if (section !== 'messages' || picking || listLoading) return;
+    publishMessagesScreenCount(inboxView.counts.all.unread);
+  }, [inboxView.counts.all.unread, listLoading, picking, section]);
+  useEffect(() => {
+    const root = inboxListRef.current;
+    if (!root || section !== 'messages' || picking) return;
+    const row = root.querySelector<HTMLElement>(
+      '[data-active-conversation="true"]',
+    );
+    if (!row) return;
+    const rootRect = root.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    if (rowRect.top < rootRect.top) {
+      root.scrollTop -= rootRect.top - rowRect.top;
+    } else if (rowRect.bottom > rootRect.bottom) {
+      root.scrollTop += rowRect.bottom - rootRect.bottom;
+    }
+  }, [
+    coherencePeerPerson?.id,
+    coherenceRoomId,
+    inboxChannelOpen,
+    inboxFilter,
+    picking,
+    section,
+    shownRows,
+  ]);
+  const listTitle =
+    section === 'archived'
+      ? t('tabs.archived')
+      : section === 'messages' && !picking
+      ? t(`inbox.${inboxFilter}Title`)
+      : t('people');
+  const showChannelTags = section === 'messages' && !picking;
   const selectedPeople = useMemo(
     () => [...selectedById.values()],
     [selectedById],
@@ -1907,6 +2584,37 @@ export function MyConnections({
     () => (debugRooms && client ? inspectJoinedAndInvitedRooms(client) : []),
     [client, debugRooms, rows, synced],
   );
+
+  const loadMoreInbox = useCallback(() => {
+    if (hasMoreInboxRows) {
+      setInboxVisibleCount((current) => current + INBOX_LIST_PAGE);
+      return;
+    }
+    if (loadingMore || !jwt || !hasMorePeople) return;
+    void loadMorePeople();
+  }, [hasMoreInboxRows, hasMorePeople, jwt, loadingMore]);
+
+  useEffect(() => {
+    if (listLoading || !canLoadMoreInbox) return;
+    const root = inboxListRef.current;
+    const sentinel = inboxEndRef.current;
+    if (!root || !sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        loadMoreInbox();
+      },
+      { root, rootMargin: '160px 0px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [
+    canLoadMoreInbox,
+    listLoading,
+    loadMoreInbox,
+    loadingMore,
+    shownRows.length,
+  ]);
 
   async function loadMorePeople() {
     if (loadingMore || !jwt || !hasMorePeople) return;
@@ -1918,7 +2626,7 @@ export function MyConnections({
     );
     try {
       const response = await fetch(
-        `/api/v1/people/me/intelligence?connections=${next}`,
+        `/api/v1/people/me/intelligence?connections=${next}&scope=shell`,
         { headers: { Authorization: `Bearer ${jwt}` } },
       );
       if (!response.ok) {
@@ -1927,7 +2635,12 @@ export function MyConnections({
       }
       const body = (await response.json()) as MemberIntelligence;
       const page = body.connections ?? [];
+      const total = body.counts?.connections ?? connectionTotal;
       if (page.length <= connections.length) {
+        if (connections.length < total) {
+          setMoreFailed(true);
+          return;
+        }
         setDirectoryComplete(true);
         return;
       }
@@ -1955,6 +2668,26 @@ export function MyConnections({
   async function openMember(row: ConnectionMemberRow) {
     if (picking) {
       toggleSelected(row);
+      return;
+    }
+    if (
+      row.inbox &&
+      row.inbox.kind !== 'dm' &&
+      row.inbox.kind !== 'group' &&
+      row.roomId
+    ) {
+      const spaceSlug =
+        row.inbox.kind === 'network'
+          ? null
+          : row.inbox.spaceSlug || row.inbox.ecosystemSlug;
+      openCoherenceChat(
+        row.roomId,
+        row.name,
+        row.inbox.signalSlug ?? '',
+        null,
+        spaceSlug,
+        { public: row.inbox.kind === 'space-public' },
+      );
       return;
     }
     setNotice(null);
@@ -2146,237 +2879,333 @@ export function MyConnections({
       ) : null}
 
       {section === 'messages' || section === 'archived' ? (
-        <>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <label className="relative min-w-0 flex-1">
-                <span className="sr-only">{t('search')}</span>
-                <Search
-                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
+        <div
+          className={cn(
+            'flex min-h-0 min-w-0 flex-1 flex-col gap-6',
+            section === 'messages' &&
+              'min-h-0 flex-1 gap-4 lg:flex-row lg:items-start lg:gap-6',
+          )}
+        >
+          {section === 'messages' ? (
+            <div
+              ref={inboxFiltersRef}
+              data-messages-filters=""
+              className={cn(
+                // Channel menu stays in page flow. The right list is sticky
+                // and capped so page and list can both scroll.
+                'w-full shrink-0 lg:w-80',
+                picking || inboxChannelOpen
+                  ? 'hidden lg:block'
+                  : 'lg:flex-none lg:overflow-visible',
+              )}
+            >
+              <MessagesInboxFilters
+                value={inboxFilter}
+                counts={inboxView.counts}
+                onChange={selectInboxFilter}
+              />
+            </div>
+          ) : null}
+          <div
+            data-messages-list-frame=""
+            className={cn(
+              'min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-visible lg:overflow-hidden',
+              // Sticky + viewport height from MessagesViewportLock so the
+              // list scrolls inside while the page still moves.
+              'lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]',
+              section === 'messages' && !picking && !inboxChannelOpen
+                ? 'hidden lg:flex'
+                : 'flex',
+            )}
+          >
+            {section === 'messages' && !picking ? (
+              <button
+                type="button"
+                aria-label={tCommon('back')}
+                className="flex shrink-0 items-center gap-1 self-start text-3 text-foreground lg:hidden"
+                onClick={() => setInboxChannelOpen(false)}
+              >
+                <ChevronLeft
+                  className="size-4 shrink-0"
                   strokeWidth={1.5}
                   aria-hidden
                 />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Escape') return;
-                    event.stopPropagation();
-                  }}
-                  placeholder={t('search')}
-                  className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </label>
-              {section === 'archived' ? null : picking ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  className="shrink-0"
-                  onClick={exitPicking}
-                >
-                  {t('cancelPick')}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  className="shrink-0 gap-1.5"
-                  disabled={!isMatrixAvailable || people.length < 2}
-                  onClick={() => setPicking(true)}
-                >
-                  <Users className="size-3.5" strokeWidth={1.5} aria-hidden />
-                  {t('groupCall')}
-                </Button>
-              )}
-            </div>
-
-            {picking && selectedPeople.length > 0 ? (
-              <div
-                className="flex gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                aria-label={t('selectedCount', {
-                  count: selectedPeople.length,
-                })}
-              >
-                {selectedPeople.map((row) => (
-                  <button
-                    key={row.person.id}
-                    type="button"
-                    className="flex w-16 shrink-0 flex-col items-center gap-1 text-center"
-                    aria-label={t('removeSelected', { name: row.name })}
-                    onClick={() => toggleSelected(row)}
-                  >
-                    <span className="relative inline-flex">
-                      <PersonAvatar
-                        size="chat"
-                        shape="circle"
-                        avatarSrc={row.avatarUrl}
-                        userName={row.name}
-                        personId={row.person.id}
-                      />
-                      <span
-                        className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-foreground text-background"
+                {t(`inbox.${inboxFilter}Title`)}
+              </button>
+            ) : null}
+            <div className="flex min-h-0 flex-1 flex-col gap-3">
+              <div className="flex shrink-0 flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="relative min-w-0 flex-1">
+                    <span className="sr-only">{t('search')}</span>
+                    <Search
+                      className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
+                      strokeWidth={1.5}
+                      aria-hidden
+                    />
+                    <input
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') return;
+                        event.stopPropagation();
+                      }}
+                      placeholder={t('search')}
+                      className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-foreground focus-visible:ring-0"
+                    />
+                  </label>
+                  {section === 'archived' ? null : picking ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      className="shrink-0"
+                      onClick={exitPicking}
+                    >
+                      {t('cancelPick')}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      className="shrink-0 gap-1.5"
+                      disabled={!isMatrixAvailable || people.length < 2}
+                      onClick={() => setPicking(true)}
+                    >
+                      <Users
+                        className="size-3.5"
+                        strokeWidth={1.5}
                         aria-hidden
+                      />
+                      {t('groupCall')}
+                    </Button>
+                  )}
+                </div>
+
+                {picking && selectedPeople.length > 0 ? (
+                  <div
+                    className="flex gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    aria-label={t('selectedCount', {
+                      count: selectedPeople.length,
+                    })}
+                  >
+                    {selectedPeople.map((row) => (
+                      <button
+                        key={row.person.id}
+                        type="button"
+                        className="flex w-16 shrink-0 flex-col items-center gap-1 text-center"
+                        aria-label={t('removeSelected', { name: row.name })}
+                        onClick={() => toggleSelected(row)}
                       >
-                        <X className="size-2.5" strokeWidth={2.5} />
-                      </span>
-                    </span>
-                    <span className="w-full truncate text-1 text-neutral-11">
-                      {row.name.split(' ')[0] || row.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : null}
+                        <span className="relative inline-flex">
+                          <PersonAvatar
+                            size="chat"
+                            shape="circle"
+                            avatarSrc={row.avatarUrl}
+                            userName={row.name}
+                            personId={row.person.id}
+                          />
+                          <span
+                            className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-foreground text-background"
+                            aria-hidden
+                          >
+                            <X className="size-2.5" strokeWidth={2.5} />
+                          </span>
+                        </span>
+                        <span className="w-full truncate text-1 text-neutral-11">
+                          {row.name.split(' ')[0] || row.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
 
-            {picking ? (
-              <div className="flex items-center justify-between gap-3">
-                <p className="min-w-0 flex-1 truncate text-1 text-neutral-11">
-                  {selectedPeople.length > 0
-                    ? t('selectedCount', { count: selectedPeople.length })
-                    : t('pickMembers')}
+                {picking ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="min-w-0 flex-1 truncate text-1 text-neutral-11">
+                      {selectedPeople.length > 0
+                        ? t('selectedCount', { count: selectedPeople.length })
+                        : t('pickMembers')}
+                    </p>
+                    <Button
+                      type="button"
+                      disabled={!canStartGroup}
+                      className="shrink-0 gap-1.5"
+                      onClick={() => void startGroupChat()}
+                    >
+                      <Users
+                        className="size-3.5"
+                        strokeWidth={1.5}
+                        aria-hidden
+                      />
+                      {t('startGroupCall')}
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+
+              {notice ? (
+                <p className="text-1 text-error-11" role="alert">
+                  {notice}
                 </p>
-                <Button
-                  type="button"
-                  disabled={!canStartGroup}
-                  className="shrink-0 gap-1.5"
-                  onClick={() => void startGroupChat()}
+              ) : null}
+
+              {debugRooms ? (
+                <div
+                  className="overflow-x-auto border border-border bg-muted/30 p-3 text-[11px] leading-4 text-muted-foreground"
+                  data-testid="debug-rooms"
                 >
-                  <Users className="size-3.5" strokeWidth={1.5} aria-hidden />
-                  {t('startGroupCall')}
-                </Button>
+                  <p className="mb-2 font-medium text-foreground">
+                    debugRooms ({roomDiagnostics.length})
+                  </p>
+                  <table className="w-full border-collapse text-left">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="py-1 pr-2">reason</th>
+                        <th className="py-1 pr-2">cache</th>
+                        <th className="py-1 pr-2">membership</th>
+                        <th className="py-1 pr-2">type</th>
+                        <th className="py-1 pr-2">members</th>
+                        <th className="py-1 pr-2">name</th>
+                        <th className="py-1">roomId</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {roomDiagnostics.map((room) => (
+                        <tr
+                          key={room.roomId}
+                          className="border-b border-border/60"
+                        >
+                          <td className="py-1 pr-2 whitespace-nowrap">
+                            {room.reason}
+                          </td>
+                          <td className="py-1 pr-2">
+                            {room.cached ? 'row' : 'missing'}
+                          </td>
+                          <td className="py-1 pr-2">{room.membership}</td>
+                          <td className="py-1 pr-2">{room.roomType || '—'}</td>
+                          <td className="py-1 pr-2 whitespace-nowrap">
+                            {room.loadedHumanCount}/{room.summaryJoinedCount} o
+                            {room.othersCount}
+                            {room.archived ? ' archived' : ''}
+                          </td>
+                          <td className="py-1 pr-2">{room.name || '—'}</td>
+                          <td className="py-1 break-all">{room.roomId}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+
+              {!isMatrixAvailable && !isConnecting && !notice ? (
+                <p className="text-2 text-muted-foreground">
+                  {tChat('matrixUnavailable')}
+                </p>
+              ) : null}
+
+              <div className="flex min-h-0 flex-1 flex-col gap-3">
+                {listLoading ? (
+                  <MemberListSkeleton
+                    title={
+                      section === 'archived' ? t('tabs.archived') : t('people')
+                    }
+                    loadingLabel={t('loading')}
+                  />
+                ) : null}
+
+                {!listLoading &&
+                section === 'archived' &&
+                isMatrixAvailable &&
+                people.length === 0 &&
+                !searching ? (
+                  <p className="text-2 text-muted-foreground">
+                    {needle ? t('noMatches') : t('archivedEmpty')}
+                  </p>
+                ) : null}
+
+                {!listLoading &&
+                section !== 'archived' &&
+                isMatrixAvailable &&
+                home != null &&
+                shownRows.length === 0 &&
+                !searching ? (
+                  <p className="text-2 text-muted-foreground">
+                    {needle
+                      ? t('noMatches')
+                      : showChannelTags && inboxFilter !== 'direct'
+                      ? t('inbox.empty')
+                      : t('empty')}
+                  </p>
+                ) : null}
+
+                {!listLoading && shownRows.length > 0 ? (
+                  <MemberList
+                    title={listTitle}
+                    rows={shownRows}
+                    showChannelTags={showChannelTags}
+                    presenceById={presenceById}
+                    locale={locale}
+                    justNow={t('justNow')}
+                    noMessage={t('noMessage')}
+                    archivedLabel={t('tabs.archived')}
+                    previewLoading={
+                      !initialSyncComplete || channelPreviewsPending
+                    }
+                    loadingLabel={t('loading')}
+                    youLabel={(message) => t('youWrote', { message })}
+                    unreadLabel={(count) => t('unread', { count })}
+                    selectLabel={(name) => t('selectMember', { name })}
+                    picking={picking}
+                    selected={selected}
+                    activeRoomId={coherenceRoomId}
+                    activePersonId={coherencePeerPerson?.id ?? null}
+                    openLookup={{
+                      rooms: rows,
+                      personIdToMatrixUserId,
+                      peopleBySub,
+                    }}
+                    onOpen={(row) => void openMember(row)}
+                    scrollRef={inboxListRef}
+                    footer={
+                      canLoadMoreInbox ? (
+                        <li
+                          ref={inboxEndRef}
+                          className="h-px w-full list-none"
+                          aria-hidden
+                        />
+                      ) : null
+                    }
+                  />
+                ) : null}
+
+                {moreFailed ? (
+                  <div className="flex shrink-0 flex-col items-center gap-2">
+                    <p
+                      className="text-center text-1 text-error-11"
+                      role="alert"
+                    >
+                      {t('loadMoreFailed')}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      disabled={loadingMore}
+                      onClick={() => {
+                        setMoreFailed(false);
+                        void loadMorePeople();
+                      }}
+                    >
+                      {tCommon('loadMore')}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
+            </div>
           </div>
-
-          {notice ? (
-            <p className="text-1 text-error-11" role="alert">
-              {notice}
-            </p>
-          ) : null}
-
-          {debugRooms ? (
-            <div
-              className="overflow-x-auto border border-border bg-muted/30 p-3 text-[11px] leading-4 text-muted-foreground"
-              data-testid="debug-rooms"
-            >
-              <p className="mb-2 font-medium text-foreground">
-                debugRooms ({roomDiagnostics.length})
-              </p>
-              <table className="w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="py-1 pr-2">reason</th>
-                    <th className="py-1 pr-2">cache</th>
-                    <th className="py-1 pr-2">membership</th>
-                    <th className="py-1 pr-2">type</th>
-                    <th className="py-1 pr-2">members</th>
-                    <th className="py-1 pr-2">name</th>
-                    <th className="py-1">roomId</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {roomDiagnostics.map((room) => (
-                    <tr key={room.roomId} className="border-b border-border/60">
-                      <td className="py-1 pr-2 whitespace-nowrap">
-                        {room.reason}
-                      </td>
-                      <td className="py-1 pr-2">
-                        {room.cached ? 'row' : 'missing'}
-                      </td>
-                      <td className="py-1 pr-2">{room.membership}</td>
-                      <td className="py-1 pr-2">{room.roomType || '—'}</td>
-                      <td className="py-1 pr-2 whitespace-nowrap">
-                        {room.loadedHumanCount}/{room.summaryJoinedCount} o
-                        {room.othersCount}
-                        {room.archived ? ' archived' : ''}
-                      </td>
-                      <td className="py-1 pr-2">{room.name || '—'}</td>
-                      <td className="py-1 break-all">{room.roomId}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-
-          {!isMatrixAvailable && !isConnecting && !notice ? (
-            <p className="text-2 text-muted-foreground">
-              {tChat('matrixUnavailable')}
-            </p>
-          ) : null}
-
-          {listLoading ? (
-            <MemberListSkeleton
-              title={section === 'archived' ? t('tabs.archived') : t('people')}
-              loadingLabel={t('loading')}
-            />
-          ) : null}
-
-          {!listLoading &&
-          section === 'archived' &&
-          isMatrixAvailable &&
-          people.length === 0 &&
-          !searching ? (
-            <p className="text-2 text-muted-foreground">
-              {needle ? t('noMatches') : t('archivedEmpty')}
-            </p>
-          ) : null}
-
-          {!listLoading &&
-          section !== 'archived' &&
-          isMatrixAvailable &&
-          home != null &&
-          people.length === 0 &&
-          !searching ? (
-            <p className="text-2 text-muted-foreground">
-              {needle ? t('noMatches') : t('empty')}
-            </p>
-          ) : null}
-
-          {!listLoading && people.length > 0 ? (
-            <MemberList
-              title={section === 'archived' ? t('tabs.archived') : t('people')}
-              rows={people}
-              presenceById={presenceById}
-              locale={locale}
-              justNow={t('justNow')}
-              noMessage={t('noMessage')}
-              previewLoading={false}
-              loadingLabel={t('loading')}
-              youLabel={(message) => t('youWrote', { message })}
-              unreadLabel={(count) => t('unread', { count })}
-              selectLabel={(name) => t('selectMember', { name })}
-              picking={picking}
-              selected={selected}
-              onOpen={(row) => void openMember(row)}
-            />
-          ) : null}
-
-          {!listLoading &&
-          hasMorePeople &&
-          !needle &&
-          section !== 'archived' ? (
-            <div className="flex justify-center">
-              <Button
-                type="button"
-                variant="outline"
-                colorVariant="neutral"
-                disabled={loadingMore}
-                onClick={() => void loadMorePeople()}
-              >
-                {tCommon('loadMore')}
-              </Button>
-            </div>
-          ) : null}
-
-          {moreFailed ? (
-            <p className="text-center text-1 text-error-11" role="alert">
-              {t('loadMoreFailed')}
-            </p>
-          ) : null}
-        </>
+        </div>
       ) : null}
     </div>
   );
@@ -2390,7 +3219,7 @@ function GroupFaces({ faces }: { faces: GroupFace[] }) {
         <span
           key={`${face.name}-${index}`}
           className={cn(
-            'absolute block size-[22px] overflow-hidden rounded-full bg-neutral-3 ring-2 ring-background group-hover/row:ring-accent-2',
+            'absolute block size-[22px] overflow-hidden rounded-full bg-neutral-3 ring-2 ring-background group-hover/row:ring-accent-2 group-data-[active=true]/row:ring-accent-2',
             index === 0 ? 'top-0 left-0' : 'right-0 bottom-0',
           )}
         >
@@ -2428,16 +3257,16 @@ function MemberListSkeleton({
 }) {
   return (
     <section
-      className="overflow-hidden rounded-none border border-border bg-background"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-none border border-border bg-background"
       role="status"
       aria-busy="true"
       aria-label={loadingLabel}
       data-testid="messages-people-loader"
     >
-      <h2 className="border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
+      <h2 className="shrink-0 border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {title}
       </h2>
-      <ul aria-hidden>
+      <ul className="min-h-0 flex-1 overflow-y-auto" aria-hidden>
         {Array.from({ length: MEMBER_LIST_SKELETON_ROWS }, (_, index) => (
           <li
             key={index}
@@ -2455,6 +3284,49 @@ function MemberListSkeleton({
   );
 }
 
+const CHANNEL_MARK_ICONS: Partial<Record<InboxChannelKind, typeof Circle>> = {
+  space: Circle,
+  'space-public': Globe,
+  signal: Radio,
+  proposal: FileText,
+  ecosystem: Target,
+  network: Globe2,
+};
+
+const SIGNAL_TYPE_KEYS = new Set([
+  'Need',
+  'Resource',
+  'Opportunity',
+  'Insight',
+  'Tension',
+  'Risk',
+  'Action',
+  'Impact',
+  'Trend',
+  'Proposal',
+]);
+
+function channelTagKey(kind: InboxChannelKind) {
+  switch (kind) {
+    case 'dm':
+      return 'inbox.tagDm';
+    case 'group':
+      return 'inbox.tagGroup';
+    case 'space':
+      return 'inbox.tagSpace';
+    case 'space-public':
+      return 'inbox.tagSpacePublic';
+    case 'signal':
+      return 'inbox.tagSignal';
+    case 'proposal':
+      return 'inbox.tagProposal';
+    case 'ecosystem':
+      return 'inbox.tagEcosystem';
+    case 'network':
+      return 'inbox.tagNetwork';
+  }
+}
+
 function MemberList({
   title,
   rows,
@@ -2462,6 +3334,7 @@ function MemberList({
   locale,
   justNow,
   noMessage,
+  archivedLabel,
   previewLoading,
   loadingLabel,
   youLabel,
@@ -2469,7 +3342,13 @@ function MemberList({
   selectLabel,
   picking,
   selected,
+  activeRoomId = null,
+  activePersonId = null,
+  openLookup,
   onOpen,
+  showChannelTags = false,
+  scrollRef,
+  footer = null,
 }: {
   title: string;
   rows: ConnectionMemberRow[];
@@ -2477,7 +3356,8 @@ function MemberList({
   locale: string;
   justNow: string;
   noMessage: string;
-  /** Rooms are still loading, so a missing conversation is not yet "empty". */
+  archivedLabel: string;
+  /** Channel history or sync is still filling in — show a skeleton, not "empty". */
   previewLoading: boolean;
   loadingLabel: string;
   youLabel: (message: string) => string;
@@ -2485,41 +3365,95 @@ function MemberList({
   selectLabel: (name: string) => string;
   picking: boolean;
   selected: Set<number>;
+  activeRoomId?: string | null;
+  activePersonId?: number | null;
+  openLookup?: Parameters<typeof listedConversationIsOpen>[2];
   onOpen: (row: ConnectionMemberRow) => void;
+  showChannelTags?: boolean;
+  /** Scrollport for the conversation rows. The title stays fixed above it. */
+  scrollRef?: Ref<HTMLUListElement>;
+  footer?: ReactNode;
 }) {
+  const tInbox = useTranslations('Connections');
+  const tTypes = useTranslations('CoherenceTab.types');
+  const chainScroll = useChainScrollAtEdge();
+  const setListRef = useCallback(
+    (node: HTMLUListElement | null) => {
+      chainScroll(node);
+      if (typeof scrollRef === 'function') scrollRef(node);
+      else if (scrollRef) scrollRef.current = node;
+    },
+    [chainScroll, scrollRef],
+  );
   return (
-    <section className="overflow-hidden rounded-none border border-border bg-background">
-      <h2 className="border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
+    <section className="flex min-h-0 flex-1 flex-col overflow-visible rounded-none border border-border bg-background lg:overflow-hidden">
+      <h2 className="shrink-0 border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {title}
       </h2>
-      <ul>
+      <ul
+        ref={setListRef}
+        className="narrow-scrollbar min-h-0 flex-1 overflow-visible lg:overflow-y-auto lg:overscroll-contain"
+      >
         {rows.map((row) => {
-          const leftoverPrivy = /privy_did_privy/i.test(row.preview);
-          const previewText = leftoverPrivy ? '' : row.preview;
+          const previewText = previewForInboxDisplay(row.preview);
           const loadingPreview =
-            leftoverPrivy || (previewLoading && (!row.roomId || !previewText));
+            previewLoading &&
+            Boolean(row.roomId) &&
+            !previewText &&
+            row.lastTs != null;
           const preview = previewText
             ? row.mine
               ? youLabel(previewText)
+              : row.senderName
+              ? tInbox('theyWrote', {
+                  name: row.senderName,
+                  message: previewText,
+                })
               : previewText
             : noMessage;
           const when = row.lastTs
             ? formatWhen(row.lastTs, locale, justNow)
             : '';
           const checked = selected.has(row.person.id);
+          const active =
+            !picking &&
+            listedConversationIsOpen(
+              row,
+              { roomId: activeRoomId, personId: activePersonId },
+              openLookup,
+            );
           const presence = presenceById.get(row.person.id) ?? 'offline';
+          const ChannelIcon = row.inbox
+            ? CHANNEL_MARK_ICONS[row.inbox.kind]
+            : undefined;
+          const contextHref =
+            showChannelTags && !picking && ChannelIcon
+              ? inboxContextHref(locale, row.inbox)
+              : null;
+          const signalType =
+            row.inbox?.signalType && SIGNAL_TYPE_KEYS.has(row.inbox.signalType)
+              ? tTypes(row.inbox.signalType as 'Need')
+              : row.inbox?.signalType ?? null;
+          const context =
+            showChannelTags && row.inbox
+              ? inboxContextLine(row.inbox, signalType)
+              : null;
           return (
             <li
               key={row.roomId ?? row.person.id}
-              className="border-b border-border last:border-b-0"
+              data-active-conversation={active ? 'true' : undefined}
+              className="relative border-b border-border last:border-b-0"
             >
               <button
                 type="button"
                 onClick={() => onOpen(row)}
                 aria-pressed={picking ? checked : undefined}
+                aria-current={active ? 'true' : undefined}
                 aria-label={picking ? selectLabel(row.name) : undefined}
+                data-active={active ? 'true' : undefined}
                 className={cn(
                   'group/row flex w-full min-w-0 items-center gap-3 px-4 py-3 text-left hover:bg-accent-2',
+                  active && 'bg-accent-2',
                   picking && checked && 'bg-accent-2/60',
                 )}
               >
@@ -2541,7 +3475,22 @@ function MemberList({
                     ) : null}
                   </span>
                 ) : null}
-                {row.faces && row.faces.length > 0 ? (
+                {showChannelTags && ChannelIcon ? (
+                  <span className="relative grid size-10 shrink-0 place-items-center border border-foreground text-foreground">
+                    <ChannelIcon
+                      className="size-4"
+                      strokeWidth={1.5}
+                      aria-hidden
+                    />
+                    {contextHref ? (
+                      <ArrowUpRight
+                        className="pointer-events-none absolute top-px right-px size-2.5"
+                        strokeWidth={1.75}
+                        aria-hidden
+                      />
+                    ) : null}
+                  </span>
+                ) : row.faces && row.faces.length > 0 ? (
                   <GroupFaces faces={row.faces} />
                 ) : (
                   <PersonAvatar
@@ -2563,13 +3512,26 @@ function MemberList({
                         className="my-0.5 block h-4 w-32 max-w-[60%] animate-pulse rounded-sm bg-neutral-5"
                       />
                     ) : (
-                      <span
-                        className={cn(
-                          'min-w-0 truncate text-2 text-foreground',
-                          row.unread > 0 && 'font-semibold',
-                        )}
-                      >
-                        {row.name}
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span
+                          className={cn(
+                            'min-w-0 truncate text-2 text-foreground',
+                            row.unread > 0 && 'font-semibold',
+                          )}
+                        >
+                          {row.name}
+                        </span>
+                        {row.archived ? (
+                          <Badge
+                            variant="outline"
+                            colorVariant="neutral"
+                            size={1}
+                            className="shrink-0"
+                            data-testid="archived-conversation-badge"
+                          >
+                            {archivedLabel}
+                          </Badge>
+                        ) : null}
                       </span>
                     )}
                     {when ? (
@@ -2578,6 +3540,25 @@ function MemberList({
                       </span>
                     ) : null}
                   </span>
+                  {showChannelTags && row.inbox ? (
+                    <span className="mt-1.5 flex min-w-0 items-center gap-2">
+                      <span className="inline-flex shrink-0 items-center gap-1 border border-border px-1.5 py-0.5 text-1 leading-none text-foreground">
+                        {ChannelIcon ? (
+                          <ChannelIcon
+                            className="size-3 shrink-0"
+                            strokeWidth={1.5}
+                            aria-hidden
+                          />
+                        ) : null}
+                        {tInbox(channelTagKey(row.inbox.kind))}
+                      </span>
+                      {context ? (
+                        <span className="min-w-0 truncate text-1 text-muted-foreground">
+                          {context}
+                        </span>
+                      ) : null}
+                    </span>
+                  ) : null}
                   <span className="mt-0.5 flex items-center justify-between gap-3">
                     {loadingPreview ? (
                       <span
@@ -2602,9 +3583,17 @@ function MemberList({
                   </span>
                 </span>
               </button>
+              {contextHref && ChannelIcon ? (
+                <Link
+                  href={contextHref}
+                  aria-label={tInbox('inbox.openContext', { name: row.name })}
+                  className="absolute top-1/2 left-4 z-10 size-10 -translate-y-1/2 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+                />
+              ) : null}
             </li>
           );
         })}
+        {footer}
       </ul>
     </section>
   );

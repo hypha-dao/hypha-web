@@ -23,24 +23,52 @@ export function isSpacePublicRoomType(
 }
 
 /**
- * Accept a resolved public room only when it is not the member channel
- * and, when a type is known, it is actually `space-public`.
- *
- * An untyped room is accepted only if we have a member id to prove it
- * is distinct — otherwise a misbound `#hypha-public-{slug}` alias that
- * points at the member timeline would be opened silently.
+ * Accept a resolved public room only when its create type is
+ * `io.hypha.room.space-public` and it is not the member channel.
+ * An unknown type is refused: a missing or stale `chatRoomId` must not
+ * let the member timeline through under the public label.
  */
 export function acceptEnsuredPublicRoomId(
   resolvedRoomId: string | null | undefined,
   memberRoomId: string | null | undefined,
   roomType?: string | null,
 ): string | null {
-  const distinct = distinctPublicRoomId(resolvedRoomId, memberRoomId);
-  if (!distinct) return null;
-  if (isSpacePublicRoomType(roomType)) return distinct;
-  if (roomType === HYPHA_ROOM_TYPES.space) return null;
-  if (roomType == null || roomType.trim() === '') {
-    return memberRoomId?.trim() ? distinct : null;
+  if (!isSpacePublicRoomType(roomType)) return null;
+  return distinctPublicRoomId(resolvedRoomId, memberRoomId);
+}
+
+const PUBLIC_ROOM_TYPE_POLL_MS = 50;
+
+/**
+ * The browser often has the room before `m.room.create` has synced.
+ * Wait while the type is still unknown, then accept only `space-public`.
+ * A known member type stops immediately.
+ */
+export async function waitForAcceptedPublicRoomId(input: {
+  roomId: string;
+  memberRoomId?: string | null;
+  readRoomType: () => string | null | undefined;
+  waitMs?: number;
+  now?: () => number;
+  sleep?: (ms: number) => Promise<void>;
+}): Promise<string | null> {
+  const waitMs = input.waitMs ?? 2000;
+  const now = input.now ?? (() => Date.now());
+  const sleep =
+    input.sleep ??
+    ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
+  const deadline = now() + waitMs;
+  let roomType = input.readRoomType();
+  while (now() < deadline) {
+    const accepted = acceptEnsuredPublicRoomId(
+      input.roomId,
+      input.memberRoomId,
+      roomType,
+    );
+    if (accepted) return accepted;
+    if (roomType != null && roomType.trim() !== '') return null;
+    await sleep(PUBLIC_ROOM_TYPE_POLL_MS);
+    roomType = input.readRoomType();
   }
-  return null;
+  return acceptEnsuredPublicRoomId(input.roomId, input.memberRoomId, roomType);
 }

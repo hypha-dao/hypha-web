@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveMemberHomePhase } from '../member-home-phase';
+import {
+  memberHomeReplyReady,
+  resolveMemberHomeGreetingName,
+  resolveMemberHomePhase,
+} from '../member-home-phase';
 
 const settled = {
   authLoading: false,
@@ -69,6 +73,23 @@ describe('resolveMemberHomePhase', () => {
     expect(
       resolveMemberHomePhase({
         ...settled,
+        home: 'missing',
+        homeError: true,
+      }),
+    ).toBe('home-unavailable');
+    // A request abort / network block is an intelligence error, not /me.
+    expect(
+      resolveMemberHomePhase({
+        ...settled,
+        person: 'present',
+        home: 'missing',
+        homeError: true,
+        meError: false,
+      }),
+    ).toBe('home-unavailable');
+    expect(
+      resolveMemberHomePhase({
+        ...settled,
         meError: true,
       }),
     ).toBe('ready');
@@ -76,5 +97,82 @@ describe('resolveMemberHomePhase', () => {
 
   it('shows member home when the person and intelligence both loaded', () => {
     expect(resolveMemberHomePhase(settled)).toBe('ready');
+  });
+});
+
+describe('memberHomeReplyReady', () => {
+  it('shows words as soon as they stream, even before the card lands', () => {
+    expect(
+      memberHomeReplyReady({
+        text: 'Océane asked to join.',
+        hasCard: false,
+        streaming: true,
+        expectsCard: true,
+      }),
+    ).toBe(true);
+    expect(
+      memberHomeReplyReady({ text: '', hasCard: true, streaming: true }),
+    ).toBe(true);
+    expect(
+      memberHomeReplyReady({
+        text: 'Océane asked to join.',
+        hasCard: true,
+        streaming: true,
+        expectsCard: true,
+      }),
+    ).toBe(true);
+    expect(
+      memberHomeReplyReady({
+        text: 'Océane asked to join.',
+        hasCard: false,
+        streaming: true,
+      }),
+    ).toBe(true);
+    expect(
+      memberHomeReplyReady({ text: '', hasCard: false, streaming: true }),
+    ).toBe(false);
+  });
+
+  it('shows finished words or a finished card', () => {
+    expect(
+      memberHomeReplyReady({
+        text: 'Océane asked to join.',
+        hasCard: true,
+        streaming: false,
+      }),
+    ).toBe(true);
+    expect(
+      memberHomeReplyReady({
+        text: 'Nothing is waiting.',
+        hasCard: false,
+        streaming: false,
+        expectsCard: true,
+      }),
+    ).toBe(true);
+    expect(
+      memberHomeReplyReady({ text: '', hasCard: true, streaming: false }),
+    ).toBe(true);
+    expect(
+      memberHomeReplyReady({ text: '', hasCard: false, streaming: false }),
+    ).toBe(false);
+  });
+});
+
+describe('resolveMemberHomeGreetingName', () => {
+  it('returns a name only when the person is the current member', () => {
+    expect(
+      resolveMemberHomeGreetingName({
+        personName: 'Vlad',
+        personNickname: 'v',
+        personIsCurrentMember: false,
+      }),
+    ).toBeNull();
+    expect(
+      resolveMemberHomeGreetingName({
+        personName: 'Vlad',
+        personNickname: 'v',
+        personIsCurrentMember: true,
+      }),
+    ).toBe('Vlad');
   });
 });

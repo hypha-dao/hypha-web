@@ -63,11 +63,14 @@ export type OrgMemoryAssetWire = {
   document_slug?: string;
   document_label?: string;
   call_session_id?: string;
+  call_recording_id?: number;
+  call_transcript_id?: number;
   discussion_summary_id?: number;
   text_excerpt?: string;
   context_title?: string;
   signal_title?: string;
   room_title?: string;
+  category?: 'conversations' | 'calls' | 'ai' | 'files';
   occurred_at: string;
 };
 
@@ -80,6 +83,20 @@ export type OrgMemorySpaceMemoryPayload = {
     total_pages: number;
     has_next_page: boolean;
     has_previous_page: boolean;
+  };
+  /** Full-catalog branch totals (not just the current page). */
+  assets_category_counts?: {
+    conversations: number;
+    calls: number;
+    ai: number;
+    files: number;
+  };
+  /** AI context packs — not rendered in the Space Memory panel. */
+  assets_category_markdown?: {
+    conversations: string;
+    calls: string;
+    ai: string;
+    files: string;
   };
   matrix_fetch?: {
     used_bot_access_token?: boolean;
@@ -410,6 +427,12 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
       const mxc = resolveOrgMemoryMxcUri(a);
       const safeUrl = !mxc && a.app_url ? normalizeHttpUrl(a.app_url) : null;
       const sessionId = a.call_session_id ?? a.filename;
+      // Prefer recording id — several takes can share one call session, and
+      // keying only on session collapsed them so Space Memory looked empty.
+      const recordingKey =
+        a.call_recording_id != null
+          ? String(a.call_recording_id)
+          : String(sessionId);
       const mime = a.mime?.toLowerCase() ?? '';
       const recordingKind: SpaceMemoryAssetKind =
         mime.startsWith('video/') || mime.startsWith('audio/')
@@ -422,14 +445,14 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
       const roomTitle = a.room_title?.trim() || undefined;
       const displayTitle = deriveSpaceMemoryDisplayTitle({
         source: 'call_recording',
-        name: `call-recording-${sessionId}.webm`,
+        name: `call-recording-${recordingKey}.webm`,
         contextTitle: signalTitle ?? roomTitle ?? contextTitle,
         textExcerpt: a.text_excerpt,
       });
       items.push({
-        id: `call-recording:${sessionId}`,
+        id: `call-recording:${recordingKey}`,
         name: displayTitle,
-        url: mxc ?? safeUrl ?? `memory://call-recording/${sessionId}`,
+        url: mxc ?? safeUrl ?? `memory://call-recording/${recordingKey}`,
         kind: recordingKind,
         source: 'call_recording',
         uploadedAt,
@@ -450,21 +473,22 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
       const syntheticId =
         a.source === 'discussion_summary'
           ? String(a.discussion_summary_id ?? a.filename)
+          : a.call_transcript_id != null
+          ? String(a.call_transcript_id)
           : String(a.call_session_id ?? a.filename);
       const contextTitle = a.context_title?.trim() || undefined;
       const signalTitle = a.signal_title?.trim() || undefined;
       const roomTitle = a.room_title?.trim() || undefined;
       const rawExcerpt = a.text_excerpt?.trim() || undefined;
-      const excerpt =
-        a.source === 'discussion_summary' && rawExcerpt
-          ? humanizeMemoryExcerpt(rawExcerpt) || undefined
-          : rawExcerpt;
+      const excerpt = rawExcerpt
+        ? humanizeMemoryExcerpt(rawExcerpt) || undefined
+        : undefined;
       const displayTitle = deriveSpaceMemoryDisplayTitle({
         source: a.source,
         name:
           a.source === 'discussion_summary'
             ? `discussion-summary-${syntheticId}.md`
-            : `call-transcript-${syntheticId}.txt`,
+            : `call-transcript-${syntheticId}.md`,
         contextTitle: signalTitle ?? roomTitle ?? contextTitle,
         textExcerpt: excerpt,
       });

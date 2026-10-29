@@ -23,7 +23,7 @@ export default async function MemoryPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceSlug={id}>
-      <div className="flex flex-col gap-4 py-4">
+      <div className="w-full min-w-0 py-4">
         <SpaceMemorySection spaceSlug={id} />
       </div>
     </SpaceTabAccessWrapper>

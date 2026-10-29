@@ -4,6 +4,7 @@ import {
   acceptEnsuredPublicRoomId,
   distinctPublicRoomId,
   isSpacePublicRoomType,
+  waitForAcceptedPublicRoomId,
 } from '../public-room-id';
 import { HYPHA_ROOM_TYPES } from '../room-types';
 
@@ -56,14 +57,60 @@ describe('acceptEnsuredPublicRoomId', () => {
     expect(isSpacePublicRoomType(HYPHA_ROOM_TYPES.space)).toBe(false);
   });
 
-  it('rejects an untyped room when the member id is unknown', () => {
+  it('rejects an untyped room even when it is distinct from the member room', () => {
     expect(acceptEnsuredPublicRoomId('!maybe:hs', null, null)).toBeNull();
     expect(acceptEnsuredPublicRoomId('!maybe:hs', null, '')).toBeNull();
+    expect(
+      acceptEnsuredPublicRoomId('!public:hs', '!space:hs', null),
+    ).toBeNull();
+    expect(
+      acceptEnsuredPublicRoomId('!old-member:hs', '!stale:hs', null),
+    ).toBeNull();
+  });
+});
+
+describe('waitForAcceptedPublicRoomId', () => {
+  it('accepts once the synced type is the public room', async () => {
+    const types = [null, HYPHA_ROOM_TYPES.spacePublic];
+    const accepted = await waitForAcceptedPublicRoomId({
+      roomId: '!public:hs',
+      memberRoomId: '!space:hs',
+      readRoomType: () => types.shift() ?? HYPHA_ROOM_TYPES.spacePublic,
+      waitMs: 200,
+      now: () => 0,
+      sleep: async () => {},
+    });
+    expect(accepted).toBe('!public:hs');
   });
 
-  it('accepts an untyped room only when it is distinct from the member room', () => {
-    expect(acceptEnsuredPublicRoomId('!public:hs', '!space:hs', null)).toBe(
-      '!public:hs',
-    );
+  it('refuses a member room without waiting out the timeout', async () => {
+    let slept = 0;
+    const accepted = await waitForAcceptedPublicRoomId({
+      roomId: '!space:hs',
+      memberRoomId: null,
+      readRoomType: () => HYPHA_ROOM_TYPES.space,
+      waitMs: 2000,
+      now: () => 0,
+      sleep: async () => {
+        slept += 1;
+      },
+    });
+    expect(accepted).toBeNull();
+    expect(slept).toBe(0);
+  });
+
+  it('refuses a room whose type never arrives', async () => {
+    let clock = 0;
+    const accepted = await waitForAcceptedPublicRoomId({
+      roomId: '!maybe:hs',
+      memberRoomId: '!space:hs',
+      readRoomType: () => null,
+      waitMs: 100,
+      now: () => clock,
+      sleep: async () => {
+        clock = 100;
+      },
+    });
+    expect(accepted).toBeNull();
   });
 });

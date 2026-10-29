@@ -22,6 +22,30 @@ import { headers } from 'next/headers';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+/** Return whatever communities finished before the function 504. */
+const ENERGY_HOME_DEADLINE_MS = 8_000;
+
+async function settleByDeadline<T>(
+  start: () => Promise<T>,
+  deadlineAt: number,
+  fallback: T,
+): Promise<T> {
+  const left = deadlineAt - Date.now();
+  if (left <= 0) return fallback;
+  const work = start();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), left);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+    void work.catch(() => undefined);
+  }
+}
 
 type AppDb = ReturnType<typeof getDb>;
 type SpaceRow = Awaited<ReturnType<typeof findAllSpacesByWeb3SpaceIds>>[number];
@@ -211,6 +235,8 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const deadlineAt = Date.now() + ENERGY_HOME_DEADLINE_MS;
+
   try {
     const appDb = getDb({ authToken });
     const person = await findPersonBySlug({ slug: personSlug }, { db: appDb });
@@ -219,8 +245,10 @@ export async function GET(
     }
 
     const memberAddress = person.address as `0x${string}`;
-    const memberWeb3SpaceIds = await web3Client.readContract(
-      getMemberSpaces({ memberAddress }),
+    const memberWeb3SpaceIds = await settleByDeadline(
+      () => web3Client.readContract(getMemberSpaces({ memberAddress })),
+      deadlineAt,
+      [] as readonly bigint[],
     );
 
     if (memberWeb3SpaceIds.length === 0) {
@@ -235,14 +263,24 @@ export async function GET(
       return value;
     });
 
-    const spaces = await findAllSpacesByWeb3SpaceIds(
-      { web3SpaceIds, parentOnly: false },
-      { db: appDb },
+    const spaces = await settleByDeadline(
+      () =>
+        findAllSpacesByWeb3SpaceIds(
+          { web3SpaceIds, parentOnly: false },
+          { db: appDb },
+        ),
+      deadlineAt,
+      [],
     );
-    const mappings = await Promise.all(
-      spaces.map((space) =>
-        findEnergyCommunityBySpaceId(space.id, { db: appDb }),
-      ),
+    const mappings = await settleByDeadline(
+      () =>
+        Promise.all(
+          spaces.map((space) =>
+            findEnergyCommunityBySpaceId(space.id, { db: appDb }),
+          ),
+        ),
+      deadlineAt,
+      spaces.map(() => null),
     );
 
     const communities = (
@@ -253,13 +291,18 @@ export async function GET(
           if (!space?.slug) return null;
           const proxy = mapping.communityProxyAddress as `0x${string}`;
           if (!ADDRESS_RE.test(proxy)) return null;
-          return loadCommunity({
-            appDb,
-            memberAddress,
-            mapping,
-            space,
-            proxy,
-          });
+          return settleByDeadline(
+            () =>
+              loadCommunity({
+                appDb,
+                memberAddress,
+                mapping,
+                space,
+                proxy,
+              }),
+            deadlineAt,
+            null,
+          );
         }),
       )
     ).filter((row): row is MemberEnergyHomeCommunity => row !== null);
@@ -268,8 +311,8 @@ export async function GET(
   } catch (error) {
     console.error('Failed to fetch member energy home:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch member energy home.' },
-      { status: 500 },
+      { error: 'Failed to load energy home' },
+      { status: 503 },
     );
   }
 }

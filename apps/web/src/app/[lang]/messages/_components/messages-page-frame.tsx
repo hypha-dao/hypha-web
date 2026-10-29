@@ -19,9 +19,15 @@ export async function MessagesPageFrame({
       : t('titleLineTwo');
 
   return (
-    <div className="w-full min-w-0 overflow-x-hidden overflow-y-auto">
-      <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9">
-        <header className="xl:hidden">
+    <div className="w-full min-w-0 overflow-x-clip">
+      <Container
+        className={
+          // Match One Wallet: xl:gap-9 under the title. Page still scrolls;
+          // the conversation list is capped separately so it scrolls too.
+          'flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9'
+        }
+      >
+        <header className="shrink-0 xl:hidden">
           <p className="mb-2 text-1 font-bold uppercase text-foreground">
             {t('titleLineOne')}
           </p>
@@ -37,12 +43,12 @@ export async function MessagesPageFrame({
           color="secondary"
           weight="medium"
           align="center"
-          className="hidden flex-col xl:flex"
+          className="hidden shrink-0 flex-col xl:flex"
         >
           <span>{t('titleLineOne')}</span>
           <span>{titleLineTwo}</span>
         </Heading>
-        {children}
+        <div>{children}</div>
       </Container>
     </div>
   );

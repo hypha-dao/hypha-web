@@ -22,6 +22,8 @@ type UseOnboardingVoiceDiscoveryOptions = {
   enabled: boolean;
   isStreaming: boolean;
   lastAssistantText: string;
+  /** Latest assistant bubble id so voice does not re-read an older line. */
+  lastAssistantMessageId?: string;
   locale?: string;
   activeSpaceSlug?: string;
   conversationContext?: VoiceSessionContext;
@@ -41,6 +43,11 @@ type UseOnboardingVoiceDiscoveryOptions = {
   speakReplies?: boolean;
   /** When false, wait for the full reply before speaking (member home). */
   speakEarlyLeadIn?: boolean;
+  /**
+   * When true, read the chat line as shown. Home uses this so a short reply
+   * is spoken instead of the previous bubble.
+   */
+  speakDisplayedText?: boolean;
 };
 
 export function useOnboardingVoiceDiscovery(
@@ -66,6 +73,7 @@ export function useOnboardingVoiceDiscovery(
     enabled: options.enabled && useRealtime,
     isChatStreaming: options.isStreaming,
     lastAssistantText: options.lastAssistantText,
+    lastAssistantMessageId: options.lastAssistantMessageId,
     locale: options.locale,
     conversationContext: options.conversationContext,
     recentTranscriptSummary: options.recentTranscriptSummary,
@@ -77,6 +85,7 @@ export function useOnboardingVoiceDiscovery(
     captureMicrophone: options.captureMicrophone,
     speakReplies: options.speakReplies,
     speakEarlyLeadIn: options.speakEarlyLeadIn,
+    speakDisplayedText: options.speakDisplayedText,
   });
 
   const voice = useRealtime ? realtime : webSpeech;

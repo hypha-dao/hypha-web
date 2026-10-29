@@ -603,14 +603,15 @@ export async function matrixSendTextMessage(
   accessToken: string,
   homeserver: string,
   extraContent?: Record<string, string>,
+  txnId?: string,
 ): Promise<string> {
-  const txnId = `hypha.${Date.now()}.${Math.random()
-    .toString(36)
-    .slice(2, 10)}`;
+  const transactionId =
+    txnId?.trim() ||
+    `hypha.${Date.now()}.${Math.random().toString(36).slice(2, 10)}`;
   const res = await matrixFetch(
     `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
       roomId,
-    )}/send/m.room.message/${encodeURIComponent(txnId)}`,
+    )}/send/m.room.message/${encodeURIComponent(transactionId)}`,
     {
       method: 'PUT',
       headers: {
@@ -630,4 +631,34 @@ export async function matrixSendTextMessage(
     throw new Error('Matrix send returned no event_id');
   }
   return eventId;
+}
+
+export async function matrixRedactEvent(
+  roomId: string,
+  eventId: string,
+  accessToken: string,
+  homeserver: string,
+  txnId?: string,
+): Promise<void> {
+  const transactionId =
+    txnId?.trim() ||
+    `hypha.redact.${Date.now()}.${Math.random().toString(36).slice(2, 10)}`;
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/redact/${encodeURIComponent(eventId)}/${encodeURIComponent(
+      transactionId,
+    )}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        reason: 'AI signal description is signed by the agent that wrote it.',
+      }),
+    },
+  );
+  await readMatrixJson<{ event_id?: string }>(res);
 }

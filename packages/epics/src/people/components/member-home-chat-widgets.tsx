@@ -11,7 +11,6 @@ import {
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useLocale, useTranslations } from 'next-intl';
-import { SyncState } from 'matrix-js-sdk';
 import {
   Check,
   ChevronDown,
@@ -19,8 +18,8 @@ import {
   Phone,
   Plus,
   Video,
+  Wallet,
 } from 'lucide-react';
-import './member-home-sent-tick.css';
 import {
   ERC20_TOKEN_TRANSFER_ADDRESSES,
   useJwt,
@@ -32,6 +31,7 @@ import {
   type Person,
   type Space,
 } from '@hypha-platform/core/client';
+import { SentTick } from './member-home-sent-tick';
 import type { AssetItem } from '../../treasury/hooks/use-user-assets';
 import {
   HYPHA_TOKEN_ADDRESS,
@@ -51,6 +51,7 @@ import {
 } from '../../common/format-blockchain-error';
 import {
   formatWalletAmount,
+  shortenWalletAddress,
   WalletHoldingLine,
 } from '../../common/wallet-flow-card';
 
@@ -64,18 +65,13 @@ import { MySpacesSwitcherMenu } from '../../spaces/components/my-spaces-switcher
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import {
   memberRowsForConnections,
-  STALE_CONNECTION_MS,
-  suggestConnections,
-  type ConnectionSuggestion,
   type ConversationRow,
-  type NewcomerCandidate,
 } from './member-connections';
 import { sortByPresenceThenShared } from './member-presence';
 import { PersonAvatar } from './person-avatar';
 import {
   attachConversationList,
   conversationRowsSnapshot,
-  prioritizeConversationRooms,
 } from './my-connections';
 import { useMemberPresence } from './use-member-presence';
 
@@ -84,7 +80,8 @@ type HomeSpace = MemberIntelligence['spaces'][number];
 
 const AMOUNTS = [5, 10, 25, 50, 100] as const;
 const AMOUNT_INPUT = /^\d*\.?\d{0,2}$/;
-const SPACE_PREVIEW = 5;
+/** Two rows of four. Find more holds the rest. */
+const SPACE_PREVIEW = 8;
 /** Quick picks. A wide screen wraps these into rows instead of one strip. */
 const RECIPIENT_PREVIEW = 10;
 
@@ -222,7 +219,12 @@ export function MemberHomeSpacesWidgetCard({
       <p className="text-2 text-neutral-11">{t('spacesWidgetEmpty')}</p>
     ) : (
       <>
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <ul
+          className={cn(
+            'grid gap-3',
+            framed ? 'grid-cols-4' : 'grid-cols-2 sm:grid-cols-4',
+          )}
+        >
           {shown.map((space) => {
             const icon = resolveSpaceDisplayLogoUrl(space, logoVariant);
             return (
@@ -298,162 +300,27 @@ export function MemberHomeSpacesWidgetCard({
 
 const PEOPLE_PREVIEW = 5;
 
-function suggestionWhen(ts: number, locale: string, justNow: string) {
-  const minutes = Math.round((Date.now() - ts) / 60000);
-  if (minutes < 1) return justNow;
-  const relative = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
-  if (minutes < 60) return relative.format(-minutes, 'minute');
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return relative.format(-hours, 'hour');
-  const days = Math.round(hours / 24);
-  if (days < 7) return relative.format(-days, 'day');
-  return new Intl.DateTimeFormat(locale, {
-    month: 'short',
-    day: 'numeric',
-  }).format(ts);
-}
-
-function newcomersFromSignals(
-  signals: MemberIntelligence['networkSignals'],
-  selfId: number | null,
-): NewcomerCandidate[] {
-  const newcomers: NewcomerCandidate[] = [];
-  const seen = new Set<number>();
-  for (const signal of signals ?? []) {
-    const id = signal.creatorId;
-    const name = signal.creatorName?.trim();
-    if (id == null || !name || id === selfId || seen.has(id)) continue;
-    seen.add(id);
-    newcomers.push({
-      id,
-      name,
-      avatarUrl: signal.creatorAvatarUrl,
-      spaceTitle: signal.spaceTitle,
-      spaceSlug: signal.spaceSlug,
-      score: signal.relevance?.score ?? 0,
-    });
-  }
-  return newcomers;
-}
-
 export function MemberHomePeopleWidgetCard({
   people,
-  networkSignals,
-  selfId,
   fallbackName,
   onChat,
   onCall,
   onVideo,
 }: {
   people: HomeConnection[];
-  networkSignals?: MemberIntelligence['networkSignals'];
-  selfId?: number | null;
   fallbackName: string;
   onChat: (person: HomeConnection) => void;
   onCall: (person: HomeConnection) => void;
   onVideo: (person: HomeConnection) => void;
 }) {
   const t = useTranslations('MemberHome');
-  const tConnections = useTranslations('Connections');
-  const locale = useLocale();
-  const { client } = useMatrix();
   const [expanded, setExpanded] = useState(false);
-  const [rows, setRows] = useState<ConversationRow[]>([]);
-  const [synced, setSynced] = useState(false);
   const personIds = useMemo(() => people.map((person) => person.id), [people]);
   const { presenceById } = useMemberPresence(personIds);
-  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({ personIds });
-  const matrixIdsRef = useRef(personIdToMatrixUserId);
-  matrixIdsRef.current = personIdToMatrixUserId;
-  const visibleMatrixKey = useMemo(
-    () =>
-      Object.values(personIdToMatrixUserId)
-        .filter((id): id is string => Boolean(id))
-        .sort()
-        .join('\n'),
-    [personIdToMatrixUserId],
-  );
   const ranked = useMemo(
     () => sortByPresenceThenShared(people, presenceById),
     [people, presenceById],
   );
-
-  useEffect(() => {
-    if (!client) {
-      setRows([]);
-      setSynced(false);
-      return;
-    }
-    return attachConversationList(client, () => {
-      setRows((current) => {
-        const next = conversationRowsSnapshot(client);
-        if (
-          current.length === next.length &&
-          current.every((row, index) => row === next[index])
-        ) {
-          return current;
-        }
-        return next;
-      });
-      const state = client.getSyncState();
-      if (state === SyncState.Prepared || state === SyncState.Syncing) {
-        setSynced(true);
-      }
-    });
-  }, [client]);
-
-  useEffect(() => {
-    if (!client) return;
-    const ids = Object.values(matrixIdsRef.current).filter((id): id is string =>
-      Boolean(id),
-    );
-    prioritizeConversationRooms(client, ids);
-  }, [client, visibleMatrixKey]);
-
-  const suggestions = useMemo(() => {
-    const newcomers = newcomersFromSignals(networkSignals, selfId ?? null);
-    if (!synced) {
-      return suggestConnections([], newcomers, Date.now()).filter(
-        (card) => card.kind === 'meet',
-      );
-    }
-    const members = memberRowsForConnections(
-      people,
-      rows,
-      personIdToMatrixUserId,
-      selfId ?? null,
-      fallbackName,
-    );
-    return suggestConnections(
-      members,
-      newcomers,
-      Date.now(),
-      STALE_CONNECTION_MS,
-    );
-  }, [
-    fallbackName,
-    networkSignals,
-    people,
-    personIdToMatrixUserId,
-    rows,
-    selfId,
-    synced,
-  ]);
-
-  const openSuggestion = (card: ConnectionSuggestion) => {
-    const known = people.find((person) => person.id === card.person.id);
-    onChat(
-      known ?? {
-        id: card.person.id,
-        slug: card.person.slug ?? null,
-        name: card.person.name,
-        surname: card.person.surname,
-        nickname: card.person.nickname,
-        avatarUrl: card.person.avatarUrl ?? null,
-        sharedSpaceCount: card.sharedSpaceCount,
-      },
-    );
-  };
   const visible = expanded ? ranked : ranked.slice(0, PEOPLE_PREVIEW);
   const remaining = ranked.length - visible.length;
 
@@ -483,65 +350,7 @@ export function MemberHomePeopleWidgetCard({
       title={t('peopleWidgetTitle')}
       aside={people.length > 0 ? String(people.length) : undefined}
     >
-      {suggestions.length > 0 ? (
-        <section
-          className="mb-4 flex flex-col gap-3"
-          aria-label={tConnections('reachOut')}
-        >
-          <div className="flex flex-col gap-1">
-            <h3 className="text-2 font-medium text-foreground">
-              {tConnections('reachOut')}
-            </h3>
-            <p className="text-1 text-neutral-11">
-              {tConnections('suggestSentence')}
-            </p>
-          </div>
-          <div className="flex gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {suggestions.map((card) => (
-              <button
-                key={card.key}
-                type="button"
-                onClick={() => openSuggestion(card)}
-                className="flex w-40 shrink-0 flex-col items-start gap-2 border border-border p-3 text-left hover:bg-accent-2"
-              >
-                <PersonAvatar
-                  size="chat"
-                  shape="circle"
-                  avatarSrc={card.avatarUrl}
-                  userName={card.name}
-                  personId={card.person.id}
-                />
-                <span className="w-full truncate text-2 text-foreground">
-                  {card.name}
-                </span>
-                <span className="text-1 text-foreground">
-                  {card.kind === 'reconnect'
-                    ? tConnections('longTimeNoSee')
-                    : tConnections('worthMeeting')}
-                </span>
-                <span className="w-full truncate text-1 text-neutral-11">
-                  {card.kind === 'reconnect'
-                    ? card.lastTs
-                      ? suggestionWhen(
-                          card.lastTs,
-                          locale,
-                          tConnections('justNow'),
-                        )
-                      : tConnections('noMessage')
-                    : card.spaceTitle
-                    ? card.spaceTitle
-                    : card.sharedSpaceCount > 0
-                    ? tConnections('sharedCount', {
-                        count: card.sharedSpaceCount,
-                      })
-                    : tConnections('noMessage')}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
-      {people.length === 0 && suggestions.length === 0 ? (
+      {people.length === 0 ? (
         <p className="text-2 text-neutral-11">{t('peopleWidgetEmpty')}</p>
       ) : null}
       {people.length > 0 ? (
@@ -579,23 +388,21 @@ export function MemberHomePeopleWidgetCard({
                     </span>
                   </span>
                 </button>
-                <div className="flex shrink-0 border border-border">
+                <div className="flex shrink-0 gap-1">
                   {actions.map((action) => {
                     const Icon = action.icon;
                     return (
-                      <button
+                      <Button
                         key={action.key}
                         type="button"
-                        className="grid h-8 w-8 place-items-center border-r border-border text-foreground last:border-r-0 hover:bg-accent-2"
+                        size="icon"
+                        variant="outline"
+                        colorVariant="neutral"
                         aria-label={action.label(name)}
                         onClick={() => action.run(person)}
                       >
-                        <Icon
-                          className="size-3.5"
-                          strokeWidth={1.25}
-                          aria-hidden
-                        />
-                      </button>
+                        <Icon className="h-4 w-4" />
+                      </Button>
                     );
                   })}
                 </div>
@@ -661,17 +468,6 @@ function tokenSpendable(
       ? token.mutualCredit.creditLimitLeft
       : 0;
   return { balance, creditLeft, spendable: balance + creditLeft };
-}
-
-function SentTick() {
-  return (
-    <span className="sent-tick text-foreground" aria-hidden>
-      <svg viewBox="0 0 48 48">
-        <circle className="sent-tick-ring" cx="24" cy="24" r="18" />
-        <path className="sent-tick-mark" d="M15.5 24.5 L21.2 30.2 L33 17.5" />
-      </svg>
-    </span>
-  );
 }
 
 export function MemberHomeSendTokensWidget({
@@ -1208,12 +1004,12 @@ export function MemberHomeSendTokensWidget({
             {sent.count > 1
               ? t('sendTokensArrivedMany', {
                   count: sent.count,
-                  name: sent.name,
+                  name: shortenWalletAddress(sent.name),
                 })
               : t('sendTokensArrived', {
                   amount: formatAmount(sent.amount),
                   symbol: sent.symbol,
-                  name: sent.name,
+                  name: shortenWalletAddress(sent.name),
                 })}
           </p>
           <p className="mt-2 text-2 text-neutral-11">{t('sendTokensSigned')}</p>
@@ -1304,15 +1100,25 @@ export function MemberHomeSendTokensWidget({
                               personId={person.id}
                             />
                           ) : (
-                            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-background-2 text-1 text-foreground">
+                            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-background-2 text-foreground">
                               {icon ? (
                                 <img
                                   src={icon}
                                   alt=""
                                   className="h-full w-full object-cover"
                                 />
+                              ) : /^0x[a-fA-F0-9]{40}$/i.test(
+                                  item.address.trim(),
+                                ) ? (
+                                <Wallet
+                                  className="size-4"
+                                  strokeWidth={1.75}
+                                  aria-hidden
+                                />
                               ) : (
-                                item.name.trim().charAt(0).toUpperCase()
+                                <span className="text-1">
+                                  {item.name.trim().charAt(0).toUpperCase()}
+                                </span>
                               )}
                             </span>
                           )}
@@ -1326,7 +1132,7 @@ export function MemberHomeSendTokensWidget({
                           ) : null}
                         </span>
                         <span className="line-clamp-2 w-full text-center text-[11px] leading-tight">
-                          {item.name}
+                          {shortenWalletAddress(item.name)}
                         </span>
                       </button>
                     </li>
@@ -1569,12 +1375,12 @@ export function MemberHomeSendTokensWidget({
               : readyLines.length > 1
               ? t('sendTokensSendMany', {
                   count: readyLines.length,
-                  name: target.name,
+                  name: shortenWalletAddress(target.name),
                 })
               : t('sendTokensSend', {
                   amount: formatAmount(readyLines[0]?.amount ?? 0),
                   symbol: readyLines[0]?.token.symbol ?? '',
-                  name: target.name,
+                  name: shortenWalletAddress(target.name),
                 })}
           </Button>
           {error === 'insufficient' ? (

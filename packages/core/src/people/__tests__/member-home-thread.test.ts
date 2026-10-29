@@ -3,17 +3,26 @@ import { describe, expect, it } from 'vitest';
 import type { MemberIntelligence } from '../member-intelligence';
 import {
   SHOW_MEMBER_HOME_ITEM_TOOL,
+  type MemberHomeThreadItem,
   listMemberHomeAttentionItems,
+  listMemberHomeThreadCatalog,
   listMemberHomeThreadItems,
+  listSpaceAttentionLead,
+  memberHomeDirectReply,
+  memberHomeTalkIsResting,
   mergeMemberHomeAttention,
   memberHomeBoardDestination,
   memberHomeItemsStillWaiting,
   memberHomeSignalAction,
   memberHomeSignalCatalogue,
   memberHomeSignalCtas,
+  memberHomeCardForSpeech,
+  memberHomeSpeechConflictsWithItem,
   memberHomeThreadItemForMessage,
   resolveMemberHomeThreadItem,
   memberHomeItemMemory,
+  isMemberHomeItemLook,
+  memberHomeLookItem,
   passedMemberHomeItemKeys,
   shownMemberHomeItemKeys,
 } from '../member-home-thread';
@@ -111,6 +120,90 @@ describe('listMemberHomeThreadItems', () => {
     expect(items.map((item) => item.slug)).toEqual(['define-products']);
   });
 
+  it('space needs-you prefers the next open item over a closed vote', () => {
+    const closedVote = {
+      ...home.proposals[0]!,
+      spaceSlug: 'hypha-energy',
+      spaceTitle: 'Hypha Energy',
+      expired: true,
+      outcome: { passed: true, participation: 50, unity: 100 },
+    };
+    expect(
+      listSpaceAttentionLead(
+        {
+          ...home,
+          proposals: [closedVote],
+        },
+        'hypha-energy',
+      ),
+    ).toMatchObject({ slug: 'define-products', action: 'validate' });
+    expect(
+      listSpaceAttentionLead(
+        {
+          ...home,
+          attention: [],
+          notifications: [],
+          proposals: [closedVote],
+          signals: [],
+        },
+        'hypha-energy',
+      ),
+    ).toBeNull();
+  });
+
+  it('space needs-you hides when only an accepted proposal remains', () => {
+    expect(
+      listSpaceAttentionLead(
+        {
+          ...home,
+          attention: [],
+          notifications: [],
+          proposals: [
+            {
+              ...home.proposals[0]!,
+              expired: true,
+              outcome: { passed: true, participation: 50, unity: 100 },
+            },
+          ],
+          signals: [],
+        },
+        'hypha-pollinate',
+      ),
+    ).toBeNull();
+  });
+
+  it('space needs-you hides done and cancelled signals', () => {
+    expect(
+      listSpaceAttentionLead(
+        {
+          ...home,
+          attention: [],
+          notifications: [],
+          proposals: [],
+          signals: [
+            { ...home.signals[0]!, progressStatus: 'done' },
+            {
+              ...home.signals[0]!,
+              id: 99,
+              slug: 'cancelled-work',
+              progressStatus: 'cancelled',
+            },
+          ],
+        },
+        'hypha-energy',
+      ),
+    ).toBeNull();
+  });
+
+  it('leaves done signals out of the waiting catalog', () => {
+    const items = listMemberHomeThreadCatalog({
+      ...home,
+      signals: [{ ...home.signals[0]!, progressStatus: 'done' }],
+      proposals: [],
+    });
+    expect(items.map((item) => item.slug)).toEqual([]);
+  });
+
   it('leaves out a closed vote that has no recorded outcome', () => {
     const items = listMemberHomeThreadItems({
       ...home,
@@ -141,7 +234,7 @@ describe('listMemberHomeThreadItems', () => {
   });
 
   it('tells a closed vote as the outcome, not a decision', () => {
-    const items = listMemberHomeThreadItems({
+    const closedHome = {
       ...home,
       proposals: [
         {
@@ -150,8 +243,17 @@ describe('listMemberHomeThreadItems', () => {
           outcome: { passed: true, participation: 62, unity: 91 },
         },
       ],
-    });
-    const proposal = items.find((item) => item.slug === 'invite-member');
+    };
+    // Focus walk drops closed votes so they are not "Needs you". The catalog
+    // still keeps them for a confirmation brief.
+    expect(
+      listMemberHomeThreadItems(closedHome).find(
+        (item) => item.slug === 'invite-member',
+      ),
+    ).toBeUndefined();
+    const proposal = listMemberHomeThreadCatalog(closedHome).find(
+      (item) => item.slug === 'invite-member',
+    );
     expect(proposal).toMatchObject({
       action: 'outcome',
       passed: true,
@@ -567,6 +669,231 @@ describe('memberHomeThreadItemForMessage', () => {
     expect(item?.slug).toBe('invite-member');
   });
 
+  it('uses a given name and the space when the title is paraphrased', () => {
+    const item = memberHomeThreadItemForMessage(
+      [
+        {
+          kind: 'proposal',
+          slug: 'candidate-review',
+          title: 'Friday candidate slate',
+          spaceSlug: 'hypha-energy',
+          spaceTitle: 'Hypha Energy',
+          action: 'decision',
+          documentKind: 'proposal',
+          authoredByMember: false,
+          category: null,
+          summary: null,
+          creatorId: 4,
+          creatorName: 'Marieke Post',
+          creatorAvatarUrl: null,
+        },
+        {
+          kind: 'proposal',
+          slug: 'other-review',
+          title: 'Another review',
+          spaceSlug: 'hypha-pollinate',
+          spaceTitle: 'Hypha Pollinate',
+          action: 'decision',
+          documentKind: 'proposal',
+          authoredByMember: false,
+          category: null,
+          summary: null,
+          creatorId: 5,
+          creatorName: 'Marieke Other',
+          creatorAvatarUrl: null,
+        },
+      ],
+      {
+        content:
+          "It should be up now — Marieke's candidate review in Hypha Energy.",
+      },
+    );
+    expect(item?.slug).toBe('candidate-review');
+  });
+
+  it('keeps the card when the reply names the person and the space, not the title', () => {
+    const signal = (
+      slug: string,
+      creatorName: string,
+      spaceTitle: string,
+      summary: string,
+    ): MemberHomeThreadItem => ({
+      kind: 'signal',
+      slug,
+      title: slug,
+      spaceSlug: spaceTitle.toLowerCase().replace(/\s+/g, '-'),
+      spaceTitle,
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: false,
+      category: null,
+      summary,
+      creatorId: null,
+      creatorName,
+      creatorAvatarUrl: null,
+    });
+    const flywheel = memberHomeThreadItemForMessage(
+      [
+        signal(
+          'older-flywheel',
+          'Vlad Hramtsov',
+          'Hypha Flywheel',
+          'Something already discussed.',
+        ),
+        signal(
+          'community-meet',
+          'Vlad Hramtsov',
+          'Hypha Flywheel',
+          'A signal the community can meet.',
+        ),
+        signal('hypha-only', 'Vlad Hramtsov', 'Hypha', 'A different space.'),
+      ],
+      {
+        content:
+          'Nice one, Alex. Vlad has something open in Hypha Flywheel — a signal the community can meet, and it would mean a lot if you stayed with it for a moment.',
+      },
+    );
+    expect(flywheel?.slug).toBe('community-meet');
+
+    const energy = memberHomeThreadItemForMessage(
+      [
+        signal(
+          'surya-goal',
+          'Surya Raman',
+          'Hypha Energy',
+          "L'objectif à définir.",
+        ),
+        signal(
+          'philippe-note',
+          'Philippe Martin',
+          'Hypha Energy',
+          'Another note.',
+        ),
+        signal('joachim-note', 'Joachim Berg', 'Hypha Energy', 'A third note.'),
+      ],
+      {
+        content:
+          "Bien joué, Alex. Surya en a ouvert une autre dans Hypha Energy — sa note sur l'objectif à définir, avec Philippe et Joachim qui y contribuent aussi.",
+      },
+    );
+    expect(energy?.slug).toBe('surya-goal');
+  });
+
+  it('keeps the card on the person the sentence names when the tool is the item just finished', () => {
+    const item = memberHomeThreadItemForMessage(
+      [
+        {
+          kind: 'proposal',
+          slug: 'studio-costs',
+          title: 'Studio costs',
+          spaceSlug: 'hypha',
+          spaceTitle: 'Hypha',
+          action: 'decision',
+          documentKind: 'proposal',
+          authoredByMember: false,
+          category: null,
+          summary: null,
+          creatorId: 3,
+          creatorName: 'Ronnie Hale',
+          creatorAvatarUrl: null,
+        },
+        {
+          kind: 'proposal',
+          slug: 'invite-marco',
+          title: 'Invite Member',
+          spaceSlug: 'hypha-energy',
+          spaceTitle: 'Hypha Energy',
+          action: 'decision',
+          documentKind: 'proposal',
+          authoredByMember: false,
+          category: 'invite',
+          summary: null,
+          creatorId: 8,
+          creatorName: 'Marco Rossi',
+          creatorAvatarUrl: null,
+        },
+      ],
+      {
+        parts: [
+          {
+            type: 'text',
+            text: "Glad that's done, Alex. Now Marco in Hypha Energy has asked to join — the people already there are the ones who can welcome him, if it feels right to you.",
+          },
+          {
+            type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+            state: 'output-available',
+            input: { kind: 'proposal', slug: 'studio-costs' },
+          },
+        ],
+      },
+    );
+    expect(item?.slug).toBe('invite-marco');
+  });
+
+  it('keeps the card on the space the reply names, not the hinted one', () => {
+    const energy: MemberHomeThreadItem = {
+      kind: 'proposal',
+      slug: 'invite-oceane',
+      title: 'Invite Member',
+      spaceSlug: 'hypha-energy',
+      spaceTitle: 'Hypha Energy',
+      action: 'decision',
+      documentKind: 'proposal',
+      authoredByMember: false,
+      category: 'invite',
+      summary: 'Océane asked to join as a member.',
+      creatorId: 12,
+      creatorName: 'Océane Martin',
+      creatorAvatarUrl: null,
+    };
+    const flywheel: MemberHomeThreadItem = {
+      kind: 'proposal',
+      slug: 'invite-edgar',
+      title: 'Invite Member',
+      spaceSlug: 'hypha-flywheel',
+      spaceTitle: 'Hypha Flywheel',
+      action: 'outcome',
+      documentKind: 'proposal',
+      authoredByMember: false,
+      category: 'invite',
+      summary: 'Edgar Kampers has just requested to join as a member.',
+      creatorId: 9,
+      creatorName: 'Edgar Kampers',
+      creatorAvatarUrl: null,
+    };
+    const text =
+      "Bien noté, Alex. Océane a demandé à rejoindre Hypha Energy comme membre — une invitation qu'on peut accueillir.";
+    const message = {
+      parts: [
+        { type: 'text', text },
+        {
+          type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+          state: 'output-available',
+          input: { kind: 'proposal', slug: 'invite-edgar' },
+        },
+      ],
+    };
+    expect(
+      memberHomeThreadItemForMessage([energy, flywheel], message)?.slug,
+    ).toBe('invite-oceane');
+    expect(
+      memberHomeCardForSpeech({
+        items: [energy, flywheel],
+        message,
+        hinted: flywheel,
+        spaceTitles: ['Hypha Energy', 'Hypha Flywheel', 'Hypha'],
+      })?.slug,
+    ).toBe('invite-oceane');
+    expect(
+      memberHomeCardForSpeech({
+        items: [flywheel],
+        message: { content: text },
+        hinted: flywheel,
+        spaceTitles: ['Hypha Energy', 'Hypha Flywheel'],
+      }),
+    ).toBeNull();
+  });
+
   it('leaves a greeting with no item empty', () => {
     const item = memberHomeThreadItemForMessage(items, {
       parts: [
@@ -577,6 +904,243 @@ describe('memberHomeThreadItemForMessage', () => {
       ],
     });
     expect(item).toBeNull();
+  });
+
+  it('keeps the member’s own card when the brief names someone inside the work', () => {
+    const ownSignal: MemberHomeThreadItem = {
+      kind: 'signal',
+      slug: 'love-based-algorithm',
+      title: 'Fear-based to love-based algorithm',
+      spaceSlug: 'humai-education',
+      spaceTitle: 'HUMAI+ Education & Lifelong Learning',
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: true,
+      category: null,
+      summary: 'Wendy brought IP into this space.',
+      creatorId: 1,
+      creatorName: 'Alex Prate',
+      creatorAvatarUrl: null,
+    };
+    const text =
+      "You raised it yourself, Alex, and it's about the fear-based to love-based algorithm Wendy has brought into HUMAI+ Education & Lifelong Learning.";
+    expect(
+      memberHomeSpeechConflictsWithItem(
+        ownSignal,
+        text,
+        ['HUMAI+ Education & Lifelong Learning'],
+        ['Wendy Example'],
+      ),
+    ).toBe(false);
+    expect(
+      memberHomeCardForSpeech({
+        items: [ownSignal],
+        message: { content: text },
+        hinted: ownSignal,
+        spaceTitles: ['HUMAI+ Education & Lifelong Learning'],
+      })?.slug,
+    ).toBe('love-based-algorithm');
+  });
+
+  it('does not keep a hinted card when the reply names another person and space', () => {
+    const suzanaEnergy: MemberHomeThreadItem = {
+      kind: 'signal',
+      slug: 'suzana-tension',
+      title: 'How decisions land',
+      spaceSlug: 'hypha-energy',
+      spaceTitle: 'Hypha Energy',
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: false,
+      category: null,
+      summary: 'A tension about how decisions land.',
+      creatorId: 4,
+      creatorName: 'Suzana Mota',
+      creatorAvatarUrl: null,
+    };
+    const vladFlywheel: MemberHomeThreadItem = {
+      kind: 'signal',
+      slug: 'vlad-meet',
+      title: 'Community meet',
+      spaceSlug: 'hypha-flywheel',
+      spaceTitle: 'Hypha Flywheel',
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: false,
+      category: null,
+      summary: 'A signal the community can meet.',
+      creatorId: 2,
+      creatorName: 'Vlad Hramtsov',
+      creatorAvatarUrl: null,
+    };
+    const text =
+      'Nice one, Alex. Vlad has something open in Hypha Flywheel — a signal the community can meet.';
+    expect(
+      memberHomeCardForSpeech({
+        items: [suzanaEnergy, vladFlywheel],
+        message: { content: text },
+        hinted: suzanaEnergy,
+        spaceTitles: ['Hypha Energy', 'Hypha Flywheel'],
+      })?.slug,
+    ).toBe('vlad-meet');
+    // Wrong hint, right words, and the right item is not in the pool: no card.
+    expect(
+      memberHomeCardForSpeech({
+        items: [vladFlywheel],
+        message: {
+          content:
+            'Alex, Suzana is naming a tension in Hypha Energy about how decisions land.',
+        },
+        hinted: vladFlywheel,
+        spaceTitles: ['Hypha Energy', 'Hypha Flywheel'],
+      }),
+    ).toBeNull();
+  });
+
+  it('never keeps a Flywheel invite under Bioregion signal speech about the same person', () => {
+    const bioregionSignal: MemberHomeThreadItem = {
+      kind: 'signal',
+      slug: 'legumes-cagettes',
+      title: 'Légumes et Cagettes Rebelles',
+      spaceSlug: 'bioregion-bassin-annecien',
+      spaceTitle: 'Biorégion du Bassin Annécien',
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: false,
+      category: 'opportunity',
+      summary:
+        'Aider à distribuer des produits frais dans les cercles étudiants.',
+      creatorId: 8,
+      creatorName: 'Someone Else',
+      creatorAvatarUrl: null,
+    };
+    const vladInvite: MemberHomeThreadItem = {
+      kind: 'proposal',
+      slug: 'invite-vlad-flywheel',
+      title: 'Invite Member',
+      spaceSlug: 'hypha-flywheel',
+      spaceTitle: 'Hypha Flywheel',
+      action: 'outcome',
+      documentKind: 'proposal',
+      authoredByMember: false,
+      category: 'invite',
+      summary: 'Vlad Hramtsov has just requested to join as a member!',
+      creatorId: 2,
+      creatorName: 'Vlad Hramtsov',
+      creatorAvatarUrl: null,
+      passed: true,
+      participation: 0.5,
+      unity: 1,
+    };
+    const text =
+      "Alex, si tu veux te rendre utile autrement, Vlad porte un signal dans la Biorégion du Bassin Annécien : collaborer avec Légumes et Cagettes Rebelles pour aider à distribuer des produits frais dans les cercles étudiants. Dis-moi si ce fil te parle et je t'emmène aux signaux de cet espace.";
+    const spaceTitles = [
+      'Biorégion du Bassin Annécien',
+      'Hypha Flywheel',
+      'Hypha Platform',
+    ];
+    expect(
+      memberHomeSpeechConflictsWithItem(vladInvite, text, spaceTitles, [
+        vladInvite.creatorName,
+        bioregionSignal.creatorName,
+      ]),
+    ).toBe(true);
+    expect(
+      memberHomeCardForSpeech({
+        items: [bioregionSignal, vladInvite],
+        message: {
+          parts: [
+            { type: 'text', text },
+            {
+              type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+              state: 'output-available',
+              input: { kind: 'proposal', slug: 'invite-vlad-flywheel' },
+            },
+          ],
+        },
+        hinted: vladInvite,
+        spaceTitles,
+      })?.slug,
+    ).toBe('legumes-cagettes');
+    // Tool showed the invite, words are a signal in Bioregion, and that
+    // signal is not in the pool: show nothing rather than the wrong card.
+    expect(
+      memberHomeCardForSpeech({
+        items: [vladInvite],
+        message: {
+          parts: [
+            { type: 'text', text },
+            {
+              type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+              state: 'output-available',
+              input: { kind: 'proposal', slug: 'invite-vlad-flywheel' },
+            },
+          ],
+        },
+        hinted: vladInvite,
+        spaceTitles,
+      }),
+    ).toBeNull();
+  });
+
+  it('does not keep a member-raised card under text that credits someone else', () => {
+    const ownDesktop: MemberHomeThreadItem = {
+      kind: 'signal',
+      slug: 'hypha-desktop-app',
+      title: 'Hypha Desktop App',
+      spaceSlug: 'hypha-platform',
+      spaceTitle: 'Hypha Platform',
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: true,
+      category: 'opportunity',
+      summary: 'What would be involved to RWA?',
+      creatorId: 1,
+      creatorName: 'Alex Prate',
+      creatorAvatarUrl: null,
+    };
+    const edgarInvite: MemberHomeThreadItem = {
+      kind: 'proposal',
+      slug: 'invite-edgar',
+      title: 'Invite Member',
+      spaceSlug: 'hypha-platform',
+      spaceTitle: 'Hypha Platform',
+      action: 'decision',
+      documentKind: 'proposal',
+      authoredByMember: false,
+      category: 'invite',
+      summary: 'Edgar asked to join.',
+      creatorId: 9,
+      creatorName: 'Edgar Kampers',
+      creatorAvatarUrl: null,
+    };
+    const text =
+      "Edgar's thread in Hypha Platform is the one still open, Alex. He has put something on the table there about how the space's agreements are read and shared.";
+    expect(
+      memberHomeCardForSpeech({
+        items: [ownDesktop, edgarInvite],
+        message: {
+          parts: [
+            { type: 'text', text },
+            {
+              type: `tool-${SHOW_MEMBER_HOME_ITEM_TOOL}`,
+              state: 'output-available',
+              input: { kind: 'signal', slug: 'hypha-desktop-app' },
+            },
+          ],
+        },
+        hinted: ownDesktop,
+        spaceTitles: ['Hypha Platform'],
+      })?.slug,
+    ).toBe('invite-edgar');
+    expect(
+      memberHomeCardForSpeech({
+        items: [ownDesktop],
+        message: { content: text },
+        hinted: ownDesktop,
+        spaceTitles: ['Hypha Platform'],
+      }),
+    ).toBeNull();
   });
 });
 
@@ -806,6 +1370,79 @@ describe('passedMemberHomeItemKeys', () => {
     expect(agreed.recalled).toEqual([]);
     expect(agreed.passed).toEqual([]);
     expect(agreed.held).toBeNull();
+
+    const looking = memberHomeItemMemory(items, [
+      offer('invite-member', 'proposal'),
+      { role: 'user', content: 'Not now for Invite Member.' },
+      offer('invite-member', 'proposal'),
+      { role: 'user', content: 'Can you show me the proposal?' },
+      { role: 'user', content: "I don't see." },
+      { role: 'user', content: 'Yes, open the flywheel.' },
+    ]);
+    expect(looking.settled).toEqual([]);
+    expect(looking.recalled).toEqual(['proposal:invite-member']);
+    const broughtBack = [
+      offer('invite-member', 'proposal'),
+      { role: 'user' as const, content: 'Not now for Invite Member.' },
+      offer('invite-member', 'proposal'),
+    ];
+    expect(
+      memberHomeLookItem(items, broughtBack, 'Can you show me the proposal?')
+        ?.slug,
+    ).toBe('invite-member');
+    expect(memberHomeLookItem(items, broughtBack, "I don't see.")?.slug).toBe(
+      'invite-member',
+    );
+    const flywheel = {
+      ...items.find((item) => item.kind === 'proposal')!,
+      slug: 'join-flywheel',
+      title: 'Invite to join',
+      spaceSlug: 'hypha-flywheel',
+      spaceTitle: 'Hypha Flywheel',
+    };
+    expect(
+      memberHomeLookItem([flywheel], [], 'Yes, open the flywheel.')?.slug,
+    ).toBe('join-flywheel');
+    expect(
+      memberHomeLookItem(items, broughtBack, 'Tell me about the budget'),
+    ).toBeNull();
+  });
+
+  it('show brings back the card from the reply above', () => {
+    expect(isMemberHomeItemLook('show')).toBe(true);
+    expect(isMemberHomeItemLook('montre')).toBe(true);
+    expect(isMemberHomeItemLook('Tell me about the budget')).toBe(false);
+    const surya: MemberHomeThreadItem = {
+      kind: 'signal',
+      slug: 'surya-goal',
+      title: 'Objectif à définir',
+      spaceSlug: 'hypha-energy',
+      spaceTitle: 'Hypha Energy',
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: false,
+      category: null,
+      summary: "L'objectif à définir.",
+      creatorId: 4,
+      creatorName: 'Surya Raman',
+      creatorAvatarUrl: null,
+    };
+    const zekeriya: MemberHomeThreadItem = {
+      ...surya,
+      slug: 'tariff-table',
+      title: 'Tariff table related with country and customer',
+      summary: 'Same tariff for everyone.',
+      creatorId: 5,
+      creatorName: 'Zekeriya Aydin',
+    };
+    const previous = {
+      role: 'assistant' as const,
+      content:
+        "Bien joué, Alex. Surya en a ouvert une autre dans Hypha Energy — sa note sur l'objectif à définir, avec Philippe et Joachim qui y contribuent aussi.",
+    };
+    expect(
+      memberHomeLookItem([surya, zekeriya], [previous], 'show')?.slug,
+    ).toBe('surya-goal');
   });
 });
 
@@ -856,5 +1493,206 @@ describe('memberHomeBoardDestination', () => {
       'en',
     );
     expect(destination?.href).toBe('/en/dho/hypha-energy/coherence');
+  });
+});
+
+describe('memberHomeDirectReply', () => {
+  it('names the open decision instead of an empty queue', () => {
+    const reply = memberHomeDirectReply(home, 'What needs a decision?');
+    expect(reply).toMatchObject({
+      ask: 'decision',
+      widget: null,
+      item: { kind: 'proposal', slug: 'invite-member' },
+      line: {
+        key: 'decisionOpen',
+        title: 'Invite Member',
+        space: 'Hypha Pollinate',
+      },
+    });
+  });
+
+  it('names the notification when that decision is not waiting on a vote', () => {
+    const reply = memberHomeDirectReply(
+      {
+        ...home,
+        proposals: [{ ...home.proposals[0]!, memberHasVoted: true }],
+        attention: [],
+        notifications: [
+          {
+            id: 'proposal-9',
+            kind: 'proposal',
+            title: 'Invite Member',
+            detail: 'Live Earth Pitch · a decision',
+            spaceSlug: 'live-earth-pitch',
+            spaceTitle: 'Live Earth Pitch',
+            targetSlug: 'invite-member',
+            at: '2026-10-27T00:00:00.000Z',
+          },
+        ],
+      },
+      'What needs a decision?',
+    );
+    expect(reply?.line).toEqual({
+      key: 'decisionListed',
+      title: 'Invite Member',
+      space: 'Live Earth Pitch',
+    });
+    expect(reply?.item).toEqual({
+      kind: 'proposal',
+      slug: 'invite-member',
+    });
+  });
+
+  it('keeps who is around on the people list', () => {
+    const reply = memberHomeDirectReply(
+      {
+        ...home,
+        connections: [
+          {
+            id: 2,
+            slug: 'vlad',
+            name: 'Vlad',
+            surname: 'Hramtsov',
+            nickname: null,
+            avatarUrl: null,
+            sharedSpaceCount: 12,
+          },
+          {
+            id: 3,
+            slug: 'edgar',
+            name: 'Edgar',
+            surname: 'Kampers',
+            nickname: null,
+            avatarUrl: null,
+            sharedSpaceCount: 4,
+          },
+        ],
+      },
+      'Who is around?',
+    );
+    expect(reply).toMatchObject({
+      ask: 'people',
+      widget: 'people',
+      item: null,
+      line: { key: 'people', name: 'Vlad Hramtsov', count: 12 },
+    });
+  });
+
+  it('names a space that is actually on the list', () => {
+    const reply = memberHomeDirectReply(
+      {
+        ...home,
+        spaces: [
+          {
+            id: 1,
+            slug: 'commercial-energy-hub',
+            title: 'Commercial Energy Hub',
+            description: '',
+            logoUrl: null,
+          },
+          {
+            id: 2,
+            slug: 'hypha-platform',
+            title: 'Hypha Platform',
+            description: '',
+            logoUrl: null,
+          },
+        ],
+      },
+      'Step into a space',
+      { recentSpaceSlugs: ['hypha-platform'] },
+    );
+    expect(reply).toMatchObject({
+      widget: 'spaces',
+      line: { key: 'space', space: 'Hypha Platform' },
+    });
+  });
+
+  it('offers tokens only for the token chip', () => {
+    const reply = memberHomeDirectReply(
+      {
+        ...home,
+        connections: [
+          {
+            id: 2,
+            slug: 'vlad',
+            name: 'Vlad',
+            surname: null,
+            nickname: null,
+            avatarUrl: null,
+            sharedSpaceCount: 3,
+          },
+        ],
+      },
+      'Send someone tokens',
+    );
+    expect(reply).toMatchObject({
+      ask: 'tokens',
+      widget: 'tokens',
+      line: { key: 'tokens', name: 'Vlad' },
+    });
+  });
+
+  it('leaves arrival and where they can be useful to the conversation', () => {
+    expect(memberHomeDirectReply(home, 'I am on my home.')).toBeNull();
+    expect(memberHomeDirectReply(home, 'Where can I be useful?')).toBeNull();
+  });
+
+  it('leaves an ordinary message to the model', () => {
+    expect(memberHomeDirectReply(home, 'Tell me about the budget')).toBeNull();
+  });
+});
+
+describe('memberHomeTalkIsResting', () => {
+  it('keeps going until they stop or accept a pause', () => {
+    expect(
+      memberHomeTalkIsResting([
+        { role: 'assistant', content: 'Alex, Marco has asked to join.' },
+        { role: 'user', content: 'Where can I be useful?' },
+      ]),
+    ).toBe(false);
+    expect(
+      memberHomeTalkIsResting([
+        { role: 'assistant', content: 'Alex, Marco has asked to join.' },
+        { role: 'user', content: 'Stop' },
+      ]),
+    ).toBe(true);
+    expect(
+      memberHomeTalkIsResting([
+        {
+          role: 'assistant',
+          content:
+            'Would you like to pause for now, or continue going through what still needs you?',
+        },
+        { role: 'user', content: 'Yes' },
+      ]),
+    ).toBe(true);
+    expect(
+      memberHomeTalkIsResting([
+        {
+          role: 'assistant',
+          content:
+            'Would you like to pause for now, or continue going through what still needs you?',
+        },
+        { role: 'user', content: 'Continue' },
+      ]),
+    ).toBe(false);
+    expect(
+      memberHomeTalkIsResting([
+        { role: 'assistant', content: 'Alex, Marco has asked to join.' },
+        { role: 'user', content: 'Stop' },
+        { role: 'user', content: 'Where can I be useful?' },
+      ]),
+    ).toBe(false);
+    expect(
+      memberHomeTalkIsResting([
+        {
+          role: 'user',
+          content: 'I am on my home.',
+          metadata: { homeArrival: true },
+        },
+        { role: 'assistant', content: 'Alex, Marco has asked to join.' },
+      ]),
+    ).toBe(false);
   });
 });

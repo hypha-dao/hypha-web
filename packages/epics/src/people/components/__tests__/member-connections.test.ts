@@ -10,6 +10,7 @@ import {
   conversationMatchesSearch,
   peopleMatchingSearch,
   conversationsMatchingSearch,
+  listedConversationIsOpen,
   listedConversationOpenTarget,
   membersForGroupPicker,
   conversationsVisibleInSection,
@@ -31,6 +32,8 @@ import {
   visibleMemberRowsAfterTitleResolve,
   messagesPeopleListReady,
   messagePreview,
+  previewForInboxDisplay,
+  senderFirstName,
   orphanedDirectRoomIds,
   previewWithNames,
   suggestConnections,
@@ -1407,6 +1410,35 @@ describe('nextSelectedMembers', () => {
     });
   });
 
+  it('keeps the open row when the joined room id is not the one stored on the row', () => {
+    const ronnie = {
+      roomId: '!stale',
+      name: 'Ronnie Xerxes Potel',
+      person: { id: 4 },
+    };
+    expect(
+      listedConversationIsOpen(ronnie, { roomId: '!live', personId: 4 }),
+    ).toBe(true);
+    expect(
+      listedConversationIsOpen(
+        { roomId: '!live', name: 'Ronnie Xerxes Potel', person: { id: 4 } },
+        { roomId: '!live', personId: null },
+      ),
+    ).toBe(true);
+    expect(
+      listedConversationIsOpen(
+        { roomId: '!other', name: 'Marieke Post', person: { id: 5 } },
+        { roomId: '!live', personId: 4 },
+      ),
+    ).toBe(false);
+    expect(
+      listedConversationIsOpen(
+        { roomId: '!group', name: 'Core Hypha Team', person: { id: -8 } },
+        { roomId: '!group', personId: 4 },
+      ),
+    ).toBe(true);
+  });
+
   it('only ensures a person room when the list row has no room yet', () => {
     expect(
       listedConversationOpenTarget({
@@ -2174,5 +2206,53 @@ describe('previewWithNames', () => {
     expect(previewWithNames(`You wrote @${local}`, names)).toBe(
       'You wrote @Vlad Hramtsov',
     );
+  });
+});
+
+describe('previewForInboxDisplay', () => {
+  it('keeps a resolved mention line', () => {
+    const names = new Map<string, string>([
+      [GERARDO.toLowerCase(), 'Gerardo Roza'],
+    ]);
+    expect(previewForInboxDisplay(`Hey ${GERARDO} ready?`, names)).toBe(
+      'Hey @Gerardo Roza ready?',
+    );
+  });
+
+  it('strips unresolved privy tokens so the row is not stuck loading', () => {
+    expect(previewForInboxDisplay(`Hey ${GERARDO} ready for the call?`)).toBe(
+      'Hey ready for the call?',
+    );
+  });
+});
+
+describe('senderFirstName', () => {
+  it('uses the profile first name and ignores a privy id', () => {
+    expect(
+      senderFirstName({
+        profileName: 'Maria',
+        matrixLabel: GERARDO,
+        senderUserId: GERARDO,
+      }),
+    ).toBe('Maria');
+  });
+
+  it('takes the first word of a human display name', () => {
+    expect(
+      senderFirstName({
+        memberName: 'Maria Santos',
+        senderUserId: '@maria:matrix.example',
+      }),
+    ).toBe('Maria');
+  });
+
+  it('stays blank when the only label is a privy id', () => {
+    expect(
+      senderFirstName({
+        matrixLabel: GERARDO,
+        memberName: 'prod_privy_did_privy_cmceozhp9017hjx0mjq0aets5',
+        senderUserId: GERARDO,
+      }),
+    ).toBe('');
   });
 });

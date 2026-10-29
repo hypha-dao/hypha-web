@@ -4,6 +4,7 @@ import type { ComponentType, ReactNode } from 'react';
 import {
   ArrowLeft,
   Circle,
+  Globe,
   Globe2,
   PanelRightClose,
   Settings,
@@ -30,7 +31,7 @@ type RoomChoiceIcon = ComponentType<{
 const ROOM_CHOICE_ICONS: Record<string, RoomChoiceIcon> = {
   space: Circle,
   ecosystem: Target,
-  public: Globe2,
+  public: Globe,
 };
 
 type RoomChoiceOption = {
@@ -140,7 +141,10 @@ export function HumanChatPanelHeader({
         )}
         {titleStart}
         {mark && !roomChoice ? (
-          <span className="inline-flex shrink-0 border border-foreground bg-foreground px-3 py-1 text-1 text-background">
+          <span
+            className="inline-flex shrink-0 border border-foreground bg-foreground px-3 py-1 text-1 text-background"
+            data-testid="chat-panel-archived-badge"
+          >
             {mark}
           </span>
         ) : null}

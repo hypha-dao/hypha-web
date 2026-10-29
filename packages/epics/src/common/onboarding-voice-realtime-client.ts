@@ -29,9 +29,11 @@ export type RealtimeAudioInputConfig = {
 export const DEFAULT_REALTIME_AUDIO_INPUT: RealtimeAudioInputConfig = {
   turnDetection: {
     type: 'server_vad',
-    threshold: 0.72,
+    // Lower than room-noise tuning so a quiet "yes" still opens a turn.
+    threshold: 0.55,
     prefix_padding_ms: 350,
-    silence_duration_ms: 1000,
+    // End the turn sooner after a short answer.
+    silence_duration_ms: 700,
     create_response: false,
     interrupt_response: false,
   },
@@ -157,6 +159,12 @@ export type RealtimeVoiceConnection = {
   remoteAudio: HTMLAudioElement;
   /** Voice chosen when the session was created. Spoken replies reuse it. */
   voice: string;
+  /** The member's microphone, kept while a silent track stands in. */
+  liveMicTrack: MediaStreamTrack | null;
+  /** The sender from addTrack. Its current track changes, so it cannot be looked up later. */
+  micSender: RTCRtpSender | null;
+  /** Serializes replaceTrack so an older mute cannot land after a newer unmute. */
+  micSwapQueue: Promise<void>;
   sendEvent: (event: Record<string, unknown>) => void;
   close: () => void;
 };
@@ -168,6 +176,8 @@ function buildRealtimeSpeakLanguageDirective(): string {
 }
 
 function buildRealtimeSpeakInstructions(text: string): string {
+  // Same relay instructions as LIVE: verbatim script, warm natural tone.
+  // Extra delivery coaching (bright/cheerful/young woman) changed rhythm.
   return [
     'CRITICAL OVERRIDE FOR THIS RESPONSE ONLY.',
     'Ignore any earlier briefing, space facts, or conversation summary for speech content.',
@@ -198,6 +208,10 @@ const NOISE_FILLER_TOKEN_PATTERNS = [
   /^e+r+$/,
 ] as const;
 
+/** One-word answers that must reach chat. Not um/uh noise. */
+const SHORT_DECISION_TRANSCRIPT =
+  /^(?:yes|no|yeah|yep|yup|ok|okay|oui|non|si|sí|ja|nein|sure|nope|nah|pass|later|maybe|sim|não|nao|da|nyet|right|correct|true|false|absolutely|definitely)(?:\s+(?:please|thanks|thank you|bitte|merci|por favor))?[\s.!?,-]*$/i;
+
 function isNoiseFillerToken(token: string): boolean {
   const letters = token.toLowerCase().replace(/[^a-z]/g, '');
   if (!letters) return true;
@@ -213,9 +227,16 @@ function isNoiseOnlyTranscript(text: string): boolean {
   return tokens.every(isNoiseFillerToken);
 }
 
+/** Short yes / no / ok answers are real turns, not ambient blips. */
+export function isShortDecisionTranscript(text: string): boolean {
+  return SHORT_DECISION_TRANSCRIPT.test(text.trim());
+}
+
 /** Ignore VAD false positives — barge-in and /api/chat only on real user speech. */
 export function isSubstantiveUserTranscript(text: string): boolean {
   const normalized = text.trim();
+  if (!normalized) return false;
+  if (isShortDecisionTranscript(normalized)) return true;
   if (normalized.length < 3) return false;
   if (isNoiseOnlyTranscript(normalized)) return false;
   if (!/\p{L}/u.test(normalized)) return false;
@@ -224,14 +245,94 @@ export function isSubstantiveUserTranscript(text: string): boolean {
   return true;
 }
 
+let silentMicTrack: MediaStreamTrack | null = null;
+let silentMicContext: AudioContext | null = null;
+
+function silentStandInTrack(): MediaStreamTrack | null {
+  if (silentMicTrack && silentMicTrack.readyState === 'live') {
+    if (silentMicContext?.state === 'suspended') {
+      void silentMicContext.resume();
+    }
+    return silentMicTrack;
+  }
+  if (typeof AudioContext === 'undefined') return null;
+  if (silentMicContext) void silentMicContext.close().catch(() => undefined);
+  const context = new AudioContext();
+  silentMicContext = context;
+  if (context.state === 'suspended') void context.resume();
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  gain.gain.value = 0;
+  const destination = context.createMediaStreamDestination();
+  oscillator.connect(gain);
+  gain.connect(destination);
+  oscillator.start();
+  silentMicTrack = destination.stream.getAudioTracks()[0] ?? null;
+  return silentMicTrack;
+}
+
+function liveMicTrackOf(
+  connection: RealtimeVoiceConnection,
+): MediaStreamTrack | null {
+  const saved = connection.liveMicTrack;
+  if (saved && saved.readyState === 'live') return saved;
+  return (
+    connection.localStream
+      .getAudioTracks()
+      .find((track) => track.readyState === 'live') ?? null
+  );
+}
+
+async function ensureLiveMicTrack(
+  connection: RealtimeVoiceConnection,
+): Promise<MediaStreamTrack | null> {
+  const current = liveMicTrackOf(connection);
+  if (current) {
+    current.enabled = true;
+    connection.liveMicTrack = current;
+    return current;
+  }
+  const stream = await acquireWarmMicStream();
+  const track =
+    stream?.getAudioTracks().find((item) => item.readyState === 'live') ?? null;
+  if (!track) return null;
+  track.enabled = true;
+  connection.liveMicTrack = track;
+  if (stream) connection.localStream = stream;
+  return track;
+}
+
 export function setLocalMicEnabled(
   connection: RealtimeVoiceConnection | null,
   enabled: boolean,
 ): void {
   if (!connection) return;
-  for (const track of connection.localStream.getAudioTracks()) {
-    track.enabled = enabled;
+  const sender = connection.micSender;
+  if (!sender) {
+    for (const track of connection.localStream.getAudioTracks()) {
+      track.enabled = enabled;
+    }
+    return;
   }
+  // The hardware mic stays enabled. Turning the track off and on again
+  // leaves it silent when it is put back on the sender, so the session
+  // keeps hearing the stand-in.
+  connection.micSwapQueue = connection.micSwapQueue
+    .then(async () => {
+      if (!enabled) {
+        const live = liveMicTrackOf(connection);
+        if (live) connection.liveMicTrack = live;
+        const silent = silentStandInTrack();
+        if (!silent) return;
+        await sender.replaceTrack(silent);
+        clearRealtimeInputAudioBuffer(connection);
+        return;
+      }
+      const live = await ensureLiveMicTrack(connection);
+      if (!live) return;
+      await sender.replaceTrack(live);
+    })
+    .catch(() => undefined);
 }
 
 /** Drop buffered mic audio so ambient noise cannot start a turn during assistant speech. */
@@ -247,6 +348,283 @@ export function setRealtimeRemoteAudioMuted(
 ): void {
   connection.remoteAudio.muted = muted;
   connection.remoteAudio.volume = muted ? 0 : 1;
+}
+
+let speechContext: AudioContext | null = null;
+/** One spoken line at a time. A second start stops the line already playing. */
+let activeExactSpeechStop: (() => void) | null = null;
+
+/** Must match OpenAI `response_format: 'pcm'` (24 kHz mono s16le). */
+const SPEECH_PCM_SAMPLE_RATE = 24_000;
+/**
+ * Buffer ~180ms before the first schedule so the opening syllable is not
+ * lost while the AudioContext wakes and the stream fills.
+ */
+const SPEECH_PCM_FIRST_PLAY_BYTES =
+  Math.floor(SPEECH_PCM_SAMPLE_RATE * 0.18) * 2;
+/** Schedule ~100ms slices once playback has begun. */
+const SPEECH_PCM_SLICE_BYTES = Math.floor(SPEECH_PCM_SAMPLE_RATE * 0.1) * 2;
+/** Lead time before the first sample so resume does not swallow the start. */
+const SPEECH_PCM_START_DELAY_SEC = 0.12;
+
+/** Resume the speaker during a click so a later recording can play. */
+export function unlockExactSpeechPlayback(): void {
+  const Context =
+    window.AudioContext ||
+    (window as Window & { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext;
+  if (!Context) return;
+  if (!speechContext) speechContext = new Context();
+  if (speechContext.state === 'suspended') {
+    void speechContext.resume().catch(() => undefined);
+  }
+}
+
+function pcm16LeToFloat32(bytes: Uint8Array): Float32Array {
+  const samples = Math.floor(bytes.byteLength / 2);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, samples * 2);
+  const out = new Float32Array(samples);
+  for (let i = 0; i < samples; i += 1) {
+    out[i] = view.getInt16(i * 2, true) / 32768;
+  }
+  return out;
+}
+
+function concatUint8(a: Uint8Array, b: Uint8Array): Uint8Array {
+  if (a.byteLength === 0) return b;
+  if (b.byteLength === 0) return a;
+  const out = new Uint8Array(a.byteLength + b.byteLength);
+  out.set(a, 0);
+  out.set(b, a.byteLength);
+  return out;
+}
+
+/** Fetch TTS PCM without playing — used to warm the next sentence while the first finishes. */
+export async function prefetchExactSpeechPcm({
+  text,
+  authToken,
+  signal,
+}: {
+  text: string;
+  authToken: string;
+  signal?: AbortSignal;
+}): Promise<ArrayBuffer | null> {
+  try {
+    const response = await fetch('/api/voice/speak', {
+      method: 'POST',
+      signal,
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
+    if (!response.ok || signal?.aborted) return null;
+    return response.arrayBuffer();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Play the chat script as synthesized speech. The realtime model is not asked
+ * to say it: that call generates a new reply, and the words drift.
+ * Streams PCM from `/api/voice/speak` so the first samples play before the
+ * full clip arrives (avoids waiting on arrayBuffer + decodeAudioData).
+ * Pass `pcm` when the bytes were already prefetched for a seamless handoff.
+ */
+export function startExactSpeechPlayback({
+  text,
+  authToken,
+  pcm,
+}: {
+  text: string;
+  authToken: string;
+  pcm?: ArrayBuffer | null;
+}): { stop: () => void; done: Promise<boolean> } {
+  activeExactSpeechStop?.();
+  activeExactSpeechStop = null;
+  const abort = new AbortController();
+  const liveSources = new Set<AudioBufferSourceNode>();
+  let endTimer: number | null = null;
+  let settled = false;
+  let resolveDone: (spoken: boolean) => void = () => undefined;
+  const done = new Promise<boolean>((resolve) => {
+    resolveDone = resolve;
+  });
+  const finish = (spoken: boolean) => {
+    if (settled) return;
+    settled = true;
+    resolveDone(spoken);
+  };
+  const stop = () => {
+    abort.abort();
+    if (endTimer !== null) {
+      window.clearTimeout(endTimer);
+      endTimer = null;
+    }
+    for (const source of liveSources) {
+      source.onended = null;
+      try {
+        source.stop();
+      } catch {
+        // Already finished.
+      }
+    }
+    liveSources.clear();
+    if (activeExactSpeechStop === stop) activeExactSpeechStop = null;
+    finish(false);
+  };
+  activeExactSpeechStop = stop;
+
+  void (async () => {
+    try {
+      unlockExactSpeechPlayback();
+      const context = speechContext;
+      if (!context) {
+        finish(false);
+        return;
+      }
+      if (context.state === 'suspended') {
+        await context.resume();
+      }
+      if (abort.signal.aborted || context.state !== 'running') {
+        finish(false);
+        return;
+      }
+
+      let body: ReadableStream<Uint8Array> | null = null;
+      if (pcm && pcm.byteLength >= 2) {
+        body = new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array(pcm));
+            controller.close();
+          },
+        });
+      } else {
+        const response = await fetch('/api/voice/speak', {
+          method: 'POST',
+          signal: abort.signal,
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text }),
+        });
+        if (!response.ok || abort.signal.aborted || !response.body) {
+          finish(false);
+          return;
+        }
+        body = response.body;
+      }
+
+      const reader = body.getReader();
+      let pending = new Uint8Array(0);
+      let nextStart = context.currentTime + SPEECH_PCM_START_DELAY_SEC;
+      let heardAudio = false;
+      let lastSource: AudioBufferSourceNode | null = null;
+
+      const schedulePcm = (pcmBytes: Uint8Array) => {
+        if (pcmBytes.byteLength < 2) return;
+        const samples = pcm16LeToFloat32(pcmBytes);
+        if (samples.length === 0) return;
+        const buffer = context.createBuffer(
+          1,
+          samples.length,
+          SPEECH_PCM_SAMPLE_RATE,
+        );
+        buffer.copyToChannel(samples, 0);
+        const source = context.createBufferSource();
+        source.buffer = buffer;
+        source.connect(context.destination);
+        // First slice needs lead time so resume does not swallow the opening.
+        // Later slices only need a tiny cushion when the queue underruns.
+        const startAt = Math.max(
+          nextStart,
+          context.currentTime +
+            (heardAudio ? 0.02 : SPEECH_PCM_START_DELAY_SEC),
+        );
+        source.start(startAt);
+        nextStart = startAt + buffer.duration;
+        heardAudio = true;
+        liveSources.add(source);
+        lastSource = source;
+        source.onended = () => {
+          liveSources.delete(source);
+          if (source !== lastSource || abort.signal.aborted) return;
+          if (endTimer !== null) {
+            window.clearTimeout(endTimer);
+            endTimer = null;
+          }
+          if (activeExactSpeechStop === stop) activeExactSpeechStop = null;
+          finish(true);
+        };
+      };
+
+      const flushPending = (force: boolean) => {
+        while (true) {
+          const aligned = pending.byteLength - (pending.byteLength % 2);
+          if (aligned < 2) return;
+          if (!heardAudio) {
+            if (!force && aligned < SPEECH_PCM_FIRST_PLAY_BYTES) return;
+            const take = force
+              ? aligned
+              : Math.min(
+                  aligned,
+                  Math.max(SPEECH_PCM_FIRST_PLAY_BYTES, SPEECH_PCM_SLICE_BYTES),
+                );
+            const slice = pending.subarray(0, take);
+            pending = pending.subarray(take);
+            schedulePcm(slice);
+            continue;
+          }
+          if (!force && aligned < SPEECH_PCM_SLICE_BYTES) return;
+          const take = force
+            ? aligned
+            : Math.min(aligned, SPEECH_PCM_SLICE_BYTES);
+          const slice = pending.subarray(0, take);
+          pending = pending.subarray(take);
+          schedulePcm(slice);
+          if (!force) return;
+        }
+      };
+
+      while (true) {
+        const { done: streamDone, value } = await reader.read();
+        if (abort.signal.aborted) {
+          void reader.cancel().catch(() => undefined);
+          finish(false);
+          return;
+        }
+        if (streamDone) break;
+        if (value?.byteLength) {
+          pending = concatUint8(pending, value);
+          flushPending(false);
+        }
+      }
+      flushPending(true);
+
+      if (!heardAudio) {
+        finish(false);
+        return;
+      }
+
+      // Fallback if onended is delayed or dropped after the last slice.
+      const remainingMs = Math.max(
+        0,
+        Math.ceil((nextStart - context.currentTime) * 1000),
+      );
+      endTimer = window.setTimeout(() => {
+        endTimer = null;
+        if (activeExactSpeechStop === stop) activeExactSpeechStop = null;
+        finish(true);
+      }, remainingMs + 1500);
+    } catch {
+      finish(false);
+    }
+  })();
+
+  return { stop, done };
 }
 
 /** Play assistant chat text through the Realtime voice (WebRTC audio), not browser TTS. */
@@ -423,8 +801,10 @@ export async function connectOpenAiRealtimeCall(params: {
   };
 
   try {
+    let micSender: RTCRtpSender | null = null;
     for (const track of localStream.getTracks()) {
-      peerConnection.addTrack(track, localStream);
+      const added = peerConnection.addTrack(track, localStream);
+      if (track.kind === 'audio') micSender = added;
     }
 
     const dataChannel = peerConnection.createDataChannel('oai-events');
@@ -495,6 +875,9 @@ export async function connectOpenAiRealtimeCall(params: {
       localStream,
       remoteAudio,
       voice,
+      liveMicTrack: null,
+      micSender,
+      micSwapQueue: Promise.resolve(),
       sendEvent,
       close,
     };

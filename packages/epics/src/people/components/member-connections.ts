@@ -12,6 +12,7 @@ import {
   peopleConversationKindForListing,
 } from '../../../../core/src/matrix/group-room';
 import { HYPHA_ROOM_TYPES } from '../../../../core/src/matrix/room-types';
+import type { InboxPlace } from './messages-inbox';
 
 export type ConnectionListPerson = {
   id: number;
@@ -37,6 +38,8 @@ export type ConversationRow = {
   avatarUrl?: string;
   preview: string;
   mine: boolean;
+  /** Matrix user id of the person who sent the preview, when one is loaded. */
+  senderUserId?: string | null;
   lastTs: number | null;
   unread: number;
   memberCount: number;
@@ -67,6 +70,10 @@ export type MemberRow<T extends ConnectionListPerson = ConnectionListPerson> = {
   avatarUrl?: string;
   preview: string;
   mine: boolean;
+  /** Matrix user id of the person who sent the preview. */
+  senderUserId?: string | null;
+  /** First name for a shared channel. Never a Privy id. */
+  senderName?: string;
   lastTs: number | null;
   unread: number;
   roomId: string | null;
@@ -86,6 +93,11 @@ export type MemberRow<T extends ConnectionListPerson = ConnectionListPerson> = {
     slug?: string | null;
     userId?: string;
   }[];
+  /**
+   * Where this existing conversation sits in the messages inbox.
+   * Absent on older rows; the list treats those as a direct chat or a group.
+   */
+  inbox?: InboxPlace;
 };
 
 export function looksLikeHyphaBot(value: string | null | undefined) {
@@ -206,14 +218,56 @@ export type PeerProfileBySub = {
 
 /** Privy subs for DM peers and group members — fetch these up front. */
 export function conversationPeerSubs(
-  rows: readonly Pick<ConversationRow, 'otherUserId' | 'searchMembers'>[],
+  rows: readonly Pick<
+    ConversationRow,
+    'otherUserId' | 'searchMembers' | 'senderUserId'
+  >[],
 ): string[] {
   return uniqueCanonicalPrivySubsFromMxids(
     rows.flatMap((row) => [
       row.otherUserId,
+      row.senderUserId,
       ...(row.searchMembers ?? []).map((member) => member.userId),
     ]),
   );
+}
+
+/**
+ * First name for a shared-channel preview. Profile first name wins.
+ * A Privy id, or a Matrix label that is one, is left blank.
+ */
+export function senderFirstName({
+  profileName,
+  profileNickname,
+  memberName,
+  matrixLabel,
+  senderUserId,
+}: {
+  profileName?: string | null;
+  profileNickname?: string | null;
+  memberName?: string | null;
+  matrixLabel?: string | null;
+  senderUserId?: string | null;
+}): string {
+  const id = senderUserId?.trim() ?? '';
+  const profile = profileName?.trim() ?? '';
+  if (profile && !looksLikeTechnicalMatrixDisplayName(profile, id || profile)) {
+    return profile;
+  }
+  const nick = profileNickname?.trim() ?? '';
+  if (nick && !looksLikeTechnicalMatrixDisplayName(nick, id || nick)) {
+    return nick.split(/\s+/)[0] ?? '';
+  }
+  for (const label of [memberName, matrixLabel]) {
+    const clean = label?.trim() ?? '';
+    if (!clean || looksLikeTechnicalMatrixDisplayName(clean, id || clean)) {
+      continue;
+    }
+    const first = clean.split(/\s+/)[0] ?? '';
+    if (!first || /privy/i.test(first)) continue;
+    return first;
+  }
+  return '';
 }
 
 /**
@@ -403,6 +457,29 @@ export function previewWithNames(
   namesByMatrixId: ReadonlyMap<string, string>,
 ) {
   return previewLine(preview, namesByMatrixId);
+}
+
+/**
+ * Inbox row text: resolve known names, then drop any leftover bridged privy
+ * mention tokens so the list never sticks on a skeleton or hides a real line.
+ */
+export function previewForInboxDisplay(
+  preview: string,
+  namesByMatrixId?: ReadonlyMap<string, string>,
+): string {
+  const named = namesByMatrixId
+    ? previewWithNames(preview, namesByMatrixId)
+    : preview;
+  if (!/privy_did_privy/i.test(named)) return named;
+  const cleaned = named
+    .replace(
+      /@?(?:dev|prev|prod)_privy_did_privy_[A-Za-z0-9]+(?::[^\s]*)?/gi,
+      ' ',
+    )
+    .replace(/@[^:\s]*privy_did_privy[^:\s]*:[^\s]+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return truncateMessagePreview(cleaned);
 }
 
 function previewLine(
@@ -1612,6 +1689,34 @@ export function listedConversationOpenTarget(
 }
 
 /**
+ * The open chat stays on the row that was opened. A direct chat can join a
+ * room id that is not the one stored on the row, so the person id counts too.
+ */
+export function listedConversationIsOpen(
+  row: {
+    roomId: string | null | undefined;
+    name: string;
+    preview?: string | null;
+    lastTs?: number | null;
+    person: { id: number };
+  },
+  open: {
+    roomId: string | null | undefined;
+    personId: number | null | undefined;
+  },
+  lookup?: ListedConversationLookup,
+): boolean {
+  const personId = open.personId;
+  if (personId != null && personId > 0 && row.person.id === personId) {
+    return true;
+  }
+  const roomId = open.roomId?.trim();
+  if (!roomId) return false;
+  if (row.roomId?.trim() === roomId) return true;
+  return resolveListedConversationRoomId(row, lookup) === roomId;
+}
+
+/**
  * Group-pick candidates. Synthetic DM rows (`person.id <= 0`) stay on
  * Messages but cannot be selected — they have no directory person id.
  */
@@ -1737,6 +1842,7 @@ export function groupRowsForConnections<T extends ConnectionListPerson>(
         faces,
         preview: room.preview,
         mine: room.mine,
+        senderUserId: room.senderUserId,
         lastTs: room.lastTs,
         unread: room.unread,
         roomId: room.roomId,

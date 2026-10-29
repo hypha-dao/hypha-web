@@ -1,5 +1,8 @@
 import type { MemberIntelligence } from './member-intelligence';
-import { balanceMemberHomeThread } from './member-situation';
+import {
+  balanceMemberHomeThread,
+  memberHomeSignalProgressIsClosed,
+} from './member-situation';
 
 /** Tool the home assistant calls so a card belongs to that reply. */
 export const SHOW_MEMBER_HOME_ITEM_TOOL = 'show_member_home_item';
@@ -372,6 +375,7 @@ function collectMemberHomeThreadItems(
       continue;
     }
     const signal = signalsBySlug.get(note.targetSlug);
+    if (memberHomeSignalProgressIsClosed(signal?.progressStatus)) continue;
     const creatorId = signal?.creatorId ?? note.creatorId ?? null;
     const dueAt = signal?.dueAt ?? null;
     if (raisedByMember(home, creatorId) && !memberHomeDeadlineNear(dueAt)) {
@@ -404,6 +408,7 @@ function collectMemberHomeThreadItems(
 
   for (const signal of home.signals) {
     if (!signal.slug) continue;
+    if (memberHomeSignalProgressIsClosed(signal.progressStatus)) continue;
     if (
       raisedByMember(home, signal.creatorId) &&
       !memberHomeDeadlineNear(signal.dueAt)
@@ -495,13 +500,37 @@ export function listMemberHomeAttentionItems(
     ),
   );
   return collectMemberHomeThreadItems(home)
-    .filter((item) => !(item.kind === 'signal' && network.has(item.slug)))
+    .filter(
+      (item) =>
+        item.action !== 'outcome' &&
+        !(item.kind === 'signal' && network.has(item.slug)),
+    )
     .sort((left, right) => {
       const leftAt = attentionAt(home, left);
       const rightAt = attentionAt(home, right);
       if (leftAt !== rightAt) return leftAt < rightAt ? 1 : -1;
       return left.slug < right.slug ? -1 : left.slug > right.slug ? 1 : 0;
     });
+}
+
+/**
+ * Lead for the space dashboard "Needs you" tile: only an open vote or signal
+ * in that space. Accepted / rejected outcomes and done / archived signals are
+ * not waiting — the section hides when the queue is empty.
+ */
+export function listSpaceAttentionLead(
+  home: MemberIntelligence,
+  spaceSlug: string,
+  turn = 0,
+): MemberHomeThreadItem | null {
+  const waiting = listMemberHomeThreadCatalog(home).filter(
+    (item) =>
+      item.spaceSlug === spaceSlug &&
+      (item.action === 'decision' || item.action === 'validate'),
+  );
+  if (waiting.length === 0) return null;
+  const index = ((turn % waiting.length) + waiting.length) % waiting.length;
+  return waiting[index] ?? null;
 }
 
 /**
@@ -679,6 +708,42 @@ function creatorNamedInText(name: string | null, haystack: string): boolean {
   return required.every((token) => haystack.includes(token));
 }
 
+/** "Marieke's candidate review" names Marieke without the rest of the name. */
+function givenNameInText(name: string | null, haystack: string): boolean {
+  const given = creatorTokens(name ?? '')[0];
+  if (!given || given.length < 4) return false;
+  return haystack.includes(given);
+}
+
+/**
+ * ", Alex." at the end of a sentence is address, not authorship.
+ * "Edgar's thread …, Alex." must not count as Alex owning the card.
+ */
+function givenNameOnlyAsVocative(
+  name: string | null,
+  haystack: string,
+): boolean {
+  const given = creatorTokens(name ?? '')[0];
+  if (!given || given.length < 4) return false;
+  if (!haystack.includes(given)) return false;
+  const vocative = new RegExp(`,\\s*${given}\\b`);
+  const first = haystack.indexOf(given);
+  const match = vocative.exec(haystack);
+  if (!match || match.index !== first) return false;
+  // Every occurrence is the same trailing address (or repeats of it).
+  let from = 0;
+  while (from < haystack.length) {
+    const at = haystack.indexOf(given, from);
+    if (at < 0) break;
+    const before = haystack.slice(Math.max(0, at - 2), at);
+    if (!/,\s*$/.test(before) && !(at > 0 && haystack[at - 1] === ',')) {
+      return false;
+    }
+    from = at + given.length;
+  }
+  return true;
+}
+
 function textOverlap(item: MemberHomeThreadItem, haystack: string): number {
   return creatorTokens(`${item.title} ${item.summary ?? ''}`).filter((token) =>
     haystack.includes(token),
@@ -797,9 +862,91 @@ function textBelongsTo(item: MemberHomeThreadItem, text: string): boolean {
   const haystack = foldHomeText(text);
   if (!haystack) return false;
   if (creatorNamedInText(item.creatorName, haystack)) return true;
+  // "Marco in Hypha Energy has asked to join" names him without the title
+  // or the rest of his name. That sentence still belongs to his card.
+  // Skip when the name is only a vocative (", Alex.") — that is address.
+  if (
+    givenNameInText(item.creatorName, haystack) &&
+    !givenNameOnlyAsVocative(item.creatorName, haystack) &&
+    spaceNamedInText(item, haystack)
+  ) {
+    return true;
+  }
   return (
     titleNamedInText(item.title, haystack) && spaceNamedInText(item, haystack)
   );
+}
+
+/** The reply is about this item, even when it never says the title. */
+export function memberHomeTextBelongsToItem(
+  item: MemberHomeThreadItem,
+  text: string,
+): boolean {
+  return textBelongsTo(item, text);
+}
+
+function spokenKind(haystack: string): MemberHomeCardKind | null {
+  // Include FR stems so "porte un signal" cannot keep an invite card.
+  const signal = /\b(signals?|signaux|notes?|tensions?)\b/.test(haystack);
+  const proposal =
+    /\b(proposals?|propositions?|invites?|invitations?|votes?|decisions?|d[ée]cisions?)\b/.test(
+      haystack,
+    );
+  if (signal === proposal) return null;
+  return signal ? 'signal' : 'proposal';
+}
+
+/**
+ * A reply names the person and the space, and leaves the title out.
+ * Several open items can share that person. The one they are talking
+ * about is the name that comes first, in the space named most specifically.
+ */
+function pickNamedPersonItem(
+  items: readonly MemberHomeThreadItem[],
+  haystack: string,
+): MemberHomeThreadItem | null {
+  const named = items.filter((item) => spaceNamedInText(item, haystack));
+  const longest = named.reduce(
+    (max, item) => Math.max(max, foldHomeText(item.spaceTitle).length),
+    0,
+  );
+  const inSpace =
+    longest === 0
+      ? []
+      : named.filter(
+          (item) => foldHomeText(item.spaceTitle).length === longest,
+        );
+  const byPerson = inSpace.filter(
+    (item) =>
+      givenNameInText(item.creatorName, haystack) &&
+      !givenNameOnlyAsVocative(item.creatorName, haystack),
+  );
+  if (byPerson.length === 0) return null;
+  if (byPerson.length === 1) return byPerson[0] ?? null;
+  let earliest = Number.POSITIVE_INFINITY;
+  for (const item of byPerson) {
+    const given = creatorTokens(item.creatorName ?? '')[0];
+    if (!given) continue;
+    const index = haystack.indexOf(given);
+    if (index >= 0 && index < earliest) earliest = index;
+  }
+  const subject =
+    earliest === Number.POSITIVE_INFINITY
+      ? byPerson
+      : byPerson.filter((item) => {
+          const given = creatorTokens(item.creatorName ?? '')[0];
+          return given != null && haystack.indexOf(given) === earliest;
+        });
+  const kind = spokenKind(haystack);
+  const ofKind = kind ? subject.filter((item) => item.kind === kind) : [];
+  const pool = ofKind.length > 0 ? ofKind : subject;
+  if (pool.length === 1) return pool[0] ?? null;
+  const ranked = [...pool].sort(
+    (left, right) =>
+      textOverlap(right, haystack) - textOverlap(left, haystack) ||
+      (left.slug < right.slug ? -1 : left.slug > right.slug ? 1 : 0),
+  );
+  return ranked[0] ?? null;
 }
 
 function itemMentionedInText(
@@ -864,6 +1011,232 @@ function itemMentionedInText(
   ) {
     return pool[0];
   }
+  return pickNamedPersonItem(items, haystack);
+}
+
+/** Longer space titles win, so "Hypha" does not swallow "Hypha Energy". */
+function mostSpecificSpaceTitles(
+  text: string,
+  spaceTitles: readonly string[],
+): string[] {
+  const haystack = foldHomeText(text);
+  if (!haystack) return [];
+  const hits = [
+    ...new Set(
+      spaceTitles
+        .map((title) => foldHomeText(title))
+        .filter((title) => title.length >= 3 && haystack.includes(title)),
+    ),
+  ];
+  return hits.filter(
+    (title) =>
+      !hits.some(
+        (other) =>
+          other !== title &&
+          other.includes(title) &&
+          other.length > title.length,
+      ),
+  );
+}
+
+/**
+ * English contractions and fillers that look like "Name's" / "Name has".
+ * "Here's the card…" must not claim a creator named "Here".
+ */
+const CLAIMED_CREATOR_STOPWORDS = new Set([
+  'here',
+  'there',
+  'that',
+  'this',
+  'what',
+  'when',
+  'where',
+  'which',
+  'who',
+  'why',
+  'how',
+  'it',
+  'he',
+  'she',
+  'we',
+  'they',
+  'let',
+  'one',
+  'someone',
+  'anyone',
+  'everyone',
+  'somebody',
+  'anybody',
+  'everybody',
+  'nobody',
+  'something',
+  'anything',
+  'everything',
+  'nothing',
+]);
+
+/**
+ * Given names the reply treats as authors ("Edgar's thread", "Edgar has put…").
+ * Uses capital letters in the original so "space's agreements" is not a person.
+ * Content mentions ("Wendy has brought", "Wendy's contribution") are not
+ * authorship — those used to clear the member's own card mid-stream.
+ */
+function claimedCreatorGivens(text: string): string[] {
+  const found = new Set<string>();
+  const patterns = [
+    /\b([A-Z][a-zA-Z]{3,})'s\s+(?:thread|signal|proposal|invite|item|work)\b/g,
+    /\b([A-Z][a-zA-Z]{3,})’s\s+(?:thread|signal|proposal|invite|item|work)\b/g,
+    /\b([A-Z][a-zA-Z]{3,}) has (?:put|raised|opened|named)\b/g,
+    /\b([A-Z][a-zA-Z]{3,}) put\b/g,
+    /\b([A-Z][a-zA-Z]{3,}) raised\b/g,
+    /\b([A-Z][a-zA-Z]{3,}) opened\b/g,
+    /\b([A-Z][a-zA-Z]{3,}) is naming\b/g,
+  ];
+  for (const pattern of patterns) {
+    for (const match of text.matchAll(pattern)) {
+      const given = foldHomeText(match[1] ?? '');
+      if (given.length < 4 || CLAIMED_CREATOR_STOPWORDS.has(given)) continue;
+      found.add(given);
+    }
+  }
+  return [...found];
+}
+
+/** The reply says this member raised the item themselves. */
+function textClaimsMemberRaised(text: string): boolean {
+  const haystack = foldHomeText(text);
+  return (
+    /\byou raised\b/.test(haystack) ||
+    /\braised it yourself\b/.test(haystack) ||
+    /\byour (?:own )?(?:signal|proposal|thread|invite|item)\b/.test(haystack)
+  );
+}
+
+/**
+ * The reply attributes this work to someone else ("Edgar's thread",
+ * "Edgar has put…") while the card belongs to a different creator.
+ * Works even when that person has no open item in the queue today.
+ */
+function textClaimsOtherCreator(
+  item: MemberHomeThreadItem,
+  text: string,
+  peerNames: readonly (string | null | undefined)[],
+): boolean {
+  const haystack = foldHomeText(text);
+  if (!haystack) return false;
+  // Own signal/proposal brief often names people inside the work
+  // ("Wendy has brought…"). That is not a change of author.
+  if (item.authoredByMember && textClaimsMemberRaised(text)) return false;
+  const own = new Set(creatorTokens(item.creatorName ?? ''));
+  const claimed = new Set(claimedCreatorGivens(text));
+  for (const name of peerNames) {
+    const given = creatorTokens(name ?? '')[0];
+    if (!given || given.length < 4) continue;
+    if (
+      haystack.includes(`${given}'s thread`) ||
+      haystack.includes(`${given}'s signal`) ||
+      haystack.includes(`${given}'s proposal`) ||
+      haystack.includes(`${given}'s invite`) ||
+      haystack.includes(`${given}'s item`) ||
+      haystack.includes(`${given}'s work`) ||
+      haystack.includes(`${given} has put`) ||
+      haystack.includes(`${given} has raised`) ||
+      haystack.includes(`${given} has opened`) ||
+      haystack.includes(`${given} has named`) ||
+      haystack.includes(`${given} put`) ||
+      haystack.includes(`${given} raised`) ||
+      haystack.includes(`${given} opened`) ||
+      haystack.includes(`${given} is naming`)
+    ) {
+      claimed.add(given);
+    }
+  }
+  for (const given of claimed) {
+    if (!own.has(given)) return true;
+  }
+  return false;
+}
+
+/**
+ * The reply names a space this card is not in, attributes the work to
+ * another person, or speaks a different kind (signal vs proposal). A greeting
+ * that names no space does not conflict.
+ *
+ * Naming the creator alone must NOT clear a conflict: "Vlad porte un signal
+ * dans la Biorégion…" must never keep Vlad's Flywheel invite card.
+ */
+export function memberHomeSpeechConflictsWithItem(
+  item: MemberHomeThreadItem,
+  text: string,
+  spaceTitles: readonly string[],
+  peerNames: readonly (string | null | undefined)[] = [],
+): boolean {
+  // Person attribution first: "Edgar's thread …, Alex." must not keep Alex's
+  // card just because the listener is named and the space matches.
+  if (textClaimsOtherCreator(item, text, peerNames)) return true;
+  const haystack = foldHomeText(text);
+  const named = mostSpecificSpaceTitles(text, spaceTitles);
+  if (named.length > 0 && !named.includes(foldHomeText(item.spaceTitle))) {
+    return true;
+  }
+  const kind = spokenKind(haystack);
+  if (kind && kind !== item.kind) return true;
+  if (textBelongsTo(item, text)) return false;
+  return false;
+}
+
+/** The one item in the space the reply actually names. */
+function itemInSpokenSpace(
+  items: readonly MemberHomeThreadItem[],
+  text: string,
+): MemberHomeThreadItem | null {
+  const named = mostSpecificSpaceTitles(
+    text,
+    items.map((item) => item.spaceTitle),
+  );
+  if (named.length !== 1) return null;
+  const space = named[0]!;
+  const candidates = items.filter(
+    (item) => foldHomeText(item.spaceTitle) === space,
+  );
+  if (candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0] ?? null;
+  const haystack = foldHomeText(text);
+  const byPerson = candidates.filter(
+    (item) =>
+      creatorNamedInText(item.creatorName, haystack) ||
+      (givenNameInText(item.creatorName, haystack) &&
+        !givenNameOnlyAsVocative(item.creatorName, haystack)),
+  );
+  // "Edgar's thread" with no Edgar item: do not fall back to another card.
+  const claimed = claimedCreatorGivens(text);
+  if (
+    claimed.length > 0 &&
+    byPerson.length === 0 &&
+    !candidates.some((item) => {
+      const given = creatorTokens(item.creatorName ?? '')[0];
+      return given != null && claimed.includes(given);
+    })
+  ) {
+    return null;
+  }
+  const pool = byPerson.length > 0 ? byPerson : candidates;
+  if (pool.length === 1) return pool[0] ?? null;
+  const nameAt = (item: MemberHomeThreadItem) => {
+    const given = creatorTokens(item.creatorName ?? '')[0];
+    if (!given) return Number.POSITIVE_INFINITY;
+    const index = haystack.indexOf(given);
+    return index >= 0 ? index : Number.POSITIVE_INFINITY;
+  };
+  const ranked = [...pool].sort(
+    (left, right) =>
+      nameAt(left) - nameAt(right) ||
+      textOverlap(right, haystack) - textOverlap(left, haystack) ||
+      (left.slug < right.slug ? -1 : left.slug > right.slug ? 1 : 0),
+  );
+  const best = ranked[0];
+  if (!best) return null;
+  if (byPerson.length > 0 || textOverlap(best, haystack) > 0) return best;
   return null;
 }
 
@@ -875,15 +1248,49 @@ function itemMentionedInText(
 export function memberHomeThreadItemForMessage(
   items: readonly MemberHomeThreadItem[],
   message: { parts?: readonly unknown[]; content?: string },
+  home?: MemberIntelligence,
 ): MemberHomeThreadItem | null {
   const text = textFromParts(message.parts) || message.content?.trim() || '';
   const mentioned = itemMentionedInText(items, text);
   let toolItem: MemberHomeThreadItem | null = null;
   for (const input of toolInputs(message.parts)) {
-    const item = itemFromToolInput(items, input);
+    let item = itemFromToolInput(items, input);
+    if (
+      !item &&
+      home &&
+      input &&
+      typeof input === 'object' &&
+      ((input as { kind?: unknown }).kind === 'proposal' ||
+        (input as { kind?: unknown }).kind === 'signal') &&
+      typeof (input as { slug?: unknown }).slug === 'string'
+    ) {
+      item = memberHomeThreadItemForRef(home, {
+        kind: (input as { kind: MemberHomeCardKind }).kind,
+        slug: (input as { slug: string }).slug,
+      });
+    }
     if (!item) continue;
     toolItem = item;
     break;
+  }
+  const spaceTitles = items.map((item) => item.spaceTitle);
+  const peerNames = items.map((item) => item.creatorName);
+  if (
+    toolItem &&
+    memberHomeSpeechConflictsWithItem(toolItem, text, spaceTitles, peerNames)
+  ) {
+    if (
+      mentioned &&
+      !memberHomeSpeechConflictsWithItem(
+        mentioned,
+        text,
+        spaceTitles,
+        peerNames,
+      )
+    ) {
+      return mentioned;
+    }
+    return itemInSpokenSpace(items, text);
   }
   if (
     mentioned &&
@@ -898,8 +1305,115 @@ export function memberHomeThreadItemForMessage(
   return mentioned;
 }
 
+/**
+ * The card that belongs with these words.
+ * A hint attached before the model speaks loses when the reply names
+ * another space. No card is better than the wrong space.
+ */
+export function memberHomeCardForSpeech(input: {
+  items: readonly MemberHomeThreadItem[];
+  message: { parts?: readonly unknown[]; content?: string };
+  hinted?: MemberHomeThreadItem | null;
+  spaceTitles?: readonly string[];
+  home?: MemberIntelligence;
+}): MemberHomeThreadItem | null {
+  const { items, message } = input;
+  const text = textFromParts(message.parts) || message.content?.trim() || '';
+  const spaceTitles = [
+    ...items.map((item) => item.spaceTitle),
+    ...(input.spaceTitles ?? []),
+  ];
+  const named = memberHomeThreadItemForMessage(items, message, input.home);
+  const wordsOnly = memberHomeThreadItemForMessage(
+    items,
+    { content: text },
+    input.home,
+  );
+  const fromHint = input.hinted ?? null;
+  const peerNames = [
+    ...items.map((item) => item.creatorName),
+    fromHint?.creatorName,
+  ];
+  const conflicts = (item: MemberHomeThreadItem | null) =>
+    Boolean(
+      item &&
+        memberHomeSpeechConflictsWithItem(item, text, spaceTitles, peerNames),
+    );
+  if (conflicts(fromHint) || conflicts(named)) {
+    if (wordsOnly && !conflicts(wordsOnly)) return wordsOnly;
+    const spoken = itemInSpokenSpace(items, text);
+    if (spoken && !conflicts(spoken)) return spoken;
+    return null;
+  }
+  const sentencePrefers = (item: MemberHomeThreadItem | null) =>
+    Boolean(
+      wordsOnly &&
+        item &&
+        memberHomeThreadItemKey(wordsOnly) !== memberHomeThreadItemKey(item) &&
+        textBelongsTo(wordsOnly, text) &&
+        !textBelongsTo(item, text),
+    );
+  if (sentencePrefers(fromHint) || sentencePrefers(named)) return wordsOnly;
+  return fromHint ?? wordsOnly ?? named;
+}
+
 function memberHomeChoiceText(text: string) {
   return text.trim().toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' ');
+}
+
+/** Hidden prompt when home opens and the talk should keep going. */
+export const MEMBER_HOME_CONTINUE_ASK = 'Continue with what still needs me.';
+
+const HOME_STOP =
+  /^(?:stop|pause|enough|that(?:'| i)?s enough|i(?:'| a)?m done|stop for now|enough for now|let's pause|lets pause|pause for now)[.!?]?$/i;
+
+const HOME_PAUSE_YES =
+  /^(?:yes|yeah|yep|yup|sure|ok|okay|please|let's pause|lets pause|pause)[.!?]?$/i;
+
+function messageIsHomeArrival(message: { metadata?: unknown }): boolean {
+  const metadata = message.metadata;
+  return (
+    metadata != null &&
+    typeof metadata === 'object' &&
+    'homeArrival' in metadata &&
+    (metadata as { homeArrival?: unknown }).homeArrival === true
+  );
+}
+
+/**
+ * The talk rests only when they asked to stop, or agreed to a pause the
+ * assistant just offered. Anything else means home should keep going.
+ */
+export function memberHomeTalkIsResting(
+  messages: ReadonlyArray<{
+    role: string;
+    parts?: readonly unknown[];
+    content?: string;
+    metadata?: unknown;
+  }>,
+): boolean {
+  let offeredPause = false;
+  let resting = false;
+  for (const message of messages) {
+    const text = textFromParts(message.parts) || message.content?.trim() || '';
+    if (message.role === 'assistant') {
+      offeredPause = /pause for now/i.test(text);
+      continue;
+    }
+    if (message.role !== 'user' || messageIsHomeArrival(message)) continue;
+    const normalized = memberHomeChoiceText(text);
+    if (!normalized) continue;
+    if (
+      HOME_STOP.test(normalized) ||
+      (offeredPause && HOME_PAUSE_YES.test(normalized))
+    ) {
+      resting = true;
+    } else {
+      resting = false;
+    }
+    offeredPause = false;
+  }
+  return resting;
 }
 
 /**
@@ -922,6 +1436,97 @@ export function isMemberHomeItemDeferral(text: string): boolean {
       normalized,
     )
   );
+}
+
+/**
+ * They are asking to see the item. That is not a yes that drops it,
+ * and it is not a no.
+ */
+/** "show" on its own means the card from the reply just above. */
+function isBareCardLook(text: string): boolean {
+  const folded = foldHomeText(text)
+    .replace(/[.!?]+$/g, '')
+    .trim();
+  return /^(?:show(?: (?:it|that|this|the card))?|montre(?:-(?:le|la|moi)| (?:le|la|moi|ca|la carte))?|affiche(?:-(?:le|la)| (?:la carte))?|zeig(?: (?:es|die karte))?|muestra(?:lo| (?:la tarjeta))?|mostra(?: (?:isso|a carta))?|toon(?: het)?|laat zien|vis(?: det)?|покажи(?: ја)?)$/.test(
+    folded,
+  );
+}
+
+export function isMemberHomeItemLook(text: string): boolean {
+  const normalized = memberHomeChoiceText(text);
+  if (!normalized) return false;
+  if (isBareCardLook(text)) return true;
+  if (
+    /\b(don't see|do not see|dont see|can't see|cannot see|not seeing)\b/.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+  if (
+    /\b(show me|let me see|where is it|where is the|where is that)\b/.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+  if (
+    /\b(show|see|open)\b/.test(normalized) &&
+    /\b(proposal|invite|card|it)\b/.test(normalized)
+  ) {
+    return true;
+  }
+  if (/\bopen\b/.test(normalized)) return true;
+  return (
+    /\b(go to|take me)\b/.test(normalized) &&
+    /\b(proposal|invite|card|it|there|space)\b/.test(normalized)
+  );
+}
+
+/** The item they are asking to see, from the reply before this message. */
+export function memberHomeLookItem(
+  items: readonly MemberHomeThreadItem[],
+  messages: ReadonlyArray<MemberHomeMemoryMessage>,
+  asked: string,
+): MemberHomeThreadItem | null {
+  if (!isMemberHomeItemLook(asked)) return null;
+  const previous = [...messages]
+    .reverse()
+    .find((message) => message.role === 'assistant');
+  const hinted = previous?.metadata?.homeItem;
+  if (hinted?.kind && hinted.slug) {
+    const match = items.find(
+      (item) => item.kind === hinted.kind && item.slug === hinted.slug,
+    );
+    if (match) return match;
+  }
+  const fromWords = previous
+    ? memberHomeThreadItemForMessage(items, previous)
+    : null;
+  if (fromWords) return fromWords;
+  const memory = memberHomeItemMemory(items, messages);
+  const key = memory.recalled[0] ?? memory.deferred[0] ?? null;
+  if (key) {
+    const remembered = items.find(
+      (item) => memberHomeThreadItemKey(item) === key,
+    );
+    if (remembered) return remembered;
+  }
+  const askedText = memberHomeChoiceText(asked);
+  const bySpace = items.filter((item) =>
+    foldHomeText(item.spaceTitle)
+      .split(/[^a-z0-9]+/)
+      .filter((token) => token.length >= 5)
+      .some((token) => askedText.includes(token)),
+  );
+  if (bySpace.length === 1) return bySpace[0] ?? null;
+  const decisions = items.filter(
+    (item) => item.kind === 'proposal' && item.action === 'decision',
+  );
+  if (decisions.length === 1 && /\b(proposal|invite|card)\b/.test(askedText)) {
+    return decisions[0] ?? null;
+  }
+  return bySpace[0] ?? null;
 }
 
 /**
@@ -973,6 +1578,9 @@ type MemberHomeMemoryMessage = {
   role?: string;
   parts?: readonly unknown[];
   content?: string;
+  metadata?: {
+    homeItem?: { kind?: string; slug?: string };
+  };
 };
 
 /**
@@ -1018,6 +1626,7 @@ export function memberHomeItemMemory(
       held = currentKey;
       continue;
     }
+    if (isMemberHomeItemLook(text)) continue;
     if (isMemberHomeItemDecline(text)) {
       const named = itemsReferencedInText(items, text);
       const offered = itemsReferencedInText(items, assistantText);
@@ -1159,4 +1768,367 @@ export function shownMemberHomeItemKeys(
     keys.push(key);
   }
   return keys;
+}
+
+export type MemberHomeDirectAsk =
+  | 'people'
+  | 'spaces'
+  | 'tokens'
+  | 'decision'
+  | 'useful';
+
+export type MemberHomeDirectLine =
+  | { key: 'people'; name: string; count: number }
+  | { key: 'peopleEmpty' }
+  | { key: 'space'; space: string }
+  | { key: 'spaceEmpty' }
+  | { key: 'tokens'; name: string }
+  | { key: 'tokensEmpty' }
+  | { key: 'decisionOpen'; title: string; space: string }
+  | { key: 'decisionListed'; title: string; space: string }
+  | { key: 'decisionQuiet' }
+  | { key: 'itemOpen'; title: string; space: string }
+  | { key: 'usefulQuiet' };
+
+/** A chip the screen already answered. Null means the model may speak. */
+export type MemberHomeDirectReply = {
+  ask: MemberHomeDirectAsk;
+  widget: 'people' | 'spaces' | 'tokens' | null;
+  item: { kind: MemberHomeCardKind; slug: string } | null;
+  line: MemberHomeDirectLine;
+};
+
+const DIRECT_PHRASES: Record<MemberHomeDirectAsk, readonly string[]> = {
+  people: [
+    'who is around',
+    "who's around",
+    'who are around',
+    'who should i connect with',
+    'quién está cerca',
+    'qui est là',
+    'quem está por perto',
+    'wer ist da',
+    'wie is er in de buurt',
+    'hvem er i nærheten',
+    'кој е во близина',
+  ],
+  spaces: [
+    'step into a space',
+    'entrar en un espacio',
+    'entrer dans un espace',
+    'entrar num espaço',
+    'einen space betreten',
+    'stap een space binnen',
+    'gå inn i et rom',
+    'влези во простор',
+  ],
+  tokens: [
+    'send someone tokens',
+    'enviar tokens a alguien',
+    'envoyer des tokens à quelqu’un',
+    "envoyer des tokens à quelqu'un",
+    'enviar tokens a alguém',
+    'jemandem token senden',
+    'iemand tokens sturen',
+    'send tokens til noen',
+    'испрати токени на некого',
+  ],
+  decision: ['what needs a decision'],
+  useful: ['where can i be useful', 'i am on my home'],
+};
+
+function foldDirectAsk(text: string) {
+  let chip = text
+    .trim()
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/\s+/g, ' ');
+  while (chip.startsWith('¿') || chip.startsWith('¡')) chip = chip.slice(1);
+  while (chip.endsWith('.') || chip.endsWith('!') || chip.endsWith('?')) {
+    chip = chip.slice(0, -1);
+  }
+  return chip.trim();
+}
+
+function classifyDirectAsk(
+  asked: string,
+  phrases?: Partial<Record<MemberHomeDirectAsk, readonly string[]>>,
+): MemberHomeDirectAsk | null {
+  const chip = foldDirectAsk(asked);
+  if (!chip) return null;
+  const order: MemberHomeDirectAsk[] = [
+    'people',
+    'spaces',
+    'tokens',
+    'decision',
+    'useful',
+  ];
+  for (const ask of order) {
+    const extra = phrases?.[ask] ?? [];
+    const known = [...DIRECT_PHRASES[ask], ...extra];
+    if (known.some((phrase) => foldDirectAsk(phrase) === chip)) return ask;
+  }
+  if (chip.includes('what needs a decision')) return 'decision';
+  return null;
+}
+
+function closestDirectPerson(home: MemberIntelligence) {
+  const named = home.connections.filter((person) => {
+    if (person.id === home.person.id) return false;
+    const name = [person.name, person.surname].filter(Boolean).join(' ').trim();
+    return Boolean(name || person.nickname?.trim());
+  });
+  named.sort((left, right) => right.sharedSpaceCount - left.sharedSpaceCount);
+  const person = named[0];
+  if (!person) return null;
+  const name =
+    [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+    person.nickname?.trim() ||
+    '';
+  if (!name) return null;
+  return { name, count: person.sharedSpaceCount };
+}
+
+function leadDirectSpace(
+  home: MemberIntelligence,
+  recentSpaceSlugs: readonly string[],
+) {
+  const bySlug = new Map(home.spaces.map((space) => [space.slug, space]));
+  for (const slug of recentSpaceSlugs) {
+    const space = bySlug.get(slug);
+    if (space?.title.trim()) return space.title.trim();
+  }
+  return home.spaces.find((space) => space.title.trim())?.title.trim() ?? null;
+}
+
+function notificationProposals(home: MemberIntelligence) {
+  return [...home.notifications]
+    .filter(
+      (item) =>
+        item.kind === 'proposal' &&
+        item.title.trim() &&
+        item.spaceTitle.trim() &&
+        item.targetSlug.trim(),
+    )
+    .sort((left, right) => {
+      const leftAt = left.at ?? '';
+      const rightAt = right.at ?? '';
+      if (leftAt !== rightAt) return leftAt < rightAt ? 1 : -1;
+      return left.id < right.id ? -1 : 1;
+    });
+}
+
+function openDecisions(home: MemberIntelligence) {
+  return listMemberHomeThreadCatalog(home).filter(
+    (item) =>
+      item.kind === 'proposal' &&
+      item.action === 'decision' &&
+      item.slug.trim() &&
+      item.title.trim() &&
+      item.spaceTitle.trim(),
+  );
+}
+
+/**
+ * The card for a kind and slug. Open items come from the catalog. A
+ * notification that is no longer waiting still gets a card from the proposal.
+ */
+export function memberHomeThreadItemForRef(
+  home: MemberIntelligence,
+  ref: { kind: MemberHomeCardKind; slug: string },
+): MemberHomeThreadItem | null {
+  const slug = ref.slug.trim();
+  if (!slug) return null;
+  const fromCatalog = listMemberHomeThreadCatalog(home).find(
+    (item) => item.kind === ref.kind && item.slug === slug,
+  );
+  if (fromCatalog) return fromCatalog;
+  if (ref.kind === 'signal') {
+    // Own-space signals carry dueAt/roomId. Network horizon rows do not —
+    // keep them separate so the union never pretends they share those fields.
+    const ownSignal = home.signals.find((row) => row.slug === slug);
+    const networkSignal = (home.networkSignals ?? []).find(
+      (row) => row.slug === slug,
+    );
+    const signal = ownSignal ?? networkSignal;
+    const note = [...home.notifications, ...home.attention].find(
+      (row) => row.kind === 'signal' && row.targetSlug === slug,
+    );
+    if (!signal && !note) return null;
+    const title = (signal?.title ?? note?.title ?? '').trim();
+    const spaceTitle = (signal?.spaceTitle ?? note?.spaceTitle ?? '').trim();
+    if (!title || !spaceTitle) return null;
+    const creatorId = signal?.creatorId ?? note?.creatorId ?? null;
+    return {
+      kind: 'signal',
+      slug,
+      title,
+      spaceSlug: signal?.spaceSlug || note?.spaceSlug || '',
+      spaceTitle,
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: raisedByMember(home, creatorId),
+      spaceLogo: signal?.spaceLogo ?? note?.spaceLogo ?? null,
+      category: memberHomeSignalCategory(signal?.type, note?.category),
+      summary: signal?.description ?? note?.summary ?? null,
+      dueAt: ownSignal?.dueAt ?? null,
+      creatorId,
+      creatorName: signal?.creatorName ?? note?.creatorName ?? null,
+      creatorAvatarUrl:
+        signal?.creatorAvatarUrl ?? note?.creatorAvatarUrl ?? null,
+      ...(typeof signal?.id === 'number' ? { signalId: signal.id } : {}),
+      ...(ownSignal?.roomId?.trim() ? { roomId: ownSignal.roomId.trim() } : {}),
+    };
+  }
+  if (ref.kind !== 'proposal') return null;
+  const proposal = home.proposals.find((row) => row.slug === slug);
+  const note = [...home.notifications, ...home.attention].find(
+    (row) => row.kind === 'proposal' && row.targetSlug === slug,
+  );
+  if (!proposal && !note) return null;
+  const title = (proposal?.title ?? note?.title ?? '').trim();
+  const spaceTitle = (proposal?.spaceTitle ?? note?.spaceTitle ?? '').trim();
+  if (!title || !spaceTitle) return null;
+  if (proposal?.expired && proposal.outcome) {
+    return {
+      kind: 'proposal',
+      slug,
+      title,
+      spaceSlug: proposal.spaceSlug || note?.spaceSlug || '',
+      spaceTitle,
+      action: 'outcome',
+      documentKind: memberHomeDocumentKind({
+        kind: 'proposal',
+        state: proposal.state,
+        label: proposal.label,
+      }),
+      authoredByMember: proposal.authoredByMember,
+      spaceLogo: proposal.spaceLogo ?? note?.spaceLogo ?? null,
+      category: proposal.label,
+      summary: proposal.description,
+      creatorId: proposal.creatorId,
+      creatorName: proposal.creatorName,
+      creatorAvatarUrl: proposal.creatorAvatarUrl,
+      documentId: proposal.id,
+      web3ProposalId: proposal.web3ProposalId,
+      web3SpaceId: proposal.web3SpaceId ?? null,
+      participation: proposal.outcome.participation,
+      unity: proposal.outcome.unity,
+      passed: proposal.outcome.passed,
+    };
+  }
+  return {
+    kind: 'proposal',
+    slug,
+    title,
+    spaceSlug: proposal?.spaceSlug || note?.spaceSlug || '',
+    spaceTitle,
+    action: 'decision',
+    documentKind: memberHomeDocumentKind({
+      kind: 'proposal',
+      state: proposal?.state,
+      label: proposal?.label,
+    }),
+    authoredByMember: proposal?.authoredByMember ?? false,
+    spaceLogo: proposal?.spaceLogo ?? note?.spaceLogo ?? null,
+    category: proposal?.label ?? null,
+    summary: proposal?.description ?? null,
+    creatorId: proposal?.creatorId ?? null,
+    creatorName: proposal?.creatorName ?? null,
+    creatorAvatarUrl: proposal?.creatorAvatarUrl ?? null,
+    documentId: proposal?.id ?? null,
+    web3ProposalId: proposal?.web3ProposalId ?? null,
+    web3SpaceId: proposal?.web3SpaceId ?? null,
+  };
+}
+
+/**
+ * Chips the member can see. The reply is the record on screen, so the model
+ * cannot send them to another space or call an open invite a closed queue.
+ */
+export function memberHomeDirectReply(
+  home: MemberIntelligence,
+  asked: string,
+  options?: {
+    recentSpaceSlugs?: readonly string[];
+    phrases?: Partial<Record<MemberHomeDirectAsk, readonly string[]>>;
+  },
+): MemberHomeDirectReply | null {
+  const ask = classifyDirectAsk(asked, options?.phrases);
+  if (!ask) return null;
+  if (ask === 'people') {
+    const person = closestDirectPerson(home);
+    return {
+      ask,
+      widget: 'people',
+      item: null,
+      line: person
+        ? { key: 'people', name: person.name, count: person.count }
+        : { key: 'peopleEmpty' },
+    };
+  }
+  if (ask === 'spaces') {
+    const space = leadDirectSpace(home, options?.recentSpaceSlugs ?? []);
+    return {
+      ask,
+      widget: 'spaces',
+      item: null,
+      line: space ? { key: 'space', space } : { key: 'spaceEmpty' },
+    };
+  }
+  if (ask === 'tokens') {
+    const person = closestDirectPerson(home);
+    return {
+      ask,
+      widget: 'tokens',
+      item: null,
+      line: person
+        ? { key: 'tokens', name: person.name }
+        : { key: 'tokensEmpty' },
+    };
+  }
+  if (ask === 'decision') {
+    const open = openDecisions(home);
+    const notes = notificationProposals(home);
+    const listedOpen = notes.find((note) =>
+      open.some((item) => item.slug === note.targetSlug),
+    );
+    const chosen = listedOpen
+      ? open.find((item) => item.slug === listedOpen.targetSlug)
+      : open[0];
+    if (chosen) {
+      return {
+        ask,
+        widget: null,
+        item: { kind: 'proposal', slug: chosen.slug },
+        line: {
+          key: 'decisionOpen',
+          title: chosen.title.trim(),
+          space: chosen.spaceTitle.trim(),
+        },
+      };
+    }
+    const listed = notes[0];
+    if (listed) {
+      return {
+        ask,
+        widget: null,
+        item: { kind: 'proposal', slug: listed.targetSlug },
+        line: {
+          key: 'decisionListed',
+          title: listed.title.trim(),
+          space: listed.spaceTitle.trim(),
+        },
+      };
+    }
+    return {
+      ask,
+      widget: null,
+      item: null,
+      line: { key: 'decisionQuiet' },
+    };
+  }
+  // Arrival and "where can I be useful" are a conversation, not a label.
+  // The model starts it. A title-and-space line is what kept coming back.
+  return null;
 }

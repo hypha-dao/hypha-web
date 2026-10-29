@@ -41,6 +41,7 @@ import { getMainColumnScrollRoot } from '../../common/main-column-scroll';
 import type { SignupOrientation } from './signup-flow';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
+import { requestMemberHomeAsk } from './member-home-ask';
 import { HOME_CHAT_COLUMN, MemberHomeChat } from './member-home-chat';
 import { rememberSignalThreadRooms } from './member-connections';
 import {
@@ -66,8 +67,6 @@ import {
   MemberHomeConnectionsWidget,
   MemberHomeWalletWidget,
 } from './member-home-side-widgets';
-import { useAiPanel } from '../../common/human-chat-panel-context';
-import { MemberHomeSpacesRail } from './member-home-spaces-rail';
 import {
   MemberHomeEnergyPanel,
   useMemberEnergyCommunities,
@@ -85,6 +84,8 @@ type MemberHomeProps = {
   intelligence?: MemberIntelligence | null;
   isLoading?: boolean;
   greetingName?: string | null;
+  /** Inline under the greeting when intelligence failed; skip loading pulses. */
+  unavailable?: ReactNode;
   isSavingOrientation?: boolean;
   orientationError?: string | null;
   onChooseOrientation: (orientation: SignupOrientation) => void;
@@ -170,12 +171,12 @@ export function MemberHome({
   intelligence,
   isLoading = false,
   greetingName,
+  unavailable,
   isSavingOrientation,
   orientationError,
   onChooseOrientation,
 }: MemberHomeProps) {
   const t = useTranslations('MemberHome');
-  const { open: isAiOpen } = useAiPanel();
   useLayoutEffect(() => {
     const root = getMainColumnScrollRoot() ?? document.documentElement;
     const previousOverflow = root.style.overflowY;
@@ -210,8 +211,11 @@ export function MemberHome({
     (person) => openVideoRef.current(person),
     [],
   );
+  const [chatNotice, setChatNotice] = useState<string | null>(null);
   const memberFallback = t('fallbackMember');
   const home = isLoading || !intelligence ? null : intelligence;
+  const showUnavailable = Boolean(unavailable) && home == null;
+  const railsBusy = home == null && !showUnavailable;
   useEffect(() => {
     rememberSignalThreadRooms(
       (home?.signals ?? []).map((signal) => signal.roomId),
@@ -249,7 +253,7 @@ export function MemberHome({
     greetingName?.trim() ||
     '';
   const displayName = knownName || t('fallbackName');
-  const greetingPending = home == null && !knownName;
+  const greetingPending = home == null && !knownName && !showUnavailable;
   const queue = useMemo(
     () => (home ? listMemberHomeThreadItems(home) : []),
     [home],
@@ -284,6 +288,32 @@ export function MemberHome({
   }, [attentionSource, chatMemory, queueSnapshot]);
   attentionOrder.current = attentionQueue;
   const [focusKey, setFocusKey] = useState<string | null>(null);
+  const selectAttention = useCallback(
+    (key: string) => {
+      if (!showAssistant) {
+        setFocusKey(key);
+        return;
+      }
+      const item = attentionQueue.find(
+        (entry) => `${entry.kind}:${entry.slug}` === key,
+      );
+      if (!item) return;
+      const name = item.creatorName?.trim();
+      requestMemberHomeAsk(
+        name
+          ? t('thinkChosenBy', {
+              title: item.title,
+              space: item.spaceTitle,
+              name,
+            })
+          : t('thinkChosen', {
+              title: item.title,
+              space: item.spaceTitle,
+            }),
+      );
+    },
+    [attentionQueue, showAssistant, t],
+  );
   const reachIds = useMemo(() => {
     if (!home) return [];
     const ids = new Set<number>();
@@ -300,14 +330,6 @@ export function MemberHome({
     <div className="@container/home relative isolate -mb-8 -mt-4 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] min-h-0 w-full min-w-0 flex-col overflow-hidden md:-mt-5 xl:h-[calc(100svh-var(--menu-top-height,4.5rem))] xl:pt-5">
       <MemberHomeBanner />
       <div className="flex min-h-0 w-full min-w-0 flex-1 flex-row overflow-hidden">
-        <div className={cn(isAiOpen ? 'hidden xl:contents' : 'contents')}>
-          <MemberHomeSpacesRail
-            lang={lang}
-            spaces={home?.spaces ?? []}
-            isLoading={home == null}
-            persistOnWide
-          />
-        </div>
         <div
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[80rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]',
@@ -322,144 +344,142 @@ export function MemberHome({
                 'max-xl:flex max-xl:shrink-0 max-xl:overflow-visible max-xl:border-0 max-xl:px-5',
             )}
           >
-            <section
-              aria-busy={home == null || undefined}
-              className="flex w-full min-w-0 flex-col border border-border bg-background p-4"
-            >
-              <h2
-                className="text-3"
-                style={{ fontFamily: 'var(--font-family-heading)' }}
+            {showUnavailable ? null : (
+              <section
+                aria-busy={railsBusy || undefined}
+                className="flex w-full min-w-0 flex-col border border-border bg-background p-4"
               >
-                {t('overviewTitle')}
-              </h2>
-              <div
-                className={
-                  home == null || orientation
-                    ? 'mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3'
-                    : 'mt-3 grid'
-                }
-              >
-                {home == null || orientation == null ? (
-                  <div className="flex w-14 shrink-0 flex-col items-center gap-1.5">
-                    <HomePulse className="h-9 w-9" />
-                    <HomePulse className="h-3 w-12" />
-                  </div>
-                ) : orientation ? (
-                  <OrientationBadge
-                    orientation={orientation}
-                    isSaving={isSavingOrientation}
-                    error={orientationError}
-                    onChoose={onChooseOrientation}
-                  />
-                ) : null}
-                <dl className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-2">
-                  <Stat
-                    label={t('counts.spaces')}
-                    value={home?.counts.spaces ?? 0}
-                    isLoading={home == null}
-                  />
-                  <Stat
-                    label={t('counts.proposals')}
-                    value={home?.counts.openProposals ?? 0}
-                    isLoading={home == null}
-                  />
-                  <Stat
-                    label={t('counts.signals')}
-                    value={home?.counts.signals ?? 0}
-                    isLoading={home == null}
-                  />
-                  <Stat
-                    label={t('counts.people')}
-                    value={home?.counts.connections ?? 0}
-                    isLoading={home == null}
-                  />
-                </dl>
-              </div>
-            </section>
+                <h2
+                  className="text-3"
+                  style={{ fontFamily: 'var(--font-family-heading)' }}
+                >
+                  {t('overviewTitle')}
+                </h2>
+                <div
+                  className={
+                    railsBusy || orientation
+                      ? 'mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3'
+                      : 'mt-3 grid'
+                  }
+                >
+                  {home == null || orientation == null ? (
+                    <div className="flex w-14 shrink-0 flex-col items-center gap-1.5">
+                      <HomePulse className="h-9 w-9" />
+                      <HomePulse className="h-3 w-12" />
+                    </div>
+                  ) : orientation ? (
+                    <OrientationBadge
+                      orientation={orientation}
+                      isSaving={isSavingOrientation}
+                      error={orientationError}
+                      onChoose={onChooseOrientation}
+                    />
+                  ) : null}
+                  <dl className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-2">
+                    <Stat
+                      label={t('counts.spaces')}
+                      value={home?.counts.spaces ?? 0}
+                      isLoading={railsBusy}
+                    />
+                    <Stat
+                      label={t('counts.proposals')}
+                      value={home?.counts.openProposals ?? 0}
+                      isLoading={railsBusy}
+                    />
+                    <Stat
+                      label={t('counts.signals')}
+                      value={home?.counts.signals ?? 0}
+                      isLoading={railsBusy}
+                    />
+                    <Stat
+                      label={t('counts.people')}
+                      value={home?.counts.connections ?? 0}
+                      isLoading={railsBusy || Boolean(home?.partial)}
+                    />
+                  </dl>
+                </div>
+              </section>
+            )}
 
-            <MemberHomeWalletWidget
-              lang={lang}
-              personSlug={home?.person.slug}
-              hasAddress={Boolean(home?.wallet.address)}
-              isHomeLoading={home == null}
-            />
-            <Tile
-              title={t('notifications')}
-              count={
-                home && home.counts.notifications > 0
-                  ? home.counts.notifications
-                  : undefined
-              }
-              busy={home == null}
-            >
-              <ResourceList
-                isLoading={home == null}
-                empty={t('noNotifications')}
-                maxItems={5}
-                markSize={24}
-                items={
-                  home
-                    ? [...home.notifications]
-                        .sort((left, right) => {
-                          const leftAt = left.at ?? '';
-                          const rightAt = right.at ?? '';
-                          if (leftAt !== rightAt) {
-                            return leftAt < rightAt ? 1 : -1;
-                          }
-                          return left.id < right.id ? -1 : 1;
-                        })
-                        .flatMap((item) => {
-                          const match = queue.find(
-                            (entry) =>
-                              entry.kind === item.kind &&
-                              entry.slug === item.targetSlug,
-                          );
-                          return [
-                            {
-                              id: item.id,
-                              kind: item.kind,
-                              title: item.title,
-                              detail: item.detail,
-                              icon: item.spaceLogo ?? null,
-                              href:
-                                item.kind === 'signal'
-                                  ? getSignalPath(
-                                      lang,
-                                      item.spaceSlug,
-                                      item.targetSlug,
-                                    )
-                                  : getProposalPath(
-                                      lang,
-                                      item.spaceSlug,
-                                      item.targetSlug,
-                                    ),
-                              ...(match
-                                ? {
-                                    onSelect: () =>
-                                      setFocusKey(
-                                        `${match.kind}:${match.slug}`,
-                                      ),
-                                  }
-                                : {}),
-                            },
-                          ];
-                        })
-                    : []
-                }
+            {showUnavailable ? null : (
+              <MemberHomeWalletWidget
+                lang={lang}
+                personSlug={home?.person.slug}
+                hasAddress={Boolean(home?.wallet.address)}
+                isHomeLoading={railsBusy}
               />
-              {home && home.notifications.length > 5 ? (
-                <Button asChild className="mt-4 w-full text-sm">
-                  <Link href={`/${lang}/home/notifications`}>
-                    {t('seeMoreNotifications')}
-                  </Link>
-                </Button>
-              ) : null}
-            </Tile>
+            )}
+            {home?.person.slug ? (
+              <MemberHomeEnergyPanel
+                personSlug={home.person.slug}
+                className={cn(showField && 'max-xl:hidden')}
+              />
+            ) : null}
+            {showUnavailable ? null : (
+              <Tile
+                title={t('notifications')}
+                count={
+                  home && home.counts.notifications > 0
+                    ? home.counts.notifications
+                    : undefined
+                }
+                busy={railsBusy}
+              >
+                <ResourceList
+                  isLoading={railsBusy}
+                  empty={t('noNotifications')}
+                  maxItems={5}
+                  markSize={24}
+                  items={
+                    home
+                      ? [...home.notifications]
+                          .sort((left, right) => {
+                            const leftAt = left.at ?? '';
+                            const rightAt = right.at ?? '';
+                            if (leftAt !== rightAt) {
+                              return leftAt < rightAt ? 1 : -1;
+                            }
+                            return left.id < right.id ? -1 : 1;
+                          })
+                          .map((item) => ({
+                            id: item.id,
+                            kind: item.kind,
+                            title: item.title,
+                            detail: item.detail,
+                            icon: item.spaceLogo ?? null,
+                            // Always navigate. Intercepting with onSelect when
+                            // the item was also in the home queue stole the
+                            // click and often no-op'd (attention lookup miss).
+                            href:
+                              item.kind === 'signal'
+                                ? getSignalPath(
+                                    lang,
+                                    item.spaceSlug,
+                                    item.targetSlug,
+                                  )
+                                : getProposalPath(
+                                    lang,
+                                    item.spaceSlug,
+                                    item.targetSlug,
+                                  ),
+                          }))
+                      : []
+                  }
+                />
+                {home && home.notifications.length > 5 ? (
+                  <Button asChild className="mt-4 w-full text-sm">
+                    <Link href={`/${lang}/home/notifications`}>
+                      {t('seeMoreNotifications')}
+                    </Link>
+                  </Button>
+                ) : null}
+              </Tile>
+            )}
           </aside>
           <main
             className={cn(
               'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden @min-[68rem]/home:col-start-1 @min-[68rem]/home:row-start-1 @min-[80rem]/home:col-start-2',
-              (showField || showEnergy) && 'max-xl:hidden',
+              (showField || showEnergy) && !showUnavailable && 'max-xl:hidden',
             )}
           >
             <div className="shrink-0 px-5 pt-4 md:px-4">
@@ -476,7 +496,12 @@ export function MemberHome({
                       <HomePulse text className="h-[28px] w-56 max-w-full" />
                     ) : (
                       <h1
-                        className="truncate text-7"
+                        className={cn(
+                          'text-7',
+                          showUnavailable
+                            ? 'text-wrap break-words'
+                            : 'truncate',
+                        )}
                         style={{ fontFamily: 'var(--font-family-heading)' }}
                       >
                         {t(greetingKey(), { name: displayName })}
@@ -484,14 +509,16 @@ export function MemberHome({
                     )}
                   </div>
                 </div>
-                <HomeViewSwitch
-                  view={homeView}
-                  ready={viewReady}
-                  onChange={writeHomeView}
-                />
               </div>
               <div className="min-w-0 pt-1 pl-[calc(24px+var(--spacing-3))]">
-                {home == null ? (
+                {showUnavailable ? (
+                  <div
+                    className="mt-2 flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2"
+                    role="status"
+                  >
+                    {unavailable}
+                  </div>
+                ) : home == null ? (
                   <div className="mt-2 flex gap-2" aria-hidden>
                     {Array.from({ length: 5 }, (_, index) => (
                       <HomePulse
@@ -502,16 +529,40 @@ export function MemberHome({
                     ))}
                   </div>
                 ) : (
-                  <MemberHomeClosest
-                    lang={lang}
-                    people={home.connections}
-                    fallbackName={memberFallback}
-                    onOpenChat={openChat}
-                  />
+                  <>
+                    {home.partial ? (
+                      <div className="mt-2 flex gap-2" aria-hidden>
+                        {Array.from({ length: 5 }, (_, index) => (
+                          <HomePulse
+                            key={index}
+                            className="h-8 w-8 rounded-full"
+                            delayMs={index * 70}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <MemberHomeClosest
+                        lang={lang}
+                        people={home.connections}
+                        fallbackName={memberFallback}
+                        onOpenChat={openChat}
+                      />
+                    )}
+                    <MemberHomePeople
+                      people={home.connections}
+                      chatSpaceSlug={home.chatSpaceSlug}
+                      fallbackName={memberFallback}
+                      extraPersonIds={reachIds}
+                      onOpenChatReady={onOpenChatReady}
+                      onOpenCallReady={onOpenCallReady}
+                      onOpenVideoReady={onOpenVideoReady}
+                      onNotice={setChatNotice}
+                    />
+                  </>
                 )}
               </div>
             </div>
-            {home && showAssistant ? (
+            {showUnavailable ? null : home && showAssistant ? (
               <MemberHomeChat
                 lang={lang}
                 intelligence={home}
@@ -545,8 +596,6 @@ export function MemberHome({
               <PersonaCard
                 title={t('memberTitle')}
                 body={t('memberBody')}
-                action={t('memberAction')}
-                href={`/${lang}/my-spaces`}
                 meta={t('memberCount', { count: home.counts.spaces })}
               />
             ) : null}
@@ -572,13 +621,7 @@ export function MemberHome({
             {home && home.invites.length > 0 ? (
               <MemberHomeInviteBanners lang={lang} invites={home.invites} />
             ) : null}
-            {home?.person.slug ? (
-              <MemberHomeEnergyPanel
-                personSlug={home.person.slug}
-                className={cn(showField && 'max-xl:hidden')}
-              />
-            ) : null}
-            {home == null ? (
+            {railsBusy ? (
               <section
                 className="border border-border bg-background p-4"
                 aria-hidden
@@ -625,32 +668,26 @@ export function MemberHome({
               </section>
             ) : null}
 
-            <AttentionNeeded
-              lang={lang}
-              home={home}
-              queue={attentionQueue}
-              onSelect={setFocusKey}
-            />
-            <MemberHomeConnectionsWidget
-              lang={lang}
-              people={home?.connections ?? []}
-              isLoading={home == null}
-              fallbackName={memberFallback}
-              onChat={home ? openChat : undefined}
-              onCall={home ? openCall : undefined}
-              onVideo={home ? openVideo : undefined}
-            />
-            {home ? (
-              <MemberHomePeople
-                people={home.connections}
-                chatSpaceSlug={home.chatSpaceSlug}
-                fallbackName={memberFallback}
-                extraPersonIds={reachIds}
-                onOpenChatReady={onOpenChatReady}
-                onOpenCallReady={onOpenCallReady}
-                onOpenVideoReady={onOpenVideoReady}
+            {showUnavailable ? null : (
+              <AttentionNeeded
+                lang={lang}
+                home={home}
+                queue={attentionQueue}
+                onSelect={selectAttention}
               />
-            ) : null}
+            )}
+            {showUnavailable ? null : (
+              <MemberHomeConnectionsWidget
+                lang={lang}
+                people={home?.connections ?? []}
+                isLoading={railsBusy}
+                fallbackName={memberFallback}
+                notice={chatNotice}
+                onChat={home ? openChat : undefined}
+                onCall={home ? openCall : undefined}
+                onVideo={home ? openVideo : undefined}
+              />
+            )}
           </aside>
           {showEnergy && home?.person.slug ? (
             <div className="flex shrink-0 flex-col gap-4 px-5 py-4 xl:hidden">
@@ -742,48 +779,6 @@ function orientationBodyKey(orientation: SignupOrientation) {
   if (orientation === 'member') return 'orientation.member.body' as const;
   if (orientation === 'builder') return 'orientation.builder.body' as const;
   return 'orientation.investor.body' as const;
-}
-
-function HomeViewSwitch({
-  view,
-  ready,
-  onChange,
-}: {
-  view: HomeView;
-  ready: boolean;
-  onChange: (view: HomeView) => void;
-}) {
-  const t = useTranslations('MemberHome');
-  return (
-    <div
-      role="group"
-      aria-label={t('viewToggleLabel')}
-      className="ml-auto hidden shrink-0 border border-foreground xl:inline-flex"
-    >
-      {(['ai', 'classic'] as const).map((option) => {
-        const selected = ready && view === option;
-        return (
-          <button
-            key={option}
-            type="button"
-            aria-pressed={selected}
-            disabled={!ready}
-            onClick={() => {
-              if (option !== view) onChange(option);
-            }}
-            className={cn(
-              'px-3 py-1 text-1 disabled:opacity-60',
-              selected
-                ? 'bg-foreground text-background'
-                : 'bg-background text-foreground',
-            )}
-          >
-            {option === 'ai' ? t('viewAi') : t('viewClassic')}
-          </button>
-        );
-      })}
-    </div>
-  );
 }
 
 function itemKey(item: MemberHomeThreadItem) {
@@ -947,19 +942,19 @@ function ChatSkeleton() {
           <Tile title={t('useful')} busy>
             <CardSkeleton lines={3} />
           </Tile>
+          <div className="narrow-scrollbar -mx-1 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto px-1 pt-1">
+            {chipWidths.map((width, index) => (
+              <HomePulse
+                key={width}
+                className="h-8 shrink-0"
+                delayMs={index * 70}
+                style={{ width }}
+              />
+            ))}
+          </div>
         </div>
       </div>
-      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
-        <div className="mx-5 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-hidden pt-2 md:mx-4">
-          {chipWidths.map((width, index) => (
-            <HomePulse
-              key={width}
-              className="h-8 shrink-0"
-              delayMs={index * 70}
-              style={{ width }}
-            />
-          ))}
-        </div>
+      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pt-2 pb-3')}>
         <div className="mx-5 flex h-[4.5rem] items-end gap-2 border border-border px-3 py-3 md:mx-4">
           <HomePulse className="h-8 w-8 shrink-0" />
           <HomePulse className="h-8 w-8 shrink-0" delayMs={40} />
@@ -1248,8 +1243,8 @@ function PersonaCard({
 }: {
   title: string;
   body: string;
-  action: string;
-  href: string;
+  action?: string;
+  href?: string;
   meta?: string;
 }) {
   return (
@@ -1264,9 +1259,11 @@ function PersonaCard({
         {body}
       </p>
       {meta ? <p className="mt-2 text-1 text-neutral-11">{meta}</p> : null}
-      <Button asChild className="mt-4 w-full text-sm">
-        <Link href={href}>{action}</Link>
-      </Button>
+      {action && href ? (
+        <Button asChild className="mt-4 w-full text-sm">
+          <Link href={href}>{action}</Link>
+        </Button>
+      ) : null}
     </section>
   );
 }

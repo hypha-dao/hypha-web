@@ -42,7 +42,10 @@ import {
   isPeopleGroupRoomType,
   normalizeGroupRoomName,
 } from '../group-room';
-import { countHumanMatrixMembers } from '../matrix-member-display';
+import {
+  countHumanMatrixMembers,
+  isHyphaBotMatrixIdentity,
+} from '../matrix-member-display';
 import { determineEnvironment } from '../../coherence/lib/determine-environment';
 import { Environment } from '../../coherence/types';
 import { getAppBaseUrl } from '../../common/server/get-app-url';
@@ -61,6 +64,7 @@ import {
   matrixCreateRoom,
   matrixDeleteRoomAlias,
   matrixGetJoinedRoomMembers,
+  matrixGetJoinOrInviteRoomMembers,
   matrixGetPowerLevels,
   matrixGetRoomType,
   matrixGetStateEvent,
@@ -631,12 +635,12 @@ export async function ensureDirectPairRoomAction({
   const localpart = directPairAliasLocalpart(self, other);
   if (!homeserver || !botToken || !localpart) return null;
 
-  let serverName = matrixServerNameFromUserId(getMatrixBotUserId() ?? '');
+  let resolvedBotUserId = getMatrixBotUserId()?.trim() ?? '';
+  let serverName = matrixServerNameFromUserId(resolvedBotUserId);
   if (!serverName) {
     try {
-      serverName = matrixServerNameFromUserId(
-        await matrixWhoAmI(botToken, homeserver),
-      );
+      resolvedBotUserId = await matrixWhoAmI(botToken, homeserver);
+      serverName = matrixServerNameFromUserId(resolvedBotUserId);
     } catch (error) {
       console.warn(
         '[MatrixBot] Failed to resolve homeserver name for the direct room:',
@@ -679,7 +683,43 @@ export async function ensureDirectPairRoomAction({
       // and leave the alias where it is.
       return null;
     }
-    if (aliasedRoomType === HYPHA_ROOM_TYPES.dm) roomId = aliasedRoomId;
+    if (aliasedRoomType === HYPHA_ROOM_TYPES.dm) {
+      try {
+        const members = await matrixGetJoinOrInviteRoomMembers(
+          aliasedRoomId,
+          botToken,
+          homeserver,
+        );
+        const botId = resolvedBotUserId.trim().toLowerCase();
+        const participants = [
+          ...new Set(
+            members
+              .map((id) => id.trim())
+              .filter((id) => {
+                if (!id) return false;
+                if (botId && id.toLowerCase() === botId) return false;
+                return !isHyphaBotMatrixIdentity(id);
+              })
+              .map((id) => id.toLowerCase()),
+          ),
+        ];
+        if (
+          participants.length === 2 &&
+          participants.includes(self.toLowerCase()) &&
+          participants.includes(other.toLowerCase())
+        ) {
+          roomId = aliasedRoomId;
+        }
+      } catch (error) {
+        console.warn(
+          '[MatrixBot] Could not read members of the aliased direct room:',
+          aliasedRoomId,
+          error instanceof Error ? error.message : error,
+        );
+        // Same as a failed type lookup: leave the alias where it is.
+        return null;
+      }
+    }
   }
   if (!roomId) {
     if (aliasedRoomId) {

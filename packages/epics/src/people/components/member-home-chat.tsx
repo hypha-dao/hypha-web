@@ -16,11 +16,21 @@ import { Volume2, VolumeX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
+  listMemberHomeThreadCatalog,
   listMemberHomeThreadItems,
   memberHomeBoardDestination,
+  memberHomeDirectReply,
+  memberHomeLookItem,
+  memberHomeTalkIsResting,
+  memberHomeThreadItemForRef,
+  type MemberHomeDirectReply,
   memberHomeItemMemory,
   memberHomeSignalCatalogue,
   mergeMemberHomeMemory,
+  isMemberHomeItemDecline,
+  isMemberHomeItemDeferral,
+  memberHomeCardForSpeech,
+  memberHomeSpeechConflictsWithItem,
   memberHomeThreadItemForMessage,
   memberHomeThreadItemKey,
   type MemberHomeThreadItem,
@@ -35,37 +45,51 @@ import {
   convertFilesToParts,
   type AiPanelDraftAttachment,
 } from '../../common/ai-panel';
-import { prepareAssistantTextForSpeech } from '../../common/onboarding-voice-speech';
-import { buildRecentTranscriptSummaryFromChatMessages } from '../../common/onboarding-voice-transcript-bridge';
 import { buildMemberHomeVoiceSessionContext } from '../../common/space-voice-session-context';
+import { useHomeLeftPanelVoiceActive } from '../../common/home-left-panel-voice';
 import { useOnboardingVoiceDiscovery } from '../../common/use-onboarding-voice-discovery';
+import { readRecentSpaceSlugs } from '../../common/recent-space-history';
 import { MEMBER_HOME_ASK_EVENT } from './member-home-ask';
 import {
   bindHomePerson,
   consumeHomeReturn,
+  HOME_QUEUE_EVENT,
+  homePartOfDay,
   homeReturnText,
   readHomeActed,
   readHomeChoices,
+  readHomeLastSeen,
+  readHomeShownItems,
   readHomeThread,
+  rememberHomeShownItem,
+  shouldWelcomeHomeReturn,
+  touchHomeLastSeen,
   writeHomeChoices,
   writeHomeThread,
+  type HomePartOfDay,
 } from './member-home-resume';
+import {
+  MEMBER_HOME_PEOPLE_LEAD_KEYS,
+  MEMBER_HOME_SPACE_LEAD_KEYS,
+  MEMBER_HOME_TOKENS_LEAD_KEYS,
+  nextMemberHomeLeadKey,
+} from './member-home-leads';
 import { MemberHomeActivationCard } from './member-home-activation-card';
 import { MemberHomeOnboardingCards } from './member-home-onboarding-cards';
 import { generatedVisualsFromParts } from '../../common/onboarding-visual-assets';
 import { useOnboardingSpaceSignature } from '../../common/use-onboarding-space-signature';
 import { MemberHomeMark } from './member-home-mark';
+import { memberHomeReplyReady } from './member-home-phase';
+import { HomeWave } from './member-home-wave';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { PersonAvatar } from './person-avatar';
-import { presenceFillClass } from './presence-dot';
 import {
   MemberHomePeopleWidgetCard,
   MemberHomeSendTokensWidget,
   MemberHomeSpacesWidgetCard,
 } from './member-home-chat-widgets';
 import type { MemberHomeOpenChat } from './member-home-people';
-import type { PresenceLevel } from './member-presence';
-import { useMemberPresence } from './use-member-presence';
+import { homeAssistantTurnSucceeded } from './member-home-chat-error';
 
 type HomeWidgetKind = 'spaces' | 'people' | 'tokens';
 
@@ -82,9 +106,10 @@ const HOME_SOUND_KEY = 'hypha-member-home-sound';
 const HOME_MIC_KEY = 'hypha-member-home-mic';
 function readHomeSoundOn() {
   try {
-    return window.localStorage.getItem(HOME_SOUND_KEY) !== 'off';
+    // Off until they turn it on. That choice stays until they turn it off.
+    return window.localStorage.getItem(HOME_SOUND_KEY) === 'on';
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -98,9 +123,10 @@ function writeHomeSoundOn(on: boolean) {
 
 function readHomeMicOn() {
   try {
-    return window.localStorage.getItem(HOME_MIC_KEY) !== 'off';
+    // Off until they turn it on. That choice stays until they turn it off.
+    return window.localStorage.getItem(HOME_MIC_KEY) === 'on';
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -132,8 +158,167 @@ type HomeMessage = UIMessage & {
   metadata?: {
     homeArrival?: boolean;
     homeBoard?: { href: string; title: string };
+    homeItem?: { kind: string; slug: string };
+    homeError?: boolean;
   };
 };
+
+function isHomeErrorMessage(message: { metadata?: unknown }) {
+  const metadata = message.metadata;
+  return (
+    metadata != null &&
+    typeof metadata === 'object' &&
+    'homeError' in metadata &&
+    (metadata as { homeError?: unknown }).homeError === true
+  );
+}
+
+function isHomeDropLineMessage(
+  message: { role?: string; metadata?: unknown; parts?: HomeMessage['parts'] },
+  droppedLine: string,
+) {
+  if (isHomeErrorMessage(message)) return true;
+  if (message.role !== 'assistant') return false;
+  return messageText(message as HomeMessage) === droppedLine;
+}
+
+function messageIsHomeArrival(message: { metadata?: unknown }) {
+  const metadata = message.metadata;
+  return (
+    metadata != null &&
+    typeof metadata === 'object' &&
+    'homeArrival' in metadata &&
+    (metadata as { homeArrival?: unknown }).homeArrival === true
+  );
+}
+
+function homeItemRef(
+  items: readonly MemberHomeThreadItem[],
+  home: MemberIntelligence | undefined,
+  ref: { kind: string; slug: string } | null | undefined,
+): MemberHomeThreadItem | null {
+  if (!ref || (ref.kind !== 'proposal' && ref.kind !== 'signal') || !ref.slug) {
+    return null;
+  }
+  return (
+    items.find((item) => item.kind === ref.kind && item.slug === ref.slug) ??
+    (home
+      ? memberHomeThreadItemForRef(home, {
+          kind: ref.kind,
+          slug: ref.slug,
+        })
+      : null)
+  );
+}
+
+function homeItemForMessage(
+  items: readonly MemberHomeThreadItem[],
+  message: HomeMessage,
+  home?: MemberIntelligence,
+): MemberHomeThreadItem | null {
+  const fromHint = homeItemRef(items, home, message.metadata?.homeItem);
+  // Speech matching already keeps or drops the hint. Never force a hint
+  // after a conflict — that put the previous/next signal under this reply.
+  return memberHomeCardForSpeech({
+    items,
+    message,
+    hinted: fromHint,
+    spaceTitles: home?.spaces.map((space) => space.title) ?? [],
+    home,
+  });
+}
+
+/** The card above the spoken line for this reply. Set-aside items stay off it. */
+function pinnedHomeItem(
+  items: readonly MemberHomeThreadItem[],
+  messages: readonly HomeMessage[],
+  index: number,
+  home?: MemberIntelligence,
+): MemberHomeThreadItem | null {
+  const message = messages[index];
+  if (!message || message.role !== 'assistant') return null;
+  const item = homeItemForMessage(items, message, home);
+  if (!item) return null;
+  const asked = userTextBefore(messages, index);
+  if (!isMemberHomeItemDeferral(asked) && !isMemberHomeItemDecline(asked)) {
+    return item;
+  }
+  const named = memberHomeThreadItemForMessage(items, { content: asked }, home);
+  let aside = named;
+  if (!aside) {
+    for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+      const earlier = messages[cursor];
+      if (earlier?.role !== 'assistant') continue;
+      aside = homeItemForMessage(items, earlier, home);
+      break;
+    }
+  }
+  if (
+    !aside ||
+    memberHomeThreadItemKey(aside) !== memberHomeThreadItemKey(item)
+  ) {
+    return item;
+  }
+  // The ack named the set-aside item. Only move on when this reply also
+  // names another open item — never grab the next catalog row by default.
+  const remaining = items.filter(
+    (entry) =>
+      memberHomeThreadItemKey(entry) !== memberHomeThreadItemKey(aside),
+  );
+  const next = homeItemForMessage(remaining, message, home);
+  if (
+    next &&
+    memberHomeThreadItemKey(next) !== memberHomeThreadItemKey(aside)
+  ) {
+    return next;
+  }
+  // Still talking about the set-aside item (title in the reply) — keep the
+  // card so "the card is right here" is not an empty promise.
+  const replyText = messageText(message);
+  if (replyText && itemMentionedInTextOnly(item, replyText)) {
+    return item;
+  }
+  return null;
+}
+
+/** Title alone is enough when the reply is clearly about this one item. */
+function itemMentionedInTextOnly(
+  item: MemberHomeThreadItem,
+  text: string,
+): boolean {
+  const haystack = text.trim().toLowerCase().replace(/[’‘]/g, "'");
+  const title = item.title.trim().toLowerCase();
+  return title.length >= 3 && haystack.includes(title);
+}
+
+/** Live catalog first, then cards already shown in this thread. */
+function mergeHomeCardItems(
+  live: readonly MemberHomeThreadItem[],
+  shown: readonly MemberHomeThreadItem[],
+) {
+  const byKey = new Map<string, MemberHomeThreadItem>();
+  for (const item of shown) {
+    byKey.set(memberHomeThreadItemKey(item), item);
+  }
+  for (const item of live) {
+    byKey.set(memberHomeThreadItemKey(item), item);
+  }
+  return [...byKey.values()];
+}
+
+function sameHomeShownItemKeys(
+  left: readonly MemberHomeThreadItem[],
+  right: readonly MemberHomeThreadItem[],
+) {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    const a = left[index];
+    const b = right[index];
+    if (!a || !b) return false;
+    if (memberHomeThreadItemKey(a) !== memberHomeThreadItemKey(b)) return false;
+  }
+  return true;
+}
 
 function homeBoardFromMessage(message: HomeMessage) {
   const board = message.metadata?.homeBoard;
@@ -152,7 +337,10 @@ function homeBoardFromMessage(message: HomeMessage) {
  * A new home turn must append. If the stream reuses an earlier assistant id,
  * the client writes the new words into that bubble.
  */
-function continueHomeChatResponse(response: Response): Response {
+function continueHomeChatResponse(
+  response: Response,
+  droppedLine: string,
+): Response {
   const stream = response.headers.get('x-vercel-ai-ui-message-stream');
   const contentType = response.headers.get('content-type') ?? '';
   if (!response.ok || !response.body) return response;
@@ -163,6 +351,7 @@ function continueHomeChatResponse(response: Response): Response {
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   let buffer = '';
+  const sawAssistantText = { current: false };
   const rewritten = response.body.pipeThrough(
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
@@ -173,7 +362,14 @@ function continueHomeChatResponse(response: Response): Response {
         controller.enqueue(
           encoder.encode(
             `${lines
-              .map((line) => rewriteHomeStartLine(line, freshId))
+              .map((line) =>
+                rewriteHomeStartLine(
+                  line,
+                  freshId,
+                  droppedLine,
+                  sawAssistantText,
+                ),
+              )
               .join('\n')}\n`,
           ),
         );
@@ -182,7 +378,14 @@ function continueHomeChatResponse(response: Response): Response {
         buffer += decoder.decode();
         if (!buffer) return;
         controller.enqueue(
-          encoder.encode(rewriteHomeStartLine(buffer, freshId)),
+          encoder.encode(
+            `${rewriteHomeStartLine(
+              buffer,
+              freshId,
+              droppedLine,
+              sawAssistantText,
+            )}\n`,
+          ),
         );
       },
     }),
@@ -194,7 +397,12 @@ function continueHomeChatResponse(response: Response): Response {
   });
 }
 
-function rewriteHomeStartLine(line: string, freshId: string) {
+function rewriteHomeStartLine(
+  line: string,
+  freshId: string,
+  droppedLine: string,
+  sawAssistantText: { current: boolean },
+) {
   const prefix = 'data: ';
   if (!line.startsWith(prefix)) return line;
   const payload = line.slice(prefix.length).trim();
@@ -204,10 +412,95 @@ function rewriteHomeStartLine(line: string, freshId: string) {
       type?: unknown;
       messageId?: unknown;
     };
-    if (chunk.type !== 'start') return line;
-    return `${prefix}${JSON.stringify({ ...chunk, messageId: freshId })}`;
+    if (chunk.type === 'start') {
+      return `${prefix}${JSON.stringify({ ...chunk, messageId: freshId })}`;
+    }
+    // Reasoning is not shown on home. A delta without its start throws in
+    // useChat and paints the dropped-thread banner.
+    if (typeof chunk.type === 'string' && chunk.type.startsWith('reasoning-')) {
+      return '';
+    }
+    if (chunk.type === 'text-start' || chunk.type === 'text-delta') {
+      sawAssistantText.current = true;
+      return line;
+    }
+    // A fatal error chunk throws inside useChat and paints "thread dropped",
+    // which then looks like the assistant restarted. Finish the turn as text
+    // only when the model has not already spoken.
+    if (chunk.type === 'error') {
+      if (sawAssistantText.current) return '';
+      const text = droppedLine;
+      const id = `e${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
+      // Each event needs a blank line. A single newline joins the JSON into
+      // one payload, which the client rejects and shows as a dropped thread.
+      return `${[
+        `${prefix}${JSON.stringify({
+          type: 'message-metadata',
+          messageMetadata: { homeError: true },
+        })}`,
+        `${prefix}${JSON.stringify({ type: 'text-start', id })}`,
+        `${prefix}${JSON.stringify({ type: 'text-delta', id, delta: text })}`,
+        `${prefix}${JSON.stringify({ type: 'text-end', id })}`,
+      ].join('\n\n')}\n\n`;
+    }
+    return line;
   } catch {
     return line;
+  }
+}
+
+function userTextBefore(messages: readonly HomeMessage[], index: number) {
+  for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+    const message = messages[cursor];
+    if (message?.role === 'user') return messageText(message);
+  }
+  return '';
+}
+
+function directReplyText(
+  reply: MemberHomeDirectReply,
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
+  switch (reply.line.key) {
+    case 'people':
+      // Shared-space ranking is not what "Who is around?" asks. The widget
+      // already sorts by presence — just point at the list. Rotate copy so
+      // the same chip does not always speak the same sentence.
+      return t(nextMemberHomeLeadKey('people', MEMBER_HOME_PEOPLE_LEAD_KEYS));
+    case 'peopleEmpty':
+      return t('peopleWidgetEmpty');
+    case 'space':
+      // Do not name a lead space — picking Hypha Platform (or any parent)
+      // as "start here" is bad advice. The widget already lists them.
+      // Rotate neutral list leads across the session.
+      return t(nextMemberHomeLeadKey('space', MEMBER_HOME_SPACE_LEAD_KEYS));
+    case 'spaceEmpty':
+      return t('spacesWidgetEmpty');
+    case 'tokens':
+      // Same trap as naming a lead space: "Vlad is closest" clashes with
+      // "Pick someone first" on the widget. Point at the list; rotate copy.
+      return t(nextMemberHomeLeadKey('tokens', MEMBER_HOME_TOKENS_LEAD_KEYS));
+    case 'tokensEmpty':
+      return t('tokensLeadEmpty');
+    case 'decisionOpen':
+      return t('decisionOpen', {
+        title: reply.line.title,
+        space: reply.line.space,
+      });
+    case 'decisionListed':
+      return t('decisionListed', {
+        title: reply.line.title,
+        space: reply.line.space,
+      });
+    case 'decisionQuiet':
+      return t('decisionQuiet');
+    case 'itemOpen':
+      return t('itemOpen', {
+        title: reply.line.title,
+        space: reply.line.space,
+      });
+    case 'usefulQuiet':
+      return t('usefulQuiet');
   }
 }
 
@@ -222,15 +515,52 @@ function messageText(message: HomeMessage) {
     .trim();
 }
 
-/** One line of copy: no break, and at most one sentence-ending mark. */
+/** Short copy beside the mark. Two short sentences still sit on one row. */
 function homeTextIsOneLine(text: string) {
-  if (text.includes('\n')) return false;
-  return (text.match(/[.!?]/g)?.length ?? 0) <= 1;
+  if (text.includes('\n') || text.length > 220) return false;
+  return (text.match(/[.!?]/g)?.length ?? 0) <= 2;
 }
 
 /** From `lg`: ~3/4 of the screen, inset in the main pane, capped at 72rem. */
 export const HOME_CHAT_COLUMN =
   'mx-auto w-full min-w-0 lg:max-w-[min(75%,75vw,72rem)]';
+
+/** Compare lines after a lead-in so "Next up: …" and "…" count as one line. */
+function homeSentenceKey(sentence: string) {
+  return sentence
+    .toLowerCase()
+    .replace(/^(?:next up|up next)\s*:\s*/u, '')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function repeatsHomeSentence(sentence: string, earlier: string[]) {
+  const key = homeSentenceKey(sentence);
+  if (key.length < 24) return false;
+  return earlier.some((previous) => {
+    const other = homeSentenceKey(previous);
+    if (other.length < 24) return false;
+    return key === other || key.includes(other) || other.includes(key);
+  });
+}
+
+/** A model that cannot call a tool sometimes prints the call. Never show that. */
+function stripLeakedToolMarkup(text: string) {
+  return text
+    .replace(/<\s*\|?\s*DSML\b[\s\S]*?<\s*\/\s*\|?\s*DSML\b[^>]*>/gi, ' ')
+    .replace(/<\s*\|?\s*DSML\b[\s\S]*$/gi, ' ')
+    .replace(/<\/?\s*\|[^>\n]*>/g, ' ')
+    .replace(/<\/?(?:tool_call|invoke|parameter|function_call)\b[^>]*>/gi, ' ')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+function looksLikeToolLeak(sentence: string) {
+  return /DSML|invoke\s+name\s*=|parameter\s+name\s*=|get_people_by_space_slug|show_member_home_item|<\s*\|/i.test(
+    sentence,
+  );
+}
 
 /** A decision stays with the member. Drop narration and any ask for their choice. */
 function straightforwardHomeText(text: string) {
@@ -238,99 +568,59 @@ function straightforwardHomeText(text: string) {
     /i['’]ll show you|here(?:'|’)s the proposal|here is the proposal|the proposal titled|if you approve|your approval|can you review|do you approve|would you approve|would you like to approve|what would you like to decide|want to take a look|i(?:'’)?ve approved|\bi approved\b|\bi have approved\b|\bi accepted\b|i(?:'’)?ve accepted|\bi voted\b|you can now see the message|think about it|approval is required|to proceed with|how (?:will|would) you vote|let me know if you|^sure[.!]?$/i.test(
       sentence,
     );
-  const cleaned = text
+  const sentences = stripLeakedToolMarkup(text)
     .replace(/\*\*/g, '')
     .split(/\n+/)
     .flatMap((paragraph) => paragraph.split(/(?<=[.!?])\s+/))
     .map((sentence) => sentence.trim())
-    .filter((sentence) => sentence.length > 0 && !steers(sentence))
+    .filter((sentence) => sentence.length > 0);
+  // A sentence still arriving has no ending mark. Hiding it as soon as it
+  // starts to look like narration blanks the bubble, then the next sentence
+  // mounts it again. A second step often repeats the line it just finished.
+  const kept: string[] = [];
+  const cleaned = sentences
+    .filter((sentence, index) => {
+      const stillArriving =
+        index === sentences.length - 1 && !/[.!?]$/.test(sentence);
+      if (looksLikeToolLeak(sentence)) return false;
+      if (!stillArriving && steers(sentence)) return false;
+      if (repeatsHomeSentence(sentence, kept)) return false;
+      kept.push(sentence);
+      return true;
+    })
     .join(' ')
     .trim();
-  if (
-    cleaned.length === 0 &&
-    /approv|what would you like to decide|want to take a look/i.test(text)
-  ) {
-    return 'You can now decide on the proposal card.';
-  }
   return cleaned;
 }
 
 /**
  * Chat bubble and spoken voice must share one script. Board copy replaces a
- * catalogue dump; speech prep strips what TTS would skip or truncate.
+ * catalogue dump. Speech prep that waits for a full sentence hides the line
+ * and then shows it again, so the bubble keeps this text as it arrives.
  */
 function homeAssistantScript(input: {
   displayText: string;
   stripDecisionCue?: boolean;
 }) {
   const base = input.displayText.trim();
-  const withoutCue = input.stripDecisionCue
-    ? base.replace(/You can now decide on the proposal card\.?/gi, '').trim()
-    : base;
-  return prepareAssistantTextForSpeech(withoutCue);
+  if (!input.stripDecisionCue) return base;
+  // Dropping the cue can leave a dangling dash from "…decision — You can…"
+  return base
+    .replace(/You can now decide on the proposal card\.?/gi, '')
+    .replace(/\s*[-—–:]\s*$/u, '')
+    .trim();
 }
 
 const HOME_LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
 
-type MentionPerson = {
-  id: number;
-  name?: string | null;
-  surname?: string | null;
-  nickname?: string | null;
-};
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function personMentionLabels(person: MentionPerson): string[] {
-  const labels: string[] = [];
-  const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
-  if (full) labels.push(full);
-  const first = person.name?.trim();
-  if (first) labels.push(first);
-  const nick = person.nickname?.trim();
-  if (nick) labels.push(nick);
-  return [...new Set(labels)].sort((left, right) => right.length - left.length);
-}
-
-function homeMessageNodes(
-  text: string,
-  options?: {
-    people?: readonly MentionPerson[];
-    presenceById?: ReadonlyMap<number, PresenceLevel>;
-  },
-): ReactNode[] {
-  const mentions: { label: string; personId: number }[] = [];
-  const seenLabels = new Set<string>();
-  for (const person of options?.people ?? []) {
-    for (const label of personMentionLabels(person)) {
-      if (label.length < 2) continue;
-      const key = label.toLowerCase();
-      if (seenLabels.has(key)) continue;
-      seenLabels.add(key);
-      mentions.push({ label, personId: person.id });
-    }
-  }
-  const mentionPattern =
-    mentions.length > 0
-      ? mentions.map((mention) => escapeRegExp(mention.label)).join('|')
-      : null;
-  const pattern = mentionPattern
-    ? new RegExp(
-        `\\[([^\\]]+)\\]\\((https?:\\/\\/[^\\s)]+)\\)|(https?:\\/\\/[^\\s)]+)|(${mentionPattern})`,
-        'gi',
-      )
-    : HOME_LINK;
-
+function homeMessageNodes(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   let last = 0;
-  for (const match of text.matchAll(pattern)) {
+  for (const match of text.matchAll(HOME_LINK)) {
     const index = match.index ?? 0;
     if (index > last) nodes.push(text.slice(last, index));
     const href = match[2] ?? match[3];
     const linkLabel = match[1] ?? href;
-    const mentionLabel = match[4];
     if (href && linkLabel) {
       nodes.push(
         <a
@@ -343,39 +633,79 @@ function homeMessageNodes(
           {linkLabel}
         </a>,
       );
-    } else if (mentionLabel) {
-      const mention = mentions.find(
-        (entry) => entry.label.toLowerCase() === mentionLabel.toLowerCase(),
-      );
-      const presence =
-        mention && options?.presenceById
-          ? options.presenceById.get(mention.personId) ?? 'offline'
-          : 'offline';
-      const around = presence === 'active' || presence === 'idle';
-      nodes.push(
-        <span
-          key={`${index}-${mentionLabel}`}
-          className="inline-flex items-center gap-1"
-        >
-          <span>{mentionLabel}</span>
-          {around ? (
-            <span
-              aria-hidden
-              className={cn(
-                'inline-block size-1.5 shrink-0 rounded-full',
-                presence === 'active'
-                  ? presenceFillClass.active
-                  : presenceFillClass.idle,
-              )}
-            />
-          ) : null}
-        </span>,
-      );
     }
     last = index + match[0].length;
   }
   if (last < text.length) nodes.push(text.slice(last));
   return nodes;
+}
+
+/** Glide the thread onto a card or the spoken line so the move itself is visible. */
+function glideScrollerTo(
+  node: HTMLElement,
+  top: number,
+  onFrame: (id: number) => void,
+  onDone: () => void,
+) {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || Math.abs(node.scrollTop - top) < 2) {
+    node.scrollTop = top;
+    onDone();
+    return;
+  }
+  const from = node.scrollTop;
+  const delta = top - from;
+  // Short glide — long enough to feel intentional, short enough not to lag the reply.
+  const duration = Math.min(700, Math.max(280, Math.abs(delta) * 0.45));
+  const start = performance.now();
+  const step = (now: number) => {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = 1 - (1 - t) ** 3;
+    node.scrollTop = from + delta * eased;
+    if (t < 1) onFrame(requestAnimationFrame(step));
+    else onDone();
+  };
+  onFrame(requestAnimationFrame(step));
+}
+
+function messageHasHomeCardTool(message: HomeMessage): boolean {
+  return message.parts.some((part) => {
+    if (part.type === 'tool-show_member_home_item') return true;
+    return (
+      part.type === 'dynamic-tool' &&
+      'toolName' in part &&
+      part.toolName === 'show_member_home_item'
+    );
+  });
+}
+
+/** This turn places a home card — from stream metadata or the card tool. */
+function messageExpectsHomeCard(message: HomeMessage): boolean {
+  const hint = message.metadata?.homeItem;
+  if (
+    hint &&
+    (hint.kind === 'proposal' || hint.kind === 'signal') &&
+    hint.slug
+  ) {
+    return true;
+  }
+  return messageHasHomeCardTool(message);
+}
+
+function scrollerTopForTarget(node: HTMLElement, target: Element) {
+  return Math.max(
+    0,
+    node.scrollTop +
+      target.getBoundingClientRect().top -
+      node.getBoundingClientRect().top -
+      12,
+  );
+}
+
+/** Newest arrival only — never the first old reply in the thread. */
+function lastHomeArrivalTarget(node: HTMLElement) {
+  const found = node.querySelectorAll('[data-home-arrival]');
+  return found.length > 0 ? found[found.length - 1]! : null;
 }
 
 export function MemberHomeChat({
@@ -397,24 +727,52 @@ export function MemberHomeChat({
   } = useAuthentication();
   const [input, setInput] = useState('');
   const [drafts, setDrafts] = useState<AiPanelDraftAttachment[]>([]);
-  const [dismissedError, setDismissedError] = useState(false);
-  const [soundOn, setSoundOn] = useState(true);
-  const [micOn, setMicOn] = useState(true);
+  const [soundOn, setSoundOn] = useState(false);
+  const [micOn, setMicOn] = useState(false);
   const [soundReady, setSoundReady] = useState(false);
+  const [voiceHydrated, setVoiceHydrated] = useState(false);
   const [widgets, setWidgets] = useState<HomeWidget[]>([]);
   const opened = useRef(false);
+  const startedTalk = useRef(false);
+  const pendingStart = useRef<
+    | { kind: 'return'; text: string }
+    | {
+        kind: 'arrival';
+        visit: 'welcome_back' | 'first_open';
+        partOfDay: HomePartOfDay;
+      }
+    | null
+  >(null);
+  const homeVisitCue = useRef<{
+    visit: 'welcome_back' | 'first_open';
+    partOfDay: HomePartOfDay;
+  } | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const seenMotionIds = useRef(new Set<string>());
   const settleSend = useRef(false);
   const glideScroll = useRef(false);
   const gliding = useRef(false);
+  const glideTimer = useRef<number | null>(null);
   const pinnedToEnd = useRef(true);
+  const holdVoiceRef = useRef(false);
+  const [holdVoice, setHoldVoice] = useState(false);
+  const arrivalBaselineIds = useRef(new Set<string>());
+  const arrivalScrollStarted = useRef(false);
+  const arrivalScrollFinished = useRef(false);
+  const arrivalFrame = useRef<number | null>(null);
+  const isStreamingRef = useRef(false);
   const settlingIds = useRef(new Set<string>());
-  const connectionIds = useMemo(
-    () => intelligence.connections.map((person) => person.id),
-    [intelligence.connections],
+  // Last non-empty line for the message that is still streaming. A cleaner
+  // gap must not unmount the bubble and play the entrance animation again.
+  const heldBubbleText = useRef(new Map<string, string>());
+  /** Card frozen under each finished reply. Live rematch was jumping links. */
+  const frozenHomeCards = useRef(
+    new Map<string, { kind: string; slug: string }>(),
   );
-  const { presenceById } = useMemberPresence(connectionIds);
+  const droppedLine = useRef(t('threadDropped'));
+  useLayoutEffect(() => {
+    droppedLine.current = t('threadDropped');
+  }, [t]);
 
   const transport = useMemo(
     () =>
@@ -437,7 +795,27 @@ export function MemberHomeChat({
           },
         }),
         fetch: async (input, init) =>
-          continueHomeChatResponse(await fetch(input, init)),
+          continueHomeChatResponse(
+            await fetch(input, init),
+            droppedLine.current,
+          ),
+        prepareSendMessagesRequest: ({
+          id,
+          messages,
+          body,
+          trigger,
+          messageId,
+        }) => ({
+          body: {
+            ...body,
+            id,
+            messages: messages.filter(
+              (message) => !isHomeDropLineMessage(message, droppedLine.current),
+            ),
+            trigger,
+            messageId,
+          },
+        }),
       }),
     [getAccessToken, lang],
   );
@@ -455,8 +833,39 @@ export function MemberHomeChat({
     transport,
   });
   const isStreaming = status === 'streaming' || status === 'submitted';
+  isStreamingRef.current = isStreaming;
   const homeMessages = messages as HomeMessage[];
   messagesRef.current = homeMessages;
+  useLayoutEffect(() => {
+    if (!error) return;
+    const current = messagesRef.current;
+    const last = current[current.length - 1];
+    const fallback = droppedLine.current;
+    const lastText = last?.role === 'assistant' ? messageText(last) : '';
+    // Keeping `error` after CodeRabbit's homeError change left the banner up
+    // when a late stream close followed a real reply. Clear that false drop.
+    if (homeAssistantTurnSucceeded(last, lastText, fallback)) {
+      clearError();
+      return;
+    }
+    const alreadyTold =
+      isHomeErrorMessage(last ?? {}) ||
+      (last?.role === 'assistant' && lastText === fallback);
+    if (!alreadyTold) {
+      setMessages([
+        ...current,
+        {
+          id: `home-assistant-${crypto.randomUUID()}`,
+          role: 'assistant',
+          metadata: { homeError: true },
+          parts: [{ type: 'text', text: fallback }],
+        },
+      ]);
+    }
+    // The drop lives in the thread card. Clear transport error so we do not
+    // also paint a second sticky banner under the scroller.
+    clearError();
+  }, [clearError, error, setMessages]);
   useOnboardingSpaceSignature(homeMessages, lang);
 
   const widgetKindFor = useCallback(
@@ -478,7 +887,19 @@ export function MemberHomeChat({
       const files = includeDrafts ? drafts.map((item) => item.file) : [];
       if (!trimmed && files.length === 0) return;
       const reveal = !hidden;
+      if (reveal) {
+        if (arrivalFrame.current != null) {
+          cancelAnimationFrame(arrivalFrame.current);
+          arrivalFrame.current = null;
+        }
+        holdVoiceRef.current = false;
+        arrivalScrollStarted.current = false;
+        arrivalScrollFinished.current = false;
+        setHoldVoice(false);
+      }
       await stop();
+      // Drop cards stay in the thread. They are filtered only from the
+      // outbound /api/chat body so the model does not re-read them.
       if (!hidden && files.length === 0) {
         const previousAssistant = [...messagesRef.current]
           .reverse()
@@ -527,6 +948,112 @@ export function MemberHomeChat({
           return;
         }
       }
+      const direct =
+        trimmed && files.length === 0
+          ? memberHomeDirectReply(intelligence, trimmed, {
+              recentSpaceSlugs: readRecentSpaceSlugs(),
+              phrases: {
+                people: [t('chipPeople')],
+                spaces: [t('chipSpace')],
+                tokens: [t('chipTokens')],
+                decision: [t('chipDecision')],
+                useful: [t('chipUseful'), t('homeArrival')],
+              },
+            })
+          : null;
+      if (direct) {
+        const base = messagesRef.current;
+        if (direct.item) {
+          const full = memberHomeThreadItemForRef(intelligence, direct.item);
+          if (full) {
+            rememberHomeShownItem(full);
+            setShownCardItems(readHomeShownItems());
+          }
+        }
+        const next: HomeMessage[] = [
+          ...base,
+          {
+            id: `home-user-${crypto.randomUUID()}`,
+            role: 'user',
+            metadata: hidden ? { homeArrival: true } : undefined,
+            parts: [{ type: 'text', text: trimmed }],
+          },
+          {
+            id: `home-assistant-${crypto.randomUUID()}`,
+            role: 'assistant',
+            metadata: direct.item ? { homeItem: direct.item } : undefined,
+            parts: [{ type: 'text', text: directReplyText(direct, t) }],
+          },
+        ];
+        const widget = direct.widget;
+        if (!hidden && widget) {
+          setWidgets((current) => [
+            ...current,
+            {
+              id: `${widget}-${Date.now()}`,
+              kind: widget,
+              after: base.length + 1,
+            },
+          ]);
+        }
+        if (reveal) {
+          setInput('');
+          if (includeDrafts) setDrafts([]);
+          settleSend.current = true;
+          glideScroll.current = true;
+          pinnedToEnd.current = true;
+        }
+        setMessages(next);
+        writeHomeThread(next);
+        return;
+      }
+      const lookedUp =
+        trimmed && files.length === 0
+          ? memberHomeLookItem(
+              listMemberHomeThreadCatalog(intelligence),
+              messagesRef.current,
+              trimmed,
+            )
+          : null;
+      if (lookedUp) {
+        const base = messagesRef.current;
+        rememberHomeShownItem(lookedUp);
+        setShownCardItems(readHomeShownItems());
+        const next: HomeMessage[] = [
+          ...base,
+          {
+            id: `home-user-${crypto.randomUUID()}`,
+            role: 'user',
+            parts: [{ type: 'text', text: trimmed }],
+          },
+          {
+            id: `home-assistant-${crypto.randomUUID()}`,
+            role: 'assistant',
+            metadata: {
+              homeItem: { kind: lookedUp.kind, slug: lookedUp.slug },
+            },
+            parts: [
+              {
+                type: 'text',
+                text: t('itemOpen', {
+                  title: lookedUp.title,
+                  space: lookedUp.spaceTitle,
+                }),
+              },
+            ],
+          },
+        ];
+        if (reveal) {
+          setInput('');
+          if (includeDrafts) setDrafts([]);
+          settleSend.current = true;
+          glideScroll.current = true;
+          pinnedToEnd.current = true;
+        }
+        setMessages(next);
+        writeHomeThread(next);
+        return;
+      }
       if (!hidden && trimmed) {
         const kind = widgetKindFor(trimmed);
         if (kind) {
@@ -540,7 +1067,6 @@ export function MemberHomeChat({
           ]);
         }
       }
-      setDismissedError(false);
       clearError();
       let token: string | undefined;
       try {
@@ -562,6 +1088,8 @@ export function MemberHomeChat({
         glideScroll.current = true;
         pinnedToEnd.current = true;
       }
+      const visitCue = homeVisitCue.current;
+      homeVisitCue.current = null;
       try {
         await sendMessage(
           {
@@ -578,6 +1106,12 @@ export function MemberHomeChat({
                 ...readHomeChoices(),
                 acted: readHomeActed(),
               },
+              ...(visitCue
+                ? {
+                    memberHomeVisit: visitCue.visit,
+                    memberHomePartOfDay: visitCue.partOfDay,
+                  }
+                : {}),
             },
           },
         );
@@ -591,6 +1125,7 @@ export function MemberHomeChat({
       drafts,
       getAccessToken,
       homeMessages.length,
+      intelligence,
       intelligence.spaces,
       lang,
       sendMessage,
@@ -631,14 +1166,6 @@ export function MemberHomeChat({
     [isStreaming, send],
   );
 
-  const recentTranscriptSummary = useMemo(
-    () =>
-      buildRecentTranscriptSummaryFromChatMessages(
-        homeMessages.filter((message) => !message.metadata?.homeArrival),
-      ),
-    [homeMessages],
-  );
-
   const dialogue = micOn || soundOn;
 
   const voiceSessionContext = useMemo(
@@ -653,45 +1180,180 @@ export function MemberHomeChat({
     () => listMemberHomeThreadItems(intelligence),
     [intelligence],
   );
+  // The walk is short. The card can be any open item the brief names.
+  const liveCardItems = useMemo(
+    () => listMemberHomeThreadCatalog(intelligence),
+    [intelligence],
+  );
+  const [shownCardItems, setShownCardItems] = useState<MemberHomeThreadItem[]>(
+    () => (typeof window === 'undefined' ? [] : readHomeShownItems()),
+  );
+  const [actedKeys, setActedKeys] = useState<string[]>(() =>
+    typeof window === 'undefined' ? [] : readHomeActed(),
+  );
+  useEffect(() => {
+    const sync = () => {
+      const nextShown = readHomeShownItems();
+      const nextActed = readHomeActed();
+      setShownCardItems((current) =>
+        sameHomeShownItemKeys(current, nextShown) ? current : nextShown,
+      );
+      setActedKeys((current) =>
+        current.length === nextActed.length &&
+        current.every((key, index) => key === nextActed[index])
+          ? current
+          : nextActed,
+      );
+    };
+    sync();
+    window.addEventListener(HOME_QUEUE_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(HOME_QUEUE_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+  const cardItems = useMemo(
+    () => mergeHomeCardItems(liveCardItems, shownCardItems),
+    [liveCardItems, shownCardItems],
+  );
+  const actedKeySet = useMemo(() => new Set(actedKeys), [actedKeys]);
 
-  /** Same string the bubble shows — Realtime must speak this script. */
-  const lastAssistantText = useMemo(() => {
+  /**
+   * Same string the bubble shows. While the latest reply is still streaming,
+   * a momentary empty clean keeps the previous words so the row does not
+   * unmount. Realtime speaks this script, never the reply before it.
+   */
+  const shownAssistantText = useMemo(() => {
+    const shown = new Map<string, string>();
+    const lastMessage = homeMessages[homeMessages.length - 1];
+    const live = new Set<string>();
+    homeMessages.forEach((message, index) => {
+      if (message.role !== 'assistant') return;
+      live.add(message.id);
+      const rawText = stripLeakedToolMarkup(
+        messageText(message).replace(/\*\*/g, ''),
+      );
+      const listAsk = widgetKindFor(userTextBefore(homeMessages, index));
+      const board =
+        rawText && !listAsk
+          ? homeBoardFromMessage(message) ??
+            memberHomeSignalCatalogue(rawText, intelligence.spaces, lang)
+          : null;
+      const spokenItem =
+        rawText && !listAsk
+          ? homeItemForMessage(cardItems, message, intelligence)
+          : null;
+      const cleaned = rawText
+        ? homeAssistantScript({
+            displayText: board
+              ? t('boardInstead', { space: board.title })
+              : straightforwardHomeText(rawText),
+            stripDecisionCue: Boolean(
+              spokenItem && spokenItem.action !== 'decision',
+            ),
+          })
+        : '';
+      const streamingThis = isStreaming && message.id === lastMessage?.id;
+      const script =
+        cleaned ||
+        (!streamingThis && listAsk === 'people'
+          ? intelligence.connections.some(
+              (person) => person.id !== intelligence.person.id,
+            )
+            ? // Direct replies already rotated at send time. This is only a
+              // stream-empty fallback — keep the primary lead, do not advance.
+              t('peopleAroundLead')
+            : t('peopleWidgetEmpty')
+          : '');
+      if (script) heldBubbleText.current.set(message.id, script);
+      const text =
+        script ||
+        (streamingThis ? heldBubbleText.current.get(message.id) ?? '' : '');
+      if (!streamingThis && !script) heldBubbleText.current.delete(message.id);
+      if (text) shown.set(message.id, text);
+    });
+    for (const id of [...heldBubbleText.current.keys()]) {
+      if (!live.has(id)) heldBubbleText.current.delete(id);
+    }
+    return shown;
+  }, [
+    cardItems,
+    homeMessages,
+    intelligence,
+    isStreaming,
+    lang,
+    t,
+    widgetKindFor,
+  ]);
+
+  /**
+   * Latest assistant bubble only. Falling through to an older reply makes
+   * voice re-read that line on every turn while the chat has moved on.
+   */
+  const lastAssistantMessage = useMemo(() => {
     for (let i = homeMessages.length - 1; i >= 0; i -= 1) {
       const message = homeMessages[i];
       if (!message || message.role !== 'assistant') continue;
-      const rawText = messageText(message).replace(/\*\*/g, '');
-      if (!rawText) continue;
-      const board =
-        homeBoardFromMessage(message) ??
-        memberHomeSignalCatalogue(rawText, intelligence.spaces, lang);
-      const spokenItem = memberHomeThreadItemForMessage(threadItems, message);
-      return homeAssistantScript({
-        displayText: board
-          ? t('boardInstead', { space: board.title })
-          : straightforwardHomeText(rawText),
-        stripDecisionCue: Boolean(
-          spokenItem && spokenItem.action !== 'decision',
-        ),
-      });
+      if (message.metadata?.homeArrival) continue;
+      return message;
     }
-    return '';
-  }, [homeMessages, intelligence.spaces, lang, t, threadItems]);
+    return null;
+  }, [homeMessages]);
 
+  const lastAssistantText = lastAssistantMessage
+    ? shownAssistantText.get(lastAssistantMessage.id) ?? ''
+    : '';
+  const lastAssistantMessageId = lastAssistantMessage?.id ?? '';
+  const leftPanelVoice = useHomeLeftPanelVoiceActive();
   const voiceInterview = useOnboardingVoiceDiscovery({
-    enabled: soundReady && dialogue && !isAuthLoading && isAuthenticated,
+    enabled:
+      soundReady &&
+      voiceHydrated &&
+      dialogue &&
+      !isAuthLoading &&
+      isAuthenticated,
     captureMicrophone: micOn,
-    speakReplies: soundOn,
+    // The left panel is the Home speaker while its sound is on.
+    speakReplies: soundOn && !leftPanelVoice,
+    // Match LIVE: Realtime marin reads the finished reply. Exact-speech TTS
+    // (speakDisplayedText) and early lead-in change rhythm and tone.
     speakEarlyLeadIn: false,
+    speakDisplayedText: false,
     isStreaming,
-    lastAssistantText,
+    // Speak as soon as the bubble has words — do not wait on the card tool.
+    lastAssistantText: holdVoice ? '' : lastAssistantText,
+    lastAssistantMessageId,
     locale: lang,
     activeSpaceSlug: HOME_VOICE_PREFERENCE_KEY,
     conversationContext: voiceSessionContext,
-    recentTranscriptSummary,
+    // Home voice is a relay for the bubble. A transcript summary in the
+    // session makes Realtime repeat the first briefing instead of the chat.
+    recentTranscriptSummary: undefined,
     getAccessToken,
-    onStopChat: stop,
+    // The open mic stays on. send() ends the previous turn when a real
+    // transcript is submitted.
     onSendTranscript: handleVoiceTranscriptSend,
   });
+
+  // Show dictation in the composer while they speak, so they can see it land.
+  const lastDictationRef = useRef('');
+  useEffect(() => {
+    if (!micOn) {
+      lastDictationRef.current = '';
+      return;
+    }
+    const live = voiceInterview.liveTranscript.trim();
+    if (live) {
+      lastDictationRef.current = live;
+      setInput(live);
+      return;
+    }
+    if (!lastDictationRef.current) return;
+    const previous = lastDictationRef.current;
+    lastDictationRef.current = '';
+    setInput((current) => (current.trim() === previous ? '' : current));
+  }, [micOn, voiceInterview.liveTranscript]);
 
   const toggleSound = useCallback(() => {
     setSoundOn((current) => {
@@ -733,31 +1395,70 @@ export function MemberHomeChat({
     bindHomePerson(intelligence.person.slug);
     const stored = readHomeThread();
     const returned = consumeHomeReturn();
+    const now = Date.now();
+    const lastSeen = readHomeLastSeen();
+    const welcome = shouldWelcomeHomeReturn(now, lastSeen);
+    const part = homePartOfDay(new Date(now));
     if (stored.length > 0) setMessages(stored);
     if (returned != null) {
-      void send(homeReturnText(returned), true);
-      return;
+      pendingStart.current = {
+        kind: 'return',
+        text: homeReturnText(returned),
+      };
+    } else if (!memberHomeTalkIsResting(stored) && welcome) {
+      // After login or ~2h away: welcome them back (or greet on first open).
+      // Returning from an action uses consumeHomeReturn above. Remounts within
+      // the window do not re-send — last-seen blocks the spam.
+      const visit =
+        lastSeen == null ? ('first_open' as const) : ('welcome_back' as const);
+      if (visit === 'welcome_back' || threadItems.length > 0) {
+        pendingStart.current = {
+          kind: 'arrival',
+          visit,
+          partOfDay: part,
+        };
+      }
     }
-    if (stored.length > 0) return;
-    // Nothing is waiting yet. A fixed prompt starts the conversation
-    // instead of asking the model to greet an empty home.
-    if (threadItems.length === 0) return;
-    void send(t('homeArrival'), true);
+    touchHomeLastSeen(now);
+    // Voice baselines this thread first, then the next effect speaks a start.
+    setVoiceHydrated(true);
   }, [
     intelligence.person.slug,
     isAuthenticated,
     isAuthLoading,
-    send,
     setMessages,
     soundReady,
-    t,
     threadItems.length,
   ]);
 
   useEffect(() => {
-    if (!opened.current) return;
-    writeHomeThread(homeMessages);
-  }, [homeMessages]);
+    if (!voiceHydrated || startedTalk.current) return;
+    startedTalk.current = true;
+    const pending = pendingStart.current;
+    pendingStart.current = null;
+    if (!pending) return;
+    if (pending.kind === 'return') {
+      void send(pending.text, true);
+      return;
+    }
+    homeVisitCue.current = {
+      visit: pending.visit,
+      partOfDay: pending.partOfDay,
+    };
+    const whenKey =
+      pending.partOfDay === 'morning'
+        ? 'homeWhenMorning'
+        : pending.partOfDay === 'afternoon'
+        ? 'homeWhenAfternoon'
+        : pending.partOfDay === 'evening'
+        ? 'homeWhenEvening'
+        : 'homeWhenNight';
+    const ask =
+      pending.visit === 'welcome_back'
+        ? t('homeWelcomeBackAsk', { when: t(whenKey) })
+        : t('homeArrival');
+    void send(ask, true);
+  }, [send, t, voiceHydrated]);
 
   useEffect(() => {
     const fromMessages = memberHomeItemMemory(threadItems, homeMessages);
@@ -784,43 +1485,151 @@ export function MemberHomeChat({
       recalled: fromMessages.recalled,
     });
   }, [homeMessages, onQueueMemory, threadItems]);
-  const cardsByMessageId = useMemo(() => {
-    const seen = new Set<string>();
-    const map = new Map<string, MemberHomeThreadItem>();
-    for (const message of homeMessages) {
+  useEffect(() => {
+    let remembered = false;
+    homeMessages.forEach((message, index) => {
       if (message.role !== 'assistant' || message.metadata?.homeArrival) {
-        continue;
+        return;
       }
-      const item = memberHomeThreadItemForMessage(threadItems, message);
-      if (!item) continue;
-      const key = memberHomeThreadItemKey(item);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      map.set(message.id, item);
+      const asked = widgetKindFor(userTextBefore(homeMessages, index));
+      if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
+        return;
+      }
+      const item = homeItemForMessage(liveCardItems, message, intelligence);
+      if (!item) return;
+      rememberHomeShownItem(item);
+      remembered = true;
+    });
+    if (!remembered) return;
+    const next = readHomeShownItems();
+    setShownCardItems((current) =>
+      sameHomeShownItemKeys(current, next) ? current : next,
+    );
+  }, [homeMessages, intelligence, liveCardItems, widgetKindFor]);
+
+  const cardsByMessageId = useMemo(() => {
+    // Each finished reply keeps the card it earned. Rematching every
+    // catalog tweak moved older links onto the previous or next signal.
+    const map = new Map<string, MemberHomeThreadItem>();
+    const liveIds = new Set(homeMessages.map((message) => message.id));
+    for (const id of frozenHomeCards.current.keys()) {
+      if (!liveIds.has(id)) frozenHomeCards.current.delete(id);
     }
+    const lastMessage = homeMessages[homeMessages.length - 1];
+    const spaceTitles = [
+      ...cardItems.map((item) => item.spaceTitle),
+      ...intelligence.spaces.map((space) => space.title),
+    ];
+    homeMessages.forEach((message, index) => {
+      if (message.role !== 'assistant' || message.metadata?.homeArrival) {
+        return;
+      }
+      // The people, spaces, and token chips already have their own panel.
+      // A tool call on that turn must not pin the next signal underneath.
+      const asked = widgetKindFor(userTextBefore(homeMessages, index));
+      if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
+        return;
+      }
+      const streamingThis = isStreaming && message.id === lastMessage?.id;
+      const text = messageText(message);
+      const frozen = frozenHomeCards.current.get(message.id);
+      if (frozen && !streamingThis) {
+        const kept = homeItemRef(cardItems, intelligence, frozen);
+        const peerNames = cardItems.map((entry) => entry.creatorName);
+        if (
+          kept &&
+          !memberHomeSpeechConflictsWithItem(kept, text, spaceTitles, peerNames)
+        ) {
+          // Acted cards stay put. Rematching after the next turn stole the
+          // finished proposal/signal from the history the member just used.
+          if (actedKeySet.has(memberHomeThreadItemKey(kept))) {
+            map.set(message.id, kept);
+            return;
+          }
+          // Speech may name a different open item without conflicting on
+          // space/kind — prefer that card so the reply is not stuck on
+          // the previous "That's noted" card.
+          const rematch = homeItemForMessage(cardItems, message, intelligence);
+          if (
+            rematch &&
+            memberHomeThreadItemKey(rematch) !== memberHomeThreadItemKey(kept)
+          ) {
+            map.set(message.id, rematch);
+            frozenHomeCards.current.set(message.id, {
+              kind: rematch.kind,
+              slug: rematch.slug,
+            });
+            return;
+          }
+          map.set(message.id, kept);
+          return;
+        }
+        frozenHomeCards.current.delete(message.id);
+      }
+      const item = pinnedHomeItem(cardItems, homeMessages, index, intelligence);
+      if (!item) return;
+      map.set(message.id, item);
+      if (!streamingThis) {
+        frozenHomeCards.current.set(message.id, {
+          kind: item.kind,
+          slug: item.slug,
+        });
+      }
+    });
     return map;
-  }, [homeMessages, threadItems]);
+  }, [
+    actedKeySet,
+    cardItems,
+    homeMessages,
+    intelligence,
+    isStreaming,
+    widgetKindFor,
+  ]);
+
+  // Persist cards on disk only — never setMessages here. Stamping via
+  // setMessages looped into React #185; the crash remount then hit #310.
+  useEffect(() => {
+    if (!opened.current) return;
+    const persisted = homeMessages.map((message) => {
+      const existing = message.metadata?.homeItem;
+      if (
+        existing &&
+        (existing.kind === 'proposal' || existing.kind === 'signal') &&
+        existing.slug
+      ) {
+        return message;
+      }
+      const item = cardsByMessageId.get(message.id);
+      if (!item) return message;
+      return {
+        ...message,
+        metadata: {
+          ...message.metadata,
+          homeItem: { kind: item.kind, slug: item.slug },
+        },
+      };
+    });
+    writeHomeThread(persisted);
+  }, [cardsByMessageId, homeMessages]);
+
   const cardMessageId = useMemo(() => {
     for (let index = homeMessages.length - 1; index >= 0; index -= 1) {
       const message = homeMessages[index];
       if (!message || message.role !== 'assistant') continue;
       if (message.metadata?.homeArrival) continue;
-      if (memberHomeThreadItemForMessage(threadItems, message))
-        return message.id;
+      if (cardsByMessageId.has(message.id)) return message.id;
     }
     return null;
-  }, [homeMessages, threadItems]);
+  }, [cardsByMessageId, homeMessages]);
   const focusedItem = useMemo(() => {
-    const message = homeMessages.find((item) => item.id === cardMessageId);
-    return message
-      ? memberHomeThreadItemForMessage(threadItems, message)
-      : null;
-  }, [cardMessageId, homeMessages, threadItems]);
+    if (!cardMessageId) return null;
+    return cardsByMessageId.get(cardMessageId) ?? null;
+  }, [cardMessageId, cardsByMessageId]);
   useEffect(() => {
     const node = scroller.current;
     if (!node) return;
     const onScroll = () => {
-      if (gliding.current) return;
+      if (gliding.current || holdVoiceRef.current) return;
       const gap = node.scrollHeight - node.scrollTop - node.clientHeight;
       pinnedToEnd.current = gap < 120;
     };
@@ -830,17 +1639,20 @@ export function MemberHomeChat({
   useEffect(() => {
     onFocusItem?.(focusedItem);
   }, [focusedItem, onFocusItem]);
-  const showSensing = useMemo(() => {
-    if (!isStreaming) return false;
+  const liveReplyPending = useMemo(() => {
     for (let i = homeMessages.length - 1; i >= 0; i -= 1) {
       const message = homeMessages[i];
       if (!message || message.metadata?.homeArrival) continue;
-      if (message.role !== 'assistant') return true;
-      if (messageText(message)) return false;
-      return memberHomeThreadItemForMessage(threadItems, message) == null;
+      if (message.role !== 'assistant') return isStreaming;
+      const hasCard = cardsByMessageId.has(message.id);
+      const text = shownAssistantText.get(message.id) ?? '';
+      // Words or a card end the arrival mask. Waiting on the card tool alone
+      // must not keep the bubble hidden once text is already streaming.
+      if (text.trim() || hasCard) return false;
+      return isStreaming;
     }
-    return true;
-  }, [homeMessages, isStreaming, threadItems]);
+    return isStreaming;
+  }, [cardsByMessageId, homeMessages, isStreaming, shownAssistantText]);
   const hasSpoken = homeMessages.some(
     (message) => message.role === 'user' && !message.metadata?.homeArrival,
   );
@@ -865,14 +1677,14 @@ export function MemberHomeChat({
   const showArrivalMask = useMemo(() => {
     if (freshStart) return false;
     if (error) return false;
+    if (liveReplyPending) return true;
     const hasVisible = homeMessages.some((message) => {
       if (message.metadata?.homeArrival) return false;
       if (message.role === 'user') return true;
       return Boolean(messageText(message));
     });
-    if (hasVisible && !showSensing) return false;
-    return true;
-  }, [error, freshStart, homeMessages, showSensing]);
+    return !hasVisible;
+  }, [error, freshStart, homeMessages, liveReplyPending]);
 
   for (const message of homeMessages) {
     if (seenMotionIds.current.has(message.id)) continue;
@@ -884,27 +1696,115 @@ export function MemberHomeChat({
 
   useLayoutEffect(() => {
     const node = scroller.current;
-    if (!node || !pinnedToEnd.current || gliding.current) return;
-    const top = node.scrollHeight;
-    const glide =
-      glideScroll.current &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    glideScroll.current = false;
-    if (Math.abs(node.scrollTop - top) < 2) return;
-    if (glide) {
-      gliding.current = true;
-      node.scrollTo({ top, behavior: 'smooth' });
-      window.setTimeout(() => {
-        gliding.current = false;
-        const current = scroller.current;
-        if (current && pinnedToEnd.current) {
-          current.scrollTop = current.scrollHeight;
+    if (!node) return;
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+
+    // After a hidden card action: one intentional glide onto the new reply,
+    // then release voice. Do not re-target on every streamed token.
+    if (holdVoiceRef.current) {
+      if (gliding.current) return;
+      if (arrivalScrollStarted.current) {
+        if (arrivalScrollFinished.current && !isStreamingRef.current) {
+          holdVoiceRef.current = false;
+          arrivalScrollStarted.current = false;
+          arrivalScrollFinished.current = false;
+          setHoldVoice(false);
         }
-      }, 520);
+        return;
+      }
+      const target = lastHomeArrivalTarget(node);
+      if (!target) return;
+      arrivalScrollStarted.current = true;
+      const top = scrollerTopForTarget(node, target);
+      gliding.current = true;
+      glideScrollerTo(
+        node,
+        top,
+        (id) => {
+          arrivalFrame.current = id;
+        },
+        () => {
+          arrivalFrame.current = null;
+          gliding.current = false;
+          arrivalScrollFinished.current = true;
+          if (isStreamingRef.current || !holdVoiceRef.current) return;
+          holdVoiceRef.current = false;
+          arrivalScrollStarted.current = false;
+          arrivalScrollFinished.current = false;
+          setHoldVoice(false);
+        },
+      );
       return;
     }
+
+    if (!pinnedToEnd.current || gliding.current) return;
+    const top = node.scrollHeight;
+    if (Math.abs(node.scrollTop - top) < 2) return;
+
+    // One smooth settle after send. While tokens stream, stick to the bottom
+    // without restarting a long glide on every word (that fought the user).
+    if (glideScroll.current && !reduceMotion) {
+      glideScroll.current = false;
+      gliding.current = true;
+      glideScrollerTo(
+        node,
+        top,
+        (id) => {
+          arrivalFrame.current = id;
+        },
+        () => {
+          arrivalFrame.current = null;
+          gliding.current = false;
+          const current = scroller.current;
+          if (current && pinnedToEnd.current && !holdVoiceRef.current) {
+            current.scrollTop = current.scrollHeight;
+          }
+        },
+      );
+      return;
+    }
+    glideScroll.current = false;
     node.scrollTop = top;
-  }, [focusedItem, homeMessages, isStreaming, showArrivalMask, widgets]);
+  }, [
+    focusedItem,
+    holdVoice,
+    homeMessages,
+    isStreaming,
+    showArrivalMask,
+    shownAssistantText,
+    widgets,
+  ]);
+
+  useEffect(() => {
+    if (!holdVoice || isStreaming || !holdVoiceRef.current) return;
+    if (arrivalScrollStarted.current) {
+      if (!arrivalScrollFinished.current) return;
+      holdVoiceRef.current = false;
+      arrivalScrollStarted.current = false;
+      arrivalScrollFinished.current = false;
+      setHoldVoice(false);
+      return;
+    }
+    const node = scroller.current;
+    if (node && lastHomeArrivalTarget(node)) return;
+    holdVoiceRef.current = false;
+    setHoldVoice(false);
+    if (node) {
+      pinnedToEnd.current = true;
+      node.scrollTop = node.scrollHeight;
+    }
+  }, [holdVoice, homeMessages, isStreaming]);
+
+  useEffect(() => {
+    return () => {
+      if (arrivalFrame.current != null) {
+        cancelAnimationFrame(arrivalFrame.current);
+      }
+      if (glideTimer.current != null) window.clearTimeout(glideTimer.current);
+    };
+  }, []);
 
   const chips = [
     { key: 'useful', ask: t('chipUseful') },
@@ -913,6 +1813,41 @@ export function MemberHomeChat({
     { key: 'decision', ask: t('chipDecision') },
     { key: 'tokens', ask: t('chipTokens') },
   ] as const;
+
+  const renderSuggestionChips = (rowKey: string) => (
+    <div
+      key={`home-chips-${rowKey}`}
+      className="narrow-scrollbar flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto"
+    >
+      {freshStart ? (
+        <button
+          type="button"
+          disabled={isStreaming}
+          className="shrink-0 rounded-none border border-foreground bg-foreground px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-background disabled:opacity-50"
+          onClick={() => {
+            void send(firstPromptAsk);
+          }}
+        >
+          {firstPromptAsk}
+        </button>
+      ) : null}
+      {chips
+        .filter((chip) => !freshStart || chip.ask !== firstPromptAsk)
+        .map((chip) => (
+          <button
+            key={`${rowKey}-${chip.key}`}
+            type="button"
+            disabled={isStreaming}
+            className="shrink-0 rounded-none border border-foreground bg-transparent px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-foreground disabled:opacity-50"
+            onClick={() => {
+              void send(chip.ask);
+            }}
+          >
+            {chip.ask}
+          </button>
+        ))}
+    </div>
+  );
 
   const renderWidget = (widget: HomeWidget) => {
     if (widget.kind === 'spaces') {
@@ -924,8 +1859,6 @@ export function MemberHomeChat({
       return (
         <MemberHomePeopleWidgetCard
           people={intelligence.connections}
-          networkSignals={intelligence.networkSignals}
-          selfId={intelligence.person.id}
           fallbackName={t('fallbackMember')}
           onChat={(person) => {
             void onChatPerson(person);
@@ -950,14 +1883,31 @@ export function MemberHomeChat({
     );
   };
 
-  const visibleError = error && !dismissedError;
+  const retryLastUserAsk = () => {
+    const last = [...homeMessages]
+      .reverse()
+      .find(
+        (message) => message.role === 'user' && !message.metadata?.homeArrival,
+      );
+    if (last) void send(messageText(last));
+  };
+
+  const dismissHomeError = (messageId: string) => {
+    clearError();
+    setMessages((current) =>
+      current.filter((message) => message.id !== messageId),
+    );
+  };
+
+  const isDropCardMessage = (message: HomeMessage) =>
+    isHomeDropLineMessage(message, droppedLine.current);
 
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
       <HomeSendMotion />
       <div
         ref={scroller}
-        className="narrow-scrollbar min-h-0 w-full min-w-0 flex-1 overflow-y-auto"
+        className="narrow-scrollbar min-h-0 w-full min-w-0 flex-1 overflow-y-auto [overflow-anchor:none]"
         aria-label={t('conversation')}
       >
         <div className={cn(HOME_CHAT_COLUMN, 'grid gap-4 px-5 py-4 md:px-4')}>
@@ -980,26 +1930,42 @@ export function MemberHomeChat({
             if (message.metadata?.homeArrival && attached.length === 0) {
               return null;
             }
+            if (isDropCardMessage(message)) {
+              return (
+                <article key={message.id} className="grid gap-3">
+                  <div className="border border-border bg-background-2 px-3 py-2 text-2">
+                    <p>{t('threadDropped')}</p>
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        colorVariant="neutral"
+                        onClick={retryLastUserAsk}
+                      >
+                        {t('tryAgain')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        colorVariant="neutral"
+                        onClick={() => dismissHomeError(message.id)}
+                      >
+                        {t('dismiss')}
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              );
+            }
             const rawText = messageText(message).replace(/\*\*/g, '');
             const board =
               message.role === 'assistant'
                 ? homeBoardFromMessage(message) ??
                   memberHomeSignalCatalogue(rawText, intelligence.spaces, lang)
                 : null;
-            const spokenItem =
-              message.role === 'assistant'
-                ? memberHomeThreadItemForMessage(threadItems, message)
-                : null;
             const text =
               message.role === 'assistant'
-                ? homeAssistantScript({
-                    displayText: board
-                      ? t('boardInstead', { space: board.title })
-                      : straightforwardHomeText(rawText),
-                    stripDecisionCue: Boolean(
-                      spokenItem && spokenItem.action !== 'decision',
-                    ),
-                  })
+                ? shownAssistantText.get(message.id) ?? ''
                 : rawText;
             const pinnedItem =
               message.role === 'assistant'
@@ -1010,17 +1976,52 @@ export function MemberHomeChat({
                 ? generatedVisualsFromParts(message.parts)
                 : null;
             const keepsCard = pinnedItem != null;
+            const streamingThis =
+              isStreaming &&
+              message.id === homeMessages[homeMessages.length - 1]?.id;
+            const listAsk = widgetKindFor(userTextBefore(homeMessages, index));
+            const expectsCard =
+              message.role === 'assistant' &&
+              listAsk !== 'people' &&
+              listAsk !== 'spaces' &&
+              listAsk !== 'tokens' &&
+              (messageExpectsHomeCard(message) ||
+                (streamingThis && cardItems.length > 0));
+            // Stream words immediately. A pending card must not blank the bubble.
+            const visibleText = text;
+            const awaitingCard =
+              streamingThis &&
+              message.role === 'assistant' &&
+              expectsCard &&
+              !keepsCard &&
+              !visuals;
+            const replyReady =
+              message.role !== 'assistant' ||
+              memberHomeReplyReady({
+                text: visibleText,
+                hasCard: keepsCard || Boolean(visuals) || attached.length > 0,
+                streaming: streamingThis,
+                expectsCard,
+              });
             const showMessage =
-              (!message.metadata?.homeArrival && Boolean(text)) ||
-              keepsCard ||
-              Boolean(visuals);
-            if (!showMessage && attached.length === 0) return null;
+              replyReady &&
+              ((!message.metadata?.homeArrival && Boolean(visibleText)) ||
+                keepsCard ||
+                Boolean(visuals) ||
+                awaitingCard);
+            if (!replyReady || (!showMessage && attached.length === 0)) {
+              return null;
+            }
             const mine = message.role === 'user';
+            const arriving =
+              holdVoice &&
+              message.role === 'assistant' &&
+              !arrivalBaselineIds.current.has(message.id);
             const oneLine =
-              text.length > 0 &&
+              visibleText.length > 0 &&
               !visuals &&
-              (mine || (!board && !pinnedItem)) &&
-              homeTextIsOneLine(text);
+              (mine || (!board && !pinnedItem && attached.length === 0)) &&
+              homeTextIsOneLine(visibleText);
             const memberName =
               [intelligence.person.name, intelligence.person.surname]
                 .filter(Boolean)
@@ -1028,110 +2029,215 @@ export function MemberHomeChat({
                 .trim() ||
               intelligence.person.nickname ||
               t('fallbackMember');
-            return (
-              <div key={message.id} className="grid gap-4">
-                {showMessage ? (
-                  <article
-                    className={cn(
-                      'flex gap-3',
-                      settlingIds.current.has(message.id) && 'home-send-settle',
-                      mine ? 'justify-end' : 'justify-start',
-                      oneLine ? 'items-center' : 'items-start',
-                    )}
-                  >
-                    {mine ? null : (
-                      <MemberHomeMark
-                        className={cn('h-8 w-8 shrink-0', !oneLine && 'mt-0.5')}
-                      />
-                    )}
+            const promptCard = Boolean(pinnedItem || visuals || board);
+            const cardDone =
+              pinnedItem != null &&
+              actedKeySet.has(memberHomeThreadItemKey(pinnedItem));
+            // Card always sits above the mark + spoken line. Never nest the
+            // card beside the mark and then move it when words arrive.
+            const showAssistantMark =
+              !mine &&
+              (Boolean(visibleText) ||
+                awaitingCard ||
+                (promptCard && !cardDone));
+            const promptMedia =
+              !mine && (promptCard || awaitingCard) ? (
+                <>
+                  {awaitingCard ? (
                     <div
-                      className={cn(
-                        'grid min-w-0 gap-3',
-                        mine ? 'max-w-[85%] text-right' : 'flex-1',
-                      )}
+                      className="border border-border bg-background p-3"
+                      aria-busy="true"
                     >
-                      {text ? (
-                        <p
-                          className={cn(
-                            'text-2 leading-relaxed whitespace-pre-wrap text-foreground',
-                            mine && 'text-right',
-                          )}
-                        >
-                          {homeMessageNodes(text, {
-                            people: intelligence.connections,
-                            presenceById,
-                          })}
-                        </p>
+                      <HomeWave
+                        className="w-full"
+                        delayMs={80}
+                        style={{ height: 56 }}
+                      />
+                      <HomeWave className="mt-3 h-4 w-1/2" delayMs={150} />
+                      <HomeWave className="mt-2 h-3 w-2/5" delayMs={200} />
+                    </div>
+                  ) : null}
+                  {visuals ? (
+                    <div className="grid gap-3">
+                      {visuals.logoUrl ? (
+                        <img
+                          src={visuals.logoUrl}
+                          alt={t('generatedLogo')}
+                          className="h-24 w-24 border border-border object-cover"
+                        />
                       ) : null}
-                      {visuals ? (
-                        <div className="grid gap-3">
-                          {visuals.logoUrl ? (
-                            <img
-                              src={visuals.logoUrl}
-                              alt={t('generatedLogo')}
-                              className="h-24 w-24 border border-border object-cover"
-                            />
-                          ) : null}
-                          {visuals.bannerUrl ? (
-                            <img
-                              src={visuals.bannerUrl}
-                              alt={t('generatedBanner')}
-                              className="w-full max-w-md border border-border object-cover"
-                              style={{ maxHeight: 160 }}
-                            />
-                          ) : null}
-                        </div>
-                      ) : null}
-                      {!mine && board ? (
-                        <Link
-                          href={board.href}
-                          className="inline-flex h-10 w-fit items-center border border-foreground bg-foreground px-3 text-1 tracking-[0.12em] text-background uppercase"
-                        >
-                          {t('openSignalsBoard')}
-                        </Link>
-                      ) : null}
-                      {!mine && pinnedItem ? (
-                        <MemberHomeThreadCard
-                          chat
-                          lang={lang}
-                          item={pinnedItem}
-                          proposal={
-                            pinnedItem.kind === 'proposal'
-                              ? intelligence.proposals.find(
-                                  (proposal) =>
-                                    proposal.slug === pinnedItem.slug,
-                                ) ?? null
-                              : null
-                          }
-                          onAsk={(ask, hidden) => {
-                            void send(ask, Boolean(hidden));
-                          }}
-                          onReach={(person, mode) =>
-                            mode === 'call'
-                              ? onCallPerson(person)
-                              : onChatPerson(person)
-                          }
+                      {visuals.bannerUrl ? (
+                        <img
+                          src={visuals.bannerUrl}
+                          alt={t('generatedBanner')}
+                          className="w-full max-w-md border border-border object-cover"
+                          style={{ maxHeight: 160 }}
                         />
                       ) : null}
                     </div>
-                    {mine ? (
-                      <PersonAvatar
-                        avatarSrc={intelligence.person.avatarUrl ?? undefined}
-                        userName={memberName}
-                        size="md"
-                        shape="circle"
-                        className={cn('shrink-0', !oneLine && 'mt-0.5')}
-                        personId={intelligence.person.id}
-                      />
-                    ) : null}
-                  </article>
-                ) : null}
+                  ) : null}
+                  {board ? (
+                    <Link
+                      href={board.href}
+                      className="inline-flex h-10 w-fit items-center border border-foreground bg-foreground px-3 text-1 tracking-[0.12em] text-background uppercase"
+                    >
+                      {t('openSignalsBoard')}
+                    </Link>
+                  ) : null}
+                  {pinnedItem ? (
+                    <MemberHomeThreadCard
+                      chat
+                      lang={lang}
+                      item={pinnedItem}
+                      done={actedKeySet.has(
+                        memberHomeThreadItemKey(pinnedItem),
+                      )}
+                      proposal={
+                        pinnedItem.kind === 'proposal'
+                          ? intelligence.proposals.find(
+                              (proposal) => proposal.slug === pinnedItem.slug,
+                            ) ?? null
+                          : null
+                      }
+                      onSettled={() => {
+                        voiceInterview.stopSpeaking();
+                      }}
+                      onAsk={(ask, hidden) => {
+                        if (hidden) {
+                          if (glideTimer.current != null) {
+                            window.clearTimeout(glideTimer.current);
+                            glideTimer.current = null;
+                          }
+                          if (arrivalFrame.current != null) {
+                            cancelAnimationFrame(arrivalFrame.current);
+                            arrivalFrame.current = null;
+                          }
+                          gliding.current = false;
+                          pinnedToEnd.current = false;
+                          arrivalBaselineIds.current = new Set(
+                            messagesRef.current.map((entry) => entry.id),
+                          );
+                          arrivalScrollStarted.current = false;
+                          arrivalScrollFinished.current = false;
+                          holdVoiceRef.current = true;
+                          setHoldVoice(true);
+                        }
+                        void send(ask, Boolean(hidden));
+                      }}
+                      onReach={(person, mode) =>
+                        mode === 'call'
+                          ? onCallPerson(person)
+                          : onChatPerson(person)
+                      }
+                    />
+                  ) : null}
+                </>
+              ) : null;
+            return (
+              <div key={message.id} className="grid gap-4">
                 {attached.map((widget) => (
-                  <article key={widget.id} className="flex gap-3">
+                  <article
+                    key={widget.id}
+                    data-home-arrival={arriving ? '' : undefined}
+                    className="flex gap-3"
+                  >
                     <MemberHomeMark className="mt-0.5 h-8 w-8" />
                     {renderWidget(widget)}
                   </article>
                 ))}
+                {showMessage ? (
+                  <article
+                    data-home-arrival={
+                      (arriving &&
+                        (pinnedItem ||
+                          (!isStreaming && Boolean(visibleText)))) ||
+                      (streamingThis &&
+                        !mine &&
+                        (Boolean(pinnedItem) || Boolean(visibleText)))
+                        ? ''
+                        : undefined
+                    }
+                    className={cn(
+                      'grid gap-3',
+                      settlingIds.current.has(message.id) && 'home-send-settle',
+                    )}
+                  >
+                    {promptCard || awaitingCard ? (
+                      <div
+                        className={cn(
+                          'grid min-w-0 gap-3',
+                          showAssistantMark && 'pl-11',
+                        )}
+                      >
+                        {promptMedia}
+                      </div>
+                    ) : null}
+                    {mine || visibleText || showAssistantMark ? (
+                      <div
+                        className={cn(
+                          'flex gap-3',
+                          mine ? 'justify-end' : 'justify-start',
+                          oneLine ? 'items-center' : 'items-start',
+                        )}
+                      >
+                        {showAssistantMark ? (
+                          <MemberHomeMark
+                            className={cn(
+                              'h-8 w-8 shrink-0',
+                              !oneLine && 'mt-0.5',
+                            )}
+                          />
+                        ) : null}
+                        <div
+                          className={cn(
+                            'grid min-w-0 gap-3',
+                            mine ? 'max-w-[85%] text-right' : 'flex-1',
+                          )}
+                        >
+                          {visibleText ? (
+                            <p
+                              data-home-reply-text={
+                                !mine && (promptCard || attached.length > 0)
+                                  ? ''
+                                  : undefined
+                              }
+                              className={cn(
+                                'text-2 leading-relaxed whitespace-pre-wrap text-foreground',
+                                mine && 'text-right',
+                              )}
+                            >
+                              {homeMessageNodes(visibleText)}
+                            </p>
+                          ) : streamingThis && !mine ? (
+                            // Card can land before speech. Keep the text
+                            // mask beside the mark until words arrive —
+                            // never leave the mark alone on the mycelium.
+                            <div
+                              className="grid min-w-0 flex-1 gap-2 pt-1"
+                              aria-busy="true"
+                            >
+                              <HomeWave className="h-3 w-11/12" delayMs={40} />
+                              <HomeWave className="h-3 w-4/5" delayMs={90} />
+                              <HomeWave className="h-3 w-2/3" delayMs={140} />
+                            </div>
+                          ) : null}
+                        </div>
+                        {mine ? (
+                          <PersonAvatar
+                            avatarSrc={
+                              intelligence.person.avatarUrl ?? undefined
+                            }
+                            userName={memberName}
+                            size="md"
+                            shape="circle"
+                            className={cn('shrink-0', !oneLine && 'mt-0.5')}
+                            personId={intelligence.person.id}
+                          />
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </article>
+                ) : null}
               </div>
             );
           })}
@@ -1152,92 +2258,39 @@ export function MemberHomeChat({
           />
           {showArrivalMask ? (
             <article
-              className="flex items-start gap-3"
+              data-home-arrival=""
+              className="grid gap-3"
               aria-live="polite"
               aria-busy="true"
             >
-              <MemberHomeMark className="home-send-breathe mt-0.5 h-8 w-8 shrink-0" />
-              <p className="home-send-breathe text-2 leading-relaxed text-neutral-11">
-                {t('thinking')}
-              </p>
+              {/* Card first — then mark + words underneath, same as a live reply. */}
+              <div className="border border-border bg-background p-3 pl-11">
+                <HomeWave
+                  className="w-full"
+                  delayMs={80}
+                  style={{ height: 56 }}
+                />
+                <HomeWave className="mt-3 h-4 w-1/2" delayMs={150} />
+                <HomeWave className="mt-2 h-3 w-2/5" delayMs={200} />
+                <div className="mt-4 flex gap-2">
+                  <HomeWave className="h-10 w-28" delayMs={240} />
+                  <HomeWave className="h-10 w-24" delayMs={290} />
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <MemberHomeMark className="mt-0.5 h-8 w-8 shrink-0" />
+                <div className="grid min-w-0 flex-1 gap-2">
+                  <HomeWave className="h-3 w-11/12" delayMs={40} />
+                  <HomeWave className="h-3 w-4/5" delayMs={90} />
+                  <HomeWave className="h-3 w-2/3" delayMs={140} />
+                </div>
+              </div>
             </article>
           ) : null}
         </div>
       </div>
 
-      {visibleError ? (
-        <div className={cn(HOME_CHAT_COLUMN, 'mb-2 px-5 md:px-4')}>
-          <div className="border border-border bg-background-2 px-3 py-2 text-2">
-            <p>{t('threadDropped')}</p>
-            <div className="mt-2 flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                colorVariant="neutral"
-                onClick={() => {
-                  const last = [...homeMessages]
-                    .reverse()
-                    .find(
-                      (message) =>
-                        message.role === 'user' &&
-                        !message.metadata?.homeArrival,
-                    );
-                  if (last) void send(messageText(last));
-                }}
-              >
-                {t('tryAgain')}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                colorVariant="neutral"
-                onClick={() => {
-                  setDismissedError(true);
-                  clearError();
-                }}
-              >
-                {t('dismiss')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
-        <div className="mx-5 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto pt-2 [scrollbar-width:none] md:mx-4 [&::-webkit-scrollbar]:hidden">
-          {freshStart ? (
-            <button
-              type="button"
-              disabled={isStreaming}
-              className="shrink-0 rounded-none border border-foreground bg-foreground px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-background disabled:opacity-50"
-              onClick={() => {
-                void send(firstPromptAsk);
-              }}
-            >
-              {firstPromptAsk}
-            </button>
-          ) : null}
-          {chips
-            .filter((chip) => !freshStart || chip.ask !== firstPromptAsk)
-            .map((chip) => (
-              <button
-                key={chip.key}
-                type="button"
-                disabled={isStreaming}
-                className="shrink-0 rounded-none border border-foreground bg-transparent px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-foreground disabled:opacity-50"
-                onClick={() => {
-                  void send(chip.ask);
-                }}
-              >
-                {chip.ask}
-              </button>
-            ))}
-        </div>
-        {micOn && voiceInterview.liveTranscript ? (
-          <p className="px-5 pb-1 text-1 text-neutral-11 md:px-4">
-            “{voiceInterview.liveTranscript}”
-          </p>
-        ) : null}
+      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pt-2 pb-3')}>
         {dialogue && micNeedsGrant ? (
           <button
             type="button"
@@ -1249,6 +2302,9 @@ export function MemberHomeChat({
             {t('soundNeedsMic')}
           </button>
         ) : null}
+        <div className="px-5 pb-2 md:px-4">
+          {renderSuggestionChips('composer')}
+        </div>
         <div className="mx-5 border border-border bg-background md:mx-4">
           <AiPanelChatBar
             value={input}

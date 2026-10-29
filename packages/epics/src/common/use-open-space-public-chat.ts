@@ -2,9 +2,8 @@
 
 import { useCallback, useState } from 'react';
 import {
-  acceptEnsuredPublicRoomId,
-  distinctPublicRoomId,
   useMatrix,
+  waitForAcceptedPublicRoomId,
 } from '@hypha-platform/core/client';
 
 import { useHumanChatPanel } from './human-chat-panel-context';
@@ -36,13 +35,11 @@ export function useOpenSpacePublicChat() {
       try {
         const memberRoomId = space.memberRoomId?.trim() || null;
         const { roomId } = await ensurePublicRoom(slug, memberRoomId);
-        const roomType = client?.getRoom(roomId)?.getType() ?? null;
-        // Untyped rooms are still syncing create state — id check only.
-        // A known member type, or an id that matches chatRoomId, is refused.
-        const publicRoomId =
-          roomType == null
-            ? distinctPublicRoomId(roomId, memberRoomId)
-            : acceptEnsuredPublicRoomId(roomId, memberRoomId, roomType);
+        const publicRoomId = await waitForAcceptedPublicRoomId({
+          roomId,
+          memberRoomId,
+          readRoomType: () => client?.getRoom(roomId)?.getType() ?? null,
+        });
         if (!publicRoomId) {
           throw new Error('Public channel resolved to the space channel');
         }

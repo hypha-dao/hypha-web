@@ -16,8 +16,8 @@ describe('resolveRealtimeAudioInputConfig', () => {
 
     const config = resolveRealtimeAudioInputConfig('gpt-4o-mini-transcribe');
 
-    expect(config.turnDetection.threshold).toBe(0.72);
-    expect(config.turnDetection.silence_duration_ms).toBe(1000);
+    expect(config.turnDetection.threshold).toBe(0.55);
+    expect(config.turnDetection.silence_duration_ms).toBe(700);
     expect(config.turnDetection.prefix_padding_ms).toBe(350);
     expect(config.turnDetection.interrupt_response).toBe(false);
     expect(config.noiseReduction).toEqual({ type: 'near_field' });

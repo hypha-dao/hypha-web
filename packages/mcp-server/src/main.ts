@@ -813,7 +813,7 @@ server.registerTool(
   'get_org_memory_by_space_slug',
   {
     description:
-      'Read-only: organisation memory for a space by slug — same member roster as get_people_by_space_slug plus org_memory_assets (proposal attachments and lead images from documents; Matrix m.file/m.image when NEXT_PUBLIC_MATRIX_HOMESERVER_URL and chat_room_id are set, and either HYPHA_MATRIX_BOT_AS_TOKEN or HYPHA_MCP_AUTH_TOKEN + HYPHA_MCP_MATRIX_REQUEST_URL / VERCEL_URL for session Matrix token resolution). structuredContent matrix_fetch includes used_bot_access_token, used_session_matrix_token, session_matrix_token_unavailable, skipped_reason, http_status, events_in_chunk, media_events_yielded, error. Optional assets_page, assets_page_size, assets_search paginate/filter assets separately from the roster.',
+      'Read-only: organisation memory for a space by slug — same member roster as get_people_by_space_slug plus org_memory_assets (each with category: conversations|calls|ai|files) and assets_category_markdown (ready-made markdown context packs per category for AI). Assets include proposal uploads, written Space Memory entries, Matrix m.file/m.image when Matrix is configured, call recordings/transcripts, and discussion summaries. Prefer assets_category_markdown for overview context, then fetch_org_memory_asset by asset_key. matrix_fetch diagnostics unchanged. Optional assets_page, assets_page_size, assets_search paginate/filter assets separately from the roster.',
     inputSchema: getOrgMemoryBySpaceSlugInputSchema,
     outputSchema: getOrgMemoryBySpaceSlugOutputSchema,
     annotations: {
@@ -941,7 +941,7 @@ server.registerTool(
   'fetch_org_memory_asset',
   {
     description:
-      'Read-only: fetch content for one org-memory asset after listing with get_org_memory_by_space_slug. Input: space_slug + asset_key from org_memory_assets[]. Supports proposal files (HTTPS), matrix media (server-side download), call transcripts, and discussion summaries. return_mode auto: UTF-8 text + PDF text extraction + image/* as base64; text_only skips binary; binary_as_base64 returns raw base64 for image/video/pdf/office. max_bytes caps download (default 2 MiB, max 4 MiB).',
+      'Read-only: fetch content for one org-memory asset after listing with get_org_memory_by_space_slug. Input: space_slug + asset_key from org_memory_assets[]. Supports proposal files (HTTPS), matrix media (server-side download), call transcripts, discussion summaries, and written memory documents. Discussion summaries, call transcripts, and memory bodies return text/markdown with category frontmatter. return_mode auto: UTF-8 text + PDF text extraction + image/* as base64; text_only skips binary; binary_as_base64 returns raw base64 for image/video/pdf/office. max_bytes caps download (default 2 MiB, max 4 MiB).',
     inputSchema: fetchOrgMemoryAssetInputSchema,
     outputSchema: fetchOrgMemoryAssetOutputSchema,
     annotations: {

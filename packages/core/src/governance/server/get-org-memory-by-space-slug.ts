@@ -32,6 +32,19 @@ import {
   deriveSpaceMemoryDisplayTitle,
   looksLikeTechnicalSpaceMemoryName,
 } from '../../org-memory/space-memory-display';
+import {
+  countSpaceMemoryBranches,
+  EMPTY_SPACE_MEMORY_BRANCH_COUNTS,
+  SPACE_MEMORY_BRANCHES,
+  spaceMemoryBranchForAsset,
+  type SpaceMemoryBranch,
+  type SpaceMemoryBranchCounts,
+} from '../../org-memory/space-memory-branches';
+import { collapseDuplicateDiscussionSummaries } from '../../org-memory/collapse-discussion-summaries';
+import {
+  buildSpaceMemoryCategoryMarkdownPack,
+  type SpaceMemoryCategoryIndexItem,
+} from '../../org-memory/space-memory-markdown';
 
 /** Aligned with MCP §8.1 / architecture org memory rows. */
 export type OrgMemoryAsset = {
@@ -64,6 +77,8 @@ export type OrgMemoryAsset = {
   context_title?: string;
   signal_title?: string;
   room_title?: string;
+  /** Space Memory left-nav category for this asset (set before return). */
+  category?: SpaceMemoryBranch;
   occurred_at: string;
 };
 
@@ -149,6 +164,17 @@ export type OrgMemoryBySpaceSlugSuccess = {
     has_next_page: boolean;
     has_previous_page: boolean;
   };
+  assets_category_counts: {
+    conversations: number;
+    calls: number;
+    ai: number;
+    files: number;
+  };
+  /**
+   * Generated markdown context packs — one file per category for AI/RAG-style
+   * reads. Not shown in the Space Memory panel.
+   */
+  assets_category_markdown: Record<SpaceMemoryBranch, string>;
 };
 
 export type OrgMemoryBySpaceSlugNotFound = {
@@ -163,7 +189,73 @@ export type OrgMemoryBySpaceSlugNotFound = {
   matrix_fetch: MatrixOrgMemoryFetchMeta;
   pagination: OrgMemoryBySpaceSlugSuccess['pagination'];
   assets_pagination: OrgMemoryBySpaceSlugSuccess['assets_pagination'];
+  assets_category_counts: SpaceMemoryBranchCounts;
+  assets_category_markdown: Record<SpaceMemoryBranch, string>;
 };
+
+function emptyCategoryMarkdown(
+  spaceSlug: string,
+): Record<SpaceMemoryBranch, string> {
+  return buildSpaceMemoryCategoryMarkdownPack({
+    spaceSlug,
+    itemsByCategory: {
+      conversations: [],
+      calls: [],
+      ai: [],
+      files: [],
+    },
+  });
+}
+
+function withAssetCategories(assets: OrgMemoryAsset[]): OrgMemoryAsset[] {
+  return assets.map((asset) => ({
+    ...asset,
+    category: spaceMemoryBranchForAsset({
+      source: asset.source,
+      documentLabel: asset.document_label,
+    }),
+  }));
+}
+
+function categoryMarkdownForAssets(input: {
+  spaceSlug: string;
+  spaceTitle?: string | null;
+  asOf: string;
+  assets: Array<OrgMemoryAsset & { asset_key?: string }>;
+}): Record<SpaceMemoryBranch, string> {
+  const itemsByCategory = Object.fromEntries(
+    SPACE_MEMORY_BRANCHES.map((branch) => [
+      branch,
+      [] as SpaceMemoryCategoryIndexItem[],
+    ]),
+  ) as Record<SpaceMemoryBranch, SpaceMemoryCategoryIndexItem[]>;
+
+  for (const asset of input.assets) {
+    const category =
+      asset.category ??
+      spaceMemoryBranchForAsset({
+        source: asset.source,
+        documentLabel: asset.document_label,
+      });
+    itemsByCategory[category].push({
+      title:
+        asset.context_title?.trim() ||
+        asset.document_title?.trim() ||
+        asset.filename,
+      occurredAt: asset.occurred_at,
+      excerpt: asset.text_excerpt,
+      assetKey: asset.asset_key,
+      source: asset.source,
+    });
+  }
+
+  return buildSpaceMemoryCategoryMarkdownPack({
+    spaceSlug: input.spaceSlug,
+    spaceTitle: input.spaceTitle,
+    asOf: input.asOf,
+    itemsByCategory,
+  });
+}
 
 export type GetOrgMemoryBySpaceSlugResult =
   | OrgMemoryBySpaceSlugSuccess
@@ -952,6 +1044,8 @@ export async function getOrgMemoryBySpaceSlug(
           safeAssetsPage,
           safeAssetsPageSize,
         ),
+        assets_category_counts: { ...EMPTY_SPACE_MEMORY_BRANCH_COUNTS },
+        assets_category_markdown: emptyCategoryMarkdown(spaceSlug),
       },
     };
   }
@@ -999,6 +1093,8 @@ export async function getOrgMemoryBySpaceSlug(
           safeAssetsPage,
           safeAssetsPageSize,
         ),
+        assets_category_counts: { ...EMPTY_SPACE_MEMORY_BRANCH_COUNTS },
+        assets_category_markdown: emptyCategoryMarkdown(spaceSlug),
       },
     };
   }
@@ -1219,16 +1315,33 @@ export async function getOrgMemoryBySpaceSlug(
     ...transcriptAssets,
     ...discussionSummaryAssets,
   ].sort(compareOrgMemoryAssetsStable);
+  // Append-only summary refreshes share the same body on different days —
+  // keep the newest of each identical excerpt for the member UI / AI packs.
+  combined = collapseDuplicateDiscussionSummaries(combined);
   if (assetView === 'signal') {
     combined = compactOrgMemoryAssetsForSignal(combined);
   }
   combined = filterAssetsBySearch(combined, assetsSearch);
 
-  const total = combined.length;
+  const categorized = withAssetCategories(combined);
+  const assets_category_counts = countSpaceMemoryBranches(
+    categorized.map((asset) => ({
+      source: asset.source,
+      documentLabel: asset.document_label,
+    })),
+  );
+
+  const total = categorized.length;
   const totalPages = total === 0 ? 0 : Math.ceil(total / safeAssetsPageSize);
   const offset = (safeAssetsPage - 1) * safeAssetsPageSize;
-  const pageSlice = combined.slice(offset, offset + safeAssetsPageSize);
-  const assetsWithKeys = withOrgMemoryAssetKeys(pageSlice);
+  const assetsWithKeys = withOrgMemoryAssetKeys(categorized);
+  const pageSlice = assetsWithKeys.slice(offset, offset + safeAssetsPageSize);
+  const assets_category_markdown = categoryMarkdownForAssets({
+    spaceSlug: roster.space_slug,
+    spaceTitle: roster.space?.title,
+    asOf,
+    assets: assetsWithKeys,
+  });
 
   return {
     access: 'ok',
@@ -1240,7 +1353,7 @@ export async function getOrgMemoryBySpaceSlug(
       source_chain,
       asOf,
       members: roster.members,
-      org_memory_assets: assetsWithKeys,
+      org_memory_assets: pageSlice,
       matrix_fetch: matrixFetchMeta,
       pagination: roster.pagination,
       assets_pagination: {
@@ -1251,6 +1364,8 @@ export async function getOrgMemoryBySpaceSlug(
         has_next_page: totalPages > 0 && safeAssetsPage < totalPages,
         has_previous_page: totalPages > 0 && safeAssetsPage > 1,
       },
+      assets_category_counts,
+      assets_category_markdown,
     },
   };
 }
