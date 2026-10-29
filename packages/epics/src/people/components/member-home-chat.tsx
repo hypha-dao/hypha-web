@@ -665,6 +665,19 @@ function messageHasHomeCardTool(message: HomeMessage): boolean {
   });
 }
 
+/** This turn places a home card — from stream metadata or the card tool. */
+function messageExpectsHomeCard(message: HomeMessage): boolean {
+  const hint = message.metadata?.homeItem;
+  if (
+    hint &&
+    (hint.kind === 'proposal' || hint.kind === 'signal') &&
+    hint.slug
+  ) {
+    return true;
+  }
+  return messageHasHomeCardTool(message);
+}
+
 function scrollerTopForTarget(node: HTMLElement, target: Element) {
   return Math.max(
     0,
@@ -1267,7 +1280,7 @@ export function MemberHomeChat({
   const holdVoiceForCard =
     isStreaming &&
     Boolean(lastAssistantMessage) &&
-    messageHasHomeCardTool(lastAssistantMessage!) &&
+    messageExpectsHomeCard(lastAssistantMessage!) &&
     !lastAssistantCard;
 
   const leftPanelVoice = useHomeLeftPanelVoiceActive();
@@ -1567,14 +1580,31 @@ export function MemberHomeChat({
       const message = homeMessages[i];
       if (!message || message.metadata?.homeArrival) continue;
       if (message.role !== 'assistant') return isStreaming;
-      const text = shownAssistantText.get(message.id) ?? '';
+      const listAsk = widgetKindFor(userTextBefore(homeMessages, i));
       const hasCard = cardsByMessageId.has(message.id);
-      // Skeleton only until the first words land — not for the whole stream.
+      const expectsCard =
+        messageExpectsHomeCard(message) ||
+        (isStreaming &&
+          listAsk !== 'people' &&
+          listAsk !== 'spaces' &&
+          listAsk !== 'tokens' &&
+          cardItems.length > 0);
+      // Card turns stay masked until the card is on screen — never flash
+      // the spoken line alone and then tuck it under the card.
+      if (expectsCard && !hasCard) return isStreaming;
+      const text = shownAssistantText.get(message.id) ?? '';
       if (text.trim() || hasCard) return false;
       return isStreaming;
     }
     return isStreaming;
-  }, [cardsByMessageId, homeMessages, isStreaming, shownAssistantText]);
+  }, [
+    cardItems.length,
+    cardsByMessageId,
+    homeMessages,
+    isStreaming,
+    shownAssistantText,
+    widgetKindFor,
+  ]);
   const hasSpoken = homeMessages.some(
     (message) => message.role === 'user' && !message.metadata?.homeArrival,
   );
@@ -1834,11 +1864,19 @@ export function MemberHomeChat({
             const streamingThis =
               isStreaming &&
               message.id === homeMessages[homeMessages.length - 1]?.id;
-            // Card prompts first — hold the spoken line until it is on screen.
+            const listAsk = widgetKindFor(userTextBefore(homeMessages, index));
+            const expectsCard =
+              message.role === 'assistant' &&
+              listAsk !== 'people' &&
+              listAsk !== 'spaces' &&
+              listAsk !== 'tokens' &&
+              (messageExpectsHomeCard(message) ||
+                (streamingThis && cardItems.length > 0));
+            // Card prompts first — never paint the spoken line alone.
             const visibleText =
               streamingThis &&
               message.role === 'assistant' &&
-              messageHasHomeCardTool(message) &&
+              expectsCard &&
               !keepsCard
                 ? ''
                 : text;
@@ -1848,6 +1886,7 @@ export function MemberHomeChat({
                 text: visibleText,
                 hasCard: keepsCard || Boolean(visuals) || attached.length > 0,
                 streaming: streamingThis,
+                expectsCard,
               });
             const showMessage =
               replyReady &&
@@ -1878,10 +1917,8 @@ export function MemberHomeChat({
             const cardDone =
               pinnedItem != null &&
               actedKeySet.has(memberHomeThreadItemKey(pinnedItem));
-            // Card above the reply: mark stays with the spoken line. A finished
-            // card with no words on this turn needs no mark — the next reply
-            // owns the mycelium stamp so text is not orphaned under an old card.
-            const markWithReply = Boolean(!mine && promptCard && visibleText);
+            // Card always sits above the mark + spoken line. Never nest the
+            // card beside the mark and then move it when words arrive.
             const showAssistantMark =
               !mine && (Boolean(visibleText) || (promptCard && !cardDone));
             const promptMedia =
@@ -1992,13 +2029,15 @@ export function MemberHomeChat({
                       settlingIds.current.has(message.id) && 'home-send-settle',
                     )}
                   >
-                    {markWithReply ? (
-                      <div className="grid min-w-0 gap-3 pl-11">
+                    {promptCard ? (
+                      <div
+                        className={cn(
+                          'grid min-w-0 gap-3',
+                          showAssistantMark && 'pl-11',
+                        )}
+                      >
                         {promptMedia}
                       </div>
-                    ) : null}
-                    {!markWithReply && promptCard && !showAssistantMark ? (
-                      <div className="grid min-w-0 gap-3">{promptMedia}</div>
                     ) : null}
                     {mine || visibleText || showAssistantMark ? (
                       <div
@@ -2022,9 +2061,6 @@ export function MemberHomeChat({
                             mine ? 'max-w-[85%] text-right' : 'flex-1',
                           )}
                         >
-                          {!markWithReply && showAssistantMark
-                            ? promptMedia
-                            : null}
                           {visibleText ? (
                             <p
                               data-home-reply-text={

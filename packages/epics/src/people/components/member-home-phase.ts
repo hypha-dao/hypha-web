@@ -39,15 +39,19 @@ export function resolveMemberHomePhase(input: {
 }
 
 /**
- * Card first, then words. A tool result may land before any sentence so the
- * card can prompt on its own while the stream continues. Words still show as
- * soon as they arrive under that card.
+ * Card first, then words. When this turn expects a card, keep the reply
+ * behind the arrival mask until that card is on screen — never paint the
+ * spoken line alone and then jump it under the card. Once the card is
+ * placed, words stream under it. Text-only turns show as soon as they have
+ * words.
  */
 export function memberHomeReplyReady(input: {
   text: string;
   hasCard: boolean;
   streaming: boolean;
+  expectsCard?: boolean;
 }): boolean {
+  if (input.expectsCard && input.streaming && !input.hasCard) return false;
   if (input.hasCard) return true;
   if (input.text.trim().length > 0) return true;
   return false;
