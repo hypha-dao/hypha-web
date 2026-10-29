@@ -226,18 +226,6 @@ function useMxcUrls(
   }, [client, mxc]);
 }
 
-/** True when Matrix info says the image is taller than it is wide. */
-function isPortraitChatImage(
-  mediaInfo?: {
-    w?: number;
-    h?: number;
-  } | null,
-): boolean {
-  const w = mediaInfo?.w;
-  const h = mediaInfo?.h;
-  return Boolean(w && h && w > 0 && h > 0 && h > w);
-}
-
 /**
  * Single-image frame: shrink-wrap the bitmap so portrait shots are not
  * letterboxed inside a full-width aspect box (`max-h` + `object-contain`).
