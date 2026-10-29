@@ -292,7 +292,7 @@ export async function revertSpaceContextSectionsByDocumentId(
       updatedAt: new Date(),
     })
     .where(eq(spaceContextSections.proposalDocumentId, documentId))
-    .returning({ id: spaceContextSections.id });
+    .returning();
   return result.length;
 }
 
