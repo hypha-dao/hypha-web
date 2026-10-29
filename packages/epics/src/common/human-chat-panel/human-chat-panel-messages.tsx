@@ -26,6 +26,28 @@ import {
   sortMessagesChronologically,
 } from './human-chat-timeline-order';
 
+/**
+ * Scroll a row inside the timeline scroller only — never call `scrollIntoView`,
+ * which also moves ancestor panels (e.g. the proposal overlay).
+ */
+function scrollChildIntoTimeline(
+  container: HTMLElement,
+  child: HTMLElement,
+  behavior: ScrollBehavior = 'smooth',
+) {
+  const cRect = container.getBoundingClientRect();
+  const eRect = child.getBoundingClientRect();
+  const next =
+    container.scrollTop +
+    (eRect.top - cRect.top) -
+    cRect.height / 2 +
+    eRect.height / 2;
+  container.scrollTo({
+    top: Math.max(0, next),
+    behavior,
+  });
+}
+
 type UIMessage = {
   id: string;
   role: 'user' | 'member';
@@ -345,14 +367,16 @@ export function HumanChatPanelMessages({
 
   const scrollToUnread = useCallback(() => {
     if (!firstUnreadMessageId) return;
+    const root = containerRef.current;
+    if (!root) return;
     const escaped =
       typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
         ? CSS.escape(firstUnreadMessageId)
         : firstUnreadMessageId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    const el = document.querySelector(
+    const el = root.querySelector(
       `[data-matrix-event-id="${escaped}"]`,
     ) as HTMLElement | null;
-    el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    if (el) scrollChildIntoTimeline(root, el);
     stickToBottomRef.current = false;
   }, [firstUnreadMessageId]);
 
@@ -505,7 +529,7 @@ export function HumanChatPanelMessages({
         : scrollTargetEventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     const row = root.querySelector(`[data-matrix-event-id="${esc}"]`);
     if (row instanceof HTMLElement) {
-      row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      scrollChildIntoTimeline(root, row);
       stickToBottomRef.current = false;
       scrollTargetConsumedRef.current = scrollTargetEventId;
       scrollTargetMissCountRef.current = 0;

@@ -2292,7 +2292,12 @@ export function HumanChatPanelChatBar({
             onFocus={() => {
               setComposerFocused(true);
               requestAnimationFrame(() => {
-                composerShellRef.current?.scrollIntoView({
+                const shell = composerShellRef.current;
+                if (!shell) return;
+                // Inside the proposal overlay, native scrollIntoView also moves
+                // the overlay panel (jumping open proposals to Discussion).
+                if (shell.closest('#proposal-overlay-panel')) return;
+                shell.scrollIntoView({
                   block: 'nearest',
                   inline: 'nearest',
                 });
