@@ -41,3 +41,18 @@ export function messagesListFrameHeight(input: {
   );
   return Number.isFinite(next) ? Math.max(160, next) : 160;
 }
+
+/**
+ * The channel menu uses the same cap as the conversation list.
+ * It becomes its own scrollport only when the rows are taller than that
+ * cap, so a shorter menu does not capture the page wheel.
+ */
+export function messagesChannelMenuOverflows(
+  contentHeight: number,
+  frameHeight: number,
+): boolean {
+  if (!Number.isFinite(contentHeight) || !Number.isFinite(frameHeight)) {
+    return false;
+  }
+  return contentHeight > frameHeight + 1;
+}

@@ -1781,6 +1781,14 @@ export function MyConnections({
   const openedDirectChatRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
   const inboxFiltersRef = useRef<HTMLDivElement | null>(null);
+  const chainFilterScroll = useChainScrollAtEdge();
+  const setInboxFiltersRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      inboxFiltersRef.current = node;
+      chainFilterScroll(node);
+    },
+    [chainFilterScroll],
+  );
   const inboxListRef = useRef<HTMLUListElement | null>(null);
   const inboxEndRef = useRef<HTMLLIElement | null>(null);
   const inboxNavReady = useRef(false);
@@ -2888,15 +2896,16 @@ export function MyConnections({
         >
           {section === 'messages' ? (
             <div
-              ref={inboxFiltersRef}
+              ref={setInboxFiltersRef}
               data-messages-filters=""
               className={cn(
-                // Channel menu stays in page flow. The right list is sticky
-                // and capped so page and list can both scroll.
-                'w-full shrink-0 lg:w-80',
+                // Same sticky edge as the conversation list. Page scroll and
+                // the list's own scroll are unchanged. The unread counts stay
+                // in view instead of leaving with the page.
+                'narrow-scrollbar w-full shrink-0 lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:w-80 lg:self-start lg:min-h-0 lg:bg-page-background',
                 picking || inboxChannelOpen
                   ? 'hidden lg:block'
-                  : 'lg:flex-none lg:overflow-visible',
+                  : 'lg:flex-none',
               )}
             >
               <MessagesInboxFilters
