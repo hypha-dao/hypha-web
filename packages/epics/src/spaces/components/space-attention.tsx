@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
@@ -13,6 +13,7 @@ import {
 import type { Locale } from '@hypha-platform/i18n';
 
 import { getProposalPath, getSignalPath } from '../../common/get-path-function';
+import { HOME_REFRESH_EVENT } from '../../people/components/member-home-resume';
 
 function stripTags(value: string) {
   let out = '';
@@ -63,7 +64,7 @@ export function SpaceAttention({
   const t = useTranslations('OverviewOps');
   const tCoherence = useTranslations('CoherenceTab');
   const { jwt } = useJwt();
-  const { data, isLoading } = useSWR<MemberIntelligence | null>(
+  const { data, isLoading, mutate } = useSWR<MemberIntelligence | null>(
     jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
     async ([url, token]) => {
       const response = await fetch(url, {
@@ -73,7 +74,21 @@ export function SpaceAttention({
       if (!response.ok) return null;
       return (await response.json()) as MemberIntelligence;
     },
+    {
+      // Votes and signal status changes land elsewhere; keep this tile fresh.
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      refreshInterval: 30_000,
+    },
   );
+
+  useEffect(() => {
+    const refresh = () => {
+      void mutate();
+    };
+    window.addEventListener(HOME_REFRESH_EVENT, refresh);
+    return () => window.removeEventListener(HOME_REFRESH_EVENT, refresh);
+  }, [mutate]);
 
   const lead = useMemo(() => {
     if (!data) return null;
@@ -119,11 +134,7 @@ export function SpaceAttention({
       ) : (
         <Link href={itemHref(lang, lead)} className="group mt-4 block">
           <span className="text-1 uppercase tracking-[0.12em] text-foreground">
-            {lead.action === 'outcome'
-              ? lead.passed
-                ? t('statusAccepted')
-                : t('statusRejected')
-              : lead.kind === 'proposal'
+            {lead.kind === 'proposal'
               ? t('nowActionVote')
               : t('nowActionSignal')}
           </span>

@@ -148,11 +148,51 @@ describe('listMemberHomeThreadItems', () => {
         },
         'hypha-energy',
       ),
-    ).toMatchObject({
-      slug: 'invite-member',
-      action: 'outcome',
-      passed: true,
-    });
+    ).toBeNull();
+  });
+
+  it('space needs-you hides when only an accepted proposal remains', () => {
+    expect(
+      listSpaceAttentionLead(
+        {
+          ...home,
+          attention: [],
+          notifications: [],
+          proposals: [
+            {
+              ...home.proposals[0]!,
+              expired: true,
+              outcome: { passed: true, participation: 50, unity: 100 },
+            },
+          ],
+          signals: [],
+        },
+        'hypha-pollinate',
+      ),
+    ).toBeNull();
+  });
+
+  it('space needs-you hides done and cancelled signals', () => {
+    expect(
+      listSpaceAttentionLead(
+        {
+          ...home,
+          attention: [],
+          notifications: [],
+          proposals: [],
+          signals: [
+            { ...home.signals[0]!, progressStatus: 'done' },
+            {
+              ...home.signals[0]!,
+              id: 99,
+              slug: 'cancelled-work',
+              progressStatus: 'cancelled',
+            },
+          ],
+        },
+        'hypha-energy',
+      ),
+    ).toBeNull();
   });
 
   it('leaves done signals out of the waiting catalog', () => {
@@ -864,6 +904,42 @@ describe('memberHomeThreadItemForMessage', () => {
       ],
     });
     expect(item).toBeNull();
+  });
+
+  it('keeps the member’s own card when the brief names someone inside the work', () => {
+    const ownSignal: MemberHomeThreadItem = {
+      kind: 'signal',
+      slug: 'love-based-algorithm',
+      title: 'Fear-based to love-based algorithm',
+      spaceSlug: 'humai-education',
+      spaceTitle: 'HUMAI+ Education & Lifelong Learning',
+      action: 'validate',
+      documentKind: 'signal',
+      authoredByMember: true,
+      category: null,
+      summary: 'Wendy brought IP into this space.',
+      creatorId: 1,
+      creatorName: 'Alex Prate',
+      creatorAvatarUrl: null,
+    };
+    const text =
+      "You raised it yourself, Alex, and it's about the fear-based to love-based algorithm Wendy has brought into HUMAI+ Education & Lifelong Learning.";
+    expect(
+      memberHomeSpeechConflictsWithItem(
+        ownSignal,
+        text,
+        ['HUMAI+ Education & Lifelong Learning'],
+        ['Wendy Example'],
+      ),
+    ).toBe(false);
+    expect(
+      memberHomeCardForSpeech({
+        items: [ownSignal],
+        message: { content: text },
+        hinted: ownSignal,
+        spaceTitles: ['HUMAI+ Education & Lifelong Learning'],
+      })?.slug,
+    ).toBe('love-based-algorithm');
   });
 
   it('does not keep a hinted card when the reply names another person and space', () => {

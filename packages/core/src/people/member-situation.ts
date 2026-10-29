@@ -6,7 +6,13 @@ export const HOME_FOCUS_LIMIT = 8;
 
 const NEW_SIGNAL_MS = 14 * 24 * 60 * 60 * 1000;
 
-const CLOSED = new Set(['done', 'cancelled', 'complete', 'completed']);
+const CLOSED = new Set([
+  'done',
+  'cancelled',
+  'complete',
+  'completed',
+  'archived',
+]);
 
 /** Done / cancelled / complete — no longer waiting on anyone. */
 export function memberHomeSignalProgressIsClosed(

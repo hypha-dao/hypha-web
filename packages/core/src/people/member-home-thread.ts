@@ -514,25 +514,23 @@ export function listMemberHomeAttentionItems(
 }
 
 /**
- * Lead for the space dashboard "Needs you" tile: an open vote or signal in
- * that space, otherwise one closed-vote confirmation when nothing else waits.
+ * Lead for the space dashboard "Needs you" tile: only an open vote or signal
+ * in that space. Accepted / rejected outcomes and done / archived signals are
+ * not waiting — the section hides when the queue is empty.
  */
 export function listSpaceAttentionLead(
   home: MemberIntelligence,
   spaceSlug: string,
   turn = 0,
 ): MemberHomeThreadItem | null {
-  const inSpace = listMemberHomeThreadCatalog(home).filter(
-    (item) => item.spaceSlug === spaceSlug,
+  const waiting = listMemberHomeThreadCatalog(home).filter(
+    (item) =>
+      item.spaceSlug === spaceSlug &&
+      (item.action === 'decision' || item.action === 'validate'),
   );
-  const waiting = inSpace.filter(
-    (item) => item.action === 'decision' || item.action === 'validate',
-  );
-  if (waiting.length > 0) {
-    const index = ((turn % waiting.length) + waiting.length) % waiting.length;
-    return waiting[index] ?? null;
-  }
-  return inSpace.find((item) => item.action === 'outcome') ?? null;
+  if (waiting.length === 0) return null;
+  const index = ((turn % waiting.length) + waiting.length) % waiting.length;
+  return waiting[index] ?? null;
 }
 
 /**
@@ -1080,13 +1078,15 @@ const CLAIMED_CREATOR_STOPWORDS = new Set([
 /**
  * Given names the reply treats as authors ("Edgar's thread", "Edgar has put…").
  * Uses capital letters in the original so "space's agreements" is not a person.
+ * Content mentions ("Wendy has brought", "Wendy's contribution") are not
+ * authorship — those used to clear the member's own card mid-stream.
  */
 function claimedCreatorGivens(text: string): string[] {
   const found = new Set<string>();
   const patterns = [
-    /\b([A-Z][a-zA-Z]{3,})'s\b/g,
-    /\b([A-Z][a-zA-Z]{3,})’s\b/g,
-    /\b([A-Z][a-zA-Z]{3,}) has\b/g,
+    /\b([A-Z][a-zA-Z]{3,})'s\s+(?:thread|signal|proposal|invite|item|work)\b/g,
+    /\b([A-Z][a-zA-Z]{3,})’s\s+(?:thread|signal|proposal|invite|item|work)\b/g,
+    /\b([A-Z][a-zA-Z]{3,}) has (?:put|raised|opened|named)\b/g,
     /\b([A-Z][a-zA-Z]{3,}) put\b/g,
     /\b([A-Z][a-zA-Z]{3,}) raised\b/g,
     /\b([A-Z][a-zA-Z]{3,}) opened\b/g,
@@ -1102,6 +1102,16 @@ function claimedCreatorGivens(text: string): string[] {
   return [...found];
 }
 
+/** The reply says this member raised the item themselves. */
+function textClaimsMemberRaised(text: string): boolean {
+  const haystack = foldHomeText(text);
+  return (
+    /\byou raised\b/.test(haystack) ||
+    /\braised it yourself\b/.test(haystack) ||
+    /\byour (?:own )?(?:signal|proposal|thread|invite|item)\b/.test(haystack)
+  );
+}
+
 /**
  * The reply attributes this work to someone else ("Edgar's thread",
  * "Edgar has put…") while the card belongs to a different creator.
@@ -1114,14 +1124,25 @@ function textClaimsOtherCreator(
 ): boolean {
   const haystack = foldHomeText(text);
   if (!haystack) return false;
+  // Own signal/proposal brief often names people inside the work
+  // ("Wendy has brought…"). That is not a change of author.
+  if (item.authoredByMember && textClaimsMemberRaised(text)) return false;
   const own = new Set(creatorTokens(item.creatorName ?? ''));
   const claimed = new Set(claimedCreatorGivens(text));
   for (const name of peerNames) {
     const given = creatorTokens(name ?? '')[0];
     if (!given || given.length < 4) continue;
     if (
-      haystack.includes(`${given}'s`) ||
-      haystack.includes(`${given} has`) ||
+      haystack.includes(`${given}'s thread`) ||
+      haystack.includes(`${given}'s signal`) ||
+      haystack.includes(`${given}'s proposal`) ||
+      haystack.includes(`${given}'s invite`) ||
+      haystack.includes(`${given}'s item`) ||
+      haystack.includes(`${given}'s work`) ||
+      haystack.includes(`${given} has put`) ||
+      haystack.includes(`${given} has raised`) ||
+      haystack.includes(`${given} has opened`) ||
+      haystack.includes(`${given} has named`) ||
       haystack.includes(`${given} put`) ||
       haystack.includes(`${given} raised`) ||
       haystack.includes(`${given} opened`) ||
