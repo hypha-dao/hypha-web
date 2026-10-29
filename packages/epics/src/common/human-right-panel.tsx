@@ -5522,7 +5522,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (appliedSpaceChatRef.current === applyKey) return;
     appliedSpaceChatRef.current = applyKey;
 
-    exitCoherenceChat();
+    // Prefer `closeCoherenceChat` over `exitCoherenceChat` — the latter closes
+    // the panel on Messages, which races opening `?spaceChat=` from the inbox.
+    closeCoherenceChat();
     joinedRef.current = null;
     messagesRoomIdRef.current = null;
     if (timelineFlushRafRef.current != null) {
@@ -5551,7 +5553,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     router,
     searchParams,
     openHumanChatPanel,
-    exitCoherenceChat,
+    closeCoherenceChat,
   ]);
 
   /**

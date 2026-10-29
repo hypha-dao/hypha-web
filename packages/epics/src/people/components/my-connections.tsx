@@ -3389,6 +3389,7 @@ function MemberList({
 }) {
   const tInbox = useTranslations('Connections');
   const tTypes = useTranslations('CoherenceTab.types');
+  const { openHumanChatPanel } = useHumanChatPanel();
   const chainScroll = useChainScrollAtEdge();
   const setListRef = useCallback(
     (node: HTMLUListElement | null) => {
@@ -3599,7 +3600,13 @@ function MemberList({
               {contextHref && ChannelIcon ? (
                 <Link
                   href={contextHref}
+                  scroll={false}
                   aria-label={tInbox('inbox.openContext', { name: row.name })}
+                  onClick={() => {
+                    // Open before navigation so ConnectedHumanRightPanel is
+                    // mounted and can apply `?spaceChat=` on the space route.
+                    openHumanChatPanel();
+                  }}
                   className="absolute top-1/2 left-4 z-10 size-10 -translate-y-1/2 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-foreground"
                 />
               ) : null}
