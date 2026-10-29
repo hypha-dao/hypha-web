@@ -138,12 +138,12 @@ export function memberHomeListAsk(
 
 function listTurnLine(kind: 'people' | 'spaces' | 'tokens') {
   if (kind === 'people') {
-    return 'This turn: they asked who is around. The people list is already on screen above your reply, online first. One short sentence that the people are above and they can chat or call. Never say below. Do not rank anyone by shared spaces. Do not invent who is online. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not mention a signal, a proposal, or a decision.';
+    return 'This turn: they asked who is around. The people list is already on screen above your reply, online first. One short warm sentence in the same voice as "Where can I be useful?" — like a friend opening the circle, not a UI caption. Invite them toward chat or call. Never say above, below, listed, tap, or screen. Do not rank anyone by shared spaces. Do not invent who is online. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not mention a signal, a proposal, or a decision.';
   }
   if (kind === 'spaces') {
-    return 'This turn: they asked to step into a space. The space list is already on screen above your reply. One short sentence that their spaces are above. Never say below. Do not name a space. Do not suggest they leave one space for another. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
+    return 'This turn: they asked to step into a space. The space list is already on screen above your reply. One short warm sentence in the same voice as "Where can I be useful?" — like a friend opening the door, not a UI caption. Invite them to step in. Never say above, below, listed, tap, or screen. Do not name a space. Do not suggest they leave one space for another. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
   }
-  return 'This turn: they asked to send tokens. The send form is already on screen above your reply. One short sentence that people they can send to are above and they should pick someone. Never say below. Do not name a closest person. Do not rank anyone by shared spaces. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
+  return 'This turn: they asked to send tokens. The send form is already on screen above your reply. One short warm sentence in the same voice as "Where can I be useful?" — like a friend offering to help send, not a UI caption. Ask who they would like to send to. Never say above, below, listed, tap, or screen. Do not name a closest person. Do not rank anyone by shared spaces. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
 }
 
 function isShareControlPhrase(text: string): boolean {
