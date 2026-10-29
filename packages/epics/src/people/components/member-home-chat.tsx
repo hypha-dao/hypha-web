@@ -168,6 +168,15 @@ function isHomeErrorMessage(message: { metadata?: unknown }) {
   );
 }
 
+function isHomeDropLineMessage(
+  message: { role?: string; metadata?: unknown; parts?: HomeMessage['parts'] },
+  droppedLine: string,
+) {
+  if (isHomeErrorMessage(message)) return true;
+  if (message.role !== 'assistant') return false;
+  return messageText(message as HomeMessage) === droppedLine;
+}
+
 function messageIsHomeArrival(message: { metadata?: unknown }) {
   const metadata = message.metadata;
   return (
@@ -688,6 +697,12 @@ function scrollerTopForTarget(node: HTMLElement, target: Element) {
   );
 }
 
+/** Newest arrival only — never the first old reply in the thread. */
+function lastHomeArrivalTarget(node: HTMLElement) {
+  const found = node.querySelectorAll('[data-home-arrival]');
+  return found.length > 0 ? found[found.length - 1]! : null;
+}
+
 export function MemberHomeChat({
   lang,
   intelligence,
@@ -707,7 +722,6 @@ export function MemberHomeChat({
   } = useAuthentication();
   const [input, setInput] = useState('');
   const [drafts, setDrafts] = useState<AiPanelDraftAttachment[]>([]);
-  const [dismissedError, setDismissedError] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const [micOn, setMicOn] = useState(false);
   const [soundReady, setSoundReady] = useState(false);
@@ -781,7 +795,7 @@ export function MemberHomeChat({
             ...body,
             id,
             messages: messages.filter(
-              (message) => !isHomeErrorMessage(message),
+              (message) => !isHomeDropLineMessage(message, droppedLine.current),
             ),
             trigger,
             messageId,
@@ -819,7 +833,9 @@ export function MemberHomeChat({
       clearError();
       return;
     }
-    const alreadyTold = last?.role === 'assistant' && lastText === fallback;
+    const alreadyTold =
+      isHomeErrorMessage(last ?? {}) ||
+      (last?.role === 'assistant' && lastText === fallback);
     if (!alreadyTold) {
       setMessages([
         ...current,
@@ -831,6 +847,9 @@ export function MemberHomeChat({
         },
       ]);
     }
+    // The drop lives in the thread card. Clear transport error so we do not
+    // also paint a second sticky banner under the scroller.
+    clearError();
   }, [clearError, error, setMessages]);
   useOnboardingSpaceSignature(homeMessages, lang);
 
@@ -864,13 +883,8 @@ export function MemberHomeChat({
         setHoldVoice(false);
       }
       await stop();
-      const withoutErrors = messagesRef.current.filter(
-        (message) => !isHomeErrorMessage(message),
-      );
-      if (withoutErrors.length !== messagesRef.current.length) {
-        setMessages(withoutErrors);
-        messagesRef.current = withoutErrors;
-      }
+      // Drop cards stay in the thread. They are filtered only from the
+      // outbound /api/chat body so the model does not re-read them.
       if (!hidden && files.length === 0) {
         const previousAssistant = [...messagesRef.current]
           .reverse()
@@ -933,9 +947,7 @@ export function MemberHomeChat({
             })
           : null;
       if (direct) {
-        const base = messagesRef.current.filter(
-          (message) => !isHomeErrorMessage(message),
-        );
+        const base = messagesRef.current;
         if (direct.item) {
           const full = memberHomeThreadItemForRef(intelligence, direct.item);
           if (full) {
@@ -989,9 +1001,7 @@ export function MemberHomeChat({
             )
           : null;
       if (lookedUp) {
-        const base = messagesRef.current.filter(
-          (message) => !isHomeErrorMessage(message),
-        );
+        const base = messagesRef.current;
         rememberHomeShownItem(lookedUp);
         setShownCardItems(readHomeShownItems());
         const next: HomeMessage[] = [
@@ -1042,7 +1052,6 @@ export function MemberHomeChat({
           ]);
         }
       }
-      setDismissedError(false);
       clearError();
       let token: string | undefined;
       try {
@@ -1294,10 +1303,10 @@ export function MemberHomeChat({
     captureMicrophone: micOn,
     // The left panel is the Home speaker while its sound is on.
     speakReplies: soundOn && !leftPanelVoice,
-    // Card lands first; as soon as words stream under it, start the voice.
-    // Remainder logic finishes the cleaned script after the early sentence.
-    speakEarlyLeadIn: true,
-    speakDisplayedText: true,
+    // Match LIVE: Realtime marin reads the finished reply. Exact-speech TTS
+    // (speakDisplayedText) and early lead-in change rhythm and tone.
+    speakEarlyLeadIn: false,
+    speakDisplayedText: false,
     isStreaming,
     lastAssistantText: holdVoice || holdVoiceForCard ? '' : lastAssistantText,
     lastAssistantMessageId,
@@ -1489,6 +1498,12 @@ export function MemberHomeChat({
           kept &&
           !memberHomeSpeechConflictsWithItem(kept, text, spaceTitles, peerNames)
         ) {
+          // Acted cards stay put. Rematching after the next turn stole the
+          // finished proposal/signal from the history the member just used.
+          if (actedKeySet.has(memberHomeThreadItemKey(kept))) {
+            map.set(message.id, kept);
+            return;
+          }
           // Speech may name a different open item without conflicting on
           // space/kind — prefer that card so the reply is not stuck on
           // the previous "That's noted" card.
@@ -1520,7 +1535,14 @@ export function MemberHomeChat({
       }
     });
     return map;
-  }, [cardItems, homeMessages, intelligence, isStreaming, widgetKindFor]);
+  }, [
+    actedKeySet,
+    cardItems,
+    homeMessages,
+    intelligence,
+    isStreaming,
+    widgetKindFor,
+  ]);
 
   // Persist cards on disk only — never setMessages here. Stamping via
   // setMessages looped into React #185; the crash remount then hit #310.
@@ -1666,9 +1688,7 @@ export function MemberHomeChat({
         }
         return;
       }
-      const target =
-        node.querySelector('[data-home-arrival]') ??
-        node.querySelector('[data-home-reply-text]');
+      const target = lastHomeArrivalTarget(node);
       if (!target) return;
       arrivalScrollStarted.current = true;
       const top = scrollerTopForTarget(node, target);
@@ -1742,7 +1762,7 @@ export function MemberHomeChat({
       return;
     }
     const node = scroller.current;
-    if (node?.querySelector('[data-home-arrival]')) return;
+    if (node && lastHomeArrivalTarget(node)) return;
     holdVoiceRef.current = false;
     setHoldVoice(false);
     if (node) {
@@ -1767,6 +1787,41 @@ export function MemberHomeChat({
     { key: 'decision', ask: t('chipDecision') },
     { key: 'tokens', ask: t('chipTokens') },
   ] as const;
+
+  const renderSuggestionChips = (rowKey: string) => (
+    <div
+      key={`home-chips-${rowKey}`}
+      className="narrow-scrollbar -mx-1 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto px-1 pt-1"
+    >
+      {freshStart ? (
+        <button
+          type="button"
+          disabled={isStreaming}
+          className="shrink-0 rounded-none border border-foreground bg-foreground px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-background disabled:opacity-50"
+          onClick={() => {
+            void send(firstPromptAsk);
+          }}
+        >
+          {firstPromptAsk}
+        </button>
+      ) : null}
+      {chips
+        .filter((chip) => !freshStart || chip.ask !== firstPromptAsk)
+        .map((chip) => (
+          <button
+            key={`${rowKey}-${chip.key}`}
+            type="button"
+            disabled={isStreaming}
+            className="shrink-0 rounded-none border border-foreground bg-transparent px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-foreground disabled:opacity-50"
+            onClick={() => {
+              void send(chip.ask);
+            }}
+          >
+            {chip.ask}
+          </button>
+        ))}
+    </div>
+  );
 
   const renderWidget = (widget: HomeWidget) => {
     if (widget.kind === 'spaces') {
@@ -1802,24 +1857,31 @@ export function MemberHomeChat({
     );
   };
 
-  const lastAssistant = [...homeMessages]
-    .reverse()
-    .find((message) => message.role === 'assistant');
-  const visibleError =
-    error &&
-    !dismissedError &&
-    !homeAssistantTurnSucceeded(
-      lastAssistant,
-      lastAssistant ? messageText(lastAssistant) : '',
-      droppedLine.current,
+  const retryLastUserAsk = () => {
+    const last = [...homeMessages]
+      .reverse()
+      .find(
+        (message) => message.role === 'user' && !message.metadata?.homeArrival,
+      );
+    if (last) void send(messageText(last));
+  };
+
+  const dismissHomeError = (messageId: string) => {
+    clearError();
+    setMessages((current) =>
+      current.filter((message) => message.id !== messageId),
     );
+  };
+
+  const isDropCardMessage = (message: HomeMessage) =>
+    isHomeDropLineMessage(message, droppedLine.current);
 
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
       <HomeSendMotion />
       <div
         ref={scroller}
-        className="narrow-scrollbar min-h-0 w-full min-w-0 flex-1 overflow-y-auto"
+        className="narrow-scrollbar min-h-0 w-full min-w-0 flex-1 overflow-y-auto [overflow-anchor:none]"
         aria-label={t('conversation')}
       >
         <div className={cn(HOME_CHAT_COLUMN, 'grid gap-4 px-5 py-4 md:px-4')}>
@@ -1835,12 +1897,40 @@ export function MemberHomeChat({
               </p>
             </article>
           ) : null}
+          {freshStart ? renderSuggestionChips('fresh') : null}
           {homeMessages.map((message, index) => {
             const attached = widgets.filter(
               (widget) => widget.after === index + 1,
             );
             if (message.metadata?.homeArrival && attached.length === 0) {
               return null;
+            }
+            if (isDropCardMessage(message)) {
+              return (
+                <article key={message.id} className="grid gap-3">
+                  <div className="border border-border bg-background-2 px-3 py-2 text-2">
+                    <p>{t('threadDropped')}</p>
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        colorVariant="neutral"
+                        onClick={retryLastUserAsk}
+                      >
+                        {t('tryAgain')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        colorVariant="neutral"
+                        onClick={() => dismissHomeError(message.id)}
+                      >
+                        {t('dismiss')}
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              );
             }
             const rawText = messageText(message).replace(/\*\*/g, '');
             const board =
@@ -2000,6 +2090,12 @@ export function MemberHomeChat({
                   ) : null}
                 </>
               ) : null;
+            const showTurnChips =
+              !mine &&
+              showMessage &&
+              !streamingThis &&
+              !message.metadata?.homeArrival &&
+              !isDropCardMessage(message);
             return (
               <div key={message.id} className="grid gap-4">
                 {attached.map((widget) => (
@@ -2105,6 +2201,7 @@ export function MemberHomeChat({
                     ) : null}
                   </article>
                 ) : null}
+                {showTurnChips ? renderSuggestionChips(message.id) : null}
               </div>
             );
           })}
@@ -2124,7 +2221,12 @@ export function MemberHomeChat({
             }}
           />
           {showArrivalMask ? (
-            <article className="grid gap-3" aria-live="polite" aria-busy="true">
+            <article
+              data-home-arrival=""
+              className="grid gap-3"
+              aria-live="polite"
+              aria-busy="true"
+            >
               {/* Card first — then mark + words underneath, same as a live reply. */}
               <div className="border border-border bg-background p-3 pl-11">
                 <HomeWave
@@ -2152,74 +2254,7 @@ export function MemberHomeChat({
         </div>
       </div>
 
-      {visibleError ? (
-        <div className={cn(HOME_CHAT_COLUMN, 'mb-2 px-5 md:px-4')}>
-          <div className="border border-border bg-background-2 px-3 py-2 text-2">
-            <p>{t('threadDropped')}</p>
-            <div className="mt-2 flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                colorVariant="neutral"
-                onClick={() => {
-                  const last = [...homeMessages]
-                    .reverse()
-                    .find(
-                      (message) =>
-                        message.role === 'user' &&
-                        !message.metadata?.homeArrival,
-                    );
-                  if (last) void send(messageText(last));
-                }}
-              >
-                {t('tryAgain')}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                colorVariant="neutral"
-                onClick={() => {
-                  setDismissedError(true);
-                  clearError();
-                }}
-              >
-                {t('dismiss')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
-        <div className="narrow-scrollbar mx-5 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto pt-2 md:mx-4">
-          {freshStart ? (
-            <button
-              type="button"
-              disabled={isStreaming}
-              className="shrink-0 rounded-none border border-foreground bg-foreground px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-background disabled:opacity-50"
-              onClick={() => {
-                void send(firstPromptAsk);
-              }}
-            >
-              {firstPromptAsk}
-            </button>
-          ) : null}
-          {chips
-            .filter((chip) => !freshStart || chip.ask !== firstPromptAsk)
-            .map((chip) => (
-              <button
-                key={chip.key}
-                type="button"
-                disabled={isStreaming}
-                className="shrink-0 rounded-none border border-foreground bg-transparent px-3 py-2 text-[11px] font-medium leading-none whitespace-nowrap text-foreground disabled:opacity-50"
-                onClick={() => {
-                  void send(chip.ask);
-                }}
-              >
-                {chip.ask}
-              </button>
-            ))}
-        </div>
+      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pt-2 pb-3')}>
         {dialogue && micNeedsGrant ? (
           <button
             type="button"

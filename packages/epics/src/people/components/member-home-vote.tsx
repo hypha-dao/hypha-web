@@ -58,6 +58,14 @@ export function MemberHomeVote({
       if (next === 'yes') await handleAccept();
       else await handleReject();
       setChoice(next);
+      // Vote buttons unmount after cast; blur so the browser does not
+      // scroll the focused control (and the whole home) back into view.
+      if (
+        typeof document !== 'undefined' &&
+        document.activeElement instanceof HTMLElement
+      ) {
+        document.activeElement.blur();
+      }
       markHomeActed(`proposal:${documentSlug}`);
     } catch (error) {
       console.error('Vote failed', error);

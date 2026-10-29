@@ -942,19 +942,19 @@ function ChatSkeleton() {
           <Tile title={t('useful')} busy>
             <CardSkeleton lines={3} />
           </Tile>
+          <div className="narrow-scrollbar -mx-1 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto px-1 pt-1">
+            {chipWidths.map((width, index) => (
+              <HomePulse
+                key={width}
+                className="h-8 shrink-0"
+                delayMs={index * 70}
+                style={{ width }}
+              />
+            ))}
+          </div>
         </div>
       </div>
-      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pb-3')}>
-        <div className="narrow-scrollbar mx-5 mb-2 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto pt-2 md:mx-4">
-          {chipWidths.map((width, index) => (
-            <HomePulse
-              key={width}
-              className="h-8 shrink-0"
-              delayMs={index * 70}
-              style={{ width }}
-            />
-          ))}
-        </div>
+      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pt-2 pb-3')}>
         <div className="mx-5 flex h-[4.5rem] items-end gap-2 border border-border px-3 py-3 md:mx-4">
           <HomePulse className="h-8 w-8 shrink-0" />
           <HomePulse className="h-8 w-8 shrink-0" delayMs={40} />
