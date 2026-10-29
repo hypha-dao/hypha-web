@@ -147,20 +147,15 @@ export function ProfileStoryConnected({
         surname:
           patch.surname ?? saved.surname ?? asOptionalString(source.surname),
         nickname:
-          patch.nickname ??
-          saved.nickname ??
-          asOptionalString(source.nickname),
+          patch.nickname ?? saved.nickname ?? asOptionalString(source.nickname),
         description:
           patch.description ??
           saved.description ??
           asOptionalString(source.description),
         email: patch.email ?? saved.email ?? asOptionalString(source.email),
         location:
-          patch.location ??
-          saved.location ??
-          asOptionalString(source.location),
-        links:
-          patch.links ?? saved.links ?? asOptionalLinks(source.links),
+          patch.location ?? saved.location ?? asOptionalString(source.location),
+        links: patch.links ?? saved.links ?? asOptionalLinks(source.links),
         preferredCurrency:
           chosenCurrency ??
           saved.preferredCurrency ??
