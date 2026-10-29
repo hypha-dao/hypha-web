@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
 import {
-  listMemberHomeThreadItems,
+  listSpaceAttentionLead,
   useJwt,
   type MemberHomeThreadItem,
   type MemberIntelligence,
@@ -75,23 +75,16 @@ export function SpaceAttention({
     },
   );
 
-  const queue = useMemo(() => {
-    if (!data) return [];
-    return listMemberHomeThreadItems(data).filter(
-      (item) => item.spaceSlug === spaceSlug,
-    );
-  }, [data, spaceSlug]);
+  const lead = useMemo(() => {
+    if (!data) return null;
+    return listSpaceAttentionLead(data, spaceSlug, turn);
+  }, [data, spaceSlug, turn]);
 
   if (!jwt) return null;
 
   const inSpace =
     data?.spaces.some((space) => space.slug === spaceSlug) ?? false;
-  if (!isLoading && (!data || !inSpace) && queue.length === 0) return null;
-
-  const lead =
-    queue.length > 0
-      ? queue[((turn % queue.length) + queue.length) % queue.length] ?? null
-      : null;
+  if (!isLoading && (!data || !inSpace) && lead == null) return null;
 
   const eyebrow = (item: MemberHomeThreadItem) => {
     if (item.category) {
@@ -126,7 +119,11 @@ export function SpaceAttention({
       ) : (
         <Link href={itemHref(lang, lead)} className="group mt-4 block">
           <span className="text-1 uppercase tracking-[0.12em] text-foreground">
-            {lead.kind === 'proposal'
+            {lead.action === 'outcome'
+              ? lead.passed
+                ? t('statusAccepted')
+                : t('statusRejected')
+              : lead.kind === 'proposal'
               ? t('nowActionVote')
               : t('nowActionSignal')}
           </span>

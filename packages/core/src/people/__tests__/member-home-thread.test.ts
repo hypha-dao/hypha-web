@@ -5,7 +5,9 @@ import {
   SHOW_MEMBER_HOME_ITEM_TOOL,
   type MemberHomeThreadItem,
   listMemberHomeAttentionItems,
+  listMemberHomeThreadCatalog,
   listMemberHomeThreadItems,
+  listSpaceAttentionLead,
   memberHomeDirectReply,
   memberHomeTalkIsResting,
   mergeMemberHomeAttention,
@@ -118,6 +120,50 @@ describe('listMemberHomeThreadItems', () => {
     expect(items.map((item) => item.slug)).toEqual(['define-products']);
   });
 
+  it('space needs-you prefers the next open item over a closed vote', () => {
+    const closedVote = {
+      ...home.proposals[0]!,
+      spaceSlug: 'hypha-energy',
+      spaceTitle: 'Hypha Energy',
+      expired: true,
+      outcome: { passed: true, participation: 50, unity: 100 },
+    };
+    expect(
+      listSpaceAttentionLead(
+        {
+          ...home,
+          proposals: [closedVote],
+        },
+        'hypha-energy',
+      ),
+    ).toMatchObject({ slug: 'define-products', action: 'validate' });
+    expect(
+      listSpaceAttentionLead(
+        {
+          ...home,
+          attention: [],
+          notifications: [],
+          proposals: [closedVote],
+          signals: [],
+        },
+        'hypha-energy',
+      ),
+    ).toMatchObject({
+      slug: 'invite-member',
+      action: 'outcome',
+      passed: true,
+    });
+  });
+
+  it('leaves done signals out of the waiting catalog', () => {
+    const items = listMemberHomeThreadCatalog({
+      ...home,
+      signals: [{ ...home.signals[0]!, progressStatus: 'done' }],
+      proposals: [],
+    });
+    expect(items.map((item) => item.slug)).toEqual([]);
+  });
+
   it('leaves out a closed vote that has no recorded outcome', () => {
     const items = listMemberHomeThreadItems({
       ...home,
@@ -148,7 +194,7 @@ describe('listMemberHomeThreadItems', () => {
   });
 
   it('tells a closed vote as the outcome, not a decision', () => {
-    const items = listMemberHomeThreadItems({
+    const closedHome = {
       ...home,
       proposals: [
         {
@@ -157,8 +203,17 @@ describe('listMemberHomeThreadItems', () => {
           outcome: { passed: true, participation: 62, unity: 91 },
         },
       ],
-    });
-    const proposal = items.find((item) => item.slug === 'invite-member');
+    };
+    // Focus walk drops closed votes so they are not "Needs you". The catalog
+    // still keeps them for a confirmation brief.
+    expect(
+      listMemberHomeThreadItems(closedHome).find(
+        (item) => item.slug === 'invite-member',
+      ),
+    ).toBeUndefined();
+    const proposal = listMemberHomeThreadCatalog(closedHome).find(
+      (item) => item.slug === 'invite-member',
+    );
     expect(proposal).toMatchObject({
       action: 'outcome',
       passed: true,

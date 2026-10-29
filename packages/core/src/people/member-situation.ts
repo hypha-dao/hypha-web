@@ -8,6 +8,13 @@ const NEW_SIGNAL_MS = 14 * 24 * 60 * 60 * 1000;
 
 const CLOSED = new Set(['done', 'cancelled', 'complete', 'completed']);
 
+/** Done / cancelled / complete — no longer waiting on anyone. */
+export function memberHomeSignalProgressIsClosed(
+  status: string | null | undefined,
+): boolean {
+  return CLOSED.has((status ?? '').trim().toLowerCase());
+}
+
 type FocusBucket =
   | 'overdue'
   | 'urgent'
@@ -50,10 +57,6 @@ export type HomeThreadFocus = {
   signals: readonly FocusSignal[];
   networkSignals?: readonly { slug: string | null }[];
 };
-
-function closed(status: string | null | undefined): boolean {
-  return CLOSED.has((status ?? '').trim().toLowerCase());
-}
 
 function urgent(priority: string | null | undefined): boolean {
   const value = (priority ?? '').trim().toLowerCase();
@@ -111,7 +114,7 @@ function bucketFor(
 ): FocusBucket | null {
   if (item.kind === 'signal' && network.has(item.slug)) return 'network';
   if (item.kind === 'signal') {
-    if (closed(signal?.progressStatus)) return null;
+    if (memberHomeSignalProgressIsClosed(signal?.progressStatus)) return null;
     const due = signal?.dueAt ? Date.parse(signal.dueAt) : NaN;
     if (
       signal?.assignedToMember &&
@@ -129,7 +132,10 @@ function bucketFor(
     return null;
   }
   if (item.documentKind === 'discussion') return 'discussion';
-  if (item.action === 'decision' || item.kind === 'proposal') return 'vote';
+  // Closed votes stay in the catalog for a confirmation brief, but they are
+  // not something that still needs a vote.
+  if (item.action === 'outcome') return null;
+  if (item.action === 'decision') return 'vote';
   return 'other';
 }
 

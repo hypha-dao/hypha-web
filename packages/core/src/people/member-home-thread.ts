@@ -1,5 +1,8 @@
 import type { MemberIntelligence } from './member-intelligence';
-import { balanceMemberHomeThread } from './member-situation';
+import {
+  balanceMemberHomeThread,
+  memberHomeSignalProgressIsClosed,
+} from './member-situation';
 
 /** Tool the home assistant calls so a card belongs to that reply. */
 export const SHOW_MEMBER_HOME_ITEM_TOOL = 'show_member_home_item';
@@ -372,6 +375,7 @@ function collectMemberHomeThreadItems(
       continue;
     }
     const signal = signalsBySlug.get(note.targetSlug);
+    if (memberHomeSignalProgressIsClosed(signal?.progressStatus)) continue;
     const creatorId = signal?.creatorId ?? note.creatorId ?? null;
     const dueAt = signal?.dueAt ?? null;
     if (raisedByMember(home, creatorId) && !memberHomeDeadlineNear(dueAt)) {
@@ -404,6 +408,7 @@ function collectMemberHomeThreadItems(
 
   for (const signal of home.signals) {
     if (!signal.slug) continue;
+    if (memberHomeSignalProgressIsClosed(signal.progressStatus)) continue;
     if (
       raisedByMember(home, signal.creatorId) &&
       !memberHomeDeadlineNear(signal.dueAt)
@@ -495,13 +500,39 @@ export function listMemberHomeAttentionItems(
     ),
   );
   return collectMemberHomeThreadItems(home)
-    .filter((item) => !(item.kind === 'signal' && network.has(item.slug)))
+    .filter(
+      (item) =>
+        item.action !== 'outcome' &&
+        !(item.kind === 'signal' && network.has(item.slug)),
+    )
     .sort((left, right) => {
       const leftAt = attentionAt(home, left);
       const rightAt = attentionAt(home, right);
       if (leftAt !== rightAt) return leftAt < rightAt ? 1 : -1;
       return left.slug < right.slug ? -1 : left.slug > right.slug ? 1 : 0;
     });
+}
+
+/**
+ * Lead for the space dashboard "Needs you" tile: an open vote or signal in
+ * that space, otherwise one closed-vote confirmation when nothing else waits.
+ */
+export function listSpaceAttentionLead(
+  home: MemberIntelligence,
+  spaceSlug: string,
+  turn = 0,
+): MemberHomeThreadItem | null {
+  const inSpace = listMemberHomeThreadCatalog(home).filter(
+    (item) => item.spaceSlug === spaceSlug,
+  );
+  const waiting = inSpace.filter(
+    (item) => item.action === 'decision' || item.action === 'validate',
+  );
+  if (waiting.length > 0) {
+    const index = ((turn % waiting.length) + waiting.length) % waiting.length;
+    return waiting[index] ?? null;
+  }
+  return inSpace.find((item) => item.action === 'outcome') ?? null;
 }
 
 /**
