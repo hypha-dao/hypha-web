@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import {
   HumanChatPanelErrorBoundary,
   HumanRightPanel,
+  useHumanChatPanel,
   useIsNetworkContext,
   useIsSpaceContext,
 } from '@hypha-platform/epics';
@@ -17,7 +18,8 @@ function isSpaceChatDeepLink(value: string | null | undefined): boolean {
 }
 
 export function ConnectedHumanRightPanel() {
-  const { open, openMobile } = useSidebar();
+  const { open: sidebarOpen, openMobile } = useSidebar();
+  const { open: contextOpen } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
   const isNetwork = useIsNetworkContext();
   const searchParams = useSearchParams();
@@ -25,16 +27,17 @@ export function ConnectedHumanRightPanel() {
     searchParams?.get('spaceChat'),
   );
   const [hasOpened, setHasOpened] = useState(false);
+  const panelOpen = sidebarOpen || openMobile || contextOpen;
 
   useEffect(() => {
-    // `?spaceChat=` must mount the panel so HumanRightPanel can open Public /
-    // Space / Ecosystem — otherwise the lazy gate leaves the side panel closed.
-    if (open || openMobile || hasSpaceChatDeepLink) {
+    // `?spaceChat=` must mount the panel so HumanRightPanel can open the space
+    // room — otherwise the lazy gate leaves the side panel closed.
+    if (panelOpen || hasSpaceChatDeepLink) {
       setHasOpened(true);
     } else if (!isSpace && !isNetwork) {
       setHasOpened(false);
     }
-  }, [open, openMobile, isSpace, isNetwork, hasSpaceChatDeepLink]);
+  }, [panelOpen, isSpace, isNetwork, hasSpaceChatDeepLink]);
 
   if (!hasOpened && !hasSpaceChatDeepLink) {
     return null;

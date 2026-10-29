@@ -1154,7 +1154,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const router = useRouter();
   const searchParams = useSearchParams();
-  const routeSpaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
+  // Root-layout mounts often miss nested `useParams().id` — pathname is authoritative.
+  const routeSpaceSlug =
+    (typeof params?.id === 'string' ? params.id.trim() : '') ||
+    getDhoSpaceSlugFromPathname(pathname) ||
+    '';
 
   const matrix = useMatrix();
   const {
