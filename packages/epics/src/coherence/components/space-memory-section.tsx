@@ -31,9 +31,14 @@ import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import {
+  clearMainColumnScrollFreeze,
+  freezeMainColumnScrollAt,
   getMainColumnScrollElement,
-  subscribeMainColumnScroll,
+  popMainColumnOverlayScrollLock,
+  pushMainColumnOverlayScrollLock,
+  scrollMainColumnTo,
 } from '../../common/main-column-scroll';
+import { spaceMemoryListHeight } from './space-memory-list-height';
 
 type SpaceMemorySectionProps = {
   spaceSlug: string;
@@ -64,30 +69,6 @@ function mobileTabOffset(): number {
   const height = probe.getBoundingClientRect().height;
   probe.remove();
   return height || 96;
-}
-
-function desktopFooterOffset(): number {
-  if (typeof window === 'undefined') return 0;
-  if (!window.matchMedia(DESKTOP_MENU).matches) return 0;
-  const footer = document.querySelector('footer');
-  if (!footer) return 0;
-  const height = footer.getBoundingClientRect().height;
-  return Number.isFinite(height) ? Math.ceil(height) : 0;
-}
-
-function availableListHeight(frameTop: number): number {
-  const scrollEl = getMainColumnScrollElement();
-  const scrollBottom =
-    scrollEl?.getBoundingClientRect().bottom ??
-    (window.visualViewport
-      ? window.visualViewport.offsetTop + window.visualViewport.height
-      : window.innerHeight);
-  const viewportBottom = window.visualViewport
-    ? window.visualViewport.offsetTop + window.visualViewport.height
-    : window.innerHeight;
-  const visibleBottom = Math.min(scrollBottom, viewportBottom);
-  const chrome = mobileTabOffset() + desktopFooterOffset();
-  return Math.max(240, Math.floor(visibleBottom - frameTop - chrome));
 }
 
 export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
@@ -270,34 +251,66 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   ]);
 
   React.useEffect(() => {
-    const frame = listFrameRef.current;
-    if (!frame) return;
+    // Keep title, where-card, and category filters on screen. Only the right
+    // list scrolls. Measuring height from a scrolling frame top made the box
+    // grow on every wheel tick and dragged the filters away.
+    let locked = false;
+    let documentLocked = false;
+    let previousDocumentOverflow = '';
+
+    const armLock = () => {
+      if (locked) return;
+      if (getMainColumnScrollElement()) {
+        pushMainColumnOverlayScrollLock();
+        locked = true;
+        return;
+      }
+      if (documentLocked) return;
+      previousDocumentOverflow = document.documentElement.style.overflowY;
+      document.documentElement.style.overflowY = 'hidden';
+      document.documentElement.scrollTop = 0;
+      documentLocked = true;
+    };
 
     const fit = () => {
+      armLock();
+      const frame = listFrameRef.current;
+      if (!frame) return;
       if (!window.matchMedia(DESKTOP_SPLIT).matches) {
         frame.style.height = '';
         return;
       }
-      frame.style.height = `${availableListHeight(
-        frame.getBoundingClientRect().top,
-      )}px`;
+      const scrollEl = getMainColumnScrollElement();
+      const viewportBottom = window.visualViewport
+        ? window.visualViewport.offsetTop + window.visualViewport.height
+        : window.innerHeight;
+      frame.style.height = `${spaceMemoryListHeight({
+        frameTop: frame.getBoundingClientRect().top,
+        scrollBottom:
+          scrollEl?.getBoundingClientRect().bottom ?? viewportBottom,
+        viewportBottom,
+        tabOffset: mobileTabOffset(),
+      })}px`;
     };
 
+    scrollMainColumnTo(0);
+    freezeMainColumnScrollAt(0);
     const observer = new ResizeObserver(fit);
     fit();
     observer.observe(document.documentElement);
-    const footer = document.querySelector('footer');
-    if (footer) observer.observe(footer);
-    const stopWatchingScrollRoot = subscribeMainColumnScroll(fit);
     window.addEventListener('resize', fit);
     window.visualViewport?.addEventListener('resize', fit);
 
     return () => {
-      stopWatchingScrollRoot();
       observer.disconnect();
       window.removeEventListener('resize', fit);
       window.visualViewport?.removeEventListener('resize', fit);
-      frame.style.height = '';
+      if (listFrameRef.current) listFrameRef.current.style.height = '';
+      clearMainColumnScrollFreeze();
+      if (locked) popMainColumnOverlayScrollLock();
+      if (documentLocked) {
+        document.documentElement.style.overflowY = previousDocumentOverflow;
+      }
     };
   }, [isLoading, spaceOrientation, searchTerm]);
 
@@ -404,7 +417,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
           >
             <nav
               aria-label={t('spaceMemoryOutline')}
-              className="w-full shrink-0 self-start lg:w-80"
+              className="narrow-scrollbar w-full shrink-0 self-start overflow-y-auto overscroll-contain lg:w-80 lg:self-stretch lg:max-h-full"
             >
               <div className="border border-border bg-background">
                 {branches.map((item) => {
