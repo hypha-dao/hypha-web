@@ -105,6 +105,24 @@ export const chatRequestSchema = z.object({
   memberHomePartOfDay: z
     .enum(['morning', 'afternoon', 'evening', 'night'])
     .nullish(),
+  /**
+   * Right-side Space Context section chat. The specialist for this section
+   * receives the current Markdown, this thread, and its own memory.
+   */
+  spaceContext: z
+    .object({
+      sectionKey: z.enum([
+        'mission',
+        'vision',
+        'strategy',
+        'objectives',
+        'projects',
+        'key_repositories',
+        'tools',
+        'how_we_decide',
+      ]),
+    })
+    .optional(),
   /** Live proposal form snapshot from the open Agreements create overlay. */
   activeProposalFormSnapshot: z
     .object({

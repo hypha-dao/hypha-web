@@ -30,6 +30,7 @@ const spaceScreenSchema = z.enum([
   'treasury',
   'rewards',
   'memory',
+  'context',
   'space_configuration',
 ] satisfies [SpaceScreen, ...SpaceScreen[]]);
 
@@ -188,6 +189,9 @@ function inferScreenFromIntent(
   }
   if (/\b(reward|rewards|incentive|incentives)\b/.test(normalized)) {
     return 'rewards';
+  }
+  if (/\b(context|mission|vision|strategy|objectives)\b/.test(normalized)) {
+    return 'context';
   }
   if (/\b(memory|knowledge|transcript|recording|notes)\b/.test(normalized)) {
     return 'memory';

@@ -25,6 +25,7 @@ export function getCreateRouteSegmentForProposalLabel(
   const labelToRoute: Record<string, string> = {
     Contribution: 'propose-contribution',
     'Collective Agreement': '',
+    'Space Context': 'ratify-context',
     Expenses: 'pay-for-expenses',
     Funding: 'deploy-funds',
     Airdrop: 'airdrop',
