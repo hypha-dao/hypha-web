@@ -1,5 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { stringToHex } from 'viem';
+
+vi.mock('server-only', () => ({}));
+
+const { multicall } = vi.hoisted(() => ({
+  multicall: vi.fn(),
+}));
+
+vi.mock('../../common/server/web3-rpc/client', () => ({
+  web3Client: { multicall, readContract: vi.fn() },
+}));
 
 import {
   assembleEnergyCommunitySnapshot,
@@ -8,6 +18,11 @@ import {
   mapEnergySnapshotOptimization,
   mapEnergySnapshotSource,
 } from '../server/community-snapshot-map';
+import {
+  clearEnergyCommunitySnapshotCache,
+  peekEnergyCommunitySnapshot,
+  readEnergyCommunitySnapshot,
+} from '../server/community-snapshot';
 
 const sourceId = stringToHex('PONTA_SCHOOL_PV', { size: 32 });
 const member = '0x1111111111111111111111111111111111111111' as const;
@@ -121,4 +136,50 @@ describe('energy community snapshot mapping', () => {
     expect(snapshot.memberAddresses).toEqual([]);
     expect(snapshot.overview.memberCount).toBe(0);
   });
+
+  it('reloads when getSourceIds fails instead of caching a zero-source snapshot', async () => {
+    const community = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as const;
+    const viewResults: Record<string, unknown> = {
+      getCommunityFeeBps: 0,
+      getAggregatorFeeBps: 0,
+      getGridBalance: 0n,
+      getSettledBalance: 0n,
+      getContractStablecoinBalance: 0n,
+      verifyZeroSum: [true, 0n],
+      getMemberAddresses: [],
+      getCommunityAddress: community,
+      getAggregatorAddress: community,
+      getGridOperator: community,
+      getExportDeviceId: 0n,
+      getOptimizationConfig: [[], 0, 0n, 0, false],
+      getSocialWallets: [],
+    };
+    multicall.mockImplementation(
+      async ({
+        contracts,
+      }: {
+        contracts: ReadonlyArray<{ functionName: string }>;
+      }) =>
+        contracts.map((contract) =>
+          contract.functionName === 'getSourceIds'
+            ? { status: 'failure' }
+            : { status: 'success', result: viewResults[contract.functionName] },
+        ),
+    );
+
+    clearEnergyCommunitySnapshotCache();
+    const first = await readEnergyCommunitySnapshot(community);
+    expect(first.sourcesOk).toBe(false);
+    expect(first.overview.sourceCount).toBe(0);
+    expect(peekEnergyCommunitySnapshot(community)).toBeUndefined();
+
+    const second = await readEnergyCommunitySnapshot(community);
+    expect(second.sourcesOk).toBe(false);
+    expect(multicall).toHaveBeenCalledTimes(2);
+  });
+});
+
+afterEach(() => {
+  multicall.mockReset();
+  clearEnergyCommunitySnapshotCache();
 });
