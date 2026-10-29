@@ -264,8 +264,9 @@ async function readCommunitySnapshotUncached(
         contractStablecoinBalance: multicallValue<bigint>(results[4]),
         zeroSumStatus: multicallValue<readonly [boolean, bigint]>(results[5]),
         sourceIds: multicallValue<readonly `0x${string}`[]>(results[6]) ?? [],
-        memberAddresses:
-          multicallValue<readonly `0x${string}`[]>(results[7]) ?? [],
+        memberAddressesRaw: multicallValue<readonly `0x${string}`[]>(
+          results[7],
+        ),
         communityAddress: multicallValue<`0x${string}`>(results[8]),
         aggregatorAddress: multicallValue<`0x${string}`>(results[9]),
         gridOperator: multicallValue<`0x${string}`>(results[10]),
@@ -317,7 +318,7 @@ async function readCommunitySnapshotUncached(
       contractStablecoinBalance,
       zeroSumStatus,
       sourceIds: sourceIds ?? [],
-      memberAddresses: memberAddresses ?? [],
+      memberAddressesRaw: memberAddresses,
       communityAddress,
       aggregatorAddress,
       gridOperator,
@@ -345,7 +346,7 @@ async function readCommunitySnapshotUncached(
     sourcesAndMembers = await readSourcesAndMembers(
       proxy,
       communityViews.sourceIds,
-      communityViews.memberAddresses,
+      communityViews.memberAddressesRaw ?? [],
       usedMulticall,
     );
   } catch (error) {
@@ -357,7 +358,7 @@ async function readCommunitySnapshotUncached(
     sourcesAndMembers = await readSourcesAndMembers(
       proxy,
       communityViews.sourceIds,
-      communityViews.memberAddresses,
+      communityViews.memberAddressesRaw ?? [],
       false,
     );
   }
@@ -369,7 +370,8 @@ async function readCommunitySnapshotUncached(
     settledBalance: communityViews.settledBalance,
     contractStablecoinBalance: communityViews.contractStablecoinBalance,
     zeroSumStatus: communityViews.zeroSumStatus,
-    memberAddresses: communityViews.memberAddresses,
+    memberAddresses: communityViews.memberAddressesRaw ?? [],
+    memberAddressesOk: communityViews.memberAddressesRaw !== null,
     sourceCount: communityViews.sourceIds.length,
     sources: sourcesAndMembers.sources,
     memberDetails: sourcesAndMembers.memberDetails,

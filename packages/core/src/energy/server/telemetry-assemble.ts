@@ -12,6 +12,10 @@ export type EnergyTelemetryAggregateRow = {
   kind: 'consumption' | 'production' | 'import' | 'export';
   meter_id: number;
   total_wh: string;
+  /** Earliest `interval_start` in this bucket group (not the date_trunc key). */
+  first_reading?: string | null;
+  /** Latest `interval_start` in this bucket group (not the date_trunc key). */
+  last_reading?: string | null;
 };
 
 export const ENERGY_TELEMETRY_PERIOD_CONFIG: Record<
@@ -164,10 +168,10 @@ export function assembleEnergyTelemetry(input: {
   let minT: Date | null = null;
   let maxT: Date | null = null;
   for (const row of input.rows) {
-    const parsed = new Date(row.bucket);
-    if (Number.isNaN(parsed.getTime())) continue;
-    if (!minT || parsed < minT) minT = parsed;
-    if (!maxT || parsed > maxT) maxT = parsed;
+    const from = new Date(row.first_reading ?? row.bucket);
+    const to = new Date(row.last_reading ?? row.bucket);
+    if (!Number.isNaN(from.getTime()) && (!minT || from < minT)) minT = from;
+    if (!Number.isNaN(to.getTime()) && (!maxT || to > maxT)) maxT = to;
   }
 
   const { keys, labels } = buildEnergyTelemetryBucketKeys(input.period, maxT);

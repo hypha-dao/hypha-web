@@ -44,6 +44,12 @@ const visibilityCache = new Map<
   { expiresAt: number; visibility: SpaceVisibility }
 >();
 
+function spaceAccessLevel(visibility: SpaceVisibility): TransparencyLevel {
+  return Number(
+    'access' in visibility ? visibility.access : visibility[1],
+  ) as TransparencyLevel;
+}
+
 async function readSpaceVisibility(
   spaceIdBigInt: bigint,
 ): Promise<SpaceVisibility> {
@@ -54,10 +60,14 @@ async function readSpaceVisibility(
   }
 
   const visibility = await fetchSpaceVisibility(spaceIdBigInt);
-  visibilityCache.set(cacheKey, {
-    expiresAt: Date.now() + VISIBILITY_CACHE_TTL_MS,
-    visibility,
-  });
+  // PUBLIC → restricted must re-read immediately; a cached PUBLIC row
+  // would keep granting hasAccess: true with no auth for the TTL.
+  if (spaceAccessLevel(visibility) !== TransparencyLevel.PUBLIC) {
+    visibilityCache.set(cacheKey, {
+      expiresAt: Date.now() + VISIBILITY_CACHE_TTL_MS,
+      visibility,
+    });
+  }
   return visibility;
 }
 
@@ -79,9 +89,7 @@ export async function checkSpaceAccess(
 
     const visibility = await readSpaceVisibility(spaceIdBigInt);
 
-    const accessLevel = Number(
-      'access' in visibility ? visibility.access : visibility[1],
-    ) as TransparencyLevel;
+    const accessLevel = spaceAccessLevel(visibility);
 
     if (accessLevel === TransparencyLevel.PUBLIC) {
       return { hasAccess: true };

@@ -225,7 +225,12 @@ export async function GET(
     const snapshot = await readEnergyCommunitySnapshot(
       mapping.communityProxyAddress,
     );
-    rememberEnergyCommunityMemberAddresses(spaceSlug, snapshot.memberAddresses);
+    if (snapshot.memberAddressesOk) {
+      rememberEnergyCommunityMemberAddresses(
+        spaceSlug,
+        snapshot.memberAddresses,
+      );
+    }
 
     const memberDeviceIds = new Map<string, number[] | null>();
     for (const detail of snapshot.memberDetails) {

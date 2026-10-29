@@ -29,11 +29,14 @@ export async function GET(request: NextRequest) {
 
   try {
     const people = await findPeopleByWeb3Addresses({ addresses }, { db });
-    const byAddress = new Map(
-      people
-        .filter((person) => person.address)
-        .map((person) => [person.address!.toLowerCase(), person]),
-    );
+    // Duplicate web3_address: lowest id wins. Map insertion order is not a
+    // query-order guarantee, so last-row-wins would be nondeterministic.
+    const byAddress = new Map<string, (typeof people)[number]>();
+    for (const person of [...people].sort((a, b) => a.id - b.id)) {
+      const address = person.address?.toLowerCase();
+      if (!address || byAddress.has(address)) continue;
+      byAddress.set(address, person);
+    }
 
     const result: Record<string, (typeof people)[number] | null> = {};
     for (const address of addresses) {

@@ -47,6 +47,8 @@ export type EnergySnapshotOptimization = {
 
 export type EnergyCommunityOnChainSnapshot = {
   memberAddresses: `0x${string}`[];
+  /** False when `getMemberAddresses` failed — do not seed the 30s roster cache. */
+  memberAddressesOk: boolean;
   memberDetails: EnergySnapshotMemberDetail[];
   sources: EnergySnapshotSource[];
   overview: {
@@ -172,6 +174,7 @@ export function assembleEnergyCommunitySnapshot(input: {
   contractStablecoinBalance: bigint | null;
   zeroSumStatus: readonly [boolean, bigint] | null;
   memberAddresses: readonly `0x${string}`[];
+  memberAddressesOk?: boolean;
   sourceCount?: number;
   sources: EnergySnapshotSource[];
   memberDetails: EnergySnapshotMemberDetail[];
@@ -186,6 +189,7 @@ export function assembleEnergyCommunitySnapshot(input: {
   );
   return {
     memberAddresses,
+    memberAddressesOk: input.memberAddressesOk ?? true,
     memberDetails: input.memberDetails,
     sources: input.sources,
     overview: {

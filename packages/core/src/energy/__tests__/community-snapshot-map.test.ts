@@ -47,7 +47,7 @@ describe('energy community snapshot mapping', () => {
     ]);
   });
 
-  it('assembles the Energy tab payload from two RPC waves', () => {
+  it('assembles overview, roles, and optimization from mapped snapshot inputs', () => {
     const snapshot = assembleEnergyCommunitySnapshot({
       communityFeeBps: 500,
       aggregatorFeeBps: 100,

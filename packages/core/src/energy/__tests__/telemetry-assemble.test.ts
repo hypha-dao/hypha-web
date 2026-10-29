@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { assembleEnergyTelemetry } from '../server/telemetry-assemble';
 
 describe('assembleEnergyTelemetry', () => {
-  it('aggregates windowed rows without a full-table min/max scan', () => {
+  it('aggregates supplied windowed rows into totals and a date range', () => {
     const telemetry = assembleEnergyTelemetry({
       period: '7d',
       communityId: 2,
@@ -44,6 +44,27 @@ describe('assembleEnergyTelemetry', () => {
     expect(telemetry.totals.consumedKwh).toBe(5);
     expect(telemetry.dataFrom).toBe('2026-10-28T00:00:00.000Z');
     expect(telemetry.dataTo).toBe('2026-10-29T00:00:00.000Z');
+  });
+
+  it('uses first/last reading timestamps for the range, not date_trunc buckets', () => {
+    const telemetry = assembleEnergyTelemetry({
+      period: '12w',
+      communityId: 2,
+      configured: true,
+      rows: [
+        {
+          bucket: '2026-10-26T00:00:00.000Z',
+          kind: 'consumption',
+          meter_id: 7,
+          total_wh: '1000',
+          first_reading: '2026-10-26T08:15:00.000Z',
+          last_reading: '2026-10-29T16:45:00.000Z',
+        },
+      ],
+    });
+
+    expect(telemetry.dataFrom).toBe('2026-10-26T08:15:00.000Z');
+    expect(telemetry.dataTo).toBe('2026-10-29T16:45:00.000Z');
   });
 
   it('returns an enabled empty series when the period has no rows', () => {
