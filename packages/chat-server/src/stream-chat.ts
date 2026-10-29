@@ -1636,14 +1636,14 @@ export async function createChatStreamResult(
     ? networkOutlook
       ? `${effectiveSystemPrompt}\n\nYou are Hypha, a friend looking across the network with this member. This is the network outlook, not their home. Home already walks what needs them in the spaces they belong to. Here you offer one opportunity on the wider network that fits how they show up. Use only the brief below. Write three or four short sentences, warm and specific. Address them by first name. Name who raised the opportunity, the space, and why it fits this member. Every name and place must be written in the brief. Do not add one that is not. Do not walk their personal decisions, the people around them, or what is happening in their own spaces. Never mention a card, a screen, or a button. ${
           memberHomeCard
-            ? 'Write the sentences first. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Then call show_member_home_item once for the one opportunity in the brief. Do not call any other tool. Do not think out loud.'
+            ? 'Call show_member_home_item once for the one opportunity in the brief first. Do not write sentences in the same step as that call. After the card is placed, write three or four short sentences. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Do not call any other tool. Do not think out loud.'
             : 'Nothing on the network fits them. One sentence that nothing is open to join right now. Do not call a tool. Do not open something from their own spaces. Do not comment on making something up.'
         }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
       : `${effectiveSystemPrompt}\n\nYou are Hypha, a friend in this community, speaking to this member at home. Use only the brief below. Write three or four short sentences, the way you would catch up a friend. Those sentences are read aloud word for word, so write them the way you would say them to a friend: easy, close, and specific. Contractions are welcome. Do not sound like you are reading a notice. Address them by first name. The person asking for attention is the subject, by first name, in the active voice. Say what the community needs, not what task to complete. Every name, number, and place must be written in the brief. Do not add one that is not. Never mention a card, a screen, or a button. Never sound like a checklist. ${
           memberHomeList
-            ? 'The list they asked for is already on screen. Write at most two short sentences about that list, using the brief. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal. Do not think out loud.'
+            ? 'The list they asked for is already on screen above where you write. Write at most two short sentences about that list, using the brief. Say the list is above, never below. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal. Do not think out loud.'
             : memberHomeCard
-            ? 'Write the sentences first. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Then call show_member_home_item once for the one item in the brief. You may also call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not mention tools, slugs, or instructions. Do not call any other tool. Do not think out loud.'
+            ? 'Call show_member_home_item once for the one item in the brief first. Do not write sentences in the same step as that call. After the card is placed, write three or four short sentences under it. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. You may also call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not mention tools, slugs, or instructions. Do not call any other tool. Do not think out loud.'
             : 'Write the sentences first. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Do not call show_member_home_item. You may call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not mention tools, slugs, or instructions. Do not call any other tool. Do not think out loud.'
         }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
     : normalizedConversationContext?.mode === 'onboarding_setup'
@@ -1790,15 +1790,21 @@ export async function createChatStreamResult(
                 : {}),
             };
           }
-          // The sentences are written first. The next step only attaches
-          // the card. Forcing the tool makes the model say the line twice.
-          if (stepNumber > 0 && memberHomeCard && !cardShown) {
+          // Card first: place the item, then speak under it on the next step.
+          if (memberHomeCard && !cardShown) {
             return {
-              system: `${homeSystem}\n\nThe sentences for this reply are already written. Do not write them again. Do not add a sentence. Call show_member_home_item once for the card in the brief, then stop.`,
+              toolChoice: {
+                type: 'tool' as const,
+                toolName: 'show_member_home_item',
+              },
+              system: `${homeSystem}\n\nCall show_member_home_item once for the card in the brief. Do not write any sentence in this step. Do not think out loud.`,
             };
           }
-          if (stepNumber > 0 && memberHomeCard) {
-            return { toolChoice: 'none' as const };
+          if (stepNumber > 0 && memberHomeCard && cardShown) {
+            return {
+              toolChoice: 'none' as const,
+              system: `${homeSystem}\n\nThe card is already placed above. Write three or four short sentences now. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Do not call a tool. Do not mention the card.`,
+            };
           }
           return {};
         }

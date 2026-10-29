@@ -213,7 +213,7 @@ function homeItemForMessage(
   });
 }
 
-/** The card under this reply. The item they just set aside stays off it. */
+/** The card above the spoken line for this reply. Set-aside items stay off it. */
 function pinnedHomeItem(
   items: readonly MemberHomeThreadItem[],
   messages: readonly HomeMessage[],
@@ -609,7 +609,7 @@ function homeMessageNodes(text: string): ReactNode[] {
   return nodes;
 }
 
-/** Glide the thread onto a card so the move itself is visible, then call back. */
+/** Glide the thread onto a card or the spoken line so the move itself is visible. */
 function glideScrollerTo(
   node: HTMLElement,
   top: number,
@@ -624,7 +624,8 @@ function glideScrollerTo(
   }
   const from = node.scrollTop;
   const delta = top - from;
-  const duration = Math.min(1400, Math.max(720, Math.abs(delta) * 0.65));
+  // Slow enough to read as intentional, not a snap.
+  const duration = Math.min(1800, Math.max(900, Math.abs(delta) * 0.9));
   const start = performance.now();
   const step = (now: number) => {
     const t = Math.min(1, (now - start) / duration);
@@ -634,6 +635,27 @@ function glideScrollerTo(
     else onDone();
   };
   onFrame(requestAnimationFrame(step));
+}
+
+function messageHasHomeCardTool(message: HomeMessage): boolean {
+  return message.parts.some((part) => {
+    if (part.type === 'tool-show_member_home_item') return true;
+    return (
+      part.type === 'dynamic-tool' &&
+      'toolName' in part &&
+      part.toolName === 'show_member_home_item'
+    );
+  });
+}
+
+function scrollerTopForTarget(node: HTMLElement, target: Element) {
+  return Math.max(
+    0,
+    node.scrollTop +
+      target.getBoundingClientRect().top -
+      node.getBoundingClientRect().top -
+      12,
+  );
 }
 
 export function MemberHomeChat({
@@ -1221,6 +1243,15 @@ export function MemberHomeChat({
     ? shownAssistantText.get(lastAssistantMessage.id) ?? ''
     : '';
   const lastAssistantMessageId = lastAssistantMessage?.id ?? '';
+  const lastAssistantCard = lastAssistantMessage
+    ? homeItemForMessage(cardItems, lastAssistantMessage, intelligence)
+    : null;
+  // Do not speak until the card has prompted when this turn places one.
+  const holdVoiceForCard =
+    isStreaming &&
+    Boolean(lastAssistantMessage) &&
+    messageHasHomeCardTool(lastAssistantMessage!) &&
+    !lastAssistantCard;
 
   const leftPanelVoice = useHomeLeftPanelVoiceActive();
   const voiceInterview = useOnboardingVoiceDiscovery({
@@ -1233,12 +1264,12 @@ export function MemberHomeChat({
     captureMicrophone: micOn,
     // The left panel is the Home speaker while its sound is on.
     speakReplies: soundOn && !leftPanelVoice,
-    // Wait for the finished bubble. An early first sentence plus the cleaned
-    // final script was stacking two voices on the same reply.
-    speakEarlyLeadIn: false,
+    // Card lands first; as soon as words stream under it, start the voice.
+    // Remainder logic finishes the cleaned script after the early sentence.
+    speakEarlyLeadIn: true,
     speakDisplayedText: true,
     isStreaming,
-    lastAssistantText: holdVoice ? '' : lastAssistantText,
+    lastAssistantText: holdVoice || holdVoiceForCard ? '' : lastAssistantText,
     lastAssistantMessageId,
     locale: lang,
     activeSpaceSlug: HOME_VOICE_PREFERENCE_KEY,
@@ -1568,16 +1599,12 @@ export function MemberHomeChat({
         }
         return;
       }
-      const target = node.querySelector('[data-home-arrival]');
+      const target =
+        node.querySelector('[data-home-reply-text]') ??
+        node.querySelector('[data-home-arrival]');
       if (!target) return;
       arrivalScrollStarted.current = true;
-      const top = Math.max(
-        0,
-        node.scrollTop +
-          target.getBoundingClientRect().top -
-          node.getBoundingClientRect().top -
-          12,
-      );
+      const top = scrollerTopForTarget(node, target);
       gliding.current = true;
       glideScrollerTo(
         node,
@@ -1600,24 +1627,37 @@ export function MemberHomeChat({
     }
 
     if (!pinnedToEnd.current || gliding.current) return;
-    const top = node.scrollHeight;
+    const spoken =
+      node.querySelector('[data-home-reply-text]') ??
+      node.querySelector('[data-home-arrival]');
+    const top = spoken ? scrollerTopForTarget(node, spoken) : node.scrollHeight;
     const glide =
-      glideScroll.current &&
+      (glideScroll.current || isStreaming) &&
       !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     glideScroll.current = false;
     if (Math.abs(node.scrollTop - top) < 2) return;
     if (glide) {
       gliding.current = true;
-      node.scrollTo({ top, behavior: 'smooth' });
-      if (glideTimer.current != null) window.clearTimeout(glideTimer.current);
-      glideTimer.current = window.setTimeout(() => {
-        glideTimer.current = null;
-        gliding.current = false;
-        const current = scroller.current;
-        if (current && pinnedToEnd.current && !holdVoiceRef.current) {
-          current.scrollTop = current.scrollHeight;
-        }
-      }, 520);
+      glideScrollerTo(
+        node,
+        top,
+        (id) => {
+          arrivalFrame.current = id;
+        },
+        () => {
+          arrivalFrame.current = null;
+          gliding.current = false;
+          const current = scroller.current;
+          if (current && pinnedToEnd.current && !holdVoiceRef.current) {
+            const follow =
+              current.querySelector('[data-home-reply-text]') ??
+              current.querySelector('[data-home-arrival]');
+            current.scrollTop = follow
+              ? scrollerTopForTarget(current, follow)
+              : current.scrollHeight;
+          }
+        },
+      );
       return;
     }
     node.scrollTop = top;
@@ -1627,6 +1667,7 @@ export function MemberHomeChat({
     homeMessages,
     isStreaming,
     showArrivalMask,
+    shownAssistantText,
     widgets,
   ]);
 
@@ -1760,18 +1801,27 @@ export function MemberHomeChat({
                 ? generatedVisualsFromParts(message.parts)
                 : null;
             const keepsCard = pinnedItem != null;
+            const streamingThis =
+              isStreaming &&
+              message.id === homeMessages[homeMessages.length - 1]?.id;
+            // Card prompts first — hold the spoken line until it is on screen.
+            const visibleText =
+              streamingThis &&
+              message.role === 'assistant' &&
+              messageHasHomeCardTool(message) &&
+              !keepsCard
+                ? ''
+                : text;
             const replyReady =
               message.role !== 'assistant' ||
               memberHomeReplyReady({
-                text,
-                hasCard: keepsCard || Boolean(visuals),
-                streaming:
-                  isStreaming &&
-                  message.id === homeMessages[homeMessages.length - 1]?.id,
+                text: visibleText,
+                hasCard: keepsCard || Boolean(visuals) || attached.length > 0,
+                streaming: streamingThis,
               });
             const showMessage =
               replyReady &&
-              ((!message.metadata?.homeArrival && Boolean(text)) ||
+              ((!message.metadata?.homeArrival && Boolean(visibleText)) ||
                 keepsCard ||
                 Boolean(visuals));
             if (!replyReady || (!showMessage && attached.length === 0)) {
@@ -1783,10 +1833,10 @@ export function MemberHomeChat({
               message.role === 'assistant' &&
               !arrivalBaselineIds.current.has(message.id);
             const oneLine =
-              text.length > 0 &&
+              visibleText.length > 0 &&
               !visuals &&
-              (mine || (!board && !pinnedItem)) &&
-              homeTextIsOneLine(text);
+              (mine || (!board && !pinnedItem && attached.length === 0)) &&
+              homeTextIsOneLine(visibleText);
             const memberName =
               [intelligence.person.name, intelligence.person.surname]
                 .filter(Boolean)
@@ -1794,13 +1844,28 @@ export function MemberHomeChat({
                 .trim() ||
               intelligence.person.nickname ||
               t('fallbackMember');
+            const promptCard = Boolean(pinnedItem || visuals || board);
             return (
               <div key={message.id} className="grid gap-4">
+                {attached.map((widget) => (
+                  <article
+                    key={widget.id}
+                    data-home-arrival={arriving ? '' : undefined}
+                    className="flex gap-3"
+                  >
+                    <MemberHomeMark className="mt-0.5 h-8 w-8" />
+                    {renderWidget(widget)}
+                  </article>
+                ))}
                 {showMessage ? (
                   <article
                     data-home-arrival={
-                      arriving &&
-                      (pinnedItem || (!isStreaming && Boolean(text)))
+                      (arriving &&
+                        (pinnedItem ||
+                          (!isStreaming && Boolean(visibleText)))) ||
+                      (streamingThis &&
+                        !mine &&
+                        (Boolean(pinnedItem) || Boolean(visibleText)))
                         ? ''
                         : undefined
                     }
@@ -1822,16 +1887,6 @@ export function MemberHomeChat({
                         mine ? 'max-w-[85%] text-right' : 'flex-1',
                       )}
                     >
-                      {text ? (
-                        <p
-                          className={cn(
-                            'text-2 leading-relaxed whitespace-pre-wrap text-foreground',
-                            mine && 'text-right',
-                          )}
-                        >
-                          {homeMessageNodes(text)}
-                        </p>
-                      ) : null}
                       {visuals ? (
                         <div className="grid gap-3">
                           {visuals.logoUrl ? (
@@ -1907,6 +1962,21 @@ export function MemberHomeChat({
                           }
                         />
                       ) : null}
+                      {visibleText ? (
+                        <p
+                          data-home-reply-text={
+                            !mine && (promptCard || attached.length > 0)
+                              ? ''
+                              : undefined
+                          }
+                          className={cn(
+                            'text-2 leading-relaxed whitespace-pre-wrap text-foreground',
+                            mine && 'text-right',
+                          )}
+                        >
+                          {homeMessageNodes(visibleText)}
+                        </p>
+                      ) : null}
                     </div>
                     {mine ? (
                       <PersonAvatar
@@ -1920,12 +1990,6 @@ export function MemberHomeChat({
                     ) : null}
                   </article>
                 ) : null}
-                {attached.map((widget) => (
-                  <article key={widget.id} className="flex gap-3">
-                    <MemberHomeMark className="mt-0.5 h-8 w-8" />
-                    {renderWidget(widget)}
-                  </article>
-                ))}
               </div>
             );
           })}

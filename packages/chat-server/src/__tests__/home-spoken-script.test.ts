@@ -66,6 +66,28 @@ describe('homeTurnShouldStop', () => {
     expect(homeTurnShouldStop([{ text: '' }])).toBe(false);
   });
 
+  it('keeps going after a card-only first step so the spoken lines can land', () => {
+    expect(
+      homeTurnShouldStop([
+        {
+          text: '',
+          toolCalls: [{ toolName: 'show_member_home_item' }],
+        },
+      ]),
+    ).toBe(false);
+    expect(
+      homeTurnShouldStop([
+        {
+          text: '',
+          toolCalls: [{ toolName: 'show_member_home_item' }],
+        },
+        {
+          text: 'Nice one, Alex. Vlad has something open in Hypha Flywheel.',
+        },
+      ]),
+    ).toBe(true);
+  });
+
   it('stops after three tries so a stuck line cannot loop', () => {
     expect(
       homeTurnShouldStop([

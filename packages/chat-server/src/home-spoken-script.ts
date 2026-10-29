@@ -20,14 +20,15 @@ function stepShowsHomeCard(step: HomeTurnStep | undefined): boolean {
 
 /**
  * Stop once the spoken script ends on a sentence, or after three tries.
- * A card tool often cuts the line mid-sentence. That turn is not finished.
- * A finished sentence that never called the card still gets one more step,
- * so the card can attach without the paragraph being said again.
+ * The card is placed first; words come after. A card-only step must keep
+ * going so the spoken lines can land. A finished sentence that never called
+ * the card still gets one more step so the card can attach.
  */
 export function homeTurnShouldStop(steps: readonly HomeTurnStep[]): boolean {
   if (steps.length >= 3) return true;
   const latest = steps[steps.length - 1];
   const spoken = latest?.text?.trim() ?? '';
+  // Card-first step: tool ran, no words yet — keep the turn open for speech.
   if (!spoken) return false;
   if (!homeSpokenScriptIsComplete(spoken)) return false;
   const cardShown = steps.some((step) => stepShowsHomeCard(step));

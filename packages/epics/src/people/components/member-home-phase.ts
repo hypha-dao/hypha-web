@@ -39,18 +39,18 @@ export function resolveMemberHomePhase(input: {
 }
 
 /**
- * Show words as soon as they arrive. Holding the whole reply until the stream
- * finished left a 6–7s skeleton on every turn. A card alone still waits for
- * the stream (or for words) so a tool result cannot flash first.
+ * Card first, then words. A tool result may land before any sentence so the
+ * card can prompt on its own while the stream continues. Words still show as
+ * soon as they arrive under that card.
  */
 export function memberHomeReplyReady(input: {
   text: string;
   hasCard: boolean;
   streaming: boolean;
 }): boolean {
+  if (input.hasCard) return true;
   if (input.text.trim().length > 0) return true;
-  if (input.streaming) return false;
-  return input.hasCard;
+  return false;
 }
 
 /** Name only when /me is the signed-in member (`person.sub === memberId`). */

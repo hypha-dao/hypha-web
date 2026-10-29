@@ -101,10 +101,10 @@ describe('resolveMemberHomePhase', () => {
 });
 
 describe('memberHomeReplyReady', () => {
-  it('shows words as they stream and holds a card-only flash', () => {
+  it('prompts the card first, then shows words as they stream', () => {
     expect(
       memberHomeReplyReady({ text: '', hasCard: true, streaming: true }),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       memberHomeReplyReady({
         text: 'Océane asked to join.',
@@ -119,6 +119,9 @@ describe('memberHomeReplyReady', () => {
         streaming: true,
       }),
     ).toBe(true);
+    expect(
+      memberHomeReplyReady({ text: '', hasCard: false, streaming: true }),
+    ).toBe(false);
   });
 
   it('shows finished words or a finished card', () => {
