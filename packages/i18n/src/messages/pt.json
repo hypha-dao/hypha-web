@@ -5647,6 +5647,8 @@
       "member": "Member",
       "draftLabel": "Draft",
       "saveDraft": "Save draft",
+      "saving": "Salvando…",
+      "saved": "Salvo",
       "propose": "Propose to ratify",
       "keepDrafting": "Keep drafting",
       "placeholder": "Ask the agent about this section…",
@@ -5666,10 +5668,12 @@
     "error": {
       "load": "Could not load Space Context.",
       "retry": "Try again",
-      "import": "Could not import from Space Memory."
+      "import": "Could not import from Space Memory.",
+      "save": "Não foi possível salvar este rascunho."
     },
     "success": {
-      "imported": "Imported a Mission draft from Space Memory."
+      "imported": "Imported a Mission draft from Space Memory.",
+      "saved": "Rascunho salvo."
     }
   }
 }

@@ -5,6 +5,7 @@ import type {
   SpaceContextOverview,
   SpaceContextSectionDetail,
   SpaceContextSectionKey,
+  SpaceContextSectionRecord,
 } from '@hypha-platform/core/client';
 import useSWR, { mutate } from 'swr';
 
@@ -18,6 +19,83 @@ export function revalidateSpaceContext(spaceSlug: string) {
       key[1] === spaceSlug,
     undefined,
     { revalidate: true },
+  );
+}
+
+function isOverview(value: unknown): value is SpaceContextOverview {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    'sections' in value &&
+    Array.isArray((value as SpaceContextOverview).sections)
+  );
+}
+
+function isDetail(value: unknown): value is SpaceContextSectionDetail {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    'section' in value &&
+    'messages' in value
+  );
+}
+
+function mergeSectionRecord(
+  current: SpaceContextSectionRecord,
+  updated: SpaceContextSectionRecord,
+): SpaceContextSectionRecord {
+  return {
+    ...current,
+    ...updated,
+    contributorCount: Math.max(
+      current.contributorCount,
+      updated.contributorCount ?? 0,
+    ),
+    lastEditorName: updated.lastEditorName ?? current.lastEditorName,
+    proposalTitle: updated.proposalTitle ?? current.proposalTitle,
+    proposalSlug: updated.proposalSlug ?? current.proposalSlug,
+    proposalWeb3Id: updated.proposalWeb3Id ?? current.proposalWeb3Id,
+    proposalStatus: updated.proposalStatus ?? current.proposalStatus,
+  };
+}
+
+/** Write a saved section into SWR so cards update without waiting on dedupe. */
+export function applySpaceContextSectionToCache(
+  spaceSlug: string,
+  updated: SpaceContextSectionRecord,
+) {
+  return mutate(
+    (key: unknown) =>
+      Array.isArray(key) &&
+      key[0] === SPACE_CONTEXT_SWR_KEY &&
+      key[1] === spaceSlug,
+    (current: unknown) => {
+      if (isOverview(current)) {
+        const sections = current.sections.map((section) =>
+          section.sectionKey === updated.sectionKey
+            ? mergeSectionRecord(section, updated)
+            : section,
+        );
+        return {
+          ...current,
+          sections,
+          ratifiedCount: sections.filter(
+            (section) => section.status === 'ratified',
+          ).length,
+        };
+      }
+      if (
+        isDetail(current) &&
+        current.section.sectionKey === updated.sectionKey
+      ) {
+        return {
+          ...current,
+          section: mergeSectionRecord(current.section, updated),
+        };
+      }
+      return current;
+    },
+    { revalidate: false },
   );
 }
 
@@ -112,8 +190,9 @@ export async function patchSpaceContextSectionRequest({
   if (!response.ok) {
     throw new Error('Failed to save section draft');
   }
-  await revalidateSpaceContext(spaceSlug);
-  return response.json();
+  const updated = (await response.json()) as SpaceContextSectionRecord;
+  await applySpaceContextSectionToCache(spaceSlug, updated);
+  return updated;
 }
 
 export async function appendSpaceContextMessageRequest({

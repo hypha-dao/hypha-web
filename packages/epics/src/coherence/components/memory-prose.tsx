@@ -6,6 +6,7 @@ type Inline =
   | { kind: 'text'; text: string }
   | { kind: 'strong'; text: string }
   | { kind: 'em'; text: string }
+  | { kind: 'code'; text: string }
   | { kind: 'link'; text: string; href: string };
 
 function safeHref(raw: string): string | null {
@@ -44,6 +45,15 @@ function parseInline(source: string): Inline[] {
       if (end > i + 1) {
         flush();
         out.push({ kind: 'em', text: source.slice(i + 1, end) });
+        i = end + 1;
+        continue;
+      }
+    }
+    if (source[i] === '`') {
+      const end = source.indexOf('`', i + 1);
+      if (end > i + 1) {
+        flush();
+        out.push({ kind: 'code', text: source.slice(i + 1, end) });
         i = end + 1;
         continue;
       }
@@ -87,6 +97,16 @@ function InlineText({ source }: { source: string }) {
         }
         if (part.kind === 'em') {
           return <em key={index}>{part.text}</em>;
+        }
+        if (part.kind === 'code') {
+          return (
+            <code
+              key={index}
+              className="bg-background-3 px-1 font-mono text-[0.92em]"
+            >
+              {part.text}
+            </code>
+          );
         }
         if (part.kind === 'link') {
           return (

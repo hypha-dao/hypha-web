@@ -5649,6 +5649,8 @@
       "member": "Mitglied",
       "draftLabel": "Entwurf",
       "saveDraft": "Entwurf speichern",
+      "saving": "Speichere…",
+      "saved": "Gespeichert",
       "propose": "Zur Ratifizierung vorschlagen",
       "keepDrafting": "Weiter entwerfen",
       "placeholder": "Fragt den Agenten zu diesem Abschnitt…",
@@ -5668,10 +5670,12 @@
     "error": {
       "load": "Space Context konnte nicht geladen werden.",
       "retry": "Erneut versuchen",
-      "import": "Import aus Space Memory fehlgeschlagen."
+      "import": "Import aus Space Memory fehlgeschlagen.",
+      "save": "Dieser Entwurf konnte nicht gespeichert werden."
     },
     "success": {
-      "imported": "Ein Missionsentwurf wurde aus Space Memory importiert."
+      "imported": "Ein Missionsentwurf wurde aus Space Memory importiert.",
+      "saved": "Entwurf gespeichert."
     }
   }
 }
