@@ -140,10 +140,27 @@ export function ProfileStoryConnected({
     if (saved) {
       // `saved` is already a Person; only backfill fields `/me` may have omitted.
       // Do not spread `source` — its `| null` fields are not assignable to Person.
-      // Prefer the currency just chosen so a sparse API body cannot blank the row.
+      // Prefer the just-edited patch so a sparse API body cannot blank the row.
       await revalidate({
         ...saved,
-        links: saved.links ?? asOptionalLinks(source.links),
+        name: patch.name ?? saved.name ?? asOptionalString(source.name),
+        surname:
+          patch.surname ?? saved.surname ?? asOptionalString(source.surname),
+        nickname:
+          patch.nickname ??
+          saved.nickname ??
+          asOptionalString(source.nickname),
+        description:
+          patch.description ??
+          saved.description ??
+          asOptionalString(source.description),
+        email: patch.email ?? saved.email ?? asOptionalString(source.email),
+        location:
+          patch.location ??
+          saved.location ??
+          asOptionalString(source.location),
+        links:
+          patch.links ?? saved.links ?? asOptionalLinks(source.links),
         preferredCurrency:
           chosenCurrency ??
           saved.preferredCurrency ??
@@ -151,9 +168,14 @@ export function ProfileStoryConnected({
         avatarUrl: saved.avatarUrl ?? asOptionalString(source.avatarUrl),
         leadImageUrl:
           saved.leadImageUrl ?? asOptionalString(source.leadImageUrl),
-        networkOffer: saved.networkOffer ?? source.networkOffer ?? null,
+        networkOffer:
+          patch.networkOffer ??
+          saved.networkOffer ??
+          source.networkOffer ??
+          null,
         primaryOrientation:
-          saved.primaryOrientation === 'member' ||
+          orientation ??
+          (saved.primaryOrientation === 'member' ||
           saved.primaryOrientation === 'builder' ||
           saved.primaryOrientation === 'investor'
             ? saved.primaryOrientation
@@ -161,7 +183,7 @@ export function ProfileStoryConnected({
               source.primaryOrientation === 'builder' ||
               source.primaryOrientation === 'investor'
             ? source.primaryOrientation
-            : null,
+            : null),
       });
     } else {
       await revalidate();

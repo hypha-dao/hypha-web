@@ -131,10 +131,11 @@ function StoryRow({
 
 function StoryLine({
   text,
-  muted = false,
+  muted: _muted = false,
   canEdit,
   label,
   value,
+  emptyText = '',
   multiline = false,
   row = false,
   onSave,
@@ -144,25 +145,39 @@ function StoryLine({
   canEdit: boolean;
   label: string;
   value: string;
+  /** Placeholder when the field is empty (row + inline). */
+  emptyText?: string;
   multiline?: boolean;
   row?: boolean;
   onSave: (next: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
+  // Keep the last committed value on screen until the parent person catches up.
+  const [saved, setSaved] = useState<string | null>(null);
   const committed = useRef(false);
 
   useEffect(() => {
-    if (!editing) setDraft(value);
-    else committed.current = false;
-  }, [editing, value]);
+    if (editing) {
+      committed.current = false;
+      return;
+    }
+    setDraft(value);
+    if (saved !== null && value.trim() === saved.trim()) {
+      setSaved(null);
+    }
+  }, [editing, value, saved]);
+
+  const shownValue = saved !== null ? saved : value;
+  const shownText = shownValue.trim() || emptyText || text;
+  const shownMuted = !shownValue.trim();
 
   if (row && !editing) {
     return (
       <StoryRow
         label={label}
-        text={text}
-        muted={muted}
+        text={shownText}
+        muted={shownMuted}
         canEdit={canEdit}
         onEdit={() => setEditing(true)}
       />
@@ -170,10 +185,10 @@ function StoryLine({
   }
 
   if (!canEdit) {
-    if (!text) return null;
+    if (!shownText) return null;
     return (
       <p className="max-w-[62ch] text-2 leading-relaxed text-foreground">
-        {text}
+        {shownText}
       </p>
     );
   }
@@ -185,10 +200,10 @@ function StoryLine({
         onClick={() => setEditing(true)}
         className={cn(
           'inline-flex max-w-[62ch] items-start gap-2 rounded-none px-0.5 text-left text-2 leading-relaxed hover:bg-accent-2',
-          muted ? 'text-neutral-11' : 'text-foreground',
+          shownMuted ? 'text-neutral-11' : 'text-foreground',
         )}
       >
-        <span>{text}</span>
+        <span>{shownText}</span>
         <Pencil
           className="mt-1 size-3.5 shrink-0 text-neutral-11"
           aria-hidden
@@ -200,11 +215,13 @@ function StoryLine({
   const commit = () => {
     if (committed.current) return;
     committed.current = true;
+    const next = draft.trim();
+    setSaved(next);
     setEditing(false);
-    if (draft.trim() !== value.trim()) onSave(draft.trim());
+    if (next !== value.trim()) onSave(next);
   };
   const cancel = () => {
-    setDraft(value);
+    setDraft(saved !== null ? saved : value);
     setEditing(false);
   };
 
@@ -280,22 +297,31 @@ export function ProfileStory({
     name: person.name ?? '',
     surname: person.surname ?? '',
   });
+  const [savedName, setSavedName] = useState<{
+    name: string;
+    surname: string;
+  } | null>(null);
   const [editingName, setEditingName] = useState(false);
   const nameCommitted = useRef(false);
 
   useEffect(() => {
-    if (!editingName) {
-      setNameDraft({ name: person.name ?? '', surname: person.surname ?? '' });
+    if (editingName) return;
+    setNameDraft({ name: person.name ?? '', surname: person.surname ?? '' });
+    if (
+      savedName &&
+      (person.name ?? '') === savedName.name &&
+      (person.surname ?? '') === savedName.surname
+    ) {
+      setSavedName(null);
     }
-  }, [editingName, person.name, person.surname]);
+  }, [editingName, person.name, person.surname, savedName]);
 
   const role = isPersonRole(person.primaryOrientation)
     ? person.primaryOrientation
     : null;
-  const fullName = [person.name, person.surname]
-    .filter(Boolean)
-    .join(' ')
-    .trim();
+  const shownName = savedName?.name ?? person.name ?? '';
+  const shownSurname = savedName?.surname ?? person.surname ?? '';
+  const fullName = [shownName, shownSurname].filter(Boolean).join(' ').trim();
   const displayName = fullName || person.nickname?.trim() || '';
   const canEdit = Boolean(isSelf && onSave);
 
@@ -314,17 +340,20 @@ export function ProfileStory({
   const commitName = () => {
     if (nameCommitted.current) return;
     nameCommitted.current = true;
-    setEditingName(false);
     const name = nameDraft.name.trim();
     const surname = nameDraft.surname.trim();
     if (!name) {
+      nameCommitted.current = false;
       setLocalError(t('editForm.errors.firstNameRequired'));
       return;
     }
     if (!surname) {
+      nameCommitted.current = false;
       setLocalError(t('editForm.errors.lastNameRequired'));
       return;
     }
+    setSavedName({ name, surname });
+    setEditingName(false);
     if (name === (person.name ?? '') && surname === (person.surname ?? '')) {
       return;
     }
@@ -489,6 +518,7 @@ export function ProfileStory({
                   person.description?.trim() ||
                   (canEdit ? t('story.descriptionEmpty') : '')
                 }
+                emptyText={canEdit ? t('story.descriptionEmpty') : ''}
                 muted={!person.description?.trim()}
                 canEdit={canEdit}
                 label={t('story.descriptionEmpty')}
@@ -603,6 +633,7 @@ export function ProfileStory({
             person.networkOffer?.trim() ||
             (canEdit ? tWelcome('offer.placeholder') : '')
           }
+          emptyText={canEdit ? tWelcome('offer.placeholder') : ''}
           muted={!person.networkOffer?.trim()}
           canEdit={canEdit}
           label={offerPrompt}
@@ -621,6 +652,7 @@ export function ProfileStory({
           text={
             person.location?.trim() || (canEdit ? t('story.basedInEmpty') : '')
           }
+          emptyText={canEdit ? t('story.basedInEmpty') : ''}
           muted={!person.location?.trim()}
           canEdit={canEdit}
           label={t('editForm.labels.location')}
@@ -640,6 +672,7 @@ export function ProfileStory({
               person.nickname?.trim() ||
               (canEdit ? t('story.knownAsEmpty') : '')
             }
+            emptyText={canEdit ? t('story.knownAsEmpty') : ''}
             muted={!person.nickname?.trim()}
             canEdit={canEdit}
             label={t('editForm.placeholders.nickname')}
@@ -663,6 +696,7 @@ export function ProfileStory({
             text={
               person.email?.trim() || (canEdit ? t('story.reachYouEmpty') : '')
             }
+            emptyText={t('story.reachYouEmpty')}
             muted={!person.email?.trim()}
             canEdit
             label={t('editForm.labels.email')}
@@ -806,15 +840,25 @@ function LinksLine({
   const tSpaces = useTranslations('Spaces');
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(links);
+  const [saved, setSaved] = useState<string[] | null>(null);
   const [invalid, setInvalid] = useState(false);
   const committed = useRef(false);
 
   useEffect(() => {
-    if (!editing) {
-      setDraft(links);
+    if (editing) {
       committed.current = false;
+      return;
     }
-  }, [editing, links]);
+    setDraft(links);
+    if (saved && saved.join('\n') === links.join('\n')) {
+      setSaved(null);
+    }
+  }, [editing, links, saved]);
+
+  const shownLinks = saved ?? links;
+  const linkLine = shownLinks.filter(Boolean).join('\n');
+  const shownText = linkLine || text;
+  const shownMuted = !linkLine;
 
   const commit = () => {
     if (committed.current) return;
@@ -837,6 +881,7 @@ function LinksLine({
       return;
     }
     setInvalid(false);
+    setSaved(next);
     setEditing(false);
     if (next.join('\n') !== links.join('\n')) onSave(next);
   };
@@ -844,8 +889,8 @@ function LinksLine({
   return (
     <StoryRow
       label={t('story.linksLabel')}
-      text={text}
-      muted={muted}
+      text={shownText}
+      muted={shownMuted}
       canEdit={canEdit}
       editing={editing}
       onEdit={() => setEditing(true)}
@@ -859,7 +904,7 @@ function LinksLine({
           }}
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
-              setDraft(links);
+              setDraft(saved ?? links);
               setInvalid(false);
               setEditing(false);
             }
