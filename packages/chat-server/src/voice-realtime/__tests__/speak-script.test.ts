@@ -32,16 +32,18 @@ describe('resolveSpeechVoice', () => {
     expect(resolveHomeSpeechVoice()).toBe('marin');
   });
 
-  it('asks the speaker for joyful enthusiastic delivery at an easy pace', () => {
+  it('asks the speaker for close joyful delivery that keeps openings intact', () => {
     expect(SPEECH_TONE_INSTRUCTIONS).toMatch(
-      /young woman talking with a friend/i,
+      /young woman talking with a close friend/i,
     );
     expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/joy/i);
     expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/enthusiasm/i);
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/pleasant moment/i);
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/never serious/i);
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/never distant/i);
     expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/youthful feminine/i);
     expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/everyday pace/i);
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/one to two seconds/i);
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/half a second/i);
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/ease into the first word/i);
     expect(SPEECH_TONE_INSTRUCTIONS).not.toMatch(/pause between sentences/i);
     expect(SPEECH_TONE_INSTRUCTIONS).not.toMatch(/higher than a narrator/i);
   });

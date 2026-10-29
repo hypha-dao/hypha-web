@@ -348,11 +348,16 @@ let activeExactSpeechStop: (() => void) | null = null;
 
 /** Must match OpenAI `response_format: 'pcm'` (24 kHz mono s16le). */
 const SPEECH_PCM_SAMPLE_RATE = 24_000;
-/** Start after ~80ms of audio so the first word is not clipped by an empty buffer. */
+/**
+ * Buffer ~180ms before the first schedule so the opening syllable is not
+ * lost while the AudioContext wakes and the stream fills.
+ */
 const SPEECH_PCM_FIRST_PLAY_BYTES =
-  Math.floor(SPEECH_PCM_SAMPLE_RATE * 0.08) * 2;
+  Math.floor(SPEECH_PCM_SAMPLE_RATE * 0.18) * 2;
 /** Schedule ~100ms slices once playback has begun. */
 const SPEECH_PCM_SLICE_BYTES = Math.floor(SPEECH_PCM_SAMPLE_RATE * 0.1) * 2;
+/** Lead time before the first sample so resume does not swallow the start. */
+const SPEECH_PCM_START_DELAY_SEC = 0.12;
 
 /** Resume the speaker during a click so a later recording can play. */
 export function unlockExactSpeechPlayback(): void {
@@ -507,7 +512,7 @@ export function startExactSpeechPlayback({
 
       const reader = body.getReader();
       let pending = new Uint8Array(0);
-      let nextStart = context.currentTime + 0.05;
+      let nextStart = context.currentTime + SPEECH_PCM_START_DELAY_SEC;
       let heardAudio = false;
       let lastSource: AudioBufferSourceNode | null = null;
 
@@ -524,7 +529,13 @@ export function startExactSpeechPlayback({
         const source = context.createBufferSource();
         source.buffer = buffer;
         source.connect(context.destination);
-        const startAt = Math.max(nextStart, context.currentTime + 0.02);
+        // First slice needs lead time so resume does not swallow the opening.
+        // Later slices only need a tiny cushion when the queue underruns.
+        const startAt = Math.max(
+          nextStart,
+          context.currentTime +
+            (heardAudio ? 0.02 : SPEECH_PCM_START_DELAY_SEC),
+        );
         source.start(startAt);
         nextStart = startAt + buffer.duration;
         heardAudio = true;
