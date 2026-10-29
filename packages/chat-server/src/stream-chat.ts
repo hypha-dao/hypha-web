@@ -1753,6 +1753,10 @@ Forbidden, including close paraphrases: naming or continuing a signal or proposa
         voiceDiscoveryActive
           ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: friendly and joyful, about people helping each other. Name the step, then ask if they want to pursue it ("Ready to take a look?"). They decide. On yes, be glad and name the next step. On no, "All good", then the next step. Do not close with "let me know if you want anything else". Stop only if they ask to pause. Keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
           : ''
+      }${
+        spaceContextSpecialistPrompt
+          ? `\n\n${spaceContextSpecialistPrompt}`
+          : ''
       }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
         localizedEntryMethodGuidelines
           ? `\n${localizedEntryMethodGuidelines}`
@@ -1761,6 +1765,10 @@ Forbidden, including close paraphrases: naming or continuing a signal or proposa
     : voiceDiscoveryActive && spaceSlug?.trim()
     ? `${effectiveSystemPrompt}\n\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice discovery mode is active for this space: the AI does it for them—reflect what you heard, propose drafts and next steps, one small ask at a time, short conversational replies (no bullet lists or markdown in voice turns). Continuous discovery applies: learn the space with tools, adapt to circumstances, and handle the next move toward purpose—not a fixed checklist.${
         proposalAcceptanceDirective ? `\n\n${proposalAcceptanceDirective}` : ''
+      }${
+        spaceContextSpecialistPrompt
+          ? `\n\n${spaceContextSpecialistPrompt}`
+          : ''
       }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
         localizedEntryMethodGuidelines
           ? `\n${localizedEntryMethodGuidelines}`
@@ -1921,26 +1929,33 @@ Forbidden, including close paraphrases: naming or continuing a signal or proposa
             : undefined,
       });
     },
-    onFinish: (event) => {
+    onFinish: async (event) => {
       const assistantText =
         typeof event.text === 'string' ? event.text.trim() : '';
-      if (assistantText && requestedSpaceSlug && spaceContext?.sectionKey) {
-        void appendSpaceContextMessage(
-          {
-            spaceSlug: requestedSpaceSlug,
-            sectionKey: spaceContext.sectionKey,
-            role: 'assistant',
-            content: assistantText,
-            agentKey:
-              SPACE_CONTEXT_SPECIALISTS[spaceContext.sectionKey].agentKey,
-          },
-          { db },
-        ).catch((error) => {
+      if (
+        assistantText &&
+        requestedSpaceSlug &&
+        spaceContext?.sectionKey &&
+        spaceContextSpecialistPrompt
+      ) {
+        try {
+          await appendSpaceContextMessage(
+            {
+              spaceSlug: requestedSpaceSlug,
+              sectionKey: spaceContext.sectionKey,
+              role: 'assistant',
+              content: assistantText,
+              agentKey:
+                SPACE_CONTEXT_SPECIALISTS[spaceContext.sectionKey].agentKey,
+            },
+            { db },
+          );
+        } catch (error) {
           console.warn('[chat][space-context-specialist] persist failed', {
             debugRequestId,
             message: error instanceof Error ? error.message : String(error),
           });
-        });
+        }
       }
 
       if (!OPENROUTER_DEBUG) return;

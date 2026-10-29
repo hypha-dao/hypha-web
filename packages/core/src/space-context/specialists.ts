@@ -4,6 +4,16 @@ import {
 } from './constants';
 import { headingForSectionKey } from './markdown';
 
+const UNTRUSTED_BEGIN = 'BEGIN UNTRUSTED DATA';
+const UNTRUSTED_END = 'END UNTRUSTED DATA';
+
+/** Neutralize fence tokens so stored draft/memory cannot close the untrusted block. */
+export function escapeUntrustedDataBoundary(value: string): string {
+  return value
+    .replaceAll(UNTRUSTED_BEGIN, 'BEGIN UNTRUSTED-DATA')
+    .replaceAll(UNTRUSTED_END, 'END UNTRUSTED-DATA');
+}
+
 export function specialistForSection(sectionKey: SpaceContextSectionKey) {
   return SPACE_CONTEXT_SPECIALISTS[sectionKey];
 }
@@ -23,8 +33,11 @@ export function buildSpaceContextSpecialistPrompt({
 }): string {
   const specialist = SPACE_CONTEXT_SPECIALISTS[sectionKey];
   const title = headingForSectionKey(sectionKey);
-  const draft = currentMarkdown.trim() || '(empty — not started)';
-  const memory = specialistMemory.trim() || '(none yet)';
+  const draft =
+    escapeUntrustedDataBoundary(currentMarkdown).trim() ||
+    '(empty — not started)';
+  const memory =
+    escapeUntrustedDataBoundary(specialistMemory).trim() || '(none yet)';
 
   return `You are the ${
     specialist.role
