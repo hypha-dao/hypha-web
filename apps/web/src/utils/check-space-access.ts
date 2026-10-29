@@ -30,23 +30,30 @@ export type CheckSpaceAccessResult = {
 };
 
 const VISIBILITY_CACHE_TTL_MS = 30_000;
+
+async function fetchSpaceVisibility(spaceIdBigInt: bigint) {
+  return web3Client.readContract(
+    getSpaceVisibility({ spaceId: spaceIdBigInt }),
+  );
+}
+
+type SpaceVisibility = Awaited<ReturnType<typeof fetchSpaceVisibility>>;
+
 const visibilityCache = new Map<
   string,
-  { expiresAt: number; visibility: unknown }
+  { expiresAt: number; visibility: SpaceVisibility }
 >();
 
-async function readSpaceVisibility(spaceIdBigInt: bigint) {
+async function readSpaceVisibility(
+  spaceIdBigInt: bigint,
+): Promise<SpaceVisibility> {
   const cacheKey = spaceIdBigInt.toString();
   const cached = visibilityCache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) {
-    return cached.visibility as Awaited<
-      ReturnType<typeof web3Client.readContract>
-    >;
+    return cached.visibility;
   }
 
-  const visibility = await web3Client.readContract(
-    getSpaceVisibility({ spaceId: spaceIdBigInt }),
-  );
+  const visibility = await fetchSpaceVisibility(spaceIdBigInt);
   visibilityCache.set(cacheKey, {
     expiresAt: Date.now() + VISIBILITY_CACHE_TTL_MS,
     visibility,
