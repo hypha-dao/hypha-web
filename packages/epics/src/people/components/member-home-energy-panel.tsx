@@ -136,24 +136,30 @@ function EnergyCommunityCard({
         {t('thisMonth')}
       </p>
       <dl className="mt-2 grid gap-2">
-        <div className="flex items-baseline justify-between gap-4">
-          <dt className="text-1 text-neutral-11">{t('you')}</dt>
+        <div className="flex items-start justify-between gap-4">
+          <dt className="shrink-0 text-1 text-neutral-11">{t('you')}</dt>
           <dd className="text-right text-1 tabular-nums">
-            {t('consumed', { kwh: formatKwh(community.youUsedKwh, missing) })}
-            <span className="text-neutral-11"> · </span>
-            {t('produced', { kwh: formatKwh(community.youMadeKwh, missing) })}
+            <div>
+              {t('consumed', { kwh: formatKwh(community.youUsedKwh, missing) })}
+            </div>
+            <div>
+              {t('produced', { kwh: formatKwh(community.youMadeKwh, missing) })}
+            </div>
           </dd>
         </div>
-        <div className="flex items-baseline justify-between gap-4">
-          <dt className="text-1 text-neutral-11">{t('community')}</dt>
+        <div className="flex items-start justify-between gap-4">
+          <dt className="shrink-0 text-1 text-neutral-11">{t('community')}</dt>
           <dd className="text-right text-1 tabular-nums">
-            {t('consumed', {
-              kwh: formatKwh(community.communityUsedKwh, missing),
-            })}
-            <span className="text-neutral-11"> · </span>
-            {t('produced', {
-              kwh: formatKwh(community.communityMadeKwh, missing),
-            })}
+            <div>
+              {t('consumed', {
+                kwh: formatKwh(community.communityUsedKwh, missing),
+              })}
+            </div>
+            <div>
+              {t('produced', {
+                kwh: formatKwh(community.communityMadeKwh, missing),
+              })}
+            </div>
           </dd>
         </div>
       </dl>
