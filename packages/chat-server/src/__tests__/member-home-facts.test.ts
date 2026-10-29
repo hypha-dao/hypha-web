@@ -300,6 +300,32 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('slug=path');
   });
 
+  it('welcomes them back by time of day after an absence', () => {
+    const facts = formatMemberHomeFactsText(home, {
+      visit: 'welcome_back',
+      partOfDay: 'morning',
+      asked:
+        "I'm back on my home. Catch me up on what needs my attention this morning.",
+      prior: 'Earlier we looked at something else.',
+    });
+    expect(facts).toMatch(/Welcome them back/i);
+    expect(facts).toContain('partOfDay=morning');
+    expect(facts).toContain('this morning');
+    expect(facts).toContain('slug=path');
+    expect(facts).not.toContain('Your previous reply was:');
+  });
+
+  it('greets on first open without inventing a last visit', () => {
+    const facts = formatMemberHomeFactsText(home, {
+      visit: 'first_open',
+      partOfDay: 'afternoon',
+      asked: 'I am on my home.',
+    });
+    expect(facts).toMatch(/first thing you say this visit/i);
+    expect(facts).toContain('partOfDay=afternoon');
+    expect(facts).toContain('slug=path');
+  });
+
   it('removes an item the member already refused from the queue', () => {
     const facts = formatMemberHomeFactsText(home, {
       passed: ['proposal:path'],

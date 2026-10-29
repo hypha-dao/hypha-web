@@ -247,6 +247,13 @@ export function formatMemberHomeFacts(
     acted?: readonly string[];
     /** They just came back from that action. Continue with the next item. */
     resumed?: boolean;
+    /**
+     * How this home open started. `welcome_back` is after a long absence;
+     * `first_open` is the first greeting of a quiet thread.
+     */
+    visit?: 'welcome_back' | 'first_open' | null;
+    /** Local morning / afternoon / evening / night from the member's browser. */
+    partOfDay?: 'morning' | 'afternoon' | 'evening' | 'night' | null;
     /** They said the card in front of them is not a proposal. */
     notADecision?: boolean;
     /** The message this reply is answering. A new reply, not a rewrite. */
@@ -330,9 +337,11 @@ export function formatMemberHomeFacts(
     /continue with what still needs me/i.test(options?.asked ?? '');
   const usefulAsk =
     !listAsk &&
-    /^(?:where can i be useful|i am on my home)[.!?]?$/i.test(
-      foldChip(options?.asked ?? ''),
-    );
+    (options?.visit === 'welcome_back' ||
+      options?.visit === 'first_open' ||
+      /^(?:where can i be useful|i am on my home|i'm back on my home)\b/i.test(
+        foldChip(options?.asked ?? ''),
+      ));
   // "Not now for Fiat Balance" names the item in order to set it aside.
   // Treating that name as the card puts the same card under the reply.
   const settingAside = Boolean(
@@ -512,7 +521,17 @@ export function formatMemberHomeFacts(
     'Never end a reply by handing the agenda back. Forbidden, including close paraphrases: "That\'s completely fine", "if you need any assistance", "if you want to explore something else", "if there\'s anything else you\'d like to discuss", "just let me know", "if there\'s another proposal", "another matter you\'d like to address", "a different aspect of". When this item is done and another is waiting, name that next item and call show_member_home_item for it. Do not ask what they would like to do.',
     "Call show_member_home_item with the slug on that item's line. The words introduce that same slug — same creator=, same space=. Never name one person and call the tool for another item. Never say a waiting proposal is not available, and never offer a different proposal instead. Do not ask what they think.",
     'If they say yes to helping someone, be glad for the person they are helping, using that person\'s name from the record, then name the next remaining item from that record the same way, including any token that record has. If spoken=he, say "he will appreciate it." If spoken=she, say "she will appreciate it." If the given name does not show he or she, say "they will appreciate it." Do not invent the person, the task, or the token. "Share signal", or saying they want to share one, is not that yes. A yes or a no on a decision is not you acting. Do not approve it, do not say you approved it, and do not ask what they would like to decide. Never say "You can now decide on the proposal card." The introduction and show_member_home_item for that same item are one reply. Do not name a second proposal. A proposal they have already voted on is absent from the waiting list. Do not ask them to vote on it, even if an earlier message did. When action=outcome the vote is closed. Use passed, participation, and unity exactly as written. When say= is present, keep that sentence and its percents. Stop. Do not say "You can now decide on the proposal card." Do not ask them to vote, approve, or look. The card says Got it, thank you. Do not invent the token. Every so often, not every turn, and only while several items remain: "Would you like to pause for now, or continue going through what still needs you?" If they pause, stop. If they continue, the next item immediately. When the list is done, say so in one line. Never vote, validate, accept, decline, or decide for them. Your words must be about the item in front of them. A share without the lines is not that item\'s completion, so do not spend the reply restating it. Do not call the tool for an item you are not talking about. The person uses the card.',
-    options?.prior?.trim() && !listAsk && !shareTurn
+    options?.visit === 'welcome_back' && !listAsk && !shareTurn
+      ? `They just came back after being away. Welcome them back warmly by first name — glad, personal, not a status report. Name the time of day naturally from partOfDay=${
+          options.partOfDay ?? 'day'
+        } (say "this morning", "this afternoon", "this evening", or "tonight"). Then open what needs their attention now. Do not invent how long they were gone. Do not invent where they left off. Three or four short sentences, then stop.`
+      : (options?.visit === 'first_open' || !options?.prior?.trim()) &&
+        !listAsk &&
+        !shareTurn
+      ? `This is the first thing you say this visit. Greet them by first name. Name the time of day naturally from partOfDay=${
+          options?.partOfDay ?? 'day'
+        } when it fits (say "this morning", "this afternoon", "this evening", or "tonight"). Then open what needs their attention. Do not invent where you left off.`
+      : options?.prior?.trim() && !listAsk && !shareTurn
       ? `Where you left off. Your previous reply was: "${options.prior
           .trim()
           .replace(/"/g, "'")
@@ -520,8 +539,6 @@ export function formatMemberHomeFacts(
             0,
             500,
           )}". Continue that conversation. One short clause that picks the thread up, then this item. Do not greet again. Do not invent a visit.`
-      : !listAsk && !shareTurn
-      ? 'This is the first thing you say this visit. Greet them by first name. Do not invent where you left off.'
       : null,
     `Person: ${member}. First name: ${givenName(
       home.person,

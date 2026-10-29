@@ -10,6 +10,23 @@ const ACTED_KEY = 'hypha-member-home-acted';
 const CHOICES_KEY = 'hypha-member-home-choices';
 /** Cards already shown in the thread. Kept after the live queue moves on. */
 const SHOWN_KEY = 'hypha-member-home-shown-items';
+/** Last time this member opened home in this browser. */
+const LAST_SEEN_KEY = 'hypha-member-home-last-seen';
+
+/** After this long away, home greets them as a returning friend. */
+export const HOME_WELCOME_BACK_AFTER_MS = 2 * 60 * 60 * 1000;
+
+export type HomePartOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
+
+/** Local part of day for a welcome-back line. */
+export function homePartOfDay(at: Date = new Date()): HomePartOfDay {
+  const hour = at.getHours();
+  if (hour < 5) return 'night';
+  if (hour < 12) return 'morning';
+  if (hour < 17) return 'afternoon';
+  if (hour < 21) return 'evening';
+  return 'night';
+}
 
 /** The signed-in member. Storage is per person so a shared browser does not mix threads. */
 let boundPerson = '';
@@ -52,6 +69,39 @@ function removeStored(base: string) {
   if (!key || typeof window === 'undefined') return;
   window.localStorage.removeItem(key);
   window.sessionStorage.removeItem(base);
+}
+
+export function readHomeLastSeen(): number | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = readStored(LAST_SEEN_KEY);
+    if (!raw) return null;
+    const at = Number(raw);
+    return Number.isFinite(at) && at > 0 ? at : null;
+  } catch {
+    return null;
+  }
+}
+
+export function touchHomeLastSeen(at: number = Date.now()) {
+  if (typeof window === 'undefined') return;
+  try {
+    writeStored(LAST_SEEN_KEY, String(at));
+  } catch {
+    // The visit still runs without a lasting stamp.
+  }
+}
+
+/**
+ * True when home should open with a welcome-back (or first) greeting —
+ * never seen here, or away longer than HOME_WELCOME_BACK_AFTER_MS.
+ */
+export function shouldWelcomeHomeReturn(
+  at: number = Date.now(),
+  lastSeen: number | null = readHomeLastSeen(),
+): boolean {
+  if (lastSeen == null) return true;
+  return at - lastSeen >= HOME_WELCOME_BACK_AFTER_MS;
 }
 
 /** Same-tab signal. Storage events do not fire in the tab that wrote them. */

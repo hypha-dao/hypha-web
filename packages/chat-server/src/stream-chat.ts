@@ -1154,6 +1154,8 @@ export type ChatStreamCallbacks = {
     settled?: string[];
     acted?: string[];
   };
+  memberHomeVisit?: 'welcome_back' | 'first_open' | null;
+  memberHomePartOfDay?: 'morning' | 'afternoon' | 'evening' | 'night' | null;
 };
 
 function sanitizeMessagesToTextOnly(
@@ -1425,6 +1427,8 @@ export async function createChatStreamResult(
     memberHome,
     networkOutlook,
     memberHomeMemory,
+    memberHomeVisit,
+    memberHomePartOfDay,
   }: ChatStreamCallbacks,
 ): Promise<
   ReturnType<typeof streamText> & {
@@ -1472,6 +1476,8 @@ export async function createChatStreamResult(
           resumed: /carried out the recommended action/i.test(
             memberHomeLastUserText ?? '',
           ),
+          visit: memberHomeVisit ?? null,
+          partOfDay: memberHomePartOfDay ?? null,
           notADecision: /not a proposal|nothing to decide/i.test(
             memberHomeLastUserText ?? '',
           ),

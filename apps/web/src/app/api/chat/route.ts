@@ -108,6 +108,8 @@ export async function POST(req: Request) {
   const memberHome = parsed.data.memberHome === true;
   const networkOutlook = parsed.data.networkOutlook === true;
   const memberHomeMemory = parsed.data.memberHomeMemory;
+  const memberHomeVisit = parsed.data.memberHomeVisit ?? null;
+  const memberHomePartOfDay = parsed.data.memberHomePartOfDay ?? null;
 
   if (spaceSlug?.trim()) {
     const interactionAuth = await authorizeSpacePanelInteraction({
@@ -144,6 +146,8 @@ export async function POST(req: Request) {
       memberHome,
       networkOutlook,
       memberHomeMemory,
+      memberHomeVisit,
+      memberHomePartOfDay,
     });
   } catch (error) {
     console.error('[chat][route][stream-init-error]', {
