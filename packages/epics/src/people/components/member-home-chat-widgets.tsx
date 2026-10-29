@@ -18,6 +18,7 @@ import {
   Phone,
   Plus,
   Video,
+  Wallet,
 } from 'lucide-react';
 import {
   ERC20_TOKEN_TRANSFER_ADDRESSES,
@@ -50,6 +51,7 @@ import {
 } from '../../common/format-blockchain-error';
 import {
   formatWalletAmount,
+  shortenWalletAddress,
   WalletHoldingLine,
 } from '../../common/wallet-flow-card';
 
@@ -1002,12 +1004,12 @@ export function MemberHomeSendTokensWidget({
             {sent.count > 1
               ? t('sendTokensArrivedMany', {
                   count: sent.count,
-                  name: sent.name,
+                  name: shortenWalletAddress(sent.name),
                 })
               : t('sendTokensArrived', {
                   amount: formatAmount(sent.amount),
                   symbol: sent.symbol,
-                  name: sent.name,
+                  name: shortenWalletAddress(sent.name),
                 })}
           </p>
           <p className="mt-2 text-2 text-neutral-11">{t('sendTokensSigned')}</p>
@@ -1098,15 +1100,25 @@ export function MemberHomeSendTokensWidget({
                               personId={person.id}
                             />
                           ) : (
-                            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-background-2 text-1 text-foreground">
+                            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-background-2 text-foreground">
                               {icon ? (
                                 <img
                                   src={icon}
                                   alt=""
                                   className="h-full w-full object-cover"
                                 />
+                              ) : /^0x[a-fA-F0-9]{40}$/i.test(
+                                  item.address.trim(),
+                                ) ? (
+                                <Wallet
+                                  className="size-4"
+                                  strokeWidth={1.75}
+                                  aria-hidden
+                                />
                               ) : (
-                                item.name.trim().charAt(0).toUpperCase()
+                                <span className="text-1">
+                                  {item.name.trim().charAt(0).toUpperCase()}
+                                </span>
                               )}
                             </span>
                           )}
@@ -1120,7 +1132,7 @@ export function MemberHomeSendTokensWidget({
                           ) : null}
                         </span>
                         <span className="line-clamp-2 w-full text-center text-[11px] leading-tight">
-                          {item.name}
+                          {shortenWalletAddress(item.name)}
                         </span>
                       </button>
                     </li>
@@ -1363,12 +1375,12 @@ export function MemberHomeSendTokensWidget({
               : readyLines.length > 1
               ? t('sendTokensSendMany', {
                   count: readyLines.length,
-                  name: target.name,
+                  name: shortenWalletAddress(target.name),
                 })
               : t('sendTokensSend', {
                   amount: formatAmount(readyLines[0]?.amount ?? 0),
                   symbol: readyLines[0]?.token.symbol ?? '',
-                  name: target.name,
+                  name: shortenWalletAddress(target.name),
                 })}
           </Button>
           {error === 'insufficient' ? (
