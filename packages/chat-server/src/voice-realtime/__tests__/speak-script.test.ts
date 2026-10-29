@@ -19,9 +19,9 @@ describe('resolveSpeechVoice', () => {
     expect(resolveSpeechVoice('Cedar')).toBe('cedar');
   });
 
-  it('falls back to coral for a voice the speech model cannot speak', () => {
+  it('falls back to shimmer for a voice the speech model cannot speak', () => {
     delete process.env.OPENAI_REALTIME_VOICE;
-    expect(resolveSpeechVoice('not-a-voice')).toBe('coral');
+    expect(resolveSpeechVoice('not-a-voice')).toBe('shimmer');
   });
 
   it('uses the configured realtime voice when none is passed', () => {
@@ -29,18 +29,17 @@ describe('resolveSpeechVoice', () => {
     expect(resolveSpeechVoice()).toBe('sage');
   });
 
-  it('keeps the joyful home speaker even when realtime is a low voice', () => {
+  it('keeps the soft home speaker even when realtime is a low voice', () => {
     process.env.OPENAI_REALTIME_VOICE = 'cedar';
     expect(resolveHomeSpeechVoice()).toBe(HOME_SPEECH_VOICE);
-    expect(HOME_SPEECH_VOICE).toBe('coral');
+    expect(HOME_SPEECH_VOICE).toBe('shimmer');
   });
 
-  it('asks for a short cheerful joyful delivery', () => {
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/cheerful/i);
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/joyful/i);
-    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/warm and close/i);
+  it('asks for a short warm natural delivery', () => {
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/warmly and naturally/i);
     expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/never serious/i);
     expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/never distant/i);
+    expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/not sound performed/i);
     expect(SPEECH_TONE_INSTRUCTIONS).toMatch(/ease into the first word/i);
     expect(HOME_SPEECH_SPEED).toBeGreaterThan(1);
     expect(HOME_SPEECH_SPEED).toBeLessThan(1.2);
