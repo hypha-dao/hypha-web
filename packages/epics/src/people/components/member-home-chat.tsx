@@ -1587,7 +1587,12 @@ export function MemberHomeChat({
   useLayoutEffect(() => {
     const node = scroller.current;
     if (!node) return;
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
 
+    // After a hidden card action: one intentional glide onto the new reply,
+    // then release voice. Do not re-target on every streamed token.
     if (holdVoiceRef.current) {
       if (gliding.current) return;
       if (arrivalScrollStarted.current) {
@@ -1600,8 +1605,8 @@ export function MemberHomeChat({
         return;
       }
       const target =
-        node.querySelector('[data-home-reply-text]') ??
-        node.querySelector('[data-home-arrival]');
+        node.querySelector('[data-home-arrival]') ??
+        node.querySelector('[data-home-reply-text]');
       if (!target) return;
       arrivalScrollStarted.current = true;
       const top = scrollerTopForTarget(node, target);
@@ -1627,16 +1632,13 @@ export function MemberHomeChat({
     }
 
     if (!pinnedToEnd.current || gliding.current) return;
-    const spoken =
-      node.querySelector('[data-home-reply-text]') ??
-      node.querySelector('[data-home-arrival]');
-    const top = spoken ? scrollerTopForTarget(node, spoken) : node.scrollHeight;
-    const glide =
-      (glideScroll.current || isStreaming) &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    glideScroll.current = false;
+    const top = node.scrollHeight;
     if (Math.abs(node.scrollTop - top) < 2) return;
-    if (glide) {
+
+    // One smooth settle after send. While tokens stream, stick to the bottom
+    // without restarting a long glide on every word (that fought the user).
+    if (glideScroll.current && !reduceMotion) {
+      glideScroll.current = false;
       gliding.current = true;
       glideScrollerTo(
         node,
@@ -1649,17 +1651,13 @@ export function MemberHomeChat({
           gliding.current = false;
           const current = scroller.current;
           if (current && pinnedToEnd.current && !holdVoiceRef.current) {
-            const follow =
-              current.querySelector('[data-home-reply-text]') ??
-              current.querySelector('[data-home-arrival]');
-            current.scrollTop = follow
-              ? scrollerTopForTarget(current, follow)
-              : current.scrollHeight;
+            current.scrollTop = current.scrollHeight;
           }
         },
       );
       return;
     }
+    glideScroll.current = false;
     node.scrollTop = top;
   }, [
     focusedItem,
