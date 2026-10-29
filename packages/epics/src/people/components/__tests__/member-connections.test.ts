@@ -515,23 +515,42 @@ describe('hiddenLegacyPairRoomIds', () => {
 });
 
 describe('orphanedDirectRoomIds', () => {
-  it('keeps the remembered room when both pair rooms exist', () => {
+  it('keeps the newest room when an older one is the remembered room', () => {
     const orphans = orphanedDirectRoomIds(
       [
         {
-          roomId: '!older',
+          roomId: '!current',
           otherUserId: '@gerardo:matrix',
           lastTs: 50,
         },
         {
-          roomId: '!later',
+          roomId: '!remembered',
           otherUserId: '@Gerardo:matrix',
           lastTs: 20,
         },
       ],
-      new Map([['@gerardo:matrix', '!later']]),
+      new Map([['@gerardo:matrix', '!remembered']]),
     );
-    expect(orphans).toEqual(['!older']);
+    expect(orphans).toEqual(['!remembered']);
+  });
+
+  it('keeps the remembered room when it is tied for newest', () => {
+    const orphans = orphanedDirectRoomIds(
+      [
+        {
+          roomId: '!other',
+          otherUserId: '@gerardo:matrix',
+          lastTs: 50,
+        },
+        {
+          roomId: '!remembered',
+          otherUserId: '@Gerardo:matrix',
+          lastTs: 50,
+        },
+      ],
+      new Map([['@gerardo:matrix', '!remembered']]),
+    );
+    expect(orphans).toEqual(['!other']);
   });
 });
 

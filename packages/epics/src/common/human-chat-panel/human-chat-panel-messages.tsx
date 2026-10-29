@@ -219,6 +219,8 @@ type HumanChatPanelMessagesProps = {
   unreadNotificationCount?: number;
   /** Called when the scroll viewport reaches the bottom (mark read). */
   onReachedTimelineBottom?: () => void;
+  /** False while the member is reading earlier messages. */
+  onTimelineAtBottomChange?: (atBottom: boolean) => void;
   /** When false the thread is off-screen, so reaching the bottom must not count as read. */
   viewportActive?: boolean;
   /** User clicked “Mark as read” in the banner. */
@@ -258,6 +260,7 @@ export function HumanChatPanelMessages({
   unreadCountIsCapped = false,
   unreadNotificationCount = 0,
   onReachedTimelineBottom,
+  onTimelineAtBottomChange,
   viewportActive = true,
   onMarkAsReadFromBanner,
   scrollTargetEventId,
@@ -378,7 +381,8 @@ export function HumanChatPanelMessages({
     ) as HTMLElement | null;
     if (el) scrollChildIntoTimeline(root, el);
     stickToBottomRef.current = false;
-  }, [firstUnreadMessageId]);
+    onTimelineAtBottomChange?.(false);
+  }, [firstUnreadMessageId, onTimelineAtBottomChange]);
 
   useEffect(() => {
     if (roomId !== prevRoomIdRef.current) {
@@ -497,6 +501,7 @@ export function HumanChatPanelMessages({
     if (shouldScrollUnread) {
       initialUnreadScrollDoneRef.current = true;
       stickToBottomRef.current = false;
+      onTimelineAtBottomChange?.(false);
       window.requestAnimationFrame(() => {
         scrollToUnread();
       });
@@ -512,11 +517,18 @@ export function HumanChatPanelMessages({
       })
     ) {
       stickToBottomRef.current = true;
+      onTimelineAtBottomChange?.(true);
       container.scrollTop = container.scrollHeight;
     }
 
     prevLastIdRef.current = lastId;
-  }, [messages, isStreaming, firstUnreadMessageId, scrollToUnread]);
+  }, [
+    messages,
+    isStreaming,
+    firstUnreadMessageId,
+    onTimelineAtBottomChange,
+    scrollToUnread,
+  ]);
 
   useLayoutEffect(() => {
     if (!scrollTargetEventId) return;
@@ -531,6 +543,7 @@ export function HumanChatPanelMessages({
     if (row instanceof HTMLElement) {
       scrollChildIntoTimeline(root, row);
       stickToBottomRef.current = false;
+      onTimelineAtBottomChange?.(false);
       scrollTargetConsumedRef.current = scrollTargetEventId;
       scrollTargetMissCountRef.current = 0;
       scrollTargetMissHandledRef.current = null;
@@ -550,6 +563,7 @@ export function HumanChatPanelMessages({
     scrollTargetEventId,
     onConsumedScrollTarget,
     onScrollTargetNotFound,
+    onTimelineAtBottomChange,
     timelineRows.length,
   ]);
 
@@ -670,7 +684,11 @@ export function HumanChatPanelMessages({
           const threshold = 80;
           const distanceFromBottom =
             el.scrollHeight - el.scrollTop - el.clientHeight;
-          stickToBottomRef.current = distanceFromBottom <= threshold;
+          const atBottom = distanceFromBottom <= threshold;
+          if (stickToBottomRef.current !== atBottom) {
+            stickToBottomRef.current = atBottom;
+            onTimelineAtBottomChange?.(atBottom);
+          }
         }}
         className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 py-3"
       >

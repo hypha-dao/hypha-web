@@ -835,7 +835,9 @@ export function collectDirectPairRoomHints(
 }
 
 /**
- * Older pair rooms once a later (or remembered) room exists for the same person.
+ * Older pair rooms once a later room exists for the same person.
+ * The newest room is the one the inbox shows, so a remembered older room
+ * must not win — receipting the visible room clears its unread badge.
  */
 export function orphanedDirectRoomIds(
   hints: readonly DirectPairRoomHint[],
@@ -851,11 +853,12 @@ export function orphanedDirectRoomIds(
   const orphans: string[] = [];
   for (const [otherKey, bucket] of byOther) {
     if (bucket.length < 2) continue;
+    const newestTs = Math.max(...bucket.map((room) => room.lastTs));
+    const newest = bucket.filter((room) => room.lastTs === newestTs);
     const remembered = rememberedRoomIdByOther?.get(otherKey);
     const keep =
-      (remembered &&
-        bucket.find((room) => room.roomId === remembered)?.roomId) ||
-      [...bucket].sort((a, b) => b.lastTs - a.lastTs)[0]?.roomId;
+      newest.find((room) => room.roomId === remembered)?.roomId ??
+      newest[0]?.roomId;
     if (!keep) continue;
     for (const room of bucket) {
       if (room.roomId !== keep) orphans.push(room.roomId);

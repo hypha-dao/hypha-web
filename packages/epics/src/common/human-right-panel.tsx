@@ -1500,6 +1500,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [unreadBump, setUnreadBump] = useState(0);
   const [aggregateMentionBump, setAggregateMentionBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
+  /** False while the open thread is scrolled up, so history must not count as read. */
+  const timelineAtBottomRef = useRef(true);
+  const handleTimelineAtBottomChange = useCallback((atBottom: boolean) => {
+    timelineAtBottomRef.current = atBottom;
+  }, []);
   const [signalTeamMemberIds, setSignalTeamMemberIds] = useState<string[]>([]);
   const [signalTeamOwnerId, setSignalTeamOwnerId] = useState<string | null>(
     null,
@@ -5185,21 +5190,32 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     void markChatTimelineRead();
   }, [markChatTimelineRead]);
 
-  // Viewing the open chat is reading it. The messages screen never sent a
-  // receipt, so the nav badge kept every message that had arrived.
+  // Viewing the latest messages is reading them. Scrolling up for history
+  // must not receipt the newest event, or the unread badge disappears
+  // while those messages are still off screen.
   useEffect(() => {
     if (!open || !roomId || !client) return;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const schedule = () => {
+      if (!timelineAtBottomRef.current) return;
       if (timer != null) return;
       timer = setTimeout(() => {
         timer = null;
+        if (!timelineAtBottomRef.current) return;
         void markRoomTimelineRead(roomId);
       }, 400);
     };
     schedule();
     const room = client.getRoom(roomId);
-    const onTimeline = () => schedule();
+    const onTimeline = (
+      event: MatrixEvent,
+      _room?: Room,
+      toStartOfTimeline?: boolean,
+    ) => {
+      if (toStartOfTimeline) return;
+      if (event.getRoomId() !== roomId) return;
+      schedule();
+    };
     const onDecrypted = (event: MatrixEvent) => {
       if (event.getRoomId() === roomId) schedule();
     };
@@ -6830,6 +6846,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
                       viewportActive={sidebarOpen && activeTab === 'chat'}
                       onReachedTimelineBottom={handleReachedTimelineBottom}
+                      onTimelineAtBottomChange={handleTimelineAtBottomChange}
                       onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
                       scrollTargetEventId={scrollToEventId}
                       onConsumedScrollTarget={handleConsumedScrollTarget}
