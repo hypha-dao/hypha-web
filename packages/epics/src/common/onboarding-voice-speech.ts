@@ -115,6 +115,17 @@ function isSpokenNoiseSentence(sentence: string): boolean {
   ) {
     return true;
   }
+  // Relay meta that leaked when prompts labeled the chat reply as a "script".
+  // Anchor to end of sentence so a full reply line is not wiped before split.
+  if (
+    /^i(?:'ll| will) read (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
+    /^here(?:'s| is) (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
+    /^reading (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
+    /^let me read (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
+    /^the script (?:says|is|goes)\b.*$/i.test(trimmed)
+  ) {
+    return true;
+  }
   return false;
 }
 

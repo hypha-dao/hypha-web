@@ -78,6 +78,17 @@ I've drafted "Issue New Token" — work for you?`;
 
     expect(spoken).toBe('One. Two. Three. Four. Could you get on a call?');
   });
+
+  it('drops relay meta that names the script label', () => {
+    const input =
+      "I'll read the script. Edgar needs projects that pay. Can you jump on?";
+
+    const spoken = prepareAssistantTextForSpeech(input);
+
+    expect(spoken).not.toMatch(/script/i);
+    expect(spoken).toContain('Edgar needs projects that pay.');
+    expect(spoken).toContain('Can you jump on?');
+  });
 });
 
 describe('pickVoiceInterimAckPhrase', () => {

@@ -176,23 +176,21 @@ function buildRealtimeSpeakLanguageDirective(): string {
 }
 
 function buildRealtimeSpeakInstructions(text: string): string {
-  // Same relay instructions as LIVE: verbatim script, warm natural tone.
-  // Extra delivery coaching (bright/cheerful/young woman) changed rhythm.
+  // Verbatim relay, warm natural tone. Never label the block "script" — the
+  // model has spoken that label out loud ("I'll read the script").
   return [
     'CRITICAL OVERRIDE FOR THIS RESPONSE ONLY.',
     'Ignore any earlier briefing, space facts, or conversation summary for speech content.',
     'You are a voice output relay only. Do not call tools or add new information.',
-    'Your only job is text-to-speech of the SCRIPT below.',
-    'Speak the SCRIPT verbatim — every word, in order, with a warm natural tone.',
+    'Read aloud only the chat reply after ---CHAT_REPLY---, verbatim, every word, in order, with a warm natural tone.',
+    'Start on its first word. Never say the marker. Never say "script", "the script", "here is the script", or "I will read the script".',
     'Do not paraphrase, summarize, reorder, soften, or skip any sentence.',
-    'Do not add greetings, fillers, questions, or closings that are not in the SCRIPT.',
+    'Do not add greetings, fillers, questions, or closings that are not in the chat reply.',
     'Do not ask follow-up questions. Do not return to a previous signal or topic.',
     buildRealtimeSpeakLanguageDirective(),
     '',
-    'SCRIPT (read aloud exactly):',
-    '"""',
+    '---CHAT_REPLY---',
     text,
-    '"""',
   ].join('\n');
 }
 
@@ -427,7 +425,7 @@ export async function prefetchExactSpeechPcm({
 }
 
 /**
- * Play the chat script as synthesized speech. The realtime model is not asked
+ * Play the chat reply as synthesized speech. The realtime model is not asked
  * to say it: that call generates a new reply, and the words drift.
  * Streams PCM from `/api/voice/speak` so the first samples play before the
  * full clip arrives (avoids waiting on arrayBuffer + decodeAudioData).
