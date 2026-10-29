@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  firstMarkdownParagraph,
   headingForSectionKey,
   type SpaceContextSectionKey,
   type SpaceContextSectionRecord,
@@ -37,7 +36,6 @@ export function SpaceContextCard({
   const t = useTranslations('SpaceContext');
   const title = headingForSectionKey(section.sectionKey);
   const empty = !section.markdown.trim();
-  const lead = empty ? '' : firstMarkdownParagraph(section.markdown);
   const footer = footerCopy(section, t);
 
   return (
@@ -59,17 +57,27 @@ export function SpaceContextCard({
         <SpaceContextStatusChip status={section.status} />
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-between gap-4 pt-0">
-        <div className="min-h-24">
+        <div className="relative min-h-24">
           {empty ? (
             <p className="text-2 text-neutral-11">{t('card.emptyBody')}</p>
           ) : (
-            <MemoryProse
-              source={featured ? section.markdown : lead}
-              className={cn(
-                'text-2 leading-relaxed text-neutral-12',
-                !featured && 'line-clamp-6',
-              )}
-            />
+            <>
+              <div
+                className={cn(
+                  featured ? 'max-h-[28rem]' : 'max-h-36',
+                  'overflow-hidden',
+                )}
+              >
+                <MemoryProse
+                  source={section.markdown}
+                  className="text-2 leading-relaxed text-neutral-12"
+                />
+              </div>
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-background-2 to-transparent"
+                aria-hidden
+              />
+            </>
           )}
         </div>
         <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-3">

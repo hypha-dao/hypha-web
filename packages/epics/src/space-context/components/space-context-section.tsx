@@ -214,6 +214,10 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
             sectionKey={openSection}
             canMutate={canMutate}
             onClose={() => setOpenSection(null)}
+            onDraftSaved={async () => {
+              setSuccessMessage(t('success.saved'));
+              await refresh();
+            }}
             onPropose={(keys) => {
               const query = new URLSearchParams({
                 sections: keys.join(','),

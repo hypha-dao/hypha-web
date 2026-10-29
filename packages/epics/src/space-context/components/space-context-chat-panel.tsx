@@ -45,6 +45,7 @@ export function SpaceContextChatPanel({
   canMutate,
   onClose,
   onPropose,
+  onDraftSaved,
 }: {
   spaceSlug: string;
   spaceTitle?: string;
@@ -52,6 +53,7 @@ export function SpaceContextChatPanel({
   canMutate: boolean;
   onClose: () => void;
   onPropose: (keys: SpaceContextSectionKey[]) => void;
+  onDraftSaved?: () => void | Promise<void>;
 }) {
   const t = useTranslations('SpaceContext');
   const locale = useLocale();
@@ -62,8 +64,12 @@ export function SpaceContextChatPanel({
   );
   const specialist = SPACE_CONTEXT_SPECIALISTS[sectionKey];
   const [draft, setDraft] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedFlash, setSavedFlash] = useState(false);
   const hydratedKey = useRef<string | null>(null);
   const persistedAssistantIds = useRef(new Set<string>());
+  const savedFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const transport = useMemo(
     () =>
@@ -107,6 +113,12 @@ export function SpaceContextChatPanel({
     );
   }, [detail, sectionKey, setMessages]);
 
+  useEffect(() => {
+    return () => {
+      if (savedFlashTimer.current) clearTimeout(savedFlashTimer.current);
+    };
+  }, []);
+
   const isStreaming = status === 'streaming' || status === 'submitted';
   const lastAssistant = [...messages]
     .reverse()
@@ -149,13 +161,26 @@ export function SpaceContextChatPanel({
   };
 
   const handleSaveDraft = async () => {
-    await patchSpaceContextSectionRequest({
-      spaceSlug,
-      sectionKey,
-      markdown: draft,
-      getAccessToken,
-    });
-    await refresh();
+    if (!canMutate || saving) return;
+    setSaveError(null);
+    setSaving(true);
+    try {
+      await patchSpaceContextSectionRequest({
+        spaceSlug,
+        sectionKey,
+        markdown: draft,
+        getAccessToken,
+      });
+      await refresh();
+      await onDraftSaved?.();
+      setSavedFlash(true);
+      if (savedFlashTimer.current) clearTimeout(savedFlashTimer.current);
+      savedFlashTimer.current = setTimeout(() => setSavedFlash(false), 2500);
+    } catch {
+      setSaveError(t('error.save'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -243,9 +268,14 @@ export function SpaceContextChatPanel({
                 variant="ghost"
                 colorVariant="neutral"
                 className="h-8 px-2"
+                disabled={saving}
                 onClick={() => void handleSaveDraft()}
               >
-                {t('chat.saveDraft')}
+                {saving
+                  ? t('chat.saving')
+                  : savedFlash
+                  ? t('chat.saved')
+                  : t('chat.saveDraft')}
               </Button>
             ) : null}
           </div>
@@ -258,12 +288,17 @@ export function SpaceContextChatPanel({
             aria-label={t('chat.draftLabel')}
           />
         </div>
+        {saveError ? (
+          <p className="text-2 text-error-11">{saveError}</p>
+        ) : savedFlash ? (
+          <p className="text-2 text-success-11">{t('success.saved')}</p>
+        ) : null}
 
         {canMutate && detail?.section.status !== 'proposed' ? (
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              disabled={!draft.trim()}
+              disabled={!draft.trim() || saving}
               onClick={() => onPropose([sectionKey])}
             >
               {t('chat.propose')}
@@ -272,9 +307,10 @@ export function SpaceContextChatPanel({
               type="button"
               variant="outline"
               colorVariant="neutral"
+              disabled={saving}
               onClick={() => void handleSaveDraft()}
             >
-              {t('chat.keepDrafting')}
+              {saving ? t('chat.saving') : t('chat.keepDrafting')}
             </Button>
           </div>
         ) : null}
