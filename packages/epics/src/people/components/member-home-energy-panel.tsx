@@ -138,20 +138,20 @@ function EnergyCommunityCard({
       <dl className="mt-2 grid gap-2">
         <div className="flex items-baseline justify-between gap-4">
           <dt className="text-1 text-neutral-11">{t('you')}</dt>
-          <dd className="text-right text-2 tabular-nums">
-            {t('used', { kwh: formatKwh(community.youUsedKwh, missing) })}
+          <dd className="text-right text-1 tabular-nums">
+            {t('consumed', { kwh: formatKwh(community.youUsedKwh, missing) })}
             <span className="text-neutral-11"> · </span>
-            {t('made', { kwh: formatKwh(community.youMadeKwh, missing) })}
+            {t('produced', { kwh: formatKwh(community.youMadeKwh, missing) })}
           </dd>
         </div>
         <div className="flex items-baseline justify-between gap-4">
           <dt className="text-1 text-neutral-11">{t('community')}</dt>
-          <dd className="text-right text-2 tabular-nums">
-            {t('used', {
+          <dd className="text-right text-1 tabular-nums">
+            {t('consumed', {
               kwh: formatKwh(community.communityUsedKwh, missing),
             })}
             <span className="text-neutral-11"> · </span>
-            {t('made', {
+            {t('produced', {
               kwh: formatKwh(community.communityMadeKwh, missing),
             })}
           </dd>
@@ -165,13 +165,13 @@ function EnergyCommunityCard({
           <>
             <div className="flex items-baseline justify-between gap-4">
               <dt className="text-1 text-neutral-11">{t('thisMonth')}</dt>
-              <dd className="text-2 tabular-nums">
+              <dd className="text-1 tabular-nums">
                 {money(community.oweThisMonth)}
               </dd>
             </div>
             <div className="flex items-baseline justify-between gap-4">
               <dt className="text-1 text-neutral-11">{t('lastMonth')}</dt>
-              <dd className="text-2 tabular-nums">
+              <dd className="text-1 tabular-nums">
                 {money(community.oweLastMonth)}
               </dd>
             </div>
@@ -179,7 +179,7 @@ function EnergyCommunityCard({
         ) : (
           <div className="flex items-baseline justify-between gap-4">
             <dt className="text-1 text-neutral-11">{t('toSettle')}</dt>
-            <dd className="text-2 tabular-nums">
+            <dd className="text-1 tabular-nums">
               {money(community.settleAmount)}
             </dd>
           </div>
