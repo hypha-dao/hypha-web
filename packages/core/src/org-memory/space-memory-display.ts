@@ -41,13 +41,29 @@ export function memoryBodyWithoutRepeatedTitle(
   const text = body.replace(/\s+/g, ' ').trim();
   if (!heading || !text) return body.trim();
   if (text.toLowerCase() === heading.toLowerCase()) return '';
-  if (text.toLowerCase().startsWith(heading.toLowerCase())) {
-    return text
-      .slice(heading.length)
-      .replace(/^[\s—–\-:.,]+/u, '')
-      .trim();
+  // Titles from firstSentence may end with … while the body is the full text.
+  const truncated = /…$|\.\.\.$/u.test(heading);
+  const headingBare = heading
+    .replace(/…$/u, '')
+    .replace(/\.\.\.$/u, '')
+    .trim();
+  const lower = text.toLowerCase();
+  for (const prefix of [heading, headingBare]) {
+    if (!prefix) continue;
+    if (!lower.startsWith(prefix.toLowerCase())) continue;
+    let rest = text.slice(prefix.length);
+    // Truncated titles cut mid-token — drop the leftover stump (`ew` from `overview`).
+    if (truncated && prefix === headingBare) {
+      rest = rest.replace(/^\S+/u, '');
+    }
+    return rest.replace(/^[\s—–\-:.,]+/u, '').trim();
   }
   return body.trim();
+}
+
+/** Fingerprint for collapsing append-only discussion summary snapshots. */
+export function discussionSummaryContentKey(text: string): string {
+  return text.replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
 function firstSentence(text: string, maxLen = 120): string {
@@ -63,6 +79,27 @@ function firstSentence(text: string, maxLen = 120): string {
     cut.lastIndexOf('? '),
   );
   return (stop > 40 ? cut.slice(0, stop + 1) : `${cut}…`).trim();
+}
+
+/** True when an excerpt lead is link spam or a stuttered phrase — not a title. */
+export function looksLikeLowSignalMemoryTitle(value: string): boolean {
+  const compact = value.replace(/\s+/g, ' ').trim();
+  if (!compact) return true;
+  const urls = compact.match(/https?:\/\/\S+/gi) ?? [];
+  const withoutUrls = compact
+    .replace(/https?:\/\/\S+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (urls.length > 0 && withoutUrls.length < 48) return true;
+  if (urls.length >= 2) return true;
+  const words = withoutUrls.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length >= 4) {
+    const half = Math.floor(words.length / 2);
+    const a = words.slice(0, half).join(' ');
+    const b = words.slice(half, half * 2).join(' ');
+    if (a && a === b) return true;
+  }
+  return false;
 }
 
 const BRIDGED_PRIVY_ID =
@@ -169,7 +206,11 @@ export function deriveSpaceMemoryDisplayTitle(input: {
     input.textExcerpt?.trim() ?? '',
   );
   const fromExcerpt = firstSentence(excerptBody);
-  if (fromExcerpt && !looksLikeTechnicalSpaceMemoryName(fromExcerpt)) {
+  if (
+    fromExcerpt &&
+    !looksLikeTechnicalSpaceMemoryName(fromExcerpt) &&
+    !looksLikeLowSignalMemoryTitle(fromExcerpt)
+  ) {
     return fromExcerpt;
   }
 

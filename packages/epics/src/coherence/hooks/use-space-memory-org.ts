@@ -2,6 +2,7 @@
 
 import {
   buildSpaceMemoryItemsFromOrgMemoryPayload,
+  collapseDuplicateDiscussionSummaries,
   EMPTY_SPACE_MEMORY_BRANCH_COUNTS,
   type OrgMemorySpaceMemoryPayload,
   type SpaceMemoryBranchCounts,
@@ -121,7 +122,8 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
       seen.add(row.id);
       unique.push(row);
     }
-    return unique;
+    // Identical discussion-summary refreshes (different ids, same body).
+    return collapseDuplicateDiscussionSummaries(unique);
   }, [loadedPages]);
 
   const totalCount = React.useMemo(() => {

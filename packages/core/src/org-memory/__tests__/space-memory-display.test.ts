@@ -108,6 +108,17 @@ describe('deriveSpaceMemoryDisplayTitle', () => {
       }),
     ).toBe('ok recording with voice only and then shifting to video');
   });
+
+  it('falls back when the excerpt lead is URL spam', () => {
+    expect(
+      deriveSpaceMemoryDisplayTitle({
+        source: 'discussion_summary',
+        name: 'discussion-summary-1.md',
+        textExcerpt:
+          'Hypha call capture notice Hypha call capture notice https://pr.example/overview https://io.example/website',
+      }),
+    ).toBe('Conversation summary');
+  });
 });
 
 describe('memoryBodyWithoutRepeatedTitle', () => {
@@ -120,6 +131,17 @@ describe('memoryBodyWithoutRepeatedTitle', () => {
         body,
       ),
     ).toBe('Then we reviewed recordings.');
+  });
+
+  it('strips a truncated title that ends with an ellipsis', () => {
+    const body =
+      'Hypha call capture notice https://example.com/overview and more notes.';
+    expect(
+      memoryBodyWithoutRepeatedTitle(
+        'Hypha call capture notice https://example.com/overvi…',
+        body,
+      ),
+    ).toBe('and more notes.');
   });
 
   it('returns empty when title and body are the same sentence', () => {

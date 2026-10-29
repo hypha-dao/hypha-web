@@ -40,6 +40,7 @@ import {
   type SpaceMemoryBranch,
   type SpaceMemoryBranchCounts,
 } from '../../org-memory/space-memory-branches';
+import { collapseDuplicateDiscussionSummaries } from '../../org-memory/collapse-discussion-summaries';
 import {
   buildSpaceMemoryCategoryMarkdownPack,
   type SpaceMemoryCategoryIndexItem,
@@ -1314,6 +1315,9 @@ export async function getOrgMemoryBySpaceSlug(
     ...transcriptAssets,
     ...discussionSummaryAssets,
   ].sort(compareOrgMemoryAssetsStable);
+  // Append-only summary refreshes share the same body on different days —
+  // keep the newest of each identical excerpt for the member UI / AI packs.
+  combined = collapseDuplicateDiscussionSummaries(combined);
   if (assetView === 'signal') {
     combined = compactOrgMemoryAssetsForSignal(combined);
   }
