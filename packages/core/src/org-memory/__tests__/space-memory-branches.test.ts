@@ -17,6 +17,12 @@ describe('spaceMemoryBranchForAsset', () => {
     );
   });
 
+  it('keeps written memories in conversations with discussion summaries', () => {
+    expect(spaceMemoryBranchForAsset({ source: 'memory' })).toBe(
+      'conversations',
+    );
+  });
+
   it('keeps AI chat matrix media in ai and other uploads in files', () => {
     expect(
       spaceMemoryBranchForAsset({
@@ -40,9 +46,10 @@ describe('countSpaceMemoryBranches', () => {
         { source: 'call_recording' },
         { source: 'matrix_chat', documentLabel: 'AI Chat' },
         { source: 'memory' },
+        { source: 'proposal_upload' },
       ]),
     ).toEqual({
-      conversations: 2,
+      conversations: 3,
       calls: 1,
       ai: 1,
       files: 1,

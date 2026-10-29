@@ -5,6 +5,13 @@ import type {
 
 export type SpaceMemoryBranch = 'conversations' | 'calls' | 'ai' | 'files';
 
+export const SPACE_MEMORY_BRANCHES = [
+  'conversations',
+  'calls',
+  'ai',
+  'files',
+] as const satisfies readonly SpaceMemoryBranch[];
+
 export type SpaceMemoryBranchCounts = Record<SpaceMemoryBranch, number>;
 
 export const EMPTY_SPACE_MEMORY_BRANCH_COUNTS: SpaceMemoryBranchCounts = {
@@ -25,7 +32,9 @@ export function spaceMemoryBranchForAsset(input: {
   source: SpaceMemorySource | string;
   documentLabel?: string | null;
 }): SpaceMemoryBranch {
-  if (input.source === 'discussion_summary') return 'conversations';
+  if (input.source === 'discussion_summary' || input.source === 'memory') {
+    return 'conversations';
+  }
   if (input.source === 'call_recording' || input.source === 'call_transcript') {
     return 'calls';
   }

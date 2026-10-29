@@ -63,11 +63,14 @@ export type OrgMemoryAssetWire = {
   document_slug?: string;
   document_label?: string;
   call_session_id?: string;
+  call_recording_id?: number;
+  call_transcript_id?: number;
   discussion_summary_id?: number;
   text_excerpt?: string;
   context_title?: string;
   signal_title?: string;
   room_title?: string;
+  category?: 'conversations' | 'calls' | 'ai' | 'files';
   occurred_at: string;
 };
 
@@ -87,6 +90,13 @@ export type OrgMemorySpaceMemoryPayload = {
     calls: number;
     ai: number;
     files: number;
+  };
+  /** AI context packs — not rendered in the Space Memory panel. */
+  assets_category_markdown?: {
+    conversations: string;
+    calls: string;
+    ai: string;
+    files: string;
   };
   matrix_fetch?: {
     used_bot_access_token?: boolean;
@@ -478,7 +488,7 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
         name:
           a.source === 'discussion_summary'
             ? `discussion-summary-${syntheticId}.md`
-            : `call-transcript-${syntheticId}.txt`,
+            : `call-transcript-${syntheticId}.md`,
         contextTitle: signalTitle ?? roomTitle ?? contextTitle,
         textExcerpt: excerpt,
       });

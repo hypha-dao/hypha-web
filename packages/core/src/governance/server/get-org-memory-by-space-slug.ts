@@ -35,8 +35,15 @@ import {
 import {
   countSpaceMemoryBranches,
   EMPTY_SPACE_MEMORY_BRANCH_COUNTS,
+  SPACE_MEMORY_BRANCHES,
+  spaceMemoryBranchForAsset,
+  type SpaceMemoryBranch,
   type SpaceMemoryBranchCounts,
 } from '../../org-memory/space-memory-branches';
+import {
+  buildSpaceMemoryCategoryMarkdownPack,
+  type SpaceMemoryCategoryIndexItem,
+} from '../../org-memory/space-memory-markdown';
 
 /** Aligned with MCP §8.1 / architecture org memory rows. */
 export type OrgMemoryAsset = {
@@ -69,6 +76,8 @@ export type OrgMemoryAsset = {
   context_title?: string;
   signal_title?: string;
   room_title?: string;
+  /** Space Memory left-nav category for this asset (set before return). */
+  category?: SpaceMemoryBranch;
   occurred_at: string;
 };
 
@@ -160,6 +169,11 @@ export type OrgMemoryBySpaceSlugSuccess = {
     ai: number;
     files: number;
   };
+  /**
+   * Generated markdown context packs — one file per category for AI/RAG-style
+   * reads. Not shown in the Space Memory panel.
+   */
+  assets_category_markdown: Record<SpaceMemoryBranch, string>;
 };
 
 export type OrgMemoryBySpaceSlugNotFound = {
@@ -175,7 +189,72 @@ export type OrgMemoryBySpaceSlugNotFound = {
   pagination: OrgMemoryBySpaceSlugSuccess['pagination'];
   assets_pagination: OrgMemoryBySpaceSlugSuccess['assets_pagination'];
   assets_category_counts: SpaceMemoryBranchCounts;
+  assets_category_markdown: Record<SpaceMemoryBranch, string>;
 };
+
+function emptyCategoryMarkdown(
+  spaceSlug: string,
+): Record<SpaceMemoryBranch, string> {
+  return buildSpaceMemoryCategoryMarkdownPack({
+    spaceSlug,
+    itemsByCategory: {
+      conversations: [],
+      calls: [],
+      ai: [],
+      files: [],
+    },
+  });
+}
+
+function withAssetCategories(assets: OrgMemoryAsset[]): OrgMemoryAsset[] {
+  return assets.map((asset) => ({
+    ...asset,
+    category: spaceMemoryBranchForAsset({
+      source: asset.source,
+      documentLabel: asset.document_label,
+    }),
+  }));
+}
+
+function categoryMarkdownForAssets(input: {
+  spaceSlug: string;
+  spaceTitle?: string | null;
+  asOf: string;
+  assets: Array<OrgMemoryAsset & { asset_key?: string }>;
+}): Record<SpaceMemoryBranch, string> {
+  const itemsByCategory = Object.fromEntries(
+    SPACE_MEMORY_BRANCHES.map((branch) => [
+      branch,
+      [] as SpaceMemoryCategoryIndexItem[],
+    ]),
+  ) as Record<SpaceMemoryBranch, SpaceMemoryCategoryIndexItem[]>;
+
+  for (const asset of input.assets) {
+    const category =
+      asset.category ??
+      spaceMemoryBranchForAsset({
+        source: asset.source,
+        documentLabel: asset.document_label,
+      });
+    itemsByCategory[category].push({
+      title:
+        asset.context_title?.trim() ||
+        asset.document_title?.trim() ||
+        asset.filename,
+      occurredAt: asset.occurred_at,
+      excerpt: asset.text_excerpt,
+      assetKey: asset.asset_key,
+      source: asset.source,
+    });
+  }
+
+  return buildSpaceMemoryCategoryMarkdownPack({
+    spaceSlug: input.spaceSlug,
+    spaceTitle: input.spaceTitle,
+    asOf: input.asOf,
+    itemsByCategory,
+  });
+}
 
 export type GetOrgMemoryBySpaceSlugResult =
   | OrgMemoryBySpaceSlugSuccess
@@ -965,6 +1044,7 @@ export async function getOrgMemoryBySpaceSlug(
           safeAssetsPageSize,
         ),
         assets_category_counts: { ...EMPTY_SPACE_MEMORY_BRANCH_COUNTS },
+        assets_category_markdown: emptyCategoryMarkdown(spaceSlug),
       },
     };
   }
@@ -1013,6 +1093,7 @@ export async function getOrgMemoryBySpaceSlug(
           safeAssetsPageSize,
         ),
         assets_category_counts: { ...EMPTY_SPACE_MEMORY_BRANCH_COUNTS },
+        assets_category_markdown: emptyCategoryMarkdown(spaceSlug),
       },
     };
   }
@@ -1238,18 +1319,25 @@ export async function getOrgMemoryBySpaceSlug(
   }
   combined = filterAssetsBySearch(combined, assetsSearch);
 
+  const categorized = withAssetCategories(combined);
   const assets_category_counts = countSpaceMemoryBranches(
-    combined.map((asset) => ({
+    categorized.map((asset) => ({
       source: asset.source,
       documentLabel: asset.document_label,
     })),
   );
 
-  const total = combined.length;
+  const total = categorized.length;
   const totalPages = total === 0 ? 0 : Math.ceil(total / safeAssetsPageSize);
   const offset = (safeAssetsPage - 1) * safeAssetsPageSize;
-  const pageSlice = combined.slice(offset, offset + safeAssetsPageSize);
-  const assetsWithKeys = withOrgMemoryAssetKeys(pageSlice);
+  const assetsWithKeys = withOrgMemoryAssetKeys(categorized);
+  const pageSlice = assetsWithKeys.slice(offset, offset + safeAssetsPageSize);
+  const assets_category_markdown = categoryMarkdownForAssets({
+    spaceSlug: roster.space_slug,
+    spaceTitle: roster.space?.title,
+    asOf,
+    assets: assetsWithKeys,
+  });
 
   return {
     access: 'ok',
@@ -1261,7 +1349,7 @@ export async function getOrgMemoryBySpaceSlug(
       source_chain,
       asOf,
       members: roster.members,
-      org_memory_assets: assetsWithKeys,
+      org_memory_assets: pageSlice,
       matrix_fetch: matrixFetchMeta,
       pagination: roster.pagination,
       assets_pagination: {
@@ -1273,6 +1361,7 @@ export async function getOrgMemoryBySpaceSlug(
         has_previous_page: totalPages > 0 && safeAssetsPage > 1,
       },
       assets_category_counts,
+      assets_category_markdown,
     },
   };
 }
