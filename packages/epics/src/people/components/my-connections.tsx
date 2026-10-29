@@ -1386,28 +1386,60 @@ export function sumConversationUnread(client: MatrixClient | null) {
 
 export { notifyConversationUnreadChanged };
 
-let messagesScreenCount = 0;
-const messagesScreenCountListeners = new Set<() => void>();
-
-/** New messages in All messages. The nav badge reads this, not the inbox size. */
-export function publishMessagesScreenCount(count: number) {
-  const next = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
-  if (next === messagesScreenCount) return;
-  messagesScreenCount = next;
-  for (const listener of messagesScreenCountListeners) listener();
-}
-
+/**
+ * Unread total for the Messages nav badge: typed DMs/groups plus space /
+ * signal / proposal / ecosystem channels that All messages would list.
+ * Follows Matrix receipts live so the badge updates when a message arrives —
+ * not only after opening Messages.
+ */
 export function useMessagesScreenCount() {
-  const [count, setCount] = useState(messagesScreenCount);
+  const { client } = useMatrix();
+  const { jwt } = useJwt();
+  const { data: inboxContext } = useSWR<InboxContext>(
+    jwt ? ['/api/v1/people/me/message-inbox-context', jwt, 'nav-badge'] : null,
+    async ([url, token]) => {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Throw so SWR keeps the last good context instead of zeroing signal
+      // unreads on a transient non-OK response.
+      if (!response.ok) {
+        throw new Error(`message-inbox-context ${response.status}`);
+      }
+      return (await response.json()) as InboxContext;
+    },
+    { refreshInterval: 60_000 },
+  );
+  const context = inboxContext ?? EMPTY_INBOX_CONTEXT;
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
-    const sync = () => setCount(messagesScreenCount);
-    messagesScreenCountListeners.add(sync);
-    sync();
-    return () => {
-      messagesScreenCountListeners.delete(sync);
+    if (!client) {
+      setCount(0);
+      return;
+    }
+    let timer = 0;
+    let stopped = false;
+    const publish = () => {
+      timer = 0;
+      if (stopped) return;
+      const next = messagesScreenUnreadSnapshot(client, context);
+      setCount((prev) => (prev === next ? prev : next));
     };
-  }, []);
+    // Coalesce, but do not keep postponing: the total should climb as each
+    // chunk of rooms is summarised, not after the last person in the backlog.
+    const schedule = () => {
+      if (timer) return;
+      timer = window.setTimeout(publish, 150);
+    };
+    const unsubscribe = attachConversationList(client, schedule);
+    publish();
+    return () => {
+      stopped = true;
+      window.clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [client, context]);
 
   return count;
 }
@@ -1429,8 +1461,6 @@ export function useConversationUnreadCount() {
       const next = conversationUnreadSnapshot(client);
       setCount((prev) => (prev === next ? prev : next));
     };
-    // Coalesce, but do not keep postponing: the total should climb as each
-    // chunk of rooms is summarised, not after the last person in the backlog.
     const schedule = () => {
       if (timer) return;
       timer = window.setTimeout(publish, 150);
@@ -1682,6 +1712,19 @@ function joinedChannelSnapshots(client: MatrixClient): JoinedChannelSnapshot[] {
   return snapshots;
 }
 
+/** Same unread total as All messages: people list + relevant channel rows. */
+function messagesScreenUnreadSnapshot(
+  client: MatrixClient,
+  context: InboxContext,
+) {
+  const channelUnread = channelRowsFromSnapshots(
+    joinedChannelSnapshots(client),
+    context,
+    '',
+  ).reduce((sum, row) => sum + (row.unread > 0 ? row.unread : 0), 0);
+  return conversationUnreadSnapshot(client) + channelUnread;
+}
+
 const channelPreviewAttempted = new Set<string>();
 let channelPreviewBackfillInFlight = false;
 
@@ -1781,6 +1824,14 @@ export function MyConnections({
   const openedDirectChatRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
   const inboxFiltersRef = useRef<HTMLDivElement | null>(null);
+  const chainFilterScroll = useChainScrollAtEdge();
+  const setInboxFiltersRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      inboxFiltersRef.current = node;
+      chainFilterScroll(node);
+    },
+    [chainFilterScroll],
+  );
   const inboxListRef = useRef<HTMLUListElement | null>(null);
   const inboxEndRef = useRef<HTMLLIElement | null>(null);
   const inboxNavReady = useRef(false);
@@ -2543,10 +2594,6 @@ export function MyConnections({
         section !== 'archived' &&
         (picking || inboxFilter === 'all' || inboxFilter === 'direct')));
   useEffect(() => {
-    if (section !== 'messages' || picking || listLoading) return;
-    publishMessagesScreenCount(inboxView.counts.all.unread);
-  }, [inboxView.counts.all.unread, listLoading, picking, section]);
-  useEffect(() => {
     const root = inboxListRef.current;
     if (!root || section !== 'messages' || picking) return;
     const row = root.querySelector<HTMLElement>(
@@ -2888,15 +2935,16 @@ export function MyConnections({
         >
           {section === 'messages' ? (
             <div
-              ref={inboxFiltersRef}
+              ref={setInboxFiltersRef}
               data-messages-filters=""
               className={cn(
-                // Channel menu stays in page flow. The right list is sticky
-                // and capped so page and list can both scroll.
-                'w-full shrink-0 lg:w-80',
+                // Same sticky edge as the conversation list. Page scroll and
+                // the list's own scroll are unchanged. The unread counts stay
+                // in view instead of leaving with the page.
+                'narrow-scrollbar w-full shrink-0 lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:w-80 lg:self-start lg:min-h-0 lg:bg-page-background',
                 picking || inboxChannelOpen
                   ? 'hidden lg:block'
-                  : 'lg:flex-none lg:overflow-visible',
+                  : 'lg:flex-none',
               )}
             >
               <MessagesInboxFilters
@@ -3121,7 +3169,7 @@ export function MyConnections({
                 people.length === 0 &&
                 !searching ? (
                   <p className="text-2 text-muted-foreground">
-                    {needle ? t('noMatches') : t('archivedEmpty')}
+                    {needle ? t('noMembersMatchSearch') : t('archivedEmpty')}
                   </p>
                 ) : null}
 
@@ -3133,7 +3181,11 @@ export function MyConnections({
                 !searching ? (
                   <p className="text-2 text-muted-foreground">
                     {needle
-                      ? t('noMatches')
+                      ? picking
+                        ? t('noMembersMatchSearch')
+                        : section === 'messages'
+                        ? t('noMessagesMatch')
+                        : t('noMatches')
                       : showChannelTags && inboxFilter !== 'direct'
                       ? t('inbox.empty')
                       : t('empty')}
@@ -3586,6 +3638,7 @@ function MemberList({
               {contextHref && ChannelIcon ? (
                 <Link
                   href={contextHref}
+                  scroll={false}
                   aria-label={tInbox('inbox.openContext', { name: row.name })}
                   className="absolute top-1/2 left-4 z-10 size-10 -translate-y-1/2 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-foreground"
                 />

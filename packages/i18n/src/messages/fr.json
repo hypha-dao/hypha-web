@@ -314,8 +314,8 @@
     "signInTitle": "Ton accueil t'attend",
     "signInBody": "Connecte-toi pour voir où tu peux être utile.",
     "signIn": "Se connecter",
-    "pageTitleLineOne": "Chez toi,",
-    "pageTitleLineTwo": "là où tu peux être utile",
+    "pageTitleLineOne": "Chez toi, là où",
+    "pageTitleLineTwo": "l'action collective commence",
     "loading": "On rassemble ton accueil…",
     "metaTitle": "Accueil | Hypha",
     "metaDescription": "Où tu peux être utile : tes espaces, tes personnes, tes propositions et ton portefeuille.",
@@ -784,7 +784,9 @@
       "filterLabel": "Filtres des messages",
       "openContext": "Ouvrir {name}",
       "empty": "Rien dans ce filtre pour le moment."
-    }
+    },
+    "noMessagesMatch": "Aucun message ne correspond à ta recherche.",
+    "noMembersMatchSearch": "Aucun membre ne correspond à ta recherche."
   },
   "NetworkFeedback": {
     "triggerLabel": "Façonner Hypha",
@@ -3321,6 +3323,7 @@
     "replyingTo": "Réponse à {author}",
     "replyDismiss": "Annuler la réponse",
     "replyOriginalUnavailable": "Message d’origine indisponible",
+    "replyJumpToOriginal": "Aller au message d’origine",
     "moreButton": "Plus",
     "composerAttachMenu": "Ajouter une pièce jointe",
     "composerAttachImage": "Photo ou image",

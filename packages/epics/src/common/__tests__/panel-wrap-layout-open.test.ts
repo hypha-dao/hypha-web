@@ -23,4 +23,13 @@ describe('chat panel open from Messages', () => {
     expect(body).not.toContain('toggleRight()');
     expect(body).not.toContain('if (open !== rightOpen)');
   });
+
+  it('opens the Human panel for inbox ?spaceChat= and ?signal= deep links', () => {
+    expect(source).toContain('function HumanChatDeepLinkOpener');
+    expect(source).toContain("searchParams?.get('spaceChat')");
+    expect(source).toContain("searchParams?.get('signal')");
+    expect(source).toContain('getDhoSpaceSlugFromPathname(pathname)');
+    expect(source).toMatch(/opensSignal[\s\S]*openHumanChatPanel\(\)/);
+    expect(source).toContain('<HumanChatDeepLinkOpener />');
+  });
 });

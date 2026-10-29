@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  messagesChannelMenuOverflows,
   messagesListFrameHeight,
   messagesVisibleViewportHeight,
 } from '../messages-frame-height';
@@ -24,6 +25,17 @@ describe('messagesListFrameHeight', () => {
         tabOffset: 96,
       }),
     ).toBe(628);
+  });
+});
+
+describe('messagesChannelMenuOverflows', () => {
+  it('keeps a menu that fits inside the list cap in the page scroll', () => {
+    expect(messagesChannelMenuOverflows(604, 718)).toBe(false);
+  });
+
+  it('scrolls a menu that is taller than the list cap inside that cap', () => {
+    expect(messagesChannelMenuOverflows(820, 640)).toBe(true);
+    expect(messagesChannelMenuOverflows(Number.NaN, 640)).toBe(false);
   });
 });
 

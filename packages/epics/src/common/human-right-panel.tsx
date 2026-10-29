@@ -405,6 +405,8 @@ type UIMessage = {
     reactorUserIds?: string[];
   }>;
   replyTo?: {
+    /** Matrix event id of the quoted message (scroll target). */
+    eventId?: string;
     authorLabel: string;
     excerpt?: string;
     /** Quoted author MXID when known (for label refresh). */
@@ -930,6 +932,7 @@ function toUIMessage(
         ? currentUserAvatarUrl
         : resolveAvatarForUser(replyAuthorId);
     replyTo = {
+      eventId: msg.inReplyToEventId,
       authorLabel,
       excerpt,
       sourceUserId: msg.inReplyToSender,
@@ -1151,7 +1154,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const router = useRouter();
   const searchParams = useSearchParams();
-  const routeSpaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
+  // Root-layout mounts often miss nested `useParams().id` — pathname is authoritative.
+  const routeSpaceSlug =
+    (typeof params?.id === 'string' ? params.id.trim() : '') ||
+    getDhoSpaceSlugFromPathname(pathname) ||
+    '';
 
   const matrix = useMatrix();
   const {
@@ -1493,6 +1500,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [unreadBump, setUnreadBump] = useState(0);
   const [aggregateMentionBump, setAggregateMentionBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
+  /** False while the open thread is scrolled up, so history must not count as read. */
+  const timelineAtBottomRef = useRef(true);
+  const handleTimelineAtBottomChange = useCallback((atBottom: boolean) => {
+    timelineAtBottomRef.current = atBottom;
+  }, []);
   const [signalTeamMemberIds, setSignalTeamMemberIds] = useState<string[]>([]);
   const [signalTeamOwnerId, setSignalTeamOwnerId] = useState<string | null>(
     null,
@@ -4851,13 +4863,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
       let hasMore = hasMoreOlderMessages;
       for (let attempt = 0; attempt < 12 && hasMore; attempt += 1) {
-        const result = await matrixRef.current.loadRoomHistory(targetRoomId, {
-          force: true,
-          maxBatches: 3,
-        });
+        let result;
+        try {
+          result = await matrixRef.current.loadRoomHistory(targetRoomId, {
+            force: true,
+            maxBatches: 3,
+          });
+        } catch {
+          if (roomIdRef.current?.trim() === targetRoomId) {
+            setMentionNavigationNotice(t('mentionOpenFallbackMissingMessage'));
+            setScrollToEventId(null);
+          }
+          return;
+        }
+        if (roomIdRef.current?.trim() !== targetRoomId) return;
         syncRoomMessages(targetRoomId);
         hasMore = result.hasMoreOlder;
         setHasMoreOlderMessages(hasMore);
+
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        });
+        if (roomIdRef.current?.trim() !== targetRoomId) return;
 
         const escaped =
           typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
@@ -4873,6 +4900,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (!hasMore) break;
       }
 
+      if (roomIdRef.current?.trim() !== targetRoomId) return;
       setMentionNavigationNotice(t('mentionOpenFallbackMissingMessage'));
       setScrollToEventId(null);
     },
@@ -5178,21 +5206,32 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     void markChatTimelineRead();
   }, [markChatTimelineRead]);
 
-  // Viewing the open chat is reading it. The messages screen never sent a
-  // receipt, so the nav badge kept every message that had arrived.
+  // Viewing the latest messages is reading them. Scrolling up for history
+  // must not receipt the newest event, or the unread badge disappears
+  // while those messages are still off screen.
   useEffect(() => {
     if (!open || !roomId || !client) return;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const schedule = () => {
+      if (!timelineAtBottomRef.current) return;
       if (timer != null) return;
       timer = setTimeout(() => {
         timer = null;
+        if (!timelineAtBottomRef.current) return;
         void markRoomTimelineRead(roomId);
       }, 400);
     };
     schedule();
     const room = client.getRoom(roomId);
-    const onTimeline = () => schedule();
+    const onTimeline = (
+      event: MatrixEvent,
+      _room?: Room,
+      toStartOfTimeline?: boolean,
+    ) => {
+      if (toStartOfTimeline) return;
+      if (event.getRoomId() !== roomId) return;
+      schedule();
+    };
     const onDecrypted = (event: MatrixEvent) => {
       if (event.getRoomId() === roomId) schedule();
     };
@@ -5393,6 +5432,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       readLiveSearchParam('msg') ?? searchParams?.get('msg')?.trim() ?? null;
     if (!qpSignal) return;
 
+    // Coherence tab owns `?signal=` via useCoherenceSignalDeepLink (select +
+    // open chat). Resolving here races that path and can strip the param on a
+    // transient API failure before the board selects the card. Match only the
+    // tab segment so a space slug like `coherence-team` still resolves here.
+    if (/^\/[^/]+\/dho\/[^/]+\/coherence(?:\/|$)/.test(pathname)) return;
+
     openHumanChatPanel();
     setActiveTab('chat');
 
@@ -5463,6 +5508,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         result.roomId,
         result.signalTitle?.trim() || result.signalSlug,
         result.signalSlug,
+        null,
+        result.spaceSlug,
       );
       openHumanChatPanel();
       setActiveTab('chat');
@@ -5519,7 +5566,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (appliedSpaceChatRef.current === applyKey) return;
     appliedSpaceChatRef.current = applyKey;
 
-    exitCoherenceChat();
+    // Prefer `closeCoherenceChat` over `exitCoherenceChat` — the latter closes
+    // the panel on Messages, which races opening `?spaceChat=` from the inbox.
+    closeCoherenceChat();
     joinedRef.current = null;
     messagesRoomIdRef.current = null;
     if (timelineFlushRafRef.current != null) {
@@ -5548,7 +5597,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     router,
     searchParams,
     openHumanChatPanel,
-    exitCoherenceChat,
+    closeCoherenceChat,
   ]);
 
   /**
@@ -6784,6 +6833,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                           ? undefined
                           : handleReplyToMessage
                       }
+                      onJumpToOriginalMessage={(eventId) => {
+                        const id = eventId.trim();
+                        if (!id) return;
+                        // Clear first so clicking the same quote again still jumps.
+                        setScrollToEventId(null);
+                        requestAnimationFrame(() => setScrollToEventId(id));
+                      }}
                       onEditMessage={
                         blockSpaceChatForMembership
                           ? undefined
@@ -6814,6 +6870,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
                       viewportActive={sidebarOpen && activeTab === 'chat'}
                       onReachedTimelineBottom={handleReachedTimelineBottom}
+                      onTimelineAtBottomChange={handleTimelineAtBottomChange}
                       onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
                       scrollTargetEventId={scrollToEventId}
                       onConsumedScrollTarget={handleConsumedScrollTarget}

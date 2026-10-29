@@ -183,6 +183,15 @@ describe('messages inbox context', () => {
           rootSlug: 'hypha',
           rootTitle: 'Hypha',
         },
+        {
+          roomId: '!quiet:hs',
+          title: 'Quiet vote',
+          slug: 'quiet-vote',
+          spaceSlug: 'hypha-platform',
+          spaceTitle: 'Hypha Platform',
+          rootSlug: 'hypha',
+          rootTitle: 'Hypha',
+        },
       ],
     };
     const rows = channelRowsFromSnapshots(
@@ -196,6 +205,16 @@ describe('messages inbox context', () => {
           mine: false,
           lastTs: recent,
           unread: 1,
+        },
+        {
+          roomId: '!quiet:hs',
+          roomType: 'io.hypha.room.proposal',
+          name: 'Quiet',
+          aliases: [],
+          preview: '',
+          mine: false,
+          lastTs: recent,
+          unread: 0,
         },
         {
           roomId: '!other:hs',
@@ -220,6 +239,77 @@ describe('messages inbox context', () => {
     expect(inboxContextLine(rows[0]!.inbox, null)).toBe(
       'Hypha Platform · Hypha',
     );
+  });
+
+  it('hides proposal chats that still have no messages', () => {
+    const voting = {
+      ...context,
+      proposals: [
+        {
+          roomId: '!empty:hs',
+          title: 'Invite Member',
+          slug: 'invite-member',
+          spaceSlug: 'hypha-platform',
+          spaceTitle: 'Hypha Platform',
+          rootSlug: 'hypha',
+          rootTitle: 'Hypha',
+        },
+      ],
+    };
+    const rows = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!empty:hs',
+          roomType: 'io.hypha.room.proposal',
+          name: 'Invite Member',
+          aliases: [],
+          preview: '',
+          mine: false,
+          lastTs: recent,
+          unread: 0,
+        },
+      ],
+      voting,
+      'Network',
+      now,
+    );
+    expect(rows).toEqual([]);
+  });
+
+  it('keeps an unread proposal chat even when the preview is still blank', () => {
+    const voting = {
+      ...context,
+      proposals: [
+        {
+          roomId: '!unread-proposal:hs',
+          title: 'Invite Member',
+          slug: 'invite-member',
+          spaceSlug: 'hypha-platform',
+          spaceTitle: 'Hypha Platform',
+          rootSlug: 'hypha',
+          rootTitle: 'Hypha',
+        },
+      ],
+    };
+    const [row] = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!unread-proposal:hs',
+          roomType: 'io.hypha.room.proposal',
+          name: 'Invite Member',
+          aliases: [],
+          preview: '',
+          mine: false,
+          lastTs: recent,
+          unread: 2,
+        },
+      ],
+      voting,
+      'Network',
+      now,
+    );
+    expect(row?.roomId).toBe('!unread-proposal:hs');
+    expect(row?.unread).toBe(2);
   });
 
   it('hides a signal the member is not on and has not been notified about', () => {
@@ -497,7 +587,7 @@ describe('inboxContextHref', () => {
 
   it('opens a signal, a space room, an ecosystem the member can enter, and the network', () => {
     expect(inboxContextHref('en', { ...place, kind: 'signal' })).toBe(
-      '/en/dho/hypha-platform/overview?signal=roadmap-page',
+      '/en/dho/hypha-platform/coherence?signal=roadmap-page',
     );
     expect(inboxContextHref('en', { ...place, kind: 'space' })).toBe(
       '/en/dho/hypha-platform/overview?spaceChat=space',

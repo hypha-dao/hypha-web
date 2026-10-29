@@ -241,6 +241,9 @@ export function ProposalDiscussionChat({
   const [isLoading, setIsLoading] = React.useState(false);
   const [input, setInput] = React.useState('');
   const [replyDraft, setReplyDraft] = React.useState<ReplyDraft | null>(null);
+  const [scrollToEventId, setScrollToEventId] = React.useState<string | null>(
+    null,
+  );
   const [editDraft, setEditDraft] = React.useState<EditDraft | null>(null);
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = React.useState(0);
   const [provisionError, setProvisionError] = React.useState<string | null>(
@@ -255,6 +258,7 @@ export function ProposalDiscussionChat({
 
   const registeredRoomIdRef = React.useRef<string | null>(null);
   const pendingRoomRef = React.useRef<Promise<string | null> | null>(null);
+  const backfillTokenRef = React.useRef(0);
   const roomIdRef = React.useRef(roomId);
   roomIdRef.current = roomId;
   const titleRef = React.useRef(title);
@@ -381,6 +385,7 @@ export function ProposalDiscussionChat({
         ...(msg.inReplyToEventId
           ? {
               replyTo: {
+                eventId: msg.inReplyToEventId,
                 authorLabel: resolveMemberLabel(replyAuthorId),
                 excerpt: msg.inReplyToBodyPreview,
                 sourceUserId: replyAuthorId,
@@ -512,6 +517,7 @@ export function ProposalDiscussionChat({
       if (id) unregisterRoomListenerRef.current(id);
       registeredRoomIdRef.current = null;
       hydratedRoomIdRef.current = null;
+      backfillTokenRef.current += 1;
     };
   }, [documentSlug]);
 
@@ -985,6 +991,65 @@ export function ProposalDiscussionChat({
               currentUserId={currentUserId}
               currentUserAvatarUrl={currentUserAvatarUrl}
               onReply={handleReplyToMessage}
+              onJumpToOriginalMessage={(eventId) => {
+                const id = eventId.trim();
+                if (!id) return;
+                setScrollToEventId(null);
+                requestAnimationFrame(() => setScrollToEventId(id));
+              }}
+              scrollTargetEventId={scrollToEventId}
+              onConsumedScrollTarget={() => setScrollToEventId(null)}
+              onScrollTargetNotFound={(eventId) => {
+                const targetRoomId = roomId?.trim();
+                if (!targetRoomId) {
+                  setScrollToEventId(null);
+                  return;
+                }
+                void (async () => {
+                  const token = backfillTokenRef.current;
+                  let hasMore = true;
+                  for (let attempt = 0; attempt < 12 && hasMore; attempt += 1) {
+                    let result;
+                    try {
+                      result = await loadRoomHistoryRef.current(targetRoomId, {
+                        force: true,
+                        maxBatches: 3,
+                      });
+                    } catch {
+                      if (backfillTokenRef.current !== token) return;
+                      setScrollToEventId(null);
+                      return;
+                    }
+                    if (backfillTokenRef.current !== token) return;
+                    hasMore = result.hasMoreOlder;
+                    refreshRoomMessages(targetRoomId);
+                    // Wait for React to commit the refreshed rows before DOM lookup.
+                    await new Promise<void>((resolve) => {
+                      requestAnimationFrame(() =>
+                        requestAnimationFrame(() => resolve()),
+                      );
+                    });
+                    if (backfillTokenRef.current !== token) return;
+                    const escaped =
+                      typeof CSS !== 'undefined' &&
+                      typeof CSS.escape === 'function'
+                        ? CSS.escape(eventId)
+                        : eventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                    if (
+                      document.querySelector(
+                        `[data-matrix-event-id="${escaped}"]`,
+                      ) != null
+                    ) {
+                      // Keep the target set so the child can consume/jump.
+                      setScrollToEventId(eventId);
+                      return;
+                    }
+                    if (!hasMore) break;
+                  }
+                  if (backfillTokenRef.current !== token) return;
+                  setScrollToEventId(null);
+                })();
+              }}
               onEditMessage={handleEditMessage}
               onDeleteMessage={handleDeleteMessage}
               onToggleReaction={handleToggleReaction}

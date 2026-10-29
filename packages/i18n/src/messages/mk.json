@@ -314,8 +314,8 @@
     "signInTitle": "Твојот дом чека",
     "signInBody": "Најави се за да видиш каде можеш да бидеш корисен.",
     "signIn": "Најави се",
-    "pageTitleLineOne": "Твојот дом,",
-    "pageTitleLineTwo": "каде што можеш да бидеш корисен",
+    "pageTitleLineOne": "Твојот дом, каде што",
+    "pageTitleLineTwo": "започнува колективното дејствување",
     "loading": "Се собира твојот дом…",
     "metaTitle": "Дом | Hypha",
     "metaDescription": "Каде можеш да бидеш корисен: твоите простори, луѓе, предлози и паричник.",
@@ -784,7 +784,9 @@
       "filterLabel": "Филтри за пораки",
       "openContext": "Отвори {name}",
       "empty": "Сè уште нема ништо во овој филтер."
-    }
+    },
+    "noMessagesMatch": "Нема пораки што одговараат на пребарувањето.",
+    "noMembersMatchSearch": "Нема членови што одговараат на пребарувањето."
   },
   "OnboardingAdventure": {
     "heroEyebrow": "ИНТЕЛИГЕНТНАТА ОРГАНИЗАЦИЈА",
@@ -3876,6 +3878,7 @@
     "replyingTo": "Одговараш на {author}",
     "replyDismiss": "Откажи одговор",
     "replyOriginalUnavailable": "Оригиналната порака не е достапна",
+    "replyJumpToOriginal": "Оди до оригиналната порака",
     "moreButton": "Повеќе",
     "composerAttachMenu": "Додај прилог",
     "composerAttachImage": "Фотографија или слика",

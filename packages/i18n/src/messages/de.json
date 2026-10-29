@@ -314,8 +314,8 @@
     "signInTitle": "Dein Zuhause wartet",
     "signInBody": "Melde dich an, um zu sehen, wo du nützlich sein kannst.",
     "signIn": "Anmelden",
-    "pageTitleLineOne": "Dein Zuhause,",
-    "pageTitleLineTwo": "wo du nützlich sein kannst",
+    "pageTitleLineOne": "Dein Zuhause, wo",
+    "pageTitleLineTwo": "kollektives Handeln beginnt",
     "loading": "Dein Zuhause wird zusammengestellt…",
     "metaTitle": "Zuhause | Hypha",
     "metaDescription": "Wo du nützlich sein kannst: deine Spaces, Menschen, Vorschläge und deine Wallet.",
@@ -784,7 +784,9 @@
       "filterLabel": "Nachrichtenfilter",
       "openContext": "{name} öffnen",
       "empty": "In diesem Filter ist noch nichts."
-    }
+    },
+    "noMessagesMatch": "Keine Nachrichten passen zu deiner Suche.",
+    "noMembersMatchSearch": "Keine Mitglieder passen zu deiner Suche."
   },
   "NetworkFeedback": {
     "triggerLabel": "Hypha gestalten",
@@ -3893,6 +3895,7 @@
     "replyingTo": "Antwort an {author}",
     "replyDismiss": "Antwort abbrechen",
     "replyOriginalUnavailable": "Ursprüngliche Nachricht nicht verfügbar",
+    "replyJumpToOriginal": "Zur Originalnachricht springen",
     "moreButton": "Mehr",
     "composerAttachMenu": "Anhang hinzufügen",
     "composerAttachImage": "Foto oder Bild",

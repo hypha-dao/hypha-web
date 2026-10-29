@@ -2,6 +2,7 @@
 
 import { HYPHA_SCREEN_SHARE_CAPTURE_ROOT_ID } from '@hypha-platform/core/client';
 import React, {
+  Suspense,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -15,7 +16,7 @@ import {
   Phone,
   Sparkles,
 } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -31,6 +32,7 @@ import {
   useAiPanel,
   useHumanChatPanel,
 } from './human-chat-panel-context';
+import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { isInteractiveCreatePath } from './get-path-function';
 import {
   isNetworkAiPath,
@@ -123,6 +125,32 @@ function useMutuallyExclusivePanels(): boolean {
   const isCompactPanels = useCompactPanelsMode();
   const isMobile = useIsMobile();
   return isCompactPanels || isMobile === true;
+}
+
+/**
+ * Messages inbox context icons deep-link with `?spaceChat=` or `?signal=`.
+ * Opens the Human panel from the layout (always mounted) so the lazy panel
+ * body can apply the channel / signal — do not wait for a prior manual open.
+ */
+function HumanChatDeepLinkOpener() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { openHumanChatPanel } = useHumanChatPanel();
+  const spaceChatDeepLink = searchParams?.get('spaceChat')?.trim() ?? null;
+  const signalDeepLink = searchParams?.get('signal')?.trim() ?? null;
+
+  useEffect(() => {
+    const opensSpaceChat =
+      spaceChatDeepLink === 'space' ||
+      spaceChatDeepLink === 'ecosystem' ||
+      spaceChatDeepLink === 'public';
+    const opensSignal = Boolean(signalDeepLink);
+    if (!opensSpaceChat && !opensSignal) return;
+    if (!getDhoSpaceSlugFromPathname(pathname)) return;
+    openHumanChatPanel();
+  }, [pathname, spaceChatDeepLink, signalDeepLink, openHumanChatPanel]);
+
+  return null;
 }
 
 export function AiSidebarTrigger() {
@@ -779,6 +807,9 @@ export function PanelWrapLayout({
         } as React.CSSProperties
       }
     >
+      <Suspense fallback={null}>
+        <HumanChatDeepLinkOpener />
+      </Suspense>
       {content}
     </div>
   );

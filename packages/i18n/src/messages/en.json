@@ -184,7 +184,9 @@
       "filterLabel": "Message filters",
       "openContext": "Open {name}",
       "empty": "Nothing in this filter yet."
-    }
+    },
+    "noMessagesMatch": "No messages match your search.",
+    "noMembersMatchSearch": "No members match your search."
   },
   "WelcomeFlow": {
     "step": "Step {current} of {total}",
@@ -546,8 +548,8 @@
     "signInTitle": "Your home is waiting",
     "signInBody": "Sign in to see where you can be useful.",
     "signIn": "Sign in",
-    "pageTitleLineOne": "Your home,",
-    "pageTitleLineTwo": "where you can be useful",
+    "pageTitleLineOne": "Your home, where",
+    "pageTitleLineTwo": "collective action begins",
     "loading": "Gathering your home…",
     "metaTitle": "Home | Hypha",
     "metaDescription": "Where you can be useful: your spaces, people, proposals, and wallet.",
@@ -3924,6 +3926,7 @@
     "replyingTo": "Replying to {author}",
     "replyDismiss": "Cancel reply",
     "replyOriginalUnavailable": "Original message unavailable",
+    "replyJumpToOriginal": "Jump to original message",
     "moreButton": "More",
     "composerAttachMenu": "Add attachment",
     "composerAttachImage": "Photo or image",

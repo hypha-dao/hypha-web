@@ -16,18 +16,25 @@ type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
   searchParams?: Promise<{
     order?: string;
+    signal?: string;
   }>;
 };
 
 export default async function CoherencePage(props: PageProps) {
   const params = await props.params;
+  const searchParams = await props.searchParams;
   const coherenceEnabled = await getEnableCoherence();
   if (!coherenceEnabled) {
-    redirect(getDhoPathOverview(params.lang, params.id));
+    const signal = searchParams?.signal?.trim();
+    const overviewPath = getDhoPathOverview(params.lang, params.id);
+    redirect(
+      signal
+        ? `${overviewPath}?signal=${encodeURIComponent(signal)}`
+        : overviewPath,
+    );
   }
 
   const humanChatEnabled = await getEnableHumanChat();
-  const searchParams = await props.searchParams;
 
   const { lang, id } = params;
 

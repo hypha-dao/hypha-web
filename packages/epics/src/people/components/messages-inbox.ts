@@ -514,8 +514,8 @@ export function inboxContextHref(
     if (!space) return null;
     const signal = place.signalSlug?.trim();
     if (!signal) return `/${locale}/dho/${space}/overview?spaceChat=space`;
-    // Space dashboard + that signal selected with its chat open.
-    return `/${locale}/dho/${space}/overview?signal=${encodeURIComponent(
+    // Signals board with that card selected (and its chat opened when enabled).
+    return `/${locale}/dho/${space}/coherence?signal=${encodeURIComponent(
       signal,
     )}`;
   }
@@ -617,12 +617,16 @@ export function channelRowsFromSnapshots(
       continue;
     }
     // Assignees, the signal team, and people who were mentioned are notified
-    // even when nobody has written in the room lately. Open proposal chats
-    // stay visible the same way for members who can vote. Other channels stay
-    // hidden until they have a message in the last three months.
-    if (
+    // even when nobody has written in the room lately. Proposal chats stay
+    // visible the same way once someone has written — empty rooms would flood
+    // the inbox. Other channels stay hidden until they have a message in the
+    // last three months.
+    if (place.kind === 'proposal') {
+      // Blank preview with unread still belongs in the inbox — the member has
+      // something to open even when the last line has not loaded yet.
+      if (!snapshot.preview.trim() && snapshot.unread <= 0) continue;
+    } else if (
       place.kind !== 'signal' &&
-      place.kind !== 'proposal' &&
       !channelHasRecentActivity(snapshot.lastTs, now)
     ) {
       continue;

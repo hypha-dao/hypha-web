@@ -314,8 +314,8 @@
     "signInTitle": "Je startpagina wacht",
     "signInBody": "Meld je aan om te zien waar je van nut kunt zijn.",
     "signIn": "Aanmelden",
-    "pageTitleLineOne": "Jouw thuis,",
-    "pageTitleLineTwo": "waar jij van betekenis bent",
+    "pageTitleLineOne": "Jouw thuis, waar",
+    "pageTitleLineTwo": "collectieve actie begint",
     "loading": "Je startpagina wordt verzameld…",
     "metaTitle": "Start | Hypha",
     "metaDescription": "Waar je van nut kunt zijn: je ruimtes, mensen, voorstellen en wallet.",
@@ -784,7 +784,9 @@
       "filterLabel": "Berichtfilters",
       "openContext": "Open {name}",
       "empty": "Nog niets in dit filter."
-    }
+    },
+    "noMessagesMatch": "Geen berichten komen overeen met je zoekopdracht.",
+    "noMembersMatchSearch": "Geen leden komen overeen met je zoekopdracht."
   },
   "NetworkFeedback": {
     "triggerLabel": "Ondersteun Hypha",
@@ -3896,6 +3898,7 @@
     "replyingTo": "Reageren op {author}",
     "replyDismiss": "Antwoord annuleren",
     "replyOriginalUnavailable": "Origineel bericht niet beschikbaar",
+    "replyJumpToOriginal": "Ga naar het originele bericht",
     "moreButton": "Meer",
     "composerAttachMenu": "Bijlage toevoegen",
     "composerAttachImage": "Foto of afbeelding",

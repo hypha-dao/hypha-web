@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { AsideOverlayLayoutProvider } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -11,6 +11,9 @@ import {
   popMainColumnOverlayScrollLock,
   pushMainColumnOverlayScrollLock,
 } from './main-column-scroll';
+
+/** Keep the panel at the top while discussion chat settles (focus / scrollIntoView). */
+const OPEN_SCROLL_PIN_MS = 350;
 
 type ProposalOverlayShellProps = {
   children: ReactNode;
@@ -76,6 +79,55 @@ export function ProposalOverlayShell({
     };
   }, []);
 
+  /**
+   * Open at the proposal title, not Discussion. Radix open-autofocus and nested
+   * chat `scrollIntoView` / composer focus otherwise drag this panel down.
+   */
+  useLayoutEffect(() => {
+    const el = overlayPanelRef.current;
+    if (!el) return;
+    el.scrollTop = 0;
+    let cancelled = false;
+    const pinUntil = performance.now() + OPEN_SCROLL_PIN_MS;
+    const pin = () => {
+      if (!cancelled && el.scrollTop !== 0) el.scrollTop = 0;
+    };
+    const onScroll = () => {
+      if (performance.now() > pinUntil) return;
+      pin();
+    };
+    el.addEventListener('scroll', onScroll);
+    const userInputEvents = [
+      'wheel',
+      'touchstart',
+      'keydown',
+      'pointerdown',
+    ] as const;
+    const releasePin = () => {
+      cancelled = true;
+      el.removeEventListener('scroll', onScroll);
+      for (const type of userInputEvents) {
+        el.removeEventListener(type, releasePin);
+      }
+    };
+    for (const type of userInputEvents) {
+      el.addEventListener(type, releasePin, { passive: true });
+    }
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      pin();
+      raf2 = requestAnimationFrame(pin);
+    });
+    const release = window.setTimeout(releasePin, OPEN_SCROLL_PIN_MS);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+      window.clearTimeout(release);
+      releasePin();
+    };
+  }, []);
+
   /** Stronger scrollbar thumb while actively scrolling (WebKit + Firefox via class in narrow.css). */
   useEffect(() => {
     const el = overlayPanelRef.current;
@@ -129,6 +181,13 @@ export function ProposalOverlayShell({
           />
           <DialogPrimitive.Content
             aria-describedby={undefined}
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              const panel = overlayPanelRef.current;
+              if (!panel) return;
+              panel.scrollTop = 0;
+              panel.focus({ preventScroll: true });
+            }}
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
             className={cn(
@@ -164,6 +223,7 @@ export function ProposalOverlayShell({
                 id="proposal-overlay-panel"
                 role="document"
                 tabIndex={-1}
+                style={{ overflowAnchor: 'none' }}
               >
                 <div className="p-4 lg:p-7">{children}</div>
               </div>

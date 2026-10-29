@@ -26,6 +26,27 @@ import {
   sortMessagesChronologically,
 } from './human-chat-timeline-order';
 
+/**
+ * Scroll a row inside the timeline scroller only — never call `scrollIntoView`,
+ * which also moves ancestor panels (e.g. the proposal overlay).
+ * Pin near the top so a reply that is already “just above” still moves
+ * clearly instead of centering in place with no visible jump.
+ */
+function scrollChildIntoTimeline(
+  container: HTMLElement,
+  child: HTMLElement,
+  behavior: ScrollBehavior = 'smooth',
+) {
+  const cRect = container.getBoundingClientRect();
+  const eRect = child.getBoundingClientRect();
+  const topPad = Math.min(72, Math.max(24, cRect.height * 0.12));
+  const next = container.scrollTop + (eRect.top - cRect.top) - topPad;
+  container.scrollTo({
+    top: Math.max(0, next),
+    behavior,
+  });
+}
+
 type UIMessage = {
   id: string;
   role: 'user' | 'member';
@@ -57,6 +78,8 @@ type UIMessage = {
     reactorUserIds?: string[];
   }>;
   replyTo?: {
+    /** Matrix event id of the quoted message (scroll target). */
+    eventId?: string;
     authorLabel: string;
     excerpt?: string;
     /** Matrix MXID of quoted author (for avatar refresh). */
@@ -175,6 +198,8 @@ type HumanChatPanelMessagesProps = {
   welcomeText?: string;
   welcomeSenderName?: string;
   onReply?: (messageId: string) => void;
+  /** Jump the timeline to the quoted original when a reply header is clicked. */
+  onJumpToOriginalMessage?: (eventId: string) => void;
   onEditMessage?: (messageId: string) => void;
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
   onToggleReaction?: (messageId: string, emoji: string) => void;
@@ -193,6 +218,8 @@ type HumanChatPanelMessagesProps = {
   unreadNotificationCount?: number;
   /** Called when the scroll viewport reaches the bottom (mark read). */
   onReachedTimelineBottom?: () => void;
+  /** False while the member is reading earlier messages. */
+  onTimelineAtBottomChange?: (atBottom: boolean) => void;
   /** When false the thread is off-screen, so reaching the bottom must not count as read. */
   viewportActive?: boolean;
   /** User clicked “Mark as read” in the banner. */
@@ -220,6 +247,7 @@ export function HumanChatPanelMessages({
   welcomeText,
   welcomeSenderName,
   onReply,
+  onJumpToOriginalMessage,
   onEditMessage,
   onDeleteMessage,
   onToggleReaction,
@@ -231,6 +259,7 @@ export function HumanChatPanelMessages({
   unreadCountIsCapped = false,
   unreadNotificationCount = 0,
   onReachedTimelineBottom,
+  onTimelineAtBottomChange,
   viewportActive = true,
   onMarkAsReadFromBanner,
   scrollTargetEventId,
@@ -275,6 +304,34 @@ export function HumanChatPanelMessages({
   /** Retry deep-link target lookup across timeline growth before falling back. */
   const scrollTargetMissCountRef = useRef(0);
   const scrollTargetMissHandledRef = useRef<string | null>(null);
+  /** Brief flash on the jumped-to row so a nearby original is still obvious. */
+  const [jumpFlashMessageId, setJumpFlashMessageId] = useState<string | null>(
+    null,
+  );
+  const jumpFlashClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flashJumpedMessage = useCallback((messageId: string) => {
+    if (jumpFlashClearRef.current != null) {
+      clearTimeout(jumpFlashClearRef.current);
+      jumpFlashClearRef.current = null;
+    }
+    setJumpFlashMessageId(messageId);
+    jumpFlashClearRef.current = setTimeout(() => {
+      jumpFlashClearRef.current = null;
+      setJumpFlashMessageId((current) =>
+        current === messageId ? null : current,
+      );
+    }, 1400);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (jumpFlashClearRef.current != null) {
+        clearTimeout(jumpFlashClearRef.current);
+      }
+    },
+    [],
+  );
 
   /** At most one floating action bar: pointer hover, or locked while that row's hover emoji picker is open. */
   const [hoverActionMessageId, setHoverActionMessageId] = useState<
@@ -340,16 +397,19 @@ export function HumanChatPanelMessages({
 
   const scrollToUnread = useCallback(() => {
     if (!firstUnreadMessageId) return;
+    const root = containerRef.current;
+    if (!root) return;
     const escaped =
       typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
         ? CSS.escape(firstUnreadMessageId)
         : firstUnreadMessageId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    const el = document.querySelector(
+    const el = root.querySelector(
       `[data-matrix-event-id="${escaped}"]`,
     ) as HTMLElement | null;
-    el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    if (el) scrollChildIntoTimeline(root, el);
     stickToBottomRef.current = false;
-  }, [firstUnreadMessageId]);
+    onTimelineAtBottomChange?.(false);
+  }, [firstUnreadMessageId, onTimelineAtBottomChange]);
 
   useEffect(() => {
     if (roomId !== prevRoomIdRef.current) {
@@ -468,6 +528,7 @@ export function HumanChatPanelMessages({
     if (shouldScrollUnread) {
       initialUnreadScrollDoneRef.current = true;
       stickToBottomRef.current = false;
+      onTimelineAtBottomChange?.(false);
       window.requestAnimationFrame(() => {
         scrollToUnread();
       });
@@ -483,44 +544,71 @@ export function HumanChatPanelMessages({
       })
     ) {
       stickToBottomRef.current = true;
+      onTimelineAtBottomChange?.(true);
       container.scrollTop = container.scrollHeight;
     }
 
     prevLastIdRef.current = lastId;
-  }, [messages, isStreaming, firstUnreadMessageId, scrollToUnread]);
+  }, [
+    messages,
+    isStreaming,
+    firstUnreadMessageId,
+    onTimelineAtBottomChange,
+    scrollToUnread,
+  ]);
 
   useLayoutEffect(() => {
     if (!scrollTargetEventId) return;
     if (scrollTargetConsumedRef.current === scrollTargetEventId) return;
     const root = containerRef.current;
     if (!root) return;
+
     const esc =
       typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
         ? CSS.escape(scrollTargetEventId)
         : scrollTargetEventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    const row = root.querySelector(`[data-matrix-event-id="${esc}"]`);
-    if (row instanceof HTMLElement) {
-      row.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      stickToBottomRef.current = false;
-      scrollTargetConsumedRef.current = scrollTargetEventId;
-      scrollTargetMissCountRef.current = 0;
-      scrollTargetMissHandledRef.current = null;
-      onConsumedScrollTarget?.();
-      return;
-    }
 
-    scrollTargetMissCountRef.current += 1;
-    if (
-      scrollTargetMissCountRef.current >= 12 &&
-      scrollTargetMissHandledRef.current !== scrollTargetEventId
-    ) {
-      scrollTargetMissHandledRef.current = scrollTargetEventId;
-      onScrollTargetNotFound?.(scrollTargetEventId);
-    }
+    let cancelled = false;
+    let frames = 0;
+    const maxFrames = 24;
+
+    const tryJump = () => {
+      if (cancelled) return;
+      const row = root.querySelector(`[data-matrix-event-id="${esc}"]`);
+      if (row instanceof HTMLElement) {
+        stickToBottomRef.current = false;
+        onTimelineAtBottomChange?.(false);
+        scrollChildIntoTimeline(root, row);
+        flashJumpedMessage(scrollTargetEventId);
+        scrollTargetConsumedRef.current = scrollTargetEventId;
+        scrollTargetMissCountRef.current = 0;
+        scrollTargetMissHandledRef.current = null;
+        onConsumedScrollTarget?.();
+        return;
+      }
+
+      frames += 1;
+      if (frames >= maxFrames) {
+        if (scrollTargetMissHandledRef.current !== scrollTargetEventId) {
+          scrollTargetMissHandledRef.current = scrollTargetEventId;
+          onScrollTargetNotFound?.(scrollTargetEventId);
+        }
+        return;
+      }
+      scrollTargetMissCountRef.current = frames;
+      requestAnimationFrame(tryJump);
+    };
+
+    tryJump();
+    return () => {
+      cancelled = true;
+    };
   }, [
     scrollTargetEventId,
+    flashJumpedMessage,
     onConsumedScrollTarget,
     onScrollTargetNotFound,
+    onTimelineAtBottomChange,
     timelineRows.length,
   ]);
 
@@ -641,7 +729,11 @@ export function HumanChatPanelMessages({
           const threshold = 80;
           const distanceFromBottom =
             el.scrollHeight - el.scrollTop - el.clientHeight;
-          stickToBottomRef.current = distanceFromBottom <= threshold;
+          const atBottom = distanceFromBottom <= threshold;
+          if (stickToBottomRef.current !== atBottom) {
+            stickToBottomRef.current = atBottom;
+            onTimelineAtBottomChange?.(atBottom);
+          }
         }}
         className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 py-3"
       >
@@ -717,6 +809,7 @@ export function HumanChatPanelMessages({
                 resolveMatrixMemberLabel={resolveMatrixMemberLabel}
                 resolveSenderDisplayLabel={resolveSenderDisplayLabel}
                 isActionBarVisible={isActionBarVisible}
+                jumpFlash={jumpFlashMessageId === msg.id}
                 unreadBoundary={row.isFirstUnread}
                 isTouchComposer={isTouchComposer}
                 onRowPointerEnter={
@@ -773,6 +866,11 @@ export function HumanChatPanelMessages({
                 }
                 onReply={
                   canInteract && onReply ? () => onReply(msg.id) : undefined
+                }
+                onJumpToOriginal={
+                  canInteract && onJumpToOriginalMessage && msg.replyTo?.eventId
+                    ? () => onJumpToOriginalMessage(msg.replyTo!.eventId!)
+                    : undefined
                 }
                 onEdit={
                   canInteract &&
