@@ -4260,7 +4260,10 @@
     "unarchiveGroupConfirm": "Ja, wiederherstellen",
     "unarchiveGroupCancel": "Abbrechen",
     "unarchiveGroupFailed": "Die Gruppe konnte nicht wiederhergestellt werden. Bitte versuchen Sie es erneut.",
-    "archivedGroupReadOnly": "Diese Gruppe ist archiviert. Stelle sie wieder her, um Nachrichten zu senden."
+    "archivedGroupReadOnly": "Diese Gruppe ist archiviert. Stelle sie wieder her, um Nachrichten zu senden.",
+    "typingOne": "{name} tippt…",
+    "typingTwo": "{name} und {other} tippen…",
+    "typingMany": "{count} Personen tippen…"
   },
   "CoherenceTab": {
     "signals": "Signale",

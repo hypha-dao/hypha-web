@@ -4262,7 +4262,10 @@
     "unarchiveGroupConfirm": "Ja, herstellen",
     "unarchiveGroupCancel": "Annuleren",
     "unarchiveGroupFailed": "Kon deze groep niet herstellen. Probeer het opnieuw.",
-    "archivedGroupReadOnly": "Deze groep is gearchiveerd. Herstel hem om berichten te sturen."
+    "archivedGroupReadOnly": "Deze groep is gearchiveerd. Herstel hem om berichten te sturen.",
+    "typingOne": "{name} is aan het typen…",
+    "typingTwo": "{name} en {other} zijn aan het typen…",
+    "typingMany": "{count} mensen zijn aan het typen…"
   },
   "CoherenceTab": {
     "signals": "Signalen",

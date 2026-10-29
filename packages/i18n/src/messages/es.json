@@ -3702,7 +3702,10 @@
     "unarchiveGroupConfirm": "Sí, restaurar",
     "unarchiveGroupCancel": "Cancelar",
     "unarchiveGroupFailed": "No se pudo restaurar este grupo. Inténtalo de nuevo.",
-    "archivedGroupReadOnly": "Este grupo está archivado. Restáuralo para enviar mensajes."
+    "archivedGroupReadOnly": "Este grupo está archivado. Restáuralo para enviar mensajes.",
+    "typingOne": "{name} está escribiendo…",
+    "typingTwo": "{name} y {other} están escribiendo…",
+    "typingMany": "{count} personas están escribiendo…"
   },
   "CoherenceTab": {
     "signals": "Señales",

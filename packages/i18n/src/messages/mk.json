@@ -4243,7 +4243,10 @@
     "unarchiveGroupConfirm": "Да, врати",
     "unarchiveGroupCancel": "Откажи",
     "unarchiveGroupFailed": "Групата не можеше да се врати. Обиди се повторно.",
-    "archivedGroupReadOnly": "Оваа група е архивирана. Врати ја за да испраќаш пораки."
+    "archivedGroupReadOnly": "Оваа група е архивирана. Врати ја за да испраќаш пораки.",
+    "typingOne": "{name} пишува…",
+    "typingTwo": "{name} и {other} пишуваат…",
+    "typingMany": "{count} луѓе пишуваат…"
   },
   "CoherenceTab": {
     "signals": "Сигнали",

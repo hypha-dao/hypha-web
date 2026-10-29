@@ -34,6 +34,9 @@ import {
   HumanChatPanelMessages,
   type ChatMentionCandidate,
 } from '../../common/human-chat-panel';
+import { HumanChatPanelTypingIndicator } from '../../common/human-chat-panel/human-chat-panel-typing-indicator';
+import { playMessageReceiveSound } from '../../common/human-chat-panel/message-receive-sound';
+import { useChatRoomTyping } from '../../common/human-chat-panel/use-chat-room-typing';
 import {
   inviteMatrixAgentIfNeeded,
   matrixAgentSkills,
@@ -555,6 +558,15 @@ export function ProposalDiscussionChat({
         registerRoomListenerRef.current(
           canonicalId,
           async (message: Message) => {
+            const selfId = client?.getUserId()?.trim() ?? '';
+            if (
+              selfId &&
+              !message.redacted &&
+              message.sender !== selfId &&
+              !message.signalTeamNotice
+            ) {
+              playMessageReceiveSound();
+            }
             setMessages((prev) => {
               if (message.redacted) {
                 return prev.filter((item) => item.id !== message.id);
@@ -866,6 +878,12 @@ export function ProposalDiscussionChat({
     [refreshRoomMessages, roomId, tChat, toggleReaction],
   );
 
+  const { typingPeers, setComposerTyping } = useChatRoomTyping({
+    client: client ?? null,
+    roomId,
+    resolveName: resolveMemberLabel,
+  });
+
   const sendMessage = React.useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed) return;
@@ -877,6 +895,7 @@ export function ProposalDiscussionChat({
     const savedEdit = editDraft;
     const savedInput = input;
     setComposerError(null);
+    setComposerTyping(false);
     try {
       const { wirePlain, mentionUserIds } = wireComposerPlainForMatrixSend(
         input,
@@ -937,6 +956,7 @@ export function ProposalDiscussionChat({
     replyDraft,
     roomId,
     sendMatrixMessage,
+    setComposerTyping,
     spaceSlug,
     tChat,
     title,
@@ -1068,11 +1088,13 @@ export function ProposalDiscussionChat({
               {composerError}
             </p>
           ) : null}
+          <HumanChatPanelTypingIndicator peers={typingPeers} />
           <HumanChatPanelChatBar
             value={input}
             onChange={(next) => {
               setComposerError(null);
               setInput(next);
+              setComposerTyping(next.trim().length > 0);
             }}
             onSend={sendMessage}
             placeholder={tCoherence('saySomething')}

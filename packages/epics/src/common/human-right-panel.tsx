@@ -128,6 +128,9 @@ import {
   type MentionPickCandidate,
   useResolvedMentionCandidateLabel,
 } from './human-chat-panel/use-resolved-mention-candidate-label';
+import { HumanChatPanelTypingIndicator } from './human-chat-panel/human-chat-panel-typing-indicator';
+import { playMessageReceiveSound } from './human-chat-panel/message-receive-sound';
+import { useChatRoomTyping } from './human-chat-panel/use-chat-room-typing';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { applyConversationRoomTitle } from '../people/components/my-connections';
@@ -4590,6 +4593,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           scheduleTimelineFlush();
           return;
         }
+        const selfId = currentUserIdRef.current?.trim() ?? '';
+        if (selfId && message.sender !== selfId && !message.signalTeamNotice) {
+          playMessageReceiveSound();
+        }
         pendingTimelineMessagesRef.current.set(message.id, message);
         scheduleTimelineFlush();
       },
@@ -5811,6 +5818,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     sendAbortControllerRef.current?.abort();
   }, []);
 
+  const { typingPeers, setComposerTyping } = useChatRoomTyping({
+    client: client ?? null,
+    roomId,
+    resolveName: resolveMemberLabel,
+  });
+
+  const handleComposerChange = useCallback(
+    (value: string) => {
+      setInput(value);
+      setComposerTyping(value.trim().length > 0);
+    },
+    [setComposerTyping],
+  );
+
   const handleSend = useCallback(async () => {
     if (!roomId) return;
     if (blockSpaceChatForMembership) {
@@ -5823,6 +5844,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     const trimmed = input.trim();
     if (!trimmed && draftAttachments.length === 0) return;
+    setComposerTyping(false);
     const text = input;
     const replyToEventId = replyDraft?.messageId;
     const editTargetEventId = editDraft?.messageId;
@@ -6059,6 +6081,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceRoom,
     coherenceSlug,
     coherenceTitle,
+    setComposerTyping,
     tCommon,
     t,
   ]);
@@ -6947,10 +6970,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 border-t border-border/70 bg-page-background p-0 dark:bg-background-2">
             <div>
+              <HumanChatPanelTypingIndicator peers={typingPeers} />
               <HumanChatPanelErrorBoundary key={roomId ?? 'composer'}>
                 <HumanChatPanelChatBar
                   value={input}
-                  onChange={setInput}
+                  onChange={handleComposerChange}
                   onSend={handleSend}
                   mentionCandidates={composerMentionCandidates}
                   mentionPickerEnabled={mentionPickerEnabled}
