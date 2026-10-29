@@ -16,6 +16,9 @@ import {
   useSpaceMinProposalDuration,
   type Person,
   type Space,
+  normalizeProposalDocumentLabel,
+  SPACE_CONTEXT_DOCUMENT_LABEL,
+  sectionKeysFromProposalMarkdown,
 } from '@hypha-platform/core/client';
 import { getTokenUpdateByDocumentIdAction } from '@hypha-platform/core/governance/server/actions';
 import {
@@ -312,6 +315,14 @@ export const FormVoting = ({
                 updateIssuedTokenResubmitPayload,
             }
           : {}),
+        ...(normalizeProposalDocumentLabel(label) ===
+        SPACE_CONTEXT_DOCUMENT_LABEL
+          ? {
+              spaceContextSectionKeys: sectionKeysFromProposalMarkdown(
+                documentDescription || '',
+              ),
+            }
+          : {}),
       };
 
       sessionStorage.setItem(
@@ -339,6 +350,19 @@ export const FormVoting = ({
           createPath = `/${lang}/dho/${spaceSlug}/agreements/create`;
         } else {
           createPath = `/${lang}/dho/${spaceSlug}/agreements/create/${routePath}`;
+        }
+
+        const sectionKeys = sectionKeysFromProposalMarkdown(
+          documentDescription || '',
+        );
+        if (
+          normalizeProposalDocumentLabel(label) ===
+            SPACE_CONTEXT_DOCUMENT_LABEL &&
+          sectionKeys.length > 0
+        ) {
+          createPath = `${createPath}?sections=${encodeURIComponent(
+            sectionKeys.join(','),
+          )}`;
         }
 
         router.push(createPath);

@@ -5669,7 +5669,8 @@
       "load": "Could not load Space Context.",
       "retry": "Try again",
       "import": "Could not import from Space Memory.",
-      "save": "Não foi possível salvar este rascunho."
+      "save": "Não foi possível salvar este rascunho.",
+      "link": "Não foi possível vincular esta proposta às seções de Context."
     },
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",

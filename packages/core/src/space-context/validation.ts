@@ -14,7 +14,7 @@ export const schemaPatchSpaceContextSection = z.object({
 });
 
 export const schemaAppendSpaceContextMessage = z.object({
-  role: z.enum(['user', 'assistant', 'system']),
+  role: z.literal('user'),
   content: z.string().trim().min(1).max(20_000),
   agentKey: z.string().trim().min(1).max(64).optional(),
 });

@@ -5658,7 +5658,8 @@
       "load": "Could not load Space Context.",
       "retry": "Try again",
       "import": "Could not import from Space Memory.",
-      "save": "Нацртот не можеше да се зачува."
+      "save": "Нацртот не можеше да се зачува.",
+      "link": "Не можеше да се поврзе овој предлог со секциите на Context."
     },
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",

@@ -124,7 +124,7 @@ export function createChatTools(
     ),
     get_space_context: safeChatTool(
       'get_space_context',
-      createGetSpaceContextTool(),
+      createGetSpaceContextTool(authToken),
     ),
     save_space_context_draft: safeChatTool(
       'save_space_context_draft',

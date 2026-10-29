@@ -164,6 +164,12 @@ export function inferResubmitTemplateSegmentFromPayload(
     return 'pay-for-expenses';
   }
   if (
+    Array.isArray(parsed.spaceContextSectionKeys) &&
+    parsed.spaceContextSectionKeys.length > 0
+  ) {
+    return 'ratify-context';
+  }
+  if (
     parsed.tokenAddress !== undefined ||
     parsed.activatePurchase !== undefined
   ) {

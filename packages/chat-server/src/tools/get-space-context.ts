@@ -1,13 +1,16 @@
 import { z } from 'zod';
 import {
-  listSpaceContextSections,
+  checkSpaceAccessForSpace,
+  findSpaceBySlug,
   headingForSectionKey,
+  listSpaceContextSections,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import type { ChatRouteTool } from './types';
 import { sanitizeSlug } from '../system-prompt';
 
-export function createGetSpaceContextTool(): ChatRouteTool {
+export function createGetSpaceContextTool(authToken: string): ChatRouteTool {
   const inputSchema = z.object({
     space_slug: z.string().trim().min(1).describe('Hypha space slug'),
   });
@@ -26,6 +29,32 @@ export function createGetSpaceContextTool(): ChatRouteTool {
         return { found: false, error: 'Invalid space slug format' };
       }
       try {
+        const host = await findSpaceBySlug({ slug: spaceSlug }, { db });
+        if (!host) {
+          return {
+            found: false,
+            space_slug: spaceSlug,
+            error: 'Space not found',
+          };
+        }
+        if (host.web3SpaceId != null) {
+          if (!canConvertToBigInt(host.web3SpaceId)) {
+            return {
+              found: false,
+              space_slug: spaceSlug,
+              error: 'Invalid space identifier',
+            };
+          }
+          const access = await checkSpaceAccessForSpace(host, authToken);
+          if (!access.hasAccess) {
+            return {
+              found: false,
+              space_slug: spaceSlug,
+              error: access.message,
+            };
+          }
+        }
+
         const overview = await listSpaceContextSections({ spaceSlug }, { db });
         if (!overview) {
           return {

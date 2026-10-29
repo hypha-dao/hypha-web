@@ -5676,7 +5676,8 @@
       "load": "Could not load Space Context.",
       "retry": "Try again",
       "import": "Could not import from Space Memory.",
-      "save": "Kunne ikke lagre dette utkastet."
+      "save": "Kunne ikke lagre dette utkastet.",
+      "link": "Kunne ikke knytte dette forslaget til Context-seksjonene."
     },
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",

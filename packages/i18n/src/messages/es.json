@@ -5685,7 +5685,8 @@
       "load": "Could not load Space Context.",
       "retry": "Try again",
       "import": "Could not import from Space Memory.",
-      "save": "No se pudo guardar este borrador."
+      "save": "No se pudo guardar este borrador.",
+      "link": "No se pudo vincular esta propuesta a las secciones de Context."
     },
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",

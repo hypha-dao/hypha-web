@@ -5693,7 +5693,8 @@
       "load": "Could not load Space Context.",
       "retry": "Try again",
       "import": "Could not import from Space Memory.",
-      "save": "Could not save this draft."
+      "save": "Could not save this draft.",
+      "link": "Could not attach this proposal to the Context sections."
     },
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",

@@ -5677,7 +5677,8 @@
       "load": "Could not load Space Context.",
       "retry": "Try again",
       "import": "Could not import from Space Memory.",
-      "save": "Dit concept kon niet worden opgeslagen."
+      "save": "Dit concept kon niet worden opgeslagen.",
+      "link": "Dit voorstel kon niet aan de Context-secties worden gekoppeld."
     },
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",

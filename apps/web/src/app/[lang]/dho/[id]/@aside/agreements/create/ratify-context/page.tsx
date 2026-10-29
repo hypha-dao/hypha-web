@@ -25,7 +25,7 @@ export default async function RatifyContextFromAgreementsPage({
       <CreateContextRatifyForm
         successfulUrl={getDhoPathContext(lang, id)}
         backUrl={getDhoPathAgreements(lang, id)}
-        closeUrl={getDhoPathContext(lang, id)}
+        closeUrl={getDhoPathAgreements(lang, id)}
         spaceId={spaceFromDb.id}
         web3SpaceId={spaceFromDb.web3SpaceId}
         spaceSlug={id}

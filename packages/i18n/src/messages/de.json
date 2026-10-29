@@ -5671,7 +5671,8 @@
       "load": "Space Context konnte nicht geladen werden.",
       "retry": "Erneut versuchen",
       "import": "Import aus Space Memory fehlgeschlagen.",
-      "save": "Dieser Entwurf konnte nicht gespeichert werden."
+      "save": "Dieser Entwurf konnte nicht gespeichert werden.",
+      "link": "Dieser Vorschlag konnte den Context-Abschnitten nicht zugeordnet werden."
     },
     "success": {
       "imported": "Ein Missionsentwurf wurde aus Space Memory importiert.",

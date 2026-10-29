@@ -1,4 +1,7 @@
-import type { SpaceContextSectionKey } from './constants';
+import {
+  SPACE_CONTEXT_SECTION_KEYS,
+  type SpaceContextSectionKey,
+} from './constants';
 
 const HEADING_RE = /^(#{1,6})\s+(.+)$/;
 
@@ -59,4 +62,27 @@ export function headingForSectionKey(key: SpaceContextSectionKey): string {
     case 'how_we_decide':
       return 'How we decide what we work on';
   }
+}
+
+/** Reverse of `buildProposalMarkdown` headings — used when resubmitting a Context proposal. */
+export function sectionKeysFromProposalMarkdown(
+  markdown: string,
+): SpaceContextSectionKey[] {
+  const titles = new Map(
+    SPACE_CONTEXT_SECTION_KEYS.map((key) => [
+      headingForSectionKey(key).toLowerCase(),
+      key,
+    ]),
+  );
+  const found: SpaceContextSectionKey[] = [];
+  const seen = new Set<SpaceContextSectionKey>();
+  for (const line of markdown.replace(/\r\n/g, '\n').split('\n')) {
+    const match = line.match(/^##\s+(.+)$/);
+    if (!match?.[1]) continue;
+    const key = titles.get(match[1].trim().toLowerCase());
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    found.push(key);
+  }
+  return found;
 }

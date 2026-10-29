@@ -68,7 +68,7 @@ export async function POST(
         sectionKey,
         role: parsed.data.role,
         content: parsed.data.content,
-        personId: parsed.data.role === 'user' ? auth.person.id : null,
+        personId: auth.person.id,
         agentKey: parsed.data.agentKey,
       },
       { db },

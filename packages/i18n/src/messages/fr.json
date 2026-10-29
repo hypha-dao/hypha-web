@@ -5667,7 +5667,8 @@
       "load": "Could not load Space Context.",
       "retry": "Try again",
       "import": "Could not import from Space Memory.",
-      "save": "Impossible d'enregistrer ce brouillon."
+      "save": "Impossible d'enregistrer ce brouillon.",
+      "link": "Impossible de lier cette proposition aux sections Context."
     },
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",
