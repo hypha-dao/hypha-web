@@ -128,27 +128,27 @@ function useMutuallyExclusivePanels(): boolean {
 }
 
 /**
- * Messages inbox context icons link to `?spaceChat=space|ecosystem|public`.
+ * Messages inbox context icons deep-link with `?spaceChat=` or `?signal=`.
  * Opens the Human panel from the layout (always mounted) so the lazy panel
- * body can apply the channel — do not wait for a prior manual open.
+ * body can apply the channel / signal — do not wait for a prior manual open.
  */
-function SpaceChatDeepLinkOpener() {
+function HumanChatDeepLinkOpener() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { openHumanChatPanel } = useHumanChatPanel();
   const spaceChatDeepLink = searchParams?.get('spaceChat')?.trim() ?? null;
+  const signalDeepLink = searchParams?.get('signal')?.trim() ?? null;
 
   useEffect(() => {
-    if (
-      spaceChatDeepLink !== 'space' &&
-      spaceChatDeepLink !== 'ecosystem' &&
-      spaceChatDeepLink !== 'public'
-    ) {
-      return;
-    }
+    const opensSpaceChat =
+      spaceChatDeepLink === 'space' ||
+      spaceChatDeepLink === 'ecosystem' ||
+      spaceChatDeepLink === 'public';
+    const opensSignal = Boolean(signalDeepLink);
+    if (!opensSpaceChat && !opensSignal) return;
     if (!getDhoSpaceSlugFromPathname(pathname)) return;
     openHumanChatPanel();
-  }, [pathname, spaceChatDeepLink, openHumanChatPanel]);
+  }, [pathname, spaceChatDeepLink, signalDeepLink, openHumanChatPanel]);
 
   return null;
 }
@@ -808,7 +808,7 @@ export function PanelWrapLayout({
       }
     >
       <Suspense fallback={null}>
-        <SpaceChatDeepLinkOpener />
+        <HumanChatDeepLinkOpener />
       </Suspense>
       {content}
     </div>

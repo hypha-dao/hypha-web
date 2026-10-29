@@ -5470,6 +5470,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         result.roomId,
         result.signalTitle?.trim() || result.signalSlug,
         result.signalSlug,
+        null,
+        result.spaceSlug,
       );
       openHumanChatPanel();
       setActiveTab('chat');

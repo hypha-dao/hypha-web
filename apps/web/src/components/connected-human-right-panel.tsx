@@ -17,29 +17,37 @@ function isSpaceChatDeepLink(value: string | null | undefined): boolean {
   return raw === 'space' || raw === 'ecosystem' || raw === 'public';
 }
 
+function isHumanChatDeepLink(
+  searchParams: {
+    get: (key: string) => string | null;
+  } | null,
+): boolean {
+  if (!searchParams) return false;
+  if (isSpaceChatDeepLink(searchParams.get('spaceChat'))) return true;
+  return Boolean(searchParams.get('signal')?.trim());
+}
+
 export function ConnectedHumanRightPanel() {
   const { open: sidebarOpen, openMobile } = useSidebar();
   const { open: contextOpen } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
   const isNetwork = useIsNetworkContext();
   const searchParams = useSearchParams();
-  const hasSpaceChatDeepLink = isSpaceChatDeepLink(
-    searchParams?.get('spaceChat'),
-  );
+  const hasChatDeepLink = isHumanChatDeepLink(searchParams);
   const [hasOpened, setHasOpened] = useState(false);
   const panelOpen = sidebarOpen || openMobile || contextOpen;
 
   useEffect(() => {
-    // `?spaceChat=` must mount the panel so HumanRightPanel can open the space
-    // room — otherwise the lazy gate leaves the side panel closed.
-    if (panelOpen || hasSpaceChatDeepLink) {
+    // `?spaceChat=` / `?signal=` must mount the panel so HumanRightPanel can
+    // open that room — otherwise the lazy gate leaves the side panel closed.
+    if (panelOpen || hasChatDeepLink) {
       setHasOpened(true);
     } else if (!isSpace && !isNetwork) {
       setHasOpened(false);
     }
-  }, [panelOpen, isSpace, isNetwork, hasSpaceChatDeepLink]);
+  }, [panelOpen, isSpace, isNetwork, hasChatDeepLink]);
 
-  if (!hasOpened && !hasSpaceChatDeepLink) {
+  if (!hasOpened && !hasChatDeepLink) {
     return null;
   }
 
