@@ -276,6 +276,42 @@ describe('messages inbox context', () => {
     expect(rows).toEqual([]);
   });
 
+  it('keeps an unread proposal chat even when the preview is still blank', () => {
+    const voting = {
+      ...context,
+      proposals: [
+        {
+          roomId: '!unread-proposal:hs',
+          title: 'Invite Member',
+          slug: 'invite-member',
+          spaceSlug: 'hypha-platform',
+          spaceTitle: 'Hypha Platform',
+          rootSlug: 'hypha',
+          rootTitle: 'Hypha',
+        },
+      ],
+    };
+    const [row] = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!unread-proposal:hs',
+          roomType: 'io.hypha.room.proposal',
+          name: 'Invite Member',
+          aliases: [],
+          preview: '',
+          mine: false,
+          lastTs: recent,
+          unread: 2,
+        },
+      ],
+      voting,
+      'Network',
+      now,
+    );
+    expect(row?.roomId).toBe('!unread-proposal:hs');
+    expect(row?.unread).toBe(2);
+  });
+
   it('hides a signal the member is not on and has not been notified about', () => {
     const quietContext = {
       ...context,

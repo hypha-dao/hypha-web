@@ -622,7 +622,9 @@ export function channelRowsFromSnapshots(
     // the inbox. Other channels stay hidden until they have a message in the
     // last three months.
     if (place.kind === 'proposal') {
-      if (!snapshot.preview.trim()) continue;
+      // Blank preview with unread still belongs in the inbox — the member has
+      // something to open even when the last line has not loaded yet.
+      if (!snapshot.preview.trim() && snapshot.unread <= 0) continue;
     } else if (
       place.kind !== 'signal' &&
       !channelHasRecentActivity(snapshot.lastTs, now)

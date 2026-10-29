@@ -258,6 +258,7 @@ export function ProposalDiscussionChat({
 
   const registeredRoomIdRef = React.useRef<string | null>(null);
   const pendingRoomRef = React.useRef<Promise<string | null> | null>(null);
+  const backfillTokenRef = React.useRef(0);
   const roomIdRef = React.useRef(roomId);
   roomIdRef.current = roomId;
   const titleRef = React.useRef(title);
@@ -516,6 +517,7 @@ export function ProposalDiscussionChat({
       if (id) unregisterRoomListenerRef.current(id);
       registeredRoomIdRef.current = null;
       hydratedRoomIdRef.current = null;
+      backfillTokenRef.current += 1;
     };
   }, [documentSlug]);
 
@@ -1004,17 +1006,30 @@ export function ProposalDiscussionChat({
                   return;
                 }
                 void (async () => {
+                  const token = backfillTokenRef.current;
                   let hasMore = true;
                   for (let attempt = 0; attempt < 12 && hasMore; attempt += 1) {
-                    const result = await loadRoomHistoryRef.current(
-                      targetRoomId,
-                      {
+                    let result;
+                    try {
+                      result = await loadRoomHistoryRef.current(targetRoomId, {
                         force: true,
                         maxBatches: 3,
-                      },
-                    );
+                      });
+                    } catch {
+                      if (backfillTokenRef.current !== token) return;
+                      setScrollToEventId(null);
+                      return;
+                    }
+                    if (backfillTokenRef.current !== token) return;
                     hasMore = result.hasMoreOlder;
                     refreshRoomMessages(targetRoomId);
+                    // Wait for React to commit the refreshed rows before DOM lookup.
+                    await new Promise<void>((resolve) => {
+                      requestAnimationFrame(() =>
+                        requestAnimationFrame(() => resolve()),
+                      );
+                    });
+                    if (backfillTokenRef.current !== token) return;
                     const escaped =
                       typeof CSS !== 'undefined' &&
                       typeof CSS.escape === 'function'
@@ -1025,12 +1040,13 @@ export function ProposalDiscussionChat({
                         `[data-matrix-event-id="${escaped}"]`,
                       ) != null
                     ) {
-                      setScrollToEventId(null);
-                      requestAnimationFrame(() => setScrollToEventId(eventId));
+                      // Keep the target set so the child can consume/jump.
+                      setScrollToEventId(eventId);
                       return;
                     }
                     if (!hasMore) break;
                   }
+                  if (backfillTokenRef.current !== token) return;
                   setScrollToEventId(null);
                 })();
               }}

@@ -4863,13 +4863,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
       let hasMore = hasMoreOlderMessages;
       for (let attempt = 0; attempt < 12 && hasMore; attempt += 1) {
-        const result = await matrixRef.current.loadRoomHistory(targetRoomId, {
-          force: true,
-          maxBatches: 3,
-        });
+        let result;
+        try {
+          result = await matrixRef.current.loadRoomHistory(targetRoomId, {
+            force: true,
+            maxBatches: 3,
+          });
+        } catch {
+          if (roomIdRef.current?.trim() === targetRoomId) {
+            setMentionNavigationNotice(t('mentionOpenFallbackMissingMessage'));
+            setScrollToEventId(null);
+          }
+          return;
+        }
+        if (roomIdRef.current?.trim() !== targetRoomId) return;
         syncRoomMessages(targetRoomId);
         hasMore = result.hasMoreOlder;
         setHasMoreOlderMessages(hasMore);
+
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        });
+        if (roomIdRef.current?.trim() !== targetRoomId) return;
 
         const escaped =
           typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
@@ -4878,14 +4893,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (
           document.querySelector(`[data-matrix-event-id="${escaped}"]`) != null
         ) {
-          setScrollToEventId(null);
-          requestAnimationFrame(() => setScrollToEventId(eventId));
+          setScrollToEventId(eventId);
           return;
         }
 
         if (!hasMore) break;
       }
 
+      if (roomIdRef.current?.trim() !== targetRoomId) return;
       setMentionNavigationNotice(t('mentionOpenFallbackMissingMessage'));
       setScrollToEventId(null);
     },
@@ -5419,8 +5434,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     // Coherence tab owns `?signal=` via useCoherenceSignalDeepLink (select +
     // open chat). Resolving here races that path and can strip the param on a
-    // transient API failure before the board selects the card.
-    if (pathname.includes('/coherence')) return;
+    // transient API failure before the board selects the card. Match only the
+    // tab segment so a space slug like `coherence-team` still resolves here.
+    if (/^\/[^/]+\/dho\/[^/]+\/coherence(?:\/|$)/.test(pathname)) return;
 
     openHumanChatPanel();
     setActiveTab('chat');

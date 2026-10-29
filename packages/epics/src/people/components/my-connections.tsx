@@ -1401,9 +1401,14 @@ export function useMessagesScreenCount() {
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) return EMPTY_INBOX_CONTEXT;
+      // Throw so SWR keeps the last good context instead of zeroing signal
+      // unreads on a transient non-OK response.
+      if (!response.ok) {
+        throw new Error(`message-inbox-context ${response.status}`);
+      }
       return (await response.json()) as InboxContext;
     },
+    { refreshInterval: 60_000 },
   );
   const context = inboxContext ?? EMPTY_INBOX_CONTEXT;
   const [count, setCount] = useState(0);

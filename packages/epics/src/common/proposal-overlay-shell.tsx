@@ -97,20 +97,34 @@ export function ProposalOverlayShell({
       pin();
     };
     el.addEventListener('scroll', onScroll);
+    const userInputEvents = [
+      'wheel',
+      'touchstart',
+      'keydown',
+      'pointerdown',
+    ] as const;
+    const releasePin = () => {
+      cancelled = true;
+      el.removeEventListener('scroll', onScroll);
+      for (const type of userInputEvents) {
+        el.removeEventListener(type, releasePin);
+      }
+    };
+    for (const type of userInputEvents) {
+      el.addEventListener(type, releasePin, { passive: true });
+    }
     let raf2 = 0;
     const raf1 = requestAnimationFrame(() => {
       pin();
       raf2 = requestAnimationFrame(pin);
     });
-    const release = window.setTimeout(() => {
-      el.removeEventListener('scroll', onScroll);
-    }, OPEN_SCROLL_PIN_MS);
+    const release = window.setTimeout(releasePin, OPEN_SCROLL_PIN_MS);
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf1);
       if (raf2) cancelAnimationFrame(raf2);
       window.clearTimeout(release);
-      el.removeEventListener('scroll', onScroll);
+      releasePin();
     };
   }, []);
 
