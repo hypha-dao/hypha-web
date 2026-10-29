@@ -736,6 +736,8 @@ type HumanChatPanelMessageBubbleProps = {
     };
     /** Rich reply: quoted context above the new text */
     replyTo?: {
+      /** Matrix event id of the quoted message (scroll target). */
+      eventId?: string;
       authorLabel: string;
       /** When omitted, UI shows “original unavailable” */
       excerpt?: string;
@@ -748,6 +750,8 @@ type HumanChatPanelMessageBubbleProps = {
   isStreaming?: boolean;
   /** When set, Reply is enabled (omit for synthetic messages like welcome). */
   onReply?: () => void;
+  /** When set, the reply quote scrolls the timeline to the original. */
+  onJumpToOriginal?: () => void;
   /** When set, Edit is enabled (own text messages only; parent omits otherwise). */
   onEdit?: () => void;
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
@@ -1608,6 +1612,7 @@ export function HumanChatPanelMessageBubble({
   currentUserId,
   currentUserAvatarUrl,
   onReply,
+  onJumpToOriginal,
   onEdit,
   onDeleteMessage,
   onReact,
@@ -1955,6 +1960,50 @@ export function HumanChatPanelMessageBubble({
     return () => ro.disconnect();
   }, [textContent, textExpanded, richTextHtml, hasInlineMedia]);
 
+  const replyExcerpt =
+    replyTo && replyTo.excerpt != null && replyTo.excerpt !== '' ? (
+      // Keep MXIDs / @handles so mention pills can resolve Privy locals to
+      // names; omit only bare technical slugs with no mention syntax.
+      needsHyphaProfileResolutionForMatrixLabel(replyTo.excerpt) &&
+      !replyTo.excerpt.includes('@') &&
+      !/\s/.test(replyTo.excerpt.trim()) ? null : (
+        <span className="min-w-0 truncate font-normal">
+          {renderTextWithMentions(
+            replyTo.excerpt,
+            bodyResolveMx,
+            false,
+            roomMemberUserIds,
+          )}
+        </span>
+      )
+    ) : replyTo ? (
+      <span className="italic">{t('replyOriginalUnavailable')}</span>
+    ) : null;
+
+  const replyContextBody = replyTo ? (
+    <>
+      <div ref={replyAvatarMeasureRef} className="shrink-0">
+        <PersonAvatar
+          size="sm"
+          className="rounded-full"
+          avatarSrc={replyHeaderAvatarResolved}
+          userName={replyAuthorLabelForUi}
+          isLoading={replyAvatarLoading}
+          personId={replyPerson?.id}
+          matrixUserId={replyTo.sourceUserId}
+        />
+      </div>
+      <span className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
+        <span className="shrink-0 font-semibold text-muted-foreground">
+          {replyAuthorLabelForUi.startsWith('@')
+            ? replyAuthorLabelForUi
+            : `@${replyAuthorLabelForUi}`}
+        </span>
+        {replyExcerpt}
+      </span>
+    </>
+  ) : null;
+
   const row = (moreSlot: ReactNode | null) => (
     <div
       ref={messageRowRef}
@@ -2002,49 +2051,30 @@ export function HumanChatPanelMessageBubble({
           mainAvatarRef={mainAvatarMeasureRef}
         />
       )}
-      {replyTo && (
+      {replyTo && replyContextBody ? (
         <div
           data-testid="chat-message-reply-context"
           className="relative z-[1] mb-0.5 flex min-h-[20px] items-center gap-1.5 pl-12"
         >
-          <div ref={replyAvatarMeasureRef} className="shrink-0">
-            <PersonAvatar
-              size="sm"
-              className="rounded-full"
-              avatarSrc={replyHeaderAvatarResolved}
-              userName={replyAuthorLabelForUi}
-              isLoading={replyAvatarLoading}
-              personId={replyPerson?.id}
-              matrixUserId={replyTo?.sourceUserId}
-            />
-          </div>
-          <p className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
-            <span className="shrink-0 font-semibold text-muted-foreground">
-              {replyAuthorLabelForUi.startsWith('@')
-                ? replyAuthorLabelForUi
-                : `@${replyAuthorLabelForUi}`}
-            </span>
-            {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
-              // Keep MXIDs / @handles so mention pills can resolve Privy locals to
-              // names; omit only bare technical slugs with no mention syntax.
-              needsHyphaProfileResolutionForMatrixLabel(replyTo.excerpt) &&
-              !replyTo.excerpt.includes('@') &&
-              !/\s/.test(replyTo.excerpt.trim()) ? null : (
-                <span className="min-w-0 truncate font-normal">
-                  {renderTextWithMentions(
-                    replyTo.excerpt,
-                    bodyResolveMx,
-                    false,
-                    roomMemberUserIds,
-                  )}
-                </span>
-              )
-            ) : (
-              <span className="italic">{t('replyOriginalUnavailable')}</span>
-            )}
-          </p>
+          {onJumpToOriginal ? (
+            <button
+              type="button"
+              data-testid="chat-message-reply-jump"
+              aria-label={t('replyJumpToOriginal')}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onJumpToOriginal();
+              }}
+              className="flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-left outline-none transition-colors hover:[&_span]:text-foreground focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              {replyContextBody}
+            </button>
+          ) : (
+            replyContextBody
+          )}
         </div>
-      )}
+      ) : null}
 
       <div className="flex items-start gap-2">
         {/* Main avatar: first row in this column is sender name — aligns with "You" */}

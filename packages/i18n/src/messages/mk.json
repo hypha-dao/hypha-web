@@ -3876,6 +3876,7 @@
     "replyingTo": "Одговараш на {author}",
     "replyDismiss": "Откажи одговор",
     "replyOriginalUnavailable": "Оригиналната порака не е достапна",
+    "replyJumpToOriginal": "Оди до оригиналната порака",
     "moreButton": "Повеќе",
     "composerAttachMenu": "Додај прилог",
     "composerAttachImage": "Фотографија или слика",

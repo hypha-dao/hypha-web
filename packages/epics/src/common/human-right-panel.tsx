@@ -405,6 +405,8 @@ type UIMessage = {
     reactorUserIds?: string[];
   }>;
   replyTo?: {
+    /** Matrix event id of the quoted message (scroll target). */
+    eventId?: string;
     authorLabel: string;
     excerpt?: string;
     /** Quoted author MXID when known (for label refresh). */
@@ -930,6 +932,7 @@ function toUIMessage(
         ? currentUserAvatarUrl
         : resolveAvatarForUser(replyAuthorId);
     replyTo = {
+      eventId: msg.inReplyToEventId,
       authorLabel,
       excerpt,
       sourceUserId: msg.inReplyToSender,
@@ -6784,6 +6787,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                           ? undefined
                           : handleReplyToMessage
                       }
+                      onJumpToOriginalMessage={(eventId) => {
+                        const id = eventId.trim();
+                        if (!id) return;
+                        setScrollToEventId(id);
+                      }}
                       onEditMessage={
                         blockSpaceChatForMembership
                           ? undefined

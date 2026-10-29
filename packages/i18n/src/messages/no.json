@@ -3895,6 +3895,7 @@
     "replyingTo": "Svarer {author}",
     "replyDismiss": "Avbryt svar",
     "replyOriginalUnavailable": "Den opprinnelige meldingen er ikke tilgjengelig",
+    "replyJumpToOriginal": "Gå til den opprinnelige meldingen",
     "moreButton": "Mer",
     "composerAttachMenu": "Legg til vedlegg",
     "composerAttachImage": "Foto eller bilde",

@@ -3321,6 +3321,7 @@
     "replyingTo": "Respondendo a {author}",
     "replyDismiss": "Cancelar resposta",
     "replyOriginalUnavailable": "Mensagem original indisponível",
+    "replyJumpToOriginal": "Ir para a mensagem original",
     "moreButton": "Mais",
     "composerAttachMenu": "Adicionar anexo",
     "composerAttachImage": "Foto ou imagem",

@@ -241,6 +241,9 @@ export function ProposalDiscussionChat({
   const [isLoading, setIsLoading] = React.useState(false);
   const [input, setInput] = React.useState('');
   const [replyDraft, setReplyDraft] = React.useState<ReplyDraft | null>(null);
+  const [scrollToEventId, setScrollToEventId] = React.useState<string | null>(
+    null,
+  );
   const [editDraft, setEditDraft] = React.useState<EditDraft | null>(null);
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = React.useState(0);
   const [provisionError, setProvisionError] = React.useState<string | null>(
@@ -381,6 +384,7 @@ export function ProposalDiscussionChat({
         ...(msg.inReplyToEventId
           ? {
               replyTo: {
+                eventId: msg.inReplyToEventId,
                 authorLabel: resolveMemberLabel(replyAuthorId),
                 excerpt: msg.inReplyToBodyPreview,
                 sourceUserId: replyAuthorId,
@@ -985,6 +989,13 @@ export function ProposalDiscussionChat({
               currentUserId={currentUserId}
               currentUserAvatarUrl={currentUserAvatarUrl}
               onReply={handleReplyToMessage}
+              onJumpToOriginalMessage={(eventId) => {
+                const id = eventId.trim();
+                if (!id) return;
+                setScrollToEventId(id);
+              }}
+              scrollTargetEventId={scrollToEventId}
+              onConsumedScrollTarget={() => setScrollToEventId(null)}
               onEditMessage={handleEditMessage}
               onDeleteMessage={handleDeleteMessage}
               onToggleReaction={handleToggleReaction}

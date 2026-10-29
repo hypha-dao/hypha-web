@@ -3896,6 +3896,7 @@
     "replyingTo": "Reageren op {author}",
     "replyDismiss": "Antwoord annuleren",
     "replyOriginalUnavailable": "Origineel bericht niet beschikbaar",
+    "replyJumpToOriginal": "Ga naar het originele bericht",
     "moreButton": "Meer",
     "composerAttachMenu": "Bijlage toevoegen",
     "composerAttachImage": "Foto of afbeelding",

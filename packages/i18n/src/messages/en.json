@@ -3924,6 +3924,7 @@
     "replyingTo": "Replying to {author}",
     "replyDismiss": "Cancel reply",
     "replyOriginalUnavailable": "Original message unavailable",
+    "replyJumpToOriginal": "Jump to original message",
     "moreButton": "More",
     "composerAttachMenu": "Add attachment",
     "composerAttachImage": "Photo or image",

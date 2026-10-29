@@ -3335,6 +3335,7 @@
     "replyingTo": "Respondiendo a {author}",
     "replyDismiss": "Cancelar respuesta",
     "replyOriginalUnavailable": "Mensaje original no disponible",
+    "replyJumpToOriginal": "Ir al mensaje original",
     "moreButton": "Más",
     "composerAttachMenu": "Añadir adjunto",
     "composerAttachImage": "Foto o imagen",

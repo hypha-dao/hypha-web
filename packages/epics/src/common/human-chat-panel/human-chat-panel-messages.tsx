@@ -57,6 +57,8 @@ type UIMessage = {
     reactorUserIds?: string[];
   }>;
   replyTo?: {
+    /** Matrix event id of the quoted message (scroll target). */
+    eventId?: string;
     authorLabel: string;
     excerpt?: string;
     /** Matrix MXID of quoted author (for avatar refresh). */
@@ -175,6 +177,8 @@ type HumanChatPanelMessagesProps = {
   welcomeText?: string;
   welcomeSenderName?: string;
   onReply?: (messageId: string) => void;
+  /** Jump the timeline to the quoted original when a reply header is clicked. */
+  onJumpToOriginalMessage?: (eventId: string) => void;
   onEditMessage?: (messageId: string) => void;
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
   onToggleReaction?: (messageId: string, emoji: string) => void;
@@ -220,6 +224,7 @@ export function HumanChatPanelMessages({
   welcomeText,
   welcomeSenderName,
   onReply,
+  onJumpToOriginalMessage,
   onEditMessage,
   onDeleteMessage,
   onToggleReaction,
@@ -773,6 +778,11 @@ export function HumanChatPanelMessages({
                 }
                 onReply={
                   canInteract && onReply ? () => onReply(msg.id) : undefined
+                }
+                onJumpToOriginal={
+                  canInteract && onJumpToOriginalMessage && msg.replyTo?.eventId
+                    ? () => onJumpToOriginalMessage(msg.replyTo!.eventId!)
+                    : undefined
                 }
                 onEdit={
                   canInteract &&
