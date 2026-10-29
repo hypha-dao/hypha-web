@@ -1892,9 +1892,13 @@ export function memberHomeThreadItemForRef(
   );
   if (fromCatalog) return fromCatalog;
   if (ref.kind === 'signal') {
-    const signal =
-      home.signals.find((row) => row.slug === slug) ??
-      (home.networkSignals ?? []).find((row) => row.slug === slug);
+    // Own-space signals carry dueAt/roomId. Network horizon rows do not —
+    // keep them separate so the union never pretends they share those fields.
+    const ownSignal = home.signals.find((row) => row.slug === slug);
+    const networkSignal = (home.networkSignals ?? []).find(
+      (row) => row.slug === slug,
+    );
+    const signal = ownSignal ?? networkSignal;
     const note = [...home.notifications, ...home.attention].find(
       (row) => row.kind === 'signal' && row.targetSlug === slug,
     );
@@ -1915,13 +1919,13 @@ export function memberHomeThreadItemForRef(
       spaceLogo: signal?.spaceLogo ?? note?.spaceLogo ?? null,
       category: memberHomeSignalCategory(signal?.type, note?.category),
       summary: signal?.description ?? note?.summary ?? null,
-      dueAt: signal?.dueAt ?? null,
+      dueAt: ownSignal?.dueAt ?? null,
       creatorId,
       creatorName: signal?.creatorName ?? note?.creatorName ?? null,
       creatorAvatarUrl:
         signal?.creatorAvatarUrl ?? note?.creatorAvatarUrl ?? null,
       ...(typeof signal?.id === 'number' ? { signalId: signal.id } : {}),
-      ...(signal?.roomId?.trim() ? { roomId: signal.roomId.trim() } : {}),
+      ...(ownSignal?.roomId?.trim() ? { roomId: ownSignal.roomId.trim() } : {}),
     };
   }
   if (ref.kind !== 'proposal') return null;
