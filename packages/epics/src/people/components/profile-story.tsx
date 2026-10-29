@@ -725,7 +725,10 @@ function CurrencyLine({
   // Keep the chosen code locally so a slow /me refresh cannot blank the row.
   const [draft, setDraft] = useState(currency ?? '');
   useEffect(() => {
-    if (!editing) setDraft(currency ?? '');
+    if (editing) return;
+    // Only adopt a saved value. Closing the select must not wipe a just-
+    // chosen draft while the parent still has no currency yet.
+    if (currency) setDraft(currency);
   }, [currency, editing]);
 
   const shown = draft || currency || '';
