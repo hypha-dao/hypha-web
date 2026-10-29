@@ -76,7 +76,11 @@ export async function GET(
       period,
     });
 
-    return NextResponse.json(telemetry);
+    return NextResponse.json(telemetry, {
+      headers: {
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=60',
+      },
+    });
   } catch (error) {
     console.error('[spaces/energy/telemetry] failed:', error);
     return NextResponse.json(

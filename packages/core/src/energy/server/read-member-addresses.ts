@@ -122,3 +122,18 @@ export async function readEnergyCommunityMemberAddresses(
   memberAddressReads.set(cacheKey, read);
   return read;
 }
+
+/** Seed the 30s member-address cache after a full community snapshot read. */
+export function rememberEnergyCommunityMemberAddresses(
+  spaceSlug: string,
+  addresses: readonly string[],
+): void {
+  const cacheKey = spaceSlug.trim().toLowerCase();
+  memberAddressCache.set(cacheKey, {
+    expiresAt: Date.now() + MEMBER_ADDRESS_CACHE_TTL_MS,
+    value: {
+      status: 'ok',
+      addresses: new Set(addresses.map((address) => address.toLowerCase())),
+    },
+  });
+}

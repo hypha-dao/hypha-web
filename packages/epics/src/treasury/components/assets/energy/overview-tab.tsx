@@ -9,6 +9,7 @@ import { ConsumerConsumptionCard } from './consumer-consumption-card';
 import {
   formatEnergyPricePerKwh,
   resolveEnergyParticipantDisplay,
+  resolveEnergyPersonId,
   sourceCardLabel,
 } from './format';
 import type { EnergyTabProps } from './energy-tab-props';
@@ -76,7 +77,11 @@ export const EnergyOverviewTab = ({
                   address={address}
                   displayName={display.displayName}
                   avatarUrl={display.avatarUrl}
-                  personId={people[address.toLowerCase()]?.id}
+                  personId={resolveEnergyPersonId(
+                    address,
+                    people,
+                    participantProfiles,
+                  )}
                   subtitle={display.subtitle}
                   isLoading={energyAvatarLoading(
                     address,

@@ -29,6 +29,31 @@ export type CheckSpaceAccessResult = {
   authToken?: string;
 };
 
+const VISIBILITY_CACHE_TTL_MS = 30_000;
+const visibilityCache = new Map<
+  string,
+  { expiresAt: number; visibility: unknown }
+>();
+
+async function readSpaceVisibility(spaceIdBigInt: bigint) {
+  const cacheKey = spaceIdBigInt.toString();
+  const cached = visibilityCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.visibility as Awaited<
+      ReturnType<typeof web3Client.readContract>
+    >;
+  }
+
+  const visibility = await web3Client.readContract(
+    getSpaceVisibility({ spaceId: spaceIdBigInt }),
+  );
+  visibilityCache.set(cacheKey, {
+    expiresAt: Date.now() + VISIBILITY_CACHE_TTL_MS,
+    visibility,
+  });
+  return visibility;
+}
+
 /**
  * Checks if the user has access to a space based on the transparency matrix.
  * This function enforces server-side authorization for space data.
@@ -45,9 +70,7 @@ export async function checkSpaceAccess(
     const spaceIdBigInt =
       typeof spaceId === 'number' ? BigInt(spaceId) : spaceId;
 
-    const visibility = await web3Client.readContract(
-      getSpaceVisibility({ spaceId: spaceIdBigInt }),
-    );
+    const visibility = await readSpaceVisibility(spaceIdBigInt);
 
     const accessLevel = Number(
       'access' in visibility ? visibility.access : visibility[1],

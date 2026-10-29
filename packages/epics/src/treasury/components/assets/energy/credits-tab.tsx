@@ -8,6 +8,7 @@ import { ENERGY_PALETTE } from './charts';
 import {
   formatStablecoinMicro,
   resolveEnergyParticipantDisplay,
+  resolveEnergyPersonId,
 } from './format';
 import type { EnergyTabProps } from './energy-tab-props';
 import { energyAvatarLoading } from './energy-tab-props';
@@ -172,6 +173,11 @@ export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
                   <EnergyPersonCard
                     address={row.address}
                     person={people[row.address.toLowerCase()]}
+                    personId={resolveEnergyPersonId(
+                      row.address,
+                      people,
+                      participantProfiles,
+                    )}
                     displayName={display.displayName}
                     avatarUrl={display.avatarUrl}
                     subtitle={display.subtitle}

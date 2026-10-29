@@ -13,6 +13,7 @@ import { type EnergyPerson } from './use-energy-people';
 import {
   formatBpsPct,
   resolveEnergyParticipantDisplay,
+  resolveEnergyPersonId,
   sourceDisplayName,
   shortAddr,
 } from './format';
@@ -312,7 +313,11 @@ const SourceOwnershipCard = ({
               owner={owner}
               displayName={display.displayName}
               avatarUrl={display.avatarUrl}
-              personId={people[owner.address.toLowerCase()]?.id}
+              personId={resolveEnergyPersonId(
+                owner.address,
+                people,
+                participantProfiles,
+              )}
               isLoading={energyAvatarLoading(
                 owner.address,
                 peopleLoading,

@@ -22,6 +22,7 @@ export type EnergyParticipantProfile = {
   avatarUrl?: string | null;
   subtitle?: string | null;
   profileSlug?: string | null;
+  personId?: number | null;
   kind: 'person' | 'space' | 'institutional';
 };
 

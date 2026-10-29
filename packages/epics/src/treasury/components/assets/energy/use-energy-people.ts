@@ -17,9 +17,9 @@ export type EnergyPerson = {
 export type EnergyPeopleMap = Record<string, EnergyPerson | null>;
 
 /**
- * Resolves a set of wallet addresses to Hypha profiles via
- * `/api/v1/people/by-web3-address/:address`. Returns a lowercase-address →
- * profile map (or `null` when the address has no linked profile yet).
+ * Resolves leftover wallet addresses to Hypha profiles in one request.
+ * The Energy tab prefers `participantProfiles` from `/energy` and only
+ * calls this for addresses the server could not label.
  */
 export const useEnergyPeople = (
   addresses: string[],
@@ -40,21 +40,21 @@ export const useEnergyPeople = (
   const { data, isLoading } = useSWR(
     key,
     async () => {
-      const entries = await Promise.all(
-        normalized.map(async (address) => {
-          try {
-            const res = await fetch(
-              `/api/v1/people/by-web3-address/${address}`,
-            );
-            if (!res.ok) return [address, null] as const;
-            const person = (await res.json()) as EnergyPerson | null;
-            return [address, person && person.slug ? person : null] as const;
-          } catch {
-            return [address, null] as const;
-          }
-        }),
+      const res = await fetch(
+        `/api/v1/people/by-web3-addresses?addresses=${normalized
+          .map((address) => encodeURIComponent(address))
+          .join(',')}`,
       );
-      return Object.fromEntries(entries) as EnergyPeopleMap;
+      if (!res.ok) {
+        throw new Error(`Failed to fetch energy people: ${res.status}`);
+      }
+      const payload = (await res.json()) as Record<string, EnergyPerson | null>;
+      const result: EnergyPeopleMap = {};
+      for (const address of normalized) {
+        const person = payload[address] ?? null;
+        result[address] = person && person.slug ? person : null;
+      }
+      return result;
     },
     { revalidateOnFocus: false },
   );

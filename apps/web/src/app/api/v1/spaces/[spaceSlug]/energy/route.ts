@@ -7,12 +7,12 @@ import {
   web3Client,
   resolveEnergyParticipants,
   institutionalLabelsForSpace,
-  readOwnershipTokenNames,
+  readEnergyCommunitySnapshot,
+  rememberEnergyCommunityMemberAddresses,
   type DatabaseInstance,
 } from '@hypha-platform/core/server';
 import {
   ENERGY_PPA_CHAIN_ID,
-  energyPpaV2Abi,
   energyPpaV2FactoryAbi,
   getEnergyPpaFactoryAddress,
 } from '@hypha-platform/core/client';
@@ -22,17 +22,6 @@ import {
 } from '@hypha-platform/core/generated';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
-import { hexToString } from 'viem';
-
-const SOURCE_TYPES: Record<number, string> = {
-  0: 'SOLAR',
-  1: 'BATTERY',
-};
-
-const BASE_PURPOSES = ['SELF_CONSUMPTION', 'MIN_CO2', 'LOWEST_PRICE'];
-const SOCIAL_MODES = ['NONE', 'FIXED', 'VARIABLE'];
-
-const toLowerHex = (address: string) => address.toLowerCase() as `0x${string}`;
 
 type EnergyCommunityActivation = {
   spaceId: number;
@@ -43,6 +32,9 @@ type EnergyCommunityActivation = {
   factoryCommunityId: number | null;
   activatedAt: Date;
 };
+
+const ENERGY_RESPONSE_CACHE_CONTROL =
+  'private, max-age=15, stale-while-revalidate=30';
 
 /**
  * Hypha links a space to `EnergyPPAv2Factory.adminCommunities[admin]`.
@@ -163,16 +155,12 @@ async function syncEnergyCommunityFromFactory(input: {
   return null;
 }
 
-const decodeSourceId = (value: `0x${string}`) => {
-  try {
-    const parsed = hexToString(value, { size: 32 })
-      .replace(/\u0000/g, '')
-      .trim();
-    return parsed.length > 0 ? parsed : value;
-  } catch {
-    return value;
-  }
-};
+function json(body: unknown, status = 200) {
+  return NextResponse.json(body, {
+    status,
+    headers: { 'Cache-Control': ENERGY_RESPONSE_CACHE_CONTROL },
+  });
+}
 
 export async function GET(
   request: NextRequest,
@@ -187,7 +175,7 @@ export async function GET(
     }
 
     if (space.web3SpaceId == null) {
-      return NextResponse.json({ enabled: false });
+      return json({ enabled: false });
     }
 
     /**
@@ -231,176 +219,22 @@ export async function GET(
     }
 
     if (!mapping) {
-      return NextResponse.json({ enabled: false });
+      return json({ enabled: false });
     }
 
-    const communityProxy = toLowerHex(mapping.communityProxyAddress);
-
-    /**
-     * Read a single view function on the community proxy without ever throwing.
-     * Returns `null` on revert / RPC failure and logs a warning so the route
-     * can still surface partial data (`enabled: true` + activation) instead of
-     * 500ing the whole request. Important because:
-     *  - public Base RPC rate-limits aggressively (multi-call batches still
-     *    occasionally fail);
-     *  - misconfigured proposals (e.g. stablecoin set to a non-ERC20) make
-     *    individual reads revert while the community itself is valid.
-     */
-    const safeRead = async <V>(
-      functionName: Parameters<
-        typeof web3Client.readContract
-      >[0] extends infer T
-        ? T extends { functionName: infer F }
-          ? F
-          : never
-        : never,
-      args?: readonly unknown[],
-    ): Promise<V | null> => {
-      try {
-        return (await web3Client.readContract({
-          address: communityProxy,
-          abi: energyPpaV2Abi,
-          functionName: functionName as never,
-          ...(args ? { args: args as never } : {}),
-        })) as V;
-      } catch (e: unknown) {
-        const message =
-          (e as { shortMessage?: string })?.shortMessage ||
-          (e as Error)?.message ||
-          String(e);
-        console.warn(
-          `[spaces/energy] readContract(${String(
-            functionName,
-          )}) failed on ${communityProxy}: ${message}`,
-        );
-        return null;
-      }
-    };
-
-    const [
-      communityFeeBps,
-      aggregatorFeeBps,
-      gridBalance,
-      settledBalance,
-      contractStablecoinBalance,
-      zeroSumStatus,
-      sourceIds,
-      memberAddresses,
-      communityRoleAddress,
-      aggregatorRoleAddress,
-      gridOperatorAddress,
-      exportDeviceId,
-    ] = await Promise.all([
-      safeRead<number>('getCommunityFeeBps'),
-      safeRead<number>('getAggregatorFeeBps'),
-      safeRead<bigint>('getGridBalance'),
-      safeRead<bigint>('getSettledBalance'),
-      safeRead<bigint>('getContractStablecoinBalance'),
-      safeRead<readonly [boolean, bigint]>('verifyZeroSum'),
-      safeRead<readonly `0x${string}`[]>('getSourceIds'),
-      safeRead<readonly `0x${string}`[]>('getMemberAddresses'),
-      safeRead<`0x${string}`>('getCommunityAddress'),
-      safeRead<`0x${string}`>('getAggregatorAddress'),
-      safeRead<`0x${string}`>('getGridOperator'),
-      safeRead<bigint>('getExportDeviceId'),
-    ]);
-
-    const sourceIdList = sourceIds ?? [];
-    const sourceResults = await Promise.all(
-      sourceIdList.map((sourceId) =>
-        safeRead<readonly [number, `0x${string}`, bigint, boolean]>(
-          'getSource',
-          [sourceId],
-        ),
-      ),
+    const snapshot = await readEnergyCommunitySnapshot(
+      mapping.communityProxyAddress,
     );
-
-    const ownershipTokens = sourceResults.flatMap((value, index) =>
-      value && sourceIdList[index] ? [value[1]] : [],
-    );
-    const tokenNamesByAddress = await readOwnershipTokenNames(ownershipTokens);
-
-    const sources = sourceResults
-      .map((value, index) => {
-        const sourceId = sourceIdList[index];
-        if (!sourceId || !value) {
-          return null;
-        }
-        const ownershipToken = value[1];
-        const decodedId = decodeSourceId(sourceId);
-        const tokenName = tokenNamesByAddress[ownershipToken.toLowerCase()];
-        return {
-          sourceId,
-          sourceLabel: decodedId,
-          sourceDisplayName: tokenName ?? decodedId,
-          sourceType: SOURCE_TYPES[Number(value[0])] ?? 'UNKNOWN',
-          ownershipToken,
-          basePricePerKwh: value[2].toString(),
-          active: value[3],
-        };
-      })
-      .filter((row): row is NonNullable<typeof row> => row !== null);
-
-    const memberAddressList = memberAddresses ?? [];
-
-    // Per-member on-chain detail: signed energy-credit balance (positive =
-    // holds credit, negative = owes), the source ids this member co-owns
-    // (with ownership bps) and the consumption meter ids registered for the
-    // member. Powers the Ownership, Credits and per-consumer telemetry views.
-    const memberDetails = await Promise.all(
-      memberAddressList.map(async (rawAddress) => {
-        const address = rawAddress.toLowerCase() as `0x${string}`;
-        const [
-          creditBalance,
-          debtStablecoin,
-          creditStablecoin,
-          ownerships,
-          memberRecord,
-        ] = await Promise.all([
-          safeRead<bigint>('getEnergyCreditBalance', [address]),
-          safeRead<bigint>('getDebtInStablecoin', [address]),
-          safeRead<bigint>('getCreditInStablecoin', [address]),
-          safeRead<readonly [readonly `0x${string}`[], readonly bigint[]]>(
-            'getAllSourceOwnerships',
-            [address],
-          ),
-          safeRead<{
-            memberAddress: `0x${string}`;
-            deviceIds: readonly bigint[];
-            isActive: boolean;
-            metadataHash: `0x${string}`;
-          }>('getMember', [address]),
-        ]);
-        const ownedIds = ownerships ? ownerships[0] : [];
-        const ownedBps = ownerships ? ownerships[1] : [];
-        return {
-          address,
-          energyCreditBalance:
-            creditBalance !== null ? creditBalance.toString() : null,
-          debtInStablecoin:
-            debtStablecoin !== null ? debtStablecoin.toString() : null,
-          creditInStablecoin:
-            creditStablecoin !== null ? creditStablecoin.toString() : null,
-          deviceIds: memberRecord
-            ? memberRecord.deviceIds.map((id) => Number(id))
-            : null,
-          ownerships: ownedIds.map((sourceId, index) => ({
-            sourceId,
-            sourceLabel: decodeSourceId(sourceId),
-            ownershipBps: Number(ownedBps[index] ?? 0n),
-          })),
-        };
-      }),
-    );
+    rememberEnergyCommunityMemberAddresses(spaceSlug, snapshot.memberAddresses);
 
     const memberDeviceIds = new Map<string, number[] | null>();
-    for (const detail of memberDetails) {
+    for (const detail of snapshot.memberDetails) {
       memberDeviceIds.set(detail.address.toLowerCase(), detail.deviceIds);
     }
 
     const participantProfiles = await resolveEnergyParticipants(
       {
-        addresses: memberAddressList.map((a) => a.toLowerCase()),
+        addresses: snapshot.memberAddresses,
         spaceSlug,
         memberDeviceIds,
         institutionalByDevice: institutionalLabelsForSpace(spaceSlug),
@@ -408,33 +242,7 @@ export async function GET(
       { db },
     );
 
-    const [optimizationConfig, socialWalletsRaw] = await Promise.all([
-      safeRead<readonly [readonly number[], number, bigint, number, boolean]>(
-        'getOptimizationConfig',
-      ),
-      safeRead<readonly { wallet: `0x${string}`; shareBps: number }[]>(
-        'getSocialWallets',
-      ),
-    ]);
-
-    const optimization = optimizationConfig
-      ? {
-          configured: optimizationConfig[4],
-          purposeRanking: optimizationConfig[0].map(
-            (purpose) =>
-              BASE_PURPOSES[Number(purpose)] ?? `UNKNOWN(${purpose})`,
-          ),
-          socialMode: SOCIAL_MODES[Number(optimizationConfig[1])] ?? 'NONE',
-          socialFixedKwh: optimizationConfig[2].toString(),
-          socialVariableBps: Number(optimizationConfig[3]),
-          socialWallets: (socialWalletsRaw ?? []).map((wallet) => ({
-            wallet: wallet.wallet.toLowerCase() as `0x${string}`,
-            shareBps: Number(wallet.shareBps),
-          })),
-        }
-      : null;
-
-    return NextResponse.json({
+    return json({
       enabled: true,
       activation: {
         spaceId: mapping.spaceId,
@@ -445,41 +253,13 @@ export async function GET(
         factoryCommunityId: mapping.factoryCommunityId,
         activatedAt: mapping.activatedAt.toISOString(),
       },
-      overview: {
-        memberCount: memberAddressList.length,
-        sourceCount: sourceIdList.length,
-        communityFeeBps:
-          communityFeeBps !== null ? Number(communityFeeBps) : null,
-        aggregatorFeeBps:
-          aggregatorFeeBps !== null ? Number(aggregatorFeeBps) : null,
-        gridBalance: gridBalance !== null ? gridBalance.toString() : null,
-        settledBalance:
-          settledBalance !== null ? settledBalance.toString() : null,
-        contractStablecoinBalance:
-          contractStablecoinBalance !== null
-            ? contractStablecoinBalance.toString()
-            : null,
-        zeroSumOk: zeroSumStatus ? zeroSumStatus[0] : null,
-        zeroSumDelta: zeroSumStatus ? zeroSumStatus[1].toString() : null,
-      },
-      roles: {
-        communityAddress: communityRoleAddress
-          ? (communityRoleAddress.toLowerCase() as `0x${string}`)
-          : null,
-        aggregatorAddress: aggregatorRoleAddress
-          ? (aggregatorRoleAddress.toLowerCase() as `0x${string}`)
-          : null,
-        gridOperator: gridOperatorAddress
-          ? (gridOperatorAddress.toLowerCase() as `0x${string}`)
-          : null,
-        exportDeviceId:
-          exportDeviceId !== null ? exportDeviceId.toString() : null,
-      },
-      members: memberAddressList.map((a) => a.toLowerCase() as `0x${string}`),
-      memberDetails,
+      overview: snapshot.overview,
+      roles: snapshot.roles,
+      members: snapshot.memberAddresses,
+      memberDetails: snapshot.memberDetails,
       participantProfiles,
-      sources,
-      optimization,
+      sources: snapshot.sources,
+      optimization: snapshot.optimization,
     });
   } catch (error) {
     console.error('Failed to fetch space energy data:', error);

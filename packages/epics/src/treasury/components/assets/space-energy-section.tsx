@@ -32,7 +32,17 @@ export const SpaceEnergySection = () => {
     [data?.enabled, data?.members],
   );
 
-  const { people, isLoading: peopleLoading } = useEnergyPeople(memberAddresses);
+  const unresolvedMemberAddresses = React.useMemo(
+    () =>
+      memberAddresses.filter(
+        (address) => !data?.participantProfiles?.[address]?.displayName,
+      ),
+    [data?.participantProfiles, memberAddresses],
+  );
+
+  const { people, isLoading: peopleLoading } = useEnergyPeople(
+    unresolvedMemberAddresses,
+  );
 
   const avatarUrls = React.useMemo(() => {
     const urls = new Set<string>();
