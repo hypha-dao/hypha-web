@@ -5417,6 +5417,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       readLiveSearchParam('msg') ?? searchParams?.get('msg')?.trim() ?? null;
     if (!qpSignal) return;
 
+    // Coherence tab owns `?signal=` via useCoherenceSignalDeepLink (select +
+    // open chat). Resolving here races that path and can strip the param on a
+    // transient API failure before the board selects the card.
+    if (pathname.includes('/coherence')) return;
+
     openHumanChatPanel();
     setActiveTab('chat');
 
