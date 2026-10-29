@@ -1387,12 +1387,56 @@ export function sumConversationUnread(client: MatrixClient | null) {
 export { notifyConversationUnreadChanged };
 
 /**
- * Unread total for the Messages nav badge. Follows Matrix receipts live so the
- * badge updates when a message arrives — not only after opening Messages.
- * Same rooms as the All-messages people list (typed DMs / People groups).
+ * Unread total for the Messages nav badge: typed DMs/groups plus space /
+ * signal / proposal / ecosystem channels that All messages would list.
+ * Follows Matrix receipts live so the badge updates when a message arrives —
+ * not only after opening Messages.
  */
 export function useMessagesScreenCount() {
-  return useConversationUnreadCount();
+  const { client } = useMatrix();
+  const { jwt } = useJwt();
+  const { data: inboxContext } = useSWR<InboxContext>(
+    jwt ? ['/api/v1/people/me/message-inbox-context', jwt, 'nav-badge'] : null,
+    async ([url, token]) => {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return EMPTY_INBOX_CONTEXT;
+      return (await response.json()) as InboxContext;
+    },
+  );
+  const context = inboxContext ?? EMPTY_INBOX_CONTEXT;
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!client) {
+      setCount(0);
+      return;
+    }
+    let timer = 0;
+    let stopped = false;
+    const publish = () => {
+      timer = 0;
+      if (stopped) return;
+      const next = messagesScreenUnreadSnapshot(client, context);
+      setCount((prev) => (prev === next ? prev : next));
+    };
+    // Coalesce, but do not keep postponing: the total should climb as each
+    // chunk of rooms is summarised, not after the last person in the backlog.
+    const schedule = () => {
+      if (timer) return;
+      timer = window.setTimeout(publish, 150);
+    };
+    const unsubscribe = attachConversationList(client, schedule);
+    publish();
+    return () => {
+      stopped = true;
+      window.clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [client, context]);
+
+  return count;
 }
 
 export function useConversationUnreadCount() {
@@ -1412,8 +1456,6 @@ export function useConversationUnreadCount() {
       const next = conversationUnreadSnapshot(client);
       setCount((prev) => (prev === next ? prev : next));
     };
-    // Coalesce, but do not keep postponing: the total should climb as each
-    // chunk of rooms is summarised, not after the last person in the backlog.
     const schedule = () => {
       if (timer) return;
       timer = window.setTimeout(publish, 150);
@@ -1663,6 +1705,19 @@ function joinedChannelSnapshots(client: MatrixClient): JoinedChannelSnapshot[] {
   }
   snapshots.sort((left, right) => left.roomId.localeCompare(right.roomId));
   return snapshots;
+}
+
+/** Same unread total as All messages: people list + relevant channel rows. */
+function messagesScreenUnreadSnapshot(
+  client: MatrixClient,
+  context: InboxContext,
+) {
+  const channelUnread = channelRowsFromSnapshots(
+    joinedChannelSnapshots(client),
+    context,
+    '',
+  ).reduce((sum, row) => sum + (row.unread > 0 ? row.unread : 0), 0);
+  return conversationUnreadSnapshot(client) + channelUnread;
 }
 
 const channelPreviewAttempted = new Set<string>();
