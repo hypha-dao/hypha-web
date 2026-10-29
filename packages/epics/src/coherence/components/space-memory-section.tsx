@@ -30,14 +30,6 @@ import { MemoryProse } from './memory-prose';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
-import {
-  clearMainColumnScrollFreeze,
-  freezeMainColumnScrollAt,
-  getMainColumnScrollElement,
-  popMainColumnOverlayScrollLock,
-  pushMainColumnOverlayScrollLock,
-  scrollMainColumnTo,
-} from '../../common/main-column-scroll';
 import { spaceMemoryListHeight } from './space-memory-list-height';
 
 type SpaceMemorySectionProps = {
@@ -251,50 +243,42 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   ]);
 
   React.useEffect(() => {
-    // Keep title, where-card, and category filters on screen. Only the right
-    // list scrolls. Measuring height from a scrolling frame top made the box
-    // grow on every wheel tick and dragged the filters away.
-    let locked = false;
-    let documentLocked = false;
-    let previousDocumentOverflow = '';
-
-    const armLock = () => {
-      if (locked) return;
-      if (getMainColumnScrollElement()) {
-        pushMainColumnOverlayScrollLock();
-        locked = true;
-        return;
-      }
-      if (documentLocked) return;
-      previousDocumentOverflow = document.documentElement.style.overflowY;
-      document.documentElement.style.overflowY = 'hidden';
-      document.documentElement.scrollTop = 0;
-      documentLocked = true;
-    };
-
+    // Page still scrolls. Cap the right list to the viewport so it scrolls
+    // inside its frame. Do not size from a scrolled frameTop — that grew
+    // the box on every wheel tick and dragged the filters away.
     const fit = () => {
-      armLock();
       const frame = listFrameRef.current;
       if (!frame) return;
       if (!window.matchMedia(DESKTOP_SPLIT).matches) {
         frame.style.height = '';
+        frame.style.maxHeight = '';
         return;
       }
-      const scrollEl = getMainColumnScrollElement();
       const viewportBottom = window.visualViewport
         ? window.visualViewport.offsetTop + window.visualViewport.height
         : window.innerHeight;
-      frame.style.height = `${spaceMemoryListHeight({
-        frameTop: frame.getBoundingClientRect().top,
-        scrollBottom:
-          scrollEl?.getBoundingClientRect().bottom ?? viewportBottom,
+      const rawMenu = getComputedStyle(document.documentElement)
+        .getPropertyValue('--menu-top-height')
+        .trim();
+      let menuOffset = 72;
+      if (rawMenu) {
+        const probe = document.createElement('div');
+        probe.style.position = 'absolute';
+        probe.style.height = rawMenu;
+        probe.style.visibility = 'hidden';
+        document.body.appendChild(probe);
+        menuOffset = probe.getBoundingClientRect().height || 72;
+        probe.remove();
+      }
+      const height = spaceMemoryListHeight({
         viewportBottom,
+        menuOffset,
         tabOffset: mobileTabOffset(),
-      })}px`;
+      });
+      frame.style.height = `${height}px`;
+      frame.style.maxHeight = `${height}px`;
     };
 
-    scrollMainColumnTo(0);
-    freezeMainColumnScrollAt(0);
     const observer = new ResizeObserver(fit);
     fit();
     observer.observe(document.documentElement);
@@ -305,11 +289,9 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       observer.disconnect();
       window.removeEventListener('resize', fit);
       window.visualViewport?.removeEventListener('resize', fit);
-      if (listFrameRef.current) listFrameRef.current.style.height = '';
-      clearMainColumnScrollFreeze();
-      if (locked) popMainColumnOverlayScrollLock();
-      if (documentLocked) {
-        document.documentElement.style.overflowY = previousDocumentOverflow;
+      if (listFrameRef.current) {
+        listFrameRef.current.style.height = '';
+        listFrameRef.current.style.maxHeight = '';
       }
     };
   }, [isLoading, spaceOrientation, searchTerm]);
@@ -334,7 +316,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
 
   return (
     <section
-      className="flex w-full min-h-0 flex-1 flex-col gap-4 py-2"
+      className="flex w-full min-w-0 flex-col gap-4 py-2"
       aria-label={t('spaceMemory')}
     >
       <header className="flex shrink-0 flex-wrap items-end justify-between gap-2">
@@ -412,12 +394,12 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
           <div
             className={cn(
               'flex min-h-0 min-w-0 flex-1 flex-col gap-4',
-              'lg:flex-row lg:items-stretch lg:gap-6',
+              'lg:flex-row lg:items-start lg:gap-6',
             )}
           >
             <nav
               aria-label={t('spaceMemoryOutline')}
-              className="narrow-scrollbar w-full shrink-0 self-start overflow-y-auto overscroll-contain lg:w-80 lg:self-stretch lg:max-h-full"
+              className="w-full shrink-0 self-start lg:w-80"
             >
               <div className="border border-border bg-background">
                 {branches.map((item) => {
@@ -471,7 +453,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
             <div
               ref={listFrameRef}
               data-space-memory-list-frame=""
-              className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-border bg-background"
+              className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-border bg-background lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]"
             >
               <div
                 ref={listScrollRef}

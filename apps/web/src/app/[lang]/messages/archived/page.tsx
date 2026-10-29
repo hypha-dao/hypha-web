@@ -11,7 +11,7 @@ import { MessagesViewportLock } from '../_components/messages-viewport-lock';
 export default function MessagesArchivedPage() {
   return (
     <MessagesViewportLock>
-      <MessagesPageFrame heading="archived" fillViewport>
+      <MessagesPageFrame heading="archived">
         <AccountRequiredGate>
           <Suspense fallback={<MessagesPeopleListSkeleton />}>
             <MyConnections section="archived" />

@@ -3,25 +3,23 @@ import { describe, expect, it } from 'vitest';
 import { spaceMemoryListHeight } from '../space-memory-list-height';
 
 describe('spaceMemoryListHeight', () => {
-  it('fills the visible column under the filters', () => {
+  it('caps the list to the viewport under the sticky menu gap', () => {
     expect(
       spaceMemoryListHeight({
-        frameTop: 280,
-        scrollBottom: 900,
         viewportBottom: 900,
+        menuOffset: 72,
         tabOffset: 0,
       }),
-    ).toBe(620);
+    ).toBe(816);
   });
 
   it('leaves room for the phone tab bar', () => {
     expect(
       spaceMemoryListHeight({
-        frameTop: 200,
-        scrollBottom: 800,
         viewportBottom: 800,
+        menuOffset: 64,
         tabOffset: 96,
       }),
-    ).toBe(504);
+    ).toBe(628);
   });
 });

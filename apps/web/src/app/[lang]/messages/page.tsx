@@ -11,7 +11,7 @@ import { MessagesViewportLock } from './_components/messages-viewport-lock';
 export default function MessagesPage() {
   return (
     <MessagesViewportLock>
-      <MessagesPageFrame fillViewport>
+      <MessagesPageFrame>
         <AccountRequiredGate>
           <Suspense fallback={<MessagesPeopleListSkeleton />}>
             <MyConnections section="messages" />

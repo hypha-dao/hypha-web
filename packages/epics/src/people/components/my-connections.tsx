@@ -2811,12 +2811,7 @@ export function MyConnections({
   }
 
   return (
-    <div
-      className={cn(
-        'flex min-w-0 flex-col gap-6',
-        (section === 'messages' || section === 'archived') && 'min-h-0 flex-1',
-      )}
-    >
+    <div className="flex min-w-0 flex-col gap-6">
       <MemberHomePeople
         people={connections}
         extraPersonIds={[...reachOutIds, ...peerPersonIds]}
@@ -2881,7 +2876,7 @@ export function MyConnections({
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col gap-6',
             section === 'messages' &&
-              'min-h-0 flex-1 gap-4 overflow-hidden lg:flex-row lg:items-stretch lg:gap-6',
+              'min-h-0 flex-1 gap-4 lg:flex-row lg:items-start lg:gap-6',
           )}
         >
           {section === 'messages' ? (
@@ -2889,12 +2884,12 @@ export function MyConnections({
               ref={inboxFiltersRef}
               data-messages-filters=""
               className={cn(
-                // Channel menu stays put in the pinned frame. Only the
-                // conversation list on the right loads more while scrolling.
-                'w-full shrink-0 lg:w-80 lg:overflow-y-auto lg:overscroll-contain',
+                // Channel menu stays in page flow. The right list is sticky
+                // and capped so page and list can both scroll.
+                'w-full shrink-0 lg:w-80',
                 picking || inboxChannelOpen
                   ? 'hidden lg:block'
-                  : 'narrow-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain lg:flex-none',
+                  : 'narrow-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain lg:flex-none lg:overflow-visible',
               )}
             >
               <MessagesInboxFilters
@@ -2908,6 +2903,9 @@ export function MyConnections({
             data-messages-list-frame=""
             className={cn(
               'min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden',
+              // Sticky + viewport height from MessagesViewportLock so the
+              // list scrolls inside while the page still moves.
+              'lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]',
               section === 'messages' && !picking && !inboxChannelOpen
                 ? 'hidden lg:flex'
                 : 'flex',

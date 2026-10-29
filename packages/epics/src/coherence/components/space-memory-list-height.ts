@@ -1,15 +1,20 @@
+/** Gap under the top menu when the memory list is sticky. */
+export const SPACE_MEMORY_LIST_STICKY_GAP_PX = 12;
+
 /**
- * Height of the memory list: the visible column under the filters.
- * The page stays put, so this must not grow when the column scrolls.
- * The site footer stays below the fold — do not reserve it here.
+ * Cap for the memory list so it scrolls inside its frame while the page
+ * still moves. Use a viewport budget — never frameTop from a scrolled page,
+ * or the list grows without bound as you scroll.
  */
 export function spaceMemoryListHeight(input: {
-  frameTop: number;
-  scrollBottom: number;
   viewportBottom: number;
+  menuOffset: number;
   tabOffset: number;
+  stickyGap?: number;
 }): number {
-  const visibleBottom = Math.min(input.scrollBottom, input.viewportBottom);
-  const next = Math.floor(visibleBottom - input.frameTop - input.tabOffset);
+  const stickyGap = input.stickyGap ?? SPACE_MEMORY_LIST_STICKY_GAP_PX;
+  const next = Math.floor(
+    input.viewportBottom - input.menuOffset - input.tabOffset - stickyGap,
+  );
   return Number.isFinite(next) ? Math.max(240, next) : 240;
 }

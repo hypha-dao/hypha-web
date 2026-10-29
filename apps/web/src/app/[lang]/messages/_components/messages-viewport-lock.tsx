@@ -1,23 +1,10 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
-import {
-  getMainColumnScrollElement,
-  popMainColumnOverlayScrollLock,
-  pushMainColumnOverlayScrollLock,
-  scrollMainColumnTo,
-  subscribeMainColumnScroll,
-} from '@hypha-platform/epics';
 
-import {
-  messagesFrameHeight,
-  messagesListFrameHeight,
-} from './messages-frame-height';
+import { messagesListFrameHeight } from './messages-frame-height';
 
-export {
-  messagesFrameHeight,
-  messagesListFrameHeight,
-} from './messages-frame-height';
+export { messagesListFrameHeight } from './messages-frame-height';
 
 const DESKTOP_MENU = '(min-width: 80rem)';
 /** Side-by-side channel menu + conversation list (Tailwind `lg`). */
@@ -39,6 +26,21 @@ function mobileTabOffset(): number {
   return height || 96;
 }
 
+function menuOffset(): number {
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue('--menu-top-height')
+    .trim();
+  if (!raw) return 72;
+  const probe = document.createElement('div');
+  probe.style.position = 'absolute';
+  probe.style.height = raw;
+  probe.style.visibility = 'hidden';
+  document.body.appendChild(probe);
+  const height = probe.getBoundingClientRect().height;
+  probe.remove();
+  return height || 72;
+}
+
 function clearListFrameHeight(root: HTMLElement) {
   const list = root.querySelector('[data-messages-list-frame]');
   if (list instanceof HTMLElement) {
@@ -48,85 +50,31 @@ function clearListFrameHeight(root: HTMLElement) {
 }
 
 /**
- * Channel menu stays put. Only the conversation list scrolls inside the
- * pinned frame. The site footer stays below the fold — do not reserve it
- * inside this screen or it covers the list scroll.
+ * Page still scrolls. The right conversation list is capped to the viewport
+ * and sticky, so it scrolls on its own and loads more without growing the
+ * page. Footer stays below the fold in normal page flow.
  */
 export function MessagesViewportLock({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollMainColumnTo(0);
-    let locked = false;
-    let documentLocked = false;
-    let previousDocumentOverflow = '';
-    let observedScroll: HTMLElement | null = null;
-    let observedList: HTMLElement | null = null;
-
-    const armLock = () => {
-      if (locked) return;
-      const scrollEl = getMainColumnScrollElement();
-      if (scrollEl) {
-        pushMainColumnOverlayScrollLock();
-        locked = true;
-        return;
-      }
-      // No inset scroller — freeze the document so the page cannot carry
-      // the channel menu away while the list scrolls in its frame.
-      if (documentLocked) return;
-      previousDocumentOverflow = document.documentElement.style.overflowY;
-      document.documentElement.style.overflowY = 'hidden';
-      document.documentElement.scrollTop = 0;
-      documentLocked = true;
-    };
-
-    const watch = (node: HTMLElement | null, previous: HTMLElement | null) => {
-      if (node === previous) return node;
-      if (previous) observer.unobserve(previous);
-      if (node) observer.observe(node);
-      return node;
-    };
-
     const fit = () => {
-      armLock();
       const root = ref.current;
       if (!root) return;
-      const scrollEl = getMainColumnScrollElement();
-      observedScroll = watch(scrollEl, observedScroll);
       const list = root.querySelector('[data-messages-list-frame]');
-      observedList = watch(
-        list instanceof HTMLElement ? list : null,
-        observedList,
-      );
-      const scrollRect = scrollEl?.getBoundingClientRect();
+      const desktopInbox = window.matchMedia(DESKTOP_INBOX).matches;
       const viewportBottom = window.visualViewport
         ? window.visualViewport.offsetTop + window.visualViewport.height
         : window.innerHeight;
-      const tabOffset = mobileTabOffset();
-      const desktopInbox = window.matchMedia(DESKTOP_INBOX).matches;
-
-      // Fill to the viewport bottom. Footer is below the fold — do not
-      // shrink this frame for it, or a white band covers the list scroll.
-      const rootAvailable = messagesFrameHeight({
-        frameTop: root.getBoundingClientRect().top,
-        scrollBottom: scrollRect?.bottom ?? viewportBottom,
-        viewportBottom,
-        tabOffset,
-      });
-      root.style.height = `${Math.max(rootAvailable, 160)}px`;
-      root.style.maxHeight = '';
 
       if (desktopInbox && list instanceof HTMLElement) {
-        const listAvailable = messagesFrameHeight({
-          frameTop: list.getBoundingClientRect().top,
-          scrollBottom: scrollRect?.bottom ?? viewportBottom,
+        const height = messagesListFrameHeight({
           viewportBottom,
-          tabOffset,
+          menuOffset: menuOffset(),
+          tabOffset: mobileTabOffset(),
         });
-        list.style.height = `${messagesListFrameHeight({
-          available: listAvailable,
-        })}px`;
-        list.style.maxHeight = '';
+        list.style.height = `${height}px`;
+        list.style.maxHeight = `${height}px`;
         return;
       }
 
@@ -136,37 +84,20 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
     const observer = new ResizeObserver(fit);
     fit();
     observer.observe(document.documentElement);
-    const root = ref.current;
-    if (root) observer.observe(root);
-    const stopWatchingScrollRoot = subscribeMainColumnScroll(fit);
     window.addEventListener('resize', fit);
-    window.addEventListener('scroll', fit, { passive: true });
     window.visualViewport?.addEventListener('resize', fit);
 
     return () => {
-      stopWatchingScrollRoot();
       observer.disconnect();
       window.removeEventListener('resize', fit);
-      window.removeEventListener('scroll', fit);
       window.visualViewport?.removeEventListener('resize', fit);
       const frame = ref.current;
-      if (frame) {
-        frame.style.height = '';
-        frame.style.maxHeight = '';
-        clearListFrameHeight(frame);
-      }
-      if (locked) popMainColumnOverlayScrollLock();
-      if (documentLocked) {
-        document.documentElement.style.overflowY = previousDocumentOverflow;
-      }
+      if (frame) clearListFrameHeight(frame);
     };
   }, []);
 
   return (
-    <div
-      ref={ref}
-      className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
-    >
+    <div ref={ref} className="w-full min-w-0">
       {children}
     </div>
   );

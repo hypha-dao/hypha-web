@@ -1,18 +1,14 @@
 import type { ReactNode } from 'react';
 import { Container, Heading } from '@hypha-platform/ui';
-import { cn } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 
 export async function MessagesPageFrame({
   children,
   heading = 'messages',
-  fillViewport = false,
 }: {
   children: ReactNode;
   /** Suggestions uses its own title. The messages screen keeps "Share messages". */
   heading?: 'messages' | 'suggestions' | 'archived';
-  /** Title stays put. Only the conversation list scrolls inside its frame. */
-  fillViewport?: boolean;
 }) {
   const t = await getTranslations('Connections');
   const titleLineTwo =
@@ -23,19 +19,13 @@ export async function MessagesPageFrame({
       : t('titleLineTwo');
 
   return (
-    <div
-      className={cn(
-        'w-full min-w-0 overflow-x-clip',
-        fillViewport && 'flex h-full min-h-0 flex-1 flex-col overflow-hidden',
-      )}
-    >
+    <div className="w-full min-w-0 overflow-x-clip">
       <Container
-        className={cn(
-          // Match One Wallet: xl:gap-9 under the title. When the inbox is
-          // pinned, drop bottom padding — that band ate the list scroll.
-          'flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3',
-          fillViewport ? 'h-full min-h-0 flex-1 xl:pb-0' : 'xl:pb-9',
-        )}
+        className={
+          // Match One Wallet: xl:gap-9 under the title. Page still scrolls;
+          // the conversation list is capped separately so it scrolls too.
+          'flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9'
+        }
       >
         <header className="shrink-0 xl:hidden">
           <p className="mb-2 text-1 font-bold uppercase text-foreground">
@@ -58,14 +48,7 @@ export async function MessagesPageFrame({
           <span>{t('titleLineOne')}</span>
           <span>{titleLineTwo}</span>
         </Heading>
-        <div
-          className={cn(
-            fillViewport &&
-              'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
-          )}
-        >
-          {children}
-        </div>
+        <div>{children}</div>
       </Container>
     </div>
   );

@@ -1,22 +1,20 @@
-/** Height of the messages frame: the visible column under the menu, above the phone tab bar. */
-export function messagesFrameHeight(input: {
-  frameTop: number;
-  scrollBottom: number;
-  viewportBottom: number;
-  tabOffset: number;
-}): number {
-  const visibleBottom = Math.min(input.scrollBottom, input.viewportBottom);
-  const next = Math.floor(visibleBottom - input.frameTop - input.tabOffset);
-  return Number.isFinite(next) ? Math.max(0, next) : 0;
-}
+/** Gap under the top menu when the conversation list is sticky. */
+export const MESSAGES_LIST_STICKY_GAP_PX = 12;
 
 /**
- * Conversation list frame: fill the pinned column so only that list scrolls
- * and Load more can sit at the end of it.
+ * Cap for the conversation list so it scrolls inside its frame while the
+ * page still moves. Use a viewport budget — never frameTop from a scrolled
+ * page, or the list grows without bound as you scroll.
  */
-export function messagesListFrameHeight(input: { available: number }): number {
-  const available = Number.isFinite(input.available)
-    ? Math.max(0, input.available)
-    : 0;
-  return Math.max(160, available);
+export function messagesListFrameHeight(input: {
+  viewportBottom: number;
+  menuOffset: number;
+  tabOffset: number;
+  stickyGap?: number;
+}): number {
+  const stickyGap = input.stickyGap ?? MESSAGES_LIST_STICKY_GAP_PX;
+  const next = Math.floor(
+    input.viewportBottom - input.menuOffset - input.tabOffset - stickyGap,
+  );
+  return Number.isFinite(next) ? Math.max(160, next) : 160;
 }
