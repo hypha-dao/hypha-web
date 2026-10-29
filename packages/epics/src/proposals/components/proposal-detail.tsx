@@ -656,7 +656,10 @@ export const ProposalDetail = ({
   // between polls (the fallback is only used while data is still loading, and
   // is hidden behind the FormVoting skeleton).
   const formattedEndTime = useMemo(
-    () => formatISO(new Date(proposalDetails?.endTime ?? new Date())),
+    () =>
+      proposalDetails?.endTime
+        ? formatISO(new Date(proposalDetails.endTime))
+        : '',
     [proposalDetails?.endTime],
   );
 

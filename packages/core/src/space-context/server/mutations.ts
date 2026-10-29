@@ -1,6 +1,7 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import {
   documents,
+  people,
   spaceContextAgentMemories,
   spaceContextSectionMessages,
   spaceContextSections,
@@ -87,7 +88,23 @@ export async function patchSpaceContextSection(
     .where(eq(spaceContextSections.id, existing.id))
     .returning();
 
-  return updated ? mapSectionRow(updated) : null;
+  if (!updated) return null;
+
+  let lastEditorName: string | null = null;
+  if (updated.updatedByPersonId != null) {
+    const [editor] = await db
+      .select({
+        name: sql<
+          string | null
+        >`trim(concat_ws(' ', ${people.name}, ${people.surname}))`,
+      })
+      .from(people)
+      .where(eq(people.id, updated.updatedByPersonId))
+      .limit(1);
+    lastEditorName = editor?.name?.trim() || null;
+  }
+
+  return mapSectionRow(updated, { lastEditorName });
 }
 
 export async function appendSpaceContextMessage(

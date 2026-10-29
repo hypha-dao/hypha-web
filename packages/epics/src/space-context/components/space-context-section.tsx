@@ -123,7 +123,7 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
                   total: overview.totalCount,
                 })}
               </p>
-              {canMutate ? (
+              {canMutate && overview.ratifiedCount < overview.totalCount ? (
                 <Button type="button" onClick={() => router.push(proposeHref)}>
                   {t('propose')}
                 </Button>
@@ -181,7 +181,9 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
             canMutate={canMutate}
             onOpen={setOpenSection}
             onViewProposal={(slug) =>
-              router.push(`/${locale}/dho/${spaceSlug}/agreements/${slug}`)
+              router.push(
+                `/${locale}/dho/${spaceSlug}/agreements/proposal/${slug}`,
+              )
             }
           />
         ) : null}
@@ -198,7 +200,9 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
                 canMutate={canMutate}
                 onOpen={setOpenSection}
                 onViewProposal={(slug) =>
-                  router.push(`/${locale}/dho/${spaceSlug}/agreements/${slug}`)
+                  router.push(
+                    `/${locale}/dho/${spaceSlug}/agreements/proposal/${slug}`,
+                  )
                 }
               />
             ))}

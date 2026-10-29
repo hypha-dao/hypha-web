@@ -64,6 +64,20 @@ export function headingForSectionKey(key: SpaceContextSectionKey): string {
   }
 }
 
+/** Drop a leading ATX heading that repeats the section card title. */
+export function stripMatchingLeadingHeading(
+  source: string,
+  title: string,
+): string {
+  const normalizedTitle = title.trim().toLowerCase();
+  if (!normalizedTitle) return source;
+  const trimmed = source.replace(/\r\n/g, '\n').replace(/^\s+/, '');
+  const match = trimmed.match(/^(#{1,6})\s+(.+?)(?:\n+|$)/);
+  if (!match?.[2]) return source;
+  if (match[2].trim().toLowerCase() !== normalizedTitle) return source;
+  return trimmed.slice(match[0].length).replace(/^\s+/, '');
+}
+
 /** Reverse of `buildProposalMarkdown` headings — used when resubmitting a Context proposal. */
 export function sectionKeysFromProposalMarkdown(
   markdown: string,

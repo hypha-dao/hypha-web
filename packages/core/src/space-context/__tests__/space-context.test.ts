@@ -7,6 +7,7 @@ import {
   escapeUntrustedDataBoundary,
   firstMarkdownParagraph,
   headingForSectionKey,
+  stripMatchingLeadingHeading,
   isSpaceContextSectionKey,
   sectionKeysFromProposalMarkdown,
   statusMatchesFilter,
@@ -62,6 +63,15 @@ describe('space context markdown', () => {
     expect(headingForSectionKey('how_we_decide')).toBe(
       'How we decide what we work on',
     );
+  });
+
+  it('strips a leading heading that repeats the section title', () => {
+    expect(
+      stripMatchingLeadingHeading('# Mission\n\nRestore land.', 'Mission'),
+    ).toBe('Restore land.');
+    expect(
+      stripMatchingLeadingHeading('## Vision\nKeep the heading.', 'Mission'),
+    ).toBe('## Vision\nKeep the heading.');
   });
 });
 
