@@ -19,6 +19,7 @@ import {
   normalizeProposalDocumentLabel,
   SPACE_CONTEXT_DOCUMENT_LABEL,
   sectionKeysFromProposalMarkdown,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { getTokenUpdateByDocumentIdAction } from '@hypha-platform/core/governance/server/actions';
 import {
@@ -174,6 +175,7 @@ export const FormVoting = ({
   const { myVote, mutate: mutateMyVote } = useMyVote(documentSlug);
   const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
+  const { space: spaceFromDb } = useSpaceBySlug(spaceSlug ?? '');
   const { theme } = useTheme();
   const { person } = useMe();
   const { jwt } = useJwt();
@@ -342,6 +344,10 @@ export const FormVoting = ({
               spaceContextSectionKeys: sectionKeysFromProposalMarkdown(
                 documentDescription || '',
               ),
+              ...(typeof spaceFromDb?.id === 'number'
+                ? { spaceContextSpaceId: spaceFromDb.id }
+                : {}),
+              ...(spaceSlug ? { spaceContextSpaceSlug: spaceSlug } : {}),
             }
           : {}),
       };

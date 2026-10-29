@@ -104,6 +104,8 @@ export function SpaceContextChatPanel({
 
   useEffect(() => {
     if (!detail) return;
+    const isActiveResponse = status === 'streaming' || status === 'submitted';
+    if (isActiveResponse) return;
     const hydrateId = `${sectionKey}:${detail.messages.length}:${detail.section.updatedAt}`;
     if (hydratedKey.current === hydrateId) return;
     const previousSection = hydratedKey.current?.split(':')[0];
@@ -119,7 +121,7 @@ export function SpaceContextChatPanel({
         parts: [{ type: 'text' as const, text: message.content }],
       })),
     );
-  }, [detail, draftDirty, sectionKey, setMessages]);
+  }, [detail, draftDirty, sectionKey, setMessages, status]);
 
   useEffect(() => {
     return () => {
@@ -143,7 +145,9 @@ export function SpaceContextChatPanel({
   };
 
   const handleSaveDraft = async () => {
-    if (!canMutate || saving) return false;
+    if (!canMutate || saving || detail?.section.status === 'proposed') {
+      return false;
+    }
     setSaveError(null);
     setSaving(true);
     try {

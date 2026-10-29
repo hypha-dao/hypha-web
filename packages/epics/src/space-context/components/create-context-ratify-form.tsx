@@ -33,6 +33,30 @@ import { useAuthentication } from '@hypha-platform/authentication';
 const formSchema = schemaCreateAgreementForm.extend(createAgreementFiles);
 type FormValues = z.infer<typeof formSchema>;
 
+function ratifyContextResubmitMatchesSpace(
+  restored: Record<string, unknown> | null,
+  spaceId: number | null | undefined,
+  spaceSlug: string,
+): boolean {
+  if (!restored) return false;
+  const originatingId = restored.spaceContextSpaceId;
+  if (typeof originatingId === 'number' && typeof spaceId === 'number') {
+    return originatingId === spaceId;
+  }
+  const originatingSlug = restored.spaceContextSpaceSlug;
+  if (typeof originatingSlug === 'string' && originatingSlug.length > 0) {
+    return originatingSlug === spaceSlug;
+  }
+  return false;
+}
+
+function ratifyContextResubmitHasField(
+  restored: Record<string, unknown> | null,
+  field: 'title' | 'description',
+): boolean {
+  return typeof restored?.[field] === 'string';
+}
+
 export function CreateContextRatifyForm({
   spaceId,
   web3SpaceId,
@@ -89,6 +113,9 @@ export function CreateContextRatifyForm({
   const titleTouchedRef = React.useRef(false);
   const descriptionTouchedRef = React.useRef(false);
   const linkedRef = React.useRef(false);
+  const submittedSectionKeysRef = React.useRef<SpaceContextSectionKey[] | null>(
+    null,
+  );
   const [linkError, setLinkError] = React.useState(false);
 
   React.useEffect(() => {
@@ -131,26 +158,30 @@ export function CreateContextRatifyForm({
 
   React.useEffect(() => {
     const restored = getResubmitPayloadForTemplate('ratify-context');
+    if (!ratifyContextResubmitMatchesSpace(restored, spaceId, spaceSlug)) {
+      return;
+    }
     if (typeof restored?.title === 'string' && restored.title) {
       titleTouchedRef.current = true;
     }
     if (typeof restored?.description === 'string' && restored.description) {
       descriptionTouchedRef.current = true;
     }
-  }, []);
+  }, [spaceId, spaceSlug]);
 
   React.useEffect(() => {
-    if (resubmitKey || form.formState.dirtyFields.title) {
+    if (!resubmitKey) return;
+    const restored = getResubmitPayloadForTemplate('ratify-context');
+    if (!ratifyContextResubmitMatchesSpace(restored, spaceId, spaceSlug)) {
+      return;
+    }
+    if (ratifyContextResubmitHasField(restored, 'title')) {
       titleTouchedRef.current = true;
     }
-    if (resubmitKey || form.formState.dirtyFields.description) {
+    if (ratifyContextResubmitHasField(restored, 'description')) {
       descriptionTouchedRef.current = true;
     }
-  }, [
-    form.formState.dirtyFields.description,
-    form.formState.dirtyFields.title,
-    resubmitKey,
-  ]);
+  }, [resubmitKey, spaceId, spaceSlug]);
 
   React.useEffect(() => {
     const subscription = form.watch((_values, info) => {
@@ -170,7 +201,7 @@ export function CreateContextRatifyForm({
     const titles = chosen.map((section) =>
       headingForSectionKey(section.sectionKey),
     );
-    if (!titleTouchedRef.current && !form.formState.dirtyFields.title) {
+    if (!titleTouchedRef.current) {
       const generated = t('proposeForm.title', {
         sections: titles.join(', '),
       });
@@ -180,10 +211,7 @@ export function CreateContextRatifyForm({
         { shouldDirty: false },
       );
     }
-    if (
-      !descriptionTouchedRef.current &&
-      !form.formState.dirtyFields.description
-    ) {
+    if (!descriptionTouchedRef.current) {
       form.setValue(
         'description',
         buildProposalMarkdown(
@@ -196,23 +224,17 @@ export function CreateContextRatifyForm({
         { shouldDirty: false },
       );
     }
-  }, [
-    form,
-    form.formState.dirtyFields.description,
-    form.formState.dirtyFields.title,
-    overview,
-    selected,
-    t,
-  ]);
+  }, [form, overview, selected, t]);
 
   const linkSectionsToProposal = React.useCallback(
-    async (documentId: number) => {
-      if (linkedRef.current || selected.length === 0) return;
+    async (documentId: number, sectionKeys?: SpaceContextSectionKey[]) => {
+      const keys = sectionKeys ?? submittedSectionKeysRef.current ?? selected;
+      if (linkedRef.current || keys.length === 0) return;
       setLinkError(false);
       try {
         await proposeSpaceContextSectionsRequest({
           spaceSlug,
-          sectionKeys: selected,
+          sectionKeys: keys,
           documentId,
           getAccessToken,
         });
@@ -226,12 +248,14 @@ export function CreateContextRatifyForm({
 
   React.useEffect(() => {
     const documentId = agreement?.id;
-    if (!documentId || linkedRef.current || selected.length === 0) return;
-    void linkSectionsToProposal(documentId);
-  }, [agreement?.id, linkSectionsToProposal, selected.length]);
+    const keys = submittedSectionKeysRef.current ?? selected;
+    if (!documentId || linkedRef.current || keys.length === 0) return;
+    void linkSectionsToProposal(documentId, keys);
+  }, [agreement?.id, linkSectionsToProposal, selected]);
 
   const handleCreate = async (data: FormValues) => {
     if (selected.length === 0) return;
+    submittedSectionKeysRef.current = [...selected];
     await createAgreement({
       ...data,
       label: SPACE_CONTEXT_DOCUMENT_LABEL,
@@ -305,7 +329,12 @@ export function CreateContextRatifyForm({
                 className="mt-3"
                 variant="outline"
                 colorVariant="neutral"
-                onClick={() => void linkSectionsToProposal(retryDocumentId)}
+                onClick={() =>
+                  void linkSectionsToProposal(
+                    retryDocumentId,
+                    submittedSectionKeysRef.current ?? selected,
+                  )
+                }
               >
                 {t('error.retry')}
               </Button>
@@ -323,6 +352,7 @@ export function CreateContextRatifyForm({
                   section.status === 'proposed' ||
                   section.status === 'ratified' ||
                   !section.markdown.trim();
+                const selectionLocked = typeof agreement?.id === 'number';
                 const checked = selected.includes(section.sectionKey);
                 return (
                   <label
@@ -332,7 +362,7 @@ export function CreateContextRatifyForm({
                     <span className="flex min-w-0 items-center gap-3">
                       <Checkbox
                         checked={checked}
-                        disabled={disabled}
+                        disabled={disabled || selectionLocked}
                         onCheckedChange={(value) => {
                           setSelected((current) => {
                             if (value === true) {

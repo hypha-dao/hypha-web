@@ -77,6 +77,8 @@ export type ResubmitProposalSessionPayload = {
     conversions: { asset: string; percentage: string }[];
   };
   spaceContextSectionKeys?: string[];
+  spaceContextSpaceId?: number;
+  spaceContextSpaceSlug?: string;
   tokenAddress?: string;
   activatePurchase?: boolean;
   purchasePrice?: number;
