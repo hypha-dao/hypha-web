@@ -176,15 +176,23 @@ function buildRealtimeSpeakLanguageDirective(): string {
 }
 
 function buildRealtimeSpeakInstructions(text: string): string {
-  // The words after the marker are the only audio. Never name the marker
-  // ("script", "here is the script") or invent an intro from session context.
+  // Same relay instructions as LIVE: verbatim script, warm natural tone.
+  // Extra delivery coaching (bright/cheerful/young woman) changed rhythm.
   return [
-    'Speak the chat reply below the marker and then stop. Start on its first word. Say every sentence, in that order, with those words. Do not shorten it. Do not turn it into a situation and a question. Do not paraphrase, do not continue, and do not start another sentence. Do not say script, here is the script, or any other label. Do not use earlier turns, the session, or anything you think you heard.',
+    'CRITICAL OVERRIDE FOR THIS RESPONSE ONLY.',
+    'Ignore any earlier briefing, space facts, or conversation summary for speech content.',
+    'You are a voice output relay only. Do not call tools or add new information.',
+    'Your only job is text-to-speech of the SCRIPT below.',
+    'Speak the SCRIPT verbatim — every word, in order, with a warm natural tone.',
+    'Do not paraphrase, summarize, reorder, soften, or skip any sentence.',
+    'Do not add greetings, fillers, questions, or closings that are not in the SCRIPT.',
+    'Do not ask follow-up questions. Do not return to a previous signal or topic.',
     buildRealtimeSpeakLanguageDirective(),
-    'You are a young woman talking with a friend. Bright, warm, and enthusiastic, at an easy everyday pace. Keep a light, youthful feminine voice.',
     '',
-    '---CHAT_REPLY---',
+    'SCRIPT (read aloud exactly):',
+    '"""',
     text,
+    '"""',
   ].join('\n');
 }
 

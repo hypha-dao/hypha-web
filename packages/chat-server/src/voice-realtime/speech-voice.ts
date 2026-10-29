@@ -1,4 +1,4 @@
-/** Voices gpt-4o-mini-tts can speak. Shimmer is the soft home speaker. */
+/** Voices gpt-4o-mini-tts can speak. Marin is the LIVE Realtime speaker. */
 const SPEECH_VOICES = new Set([
   'alloy',
   'ash',
@@ -13,26 +13,26 @@ const SPEECH_VOICES = new Set([
 ]);
 
 /**
- * Home speaker for chat TTS and home Live Realtime.
- * Shimmer is soft and close. Marin read too calm; coral sounded performed
- * and weird with the cheer instructions. Home speech ignores a low
- * deployed OPENAI_REALTIME_VOICE override.
+ * Home / LIVE speaker — same as production Realtime
+ * (`OPENAI_REALTIME_VOICE` default). Keep marin; shimmer/coral and TTS
+ * tone/speed overrides are what drifted the home voice away from LIVE.
+ * Home speech ignores a low deployed OPENAI_REALTIME_VOICE override.
  */
-export const HOME_SPEECH_VOICE = 'shimmer';
+export const HOME_SPEECH_VOICE = 'marin';
 
 /**
- * Slight lift so the line feels alive, not dragged.
+ * Default OpenAI pace. Speeding TTS up was one of the rhythm drifts from LIVE.
  * OpenAI accepts 0.25–4.0; 1.0 is the default.
  */
-export const HOME_SPEECH_SPEED = 1.05;
+export const HOME_SPEECH_SPEED = 1;
 
 /**
- * Tone for synthesized home speech. Keep this short and directive —
- * long essays and stacked cheer made the delivery feel performed.
- * Words stay the chat script.
+ * Tone for synthesized speech fallback only. LIVE home speaks through
+ * Realtime with its own "warm natural tone" instruction — keep this aligned,
+ * not a separate cheer script.
  */
 export const SPEECH_TONE_INSTRUCTIONS =
-  'Speak warmly and naturally, like a young woman talking with a friend she likes. Soft, close, and easy. Everyday pace. Soft short breaths between sentences. Never serious, never distant, never flat, never like a host or a briefing. Do not sound performed or cartoonish. Ease into the first word so nothing is clipped.';
+  'Speak the text verbatim with a warm natural tone. Do not add words.';
 
 export function resolveSpeechVoice(requested?: string | null): string {
   const voice = (
@@ -43,7 +43,7 @@ export function resolveSpeechVoice(requested?: string | null): string {
   return SPEECH_VOICES.has(voice) ? voice : HOME_SPEECH_VOICE;
 }
 
-/** Home chat and home speech. Ignores OPENAI_REALTIME_VOICE. */
+/** Home chat and home speech. Ignores OPENAI_REALTIME_VOICE. Matches LIVE. */
 export function resolveHomeSpeechVoice(): string {
   return HOME_SPEECH_VOICE;
 }

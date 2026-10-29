@@ -3179,10 +3179,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     // On Home the center chat yields while this panel's sound is on, so the
     // two speakers do not play at once.
     speakReplies: soundOn,
-    // Home reads one finished bubble. Early lead-in + the final script was
-    // two voices on the same text when the displayed line was cleaned.
+    // Match LIVE: Realtime marin on every surface. Exact-speech TTS changed
+    // the home speaker away from production rhythm and tone.
     speakEarlyLeadIn: !isMemberAiSurface,
-    speakDisplayedText: isMemberAiSurface,
+    speakDisplayedText: false,
   });
 
   useLayoutEffect(() => {
