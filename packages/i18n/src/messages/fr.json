@@ -3687,7 +3687,10 @@
     "unarchiveGroupConfirm": "Oui, restaurer",
     "unarchiveGroupCancel": "Annuler",
     "unarchiveGroupFailed": "Impossible de restaurer ce groupe. Réessayez.",
-    "archivedGroupReadOnly": "Ce groupe est archivé. Restaure-le pour envoyer des messages."
+    "archivedGroupReadOnly": "Ce groupe est archivé. Restaure-le pour envoyer des messages.",
+    "typingOne": "{name} est en train d’écrire…",
+    "typingTwo": "{name} et {other} sont en train d’écrire…",
+    "typingMany": "{count} personnes sont en train d’écrire…"
   },
   "CoherenceTab": {
     "signals": "Signaux",

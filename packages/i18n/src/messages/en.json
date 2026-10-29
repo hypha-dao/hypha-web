@@ -4293,7 +4293,10 @@
     "unarchiveGroupConfirm": "Yes, restore",
     "unarchiveGroupCancel": "Cancel",
     "unarchiveGroupFailed": "Could not restore this group. Try again.",
-    "archivedGroupReadOnly": "This group is archived. Restore it to send messages."
+    "archivedGroupReadOnly": "This group is archived. Restore it to send messages.",
+    "typingOne": "{name} is typing…",
+    "typingTwo": "{name} and {other} are typing…",
+    "typingMany": "{count} people are typing…"
   },
   "CoherenceTab": {
     "signals": "Signals",
