@@ -101,7 +101,7 @@ describe('resolveMemberHomePhase', () => {
 });
 
 describe('memberHomeReplyReady', () => {
-  it('holds words until the expected card lands, then streams under it', () => {
+  it('shows words as soon as they stream, even before the card lands', () => {
     expect(
       memberHomeReplyReady({
         text: 'Océane asked to join.',
@@ -109,7 +109,7 @@ describe('memberHomeReplyReady', () => {
         streaming: true,
         expectsCard: true,
       }),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       memberHomeReplyReady({ text: '', hasCard: true, streaming: true }),
     ).toBe(true);

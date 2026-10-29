@@ -54,14 +54,19 @@ import {
   bindHomePerson,
   consumeHomeReturn,
   HOME_QUEUE_EVENT,
+  homePartOfDay,
   homeReturnText,
   readHomeActed,
   readHomeChoices,
+  readHomeLastSeen,
   readHomeShownItems,
   readHomeThread,
   rememberHomeShownItem,
+  shouldWelcomeHomeReturn,
+  touchHomeLastSeen,
   writeHomeChoices,
   writeHomeThread,
+  type HomePartOfDay,
 } from './member-home-resume';
 import {
   MEMBER_HOME_PEOPLE_LEAD_KEYS,
@@ -650,8 +655,8 @@ function glideScrollerTo(
   }
   const from = node.scrollTop;
   const delta = top - from;
-  // Slow enough to read as intentional, not a snap.
-  const duration = Math.min(1800, Math.max(900, Math.abs(delta) * 0.9));
+  // Short glide — long enough to feel intentional, short enough not to lag the reply.
+  const duration = Math.min(700, Math.max(280, Math.abs(delta) * 0.45));
   const start = performance.now();
   const step = (now: number) => {
     const t = Math.min(1, (now - start) / duration);
@@ -730,8 +735,18 @@ export function MemberHomeChat({
   const opened = useRef(false);
   const startedTalk = useRef(false);
   const pendingStart = useRef<
-    { kind: 'return'; text: string } | { kind: 'arrival' } | null
+    | { kind: 'return'; text: string }
+    | {
+        kind: 'arrival';
+        visit: 'welcome_back' | 'first_open';
+        partOfDay: HomePartOfDay;
+      }
+    | null
   >(null);
+  const homeVisitCue = useRef<{
+    visit: 'welcome_back' | 'first_open';
+    partOfDay: HomePartOfDay;
+  } | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const seenMotionIds = useRef(new Set<string>());
   const settleSend = useRef(false);
@@ -1073,6 +1088,8 @@ export function MemberHomeChat({
         glideScroll.current = true;
         pinnedToEnd.current = true;
       }
+      const visitCue = homeVisitCue.current;
+      homeVisitCue.current = null;
       try {
         await sendMessage(
           {
@@ -1089,6 +1106,12 @@ export function MemberHomeChat({
                 ...readHomeChoices(),
                 acted: readHomeActed(),
               },
+              ...(visitCue
+                ? {
+                    memberHomeVisit: visitCue.visit,
+                    memberHomePartOfDay: visitCue.partOfDay,
+                  }
+                : {}),
             },
           },
         );
@@ -1282,16 +1305,6 @@ export function MemberHomeChat({
     ? shownAssistantText.get(lastAssistantMessage.id) ?? ''
     : '';
   const lastAssistantMessageId = lastAssistantMessage?.id ?? '';
-  const lastAssistantCard = lastAssistantMessage
-    ? homeItemForMessage(cardItems, lastAssistantMessage, intelligence)
-    : null;
-  // Do not speak until the card has prompted when this turn places one.
-  const holdVoiceForCard =
-    isStreaming &&
-    Boolean(lastAssistantMessage) &&
-    messageExpectsHomeCard(lastAssistantMessage!) &&
-    !lastAssistantCard;
-
   const leftPanelVoice = useHomeLeftPanelVoiceActive();
   const voiceInterview = useOnboardingVoiceDiscovery({
     enabled:
@@ -1308,7 +1321,8 @@ export function MemberHomeChat({
     speakEarlyLeadIn: false,
     speakDisplayedText: false,
     isStreaming,
-    lastAssistantText: holdVoice || holdVoiceForCard ? '' : lastAssistantText,
+    // Speak as soon as the bubble has words — do not wait on the card tool.
+    lastAssistantText: holdVoice ? '' : lastAssistantText,
     lastAssistantMessageId,
     locale: lang,
     activeSpaceSlug: HOME_VOICE_PREFERENCE_KEY,
@@ -1381,22 +1395,31 @@ export function MemberHomeChat({
     bindHomePerson(intelligence.person.slug);
     const stored = readHomeThread();
     const returned = consumeHomeReturn();
+    const now = Date.now();
+    const lastSeen = readHomeLastSeen();
+    const welcome = shouldWelcomeHomeReturn(now, lastSeen);
+    const part = homePartOfDay(new Date(now));
     if (stored.length > 0) setMessages(stored);
     if (returned != null) {
       pendingStart.current = {
         kind: 'return',
         text: homeReturnText(returned),
       };
-    } else if (
-      !memberHomeTalkIsResting(stored) &&
-      stored.length === 0 &&
-      threadItems.length > 0
-    ) {
-      // First open with an empty thread: greet and brief. Returning from an
-      // action uses consumeHomeReturn above. Do not auto-continue on remount —
-      // that re-sent the same briefing every crash/navigation remount.
-      pendingStart.current = { kind: 'arrival' };
+    } else if (!memberHomeTalkIsResting(stored) && welcome) {
+      // After login or ~2h away: welcome them back (or greet on first open).
+      // Returning from an action uses consumeHomeReturn above. Remounts within
+      // the window do not re-send — last-seen blocks the spam.
+      const visit =
+        lastSeen == null ? ('first_open' as const) : ('welcome_back' as const);
+      if (visit === 'welcome_back' || threadItems.length > 0) {
+        pendingStart.current = {
+          kind: 'arrival',
+          visit,
+          partOfDay: part,
+        };
+      }
     }
+    touchHomeLastSeen(now);
     // Voice baselines this thread first, then the next effect speaks a start.
     setVoiceHydrated(true);
   }, [
@@ -1414,8 +1437,27 @@ export function MemberHomeChat({
     const pending = pendingStart.current;
     pendingStart.current = null;
     if (!pending) return;
-    if (pending.kind === 'return') void send(pending.text, true);
-    else void send(t('homeArrival'), true);
+    if (pending.kind === 'return') {
+      void send(pending.text, true);
+      return;
+    }
+    homeVisitCue.current = {
+      visit: pending.visit,
+      partOfDay: pending.partOfDay,
+    };
+    const whenKey =
+      pending.partOfDay === 'morning'
+        ? 'homeWhenMorning'
+        : pending.partOfDay === 'afternoon'
+        ? 'homeWhenAfternoon'
+        : pending.partOfDay === 'evening'
+        ? 'homeWhenEvening'
+        : 'homeWhenNight';
+    const ask =
+      pending.visit === 'welcome_back'
+        ? t('homeWelcomeBackAsk', { when: t(whenKey) })
+        : t('homeArrival');
+    void send(ask, true);
   }, [send, t, voiceHydrated]);
 
   useEffect(() => {
@@ -1602,31 +1644,15 @@ export function MemberHomeChat({
       const message = homeMessages[i];
       if (!message || message.metadata?.homeArrival) continue;
       if (message.role !== 'assistant') return isStreaming;
-      const listAsk = widgetKindFor(userTextBefore(homeMessages, i));
       const hasCard = cardsByMessageId.has(message.id);
-      const expectsCard =
-        messageExpectsHomeCard(message) ||
-        (isStreaming &&
-          listAsk !== 'people' &&
-          listAsk !== 'spaces' &&
-          listAsk !== 'tokens' &&
-          cardItems.length > 0);
-      // Card turns stay masked until the card is on screen — never flash
-      // the spoken line alone and then tuck it under the card.
-      if (expectsCard && !hasCard) return isStreaming;
       const text = shownAssistantText.get(message.id) ?? '';
+      // Words or a card end the arrival mask. Waiting on the card tool alone
+      // must not keep the bubble hidden once text is already streaming.
       if (text.trim() || hasCard) return false;
       return isStreaming;
     }
     return isStreaming;
-  }, [
-    cardItems.length,
-    cardsByMessageId,
-    homeMessages,
-    isStreaming,
-    shownAssistantText,
-    widgetKindFor,
-  ]);
+  }, [cardsByMessageId, homeMessages, isStreaming, shownAssistantText]);
   const hasSpoken = homeMessages.some(
     (message) => message.role === 'user' && !message.metadata?.homeArrival,
   );
@@ -1791,7 +1817,7 @@ export function MemberHomeChat({
   const renderSuggestionChips = (rowKey: string) => (
     <div
       key={`home-chips-${rowKey}`}
-      className="narrow-scrollbar -mx-1 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto px-1 pt-1"
+      className="narrow-scrollbar flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto"
     >
       {freshStart ? (
         <button
@@ -1897,7 +1923,6 @@ export function MemberHomeChat({
               </p>
             </article>
           ) : null}
-          {freshStart ? renderSuggestionChips('fresh') : null}
           {homeMessages.map((message, index) => {
             const attached = widgets.filter(
               (widget) => widget.after === index + 1,
@@ -1962,14 +1987,14 @@ export function MemberHomeChat({
               listAsk !== 'tokens' &&
               (messageExpectsHomeCard(message) ||
                 (streamingThis && cardItems.length > 0));
-            // Card prompts first — never paint the spoken line alone.
-            const visibleText =
+            // Stream words immediately. A pending card must not blank the bubble.
+            const visibleText = text;
+            const awaitingCard =
               streamingThis &&
               message.role === 'assistant' &&
               expectsCard &&
-              !keepsCard
-                ? ''
-                : text;
+              !keepsCard &&
+              !visuals;
             const replyReady =
               message.role !== 'assistant' ||
               memberHomeReplyReady({
@@ -1982,7 +2007,8 @@ export function MemberHomeChat({
               replyReady &&
               ((!message.metadata?.homeArrival && Boolean(visibleText)) ||
                 keepsCard ||
-                Boolean(visuals));
+                Boolean(visuals) ||
+                awaitingCard);
             if (!replyReady || (!showMessage && attached.length === 0)) {
               return null;
             }
@@ -2010,10 +2036,27 @@ export function MemberHomeChat({
             // Card always sits above the mark + spoken line. Never nest the
             // card beside the mark and then move it when words arrive.
             const showAssistantMark =
-              !mine && (Boolean(visibleText) || (promptCard && !cardDone));
+              !mine &&
+              (Boolean(visibleText) ||
+                awaitingCard ||
+                (promptCard && !cardDone));
             const promptMedia =
-              !mine && promptCard ? (
+              !mine && (promptCard || awaitingCard) ? (
                 <>
+                  {awaitingCard ? (
+                    <div
+                      className="border border-border bg-background p-3"
+                      aria-busy="true"
+                    >
+                      <HomeWave
+                        className="w-full"
+                        delayMs={80}
+                        style={{ height: 56 }}
+                      />
+                      <HomeWave className="mt-3 h-4 w-1/2" delayMs={150} />
+                      <HomeWave className="mt-2 h-3 w-2/5" delayMs={200} />
+                    </div>
+                  ) : null}
                   {visuals ? (
                     <div className="grid gap-3">
                       {visuals.logoUrl ? (
@@ -2090,12 +2133,6 @@ export function MemberHomeChat({
                   ) : null}
                 </>
               ) : null;
-            const showTurnChips =
-              !mine &&
-              showMessage &&
-              !streamingThis &&
-              !message.metadata?.homeArrival &&
-              !isDropCardMessage(message);
             return (
               <div key={message.id} className="grid gap-4">
                 {attached.map((widget) => (
@@ -2125,7 +2162,7 @@ export function MemberHomeChat({
                       settlingIds.current.has(message.id) && 'home-send-settle',
                     )}
                   >
-                    {promptCard ? (
+                    {promptCard || awaitingCard ? (
                       <div
                         className={cn(
                           'grid min-w-0 gap-3',
@@ -2201,7 +2238,6 @@ export function MemberHomeChat({
                     ) : null}
                   </article>
                 ) : null}
-                {showTurnChips ? renderSuggestionChips(message.id) : null}
               </div>
             );
           })}
@@ -2266,6 +2302,9 @@ export function MemberHomeChat({
             {t('soundNeedsMic')}
           </button>
         ) : null}
+        <div className="px-5 pb-2 md:px-4">
+          {renderSuggestionChips('composer')}
+        </div>
         <div className="mx-5 border border-border bg-background md:mx-4">
           <AiPanelChatBar
             value={input}
