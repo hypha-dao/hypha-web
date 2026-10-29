@@ -784,7 +784,9 @@
       "filterLabel": "Филтри за пораки",
       "openContext": "Отвори {name}",
       "empty": "Сè уште нема ништо во овој филтер."
-    }
+    },
+    "noMessagesMatch": "Нема пораки што одговараат на пребарувањето.",
+    "noMembersMatchSearch": "Нема членови што одговараат на пребарувањето."
   },
   "OnboardingAdventure": {
     "heroEyebrow": "ИНТЕЛИГЕНТНАТА ОРГАНИЗАЦИЈА",

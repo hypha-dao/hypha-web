@@ -184,7 +184,9 @@
       "filterLabel": "Message filters",
       "openContext": "Open {name}",
       "empty": "Nothing in this filter yet."
-    }
+    },
+    "noMessagesMatch": "No messages match your search.",
+    "noMembersMatchSearch": "No members match your search."
   },
   "WelcomeFlow": {
     "step": "Step {current} of {total}",

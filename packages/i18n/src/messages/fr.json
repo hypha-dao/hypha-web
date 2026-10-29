@@ -784,7 +784,9 @@
       "filterLabel": "Filtres des messages",
       "openContext": "Ouvrir {name}",
       "empty": "Rien dans ce filtre pour le moment."
-    }
+    },
+    "noMessagesMatch": "Aucun message ne correspond à ta recherche.",
+    "noMembersMatchSearch": "Aucun membre ne correspond à ta recherche."
   },
   "NetworkFeedback": {
     "triggerLabel": "Façonner Hypha",

@@ -3130,7 +3130,7 @@ export function MyConnections({
                 people.length === 0 &&
                 !searching ? (
                   <p className="text-2 text-muted-foreground">
-                    {needle ? t('noMatches') : t('archivedEmpty')}
+                    {needle ? t('noMembersMatchSearch') : t('archivedEmpty')}
                   </p>
                 ) : null}
 
@@ -3142,7 +3142,11 @@ export function MyConnections({
                 !searching ? (
                   <p className="text-2 text-muted-foreground">
                     {needle
-                      ? t('noMatches')
+                      ? picking
+                        ? t('noMembersMatchSearch')
+                        : section === 'messages'
+                        ? t('noMessagesMatch')
+                        : t('noMatches')
                       : showChannelTags && inboxFilter !== 'direct'
                       ? t('inbox.empty')
                       : t('empty')}

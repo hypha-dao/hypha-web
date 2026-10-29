@@ -1562,7 +1562,9 @@
       "filterLabel": "Filtros de mensagens",
       "openContext": "Abrir {name}",
       "empty": "Nada neste filtro ainda."
-    }
+    },
+    "noMessagesMatch": "Nenhuma mensagem corresponde à tua pesquisa.",
+    "noMembersMatchSearch": "Nenhum membro corresponde à tua pesquisa."
   },
   "NetworkFeedback": {
     "triggerLabel": "Moldar a Hypha",
