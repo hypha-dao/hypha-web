@@ -2075,6 +2075,27 @@ export function MemberHomeChat({
                             >
                               {homeMessageNodes(visibleText)}
                             </p>
+                          ) : streamingThis && !mine ? (
+                            // Card can land before speech. Keep the text
+                            // mask beside the mark until words arrive —
+                            // never leave the mark alone on the mycelium.
+                            <div
+                              className="grid min-w-0 flex-1 gap-2 pt-1"
+                              aria-busy="true"
+                            >
+                              <HomeWave
+                                className="h-3 w-11/12"
+                                delayMs={40}
+                              />
+                              <HomeWave
+                                className="h-3 w-4/5"
+                                delayMs={90}
+                              />
+                              <HomeWave
+                                className="h-3 w-2/3"
+                                delayMs={140}
+                              />
+                            </div>
                           ) : null}
                         </div>
                         {mine ? (
