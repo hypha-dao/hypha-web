@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('server-only', () => ({}));
+
 import {
   buildProposalMarkdown,
   buildSpaceContextAgentPrompt,
@@ -12,6 +15,7 @@ import {
   specialistForSectionKey,
 } from '../index';
 import { mapSectionRow } from '../server/map-row';
+import { ratifySpaceContextSectionsByDocumentId } from '../server/mutations';
 
 const baseRow = {
   id: 1,
@@ -213,6 +217,48 @@ describe('added and removed sections', () => {
     expect(markdown).toContain('How newcomers start.');
     expect(markdown).toContain('## Remove section: Tools we use');
     expect(sectionKeysFromProposalMarkdown(markdown)).toEqual(['tools']);
+  });
+
+  it('marks a section removed when its removal proposal passes', async () => {
+    const selects: unknown[][] = [
+      [{ id: 5 }],
+      [{ id: 42 }],
+      [{ id: 5, pendingChange: 'remove' }],
+    ];
+    const updates: Record<string, unknown>[] = [];
+    const query = (rows: unknown[]) => {
+      const chain = {
+        from: () => chain,
+        where: () => chain,
+        limit: () => chain,
+        then: (
+          resolve: (value: unknown[]) => unknown,
+          reject?: (error: unknown) => unknown,
+        ) => Promise.resolve(rows).then(resolve, reject),
+      };
+      return chain;
+    };
+    const db = {
+      select: () => query(selects.shift() ?? []),
+      update: () => ({
+        set: (values: Record<string, unknown>) => {
+          updates.push(values);
+          return { where: () => Promise.resolve() };
+        },
+      }),
+    } as unknown as Parameters<
+      typeof ratifySpaceContextSectionsByDocumentId
+    >[1]['db'];
+
+    const count = await ratifySpaceContextSectionsByDocumentId(
+      { documentId: 42 },
+      { db },
+    );
+
+    expect(count).toBe(1);
+    expect(updates).toHaveLength(1);
+    expect(updates[0]?.removedAt).toBeInstanceOf(Date);
+    expect(updates[0]?.pendingChange).toBeNull();
   });
 
   it('normalises a suggested title to one plain line', () => {
