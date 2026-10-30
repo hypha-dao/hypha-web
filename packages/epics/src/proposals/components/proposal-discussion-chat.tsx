@@ -32,7 +32,9 @@ import type { MatrixClient } from 'matrix-js-sdk';
 import {
   HumanChatPanelChatBar,
   HumanChatPanelMessages,
+  type ChatDraftAttachment,
   type ChatMentionCandidate,
+  type ChatPanelAttachmentMedia,
 } from '../../common/human-chat-panel';
 import { HumanChatPanelTypingIndicator } from '../../common/human-chat-panel/human-chat-panel-typing-indicator';
 import { useChatRoomTyping } from '../../common/human-chat-panel/use-chat-room-typing';
@@ -109,11 +111,14 @@ type PanelMessage = {
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
+  media?: ChatPanelAttachmentMedia;
+  mediaSlots?: ChatPanelAttachmentMedia[];
   senderName?: string;
   senderMatrixId?: string;
   agentSpecialistId?: string;
   avatarUrl?: string;
   timestamp?: Date;
+  edited?: boolean;
   formattedContentHtml?: string;
   reactions?: Array<{
     emoji: string;
@@ -122,6 +127,7 @@ type PanelMessage = {
     reactorUserIds?: string[];
   }>;
   replyTo?: {
+    eventId?: string;
     authorLabel: string;
     excerpt?: string;
     sourceUserId?: string;
@@ -129,6 +135,20 @@ type PanelMessage = {
   };
   mentionedUserIds?: string[];
 };
+
+function disposeDraftAttachmentUrls(drafts: readonly ChatDraftAttachment[]) {
+  for (const draft of drafts) {
+    if (draft.previewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(draft.previewUrl);
+    }
+  }
+}
+
+function isMatrixMediaMsgtype(
+  msgtype: Message['msgtype'],
+): msgtype is 'm.file' | 'm.image' | 'm.audio' {
+  return msgtype === 'm.file' || msgtype === 'm.image' || msgtype === 'm.audio';
+}
 
 type ReplyDraft = {
   messageId: string;
@@ -242,11 +262,22 @@ export function ProposalDiscussionChat({
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [input, setInput] = React.useState('');
+  const [draftAttachments, setDraftAttachments] = React.useState<
+    ChatDraftAttachment[]
+  >([]);
+  const draftAttachmentsRef = React.useRef(draftAttachments);
+  draftAttachmentsRef.current = draftAttachments;
   const [replyDraft, setReplyDraft] = React.useState<ReplyDraft | null>(null);
   const [scrollToEventId, setScrollToEventId] = React.useState<string | null>(
     null,
   );
   const [editDraft, setEditDraft] = React.useState<EditDraft | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+    };
+  }, []);
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = React.useState(0);
   const [provisionError, setProvisionError] = React.useState<string | null>(
     null,
@@ -366,10 +397,47 @@ export function ProposalDiscussionChat({
           ? currentUserAvatarUrl
           : resolveMemberAvatar(replyAuthorId)
         : undefined;
+      const mediaMsgtype = msg.msgtype;
+      const isMedia = isMatrixMediaMsgtype(mediaMsgtype);
+      const strippedMediaBody = isMedia
+        ? stripMatrixReplyFallback(msg.content).trim()
+        : '';
+      const mediaFilenameForCaption = (msg.filename ?? msg.content).trim();
+      const captionForMedia =
+        isMedia &&
+        strippedMediaBody.length > 0 &&
+        strippedMediaBody !== mediaFilenameForCaption
+          ? strippedMediaBody
+          : '';
+      const media: ChatPanelAttachmentMedia | undefined = isMedia
+        ? {
+            msgtype: mediaMsgtype,
+            mxcUrl: msg.mxcUrl,
+            filename: msg.filename ?? msg.content,
+            mediaInfo: msg.mediaInfo,
+            spoiler: msg.spoiler,
+          }
+        : undefined;
+      const mediaSlots: ChatPanelAttachmentMedia[] | undefined =
+        isMedia && msg.mediaBundle && msg.mediaBundle.length > 1
+          ? msg.mediaBundle.map((slot) => ({
+              msgtype: slot.msgtype,
+              mxcUrl: slot.mxcUrl,
+              filename: slot.filename ?? '',
+              mediaInfo: slot.mediaInfo,
+              spoiler: slot.spoiler,
+            }))
+          : undefined;
       return {
         id: msg.id,
         role: isCurrentUser ? 'user' : 'member',
-        parts: [{ type: 'text', text: msg.content }],
+        parts: isMedia
+          ? captionForMedia
+            ? [{ type: 'text', text: captionForMedia }]
+            : []
+          : [{ type: 'text', text: msg.content }],
+        ...(media ? { media } : {}),
+        ...(mediaSlots ? { mediaSlots } : {}),
         senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
         senderMatrixId: msg.sender,
         ...(msg.agentSpecialistId
@@ -378,7 +446,8 @@ export function ProposalDiscussionChat({
         ...(avatarUrl ? { avatarUrl } : {}),
         timestamp: msg.timestamp,
         ...(msg.edited ? { edited: true } : {}),
-        formattedContentHtml: msg.formattedContentHtml,
+        formattedContentHtml:
+          isMedia && !captionForMedia ? undefined : msg.formattedContentHtml,
         reactions: msg.reactions?.map((reaction) => ({
           emoji: reaction.key,
           count: reaction.count,
@@ -878,7 +947,8 @@ export function ProposalDiscussionChat({
 
   const sendMessage = React.useCallback(async () => {
     const trimmed = input.trim();
-    if (!trimmed) return;
+    const attachments = draftAttachments;
+    if (!trimmed && attachments.length === 0) return;
     const targetRoom = roomIdRef.current ?? roomId ?? (await ensureRoom());
     if (!targetRoom) return;
     const replyToEventId = replyDraft?.messageId;
@@ -886,14 +956,20 @@ export function ProposalDiscussionChat({
     const savedReply = replyDraft;
     const savedEdit = editDraft;
     const savedInput = input;
+    const savedAttachments = attachments;
     setComposerError(null);
     setComposerTyping(false);
+    setInput('');
+    setDraftAttachments([]);
     try {
       const { wirePlain, mentionUserIds } = wireComposerPlainForMatrixSend(
-        input,
+        savedInput,
         mentionSanitizedLabelToUserId,
       );
       if (editTargetEventId) {
+        if (savedAttachments.length > 0) {
+          throw new Error(tChat('editAttachmentsNotSupported'));
+        }
         await editRoomMessage({
           roomId: targetRoom,
           targetEventId: editTargetEventId,
@@ -913,6 +989,19 @@ export function ProposalDiscussionChat({
           message: wirePlain,
           mentionUserIds,
           ...(replyToEventId ? { replyToEventId } : {}),
+          ...(savedAttachments.length > 0
+            ? {
+                attachments: savedAttachments.map((attachment) => ({
+                  file: attachment.file,
+                  kind: (attachment.kind === 'image'
+                    ? 'image'
+                    : attachment.kind === 'audio'
+                    ? 'audio'
+                    : 'file') as 'image' | 'audio' | 'file',
+                  spoiler: attachment.spoiler,
+                })),
+              }
+            : {}),
         });
         if (mentionUserIds.length > 0) {
           void ensureRoomMembers(targetRoom, mentionUserIds);
@@ -931,12 +1020,13 @@ export function ProposalDiscussionChat({
         });
       }
       refreshRoomMessages(targetRoom);
-      setInput('');
+      disposeDraftAttachmentUrls(savedAttachments);
       setReplyDraft(null);
       setEditDraft(null);
     } catch (error) {
       console.warn('[ProposalDiscussionChat] send failed', error);
       setInput(savedInput);
+      setDraftAttachments(savedAttachments);
       setReplyDraft(savedReply);
       setEditDraft(savedEdit);
       setComposerError(tChat('sendFailed'));
@@ -944,6 +1034,7 @@ export function ProposalDiscussionChat({
   }, [
     authToken,
     client,
+    draftAttachments,
     ensureRoomMembers,
     documentSlug,
     editDraft,
@@ -1093,13 +1184,17 @@ export function ProposalDiscussionChat({
             onChange={(next) => {
               setComposerError(null);
               setInput(next);
-              setComposerTyping(next.trim().length > 0);
+              setComposerTyping(
+                next.trim().length > 0 || draftAttachments.length > 0,
+              );
             }}
             onSend={sendMessage}
             placeholder={tCoherence('saySomething')}
             mentionCandidates={mentionCandidates}
             mentionPickerEnabled={mentionCandidates.length > 0}
             getMentionComposerLabel={getMentionComposerLabel}
+            draftAttachments={draftAttachments}
+            onDraftAttachmentsChange={setDraftAttachments}
             composerLocked={Boolean(provisionError)}
             composerLockedMessage={provisionError ?? t('discussion.connecting')}
             replyPreview={
@@ -1120,6 +1215,8 @@ export function ProposalDiscussionChat({
                     onDismiss: () => {
                       setEditDraft(null);
                       setInput('');
+                      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+                      setDraftAttachments([]);
                       setComposerError(null);
                     },
                   }
