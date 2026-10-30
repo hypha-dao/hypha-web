@@ -78,6 +78,8 @@ describe('buildRichReplyPlainBody', () => {
 describe('messageFromRoomMessageEvent edited', () => {
   function makeTextEvent(opts: {
     replacingEventId?: string;
+    /** Local-echo replace attached before the edit event has a final id. */
+    hasReplacingEvent?: boolean;
     body?: string;
   }): MatrixSdk.MatrixEvent {
     return {
@@ -93,6 +95,12 @@ describe('messageFromRoomMessageEvent edited', () => {
         body: opts.body ?? 'Hello',
       }),
       replacingEventId: () => opts.replacingEventId,
+      replacingEvent: () =>
+        opts.hasReplacingEvent || opts.replacingEventId
+          ? ({
+              getId: () => opts.replacingEventId ?? null,
+            } as MatrixSdk.MatrixEvent)
+          : null,
     } as unknown as MatrixSdk.MatrixEvent;
   }
 
@@ -108,6 +116,19 @@ describe('messageFromRoomMessageEvent edited', () => {
     );
     expect(message.edited).toBe(true);
     expect(message.content).toBe('Updated');
+  });
+
+  it('marks local-echo edits as edited when the replace id is not final yet', () => {
+    const client = {
+      getRoom: () => null,
+    } as unknown as MatrixSdk.MatrixClient;
+    const message = messageFromRoomMessageEvent(
+      client,
+      '!room:example.com',
+      makeTextEvent({ hasReplacingEvent: true, body: 'Updated' }),
+      false,
+    );
+    expect(message.edited).toBe(true);
   });
 
   it('omits edited when there is no replacement', () => {

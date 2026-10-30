@@ -890,6 +890,13 @@ export function ProposalDiscussionChat({
           message: wirePlain,
           mentionUserIds,
         });
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === editTargetEventId
+              ? { ...message, content: wirePlain, edited: true }
+              : message,
+          ),
+        );
       } else {
         await sendMatrixMessage({
           roomId: targetRoom,

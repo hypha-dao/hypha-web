@@ -5899,6 +5899,25 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             mentionUserIds,
           });
         }
+        // Timeline replace can land before replacingEventId is final; mark
+        // edited immediately so the label is visible without waiting on sync.
+        const caption = wirePlain.trim();
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id !== editTargetEventId) return m;
+            const isMedia = Boolean(m.media || m.mediaSlots?.length);
+            return {
+              ...m,
+              edited: true,
+              parts: isMedia
+                ? caption
+                  ? [{ type: 'text' as const, text: caption }]
+                  : []
+                : [{ type: 'text' as const, text: wirePlain }],
+              formattedContentHtml: undefined,
+            };
+          }),
+        );
       } else {
         await matrixRef.current.sendMessage({
           roomId,

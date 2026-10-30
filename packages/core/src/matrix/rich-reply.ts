@@ -395,7 +395,9 @@ export function messageFromRoomMessageEvent(
     throw new Error('Matrix room message event missing id or sender');
   }
 
-  const edited = Boolean(event.replacingEventId());
+  // Prefer replacingEvent() so local-echo edits (id not final yet) still
+  // count as edited; replacingEventId() alone can be empty until sync.
+  const edited = Boolean(event.replacingEventId() || event.replacingEvent());
 
   if (isMedia) {
     const spoilerVal = content[HYPHA_SPOILER_FIELD];
