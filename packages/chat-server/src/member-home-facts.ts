@@ -101,34 +101,59 @@ export function memberHomeListAsk(
     "who's around",
     'who are around',
     'who should i connect with',
+    'who could use a hello',
     'quién está cerca',
+    'quién podría usar un hola',
     'qui est là',
+    "qui aurait besoin d'un bonjour",
     'quem está por perto',
+    'quem poderia usar um oi',
     'wer ist da',
+    'wer könnte einen hallo brauchen',
     'wie is er in de buurt',
+    'wie kan een hallo gebruiken',
     'hvem er i nærheten',
+    'hvem kunne trenge en hei',
     'кој е во близина',
+    'кому му треба здраво',
   ]);
   const spaces = new Set([
     'step into a space',
+    'where should i show up',
     'entrar en un espacio',
+    'dónde debería aparecer',
     'entrer dans un espace',
+    'où dois-je me montrer',
     'entrar num espaço',
+    'onde devo aparecer',
     'einen space betreten',
+    'wo sollte ich auftauchen',
     'stap een space binnen',
+    'waar moet ik opduiken',
     'gå inn i et rom',
+    'hvor bør jeg dukke opp',
     'влези во простор',
+    'каде да се појавам',
   ]);
   const tokens = new Set([
     'send someone tokens',
+    'who could use a thank-you',
+    'who could use a thank you',
     'enviar tokens a alguien',
+    'quién podría usar un agradecimiento',
     'envoyer des tokens à quelqu’un',
     "envoyer des tokens à quelqu'un",
+    "qui aurait besoin d'un merci",
     'enviar tokens a alguém',
+    'quem poderia usar um obrigado',
     'jemandem token senden',
+    'wer könnte ein dankeschön brauchen',
     'iemand tokens sturen',
+    'wie kan een bedankje gebruiken',
     'send tokens til noen',
+    'hvem kunne trenge en takk',
     'испрати токени на некого',
+    'кому му треба благодарност',
   ]);
   if (people.has(chip)) return 'people';
   if (spaces.has(chip)) return 'spaces';
@@ -143,7 +168,7 @@ function listTurnLine(kind: 'people' | 'spaces' | 'tokens') {
   if (kind === 'spaces') {
     return 'This turn: they asked to step into a space. The space list is already on screen above your reply. Match the warmth of "Where can I be useful?" — three or four short sentences, like a friend opening the door, then stop. Speak to them by first name. Notice that their spaces are ready when they are. Invite them to step into whichever one is calling them. Never say above, below, listed, tap, or screen. Do not name a space. Do not suggest they leave one space for another. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
   }
-  return 'This turn: they asked to send tokens. The send form is already on screen above your reply. Match the warmth of "Where can I be useful?" — three or four short sentences, like a friend helping care move through the network, then stop. Speak to them by first name. Notice that a thank-you or a bit of support can land with someone they already share a space with. Ask who they would like to send to, in ordinary speech — never field labels. Never say above, below, listed, tap, or screen. Do not name a closest person. Do not rank anyone by shared spaces. Do not invent an amount or a token. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
+  return 'This turn: they asked to send tokens. The send form is already on screen above your reply — they send, you do not. You cannot send, transfer, or move tokens. Never say you sent them, transferred them, that they are on the way, or that the send is done. Match the warmth of "Where can I be useful?" — three or four short sentences, like a friend inviting a thank-you, then stop. Speak to them by first name. Notice that a thank-you can land with someone they already share a space with. Ask who they would like to send to, in ordinary speech — never field labels. Never say above, below, listed, tap, or screen. Do not name a closest person. Do not rank anyone by shared spaces. Do not invent an amount or a token. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
 }
 
 function isShareControlPhrase(text: string): boolean {
@@ -157,9 +182,12 @@ function isShareControlPhrase(text: string): boolean {
   }
   if (memberHomeListAsk(normalized)) return true;
   return (
-    /^(?:where can i be useful|step into a space|who should i connect with|who is around|what needs a decision|send someone tokens|pause|stop|enough|continue with what still needs me)[.!?]?$/.test(
+    /^(?:where can i be useful|step into a space|where should i show up|who should i connect with|who is around|who could use a hello|what needs a decision|where is my voice needed|send someone tokens|who could use a thank-you|who could use a thank you|pause|stop|enough|continue with what still needs me)[.!?]?$/.test(
       normalized,
-    ) || /\b(?:what needs a decision|needs a decision)\b/.test(normalized)
+    ) ||
+    /\b(?:what needs a decision|needs a decision|where is my voice needed)\b/.test(
+      normalized,
+    )
   );
 }
 
@@ -375,9 +403,32 @@ export function formatMemberHomeFacts(
             )}"`;
           })
           .join('\n');
-  const decisionAsk = /what needs a decision|needs a decision/i.test(
-    options?.asked ?? '',
-  );
+  const decisionAsk = (() => {
+    const chip = foldChip(options?.asked ?? '');
+    if (!chip) return false;
+    const decisions = new Set([
+      'what needs a decision',
+      'where is my voice needed',
+      'qué necesita una decisión',
+      'dónde se necesita mi voz',
+      "qu'est-ce qui demande une décision",
+      'où ma voix est-elle utile',
+      'o que precisa de uma decisão',
+      'onde minha voz é necessária',
+      'was braucht eine entscheidung',
+      'wo wird meine stimme gebraucht',
+      'wat vraagt een beslissing',
+      'waar is mijn stem nodig',
+      'hva trenger en beslutning',
+      'hvor trengs stemmen min',
+      'што бара одлука',
+      'каде е потребен мојот глас',
+    ]);
+    if (decisions.has(chip)) return true;
+    return /\b(?:what needs a decision|needs a decision)\b/i.test(
+      options?.asked ?? '',
+    );
+  })();
   const shownKeys = new Set(
     (options?.alreadyShown ?? []).map((key) => key.trim()).filter(Boolean),
   );

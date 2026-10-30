@@ -285,10 +285,31 @@ describe('formatMemberHomeFacts', () => {
     );
     expect(facts).toMatch(/three or four short sentences/i);
     expect(facts).toMatch(/who they would like to send to/i);
+    expect(facts).toMatch(/You cannot send, transfer, or move tokens/i);
+    expect(facts).toMatch(/Never say you sent them/i);
     expect(facts).toMatch(/Do not name a closest person/i);
     expect(facts).not.toMatch(/pick someone/i);
     expect(facts).not.toContain('People who share a space');
     expect(facts).not.toContain('Ada Lovelace (shared spaces:');
+  });
+
+  it('matches the warmer chip labels to the same list turns', () => {
+    expect(
+      formatMemberHomeFacts(home, { asked: 'Who could use a hello?' }).text,
+    ).toContain('The people list is already on screen');
+    expect(
+      formatMemberHomeFacts(home, { asked: 'Where should I show up?' }).text,
+    ).toContain('The space list is already on screen');
+    expect(
+      formatMemberHomeFacts(home, {
+        asked: 'Who could use a thank-you?',
+      }).text,
+    ).toMatch(/You cannot send, transfer, or move tokens/i);
+    expect(
+      formatMemberHomeFactsText(home, {
+        asked: 'Where is my voice needed?',
+      }),
+    ).toMatch(/they asked what needs a decision/i);
   });
 
   it('omits the connections roster on a useful ask', () => {

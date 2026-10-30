@@ -123,6 +123,7 @@ describe('buildMemberHomeRealtimeInstructions', () => {
     });
     expect(instructions).toContain('voice relay');
     expect(instructions).toContain('verbatim');
+    expect(instructions).toContain('---CHAT_REPLY---');
     expect(instructions).toContain('listening context only');
     expect(instructions).not.toMatch(/\bscript\b/i);
     expect(instructions).not.toContain('Speak from those records');
