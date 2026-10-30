@@ -170,6 +170,8 @@ export function useSpaceContextSection(
       }
       return (await response.json()) as SpaceContextSectionDetail;
     },
+    // Other members and the section agent save drafts while the panel is open.
+    { refreshInterval: 20_000, revalidateOnFocus: true },
   );
 
   return {
@@ -208,34 +210,33 @@ export async function patchSpaceContextSectionRequest({
   return updated;
 }
 
-export async function appendSpaceContextMessageRequest({
+/** Store the section's discussion room. Returns the room the server kept. */
+export async function storeSpaceContextChatRoomRequest({
   spaceSlug,
   sectionKey,
-  role,
-  content,
-  agentKey,
+  chatRoomId,
   getAccessToken,
 }: {
   spaceSlug: string;
   sectionKey: SpaceContextSectionKey;
-  role: 'user';
-  content: string;
-  agentKey?: string;
+  chatRoomId: string;
   getAccessToken?: () => Promise<string | null | undefined>;
-}) {
+}): Promise<string | null> {
   const headers = await authHeaders(getAccessToken);
   const response = await fetch(
-    `/api/v1/spaces/${spaceSlug}/context/${sectionKey}/messages`,
+    `/api/v1/spaces/${spaceSlug}/context/${sectionKey}`,
     {
-      method: 'POST',
+      method: 'PATCH',
       headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role, content, agentKey }),
+      body: JSON.stringify({ chatRoomId }),
     },
   );
   if (!response.ok) {
-    throw new Error('Failed to save chat message');
+    throw new Error('Failed to store the section chat room');
   }
-  return response.json();
+  const updated = (await response.json()) as SpaceContextSectionRecord;
+  await applySpaceContextSectionToCache(spaceSlug, updated);
+  return updated.chatRoomId;
 }
 
 export async function importSpaceContextFromMemoryRequest({
