@@ -77,6 +77,9 @@ export function stripMatchingLeadingHeading(
   return trimmed.slice(match[0].length).replace(/^\s+/, '');
 }
 
+const BLOCK_START =
+  /^(#{1,6}\s|[-*+]\s|\d+[.)]\s|>|\||```|~~~|(?:[-*_]\s*){3,}$)/;
+
 /**
  * Split a section body into its opening prose paragraph and the remainder.
  * Lists, tables, quotes and code are never promoted to the lead.
@@ -87,12 +90,21 @@ export function splitLeadParagraph(source: string): {
 } {
   const trimmed = source.replace(/\r\n/g, '\n').trim();
   if (!trimmed) return { lead: '', rest: '' };
-  const [first = '', ...others] = trimmed.split(/\n\s*\n/);
-  const chunk = first.trim();
-  if (!chunk || /^(#{1,6}\s|[-*+]\s|\d+[.)]\s|>|\||```|~~~)/.test(chunk)) {
-    return { lead: '', rest: trimmed };
+  const lines = trimmed.split('\n');
+  let end = 0;
+  while (end < lines.length) {
+    const line = (lines[end] ?? '').trim();
+    if (!line || BLOCK_START.test(line)) break;
+    end += 1;
   }
-  return { lead: chunk.replace(/\n/g, ' '), rest: others.join('\n\n').trim() };
+  if (end === 0) return { lead: '', rest: trimmed };
+  return {
+    lead: lines
+      .slice(0, end)
+      .map((line) => line.trim())
+      .join(' '),
+    rest: lines.slice(end).join('\n').trim(),
+  };
 }
 
 /** Reverse of `buildProposalMarkdown` headings — used when resubmitting a Context proposal. */

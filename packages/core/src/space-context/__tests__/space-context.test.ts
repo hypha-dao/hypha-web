@@ -140,6 +140,18 @@ describe('space context markdown', () => {
       rest: '- Only a list',
     });
     expect(splitLeadParagraph('   ')).toEqual({ lead: '', rest: '' });
+    expect(
+      splitLeadParagraph(
+        'We decide together.\n> Bias to small, shippable work.',
+      ),
+    ).toEqual({
+      lead: 'We decide together.',
+      rest: '> Bias to small, shippable work.',
+    });
+    expect(splitLeadParagraph('> Quote first\n\nThen prose')).toEqual({
+      lead: '',
+      rest: '> Quote first\n\nThen prose',
+    });
   });
 });
 
