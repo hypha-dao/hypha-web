@@ -17,6 +17,9 @@ export type SpaceContextSectionRecord = {
   proposalSlug: string | null;
   proposalWeb3Id: number | null;
   proposalStatus: 'accepted' | 'rejected' | 'onVoting' | null;
+  ratifiedTitle: string | null;
+  ratifiedSlug: string | null;
+  ratifiedWeb3Id: number | null;
   contributorCount: number;
   lastEditorName: string | null;
 };
