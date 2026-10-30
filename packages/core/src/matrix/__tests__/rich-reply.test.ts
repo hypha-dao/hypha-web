@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import type * as MatrixSdk from 'matrix-js-sdk';
 
 import {
   buildRichReplyPlainBody,
   firstLineForReplyPreview,
   isLocalProvisionalEventId,
+  messageFromRoomMessageEvent,
   stripMatrixReplyFallback,
   truncateForPreview,
 } from '../rich-reply';
@@ -70,5 +72,54 @@ describe('buildRichReplyPlainBody', () => {
     const out = buildRichReplyPlainBody('@u:h', parent, 'world');
     expect(out).toContain('> <@u:h> hello');
     expect(out).not.toContain('> <@u:h> > <@a:b> hi');
+  });
+});
+
+describe('messageFromRoomMessageEvent edited', () => {
+  function makeTextEvent(opts: {
+    replacingEventId?: string;
+    body?: string;
+  }): MatrixSdk.MatrixEvent {
+    return {
+      getId: () => '$msg:example.com',
+      getSender: () => '@you:example.com',
+      getTs: () => 1_700_000_000_000,
+      getContent: () => ({
+        msgtype: 'm.text',
+        body: opts.body ?? 'Hello',
+      }),
+      getWireContent: () => ({
+        msgtype: 'm.text',
+        body: opts.body ?? 'Hello',
+      }),
+      replacingEventId: () => opts.replacingEventId,
+    } as unknown as MatrixSdk.MatrixEvent;
+  }
+
+  it('marks a replaced root as edited', () => {
+    const client = {
+      getRoom: () => null,
+    } as unknown as MatrixSdk.MatrixClient;
+    const message = messageFromRoomMessageEvent(
+      client,
+      '!room:example.com',
+      makeTextEvent({ replacingEventId: '$edit:example.com', body: 'Updated' }),
+      false,
+    );
+    expect(message.edited).toBe(true);
+    expect(message.content).toBe('Updated');
+  });
+
+  it('omits edited when there is no replacement', () => {
+    const client = {
+      getRoom: () => null,
+    } as unknown as MatrixSdk.MatrixClient;
+    const message = messageFromRoomMessageEvent(
+      client,
+      '!room:example.com',
+      makeTextEvent({}),
+      false,
+    );
+    expect(message.edited).toBeUndefined();
   });
 });

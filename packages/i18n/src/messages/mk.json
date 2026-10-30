@@ -3758,6 +3758,7 @@
     "replyButton": "Одговори",
     "editButton": "Уреди порака",
     "editingMessage": "Уредување порака",
+    "messageEdited": "(изменето)",
     "editDismiss": "Откажи уредување",
     "editAttachmentsNotSupported": "Прилозите не се поддржани при уредување порака",
     "editMediaRequiresAttachment": "Задржи барем еден прилог при уредување на оваа порака.",

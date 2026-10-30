@@ -3217,6 +3217,7 @@
     "replyButton": "Responder",
     "editButton": "Editar mensaje",
     "editingMessage": "Editando mensaje",
+    "messageEdited": "(editado)",
     "editDismiss": "Cancelar edición",
     "editAttachmentsNotSupported": "No se admiten archivos adjuntos al editar un mensaje",
     "editMediaRequiresAttachment": "Conserva al menos un adjunto al editar este mensaje.",

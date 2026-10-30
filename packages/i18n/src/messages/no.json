@@ -3777,6 +3777,7 @@
     "replyButton": "Svar",
     "editButton": "Rediger melding",
     "editingMessage": "Redigerer melding",
+    "messageEdited": "(redigert)",
     "editDismiss": "Avbryt redigering",
     "editAttachmentsNotSupported": "Vedlegg støttes ikke når du redigerer en melding",
     "editMediaRequiresAttachment": "Behold minst ett vedlegg når du redigerer denne meldingen.",

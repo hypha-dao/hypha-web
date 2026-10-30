@@ -309,6 +309,7 @@ export function ProposalDiscussionChat({
           : {}),
         ...(avatarUrl ? { avatarUrl } : {}),
         timestamp: msg.timestamp,
+        ...(msg.edited ? { edited: true } : {}),
         formattedContentHtml: msg.formattedContentHtml,
         reactions: msg.reactions?.map((reaction) => ({
           emoji: reaction.key,

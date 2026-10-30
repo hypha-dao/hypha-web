@@ -3806,6 +3806,7 @@
     "replyButton": "Reply",
     "editButton": "Edit message",
     "editingMessage": "Editing message",
+    "messageEdited": "(edited)",
     "editDismiss": "Cancel edit",
     "editAttachmentsNotSupported": "Attachments are not supported when editing a message",
     "editMediaRequiresAttachment": "Keep at least one attachment when editing this message.",
