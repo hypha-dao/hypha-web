@@ -1564,7 +1564,9 @@
       "empty": "Nada en este filtro todavía."
     },
     "noMessagesMatch": "Ningún mensaje coincide con tu búsqueda.",
-    "noMembersMatchSearch": "Ningún miembro coincide con tu búsqueda."
+    "noMembersMatchSearch": "Ningún miembro coincide con tu búsqueda.",
+    "searchMembers": "Buscar miembros",
+    "startConversation": "Iniciar conversación"
   },
   "NetworkFeedback": {
     "triggerLabel": "Da forma a Hypha",

@@ -785,7 +785,9 @@
       "empty": "Ingenting i dette filteret ennå."
     },
     "noMessagesMatch": "Ingen meldinger samsvarer med søket ditt.",
-    "noMembersMatchSearch": "Ingen medlemmer samsvarer med søket ditt."
+    "noMembersMatchSearch": "Ingen medlemmer samsvarer med søket ditt.",
+    "searchMembers": "Søk etter medlemmer",
+    "startConversation": "Start en samtale"
   },
   "NetworkFeedback": {
     "triggerLabel": "Bidra til Hypha",

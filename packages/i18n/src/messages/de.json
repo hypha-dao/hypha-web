@@ -786,7 +786,9 @@
       "empty": "In diesem Filter ist noch nichts."
     },
     "noMessagesMatch": "Keine Nachrichten passen zu deiner Suche.",
-    "noMembersMatchSearch": "Keine Mitglieder passen zu deiner Suche."
+    "noMembersMatchSearch": "Keine Mitglieder passen zu deiner Suche.",
+    "searchMembers": "Mitglieder suchen",
+    "startConversation": "Unterhaltung starten"
   },
   "NetworkFeedback": {
     "triggerLabel": "Hypha gestalten",

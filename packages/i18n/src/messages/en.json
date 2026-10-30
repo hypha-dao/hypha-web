@@ -186,7 +186,9 @@
       "empty": "Nothing in this filter yet."
     },
     "noMessagesMatch": "No messages match your search.",
-    "noMembersMatchSearch": "No members match your search."
+    "noMembersMatchSearch": "No members match your search.",
+    "searchMembers": "Search members",
+    "startConversation": "Start a conversation"
   },
   "WelcomeFlow": {
     "step": "Step {current} of {total}",

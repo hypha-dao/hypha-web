@@ -786,7 +786,9 @@
       "empty": "Nog niets in dit filter."
     },
     "noMessagesMatch": "Geen berichten komen overeen met je zoekopdracht.",
-    "noMembersMatchSearch": "Geen leden komen overeen met je zoekopdracht."
+    "noMembersMatchSearch": "Geen leden komen overeen met je zoekopdracht.",
+    "searchMembers": "Leden zoeken",
+    "startConversation": "Gesprek starten"
   },
   "NetworkFeedback": {
     "triggerLabel": "Ondersteun Hypha",

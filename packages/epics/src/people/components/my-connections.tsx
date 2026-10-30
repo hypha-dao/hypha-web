@@ -126,6 +126,7 @@ import {
   readRememberedDirectRoom,
   suggestConnections,
   supersededDirectRoomIds,
+  peopleMatchingSearch,
   type ConnectionSuggestion,
   type ConversationRow,
   type GroupFace,
@@ -2049,17 +2050,52 @@ export function MyConnections({
       setSearching(true);
       void (async () => {
         try {
-          const response = await fetch(
-            `/api/v1/people/me/intelligence?q=${encodeURIComponent(term)}`,
-            {
-              headers: { Authorization: `Bearer ${jwt}` },
-              signal: controller.signal,
-            },
-          );
-          if (!response.ok) return;
-          const body = (await response.json()) as MemberIntelligence;
+          const headers = { Authorization: `Bearer ${jwt}` };
+          const [connectionResponse, networkResponse] = await Promise.all([
+            fetch(
+              `/api/v1/people/me/intelligence?q=${encodeURIComponent(term)}`,
+              { headers, signal: controller.signal },
+            ),
+            term.length >= 2
+              ? fetch(`/api/v1/people/search?q=${encodeURIComponent(term)}`, {
+                  headers,
+                  signal: controller.signal,
+                })
+              : Promise.resolve(null),
+          ]);
+          if (controller.signal.aborted) return;
+          const connections: ConnectionPerson[] = [];
+          if (connectionResponse.ok) {
+            const body =
+              (await connectionResponse.json()) as MemberIntelligence;
+            connections.push(...(body.connections ?? []));
+          }
+          if (networkResponse?.ok) {
+            const body = (await networkResponse.json()) as {
+              people?: Array<{
+                id: number;
+                slug: string | null;
+                name: string | null;
+                surname: string | null;
+                nickname: string | null;
+                avatarUrl: string | null;
+              }>;
+            };
+            for (const person of body.people ?? []) {
+              if (!person.id || person.id <= 0) continue;
+              connections.push({
+                id: person.id,
+                slug: person.slug,
+                name: person.name,
+                surname: person.surname,
+                nickname: person.nickname,
+                avatarUrl: person.avatarUrl,
+                sharedSpaceCount: 0,
+              });
+            }
+          }
           if (!controller.signal.aborted) {
-            setSearchDirectory(body.connections ?? []);
+            setSearchDirectory(mergeDirectoryPeople(connections));
           }
         } catch (error) {
           if (error instanceof DOMException && error.name === 'AbortError') {
@@ -2237,9 +2273,54 @@ export function MyConnections({
       STALE_CONNECTION_MS,
     );
   }, [home?.networkSignals, members, synced]);
+  /** Suggestions search: start a chat with anyone matching the name, even with no thread yet. */
+  const suggestionCards = useMemo((): ConnectionSuggestion[] => {
+    if (!needle) return reachOut;
+    const selfId = home?.person.id ?? null;
+    const hits = peopleMatchingSearch(
+      directoryPeople,
+      searchDirectory,
+      needle,
+    ).filter((person) => person.id > 0 && person.id !== selfId);
+    return hits.map((person) => {
+      const name =
+        [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+        person.nickname?.trim() ||
+        t('someone');
+      const existing = members.find((row) => row.person.id === person.id);
+      return {
+        key: `search-${person.id}`,
+        kind: 'meet' as const,
+        name,
+        avatarUrl: person.avatarUrl ?? undefined,
+        roomId: existing?.roomId ?? null,
+        lastTs: existing
+          ? connectionActivityTs(existing.lastTs, existing.preview)
+          : null,
+        person: {
+          id: person.id,
+          slug: person.slug,
+          name: person.name,
+          surname: person.surname,
+          nickname: person.nickname,
+          avatarUrl: person.avatarUrl,
+        },
+        sharedSpaceCount: person.sharedSpaceCount ?? 0,
+        spaceTitle: null,
+      };
+    });
+  }, [
+    directoryPeople,
+    home?.person.id,
+    members,
+    needle,
+    reachOut,
+    searchDirectory,
+    t,
+  ]);
   const reachOutIds = useMemo(
-    () => reachOut.map((card) => card.person.id),
-    [reachOut],
+    () => suggestionCards.map((card) => card.person.id),
+    [suggestionCards],
   );
 
   const titlesLoading =
@@ -2894,13 +2975,33 @@ export function MyConnections({
       {section === 'suggestions' ? (
         <section className="flex flex-col gap-3" aria-label={t('reachOut')}>
           <p className="text-2 text-muted-foreground">{t('suggestSentence')}</p>
-          {reachOut.length === 0 ? (
+          <label className="relative min-w-0 w-full max-w-md">
+            <span className="sr-only">{t('searchMembers')}</span>
+            <Search
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
+              strokeWidth={1.5}
+              aria-hidden
+            />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') return;
+                event.stopPropagation();
+              }}
+              placeholder={t('searchMembers')}
+              className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-foreground focus-visible:ring-0"
+            />
+          </label>
+          {searching && needle ? (
+            <p className="text-2 text-muted-foreground">{t('loading')}</p>
+          ) : suggestionCards.length === 0 ? (
             <p className="text-2 text-muted-foreground">
-              {t('suggestionsEmpty')}
+              {needle ? t('noMembersMatchSearch') : t('suggestionsEmpty')}
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {reachOut.map((card) => (
+              {suggestionCards.map((card) => (
                 <button
                   key={card.key}
                   type="button"
@@ -2918,12 +3019,18 @@ export function MyConnections({
                     {card.name}
                   </span>
                   <span className="text-1 text-foreground">
-                    {card.kind === 'reconnect'
+                    {needle
+                      ? t('startConversation')
+                      : card.kind === 'reconnect'
                       ? t('longTimeNoSee')
                       : t('worthMeeting')}
                   </span>
                   <span className="w-full truncate text-1 text-muted-foreground">
-                    {card.kind === 'reconnect'
+                    {needle
+                      ? card.lastTs
+                        ? formatWhen(card.lastTs, locale, t('justNow'))
+                        : t('noMessage')
+                      : card.kind === 'reconnect'
                       ? card.lastTs
                         ? formatWhen(card.lastTs, locale, t('justNow'))
                         : t('noMessage')
@@ -3196,10 +3303,8 @@ export function MyConnections({
                 !searching ? (
                   <p className="text-2 text-muted-foreground">
                     {needle
-                      ? picking
+                      ? picking || section === 'messages'
                         ? t('noMembersMatchSearch')
-                        : section === 'messages'
-                        ? t('noMessagesMatch')
                         : t('noMatches')
                       : showChannelTags && inboxFilter !== 'direct'
                       ? t('inbox.empty')
