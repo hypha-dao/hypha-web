@@ -274,6 +274,7 @@ export async function ratifySpaceContextSectionsByDocumentId(
       status: 'ratified',
       ratifiedDocumentId: document?.id ?? null,
       ratifiedAt: new Date(),
+      ratifiedMarkdown: sql`${spaceContextSections.markdown}`,
       proposalDocumentId: null,
       updatedAt: new Date(),
     })
@@ -289,6 +290,12 @@ export async function revertSpaceContextSectionsByDocumentId(
   const result = await db
     .update(spaceContextSections)
     .set({
+      markdown: sql`case
+        when ${spaceContextSections.ratifiedDocumentId} is not null
+          and ${spaceContextSections.ratifiedMarkdown} is not null
+          then ${spaceContextSections.ratifiedMarkdown}
+        else ${spaceContextSections.markdown}
+      end`,
       status: sql`case
         when ${spaceContextSections.ratifiedDocumentId} is not null then 'ratified'
         when trim(coalesce(${spaceContextSections.markdown}, '')) = '' then 'not_started'

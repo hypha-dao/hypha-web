@@ -50,6 +50,31 @@ describe('space context catalog', () => {
     );
   });
 
+  it('stops reading a section as ratified once its agreement is gone', () => {
+    const row = {
+      id: 1,
+      spaceId: 1,
+      sectionKey: 'mission',
+      markdown: 'We restore land.',
+      status: 'ratified',
+      version: 1,
+      proposalDocumentId: null,
+      ratifiedDocumentId: 9,
+      ratifiedAt: new Date(),
+      updatedByPersonId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as unknown as Parameters<typeof mapSectionRow>[0];
+    expect(mapSectionRow(row)?.status).toBe('ratified');
+    expect(mapSectionRow({ ...row, ratifiedDocumentId: null })?.status).toBe(
+      'draft',
+    );
+    expect(
+      mapSectionRow({ ...row, ratifiedDocumentId: null, markdown: ' ' })
+        ?.status,
+    ).toBe('not_started');
+  });
+
   it('gives each section its own named agent', () => {
     const names = new Set<string>();
     for (const key of SPACE_CONTEXT_SECTION_KEYS) {

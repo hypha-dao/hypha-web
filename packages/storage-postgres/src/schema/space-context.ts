@@ -37,6 +37,8 @@ export const spaceContextSections = pgTable(
       { onDelete: 'set null' },
     ),
     ratifiedAt: timestamp('ratified_at'),
+    /** Markdown as ratified, restored when a later amendment fails. */
+    ratifiedMarkdown: text('ratified_markdown'),
     /** Matrix room where members discuss this section and @mention its agent. */
     chatRoomId: text('chat_room_id'),
     updatedByPersonId: integer('updated_by_person_id').references(
