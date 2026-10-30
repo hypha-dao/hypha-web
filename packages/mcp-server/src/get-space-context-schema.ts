@@ -12,6 +12,8 @@ const sectionSchema = z.object({
   title: z.string(),
   status: z.enum(['not_started', 'draft', 'proposed', 'ratified']),
   markdown: z.string(),
+  draft_markdown: z.string().nullable(),
+  pending_change: z.enum(['add', 'remove']).nullable(),
   version: z.number(),
   updated_at: z.string(),
 });

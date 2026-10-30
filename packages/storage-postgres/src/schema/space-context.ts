@@ -25,6 +25,8 @@ export const spaceContextSections = pgTable(
       .notNull()
       .references(() => spaces.id, { onDelete: 'cascade' }),
     sectionKey: text('section_key').notNull(),
+    /** Member-chosen title of a section added by the space (null for built-ins). */
+    title: text('title'),
     markdown: text('markdown').notNull().default(''),
     status: text('status').notNull().default('not_started'),
     version: integer('version').notNull().default(1),
@@ -39,6 +41,13 @@ export const spaceContextSections = pgTable(
     ratifiedAt: timestamp('ratified_at'),
     /** Markdown as ratified, restored when a later amendment fails. */
     ratifiedMarkdown: text('ratified_markdown'),
+    /**
+     * Suggested change to the set of sections: `add` (not yet part of the
+     * official Context) or `remove`. Applied when its proposal passes.
+     */
+    pendingChange: text('pending_change'),
+    /** Set when a removal proposal passed; the row is kept for history. */
+    removedAt: timestamp('removed_at'),
     /** Matrix room where members discuss this section and @mention its agent. */
     chatRoomId: text('chat_room_id'),
     updatedByPersonId: integer('updated_by_person_id').references(

@@ -4,19 +4,20 @@ import {
   people,
   spaceContextAgentMemories,
   spaceContextSections,
+  type SpaceContextSection,
 } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../common/server/types';
 import { findSpaceBySlug } from '../../space/server/queries';
 import { getOrgMemoryBySpaceSlug } from '../../governance/server/get-org-memory-by-space-slug';
 import {
-  SPACE_CONTEXT_SPECIALISTS,
+  SPACE_CONTEXT_CUSTOM_KEY_PREFIX,
+  specialistForSectionKey,
   type SpaceContextSectionKey,
-  type SpaceContextStatus,
 } from '../constants';
 import type { SpaceContextOverview, SpaceContextSectionRecord } from '../types';
 import { listSpaceContextSections } from './queries';
 import { mapSectionRow } from './map-row';
-import { firstMarkdownParagraph } from '../markdown';
+import { firstMarkdownParagraph, normalizeSectionTitle } from '../markdown';
 
 async function requireSpaceId(spaceSlug: string, db: DbConfig['db']) {
   const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
@@ -24,86 +25,269 @@ async function requireSpaceId(spaceSlug: string, db: DbConfig['db']) {
   return space;
 }
 
-export async function patchSpaceContextSection(
-  {
-    spaceSlug,
-    sectionKey,
-    markdown,
-    status,
-    personId,
-  }: {
-    spaceSlug: string;
-    sectionKey: SpaceContextSectionKey;
-    markdown?: string;
-    status?: SpaceContextStatus;
-    personId?: number | null;
-  },
-  { db }: DbConfig,
-): Promise<SpaceContextSectionRecord | null> {
-  const space = await requireSpaceId(spaceSlug, db);
-  if (!space) return null;
+/** Why a Context write was refused; routes map it to an HTTP status. */
+export type SpaceContextWriteError =
+  | 'not_found'
+  | 'on_voting'
+  | 'removed'
+  | 'invalid_title'
+  | 'duplicate_title'
+  | 'not_allowed';
 
-  await listSpaceContextSections({ spaceSlug }, { db });
+export type SpaceContextWriteResult =
+  | { ok: true; section: SpaceContextSectionRecord }
+  | { ok: false; error: SpaceContextWriteError };
 
-  const [existing] = await db
+async function findSectionRow(
+  spaceId: number,
+  sectionKey: SpaceContextSectionKey,
+  db: DbConfig['db'],
+) {
+  const [row] = await db
     .select()
     .from(spaceContextSections)
     .where(
       and(
-        eq(spaceContextSections.spaceId, space.id),
+        eq(spaceContextSections.spaceId, spaceId),
         eq(spaceContextSections.sectionKey, sectionKey),
       ),
     )
     .limit(1);
-  if (!existing) return null;
+  return row ?? null;
+}
 
-  const nextMarkdown = markdown ?? existing.markdown;
-  let nextStatus = status ?? existing.status;
-  if (
-    markdown != null &&
-    markdown.trim() &&
-    existing.status === 'not_started' &&
-    status == null
-  ) {
+async function editorName(
+  personId: number | null,
+  db: DbConfig['db'],
+): Promise<string | null> {
+  if (personId == null) return null;
+  try {
+    const [editor] = await db
+      .select({
+        name: sql<
+          string | null
+        >`trim(concat_ws(' ', ${people.name}, ${people.surname}))`,
+      })
+      .from(people)
+      .where(eq(people.id, personId))
+      .limit(1);
+    return editor?.name?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+async function toWriteResult(
+  row: SpaceContextSection | undefined,
+  db: DbConfig['db'],
+): Promise<SpaceContextWriteResult> {
+  if (!row) return { ok: false, error: 'not_found' };
+  const section = mapSectionRow(row, {
+    lastEditorName: await editorName(row.updatedByPersonId, db),
+  });
+  return section ? { ok: true, section } : { ok: false, error: 'not_found' };
+}
+
+/**
+ * Write the working draft. The ratified text is untouched: it only changes
+ * when a proposal passes. Drafts cannot change while the section is on voting.
+ */
+export async function saveSpaceContextSectionDraft(
+  {
+    spaceSlug,
+    sectionKey,
+    markdown,
+    personId,
+  }: {
+    spaceSlug: string;
+    sectionKey: SpaceContextSectionKey;
+    markdown: string;
+    personId?: number | null;
+  },
+  { db }: DbConfig,
+): Promise<SpaceContextWriteResult> {
+  const space = await requireSpaceId(spaceSlug, db);
+  if (!space) return { ok: false, error: 'not_found' };
+
+  await listSpaceContextSections({ spaceSlug }, { db });
+
+  const existing = await findSectionRow(space.id, sectionKey, db);
+  if (!existing) return { ok: false, error: 'not_found' };
+  if (existing.status === 'proposed') return { ok: false, error: 'on_voting' };
+  if (existing.removedAt != null && existing.pendingChange !== 'add') {
+    return { ok: false, error: 'removed' };
+  }
+
+  let nextStatus = existing.status;
+  if (markdown.trim() && existing.status === 'not_started') {
     nextStatus = 'draft';
   }
-  if (markdown != null && !markdown.trim() && existing.status === 'draft') {
+  if (!markdown.trim() && existing.status === 'draft') {
     nextStatus = 'not_started';
   }
 
   const [updated] = await db
     .update(spaceContextSections)
     .set({
-      markdown: nextMarkdown,
+      markdown,
       status: nextStatus,
-      version: existing.version + (markdown != null ? 1 : 0),
+      version: existing.version + 1,
       updatedByPersonId: personId ?? existing.updatedByPersonId,
       updatedAt: new Date(),
     })
     .where(eq(spaceContextSections.id, existing.id))
     .returning();
 
-  if (!updated) return null;
+  return toWriteResult(updated, db);
+}
 
-  let lastEditorName: string | null = null;
-  if (updated.updatedByPersonId != null) {
-    try {
-      const [editor] = await db
-        .select({
-          name: sql<
-            string | null
-          >`trim(concat_ws(' ', ${people.name}, ${people.surname}))`,
-        })
-        .from(people)
-        .where(eq(people.id, updated.updatedByPersonId))
-        .limit(1);
-      lastEditorName = editor?.name?.trim() || null;
-    } catch {
-      lastEditorName = null;
+function newCustomSectionKey(): SpaceContextSectionKey {
+  const id = globalThis.crypto
+    .randomUUID()
+    .replace(/-/g, '')
+    .slice(0, 12)
+    .toLowerCase();
+  return `${SPACE_CONTEXT_CUSTOM_KEY_PREFIX}${id}`;
+}
+
+/**
+ * Suggest a new section, or restoring one a passed proposal removed. The
+ * suggestion is a draft; it joins the official Context when its proposal passes.
+ */
+export async function suggestSpaceContextSection(
+  input:
+    | {
+        spaceSlug: string;
+        title: string;
+        markdown?: string;
+        personId?: number | null;
+      }
+    | {
+        spaceSlug: string;
+        restoreSectionKey: SpaceContextSectionKey;
+        personId?: number | null;
+      },
+  { db }: DbConfig,
+): Promise<SpaceContextWriteResult> {
+  const space = await requireSpaceId(input.spaceSlug, db);
+  if (!space) return { ok: false, error: 'not_found' };
+  const overview = await listSpaceContextSections(
+    { spaceSlug: input.spaceSlug },
+    { db },
+  );
+  if (!overview) return { ok: false, error: 'not_found' };
+
+  if ('restoreSectionKey' in input) {
+    const row = await findSectionRow(space.id, input.restoreSectionKey, db);
+    if (!row) return { ok: false, error: 'not_found' };
+    if (row.removedAt == null || row.pendingChange != null) {
+      return { ok: false, error: 'not_allowed' };
     }
+    const [updated] = await db
+      .update(spaceContextSections)
+      .set({
+        pendingChange: 'add',
+        status: row.markdown.trim() ? 'draft' : 'not_started',
+        updatedByPersonId: input.personId ?? row.updatedByPersonId,
+        updatedAt: new Date(),
+      })
+      .where(eq(spaceContextSections.id, row.id))
+      .returning();
+    return toWriteResult(updated, db);
   }
 
-  return mapSectionRow(updated, { lastEditorName });
+  const title = normalizeSectionTitle(input.title);
+  if (!title) return { ok: false, error: 'invalid_title' };
+  const taken = new Set(
+    [
+      ...overview.sections.map((section) => section.title),
+      ...overview.removedSections.map((section) => section.title),
+    ].map((value) => value.trim().toLowerCase()),
+  );
+  if (taken.has(title.toLowerCase())) {
+    return { ok: false, error: 'duplicate_title' };
+  }
+
+  const markdown = input.markdown?.trim() ?? '';
+  const [created] = await db
+    .insert(spaceContextSections)
+    .values({
+      spaceId: space.id,
+      sectionKey: newCustomSectionKey(),
+      title,
+      markdown,
+      status: markdown ? 'draft' : 'not_started',
+      pendingChange: 'add',
+      updatedByPersonId: input.personId ?? null,
+    })
+    .returning();
+  return toWriteResult(created, db);
+}
+
+/** Suggest removing a section from the official Context, or withdraw that suggestion. */
+export async function setSpaceContextSectionRemovalSuggested(
+  {
+    spaceSlug,
+    sectionKey,
+    suggested,
+    personId,
+  }: {
+    spaceSlug: string;
+    sectionKey: SpaceContextSectionKey;
+    suggested: boolean;
+    personId?: number | null;
+  },
+  { db }: DbConfig,
+): Promise<SpaceContextWriteResult> {
+  const space = await requireSpaceId(spaceSlug, db);
+  if (!space) return { ok: false, error: 'not_found' };
+  const row = await findSectionRow(space.id, sectionKey, db);
+  if (!row) return { ok: false, error: 'not_found' };
+  if (row.status === 'proposed') return { ok: false, error: 'on_voting' };
+  if (row.removedAt != null || row.pendingChange === 'add') {
+    return { ok: false, error: 'not_allowed' };
+  }
+  const [updated] = await db
+    .update(spaceContextSections)
+    .set({
+      pendingChange: suggested ? 'remove' : null,
+      updatedByPersonId: personId ?? row.updatedByPersonId,
+      updatedAt: new Date(),
+    })
+    .where(eq(spaceContextSections.id, row.id))
+    .returning();
+  return toWriteResult(updated, db);
+}
+
+/**
+ * Withdraw a suggested addition. A new section that was never ratified is
+ * deleted; a suggested restore leaves the section removed.
+ */
+export async function discardSpaceContextSectionSuggestion(
+  {
+    spaceSlug,
+    sectionKey,
+  }: { spaceSlug: string; sectionKey: SpaceContextSectionKey },
+  { db }: DbConfig,
+): Promise<{ ok: true } | { ok: false; error: SpaceContextWriteError }> {
+  const space = await requireSpaceId(spaceSlug, db);
+  if (!space) return { ok: false, error: 'not_found' };
+  const row = await findSectionRow(space.id, sectionKey, db);
+  if (!row) return { ok: false, error: 'not_found' };
+  if (row.pendingChange !== 'add') return { ok: false, error: 'not_allowed' };
+  if (row.status === 'proposed') return { ok: false, error: 'on_voting' };
+
+  if (row.removedAt == null && row.ratifiedDocumentId == null) {
+    await db
+      .delete(spaceContextSections)
+      .where(eq(spaceContextSections.id, row.id));
+    return { ok: true };
+  }
+  await db
+    .update(spaceContextSections)
+    .set({ pendingChange: null, updatedAt: new Date() })
+    .where(eq(spaceContextSections.id, row.id));
+  return { ok: true };
 }
 
 /**
@@ -160,7 +344,7 @@ export async function saveSpaceContextAgentMemory(
 ): Promise<boolean> {
   const space = await requireSpaceId(spaceSlug, db);
   if (!space) return false;
-  const agentKey = SPACE_CONTEXT_SPECIALISTS[sectionKey].agentKey;
+  const agentKey = specialistForSectionKey(sectionKey).agentKey;
 
   await db
     .insert(spaceContextAgentMemories)
@@ -208,6 +392,24 @@ export async function markSpaceContextSectionsProposed(
     .limit(1);
   if (!document || document.spaceId !== space.id) return [];
 
+  const candidates = await db
+    .select()
+    .from(spaceContextSections)
+    .where(
+      and(
+        eq(spaceContextSections.spaceId, space.id),
+        inArray(spaceContextSections.sectionKey, sectionKeys),
+      ),
+    );
+  const ids = candidates
+    .filter(
+      (row) =>
+        (row.removedAt == null || row.pendingChange === 'add') &&
+        (row.status !== 'proposed' || row.proposalDocumentId === documentId),
+    )
+    .map((row) => row.id);
+  if (ids.length === 0) return [];
+
   const updated = await db
     .update(spaceContextSections)
     .set({
@@ -216,12 +418,7 @@ export async function markSpaceContextSectionsProposed(
       updatedByPersonId: personId ?? null,
       updatedAt: new Date(),
     })
-    .where(
-      and(
-        eq(spaceContextSections.spaceId, space.id),
-        inArray(spaceContextSections.sectionKey, sectionKeys),
-      ),
-    )
+    .where(inArray(spaceContextSections.id, ids))
     .returning();
 
   return updated
@@ -268,17 +465,53 @@ export async function ratifySpaceContextSectionsByDocumentId(
         .where(eq(documents.web3ProposalId, web3ProposalId ?? -1))
         .limit(1);
 
-  await db
-    .update(spaceContextSections)
-    .set({
-      status: 'ratified',
-      ratifiedDocumentId: document?.id ?? null,
-      ratifiedAt: new Date(),
-      ratifiedMarkdown: sql`${spaceContextSections.markdown}`,
-      proposalDocumentId: null,
-      updatedAt: new Date(),
+  const changes = await db
+    .select({
+      id: spaceContextSections.id,
+      pendingChange: spaceContextSections.pendingChange,
     })
+    .from(spaceContextSections)
     .where(inArray(spaceContextSections.id, ids));
+  const removalIds = changes
+    .filter((row) => row.pendingChange === 'remove')
+    .map((row) => row.id);
+  const ratifyIds = changes
+    .filter((row) => row.pendingChange !== 'remove')
+    .map((row) => row.id);
+  const now = new Date();
+
+  if (ratifyIds.length > 0) {
+    await db
+      .update(spaceContextSections)
+      .set({
+        status: 'ratified',
+        ratifiedDocumentId: document?.id ?? null,
+        ratifiedAt: now,
+        ratifiedMarkdown: sql`${spaceContextSections.markdown}`,
+        proposalDocumentId: null,
+        pendingChange: null,
+        removedAt: null,
+        updatedAt: now,
+      })
+      .where(inArray(spaceContextSections.id, ratifyIds));
+  }
+
+  if (removalIds.length > 0) {
+    await db
+      .update(spaceContextSections)
+      .set({
+        removedAt: now,
+        pendingChange: null,
+        status: sql`case
+          when ${spaceContextSections.ratifiedDocumentId} is not null then 'ratified'
+          when trim(coalesce(${spaceContextSections.markdown}, '')) = '' then 'not_started'
+          else 'draft'
+        end`,
+        proposalDocumentId: null,
+        updatedAt: now,
+      })
+      .where(inArray(spaceContextSections.id, removalIds));
+  }
 
   return ids.length;
 }

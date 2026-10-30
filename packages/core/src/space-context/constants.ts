@@ -8,8 +8,27 @@ export const SPACE_CONTEXT_SECTION_KEYS = [
   'how_we_decide',
 ] as const;
 
-export type SpaceContextSectionKey =
+export type BuiltinSpaceContextSectionKey =
   (typeof SPACE_CONTEXT_SECTION_KEYS)[number];
+
+/** Key of a section members added to their space's Context. */
+export type CustomSpaceContextSectionKey = `custom-${string}`;
+
+export type SpaceContextSectionKey =
+  | BuiltinSpaceContextSectionKey
+  | CustomSpaceContextSectionKey;
+
+export const SPACE_CONTEXT_CUSTOM_KEY_PREFIX = 'custom-';
+
+const CUSTOM_SECTION_KEY_RE = /^custom-[a-z0-9]{6,32}$/;
+
+export const SPACE_CONTEXT_SECTION_TITLE_MAX = 80;
+
+/** Suggested change to the set of Context sections, applied on ratification. */
+export const SPACE_CONTEXT_PENDING_CHANGES = ['add', 'remove'] as const;
+
+export type SpaceContextPendingChange =
+  (typeof SPACE_CONTEXT_PENDING_CHANGES)[number];
 
 export const SPACE_CONTEXT_STATUSES = [
   'not_started',
@@ -33,7 +52,7 @@ export type SpaceContextFilter = (typeof SPACE_CONTEXT_FILTERS)[number];
 export const SPACE_CONTEXT_DOCUMENT_LABEL = 'Space Context';
 
 export const SPACE_CONTEXT_SECTION_ORDER: Record<
-  SpaceContextSectionKey,
+  BuiltinSpaceContextSectionKey,
   number
 > = {
   mission: 0,
@@ -57,7 +76,7 @@ export type SpaceContextSpecialist = {
 };
 
 export const SPACE_CONTEXT_SPECIALISTS: Record<
-  SpaceContextSectionKey,
+  BuiltinSpaceContextSectionKey,
   SpaceContextSpecialist
 > = {
   mission: {
@@ -125,10 +144,53 @@ export const SPACE_CONTEXT_SPECIALISTS: Record<
   },
 };
 
+/** Specialist for sections members add; the section title narrows its focus. */
+export const SPACE_CONTEXT_CUSTOM_SPECIALIST: SpaceContextSpecialist = {
+  agentKey: 'custom',
+  agentName: 'Scribe Context',
+  role: 'Context specialist',
+  focus: 'A section this space added to its Context',
+  avatarLabel: 'SC',
+  brief:
+    'This section was added by the space itself. Infer its purpose from its title and the discussion: what a newcomer needs to know about that topic to work in this space. Keep it factual and operational, short paragraphs or lists. Test a draft: does every line belong under the title? Would a new member act differently after reading it? Point overlaps with Mission, Vision, Strategy, Objectives, repositories, tools, or decision-making to those sections.',
+};
+
+export function isBuiltinSpaceContextSectionKey(
+  value: string,
+): value is BuiltinSpaceContextSectionKey {
+  return (SPACE_CONTEXT_SECTION_KEYS as readonly string[]).includes(value);
+}
+
+export function isCustomSpaceContextSectionKey(
+  value: string,
+): value is CustomSpaceContextSectionKey {
+  return CUSTOM_SECTION_KEY_RE.test(value);
+}
+
 export function isSpaceContextSectionKey(
   value: string,
 ): value is SpaceContextSectionKey {
-  return (SPACE_CONTEXT_SECTION_KEYS as readonly string[]).includes(value);
+  return (
+    isBuiltinSpaceContextSectionKey(value) ||
+    isCustomSpaceContextSectionKey(value)
+  );
+}
+
+export function isSpaceContextPendingChange(
+  value: unknown,
+): value is SpaceContextPendingChange {
+  return (
+    typeof value === 'string' &&
+    (SPACE_CONTEXT_PENDING_CHANGES as readonly string[]).includes(value)
+  );
+}
+
+export function specialistForSectionKey(
+  key: SpaceContextSectionKey,
+): SpaceContextSpecialist {
+  return isBuiltinSpaceContextSectionKey(key)
+    ? SPACE_CONTEXT_SPECIALISTS[key]
+    : SPACE_CONTEXT_CUSTOM_SPECIALIST;
 }
 
 export function isSpaceContextStatus(

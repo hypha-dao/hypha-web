@@ -1,5 +1,8 @@
 import {
+  isBuiltinSpaceContextSectionKey,
   SPACE_CONTEXT_SECTION_KEYS,
+  SPACE_CONTEXT_SECTION_TITLE_MAX,
+  type SpaceContextPendingChange,
   type SpaceContextSectionKey,
 } from './constants';
 
@@ -28,22 +31,45 @@ export function stripMarkdownToPlain(source: string): string {
     .trim();
 }
 
+const ADD_SECTION_PREFIX = 'Add section: ';
+const REMOVE_SECTION_PREFIX = 'Remove section: ';
+
 export function buildProposalMarkdown(
   sections: Array<{
     key: SpaceContextSectionKey;
     title: string;
     markdown: string;
+    change?: SpaceContextPendingChange | null;
   }>,
 ): string {
   return sections
     .map((section) => {
-      const body = section.markdown.trim();
-      return `## ${section.title}\n\n${body || '_No draft yet._'}`;
+      if (section.change === 'remove') {
+        return `## ${REMOVE_SECTION_PREFIX}${section.title}\n\n_When this proposal passes, ${section.title} is removed from the Space Context._`;
+      }
+      const body = section.markdown.trim() || '_No draft yet._';
+      const heading =
+        section.change === 'add'
+          ? `${ADD_SECTION_PREFIX}${section.title}`
+          : section.title;
+      return `## ${heading}\n\n${body}`;
     })
     .join('\n\n');
 }
 
+/** One line, no Markdown heading marks, bounded length. Empty when unusable. */
+export function normalizeSectionTitle(raw: string): string {
+  return raw
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^#+\s*/, '')
+    .slice(0, SPACE_CONTEXT_SECTION_TITLE_MAX)
+    .trim();
+}
+
+/** Built-in heading; member-added sections carry their own title on the record. */
 export function headingForSectionKey(key: SpaceContextSectionKey): string {
+  if (!isBuiltinSpaceContextSectionKey(key)) return 'Section';
   switch (key) {
     case 'mission':
       return 'Mission';
@@ -122,7 +148,13 @@ export function sectionKeysFromProposalMarkdown(
   for (const line of markdown.replace(/\r\n/g, '\n').split('\n')) {
     const match = line.match(/^##\s+(.+)$/);
     if (!match?.[1]) continue;
-    const key = titles.get(match[1].trim().toLowerCase());
+    const heading = match[1]
+      .trim()
+      .replace(
+        new RegExp(`^(${ADD_SECTION_PREFIX}|${REMOVE_SECTION_PREFIX})`),
+        '',
+      );
+    const key = titles.get(heading.toLowerCase());
     if (!key || seen.has(key)) continue;
     seen.add(key);
     found.push(key);

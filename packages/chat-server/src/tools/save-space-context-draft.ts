@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   authorizeSpacePanelInteraction,
   isSpaceContextSectionKey,
-  patchSpaceContextSection,
+  saveSpaceContextSectionDraft,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import type { ChatRouteTool } from './types';
@@ -18,14 +18,14 @@ export function createSaveSpaceContextDraftTool(
       .trim()
       .min(1)
       .describe(
-        'mission | vision | strategy | objectives | key_repositories | tools | how_we_decide',
+        'mission | vision | strategy | objectives | key_repositories | tools | how_we_decide, or a custom-… key from get_space_context',
       ),
     markdown: z.string().max(80_000),
   });
 
   return {
     description:
-      'Write Markdown onto a Space Context section card. Members still ratify through Agreements. Use after the member agrees the draft is ready to keep.',
+      'Save Markdown as the working draft of a Space Context section. Only call it when the member explicitly asks to save the text as the draft; when they ask what a section should say, answer in the chat instead. A draft is never official: the ratified text changes only when an Agreements proposal passes.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -44,7 +44,7 @@ export function createSaveSpaceContextDraftTool(
       if (!auth.authorized) {
         return { ok: false, error: auth.message };
       }
-      const section = await patchSpaceContextSection(
+      const result = await saveSpaceContextSectionDraft(
         {
           spaceSlug,
           sectionKey: parsed.data.section_key,
@@ -53,12 +53,21 @@ export function createSaveSpaceContextDraftTool(
         },
         { db },
       );
-      if (!section) return { ok: false, error: 'Section not found' };
+      if (!result.ok) {
+        return {
+          ok: false,
+          error:
+            result.error === 'on_voting'
+              ? 'The section is on voting. Drafts can be saved after the vote.'
+              : 'Section not found',
+        };
+      }
       return {
         ok: true,
-        section_key: section.sectionKey,
-        status: section.status,
-        version: section.version,
+        section_key: result.section.sectionKey,
+        status: result.section.status,
+        version: result.section.version,
+        official: false,
       };
     },
   } as ChatRouteTool;
