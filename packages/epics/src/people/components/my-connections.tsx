@@ -47,12 +47,13 @@ import {
   visibleMatrixMemberName,
   useJwt,
   useMatrix,
+  DEFAULT_SPACE_AVATAR_IMAGE,
   useMatrixUserIdsByPersonIds,
   usePeopleBySubs,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import { listBoundChatRoomIdsAmongAction } from '@hypha-platform/core/matrix/server/actions';
-import { Badge, Button } from '@hypha-platform/ui';
+import { Badge, Button, Image } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
   ArrowUpRight,
@@ -61,7 +62,6 @@ import {
   FileText,
   Globe,
   Globe2,
-  LayoutGrid,
   Radio,
   Search,
   Target,
@@ -70,6 +70,7 @@ import {
 } from 'lucide-react';
 
 import { countIncomingUnreadMessages } from '../../common/human-chat-panel/conversation-unread-count';
+import { playMessageReceiveSoundForEvent } from '../../common/human-chat-panel/message-receive-sound';
 import { contentMentionsMatrixUser } from '../../../../core/src/matrix/mentions';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { scrollMainColumnTo } from '../../common/main-column-scroll';
@@ -1185,12 +1186,20 @@ function onConversationState(event: MatrixEvent) {
 }
 
 function onConversationTimeline(
-  _event: MatrixEvent,
+  event: MatrixEvent,
   room?: Room,
   toStartOfTimeline?: boolean,
+  _removed?: boolean,
+  data?: { liveEvent?: boolean },
 ) {
   if (toStartOfTimeline) return;
   refreshConversationRoom(room);
+  // Notification chime for new messages in any room — not only the open chat.
+  // History / sync catch-up sets liveEvent=false; opening a thread must stay silent.
+  playMessageReceiveSoundForEvent(event, conversationClient?.getUserId(), {
+    toStartOfTimeline,
+    liveEvent: data?.liveEvent,
+  });
 }
 
 function onConversationReceipt(_event: MatrixEvent, room?: Room) {
@@ -1205,6 +1214,10 @@ function onConversationDecrypted(event: MatrixEvent) {
   const roomId = event.getRoomId();
   if (!roomId || !conversationClient) return;
   refreshConversationRoom(conversationClient.getRoom(roomId) ?? undefined);
+  // Encrypted live messages become RoomMessage only after decrypt.
+  playMessageReceiveSoundForEvent(event, conversationClient.getUserId(), {
+    requireRecent: true,
+  });
 }
 
 function onConversationSignals() {
@@ -3530,19 +3543,24 @@ function MemberList({
                   </span>
                 ) : null}
                 {showChannelTags && ChannelIcon ? (
-                  <span className="relative grid size-10 shrink-0 place-items-center border border-foreground text-foreground">
-                    {/* Kind is already on the tag; use the space mark for every channel. */}
-                    <LayoutGrid
-                      className="size-4"
-                      strokeWidth={1.5}
+                  <span className="relative size-10 shrink-0 overflow-hidden rounded-full border border-border bg-background">
+                    {/* Kind is already on the tag; show the space logo (Hypha mark fallback). */}
+                    <Image
+                      className="aspect-square h-full w-full object-cover"
+                      width={40}
+                      height={40}
+                      src={row.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE}
+                      alt=""
                       aria-hidden
                     />
                     {contextHref ? (
-                      <ArrowUpRight
-                        className="pointer-events-none absolute top-px right-px size-2.5"
-                        strokeWidth={1.75}
-                        aria-hidden
-                      />
+                      <span className="pointer-events-none absolute top-0 right-0 grid size-3.5 place-items-center rounded-bl-md bg-background text-foreground">
+                        <ArrowUpRight
+                          className="size-2.5"
+                          strokeWidth={1.75}
+                          aria-hidden
+                        />
+                      </span>
                     ) : null}
                   </span>
                 ) : row.faces && row.faces.length > 0 ? (

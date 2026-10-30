@@ -35,7 +35,6 @@ import {
   type ChatMentionCandidate,
 } from '../../common/human-chat-panel';
 import { HumanChatPanelTypingIndicator } from '../../common/human-chat-panel/human-chat-panel-typing-indicator';
-import { playMessageReceiveSound } from '../../common/human-chat-panel/message-receive-sound';
 import { useChatRoomTyping } from '../../common/human-chat-panel/use-chat-room-typing';
 import {
   inviteMatrixAgentIfNeeded,
@@ -559,15 +558,7 @@ export function ProposalDiscussionChat({
         registerRoomListenerRef.current(
           canonicalId,
           async (message: Message) => {
-            const selfId = client?.getUserId()?.trim() ?? '';
-            if (
-              selfId &&
-              !message.redacted &&
-              message.sender !== selfId &&
-              !message.signalTeamNotice
-            ) {
-              playMessageReceiveSound();
-            }
+            // Receive chime is global (conversation timeline) — not on open room.
             setMessages((prev) => {
               if (message.redacted) {
                 return prev.filter((item) => item.id !== message.id);

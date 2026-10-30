@@ -98,6 +98,8 @@ export type MemberRow<T extends ConnectionListPerson = ConnectionListPerson> = {
    * Absent on older rows; the list treats those as a direct chat or a group.
    */
   inbox?: InboxPlace;
+  /** Space logo for channel rows. Falls back to the default space avatar. */
+  logoUrl?: string | null;
 };
 
 export function looksLikeHyphaBot(value: string | null | undefined) {

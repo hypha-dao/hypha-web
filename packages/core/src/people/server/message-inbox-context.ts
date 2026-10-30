@@ -71,6 +71,7 @@ type SpaceRow = {
   title: string | null;
   parentId: number | null;
   chatRoomId: string | null;
+  logoUrl: string | null;
 };
 
 type SignalRow = {
@@ -92,6 +93,7 @@ function toNode(space: SpaceRow): MessageInboxSpaceNode | null {
     title,
     parentId: space.parentId,
     chatRoomId: space.chatRoomId?.trim() || null,
+    logoUrl: space.logoUrl?.trim() || null,
   };
 }
 
@@ -155,6 +157,7 @@ async function chainMemberSpaceRows(
       title: spaces.title,
       parentId: spaces.parentId,
       chatRoomId: spaces.chatRoomId,
+      logoUrl: spaces.logoUrl,
     })
     .from(spaces)
     .where(and(inArray(spaces.web3SpaceId, ids), eq(spaces.isArchived, false)));
@@ -245,6 +248,7 @@ export async function getMessageInboxContext(
         title: spaces.title,
         parentId: spaces.parentId,
         chatRoomId: spaces.chatRoomId,
+        logoUrl: spaces.logoUrl,
       })
       .from(spaces)
       .where(inArray(spaces.id, [...extraSpaceIds]));
@@ -265,6 +269,7 @@ export async function getMessageInboxContext(
         title: spaces.title,
         parentId: spaces.parentId,
         chatRoomId: spaces.chatRoomId,
+        logoUrl: spaces.logoUrl,
       })
       .from(spaces)
       .where(inArray(spaces.id, pending));

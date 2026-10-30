@@ -4,6 +4,7 @@ export type MessageInboxSpaceNode = {
   title: string;
   parentId: number | null;
   chatRoomId: string | null;
+  logoUrl: string | null;
 };
 
 export type MessageInboxSpaceLabel = MessageInboxSpaceNode & {

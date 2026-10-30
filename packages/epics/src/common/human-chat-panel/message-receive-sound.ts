@@ -1,13 +1,33 @@
 'use client';
 
+import {
+  EventType,
+  type MatrixEvent,
+} from 'matrix-js-sdk';
+
 /**
  * Soft incoming-message chime — a quieter, shorter cousin of the HUMAI
  * celebrate signature (see `member-home-celebrate.ts`). Web Audio only so CSP
  * stays happy; fails quietly when autoplay is blocked.
+ *
+ * Played for **live** messages from someone else in any joined room (Messages
+ * badge listeners), not when opening a thread. When the tab is backgrounded
+ * the browser may still block audio — OneSignal `chat.message` push covers
+ * that case with an OS notification sound.
  */
 
 const SOUND_KEY = 'humai-sound';
 const LEGACY_SOUND_KEY = 'hypha-member-home-sound';
+
+/** Ignore decrypt catch-up for older encrypted history when opening a room. */
+const RECENT_MESSAGE_MS = 20_000;
+
+const HIDDEN_MESSAGE_FLAGS = [
+  'io.hypha.call.session_anchor.v1',
+  'io.hypha.call.raise_hand.v1',
+  'io.hypha.screenshare_takeover.v1',
+  'io.hypha.call_capture_notice.v1',
+] as const;
 
 function soundPreference(): boolean {
   try {
@@ -40,6 +60,30 @@ function audioContext(): AudioContext | null {
   return shared;
 }
 
+/** Exported for unit tests — live receive chime eligibility. */
+export function isIncomingConversationMessage(
+  event: MatrixEvent,
+  selfId: string | null | undefined,
+): boolean {
+  if (event.getType() !== EventType.RoomMessage) return false;
+  if (event.isRedacted()) return false;
+  const sender = event.getSender() || event.sender?.userId || '';
+  if (!sender) return false;
+  if (selfId && sender === selfId) return false;
+  const content = event.getContent() as Record<string, unknown> | undefined;
+  const relates = content?.['m.relates_to'] as
+    | { rel_type?: string }
+    | undefined;
+  if (relates?.rel_type === 'm.replace') return false;
+  if (content?.msgtype === 'm.notice') return false;
+  if (HIDDEN_MESSAGE_FLAGS.some((flag) => content?.[flag] === true)) {
+    return false;
+  }
+  const body = typeof content?.body === 'string' ? content.body : '';
+  if (body.includes('[hypha:signal-team')) return false;
+  return Boolean(event.getId());
+}
+
 /**
  * Soft two-note ping (~0.35s). Debounced so a burst of messages does not stack.
  */
@@ -48,7 +92,6 @@ export function playMessageReceiveSound(): void {
     if (typeof window === 'undefined') return;
     if (motionShouldStaySilent()) return;
     if (!soundPreference()) return;
-    if (document.visibilityState !== 'visible') return;
     const now = Date.now();
     if (now - lastPlayedAt < 450) return;
     lastPlayedAt = now;
@@ -58,6 +101,30 @@ export function playMessageReceiveSound(): void {
   } catch {
     // Sound never blocks chat.
   }
+}
+
+/**
+ * Play for a Matrix timeline / decrypt event when it is a live message from
+ * someone else. Skips history pagination and sync catch-up.
+ */
+export function playMessageReceiveSoundForEvent(
+  event: MatrixEvent,
+  selfId: string | null | undefined,
+  options?: {
+    toStartOfTimeline?: boolean;
+    liveEvent?: boolean;
+    /** When true, only play if the event timestamp is recent (decrypt path). */
+    requireRecent?: boolean;
+  },
+): void {
+  if (options?.toStartOfTimeline) return;
+  if (options?.liveEvent === false) return;
+  if (options?.requireRecent) {
+    const age = Date.now() - event.getTs();
+    if (!Number.isFinite(age) || age < 0 || age > RECENT_MESSAGE_MS) return;
+  }
+  if (!isIncomingConversationMessage(event, selfId)) return;
+  playMessageReceiveSound();
 }
 
 async function playSoftPing(ctx: AudioContext): Promise<void> {
