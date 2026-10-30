@@ -1,7 +1,10 @@
 'use client';
 
 import { Badge } from '@hypha-platform/ui';
-import type { SpaceContextStatus } from '@hypha-platform/core/client';
+import type {
+  SpaceContextPendingChange,
+  SpaceContextStatus,
+} from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 
 const TONE = {
@@ -50,6 +53,25 @@ export function SpaceContextStatusChip({
     >
       <span className={`size-1.5 ${tone.dot}`} aria-hidden />
       {label}
+    </Badge>
+  );
+}
+
+/** Suggested addition or removal that applies only once a proposal passes. */
+export function SpaceContextChangeBadge({
+  change,
+}: {
+  change: SpaceContextPendingChange | null;
+}) {
+  const t = useTranslations('SpaceContext');
+  if (!change) return null;
+  return (
+    <Badge
+      variant="surface"
+      colorVariant="neutral"
+      className="shrink-0 border-dashed border-neutral-11 bg-transparent px-2 py-[3px] text-[10px] font-bold uppercase tracking-[0.06em] text-neutral-11 hover:bg-transparent"
+    >
+      {change === 'add' ? t('change.add') : t('change.remove')}
     </Badge>
   );
 }

@@ -1,10 +1,11 @@
 'use client';
 
 import {
-  headingForSectionKey,
+  officialSectionMarkdown,
   splitLeadParagraph,
   stripMatchingLeadingHeading,
   useProposalDetailsWeb3Rpc,
+  type BuiltinSpaceContextSectionKey,
   type SpaceContextSectionKey,
   type SpaceContextSectionRecord,
 } from '@hypha-platform/core/client';
@@ -20,9 +21,12 @@ import {
 } from '../../coherence/components/memory-prose';
 import { getProposalPath } from '../../common/get-path-function';
 import { agreementNumber } from './agreement-number';
-import { SpaceContextStatusChip } from './space-context-status-chip';
+import {
+  SpaceContextChangeBadge,
+  SpaceContextStatusChip,
+} from './space-context-status-chip';
 
-type SpaceContextT = ReturnType<typeof useTranslations<'SpaceContext'>>;
+export type SpaceContextT = ReturnType<typeof useTranslations<'SpaceContext'>>;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
@@ -33,6 +37,7 @@ export function SpaceContextCard({
   selected,
   featured,
   canMutate,
+  onRead,
   onOpen,
   onProposeAmendment,
 }: {
@@ -41,13 +46,16 @@ export function SpaceContextCard({
   selected?: boolean;
   featured?: boolean;
   canMutate: boolean;
+  onRead: (key: SpaceContextSectionKey) => void;
   onOpen: (key: SpaceContextSectionKey) => void;
   onProposeAmendment?: (key: SpaceContextSectionKey) => void;
 }) {
   const t = useTranslations('SpaceContext');
   const locale = useLocale() as Locale;
-  const title = headingForSectionKey(section.sectionKey);
-  const body = stripMatchingLeadingHeading(section.markdown, title);
+  const title = section.title;
+  const official = officialSectionMarkdown(section);
+  const unofficial = official == null;
+  const body = stripMatchingLeadingHeading(official ?? section.markdown, title);
   const empty = !body.trim();
   const { lead, rest } = splitLeadParagraph(body);
   const proposalHref =
@@ -57,16 +65,17 @@ export function SpaceContextCard({
   const agreementHref = section.ratifiedSlug
     ? getProposalPath(locale, spaceSlug, section.ratifiedSlug)
     : null;
+  const notice = sectionNotice(section, t);
 
   return (
     <Card
       className={cn(
-        'flex h-full flex-col',
+        'relative flex h-full flex-col transition-colors hover:border-neutral-11',
         featured
           ? 'gap-2.5 border-success-11 px-6 pb-[18px] pt-5'
           : 'min-h-[210px] gap-3.5 p-6',
         selected && 'border-foreground',
-        section.status === 'not_started' && 'border-dashed',
+        (unofficial || section.pendingChange) && 'border-dashed',
       )}
     >
       <div className="flex items-start gap-3">
@@ -77,17 +86,28 @@ export function SpaceContextCard({
               featured ? 'text-5' : 'flex-1 text-[17px]',
             )}
           >
-            {title}
+            <button
+              type="button"
+              className="text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:ring-1 focus-visible:after:ring-ring"
+              onClick={() => onRead(section.sectionKey)}
+              aria-label={t('card.read', { section: title })}
+            >
+              {title}
+            </button>
           </CardTitle>
           {featured ? <SpaceContextStatusChip status={section.status} /> : null}
+          <SpaceContextChangeBadge change={section.pendingChange} />
         </div>
         {featured ? (
-          canMutate && section.status === 'ratified' && onProposeAmendment ? (
+          canMutate &&
+          section.status !== 'proposed' &&
+          !section.pendingChange &&
+          onProposeAmendment ? (
             <Button
               type="button"
               variant="outline"
               colorVariant="neutral"
-              className="h-8 shrink-0 border-foreground bg-transparent px-3 text-[11px] font-semibold uppercase tracking-[0.09em] text-foreground"
+              className="relative z-10 h-8 shrink-0 border-foreground bg-transparent px-3 text-[11px] font-semibold uppercase tracking-[0.09em] text-foreground"
               onClick={() => onProposeAmendment(section.sectionKey)}
             >
               {t('card.proposeAmendment')}
@@ -97,9 +117,9 @@ export function SpaceContextCard({
           <SpaceContextStatusChip status={section.status} />
         )}
       </div>
-      {featured ? null : (
+      {featured || section.isCustom ? null : (
         <p className="-mt-2 text-1 text-neutral-11">
-          {t(`leads.${section.sectionKey}`)}
+          {t(`leads.${section.sectionKey as BuiltinSpaceContextSectionKey}`)}
         </p>
       )}
       <div className="relative flex-1">
@@ -109,16 +129,25 @@ export function SpaceContextCard({
           </p>
         ) : (
           <>
+            {unofficial ? (
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-11">
+                {section.status === 'proposed'
+                  ? t('card.proposedText')
+                  : t('card.draftText')}
+              </p>
+            ) : null}
             <div
               className={cn(
                 featured ? 'max-h-[28rem]' : 'max-h-44',
                 'space-y-3.5 overflow-hidden',
+                unofficial &&
+                  'border-l-2 border-dashed border-neutral-6 pl-3 text-neutral-11',
               )}
             >
               {lead ? (
                 <p
                   className={cn(
-                    'text-foreground',
+                    unofficial ? 'text-neutral-11' : 'text-foreground',
                     featured
                       ? 'max-w-3xl text-4 leading-snug'
                       : 'text-[13px] leading-snug',
@@ -131,7 +160,10 @@ export function SpaceContextCard({
                 <div className="border-t border-border/60 pt-3.5">
                   <MemoryProse
                     source={rest}
-                    className="text-[13px] leading-relaxed text-foreground"
+                    className={cn(
+                      'text-[13px] leading-relaxed',
+                      unofficial ? 'text-neutral-11' : 'text-foreground',
+                    )}
                   />
                 </div>
               ) : null}
@@ -143,13 +175,16 @@ export function SpaceContextCard({
           </>
         )}
       </div>
+      {notice ? (
+        <p className="text-[11px] font-medium text-neutral-11">{notice}</p>
+      ) : null}
       <div
         className={cn(
           'flex items-center justify-between gap-3',
           !featured && 'border-t border-border/60 pt-2.5',
         )}
       >
-        <div className="min-w-0 truncate text-[11px] text-neutral-11">
+        <div className="relative z-10 min-w-0 truncate text-[11px] text-neutral-11">
           {section.status === 'proposed' ? (
             <ProposedFooterMeta section={section} />
           ) : (
@@ -173,6 +208,19 @@ export function SpaceContextCard({
   );
 }
 
+/** One line telling members what is official and what is only suggested. */
+export function sectionNotice(
+  section: SpaceContextSectionRecord,
+  t: SpaceContextT,
+): string | null {
+  if (section.pendingChange === 'remove') return t('notice.removal');
+  if (section.pendingChange === 'add') return t('notice.addition');
+  if (officialSectionMarkdown(section) == null) return null;
+  if (section.status === 'proposed') return t('notice.amendmentOnVoting');
+  if (section.hasDraftChanges) return t('notice.draftChanges');
+  return null;
+}
+
 function CardAction({
   section,
   canMutate,
@@ -186,7 +234,7 @@ function CardAction({
 }) {
   const t = useTranslations('SpaceContext');
   const className =
-    'inline-flex shrink-0 items-center gap-1 text-1 font-bold text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+    'relative z-10 inline-flex shrink-0 items-center gap-1 text-1 font-bold text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
   if (proposalHref) {
     return (

@@ -6,7 +6,8 @@ import {
   CHAT_ATTACHMENT_MAX_SIZE_LABEL,
   headingForSectionKey,
   HYPHA_ROOM_TYPES,
-  SPACE_CONTEXT_SPECIALISTS,
+  officialSectionMarkdown,
+  specialistForSectionKey,
   uploadChatAttachmentFile,
   useMatrix,
   type SpaceContextSectionKey,
@@ -19,9 +20,13 @@ import {
   MatrixDiscussionThread,
   type MatrixDiscussionComposerTools,
 } from '../../common/matrix-discussion-thread';
-import { SpaceContextStatusChip } from './space-context-status-chip';
+import {
+  SpaceContextChangeBadge,
+  SpaceContextStatusChip,
+} from './space-context-status-chip';
 import {
   patchSpaceContextSectionRequest,
+  SpaceContextRequestError,
   storeSpaceContextChatRoomRequest,
   useSpaceContextSection,
 } from '../hooks/use-space-context';
@@ -72,8 +77,11 @@ export function SpaceContextChatPanel({
     spaceSlug,
     sectionKey,
   );
-  const specialist = SPACE_CONTEXT_SPECIALISTS[sectionKey];
-  const sectionTitle = headingForSectionKey(sectionKey);
+  const specialist = specialistForSectionKey(sectionKey);
+  const sectionTitle =
+    detail?.section.sectionKey === sectionKey
+      ? detail.section.title
+      : headingForSectionKey(sectionKey);
   const agentName = specialist.agentName;
   const [draft, setDraft] = useState('');
   const [draftDirty, setDraftDirty] = useState(false);
@@ -149,8 +157,12 @@ export function SpaceContextChatPanel({
         // Post-save callbacks must not turn a successful PATCH into a failed save.
       }
       return true;
-    } catch {
-      setSaveError(t('error.save'));
+    } catch (err) {
+      setSaveError(
+        err instanceof SpaceContextRequestError && err.code === 'on_voting'
+          ? t('error.onVoting')
+          : t('error.save'),
+      );
       setSaving(false);
       return false;
     }
@@ -195,6 +207,18 @@ export function SpaceContextChatPanel({
 
   const draftLocked =
     !canMutate || saving || detail?.section.status === 'proposed';
+  const section = detail?.section;
+  const hasOfficialText = section
+    ? officialSectionMarkdown(section) != null
+    : false;
+  const canPropose =
+    canMutate &&
+    !!section &&
+    section.status !== 'proposed' &&
+    (section.status !== 'ratified' ||
+      section.hasDraftChanges ||
+      section.pendingChange != null ||
+      draftDirty);
 
   return (
     <aside className="flex h-full min-h-[40rem] w-full flex-col border border-border/70 bg-background-2 xl:w-[28rem] xl:shrink-0">
@@ -206,7 +230,12 @@ export function SpaceContextChatPanel({
           <div className="mt-1 flex items-center gap-2">
             <h2 className="truncate text-3 font-medium">{sectionTitle}</h2>
             {detail ? (
-              <SpaceContextStatusChip status={detail.section.status} />
+              <>
+                <SpaceContextStatusChip status={detail.section.status} />
+                <SpaceContextChangeBadge
+                  change={detail.section.pendingChange}
+                />
+              </>
             ) : null}
           </div>
         </div>
@@ -263,7 +292,11 @@ export function SpaceContextChatPanel({
         </div>
         {canMutate ? (
           <p className="text-1 text-neutral-11">
-            {t('chat.draftHint', { section: sectionTitle })}
+            {section?.status === 'proposed'
+              ? t('chat.draftLockedHint')
+              : hasOfficialText
+              ? t('chat.draftHintRatified', { section: sectionTitle })
+              : t('chat.draftHint', { section: sectionTitle })}
           </p>
         ) : null}
         <textarea
@@ -297,13 +330,15 @@ export function SpaceContextChatPanel({
         ) : savedFlash ? (
           <p className="text-2 text-success-11">{t('success.saved')}</p>
         ) : null}
-        {canMutate &&
-        detail?.section.status !== 'proposed' &&
-        detail?.section.status !== 'ratified' ? (
+        {canPropose ? (
           <div className="flex flex-wrap gap-2 pt-1">
             <Button
               type="button"
-              disabled={!detail || !draft.trim() || saving}
+              disabled={
+                !detail ||
+                saving ||
+                (!draft.trim() && section?.pendingChange !== 'remove')
+              }
               onClick={() => void handlePropose()}
             >
               {t('chat.propose')}

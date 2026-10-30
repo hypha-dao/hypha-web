@@ -5,8 +5,8 @@ import {
   schemaCreateAgreementForm,
   createAgreementFiles,
   SPACE_CONTEXT_DOCUMENT_LABEL,
-  headingForSectionKey,
   buildProposalMarkdown,
+  isProposableSection,
   type SpaceContextSectionKey,
   type SpaceContextSectionRecord,
   useMe,
@@ -40,11 +40,6 @@ const FIELD_LABEL_CLASS =
 const formSchema = schemaCreateAgreementForm.extend(createAgreementFiles);
 type FormValues = z.infer<typeof formSchema>;
 
-function isSelectable(section: SpaceContextSectionRecord): boolean {
-  if (section.status === 'proposed') return false;
-  return section.markdown.trim().length > 0;
-}
-
 function sectionMeta(
   section: SpaceContextSectionRecord,
   t: ReturnType<typeof useTranslations<'SpaceContext'>>,
@@ -57,16 +52,22 @@ function sectionMeta(
       ),
     });
   }
-  if (section.status === 'ratified') {
-    return t('proposeForm.ratifiedAmend', {
-      agreement: agreementNumber(
-        section.ratifiedWeb3Id,
-        section.ratifiedDocumentId,
-      ),
-    });
+  if (section.pendingChange === 'remove') return t('proposeForm.removeSection');
+  if (section.status === 'ratified' && section.pendingChange !== 'add') {
+    const agreement = agreementNumber(
+      section.ratifiedWeb3Id,
+      section.ratifiedDocumentId,
+    );
+    return section.hasDraftChanges
+      ? t('proposeForm.ratifiedAmend', { agreement })
+      : t('proposeForm.ratifiedUnchanged', { agreement });
   }
   if (!section.markdown.trim()) return t('proposeForm.noDraft');
-  const parts = [t('proposeForm.draftVersion', { version: section.version })];
+  const parts = [
+    section.pendingChange === 'add'
+      ? t('proposeForm.addSection')
+      : t('proposeForm.draftVersion', { version: section.version }),
+  ];
   if (section.contributorCount > 1) {
     parts.push(t('card.contributors', { count: section.contributorCount }));
   } else if (section.lastEditorName) {
@@ -145,7 +146,7 @@ export function CreateContextRatifyForm({
       .filter(Boolean);
   }, [searchParams]);
 
-  const selectable = (overview?.sections ?? []).filter(isSelectable);
+  const selectable = (overview?.sections ?? []).filter(isProposableSection);
   const [selected, setSelected] = React.useState<SpaceContextSectionKey[]>([]);
   const initializedRef = React.useRef(false);
   const titleTouchedRef = React.useRef(false);
@@ -165,9 +166,7 @@ export function CreateContextRatifyForm({
     setSelected(
       fromQuery.length > 0
         ? fromQuery
-        : selectable
-            .filter((section) => section.status !== 'ratified')
-            .map((section) => section.sectionKey),
+        : selectable.map((section) => section.sectionKey),
     );
   }, [overview, preselected, selectable]);
 
@@ -231,9 +230,7 @@ export function CreateContextRatifyForm({
       selected.includes(section.sectionKey),
     );
     if (chosen.length === 0) return;
-    const titles = chosen.map((section) =>
-      headingForSectionKey(section.sectionKey),
-    );
+    const titles = chosen.map((section) => section.title);
     if (!titleTouchedRef.current) {
       const generated = t('proposeForm.title', {
         sections: titles.join(', '),
@@ -254,8 +251,9 @@ export function CreateContextRatifyForm({
       const generated = buildProposalMarkdown(
         chosen.map((section) => ({
           key: section.sectionKey,
-          title: headingForSectionKey(section.sectionKey),
+          title: section.title,
           markdown: section.markdown,
+          change: section.pendingChange,
         })),
       ).slice(0, 4000);
       generatedDescriptionRef.current = generated;
@@ -378,7 +376,7 @@ export function CreateContextRatifyForm({
                   </legend>
                   <div className="divide-y divide-border/70 border border-border/70 bg-background-2">
                     {(overview?.sections ?? []).map((section) => {
-                      const disabled = !isSelectable(section);
+                      const disabled = !isProposableSection(section);
                       const selectionLocked = typeof agreement?.id === 'number';
                       const checked = selected.includes(section.sectionKey);
                       return (
@@ -410,7 +408,7 @@ export function CreateContextRatifyForm({
                           />
                           <span className="flex min-w-0 flex-1 items-baseline gap-3">
                             <span className="shrink-0 text-[13px] font-semibold text-foreground">
-                              {headingForSectionKey(section.sectionKey)}
+                              {section.title}
                             </span>
                             <span className="min-w-0 truncate text-[11px] text-neutral-11">
                               {sectionMeta(section, t)}

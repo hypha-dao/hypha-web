@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  headingForSectionKey,
   useProposalDetailsWeb3Rpc,
   type SpaceContextSectionRecord,
 } from '@hypha-platform/core/client';
@@ -60,9 +59,7 @@ export function SpaceContextPassedBanner({
   const title =
     group.lead.ratifiedTitle ??
     t('proposeForm.title', {
-      sections: group.sections
-        .map((section) => headingForSectionKey(section.sectionKey))
-        .join(', '),
+      sections: group.sections.map((section) => section.title).join(', '),
     });
   const href = group.lead.ratifiedSlug
     ? getProposalPath(locale, spaceSlug, group.lead.ratifiedSlug)

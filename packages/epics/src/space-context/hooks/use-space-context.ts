@@ -87,7 +87,8 @@ export function applySpaceContextSectionToCache(
           ...current,
           sections,
           ratifiedCount: sections.filter(
-            (section) => section.status === 'ratified',
+            (section) =>
+              section.status === 'ratified' && section.pendingChange !== 'add',
           ).length,
         };
       }
@@ -182,6 +183,31 @@ export function useSpaceContextSection(
   };
 }
 
+/** Failed Context write; `code` is the server's reason (e.g. `on_voting`). */
+export class SpaceContextRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code: string | null,
+  ) {
+    super(message);
+    this.name = 'SpaceContextRequestError';
+  }
+}
+
+async function requestError(response: Response, fallback: string) {
+  let code: string | null = null;
+  let message = fallback;
+  try {
+    const body = (await response.json()) as { error?: string; code?: string };
+    code = body.code ?? null;
+    message = body.error || fallback;
+  } catch {
+    // Non-JSON error body: keep the fallback message.
+  }
+  return new SpaceContextRequestError(message, response.status, code);
+}
+
 export async function patchSpaceContextSectionRequest({
   spaceSlug,
   sectionKey,
@@ -203,7 +229,7 @@ export async function patchSpaceContextSectionRequest({
     },
   );
   if (!response.ok) {
-    throw new Error('Failed to save section draft');
+    throw await requestError(response, 'Failed to save section draft');
   }
   const updated = (await response.json()) as SpaceContextSectionRecord;
   await applySpaceContextSectionToCache(spaceSlug, updated);
@@ -237,6 +263,83 @@ export async function storeSpaceContextChatRoomRequest({
   const updated = (await response.json()) as SpaceContextSectionRecord;
   await applySpaceContextSectionToCache(spaceSlug, updated);
   return updated.chatRoomId;
+}
+
+export type SuggestSpaceContextSectionBody =
+  | { title: string; markdown?: string }
+  | { restoreSectionKey: SpaceContextSectionKey };
+
+/** Suggest a new section, or restoring a removed one. Applied only once a proposal passes. */
+export async function suggestSpaceContextSectionRequest({
+  spaceSlug,
+  body,
+  getAccessToken,
+}: {
+  spaceSlug: string;
+  body: SuggestSpaceContextSectionBody;
+  getAccessToken?: () => Promise<string | null | undefined>;
+}) {
+  const headers = await authHeaders(getAccessToken);
+  const response = await fetch(`/api/v1/spaces/${spaceSlug}/context/sections`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw await requestError(response, 'Failed to suggest the section');
+  }
+  const created = (await response.json()) as SpaceContextSectionRecord;
+  await revalidateSpaceContext(spaceSlug);
+  return created;
+}
+
+export async function setSpaceContextRemovalSuggestedRequest({
+  spaceSlug,
+  sectionKey,
+  suggested,
+  getAccessToken,
+}: {
+  spaceSlug: string;
+  sectionKey: SpaceContextSectionKey;
+  suggested: boolean;
+  getAccessToken?: () => Promise<string | null | undefined>;
+}) {
+  const headers = await authHeaders(getAccessToken);
+  const response = await fetch(
+    `/api/v1/spaces/${spaceSlug}/context/${sectionKey}`,
+    {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pendingChange: suggested ? 'remove' : null }),
+    },
+  );
+  if (!response.ok) {
+    throw await requestError(response, 'Failed to update the section');
+  }
+  const updated = (await response.json()) as SpaceContextSectionRecord;
+  await applySpaceContextSectionToCache(spaceSlug, updated);
+  return updated;
+}
+
+/** Withdraw a suggested addition (or removal) before it is proposed. */
+export async function discardSpaceContextSuggestionRequest({
+  spaceSlug,
+  sectionKey,
+  getAccessToken,
+}: {
+  spaceSlug: string;
+  sectionKey: SpaceContextSectionKey;
+  getAccessToken?: () => Promise<string | null | undefined>;
+}) {
+  const headers = await authHeaders(getAccessToken);
+  const response = await fetch(
+    `/api/v1/spaces/${spaceSlug}/context/${sectionKey}`,
+    { method: 'DELETE', headers },
+  );
+  if (!response.ok) {
+    throw await requestError(response, 'Failed to withdraw the suggestion');
+  }
+  await revalidateSpaceContext(spaceSlug);
 }
 
 export async function importSpaceContextFromMemoryRequest({
