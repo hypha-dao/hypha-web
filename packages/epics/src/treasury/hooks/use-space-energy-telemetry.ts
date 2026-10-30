@@ -138,7 +138,13 @@ function startTelemetryRequest(
   return entry;
 }
 
-export const useSpaceEnergyTelemetry = (period: TelemetryPeriod) => {
+export const useSpaceEnergyTelemetry = (
+  period: TelemetryPeriod,
+  {
+    enabled = true,
+    refreshInterval = 60_000,
+  }: { enabled?: boolean; refreshInterval?: number } = {},
+) => {
   const pathname = usePathname();
   const spaceSlug = React.useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),
@@ -148,11 +154,11 @@ export const useSpaceEnergyTelemetry = (period: TelemetryPeriod) => {
   const { mutate: mutateCache } = useSWRConfig();
 
   const endpoint = React.useMemo(() => {
-    if (isAuthLoading || !spaceSlug) return null;
+    if (!enabled || isAuthLoading || !spaceSlug) return null;
     return `/api/v1/spaces/${encodeURIComponent(
       spaceSlug,
     )}/energy/telemetry?period=${encodeURIComponent(period)}`;
-  }, [isAuthLoading, period, spaceSlug]);
+  }, [enabled, isAuthLoading, period, spaceSlug]);
 
   React.useEffect(() => {
     if (!endpoint) return;
@@ -211,7 +217,7 @@ export const useSpaceEnergyTelemetry = (period: TelemetryPeriod) => {
       }
     },
     {
-      refreshInterval: 60_000,
+      refreshInterval,
       shouldRetryOnError: false,
     },
   );

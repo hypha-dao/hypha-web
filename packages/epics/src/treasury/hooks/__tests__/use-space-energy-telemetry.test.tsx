@@ -153,6 +153,21 @@ describe('useSpaceEnergyTelemetry', () => {
     expect(second.signal.aborted).toBe(true);
   });
 
+  it('does not request while disabled', async () => {
+    nav.pathname = '/en/dho/disabled-space/energy';
+    const { rerender } = renderHook(
+      ({ enabled }: { enabled: boolean }) =>
+        useSpaceEnergyTelemetry('7d', { enabled, refreshInterval: 0 }),
+      { wrapper, initialProps: { enabled: false } },
+    );
+    await advance(0);
+    expect(pending).toHaveLength(0);
+
+    rerender({ enabled: true });
+    await advance(0);
+    expect(pending).toHaveLength(1);
+  });
+
   it('keeps a shared request alive while another subscriber is mounted', async () => {
     nav.pathname = '/en/dho/shared-space/energy';
     const first = renderHook(() => useSpaceEnergyTelemetry('30d'), {

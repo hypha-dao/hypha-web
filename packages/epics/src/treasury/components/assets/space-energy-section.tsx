@@ -9,7 +9,11 @@ import { StatCard } from './energy/shared';
 import { ENERGY_PALETTE } from './energy/charts';
 import { formatStablecoinMicro } from './energy/format';
 import { EnergyOverviewTab } from './energy/overview-tab';
-import { ProductionConsumptionTab } from './energy/production-consumption-tab';
+import {
+  PRODUCTION_DEFAULT_TIMEFRAME,
+  ProductionConsumptionTab,
+} from './energy/production-consumption-tab';
+import { useSpaceEnergyTelemetry } from '../../hooks/use-space-energy-telemetry';
 import { OwnershipTab } from './energy/ownership-tab';
 import { CreditsTab } from './energy/credits-tab';
 import { useEnergyPeople } from './energy/use-energy-people';
@@ -23,6 +27,15 @@ export const SpaceEnergySection = () => {
   const tOverview = useTranslations('Energy.overview');
   const { data, isLoading } = useSpaceEnergy();
   const [tab, setTab] = React.useState<string>('overview');
+
+  // Start telemetry with the overview so the Production tab and the consumer
+  // cards (daily = 30d) open from cache. The tabs themselves poll.
+  const prefetchTelemetry = {
+    enabled: Boolean(data?.enabled),
+    refreshInterval: 0,
+  };
+  useSpaceEnergyTelemetry(PRODUCTION_DEFAULT_TIMEFRAME, prefetchTelemetry);
+  useSpaceEnergyTelemetry('30d', prefetchTelemetry);
 
   const memberAddresses = React.useMemo(
     () =>
