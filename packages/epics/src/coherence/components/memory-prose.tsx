@@ -169,6 +169,24 @@ function unquote(line: string): string {
   return trimmed.startsWith(' ') ? trimmed.slice(1) : trimmed;
 }
 
+/** Fewer levels than a reader can follow; deeper `>` render flat at the last level. */
+const MAX_QUOTE_DEPTH = 8;
+
+function unquoteAll(line: string): string {
+  let current = line;
+  while (isQuote(current)) current = unquote(current);
+  return current;
+}
+
+/** A closing fence is only the fence characters, at least as long as the opening one. */
+function closesFence(line: string, open: string): boolean {
+  const trimmed = line.trim();
+  return (
+    trimmed.length >= open.length &&
+    [...trimmed].every((char) => char === open[0])
+  );
+}
+
 function fence(line: string): string | null {
   const trimmed = line.trimStart();
   if (trimmed.startsWith('```')) return '```';
@@ -205,7 +223,7 @@ export function MemoryProse({
   return <div className={className}>{blocks}</div>;
 }
 
-function renderBlocks(lines: string[]): React.ReactNode[] {
+function renderBlocks(lines: string[], quoteDepth = 0): React.ReactNode[] {
   const blocks: React.ReactNode[] = [];
   let i = 0;
   let key = 0;
@@ -228,10 +246,7 @@ function renderBlocks(lines: string[]): React.ReactNode[] {
     if (open) {
       const code: string[] = [];
       i += 1;
-      while (
-        i < lines.length &&
-        !(lines[i] ?? '').trimStart().startsWith(open)
-      ) {
+      while (i < lines.length && !closesFence(lines[i] ?? '', open)) {
         code.push(lines[i] ?? '');
         i += 1;
       }
@@ -249,8 +264,10 @@ function renderBlocks(lines: string[]): React.ReactNode[] {
     }
     if (isQuote(line)) {
       const quoted: string[] = [];
+      const innermost = quoteDepth + 1 >= MAX_QUOTE_DEPTH;
       while (i < lines.length && isQuote(lines[i] ?? '')) {
-        quoted.push(unquote(lines[i] ?? ''));
+        const current = lines[i] ?? '';
+        quoted.push(innermost ? unquoteAll(current) : unquote(current));
         i += 1;
       }
       blocks.push(
@@ -258,7 +275,7 @@ function renderBlocks(lines: string[]): React.ReactNode[] {
           key={key}
           className="mt-3 border-l-4 border-neutral-6 pl-4 italic text-neutral-10 first:mt-0"
         >
-          {renderBlocks(quoted)}
+          {renderBlocks(quoted, quoteDepth + 1)}
         </blockquote>,
       );
       key += 1;
