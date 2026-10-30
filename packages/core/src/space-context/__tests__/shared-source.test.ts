@@ -140,9 +140,19 @@ describe('htmlToText', () => {
   });
 
   it('does not reassemble tags from nested fragments', () => {
-    const { text } = htmlToText('<p>a <scr<b>ipt>alert(1)</p> 1 &lt; 2');
-    expect(text).not.toContain('<script');
-    expect(text).toContain('1 < 2');
+    const { text } = htmlToText('<p>a <scr<b>ipt>alert(1)</p>');
+    expect(text).not.toContain('<');
+    expect(text).toContain('alert(1)');
+  });
+
+  it('does not decode entities back into markup', () => {
+    const { title, text } = htmlToText(
+      '<title>&lt;script&gt;x</title><p>&lt;script&gt;alert(1)&lt;/script&gt; &lt;scr&lt;b&gt;ipt&gt; &#60;script &amp;lt;script&amp;gt; 1 &lt; 2</p>',
+    );
+    expect(title).not.toContain('<');
+    expect(text).not.toContain('<');
+    expect(text).toContain('alert(1)');
+    expect(text).toContain('&lt;script&gt;');
   });
 });
 

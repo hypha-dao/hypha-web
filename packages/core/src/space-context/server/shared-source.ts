@@ -355,33 +355,40 @@ function dropElements(html: string): string {
   return out;
 }
 
+/**
+ * Runs after entity decoding so `&lt;script&gt;` cannot reappear as markup, and
+ * drops every `<` left over because one pass over `<scr<b>ipt>` leaves `<script>`.
+ */
+function stripAngleBrackets(value: string): string {
+  return value.replace(/<[^<>]*>/g, '').replace(/</g, '');
+}
+
 export function htmlToText(html: string): {
   title: string | null;
   text: string;
 } {
   const titleMatch = /<title[^<>]*>([^<]*)</i.exec(html);
   const title = titleMatch
-    ? decodeHtmlEntities(titleMatch[1] ?? '')
+    ? stripAngleBrackets(decodeHtmlEntities(titleMatch[1] ?? ''))
         .replace(/\s+/g, ' ')
         .trim() || null
     : null;
-  const text = decodeHtmlEntities(
-    dropElements(html)
-      .replace(/<br[^<>]*>/gi, '\n')
-      .replace(
-        /<h([1-6])(?:\s[^<>]*)?>/gi,
-        (_m, level: string) => `\n\n${'#'.repeat(Number(level))} `,
-      )
-      .replace(/<\/h[1-6]\s*>/gi, '\n\n')
-      .replace(/<li(?:\s[^<>]*)?>/gi, '\n- ')
-      .replace(
-        /<\/?(?:p|div|section|article|header|main|aside|ul|ol|tr|table|blockquote|pre|figure|figcaption|dl|dt|dd|hr)(?:\s[^<>]*)?\/?>/gi,
-        '\n',
-      )
-      .replace(/<\/t[dh]\s*>/gi, ' ')
-      .replace(/<[^<>]*>/g, '')
-      // Stripping `<scr<b>ipt>` once leaves `<script>`; text `<` arrives as `&lt;`.
-      .replace(/</g, ''),
+  const text = stripAngleBrackets(
+    decodeHtmlEntities(
+      dropElements(html)
+        .replace(/<br[^<>]*>/gi, '\n')
+        .replace(
+          /<h([1-6])(?:\s[^<>]*)?>/gi,
+          (_m, level: string) => `\n\n${'#'.repeat(Number(level))} `,
+        )
+        .replace(/<\/h[1-6]\s*>/gi, '\n\n')
+        .replace(/<li(?:\s[^<>]*)?>/gi, '\n- ')
+        .replace(
+          /<\/?(?:p|div|section|article|header|main|aside|ul|ol|tr|table|blockquote|pre|figure|figcaption|dl|dt|dd|hr)(?:\s[^<>]*)?\/?>/gi,
+          '\n',
+        )
+        .replace(/<\/t[dh]\s*>/gi, ' '),
+    ),
   )
     .split('\n')
     .map((line) => line.replace(/[ \t\f\v\u00a0]+/g, ' ').trim())
