@@ -251,9 +251,8 @@
 }
 
 /*
- * Signal cards (and any other dark:bg-background-5 card) rest on
- * --background-5 (#1c1c1c), above the #040404 page. Mixing the hover into
- * --background-2 would snap them back to #121212. Lift from #1c1c1c instead.
+ * Cards that opt into dark:bg-background-5 (#1c1c1c) need hover mixed into
+ * that step — not --background-2 (#121212), or the fill would snap darker.
  * Selected cards use bg-transparent and do not carry this class.
  */
 :is(.dark, .dark-theme, [data-theme='dark'])
