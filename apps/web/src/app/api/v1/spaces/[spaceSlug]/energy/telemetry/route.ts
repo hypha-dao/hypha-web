@@ -8,7 +8,10 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
-import { readStaleWhileRevalidate } from '@web/utils/stale-while-revalidate';
+import {
+  readStaleWhileRevalidate,
+  StaleWhileRevalidateBusyError,
+} from '@web/utils/stale-while-revalidate';
 
 /** Pool worst case (15s connect + 70s query) plus space/access lookups. */
 export const maxDuration = 90;
@@ -94,6 +97,9 @@ export async function GET(
       freshMs: TELEMETRY_FRESH_MS,
       ttlSeconds: TELEMETRY_CACHE_TTL_SECONDS,
       load: () => fetchEnergyTelemetry({ communityId, period }),
+      // Parallel cold aggregates slow each other down past the query timeout,
+      // so one instance per region queries Azure and the rest wait for it.
+      coalesce: { waitMs: 55_000, lockSeconds: maxDuration },
     });
 
     return NextResponse.json(telemetry, {
@@ -102,6 +108,12 @@ export async function GET(
       },
     });
   } catch (error) {
+    if (error instanceof StaleWhileRevalidateBusyError) {
+      return NextResponse.json(
+        { error: 'Energy telemetry is still loading.' },
+        { status: 503, headers: { 'Retry-After': '10' } },
+      );
+    }
     console.error('[spaces/energy/telemetry] failed:', error);
     return NextResponse.json(
       { error: 'Failed to fetch energy telemetry.' },

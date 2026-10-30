@@ -38,8 +38,11 @@ function getEnergyDbPool(): Pool | null {
       // Cold Azure connects can take 8–15s. Same-key loads coalesce in
       // the TTL cache, so pool slots are for distinct community:period
       // keys. 30d aggregates have reached ~43s; 15s connect + 70s query
-      // fits the 90s route budget.
+      // fits the 90s route budget. `query_timeout` only stops waiting on our
+      // side; `statement_timeout` makes Azure cancel the query too, so an
+      // abandoned aggregate does not keep loading the database.
       connectionTimeoutMillis: 15_000,
+      statement_timeout: 65_000,
       query_timeout: 70_000,
     });
     energyDbPool.on('error', (error) => {

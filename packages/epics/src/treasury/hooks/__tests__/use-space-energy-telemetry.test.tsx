@@ -18,6 +18,7 @@ vi.mock('@hypha-platform/authentication', () => ({
 }));
 
 import {
+  EnergyTelemetryHttpError,
   EnergyTelemetryTimeoutError,
   useSpaceEnergyTelemetry,
 } from '../use-space-energy-telemetry';
@@ -197,6 +198,46 @@ describe('useSpaceEnergyTelemetry', () => {
       await vi.advanceTimersByTimeAsync(0);
     });
     expect(pending).toHaveLength(1);
+  });
+
+  it('retries a server error and replaces the error with data', async () => {
+    nav.pathname = '/en/dho/cold-space/energy';
+    const { result } = renderHook(() => useSpaceEnergyTelemetry('7d'), {
+      wrapper,
+    });
+    await advance(0);
+    await act(async () => {
+      pending[0]!.resolve({ error: 'Failed' }, 500);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.error).toBeInstanceOf(EnergyTelemetryHttpError);
+
+    await advance(4_999);
+    expect(pending).toHaveLength(1);
+    await advance(1);
+    expect(pending).toHaveLength(2);
+    await act(async () => {
+      pending[1]!.resolve(payload('7d'));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.error).toBeUndefined();
+    expect(result.current.data?.period).toBe('7d');
+  });
+
+  it('does not retry a forbidden response', async () => {
+    nav.pathname = '/en/dho/private-space/energy';
+    const { result } = renderHook(
+      () => useSpaceEnergyTelemetry('7d', { refreshInterval: 0 }),
+      { wrapper },
+    );
+    await advance(0);
+    await act(async () => {
+      pending[0]!.resolve({ error: 'Forbidden' }, 403);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await advance(60_000);
+    expect(pending).toHaveLength(1);
+    expect(result.current.error).toBeInstanceOf(EnergyTelemetryHttpError);
   });
 
   it('hard-aborts a hung request after 60s', async () => {

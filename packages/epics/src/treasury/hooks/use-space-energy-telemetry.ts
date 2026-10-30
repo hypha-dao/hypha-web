@@ -62,6 +62,25 @@ export class EnergyTelemetryTimeoutError extends Error {
   }
 }
 
+export class EnergyTelemetryHttpError extends Error {
+  constructor(readonly status: number) {
+    super(`Failed to fetch energy telemetry: ${status}`);
+    this.name = 'EnergyTelemetryHttpError';
+  }
+}
+
+/**
+ * Cold Azure aggregates can fail or time out while the server is still
+ * warming its cache; retry those (5s, 10s, 20s) rather than leaving the
+ * placeholder charts up until a reload. 4xx responses are final.
+ */
+const TELEMETRY_MAX_RETRIES = 3;
+const TELEMETRY_RETRY_BASE_MS = 5_000;
+
+const isRetryableTelemetryError = (error: unknown) =>
+  !(error instanceof EnergyTelemetryCancelledError) &&
+  !(error instanceof EnergyTelemetryHttpError && error.status < 500);
+
 class EnergyTelemetryCancelledError extends Error {
   constructor() {
     super('Energy telemetry request cancelled');
@@ -131,7 +150,7 @@ function startTelemetryRequest(
         }
       }
       if (!response.ok) {
-        throw new Error(`Failed to fetch energy telemetry: ${response.status}`);
+        throw new EnergyTelemetryHttpError(response.status);
       }
       return (await response.json()) as SpaceEnergyTelemetryResponse;
     } catch (error) {
@@ -229,7 +248,14 @@ export const useSpaceEnergyTelemetry = (
     },
     {
       refreshInterval,
-      shouldRetryOnError: false,
+      shouldRetryOnError: isRetryableTelemetryError,
+      onErrorRetry: (_error, _key, _config, revalidate, retryOptions) => {
+        if (retryOptions.retryCount > TELEMETRY_MAX_RETRIES) return;
+        setTimeout(
+          () => revalidate(retryOptions),
+          TELEMETRY_RETRY_BASE_MS * 2 ** (retryOptions.retryCount - 1),
+        );
+      },
     },
   );
 
