@@ -150,7 +150,10 @@ import {
   type CallElsewhereEntry,
 } from './human-chat-panel/use-call-membership-registry';
 import { HumanChatPanelElsewhereCallIndicator } from './human-chat-panel/human-chat-panel-elsewhere-call-indicator';
-import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
+import {
+  getCoherenceBySlug,
+  seedAiSignalDescriptionAsAgent,
+} from '@hypha-platform/core/coherence/server/web3';
 import { upsertSignalDescriptionInRoom } from '../coherence/utils/signal-chat-description';
 import { SignalTurnIntoProposalButton } from '../coherence/components/signal-turn-into-proposal-button';
 import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
@@ -3514,9 +3517,53 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           if (cancelled || openingSpaceSlug) return;
           try {
             let description = coherenceDescription?.trim() || null;
-            if (!description && coherenceSlug?.trim()) {
+            const signalSlug = coherenceSlug?.trim() || '';
+            let signedByAgent = false;
+            let blockMemberSeed = false;
+            if (signalSlug) {
+              try {
+                const seeded = await seedAiSignalDescriptionAsAgent({
+                  slug: signalSlug,
+                  roomId: targetRoomId,
+                  authToken: authTokenRef.current ?? undefined,
+                });
+                if (seeded.ok && seeded.signed) {
+                  signedByAgent = true;
+                  if (seeded.unredactedEventId) {
+                    try {
+                      await matrixRef.current.redactRoomEvent({
+                        roomId: targetRoomId,
+                        eventId: seeded.unredactedEventId,
+                      });
+                    } catch {
+                      // Only the account that posted the copy can remove it.
+                    }
+                  }
+                } else if (!seeded.ok && seeded.reason !== 'not-found') {
+                  blockMemberSeed = true;
+                }
+              } catch (agentSeedError) {
+                console.warn(
+                  '[HumanRightPanel] Failed to sign the signal as the agent:',
+                  agentSeedError,
+                );
+              }
+            }
+            if (signedByAgent) {
+              if (!cancelled) {
+                await matrixRef.current.loadRoomHistory(targetRoomId, {
+                  force: true,
+                  pageSize: 30,
+                  maxBatches: 1,
+                });
+                syncRoomMessages(targetRoomId);
+              }
+              return;
+            }
+            if (blockMemberSeed) return;
+            if (!description && signalSlug) {
               const signal = await getCoherenceBySlug({
-                slug: coherenceSlug.trim(),
+                slug: signalSlug,
               });
               description = signal?.description?.trim() || null;
             }
@@ -4839,6 +4886,25 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             mentionUserIds,
           });
         }
+        // Timeline replace can land before replacingEventId is final; mark
+        // edited immediately so the label is visible without waiting on sync.
+        const caption = wirePlain.trim();
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id !== editTargetEventId) return m;
+            const isMedia = Boolean(m.media || m.mediaSlots?.length);
+            return {
+              ...m,
+              edited: true,
+              parts: isMedia
+                ? caption
+                  ? [{ type: 'text' as const, text: caption }]
+                  : []
+                : [{ type: 'text' as const, text: wirePlain }],
+              formattedContentHtml: undefined,
+            };
+          }),
+        );
       } else {
         await matrixRef.current.sendMessage({
           roomId,
