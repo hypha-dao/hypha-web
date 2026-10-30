@@ -5589,13 +5589,13 @@
       "drafts": "Нацрти"
     },
     "leads": {
-      "mission": "Why the space exists.",
-      "vision": "The future we are building toward.",
-      "strategy": "How we get there over the next 2–3 years.",
-      "objectives": "Measurable goals for this season.",
-      "key_repositories": "Code, docs and data the space relies on.",
-      "tools": "Inventory of tools the space uses.",
-      "how_we_decide": "How this space accepts work and chooses features."
+      "mission": "Зошто постои просторот.",
+      "vision": "Иднината кон која градиме.",
+      "strategy": "Како ќе стигнеме таму во следните 2–3 години.",
+      "objectives": "Мерливи цели за оваа сезона.",
+      "key_repositories": "Код, документи и податоци на кои се потпира просторот.",
+      "tools": "Попис на алатките што ги користи просторот.",
+      "how_we_decide": "Како овој простор прифаќа работа и избира функции."
     },
     "status": {
       "ratified": "Ратификувано",
@@ -5604,11 +5604,11 @@
       "notStarted": "Незапочнато"
     },
     "card": {
-      "emptyBody": "No draft yet.",
-      "proposalFallback": "Proposal",
-      "viewProposal": "View proposal",
-      "view": "View",
-      "open": "Open",
+      "emptyBody": "Сè уште нема нацрт.",
+      "proposalFallback": "Предлог",
+      "viewProposal": "Види предлог",
+      "view": "Види",
+      "open": "Отвори",
       "openDiscussion": "Отвори дискусија",
       "startDiscussion": "Започни дискусија",
       "proposeAmendment": "Предложи измена",
@@ -5627,8 +5627,8 @@
       "description": "Дефинирајте кој е овој простор — мисија, визија, стратегија и повеќе. Отворете дел за да го дискутирате со членовите, спомнете го неговиот агент кога сакате нацрт, и ратификувајте го со предлог кога е подготвен.",
       "startMission": "Почни со мисија",
       "importMemory": "Увези од Memory",
-      "importing": "Importing…",
-      "filter": "No sections in this filter."
+      "importing": "Се увезува…",
+      "filter": "Нема делови во овој филтер."
     },
     "chat": {
       "title": "Дискусија за делот",

@@ -5607,13 +5607,13 @@
       "drafts": "Utkast"
     },
     "leads": {
-      "mission": "Why the space exists.",
-      "vision": "The future we are building toward.",
-      "strategy": "How we get there over the next 2–3 years.",
-      "objectives": "Measurable goals for this season.",
-      "key_repositories": "Code, docs and data the space relies on.",
-      "tools": "Inventory of tools the space uses.",
-      "how_we_decide": "How this space accepts work and chooses features."
+      "mission": "Hvorfor spacen finnes.",
+      "vision": "Fremtiden vi bygger mot.",
+      "strategy": "Hvordan vi kommer dit de neste 2–3 årene.",
+      "objectives": "Målbare mål for denne sesongen.",
+      "key_repositories": "Kode, dokumenter og data spacen er avhengig av.",
+      "tools": "Oversikt over verktøyene spacen bruker.",
+      "how_we_decide": "Hvordan denne spacen tar imot arbeid og velger funksjoner."
     },
     "status": {
       "ratified": "Ratifisert",
@@ -5622,11 +5622,11 @@
       "notStarted": "Ikke startet"
     },
     "card": {
-      "emptyBody": "No draft yet.",
-      "proposalFallback": "Proposal",
-      "viewProposal": "View proposal",
-      "view": "View",
-      "open": "Open",
+      "emptyBody": "Ingen utkast ennå.",
+      "proposalFallback": "Forslag",
+      "viewProposal": "Se forslag",
+      "view": "Se",
+      "open": "Åpne",
       "openDiscussion": "Åpne diskusjon",
       "startDiscussion": "Start diskusjon",
       "proposeAmendment": "Foreslå endring",
@@ -5645,8 +5645,8 @@
       "description": "Definer hvem denne spacen er — misjon, visjon, strategi og mer. Åpne en seksjon for å diskutere den med medlemmene, nevn agenten når du vil ha et utkast, og ratifiser den med et forslag når den er klar.",
       "startMission": "Start med misjon",
       "importMemory": "Importer fra Memory",
-      "importing": "Importing…",
-      "filter": "No sections in this filter."
+      "importing": "Importerer…",
+      "filter": "Ingen seksjoner i dette filteret."
     },
     "chat": {
       "title": "Seksjonsdiskusjon",
