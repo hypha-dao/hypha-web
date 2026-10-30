@@ -5,6 +5,7 @@ import { generateText, stepCountIs } from 'ai';
 import {
   contentMentionsMatrixUser,
   HYPHA_AGENT_SPECIALIST_FIELD,
+  isSpaceContextSectionKey,
   selectSpecialistForQuestion,
   specialistById,
 } from '@hypha-platform/core/client';
@@ -20,6 +21,7 @@ import {
   resolveUserMatrixAccessTokenForSend,
 } from '@hypha-platform/core/server';
 import { mentionAwaitingAgent, type AgentRoomLine } from './matrix-agent-turn';
+import { writeSpaceContextAgentReply } from './matrix-space-context-agent';
 import { createChatTools } from './tools';
 import { getHyphaChatModel } from './stream-chat';
 
@@ -252,6 +254,7 @@ export type MatrixAgentRoomContext = {
     | 'proposal'
     | 'signal'
     | 'space'
+    | 'space_context'
     | 'ecosystem'
     | 'public'
     | 'network'
@@ -261,6 +264,8 @@ export type MatrixAgentRoomContext = {
   documentTitle?: string | null;
   signalSlug?: string | null;
   signalTitle?: string | null;
+  /** Context section whose agent was mentioned (`space_context` rooms). */
+  sectionKey?: string | null;
 };
 
 function describeRoomContext(
@@ -351,7 +356,20 @@ export async function replyToMatrixAgentMention({
     requestUrl,
   });
 
+  const slug = context?.spaceSlug?.trim() || spaceSlug?.trim() || '';
+  const contextSectionKey =
+    context?.kind === 'space_context' &&
+    slug &&
+    context.sectionKey &&
+    isSpaceContextSectionKey(context.sectionKey)
+      ? context.sectionKey
+      : null;
+  if (context?.kind === 'space_context' && !contextSectionKey) {
+    return { replied: false };
+  }
+
   let turn: { question: string; earlier: string } | null = null;
+  let lines: AgentRoomLine[] = [];
   for (let attempt = 0; attempt < 8 && !turn; attempt += 1) {
     if (attempt > 0) await sleep(350);
     try {
@@ -359,12 +377,10 @@ export async function replyToMatrixAgentMention({
         trimmedRoom,
         botToken,
         homeserver,
-        { limit: 30 },
+        { limit: contextSectionKey ? 50 : 30 },
       );
-      turn = mentionAwaitingAgent(
-        readTextEvents(history.chunk, agentUserId),
-        agentUserId,
-      );
+      lines = readTextEvents(history.chunk, agentUserId);
+      turn = mentionAwaitingAgent(lines, agentUserId);
     } catch (error) {
       console.warn(
         '[MatrixAgent] Failed to read the room:',
@@ -376,9 +392,37 @@ export async function replyToMatrixAgentMention({
   }
   if (!turn) return { replied: false };
 
+  if (contextSectionKey) {
+    let contextText: string | null = null;
+    try {
+      contextText = await writeSpaceContextAgentReply({
+        roomId: trimmedRoom,
+        authToken,
+        spaceSlug: slug,
+        sectionKey: contextSectionKey,
+        agentUserId,
+        newestFirst: lines,
+      });
+    } catch (error) {
+      console.warn(
+        '[MatrixAgent] Failed to write a Context section reply:',
+        trimmedRoom,
+        error instanceof Error ? error.message : error,
+      );
+      return { replied: false };
+    }
+    if (!contextText) return { replied: false };
+    return postAgentReply({
+      roomId: trimmedRoom,
+      text: contextText,
+      botToken,
+      homeserver,
+      question: turn.question,
+    });
+  }
+
   const specialist =
     selectSpecialistForQuestion(turn.question) ?? specialistById('purpose');
-  const slug = context?.spaceSlug?.trim() || spaceSlug?.trim() || '';
   const roomKind = context?.kind ?? (slug ? 'space' : 'dm');
   const allowSpaceTools =
     Boolean(slug) && roomKind !== 'dm' && roomKind !== 'network';
@@ -437,32 +481,16 @@ export async function replyToMatrixAgentMention({
         }
         if (!text) return { replied: false };
 
-        try {
-          await matrixJoinRoom(trimmedRoom, botToken, homeserver);
-        } catch {
-          // The agent is already in the room, or the room is one it created.
-        }
-
-        try {
-          await matrixSendTextMessage(
-            trimmedRoom,
-            text,
-            botToken,
-            homeserver,
-            specialist
-              ? { [HYPHA_AGENT_SPECIALIST_FIELD]: specialist.id }
-              : undefined,
-            agentReplyTxnId(trimmedRoom, turn.question),
-          );
-        } catch (error) {
-          console.warn(
-            '[MatrixAgent] Failed to post the reply:',
-            trimmedRoom,
-            error instanceof Error ? error.message : error,
-          );
-          return { replied: false };
-        }
-        return { replied: true };
+        return postAgentReply({
+          roomId: trimmedRoom,
+          text,
+          botToken,
+          homeserver,
+          question: turn.question,
+          extraContent: specialist
+            ? { [HYPHA_AGENT_SPECIALIST_FIELD]: specialist.id }
+            : undefined,
+        });
       },
     );
   } catch (error) {
@@ -473,4 +501,45 @@ export async function replyToMatrixAgentMention({
     );
     return { replied: false };
   }
+}
+
+async function postAgentReply({
+  roomId,
+  text,
+  botToken,
+  homeserver,
+  question,
+  extraContent,
+}: {
+  roomId: string;
+  text: string;
+  botToken: string;
+  homeserver: string;
+  question: string;
+  extraContent?: Record<string, string>;
+}): Promise<{ replied: boolean }> {
+  try {
+    await matrixJoinRoom(roomId, botToken, homeserver);
+  } catch {
+    // The agent is already in the room, or the room is one it created.
+  }
+
+  try {
+    await matrixSendTextMessage(
+      roomId,
+      text,
+      botToken,
+      homeserver,
+      extraContent,
+      agentReplyTxnId(roomId, question),
+    );
+  } catch (error) {
+    console.warn(
+      '[MatrixAgent] Failed to post the reply:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+    return { replied: false };
+  }
+  return { replied: true };
 }

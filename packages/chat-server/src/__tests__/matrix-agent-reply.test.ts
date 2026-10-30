@@ -58,4 +58,27 @@ describe('mentionAwaitingAgent', () => {
       ),
     ).toBeNull();
   });
+
+  it('keeps longer section discussions and names the agent by its own label', () => {
+    const pasted = 'x'.repeat(3000);
+    const turn = mentionAwaitingAgent(
+      [
+        {
+          sender: '@alex:matrix.test',
+          body: '@Aura Mission draft this from the text above',
+          mentionsAgent: true,
+        },
+        {
+          sender: agent,
+          body: 'Draft saved to Mission.',
+          mentionsAgent: false,
+        },
+        { sender: '@noor:matrix.test', body: pasted, mentionsAgent: false },
+      ],
+      agent,
+      { earlierChars: 6000, agentLabel: 'Aura Mission' },
+    );
+    expect(turn?.earlier).toContain(pasted);
+    expect(turn?.earlier).toContain('Aura Mission: Draft saved to Mission.');
+  });
 });

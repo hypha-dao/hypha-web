@@ -364,6 +364,6 @@ function ctaLabel(
   if (!canMutate) {
     return section.status === 'ratified' ? t('card.view') : t('card.open');
   }
-  if (section.status === 'not_started') return t('card.startWithAgent');
-  return t('card.continue');
+  if (section.status === 'not_started') return t('card.startDiscussion');
+  return t('card.openDiscussion');
 }

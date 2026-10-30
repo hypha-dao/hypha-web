@@ -98,6 +98,7 @@ export type MatrixAgentRoomContext = {
     | 'proposal'
     | 'signal'
     | 'space'
+    | 'space_context'
     | 'ecosystem'
     | 'public'
     | 'network'
@@ -107,6 +108,8 @@ export type MatrixAgentRoomContext = {
   documentTitle?: string | null;
   signalSlug?: string | null;
   signalTitle?: string | null;
+  /** Context section whose agent was mentioned (`space_context` rooms). */
+  sectionKey?: string | null;
 };
 
 /** Ask the server to answer if the latest room message @mentions AI Agents. */
@@ -139,6 +142,7 @@ export function requestMatrixAgentReply({
           documentTitle: context.documentTitle?.trim() || null,
           signalSlug: context.signalSlug?.trim() || null,
           signalTitle: context.signalTitle?.trim() || null,
+          sectionKey: context.sectionKey?.trim() || null,
         }
       : null,
   });
