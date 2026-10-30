@@ -164,7 +164,7 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Do not list signals');
     expect(facts).toContain('Do not say you opened the space');
     expect(facts).toContain(
-      'LENGTH: Typed chat and spoken voice are the same script: three or four short sentences, like a friend catching them up, then stop.',
+      'LENGTH: Typed chat and spoken voice are the same words: three or four short sentences, like a friend catching them up, then stop.',
     );
     expect(facts).toContain('Never a wall of text');
     expect(facts).toContain('never the full list');
@@ -283,8 +283,10 @@ describe('formatMemberHomeFacts', () => {
       },
       { asked: 'Send someone tokens' },
     );
-    expect(facts).toMatch(/pick someone/i);
+    expect(facts).toMatch(/three or four short sentences/i);
+    expect(facts).toMatch(/who they would like to send to/i);
     expect(facts).toMatch(/Do not name a closest person/i);
+    expect(facts).not.toMatch(/pick someone/i);
     expect(facts).not.toContain('People who share a space');
     expect(facts).not.toContain('Ada Lovelace (shared spaces:');
   });
@@ -847,10 +849,32 @@ describe('formatMemberHomeFacts', () => {
     const brief = formatMemberHomeFacts(home, { asked: 'Who is around?' });
     expect(brief.card).toBeNull();
     expect(brief.text).toContain('The people list is already on screen');
+    expect(brief.text).toMatch(/three or four short sentences/i);
     expect(brief.text).toContain('Do not call any tool');
     expect(brief.text).toContain('Do not rank anyone by shared spaces');
     expect(brief.text).not.toContain('Card on screen:');
     expect(brief.text).not.toContain('People who share a space');
+  });
+
+  it('keeps step into a space on the spaces list with useful tone', () => {
+    const brief = formatMemberHomeFacts(home, {
+      asked: 'Step into a space',
+    });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toContain('The space list is already on screen');
+    expect(brief.text).toMatch(/three or four short sentences/i);
+    expect(brief.text).toContain('Do not name a space');
+    expect(brief.text).toContain('Do not call any tool');
+  });
+
+  it('briefs what needs a decision like a useful ask', () => {
+    const facts = formatMemberHomeFactsText(home, {
+      asked: 'What needs a decision?',
+    });
+    expect(facts).toMatch(/they asked what needs a decision/i);
+    expect(facts).toMatch(/three or four short sentences/i);
+    expect(facts).toMatch(/same voice as "Where can I be useful\?"/i);
+    expect(facts).toContain('slug=path');
   });
 
   it('navigates the network by orientation and leaves the home queue alone', () => {

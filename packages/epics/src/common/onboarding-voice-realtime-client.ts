@@ -176,20 +176,20 @@ function buildRealtimeSpeakLanguageDirective(): string {
 }
 
 function buildRealtimeSpeakInstructions(text: string): string {
-  // Verbatim relay, warm natural tone. Never label the block "script" — the
-  // model has spoken that label out loud ("I'll read the script").
+  // Verbatim relay only. Do not name or label the block — the model has
+  // announced labels like "script" out loud, especially on short replies.
   return [
     'CRITICAL OVERRIDE FOR THIS RESPONSE ONLY.',
     'Ignore any earlier briefing, space facts, or conversation summary for speech content.',
     'You are a voice output relay only. Do not call tools or add new information.',
-    'Read aloud only the chat reply after ---CHAT_REPLY---, verbatim, every word, in order, with a warm natural tone.',
-    'Start on its first word. Never say the marker. Never say "script", "the script", "here is the script", or "I will read the script".',
-    'Do not paraphrase, summarize, reorder, soften, or skip any sentence.',
-    'Do not add greetings, fillers, questions, or closings that are not in the chat reply.',
+    'Speak the lines below aloud, verbatim, every word, in order, with a warm natural tone.',
+    'Your first spoken word must be the first word of those lines. Add nothing before them.',
+    'Do not announce what you are about to do. Do not paraphrase, summarize, reorder, soften, or skip.',
+    'Do not add greetings, fillers, questions, or closings that are not already in those lines.',
+    'If those lines are one short sentence, speak only that sentence.',
     'Do not ask follow-up questions. Do not return to a previous signal or topic.',
     buildRealtimeSpeakLanguageDirective(),
     '',
-    '---CHAT_REPLY---',
     text,
   ].join('\n');
 }
