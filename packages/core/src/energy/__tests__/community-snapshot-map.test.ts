@@ -231,7 +231,7 @@ describe('energy community snapshot mapping', () => {
     ]);
   });
 
-  it('does not cache snapshots with failed fee or member reads, but tolerates missing optimization', async () => {
+  it('does not cache snapshots with failed fee, member or ownership reads, but tolerates missing optimization', async () => {
     const community = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' as const;
     const viewResults: Record<string, unknown> = {
       getCommunityFeeBps: 0,
@@ -279,6 +279,13 @@ describe('energy community snapshot mapping', () => {
 
     failing.delete('getCommunityFeeBps');
     await readEnergyCommunitySnapshot(community);
+    expect(peekEnergyCommunitySnapshot(community)).toBeUndefined();
+
+    failing.clear();
+    failing.add('getAllSourceOwnerships');
+    const ownershipFailed = await readEnergyCommunitySnapshot(community);
+    expect(ownershipFailed.detailsOk).toBe(false);
+    expect(ownershipFailed.memberDetails[0]?.ownershipsOk).toBe(false);
     expect(peekEnergyCommunitySnapshot(community)).toBeUndefined();
 
     failing.clear();
