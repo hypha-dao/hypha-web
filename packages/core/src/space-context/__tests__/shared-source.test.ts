@@ -145,14 +145,19 @@ describe('htmlToText', () => {
     expect(text).toContain('alert(1)');
   });
 
-  it('does not decode entities back into markup', () => {
+  it('keeps escaped angle brackets as visible text', () => {
     const { title, text } = htmlToText(
-      '<title>&lt;script&gt;x</title><p>&lt;script&gt;alert(1)&lt;/script&gt; &lt;scr&lt;b&gt;ipt&gt; &#60;script &amp;lt;script&amp;gt; 1 &lt; 2</p>',
+      '<title>a &lt; b</title><p>1 &lt; 2 &gt; 0</p><p>&#60;tag&#62; &amp;lt;once&amp;gt;</p>',
     );
-    expect(title).not.toContain('<');
-    expect(text).not.toContain('<');
-    expect(text).toContain('alert(1)');
-    expect(text).toContain('&lt;script&gt;');
+    expect(title).toBe('a < b');
+    expect(text).toBe('1 < 2 > 0\n\n<tag> &lt;once&gt;');
+  });
+
+  it('strips raw markup before decoding entities', () => {
+    const { text } = htmlToText(
+      '<p>&lt;b&gt;shown&lt;/b&gt; <scr<b>ipt>x <i>raw</i></p>',
+    );
+    expect(text).toBe('<b>shown</b> script>x raw');
   });
 });
 

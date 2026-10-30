@@ -356,8 +356,9 @@ function dropElements(html: string): string {
 }
 
 /**
- * Runs after entity decoding so `&lt;script&gt;` cannot reappear as markup, and
- * drops every `<` left over because one pass over `<scr<b>ipt>` leaves `<script>`.
+ * Removes raw markup before entities are decoded, so an escaped `&lt;` stays
+ * visible text. Every raw `<` goes, because one pass over `<scr<b>ipt>` would
+ * otherwise leave `<script>`.
  */
 function stripAngleBrackets(value: string): string {
   let out = '';
@@ -387,12 +388,12 @@ export function htmlToText(html: string): {
 } {
   const titleMatch = /<title[^<>]*>([^<]*)</i.exec(html);
   const title = titleMatch
-    ? stripAngleBrackets(decodeHtmlEntities(titleMatch[1] ?? ''))
+    ? decodeHtmlEntities(stripAngleBrackets(titleMatch[1] ?? ''))
         .replace(/\s+/g, ' ')
         .trim() || null
     : null;
-  const text = stripAngleBrackets(
-    decodeHtmlEntities(
+  const text = decodeHtmlEntities(
+    stripAngleBrackets(
       dropElements(html)
         .replace(/<br[^<>]*>/gi, '\n')
         .replace(
