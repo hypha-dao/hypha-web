@@ -129,7 +129,7 @@ export function InlineText({ source }: { source: string }) {
 
 function isHeading(line: string): { level: number; text: string } | null {
   let level = 0;
-  while (level < line.length && level < 3 && line[level] === '#') level += 1;
+  while (level < line.length && level < 6 && line[level] === '#') level += 1;
   if (level === 0 || line[level] !== ' ') return null;
   const text = line.slice(level + 1).trim();
   if (!text) return null;
@@ -138,7 +138,12 @@ function isHeading(line: string): { level: number; text: string } | null {
 
 function listMarker(line: string): { ordered: boolean; text: string } | null {
   const trimmed = line.trimStart();
-  if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+  if (isRule(trimmed)) return null;
+  if (
+    trimmed.startsWith('- ') ||
+    trimmed.startsWith('* ') ||
+    trimmed.startsWith('+ ')
+  ) {
     return { ordered: false, text: trimmed.slice(2).trim() };
   }
   let i = 0;
@@ -149,10 +154,42 @@ function listMarker(line: string): { ordered: boolean; text: string } | null {
   }
   const dot = trimmed[i];
   const gap = trimmed[i + 1];
-  if (i > 0 && dot === '.' && gap === ' ') {
+  if (i > 0 && (dot === '.' || dot === ')') && gap === ' ') {
     return { ordered: true, text: trimmed.slice(i + 2).trim() };
   }
   return null;
+}
+
+function isQuote(line: string): boolean {
+  return line.trimStart().startsWith('>');
+}
+
+function unquote(line: string): string {
+  const trimmed = line.trimStart().slice(1);
+  return trimmed.startsWith(' ') ? trimmed.slice(1) : trimmed;
+}
+
+function fence(line: string): string | null {
+  const trimmed = line.trimStart();
+  if (trimmed.startsWith('```')) return '```';
+  if (trimmed.startsWith('~~~')) return '~~~';
+  return null;
+}
+
+function isRule(line: string): boolean {
+  const compact = line.replace(/\s/g, '');
+  return compact.length >= 3 && /^(-+|\*+|_+)$/.test(compact);
+}
+
+function startsBlock(line: string): boolean {
+  const trimmed = line.trim();
+  return (
+    !!isHeading(trimmed) ||
+    !!listMarker(line) ||
+    isQuote(line) ||
+    !!fence(line) ||
+    isRule(trimmed)
+  );
 }
 
 /** Readable markdown for memory write-ups. No raw HTML. */
@@ -163,8 +200,13 @@ export function MemoryProse({
   source: string;
   className?: string;
 }) {
+  const blocks = renderBlocks(source.replace(/\r\n/g, '\n').split('\n'));
+  if (blocks.length === 0) return null;
+  return <div className={className}>{blocks}</div>;
+}
+
+function renderBlocks(lines: string[]): React.ReactNode[] {
   const blocks: React.ReactNode[] = [];
-  const lines = source.replace(/\r\n/g, '\n').split('\n');
   let i = 0;
   let key = 0;
 
@@ -172,6 +214,54 @@ export function MemoryProse({
     const line = lines[i] ?? '';
     if (!line.trim()) {
       i += 1;
+      continue;
+    }
+    if (isRule(line.trim())) {
+      blocks.push(
+        <hr key={key} className="mt-3 border-border/60 first:mt-0" />,
+      );
+      key += 1;
+      i += 1;
+      continue;
+    }
+    const open = fence(line);
+    if (open) {
+      const code: string[] = [];
+      i += 1;
+      while (
+        i < lines.length &&
+        !(lines[i] ?? '').trimStart().startsWith(open)
+      ) {
+        code.push(lines[i] ?? '');
+        i += 1;
+      }
+      i += 1;
+      blocks.push(
+        <pre
+          key={key}
+          className="mt-3 overflow-x-auto bg-background-3 p-3 font-mono text-[0.92em] leading-snug first:mt-0"
+        >
+          <code>{code.join('\n')}</code>
+        </pre>,
+      );
+      key += 1;
+      continue;
+    }
+    if (isQuote(line)) {
+      const quoted: string[] = [];
+      while (i < lines.length && isQuote(lines[i] ?? '')) {
+        quoted.push(unquote(lines[i] ?? ''));
+        i += 1;
+      }
+      blocks.push(
+        <blockquote
+          key={key}
+          className="mt-3 border-l-4 border-neutral-6 pl-4 italic text-neutral-10 first:mt-0"
+        >
+          {renderBlocks(quoted)}
+        </blockquote>,
+      );
+      key += 1;
       continue;
     }
     const heading = isHeading(line.trim());
@@ -220,9 +310,7 @@ export function MemoryProse({
     }
     const paragraph: string[] = [];
     while (i < lines.length && (lines[i] ?? '').trim()) {
-      if (isHeading((lines[i] ?? '').trim()) || listMarker(lines[i] ?? '')) {
-        break;
-      }
+      if (paragraph.length > 0 && startsBlock(lines[i] ?? '')) break;
       paragraph.push((lines[i] ?? '').trim());
       i += 1;
     }
@@ -237,8 +325,7 @@ export function MemoryProse({
     key += 1;
   }
 
-  if (blocks.length === 0) return null;
-  return <div className={className}>{blocks}</div>;
+  return blocks;
 }
 
 export function firstMemoryParagraph(source: string): string {
