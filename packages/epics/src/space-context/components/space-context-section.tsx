@@ -7,7 +7,7 @@ import {
   type SpaceContextSectionKey,
 } from '@hypha-platform/core/client';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
-import { Button, Progress, Skeleton } from '@hypha-platform/ui';
+import { Button, Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -20,6 +20,7 @@ import {
 import { SpaceContextCard } from './space-context-card';
 import { SpaceContextChatPanel } from './space-context-chat-panel';
 import { SpaceContextEmpty } from './space-context-empty';
+import { SpaceContextPassedBanner } from './space-context-passed-banner';
 
 const FILTERS: SpaceContextFilter[] = ['all', 'ratified', 'proposed', 'drafts'];
 
@@ -44,8 +45,13 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
   const hasEligibleSection = sections.some(
     (section) =>
       section.status === 'draft' ||
-      (section.status === 'not_started' && section.markdown.trim()),
+      ((section.status === 'not_started' || section.status === 'ratified') &&
+        section.markdown.trim()),
   );
+  const ratifiedPercent =
+    overview && overview.totalCount > 0
+      ? Math.round((overview.ratifiedCount / overview.totalCount) * 100)
+      : 0;
   const featured = sections.find(
     (section) =>
       section.sectionKey === 'mission' && section.status === 'ratified',
@@ -61,6 +67,10 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
   );
 
   const proposeHref = `/${locale}/dho/${spaceSlug}/context/create`;
+  const proposeSections = (keys: SpaceContextSectionKey[]) => {
+    const query = new URLSearchParams({ sections: keys.join(',') });
+    router.push(`${proposeHref}?${query.toString()}`);
+  };
 
   const handleImport = async () => {
     setImportError(null);
@@ -113,21 +123,41 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
   return (
     <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
       <div className="min-w-0 flex-1 space-y-6">
+        <SpaceContextPassedBanner spaceSlug={spaceSlug} sections={sections} />
+
         <header className="craft-page-header space-y-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="craft-page-title">{t('title')}</h1>
               <p className="mt-1 max-w-2xl text-2 text-neutral-11">
                 {t('subtitle')}
               </p>
             </div>
-            <div className="flex flex-col items-stretch gap-2 sm:items-end">
-              <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-                {t('progress', {
-                  ratified: overview.ratifiedCount,
-                  total: overview.totalCount,
-                })}
-              </p>
+            <div className="flex flex-wrap items-center gap-4 sm:justify-end">
+              <div className="flex items-center gap-3">
+                <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                  {t('progress', {
+                    ratified: overview.ratifiedCount,
+                    total: overview.totalCount,
+                  })}
+                </p>
+                <div
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={ratifiedPercent}
+                  aria-label={t('progress', {
+                    ratified: overview.ratifiedCount,
+                    total: overview.totalCount,
+                  })}
+                  className="h-1 w-24 overflow-hidden bg-neutral-5"
+                >
+                  <div
+                    className="h-full bg-success-9 transition-[width]"
+                    style={{ width: `${ratifiedPercent}%` }}
+                  />
+                </div>
+              </div>
               {canMutate && hasEligibleSection ? (
                 <Button type="button" onClick={() => router.push(proposeHref)}>
                   {t('propose')}
@@ -135,14 +165,6 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
               ) : null}
             </div>
           </div>
-          <Progress
-            className="h-1 rounded-none"
-            value={
-              overview.totalCount === 0
-                ? 0
-                : (overview.ratifiedCount / overview.totalCount) * 100
-            }
-          />
           {successMessage ? (
             <p className="text-2 text-success-11">{successMessage}</p>
           ) : null}
@@ -151,21 +173,27 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
           ) : null}
         </header>
 
-        <div className="flex flex-wrap gap-1">
+        <div
+          role="tablist"
+          aria-label={t('title')}
+          className="flex flex-wrap gap-6 border-b border-border/60"
+        >
           {FILTERS.map((item) => (
-            <Button
+            <button
               key={item}
               type="button"
-              variant="ghost"
-              colorVariant="neutral"
+              role="tab"
+              aria-selected={filter === item}
               className={cn(
-                'h-10 px-3',
-                filter === item && 'bg-foreground text-background',
+                '-mb-px border-b-2 pb-2 text-1 uppercase tracking-[0.12em] transition-colors',
+                filter === item
+                  ? 'border-foreground text-foreground'
+                  : 'border-transparent text-neutral-11 hover:text-foreground',
               )}
               onClick={() => setFilter(item)}
             >
               {t(`filters.${item}`)}
-            </Button>
+            </button>
           ))}
         </div>
 
@@ -181,15 +209,12 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
         {featured && filter === 'all' ? (
           <SpaceContextCard
             section={featured}
+            spaceSlug={spaceSlug}
             featured
             selected={openSection === featured.sectionKey}
             canMutate={canMutate}
             onOpen={setOpenSection}
-            onViewProposal={(slug) =>
-              router.push(
-                `/${locale}/dho/${spaceSlug}/agreements/proposal/${slug}`,
-              )
-            }
+            onProposeAmendment={(key) => proposeSections([key])}
           />
         ) : null}
 
@@ -201,14 +226,10 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
               <SpaceContextCard
                 key={section.sectionKey}
                 section={section}
+                spaceSlug={spaceSlug}
                 selected={openSection === section.sectionKey}
                 canMutate={canMutate}
                 onOpen={setOpenSection}
-                onViewProposal={(slug) =>
-                  router.push(
-                    `/${locale}/dho/${spaceSlug}/agreements/proposal/${slug}`,
-                  )
-                }
               />
             ))}
           </div>
@@ -227,12 +248,7 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
               setSuccessMessage(t('success.saved'));
               await refresh();
             }}
-            onPropose={(keys) => {
-              const query = new URLSearchParams({
-                sections: keys.join(','),
-              });
-              router.push(`${proposeHref}?${query.toString()}`);
-            }}
+            onPropose={proposeSections}
           />
         </div>
       ) : null}
