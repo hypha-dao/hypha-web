@@ -151,6 +151,7 @@ import {
   type JoinedChannelSnapshot,
 } from './messages-inbox';
 import { type PresenceLevel } from './member-presence';
+import { MemberHomeMark } from './member-home-mark';
 import { PersonAvatar } from './person-avatar';
 import { useMemberPresence } from './use-member-presence';
 
@@ -3648,16 +3649,23 @@ function MemberList({
                   </span>
                 ) : null}
                 {showChannelTags && ChannelIcon ? (
-                  <span className="relative size-10 shrink-0 overflow-hidden rounded-full border border-border bg-background">
-                    {/* Kind is already on the tag; show the space logo (Hypha mark fallback). */}
-                    <Image
-                      className="aspect-square h-full w-full object-cover"
-                      width={40}
-                      height={40}
-                      src={row.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE}
-                      alt=""
-                      aria-hidden
-                    />
+                  <span className="relative size-10 shrink-0">
+                    <span className="grid size-full place-items-center overflow-hidden rounded-full border border-border bg-background text-foreground">
+                      {row.inbox?.kind === 'network' ? (
+                        <MemberHomeMark className="h-6 w-6" />
+                      ) : (
+                        <Image
+                          className="aspect-square h-full w-full object-cover"
+                          width={40}
+                          height={40}
+                          src={
+                            row.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE
+                          }
+                          alt=""
+                          aria-hidden
+                        />
+                      )}
+                    </span>
                     {contextHref ? (
                       <span className="pointer-events-none absolute top-0 right-0 grid size-3.5 place-items-center rounded-bl-md bg-background text-foreground">
                         <ArrowUpRight
