@@ -7,13 +7,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const nav = vi.hoisted(() => ({ pathname: '/en/dho/space-a/energy' }));
 const auth = vi.hoisted(() => ({
   getAccessToken: (): Promise<string | null> => Promise.resolve('token'),
+  isLoading: false,
 }));
 
 vi.mock('next/navigation', () => ({ usePathname: () => nav.pathname }));
 vi.mock('@hypha-platform/authentication', () => ({
   useAuthentication: () => ({
     getAccessToken: auth.getAccessToken,
-    isLoading: false,
+    isLoading: auth.isLoading,
   }),
 }));
 
@@ -84,6 +85,7 @@ describe('useSpaceEnergyTelemetry', () => {
     vi.useFakeTimers();
     pending = [];
     auth.getAccessToken = () => Promise.resolve('token');
+    auth.isLoading = false;
     vi.stubGlobal(
       'fetch',
       vi.fn(
@@ -127,6 +129,25 @@ describe('useSpaceEnergyTelemetry', () => {
       pending[0]!.resolve(payload('30d'));
       await vi.advanceTimersByTimeAsync(0);
     });
+    expect(result.current.error).toBeUndefined();
+    expect(result.current.data?.period).toBe('30d');
+  });
+
+  it('skips the soft-timeout retry once the late result has arrived', async () => {
+    nav.pathname = '/en/dho/late-retry-space/energy';
+    const { result } = renderHook(
+      () => useSpaceEnergyTelemetry('30d', { refreshInterval: 0 }),
+      { wrapper },
+    );
+    await advance(25_000);
+    expect(result.current.error).toBeInstanceOf(EnergyTelemetryTimeoutError);
+
+    await act(async () => {
+      pending[0]!.resolve(payload('30d'));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await advance(60_000);
+    expect(pending).toHaveLength(1);
     expect(result.current.error).toBeUndefined();
     expect(result.current.data?.period).toBe('30d');
   });
@@ -345,6 +366,22 @@ describe('useSpaceEnergyTelemetry', () => {
     expect(pending).toHaveLength(1);
   });
 
+  it('does not request telemetry while authentication is loading', async () => {
+    nav.pathname = '/en/dho/auth-loading-space/energy';
+    auth.isLoading = true;
+    const { rerender } = renderHook(
+      () => useSpaceEnergyTelemetry('7d', { refreshInterval: 0 }),
+      { wrapper },
+    );
+    await advance(0);
+    expect(pending).toHaveLength(0);
+
+    auth.isLoading = false;
+    rerender();
+    await advance(0);
+    expect(pending).toHaveLength(1);
+  });
+
   it('keeps a shared request alive while another subscriber is mounted', async () => {
     nav.pathname = '/en/dho/shared-space/energy';
     const first = renderHook(() => useSpaceEnergyTelemetry('30d'), {
@@ -358,5 +395,25 @@ describe('useSpaceEnergyTelemetry', () => {
     first.unmount();
     await advance(0);
     expect(request.signal.aborted).toBe(false);
+  });
+
+  it('aborts a shared request after its last subscriber unmounts', async () => {
+    nav.pathname = '/en/dho/shared-cancel-space/energy';
+    const first = renderHook(() => useSpaceEnergyTelemetry('30d'), {
+      wrapper,
+    });
+    const second = renderHook(() => useSpaceEnergyTelemetry('30d'), {
+      wrapper,
+    });
+    await advance(0);
+    expect(pending).toHaveLength(1);
+    const request = pending[0]!;
+
+    first.unmount();
+    await advance(0);
+    expect(request.signal.aborted).toBe(false);
+    second.unmount();
+    await advance(0);
+    expect(request.signal.aborted).toBe(true);
   });
 });

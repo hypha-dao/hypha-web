@@ -16,6 +16,7 @@ import {
   resolveEnergyPersonId,
   sourceDisplayName,
   shortAddr,
+  UNAVAILABLE,
 } from './format';
 import {
   buildSourceProductionSeries,
@@ -198,6 +199,7 @@ const OwnerEarningsRow = ({
   totalEarned,
   totalIsPlaceholder,
   earningsLoading,
+  earningsUnavailable,
 }: {
   group: SourceGroup;
   owner: Owner;
@@ -209,6 +211,7 @@ const OwnerEarningsRow = ({
   totalEarned: number;
   totalIsPlaceholder: boolean;
   earningsLoading?: boolean;
+  earningsUnavailable: boolean;
 }) => {
   const t = useTranslations('Energy.ownership');
   const [expanded, setExpanded] = React.useState(false);
@@ -231,7 +234,9 @@ const OwnerEarningsRow = ({
         />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{displayName}</p>
-          {earningsLoading ? (
+          {earningsUnavailable ? (
+            <p className="truncate text-1 text-neutral-11">{UNAVAILABLE}</p>
+          ) : earningsLoading ? (
             <EnergyTextSkeleton className="mt-1 w-48" />
           ) : (
             <p className="truncate text-1 text-neutral-11">
@@ -258,7 +263,13 @@ const OwnerEarningsRow = ({
         />
       </button>
       {expanded ? (
-        <OwnerEarningsChart group={group} owner={owner} accent={accent} />
+        earningsUnavailable ? (
+          <p className="border-t border-border px-3 pb-3 pt-3 text-1 text-neutral-11">
+            {t('earningsUnavailable')}
+          </p>
+        ) : (
+          <OwnerEarningsChart group={group} owner={owner} accent={accent} />
+        )
       ) : null}
     </div>
   );
@@ -270,12 +281,14 @@ const SourceOwnershipCard = ({
   people,
   participantProfiles,
   peopleLoading,
+  earningsUnavailable,
 }: {
   group: SourceGroup;
   accent: string;
   people: Record<string, EnergyPerson | null>;
   participantProfiles?: Record<string, EnergyParticipantProfile>;
   peopleLoading: boolean;
+  earningsUnavailable: boolean;
 }) => {
   const locale = useLocale();
   const t = useTranslations('Energy.ownership');
@@ -331,10 +344,13 @@ const SourceOwnershipCard = ({
               }
               totalIsPlaceholder={production.isPlaceholder}
               earningsLoading={production.isLoading}
+              earningsUnavailable={earningsUnavailable}
             />
           );
         })}
-        {production.isLoading ? (
+        {earningsUnavailable ? (
+          <p className="text-1 text-neutral-11">{t('earningsUnavailable')}</p>
+        ) : production.isLoading ? (
           <EnergyTextSkeleton className="w-64" />
         ) : (
           <p className="text-1 text-neutral-11">
@@ -432,9 +448,20 @@ export const OwnershipTab = ({
     );
   }
 
+  // A failed ownership read leaves that member with no ownerships, so an
+  // empty or partial grouping would misstate who owns the sources.
+  if (data.detailsOk === false) {
+    return (
+      <p className="text-2 text-neutral-11">{t('ownershipUnavailable')}</p>
+    );
+  }
+
   if (!groups.length) {
     return <p className="text-2 text-neutral-11">{t('noOwnership')}</p>;
   }
+
+  // Ownership comes from member reads; only earnings need source prices.
+  const earningsUnavailable = data.sourcesOk === false;
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -446,6 +473,7 @@ export const OwnershipTab = ({
           people={people}
           participantProfiles={participantProfiles}
           peopleLoading={peopleLoading}
+          earningsUnavailable={earningsUnavailable}
         />
       ))}
     </div>

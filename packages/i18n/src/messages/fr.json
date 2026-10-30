@@ -4994,6 +4994,8 @@
     },
     "ownership": {
       "noOwnership": "Aucune propriété de source n'a encore été enregistrée sur la chaîne.",
+      "ownershipUnavailable": "Les détails de propriété sont temporairement indisponibles.",
+      "earningsUnavailable": "Les gains sont temporairement indisponibles car la liste des sources n'a pas pu être chargée.",
       "earningsOverWindow": "≈ {amount} EURC sur cette période",
       "earnings": "Revenus",
       "earnedFromSource": "{prefix}{amount} EURC gagnés depuis cette source",

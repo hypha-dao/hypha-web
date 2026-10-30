@@ -4985,6 +4985,8 @@
     },
     "ownership": {
       "noOwnership": "Сè уште нема евидентирана сопственост на извори на синџир.",
+      "ownershipUnavailable": "Деталите за сопственост се привремено недостапни.",
+      "earningsUnavailable": "Заработката е привремено недостапна бидејќи листата на извори не можеше да се вчита.",
       "earningsOverWindow": "≈ {amount} EURC за овој период",
       "earnings": "Заработка",
       "earnedFromSource": "{prefix}{amount} EURC заработено од овој извор",

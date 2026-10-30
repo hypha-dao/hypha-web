@@ -23,7 +23,10 @@ export const EnergyOverviewTab = ({
   const t = useTranslations('Energy.overview');
   const tShared = useTranslations('Energy.shared');
   const sources = data.sources ?? [];
-  const rosterUnavailable = data.memberAddressesOk === false;
+  // A failed detail read leaves `deviceIds` null, so whether that member
+  // consumes is unknown; show the list as unavailable rather than guess.
+  const consumersUnavailable =
+    data.memberAddressesOk === false || data.detailsOk === false;
   const sourcesUnavailable = data.sourcesOk === false;
 
   const deviceIdsByAddress = React.useMemo(() => {
@@ -59,7 +62,7 @@ export const EnergyOverviewTab = ({
           title={t('consumersTitle')}
           description={t('consumersDescription')}
           right={
-            rosterUnavailable ? null : (
+            consumersUnavailable ? null : (
               <span className="flex items-center gap-1.5 text-1 text-neutral-11">
                 <UsersIcon size={14} />
                 {t('consumerCount', { count: consumers.length })}
@@ -67,7 +70,7 @@ export const EnergyOverviewTab = ({
             )
           }
         />
-        {rosterUnavailable ? (
+        {consumersUnavailable ? (
           <p className="text-2 text-neutral-11">{t('consumersUnavailable')}</p>
         ) : consumers.length ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">

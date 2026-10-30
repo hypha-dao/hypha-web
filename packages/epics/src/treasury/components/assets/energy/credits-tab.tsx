@@ -69,6 +69,7 @@ export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
   const details = data.memberDetails ?? [];
   const participantProfiles = data.participantProfiles;
   const gridOperator = data.roles?.gridOperator ?? null;
+  const gridBalanceUnavailable = data.overview?.gridBalance === null;
   const gridBalanceInternal = toSignedBigInt(data.overview?.gridBalance);
 
   const rows = React.useMemo(() => {
@@ -164,7 +165,9 @@ export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
                       })}
                     </p>
                   ) : null}
-                  {gridToSettleMicro === 0n && gridReceivableMicro === 0n ? (
+                  {gridBalanceUnavailable ? (
+                    <p className="font-medium text-neutral-11">{UNAVAILABLE}</p>
+                  ) : gridToSettleMicro === 0n && gridReceivableMicro === 0n ? (
                     <p className="font-medium text-neutral-11">
                       {t('balanced')}
                     </p>

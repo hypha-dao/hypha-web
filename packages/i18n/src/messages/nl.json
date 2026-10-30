@@ -5004,6 +5004,8 @@
     },
     "ownership": {
       "noOwnership": "Er is nog geen broneigendom vastgelegd in de keten.",
+      "ownershipUnavailable": "Eigendomsgegevens zijn tijdelijk niet beschikbaar.",
+      "earningsUnavailable": "Opbrengsten zijn tijdelijk niet beschikbaar omdat de bronnenlijst niet kon worden geladen.",
       "earningsOverWindow": "≈ {amount} EURC over dit venster",
       "earnings": "Inkomsten",
       "earnedFromSource": "{prefix}{amount} EURC verdiend uit deze bron",

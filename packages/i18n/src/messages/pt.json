@@ -4996,6 +4996,8 @@
     },
     "ownership": {
       "noOwnership": "Ainda não foi registada qualquer propriedade de fontes na cadeia.",
+      "ownershipUnavailable": "Os detalhes de propriedade estão temporariamente indisponíveis.",
+      "earningsUnavailable": "Os ganhos estão temporariamente indisponíveis porque não foi possível carregar a lista de fontes.",
       "earningsOverWindow": "≈ {amount} EURC neste período",
       "earnings": "Ganhos",
       "earnedFromSource": "{prefix}{amount} EURC ganhos com esta fonte",

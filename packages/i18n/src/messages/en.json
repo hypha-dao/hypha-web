@@ -5034,6 +5034,8 @@
     },
     "ownership": {
       "noOwnership": "No source ownership has been recorded on-chain yet.",
+      "ownershipUnavailable": "Ownership details are temporarily unavailable.",
+      "earningsUnavailable": "Earnings are temporarily unavailable because the source list could not be loaded.",
       "earningsOverWindow": "≈ {amount} EURC over this window",
       "earnings": "Earnings",
       "earnedFromSource": "{prefix}{amount} EURC earned from this source",

@@ -128,6 +128,10 @@ function refresh<T>({
  * `StaleWhileRevalidateBusyError` when that load is still running after
  * `waitMs` or ended without storing, so callers retry later instead of all
  * starting the same load at once.
+ *
+ * Best effort: the runtime cache has no create-if-absent write, so instances
+ * that check within the same moment can both miss the marker and both load.
+ * That costs a duplicate query, not a wrong result.
  */
 async function waitForLoadElsewhere(
   key: string,

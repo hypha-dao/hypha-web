@@ -5003,6 +5003,8 @@
     },
     "ownership": {
       "noOwnership": "Ingen kildeeierskap er registrert på kjeden ennå.",
+      "ownershipUnavailable": "Eierskapsdetaljer er midlertidig utilgjengelige.",
+      "earningsUnavailable": "Inntekter er midlertidig utilgjengelige fordi kildelisten ikke kunne lastes inn.",
       "earningsOverWindow": "≈ {amount} EURC i denne perioden",
       "earnings": "Inntekter",
       "earnedFromSource": "{prefix}{amount} EURC opptjent fra denne kilden",

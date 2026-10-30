@@ -56,6 +56,9 @@ const TELEMETRY_TOKEN_WAIT_MS = 5_000;
 const TOKEN_PENDING = Symbol('token-pending');
 
 export class EnergyTelemetryTimeoutError extends Error {
+  /** Set when the request behind a soft timeout later succeeds. */
+  lateResultArrived = false;
+
   constructor() {
     super('Energy telemetry request timed out');
     this.name = 'EnergyTelemetryTimeoutError';
@@ -242,7 +245,10 @@ export const useSpaceEnergyTelemetry = (
           !request.controller.signal.aborted
         ) {
           void request.promise.then(
-            (late) => mutateCache(key, late, { revalidate: false }),
+            (late) => {
+              fetchError.lateResultArrived = true;
+              return mutateCache(key, late, { revalidate: false });
+            },
             () => undefined,
           );
         }
@@ -254,12 +260,19 @@ export const useSpaceEnergyTelemetry = (
     {
       refreshInterval,
       shouldRetryOnError: isRetryableTelemetryError,
-      onErrorRetry: (_error, _key, _config, revalidate, retryOptions) => {
+      onErrorRetry: (retryError, _key, _config, revalidate, retryOptions) => {
         if (retryOptions.retryCount > TELEMETRY_MAX_RETRIES) return;
-        setTimeout(
-          () => revalidate(retryOptions),
-          TELEMETRY_RETRY_BASE_MS * 2 ** (retryOptions.retryCount - 1),
-        );
+        setTimeout(() => {
+          // A failed retry would set `error` beside the late data and
+          // flip consumers back to placeholder charts.
+          if (
+            retryError instanceof EnergyTelemetryTimeoutError &&
+            retryError.lateResultArrived
+          ) {
+            return;
+          }
+          void revalidate(retryOptions);
+        }, TELEMETRY_RETRY_BASE_MS * 2 ** (retryOptions.retryCount - 1));
       },
     },
   );

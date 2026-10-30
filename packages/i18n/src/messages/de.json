@@ -4998,6 +4998,8 @@
     },
     "ownership": {
       "noOwnership": "Es wurde noch keine Quelleneigentümerschaft On-Chain erfasst.",
+      "ownershipUnavailable": "Eigentumsdetails sind vorübergehend nicht verfügbar.",
+      "earningsUnavailable": "Erträge sind vorübergehend nicht verfügbar, da die Quellenliste nicht geladen werden konnte.",
       "earningsOverWindow": "≈ {amount} EURC in diesem Zeitraum",
       "earnings": "Einnahmen",
       "earnedFromSource": "{prefix}{amount} EURC mit dieser Quelle verdient",
