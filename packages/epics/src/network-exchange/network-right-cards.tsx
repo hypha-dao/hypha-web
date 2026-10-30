@@ -154,8 +154,13 @@ function useSpaceTreasury(slug: string | null) {
         assets?: { symbol?: string; value?: number }[];
       };
       return (body.assets ?? []).flatMap((asset) => {
-        if (!asset.symbol || !(asset.value && asset.value > 0)) return [];
-        return [{ symbol: asset.symbol, value: asset.value }];
+        const symbol = asset.symbol?.trim();
+        if (!symbol) return [];
+        const value =
+          typeof asset.value === 'number' && Number.isFinite(asset.value)
+            ? asset.value
+            : 0;
+        return [{ symbol, value }];
       });
     },
     { revalidateOnFocus: false },
