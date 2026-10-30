@@ -46,7 +46,7 @@ export async function syncSpaceContextProposalStatuses(
   const outcomes =
     space?.web3SpaceId != null
       ? await fetchProposalOutcomeSetsForSpace(space.web3SpaceId, {
-          blockTag: 'latest',
+          blockTag: 'safe',
         })
       : null;
 

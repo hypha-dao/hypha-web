@@ -72,6 +72,9 @@ describe('space context markdown', () => {
     expect(
       stripMatchingLeadingHeading('## Vision\nKeep the heading.', 'Mission'),
     ).toBe('## Vision\nKeep the heading.');
+    expect(
+      stripMatchingLeadingHeading('# Mission #\n\nRestore land.', 'Mission'),
+    ).toBe('Restore land.');
   });
 });
 

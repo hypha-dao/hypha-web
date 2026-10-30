@@ -38,6 +38,18 @@ function textFromMessage(message: ChatUIMessage): string {
     .trim();
 }
 
+function snapshotCoversChat(
+  snapshot: Array<{ content: string }>,
+  chat: ChatUIMessage[],
+): boolean {
+  const snapshotTexts = snapshot.map((message) => message.content.trim());
+  return chat.every((message) => {
+    const text = textFromMessage(message);
+    if (!text) return true;
+    return snapshotTexts.includes(text);
+  });
+}
+
 export function SpaceContextChatPanel({
   spaceSlug,
   spaceTitle,
@@ -97,19 +109,39 @@ export function SpaceContextChatPanel({
     id: `space-context-${spaceSlug}-${sectionKey}`,
     transport,
   });
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+  const prevStatusRef = useRef(status);
 
   useEffect(() => {
     setDraftDirty(false);
   }, [sectionKey]);
 
   useEffect(() => {
+    const wasActive =
+      prevStatusRef.current === 'streaming' ||
+      prevStatusRef.current === 'submitted';
+    prevStatusRef.current = status;
+    const isActive = status === 'streaming' || status === 'submitted';
+    if (wasActive && !isActive) {
+      void refresh();
+    }
+  }, [refresh, status]);
+
+  useEffect(() => {
     if (!detail) return;
     const isActiveResponse = status === 'streaming' || status === 'submitted';
     if (isActiveResponse) return;
-    const hydrateId = `${sectionKey}:${detail.messages.length}:${detail.section.updatedAt}`;
-    if (hydratedKey.current === hydrateId) return;
     const previousSection = hydratedKey.current?.split(':')[0];
     const sectionChanged = previousSection !== sectionKey;
+    if (
+      !sectionChanged &&
+      !snapshotCoversChat(detail.messages, messagesRef.current)
+    ) {
+      return;
+    }
+    const hydrateId = `${sectionKey}:${detail.messages.length}:${detail.section.updatedAt}`;
+    if (hydratedKey.current === hydrateId) return;
     hydratedKey.current = hydrateId;
     if (!draftDirty || sectionChanged) {
       setDraft(detail.section.markdown);
@@ -145,7 +177,12 @@ export function SpaceContextChatPanel({
   };
 
   const handleSaveDraft = async () => {
-    if (!canMutate || saving || detail?.section.status === 'proposed') {
+    if (
+      !detail ||
+      !canMutate ||
+      saving ||
+      detail.section.status === 'proposed'
+    ) {
       return false;
     }
     setSaveError(null);
@@ -162,8 +199,16 @@ export function SpaceContextChatPanel({
       setSaving(false);
       if (savedFlashTimer.current) clearTimeout(savedFlashTimer.current);
       savedFlashTimer.current = setTimeout(() => setSavedFlash(false), 2500);
-      await refresh();
-      await onDraftSaved?.();
+      try {
+        await refresh();
+      } catch {
+        // Refresh must not turn a successful PATCH into a failed save.
+      }
+      try {
+        await onDraftSaved?.();
+      } catch {
+        // Post-save callbacks must not turn a successful PATCH into a failed save.
+      }
       return true;
     } catch {
       setSaveError(t('error.save'));
@@ -262,7 +307,7 @@ export function SpaceContextChatPanel({
                 variant="ghost"
                 colorVariant="neutral"
                 className="h-8 px-2"
-                disabled={saving}
+                disabled={saving || !detail}
                 onClick={() => void handleSaveDraft()}
               >
                 {saving
@@ -299,7 +344,7 @@ export function SpaceContextChatPanel({
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              disabled={!draft.trim() || saving}
+              disabled={!detail || !draft.trim() || saving}
               onClick={() => void handlePropose()}
             >
               {t('chat.propose')}
@@ -308,7 +353,7 @@ export function SpaceContextChatPanel({
               type="button"
               variant="outline"
               colorVariant="neutral"
-              disabled={saving}
+              disabled={saving || !detail}
               onClick={() => void handleSaveDraft()}
             >
               {saving ? t('chat.saving') : t('chat.keepDrafting')}

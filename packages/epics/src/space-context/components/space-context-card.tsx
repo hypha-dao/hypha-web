@@ -36,7 +36,8 @@ export function SpaceContextCard({
 }) {
   const t = useTranslations('SpaceContext');
   const title = headingForSectionKey(section.sectionKey);
-  const empty = !section.markdown.trim();
+  const body = stripMatchingLeadingHeading(section.markdown, title);
+  const empty = !body.trim();
   const footer = footerCopy(section, t);
 
   return (
@@ -70,7 +71,7 @@ export function SpaceContextCard({
                 )}
               >
                 <MemoryProse
-                  source={stripMatchingLeadingHeading(section.markdown, title)}
+                  source={body}
                   className="text-2 leading-relaxed text-neutral-12"
                 />
               </div>

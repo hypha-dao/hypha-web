@@ -41,6 +41,11 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
 
   const sections = overview?.sections ?? [];
   const allEmpty = sections.every((section) => !section.markdown.trim());
+  const hasEligibleSection = sections.some(
+    (section) =>
+      section.status === 'draft' ||
+      (section.status === 'not_started' && section.markdown.trim()),
+  );
   const featured = sections.find(
     (section) =>
       section.sectionKey === 'mission' && section.status === 'ratified',
@@ -123,7 +128,7 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
                   total: overview.totalCount,
                 })}
               </p>
-              {canMutate && overview.ratifiedCount < overview.totalCount ? (
+              {canMutate && hasEligibleSection ? (
                 <Button type="button" onClick={() => router.push(proposeHref)}>
                   {t('propose')}
                 </Button>

@@ -74,7 +74,8 @@ export function stripMatchingLeadingHeading(
   const trimmed = source.replace(/\r\n/g, '\n').replace(/^\s+/, '');
   const match = trimmed.match(/^(#{1,6})\s+(.+?)(?:\n+|$)/);
   if (!match?.[2]) return source;
-  if (match[2].trim().toLowerCase() !== normalizedTitle) return source;
+  const heading = match[2].trim().replace(/\s+#+$/, '');
+  if (heading.toLowerCase() !== normalizedTitle) return source;
   return trimmed.slice(match[0].length).replace(/^\s+/, '');
 }
 
