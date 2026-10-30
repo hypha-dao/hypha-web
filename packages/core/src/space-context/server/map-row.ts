@@ -29,9 +29,13 @@ export function mapSectionRow(
   },
 ): SpaceContextSectionRecord | null {
   if (!isSpaceContextSectionKey(row.sectionKey)) return null;
-  const status: SpaceContextStatus = isSpaceContextStatus(row.status)
+  let status: SpaceContextStatus = isSpaceContextStatus(row.status)
     ? row.status
     : 'not_started';
+  // Deleting the ratifying agreement nulls the link but leaves the stored status.
+  if (status === 'ratified' && row.ratifiedDocumentId == null) {
+    status = row.markdown?.trim() ? 'draft' : 'not_started';
+  }
   const createdAt = toIso(row.createdAt) ?? new Date().toISOString();
   const updatedAt = toIso(row.updatedAt) ?? createdAt;
   return {
