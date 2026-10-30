@@ -20,6 +20,7 @@ import {
 } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { checkSpaceAccess } from '@web/utils/check-space-access';
 
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 /** Return whatever communities finished before the function 504. */
@@ -223,7 +224,7 @@ async function loadCommunity({
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ personSlug: string }> },
 ) {
   const { personSlug: personSlugRaw } = await params;
@@ -291,6 +292,16 @@ export async function GET(
           if (!space?.slug) return null;
           const proxy = mapping.communityProxyAddress as `0x${string}`;
           if (!ADDRESS_RE.test(proxy)) return null;
+          if (space.web3SpaceId == null) return null;
+          const web3SpaceId = space.web3SpaceId;
+          // The person slug is caller-chosen; only return figures for spaces
+          // the requester can read. A timed-out check counts as denied.
+          const access = await settleByDeadline(
+            () => checkSpaceAccess(request, web3SpaceId),
+            deadlineAt,
+            null,
+          );
+          if (!access?.hasAccess) return null;
           return settleByDeadline(
             () =>
               loadCommunity({
