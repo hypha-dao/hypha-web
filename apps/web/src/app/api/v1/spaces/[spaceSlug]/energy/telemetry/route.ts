@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { unstable_cache } from 'next/cache';
 import {
   findSpaceBySlug,
   findEnergyCommunityBySpaceId,
@@ -11,6 +12,22 @@ import { checkSpaceAccess } from '@web/utils/check-space-access';
 
 /** Pool worst case (15s connect + 45s query) plus space/access lookups. */
 export const maxDuration = 90;
+
+type TelemetryPeriod = ReturnType<typeof parseEnergyTelemetryPeriod>;
+
+/**
+ * Azure aggregates take 17–30s uncached. Readings land in 15-minute windows,
+ * so serve the last aggregate from the shared Data Cache and refresh it in
+ * the background once it is older than this.
+ */
+const TELEMETRY_REVALIDATE_SECONDS = 300;
+
+const readCachedTelemetry = unstable_cache(
+  (communityId: number, period: TelemetryPeriod) =>
+    fetchEnergyTelemetry({ communityId, period }),
+  ['energy-telemetry-v1'],
+  { revalidate: TELEMETRY_REVALIDATE_SECONDS, tags: ['energy-telemetry'] },
+);
 
 const disabledTelemetryPayload = (
   period: ReturnType<typeof parseEnergyTelemetryPeriod>,
@@ -74,10 +91,13 @@ export async function GET(
 
     const communityId = mapping.factoryCommunityId;
 
-    const telemetry = await fetchEnergyTelemetry({
-      communityId,
-      period,
-    });
+    if (!isEnergyDbConfigured()) {
+      return NextResponse.json(
+        await fetchEnergyTelemetry({ communityId, period }),
+      );
+    }
+
+    const telemetry = await readCachedTelemetry(communityId, period);
 
     return NextResponse.json(telemetry, {
       headers: {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { unstable_cache } from 'next/cache';
 import {
   findSpaceBySlug,
   findEnergyCommunityBySpaceId,
@@ -35,6 +36,46 @@ type EnergyCommunityActivation = {
 
 const ENERGY_RESPONSE_CACHE_CONTROL =
   'private, max-age=15, stale-while-revalidate=30';
+
+type EnergyCommunitySnapshot = Awaited<
+  ReturnType<typeof readEnergyCommunitySnapshot>
+>;
+
+class IncompleteEnergySnapshotError extends Error {
+  constructor(readonly snapshot: EnergyCommunitySnapshot) {
+    super('Energy community snapshot is incomplete');
+    this.name = 'IncompleteEnergySnapshotError';
+  }
+}
+
+/**
+ * Shared across instances so a cold function serves the last snapshot and
+ * refreshes it behind the response. Matches the Energy tab's 15s poll.
+ */
+const readSharedEnergySnapshot = unstable_cache(
+  async (communityProxyAddress: string) => {
+    const snapshot = await readEnergyCommunitySnapshot(communityProxyAddress);
+    if (!snapshot.memberAddressesOk || !snapshot.sourcesOk) {
+      throw new IncompleteEnergySnapshotError(snapshot);
+    }
+    return snapshot;
+  },
+  ['energy-community-snapshot-v1'],
+  { revalidate: 15, tags: ['energy-community-snapshot'] },
+);
+
+async function readSnapshot(
+  communityProxyAddress: string,
+): Promise<EnergyCommunitySnapshot> {
+  try {
+    return await readSharedEnergySnapshot(
+      communityProxyAddress.trim().toLowerCase(),
+    );
+  } catch (error) {
+    if (error instanceof IncompleteEnergySnapshotError) return error.snapshot;
+    throw error;
+  }
+}
 
 /**
  * Hypha links a space to `EnergyPPAv2Factory.adminCommunities[admin]`.
@@ -232,9 +273,7 @@ export async function GET(
       return json({ enabled: false });
     }
 
-    const snapshot = await readEnergyCommunitySnapshot(
-      mapping.communityProxyAddress,
-    );
+    const snapshot = await readSnapshot(mapping.communityProxyAddress);
     if (snapshot.memberAddressesOk) {
       rememberEnergyCommunityMemberAddresses(
         spaceSlug,
