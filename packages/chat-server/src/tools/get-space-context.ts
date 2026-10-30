@@ -2,8 +2,8 @@ import { z } from 'zod';
 import {
   checkSpaceAccessForSpace,
   findSpaceBySlug,
-  headingForSectionKey,
   listSpaceContextSections,
+  toSpaceContextSectionOutput,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
@@ -17,7 +17,7 @@ export function createGetSpaceContextTool(authToken: string): ChatRouteTool {
 
   return {
     description:
-      'Read-only: Space Context Markdown sections for a space (mission, vision, strategy, objectives, key repositories, tools, how we decide). Status is not_started, draft, proposed, or ratified.',
+      'Read-only: Space Context Markdown sections for a space (mission, vision, strategy, objectives, key repositories, tools, how we decide, plus sections the space added). Status is not_started, draft, proposed, or ratified. `markdown` is the official text for ratified sections; `draft_markdown` is an unratified amendment; `pending_change` is a suggested add or remove that applies only when its proposal passes.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -69,14 +69,7 @@ export function createGetSpaceContextTool(authToken: string): ChatRouteTool {
           space_title: overview.spaceTitle,
           ratified_count: overview.ratifiedCount,
           total_count: overview.totalCount,
-          sections: overview.sections.map((section) => ({
-            key: section.sectionKey,
-            title: headingForSectionKey(section.sectionKey),
-            status: section.status,
-            markdown: section.markdown,
-            version: section.version,
-            updated_at: section.updatedAt,
-          })),
+          sections: overview.sections.map(toSpaceContextSectionOutput),
         };
       } catch (error) {
         return {

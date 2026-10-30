@@ -10,19 +10,22 @@ import {
 import type { DbConfig } from '../../common/server/types';
 import { findSpaceBySlug } from '../../space/server/queries';
 import {
+  isBuiltinSpaceContextSectionKey,
+  isSpaceContextSectionKey,
   SPACE_CONTEXT_SECTION_KEYS,
   SPACE_CONTEXT_SECTION_ORDER,
-  SPACE_CONTEXT_SPECIALISTS,
+  specialistForSectionKey,
   type SpaceContextSectionKey,
 } from '../constants';
 import type {
   SpaceContextAgentMemoryRecord,
   SpaceContextMessageRecord,
   SpaceContextOverview,
+  SpaceContextRemovedSection,
   SpaceContextSectionDetail,
   SpaceContextSectionRecord,
 } from '../types';
-import { mapSectionRow } from './map-row';
+import { mapSectionRow, sectionTitleFromRow } from './map-row';
 
 async function ensureSectionsForSpace(
   spaceId: number,
@@ -46,14 +49,29 @@ async function ensureSectionsForSpace(
   );
 }
 
+function sectionOrder(key: SpaceContextSectionKey): number {
+  return isBuiltinSpaceContextSectionKey(key)
+    ? SPACE_CONTEXT_SECTION_ORDER[key]
+    : SPACE_CONTEXT_SECTION_KEYS.length;
+}
+
+/** Built-ins in their fixed order, then added sections oldest first. */
 function sortSections(
   sections: SpaceContextSectionRecord[],
 ): SpaceContextSectionRecord[] {
   return [...sections].sort(
     (a, b) =>
-      SPACE_CONTEXT_SECTION_ORDER[a.sectionKey] -
-      SPACE_CONTEXT_SECTION_ORDER[b.sectionKey],
+      sectionOrder(a.sectionKey) - sectionOrder(b.sectionKey) ||
+      a.createdAt.localeCompare(b.createdAt) ||
+      a.id - b.id,
   );
+}
+
+/** Part of the official Context (not a suggested addition, not removed). */
+export function isOfficialSpaceContextSection(
+  section: Pick<SpaceContextSectionRecord, 'pendingChange'>,
+): boolean {
+  return section.pendingChange !== 'add';
 }
 
 export async function listSpaceContextSections(
@@ -91,7 +109,26 @@ export async function listSpaceContextSections(
     .leftJoin(people, eq(people.id, spaceContextSections.updatedByPersonId))
     .where(eq(spaceContextSections.spaceId, space.id));
 
-  const sectionIds = rows.map((row) => row.section.id);
+  const removedSections: SpaceContextRemovedSection[] = [];
+  const liveRows = rows.filter((row) => {
+    const { section } = row;
+    if (section.removedAt == null || section.pendingChange === 'add') {
+      return true;
+    }
+    if (isSpaceContextSectionKey(section.sectionKey)) {
+      removedSections.push({
+        sectionKey: section.sectionKey,
+        title: sectionTitleFromRow(section),
+        removedAt:
+          section.removedAt instanceof Date
+            ? section.removedAt.toISOString()
+            : new Date(section.removedAt).toISOString(),
+      });
+    }
+    return false;
+  });
+
+  const sectionIds = liveRows.map((row) => row.section.id);
   const contributorRows =
     sectionIds.length === 0
       ? []
@@ -114,7 +151,7 @@ export async function listSpaceContextSections(
   );
 
   const sections = sortSections(
-    rows
+    liveRows
       .map((row) =>
         mapSectionRow(row.section, {
           proposalTitle: row.proposalTitle,
@@ -130,13 +167,15 @@ export async function listSpaceContextSections(
       .filter((row): row is SpaceContextSectionRecord => row != null),
   );
 
+  const official = sections.filter(isOfficialSpaceContextSection);
   return {
     spaceSlug: space.slug,
     spaceTitle: space.title,
     sections,
-    ratifiedCount: sections.filter((section) => section.status === 'ratified')
+    removedSections,
+    ratifiedCount: official.filter((section) => section.status === 'ratified')
       .length,
-    totalCount: SPACE_CONTEXT_SECTION_KEYS.length,
+    totalCount: official.length,
   };
 }
 
@@ -147,11 +186,13 @@ export async function getSpaceContextSection(
   }: { spaceSlug: string; sectionKey: SpaceContextSectionKey },
   { db }: DbConfig,
 ): Promise<SpaceContextSectionDetail | null> {
+  const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+  if (!space) return null;
   const overview = await listSpaceContextSections({ spaceSlug }, { db });
   if (!overview) return null;
-  const section = overview.sections.find(
-    (item) => item.sectionKey === sectionKey,
-  );
+  const section =
+    overview.sections.find((item) => item.sectionKey === sectionKey) ??
+    (await findRemovedSection(space.id, overview, sectionKey, { db }));
   if (!section) return null;
 
   const messageRows = await db
@@ -190,10 +231,7 @@ export async function getSpaceContextSection(
           : new Date(row.createdAt).toISOString(),
     }));
 
-  const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-  if (!space) return null;
-
-  const agentKey = SPACE_CONTEXT_SPECIALISTS[sectionKey].agentKey;
+  const agentKey = specialistForSectionKey(sectionKey).agentKey;
   const [memory] = await db
     .select()
     .from(spaceContextAgentMemories)
@@ -220,6 +258,31 @@ export async function getSpaceContextSection(
     : null;
 
   return { section, messages, specialistMemory };
+}
+
+/** A removed section can still be read (history, restore suggestions). */
+async function findRemovedSection(
+  spaceId: number,
+  overview: SpaceContextOverview,
+  sectionKey: SpaceContextSectionKey,
+  { db }: DbConfig,
+): Promise<SpaceContextSectionRecord | null> {
+  if (
+    !overview.removedSections.some((item) => item.sectionKey === sectionKey)
+  ) {
+    return null;
+  }
+  const [row] = await db
+    .select()
+    .from(spaceContextSections)
+    .where(
+      and(
+        eq(spaceContextSections.spaceId, spaceId),
+        eq(spaceContextSections.sectionKey, sectionKey),
+      ),
+    )
+    .limit(1);
+  return row ? mapSectionRow(row) : null;
 }
 
 export async function findSpaceContextSectionsByProposalDocumentId(

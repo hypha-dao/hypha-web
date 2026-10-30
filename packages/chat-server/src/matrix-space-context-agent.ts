@@ -1,16 +1,16 @@
 import 'server-only';
 
-import { generateText, stepCountIs, tool } from 'ai';
+import { generateText, stepCountIs, tool, type ToolSet } from 'ai';
 import { z } from 'zod';
 import {
   authorizeSpacePanelInteraction,
   buildSpaceContextAgentPrompt,
+  detectSpaceContextAgentIntent,
   extractSharedSourceUrls,
   findSpaceBySlug,
   getSpaceContextSection,
-  headingForSectionKey,
-  patchSpaceContextSection,
-  SPACE_CONTEXT_SPECIALISTS,
+  saveSpaceContextSectionDraft,
+  specialistForSectionKey,
   type SpaceContextSectionKey,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -43,7 +43,7 @@ function createSaveSectionDraftTool({
 }) {
   return tool({
     description:
-      'Save Markdown as the shared draft of this Context section. Members see it in the draft field and ratify it later through Agreements. Send the whole section, not a fragment.',
+      'Save Markdown as the working draft of this Context section, because the member asked to save it (or to propose it). The draft is not official: the ratified text changes only when an Agreements proposal passes. Send the whole section, not a fragment.',
     inputSchema: z.object({
       markdown: z.string().trim().min(1).max(80_000),
     }),
@@ -53,31 +53,53 @@ function createSaveSectionDraftTool({
         authToken,
       });
       if (!auth.authorized) return { ok: false, error: auth.message };
-      const current = await getSpaceContextSection(
-        { spaceSlug, sectionKey },
-        { db },
-      );
-      if (!current) return { ok: false, error: 'Section not found' };
-      if (current.section.status === 'proposed') {
-        return {
-          ok: false,
-          error:
-            'The section is on voting. Drafts can be saved after the vote.',
-        };
-      }
-      const saved = await patchSpaceContextSection(
+      const result = await saveSpaceContextSectionDraft(
         { spaceSlug, sectionKey, markdown, personId: auth.person.id },
         { db },
       );
-      if (!saved) return { ok: false, error: 'Section not found' };
+      if (!result.ok) {
+        return {
+          ok: false,
+          error:
+            result.error === 'on_voting'
+              ? 'The section is on voting. Drafts can be saved after the vote.'
+              : 'The section cannot be saved now.',
+        };
+      }
       onSaved();
-      return { ok: true, status: saved.status, version: saved.version };
+      return {
+        ok: true,
+        status: result.section.status,
+        version: result.section.version,
+        official: false,
+      };
     },
   });
 }
 
+/** Locale-free path; the i18n middleware sends members to their own locale. */
+export function spaceContextProposeUrl(
+  requestUrl: string | undefined,
+  spaceSlug: string,
+  sectionKey: SpaceContextSectionKey,
+): string | null {
+  if (!requestUrl) return null;
+  try {
+    const url = new URL(
+      `/dho/${encodeURIComponent(spaceSlug)}/context/create`,
+      requestUrl,
+    );
+    url.searchParams.set('sections', sectionKey);
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Answer one @mention in a Context section room as that section's agent.
+ * The draft changes only when the member explicitly asks to save or to
+ * propose; otherwise the agent answers in the chat and nothing is written.
  * Returns null when the caller cannot use the section or the room is not the
  * section's discussion room.
  */
@@ -88,6 +110,7 @@ export async function writeSpaceContextAgentReply({
   sectionKey,
   agentUserId,
   newestFirst,
+  requestUrl,
 }: {
   roomId: string;
   authToken: string;
@@ -95,8 +118,9 @@ export async function writeSpaceContextAgentReply({
   sectionKey: SpaceContextSectionKey;
   agentUserId: string;
   newestFirst: AgentRoomLine[];
+  requestUrl?: string;
 }): Promise<string | null> {
-  const specialist = SPACE_CONTEXT_SPECIALISTS[sectionKey];
+  const specialist = specialistForSectionKey(sectionKey);
   const turn = mentionAwaitingAgent(newestFirst, agentUserId, {
     ...CONTEXT_AGENT_TURN_LIMITS,
     agentLabel: specialist.agentName,
@@ -113,33 +137,47 @@ export async function writeSpaceContextAgentReply({
   if (!space || !detail) return null;
   if (detail.section.chatRoomId !== roomId) return null;
 
+  const intent = detectSpaceContextAgentIntent(turn.question);
+  const canWrite = intent !== 'answer' && detail.section.status !== 'proposed';
+  const proposeUrl =
+    intent === 'propose'
+      ? spaceContextProposeUrl(requestUrl, spaceSlug, sectionKey)
+      : null;
+
   const memberTexts = newestFirst
     .filter((line) => line.sender !== agentUserId)
     .map((line) => line.body);
   let draftSaved = false;
-  const tools = {
-    save_section_draft: createSaveSectionDraftTool({
-      authToken,
-      spaceSlug,
-      sectionKey,
-      onSaved: () => {
-        draftSaved = true;
-      },
-    }),
+  const tools: ToolSet = {
     read_space_context_source: createReadSpaceContextSourceTool(
       authToken,
       spaceSlug,
       extractSharedSourceUrls(memberTexts),
     ),
   };
+  if (canWrite) {
+    tools.save_section_draft = createSaveSectionDraftTool({
+      authToken,
+      spaceSlug,
+      sectionKey,
+      onSaved: () => {
+        draftSaved = true;
+      },
+    });
+  }
 
   const system = buildSpaceContextAgentPrompt({
     sectionKey,
+    sectionTitle: detail.section.title,
     spaceTitle: space.title?.trim() || spaceSlug,
     spaceSlug,
-    currentMarkdown: detail.section.markdown,
+    draftMarkdown: detail.section.markdown,
+    ratifiedMarkdown: detail.section.ratifiedMarkdown,
     status: detail.section.status,
+    pendingChange: detail.section.pendingChange,
     specialistMemory: detail.specialistMemory?.memoryMarkdown ?? '',
+    intent,
+    proposeUrl,
   });
   const prompt = [
     turn.earlier
@@ -147,6 +185,12 @@ export async function writeSpaceContextAgentReply({
       : 'No earlier messages.',
     `The message that mentioned you:\n${turn.question}`,
   ].join('\n\n');
+
+  const savedLine = `Saved as the ${detail.section.title} draft. It becomes official only after a proposal passes.`;
+  const withProposeLink = (text: string) =>
+    proposeUrl && !text.includes(proposeUrl)
+      ? `${text}\n\n${proposeUrl}`
+      : text;
 
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), CONTEXT_AGENT_WRITE_MS);
@@ -160,13 +204,11 @@ export async function writeSpaceContextAgentReply({
       abortSignal: abort.signal,
     });
     const text = result.text.trim().slice(0, CONTEXT_AGENT_REPLY_MAX);
-    if (text) return text;
-    return draftSaved
-      ? `Draft saved to ${headingForSectionKey(sectionKey)}.`
-      : null;
+    if (text) return withProposeLink(text);
+    return draftSaved ? withProposeLink(savedLine) : null;
   } catch (error) {
     if (!draftSaved) throw error;
-    return `Draft saved to ${headingForSectionKey(sectionKey)}.`;
+    return withProposeLink(savedLine);
   } finally {
     clearTimeout(timer);
   }

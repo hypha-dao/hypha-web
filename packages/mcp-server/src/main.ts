@@ -14,7 +14,7 @@ import {
   getOrgMemoryBySpaceSlug,
   fetchOrgMemoryAsset,
   listSpaceContextSections,
-  headingForSectionKey,
+  toSpaceContextSectionOutput,
   ingestSpaceCallArtifacts,
   createSpaceDiscussionSummary,
   getSpaceMembersRoster,
@@ -1022,14 +1022,7 @@ server.registerTool(
         space_title: overview.spaceTitle,
         ratified_count: overview.ratifiedCount,
         total_count: overview.totalCount,
-        sections: overview.sections.map((section) => ({
-          key: section.sectionKey,
-          title: headingForSectionKey(section.sectionKey),
-          status: section.status,
-          markdown: section.markdown,
-          version: section.version,
-          updated_at: section.updatedAt,
-        })),
+        sections: overview.sections.map(toSpaceContextSectionOutput),
       };
       const out = getSpaceContextOutputSchema.safeParse(data);
       if (!out.success) {

@@ -1,10 +1,23 @@
-import type { SpaceContextSectionKey, SpaceContextStatus } from './constants';
+import type {
+  SpaceContextPendingChange,
+  SpaceContextSectionKey,
+  SpaceContextStatus,
+} from './constants';
 
 export type SpaceContextSectionRecord = {
   id: number;
   spaceId: number;
   sectionKey: SpaceContextSectionKey;
+  /** Display title: the built-in heading or the title members gave it. */
+  title: string;
+  isCustom: boolean;
+  /** Working draft members and the section agent edit. Never official by itself. */
   markdown: string;
+  /** Text as last ratified through Agreements; null until the first ratification. */
+  ratifiedMarkdown: string | null;
+  /** The working draft differs from the ratified text. */
+  hasDraftChanges: boolean;
+  pendingChange: SpaceContextPendingChange | null;
   status: SpaceContextStatus;
   version: number;
   proposalDocumentId: number | null;
@@ -44,11 +57,21 @@ export type SpaceContextAgentMemoryRecord = {
   updatedAt: string;
 };
 
+export type SpaceContextRemovedSection = {
+  sectionKey: SpaceContextSectionKey;
+  title: string;
+  removedAt: string | null;
+};
+
 export type SpaceContextOverview = {
   spaceSlug: string;
   spaceTitle: string;
+  /** Official sections plus suggested additions (`pendingChange: 'add'`). */
   sections: SpaceContextSectionRecord[];
+  /** Sections removed by a passed proposal; members can suggest restoring them. */
+  removedSections: SpaceContextRemovedSection[];
   ratifiedCount: number;
+  /** Official sections only; suggested additions do not count. */
   totalCount: number;
 };
 

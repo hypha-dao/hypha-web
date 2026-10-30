@@ -336,6 +336,7 @@ export async function replyToMatrixAgentMention({
         sectionKey: contextSectionKey,
         agentUserId,
         newestFirst: lines,
+        requestUrl,
       });
     } catch (error) {
       console.warn(
