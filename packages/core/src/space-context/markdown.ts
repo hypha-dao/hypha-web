@@ -53,8 +53,6 @@ export function headingForSectionKey(key: SpaceContextSectionKey): string {
       return 'Strategy';
     case 'objectives':
       return 'Objectives';
-    case 'projects':
-      return 'Projects';
     case 'key_repositories':
       return 'Key repositories';
     case 'tools':

@@ -3,7 +3,6 @@ export const SPACE_CONTEXT_SECTION_KEYS = [
   'vision',
   'strategy',
   'objectives',
-  'projects',
   'key_repositories',
   'tools',
   'how_we_decide',
@@ -41,10 +40,9 @@ export const SPACE_CONTEXT_SECTION_ORDER: Record<
   vision: 1,
   strategy: 2,
   objectives: 3,
-  projects: 4,
-  key_repositories: 5,
-  tools: 6,
-  how_we_decide: 7,
+  key_repositories: 4,
+  tools: 5,
+  how_we_decide: 6,
 };
 
 export const SPACE_CONTEXT_SPECIALISTS: Record<
@@ -79,12 +77,6 @@ export const SPACE_CONTEXT_SPECIALISTS: Record<
     role: 'Objectives expert',
     focus: 'Measurable goals for this season',
     avatarLabel: 'OE',
-  },
-  projects: {
-    agentKey: 'projects',
-    role: 'Projects expert',
-    focus: 'Active initiatives and who leads them',
-    avatarLabel: 'PE',
   },
   key_repositories: {
     agentKey: 'key_repositories',

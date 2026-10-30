@@ -116,7 +116,6 @@ export const chatRequestSchema = z.object({
         'vision',
         'strategy',
         'objectives',
-        'projects',
         'key_repositories',
         'tools',
         'how_we_decide',

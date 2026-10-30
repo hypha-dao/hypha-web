@@ -18,7 +18,7 @@ export function createSaveSpaceContextDraftTool(
       .trim()
       .min(1)
       .describe(
-        'mission | vision | strategy | objectives | projects | key_repositories | tools | how_we_decide',
+        'mission | vision | strategy | objectives | key_repositories | tools | how_we_decide',
       ),
     markdown: z.string().max(80_000),
   });
