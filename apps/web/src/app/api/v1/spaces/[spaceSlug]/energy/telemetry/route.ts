@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { unstable_cache } from 'next/cache';
 import {
   findSpaceBySlug,
   findEnergyCommunityBySpaceId,
@@ -9,25 +8,18 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
+import { readStaleWhileRevalidate } from '@web/utils/stale-while-revalidate';
 
 /** Pool worst case (15s connect + 45s query) plus space/access lookups. */
 export const maxDuration = 90;
 
-type TelemetryPeriod = ReturnType<typeof parseEnergyTelemetryPeriod>;
-
 /**
- * Azure aggregates take 17–30s uncached. Readings land in 15-minute windows,
- * so serve the last aggregate from the shared Data Cache and refresh it in
- * the background once it is older than this.
+ * Azure aggregates take 17–45s uncached. Readings land in 15-minute windows,
+ * so serve the last aggregate and refresh it after the response once it is
+ * older than this. Kept for a week so a quiet community still opens warm.
  */
-const TELEMETRY_REVALIDATE_SECONDS = 300;
-
-const readCachedTelemetry = unstable_cache(
-  (communityId: number, period: TelemetryPeriod) =>
-    fetchEnergyTelemetry({ communityId, period }),
-  ['energy-telemetry-v1'],
-  { revalidate: TELEMETRY_REVALIDATE_SECONDS, tags: ['energy-telemetry'] },
-);
+const TELEMETRY_FRESH_MS = 5 * 60_000;
+const TELEMETRY_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 const disabledTelemetryPayload = (
   period: ReturnType<typeof parseEnergyTelemetryPeriod>,
@@ -97,7 +89,12 @@ export async function GET(
       );
     }
 
-    const telemetry = await readCachedTelemetry(communityId, period);
+    const telemetry = await readStaleWhileRevalidate({
+      key: `energy-telemetry:v1:${communityId}:${period}`,
+      freshMs: TELEMETRY_FRESH_MS,
+      ttlSeconds: TELEMETRY_CACHE_TTL_SECONDS,
+      load: () => fetchEnergyTelemetry({ communityId, period }),
+    });
 
     return NextResponse.json(telemetry, {
       headers: {
