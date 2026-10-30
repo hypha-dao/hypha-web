@@ -92,11 +92,10 @@ function ratifyContextResubmitMatchesSpace(
   return false;
 }
 
-function ratifyContextResubmitHasField(
+function ratifyContextResubmitHasTitle(
   restored: Record<string, unknown> | null,
-  field: 'title' | 'description',
 ): boolean {
-  return typeof restored?.[field] === 'string';
+  return typeof restored?.title === 'string';
 }
 
 export function CreateContextRatifyForm({
@@ -150,7 +149,7 @@ export function CreateContextRatifyForm({
   const [selected, setSelected] = React.useState<SpaceContextSectionKey[]>([]);
   const initializedRef = React.useRef(false);
   const titleTouchedRef = React.useRef(false);
-  const descriptionTouchedRef = React.useRef(false);
+  const generatedDescriptionRef = React.useRef<string | null>(null);
   const linkedRef = React.useRef(false);
   const submittedSectionKeysRef = React.useRef<SpaceContextSectionKey[] | null>(
     null,
@@ -205,9 +204,6 @@ export function CreateContextRatifyForm({
     if (typeof restored?.title === 'string' && restored.title) {
       titleTouchedRef.current = true;
     }
-    if (typeof restored?.description === 'string' && restored.description) {
-      descriptionTouchedRef.current = true;
-    }
   }, [spaceId, spaceSlug]);
 
   React.useEffect(() => {
@@ -216,11 +212,8 @@ export function CreateContextRatifyForm({
     if (!ratifyContextResubmitMatchesSpace(restored, spaceId, spaceSlug)) {
       return;
     }
-    if (ratifyContextResubmitHasField(restored, 'title')) {
+    if (ratifyContextResubmitHasTitle(restored)) {
       titleTouchedRef.current = true;
-    }
-    if (ratifyContextResubmitHasField(restored, 'description')) {
-      descriptionTouchedRef.current = true;
     }
   }, [resubmitKey, spaceId, spaceSlug]);
 
@@ -228,7 +221,6 @@ export function CreateContextRatifyForm({
     const subscription = form.watch((_values, info) => {
       if (info?.type !== 'change') return;
       if (info.name === 'title') titleTouchedRef.current = true;
-      if (info.name === 'description') descriptionTouchedRef.current = true;
     });
     return () => subscription.unsubscribe();
   }, [form]);
@@ -252,18 +244,22 @@ export function CreateContextRatifyForm({
         { shouldDirty: false },
       );
     }
-    if (!descriptionTouchedRef.current) {
-      form.setValue(
-        'description',
-        buildProposalMarkdown(
-          chosen.map((section) => ({
-            key: section.sectionKey,
-            title: headingForSectionKey(section.sectionKey),
-            markdown: section.markdown,
-          })),
-        ).slice(0, 4000),
-        { shouldDirty: false },
-      );
+    // The editor emits `onChange('')` on mount, so a change event alone does not
+    // mean the member wrote anything; only keep content that differs from ours.
+    const currentDescription = form.getValues('description') ?? '';
+    if (
+      !currentDescription.trim() ||
+      currentDescription === generatedDescriptionRef.current
+    ) {
+      const generated = buildProposalMarkdown(
+        chosen.map((section) => ({
+          key: section.sectionKey,
+          title: headingForSectionKey(section.sectionKey),
+          markdown: section.markdown,
+        })),
+      ).slice(0, 4000);
+      generatedDescriptionRef.current = generated;
+      form.setValue('description', generated, { shouldDirty: false });
     }
   }, [form, overview, selected, t]);
 
