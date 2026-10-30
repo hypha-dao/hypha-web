@@ -194,11 +194,11 @@ export async function GET(
      * already public on-chain data readable by anyone via Basescan, so on
      * verifier infrastructure failure we fall through and treat the request
      * as anonymous-public rather than serving a misleading 500.
+     *
+     * Evaluate the access result before the energy lookup so a denied
+     * request cannot be rewritten as 500 if the mapping query throws.
      */
-    const [access, mappingFromDb] = await Promise.all([
-      checkSpaceAccess(request, space.web3SpaceId as number),
-      findEnergyCommunityBySpaceId(space.id, { db }),
-    ]);
+    const access = await checkSpaceAccess(request, space.web3SpaceId as number);
     if (!access.hasAccess && access.response) {
       const status = access.response.status;
       if (status === 401 || status === 403) {
@@ -209,7 +209,8 @@ export async function GET(
       );
     }
 
-    let mapping: EnergyCommunityActivation | null = mappingFromDb;
+    let mapping: EnergyCommunityActivation | null =
+      await findEnergyCommunityBySpaceId(space.id, { db });
 
     if (!mapping) {
       try {

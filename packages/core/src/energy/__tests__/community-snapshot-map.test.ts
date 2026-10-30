@@ -203,6 +203,9 @@ describe('energy community snapshot mapping', () => {
     expect(second.sourcesOk).toBe(true);
     expect(second.overview.sourceCount).toBeGreaterThan(0);
     expect(second.sources.length).toBeGreaterThan(0);
+    expect(second.sources.map((source) => source.sourceLabel)).toEqual([
+      'PONTA_SCHOOL_PV',
+    ]);
   });
 });
 
