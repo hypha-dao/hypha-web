@@ -54,4 +54,29 @@ pnpm dev
     expect(html).not.toContain('1)');
     expect(html).not.toContain('+ Loose');
   });
+
+  it('keeps a fenced block open until a bare closing fence', () => {
+    const html = renderToStaticMarkup(
+      <MemoryProse
+        source={`\`\`\`md
+first
+\`\`\`example
+still code
+\`\`\`
+After the block.`}
+      />,
+    );
+    expect(html.match(/<pre/g)).toHaveLength(1);
+    expect(html).toContain('```example\nstill code');
+    expect(html).toMatch(/<\/pre><p[^>]*>After the block\.<\/p>/);
+  });
+
+  it('caps blockquote nesting and renders deeper levels flat', () => {
+    const html = renderToStaticMarkup(
+      <MemoryProse source={`${'>'.repeat(40)} deep thought`} />,
+    );
+    expect(html.match(/<blockquote/g)).toHaveLength(8);
+    expect(html).toContain('deep thought');
+    expect(html).not.toContain('&gt;');
+  });
 });

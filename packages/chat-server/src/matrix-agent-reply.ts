@@ -281,15 +281,6 @@ export async function replyToMatrixAgentMention({
     return { replied: false };
   }
 
-  await ensureAgentJoinedRoom({
-    roomId: trimmedRoom,
-    agentUserId,
-    botToken,
-    homeserver,
-    authToken,
-    requestUrl,
-  });
-
   const slug = context?.spaceSlug?.trim() || spaceSlug?.trim() || '';
   const contextSectionKey =
     context?.kind === 'space_context' &&
@@ -301,6 +292,15 @@ export async function replyToMatrixAgentMention({
   if (context?.kind === 'space_context' && !contextSectionKey) {
     return { replied: false };
   }
+
+  await ensureAgentJoinedRoom({
+    roomId: trimmedRoom,
+    agentUserId,
+    botToken,
+    homeserver,
+    authToken,
+    requestUrl,
+  });
 
   let turn: { question: string; earlier: string } | null = null;
   let lines: AgentRoomLine[] = [];

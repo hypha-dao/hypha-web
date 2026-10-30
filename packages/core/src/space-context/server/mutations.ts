@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 import {
   documents,
   people,
@@ -118,26 +118,38 @@ export async function saveSpaceContextSectionDraft(
     return { ok: false, error: 'removed' };
   }
 
-  let nextStatus = existing.status;
-  if (markdown.trim() && existing.status === 'not_started') {
-    nextStatus = 'draft';
-  }
-  if (!markdown.trim() && existing.status === 'draft') {
-    nextStatus = 'not_started';
-  }
-
+  const hasText = markdown.trim().length > 0;
+  // Status and version come from the row being updated, and the guards are
+  // repeated here: a proposal can link the section after the read above.
   const [updated] = await db
     .update(spaceContextSections)
     .set({
       markdown,
-      status: nextStatus,
-      version: existing.version + 1,
+      status: hasText
+        ? sql`case when ${spaceContextSections.status} = 'not_started' then 'draft' else ${spaceContextSections.status} end`
+        : sql`case when ${spaceContextSections.status} = 'draft' then 'not_started' else ${spaceContextSections.status} end`,
+      version: sql`${spaceContextSections.version} + 1`,
       updatedByPersonId: personId ?? existing.updatedByPersonId,
       updatedAt: new Date(),
     })
-    .where(eq(spaceContextSections.id, existing.id))
+    .where(
+      and(
+        eq(spaceContextSections.id, existing.id),
+        ne(spaceContextSections.status, 'proposed'),
+        or(
+          isNull(spaceContextSections.removedAt),
+          eq(spaceContextSections.pendingChange, 'add'),
+        ),
+      ),
+    )
     .returning();
 
+  if (!updated) {
+    const current = await findSectionRow(space.id, sectionKey, db);
+    if (!current) return { ok: false, error: 'not_found' };
+    if (current.status === 'proposed') return { ok: false, error: 'on_voting' };
+    return { ok: false, error: 'removed' };
+  }
   return toWriteResult(updated, db);
 }
 
