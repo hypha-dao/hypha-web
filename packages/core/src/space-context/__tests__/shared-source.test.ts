@@ -138,6 +138,12 @@ describe('htmlToText', () => {
     htmlToText(hostile);
     expect(Date.now() - started).toBeLessThan(2000);
   });
+
+  it('does not reassemble tags from nested fragments', () => {
+    const { text } = htmlToText('<p>a <scr<b>ipt>alert(1)</p> 1 &lt; 2');
+    expect(text).not.toContain('<script');
+    expect(text).toContain('1 < 2');
+  });
 });
 
 describe('decodeSharedSourceBytes', () => {
