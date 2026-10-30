@@ -92,16 +92,20 @@ export async function patchSpaceContextSection(
 
   let lastEditorName: string | null = null;
   if (updated.updatedByPersonId != null) {
-    const [editor] = await db
-      .select({
-        name: sql<
-          string | null
-        >`trim(concat_ws(' ', ${people.name}, ${people.surname}))`,
-      })
-      .from(people)
-      .where(eq(people.id, updated.updatedByPersonId))
-      .limit(1);
-    lastEditorName = editor?.name?.trim() || null;
+    try {
+      const [editor] = await db
+        .select({
+          name: sql<
+            string | null
+          >`trim(concat_ws(' ', ${people.name}, ${people.surname}))`,
+        })
+        .from(people)
+        .where(eq(people.id, updated.updatedByPersonId))
+        .limit(1);
+      lastEditorName = editor?.name?.trim() || null;
+    } catch {
+      lastEditorName = null;
+    }
   }
 
   return mapSectionRow(updated, { lastEditorName });

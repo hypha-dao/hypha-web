@@ -89,6 +89,7 @@ export function CreateContextRatifyForm({
     isPending,
     progress,
     agreement,
+    taskState,
   } = useCreateAgreementOrchestrator({
     authToken: jwt,
     config,
@@ -249,9 +250,22 @@ export function CreateContextRatifyForm({
   React.useEffect(() => {
     const documentId = agreement?.id;
     const keys = submittedSectionKeysRef.current ?? selected;
-    if (!documentId || linkedRef.current || keys.length === 0) return;
+    const uploadSucceeded = taskState.UPLOAD_FILES.status === 'isDone';
+    if (
+      !documentId ||
+      linkedRef.current ||
+      keys.length === 0 ||
+      !uploadSucceeded
+    ) {
+      return;
+    }
     void linkSectionsToProposal(documentId, keys);
-  }, [agreement?.id, linkSectionsToProposal, selected]);
+  }, [
+    agreement?.id,
+    linkSectionsToProposal,
+    selected,
+    taskState.UPLOAD_FILES.status,
+  ]);
 
   const handleCreate = async (data: FormValues) => {
     if (selected.length === 0) return;

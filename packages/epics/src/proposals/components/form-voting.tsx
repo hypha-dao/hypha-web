@@ -477,15 +477,21 @@ export const FormVoting = ({
   const showVotedMessage = myVote || localVote;
   const voteText = myVote || localVote;
 
+  const votingEnd = new Date(endTime);
+  const votingPeriodEnded =
+    Boolean(endTime) && !Number.isNaN(votingEnd.getTime()) && isPast(votingEnd);
+
   const votingInProgress =
     Boolean(isVoting) &&
     proposalStatus === 'onVoting' &&
     !executed &&
     !expired &&
-    !isPast(new Date(endTime));
+    !votingPeriodEnded;
 
-  const isRejectDisabled = isDisabled || votingInProgress || voteText === 'no';
-  const isAcceptDisabled = isDisabled || votingInProgress || voteText === 'yes';
+  const isRejectDisabled =
+    isDisabled || votingInProgress || voteText === 'no' || votingPeriodEnded;
+  const isAcceptDisabled =
+    isDisabled || votingInProgress || voteText === 'yes' || votingPeriodEnded;
 
   const hasUserVoted = Boolean(myVote ?? localVote);
 
