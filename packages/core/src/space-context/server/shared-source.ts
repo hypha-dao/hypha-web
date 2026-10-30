@@ -379,7 +379,9 @@ export function htmlToText(html: string): {
         '\n',
       )
       .replace(/<\/t[dh]\s*>/gi, ' ')
-      .replace(/<[^<>]*>/g, ''),
+      .replace(/<[^<>]*>/g, '')
+      // Stripping `<scr<b>ipt>` once leaves `<script>`; text `<` arrives as `&lt;`.
+      .replace(/</g, ''),
   )
     .split('\n')
     .map((line) => line.replace(/[ \t\f\v\u00a0]+/g, ' ').trim())
