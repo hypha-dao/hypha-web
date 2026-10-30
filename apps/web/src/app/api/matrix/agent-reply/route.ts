@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
       'proposal',
       'signal',
       'space',
+      'space_context',
       'ecosystem',
       'public',
       'network',
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
         documentTitle: readString(rawContext?.documentTitle) || null,
         signalSlug: readString(rawContext?.signalSlug) || null,
         signalTitle: readString(rawContext?.signalTitle) || null,
+        sectionKey: readString(rawContext?.sectionKey) || null,
       }
     : null;
 

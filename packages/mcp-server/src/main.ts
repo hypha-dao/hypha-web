@@ -13,6 +13,8 @@ import {
   getDocumentsBySpaceSlug,
   getOrgMemoryBySpaceSlug,
   fetchOrgMemoryAsset,
+  listSpaceContextSections,
+  toSpaceContextSectionOutput,
   ingestSpaceCallArtifacts,
   createSpaceDiscussionSummary,
   getSpaceMembersRoster,
@@ -49,6 +51,10 @@ import {
   getOrgMemoryBySpaceSlugInputSchema,
   getOrgMemoryBySpaceSlugOutputSchema,
 } from './get-org-memory-by-space-slug-schema.js';
+import {
+  getSpaceContextInputSchema,
+  getSpaceContextOutputSchema,
+} from './get-space-context-schema.js';
 import {
   fetchOrgMemoryAssetInputSchema,
   fetchOrgMemoryAssetOutputSchema,
@@ -102,7 +108,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); member intelligence for the authenticated person (get_member_intelligence and the get_member_* slices: spaces, proposals, signals, notifications, connections, wallet); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; proposal_guidance, get_proposal_form_state, and prepare_governance_proposal for one-field-at-a-time governance proposal hand-holding; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
+      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); member intelligence for the authenticated person (get_member_intelligence and the get_member_* slices: spaces, proposals, signals, notifications, connections, wallet); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; proposal_guidance, get_proposal_form_state, and prepare_governance_proposal for one-field-at-a-time governance proposal hand-holding; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; get_space_context for ratified/draft Space Context Markdown sections; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
   },
 );
 
@@ -931,6 +937,118 @@ server.registerTool(
             text: 'Internal error while fetching org memory',
           },
         ],
+        isError: true,
+      };
+    }
+  },
+);
+
+server.registerTool(
+  'get_space_context',
+  {
+    description:
+      'Read-only: Space Context Markdown for a space slug — Mission, Vision, Strategy, Objectives, Key repositories, Tools we use, and How we decide. Each section has status not_started | draft | proposed | ratified and Markdown agents can parse.',
+    inputSchema: getSpaceContextInputSchema,
+    outputSchema: getSpaceContextOutputSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = getSpaceContextInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+    try {
+      const host = await findSpaceBySlug(
+        { slug: parsed.data.space_slug },
+        { db },
+      );
+      if (!host) {
+        const data = {
+          found: false,
+          space_slug: parsed.data.space_slug,
+          error: 'Space not found',
+        };
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `No space found for slug "${parsed.data.space_slug}".`,
+            },
+          ],
+          structuredContent: data,
+        };
+      }
+
+      const authToken = process.env.HYPHA_MCP_AUTH_TOKEN;
+      const access = await checkSpaceAccessForSpace(host, authToken);
+      if (!access.hasAccess) {
+        return {
+          content: [{ type: 'text', text: access.message }],
+          isError: true,
+        };
+      }
+
+      const overview = await listSpaceContextSections(
+        { spaceSlug: parsed.data.space_slug },
+        { db },
+      );
+      if (!overview) {
+        const data = {
+          found: false,
+          space_slug: parsed.data.space_slug,
+          error: 'Space not found',
+        };
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `No space found for slug "${parsed.data.space_slug}".`,
+            },
+          ],
+          structuredContent: data,
+        };
+      }
+      const data = {
+        found: true,
+        space_slug: overview.spaceSlug,
+        space_title: overview.spaceTitle,
+        ratified_count: overview.ratifiedCount,
+        total_count: overview.totalCount,
+        sections: overview.sections.map(toSpaceContextSectionOutput),
+      };
+      const out = getSpaceContextOutputSchema.safeParse(data);
+      if (!out.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${out.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Space Context for "${overview.spaceTitle}": ${overview.ratifiedCount}/${overview.totalCount} ratified.`,
+          },
+        ],
+        structuredContent: out.data,
+      };
+    } catch (error) {
+      console.error('[hypha-mcp:get_space_context] failed', error);
+      return {
+        content: [{ type: 'text', text: 'Failed to load Space Context.' }],
         isError: true,
       };
     }

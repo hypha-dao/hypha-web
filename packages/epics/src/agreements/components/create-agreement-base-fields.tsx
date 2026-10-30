@@ -87,6 +87,12 @@ export type CreateAgreementFormProps = {
   stickyHeaderTitle?: string;
   mode?: 'agreement' | 'memory';
   progress: number;
+  /** Proposal types without a banner skip the lead image (and the space-banner default). */
+  hideLeadImage?: boolean;
+  /** Type-specific fields rendered between the header and the content editor. */
+  beforeContent?: React.ReactNode;
+  /** Replaces the whole content label, including its requirement mark. */
+  contentLabel?: React.ReactNode;
 };
 
 type Callback = () => Promise<void>;
@@ -103,6 +109,9 @@ export function CreateAgreementBaseFields({
   stickyHeaderTitle,
   mode = 'agreement',
   progress,
+  hideLeadImage = false,
+  beforeContent,
+  contentLabel: contentLabelOverride,
 }: CreateAgreementFormProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tCoherence = useTranslations('CoherenceTab');
@@ -224,7 +233,7 @@ export function CreateAgreementBaseFields({
   const hasAppliedSpaceBannerDefaultRef = React.useRef(false);
 
   React.useEffect(() => {
-    if (resubmitFormData?.leadImage?.trim()) {
+    if (hideLeadImage || resubmitFormData?.leadImage?.trim()) {
       return;
     }
 
@@ -257,7 +266,7 @@ export function CreateAgreementBaseFields({
 
     form.setValue('leadImage', bannerUrl, { shouldValidate: true });
     hasAppliedSpaceBannerDefaultRef.current = true;
-  }, [space?.leadImage, resubmitFormData, form]);
+  }, [hideLeadImage, space?.leadImage, resubmitFormData, form]);
 
   const spaceIdBigInt =
     typeof space?.web3SpaceId === 'number'
@@ -547,7 +556,8 @@ export function CreateAgreementBaseFields({
         <Separator />
       </div>
       <div className="flex flex-col gap-6">
-        {mode !== 'memory' ? (
+        {beforeContent}
+        {mode !== 'memory' && !hideLeadImage ? (
           <section className="rounded-none border border-border/70 bg-background-2 p-4 lg:p-6">
             <FormField
               control={form.control}
@@ -663,7 +673,11 @@ export function CreateAgreementBaseFields({
               return (
                 <FormItem>
                   <FormLabel className="gap-1 text-foreground">
-                    {contentLabel} <RequirementMark />
+                    {contentLabelOverride ?? (
+                      <>
+                        {contentLabel} <RequirementMark />
+                      </>
+                    )}
                   </FormLabel>
                   <FormControl>
                     <div className="overflow-hidden rounded-none border border-border bg-background-2 shadow-none focus-within:border-foreground">

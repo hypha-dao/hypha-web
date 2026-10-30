@@ -667,7 +667,8 @@
     "durationDays": "{count, plural, one {# Tag} other {# Tage}}",
     "spaceBannerRevealMeta": "Details",
     "moreNav": "Mehr",
-    "bankingTab": "Banking"
+    "bankingTab": "Banking",
+    "context": "Kontext"
   },
   "ModalAside": {
     "spaceSettings": "Space-Einstellungen",
@@ -2650,7 +2651,8 @@
       "registerEnergySource": "Energiequelle registrieren",
       "addEnergyMember": "Energiemitglied hinzufügen",
       "changeEnergyOptimization": "Energieoptimierung ändern",
-      "whitelistEnergySettlement": "Energieabrechnung whitelisten"
+      "whitelistEnergySettlement": "Energieabrechnung whitelisten",
+      "spaceContext": "Kontext des Spaces"
     },
     "documentBadges": {
       "invite": "Einladung",
@@ -5587,5 +5589,180 @@
     "proposal": "Vorschlag",
     "agreement": "Vereinbarung",
     "backHome": "Zurück nach Hause"
+  },
+  "SpaceContext": {
+    "title": "Kontext",
+    "subtitle": "Eine gemeinsame Wahrheitsquelle für diesen Space. Mitglieder besprechen jeden Abschnitt gemeinsam, erwähnen dessen Agenten, wenn sie Hilfe möchten, und ratifizieren ihn dann über eine Vereinbarung.",
+    "progress": "{ratified} von {total} ratifiziert",
+    "propose": "Zur Ratifizierung vorschlagen",
+    "filters": {
+      "all": "Alle",
+      "ratified": "Ratifiziert",
+      "proposed": "In Abstimmung",
+      "drafts": "Entwürfe"
+    },
+    "leads": {
+      "mission": "Warum der Space existiert.",
+      "vision": "Die Zukunft, auf die wir hinarbeiten.",
+      "strategy": "Wie wir dort in den nächsten 2–3 Jahren hinkommen.",
+      "objectives": "Messbare Ziele für diese Saison.",
+      "key_repositories": "Code, Docs und Daten, auf die der Space setzt.",
+      "tools": "Inventar der Tools, die der Space nutzt.",
+      "how_we_decide": "Wie dieser Space Arbeit annimmt und Features wählt."
+    },
+    "status": {
+      "ratified": "Ratifiziert",
+      "onVoting": "In Abstimmung",
+      "draft": "Entwurf",
+      "notStarted": "Nicht gestartet"
+    },
+    "card": {
+      "emptyBody": "Noch kein Entwurf.",
+      "proposalFallback": "Vorschlag",
+      "viewProposal": "Vorschlag ansehen",
+      "view": "Ansehen",
+      "open": "Öffnen",
+      "openDiscussion": "Diskussion öffnen",
+      "startDiscussion": "Diskussion starten",
+      "proposeAmendment": "Änderung vorschlagen",
+      "agreementRef": "Vereinbarung #{agreement}",
+      "ratifiedVia": "Ratifiziert durch",
+      "draftedBy": "entworfen von {name}",
+      "version": "v{version}",
+      "contributors": "{count, plural, one {# Mitwirkende Person} other {# Mitwirkende}}",
+      "edited": "bearbeitet {when}",
+      "votingClosed": "Abstimmung beendet",
+      "daysLeft": "noch {count, plural, one {# Tag} other {# Tage}}",
+      "hoursLeft": "noch {count, plural, one {# Stunde} other {# Stunden}}",
+      "read": "{section} lesen",
+      "draftText": "Entwurf — nicht ratifiziert",
+      "proposedText": "Vorgeschlagener Text — in Abstimmung"
+    },
+    "empty": {
+      "title": "Noch kein Kontext",
+      "description": "Lege fest, wer dieser Space ist — Mission, Vision, Strategie und mehr. Öffne einen Abschnitt, um ihn mit Mitgliedern zu besprechen, erwähne seinen Agenten, wenn du einen Entwurf möchtest, und ratifiziere ihn per Vorschlag, wenn er fertig ist.",
+      "startMission": "Mit der Mission starten",
+      "importMemory": "Aus Memory importieren",
+      "importing": "Importiere…",
+      "filter": "Keine Abschnitte in diesem Filter."
+    },
+    "chat": {
+      "title": "Abschnittsdiskussion",
+      "close": "Diskussion schließen",
+      "agent": "{agent} · Agent für {section}",
+      "agentHint": "Hier diskutieren Mitglieder. {agent} antwortet nur, wenn jemand @{agent} erwähnt.",
+      "empty": "Noch keine Nachrichten. Besprecht hier gemeinsam {section} und erwähnt @{agent}, wenn ihr eine Prüfung oder einen Entwurf möchtet.",
+      "loadError": "Dieser Abschnittschat konnte nicht geladen werden.",
+      "connecting": "Verbindung zur Diskussion wird hergestellt…",
+      "unavailable": "Die Diskussion ist gerade nicht verfügbar. Versuche es später erneut.",
+      "signInHint": "Melde dich an, um diesen Abschnitt mit Mitgliedern zu besprechen.",
+      "membersOnly": "Nur Mitglieder des Space können an dieser Diskussion teilnehmen.",
+      "roomTitle": "{section} · Kontext — {space}",
+      "placeholder": "Schreibe den Mitgliedern oder erwähne @{agent}…",
+      "askAgent": "@{agent} fragen",
+      "draftLabel": "Gemeinsamer Entwurf",
+      "draftHint": "Füge hier vorhandenen Text für {section} ein oder bearbeitet ihn gemeinsam. Speichern teilt ihn mit den Mitgliedern.",
+      "draftPlaceholder": "{section} hier einfügen oder schreiben…",
+      "draftUpdated": "Ein Mitglied oder der Agent hat einen neueren Entwurf gespeichert.",
+      "loadLatest": "Neuesten laden",
+      "saveDraft": "Entwurf speichern",
+      "saving": "Speichere…",
+      "saved": "Gespeichert",
+      "propose": "Zur Ratifizierung vorschlagen",
+      "keepDrafting": "Weiter entwerfen",
+      "attach": "Dokument anhängen",
+      "attachHint": "Füge einen Link ein oder hänge ein Dokument an und erwähne dann @{agent}, um daraus einen Entwurf zu erstellen.",
+      "attachTooLarge": "Dateien dürfen höchstens {maxSize} groß sein.",
+      "attachLimit": "Hängt bis zu {max} Dokumente auf einmal an.",
+      "uploading": "Lade hoch…",
+      "uploadFailed": "Das Dokument konnte nicht hochgeladen werden. Versucht es erneut.",
+      "sharedDocument": "Geteiltes Dokument",
+      "skills": {
+        "review": "Ist das eine gute {section}? Was fehlt oder ist vage?",
+        "refine": "Überarbeite den gemeinsamen Entwurf anhand unserer Diskussion oben.",
+        "draft": "Mach aus dieser Diskussion einen Entwurf für {section} und speichere ihn.",
+        "fromSource": "Lies den geteilten Link oder das Dokument und entwirf daraus {section}."
+      },
+      "draftHintRatified": "Änderungen hier sind ein Entwurf. {section} in ratifizierter Fassung ändert sich erst, wenn ein Vorschlag angenommen wird.",
+      "draftLockedHint": "Dieser Abschnitt ist in Abstimmung. Der Entwurf kann nach der Abstimmung geändert werden."
+    },
+    "proposeForm": {
+      "header": "Vorschlag erstellen",
+      "title": "Kontext ratifizieren: {sections}",
+      "titleShort": "Kontext-Abschnitte ratifizieren",
+      "sections": "Zu ratifizierende Abschnitte",
+      "alreadyVoting": "Bereits in Abstimmung (Vereinbarung #{agreement})",
+      "noDraft": "Noch kein Entwurf",
+      "proposalType": "Vorschlagstyp",
+      "proposalTypeValue": "Kontextabschnitt(e) ratifizieren",
+      "contentPrefilled": "aus Entwürfen vorausgefüllt",
+      "ratifiedAmend": "Ratifiziert #{agreement} — Änderungsentwurf",
+      "draftVersion": "Entwurf v{version}",
+      "onPassNote": "Bei Annahme werden die ausgewählten Entwürfe zum ratifizierten Text, und vorgeschlagene Ergänzungen oder Entfernungen werden übernommen.",
+      "cancel": "Abbrechen",
+      "addSection": "Fügt einen neuen Abschnitt hinzu",
+      "removeSection": "Entfernt diesen Abschnitt",
+      "ratifiedUnchanged": "Ratifiziert #{agreement} — keine Entwurfsänderungen"
+    },
+    "error": {
+      "load": "Space Context konnte nicht geladen werden.",
+      "retry": "Erneut versuchen",
+      "import": "Import aus Space Memory fehlgeschlagen.",
+      "save": "Dieser Entwurf konnte nicht gespeichert werden.",
+      "link": "Dieser Vorschlag konnte den Context-Abschnitten nicht zugeordnet werden.",
+      "change": "Dieser Abschnitt konnte nicht aktualisiert werden. Versuche es erneut.",
+      "onVoting": "Dieser Abschnitt ist in Abstimmung. Er kann nach der Abstimmung geändert werden."
+    },
+    "success": {
+      "imported": "Ein Missionsentwurf wurde aus Space Memory importiert.",
+      "saved": "Entwurf gespeichert.",
+      "suggested": "Abschnitt vorgeschlagen. Er kommt in den Kontext, sobald ein Vorschlag zum Hinzufügen angenommen wird.",
+      "removalSuggested": "Entfernung vorgeschlagen. Nimm sie in einen Vorschlag auf, um sie umzusetzen.",
+      "removalWithdrawn": "Entfernungsvorschlag zurückgezogen.",
+      "additionWithdrawn": "Vorschlag zurückgezogen."
+    },
+    "passed": {
+      "withVotes": "Vereinbarung #{agreement} „{title}“ angenommen — {yes} % Ja, {quorum} % Quorum. Die Abschnitte sind jetzt ratifiziert.",
+      "plain": "Vereinbarung #{agreement} „{title}“ angenommen. Die Abschnitte sind jetzt ratifiziert.",
+      "viewAgreement": "Vereinbarung ansehen"
+    },
+    "change": {
+      "add": "Vorgeschlagener Abschnitt",
+      "remove": "Entfernung vorgeschlagen"
+    },
+    "notice": {
+      "addition": "Vorgeschlagener Abschnitt. Er kommt erst in den Kontext, wenn ein Vorschlag zum Hinzufügen angenommen wird.",
+      "removal": "Entfernung vorgeschlagen. Der Abschnitt bleibt, bis ein Vorschlag zum Entfernen angenommen wird.",
+      "amendmentOnVoting": "Eine Änderung ist in Abstimmung. Der ratifizierte Text gilt, bis sie angenommen wird.",
+      "draftChanges": "Entwurfsänderungen offen. Sie werden erst verbindlich, wenn ein Vorschlag angenommen wird."
+    },
+    "reader": {
+      "customLead": "Ein Abschnitt, den Mitglieder dem Kontext dieses Space hinzugefügt haben.",
+      "official": "Ratifizierter Text",
+      "noOfficial": "Noch nichts ratifiziert.",
+      "draft": "Entwurf — nicht ratifiziert",
+      "proposed": "Vorgeschlagener Text — in Abstimmung",
+      "suggestRemoval": "Entfernen vorschlagen",
+      "cancelRemoval": "Entfernungsvorschlag zurückziehen",
+      "withdrawAddition": "Vorschlag zurückziehen",
+      "close": "Schließen"
+    },
+    "addSection": {
+      "open": "Abschnitt hinzufügen",
+      "title": "Neuen Abschnitt vorschlagen",
+      "description": "Jedes Mitglied kann einen Abschnitt vorschlagen. Er bleibt ein Entwurf, bis ein Vorschlag zum Hinzufügen angenommen wird.",
+      "nameLabel": "Name des Abschnitts",
+      "namePlaceholder": "z. B. Onboarding",
+      "draftLabel": "Erster Entwurf (optional)",
+      "draftPlaceholder": "Was soll in diesem Abschnitt stehen?",
+      "cancel": "Abbrechen",
+      "submit": "Abschnitt vorschlagen",
+      "submitting": "Wird vorgeschlagen…",
+      "duplicate": "Ein Abschnitt mit diesem Namen existiert bereits.",
+      "titleRequired": "Gib dem Abschnitt einen Namen.",
+      "failed": "Der Abschnitt konnte nicht vorgeschlagen werden. Versuche es erneut.",
+      "restoreLabel": "Entfernte Abschnitte",
+      "restore": "Wiederherstellen vorschlagen"
+    }
   }
 }

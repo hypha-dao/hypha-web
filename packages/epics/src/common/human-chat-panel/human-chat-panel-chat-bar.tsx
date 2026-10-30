@@ -86,6 +86,7 @@ import { formatComposerMentionToken } from './human-chat-display-mention';
 import { mentionCandidateMatchRank } from './human-chat-mention-search';
 import { resolveReplyPreviewAuthorLookup } from './reply-preview-author';
 import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';
+import { useAgentMentionLabel } from './agent-mention-label-context';
 import { ComposerAttachGoogleDriveMenuItem } from '../composer';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
@@ -656,6 +657,7 @@ export function HumanChatPanelChatBar({
   composerLockedMessage,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
+  const agentMentionLabel = useAgentMentionLabel();
 
   const membershipAvailable =
     mentionPickerEnabled ?? mentionCandidates.length > 0;
@@ -2143,7 +2145,7 @@ export function HumanChatPanelChatBar({
                     isYou={replyPreview.isYou}
                     youLabel={t('you')}
                     unknownMemberLabel={t('unknownMember')}
-                    agentMentionLabel={t('agentMentionLabel')}
+                    agentMentionLabel={agentMentionLabel}
                   />
                 </span>
                 <span className="text-muted-foreground"> — </span>

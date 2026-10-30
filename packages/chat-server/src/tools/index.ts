@@ -20,6 +20,9 @@ import { createGetProposalFormStateTool } from './get-proposal-form-state';
 import type { ActiveProposalFormSnapshot } from './proposal-form-state';
 import { createOnboardingToolSet, safeChatTool } from './onboarding-tool-set';
 import { resolveChatLocale } from '../locale-ui-labels';
+import { createGetSpaceContextTool } from './get-space-context';
+import { createSaveSpaceContextDraftTool } from './save-space-context-draft';
+import { createSaveSpaceContextMemoryTool } from './save-space-context-memory';
 
 /**
  * All AI SDK tools exposed by the chat route. Add new tools here and in the
@@ -118,6 +121,18 @@ export function createChatTools(
     prepare_governance_proposal: safeChatTool(
       'prepare_governance_proposal',
       createPrepareGovernanceProposalTool(authToken),
+    ),
+    get_space_context: safeChatTool(
+      'get_space_context',
+      createGetSpaceContextTool(authToken),
+    ),
+    save_space_context_draft: safeChatTool(
+      'save_space_context_draft',
+      createSaveSpaceContextDraftTool(authToken),
+    ),
+    save_space_context_memory: safeChatTool(
+      'save_space_context_memory',
+      createSaveSpaceContextMemoryTool(authToken),
     ),
     web_search: safeChatTool('web_search', webSearchTool),
     ...onboardingTools,

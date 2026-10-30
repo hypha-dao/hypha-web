@@ -8,6 +8,7 @@ export type SpaceScreen =
   | 'treasury'
   | 'rewards'
   | 'memory'
+  | 'context'
   | 'space_configuration';
 
 export type InternalSpaceNavigationPayload = {
@@ -41,6 +42,7 @@ export function resolveSpaceScreenPath(
   if (screen === 'treasury') return `/${lang}/dho/${spaceSlug}/treasury`;
   if (screen === 'rewards') return `/${lang}/dho/${spaceSlug}/rewards`;
   if (screen === 'memory') return `/${lang}/dho/${spaceSlug}/memory`;
+  if (screen === 'context') return `/${lang}/dho/${spaceSlug}/context`;
   return `/${lang}/dho/${spaceSlug}/agreements/space-configuration`;
 }
 

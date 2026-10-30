@@ -666,7 +666,8 @@
     "durationDays": "{count, plural, one {# dag} other {# dager}}",
     "spaceBannerRevealMeta": "Detaljer",
     "moreNav": "Mer",
-    "bankingTab": "Bank"
+    "bankingTab": "Bank",
+    "context": "Kontekst"
   },
   "ModalAside": {
     "spaceSettings": "Rominnstillinger",
@@ -2648,7 +2649,8 @@
       "registerEnergySource": "Registrer energikilde",
       "addEnergyMember": "Legg til energimedlem",
       "changeEnergyOptimization": "Endre energioptimalisering",
-      "whitelistEnergySettlement": "Hvitelist energioppgjør"
+      "whitelistEnergySettlement": "Hvitelist energioppgjør",
+      "spaceContext": "Space-kontekst"
     },
     "documentBadges": {
       "invite": "Invitasjon",
@@ -5592,5 +5594,180 @@
     "proposal": "Forslag",
     "agreement": "Avtale",
     "backHome": "Tilbake til hjem"
+  },
+  "SpaceContext": {
+    "title": "Kontekst",
+    "subtitle": "Én felles sannhetskilde for denne spacen. Medlemmene diskuterer hver seksjon sammen, nevner agenten når de vil ha hjelp, og ratifiserer den deretter gjennom en avtale.",
+    "progress": "{ratified} av {total} ratifisert",
+    "propose": "Foreslå for ratifisering",
+    "filters": {
+      "all": "Alle",
+      "ratified": "Ratifisert",
+      "proposed": "Til avstemning",
+      "drafts": "Utkast"
+    },
+    "leads": {
+      "mission": "Hvorfor spacen finnes.",
+      "vision": "Fremtiden vi bygger mot.",
+      "strategy": "Hvordan vi kommer dit de neste 2–3 årene.",
+      "objectives": "Målbare mål for denne sesongen.",
+      "key_repositories": "Kode, dokumenter og data spacen er avhengig av.",
+      "tools": "Oversikt over verktøyene spacen bruker.",
+      "how_we_decide": "Hvordan denne spacen tar imot arbeid og velger funksjoner."
+    },
+    "status": {
+      "ratified": "Ratifisert",
+      "onVoting": "Til avstemning",
+      "draft": "Utkast",
+      "notStarted": "Ikke startet"
+    },
+    "card": {
+      "emptyBody": "Ingen utkast ennå.",
+      "proposalFallback": "Forslag",
+      "viewProposal": "Se forslag",
+      "view": "Se",
+      "open": "Åpne",
+      "openDiscussion": "Åpne diskusjon",
+      "startDiscussion": "Start diskusjon",
+      "proposeAmendment": "Foreslå endring",
+      "agreementRef": "Avtale #{agreement}",
+      "ratifiedVia": "Ratifisert via",
+      "draftedBy": "utarbeidet av {name}",
+      "version": "v{version}",
+      "contributors": "{count, plural, one {# bidragsyter} other {# bidragsytere}}",
+      "edited": "redigert {when}",
+      "votingClosed": "avstemningen er avsluttet",
+      "daysLeft": "{count, plural, one {# dag} other {# dager}} igjen",
+      "hoursLeft": "{count, plural, one {# time} other {# timer}} igjen",
+      "read": "Les {section}",
+      "draftText": "Utkast — ikke ratifisert",
+      "proposedText": "Foreslått tekst — til avstemning"
+    },
+    "empty": {
+      "title": "Ingen kontekst ennå",
+      "description": "Definer hvem denne spacen er — misjon, visjon, strategi og mer. Åpne en seksjon for å diskutere den med medlemmene, nevn agenten når du vil ha et utkast, og ratifiser den med et forslag når den er klar.",
+      "startMission": "Start med misjon",
+      "importMemory": "Importer fra Memory",
+      "importing": "Importerer…",
+      "filter": "Ingen seksjoner i dette filteret."
+    },
+    "chat": {
+      "title": "Seksjonsdiskusjon",
+      "close": "Lukk diskusjon",
+      "agent": "{agent} · agent for {section}",
+      "agentHint": "Medlemmene diskuterer her. {agent} svarer bare når noen nevner @{agent}.",
+      "empty": "Ingen meldinger ennå. Diskuter {section} med medlemmene her, og nevn @{agent} når dere vil ha en gjennomgang eller et utkast.",
+      "loadError": "Kunne ikke laste chatten for denne seksjonen.",
+      "connecting": "Kobler til diskusjonen…",
+      "unavailable": "Diskusjonen er ikke tilgjengelig nå. Prøv igjen senere.",
+      "signInHint": "Logg inn for å diskutere denne seksjonen med medlemmene.",
+      "membersOnly": "Bare medlemmer av spacen kan delta i denne diskusjonen.",
+      "roomTitle": "{section} · Kontekst — {space}",
+      "placeholder": "Skriv til medlemmene, eller nevn @{agent}…",
+      "askAgent": "Spør @{agent}",
+      "draftLabel": "Felles utkast",
+      "draftHint": "Lim inn eksisterende tekst for {section} her eller rediger den sammen. Lagre for å dele den med medlemmene.",
+      "draftPlaceholder": "Lim inn eller skriv {section} her…",
+      "draftUpdated": "Et medlem eller agenten lagret et nyere utkast.",
+      "loadLatest": "Last inn nyeste",
+      "saveDraft": "Lagre utkast",
+      "saving": "Lagrer…",
+      "saved": "Lagret",
+      "propose": "Foreslå for ratifisering",
+      "keepDrafting": "Fortsett utkastet",
+      "attach": "Legg ved dokument",
+      "attachHint": "Lim inn en lenke eller legg ved et dokument, og nevn deretter @{agent} for å lage et utkast fra det.",
+      "attachTooLarge": "Filer kan være maks {maxSize}.",
+      "attachLimit": "Legg ved opptil {max} dokumenter om gangen.",
+      "uploading": "Laster opp…",
+      "uploadFailed": "Kunne ikke laste opp dokumentet. Prøv igjen.",
+      "sharedDocument": "Delt dokument",
+      "skills": {
+        "review": "Er dette en god {section}? Hva mangler eller er vagt?",
+        "refine": "Forbedre det felles utkastet ut fra det vi diskuterte over.",
+        "draft": "Gjør denne diskusjonen om til et utkast for {section} og lagre det.",
+        "fromSource": "Les den delte lenken eller dokumentet og skriv {section} ut fra det."
+      },
+      "draftHintRatified": "Endringer her er et utkast. Den ratifiserte {section} endres først når et forslag blir vedtatt.",
+      "draftLockedHint": "Denne seksjonen er til avstemning. Utkastet kan endres etter avstemningen."
+    },
+    "proposeForm": {
+      "header": "Opprett et forslag",
+      "title": "Ratifiser kontekst: {sections}",
+      "titleShort": "Ratifiser kontekstseksjoner",
+      "sections": "Seksjoner som skal ratifiseres",
+      "alreadyVoting": "Allerede til avstemning (Avtale #{agreement})",
+      "noDraft": "Ingen utkast ennå",
+      "proposalType": "Forslagstype",
+      "proposalTypeValue": "Ratifiser kontekstseksjon(er)",
+      "contentPrefilled": "forhåndsutfylt fra utkast",
+      "ratifiedAmend": "Ratifisert #{agreement} — utkast til endring",
+      "draftVersion": "Utkast v{version}",
+      "onPassNote": "Ved vedtak blir de valgte utkastene den ratifiserte teksten, og foreslåtte tillegg eller fjerninger blir gjennomført.",
+      "cancel": "Avbryt",
+      "addSection": "Legger til en ny seksjon",
+      "removeSection": "Fjerner denne seksjonen",
+      "ratifiedUnchanged": "Ratifisert #{agreement} — ingen utkastendringer"
+    },
+    "error": {
+      "load": "Kunne ikke laste konteksten for spacen.",
+      "retry": "Prøv igjen",
+      "import": "Kunne ikke importere fra Space Memory.",
+      "save": "Kunne ikke lagre dette utkastet.",
+      "link": "Kunne ikke knytte dette forslaget til Context-seksjonene.",
+      "change": "Kunne ikke oppdatere denne seksjonen. Prøv igjen.",
+      "onVoting": "Denne seksjonen er til avstemning. Den kan endres etter avstemningen."
+    },
+    "success": {
+      "imported": "Importerte et utkast til misjonen fra Space Memory.",
+      "saved": "Utkast lagret.",
+      "suggested": "Seksjon foreslått. Den blir en del av Konteksten når et forslag om å legge den til blir vedtatt.",
+      "removalSuggested": "Fjerning foreslått. Ta den med i et forslag for å gjennomføre den.",
+      "removalWithdrawn": "Forslaget om fjerning er trukket.",
+      "additionWithdrawn": "Forslaget er trukket."
+    },
+    "passed": {
+      "withVotes": "Avtale #{agreement} «{title}» er vedtatt — {yes} % ja, {quorum} % quorum. Seksjonene er nå ratifisert.",
+      "plain": "Avtale #{agreement} «{title}» er vedtatt. Seksjonene er nå ratifisert.",
+      "viewAgreement": "Se avtalen"
+    },
+    "change": {
+      "add": "Foreslått seksjon",
+      "remove": "Fjerning foreslått"
+    },
+    "notice": {
+      "addition": "Foreslått seksjon. Den blir en del av Konteksten først når et forslag om å legge den til blir vedtatt.",
+      "removal": "Fjerning foreslått. Seksjonen blir værende til et forslag om å fjerne den blir vedtatt.",
+      "amendmentOnVoting": "En endring er til avstemning. Den ratifiserte teksten gjelder til den blir vedtatt.",
+      "draftChanges": "Utkastendringer venter. De blir offisielle først når et forslag blir vedtatt."
+    },
+    "reader": {
+      "customLead": "En seksjon medlemmene har lagt til i Konteksten for dette området.",
+      "official": "Ratifisert tekst",
+      "noOfficial": "Ingenting er ratifisert ennå.",
+      "draft": "Utkast — ikke ratifisert",
+      "proposed": "Foreslått tekst — til avstemning",
+      "suggestRemoval": "Foreslå fjerning",
+      "cancelRemoval": "Trekk forslaget om fjerning",
+      "withdrawAddition": "Trekk forslaget",
+      "close": "Lukk"
+    },
+    "addSection": {
+      "open": "Legg til seksjon",
+      "title": "Foreslå en ny seksjon",
+      "description": "Alle medlemmer kan foreslå en seksjon. Den forblir et utkast til et forslag om å legge den til blir vedtatt.",
+      "nameLabel": "Navn på seksjonen",
+      "namePlaceholder": "f.eks. Onboarding",
+      "draftLabel": "Første utkast (valgfritt)",
+      "draftPlaceholder": "Hva bør stå i denne seksjonen?",
+      "cancel": "Avbryt",
+      "submit": "Foreslå seksjon",
+      "submitting": "Foreslår…",
+      "duplicate": "Det finnes allerede en seksjon med dette navnet.",
+      "titleRequired": "Gi seksjonen et navn.",
+      "failed": "Kunne ikke foreslå seksjonen. Prøv igjen.",
+      "restoreLabel": "Fjernede seksjoner",
+      "restore": "Foreslå gjenoppretting"
+    }
   }
 }

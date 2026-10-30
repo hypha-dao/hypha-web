@@ -67,7 +67,8 @@
     "durationDays": "{count, plural, one {# Day} other {# Days}}",
     "spaceBannerRevealMeta": "Details",
     "moreNav": "More",
-    "bankingTab": "Banking"
+    "bankingTab": "Banking",
+    "context": "Context"
   },
   "ModalAside": {
     "spaceSettings": "Space Settings",
@@ -2677,7 +2678,8 @@
       "registerEnergySource": "Register Energy Source",
       "addEnergyMember": "Add Energy Member",
       "changeEnergyOptimization": "Change Energy Optimization",
-      "whitelistEnergySettlement": "Whitelist Energy Settlement"
+      "whitelistEnergySettlement": "Whitelist Energy Settlement",
+      "spaceContext": "Space Context"
     },
     "documentBadges": {
       "invite": "Invite",
@@ -5609,5 +5611,180 @@
     "errorAlreadyConfirmedDescription": "This email has already been confirmed.",
     "errorGenericTitle": "Something went wrong",
     "errorGenericDescription": "We could not confirm this email. Please try again later."
+  },
+  "SpaceContext": {
+    "title": "Context",
+    "subtitle": "One shared source of truth for this space. Members discuss each section together, mention its agent when they want help, then ratify it through an agreement.",
+    "progress": "{ratified} of {total} ratified",
+    "propose": "Propose to ratify",
+    "filters": {
+      "all": "All",
+      "ratified": "Ratified",
+      "proposed": "On voting",
+      "drafts": "Drafts"
+    },
+    "leads": {
+      "mission": "Why the space exists.",
+      "vision": "The future we are building toward.",
+      "strategy": "How we get there over the next 2–3 years.",
+      "objectives": "Measurable goals for this season.",
+      "key_repositories": "Code, docs and data the space relies on.",
+      "tools": "Inventory of tools the space uses.",
+      "how_we_decide": "How this space accepts work and chooses features."
+    },
+    "status": {
+      "ratified": "Ratified",
+      "onVoting": "On voting",
+      "draft": "Draft",
+      "notStarted": "Not started"
+    },
+    "card": {
+      "emptyBody": "No draft yet.",
+      "proposalFallback": "Proposal",
+      "viewProposal": "View proposal",
+      "view": "View",
+      "open": "Open",
+      "openDiscussion": "Open discussion",
+      "startDiscussion": "Start discussion",
+      "proposeAmendment": "Propose amendment",
+      "agreementRef": "Agreement #{agreement}",
+      "ratifiedVia": "Ratified via",
+      "draftedBy": "drafted by {name}",
+      "version": "v{version}",
+      "contributors": "{count, plural, one {# contributor} other {# contributors}}",
+      "edited": "edited {when}",
+      "votingClosed": "voting closed",
+      "daysLeft": "{count, plural, one {# day} other {# days}} left",
+      "hoursLeft": "{count, plural, one {# hour} other {# hours}} left",
+      "read": "Read {section}",
+      "draftText": "Draft — not ratified",
+      "proposedText": "Proposed text — on voting"
+    },
+    "empty": {
+      "title": "No context yet",
+      "description": "Define who this space is — mission, vision, strategy and more. Open a section to discuss it with members, mention its agent when you want a draft, and ratify it with a proposal when it is ready.",
+      "startMission": "Start with Mission",
+      "importMemory": "Import from Memory",
+      "importing": "Importing…",
+      "filter": "No sections in this filter."
+    },
+    "chat": {
+      "title": "Section discussion",
+      "close": "Close discussion",
+      "agent": "{agent} · {section} agent",
+      "agentHint": "Members discuss here. {agent} replies only when someone mentions @{agent}.",
+      "empty": "No messages yet. Discuss the {section} with members here, and mention @{agent} when you want it reviewed or drafted.",
+      "loadError": "Could not load this section chat.",
+      "connecting": "Connecting to the discussion…",
+      "unavailable": "The discussion is unavailable right now. Try again later.",
+      "signInHint": "Sign in to discuss this section with members.",
+      "membersOnly": "Only space members can join this discussion.",
+      "roomTitle": "{section} · Context — {space}",
+      "placeholder": "Message members, or mention @{agent}…",
+      "askAgent": "Ask @{agent}",
+      "draftLabel": "Shared draft",
+      "draftHint": "Paste existing {section} text here or edit it together. Save to share it with members.",
+      "draftPlaceholder": "Paste or write the {section} here…",
+      "draftUpdated": "A member or the agent saved a newer draft.",
+      "loadLatest": "Load latest",
+      "saveDraft": "Save draft",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "propose": "Propose to ratify",
+      "keepDrafting": "Keep drafting",
+      "attach": "Attach document",
+      "attachHint": "Paste a link or attach a document, then mention @{agent} to draft from it.",
+      "attachTooLarge": "Files must be {maxSize} or smaller.",
+      "attachLimit": "Attach up to {max} documents at a time.",
+      "uploading": "Uploading…",
+      "uploadFailed": "Could not upload the document. Try again.",
+      "sharedDocument": "Shared document",
+      "skills": {
+        "review": "Is this a good {section}? What is missing or vague?",
+        "refine": "Refine the shared draft using what we discussed above.",
+        "draft": "Turn this discussion into a {section} draft and save it.",
+        "fromSource": "Read the shared link or document and draft the {section} from it."
+      },
+      "draftHintRatified": "Edits here are a draft. The ratified {section} changes only when a proposal passes.",
+      "draftLockedHint": "This section is on voting. The draft can change after the vote."
+    },
+    "proposeForm": {
+      "header": "Create a proposal",
+      "title": "Ratify context: {sections}",
+      "titleShort": "Ratify context sections",
+      "sections": "Sections to ratify",
+      "alreadyVoting": "Already on voting (Agreement #{agreement})",
+      "noDraft": "No draft yet",
+      "proposalType": "Proposal type",
+      "proposalTypeValue": "Ratify context section(s)",
+      "contentPrefilled": "pre-filled from drafts",
+      "ratifiedAmend": "Ratified #{agreement} — draft amendment",
+      "draftVersion": "Draft v{version}",
+      "onPassNote": "On pass, the selected drafts become the ratified text, and suggested additions or removals are applied.",
+      "cancel": "Cancel",
+      "addSection": "Adds a new section",
+      "removeSection": "Removes this section",
+      "ratifiedUnchanged": "Ratified #{agreement} — no draft changes"
+    },
+    "error": {
+      "load": "Could not load Space Context.",
+      "retry": "Try again",
+      "import": "Could not import from Space Memory.",
+      "save": "Could not save this draft.",
+      "link": "Could not attach this proposal to the Context sections.",
+      "change": "Could not update this section. Try again.",
+      "onVoting": "This section is on voting. It can change after the vote."
+    },
+    "success": {
+      "imported": "Imported a Mission draft from Space Memory.",
+      "saved": "Draft saved.",
+      "suggested": "Section suggested. It joins the Context once a proposal adding it passes.",
+      "removalSuggested": "Removal suggested. Include it in a proposal to apply it.",
+      "removalWithdrawn": "Removal suggestion withdrawn.",
+      "additionWithdrawn": "Suggestion withdrawn."
+    },
+    "passed": {
+      "withVotes": "Agreement #{agreement} “{title}” passed — {yes}% yes, {quorum}% quorum. Sections are now ratified.",
+      "plain": "Agreement #{agreement} “{title}” passed. Sections are now ratified.",
+      "viewAgreement": "View agreement"
+    },
+    "change": {
+      "add": "Suggested section",
+      "remove": "Removal suggested"
+    },
+    "notice": {
+      "addition": "Suggested section. It joins the Context only when a proposal adding it passes.",
+      "removal": "Removal suggested. The section stays until a proposal removing it passes.",
+      "amendmentOnVoting": "An amendment is on voting. The ratified text stays until it passes.",
+      "draftChanges": "Draft changes pending. They become official only when a proposal passes."
+    },
+    "reader": {
+      "customLead": "A section members added to this space's Context.",
+      "official": "Ratified text",
+      "noOfficial": "Nothing ratified yet.",
+      "draft": "Draft — not ratified",
+      "proposed": "Proposed text — on voting",
+      "suggestRemoval": "Suggest removing",
+      "cancelRemoval": "Withdraw removal suggestion",
+      "withdrawAddition": "Withdraw suggestion",
+      "close": "Close"
+    },
+    "addSection": {
+      "open": "Add section",
+      "title": "Suggest a new section",
+      "description": "Any member can suggest a section. It stays a draft until a proposal adding it passes.",
+      "nameLabel": "Section name",
+      "namePlaceholder": "e.g. Onboarding",
+      "draftLabel": "First draft (optional)",
+      "draftPlaceholder": "What should this section say?",
+      "cancel": "Cancel",
+      "submit": "Suggest section",
+      "submitting": "Suggesting…",
+      "duplicate": "A section with this name already exists.",
+      "titleRequired": "Give the section a name.",
+      "failed": "Could not suggest the section. Try again.",
+      "restoreLabel": "Removed sections",
+      "restore": "Suggest restoring"
+    }
   }
 }

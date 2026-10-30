@@ -25,6 +25,7 @@ export function getCreateRouteSegmentForProposalLabel(
   const labelToRoute: Record<string, string> = {
     Contribution: 'propose-contribution',
     'Collective Agreement': '',
+    'Space Context': 'ratify-context',
     Expenses: 'pay-for-expenses',
     Funding: 'deploy-funds',
     Airdrop: 'airdrop',
@@ -161,6 +162,12 @@ export function inferResubmitTemplateSegmentFromPayload(
     typeof parsed.payForExpensesForm === 'object'
   ) {
     return 'pay-for-expenses';
+  }
+  if (
+    Array.isArray(parsed.spaceContextSectionKeys) &&
+    parsed.spaceContextSectionKeys.length > 0
+  ) {
+    return 'ratify-context';
   }
   if (
     parsed.tokenAddress !== undefined ||

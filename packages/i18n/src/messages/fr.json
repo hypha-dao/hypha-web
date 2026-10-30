@@ -667,7 +667,8 @@
     "durationDays": "{count, plural, one {# jour} other {# jours}}",
     "spaceBannerRevealMeta": "Détails",
     "moreNav": "Plus",
-    "bankingTab": "Banque"
+    "bankingTab": "Banque",
+    "context": "Contexte"
   },
   "ModalAside": {
     "spaceSettings": "Paramètres de l’espace",
@@ -2078,7 +2079,8 @@
       "registerEnergySource": "Enregistrer une source d'énergie",
       "addEnergyMember": "Ajouter un membre énergie",
       "changeEnergyOptimization": "Modifier l'optimisation énergétique",
-      "whitelistEnergySettlement": "Liste blanche de règlement énergétique"
+      "whitelistEnergySettlement": "Liste blanche de règlement énergétique",
+      "spaceContext": "Contexte de l'espace"
     },
     "documentBadges": {
       "invite": "Invitation",
@@ -5583,5 +5585,180 @@
     "proposal": "Proposition",
     "agreement": "Accord",
     "backHome": "Retour à l'accueil"
+  },
+  "SpaceContext": {
+    "title": "Contexte",
+    "subtitle": "Une source de vérité partagée pour cet espace. Les membres discutent chaque section ensemble, mentionnent son agent quand ils veulent de l’aide, puis la ratifient par un accord.",
+    "progress": "{ratified} sur {total} ratifiées",
+    "propose": "Proposer à la ratification",
+    "filters": {
+      "all": "Toutes",
+      "ratified": "Ratifiées",
+      "proposed": "En vote",
+      "drafts": "Brouillons"
+    },
+    "leads": {
+      "mission": "Why the space exists.",
+      "vision": "The future we are building toward.",
+      "strategy": "How we get there over the next 2–3 years.",
+      "objectives": "Measurable goals for this season.",
+      "key_repositories": "Code, docs and data the space relies on.",
+      "tools": "Inventory of tools the space uses.",
+      "how_we_decide": "How this space accepts work and chooses features."
+    },
+    "status": {
+      "ratified": "Ratifiée",
+      "onVoting": "En vote",
+      "draft": "Brouillon",
+      "notStarted": "Non commencée"
+    },
+    "card": {
+      "emptyBody": "No draft yet.",
+      "proposalFallback": "Proposal",
+      "viewProposal": "View proposal",
+      "view": "View",
+      "open": "Open",
+      "openDiscussion": "Ouvrir la discussion",
+      "startDiscussion": "Lancer la discussion",
+      "proposeAmendment": "Proposer un amendement",
+      "agreementRef": "Accord n°{agreement}",
+      "ratifiedVia": "Ratifiée via",
+      "draftedBy": "rédigée par {name}",
+      "version": "v{version}",
+      "contributors": "{count, plural, one {# contributeur} other {# contributeurs}}",
+      "edited": "modifiée {when}",
+      "votingClosed": "vote clos",
+      "daysLeft": "{count, plural, one {# jour restant} other {# jours restants}}",
+      "hoursLeft": "{count, plural, one {# heure restante} other {# heures restantes}}",
+      "read": "Lire {section}",
+      "draftText": "Brouillon — non ratifié",
+      "proposedText": "Texte proposé — en vote"
+    },
+    "empty": {
+      "title": "Pas encore de contexte",
+      "description": "Définissez qui est cet espace — mission, vision, stratégie et plus. Ouvrez une section pour en discuter avec les membres, mentionnez son agent quand vous voulez un brouillon, et ratifiez-la par une proposition quand elle est prête.",
+      "startMission": "Commencer par la mission",
+      "importMemory": "Importer depuis Memory",
+      "importing": "Importing…",
+      "filter": "No sections in this filter."
+    },
+    "chat": {
+      "title": "Discussion de la section",
+      "close": "Fermer la discussion",
+      "agent": "{agent} · agent {section}",
+      "agentHint": "Les membres discutent ici. {agent} ne répond que lorsque quelqu’un mentionne @{agent}.",
+      "empty": "Pas encore de messages. Discutez ici de {section} avec les membres et mentionnez @{agent} quand vous voulez une relecture ou un brouillon.",
+      "loadError": "Could not load this section chat.",
+      "connecting": "Connexion à la discussion…",
+      "unavailable": "La discussion est indisponible pour le moment. Réessayez plus tard.",
+      "signInHint": "Connectez-vous pour discuter de cette section avec les membres.",
+      "membersOnly": "Seuls les membres de l’espace peuvent rejoindre cette discussion.",
+      "roomTitle": "{section} · Contexte — {space}",
+      "placeholder": "Écrivez aux membres ou mentionnez @{agent}…",
+      "askAgent": "Demander à @{agent}",
+      "draftLabel": "Brouillon partagé",
+      "draftHint": "Collez ici le texte existant de {section} ou modifiez-le ensemble. Enregistrez pour le partager avec les membres.",
+      "draftPlaceholder": "Collez ou écrivez {section} ici…",
+      "draftUpdated": "Un membre ou l’agent a enregistré un brouillon plus récent.",
+      "loadLatest": "Charger le plus récent",
+      "saveDraft": "Save draft",
+      "saving": "Enregistrement…",
+      "saved": "Enregistré",
+      "propose": "Propose to ratify",
+      "keepDrafting": "Keep drafting",
+      "attach": "Joindre un document",
+      "attachHint": "Collez un lien ou joignez un document, puis mentionnez @{agent} pour rédiger à partir de celui-ci.",
+      "attachTooLarge": "Les fichiers doivent faire {maxSize} au maximum.",
+      "attachLimit": "Joignez jusqu’à {max} documents à la fois.",
+      "uploading": "Envoi…",
+      "uploadFailed": "Impossible d’envoyer le document. Réessayez.",
+      "sharedDocument": "Document partagé",
+      "skills": {
+        "review": "Est-ce une bonne {section} ? Qu’est-ce qui manque ou reste vague ?",
+        "refine": "Améliore le brouillon partagé à partir de notre discussion ci-dessus.",
+        "draft": "Transforme cette discussion en brouillon de {section} et enregistre-le.",
+        "fromSource": "Lis le lien ou le document partagé et rédige {section} à partir de celui-ci."
+      },
+      "draftHintRatified": "Les modifications ici sont un brouillon. {section} ratifiée ne change que lorsqu’une proposition est adoptée.",
+      "draftLockedHint": "Cette section est en vote. Le brouillon pourra changer après le vote."
+    },
+    "proposeForm": {
+      "header": "Créer une proposition",
+      "title": "Ratifier le contexte : {sections}",
+      "titleShort": "Ratifier des sections de contexte",
+      "sections": "Sections to ratify",
+      "alreadyVoting": "Déjà en vote (Accord n°{agreement})",
+      "noDraft": "No draft yet",
+      "proposalType": "Type de proposition",
+      "proposalTypeValue": "Ratifier des sections du contexte",
+      "contentPrefilled": "prérempli à partir des brouillons",
+      "ratifiedAmend": "Ratifiée n°{agreement} — amendement en brouillon",
+      "draftVersion": "Brouillon v{version}",
+      "onPassNote": "Si elle est adoptée, les brouillons sélectionnés deviennent le texte ratifié, et les ajouts ou suppressions suggérés sont appliqués.",
+      "cancel": "Annuler",
+      "addSection": "Ajoute une nouvelle section",
+      "removeSection": "Supprime cette section",
+      "ratifiedUnchanged": "Ratifiée n°{agreement} — aucune modification de brouillon"
+    },
+    "error": {
+      "load": "Could not load Space Context.",
+      "retry": "Try again",
+      "import": "Could not import from Space Memory.",
+      "save": "Impossible d'enregistrer ce brouillon.",
+      "link": "Impossible de lier cette proposition aux sections Context.",
+      "change": "Impossible de mettre à jour cette section. Réessayez.",
+      "onVoting": "Cette section est en vote. Elle pourra changer après le vote."
+    },
+    "success": {
+      "imported": "Imported a Mission draft from Space Memory.",
+      "saved": "Brouillon enregistré.",
+      "suggested": "Section suggérée. Elle rejoint le Contexte dès qu’une proposition qui l’ajoute est adoptée.",
+      "removalSuggested": "Suppression suggérée. Incluez-la dans une proposition pour l’appliquer.",
+      "removalWithdrawn": "Suggestion de suppression retirée.",
+      "additionWithdrawn": "Suggestion retirée."
+    },
+    "passed": {
+      "withVotes": "Accord n°{agreement} « {title} » adopté — {yes} % oui, {quorum} % de quorum. Les sections sont désormais ratifiées.",
+      "plain": "Accord n°{agreement} « {title} » adopté. Les sections sont désormais ratifiées.",
+      "viewAgreement": "Voir l’accord"
+    },
+    "change": {
+      "add": "Section suggérée",
+      "remove": "Suppression suggérée"
+    },
+    "notice": {
+      "addition": "Section suggérée. Elle rejoint le Contexte seulement quand une proposition qui l’ajoute est adoptée.",
+      "removal": "Suppression suggérée. La section reste jusqu’à l’adoption d’une proposition qui la supprime.",
+      "amendmentOnVoting": "Un amendement est en vote. Le texte ratifié reste en vigueur jusqu’à son adoption.",
+      "draftChanges": "Modifications de brouillon en attente. Elles deviennent officielles seulement quand une proposition est adoptée."
+    },
+    "reader": {
+      "customLead": "Une section ajoutée par les membres au Contexte de cet espace.",
+      "official": "Texte ratifié",
+      "noOfficial": "Rien n’est encore ratifié.",
+      "draft": "Brouillon — non ratifié",
+      "proposed": "Texte proposé — en vote",
+      "suggestRemoval": "Suggérer la suppression",
+      "cancelRemoval": "Retirer la suggestion de suppression",
+      "withdrawAddition": "Retirer la suggestion",
+      "close": "Fermer"
+    },
+    "addSection": {
+      "open": "Ajouter une section",
+      "title": "Suggérer une nouvelle section",
+      "description": "Tout membre peut suggérer une section. Elle reste un brouillon jusqu’à l’adoption d’une proposition qui l’ajoute.",
+      "nameLabel": "Nom de la section",
+      "namePlaceholder": "ex. Accueil des membres",
+      "draftLabel": "Premier brouillon (facultatif)",
+      "draftPlaceholder": "Que devrait dire cette section ?",
+      "cancel": "Annuler",
+      "submit": "Suggérer la section",
+      "submitting": "Envoi…",
+      "duplicate": "Une section porte déjà ce nom.",
+      "titleRequired": "Donnez un nom à la section.",
+      "failed": "Impossible de suggérer la section. Réessayez.",
+      "restoreLabel": "Sections supprimées",
+      "restore": "Suggérer la restauration"
+    }
   }
 }

@@ -79,6 +79,7 @@ import {
   formatVoiceDurationLabel,
 } from './human-chat-panel-voice-audio-row';
 import { asTimelineDate } from './human-chat-timeline-order';
+import { useAgentMentionLabel } from './agent-mention-label-context';
 
 type Reaction = {
   emoji: string;
@@ -1343,17 +1344,17 @@ function MxidMentionPill({
     sub: linkedSub ?? canonicalSub ?? undefined,
   });
 
-  const t = useTranslations('HumanChatPanel');
+  const agentMentionLabel = useAgentMentionLabel();
   const displayLabel = useMemo(() => {
     if (isHyphaBotMatrixIdentity(fullMxid, syncLabel)) {
-      const label = t('agentMentionLabel').trim();
+      const label = agentMentionLabel.trim();
       return label.startsWith('@') ? label : `@${label}`;
     }
     const fromPerson = person ? formatPersonDisplayName(person) : '';
     const visible = visibleMatrixMemberName(fullMxid, fromPerson, syncLabel);
     if (!visible) return '';
     return visible.startsWith('@') ? visible : `@${visible}`;
-  }, [person, syncLabel, fullMxid, t]);
+  }, [agentMentionLabel, person, syncLabel, fullMxid]);
 
   const loading =
     needsProfile &&
@@ -1640,6 +1641,7 @@ export function HumanChatPanelMessageBubble({
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
   const tCoherence = useTranslations('CoherenceTab');
+  const agentMentionLabel = useAgentMentionLabel();
   const specialist = message.agentSpecialistId
     ? specialistById(message.agentSpecialistId)
     : null;
@@ -1774,7 +1776,7 @@ export function HumanChatPanelMessageBubble({
 
   const resolvedSenderName = useMemo(() => {
     if (isHyphaBotMatrixIdentity(message.senderMatrixId, message.senderName)) {
-      return t('agentMentionLabel');
+      return agentMentionLabel;
     }
     if (message.role === 'user') {
       return message.senderName ?? t('you');
@@ -1793,6 +1795,7 @@ export function HumanChatPanelMessageBubble({
         : fromPerson || rosterSenderLabel?.trim() || message.senderName?.trim();
     return visible || t('unknownMember');
   }, [
+    agentMentionLabel,
     message.role,
     message.senderMatrixId,
     message.senderName,
@@ -1804,7 +1807,7 @@ export function HumanChatPanelMessageBubble({
   const resolvedReplyAuthorLabel = useMemo(() => {
     if (!replyTo) return '';
     if (isHyphaBotMatrixIdentity(replyTo.sourceUserId, replyTo.authorLabel)) {
-      return t('agentMentionLabel');
+      return agentMentionLabel;
     }
     const fromPerson = replyPerson ? formatPersonDisplayName(replyPerson) : '';
     const visible =
@@ -1817,7 +1820,7 @@ export function HumanChatPanelMessageBubble({
           )
         : fromPerson || rosterReplyLabel?.trim() || replyTo.authorLabel?.trim();
     return visible || t('unknownMember');
-  }, [replyPerson, replyTo, rosterReplyLabel, t]);
+  }, [agentMentionLabel, replyPerson, replyTo, rosterReplyLabel, t]);
 
   const senderHasVisibleLabel = useMemo(() => {
     if (message.role !== 'member' || !message.senderMatrixId) return true;
