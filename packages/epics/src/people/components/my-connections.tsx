@@ -61,6 +61,7 @@ import {
   FileText,
   Globe,
   Globe2,
+  LayoutGrid,
   Radio,
   Search,
   Target,
