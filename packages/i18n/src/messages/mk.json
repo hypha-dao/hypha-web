@@ -3846,7 +3846,7 @@
     "backToSpaceChat": "Назад кон разговорот на просторот",
     "copyButton": "Копирај",
     "copiedButton": "Копирано!",
-    "tabChat": "Разговор",
+    "tabChat": "Соба",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# непрочитано спомнување} other {# непрочитани спомнувања}}",
     "tabWithUnreadMentionsCapped": "{tabLabel}, 99 или повеќе непрочитани спомнувања",
     "tabMembers": "Членови",

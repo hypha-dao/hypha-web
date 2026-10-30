@@ -3866,7 +3866,7 @@
     "backToSpaceChat": "Terug naar de ruimtechat",
     "copyButton": "Kopiëren",
     "copiedButton": "Gekopieerd!",
-    "tabChat": "Chatten",
+    "tabChat": "Kamer",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# ongelezen vermelding} other {# ongelezen vermeldingen}}",
     "tabWithUnreadMentionsCapped": "{tabLabel}, 99 of meer ongelezen vermeldingen",
     "tabMembers": "Leden",

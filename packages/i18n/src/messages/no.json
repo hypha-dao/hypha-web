@@ -3865,7 +3865,7 @@
     "backToSpaceChat": "Tilbake til romchatten",
     "copyButton": "Kopier",
     "copiedButton": "Kopiert!",
-    "tabChat": "Chat",
+    "tabChat": "Rom",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# ulest omtale} other {# uleste omtaler}}",
     "tabWithUnreadMentionsCapped": "{tabLabel}, 99 eller flere uleste omtaler",
     "tabMembers": "Medlemmer",

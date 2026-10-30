@@ -3894,7 +3894,7 @@
     "backToSpaceChat": "Back to space chat",
     "copyButton": "Copy",
     "copiedButton": "Copied!",
-    "tabChat": "Chat",
+    "tabChat": "Room",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# unread mention} other {# unread mentions}}",
     "tabWithUnreadMentionsCapped": "{tabLabel}, 99 or more unread mentions",
     "tabMembers": "Members",

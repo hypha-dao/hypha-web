@@ -3291,7 +3291,7 @@
     "closePanel": "Fermer le panneau",
     "copyButton": "Copier",
     "copiedButton": "Copié !",
-    "tabChat": "Chat",
+    "tabChat": "Salle",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# mention non lue} other {# mentions non lues}}",
     "tabWithUnreadMentionsCapped": "{tabLabel}, 99 mentions non lues ou plus",
     "tabMembers": "Membres",

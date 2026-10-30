@@ -3305,7 +3305,7 @@
     "closePanel": "Cerrar panel",
     "copyButton": "Copiar",
     "copiedButton": "¡Copiado!",
-    "tabChat": "Chat",
+    "tabChat": "Sala",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# mención sin leer} other {# menciones sin leer}}",
     "tabWithUnreadMentionsCapped": "{tabLabel}, 99 o más menciones sin leer",
     "tabMembers": "Miembros",
