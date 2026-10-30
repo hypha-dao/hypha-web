@@ -8,11 +8,20 @@ import {
   headingForSectionKey,
   buildProposalMarkdown,
   type SpaceContextSectionKey,
+  type SpaceContextSectionRecord,
   useMe,
   useJwt,
   useCreateAgreementOrchestrator,
 } from '@hypha-platform/core/client';
-import { Button, Checkbox, Form } from '@hypha-platform/ui';
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Form,
+  RequirementMark,
+} from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import React from 'react';
 import { useConfig } from 'wagmi';
@@ -28,10 +37,49 @@ import {
   useSpaceContext,
 } from '../hooks/use-space-context';
 import { SpaceContextStatusChip } from './space-context-status-chip';
+import { agreementNumber } from './agreement-number';
 import { useAuthentication } from '@hypha-platform/authentication';
+
+const FIELD_LABEL_CLASS =
+  'text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground';
 
 const formSchema = schemaCreateAgreementForm.extend(createAgreementFiles);
 type FormValues = z.infer<typeof formSchema>;
+
+function isSelectable(section: SpaceContextSectionRecord): boolean {
+  if (section.status === 'proposed') return false;
+  return section.markdown.trim().length > 0;
+}
+
+function sectionMeta(
+  section: SpaceContextSectionRecord,
+  t: ReturnType<typeof useTranslations<'SpaceContext'>>,
+): string {
+  if (section.status === 'proposed') {
+    return t('proposeForm.alreadyVoting', {
+      agreement: agreementNumber(
+        section.proposalWeb3Id,
+        section.proposalDocumentId,
+      ),
+    });
+  }
+  if (section.status === 'ratified') {
+    return t('proposeForm.ratifiedAmend', {
+      agreement: agreementNumber(
+        section.ratifiedWeb3Id,
+        section.ratifiedDocumentId,
+      ),
+    });
+  }
+  if (!section.markdown.trim()) return t('proposeForm.noDraft');
+  const parts = [t('proposeForm.draftVersion', { version: section.version })];
+  if (section.contributorCount > 1) {
+    parts.push(t('card.contributors', { count: section.contributorCount }));
+  } else if (section.lastEditorName) {
+    parts.push(section.lastEditorName);
+  }
+  return parts.join(' · ');
+}
 
 function ratifyContextResubmitMatchesSpace(
   restored: Record<string, unknown> | null,
@@ -104,11 +152,7 @@ export function CreateContextRatifyForm({
       .filter(Boolean);
   }, [searchParams]);
 
-  const selectable = (overview?.sections ?? []).filter(
-    (section) =>
-      section.status === 'draft' ||
-      (section.status === 'not_started' && section.markdown.trim()),
-  );
+  const selectable = (overview?.sections ?? []).filter(isSelectable);
   const [selected, setSelected] = React.useState<SpaceContextSectionKey[]>([]);
   const initializedRef = React.useRef(false);
   const titleTouchedRef = React.useRef(false);
@@ -128,7 +172,9 @@ export function CreateContextRatifyForm({
     setSelected(
       fromQuery.length > 0
         ? fromQuery
-        : selectable.map((section) => section.sectionKey),
+        : selectable
+            .filter((section) => section.status !== 'ratified')
+            .map((section) => section.sectionKey),
     );
   }, [overview, preselected, selectable]);
 
@@ -318,6 +364,88 @@ export function CreateContextRatifyForm({
             label={SPACE_CONTEXT_DOCUMENT_LABEL}
             stickyHeaderTitle={t('proposeForm.header')}
             progress={progress}
+            hideLeadImage
+            contentLabel={
+              <>
+                {tAgreementFlow('createAgreementBaseFields.proposalContent')}
+                <span className="font-normal text-neutral-11">
+                  {' — '}
+                  {t('proposeForm.contentPrefilled')}
+                </span>
+              </>
+            }
+            beforeContent={
+              <section className="space-y-5 rounded-none border border-border/70 bg-background-2 p-4 lg:p-6">
+                <div className="space-y-2">
+                  <p className={FIELD_LABEL_CLASS}>
+                    {t('proposeForm.proposalType')}
+                  </p>
+                  <Badge
+                    variant="outline"
+                    colorVariant="neutral"
+                    className="uppercase tracking-[0.12em]"
+                  >
+                    {t('proposeForm.proposalTypeValue')}
+                  </Badge>
+                </div>
+                <fieldset className="space-y-2">
+                  <legend className={FIELD_LABEL_CLASS}>
+                    {t('proposeForm.sections')} <RequirementMark />
+                  </legend>
+                  <p className="text-1 text-neutral-11">
+                    {t('proposeForm.hint')}
+                  </p>
+                  <div className="divide-y divide-border/70 border border-border/70">
+                    {(overview?.sections ?? []).map((section) => {
+                      const disabled = !isSelectable(section);
+                      const selectionLocked = typeof agreement?.id === 'number';
+                      const checked = selected.includes(section.sectionKey);
+                      return (
+                        <label
+                          key={section.sectionKey}
+                          className={cn(
+                            'flex items-center justify-between gap-3 px-3 py-3',
+                            disabled || selectionLocked
+                              ? 'cursor-not-allowed'
+                              : 'cursor-pointer',
+                            disabled && 'opacity-60',
+                          )}
+                        >
+                          <span className="flex min-w-0 items-center gap-3">
+                            <Checkbox
+                              checked={checked}
+                              disabled={disabled || selectionLocked}
+                              onCheckedChange={(value) => {
+                                setSelected((current) => {
+                                  if (value === true) {
+                                    return current.includes(section.sectionKey)
+                                      ? current
+                                      : [...current, section.sectionKey];
+                                  }
+                                  return current.filter(
+                                    (key) => key !== section.sectionKey,
+                                  );
+                                });
+                              }}
+                            />
+                            <span className="min-w-0 truncate text-2">
+                              <span className="font-semibold text-foreground">
+                                {headingForSectionKey(section.sectionKey)}
+                              </span>
+                              <span className="text-neutral-11">
+                                {' · '}
+                                {sectionMeta(section, t)}
+                              </span>
+                            </span>
+                          </span>
+                          <SpaceContextStatusChip status={section.status} />
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              </section>
+            }
           />
 
           {error ? (
@@ -355,67 +483,20 @@ export function CreateContextRatifyForm({
             </div>
           ) : null}
 
-          <fieldset className="space-y-3">
-            <legend className="text-[11px] font-semibold uppercase tracking-[0.12em]">
-              {t('proposeForm.sections')}
-            </legend>
-            <p className="text-2 text-neutral-11">{t('proposeForm.hint')}</p>
-            <div className="divide-y divide-border/70 border border-border/70">
-              {(overview?.sections ?? []).map((section) => {
-                const disabled =
-                  section.status === 'proposed' ||
-                  section.status === 'ratified' ||
-                  !section.markdown.trim();
-                const selectionLocked = typeof agreement?.id === 'number';
-                const checked = selected.includes(section.sectionKey);
-                return (
-                  <label
-                    key={section.sectionKey}
-                    className="flex cursor-pointer items-center justify-between gap-3 px-3 py-3"
-                  >
-                    <span className="flex min-w-0 items-center gap-3">
-                      <Checkbox
-                        checked={checked}
-                        disabled={disabled || selectionLocked}
-                        onCheckedChange={(value) => {
-                          setSelected((current) => {
-                            if (value === true) {
-                              return current.includes(section.sectionKey)
-                                ? current
-                                : [...current, section.sectionKey];
-                            }
-                            return current.filter(
-                              (key) => key !== section.sectionKey,
-                            );
-                          });
-                        }}
-                      />
-                      <span className="min-w-0">
-                        <span className="block font-medium">
-                          {headingForSectionKey(section.sectionKey)}
-                        </span>
-                        <span className="block truncate text-1 text-neutral-11">
-                          {disabled
-                            ? section.status === 'proposed'
-                              ? t('proposeForm.alreadyVoting')
-                              : section.status === 'ratified'
-                              ? t('proposeForm.alreadyRatified')
-                              : t('proposeForm.noDraft')
-                            : t('proposeForm.draftReady')}
-                        </span>
-                      </span>
-                    </span>
-                    <SpaceContextStatusChip status={section.status} />
-                  </label>
-                );
-              })}
+          <div className="flex flex-col gap-3 border-t border-border/70 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-1 text-neutral-11">
+              {t('proposeForm.onPassNote')}
+            </p>
+            <div className="flex shrink-0 justify-end gap-2">
+              <Button asChild variant="outline" colorVariant="neutral">
+                <Link href={closeUrl || successfulUrl} scroll={false}>
+                  {t('proposeForm.cancel')}
+                </Link>
+              </Button>
+              <Button type="submit" disabled={selected.length === 0}>
+                {tAgreementFlow('buttons.publish')}
+              </Button>
             </div>
-          </fieldset>
-
-          <div className="flex justify-end">
-            <Button type="submit" disabled={selected.length === 0}>
-              {tAgreementFlow('buttons.publish')}
-            </Button>
           </div>
         </form>
       </Form>

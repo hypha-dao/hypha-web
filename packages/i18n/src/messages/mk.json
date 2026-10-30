@@ -5606,17 +5606,23 @@
     },
     "card": {
       "emptyBody": "No draft yet.",
-      "ratifiedMeta": "Ratified · Agreement #{agreement}",
-      "proposedMeta": "On voting · {title}",
       "proposalFallback": "Proposal",
-      "draftContributors": "Нацрт · {count, plural, one {# соработник} other {# соработници}}",
-      "draftEditor": "Draft · {name}",
-      "draftMeta": "Draft",
       "viewProposal": "View proposal",
       "view": "View",
       "open": "Open",
-      "continue": "Continue",
-      "startWithAgent": "Start with agent"
+      "continue": "Продолжи разговор",
+      "startWithAgent": "Start with agent",
+      "proposeAmendment": "Предложи измена",
+      "agreementRef": "Договор #{agreement}",
+      "ratifiedVia": "Ратификувано преку",
+      "draftedBy": "изготвено од {name}",
+      "version": "v{version}",
+      "contributors": "{count, plural, one {# соработник} other {# соработници}}",
+      "edited": "изменето {when}",
+      "votingClosed": "гласањето заврши",
+      "daysLeft": "{count, plural, one {преостанува # ден} other {преостануваат # дена}}",
+      "hoursLeft": "{count, plural, one {преостанува # час} other {преостануваат # часа}}",
+      "yesShare": "{percent}% за"
     },
     "empty": {
       "title": "Сè уште нема контекст",
@@ -5656,11 +5662,16 @@
       "title": "Ratify context: {sections}",
       "titleShort": "Ratify context sections",
       "sections": "Sections to ratify",
-      "hint": "Only drafted sections can be included. On voting and ratified sections stay out of this proposal.",
-      "alreadyVoting": "Already on voting",
-      "alreadyRatified": "Already ratified",
+      "hint": "Изберете нацрт-делови за ратификација или ратификуван дел за измена. Деловите што се веќе на гласање остануваат надвор.",
+      "alreadyVoting": "Веќе на гласање (Договор #{agreement})",
       "noDraft": "No draft yet",
-      "draftReady": "Draft ready"
+      "proposalType": "Тип на предлог",
+      "proposalTypeValue": "Ратификувај дел(ови) од контекстот",
+      "contentPrefilled": "пополнето од нацртите",
+      "ratifiedAmend": "Ратификувано #{agreement} — изберете за измена",
+      "draftVersion": "Нацрт v{version}",
+      "onPassNote": "Ако се усвои, избраните делови се означуваат како ратификувани на страницата Контекст.",
+      "cancel": "Откажи"
     },
     "error": {
       "load": "Could not load Space Context.",
@@ -5672,6 +5683,16 @@
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",
       "saved": "Нацртот е зачуван."
+    },
+    "passed": {
+      "withVotes": "Договор #{agreement} „{title}“ е усвоен — {yes}% за, {quorum}% кворум. Деловите се сега ратификувани.",
+      "plain": "Договор #{agreement} „{title}“ е усвоен. Деловите се сега ратификувани.",
+      "viewAgreement": "Види договор",
+      "dismiss": "Затвори"
+    },
+    "proposal": {
+      "passedNote": "Усвоено — овие делови се сега ратификувани на страницата Контекст.",
+      "openContext": "Отвори Контекст"
     }
   }
 }

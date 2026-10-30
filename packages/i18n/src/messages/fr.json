@@ -5615,17 +5615,23 @@
     },
     "card": {
       "emptyBody": "No draft yet.",
-      "ratifiedMeta": "Ratified · Agreement #{agreement}",
-      "proposedMeta": "On voting · {title}",
       "proposalFallback": "Proposal",
-      "draftContributors": "Brouillon · {count, plural, one {# contributeur} other {# contributeurs}}",
-      "draftEditor": "Draft · {name}",
-      "draftMeta": "Draft",
       "viewProposal": "View proposal",
       "view": "View",
       "open": "Open",
-      "continue": "Continue",
-      "startWithAgent": "Start with agent"
+      "continue": "Continuer le chat",
+      "startWithAgent": "Start with agent",
+      "proposeAmendment": "Proposer un amendement",
+      "agreementRef": "Accord n°{agreement}",
+      "ratifiedVia": "Ratifiée via",
+      "draftedBy": "rédigée par {name}",
+      "version": "v{version}",
+      "contributors": "{count, plural, one {# contributeur} other {# contributeurs}}",
+      "edited": "modifiée {when}",
+      "votingClosed": "vote clos",
+      "daysLeft": "{count, plural, one {# jour restant} other {# jours restants}}",
+      "hoursLeft": "{count, plural, one {# heure restante} other {# heures restantes}}",
+      "yesShare": "{percent} % oui"
     },
     "empty": {
       "title": "Pas encore de contexte",
@@ -5665,11 +5671,16 @@
       "title": "Ratifier le contexte : {sections}",
       "titleShort": "Ratifier des sections de contexte",
       "sections": "Sections to ratify",
-      "hint": "Only drafted sections can be included. On voting and ratified sections stay out of this proposal.",
-      "alreadyVoting": "Already on voting",
-      "alreadyRatified": "Already ratified",
+      "hint": "Sélectionnez des sections en brouillon à ratifier, ou une section ratifiée à amender. Les sections déjà en vote sont exclues.",
+      "alreadyVoting": "Déjà en vote (Accord n°{agreement})",
       "noDraft": "No draft yet",
-      "draftReady": "Draft ready"
+      "proposalType": "Type de proposition",
+      "proposalTypeValue": "Ratifier des sections du contexte",
+      "contentPrefilled": "prérempli à partir des brouillons",
+      "ratifiedAmend": "Ratifiée n°{agreement} — sélectionner pour amender",
+      "draftVersion": "Brouillon v{version}",
+      "onPassNote": "Si elle est adoptée, les sections sélectionnées sont marquées ratifiées sur la page Contexte.",
+      "cancel": "Annuler"
     },
     "error": {
       "load": "Could not load Space Context.",
@@ -5681,6 +5692,16 @@
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",
       "saved": "Brouillon enregistré."
+    },
+    "passed": {
+      "withVotes": "Accord n°{agreement} « {title} » adopté — {yes} % oui, {quorum} % de quorum. Les sections sont désormais ratifiées.",
+      "plain": "Accord n°{agreement} « {title} » adopté. Les sections sont désormais ratifiées.",
+      "viewAgreement": "Voir l’accord",
+      "dismiss": "Fermer"
+    },
+    "proposal": {
+      "passedNote": "Adopté — ces sections sont désormais ratifiées sur la page Contexte.",
+      "openContext": "Ouvrir le Contexte"
     }
   }
 }

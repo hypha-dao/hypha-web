@@ -5624,17 +5624,23 @@
     },
     "card": {
       "emptyBody": "No draft yet.",
-      "ratifiedMeta": "Ratified · Agreement #{agreement}",
-      "proposedMeta": "On voting · {title}",
       "proposalFallback": "Proposal",
-      "draftContributors": "Utkast · {count, plural, one {# bidragsyter} other {# bidragsytere}}",
-      "draftEditor": "Draft · {name}",
-      "draftMeta": "Draft",
       "viewProposal": "View proposal",
       "view": "View",
       "open": "Open",
-      "continue": "Continue",
-      "startWithAgent": "Start with agent"
+      "continue": "Fortsett chat",
+      "startWithAgent": "Start with agent",
+      "proposeAmendment": "Foreslå endring",
+      "agreementRef": "Avtale #{agreement}",
+      "ratifiedVia": "Ratifisert via",
+      "draftedBy": "utarbeidet av {name}",
+      "version": "v{version}",
+      "contributors": "{count, plural, one {# bidragsyter} other {# bidragsytere}}",
+      "edited": "redigert {when}",
+      "votingClosed": "avstemningen er avsluttet",
+      "daysLeft": "{count, plural, one {# dag} other {# dager}} igjen",
+      "hoursLeft": "{count, plural, one {# time} other {# timer}} igjen",
+      "yesShare": "{percent} % ja"
     },
     "empty": {
       "title": "Ingen kontekst ennå",
@@ -5674,11 +5680,16 @@
       "title": "Ratify context: {sections}",
       "titleShort": "Ratify context sections",
       "sections": "Sections to ratify",
-      "hint": "Only drafted sections can be included. On voting and ratified sections stay out of this proposal.",
-      "alreadyVoting": "Already on voting",
-      "alreadyRatified": "Already ratified",
+      "hint": "Velg utkast som skal ratifiseres, eller en ratifisert seksjon som skal endres. Seksjoner som allerede er til avstemning holdes utenfor.",
+      "alreadyVoting": "Allerede til avstemning (Avtale #{agreement})",
       "noDraft": "No draft yet",
-      "draftReady": "Draft ready"
+      "proposalType": "Forslagstype",
+      "proposalTypeValue": "Ratifiser kontekstseksjon(er)",
+      "contentPrefilled": "forhåndsutfylt fra utkast",
+      "ratifiedAmend": "Ratifisert #{agreement} — velg for å endre",
+      "draftVersion": "Utkast v{version}",
+      "onPassNote": "Ved vedtak markeres de valgte seksjonene som ratifisert på Kontekst-siden.",
+      "cancel": "Avbryt"
     },
     "error": {
       "load": "Could not load Space Context.",
@@ -5690,6 +5701,16 @@
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",
       "saved": "Utkast lagret."
+    },
+    "passed": {
+      "withVotes": "Avtale #{agreement} «{title}» er vedtatt — {yes} % ja, {quorum} % quorum. Seksjonene er nå ratifisert.",
+      "plain": "Avtale #{agreement} «{title}» er vedtatt. Seksjonene er nå ratifisert.",
+      "viewAgreement": "Se avtalen",
+      "dismiss": "Lukk"
+    },
+    "proposal": {
+      "passedNote": "Vedtatt — disse seksjonene er nå ratifisert på Kontekst-siden.",
+      "openContext": "Åpne Kontekst"
     }
   }
 }

@@ -25,6 +25,7 @@ import {
   stripHyphaInvestmentFormMarker,
   getEscrowImplementationAddress,
   parseHyphaInvestmentFormFromDescription,
+  SPACE_CONTEXT_DOCUMENT_LABEL,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -51,6 +52,7 @@ import { stripExchangeDetailsBlock } from '../../governance/utils/strip-exchange
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
 import { ProposalDiscussionChat } from './proposal-discussion-chat';
+import { SpaceContextProposalBody } from '../../space-context/components/space-context-proposal-body';
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import { ProposalActivateSpacesData } from '../../governance/components/proposal-activate-spaces-data';
@@ -669,13 +671,21 @@ export const ProposalDetail = ({
   // (vote counts, voters, isVoting) changes and would otherwise re-render the
   // markdown and reload the description. Memoizing the element by its actual
   // inputs keeps the reference stable so React skips re-rendering it.
+  const isSpaceContextProposal = label === SPACE_CONTEXT_DOCUMENT_LABEL;
   const descriptionMarkdown = useMemo(
-    () => (
-      <MarkdownSuspense>
-        {markdownBodyForProposalView(label, content)}
-      </MarkdownSuspense>
-    ),
-    [content, label],
+    () =>
+      isSpaceContextProposal ? (
+        <SpaceContextProposalBody
+          spaceSlug={spaceSlug}
+          documentId={documentId}
+          content={content}
+        />
+      ) : (
+        <MarkdownSuspense>
+          {markdownBodyForProposalView(label, content)}
+        </MarkdownSuspense>
+      ),
+    [content, documentId, isSpaceContextProposal, label, spaceSlug],
   );
 
   const findDocumentStatus = (
@@ -1274,20 +1284,22 @@ export const ProposalDetail = ({
         />
       </div>
       <Separator />
-      <Skeleton
-        width="100%"
-        height="150px"
-        loading={isLoading}
-        className="rounded-lg"
-      >
-        <Image
-          height={150}
-          width={554}
-          className="w-full object-cover rounded-lg max-h-[150px]"
-          src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-          alt={title ?? ''}
-        />
-      </Skeleton>
+      {isSpaceContextProposal ? null : (
+        <Skeleton
+          width="100%"
+          height="150px"
+          loading={isLoading}
+          className="rounded-lg"
+        >
+          <Image
+            height={150}
+            width={554}
+            className="w-full object-cover rounded-lg max-h-[150px]"
+            src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
+            alt={title ?? ''}
+          />
+        </Skeleton>
+      )}
       <ExpireProposalBanner
         isDisplay={displayExpireProposalBanner}
         quorumReached={quorumReached}

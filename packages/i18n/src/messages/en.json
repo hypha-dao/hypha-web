@@ -5641,17 +5641,23 @@
     },
     "card": {
       "emptyBody": "No draft yet.",
-      "ratifiedMeta": "Ratified · Agreement #{agreement}",
-      "proposedMeta": "On voting · {title}",
       "proposalFallback": "Proposal",
-      "draftContributors": "Draft · {count, plural, one {# contributor} other {# contributors}}",
-      "draftEditor": "Draft · {name}",
-      "draftMeta": "Draft",
       "viewProposal": "View proposal",
       "view": "View",
       "open": "Open",
-      "continue": "Continue",
-      "startWithAgent": "Start with agent"
+      "continue": "Continue chat",
+      "startWithAgent": "Start with agent",
+      "proposeAmendment": "Propose amendment",
+      "agreementRef": "Agreement #{agreement}",
+      "ratifiedVia": "Ratified via",
+      "draftedBy": "drafted by {name}",
+      "version": "v{version}",
+      "contributors": "{count, plural, one {# contributor} other {# contributors}}",
+      "edited": "edited {when}",
+      "votingClosed": "voting closed",
+      "daysLeft": "{count, plural, one {# day} other {# days}} left",
+      "hoursLeft": "{count, plural, one {# hour} other {# hours}} left",
+      "yesShare": "{percent}% yes"
     },
     "empty": {
       "title": "No context yet",
@@ -5691,11 +5697,16 @@
       "title": "Ratify context: {sections}",
       "titleShort": "Ratify context sections",
       "sections": "Sections to ratify",
-      "hint": "Only drafted sections can be included. On voting and ratified sections stay out of this proposal.",
-      "alreadyVoting": "Already on voting",
-      "alreadyRatified": "Already ratified",
+      "hint": "Select drafted sections to ratify, or a ratified section to amend it. Sections already on voting stay out.",
+      "alreadyVoting": "Already on voting (Agreement #{agreement})",
       "noDraft": "No draft yet",
-      "draftReady": "Draft ready"
+      "proposalType": "Proposal type",
+      "proposalTypeValue": "Ratify context section(s)",
+      "contentPrefilled": "pre-filled from drafts",
+      "ratifiedAmend": "Ratified #{agreement} — select to amend",
+      "draftVersion": "Draft v{version}",
+      "onPassNote": "On pass, selected sections are marked Ratified on the Context page.",
+      "cancel": "Cancel"
     },
     "error": {
       "load": "Could not load Space Context.",
@@ -5707,6 +5718,16 @@
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",
       "saved": "Draft saved."
+    },
+    "passed": {
+      "withVotes": "Agreement #{agreement} “{title}” passed — {yes}% yes, {quorum}% quorum. Sections are now ratified.",
+      "plain": "Agreement #{agreement} “{title}” passed. Sections are now ratified.",
+      "viewAgreement": "View agreement",
+      "dismiss": "Dismiss"
+    },
+    "proposal": {
+      "passedNote": "Passed — these sections are now ratified on the Context page.",
+      "openContext": "Open Context"
     }
   }
 }

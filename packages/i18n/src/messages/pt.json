@@ -5617,17 +5617,23 @@
     },
     "card": {
       "emptyBody": "No draft yet.",
-      "ratifiedMeta": "Ratified · Agreement #{agreement}",
-      "proposedMeta": "On voting · {title}",
       "proposalFallback": "Proposal",
-      "draftContributors": "Rascunho · {count, plural, one {# colaborador} other {# colaboradores}}",
-      "draftEditor": "Draft · {name}",
-      "draftMeta": "Draft",
       "viewProposal": "View proposal",
       "view": "View",
       "open": "Open",
-      "continue": "Continue",
-      "startWithAgent": "Start with agent"
+      "continue": "Continuar chat",
+      "startWithAgent": "Start with agent",
+      "proposeAmendment": "Propor emenda",
+      "agreementRef": "Acordo #{agreement}",
+      "ratifiedVia": "Ratificada pelo",
+      "draftedBy": "redigida por {name}",
+      "version": "v{version}",
+      "contributors": "{count, plural, one {# colaborador} other {# colaboradores}}",
+      "edited": "editada {when}",
+      "votingClosed": "votação encerrada",
+      "daysLeft": "{count, plural, one {falta # dia} other {faltam # dias}}",
+      "hoursLeft": "{count, plural, one {falta # hora} other {faltam # horas}}",
+      "yesShare": "{percent}% sim"
     },
     "empty": {
       "title": "Ainda sem contexto",
@@ -5667,11 +5673,16 @@
       "title": "Ratificar contexto: {sections}",
       "titleShort": "Ratificar seções de contexto",
       "sections": "Sections to ratify",
-      "hint": "Only drafted sections can be included. On voting and ratified sections stay out of this proposal.",
-      "alreadyVoting": "Already on voting",
-      "alreadyRatified": "Already ratified",
+      "hint": "Selecione seções em rascunho para ratificar, ou uma seção ratificada para emendar. Seções já em votação ficam de fora.",
+      "alreadyVoting": "Já em votação (Acordo #{agreement})",
       "noDraft": "No draft yet",
-      "draftReady": "Draft ready"
+      "proposalType": "Tipo de proposta",
+      "proposalTypeValue": "Ratificar seção(ões) de contexto",
+      "contentPrefilled": "preenchido a partir dos rascunhos",
+      "ratifiedAmend": "Ratificada #{agreement} — selecione para emendar",
+      "draftVersion": "Rascunho v{version}",
+      "onPassNote": "Se aprovada, as seções selecionadas ficam marcadas como ratificadas na página Contexto.",
+      "cancel": "Cancelar"
     },
     "error": {
       "load": "Could not load Space Context.",
@@ -5683,6 +5694,16 @@
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",
       "saved": "Rascunho salvo."
+    },
+    "passed": {
+      "withVotes": "Acordo #{agreement} “{title}” aprovado — {yes}% sim, {quorum}% de quórum. As seções agora estão ratificadas.",
+      "plain": "Acordo #{agreement} “{title}” aprovado. As seções agora estão ratificadas.",
+      "viewAgreement": "Ver acordo",
+      "dismiss": "Fechar"
+    },
+    "proposal": {
+      "passedNote": "Aprovado — estas seções agora estão ratificadas na página Contexto.",
+      "openContext": "Abrir Contexto"
     }
   }
 }

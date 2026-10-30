@@ -5619,17 +5619,23 @@
     },
     "card": {
       "emptyBody": "Noch kein Entwurf.",
-      "ratifiedMeta": "Ratifiziert · Agreement #{agreement}",
-      "proposedMeta": "In Abstimmung · {title}",
       "proposalFallback": "Vorschlag",
-      "draftContributors": "Entwurf · {count, plural, one {# Beitragender} other {# Beitragende}}",
-      "draftEditor": "Entwurf · {name}",
-      "draftMeta": "Entwurf",
       "viewProposal": "Vorschlag ansehen",
       "view": "Ansehen",
       "open": "Öffnen",
-      "continue": "Weiter",
-      "startWithAgent": "Mit Agent starten"
+      "continue": "Chat fortsetzen",
+      "startWithAgent": "Mit Agent starten",
+      "proposeAmendment": "Änderung vorschlagen",
+      "agreementRef": "Vereinbarung #{agreement}",
+      "ratifiedVia": "Ratifiziert durch",
+      "draftedBy": "entworfen von {name}",
+      "version": "v{version}",
+      "contributors": "{count, plural, one {# Mitwirkende Person} other {# Mitwirkende}}",
+      "edited": "bearbeitet {when}",
+      "votingClosed": "Abstimmung beendet",
+      "daysLeft": "noch {count, plural, one {# Tag} other {# Tage}}",
+      "hoursLeft": "noch {count, plural, one {# Stunde} other {# Stunden}}",
+      "yesShare": "{percent} % Ja"
     },
     "empty": {
       "title": "Noch kein Kontext",
@@ -5669,11 +5675,16 @@
       "title": "Kontext ratifizieren: {sections}",
       "titleShort": "Kontext-Abschnitte ratifizieren",
       "sections": "Zu ratifizierende Abschnitte",
-      "hint": "Nur entworfene Abschnitte können enthalten sein. Abschnitte in Abstimmung oder bereits ratifiziert bleiben draußen.",
-      "alreadyVoting": "Bereits in Abstimmung",
-      "alreadyRatified": "Bereits ratifiziert",
+      "hint": "Wähle Entwürfe zum Ratifizieren oder einen ratifizierten Abschnitt zum Ändern. Abschnitte in Abstimmung bleiben außen vor.",
+      "alreadyVoting": "Bereits in Abstimmung (Vereinbarung #{agreement})",
       "noDraft": "Noch kein Entwurf",
-      "draftReady": "Entwurf bereit"
+      "proposalType": "Vorschlagstyp",
+      "proposalTypeValue": "Kontextabschnitt(e) ratifizieren",
+      "contentPrefilled": "aus Entwürfen vorausgefüllt",
+      "ratifiedAmend": "Ratifiziert #{agreement} — zum Ändern auswählen",
+      "draftVersion": "Entwurf v{version}",
+      "onPassNote": "Bei Annahme werden die ausgewählten Abschnitte auf der Kontextseite als ratifiziert markiert.",
+      "cancel": "Abbrechen"
     },
     "error": {
       "load": "Space Context konnte nicht geladen werden.",
@@ -5685,6 +5696,16 @@
     "success": {
       "imported": "Ein Missionsentwurf wurde aus Space Memory importiert.",
       "saved": "Entwurf gespeichert."
+    },
+    "passed": {
+      "withVotes": "Vereinbarung #{agreement} „{title}“ angenommen — {yes} % Ja, {quorum} % Quorum. Die Abschnitte sind jetzt ratifiziert.",
+      "plain": "Vereinbarung #{agreement} „{title}“ angenommen. Die Abschnitte sind jetzt ratifiziert.",
+      "viewAgreement": "Vereinbarung ansehen",
+      "dismiss": "Schließen"
+    },
+    "proposal": {
+      "passedNote": "Angenommen — diese Abschnitte sind auf der Kontextseite jetzt ratifiziert.",
+      "openContext": "Kontext öffnen"
     }
   }
 }
