@@ -20,9 +20,9 @@ describe('app nav visibility', () => {
     expect(shouldShowMessagesNav(undefined)).toBe(true);
   });
 
-  it('keeps investors on home, wallet, and network', () => {
+  it('keeps investors on home, wallet, network, and messages', () => {
     expect(shouldShowSpacesScreen('investor')).toBe(false);
-    expect(shouldShowMessagesNav('investor')).toBe(false);
+    expect(shouldShowMessagesNav('investor')).toBe(true);
   });
 
   it('matches messages and spaces hrefs separately', () => {
