@@ -9,8 +9,8 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 
-/** Azure PG connect + windowed aggregate can exceed the 15s default. */
-export const maxDuration = 60;
+/** Pool worst case (15s connect + 45s query) plus space/access lookups. */
+export const maxDuration = 90;
 
 const disabledTelemetryPayload = (
   period: ReturnType<typeof parseEnergyTelemetryPeriod>,

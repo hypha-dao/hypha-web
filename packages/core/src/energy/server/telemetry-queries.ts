@@ -33,10 +33,11 @@ function getEnergyDbPool(): Pool | null {
       user: dbConfig.user,
       password: dbConfig.password,
       ssl: dbConfig.ssl ? { rejectUnauthorized: false } : undefined,
-      max: 4,
+      max: 8,
       idleTimeoutMillis: 15_000,
-      // Cold Azure connects can take 8–15s; keep the rest of the 60s
-      // route budget for the windowed aggregate (25s timed out on 30d).
+      // Cold Azure connects can take 8–15s. Same-key loads coalesce in
+      // the TTL cache, so pool slots are for distinct community:period
+      // keys. 15s connect + 45s query fits the 90s route budget.
       connectionTimeoutMillis: 15_000,
       query_timeout: 45_000,
     });
