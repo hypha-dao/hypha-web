@@ -5659,7 +5659,15 @@
       "propose": "Propose to ratify",
       "keepDrafting": "Keep drafting",
       "placeholder": "Ask the agent about this section…",
-      "send": "Send"
+      "send": "Send",
+      "attach": "Legg ved dokument",
+      "attachRemove": "Fjern {name}",
+      "attachHint": "Lim inn en lenke eller legg ved et dokument. Spesialisten leser det før utkastet skrives.",
+      "attachTooLarge": "Filer kan være maks {maxSize}.",
+      "attachLimit": "Legg ved opptil {max} dokumenter om gangen.",
+      "uploading": "Laster opp…",
+      "uploadFailed": "Kunne ikke laste opp dokumentet. Prøv igjen.",
+      "sharedDocument": "Delt dokument"
     },
     "proposeForm": {
       "header": "Create a proposal",

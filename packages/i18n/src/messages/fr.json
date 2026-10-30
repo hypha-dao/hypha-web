@@ -5650,7 +5650,15 @@
       "propose": "Propose to ratify",
       "keepDrafting": "Keep drafting",
       "placeholder": "Ask the agent about this section…",
-      "send": "Send"
+      "send": "Send",
+      "attach": "Joindre un document",
+      "attachRemove": "Retirer {name}",
+      "attachHint": "Collez un lien ou joignez un document. Le spécialiste le lit avant de rédiger.",
+      "attachTooLarge": "Les fichiers doivent faire {maxSize} au maximum.",
+      "attachLimit": "Joignez jusqu’à {max} documents à la fois.",
+      "uploading": "Envoi…",
+      "uploadFailed": "Impossible d’envoyer le document. Réessayez.",
+      "sharedDocument": "Document partagé"
     },
     "proposeForm": {
       "header": "Créer une proposition",

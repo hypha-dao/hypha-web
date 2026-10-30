@@ -103,7 +103,6 @@ function decompress(
 const fetchOnce: SharedSourceFetchOnce = (url, maxBytes, timeoutMs) =>
   new Promise((resolve) => {
     let settled = false;
-    let deadline: ReturnType<typeof setTimeout> | undefined;
     const settle = (result: FetchOnceResult) => {
       if (settled) return;
       settled = true;
@@ -199,7 +198,7 @@ const fetchOnce: SharedSourceFetchOnce = (url, maxBytes, timeoutMs) =>
         });
       },
     );
-    deadline = setTimeout(() => {
+    const deadline = setTimeout(() => {
       req.destroy(new Error('Timed out while reading the link'));
     }, timeoutMs);
     req.on('error', (error: NodeJS.ErrnoException) => {
@@ -307,12 +306,10 @@ export async function readSpaceContextSharedSource(
       filename: name,
     });
     if (!decoded.ok) return decoded;
-    const { ok: _ok, ...content } = decoded;
     return {
-      ok: true,
+      ...decoded,
       url: parsed.url.href,
       final_url: current.href,
-      ...content,
     };
   }
   return { ok: false, error: 'Too many redirects', code: 'fetch_failed' };

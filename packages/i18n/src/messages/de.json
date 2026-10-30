@@ -5654,7 +5654,15 @@
       "propose": "Zur Ratifizierung vorschlagen",
       "keepDrafting": "Weiter entwerfen",
       "placeholder": "Fragt den Agenten zu diesem Abschnitt…",
-      "send": "Senden"
+      "send": "Senden",
+      "attach": "Dokument anhängen",
+      "attachRemove": "{name} entfernen",
+      "attachHint": "Fügt einen Link ein oder hängt ein Dokument an. Der Spezialist liest es vor dem Entwurf.",
+      "attachTooLarge": "Dateien dürfen höchstens {maxSize} groß sein.",
+      "attachLimit": "Hängt bis zu {max} Dokumente auf einmal an.",
+      "uploading": "Lade hoch…",
+      "uploadFailed": "Das Dokument konnte nicht hochgeladen werden. Versucht es erneut.",
+      "sharedDocument": "Geteiltes Dokument"
     },
     "proposeForm": {
       "header": "Vorschlag erstellen",
