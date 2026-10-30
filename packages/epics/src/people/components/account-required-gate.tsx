@@ -10,11 +10,8 @@ export function AccountRequiredGate({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthentication();
   if (isLoading) return null;
   if (!isAuthenticated) {
-    return (
-      <div className="flex min-h-[60vh] w-full items-center justify-center px-5 py-16">
-        <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />
-      </div>
-    );
+    // Match Wallet: sit under the page title, not centered in a tall slab.
+    return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
   }
   return (
     <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col">

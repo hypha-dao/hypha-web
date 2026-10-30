@@ -332,9 +332,7 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
             <span>{t('pageTitleLineOne')}</span>
             <span>{t('pageTitleLineTwo')}</span>
           </Heading>
-          <div className="flex min-h-[50vh] w-full items-center justify-center px-5 py-16">
-            <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />
-          </div>
+          <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />
         </Container>
       </div>
     );
