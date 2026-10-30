@@ -56,6 +56,13 @@ function mergeSectionRecord(
     proposalSlug: updated.proposalSlug ?? current.proposalSlug,
     proposalWeb3Id: updated.proposalWeb3Id ?? current.proposalWeb3Id,
     proposalStatus: updated.proposalStatus ?? current.proposalStatus,
+    ...(updated.ratifiedDocumentId === current.ratifiedDocumentId
+      ? {
+          ratifiedTitle: updated.ratifiedTitle ?? current.ratifiedTitle,
+          ratifiedSlug: updated.ratifiedSlug ?? current.ratifiedSlug,
+          ratifiedWeb3Id: updated.ratifiedWeb3Id ?? current.ratifiedWeb3Id,
+        }
+      : {}),
   };
 }
 

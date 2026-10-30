@@ -306,6 +306,7 @@ export async function revertSpaceContextSectionsByDocumentId(
     .update(spaceContextSections)
     .set({
       status: sql`case
+        when ${spaceContextSections.ratifiedDocumentId} is not null then 'ratified'
         when trim(coalesce(${spaceContextSections.markdown}, '')) = '' then 'not_started'
         else 'draft'
       end`,

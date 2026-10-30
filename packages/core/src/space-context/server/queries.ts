@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import {
   documents,
   people,
@@ -64,12 +65,16 @@ export async function listSpaceContextSections(
 
   await ensureSectionsForSpace(space.id, { db });
 
+  const ratifiedDocuments = alias(documents, 'ratified_documents');
   const rows = await db
     .select({
       section: spaceContextSections,
       proposalTitle: documents.title,
       proposalSlug: documents.slug,
       proposalWeb3Id: documents.web3ProposalId,
+      ratifiedTitle: ratifiedDocuments.title,
+      ratifiedSlug: ratifiedDocuments.slug,
+      ratifiedWeb3Id: ratifiedDocuments.web3ProposalId,
       lastEditorName: sql<
         string | null
       >`trim(concat_ws(' ', ${people.name}, ${people.surname}))`,
@@ -78,6 +83,10 @@ export async function listSpaceContextSections(
     .leftJoin(
       documents,
       eq(documents.id, spaceContextSections.proposalDocumentId),
+    )
+    .leftJoin(
+      ratifiedDocuments,
+      eq(ratifiedDocuments.id, spaceContextSections.ratifiedDocumentId),
     )
     .leftJoin(people, eq(people.id, spaceContextSections.updatedByPersonId))
     .where(eq(spaceContextSections.spaceId, space.id));
@@ -111,6 +120,9 @@ export async function listSpaceContextSections(
           proposalTitle: row.proposalTitle,
           proposalSlug: row.proposalSlug,
           proposalWeb3Id: row.proposalWeb3Id,
+          ratifiedTitle: row.ratifiedTitle,
+          ratifiedSlug: row.ratifiedSlug,
+          ratifiedWeb3Id: row.ratifiedWeb3Id,
           contributorCount: contributorBySection.get(row.section.id) ?? 0,
           lastEditorName: row.lastEditorName,
         }),

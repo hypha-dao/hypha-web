@@ -21,6 +21,9 @@ export function mapSectionRow(
     proposalSlug?: string | null;
     proposalWeb3Id?: number | null;
     proposalStatus?: SpaceContextSectionRecord['proposalStatus'];
+    ratifiedTitle?: string | null;
+    ratifiedSlug?: string | null;
+    ratifiedWeb3Id?: number | null;
     contributorCount?: number;
     lastEditorName?: string | null;
   },
@@ -48,6 +51,9 @@ export function mapSectionRow(
     proposalSlug: extras?.proposalSlug ?? null,
     proposalWeb3Id: extras?.proposalWeb3Id ?? null,
     proposalStatus: extras?.proposalStatus ?? null,
+    ratifiedTitle: extras?.ratifiedTitle ?? null,
+    ratifiedSlug: extras?.ratifiedSlug ?? null,
+    ratifiedWeb3Id: extras?.ratifiedWeb3Id ?? null,
     contributorCount: extras?.contributorCount ?? 0,
     lastEditorName: extras?.lastEditorName ?? null,
   };
