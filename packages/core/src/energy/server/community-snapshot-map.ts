@@ -29,6 +29,8 @@ export type EnergySnapshotMemberDetail = {
   debtInStablecoin: string | null;
   creditInStablecoin: string | null;
   deviceIds: number[] | null;
+  /** False when the ownership read failed; `ownerships` is then empty, not "owns nothing". */
+  ownershipsOk: boolean;
   ownerships: {
     sourceId: `0x${string}`;
     sourceLabel: string;
@@ -139,6 +141,7 @@ export function mapEnergySnapshotMemberDetail(
     deviceIds: input.memberRecord
       ? input.memberRecord.deviceIds.map((id) => Number(id))
       : null,
+    ownershipsOk: input.ownerships !== null,
     ownerships: ownedIds.map((sourceId, index) => ({
       sourceId,
       sourceLabel: decodeEnergySourceId(sourceId),

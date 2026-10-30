@@ -52,13 +52,14 @@ const useSourceProduction = (
   sourceName: string,
   granularity: Granularity,
   locale: string,
+  enabled = true,
 ) => {
   const cfg = granularityConfig(granularity);
   const {
     data: telemetry,
     isLoading,
     error,
-  } = useSpaceEnergyTelemetry(cfg.period);
+  } = useSpaceEnergyTelemetry(cfg.period, { enabled });
 
   const live = Boolean(
     telemetry?.enabled && telemetry.configured && !error && telemetry.dataFrom,
@@ -298,6 +299,7 @@ const SourceOwnershipCard = ({
     group.name,
     'monthly',
     locale,
+    !earningsUnavailable,
   );
   const totalProductionKwh = production.values.reduce((a, b) => a + b, 0);
 
@@ -448,9 +450,8 @@ export const OwnershipTab = ({
     );
   }
 
-  // A failed ownership read leaves that member with no ownerships, so an
-  // empty or partial grouping would misstate who owns the sources.
-  if (data.detailsOk === false) {
+  // An empty or partial grouping would misstate who owns the sources.
+  if (details.some((member) => member.ownershipsOk === false)) {
     return (
       <p className="text-2 text-neutral-11">{t('ownershipUnavailable')}</p>
     );

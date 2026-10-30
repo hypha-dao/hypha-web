@@ -36,6 +36,8 @@ export type SpaceEnergyMemberDetail = {
   creditInStablecoin: string | null;
   /** Consumption meter ids registered for this member on-chain (null if the read failed). */
   deviceIds: number[] | null;
+  /** False when the ownership read failed (`ownerships` is then empty, not "owns nothing"). */
+  ownershipsOk?: boolean;
   ownerships: {
     sourceId: `0x${string}`;
     sourceLabel: string;

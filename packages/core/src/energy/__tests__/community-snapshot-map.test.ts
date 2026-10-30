@@ -57,9 +57,32 @@ describe('energy community snapshot mapping', () => {
     expect(detail.energyCreditBalance).toBe('-4');
     expect(detail.debtInStablecoin).toBe('40000');
     expect(detail.deviceIds).toEqual([7, 8]);
+    expect(detail.ownershipsOk).toBe(true);
     expect(detail.ownerships).toEqual([
       { sourceId, sourceLabel: 'PONTA_SCHOOL_PV', ownershipBps: 2500 },
     ]);
+  });
+
+  it('flags a failed ownership read apart from owning nothing', () => {
+    const base = {
+      creditBalance: 0n,
+      debtStablecoin: 0n,
+      creditStablecoin: 0n,
+      memberRecord: { deviceIds: [] },
+    };
+    const failed = mapEnergySnapshotMemberDetail(member, {
+      ...base,
+      ownerships: null,
+    });
+    const none = mapEnergySnapshotMemberDetail(member, {
+      ...base,
+      ownerships: [[], []],
+    });
+
+    expect(failed.ownerships).toEqual([]);
+    expect(failed.ownershipsOk).toBe(false);
+    expect(none.ownerships).toEqual([]);
+    expect(none.ownershipsOk).toBe(true);
   });
 
   it('assembles overview, roles, and optimization from mapped snapshot inputs', () => {

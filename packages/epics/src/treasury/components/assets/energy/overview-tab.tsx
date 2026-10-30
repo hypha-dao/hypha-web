@@ -23,10 +23,11 @@ export const EnergyOverviewTab = ({
   const t = useTranslations('Energy.overview');
   const tShared = useTranslations('Energy.shared');
   const sources = data.sources ?? [];
-  // A failed detail read leaves `deviceIds` null, so whether that member
+  // A failed device read leaves `deviceIds` null, so whether that member
   // consumes is unknown; show the list as unavailable rather than guess.
   const consumersUnavailable =
-    data.memberAddressesOk === false || data.detailsOk === false;
+    data.memberAddressesOk === false ||
+    (data.memberDetails ?? []).some((detail) => detail.deviceIds === null);
   const sourcesUnavailable = data.sourcesOk === false;
 
   const deviceIdsByAddress = React.useMemo(() => {
