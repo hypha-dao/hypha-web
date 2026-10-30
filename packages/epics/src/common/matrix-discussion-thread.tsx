@@ -38,6 +38,7 @@ import {
   type MatrixAgentRoomContext,
   type MatrixAgentSkill,
 } from './human-chat-panel/matrix-agent-mention';
+import { AgentMentionLabelProvider } from './human-chat-panel/agent-mention-label-context';
 import {
   isHyphaBotMatrixIdentity,
   matrixMemberDisplayLabel,
@@ -1011,7 +1012,7 @@ export function MatrixDiscussionThread({
   }
 
   return (
-    <>
+    <AgentMentionLabelProvider value={agentLabel}>
       <div className={messagesClassName ?? 'flex h-[22rem] min-h-0 flex-col'}>
         <HumanChatPanelMessages
           messages={panelMessages}
@@ -1138,6 +1139,6 @@ export function MatrixDiscussionThread({
         mentionAgent,
         composerLocked: false,
       })}
-    </>
+    </AgentMentionLabelProvider>
   );
 }
