@@ -947,7 +947,7 @@ server.registerTool(
   'get_space_context',
   {
     description:
-      'Read-only: Space Context Markdown for a space slug — Mission, Vision, Strategy, Objectives, Projects, Key repositories, Tools we use, and How we decide. Each section has status not_started | draft | proposed | ratified and Markdown agents can parse.',
+      'Read-only: Space Context Markdown for a space slug — Mission, Vision, Strategy, Objectives, Key repositories, Tools we use, and How we decide. Each section has status not_started | draft | proposed | ratified and Markdown agents can parse.',
     inputSchema: getSpaceContextInputSchema,
     outputSchema: getSpaceContextOutputSchema,
     annotations: {

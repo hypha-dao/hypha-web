@@ -13,19 +13,41 @@ import {
   splitLeadParagraph,
   statusMatchesFilter,
 } from '../index';
+import { mapSectionRow } from '../server/map-row';
 
 describe('space context catalog', () => {
-  it('seeds eight starting sections', () => {
+  it('seeds seven starting sections', () => {
     expect(SPACE_CONTEXT_SECTION_KEYS).toEqual([
       'mission',
       'vision',
       'strategy',
       'objectives',
-      'projects',
       'key_repositories',
       'tools',
       'how_we_decide',
     ]);
+  });
+
+  it('hides rows for retired section keys such as projects', () => {
+    expect(isSpaceContextSectionKey('projects')).toBe(false);
+    const row = {
+      id: 1,
+      spaceId: 1,
+      sectionKey: 'projects',
+      markdown: '- Legacy',
+      status: 'ratified',
+      version: 1,
+      proposalDocumentId: null,
+      ratifiedDocumentId: null,
+      ratifiedAt: null,
+      updatedByPersonId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as unknown as Parameters<typeof mapSectionRow>[0];
+    expect(mapSectionRow(row)).toBeNull();
+    expect(mapSectionRow({ ...row, sectionKey: 'mission' })?.sectionKey).toBe(
+      'mission',
+    );
   });
 
   it('gives each section its own specialist', () => {
