@@ -122,7 +122,9 @@ function isSpokenNoiseSentence(sentence: string): boolean {
     /^here(?:'s| is) (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
     /^reading (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
     /^let me read (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
-    /^the script (?:says|is|goes)[.!?]?\s*$/i.test(trimmed)
+    /^the script (?:says|is|goes)[.!?]?\s*$/i.test(trimmed) ||
+    /^request completed[.!?]?\s*$/i.test(trimmed) ||
+    /^request complete[.!?]?\s*$/i.test(trimmed)
   ) {
     return true;
   }

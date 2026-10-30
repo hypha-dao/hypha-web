@@ -1316,10 +1316,10 @@ export function MemberHomeChat({
     captureMicrophone: micOn,
     // The left panel is the Home speaker while its sound is on.
     speakReplies: soundOn && !leftPanelVoice,
-    // Match LIVE: Realtime marin reads the finished reply. Exact-speech TTS
-    // (speakDisplayedText) and early lead-in change rhythm and tone.
+    // Exact TTS of the bubble. Realtime relay was inventing meta like
+    // "Request completed" instead of reading the chat reply.
     speakEarlyLeadIn: false,
-    speakDisplayedText: false,
+    speakDisplayedText: true,
     isStreaming,
     // Speak as soon as the bubble has words — do not wait on the card tool.
     lastAssistantText: holdVoice ? '' : lastAssistantText,

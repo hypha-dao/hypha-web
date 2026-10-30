@@ -90,6 +90,15 @@ I've drafted "Issue New Token" — work for you?`;
     expect(spoken).toContain('Can you jump on?');
   });
 
+  it('drops a bare request-completed status line', () => {
+    expect(prepareAssistantTextForSpeech('Request completed.')).toBe('');
+    expect(
+      prepareAssistantTextForSpeech(
+        'Request completed. Edgar needs projects that pay.',
+      ),
+    ).toBe('Edgar needs projects that pay.');
+  });
+
   it('keeps content after a leading the-script-says label', () => {
     const input =
       'The script says Edgar needs projects that pay. Can you jump on?';

@@ -178,7 +178,7 @@ function buildRealtimeSpeakLanguageDirective(): string {
 function buildRealtimeSpeakInstructions(text: string): string {
   // Silent ---CHAT_REPLY--- boundary (never say "script" — that word gets
   // announced). Without a marker, Realtime invents lines instead of reading
-  // the bubble — including false claims like sending tokens.
+  // the bubble — including "Request completed" or false token sends.
   return [
     'CRITICAL OVERRIDE FOR THIS RESPONSE ONLY.',
     'Ignore any earlier briefing, space facts, or conversation summary for speech content.',
@@ -188,6 +188,7 @@ function buildRealtimeSpeakInstructions(text: string): string {
     'Do not announce what you are about to do. Do not paraphrase, summarize, reorder, soften, or skip.',
     'Do not add greetings, fillers, questions, or closings that are not in the chat reply.',
     'If the chat reply is one short sentence, speak only that sentence.',
+    'Forbidden spoken words unless they appear after the marker: "request completed", "done", "finished", "okay", "script", "I will read".',
     'Do not invent actions. Never say you sent tokens, transferred funds, approved a proposal, or finished anything for them.',
     'Do not ask follow-up questions. Do not return to a previous signal or topic.',
     buildRealtimeSpeakLanguageDirective(),
@@ -651,6 +652,8 @@ export function speakAssistantTextViaRealtime(
     response: {
       output_modalities: ['audio'],
       instructions,
+      // Speak-only turn — tools invite meta like "Request completed".
+      tool_choice: 'none',
       ...(voice ? { audio: { output: { voice } } } : {}),
       metadata: { purpose: 'hypha_assistant_speak' },
     },

@@ -1839,7 +1839,7 @@ const DIRECT_PHRASES: Record<MemberHomeDirectAsk, readonly string[]> = {
     'send tokens til noen',
     'испрати токени на некого',
   ],
-  decision: ['what needs a decision'],
+  decision: ['what needs a decision', 'where is my voice needed'],
   useful: ['where can i be useful', 'i am on my home'],
 };
 
@@ -2103,16 +2103,10 @@ export function memberHomeDirectReply(
       ? open.find((item) => item.slug === listedOpen.targetSlug)
       : open[0];
     if (chosen) {
-      return {
-        ask,
-        widget: null,
-        item: { kind: 'proposal', slug: chosen.slug },
-        line: {
-          key: 'decisionOpen',
-          title: chosen.title.trim(),
-          space: chosen.spaceTitle.trim(),
-        },
-      };
+      // Open decisions are a conversation, not a title dump
+      // ("Deliverable Contribution — X is open in Y"). Same as useful:
+      // the model briefs the person and the need.
+      return null;
     }
     const listed = notes[0];
     if (listed) {

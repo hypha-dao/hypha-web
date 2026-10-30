@@ -1505,18 +1505,8 @@ describe('memberHomeBoardDestination', () => {
 });
 
 describe('memberHomeDirectReply', () => {
-  it('names the open decision instead of an empty queue', () => {
-    const reply = memberHomeDirectReply(home, 'What needs a decision?');
-    expect(reply).toMatchObject({
-      ask: 'decision',
-      widget: null,
-      item: { kind: 'proposal', slug: 'invite-member' },
-      line: {
-        key: 'decisionOpen',
-        title: 'Invite Member',
-        space: 'Hypha Pollinate',
-      },
-    });
+  it('lets the model brief an open decision instead of dumping the title', () => {
+    expect(memberHomeDirectReply(home, 'What needs a decision?')).toBeNull();
   });
 
   it('names the notification when that decision is not waiting on a vote', () => {
