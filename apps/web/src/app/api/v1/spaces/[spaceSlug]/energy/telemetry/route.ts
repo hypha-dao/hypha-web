@@ -10,7 +10,7 @@ import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { readStaleWhileRevalidate } from '@web/utils/stale-while-revalidate';
 
-/** Pool worst case (15s connect + 45s query) plus space/access lookups. */
+/** Pool worst case (15s connect + 70s query) plus space/access lookups. */
 export const maxDuration = 90;
 
 /**
