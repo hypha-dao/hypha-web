@@ -1838,7 +1838,8 @@ export function MyConnections({
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
   const [channels, setChannels] = useState<JoinedChannelSnapshot[]>([]);
-  const [inboxFilter, setInboxFilter] = useState<InboxFilter>('all');
+  // Direct skips the all-channels merge on open (faster first paint).
+  const [inboxFilter, setInboxFilter] = useState<InboxFilter>('direct');
   const [inboxVisibleCount, setInboxVisibleCount] = useState(INBOX_LIST_PAGE);
   /** Below the side-by-side layout, a channel tap replaces the menu with its messages. */
   const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
