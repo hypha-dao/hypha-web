@@ -34,6 +34,7 @@ import { loadMemberHomeFacts } from './load-member-home-facts';
 import {
   appendSpaceContextMessage,
   buildSpaceContextSpecialistPrompt,
+  extractSharedSourceUrls,
   findSpaceBySlug,
   getSpaceContextSection,
   SPACE_CONTEXT_SPECIALISTS,
@@ -90,6 +91,8 @@ import {
   getSpaceBySlugTool,
 } from './tools/index';
 import { createGenerateSpaceVisualAssetsTool } from './tools/generate-space-visual-assets';
+import { createReadSpaceContextSourceTool } from './tools/read-space-context-source';
+import type { ChatRouteTool } from './tools/types';
 
 const VOICE_MODE_ACTIVE_DIRECTIVES = `${STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES}
 CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS reads it word for word). Human summary only — ${VOICE_SPOKEN_SENTENCE_LIMIT} natural sentences, no Title/Description/field labels, no numbered lists, no form structure. Draft first, one small reaction ask.
@@ -1627,6 +1630,21 @@ export async function createChatStreamResult(
       throw new Error(SPACE_CONTEXT_SPECIALIST_LOAD_FAILED);
     }
   }
+  const chatTools = spaceContextSpecialistPrompt
+    ? {
+        ...tools,
+        read_space_context_source: safeChatTool(
+          'read_space_context_source',
+          createReadSpaceContextSourceTool(
+            authToken,
+            requestedSpaceSlug,
+            extractSharedSourceUrls(
+              extractRecentUserTexts(messages, messages.length),
+            ),
+          ) as unknown as ChatRouteTool,
+        ),
+      }
+    : tools;
   const onboardingLocaleDirective = buildOnboardingLocaleDirective(
     normalizedConversationContext?.mode === 'onboarding_setup'
       ? normalizedConversationContext.locale
@@ -1850,7 +1868,7 @@ Forbidden, including close paraphrases: naming or continuing a signal or proposa
           ],
 
     // Cast: ChatRouteTool's generic Zod input doesn't satisfy ai's CoreTool typing, but is structurally compatible at runtime.
-    tools: tools as unknown as Parameters<typeof streamText>[0]['tools'],
+    tools: chatTools as unknown as Parameters<typeof streamText>[0]['tools'],
     // After the waiting-item card, the next step is speech only. Share and
     // visual turns still need their tools on later steps.
     prepareStep: memberHomeRecord
