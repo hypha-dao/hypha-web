@@ -297,7 +297,8 @@ export async function GET(
           // The person slug is caller-chosen; only return figures for spaces
           // the requester can read. A timed-out check counts as denied.
           const access = await settleByDeadline(
-            () => checkSpaceAccess(request, web3SpaceId),
+            () =>
+              checkSpaceAccess(request, web3SpaceId, { freshVisibility: true }),
             deadlineAt,
             null,
           );

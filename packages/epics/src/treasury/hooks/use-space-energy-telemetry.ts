@@ -53,6 +53,7 @@ const TELEMETRY_SOFT_TIMEOUT_MS = 25_000;
 /** Below the route's 90s `maxDuration`, so a hung request is always released. */
 const TELEMETRY_HARD_TIMEOUT_MS = 60_000;
 const TELEMETRY_TOKEN_WAIT_MS = 5_000;
+const TOKEN_PENDING = Symbol('token-pending');
 
 export class EnergyTelemetryTimeoutError extends Error {
   constructor() {
@@ -98,27 +99,37 @@ function startTelemetryRequest(
     () => controller.abort(new EnergyTelemetryTimeoutError()),
     TELEMETRY_HARD_TIMEOUT_MS,
   );
+  const send = (token: string | null) => {
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    return fetch(path, { headers, signal: controller.signal });
+  };
   const promise = (async () => {
     try {
       // A stalled Privy refresh must not keep the request from being sent;
-      // public spaces load without a token, restricted ones fail with 401.
-      const token = await rejectOnAbort(
+      // public spaces load without a token.
+      const tokenPromise = getAccessToken().catch(() => null);
+      const firstToken = await rejectOnAbort(
         Promise.race([
-          getAccessToken().catch(() => null),
-          new Promise<null>((resolve) =>
-            setTimeout(() => resolve(null), TELEMETRY_TOKEN_WAIT_MS),
+          tokenPromise,
+          new Promise<typeof TOKEN_PENDING>((resolve) =>
+            setTimeout(() => resolve(TOKEN_PENDING), TELEMETRY_TOKEN_WAIT_MS),
           ),
         ]),
         controller.signal,
       );
-      const headers: HeadersInit = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
+      const sentAnonymously = firstToken === TOKEN_PENDING;
+      let response = await send(sentAnonymously ? null : firstToken);
+      // Restricted spaces reject the anonymous request; retry once with the
+      // token if Privy eventually delivers one (bounded by the hard timeout).
+      if (response.status === 401 && sentAnonymously) {
+        const lateToken = await rejectOnAbort(tokenPromise, controller.signal);
+        if (lateToken) {
+          response = await send(lateToken);
+        }
       }
-      const response = await fetch(path, {
-        headers,
-        signal: controller.signal,
-      });
       if (!response.ok) {
         throw new Error(`Failed to fetch energy telemetry: ${response.status}`);
       }

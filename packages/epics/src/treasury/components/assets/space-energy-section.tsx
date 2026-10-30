@@ -7,7 +7,7 @@ import { UsersIcon, ZapIcon, CoinsIcon } from 'lucide-react';
 import { useSpaceEnergy } from '../../hooks/use-space-energy';
 import { StatCard } from './energy/shared';
 import { ENERGY_PALETTE } from './energy/charts';
-import { formatStablecoinMicro } from './energy/format';
+import { formatStablecoinMicro, UNAVAILABLE } from './energy/format';
 import { EnergyOverviewTab } from './energy/overview-tab';
 import {
   PRODUCTION_DEFAULT_TIMEFRAME,
@@ -96,13 +96,13 @@ export const SpaceEnergySection = () => {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard
           label={tOverview('statConsumers')}
-          value={consumerCount}
+          value={data.memberAddressesOk === false ? UNAVAILABLE : consumerCount}
           accent={ENERGY_PALETTE[2]}
           icon={<UsersIcon size={16} />}
         />
         <StatCard
           label={tOverview('statSources')}
-          value={overview.sourceCount}
+          value={data.sourcesOk === false ? UNAVAILABLE : overview.sourceCount}
           accent={ENERGY_PALETTE[0]}
           icon={<ZapIcon size={16} />}
         />

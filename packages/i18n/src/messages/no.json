@@ -4955,10 +4955,12 @@
       "consumersDescription": "Personer som deltar i dette fellesskapets energipool. Klikk på et medlem for å se forbruket deres.",
       "consumerCount": "{count, plural, one {# forbruker} other {# forbrukere}}",
       "noConsumers": "Ingen forbrukere registrert ennå.",
+      "consumersUnavailable": "Forbrukerlisten er midlertidig utilgjengelig.",
       "sourcesTitle": "Lokale energikilder",
       "sourcesDescription": "Produksjons- og lagringsanlegg som forsyner fellesskapet.",
       "sourceCount": "{count, plural, one {# kilde} other {# kilder}}",
-      "noSources": "Ingen kilder registrert ennå."
+      "noSources": "Ingen kilder registrert ennå.",
+      "sourcesUnavailable": "Kildelisten er midlertidig utilgjengelig."
     },
     "credits": {
       "noBalances": "Ingen avregningssaldoer for medlemmer tilgjengelig ennå.",

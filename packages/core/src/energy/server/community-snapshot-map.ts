@@ -51,6 +51,11 @@ export type EnergyCommunityOnChainSnapshot = {
   memberAddressesOk: boolean;
   /** False when `getSourceIds` failed — do not cache a zero-source snapshot. */
   sourcesOk: boolean;
+  /**
+   * False when a fee, balance, zero-sum, source or member-detail read failed.
+   * Those failures surface as `null` and must not be cached as real values.
+   */
+  detailsOk: boolean;
   memberDetails: EnergySnapshotMemberDetail[];
   sources: EnergySnapshotSource[];
   overview: {
@@ -178,6 +183,7 @@ export function assembleEnergyCommunitySnapshot(input: {
   memberAddresses: readonly `0x${string}`[];
   memberAddressesOk?: boolean;
   sourcesOk?: boolean;
+  detailsOk?: boolean;
   sourceCount?: number;
   sources: EnergySnapshotSource[];
   memberDetails: EnergySnapshotMemberDetail[];
@@ -194,6 +200,7 @@ export function assembleEnergyCommunitySnapshot(input: {
     memberAddresses,
     memberAddressesOk: input.memberAddressesOk ?? true,
     sourcesOk: input.sourcesOk ?? true,
+    detailsOk: input.detailsOk ?? true,
     memberDetails: input.memberDetails,
     sources: input.sources,
     overview: {
@@ -222,4 +229,11 @@ export function assembleEnergyCommunitySnapshot(input: {
     },
     optimization: input.optimization,
   };
+}
+
+/** Only complete snapshots may be cached; partial ones are served once. */
+export function isCompleteEnergySnapshot(
+  snapshot: EnergyCommunityOnChainSnapshot,
+): boolean {
+  return snapshot.memberAddressesOk && snapshot.sourcesOk && snapshot.detailsOk;
 }

@@ -52,9 +52,10 @@ function spaceAccessLevel(visibility: SpaceVisibility): TransparencyLevel {
 
 async function readSpaceVisibility(
   spaceIdBigInt: bigint,
+  fresh: boolean,
 ): Promise<SpaceVisibility> {
   const cacheKey = spaceIdBigInt.toString();
-  const cached = visibilityCache.get(cacheKey);
+  const cached = fresh ? undefined : visibilityCache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) {
     return cached.visibility;
   }
@@ -77,17 +78,23 @@ async function readSpaceVisibility(
  *
  * @param request - The incoming NextRequest
  * @param spaceId - The web3 space ID to check access for
+ * @param options.freshVisibility - Skip the 30s visibility cache, so a space
+ *   that just became restricted is enforced immediately
  * @returns Object with hasAccess boolean and optional error response
  */
 export async function checkSpaceAccess(
   request: NextRequest,
   spaceId: number | bigint,
+  options: { freshVisibility?: boolean } = {},
 ): Promise<CheckSpaceAccessResult> {
   try {
     const spaceIdBigInt =
       typeof spaceId === 'number' ? BigInt(spaceId) : spaceId;
 
-    const visibility = await readSpaceVisibility(spaceIdBigInt);
+    const visibility = await readSpaceVisibility(
+      spaceIdBigInt,
+      options.freshVisibility ?? false,
+    );
 
     const accessLevel = spaceAccessLevel(visibility);
 

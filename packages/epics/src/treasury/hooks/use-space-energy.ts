@@ -54,6 +54,10 @@ export type SpaceEnergyResponse = {
     factoryCommunityId?: number | null;
     activatedAt: string;
   };
+  /** False when the member roster could not be read on-chain (not the same as an empty roster). */
+  memberAddressesOk?: boolean;
+  /** False when the source list could not be read on-chain (not the same as no sources). */
+  sourcesOk?: boolean;
   overview?: {
     memberCount: number;
     sourceCount: number;

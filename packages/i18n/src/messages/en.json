@@ -4986,10 +4986,12 @@
       "consumersDescription": "People taking part in this community's energy pool. Click a member to see their consumption.",
       "consumerCount": "{count, plural, one {# consumer} other {# consumers}}",
       "noConsumers": "No consumers registered yet.",
+      "consumersUnavailable": "Consumer list is temporarily unavailable.",
       "sourcesTitle": "Local energy sources",
       "sourcesDescription": "Generation and storage assets feeding the community.",
       "sourceCount": "{count, plural, one {# source} other {# sources}}",
-      "noSources": "No sources registered yet."
+      "noSources": "No sources registered yet.",
+      "sourcesUnavailable": "Source list is temporarily unavailable."
     },
     "credits": {
       "noBalances": "No member settlement balances available yet.",

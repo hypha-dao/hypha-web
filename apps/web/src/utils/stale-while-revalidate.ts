@@ -23,7 +23,7 @@ async function readShared(key: string): Promise<Entry<unknown> | undefined> {
     const value = await sharedCache.get(key);
     return isEntry(value) ? value : undefined;
   } catch (error) {
-    console.warn(`[swr-cache] read ${key} failed`, error);
+    console.warn('[swr-cache] read %s failed', key, error);
     return undefined;
   }
 }
@@ -56,7 +56,7 @@ function refresh<T>({
       await sharedCache
         .set(key, entry, { ttl: ttlSeconds })
         .catch((error: unknown) => {
-          console.warn(`[swr-cache] write ${key} failed`, error);
+          console.warn('[swr-cache] write %s failed', key, error);
         });
     }
     return value;
@@ -95,7 +95,7 @@ export async function readStaleWhileRevalidate<T>(
   if (!isFresh(entry)) {
     after(() =>
       refresh(options).catch((error: unknown) => {
-        console.warn(`[swr-cache] refresh ${key} failed`, error);
+        console.warn('[swr-cache] refresh %s failed', key, error);
       }),
     );
   }

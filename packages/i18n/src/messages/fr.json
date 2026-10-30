@@ -4946,10 +4946,12 @@
       "consumersDescription": "Personnes participant au pool énergétique de cette communauté. Cliquez sur un membre pour voir sa consommation.",
       "consumerCount": "{count, plural, one {# consommateur} other {# consommateurs}}",
       "noConsumers": "Aucun consommateur enregistré pour le moment.",
+      "consumersUnavailable": "La liste des consommateurs est temporairement indisponible.",
       "sourcesTitle": "Sources d'énergie locales",
       "sourcesDescription": "Actifs de production et de stockage alimentant la communauté.",
       "sourceCount": "{count, plural, one {# source} other {# sources}}",
-      "noSources": "Aucune source enregistrée pour le moment."
+      "noSources": "Aucune source enregistrée pour le moment.",
+      "sourcesUnavailable": "La liste des sources est temporairement indisponible."
     },
     "credits": {
       "noBalances": "Aucun solde de règlement des membres disponible pour le moment.",

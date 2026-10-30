@@ -6,6 +6,7 @@ import { readOwnershipTokenNames } from './read-ownership-token-name';
 import { createTtlCache } from './ttl-cache';
 import {
   assembleEnergyCommunitySnapshot,
+  isCompleteEnergySnapshot,
   mapEnergySnapshotMemberDetail,
   mapEnergySnapshotOptimization,
   mapEnergySnapshotSource,
@@ -24,6 +25,7 @@ export type {
 export {
   decodeEnergySourceId,
   assembleEnergyCommunitySnapshot,
+  isCompleteEnergySnapshot,
   mapEnergySnapshotMemberDetail,
   mapEnergySnapshotOptimization,
   mapEnergySnapshotSource,
@@ -150,6 +152,7 @@ async function readSourcesAndMembers(
 ): Promise<{
   sources: EnergySnapshotSource[];
   memberDetails: EnergySnapshotMemberDetail[];
+  detailsOk: boolean;
 }> {
   const memberCalls = memberAddresses.flatMap((address) =>
     MEMBER_VIEW_FNS.map((functionName) =>
@@ -243,7 +246,13 @@ async function readSourcesAndMembers(
     mapEnergySnapshotMemberDetail(address, memberSlices[index]!),
   );
 
-  return { sources, memberDetails };
+  const detailsOk =
+    sourceRows.every((row) => row !== null) &&
+    memberSlices.every((slice) =>
+      Object.values(slice).every((value) => value !== null),
+    );
+
+  return { sources, memberDetails, detailsOk };
 }
 
 async function readCommunitySnapshotUncached(
@@ -373,6 +382,18 @@ async function readCommunitySnapshotUncached(
     memberAddresses: communityViews.memberAddressesRaw ?? [],
     memberAddressesOk: communityViews.memberAddressesRaw !== null,
     sourcesOk: communityViews.sourceIdsRaw !== null,
+    // Optimization/social-wallet reads stay optional: older proxies revert
+    // on them and an unconfigured optimization is a legitimate null.
+    detailsOk:
+      sourcesAndMembers.detailsOk &&
+      [
+        communityViews.communityFeeBps,
+        communityViews.aggregatorFeeBps,
+        communityViews.gridBalance,
+        communityViews.settledBalance,
+        communityViews.contractStablecoinBalance,
+        communityViews.zeroSumStatus,
+      ].every((value) => value !== null),
     sourceCount: (communityViews.sourceIdsRaw ?? []).length,
     sources: sourcesAndMembers.sources,
     memberDetails: sourcesAndMembers.memberDetails,
@@ -400,7 +421,7 @@ export async function readEnergyCommunitySnapshot(
   const snapshot = await snapshotCache.getOrLoad(
     cacheKey,
     () => readCommunitySnapshotUncached(communityProxyAddress),
-    (value) => value.memberAddressesOk && value.sourcesOk,
+    isCompleteEnergySnapshot,
   );
   return structuredClone(snapshot);
 }

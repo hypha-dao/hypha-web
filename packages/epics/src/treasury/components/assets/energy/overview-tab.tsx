@@ -23,6 +23,8 @@ export const EnergyOverviewTab = ({
   const t = useTranslations('Energy.overview');
   const tShared = useTranslations('Energy.shared');
   const sources = data.sources ?? [];
+  const rosterUnavailable = data.memberAddressesOk === false;
+  const sourcesUnavailable = data.sourcesOk === false;
 
   const deviceIdsByAddress = React.useMemo(() => {
     const map = new Map<string, number[] | null>();
@@ -57,13 +59,17 @@ export const EnergyOverviewTab = ({
           title={t('consumersTitle')}
           description={t('consumersDescription')}
           right={
-            <span className="flex items-center gap-1.5 text-1 text-neutral-11">
-              <UsersIcon size={14} />
-              {t('consumerCount', { count: consumers.length })}
-            </span>
+            rosterUnavailable ? null : (
+              <span className="flex items-center gap-1.5 text-1 text-neutral-11">
+                <UsersIcon size={14} />
+                {t('consumerCount', { count: consumers.length })}
+              </span>
+            )
           }
         />
-        {consumers.length ? (
+        {rosterUnavailable ? (
+          <p className="text-2 text-neutral-11">{t('consumersUnavailable')}</p>
+        ) : consumers.length ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {consumers.map((address) => {
               const display = resolveEnergyParticipantDisplay(
@@ -105,13 +111,17 @@ export const EnergyOverviewTab = ({
           title={t('sourcesTitle')}
           description={t('sourcesDescription')}
           right={
-            <span className="flex items-center gap-1.5 text-1 text-neutral-11">
-              <ZapIcon size={14} />
-              {t('sourceCount', { count: sources.length })}
-            </span>
+            sourcesUnavailable ? null : (
+              <span className="flex items-center gap-1.5 text-1 text-neutral-11">
+                <ZapIcon size={14} />
+                {t('sourceCount', { count: sources.length })}
+              </span>
+            )
           }
         />
-        {sources.length ? (
+        {sourcesUnavailable ? (
+          <p className="text-2 text-neutral-11">{t('sourcesUnavailable')}</p>
+        ) : sources.length ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {sources.map((source, index) => (
               <SourceCard

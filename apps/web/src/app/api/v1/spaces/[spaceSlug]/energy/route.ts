@@ -8,6 +8,7 @@ import {
   resolveEnergyParticipants,
   institutionalLabelsForSpace,
   readEnergyCommunitySnapshot,
+  isCompleteEnergySnapshot,
   rememberEnergyCommunityMemberAddresses,
   type DatabaseInstance,
 } from '@hypha-platform/core/server';
@@ -51,7 +52,7 @@ function readSnapshot(communityProxyAddress: string) {
     freshMs: SNAPSHOT_FRESH_MS,
     ttlSeconds: SNAPSHOT_CACHE_TTL_SECONDS,
     load: () => readEnergyCommunitySnapshot(proxy),
-    shouldStore: (snapshot) => snapshot.memberAddressesOk && snapshot.sourcesOk,
+    shouldStore: isCompleteEnergySnapshot,
   });
 }
 
@@ -285,6 +286,8 @@ export async function GET(
         factoryCommunityId: mapping.factoryCommunityId,
         activatedAt: mapping.activatedAt.toISOString(),
       },
+      memberAddressesOk: snapshot.memberAddressesOk,
+      sourcesOk: snapshot.sourcesOk,
       overview: snapshot.overview,
       roles: snapshot.roles,
       members: snapshot.memberAddresses,

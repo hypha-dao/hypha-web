@@ -58,8 +58,17 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 
 type PendingFetch = {
   url: string;
+  headers: Record<string, string>;
   signal: AbortSignal;
-  resolve: (body: unknown) => void;
+  resolve: (body: unknown, status?: number) => void;
+};
+
+const deferred = <T,>() => {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
 };
 
 let pending: PendingFetch[] = [];
@@ -83,9 +92,10 @@ describe('useSpaceEnergyTelemetry', () => {
             signal.addEventListener('abort', () => reject(signal.reason));
             pending.push({
               url,
+              headers: { ...(init.headers as Record<string, string>) },
               signal,
-              resolve: (body) =>
-                resolve(new Response(JSON.stringify(body), { status: 200 })),
+              resolve: (body, status = 200) =>
+                resolve(new Response(JSON.stringify(body), { status })),
             });
           }),
       ),
@@ -130,6 +140,80 @@ describe('useSpaceEnergyTelemetry', () => {
     await advance(1_000);
     expect(pending).toHaveLength(1);
     expect(pending[0]!.url).toContain('/stalled-auth/energy/telemetry');
+    expect(pending[0]!.headers.Authorization).toBeUndefined();
+  });
+
+  it('retries a 401 once with the token that arrives after the stall', async () => {
+    nav.pathname = '/en/dho/restricted-space/energy';
+    const token = deferred<string | null>();
+    auth.getAccessToken = () => token.promise;
+    const { result } = renderHook(() => useSpaceEnergyTelemetry('7d'), {
+      wrapper,
+    });
+
+    await advance(5_000);
+    expect(pending).toHaveLength(1);
+    expect(pending[0]!.headers.Authorization).toBeUndefined();
+    await act(async () => {
+      pending[0]!.resolve({ error: 'Unauthorized' }, 401);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(pending).toHaveLength(1);
+
+    await act(async () => {
+      token.resolve('late-token');
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(pending).toHaveLength(2);
+    expect(pending[1]!.headers.Authorization).toBe('Bearer late-token');
+
+    await act(async () => {
+      pending[1]!.resolve(payload('7d'));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.data?.period).toBe('7d');
+    expect(result.current.error).toBeUndefined();
+    expect(pending).toHaveLength(2);
+  });
+
+  it('does not refetch when a late token arrives after an anonymous success', async () => {
+    nav.pathname = '/en/dho/public-space/energy';
+    const token = deferred<string | null>();
+    auth.getAccessToken = () => token.promise;
+    const { result } = renderHook(
+      () => useSpaceEnergyTelemetry('7d', { refreshInterval: 0 }),
+      { wrapper },
+    );
+
+    await advance(5_000);
+    await act(async () => {
+      pending[0]!.resolve(payload('7d'));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.data?.period).toBe('7d');
+
+    await act(async () => {
+      token.resolve('late-token');
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(pending).toHaveLength(1);
+  });
+
+  it('hard-aborts a hung request after 60s', async () => {
+    nav.pathname = '/en/dho/hung-space/energy';
+    const { result } = renderHook(() => useSpaceEnergyTelemetry('30d'), {
+      wrapper,
+    });
+    await advance(0);
+    const request = pending[0]!;
+
+    await advance(59_999);
+    expect(request.signal.aborted).toBe(false);
+    await advance(1);
+    expect(request.signal.aborted).toBe(true);
+    expect(request.signal.reason).toBeInstanceOf(EnergyTelemetryTimeoutError);
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toBeInstanceOf(EnergyTelemetryTimeoutError);
   });
 
   it('aborts the request when the period changes or the hook unmounts', async () => {

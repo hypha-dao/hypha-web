@@ -207,6 +207,63 @@ describe('energy community snapshot mapping', () => {
       'PONTA_SCHOOL_PV',
     ]);
   });
+
+  it('does not cache snapshots with failed fee or member reads, but tolerates missing optimization', async () => {
+    const community = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' as const;
+    const viewResults: Record<string, unknown> = {
+      getCommunityFeeBps: 0,
+      getAggregatorFeeBps: 0,
+      getGridBalance: 0n,
+      getSettledBalance: 0n,
+      getContractStablecoinBalance: 0n,
+      verifyZeroSum: [true, 0n],
+      getSourceIds: [],
+      getMemberAddresses: [member],
+      getCommunityAddress: community,
+      getAggregatorAddress: community,
+      getGridOperator: community,
+      getExportDeviceId: 0n,
+      getEnergyCreditBalance: 0n,
+      getDebtInStablecoin: 0n,
+      getCreditInStablecoin: 0n,
+      getAllSourceOwnerships: [[], []],
+      getMember: {
+        memberAddress: member,
+        deviceIds: [7n],
+        isActive: true,
+        metadataHash: `0x${'0'.repeat(64)}`,
+      },
+    };
+    const failing = new Set(['getCommunityFeeBps', 'getDebtInStablecoin']);
+    multicall.mockImplementation(
+      async ({
+        contracts,
+      }: {
+        contracts: ReadonlyArray<{ functionName: string }>;
+      }) =>
+        contracts.map(({ functionName }) =>
+          failing.has(functionName) || !(functionName in viewResults)
+            ? { status: 'failure' }
+            : { status: 'success', result: viewResults[functionName] },
+        ),
+    );
+
+    clearEnergyCommunitySnapshotCache();
+    const partial = await readEnergyCommunitySnapshot(community);
+    expect(partial.detailsOk).toBe(false);
+    expect(partial.overview.communityFeeBps).toBeNull();
+    expect(peekEnergyCommunitySnapshot(community)).toBeUndefined();
+
+    failing.delete('getCommunityFeeBps');
+    await readEnergyCommunitySnapshot(community);
+    expect(peekEnergyCommunitySnapshot(community)).toBeUndefined();
+
+    failing.clear();
+    const complete = await readEnergyCommunitySnapshot(community);
+    expect(complete.optimization).toBeNull();
+    expect(complete.detailsOk).toBe(true);
+    expect(peekEnergyCommunitySnapshot(community)).toBeDefined();
+  });
 });
 
 afterEach(() => {

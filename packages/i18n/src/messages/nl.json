@@ -4956,10 +4956,12 @@
       "consumersDescription": "Mensen die deelnemen aan de energiepool van deze gemeenschap. Klik op een lid om zijn verbruik te zien.",
       "consumerCount": "{count, plural, one {# consument} other {# consumenten}}",
       "noConsumers": "Er zijn nog geen consumenten geregistreerd.",
+      "consumersUnavailable": "De lijst met consumenten is tijdelijk niet beschikbaar.",
       "sourcesTitle": "Lokale energiebronnen",
       "sourcesDescription": "Opwekkings- en opslagmiddelen die de gemeenschap voeden.",
       "sourceCount": "{count, plural, one {# bron} other {# bronnen}}",
-      "noSources": "Nog geen bronnen geregistreerd."
+      "noSources": "Nog geen bronnen geregistreerd.",
+      "sourcesUnavailable": "De lijst met bronnen is tijdelijk niet beschikbaar."
     },
     "credits": {
       "noBalances": "Er zijn nog geen ledenafrekeningssaldi beschikbaar.",
