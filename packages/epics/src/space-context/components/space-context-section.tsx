@@ -134,8 +134,8 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-4 sm:justify-end">
-              <div className="flex items-center gap-3">
-                <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+              <div className="flex flex-col items-start gap-1.5 sm:items-end">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground">
                   {t('progress', {
                     ratified: overview.ratifiedCount,
                     total: overview.totalCount,
@@ -150,10 +150,10 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
                     ratified: overview.ratifiedCount,
                     total: overview.totalCount,
                   })}
-                  className="h-1 w-24 overflow-hidden bg-neutral-5"
+                  className="h-1 w-[200px] max-w-full overflow-hidden bg-neutral-4"
                 >
                   <div
-                    className="h-full bg-success-9 transition-[width]"
+                    className="h-full bg-success-11 transition-[width]"
                     style={{ width: `${ratifiedPercent}%` }}
                   />
                 </div>
@@ -173,10 +173,12 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
           ) : null}
         </header>
 
+        <div className="h-px w-full bg-foreground" aria-hidden />
+
         <div
           role="tablist"
           aria-label={t('title')}
-          className="flex flex-wrap gap-6 border-b border-border/60"
+          className="-mt-2 flex flex-wrap gap-5"
         >
           {FILTERS.map((item) => (
             <button
@@ -185,10 +187,10 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
               role="tab"
               aria-selected={filter === item}
               className={cn(
-                '-mb-px border-b-2 pb-2 text-1 uppercase tracking-[0.12em] transition-colors',
+                'border-b-[1.5px] pb-1 text-[10px] uppercase tracking-[0.1em] transition-colors',
                 filter === item
-                  ? 'border-foreground text-foreground'
-                  : 'border-transparent text-neutral-11 hover:text-foreground',
+                  ? 'border-foreground font-bold text-foreground'
+                  : 'border-transparent font-medium text-neutral-11 hover:text-foreground',
               )}
               onClick={() => setFilter(item)}
             >

@@ -4,6 +4,27 @@ import { Badge } from '@hypha-platform/ui';
 import type { SpaceContextStatus } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 
+const TONE = {
+  ratified: {
+    colorVariant: 'success',
+    className:
+      'border-success-11 bg-success-3 text-success-11 hover:bg-success-3',
+    dot: 'bg-success-11',
+  },
+  proposed: {
+    colorVariant: 'warn',
+    className:
+      'border-warning-11 bg-warning-3 text-warning-11 hover:bg-warning-3',
+    dot: 'bg-warning-11',
+  },
+  quiet: {
+    colorVariant: 'neutral',
+    className:
+      'border-neutral-11 bg-neutral-1 text-neutral-11 hover:bg-neutral-1 hover:text-neutral-11',
+    dot: 'bg-neutral-11',
+  },
+} as const;
+
 export function SpaceContextStatusChip({
   status,
 }: {
@@ -18,30 +39,16 @@ export function SpaceContextStatusChip({
       : status === 'draft'
       ? t('status.draft')
       : t('status.notStarted');
-
-  const colorVariant =
-    status === 'ratified'
-      ? 'success'
-      : status === 'proposed'
-      ? 'warn'
-      : 'neutral';
+  const tone =
+    status === 'ratified' || status === 'proposed' ? TONE[status] : TONE.quiet;
 
   return (
     <Badge
-      variant="outline"
-      colorVariant={colorVariant}
-      className="gap-1.5 uppercase tracking-[0.12em]"
+      variant="surface"
+      colorVariant={tone.colorVariant}
+      className={`shrink-0 gap-1.5 px-2 py-[3px] text-[10px] font-bold uppercase tracking-[0.06em] ${tone.className}`}
     >
-      <span
-        className={
-          status === 'ratified'
-            ? 'size-1.5 bg-success-9'
-            : status === 'proposed'
-            ? 'size-1.5 bg-warning-9'
-            : 'size-1.5 bg-neutral-8'
-        }
-        aria-hidden
-      />
+      <span className={`size-1.5 ${tone.dot}`} aria-hidden />
       {label}
     </Badge>
   );
