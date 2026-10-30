@@ -11,12 +11,14 @@ export const spaceContextStatusSchema = z.enum(SPACE_CONTEXT_STATUSES);
 export const schemaPatchSpaceContextSection = z.object({
   markdown: z.string().max(80_000).optional(),
   status: spaceContextStatusSchema.optional(),
-});
-
-export const schemaAppendSpaceContextMessage = z.object({
-  role: z.literal('user'),
-  content: z.string().trim().min(1).max(20_000),
-  agentKey: z.string().trim().min(1).max(64).optional(),
+  /** Matrix room id (`!…`) of the section discussion. Stored once. */
+  chatRoomId: z
+    .string()
+    .trim()
+    .min(2)
+    .max(255)
+    .refine((value) => value.startsWith('!'), 'Expected a Matrix room id')
+    .optional(),
 });
 
 export const schemaProposeSpaceContext = z.object({
@@ -33,9 +35,6 @@ export const schemaSaveSpaceContextMemory = z.object({
 
 export type PatchSpaceContextSectionInput = z.infer<
   typeof schemaPatchSpaceContextSection
->;
-export type AppendSpaceContextMessageInput = z.infer<
-  typeof schemaAppendSpaceContextMessage
 >;
 export type ProposeSpaceContextInput = z.infer<
   typeof schemaProposeSpaceContext

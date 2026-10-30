@@ -44,6 +44,7 @@ export function mapSectionRow(
     proposalDocumentId: row.proposalDocumentId ?? null,
     ratifiedDocumentId: row.ratifiedDocumentId ?? null,
     ratifiedAt: toIso(row.ratifiedAt),
+    chatRoomId: row.chatRoomId?.trim() || null,
     updatedByPersonId: row.updatedByPersonId ?? null,
     createdAt,
     updatedAt,

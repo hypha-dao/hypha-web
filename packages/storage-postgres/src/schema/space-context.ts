@@ -37,6 +37,8 @@ export const spaceContextSections = pgTable(
       { onDelete: 'set null' },
     ),
     ratifiedAt: timestamp('ratified_at'),
+    /** Matrix room where members discuss this section and @mention its agent. */
+    chatRoomId: text('chat_room_id'),
     updatedByPersonId: integer('updated_by_person_id').references(
       () => people.id,
       { onDelete: 'set null' },
@@ -55,7 +57,10 @@ export const spaceContextSections = pgTable(
   ],
 );
 
-/** Shared drafting thread for a Context section (members + specialist). */
+/**
+ * Earlier per-section drafting thread. Section discussion now lives in the
+ * Matrix room at `space_context_sections.chat_room_id`.
+ */
 export const spaceContextSectionMessages = pgTable(
   'space_context_section_messages',
   {

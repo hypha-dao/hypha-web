@@ -10,6 +10,7 @@ export type SpaceContextSectionRecord = {
   proposalDocumentId: number | null;
   ratifiedDocumentId: number | null;
   ratifiedAt: string | null;
+  chatRoomId: string | null;
   updatedByPersonId: number | null;
   createdAt: string;
   updatedAt: string;

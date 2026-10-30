@@ -4,6 +4,7 @@ import {
   isSpaceContextSectionKey,
   patchSpaceContextSection,
   schemaPatchSpaceContextSection,
+  setSpaceContextSectionChatRoom,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { authorizeContextRead, authorizeContextWrite } from '../_lib';
@@ -62,12 +63,39 @@ export async function PATCH(
       );
     }
 
+    const { chatRoomId, markdown, status } = parsed.data;
+    if (chatRoomId) {
+      const stored = await setSpaceContextSectionChatRoom(
+        { spaceSlug, sectionKey, chatRoomId },
+        { db },
+      );
+      if (!stored) {
+        return NextResponse.json(
+          { error: 'Section not found' },
+          { status: 404 },
+        );
+      }
+      if (markdown == null && status == null) {
+        const detail = await getSpaceContextSection(
+          { spaceSlug, sectionKey },
+          { db },
+        );
+        if (!detail) {
+          return NextResponse.json(
+            { error: 'Section not found' },
+            { status: 404 },
+          );
+        }
+        return NextResponse.json(detail.section);
+      }
+    }
+
     const section = await patchSpaceContextSection(
       {
         spaceSlug,
         sectionKey,
-        markdown: parsed.data.markdown,
-        status: parsed.data.status,
+        markdown,
+        status,
         personId: auth.person.id,
       },
       { db },

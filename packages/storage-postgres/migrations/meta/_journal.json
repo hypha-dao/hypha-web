@@ -652,7 +652,13 @@
       "when": 1784000000023,
       "tag": "0092_space_context",
       "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1784000000024,
+      "tag": "0093_space_context_chat_room",
+      "breakpoints": true
     }
   ]
 }
-

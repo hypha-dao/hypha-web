@@ -1,9 +1,8 @@
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import {
   documents,
   people,
   spaceContextAgentMemories,
-  spaceContextSectionMessages,
   spaceContextSections,
 } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../common/server/types';
@@ -14,11 +13,7 @@ import {
   type SpaceContextSectionKey,
   type SpaceContextStatus,
 } from '../constants';
-import type {
-  SpaceContextMessageRecord,
-  SpaceContextOverview,
-  SpaceContextSectionRecord,
-} from '../types';
+import type { SpaceContextOverview, SpaceContextSectionRecord } from '../types';
 import { listSpaceContextSections } from './queries';
 import { mapSectionRow } from './map-row';
 import { firstMarkdownParagraph } from '../markdown';
@@ -111,55 +106,44 @@ export async function patchSpaceContextSection(
   return mapSectionRow(updated, { lastEditorName });
 }
 
-export async function appendSpaceContextMessage(
+/**
+ * Keep the first discussion room stored for a section. When two members open
+ * the section at once, the later room loses and both land in the stored one.
+ */
+export async function setSpaceContextSectionChatRoom(
   {
     spaceSlug,
     sectionKey,
-    role,
-    content,
-    personId,
-    agentKey,
+    chatRoomId,
   }: {
     spaceSlug: string;
     sectionKey: SpaceContextSectionKey;
-    role: 'user' | 'assistant' | 'system';
-    content: string;
-    personId?: number | null;
-    agentKey?: string | null;
+    chatRoomId: string;
   },
   { db }: DbConfig,
-): Promise<SpaceContextMessageRecord | null> {
-  const overview = await listSpaceContextSections({ spaceSlug }, { db });
-  const section = overview?.sections.find(
-    (item) => item.sectionKey === sectionKey,
+): Promise<string | null> {
+  const space = await requireSpaceId(spaceSlug, db);
+  if (!space) return null;
+
+  await listSpaceContextSections({ spaceSlug }, { db });
+
+  const sectionWhere = and(
+    eq(spaceContextSections.spaceId, space.id),
+    eq(spaceContextSections.sectionKey, sectionKey),
   );
-  if (!section) return null;
-
-  const [row] = await db
-    .insert(spaceContextSectionMessages)
-    .values({
-      sectionId: section.id,
-      role,
-      content,
-      personId: personId ?? null,
-      agentKey: agentKey ?? null,
-    })
+  const [claimed] = await db
+    .update(spaceContextSections)
+    .set({ chatRoomId })
+    .where(and(sectionWhere, isNull(spaceContextSections.chatRoomId)))
     .returning();
-  if (!row) return null;
+  if (claimed?.chatRoomId) return claimed.chatRoomId;
 
-  return {
-    id: row.id,
-    sectionId: row.sectionId,
-    personId: row.personId,
-    personName: null,
-    agentKey: row.agentKey,
-    role,
-    content: row.content,
-    createdAt:
-      row.createdAt instanceof Date
-        ? row.createdAt.toISOString()
-        : new Date(row.createdAt).toISOString(),
-  };
+  const [existing] = await db
+    .select({ chatRoomId: spaceContextSections.chatRoomId })
+    .from(spaceContextSections)
+    .where(sectionWhere)
+    .limit(1);
+  return existing?.chatRoomId ?? null;
 }
 
 export async function saveSpaceContextAgentMemory(
