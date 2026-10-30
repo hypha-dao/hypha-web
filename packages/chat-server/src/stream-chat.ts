@@ -32,15 +32,6 @@ import {
 } from './home-spoken-script';
 import { loadMemberHomeFacts } from './load-member-home-facts';
 import {
-  appendSpaceContextMessage,
-  buildSpaceContextSpecialistPrompt,
-  extractSharedSourceUrls,
-  findSpaceBySlug,
-  getSpaceContextSection,
-  SPACE_CONTEXT_SPECIALISTS,
-} from '@hypha-platform/core/server';
-import { db } from '@hypha-platform/storage-postgres';
-import {
   buildSpaceContextSnapshot,
   loadSignedInMemberBrief,
 } from './presence-brief';
@@ -91,8 +82,6 @@ import {
   getSpaceBySlugTool,
 } from './tools/index';
 import { createGenerateSpaceVisualAssetsTool } from './tools/generate-space-visual-assets';
-import { createReadSpaceContextSourceTool } from './tools/read-space-context-source';
-import type { ChatRouteTool } from './tools/types';
 
 const VOICE_MODE_ACTIVE_DIRECTIVES = `${STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES}
 CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS reads it word for word). Human summary only — ${VOICE_SPOKEN_SENTENCE_LIMIT} natural sentences, no Title/Description/field labels, no numbered lists, no form structure. Draft first, one small reaction ask.
@@ -111,9 +100,6 @@ export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 /** Thrown before `streamText` when deployment is missing OpenRouter credentials (matches provider default env). */
 export const MISSING_OPENROUTER_KEY_MESSAGE =
   'Hypha AI is not configured: OPENROUTER_API_KEY is missing.';
-
-export const SPACE_CONTEXT_SPECIALIST_LOAD_FAILED =
-  'Failed to load Space Context for this section.';
 
 /** Default chat model. A small model drops the home instructions. */
 const DEFAULT_OPENROUTER_CHAT_MODEL = 'deepseek/deepseek-v4.1-flash';
@@ -1170,7 +1156,6 @@ export type ChatStreamCallbacks = {
   };
   memberHomeVisit?: 'welcome_back' | 'first_open' | null;
   memberHomePartOfDay?: 'morning' | 'afternoon' | 'evening' | 'night' | null;
-  spaceContext?: ChatRequestPayload['spaceContext'];
 };
 
 function sanitizeMessagesToTextOnly(
@@ -1444,7 +1429,6 @@ export async function createChatStreamResult(
     memberHomeMemory,
     memberHomeVisit,
     memberHomePartOfDay,
-    spaceContext,
   }: ChatStreamCallbacks,
 ): Promise<
   ReturnType<typeof streamText> & {
@@ -1599,52 +1583,6 @@ export async function createChatStreamResult(
     spaceContextSnapshot,
     memberBrief,
   );
-  let spaceContextSpecialistPrompt: string | null = null;
-  if (!memberHomeRecord && requestedSpaceSlug && spaceContext?.sectionKey) {
-    try {
-      const [space, detail] = await Promise.all([
-        findSpaceBySlug({ slug: requestedSpaceSlug }, { db }),
-        getSpaceContextSection(
-          {
-            spaceSlug: requestedSpaceSlug,
-            sectionKey: spaceContext.sectionKey,
-          },
-          { db },
-        ),
-      ]);
-      if (!space || !detail) {
-        throw new Error(SPACE_CONTEXT_SPECIALIST_LOAD_FAILED);
-      }
-      spaceContextSpecialistPrompt = buildSpaceContextSpecialistPrompt({
-        sectionKey: spaceContext.sectionKey,
-        spaceTitle: space.title?.trim() || requestedSpaceSlug,
-        spaceSlug: requestedSpaceSlug,
-        currentMarkdown: detail.section.markdown,
-        specialistMemory: detail.specialistMemory?.memoryMarkdown ?? '',
-      });
-    } catch (error) {
-      console.warn('[chat][space-context-specialist] failed', {
-        debugRequestId,
-        message: error instanceof Error ? error.message : String(error),
-      });
-      throw new Error(SPACE_CONTEXT_SPECIALIST_LOAD_FAILED);
-    }
-  }
-  const chatTools = spaceContextSpecialistPrompt
-    ? {
-        ...tools,
-        read_space_context_source: safeChatTool(
-          'read_space_context_source',
-          createReadSpaceContextSourceTool(
-            authToken,
-            requestedSpaceSlug,
-            extractSharedSourceUrls(
-              extractRecentUserTexts(messages, messages.length),
-            ),
-          ) as unknown as ChatRouteTool,
-        ),
-      }
-    : tools;
   const onboardingLocaleDirective = buildOnboardingLocaleDirective(
     normalizedConversationContext?.mode === 'onboarding_setup'
       ? normalizedConversationContext.locale
@@ -1771,10 +1709,6 @@ Forbidden, including close paraphrases: naming or continuing a signal or proposa
         voiceDiscoveryActive
           ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: friendly and joyful, about people helping each other. Name the step, then ask if they want to pursue it ("Ready to take a look?"). They decide. On yes, be glad and name the next step. On no, "All good", then the next step. Do not close with "let me know if you want anything else". Stop only if they ask to pause. Keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
           : ''
-      }${
-        spaceContextSpecialistPrompt
-          ? `\n\n${spaceContextSpecialistPrompt}`
-          : ''
       }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
         localizedEntryMethodGuidelines
           ? `\n${localizedEntryMethodGuidelines}`
@@ -1783,20 +1717,12 @@ Forbidden, including close paraphrases: naming or continuing a signal or proposa
     : voiceDiscoveryActive && spaceSlug?.trim()
     ? `${effectiveSystemPrompt}\n\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice discovery mode is active for this space: the AI does it for them—reflect what you heard, propose drafts and next steps, one small ask at a time, short conversational replies (no bullet lists or markdown in voice turns). Continuous discovery applies: learn the space with tools, adapt to circumstances, and handle the next move toward purpose—not a fixed checklist.${
         proposalAcceptanceDirective ? `\n\n${proposalAcceptanceDirective}` : ''
-      }${
-        spaceContextSpecialistPrompt
-          ? `\n\n${spaceContextSpecialistPrompt}`
-          : ''
       }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
         localizedEntryMethodGuidelines
           ? `\n${localizedEntryMethodGuidelines}`
           : ''
       }`
     : `${effectiveSystemPrompt}${
-        spaceContextSpecialistPrompt
-          ? `\n\n${spaceContextSpecialistPrompt}`
-          : ''
-      }${
         proposalFormStateDirective ? `\n\n${proposalFormStateDirective}` : ''
       }${
         activeGovernanceProposalDirective
@@ -1868,7 +1794,7 @@ Forbidden, including close paraphrases: naming or continuing a signal or proposa
           ],
 
     // Cast: ChatRouteTool's generic Zod input doesn't satisfy ai's CoreTool typing, but is structurally compatible at runtime.
-    tools: chatTools as unknown as Parameters<typeof streamText>[0]['tools'],
+    tools: tools as unknown as Parameters<typeof streamText>[0]['tools'],
     // After the waiting-item card, the next step is speech only. Share and
     // visual turns still need their tools on later steps.
     prepareStep: memberHomeRecord
@@ -1947,35 +1873,7 @@ Forbidden, including close paraphrases: naming or continuing a signal or proposa
             : undefined,
       });
     },
-    onFinish: async (event) => {
-      const assistantText =
-        typeof event.text === 'string' ? event.text.trim() : '';
-      if (
-        assistantText &&
-        requestedSpaceSlug &&
-        spaceContext?.sectionKey &&
-        spaceContextSpecialistPrompt
-      ) {
-        try {
-          await appendSpaceContextMessage(
-            {
-              spaceSlug: requestedSpaceSlug,
-              sectionKey: spaceContext.sectionKey,
-              role: 'assistant',
-              content: assistantText,
-              agentKey:
-                SPACE_CONTEXT_SPECIALISTS[spaceContext.sectionKey].agentKey,
-            },
-            { db },
-          );
-        } catch (error) {
-          console.warn('[chat][space-context-specialist] persist failed', {
-            debugRequestId,
-            message: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
-
+    onFinish: (event) => {
       if (!OPENROUTER_DEBUG) return;
 
       const generationId = event.response?.id;

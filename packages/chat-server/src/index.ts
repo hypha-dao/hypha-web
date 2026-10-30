@@ -10,7 +10,6 @@ export {
   createChatStreamResult,
   isAbortLikeError,
   MISSING_OPENROUTER_KEY_MESSAGE,
-  SPACE_CONTEXT_SPECIALIST_LOAD_FAILED,
   OPENROUTER_DEBUG,
 } from './stream-chat';
 export {

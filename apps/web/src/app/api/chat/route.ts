@@ -10,7 +10,6 @@ import {
   type ChatRequestPayload,
   createChatStreamResult,
   MISSING_OPENROUTER_KEY_MESSAGE,
-  SPACE_CONTEXT_SPECIALIST_LOAD_FAILED,
   OPENROUTER_DEBUG,
   verifyPrivyAuthToken,
 } from '@hypha-platform/chat-server';
@@ -111,7 +110,6 @@ export async function POST(req: Request) {
   const memberHomeMemory = parsed.data.memberHomeMemory;
   const memberHomeVisit = parsed.data.memberHomeVisit ?? null;
   const memberHomePartOfDay = parsed.data.memberHomePartOfDay ?? null;
-  const spaceContext = parsed.data.spaceContext;
 
   if (spaceSlug?.trim()) {
     const interactionAuth = await authorizeSpacePanelInteraction({
@@ -150,7 +148,6 @@ export async function POST(req: Request) {
       memberHomeMemory,
       memberHomeVisit,
       memberHomePartOfDay,
-      spaceContext,
     });
   } catch (error) {
     console.error('[chat][route][stream-init-error]', {
@@ -162,9 +159,6 @@ export async function POST(req: Request) {
     const message =
       error instanceof Error && error.message === MISSING_OPENROUTER_KEY_MESSAGE
         ? 'Hypha AI is not available on this deployment because the assistant API is not configured (missing OpenRouter credentials). Contact your team or administrator.'
-        : error instanceof Error &&
-          error.message === SPACE_CONTEXT_SPECIALIST_LOAD_FAILED
-        ? 'Could not load this Context section. Please retry in a few seconds.'
         : 'I hit an issue while starting the response. Please retry in a few seconds.';
 
     return createChatFailureStreamResponse({
