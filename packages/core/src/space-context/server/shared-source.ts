@@ -360,7 +360,25 @@ function dropElements(html: string): string {
  * drops every `<` left over because one pass over `<scr<b>ipt>` leaves `<script>`.
  */
 function stripAngleBrackets(value: string): string {
-  return value.replace(/<[^<>]*>/g, '').replace(/</g, '');
+  let out = '';
+  let i = 0;
+  let gt = -1;
+  while (i < value.length) {
+    const lt = value.indexOf('<', i);
+    if (lt === -1) {
+      out += value.slice(i);
+      break;
+    }
+    out += value.slice(i, lt);
+    if (gt !== value.length && gt <= lt) {
+      const found = value.indexOf('>', lt + 1);
+      gt = found === -1 ? value.length : found;
+    }
+    const nextLt = value.indexOf('<', lt + 1);
+    const closesTag = gt < value.length && (nextLt === -1 || gt < nextLt);
+    i = closesTag ? gt + 1 : lt + 1;
+  }
+  return out;
 }
 
 export function htmlToText(html: string): {
