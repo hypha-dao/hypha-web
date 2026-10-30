@@ -89,6 +89,17 @@ I've drafted "Issue New Token" — work for you?`;
     expect(spoken).toContain('Edgar needs projects that pay.');
     expect(spoken).toContain('Can you jump on?');
   });
+
+  it('keeps content after a leading the-script-says label', () => {
+    const input =
+      'The script says Edgar needs projects that pay. Can you jump on?';
+
+    const spoken = prepareAssistantTextForSpeech(input);
+
+    expect(spoken).not.toMatch(/script/i);
+    expect(spoken).toContain('Edgar needs projects that pay.');
+    expect(spoken).toContain('Can you jump on?');
+  });
 });
 
 describe('pickVoiceInterimAckPhrase', () => {

@@ -122,11 +122,18 @@ function isSpokenNoiseSentence(sentence: string): boolean {
     /^here(?:'s| is) (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
     /^reading (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
     /^let me read (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
-    /^the script (?:says|is|goes)\b.*$/i.test(trimmed)
+    /^the script (?:says|is|goes)[.!?]?\s*$/i.test(trimmed)
   ) {
     return true;
   }
   return false;
+}
+
+/** Drop a leading "the script says …" label; keep the words after it. */
+function stripLeadingScriptRelayLabel(text: string): string {
+  return text
+    .replace(/^the script (?:says|is|goes)\s*[:\-–—,]?\s*/i, '')
+    .trim();
 }
 
 /**
@@ -144,7 +151,9 @@ export function prepareAssistantTextForSpeech(text: string): string {
     .map((rawLine) => {
       const trimmedRaw = rawLine.trim();
       if (/^[-*•]\s/.test(trimmedRaw)) return '';
-      return stripMarkdown(trimmedRaw).replace(/\s+/g, ' ').trim();
+      return stripLeadingScriptRelayLabel(
+        stripMarkdown(trimmedRaw).replace(/\s+/g, ' ').trim(),
+      );
     })
     .filter(Boolean);
   const lineFiltered = lines.filter((line) => !isSpokenNoiseSentence(line));
@@ -153,9 +162,9 @@ export function prepareAssistantTextForSpeech(text: string): string {
   if (!collapsed) return '';
 
   const sentences = collapsed.split(/(?<=[.!?])\s+/).filter(Boolean);
-  const spoken = sentences.filter(
-    (sentence) => !isSpokenNoiseSentence(sentence),
-  );
+  const spoken = sentences
+    .map(stripLeadingScriptRelayLabel)
+    .filter((sentence) => !isSpokenNoiseSentence(sentence));
 
   if (spoken.length > 0) {
     return takeSpokenSentences(spoken).join(' ').trim();
