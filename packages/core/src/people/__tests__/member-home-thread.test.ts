@@ -212,6 +212,14 @@ describe('listMemberHomeThreadItems', () => {
     expect(items.map((item) => item.slug)).toEqual(['define-products']);
   });
 
+  it('leaves out a withdrawn proposal even when the chain vote still looks open', () => {
+    const items = listMemberHomeThreadItems({
+      ...home,
+      proposals: [{ ...home.proposals[0]!, withdrawn: true }],
+    });
+    expect(items.map((item) => item.slug)).toEqual(['define-products']);
+  });
+
   it('drops an item from the waiting list once the member clears it', () => {
     const items = listMemberHomeThreadItems(home);
     const open = memberHomeItemsStillWaiting(items, {

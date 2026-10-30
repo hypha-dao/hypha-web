@@ -45,6 +45,7 @@ import { getSpaceDetails } from '../../space/shared/web3/get-space-details';
 
 import { createGovernancePublicClient } from '../../common/web3/governance-public-client';
 import { getGovernanceChainId } from '../../governance/client/governance-chain-id';
+import { proposalIdsWithdrawn } from '../../governance/server/proposal-ids-withdrawn';
 
 import { web3Client } from '../../common/server/web3-rpc/client';
 import { getMemberSpaces } from '../../space/client/web3/dao-space-factory/get-member-spaces';
@@ -1582,6 +1583,15 @@ export async function getMemberIntelligence(
           new Map<number, ClosedProposalOutcome>(),
         ),
       );
+  const withdrawnListedPromise = shell
+    ? Promise.resolve(new Set<number>())
+    : listedVoteIdsPromise.then((ids) =>
+        readSlice(
+          'proposalWithdrawn',
+          () => proposalIdsWithdrawn(ids),
+          new Set<number>(),
+        ),
+      );
 
   const [
     proposalSlice,
@@ -1752,45 +1762,66 @@ export async function getMemberIntelligence(
   const extraChainIds = openChainProposalIds(missingProposals).filter(
     (id) => !listedChainIds.includes(id),
   );
-  const [votedListed, closedListed, extraVoted, extraClosed] =
-    await Promise.all([
-      votedListedPromise,
-      closedListedPromise,
-      extraChainIds.length === 0 || shell
-        ? Promise.resolve(new Set<number>())
-        : readSlice(
-            'memberVotes',
-            () => proposalIdsAlreadyVoted(person.address, extraChainIds),
-            new Set<number>(),
-          ),
-      extraChainIds.length === 0 || shell
-        ? Promise.resolve(new Map<number, ClosedProposalOutcome>())
-        : readSlice(
-            'proposalExpiry',
-            () => readClosedProposals(extraChainIds),
-            new Map<number, ClosedProposalOutcome>(),
-          ),
-    ]);
+  const [
+    votedListed,
+    closedListed,
+    withdrawnListed,
+    extraVoted,
+    extraClosed,
+    extraWithdrawn,
+  ] = await Promise.all([
+    votedListedPromise,
+    closedListedPromise,
+    withdrawnListedPromise,
+    extraChainIds.length === 0 || shell
+      ? Promise.resolve(new Set<number>())
+      : readSlice(
+          'memberVotes',
+          () => proposalIdsAlreadyVoted(person.address, extraChainIds),
+          new Set<number>(),
+        ),
+    extraChainIds.length === 0 || shell
+      ? Promise.resolve(new Map<number, ClosedProposalOutcome>())
+      : readSlice(
+          'proposalExpiry',
+          () => readClosedProposals(extraChainIds),
+          new Map<number, ClosedProposalOutcome>(),
+        ),
+    extraChainIds.length === 0 || shell
+      ? Promise.resolve(new Set<number>())
+      : readSlice(
+          'proposalWithdrawn',
+          () => proposalIdsWithdrawn(extraChainIds),
+          new Set<number>(),
+        ),
+  ]);
   const votedProposalIds = new Set([...votedListed, ...extraVoted]);
   const closedProposals = new Map([...closedListed, ...extraClosed]);
+  const withdrawnProposalIds = new Set([...withdrawnListed, ...extraWithdrawn]);
   const proposalsWithVotes = proposals.map((proposal) => {
     const closed =
       proposal.web3ProposalId != null
         ? closedProposals.get(proposal.web3ProposalId)
         : undefined;
+    const withdrawn =
+      proposal.web3ProposalId != null &&
+      withdrawnProposalIds.has(proposal.web3ProposalId);
     return {
       ...proposal,
       memberHasVoted:
         proposal.web3ProposalId != null &&
         votedProposalIds.has(proposal.web3ProposalId),
-      expired: closed != null,
-      outcome: closed
-        ? {
-            passed: closed.passed,
-            participation: closed.participation,
-            unity: closed.unity,
-          }
-        : null,
+      // Withdrawn proposals are gone — do not surface an outcome card either.
+      expired: !withdrawn && closed != null,
+      withdrawn,
+      outcome:
+        !withdrawn && closed
+          ? {
+              passed: closed.passed,
+              participation: closed.participation,
+              unity: closed.unity,
+            }
+          : null,
     };
   });
   const settledSlugs = new Set(
@@ -1800,12 +1831,18 @@ export async function getMemberIntelligence(
         : [],
     ),
   );
+  const withdrawnSlugs = new Set(
+    proposalsWithVotes.flatMap((proposal) =>
+      proposal.withdrawn && proposal.slug ? [proposal.slug] : [],
+    ),
+  );
   const attention = notificationSlice.items.filter(
     (item) =>
       !(
         item.kind === 'proposal' &&
         Boolean(item.targetSlug) &&
-        settledSlugs.has(item.targetSlug)
+        (settledSlugs.has(item.targetSlug) ||
+          withdrawnSlugs.has(item.targetSlug))
       ),
   );
   const listedSignalSlugs = new Set(

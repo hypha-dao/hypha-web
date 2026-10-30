@@ -535,13 +535,19 @@ export function listSpaceAttentionLead(
 
 /**
  * A discussion is still a conversation. A proposal is a decision only while
- * it has a chain vote that has not closed and this member has not voted.
- * An agreement, or a proposal row with no chain id, has nothing left to decide.
+ * it has a chain vote that has not closed, has not been withdrawn, and this
+ * member has not voted. An agreement, or a proposal row with no chain id, has
+ * nothing left to decide.
  */
 function proposalStillOpen(
   proposal: MemberIntelligence['proposals'][number] | null | undefined,
 ): proposal is MemberIntelligence['proposals'][number] {
-  if (!proposal?.slug || proposal.memberHasVoted || proposal.expired) {
+  if (
+    !proposal?.slug ||
+    proposal.memberHasVoted ||
+    proposal.expired ||
+    proposal.withdrawn
+  ) {
     return false;
   }
   const state = proposal.state?.trim().toLowerCase();

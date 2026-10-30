@@ -127,6 +127,12 @@ export type MemberIntelligence = {
      */
     expired?: boolean;
     /**
+     * True when the creator (or owner) withdrew this proposal on-chain.
+     * Withdrawn ids still look open on getProposalCore (0% tallies, future
+     * end time) — Agreements already hides them; Home must too.
+     */
+    withdrawn?: boolean;
+    /**
      * Set when the chain vote has closed. Participation is the share of
      * voting power that voted. Unity is the yes share of the votes cast.
      */
