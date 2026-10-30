@@ -58,6 +58,8 @@ export type SpaceEnergyResponse = {
   memberAddressesOk?: boolean;
   /** False when the source list could not be read on-chain (not the same as no sources). */
   sourcesOk?: boolean;
+  /** False when a fee, balance, source or member-detail read failed; those fields are `null`. */
+  detailsOk?: boolean;
   overview?: {
     memberCount: number;
     sourceCount: number;

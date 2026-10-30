@@ -5063,6 +5063,7 @@
       "settleHint": "Settle debt approves the PPA contract to pull the quoted USDC from your smart wallet, then calls <code>settleOwnDebt</code>."
     },
     "shared": {
+      "memberListUnavailable": "Member list is temporarily unavailable.",
       "gridOperatorName": "Local grid operator",
       "gridOperatorSubtitle": "External energy supplier",
       "basePerKwh": "Base / kWh",

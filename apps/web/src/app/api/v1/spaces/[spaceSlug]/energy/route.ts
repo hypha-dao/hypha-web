@@ -288,6 +288,7 @@ export async function GET(
       },
       memberAddressesOk: snapshot.memberAddressesOk,
       sourcesOk: snapshot.sourcesOk,
+      detailsOk: snapshot.detailsOk,
       overview: snapshot.overview,
       roles: snapshot.roles,
       members: snapshot.memberAddresses,

@@ -424,6 +424,14 @@ export const OwnershipTab = ({
 
   const participantProfiles = data.participantProfiles;
 
+  if (data.memberAddressesOk === false) {
+    return (
+      <p className="text-2 text-neutral-11">
+        {tShared('memberListUnavailable')}
+      </p>
+    );
+  }
+
   if (!groups.length) {
     return <p className="text-2 text-neutral-11">{t('noOwnership')}</p>;
   }

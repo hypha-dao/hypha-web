@@ -11,6 +11,8 @@ const refreshing = new Map<string, Promise<unknown>>();
 
 const LOADING_SUFFIX = ':loading';
 const LOADING_POLL_MS = 1_000;
+/** A stale local entry is already servable; don't let a slow shared read delay it. */
+const STALE_SHARED_READ_TIMEOUT_MS = 250;
 
 export class StaleWhileRevalidateBusyError extends Error {
   constructor(key: string) {
@@ -28,13 +30,28 @@ function isEntry(value: unknown): value is Entry<unknown> {
   );
 }
 
-async function readShared(key: string): Promise<Entry<unknown> | undefined> {
+async function readShared(
+  key: string,
+  timeoutMs?: number,
+): Promise<Entry<unknown> | undefined> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const value = await sharedCache.get(key);
+    const read = sharedCache.get(key);
+    const value =
+      timeoutMs === undefined
+        ? await read
+        : await Promise.race([
+            read,
+            new Promise<undefined>((resolve) => {
+              timer = setTimeout(() => resolve(undefined), timeoutMs);
+            }),
+          ]);
     return isEntry(value) ? value : undefined;
   } catch (error) {
     console.warn('[swr-cache] read %s failed', key, error);
     return undefined;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -137,13 +154,22 @@ async function waitForLoadElsewhere(
 export async function readStaleWhileRevalidate<T>(
   options: ReadOptions<T>,
 ): Promise<T> {
-  const { key, freshMs, coalesce } = options;
+  const { key, freshMs, ttlSeconds, coalesce } = options;
   const isFresh = (entry: Entry<unknown>) =>
     Date.now() - entry.storedAt < freshMs;
 
   let entry = localEntries.get(key);
+  // Local entries expire like shared ones, so an instance whose refreshes
+  // keep failing stops serving data past its TTL.
+  if (entry && Date.now() - entry.storedAt >= ttlSeconds * 1000) {
+    localEntries.delete(key);
+    entry = undefined;
+  }
   if (!entry || !isFresh(entry)) {
-    const shared = await readShared(key);
+    const shared = await readShared(
+      key,
+      entry ? STALE_SHARED_READ_TIMEOUT_MS : undefined,
+    );
     if (shared && (!entry || shared.storedAt > entry.storedAt)) {
       entry = shared;
       localEntries.set(key, shared);

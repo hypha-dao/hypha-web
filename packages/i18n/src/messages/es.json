@@ -5041,6 +5041,7 @@
       "settleHint": "Liquidar deuda autoriza al contrato PPA a retirar el USDC indicado de tu smart wallet y luego llama a <code>settleOwnDebt</code>."
     },
     "shared": {
+      "memberListUnavailable": "La lista de miembros no está disponible temporalmente.",
       "gridOperatorName": "Operador de red local",
       "gridOperatorSubtitle": "Proveedor externo de energía",
       "basePerKwh": "Base / kWh",

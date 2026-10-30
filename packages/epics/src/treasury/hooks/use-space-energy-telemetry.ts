@@ -139,12 +139,17 @@ function startTelemetryRequest(
         ]),
         controller.signal,
       );
-      const sentAnonymously = firstToken === TOKEN_PENDING;
-      let response = await send(sentAnonymously ? null : firstToken);
-      // Restricted spaces reject the anonymous request; retry once with the
+      const tokenTimedOut = firstToken === TOKEN_PENDING;
+      const sentWithoutToken = tokenTimedOut || !firstToken;
+      let response = await send(tokenTimedOut ? null : firstToken);
+      // Restricted spaces reject a tokenless request; retry once with the
       // token if Privy eventually delivers one (bounded by the hard timeout).
-      if (response.status === 401 && sentAnonymously) {
-        const lateToken = await rejectOnAbort(tokenPromise, controller.signal);
+      // Privy can briefly answer null right after loading, so ask again then.
+      if (response.status === 401 && sentWithoutToken) {
+        const lateToken = await rejectOnAbort(
+          tokenTimedOut ? tokenPromise : getAccessToken().catch(() => null),
+          controller.signal,
+        );
         if (lateToken) {
           response = await send(lateToken);
         }

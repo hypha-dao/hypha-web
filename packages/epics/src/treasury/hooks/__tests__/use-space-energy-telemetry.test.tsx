@@ -177,6 +177,58 @@ describe('useSpaceEnergyTelemetry', () => {
     expect(pending).toHaveLength(2);
   });
 
+  it('asks for a token again and retries once when a null-token request gets 401', async () => {
+    nav.pathname = '/en/dho/restricted-null-token/energy';
+    const tokens: (string | null)[] = [null, 'fresh-token'];
+    let tokenCalls = 0;
+    auth.getAccessToken = () => Promise.resolve(tokens[tokenCalls++] ?? null);
+    const { result } = renderHook(
+      () => useSpaceEnergyTelemetry('7d', { refreshInterval: 0 }),
+      { wrapper },
+    );
+
+    await advance(0);
+    expect(pending).toHaveLength(1);
+    expect(pending[0]!.headers.Authorization).toBeUndefined();
+    await act(async () => {
+      pending[0]!.resolve({ error: 'Unauthorized' }, 401);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(tokenCalls).toBe(2);
+    expect(pending).toHaveLength(2);
+    expect(pending[1]!.headers.Authorization).toBe('Bearer fresh-token');
+
+    await act(async () => {
+      pending[1]!.resolve(payload('7d'));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.data?.period).toBe('7d');
+    expect(pending).toHaveLength(2);
+  });
+
+  it('surfaces the 401 when a second token request still returns null', async () => {
+    nav.pathname = '/en/dho/restricted-logged-out/energy';
+    let tokenCalls = 0;
+    auth.getAccessToken = () => {
+      tokenCalls++;
+      return Promise.resolve(null);
+    };
+    const { result } = renderHook(
+      () => useSpaceEnergyTelemetry('7d', { refreshInterval: 0 }),
+      { wrapper },
+    );
+
+    await advance(0);
+    await act(async () => {
+      pending[0]!.resolve({ error: 'Unauthorized' }, 401);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await advance(60_000);
+    expect(tokenCalls).toBe(2);
+    expect(pending).toHaveLength(1);
+    expect(result.current.error).toBeInstanceOf(EnergyTelemetryHttpError);
+  });
+
   it('does not refetch when a late token arrives after an anonymous success', async () => {
     nav.pathname = '/en/dho/public-space/energy';
     const token = deferred<string | null>();

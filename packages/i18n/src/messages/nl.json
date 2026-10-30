@@ -5033,6 +5033,7 @@
       "settleHint": "Schulden afwikkelen keurt het PPA-contract goed om de genoteerde USDC uit uw slimme portemonnee te halen en roept vervolgens <code>settleOwnDebt</code> aan."
     },
     "shared": {
+      "memberListUnavailable": "De ledenlijst is tijdelijk niet beschikbaar.",
       "gridOperatorName": "Lokale netbeheerder",
       "gridOperatorSubtitle": "Externe energieleverancier",
       "basePerKwh": "Basis / kWh",

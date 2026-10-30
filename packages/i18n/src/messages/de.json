@@ -5027,6 +5027,7 @@
       "settleHint": "Schuld begleichen genehmigt den PPA-Vertrag, den angegebenen USDC-Betrag aus Ihrer Smart Wallet abzuziehen, und ruft anschließend <code>settleOwnDebt</code> auf."
     },
     "shared": {
+      "memberListUnavailable": "Die Mitgliederliste ist vorübergehend nicht verfügbar.",
       "gridOperatorName": "Lokaler Netzbetreiber",
       "gridOperatorSubtitle": "Externer Energielieferant",
       "basePerKwh": "Grundpreis / kWh",

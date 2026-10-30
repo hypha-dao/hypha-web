@@ -5032,6 +5032,7 @@
       "settleHint": "Avregn gjeld gir PPA-kontrakten godkjenning til å trekke det oppgitte USDC-beløpet fra smartlommeboken din, og kaller deretter <code>settleOwnDebt</code>."
     },
     "shared": {
+      "memberListUnavailable": "Medlemslisten er midlertidig utilgjengelig.",
       "gridOperatorName": "Lokal nettoperatør",
       "gridOperatorSubtitle": "Ekstern energileverandør",
       "basePerKwh": "Grunnpris / kWh",

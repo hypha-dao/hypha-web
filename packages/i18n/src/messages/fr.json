@@ -5023,6 +5023,7 @@
       "settleHint": "Régler la dette autorise le contrat PPA à prélever l'USDC indiqué depuis votre smart wallet, puis appelle <code>settleOwnDebt</code>."
     },
     "shared": {
+      "memberListUnavailable": "La liste des membres est temporairement indisponible.",
       "gridOperatorName": "Gestionnaire de réseau local",
       "gridOperatorSubtitle": "Fournisseur d'énergie externe",
       "basePerKwh": "Base / kWh",
