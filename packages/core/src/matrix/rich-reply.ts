@@ -395,6 +395,8 @@ export function messageFromRoomMessageEvent(
     throw new Error('Matrix room message event missing id or sender');
   }
 
+  const edited = Boolean(event.replacingEventId());
+
   if (isMedia) {
     const spoilerVal = content[HYPHA_SPOILER_FIELD];
     const mxcUrl =
@@ -470,6 +472,7 @@ export function messageFromRoomMessageEvent(
       content: rawBody,
       formattedContentHtml,
       timestamp: new Date(event.getTs()),
+      ...(edited ? { edited: true } : {}),
       pinned,
       inReplyToEventId: replyToId,
       inReplyToSender,
@@ -500,6 +503,7 @@ export function messageFromRoomMessageEvent(
     content: displayBody,
     formattedContentHtml,
     timestamp: new Date(event.getTs()),
+    ...(edited ? { edited: true } : {}),
     pinned,
     inReplyToEventId: replyToId,
     inReplyToSender,

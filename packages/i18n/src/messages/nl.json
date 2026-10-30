@@ -3879,6 +3879,7 @@
     "replyButton": "Antwoord",
     "editButton": "Bericht bewerken",
     "editingMessage": "Bericht bewerken",
+    "messageEdited": "(bewerkt)",
     "editDismiss": "Bewerking annuleren",
     "editAttachmentsNotSupported": "Bijlagen worden niet ondersteund bij het bewerken van een bericht",
     "editMediaRequiresAttachment": "Bewaar ten minste één bijlage wanneer u dit bericht bewerkt.",

@@ -3876,6 +3876,7 @@
     "replyButton": "Antworten",
     "editButton": "Nachricht bearbeiten",
     "editingMessage": "Nachricht bearbeiten",
+    "messageEdited": "(bearbeitet)",
     "editDismiss": "Bearbeitung abbrechen",
     "editAttachmentsNotSupported": "Anhänge werden beim Bearbeiten einer Nachricht nicht unterstützt",
     "editMediaRequiresAttachment": "Behalten Sie mindestens einen Anhang beim Bearbeiten dieser Nachricht.",

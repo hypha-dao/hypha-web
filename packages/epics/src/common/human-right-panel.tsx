@@ -390,6 +390,8 @@ type UIMessage = {
   avatarUrl?: string;
   /** Matrix event time (origin_server_ts), for header timestamp */
   timestamp?: Date;
+  /** True when the Matrix root was edited (`m.replace`). */
+  edited?: boolean;
   /** MSC3952 intentional mentions on this event (`m.mentions.user_ids`). */
   mentionedUserIds?: string[];
   /** Matrix custom HTML for visible body (when sent with formatting). */
@@ -1014,6 +1016,7 @@ function toUIMessage(
       : {}),
     avatarUrl: isCurrentUser ? currentUserAvatarUrl : memberAvatar,
     timestamp: msg.timestamp,
+    ...(msg.edited ? { edited: true } : {}),
     reactions,
     replyTo,
     ...(msg.mentionedUserIds?.length

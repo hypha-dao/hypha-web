@@ -740,6 +740,8 @@ type HumanChatPanelMessageBubbleProps = {
     agentSpecialistId?: string;
     avatarUrl?: string;
     timestamp?: Date;
+    /** True when the Matrix root was edited (`m.replace`). */
+    edited?: boolean;
     reactions?: Reaction[];
     /** Matrix formatted_body (subset) for rich display */
     formattedContentHtml?: string;
@@ -2147,6 +2149,14 @@ export function HumanChatPanelMessageBubble({
                 {timestamp}
               </span>
             )}
+            {message.edited ? (
+              <span
+                className="shrink-0 text-xs text-muted-foreground/80"
+                data-testid="chat-message-edited"
+              >
+                {t('messageEdited')}
+              </span>
+            ) : null}
           </div>
 
           {message.sendPending && (

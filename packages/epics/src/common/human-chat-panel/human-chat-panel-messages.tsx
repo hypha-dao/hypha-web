@@ -70,6 +70,8 @@ type UIMessage = {
   agentSpecialistId?: string;
   avatarUrl?: string;
   timestamp?: Date;
+  /** True when the Matrix root was edited (`m.replace`). */
+  edited?: boolean;
   formattedContentHtml?: string;
   reactions?: Array<{
     emoji: string;
