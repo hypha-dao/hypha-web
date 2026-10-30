@@ -11,7 +11,7 @@ import { Button, Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import {
   importSpaceContextFromMemoryRequest,
@@ -33,6 +33,25 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
   const { canMutate } = useCanMutateInSpace({ spaceSlug, space });
   const { overview, error, isLoading, refresh } = useSpaceContext(spaceSlug);
   const [filter, setFilter] = useState<SpaceContextFilter>('all');
+  const filterTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const handleFilterKeyDown = (event: KeyboardEvent, index: number) => {
+    let next: number | null = null;
+    if (event.key === 'ArrowRight') {
+      next = (index + 1) % FILTERS.length;
+    } else if (event.key === 'ArrowLeft') {
+      next = (index - 1 + FILTERS.length) % FILTERS.length;
+    } else if (event.key === 'Home') {
+      next = 0;
+    } else if (event.key === 'End') {
+      next = FILTERS.length - 1;
+    }
+    const nextFilter = next == null ? undefined : FILTERS[next];
+    if (next == null || !nextFilter) return;
+    event.preventDefault();
+    setFilter(nextFilter);
+    filterTabRefs.current[next]?.focus();
+  };
   const [openSection, setOpenSection] = useState<SpaceContextSectionKey | null>(
     null,
   );
@@ -180,12 +199,16 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
           aria-label={t('title')}
           className="-mt-2 flex flex-wrap gap-5"
         >
-          {FILTERS.map((item) => (
+          {FILTERS.map((item, index) => (
             <button
               key={item}
+              ref={(node) => {
+                filterTabRefs.current[index] = node;
+              }}
               type="button"
               role="tab"
               aria-selected={filter === item}
+              tabIndex={filter === item ? 0 : -1}
               className={cn(
                 'border-b-[1.5px] pb-1 text-[10px] uppercase tracking-[0.1em] transition-colors',
                 filter === item
@@ -193,6 +216,7 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
                   : 'border-transparent font-medium text-neutral-11 hover:text-foreground',
               )}
               onClick={() => setFilter(item)}
+              onKeyDown={(event) => handleFilterKeyDown(event, index)}
             >
               {t(`filters.${item}`)}
             </button>
