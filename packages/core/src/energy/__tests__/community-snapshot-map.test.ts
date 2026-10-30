@@ -289,6 +289,12 @@ describe('energy community snapshot mapping', () => {
     expect(peekEnergyCommunitySnapshot(community)).toBeUndefined();
 
     failing.clear();
+    failing.add('getMemberAddresses');
+    const rosterFailed = await readEnergyCommunitySnapshot(community);
+    expect(rosterFailed.memberAddressesOk).toBe(false);
+    expect(peekEnergyCommunitySnapshot(community)).toBeUndefined();
+
+    failing.clear();
     const complete = await readEnergyCommunitySnapshot(community);
     expect(complete.optimization).toBeNull();
     expect(complete.detailsOk).toBe(true);
