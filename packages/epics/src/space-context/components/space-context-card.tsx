@@ -9,15 +9,8 @@ import {
   type SpaceContextSectionRecord,
 } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@hypha-platform/ui';
+import { Button, Card, CardTitle } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { ArrowRight } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Fragment, type ReactNode } from 'react';
@@ -65,15 +58,22 @@ export function SpaceContextCard({
   return (
     <Card
       className={cn(
-        'flex h-full flex-col border-border/70',
-        featured ? 'border-success-8' : 'min-h-[280px]',
+        'flex h-full flex-col',
+        featured
+          ? 'gap-2.5 border-success-11 px-6 pb-[18px] pt-5'
+          : 'min-h-[210px] gap-3.5 p-6',
         selected && 'border-foreground',
         section.status === 'not_started' && 'border-dashed',
       )}
     >
-      <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
-        <div className="flex min-w-0 flex-wrap items-center gap-3">
-          <CardTitle className={featured ? 'text-5' : 'text-4'}>
+      <div className="flex items-start gap-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+          <CardTitle
+            className={cn(
+              'font-semibold',
+              featured ? 'text-5' : 'flex-1 text-[17px]',
+            )}
+          >
             {title}
           </CardTitle>
           {featured ? <SpaceContextStatusChip status={section.status} /> : null}
@@ -84,7 +84,7 @@ export function SpaceContextCard({
               type="button"
               variant="outline"
               colorVariant="neutral"
-              className="h-9 shrink-0 uppercase tracking-[0.12em]"
+              className="h-8 shrink-0 border-foreground bg-transparent px-3 text-[11px] font-semibold uppercase tracking-[0.09em] text-foreground"
               onClick={() => onProposeAmendment(section.sectionKey)}
             >
               {t('card.proposeAmendment')}
@@ -93,70 +93,79 @@ export function SpaceContextCard({
         ) : (
           <SpaceContextStatusChip status={section.status} />
         )}
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col justify-between gap-4 pt-0">
-        <div className="relative min-h-24">
-          {empty ? (
-            <div className="space-y-1 text-2 text-neutral-11">
-              <p>{t(`leads.${section.sectionKey}`)}</p>
-              <p>{t('card.emptyBody')}</p>
-            </div>
-          ) : (
-            <>
-              <div
-                className={cn(
-                  featured ? 'max-h-[28rem]' : 'max-h-44',
-                  'space-y-3 overflow-hidden',
-                )}
-              >
-                {lead ? (
-                  <p
-                    className={cn(
-                      'text-neutral-12',
-                      featured
-                        ? 'max-w-3xl text-5 font-medium leading-snug'
-                        : 'text-3 leading-snug',
-                    )}
-                  >
-                    {lead}
-                  </p>
-                ) : null}
-                {rest ? (
+      </div>
+      {featured ? null : (
+        <p className="-mt-2 text-1 text-neutral-11">
+          {t(`leads.${section.sectionKey}`)}
+        </p>
+      )}
+      <div className="relative flex-1">
+        {empty ? (
+          <p className="text-[13px] leading-snug text-neutral-11">
+            {t('card.emptyBody')}
+          </p>
+        ) : (
+          <>
+            <div
+              className={cn(
+                featured ? 'max-h-[28rem]' : 'max-h-44',
+                'space-y-3.5 overflow-hidden',
+              )}
+            >
+              {lead ? (
+                <p
+                  className={cn(
+                    'text-foreground',
+                    featured
+                      ? 'max-w-3xl text-4 leading-snug'
+                      : 'text-[13px] leading-snug',
+                  )}
+                >
+                  {lead}
+                </p>
+              ) : null}
+              {rest ? (
+                <div className="border-t border-border/60 pt-3.5">
                   <MemoryProse
                     source={rest}
-                    className="text-2 leading-relaxed text-neutral-11"
+                    className="text-[13px] leading-relaxed text-foreground"
                   />
-                ) : null}
-              </div>
-              <div
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-background-2 to-transparent"
-                aria-hidden
-              />
-            </>
+                </div>
+              ) : null}
+            </div>
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-background-2 to-transparent"
+              aria-hidden
+            />
+          </>
+        )}
+      </div>
+      <div
+        className={cn(
+          'flex items-center justify-between gap-3',
+          !featured && 'border-t border-border/60 pt-2.5',
+        )}
+      >
+        <div className="min-w-0 truncate text-[11px] text-neutral-11">
+          {section.status === 'proposed' ? (
+            <ProposedFooterMeta section={section} />
+          ) : (
+            <FooterParts
+              parts={staticFooterParts({
+                section,
+                featured: !!featured,
+                agreementHref,
+              })}
+            />
           )}
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-3">
-          <div className="min-w-0 truncate text-1 text-neutral-11">
-            {section.status === 'proposed' ? (
-              <ProposedFooterMeta section={section} />
-            ) : (
-              <FooterParts
-                parts={staticFooterParts({
-                  section,
-                  featured: !!featured,
-                  agreementHref,
-                })}
-              />
-            )}
-          </div>
-          <CardAction
-            section={section}
-            canMutate={canMutate}
-            proposalHref={proposalHref}
-            onOpen={onOpen}
-          />
-        </div>
-      </CardContent>
+        <CardAction
+          section={section}
+          canMutate={canMutate}
+          proposalHref={proposalHref}
+          onOpen={onOpen}
+        />
+      </div>
     </Card>
   );
 }
@@ -173,38 +182,28 @@ function CardAction({
   onOpen: (key: SpaceContextSectionKey) => void;
 }) {
   const t = useTranslations('SpaceContext');
-  const className = 'h-10 shrink-0 gap-1.5 px-3';
-  const arrow = (
-    <ArrowRight className="size-3.5" strokeWidth={1.25} aria-hidden />
-  );
+  const className =
+    'inline-flex shrink-0 items-center gap-1 text-1 font-bold text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
   if (proposalHref) {
     return (
-      <Button
-        asChild
-        variant="ghost"
-        colorVariant="neutral"
-        className={className}
-      >
-        <Link href={proposalHref} scroll={false}>
-          {t('card.viewProposal')}
-          {arrow}
-        </Link>
-      </Button>
+      <Link href={proposalHref} scroll={false} className={className}>
+        {t('card.viewProposal')}
+        <span aria-hidden>→</span>
+      </Link>
     );
   }
 
+  const label = ctaLabel(section, canMutate, t);
   return (
-    <Button
+    <button
       type="button"
-      variant="ghost"
-      colorVariant="neutral"
       className={className}
       onClick={() => onOpen(section.sectionKey)}
     >
-      {ctaLabel(section, canMutate, t)}
-      {arrow}
-    </Button>
+      {label}
+      {label === t('card.view') ? null : <span aria-hidden>→</span>}
+    </button>
   );
 }
 
@@ -353,11 +352,6 @@ function ProposedFooterMeta({
       }),
     );
   }
-  parts.push(
-    t('card.yesShare', {
-      percent: Math.round(proposalDetails.unityPercentage),
-    }),
-  );
   return <FooterParts parts={parts} />;
 }
 

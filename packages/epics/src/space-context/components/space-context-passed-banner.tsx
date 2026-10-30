@@ -6,19 +6,13 @@ import {
   type SpaceContextSectionRecord,
 } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
-import { Button } from '@hypha-platform/ui';
-import { ArrowRight, Check, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { getProposalPath } from '../../common/get-path-function';
 import { agreementNumber } from './agreement-number';
 
 const RECENT_PASS_MS = 14 * 24 * 60 * 60 * 1000;
-
-function dismissKey(spaceSlug: string, documentId: number) {
-  return `hypha:space-context:passed:${spaceSlug}:${documentId}`;
-}
 
 /** The most recently ratified agreement, while it is still news. */
 function latestRatifiedGroup(sections: SpaceContextSectionRecord[]) {
@@ -55,24 +49,12 @@ export function SpaceContextPassedBanner({
   const locale = useLocale() as Locale;
   const group = useMemo(() => latestRatifiedGroup(sections), [sections]);
   const documentId = group?.lead.ratifiedDocumentId ?? null;
-  const [dismissed, setDismissed] = useState(true);
-
-  useEffect(() => {
-    if (documentId == null) return;
-    try {
-      setDismissed(
-        window.localStorage.getItem(dismissKey(spaceSlug, documentId)) === '1',
-      );
-    } catch {
-      setDismissed(false);
-    }
-  }, [documentId, spaceSlug]);
 
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
-    proposalId: group && !dismissed ? group.lead.ratifiedWeb3Id : null,
+    proposalId: group?.lead.ratifiedWeb3Id ?? null,
   });
 
-  if (!group || documentId == null || dismissed) return null;
+  if (!group || documentId == null) return null;
 
   const agreement = agreementNumber(group.lead.ratifiedWeb3Id, documentId);
   const title =
@@ -86,22 +68,18 @@ export function SpaceContextPassedBanner({
     ? getProposalPath(locale, spaceSlug, group.lead.ratifiedSlug)
     : null;
 
-  const dismiss = () => {
-    setDismissed(true);
-    try {
-      window.localStorage.setItem(dismissKey(spaceSlug, documentId), '1');
-    } catch {
-      // Private mode: the banner simply returns on the next visit.
-    }
-  };
-
   return (
     <div
       role="status"
-      className="flex flex-col gap-3 border border-success-8 bg-success-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-2 border border-success-11 bg-success-3 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
     >
-      <p className="flex min-w-0 items-start gap-2 text-2 text-success-11">
-        <Check className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <p className="flex min-w-0 items-start gap-2.5 text-1 font-medium text-foreground">
+        <span
+          className="text-[13px] font-bold leading-4 text-success-11"
+          aria-hidden
+        >
+          ✓
+        </span>
         <span>
           {proposalDetails
             ? t('passed.withVotes', {
@@ -113,31 +91,15 @@ export function SpaceContextPassedBanner({
             : t('passed.plain', { agreement, title })}
         </span>
       </p>
-      <div className="flex shrink-0 items-center gap-1">
-        {href ? (
-          <Button
-            asChild
-            variant="ghost"
-            colorVariant="neutral"
-            className="h-9 gap-1.5 px-3 uppercase tracking-[0.12em] text-success-11"
-          >
-            <Link href={href} scroll={false}>
-              {t('passed.viewAgreement')}
-              <ArrowRight className="size-3.5" strokeWidth={1.25} aria-hidden />
-            </Link>
-          </Button>
-        ) : null}
-        <Button
-          type="button"
-          variant="ghost"
-          colorVariant="neutral"
-          className="size-9 p-0 text-success-11"
-          aria-label={t('passed.dismiss')}
-          onClick={dismiss}
+      {href ? (
+        <Link
+          href={href}
+          scroll={false}
+          className="shrink-0 text-[10px] font-bold uppercase tracking-[0.1em] text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
-          <X className="size-4" aria-hidden />
-        </Button>
-      </div>
+          {t('passed.viewAgreement')} <span aria-hidden>→</span>
+        </Link>
+      ) : null}
     </div>
   );
 }

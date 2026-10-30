@@ -13,13 +13,7 @@ import {
   useJwt,
   useCreateAgreementOrchestrator,
 } from '@hypha-platform/core/client';
-import {
-  Badge,
-  Button,
-  Checkbox,
-  Form,
-  RequirementMark,
-} from '@hypha-platform/ui';
+import { Button, Checkbox, Form, RequirementMark } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -41,7 +35,7 @@ import { agreementNumber } from './agreement-number';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 const FIELD_LABEL_CLASS =
-  'text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground';
+  'text-[9px] font-semibold uppercase tracking-[0.11em] text-neutral-11';
 
 const formSchema = schemaCreateAgreementForm.extend(createAgreementFiles);
 type FormValues = z.infer<typeof formSchema>;
@@ -366,36 +360,27 @@ export function CreateContextRatifyForm({
             progress={progress}
             hideLeadImage
             contentLabel={
-              <>
-                {tAgreementFlow('createAgreementBaseFields.proposalContent')}
-                <span className="font-normal text-neutral-11">
-                  {' — '}
-                  {t('proposeForm.contentPrefilled')}
-                </span>
-              </>
+              <span className={FIELD_LABEL_CLASS}>
+                {tAgreementFlow('createAgreementBaseFields.proposalContent')}{' '}
+                <RequirementMark /> {'— '}
+                {t('proposeForm.contentPrefilled')}
+              </span>
             }
             beforeContent={
-              <section className="space-y-5 rounded-none border border-border/70 bg-background-2 p-4 lg:p-6">
-                <div className="space-y-2">
+              <section className="space-y-3.5">
+                <div className="space-y-3.5">
                   <p className={FIELD_LABEL_CLASS}>
                     {t('proposeForm.proposalType')}
                   </p>
-                  <Badge
-                    variant="outline"
-                    colorVariant="neutral"
-                    className="uppercase tracking-[0.12em]"
-                  >
+                  <span className="inline-flex border border-foreground bg-background-2 px-2.5 py-1.5 text-1 font-semibold text-foreground">
                     {t('proposeForm.proposalTypeValue')}
-                  </Badge>
+                  </span>
                 </div>
-                <fieldset className="space-y-2">
-                  <legend className={FIELD_LABEL_CLASS}>
+                <fieldset className="space-y-3.5">
+                  <legend className={cn(FIELD_LABEL_CLASS, 'mb-3.5')}>
                     {t('proposeForm.sections')} <RequirementMark />
                   </legend>
-                  <p className="text-1 text-neutral-11">
-                    {t('proposeForm.hint')}
-                  </p>
-                  <div className="divide-y divide-border/70 border border-border/70">
+                  <div className="divide-y divide-border/70 border border-border/70 bg-background-2">
                     {(overview?.sections ?? []).map((section) => {
                       const disabled = !isSelectable(section);
                       const selectionLocked = typeof agreement?.id === 'number';
@@ -404,38 +389,35 @@ export function CreateContextRatifyForm({
                         <label
                           key={section.sectionKey}
                           className={cn(
-                            'flex items-center justify-between gap-3 px-3 py-3',
+                            'flex items-center gap-3 px-3.5 py-2.5',
                             disabled || selectionLocked
                               ? 'cursor-not-allowed'
                               : 'cursor-pointer',
-                            disabled && 'opacity-60',
+                            disabled && 'opacity-45',
                           )}
                         >
-                          <span className="flex min-w-0 items-center gap-3">
-                            <Checkbox
-                              checked={checked}
-                              disabled={disabled || selectionLocked}
-                              onCheckedChange={(value) => {
-                                setSelected((current) => {
-                                  if (value === true) {
-                                    return current.includes(section.sectionKey)
-                                      ? current
-                                      : [...current, section.sectionKey];
-                                  }
-                                  return current.filter(
-                                    (key) => key !== section.sectionKey,
-                                  );
-                                });
-                              }}
-                            />
-                            <span className="min-w-0 truncate text-2">
-                              <span className="font-semibold text-foreground">
-                                {headingForSectionKey(section.sectionKey)}
-                              </span>
-                              <span className="text-neutral-11">
-                                {' · '}
-                                {sectionMeta(section, t)}
-                              </span>
+                          <Checkbox
+                            checked={checked}
+                            disabled={disabled || selectionLocked}
+                            onCheckedChange={(value) => {
+                              setSelected((current) => {
+                                if (value === true) {
+                                  return current.includes(section.sectionKey)
+                                    ? current
+                                    : [...current, section.sectionKey];
+                                }
+                                return current.filter(
+                                  (key) => key !== section.sectionKey,
+                                );
+                              });
+                            }}
+                          />
+                          <span className="flex min-w-0 flex-1 items-baseline gap-3">
+                            <span className="shrink-0 text-[13px] font-semibold text-foreground">
+                              {headingForSectionKey(section.sectionKey)}
+                            </span>
+                            <span className="min-w-0 truncate text-[11px] text-neutral-11">
+                              {sectionMeta(section, t)}
                             </span>
                           </span>
                           <SpaceContextStatusChip status={section.status} />
@@ -483,8 +465,8 @@ export function CreateContextRatifyForm({
             </div>
           ) : null}
 
-          <div className="flex flex-col gap-3 border-t border-border/70 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-1 text-neutral-11">
+          <div className="flex flex-col gap-3 border-t border-border/70 pt-3.5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[11px] text-neutral-11">
               {t('proposeForm.onPassNote')}
             </p>
             <div className="flex shrink-0 justify-end gap-2">

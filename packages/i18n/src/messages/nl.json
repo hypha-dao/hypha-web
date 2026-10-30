@@ -5640,8 +5640,7 @@
       "edited": "bewerkt {when}",
       "votingClosed": "stemming gesloten",
       "daysLeft": "nog {count, plural, one {# dag} other {# dagen}}",
-      "hoursLeft": "nog {count, plural, one {# uur} other {# uur}}",
-      "yesShare": "{percent}% ja"
+      "hoursLeft": "nog {count, plural, one {# uur} other {# uur}}"
     },
     "empty": {
       "title": "Nog geen context",
@@ -5681,7 +5680,6 @@
       "title": "Ratify context: {sections}",
       "titleShort": "Ratify context sections",
       "sections": "Sections to ratify",
-      "hint": "Kies conceptsecties om te bekrachtigen, of een bekrachtigde sectie om te wijzigen. Secties die al in stemming zijn, blijven erbuiten.",
       "alreadyVoting": "Al in stemming (Overeenkomst #{agreement})",
       "noDraft": "No draft yet",
       "proposalType": "Type voorstel",
@@ -5706,12 +5704,7 @@
     "passed": {
       "withVotes": "Overeenkomst #{agreement} “{title}” aangenomen — {yes}% ja, {quorum}% quorum. De secties zijn nu bekrachtigd.",
       "plain": "Overeenkomst #{agreement} “{title}” aangenomen. De secties zijn nu bekrachtigd.",
-      "viewAgreement": "Overeenkomst bekijken",
-      "dismiss": "Sluiten"
-    },
-    "proposal": {
-      "passedNote": "Aangenomen — deze secties zijn nu bekrachtigd op de Context-pagina.",
-      "openContext": "Context openen"
+      "viewAgreement": "Overeenkomst bekijken"
     }
   }
 }

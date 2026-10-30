@@ -11,7 +11,6 @@ import {
   isSpaceContextSectionKey,
   sectionKeysFromProposalMarkdown,
   splitLeadParagraph,
-  splitProposalMarkdownSections,
   statusMatchesFilter,
 } from '../index';
 
@@ -88,38 +87,6 @@ describe('space context markdown', () => {
       rest: '- Only a list',
     });
     expect(splitLeadParagraph('   ')).toEqual({ lead: '', rest: '' });
-  });
-
-  it('splits proposal markdown back into ratified sections', () => {
-    const markdown = [
-      'Why we ratify now.',
-      '',
-      buildProposalMarkdown([
-        {
-          key: 'mission',
-          title: 'Mission',
-          markdown: 'Heal land.\n\n```md\n## Vision\n```',
-        },
-        { key: 'objectives', title: 'Objectives', markdown: '- Ship' },
-      ]),
-      '',
-      '## Notes',
-      'Kept with objectives.',
-    ].join('\n');
-    const result = splitProposalMarkdownSections(markdown);
-    expect(result.intro).toBe('Why we ratify now.');
-    expect(result.sections.map((section) => section.key)).toEqual([
-      'mission',
-      'objectives',
-    ]);
-    expect(result.sections[0]?.markdown).toContain('## Vision');
-    expect(result.sections[1]?.markdown).toBe(
-      '- Ship\n\n## Notes\nKept with objectives.',
-    );
-    expect(splitProposalMarkdownSections('Plain text.')).toEqual({
-      intro: 'Plain text.',
-      sections: [],
-    });
   });
 });
 

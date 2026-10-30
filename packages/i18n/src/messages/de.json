@@ -5634,8 +5634,7 @@
       "edited": "bearbeitet {when}",
       "votingClosed": "Abstimmung beendet",
       "daysLeft": "noch {count, plural, one {# Tag} other {# Tage}}",
-      "hoursLeft": "noch {count, plural, one {# Stunde} other {# Stunden}}",
-      "yesShare": "{percent} % Ja"
+      "hoursLeft": "noch {count, plural, one {# Stunde} other {# Stunden}}"
     },
     "empty": {
       "title": "Noch kein Kontext",
@@ -5675,7 +5674,6 @@
       "title": "Kontext ratifizieren: {sections}",
       "titleShort": "Kontext-Abschnitte ratifizieren",
       "sections": "Zu ratifizierende Abschnitte",
-      "hint": "Wähle Entwürfe zum Ratifizieren oder einen ratifizierten Abschnitt zum Ändern. Abschnitte in Abstimmung bleiben außen vor.",
       "alreadyVoting": "Bereits in Abstimmung (Vereinbarung #{agreement})",
       "noDraft": "Noch kein Entwurf",
       "proposalType": "Vorschlagstyp",
@@ -5700,12 +5698,7 @@
     "passed": {
       "withVotes": "Vereinbarung #{agreement} „{title}“ angenommen — {yes} % Ja, {quorum} % Quorum. Die Abschnitte sind jetzt ratifiziert.",
       "plain": "Vereinbarung #{agreement} „{title}“ angenommen. Die Abschnitte sind jetzt ratifiziert.",
-      "viewAgreement": "Vereinbarung ansehen",
-      "dismiss": "Schließen"
-    },
-    "proposal": {
-      "passedNote": "Angenommen — diese Abschnitte sind auf der Kontextseite jetzt ratifiziert.",
-      "openContext": "Kontext öffnen"
+      "viewAgreement": "Vereinbarung ansehen"
     }
   }
 }

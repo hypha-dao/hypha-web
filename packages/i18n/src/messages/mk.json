@@ -5621,8 +5621,7 @@
       "edited": "изменето {when}",
       "votingClosed": "гласањето заврши",
       "daysLeft": "{count, plural, one {преостанува # ден} other {преостануваат # дена}}",
-      "hoursLeft": "{count, plural, one {преостанува # час} other {преостануваат # часа}}",
-      "yesShare": "{percent}% за"
+      "hoursLeft": "{count, plural, one {преостанува # час} other {преостануваат # часа}}"
     },
     "empty": {
       "title": "Сè уште нема контекст",
@@ -5662,7 +5661,6 @@
       "title": "Ratify context: {sections}",
       "titleShort": "Ratify context sections",
       "sections": "Sections to ratify",
-      "hint": "Изберете нацрт-делови за ратификација или ратификуван дел за измена. Деловите што се веќе на гласање остануваат надвор.",
       "alreadyVoting": "Веќе на гласање (Договор #{agreement})",
       "noDraft": "No draft yet",
       "proposalType": "Тип на предлог",
@@ -5687,12 +5685,7 @@
     "passed": {
       "withVotes": "Договор #{agreement} „{title}“ е усвоен — {yes}% за, {quorum}% кворум. Деловите се сега ратификувани.",
       "plain": "Договор #{agreement} „{title}“ е усвоен. Деловите се сега ратификувани.",
-      "viewAgreement": "Види договор",
-      "dismiss": "Затвори"
-    },
-    "proposal": {
-      "passedNote": "Усвоено — овие делови се сега ратификувани на страницата Контекст.",
-      "openContext": "Отвори Контекст"
+      "viewAgreement": "Види договор"
     }
   }
 }

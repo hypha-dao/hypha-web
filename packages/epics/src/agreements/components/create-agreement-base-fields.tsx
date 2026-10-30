@@ -91,6 +91,7 @@ export type CreateAgreementFormProps = {
   hideLeadImage?: boolean;
   /** Type-specific fields rendered between the header and the content editor. */
   beforeContent?: React.ReactNode;
+  /** Replaces the whole content label, including its requirement mark. */
   contentLabel?: React.ReactNode;
 };
 
@@ -148,12 +149,11 @@ export function CreateAgreementBaseFields({
         : tCoherence('newMemory')
       : tAgreementFlow('createAgreementBaseFields.proposalTitlePlaceholder');
   const contentLabel =
-    contentLabelOverride ??
-    (mode === 'memory'
+    mode === 'memory'
       ? tCoherence.has('newMemoryContentLabel')
         ? tCoherence('newMemoryContentLabel')
         : tCoherence('description')
-      : tAgreementFlow('createAgreementBaseFields.proposalContent'));
+      : tAgreementFlow('createAgreementBaseFields.proposalContent');
   const contentPlaceholder =
     mode === 'memory'
       ? tCoherence.has('newMemoryContentPlaceholder')
@@ -673,7 +673,11 @@ export function CreateAgreementBaseFields({
               return (
                 <FormItem>
                   <FormLabel className="gap-1 text-foreground">
-                    {contentLabel} <RequirementMark />
+                    {contentLabelOverride ?? (
+                      <>
+                        {contentLabel} <RequirementMark />
+                      </>
+                    )}
                   </FormLabel>
                   <FormControl>
                     <div className="overflow-hidden rounded-none border border-border bg-background-2 shadow-none focus-within:border-foreground">

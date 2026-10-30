@@ -5639,8 +5639,7 @@
       "edited": "redigert {when}",
       "votingClosed": "avstemningen er avsluttet",
       "daysLeft": "{count, plural, one {# dag} other {# dager}} igjen",
-      "hoursLeft": "{count, plural, one {# time} other {# timer}} igjen",
-      "yesShare": "{percent} % ja"
+      "hoursLeft": "{count, plural, one {# time} other {# timer}} igjen"
     },
     "empty": {
       "title": "Ingen kontekst ennå",
@@ -5680,7 +5679,6 @@
       "title": "Ratify context: {sections}",
       "titleShort": "Ratify context sections",
       "sections": "Sections to ratify",
-      "hint": "Velg utkast som skal ratifiseres, eller en ratifisert seksjon som skal endres. Seksjoner som allerede er til avstemning holdes utenfor.",
       "alreadyVoting": "Allerede til avstemning (Avtale #{agreement})",
       "noDraft": "No draft yet",
       "proposalType": "Forslagstype",
@@ -5705,12 +5703,7 @@
     "passed": {
       "withVotes": "Avtale #{agreement} «{title}» er vedtatt — {yes} % ja, {quorum} % quorum. Seksjonene er nå ratifisert.",
       "plain": "Avtale #{agreement} «{title}» er vedtatt. Seksjonene er nå ratifisert.",
-      "viewAgreement": "Se avtalen",
-      "dismiss": "Lukk"
-    },
-    "proposal": {
-      "passedNote": "Vedtatt — disse seksjonene er nå ratifisert på Kontekst-siden.",
-      "openContext": "Åpne Kontekst"
+      "viewAgreement": "Se avtalen"
     }
   }
 }

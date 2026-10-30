@@ -5632,8 +5632,7 @@
       "edited": "editada {when}",
       "votingClosed": "votação encerrada",
       "daysLeft": "{count, plural, one {falta # dia} other {faltam # dias}}",
-      "hoursLeft": "{count, plural, one {falta # hora} other {faltam # horas}}",
-      "yesShare": "{percent}% sim"
+      "hoursLeft": "{count, plural, one {falta # hora} other {faltam # horas}}"
     },
     "empty": {
       "title": "Ainda sem contexto",
@@ -5673,7 +5672,6 @@
       "title": "Ratificar contexto: {sections}",
       "titleShort": "Ratificar seções de contexto",
       "sections": "Sections to ratify",
-      "hint": "Selecione seções em rascunho para ratificar, ou uma seção ratificada para emendar. Seções já em votação ficam de fora.",
       "alreadyVoting": "Já em votação (Acordo #{agreement})",
       "noDraft": "No draft yet",
       "proposalType": "Tipo de proposta",
@@ -5698,12 +5696,7 @@
     "passed": {
       "withVotes": "Acordo #{agreement} “{title}” aprovado — {yes}% sim, {quorum}% de quórum. As seções agora estão ratificadas.",
       "plain": "Acordo #{agreement} “{title}” aprovado. As seções agora estão ratificadas.",
-      "viewAgreement": "Ver acordo",
-      "dismiss": "Fechar"
-    },
-    "proposal": {
-      "passedNote": "Aprovado — estas seções agora estão ratificadas na página Contexto.",
-      "openContext": "Abrir Contexto"
+      "viewAgreement": "Ver acordo"
     }
   }
 }
