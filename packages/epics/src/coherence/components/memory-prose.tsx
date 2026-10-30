@@ -84,7 +84,7 @@ function parseInline(source: string): Inline[] {
   return out;
 }
 
-function InlineText({ source }: { source: string }) {
+export function InlineText({ source }: { source: string }) {
   return (
     <>
       {parseInline(source).map((part, index) => {

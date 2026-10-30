@@ -14,7 +14,10 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Fragment, type ReactNode } from 'react';
-import { MemoryProse } from '../../coherence/components/memory-prose';
+import {
+  InlineText,
+  MemoryProse,
+} from '../../coherence/components/memory-prose';
 import { getProposalPath } from '../../common/get-path-function';
 import { agreementNumber } from './agreement-number';
 import { SpaceContextStatusChip } from './space-context-status-chip';
@@ -121,7 +124,7 @@ export function SpaceContextCard({
                       : 'text-[13px] leading-snug',
                   )}
                 >
-                  {lead}
+                  <InlineText source={lead} />
                 </p>
               ) : null}
               {rest ? (
