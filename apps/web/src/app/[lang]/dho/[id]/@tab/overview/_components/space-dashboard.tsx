@@ -38,6 +38,7 @@ import {
   spaceTreasuryDistributionShare,
   type SpaceTreasuryAsset,
 } from './space-treasury-assets';
+import './space-dashboard-surface.css';
 
 const SpaceGovernanceCharts = dynamic(
   () =>
@@ -676,7 +677,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   })();
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="space-dashboard-surface flex flex-col gap-6">
       {name ? (
         <header className="flex min-w-0 flex-col gap-1 border-b-2 border-[color:var(--space-spot,var(--space-accent))] pb-3">
           {greetingLink ? (
