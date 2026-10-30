@@ -36,8 +36,11 @@ type SourceGroup = {
   name: string;
   /** Index of this source in the registered source list (`data.sources`). */
   sourceIndex: number;
-  /** On-chain internal price units: value / 100 = stablecoin per kWh. */
-  basePricePerKwh: number;
+  /**
+   * On-chain internal price units: value / 100 = stablecoin per kWh.
+   * Null when this source was not in the loaded source list.
+   */
+  basePricePerKwh: number | null;
   owners: Owner[];
 };
 
@@ -135,11 +138,14 @@ const OwnerEarningsChart = ({
     locale,
   );
 
-  const earnings = earningsFromProduction(
-    production.values,
-    group.basePricePerKwh,
-    owner.bps,
-  );
+  const earnings =
+    group.basePricePerKwh === null
+      ? []
+      : earningsFromProduction(
+          production.values,
+          group.basePricePerKwh,
+          owner.bps,
+        );
   const total = earnings.reduce((a, b) => a + b, 0);
 
   const series: ChartSeries[] = [
@@ -209,7 +215,7 @@ const OwnerEarningsRow = ({
   personId?: number;
   isLoading?: boolean;
   accent: string;
-  totalEarned: number;
+  totalEarned: number | null;
   totalIsPlaceholder: boolean;
   earningsLoading?: boolean;
   earningsUnavailable: boolean;
@@ -235,7 +241,7 @@ const OwnerEarningsRow = ({
         />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{displayName}</p>
-          {earningsUnavailable ? (
+          {earningsUnavailable || totalEarned === null ? (
             <p className="truncate text-1 text-neutral-11">{UNAVAILABLE}</p>
           ) : earningsLoading ? (
             <EnergyTextSkeleton className="mt-1 w-48" />
@@ -340,9 +346,11 @@ const SourceOwnershipCard = ({
               )}
               accent={accent}
               totalEarned={
-                totalProductionKwh *
-                (group.basePricePerKwh / 100) *
-                (owner.bps / 10_000)
+                group.basePricePerKwh === null
+                  ? null
+                  : totalProductionKwh *
+                    (group.basePricePerKwh / 100) *
+                    (owner.bps / 10_000)
               }
               totalIsPlaceholder={production.isPlaceholder}
               earningsLoading={production.isLoading}
@@ -433,7 +441,7 @@ export const OwnershipTab = ({
             meta?.displayName,
           ),
           sourceIndex: meta?.index ?? index,
-          basePricePerKwh: meta?.basePricePerKwh ?? 0,
+          basePricePerKwh: meta ? meta.basePricePerKwh : null,
           owners: value.owners.sort((a, b) => b.bps - a.bps),
         };
       });
@@ -461,9 +469,6 @@ export const OwnershipTab = ({
     return <p className="text-2 text-neutral-11">{t('noOwnership')}</p>;
   }
 
-  // Ownership comes from member reads; only earnings need source prices.
-  const earningsUnavailable = data.sourcesOk === false;
-
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {groups.map((group, index) => (
@@ -474,7 +479,9 @@ export const OwnershipTab = ({
           people={people}
           participantProfiles={participantProfiles}
           peopleLoading={peopleLoading}
-          earningsUnavailable={earningsUnavailable}
+          earningsUnavailable={
+            data.sourcesOk === false || group.basePricePerKwh === null
+          }
         />
       ))}
     </div>

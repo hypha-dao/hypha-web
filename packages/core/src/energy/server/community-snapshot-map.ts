@@ -51,7 +51,10 @@ export type EnergyCommunityOnChainSnapshot = {
   memberAddresses: `0x${string}`[];
   /** False when `getMemberAddresses` failed — do not seed the 30s roster cache. */
   memberAddressesOk: boolean;
-  /** False when `getSourceIds` failed — do not cache a zero-source snapshot. */
+  /**
+   * False when `getSourceIds` failed, or a member owns a source that was not
+   * read. Do not cache that snapshot or price the missing source as zero.
+   */
   sourcesOk: boolean;
   /**
    * False when a fee, balance, zero-sum, source or member-detail read failed.

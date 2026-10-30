@@ -153,6 +153,8 @@ async function readSourcesAndMembers(
   sources: EnergySnapshotSource[];
   memberDetails: EnergySnapshotMemberDetail[];
   detailsOk: boolean;
+  /** False when a member owns a source whose `getSource` read failed or is absent. */
+  ownedSourcesOk: boolean;
 }> {
   const memberCalls = memberAddresses.flatMap((address) =>
     MEMBER_VIEW_FNS.map((functionName) =>
@@ -252,7 +254,21 @@ async function readSourcesAndMembers(
       Object.values(slice).every((value) => value !== null),
     );
 
-  return { sources, memberDetails, detailsOk };
+  const readableSourceIds = new Set(
+    sourceIds.flatMap((id, index) =>
+      sourceRows[index] ? [id.toLowerCase()] : [],
+    ),
+  );
+  const ownedSourcesOk = memberSlices.every((slice) => {
+    if (!slice.ownerships) return true;
+    const [ids, bps] = slice.ownerships;
+    return ids.every(
+      (id, index) =>
+        (bps[index] ?? 0n) <= 0n || readableSourceIds.has(id.toLowerCase()),
+    );
+  });
+
+  return { sources, memberDetails, detailsOk, ownedSourcesOk };
 }
 
 async function readCommunitySnapshotUncached(
@@ -381,7 +397,8 @@ async function readCommunitySnapshotUncached(
     zeroSumStatus: communityViews.zeroSumStatus,
     memberAddresses: communityViews.memberAddressesRaw ?? [],
     memberAddressesOk: communityViews.memberAddressesRaw !== null,
-    sourcesOk: communityViews.sourceIdsRaw !== null,
+    sourcesOk:
+      communityViews.sourceIdsRaw !== null && sourcesAndMembers.ownedSourcesOk,
     // Optimization/social-wallet reads stay optional: older proxies revert
     // on them and an unconfigured optimization is a legitimate null.
     detailsOk:

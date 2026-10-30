@@ -231,6 +231,77 @@ describe('energy community snapshot mapping', () => {
     ]);
   });
 
+  it('does not report sources ok when getSource fails for a source someone owns', async () => {
+    const community = '0xcccccccccccccccccccccccccccccccccccccccc' as const;
+    const token = '0x2222222222222222222222222222222222222222' as const;
+    const viewResults: Record<string, unknown> = {
+      getCommunityFeeBps: 0,
+      getAggregatorFeeBps: 0,
+      getGridBalance: 0n,
+      getSettledBalance: 0n,
+      getContractStablecoinBalance: 0n,
+      verifyZeroSum: [true, 0n],
+      getSourceIds: [sourceId],
+      getMemberAddresses: [member],
+      getCommunityAddress: community,
+      getAggregatorAddress: community,
+      getGridOperator: community,
+      getExportDeviceId: 0n,
+      getEnergyCreditBalance: 0n,
+      getDebtInStablecoin: 0n,
+      getCreditInStablecoin: 0n,
+      getAllSourceOwnerships: [[sourceId], [10_000n]],
+      getMember: {
+        memberAddress: member,
+        deviceIds: [7n],
+        isActive: true,
+        metadataHash: `0x${'0'.repeat(64)}`,
+      },
+    };
+    let sourceReads = 0;
+    multicall.mockImplementation(
+      async ({
+        contracts,
+      }: {
+        contracts: ReadonlyArray<{ functionName: string }>;
+      }) =>
+        contracts.map(({ functionName }) => {
+          if (functionName === 'getSource') {
+            sourceReads += 1;
+            return sourceReads === 1
+              ? { status: 'failure' }
+              : { status: 'success', result: [0, token, 10n, true] };
+          }
+          if (functionName === 'name') {
+            return { status: 'success', result: 'School PV' };
+          }
+          if (!(functionName in viewResults)) return { status: 'failure' };
+          return { status: 'success', result: viewResults[functionName] };
+        }),
+    );
+
+    clearEnergyCommunitySnapshotCache();
+    const failed = await readEnergyCommunitySnapshot(community);
+    expect(failed.sourcesOk).toBe(false);
+    expect(failed.sources).toEqual([]);
+    expect(failed.detailsOk).toBe(false);
+    expect(failed.memberDetails[0]?.ownerships).toEqual([
+      {
+        sourceId,
+        sourceLabel: 'PONTA_SCHOOL_PV',
+        ownershipBps: 10_000,
+      },
+    ]);
+    expect(peekEnergyCommunitySnapshot(community)).toBeUndefined();
+
+    const recovered = await readEnergyCommunitySnapshot(community);
+    expect(recovered.sourcesOk).toBe(true);
+    expect(recovered.sources.map((source) => source.basePricePerKwh)).toEqual([
+      '10',
+    ]);
+    expect(peekEnergyCommunitySnapshot(community)).toBeDefined();
+  });
+
   it('does not cache snapshots with failed fee, member or ownership reads, but tolerates missing optimization', async () => {
     const community = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' as const;
     const viewResults: Record<string, unknown> = {
