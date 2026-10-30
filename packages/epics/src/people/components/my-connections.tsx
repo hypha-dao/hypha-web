@@ -3531,7 +3531,8 @@ function MemberList({
                 ) : null}
                 {showChannelTags && ChannelIcon ? (
                   <span className="relative grid size-10 shrink-0 place-items-center border border-foreground text-foreground">
-                    <ChannelIcon
+                    {/* Kind is already on the tag; use the space mark for every channel. */}
+                    <LayoutGrid
                       className="size-4"
                       strokeWidth={1.5}
                       aria-hidden
