@@ -5639,7 +5639,10 @@
       "edited": "bewerkt {when}",
       "votingClosed": "stemming gesloten",
       "daysLeft": "nog {count, plural, one {# dag} other {# dagen}}",
-      "hoursLeft": "nog {count, plural, one {# uur} other {# uur}}"
+      "hoursLeft": "nog {count, plural, one {# uur} other {# uur}}",
+      "read": "{section} lezen",
+      "draftText": "Concept — niet bekrachtigd",
+      "proposedText": "Voorgestelde tekst — in stemming"
     },
     "empty": {
       "title": "Nog geen context",
@@ -5685,7 +5688,9 @@
         "refine": "Verbeter het gedeelde concept met wat we hierboven bespraken.",
         "draft": "Maak van deze discussie een concept voor {section} en sla het op.",
         "fromSource": "Lees de gedeelde link of het document en schrijf {section} op basis daarvan."
-      }
+      },
+      "draftHintRatified": "Wijzigingen hier zijn een concept. De bekrachtigde {section} verandert pas als een voorstel wordt aangenomen.",
+      "draftLockedHint": "Deze sectie is in stemming. Het concept kan na de stemming veranderen."
     },
     "proposeForm": {
       "header": "Create a proposal",
@@ -5697,26 +5702,73 @@
       "proposalType": "Type voorstel",
       "proposalTypeValue": "Contextsectie(s) bekrachtigen",
       "contentPrefilled": "vooraf ingevuld uit concepten",
-      "ratifiedAmend": "Bekrachtigd #{agreement} — kies om te wijzigen",
+      "ratifiedAmend": "Bekrachtigd #{agreement} — conceptwijziging",
       "draftVersion": "Concept v{version}",
-      "onPassNote": "Bij aanname worden de gekozen secties op de Context-pagina als bekrachtigd gemarkeerd.",
-      "cancel": "Annuleren"
+      "onPassNote": "Bij aanname worden de gekozen concepten de bekrachtigde tekst, en voorgestelde toevoegingen of verwijderingen worden doorgevoerd.",
+      "cancel": "Annuleren",
+      "addSection": "Voegt een nieuwe sectie toe",
+      "removeSection": "Verwijdert deze sectie",
+      "ratifiedUnchanged": "Bekrachtigd #{agreement} — geen conceptwijzigingen"
     },
     "error": {
       "load": "Could not load Space Context.",
       "retry": "Try again",
       "import": "Could not import from Space Memory.",
       "save": "Dit concept kon niet worden opgeslagen.",
-      "link": "Dit voorstel kon niet aan de Context-secties worden gekoppeld."
+      "link": "Dit voorstel kon niet aan de Context-secties worden gekoppeld.",
+      "change": "Deze sectie kon niet worden bijgewerkt. Probeer het opnieuw.",
+      "onVoting": "Deze sectie is in stemming. Ze kan na de stemming veranderen."
     },
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",
-      "saved": "Concept opgeslagen."
+      "saved": "Concept opgeslagen.",
+      "suggested": "Sectie voorgesteld. Ze komt in de Context zodra een voorstel om haar toe te voegen wordt aangenomen.",
+      "removalSuggested": "Verwijdering voorgesteld. Neem haar op in een voorstel om haar door te voeren.",
+      "removalWithdrawn": "Verwijderingsvoorstel ingetrokken.",
+      "additionWithdrawn": "Voorstel ingetrokken."
     },
     "passed": {
       "withVotes": "Overeenkomst #{agreement} “{title}” aangenomen — {yes}% ja, {quorum}% quorum. De secties zijn nu bekrachtigd.",
       "plain": "Overeenkomst #{agreement} “{title}” aangenomen. De secties zijn nu bekrachtigd.",
       "viewAgreement": "Overeenkomst bekijken"
+    },
+    "change": {
+      "add": "Voorgestelde sectie",
+      "remove": "Verwijdering voorgesteld"
+    },
+    "notice": {
+      "addition": "Voorgestelde sectie. Ze komt pas in de Context als een voorstel om haar toe te voegen wordt aangenomen.",
+      "removal": "Verwijdering voorgesteld. De sectie blijft tot een voorstel om haar te verwijderen wordt aangenomen.",
+      "amendmentOnVoting": "Er is een wijziging in stemming. De bekrachtigde tekst blijft gelden tot die wordt aangenomen.",
+      "draftChanges": "Conceptwijzigingen staan open. Ze worden pas officieel als een voorstel wordt aangenomen."
+    },
+    "reader": {
+      "customLead": "Een sectie die leden aan de Context van deze space hebben toegevoegd.",
+      "official": "Bekrachtigde tekst",
+      "noOfficial": "Nog niets bekrachtigd.",
+      "draft": "Concept — niet bekrachtigd",
+      "proposed": "Voorgestelde tekst — in stemming",
+      "suggestRemoval": "Verwijderen voorstellen",
+      "cancelRemoval": "Verwijderingsvoorstel intrekken",
+      "withdrawAddition": "Voorstel intrekken",
+      "close": "Sluiten"
+    },
+    "addSection": {
+      "open": "Sectie toevoegen",
+      "title": "Nieuwe sectie voorstellen",
+      "description": "Elk lid kan een sectie voorstellen. Ze blijft een concept tot een voorstel om haar toe te voegen wordt aangenomen.",
+      "nameLabel": "Naam van de sectie",
+      "namePlaceholder": "bijv. Onboarding",
+      "draftLabel": "Eerste concept (optioneel)",
+      "draftPlaceholder": "Wat moet er in deze sectie staan?",
+      "cancel": "Annuleren",
+      "submit": "Sectie voorstellen",
+      "submitting": "Bezig met voorstellen…",
+      "duplicate": "Er bestaat al een sectie met deze naam.",
+      "titleRequired": "Geef de sectie een naam.",
+      "failed": "De sectie kon niet worden voorgesteld. Probeer het opnieuw.",
+      "restoreLabel": "Verwijderde secties",
+      "restore": "Herstellen voorstellen"
     }
   }
 }

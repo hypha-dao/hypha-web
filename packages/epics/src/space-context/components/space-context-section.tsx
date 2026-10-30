@@ -2,7 +2,9 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
-  statusMatchesFilter,
+  isProposableSection,
+  officialSectionMarkdown,
+  sectionMatchesFilter,
   type SpaceContextFilter,
   type SpaceContextSectionKey,
 } from '@hypha-platform/core/client';
@@ -11,16 +13,25 @@ import { Button, Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { Plus } from 'lucide-react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from 'react';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import {
   importSpaceContextFromMemoryRequest,
   useSpaceContext,
 } from '../hooks/use-space-context';
+import { SpaceContextAddSectionDialog } from './space-context-add-section-dialog';
 import { SpaceContextCard } from './space-context-card';
 import { SpaceContextChatPanel } from './space-context-chat-panel';
 import { SpaceContextEmpty } from './space-context-empty';
 import { SpaceContextPassedBanner } from './space-context-passed-banner';
+import { SpaceContextReaderDialog } from './space-context-reader-dialog';
 
 const FILTERS: SpaceContextFilter[] = ['all', 'ratified', 'proposed', 'drafts'];
 
@@ -55,37 +66,52 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
   const [openSection, setOpenSection] = useState<SpaceContextSectionKey | null>(
     null,
   );
+  const [readerKey, setReaderKey] = useState<SpaceContextSectionKey | null>(
+    null,
+  );
+  const [addOpen, setAddOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const sections = overview?.sections ?? [];
-  const allEmpty = sections.every((section) => !section.markdown.trim());
-  const hasEligibleSection = sections.some(
-    (section) =>
-      section.status === 'draft' ||
-      ((section.status === 'not_started' || section.status === 'ratified') &&
-        section.markdown.trim()),
+  const sections = useMemo(() => overview?.sections ?? [], [overview]);
+  const allEmpty = sections.every(
+    (section) => !section.markdown.trim() && !section.ratifiedMarkdown?.trim(),
   );
+  const hasEligibleSection = sections.some(isProposableSection);
+  const readerSection =
+    sections.find((section) => section.sectionKey === readerKey) ?? null;
+
+  useEffect(() => {
+    if (!overview) return;
+    const keys = new Set(sections.map((section) => section.sectionKey));
+    if (openSection && !keys.has(openSection)) setOpenSection(null);
+    if (readerKey && !keys.has(readerKey)) setReaderKey(null);
+  }, [openSection, overview, readerKey, sections]);
   const ratifiedPercent =
     overview && overview.totalCount > 0
       ? Math.round((overview.ratifiedCount / overview.totalCount) * 100)
       : 0;
   const featured = sections.find(
     (section) =>
-      section.sectionKey === 'mission' && section.status === 'ratified',
+      section.sectionKey === 'mission' &&
+      officialSectionMarkdown(section) != null,
   );
   const visible = useMemo(
     () =>
       sections.filter(
         (section) =>
-          statusMatchesFilter(section.status, filter) &&
+          sectionMatchesFilter(section, filter) &&
           !(featured && section.sectionKey === 'mission' && filter === 'all'),
       ),
     [featured, filter, sections],
   );
 
   const proposeHref = `/${locale}/dho/${spaceSlug}/context/create`;
+  const openDiscussion = (key: SpaceContextSectionKey) => {
+    setReaderKey(null);
+    setOpenSection(key);
+  };
   const proposeSections = (keys: SpaceContextSectionKey[]) => {
     const query = new URLSearchParams({ sections: keys.join(',') });
     router.push(`${proposeHref}?${query.toString()}`);
@@ -177,6 +203,18 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
                   />
                 </div>
               </div>
+              {canMutate ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  colorVariant="neutral"
+                  className="gap-1.5"
+                  onClick={() => setAddOpen(true)}
+                >
+                  <Plus className="size-4" strokeWidth={1.25} aria-hidden />
+                  {t('addSection.open')}
+                </Button>
+              ) : null}
               {canMutate && hasEligibleSection ? (
                 <Button type="button" onClick={() => router.push(proposeHref)}>
                   {t('propose')}
@@ -239,8 +277,13 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
             featured
             selected={openSection === featured.sectionKey}
             canMutate={canMutate}
-            onOpen={setOpenSection}
-            onProposeAmendment={(key) => proposeSections([key])}
+            onRead={setReaderKey}
+            onOpen={openDiscussion}
+            onProposeAmendment={(key) =>
+              isProposableSection(featured)
+                ? proposeSections([key])
+                : openDiscussion(key)
+            }
           />
         ) : null}
 
@@ -255,12 +298,40 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
                 spaceSlug={spaceSlug}
                 selected={openSection === section.sectionKey}
                 canMutate={canMutate}
-                onOpen={setOpenSection}
+                onRead={setReaderKey}
+                onOpen={openDiscussion}
               />
             ))}
           </div>
         )}
       </div>
+
+      <SpaceContextReaderDialog
+        section={readerSection}
+        spaceSlug={spaceSlug}
+        canMutate={canMutate}
+        onClose={() => setReaderKey(null)}
+        onOpenDiscussion={openDiscussion}
+        onPropose={proposeSections}
+        onChanged={async (message) => {
+          setSuccessMessage(message);
+          await refresh();
+        }}
+      />
+
+      {canMutate ? (
+        <SpaceContextAddSectionDialog
+          open={addOpen}
+          onOpenChange={setAddOpen}
+          spaceSlug={spaceSlug}
+          removedSections={overview.removedSections ?? []}
+          onSuggested={async (key) => {
+            setSuccessMessage(t('success.suggested'));
+            await refresh();
+            openDiscussion(key);
+          }}
+        />
+      ) : null}
 
       {openSection ? (
         <div className="xl:sticky xl:top-4 xl:self-start">

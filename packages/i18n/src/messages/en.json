@@ -5655,7 +5655,10 @@
       "edited": "edited {when}",
       "votingClosed": "voting closed",
       "daysLeft": "{count, plural, one {# day} other {# days}} left",
-      "hoursLeft": "{count, plural, one {# hour} other {# hours}} left"
+      "hoursLeft": "{count, plural, one {# hour} other {# hours}} left",
+      "read": "Read {section}",
+      "draftText": "Draft — not ratified",
+      "proposedText": "Proposed text — on voting"
     },
     "empty": {
       "title": "No context yet",
@@ -5701,7 +5704,9 @@
         "refine": "Refine the shared draft using what we discussed above.",
         "draft": "Turn this discussion into a {section} draft and save it.",
         "fromSource": "Read the shared link or document and draft the {section} from it."
-      }
+      },
+      "draftHintRatified": "Edits here are a draft. The ratified {section} changes only when a proposal passes.",
+      "draftLockedHint": "This section is on voting. The draft can change after the vote."
     },
     "proposeForm": {
       "header": "Create a proposal",
@@ -5713,26 +5718,73 @@
       "proposalType": "Proposal type",
       "proposalTypeValue": "Ratify context section(s)",
       "contentPrefilled": "pre-filled from drafts",
-      "ratifiedAmend": "Ratified #{agreement} — select to amend",
+      "ratifiedAmend": "Ratified #{agreement} — draft amendment",
       "draftVersion": "Draft v{version}",
-      "onPassNote": "On pass, selected sections are marked Ratified on the Context page.",
-      "cancel": "Cancel"
+      "onPassNote": "On pass, the selected drafts become the ratified text, and suggested additions or removals are applied.",
+      "cancel": "Cancel",
+      "addSection": "Adds a new section",
+      "removeSection": "Removes this section",
+      "ratifiedUnchanged": "Ratified #{agreement} — no draft changes"
     },
     "error": {
       "load": "Could not load Space Context.",
       "retry": "Try again",
       "import": "Could not import from Space Memory.",
       "save": "Could not save this draft.",
-      "link": "Could not attach this proposal to the Context sections."
+      "link": "Could not attach this proposal to the Context sections.",
+      "change": "Could not update this section. Try again.",
+      "onVoting": "This section is on voting. It can change after the vote."
     },
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",
-      "saved": "Draft saved."
+      "saved": "Draft saved.",
+      "suggested": "Section suggested. It joins the Context once a proposal adding it passes.",
+      "removalSuggested": "Removal suggested. Include it in a proposal to apply it.",
+      "removalWithdrawn": "Removal suggestion withdrawn.",
+      "additionWithdrawn": "Suggestion withdrawn."
     },
     "passed": {
       "withVotes": "Agreement #{agreement} “{title}” passed — {yes}% yes, {quorum}% quorum. Sections are now ratified.",
       "plain": "Agreement #{agreement} “{title}” passed. Sections are now ratified.",
       "viewAgreement": "View agreement"
+    },
+    "change": {
+      "add": "Suggested section",
+      "remove": "Removal suggested"
+    },
+    "notice": {
+      "addition": "Suggested section. It joins the Context only when a proposal adding it passes.",
+      "removal": "Removal suggested. The section stays until a proposal removing it passes.",
+      "amendmentOnVoting": "An amendment is on voting. The ratified text stays until it passes.",
+      "draftChanges": "Draft changes pending. They become official only when a proposal passes."
+    },
+    "reader": {
+      "customLead": "A section members added to this space's Context.",
+      "official": "Ratified text",
+      "noOfficial": "Nothing ratified yet.",
+      "draft": "Draft — not ratified",
+      "proposed": "Proposed text — on voting",
+      "suggestRemoval": "Suggest removing",
+      "cancelRemoval": "Withdraw removal suggestion",
+      "withdrawAddition": "Withdraw suggestion",
+      "close": "Close"
+    },
+    "addSection": {
+      "open": "Add section",
+      "title": "Suggest a new section",
+      "description": "Any member can suggest a section. It stays a draft until a proposal adding it passes.",
+      "nameLabel": "Section name",
+      "namePlaceholder": "e.g. Onboarding",
+      "draftLabel": "First draft (optional)",
+      "draftPlaceholder": "What should this section say?",
+      "cancel": "Cancel",
+      "submit": "Suggest section",
+      "submitting": "Suggesting…",
+      "duplicate": "A section with this name already exists.",
+      "titleRequired": "Give the section a name.",
+      "failed": "Could not suggest the section. Try again.",
+      "restoreLabel": "Removed sections",
+      "restore": "Suggest restoring"
     }
   }
 }

@@ -5631,7 +5631,10 @@
       "edited": "editada {when}",
       "votingClosed": "votação encerrada",
       "daysLeft": "{count, plural, one {falta # dia} other {faltam # dias}}",
-      "hoursLeft": "{count, plural, one {falta # hora} other {faltam # horas}}"
+      "hoursLeft": "{count, plural, one {falta # hora} other {faltam # horas}}",
+      "read": "Ler {section}",
+      "draftText": "Rascunho — não ratificado",
+      "proposedText": "Texto proposto — em votação"
     },
     "empty": {
       "title": "Ainda sem contexto",
@@ -5677,7 +5680,9 @@
         "refine": "Melhora o rascunho partilhado com o que discutimos acima.",
         "draft": "Transforma esta discussão num rascunho de {section} e guarda-o.",
         "fromSource": "Lê a ligação ou o documento partilhado e redige {section} a partir dele."
-      }
+      },
+      "draftHintRatified": "As alterações aqui são um rascunho. {section} ratificada só muda quando uma proposta for aprovada.",
+      "draftLockedHint": "Esta seção está em votação. O rascunho pode mudar depois da votação."
     },
     "proposeForm": {
       "header": "Criar uma proposta",
@@ -5689,26 +5694,73 @@
       "proposalType": "Tipo de proposta",
       "proposalTypeValue": "Ratificar seção(ões) de contexto",
       "contentPrefilled": "preenchido a partir dos rascunhos",
-      "ratifiedAmend": "Ratificada #{agreement} — selecione para emendar",
+      "ratifiedAmend": "Ratificada #{agreement} — emenda em rascunho",
       "draftVersion": "Rascunho v{version}",
-      "onPassNote": "Se aprovada, as seções selecionadas ficam marcadas como ratificadas na página Contexto.",
-      "cancel": "Cancelar"
+      "onPassNote": "Se aprovada, os rascunhos selecionados passam a ser o texto ratificado, e as adições ou remoções sugeridas são aplicadas.",
+      "cancel": "Cancelar",
+      "addSection": "Adiciona uma nova seção",
+      "removeSection": "Remove esta seção",
+      "ratifiedUnchanged": "Ratificada #{agreement} — sem alterações de rascunho"
     },
     "error": {
       "load": "Could not load Space Context.",
       "retry": "Try again",
       "import": "Could not import from Space Memory.",
       "save": "Não foi possível salvar este rascunho.",
-      "link": "Não foi possível vincular esta proposta às seções de Context."
+      "link": "Não foi possível vincular esta proposta às seções de Context.",
+      "change": "Não foi possível atualizar esta seção. Tente novamente.",
+      "onVoting": "Esta seção está em votação. Pode mudar depois da votação."
     },
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",
-      "saved": "Rascunho salvo."
+      "saved": "Rascunho salvo.",
+      "suggested": "Seção sugerida. Entra no Contexto quando uma proposta que a adiciona for aprovada.",
+      "removalSuggested": "Remoção sugerida. Inclua-a numa proposta para aplicá-la.",
+      "removalWithdrawn": "Sugestão de remoção retirada.",
+      "additionWithdrawn": "Sugestão retirada."
     },
     "passed": {
       "withVotes": "Acordo #{agreement} “{title}” aprovado — {yes}% sim, {quorum}% de quórum. As seções agora estão ratificadas.",
       "plain": "Acordo #{agreement} “{title}” aprovado. As seções agora estão ratificadas.",
       "viewAgreement": "Ver acordo"
+    },
+    "change": {
+      "add": "Seção sugerida",
+      "remove": "Remoção sugerida"
+    },
+    "notice": {
+      "addition": "Seção sugerida. Entra no Contexto só quando uma proposta que a adiciona for aprovada.",
+      "removal": "Remoção sugerida. A seção fica até ser aprovada uma proposta que a remove.",
+      "amendmentOnVoting": "Há uma emenda em votação. O texto ratificado vale até ela ser aprovada.",
+      "draftChanges": "Alterações de rascunho pendentes. Só ficam oficiais quando uma proposta for aprovada."
+    },
+    "reader": {
+      "customLead": "Uma seção que os membros adicionaram ao Contexto deste espaço.",
+      "official": "Texto ratificado",
+      "noOfficial": "Nada ratificado ainda.",
+      "draft": "Rascunho — não ratificado",
+      "proposed": "Texto proposto — em votação",
+      "suggestRemoval": "Sugerir remoção",
+      "cancelRemoval": "Retirar a sugestão de remoção",
+      "withdrawAddition": "Retirar a sugestão",
+      "close": "Fechar"
+    },
+    "addSection": {
+      "open": "Adicionar seção",
+      "title": "Sugerir uma nova seção",
+      "description": "Qualquer membro pode sugerir uma seção. Ela fica como rascunho até ser aprovada uma proposta que a adiciona.",
+      "nameLabel": "Nome da seção",
+      "namePlaceholder": "ex.: Integração",
+      "draftLabel": "Primeiro rascunho (opcional)",
+      "draftPlaceholder": "O que esta seção deve dizer?",
+      "cancel": "Cancelar",
+      "submit": "Sugerir seção",
+      "submitting": "Sugerindo…",
+      "duplicate": "Já existe uma seção com este nome.",
+      "titleRequired": "Dê um nome à seção.",
+      "failed": "Não foi possível sugerir a seção. Tente novamente.",
+      "restoreLabel": "Seções removidas",
+      "restore": "Sugerir restauração"
     }
   }
 }

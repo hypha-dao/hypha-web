@@ -5629,7 +5629,10 @@
       "edited": "modifiée {when}",
       "votingClosed": "vote clos",
       "daysLeft": "{count, plural, one {# jour restant} other {# jours restants}}",
-      "hoursLeft": "{count, plural, one {# heure restante} other {# heures restantes}}"
+      "hoursLeft": "{count, plural, one {# heure restante} other {# heures restantes}}",
+      "read": "Lire {section}",
+      "draftText": "Brouillon — non ratifié",
+      "proposedText": "Texte proposé — en vote"
     },
     "empty": {
       "title": "Pas encore de contexte",
@@ -5675,7 +5678,9 @@
         "refine": "Améliore le brouillon partagé à partir de notre discussion ci-dessus.",
         "draft": "Transforme cette discussion en brouillon de {section} et enregistre-le.",
         "fromSource": "Lis le lien ou le document partagé et rédige {section} à partir de celui-ci."
-      }
+      },
+      "draftHintRatified": "Les modifications ici sont un brouillon. {section} ratifiée ne change que lorsqu’une proposition est adoptée.",
+      "draftLockedHint": "Cette section est en vote. Le brouillon pourra changer après le vote."
     },
     "proposeForm": {
       "header": "Créer une proposition",
@@ -5687,26 +5692,73 @@
       "proposalType": "Type de proposition",
       "proposalTypeValue": "Ratifier des sections du contexte",
       "contentPrefilled": "prérempli à partir des brouillons",
-      "ratifiedAmend": "Ratifiée n°{agreement} — sélectionner pour amender",
+      "ratifiedAmend": "Ratifiée n°{agreement} — amendement en brouillon",
       "draftVersion": "Brouillon v{version}",
-      "onPassNote": "Si elle est adoptée, les sections sélectionnées sont marquées ratifiées sur la page Contexte.",
-      "cancel": "Annuler"
+      "onPassNote": "Si elle est adoptée, les brouillons sélectionnés deviennent le texte ratifié, et les ajouts ou suppressions suggérés sont appliqués.",
+      "cancel": "Annuler",
+      "addSection": "Ajoute une nouvelle section",
+      "removeSection": "Supprime cette section",
+      "ratifiedUnchanged": "Ratifiée n°{agreement} — aucune modification de brouillon"
     },
     "error": {
       "load": "Could not load Space Context.",
       "retry": "Try again",
       "import": "Could not import from Space Memory.",
       "save": "Impossible d'enregistrer ce brouillon.",
-      "link": "Impossible de lier cette proposition aux sections Context."
+      "link": "Impossible de lier cette proposition aux sections Context.",
+      "change": "Impossible de mettre à jour cette section. Réessayez.",
+      "onVoting": "Cette section est en vote. Elle pourra changer après le vote."
     },
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",
-      "saved": "Brouillon enregistré."
+      "saved": "Brouillon enregistré.",
+      "suggested": "Section suggérée. Elle rejoint le Contexte dès qu’une proposition qui l’ajoute est adoptée.",
+      "removalSuggested": "Suppression suggérée. Incluez-la dans une proposition pour l’appliquer.",
+      "removalWithdrawn": "Suggestion de suppression retirée.",
+      "additionWithdrawn": "Suggestion retirée."
     },
     "passed": {
       "withVotes": "Accord n°{agreement} « {title} » adopté — {yes} % oui, {quorum} % de quorum. Les sections sont désormais ratifiées.",
       "plain": "Accord n°{agreement} « {title} » adopté. Les sections sont désormais ratifiées.",
       "viewAgreement": "Voir l’accord"
+    },
+    "change": {
+      "add": "Section suggérée",
+      "remove": "Suppression suggérée"
+    },
+    "notice": {
+      "addition": "Section suggérée. Elle rejoint le Contexte seulement quand une proposition qui l’ajoute est adoptée.",
+      "removal": "Suppression suggérée. La section reste jusqu’à l’adoption d’une proposition qui la supprime.",
+      "amendmentOnVoting": "Un amendement est en vote. Le texte ratifié reste en vigueur jusqu’à son adoption.",
+      "draftChanges": "Modifications de brouillon en attente. Elles deviennent officielles seulement quand une proposition est adoptée."
+    },
+    "reader": {
+      "customLead": "Une section ajoutée par les membres au Contexte de cet espace.",
+      "official": "Texte ratifié",
+      "noOfficial": "Rien n’est encore ratifié.",
+      "draft": "Brouillon — non ratifié",
+      "proposed": "Texte proposé — en vote",
+      "suggestRemoval": "Suggérer la suppression",
+      "cancelRemoval": "Retirer la suggestion de suppression",
+      "withdrawAddition": "Retirer la suggestion",
+      "close": "Fermer"
+    },
+    "addSection": {
+      "open": "Ajouter une section",
+      "title": "Suggérer une nouvelle section",
+      "description": "Tout membre peut suggérer une section. Elle reste un brouillon jusqu’à l’adoption d’une proposition qui l’ajoute.",
+      "nameLabel": "Nom de la section",
+      "namePlaceholder": "ex. Accueil des membres",
+      "draftLabel": "Premier brouillon (facultatif)",
+      "draftPlaceholder": "Que devrait dire cette section ?",
+      "cancel": "Annuler",
+      "submit": "Suggérer la section",
+      "submitting": "Envoi…",
+      "duplicate": "Une section porte déjà ce nom.",
+      "titleRequired": "Donnez un nom à la section.",
+      "failed": "Impossible de suggérer la section. Réessayez.",
+      "restoreLabel": "Sections supprimées",
+      "restore": "Suggérer la restauration"
     }
   }
 }

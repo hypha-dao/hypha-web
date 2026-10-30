@@ -43,6 +43,20 @@ export function toSpaceContextSectionOutput(
   };
 }
 
+/**
+ * Text the space has ratified for this section, or null when nothing is
+ * official yet. A suggested (or restored) section is never official.
+ */
+export function officialSectionMarkdown(
+  section: Pick<
+    SpaceContextSectionRecord,
+    'pendingChange' | 'ratifiedMarkdown'
+  >,
+): string | null {
+  if (section.pendingChange === 'add') return null;
+  return section.ratifiedMarkdown;
+}
+
 /** The section can go into a ratification proposal now. */
 export function isProposableSection(section: SectionState): boolean {
   if (section.status === 'proposed') return false;

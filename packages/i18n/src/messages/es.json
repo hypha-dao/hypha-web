@@ -5647,7 +5647,10 @@
       "edited": "editada {when}",
       "votingClosed": "votación cerrada",
       "daysLeft": "{count, plural, one {queda # día} other {quedan # días}}",
-      "hoursLeft": "{count, plural, one {queda # hora} other {quedan # horas}}"
+      "hoursLeft": "{count, plural, one {queda # hora} other {quedan # horas}}",
+      "read": "Leer {section}",
+      "draftText": "Borrador — sin ratificar",
+      "proposedText": "Texto propuesto — en votación"
     },
     "empty": {
       "title": "Aún no hay contexto",
@@ -5693,7 +5696,9 @@
         "refine": "Mejora el borrador compartido con lo que hemos debatido arriba.",
         "draft": "Convierte este debate en un borrador de {section} y guárdalo.",
         "fromSource": "Lee el enlace o documento compartido y redacta {section} a partir de él."
-      }
+      },
+      "draftHintRatified": "Los cambios aquí son un borrador. {section} ratificada solo cambia cuando se aprueba una propuesta.",
+      "draftLockedHint": "Esta sección está en votación. El borrador puede cambiar después de la votación."
     },
     "proposeForm": {
       "header": "Crear una propuesta",
@@ -5705,26 +5710,73 @@
       "proposalType": "Tipo de propuesta",
       "proposalTypeValue": "Ratificar sección(es) de contexto",
       "contentPrefilled": "rellenado a partir de los borradores",
-      "ratifiedAmend": "Ratificada #{agreement} — selecciona para enmendar",
+      "ratifiedAmend": "Ratificada #{agreement} — enmienda en borrador",
       "draftVersion": "Borrador v{version}",
-      "onPassNote": "Si se aprueba, las secciones seleccionadas se marcan como ratificadas en la página Contexto.",
-      "cancel": "Cancelar"
+      "onPassNote": "Si se aprueba, los borradores seleccionados pasan a ser el texto ratificado y se aplican las secciones sugeridas para añadir o eliminar.",
+      "cancel": "Cancelar",
+      "addSection": "Añade una sección nueva",
+      "removeSection": "Elimina esta sección",
+      "ratifiedUnchanged": "Ratificada #{agreement} — sin cambios de borrador"
     },
     "error": {
       "load": "Could not load Space Context.",
       "retry": "Try again",
       "import": "Could not import from Space Memory.",
       "save": "No se pudo guardar este borrador.",
-      "link": "No se pudo vincular esta propuesta a las secciones de Context."
+      "link": "No se pudo vincular esta propuesta a las secciones de Context.",
+      "change": "No se pudo actualizar esta sección. Inténtalo de nuevo.",
+      "onVoting": "Esta sección está en votación. Puede cambiar después de la votación."
     },
     "success": {
       "imported": "Imported a Mission draft from Space Memory.",
-      "saved": "Borrador guardado."
+      "saved": "Borrador guardado.",
+      "suggested": "Sección sugerida. Se suma al Contexto cuando se aprueba una propuesta que la añade.",
+      "removalSuggested": "Eliminación sugerida. Inclúyela en una propuesta para aplicarla.",
+      "removalWithdrawn": "Sugerencia de eliminar retirada.",
+      "additionWithdrawn": "Sugerencia retirada."
     },
     "passed": {
       "withVotes": "Acuerdo #{agreement} «{title}» aprobado — {yes} % sí, {quorum} % de quórum. Las secciones ya están ratificadas.",
       "plain": "Acuerdo #{agreement} «{title}» aprobado. Las secciones ya están ratificadas.",
       "viewAgreement": "Ver acuerdo"
+    },
+    "change": {
+      "add": "Sección sugerida",
+      "remove": "Eliminación sugerida"
+    },
+    "notice": {
+      "addition": "Sección sugerida. Se suma al Contexto solo cuando se aprueba una propuesta que la añade.",
+      "removal": "Eliminación sugerida. La sección se mantiene hasta que se aprueba una propuesta que la elimina.",
+      "amendmentOnVoting": "Hay una enmienda en votación. El texto ratificado se mantiene hasta que se apruebe.",
+      "draftChanges": "Cambios de borrador pendientes. Solo son oficiales cuando se aprueba una propuesta."
+    },
+    "reader": {
+      "customLead": "Una sección que los miembros añadieron al Contexto de este espacio.",
+      "official": "Texto ratificado",
+      "noOfficial": "Aún no hay nada ratificado.",
+      "draft": "Borrador — sin ratificar",
+      "proposed": "Texto propuesto — en votación",
+      "suggestRemoval": "Sugerir eliminar",
+      "cancelRemoval": "Retirar la sugerencia de eliminar",
+      "withdrawAddition": "Retirar la sugerencia",
+      "close": "Cerrar"
+    },
+    "addSection": {
+      "open": "Añadir sección",
+      "title": "Sugerir una sección nueva",
+      "description": "Cualquier miembro puede sugerir una sección. Sigue siendo un borrador hasta que se aprueba una propuesta que la añade.",
+      "nameLabel": "Nombre de la sección",
+      "namePlaceholder": "p. ej. Incorporación",
+      "draftLabel": "Primer borrador (opcional)",
+      "draftPlaceholder": "¿Qué debería decir esta sección?",
+      "cancel": "Cancelar",
+      "submit": "Sugerir sección",
+      "submitting": "Sugiriendo…",
+      "duplicate": "Ya existe una sección con este nombre.",
+      "titleRequired": "Pon un nombre a la sección.",
+      "failed": "No se pudo sugerir la sección. Inténtalo de nuevo.",
+      "restoreLabel": "Secciones eliminadas",
+      "restore": "Sugerir restaurar"
     }
   }
 }

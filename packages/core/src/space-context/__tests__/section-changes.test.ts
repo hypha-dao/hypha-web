@@ -6,6 +6,7 @@ import {
   isProposableSection,
   isSpaceContextSectionKey,
   normalizeSectionTitle,
+  officialSectionMarkdown,
   sectionKeysFromProposalMarkdown,
   sectionMatchesFilter,
   specialistForSectionKey,
@@ -143,6 +144,18 @@ describe('official text vs working draft', () => {
     });
     expect(section?.ratifiedMarkdown).toBeNull();
     expect(section?.hasDraftChanges).toBe(false);
+    expect(section && officialSectionMarkdown(section)).toBeNull();
+  });
+
+  it('never treats a restored section as official before its vote', () => {
+    const section = mapSectionRow({
+      ...baseRow,
+      status: 'draft',
+      pendingChange: 'add',
+      removedAt: new Date(),
+    });
+    expect(section?.ratifiedMarkdown).toBe('We restore land.');
+    expect(section && officialSectionMarkdown(section)).toBeNull();
   });
 
   it('does not offer an unchanged ratified section for ratification', () => {
