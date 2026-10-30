@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  EventType,
-  type MatrixEvent,
-} from 'matrix-js-sdk';
+import { EventType, type MatrixEvent } from 'matrix-js-sdk';
 
 /**
  * Soft incoming-message chime — a quieter, shorter cousin of the HUMAI
