@@ -2975,7 +2975,7 @@ export function MyConnections({
       {section === 'suggestions' ? (
         <section className="flex flex-col gap-3" aria-label={t('reachOut')}>
           <p className="text-2 text-muted-foreground">{t('suggestSentence')}</p>
-          <label className="relative min-w-0 w-full max-w-md">
+          <label className="relative min-w-0 w-full">
             <span className="sr-only">{t('searchMembers')}</span>
             <Search
               className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
