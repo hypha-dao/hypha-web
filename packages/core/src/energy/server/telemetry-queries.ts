@@ -35,9 +35,10 @@ function getEnergyDbPool(): Pool | null {
       ssl: dbConfig.ssl ? { rejectUnauthorized: false } : undefined,
       max: 4,
       idleTimeoutMillis: 15_000,
-      // Cold Azure connects can take 8–15s; keep the 25s query budget.
+      // Cold Azure connects can take 8–15s; keep the rest of the 60s
+      // route budget for the windowed aggregate (25s timed out on 30d).
       connectionTimeoutMillis: 15_000,
-      query_timeout: 25_000,
+      query_timeout: 45_000,
     });
     energyDbPool.on('error', (error) => {
       console.warn('[energy/telemetry] pool error', error);
@@ -70,38 +71,32 @@ async function queryEnergyTelemetryUncached(input: {
             or (direction is null and meter_id between 1 and 5)
             then 'consumption'
           when direction = 'import' then 'import'
-          when direction = 'export' then 'export'
-          else null
+          else 'export'
         end as kind,
         meter_id,
         sum(energy_wh)::bigint as total_wh,
         to_char(
-          min(interval_start at time zone 'UTC') at time zone 'UTC',
+          min(interval_start) at time zone 'UTC',
           'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
         ) as first_reading,
         to_char(
-          max(interval_start at time zone 'UTC') at time zone 'UTC',
+          max(interval_start) at time zone 'UTC',
           'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
         ) as last_reading
       from accounting.interval_readings
       where community_id = $1
-        and interval_start >= (now() at time zone 'utc') - ${cfg.intervalSql}
+        and interval_start >= now() - ${cfg.intervalSql}
         and (
           direction in ('consumption', 'production', 'import', 'export')
-          or direction is null
+          or (
+            direction is null
+            and (
+              meter_id between 1 and 5
+              or meter_id in (9001, 9002, 9003)
+            )
+          )
         )
       group by 1, 2, 3
-      having case
-          when direction = 'production'
-            or (direction is null and meter_id in (9001, 9002, 9003))
-            then 'production'
-          when direction = 'consumption'
-            or (direction is null and meter_id between 1 and 5)
-            then 'consumption'
-          when direction = 'import' then 'import'
-          when direction = 'export' then 'export'
-          else null
-        end is not null
       order by 1 asc
     `;
 
