@@ -1201,6 +1201,7 @@ function onConversationTimeline(
   playMessageReceiveSoundForEvent(event, conversationClient?.getUserId(), {
     toStartOfTimeline,
     liveEvent: data?.liveEvent,
+    room,
   });
 }
 
@@ -1215,10 +1216,11 @@ function onConversationMembership(room?: Room) {
 function onConversationDecrypted(event: MatrixEvent) {
   const roomId = event.getRoomId();
   if (!roomId || !conversationClient) return;
-  refreshConversationRoom(conversationClient.getRoom(roomId) ?? undefined);
+  const room = conversationClient.getRoom(roomId) ?? undefined;
+  refreshConversationRoom(room);
   // Encrypted live messages become RoomMessage only after decrypt.
   playMessageReceiveSoundForEvent(event, conversationClient.getUserId(), {
-    requireRecent: true,
+    room,
   });
 }
 
