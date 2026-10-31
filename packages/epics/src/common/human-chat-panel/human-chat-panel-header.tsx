@@ -165,7 +165,6 @@ export function HumanChatPanelHeader({
         {trailingEnd}
       </div>
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
-        {titleStart ? <div className="shrink-0">{titleStart}</div> : null}
         {mark && !roomChoice ? (
           <span
             className="inline-flex shrink-0 border border-foreground bg-foreground px-3 py-1 text-1 text-background"
@@ -175,99 +174,128 @@ export function HumanChatPanelHeader({
           </span>
         ) : null}
         {roomChoice ? (
-          <TooltipProvider delayDuration={200}>
-            <div
-              role="group"
-              aria-label={roomChoice.ariaLabel}
-              className="inline-flex shrink-0 border border-foreground"
-            >
-              {roomChoice.options.map((option) => {
-                const selected = roomChoice.value === option.value;
-                const Icon = ROOM_CHOICE_ICONS[option.value];
-                const unread = option.unreadCount ?? 0;
-                const unreadLabel =
-                  unread > 0
-                    ? option.unreadCountIsCapped || unread >= 100
-                      ? t('channelUnreadCappedAria', { channel: option.label })
-                      : t('channelUnreadAria', {
-                          channel: option.label,
-                          count: unread,
-                        })
-                    : option.label;
-                return (
-                  <Tooltip key={option.value}>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        aria-pressed={selected}
-                        aria-label={unreadLabel}
-                        onClick={() => roomChoice.onChange(option.value)}
-                        className={cn(
-                          'relative inline-flex h-[36px] w-[36px] items-center justify-center',
-                          selected
-                            ? 'bg-foreground text-background'
-                            : 'bg-background text-foreground',
-                        )}
-                      >
-                        {option.iconSrc?.trim() || Icon ? (
-                          <RoomChoiceGlyph
-                            iconSrc={option.iconSrc}
-                            Icon={Icon}
-                          />
-                        ) : (
-                          <span className="px-2 text-1">{option.label}</span>
-                        )}
-                        {unread > 0 ? (
-                          <CountBadge
-                            count={unread}
-                            capped={option.unreadCountIsCapped}
-                            size="sm"
-                            className="absolute -right-1 -top-1 z-10"
-                          />
-                        ) : null}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      {option.label}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </div>
-          </TooltipProvider>
-        ) : iconTitle ? (
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span
-                  className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center border border-foreground bg-foreground text-background"
-                  aria-label={iconTitle}
-                >
-                  <Globe2 className="h-4 w-4" strokeWidth={1.5} aria-hidden />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{iconTitle}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ) : displayTitle ? (
-          <div className="flex min-w-0 flex-1 flex-col items-end gap-0.5 overflow-hidden">
-            <span
-              className="w-full truncate text-right text-sm font-medium text-foreground"
-              title={displayTitle}
-            >
-              {displayTitle}
-            </span>
-            {displayDescription ? (
-              <p
-                className="craft-meta w-full truncate text-right"
-                title={displayDescription}
+          <>
+            {titleStart ? (
+              <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden">
+                {titleStart}
+              </div>
+            ) : null}
+            <TooltipProvider delayDuration={200}>
+              <div
+                role="group"
+                aria-label={roomChoice.ariaLabel}
+                className="inline-flex h-[36px] shrink-0 border border-foreground"
               >
+                {roomChoice.options.map((option) => {
+                  const selected = roomChoice.value === option.value;
+                  const Icon = ROOM_CHOICE_ICONS[option.value];
+                  const unread = option.unreadCount ?? 0;
+                  const unreadLabel =
+                    unread > 0
+                      ? option.unreadCountIsCapped || unread >= 100
+                        ? t('channelUnreadCappedAria', {
+                            channel: option.label,
+                          })
+                        : t('channelUnreadAria', {
+                            channel: option.label,
+                            count: unread,
+                          })
+                      : option.label;
+                  return (
+                    <Tooltip key={option.value}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-pressed={selected}
+                          aria-label={unreadLabel}
+                          onClick={() => roomChoice.onChange(option.value)}
+                          className={cn(
+                            'relative inline-flex h-full w-[36px] items-center justify-center',
+                            selected
+                              ? 'bg-foreground text-background'
+                              : 'bg-background text-foreground',
+                          )}
+                        >
+                          {option.iconSrc?.trim() || Icon ? (
+                            <RoomChoiceGlyph
+                              iconSrc={option.iconSrc}
+                              Icon={Icon}
+                            />
+                          ) : (
+                            <span className="px-2 text-1">{option.label}</span>
+                          )}
+                          {unread > 0 ? (
+                            <CountBadge
+                              count={unread}
+                              capped={option.unreadCountIsCapped}
+                              size="sm"
+                              className="absolute -right-1 -top-1 z-10"
+                            />
+                          ) : null}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        {option.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
+          </>
+        ) : iconTitle ? (
+          <>
+            {titleStart ? (
+              <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden">
+                {titleStart}
+              </div>
+            ) : null}
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center border border-foreground bg-foreground text-background"
+                    aria-label={iconTitle}
+                  >
+                    <Globe2 className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">{iconTitle}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        ) : displayTitle || titleStart ? (
+          <div className="flex min-w-0 items-center justify-end gap-2 overflow-hidden">
+            {titleStart ? (
+              <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden">
+                {titleStart}
+              </div>
+            ) : null}
+            {displayTitle ? (
+              <div className="flex min-w-0 flex-col items-end justify-center gap-0 overflow-hidden">
+                <span
+                  className="w-full truncate text-right text-sm leading-5 font-medium text-foreground"
+                  title={displayTitle}
+                >
+                  {displayTitle}
+                </span>
+                {displayDescription ? (
+                  <p
+                    className="w-full truncate text-right text-[11px] leading-4 text-muted-foreground"
+                    title={displayDescription}
+                  >
+                    {displayDescription}
+                  </p>
+                ) : null}
+              </div>
+            ) : displayDescription ? (
+              <p className="min-w-0 truncate text-right text-[11px] leading-4 text-muted-foreground">
                 {displayDescription}
               </p>
             ) : null}
           </div>
         ) : displayDescription ? (
-          <p className="craft-meta min-w-0 flex-1 truncate text-right">
+          <p className="min-w-0 flex-1 truncate text-right text-[11px] leading-4 text-muted-foreground">
             {displayDescription}
           </p>
         ) : null}

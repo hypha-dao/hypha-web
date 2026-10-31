@@ -6370,15 +6370,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   dmPeerUserId ??
                   undefined
                 }
-                size="md"
+                size="toolbar"
                 isLoading={dmPeerPersonLoading || peerMatrixIdsLoading}
               />
             ) : coherenceChannel === 'network' ? (
-              <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-background text-foreground">
-                <MemberHomeMark className="h-5 w-5" />
+              <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-border bg-background text-foreground">
+                <MemberHomeMark className="h-4 w-4" />
               </span>
             ) : // Space context + Messages space/ecosystem channels: logo left of
-            // the room tabs / title. Room-choice tabs keep outline icons.
+            // the room tabs / title. Sized to the 36px room-choice toggle.
             mode === 'space' && spaceSlug?.trim() ? (
               // eslint-disable-next-line @next/next/no-img-element -- remote space logos in header chrome
               <img
@@ -6390,7 +6390,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 }
                 alt=""
                 aria-hidden
-                className="h-8 w-8 shrink-0 rounded-full border border-border object-cover"
+                className="h-full w-full rounded-full border border-border object-cover"
               />
             ) : coherenceChannel === 'space' ||
               coherenceChannel === 'space-public' ||
@@ -6407,7 +6407,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 }
                 alt=""
                 aria-hidden
-                className="h-8 w-8 shrink-0 rounded-full border border-border object-cover"
+                className="h-full w-full rounded-full border border-border object-cover"
               />
             ) : null
           }

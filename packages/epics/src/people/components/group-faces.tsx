@@ -17,8 +17,9 @@ export function GroupFaces({
 }) {
   const shown = faces.slice(0, 2);
   if (shown.length === 0) return null;
-  const box = size === 'header' ? 'h-8 w-8' : 'h-10 w-10';
-  const face = size === 'header' ? 'size-[18px]' : 'size-[22px]';
+  // Header fills the 36px chrome slot (same as room toggle / toolbar avatar).
+  const box = size === 'header' ? 'h-full w-full' : 'h-10 w-10';
+  const face = size === 'header' ? 'size-[20px]' : 'size-[22px]';
   return (
     <span className={cn('relative block shrink-0', box, className)} aria-hidden>
       {shown.map((entry, index) => (
