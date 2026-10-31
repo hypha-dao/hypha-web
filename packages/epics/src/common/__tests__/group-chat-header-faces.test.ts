@@ -16,4 +16,13 @@ describe('group chat header faces', () => {
     );
     expect(panel).toContain("from '../people/components/group-faces'");
   });
+
+  it('resolves header faces like the Messages list (getUser + Hypha roster)', () => {
+    expect(panel).toContain('client.getUser(userId)?.avatarUrl');
+    expect(panel).toContain('resolveMemberAvatar(userId)');
+    // Same mxcUrlToHttp shape as Messages `avatarHttp` — not the auth-media arity.
+    expect(panel).toMatch(
+      /function matrixMemberAvatarSquare[\s\S]*?mxcUrlToHttp\(mxc, px, px, 'crop'\)/,
+    );
+  });
 });

@@ -876,7 +876,9 @@ function clearStoredRoomId(spaceSlug: string): void {
 }
 
 /**
- * Matrix room member avatar → HTTP thumbnail for `<img>` (unauthenticated media URL).
+ * Matrix member avatar → HTTP thumbnail for `<img>`.
+ * Same sources as the Messages list: room member MXC, then the global user
+ * store (group headers often miss room-member avatars while `getUser` has them).
  */
 function matrixMemberAvatarSquare(
   client: MatrixClient | null | undefined,
@@ -884,15 +886,14 @@ function matrixMemberAvatarSquare(
   userId: string | undefined,
   px: number,
 ): string | undefined {
-  if (!client || !roomId || !userId) return undefined;
-  const room = client.getRoom(roomId);
+  if (!client || !userId) return undefined;
+  const room = roomId ? client.getRoom(roomId) : null;
   const member = room?.getMember(userId);
-  if (!member) return undefined;
-  const mxc = member.getMxcAvatarUrl();
-  if (!mxc || !mxc.startsWith('mxc://')) return undefined;
-  return (
-    client.mxcUrlToHttp(mxc, px, px, 'crop', true, false, false) ?? undefined
-  );
+  const mxc =
+    member?.getMxcAvatarUrl() || client.getUser(userId)?.avatarUrl || undefined;
+  if (!mxc || !String(mxc).startsWith('mxc://')) return undefined;
+  // Match Messages `avatarHttp` — that URL shape already loads in the inbox.
+  return client.mxcUrlToHttp(mxc, px, px, 'crop') ?? undefined;
 }
 
 /**
@@ -2537,6 +2538,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       }
       if (!mxid) continue;
       m.set(mxid, url);
+      m.set(mxid.toLowerCase(), url);
     }
     return m;
   }, [spaceMembers, personIdToMatrixUserId, subToMatrixUserId]);
@@ -5219,9 +5221,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         ) ||
         userId ||
         '?';
-      const fromRoster = userId
-        ? matrixUserIdToPersonAvatar.get(userId)?.trim()
-        : undefined;
+      // Hypha roster (space + Privy sub) first, then the same Matrix sources
+      // the Messages list uses — room member MXC and `client.getUser`.
+      const fromRoster = userId ? resolveMemberAvatar(userId) : undefined;
       const fromMatrix = matrixMemberAvatarSquare(client, roomId, userId, 64);
       return {
         name,
@@ -5246,7 +5248,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     client,
     roomId,
     mentionMembershipEpoch,
-    matrixUserIdToPersonAvatar,
+    resolveMemberAvatar,
     groupTitle,
     coherenceTitle,
   ]);
