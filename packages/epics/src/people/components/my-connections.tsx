@@ -2332,6 +2332,8 @@ export function MyConnections({
   const dataReady = messagesPeopleListReady({
     isMatrixAvailable,
     isConnecting,
+    synced,
+    initialSyncComplete,
     homeLoaded,
   });
   useEffect(() => {

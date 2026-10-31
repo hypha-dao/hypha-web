@@ -363,13 +363,14 @@ export function visibleMemberRowsAfterTitleResolve<
 export type MessagesPeopleListReadyInput = {
   isMatrixAvailable: boolean;
   isConnecting: boolean;
+  /** Matrix has reached Prepared/Syncing. Not enough on its own — Syncing can be empty. */
+  synced: boolean;
   /**
-   * @deprecated Ignored — waiting on Matrix sync blocked PEOPLE AROUND for
-   * multi-second initial /sync. Rooms and previews fill in after paint.
+   * First /sync finished (`Prepared` or `isInitialSyncComplete`). Without this,
+   * the directory paints as PEOPLE AROUND / Direct before rooms exist — every
+   * row shows "No messages yet" and the list skeleton (mask) drops too early.
    */
-  synced?: boolean;
-  /** @deprecated Ignored — see `synced`. */
-  initialSyncComplete?: boolean;
+  initialSyncComplete: boolean;
   /** Intelligence fetch finished (or there is no JWT to fetch). */
   homeLoaded: boolean;
   /**
@@ -384,10 +385,10 @@ export type MessagesPeopleListReadyInput = {
 };
 
 /**
- * The Messages people list is safe to paint. Home intelligence is enough for
- * PEOPLE AROUND; Matrix room summaries and previews stream in after first paint
- * (row `previewLoading` covers incomplete sync). Do not wait on initial /sync —
- * that routinely takes several seconds and left the whole list behind a skeleton.
+ * The Messages people list is safe to paint. Wait for the first Matrix sync and
+ * home intelligence so the directory does not flash before rooms exist; do not
+ * wait for every room summary or peer profile (those stream in after paint via
+ * `previewLoading` / title resolve).
  *
  * Matrix unavailable and not connecting is "ready" so the empty/unavailable
  * copy can show. Callers latch this so a later room pump does not hide the list.
@@ -396,7 +397,7 @@ export function messagesPeopleListReady(
   input: MessagesPeopleListReadyInput,
 ): boolean {
   if (!input.isMatrixAvailable) return !input.isConnecting;
-  return input.homeLoaded;
+  return input.synced && input.initialSyncComplete && input.homeLoaded;
 }
 
 /** Union directory pages / search hits by person id. Synthetics stay out. */

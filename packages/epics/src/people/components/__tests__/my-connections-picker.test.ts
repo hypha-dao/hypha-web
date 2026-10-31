@@ -75,12 +75,14 @@ describe('group picker chips and radio', () => {
     expect(source).toContain('event.stopPropagation()');
   });
 
-  it('holds PEOPLE AROUND behind a list skeleton until home intelligence is ready', () => {
+  it('holds PEOPLE AROUND behind a list skeleton until first Matrix sync + home', () => {
     expect(source).toContain('messagesPeopleListReady');
     expect(source).toContain('homeLoaded');
+    expect(source).toContain('synced');
+    expect(source).toContain('initialSyncComplete');
     expect(source).toContain('MemberListSkeleton');
     expect(source).toContain('data-testid="messages-people-loader"');
-    // Previews stay skeletoned until sync/backfill; the list itself paints earlier.
+    // Previews stay skeletoned until sync/backfill after the list paints.
     expect(source).toContain('!initialSyncComplete || channelPreviewsPending');
     expect(source).toContain(
       'if (dataReady && isMatrixAvailable) setListSettled(true)',
