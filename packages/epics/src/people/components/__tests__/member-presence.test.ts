@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   latestMessageTs,
+  peerLastSeenLine,
   preferPresence,
   presenceFromMatrixStatus,
   presenceFromRecency,
   presenceRank,
   readMemberPresence,
+  readMemberPresenceDetail,
   sortByPresenceThenShared,
   sortByRecencyThenPresence,
 } from '../member-presence';
@@ -83,6 +85,41 @@ describe('readMemberPresence', () => {
       now,
     );
     expect(level).toBe('active');
+  });
+
+  it('exposes last-active time from the homeserver for the DM header', async () => {
+    const now = 1_700_000_000_000;
+    const ago = 2 * 60 * 60_000;
+    const detail = await readMemberPresenceDetail(
+      {
+        getPresence: async () => ({
+          presence: 'offline',
+          last_active_ago: ago,
+        }),
+      },
+      '@ada:hypha',
+      now,
+    );
+    expect(detail.known).toBe(true);
+    expect(detail.level).toBe('offline');
+    expect(detail.lastActiveAt).toBe(now - ago);
+    expect(peerLastSeenLine(detail)).toEqual({
+      kind: 'lastSeenAt',
+      at: now - ago,
+    });
+  });
+
+  it('hides the DM last-seen line when presence probes fail', async () => {
+    const detail = await readMemberPresenceDetail(
+      {
+        getPresence: async () => {
+          throw new Error('presence disabled');
+        },
+      },
+      '@ada:hypha',
+    );
+    expect(detail.known).toBe(false);
+    expect(peerLastSeenLine(detail)).toEqual({ kind: 'hidden' });
   });
 
   it('uses a recent message when no presence event exists', async () => {

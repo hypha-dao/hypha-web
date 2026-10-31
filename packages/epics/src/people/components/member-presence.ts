@@ -78,11 +78,77 @@ type PresenceClient = {
     presence?: string;
     currentlyActive?: boolean;
     lastPresenceTs?: number;
+    lastActiveAgo?: number;
+    getLastActiveTs?: () => number;
   } | null;
   getRooms?: () => Array<{
     getLiveTimeline?: () => { getEvents?: () => PresenceEvent[] };
   }>;
 };
+
+/** Presence plus a last-active timestamp for DM header copy. */
+export type MemberPresenceDetail = {
+  level: PresenceLevel;
+  /** Absolute ms of last activity when known. */
+  lastActiveAt: number | null;
+  /** False when the homeserver gave no usable presence signal. */
+  known: boolean;
+};
+
+/** Header line for a DM peer. Hidden when we have nothing trustworthy. */
+export type PeerLastSeenLine =
+  | { kind: 'online' }
+  | { kind: 'lastSeenAt'; at: number }
+  | { kind: 'hidden' };
+
+function lastActiveAtFromStatus(
+  status: {
+    last_active_ago?: number | null;
+  },
+  now: number,
+): number | null {
+  const ago = status.last_active_ago;
+  if (typeof ago !== 'number' || !Number.isFinite(ago) || ago < 0) return null;
+  return now - ago;
+}
+
+function cachedLastActiveAt(
+  client: PresenceClient,
+  matrixUserId: string,
+  now: number,
+): number | null {
+  const known = client.getUser?.(matrixUserId);
+  if (!known) return null;
+  const fromMethod = known.getLastActiveTs?.();
+  if (typeof fromMethod === 'number' && fromMethod > 0) return fromMethod;
+  if (
+    typeof known.lastActiveAgo === 'number' &&
+    Number.isFinite(known.lastActiveAgo) &&
+    known.lastActiveAgo >= 0 &&
+    known.lastPresenceTs
+  ) {
+    return now - known.lastActiveAgo;
+  }
+  if (typeof known.lastPresenceTs === 'number' && known.lastPresenceTs > 0) {
+    return known.lastPresenceTs;
+  }
+  return null;
+}
+
+/**
+ * Pick the chat-header line from a presence detail. Active → online;
+ * otherwise last seen when we have a timestamp; never invent a time.
+ */
+export function peerLastSeenLine(
+  detail: MemberPresenceDetail | null | undefined,
+): PeerLastSeenLine {
+  if (!detail || !detail.known) return { kind: 'hidden' };
+  if (detail.level === 'active') return { kind: 'online' };
+  if (detail.lastActiveAt != null && detail.lastActiveAt > 0) {
+    return { kind: 'lastSeenAt', at: detail.lastActiveAt };
+  }
+  return { kind: 'hidden' };
+}
 
 function cachedPresence(
   client: PresenceClient,
@@ -129,20 +195,48 @@ export async function readMemberPresence(
   matrixUserId: string,
   now = Date.now(),
 ): Promise<PresenceLevel> {
-  let live: PresenceLevel | null = null;
+  const detail = await readMemberPresenceDetail(client, matrixUserId, now);
+  return detail.level;
+}
+
+/**
+ * Presence level plus last-active time for DM “online / last seen” copy.
+ * `known` is false only when every Matrix probe failed and nothing is cached.
+ */
+export async function readMemberPresenceDetail(
+  client: PresenceClient,
+  matrixUserId: string,
+  now = Date.now(),
+): Promise<MemberPresenceDetail> {
+  let liveStatus: {
+    presence?: string | null;
+    currently_active?: boolean | null;
+    last_active_ago?: number | null;
+  } | null = null;
   try {
-    live = presenceFromMatrixStatus(await client.getPresence(matrixUserId));
+    liveStatus = await client.getPresence(matrixUserId);
   } catch {
-    live = null;
+    liveStatus = null;
   }
+  const live = liveStatus ? presenceFromMatrixStatus(liveStatus) : null;
+  const cached = cachedPresence(client, matrixUserId);
+  const fromMessages = presenceFromRecency(
+    latestMessageTs(client, matrixUserId),
+    now,
+  );
   const self =
     client.getUserId?.() === matrixUserId ? ('active' as const) : null;
-  return preferPresence([
-    live,
-    cachedPresence(client, matrixUserId),
-    presenceFromRecency(latestMessageTs(client, matrixUserId), now),
-    self,
-  ]);
+  // Dots still use message recency; the header must not invent last-seen
+  // from chat activity when presence itself is unavailable.
+  const level = preferPresence([live, cached, fromMessages, self]);
+  const lastActiveAt =
+    (liveStatus ? lastActiveAtFromStatus(liveStatus, now) : null) ??
+    cachedLastActiveAt(client, matrixUserId, now);
+  // Successful getPresence (even offline) is always known. A failed probe
+  // with no cache stays unknown so the header stays empty.
+  if (liveStatus) return { level, lastActiveAt, known: true };
+  if (cached || self) return { level, lastActiveAt, known: true };
+  return { level, lastActiveAt: null, known: false };
 }
 
 export function sortByPresenceThenShared<
