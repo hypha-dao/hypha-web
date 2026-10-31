@@ -5634,7 +5634,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     setRoomId(null);
     setMessages([]);
-    if (opensSpaceChannel && raw !== 'network') {
+    if (opensSpaceChannel) {
       setSpaceRoom(raw);
     }
     openHumanChatPanel();
