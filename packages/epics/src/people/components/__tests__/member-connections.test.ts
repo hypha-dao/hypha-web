@@ -1169,13 +1169,10 @@ describe('messagesPeopleListReady', () => {
     isConnecting: false,
     synced: true,
     initialSyncComplete: true,
-    rowsPending: false,
     homeLoaded: true,
-    matrixIdsLoading: false,
-    peopleBySubLoading: false,
   };
 
-  it('waits while Matrix is connecting or the room list has not settled', () => {
+  it('waits while Matrix is connecting', () => {
     expect(
       messagesPeopleListReady({
         ...ready,
@@ -1183,14 +1180,10 @@ describe('messagesPeopleListReady', () => {
         isConnecting: true,
         synced: false,
         initialSyncComplete: false,
-        rowsPending: true,
         homeLoaded: false,
       }),
     ).toBe(false);
     expect(messagesPeopleListReady({ ...ready, synced: false })).toBe(false);
-    expect(messagesPeopleListReady({ ...ready, rowsPending: true })).toBe(
-      false,
-    );
   });
 
   it('does not treat Syncing-without-Prepared as ready (directory flash)', () => {
@@ -1199,16 +1192,18 @@ describe('messagesPeopleListReady', () => {
     ).toBe(false);
   });
 
-  it('waits for directory, Matrix ids, and peer profiles so the set of people does not swap', () => {
+  it('waits for home intelligence but not room/id/profile backfill', () => {
     expect(messagesPeopleListReady({ ...ready, homeLoaded: false })).toBe(
       false,
     );
-    expect(messagesPeopleListReady({ ...ready, matrixIdsLoading: true })).toBe(
-      false,
-    );
     expect(
-      messagesPeopleListReady({ ...ready, peopleBySubLoading: true }),
-    ).toBe(false);
+      messagesPeopleListReady({
+        ...ready,
+        rowsPending: true,
+        matrixIdsLoading: true,
+        peopleBySubLoading: true,
+      }),
+    ).toBe(true);
     expect(messagesPeopleListReady(ready)).toBe(true);
   });
 
@@ -1219,7 +1214,6 @@ describe('messagesPeopleListReady', () => {
         isMatrixAvailable: false,
         synced: false,
         initialSyncComplete: false,
-        rowsPending: true,
         homeLoaded: false,
       }),
     ).toBe(true);
