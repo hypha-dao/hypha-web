@@ -302,6 +302,53 @@ describe('energy community snapshot mapping', () => {
     expect(peekEnergyCommunitySnapshot(community)).toBeDefined();
   });
 
+  it('does not report sources ok when an owned source is absent from getSourceIds', async () => {
+    const community = '0xdddddddddddddddddddddddddddddddddddddddd' as const;
+    const viewResults: Record<string, unknown> = {
+      getCommunityFeeBps: 0,
+      getAggregatorFeeBps: 0,
+      getGridBalance: 0n,
+      getSettledBalance: 0n,
+      getContractStablecoinBalance: 0n,
+      verifyZeroSum: [true, 0n],
+      getSourceIds: [],
+      getMemberAddresses: [member],
+      getCommunityAddress: community,
+      getAggregatorAddress: community,
+      getGridOperator: community,
+      getExportDeviceId: 0n,
+      getEnergyCreditBalance: 0n,
+      getDebtInStablecoin: 0n,
+      getCreditInStablecoin: 0n,
+      getAllSourceOwnerships: [[sourceId], [10_000n]],
+      getMember: {
+        memberAddress: member,
+        deviceIds: [7n],
+        isActive: true,
+        metadataHash: `0x${'0'.repeat(64)}`,
+      },
+    };
+    multicall.mockImplementation(
+      async ({
+        contracts,
+      }: {
+        contracts: ReadonlyArray<{ functionName: string }>;
+      }) =>
+        contracts.map(({ functionName }) =>
+          functionName in viewResults
+            ? { status: 'success', result: viewResults[functionName] }
+            : { status: 'failure' },
+        ),
+    );
+
+    clearEnergyCommunitySnapshotCache();
+    const snapshot = await readEnergyCommunitySnapshot(community);
+    expect(snapshot.sourcesOk).toBe(false);
+    expect(snapshot.sources).toEqual([]);
+    expect(snapshot.memberDetails[0]?.ownerships[0]?.ownershipBps).toBe(10_000);
+    expect(peekEnergyCommunitySnapshot(community)).toBeUndefined();
+  });
+
   it('does not cache snapshots with failed fee, member or ownership reads, but tolerates missing optimization', async () => {
     const community = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' as const;
     const viewResults: Record<string, unknown> = {

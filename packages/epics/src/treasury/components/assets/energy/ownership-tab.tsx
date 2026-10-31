@@ -479,9 +479,7 @@ export const OwnershipTab = ({
           people={people}
           participantProfiles={participantProfiles}
           peopleLoading={peopleLoading}
-          earningsUnavailable={
-            data.sourcesOk === false || group.basePricePerKwh === null
-          }
+          earningsUnavailable={group.basePricePerKwh === null}
         />
       ))}
     </div>
