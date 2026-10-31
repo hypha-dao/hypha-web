@@ -2325,13 +2325,12 @@ export function MyConnections({
     [suggestionCards],
   );
 
-  const titlesLoading =
-    !listSettled && (peopleBySubLoading || (peerSubs.length > 0 && !jwt));
+  // Keep pending titles visible while peer profiles load — do not tie this to
+  // listSettled, or an early PEOPLE AROUND paint drops everyone as titlePending.
+  const titlesLoading = peopleBySubLoading || (peerSubs.length > 0 && !jwt);
   const dataReady = messagesPeopleListReady({
     isMatrixAvailable,
     isConnecting,
-    synced,
-    initialSyncComplete,
     homeLoaded,
   });
   useEffect(() => {

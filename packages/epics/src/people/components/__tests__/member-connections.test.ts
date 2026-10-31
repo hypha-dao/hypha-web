@@ -1167,8 +1167,6 @@ describe('messagesPeopleListReady', () => {
   const ready = {
     isMatrixAvailable: true,
     isConnecting: false,
-    synced: true,
-    initialSyncComplete: true,
     homeLoaded: true,
   };
 
@@ -1178,18 +1176,19 @@ describe('messagesPeopleListReady', () => {
         ...ready,
         isMatrixAvailable: false,
         isConnecting: true,
-        synced: false,
-        initialSyncComplete: false,
         homeLoaded: false,
       }),
     ).toBe(false);
-    expect(messagesPeopleListReady({ ...ready, synced: false })).toBe(false);
   });
 
-  it('does not treat Syncing-without-Prepared as ready (directory flash)', () => {
+  it('paints once home is loaded without waiting for Matrix sync', () => {
     expect(
-      messagesPeopleListReady({ ...ready, initialSyncComplete: false }),
-    ).toBe(false);
+      messagesPeopleListReady({
+        ...ready,
+        synced: false,
+        initialSyncComplete: false,
+      }),
+    ).toBe(true);
   });
 
   it('waits for home intelligence but not room/id/profile backfill', () => {
@@ -1212,8 +1211,6 @@ describe('messagesPeopleListReady', () => {
       messagesPeopleListReady({
         ...ready,
         isMatrixAvailable: false,
-        synced: false,
-        initialSyncComplete: false,
         homeLoaded: false,
       }),
     ).toBe(true);
