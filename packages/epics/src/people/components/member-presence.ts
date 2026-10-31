@@ -89,6 +89,12 @@ type PresenceClient = {
 /** Presence plus a last-active timestamp for DM header copy. */
 export type MemberPresenceDetail = {
   level: PresenceLevel;
+  /**
+   * Matrix presence only (live + cached + self) — ignores message-recency.
+   * Used for the DM "online" subtitle so a recent message cannot outrank
+   * an explicit homeserver `offline` status.
+   */
+  matrixLevel: PresenceLevel | null;
   /** Absolute ms of last activity when known. */
   lastActiveAt: number | null;
   /** False when the homeserver gave no usable presence signal. */
@@ -129,21 +135,20 @@ function cachedLastActiveAt(
   ) {
     return now - known.lastActiveAgo;
   }
-  if (typeof known.lastPresenceTs === 'number' && known.lastPresenceTs > 0) {
-    return known.lastPresenceTs;
-  }
+  // `lastPresenceTs` is when we received the presence event, not the peer's
+  // last activity — never surface it as "last seen".
   return null;
 }
 
 /**
- * Pick the chat-header line from a presence detail. Active → online;
- * otherwise last seen when we have a timestamp; never invent a time.
+ * Pick the chat-header line from a presence detail. Online only when Matrix
+ * itself reports active; otherwise last seen when we have a timestamp.
  */
 export function peerLastSeenLine(
   detail: MemberPresenceDetail | null | undefined,
 ): PeerLastSeenLine {
   if (!detail || !detail.known) return { kind: 'hidden' };
-  if (detail.level === 'active') return { kind: 'online' };
+  if (detail.matrixLevel === 'active') return { kind: 'online' };
   if (detail.lastActiveAt != null && detail.lastActiveAt > 0) {
     return { kind: 'lastSeenAt', at: detail.lastActiveAt };
   }
@@ -224,9 +229,11 @@ export async function readMemberPresenceDetail(
   const fromMessages = presenceFromRecency(messageTs, now);
   const self =
     client.getUserId?.() === matrixUserId ? ('active' as const) : null;
-  // Dots still use message recency. Header last-seen prefers Matrix
-  // `last_active_ago`, then falls back to the latest message only when we
-  // already know presence (so a failed probe never invents a time).
+  // Dots still use message recency. Header "online" uses Matrix only so a
+  // recent message cannot outrank an explicit offline status. Last-seen
+  // prefers Matrix `last_active_ago`, then the latest message when presence
+  // is already known (so a failed probe never invents a time).
+  const matrixLevel = preferPresence([live, cached, self]);
   const level = preferPresence([live, cached, fromMessages, self]);
   const presenceKnown = Boolean(liveStatus || cached || self);
   const lastActiveAt =
@@ -235,8 +242,15 @@ export async function readMemberPresenceDetail(
     (presenceKnown && messageTs != null && messageTs > 0 ? messageTs : null);
   // Successful getPresence (even offline) is always known. A failed probe
   // with no cache stays unknown so the header stays empty.
-  if (presenceKnown) return { level, lastActiveAt, known: true };
-  return { level, lastActiveAt: null, known: false };
+  if (presenceKnown) {
+    return {
+      level,
+      matrixLevel,
+      lastActiveAt,
+      known: true,
+    };
+  }
+  return { level, matrixLevel: null, lastActiveAt: null, known: false };
 }
 
 export function sortByPresenceThenShared<

@@ -15,11 +15,22 @@ function roomStub(input: {
     rawDisplayName?: string;
   }>;
   readUpTo?: Record<string, string | null>;
+  /** When set, preferred over getEventReadUpTo (public m.read only). */
+  publicReadUpTo?: Record<string, string | null>;
   ordering?: Record<string, number>;
 }) {
   return {
     getMembers: () => input.members ?? [],
     getEventReadUpTo: (userId: string) => input.readUpTo?.[userId] ?? null,
+    getReadReceiptForUserId: (
+      userId: string,
+      _ignoreSynthesized?: boolean,
+      _receiptType?: string,
+    ) => {
+      const eventId =
+        input.publicReadUpTo?.[userId] ?? input.readUpTo?.[userId];
+      return eventId ? { eventId } : null;
+    },
     hasUserReadEvent: (userId: string, eventId: string) => {
       const cursor = input.readUpTo?.[userId];
       if (!cursor) return false;
@@ -134,5 +145,29 @@ describe('ownMessageReceiptStatus', () => {
         room,
       }),
     ).toBe('sent');
+  });
+
+  it('stays pending until the Matrix echo is acknowledged', () => {
+    expect(
+      ownMessageReceiptStatus({
+        sendAcknowledged: false,
+        eventId: 'evt-2',
+        peerId: '@peer:hypha',
+        room,
+      }),
+    ).toBe('pending');
+  });
+});
+
+describe('peer public m.read only', () => {
+  it('ignores a synthesized later cursor that is not public m.read', () => {
+    const room = roomStub({
+      readUpTo: { '@peer:hypha': 'evt-2' },
+      publicReadUpTo: { '@peer:hypha': 'evt-1' },
+      ordering: { 'evt-1': 1, 'evt-2': 2 },
+    });
+    expect(peerReadUpToEventId(room, '@peer:hypha')).toBe('evt-1');
+    expect(messageIsReadByPeer(room, '@peer:hypha', 'evt-2')).toBe(false);
+    expect(messageIsReadByPeer(room, '@peer:hypha', 'evt-1')).toBe(true);
   });
 });

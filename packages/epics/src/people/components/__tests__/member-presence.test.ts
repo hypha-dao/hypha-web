@@ -145,7 +145,38 @@ describe('readMemberPresence', () => {
       now,
     );
     expect(detail.known).toBe(true);
+    expect(detail.matrixLevel).toBe('offline');
     expect(detail.lastActiveAt).toBe(messageAt);
+    expect(peerLastSeenLine(detail)).toEqual({
+      kind: 'lastSeenAt',
+      at: messageAt,
+    });
+  });
+
+  it('does not show online when Matrix is offline but a recent message exists', async () => {
+    const messageAt = now - 60_000;
+    const detail = await readMemberPresenceDetail(
+      {
+        getPresence: async () => ({ presence: 'offline' }),
+        getRooms: () => [
+          {
+            getLiveTimeline: () => ({
+              getEvents: () => [
+                {
+                  getSender: () => '@ada:hypha',
+                  getType: () => 'm.room.message',
+                  getTs: () => messageAt,
+                },
+              ],
+            }),
+          },
+        ],
+      },
+      '@ada:hypha',
+      now,
+    );
+    expect(detail.level).toBe('active');
+    expect(detail.matrixLevel).toBe('offline');
     expect(peerLastSeenLine(detail)).toEqual({
       kind: 'lastSeenAt',
       at: messageAt,

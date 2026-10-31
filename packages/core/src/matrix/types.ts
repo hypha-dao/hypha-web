@@ -75,6 +75,11 @@ export type MessageMediaBundleItem = {
 export interface Message {
   id: string;
   sender: string;
+  /**
+   * False while Matrix still holds a local echo (sending / queued / failed).
+   * True once the homeserver has acknowledged the event (`event.status` null).
+   */
+  sendAcknowledged?: boolean;
   /** Synthetic row from a redaction handler: remove this timeline id from UI. */
   redacted?: boolean;
   /** Matrix msgtype for timeline rendering (`m.text` is implicit when omitted). */

@@ -470,6 +470,7 @@ export function messageFromRoomMessageEvent(
     return {
       id,
       sender,
+      sendAcknowledged: event.status == null,
       msgtype: msgtypeRaw as Message['msgtype'],
       content: rawBody,
       formattedContentHtml,
@@ -502,6 +503,7 @@ export function messageFromRoomMessageEvent(
   return {
     id,
     sender,
+    sendAcknowledged: event.status == null,
     content: displayBody,
     formattedContentHtml,
     timestamp: new Date(event.getTs()),

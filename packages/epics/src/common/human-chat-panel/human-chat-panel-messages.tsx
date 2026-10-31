@@ -52,6 +52,8 @@ type UIMessage = {
   role: 'user' | 'member';
   /** Non-Matrix / system rows: no reply or reactions. */
   isSynthetic?: boolean;
+  /** False while Matrix still holds a local echo / failed send. */
+  sendAcknowledged?: boolean;
   sendPending?: {
     attachmentCount: number;
     captionPreview: string;
@@ -911,7 +913,8 @@ export function HumanChatPanelMessages({
                   !dmPeerUserId ||
                   msg.role !== 'user' ||
                   msg.isSynthetic ||
-                  msg.sendPending
+                  msg.sendPending ||
+                  msg.sendAcknowledged === false
                     ? null
                     : isMessageReadByPeer?.(msg.id) ||
                       peerReadUpToEventId === msg.id

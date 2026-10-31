@@ -1,4 +1,4 @@
-import type { Room } from 'matrix-js-sdk';
+import { ReceiptType, type Room } from 'matrix-js-sdk';
 
 import { isHyphaBotMatrixIdentity } from './matrix-room-member-display';
 
@@ -12,6 +12,11 @@ type RoomMemberLike = {
 type RoomLike = Pick<Room, 'getEventReadUpTo' | 'hasUserReadEvent'> & {
   getMembers?: () => RoomMemberLike[];
   getJoinedMembers?: () => RoomMemberLike[];
+  getReadReceiptForUserId?: (
+    userId: string,
+    ignoreSynthesized?: boolean,
+    receiptType?: ReceiptType,
+  ) => { eventId: string } | null;
   compareEventOrdering?: (
     leftEventId: string,
     rightEventId: string,
@@ -32,17 +37,14 @@ function roomMembers(room: RoomLike): RoomMemberLike[] {
   }
 }
 
-/**
- * The other person in a 1:1 DM. Ignores Hypha bots so a bot invite does not
- * look like a group. Null when there is not exactly one human peer.
- */
-export function dmPeerMatrixUserId(
+/** Other joined/invited humans in the room (excludes self and Hypha bots). */
+export function dmOtherHumanMembers(
   room: RoomLike,
   selfId: string | null | undefined,
-): string | null {
+): RoomMemberLike[] {
   const me = selfId?.trim();
-  if (!me) return null;
-  const others = roomMembers(room).filter((member) => {
+  if (!me) return [];
+  return roomMembers(room).filter((member) => {
     const userId = member.userId?.trim();
     if (!userId || userId === me) return false;
     if (
@@ -57,23 +59,46 @@ export function dmPeerMatrixUserId(
       member.name || member.rawDisplayName,
     );
   });
+}
+
+/**
+ * The other person in a 1:1 DM. Ignores Hypha bots so a bot invite does not
+ * look like a group. Null when there is not exactly one human peer.
+ */
+export function dmPeerMatrixUserId(
+  room: RoomLike,
+  selfId: string | null | undefined,
+): string | null {
+  const others = dmOtherHumanMembers(room, selfId);
   if (others.length !== 1) return null;
   return others[0]?.userId?.trim() || null;
 }
 
-/** Peer's public `m.read` cursor in this room, if any. */
+/**
+ * Peer's public `m.read` cursor in this room, if any.
+ * Ignores synthesized receipts and private `m.read.private` so a later peer
+ * message is not treated as having read earlier own messages.
+ */
 export function peerReadUpToEventId(
   room: RoomLike,
   peerId: string | null | undefined,
 ): string | null {
   const id = peerId?.trim();
   if (!id) return null;
-  return room.getEventReadUpTo(id, false) ?? null;
+  if (typeof room.getReadReceiptForUserId === 'function') {
+    try {
+      const receipt = room.getReadReceiptForUserId(id, true, ReceiptType.Read);
+      return receipt?.eventId ?? null;
+    } catch {
+      // Fall through to getEventReadUpTo.
+    }
+  }
+  return room.getEventReadUpTo(id, true) ?? null;
 }
 
 /**
- * True when the peer's read receipt has reached this event (or something after).
- * Uses Matrix `hasUserReadEvent` when available; otherwise compares cursors.
+ * True when the peer's public read receipt has reached this event (or later).
+ * Does not use `hasUserReadEvent` — that helper treats a later peer send as read.
  */
 export function messageIsReadByPeer(
   room: RoomLike,
@@ -83,13 +108,6 @@ export function messageIsReadByPeer(
   const peer = peerId?.trim();
   const event = eventId?.trim();
   if (!peer || !event) return false;
-  if (typeof room.hasUserReadEvent === 'function') {
-    try {
-      return room.hasUserReadEvent(peer, event);
-    } catch {
-      // Fall through to ordering when the SDK throws on unknown ids.
-    }
-  }
   const readUpTo = peerReadUpToEventId(room, peer);
   if (!readUpTo) return false;
   if (readUpTo === event) return true;
@@ -103,11 +121,14 @@ export type OwnMessageReceiptStatus = 'pending' | 'sent' | 'read';
 /** Status for the current user's own DM message. */
 export function ownMessageReceiptStatus(input: {
   sendPending?: boolean;
+  /** False while Matrix still holds a local echo / failed send. */
+  sendAcknowledged?: boolean;
   eventId?: string | null;
   peerId?: string | null;
   room?: RoomLike | null;
 }): OwnMessageReceiptStatus {
   if (input.sendPending) return 'pending';
+  if (input.sendAcknowledged === false) return 'pending';
   if (
     input.room &&
     messageIsReadByPeer(input.room, input.peerId, input.eventId)

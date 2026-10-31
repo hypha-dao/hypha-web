@@ -12,7 +12,7 @@ import {
 } from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { Check, Plus } from 'lucide-react';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useFormatter, useTimeZone, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
   useParams,
@@ -192,10 +192,12 @@ import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
 import { SignalIndicativeAmounts } from '../coherence/components/signal-indicative-amounts';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
+  dmOtherHumanMembers,
   dmPeerMatrixUserId,
   messageIsReadByPeer,
   peerReadUpToEventId,
 } from './human-chat-panel/matrix-chat-receipts';
+import { isPeopleGroupChatRoom } from './human-chat-panel/people-group-room';
 import { peerLastSeenFormatParts } from './human-chat-panel/format-peer-last-seen';
 import {
   peerLastSeenLine,
@@ -382,6 +384,11 @@ type UIMessage = {
   role: 'user' | 'member';
   /** True for non-Matrix rows (e.g. welcome); disables reply/reactions. */
   isSynthetic?: boolean;
+  /**
+   * False while Matrix still holds a local echo / failed send. Omitted on
+   * synthetic rows. Receipt ticks require this to be true (or omitted).
+   */
+  sendAcknowledged?: boolean;
   /** Optimistic row while uploads run (cleared when send completes or fails). */
   sendPending?: {
     attachmentCount: number;
@@ -1009,6 +1016,7 @@ function toUIMessage(
     id: msg.id,
     role: isCurrentUser ? 'user' : 'member',
     isSynthetic: false,
+    ...(msg.sendAcknowledged === false ? { sendAcknowledged: false } : {}),
     parts: isMedia
       ? captionForMedia
         ? [{ type: 'text', text: captionForMedia }]
@@ -1157,6 +1165,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const tMember = useTranslations('MemberHome');
   const tConnections = useTranslations('Connections');
   const formatter = useFormatter();
+  const timeZone = useTimeZone();
   const isMobile = useIsMobile() ?? false;
   const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
   const isTouchCallChrome = isMobile || prefersCoarsePointer;
@@ -1324,6 +1333,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const blockSpaceChatForMembership =
     !isDirectConversation &&
     !coherencePublic &&
+    coherenceChannel !== 'network' &&
     !(mode === 'space' && spaceRoom === 'public') &&
     (mode === 'space' || mode === 'coherence') &&
     Boolean(mode === 'coherence' || spaceSlug?.trim()) &&
@@ -4955,12 +4965,21 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       return null;
     }
     const room = client && roomId ? client.getRoom(roomId) : null;
+    // Remembered group rooms can drop to two humans; still not a DM.
+    if (room && isPeopleGroupChatRoom(room)) {
+      return null;
+    }
     const fromRoom = room ? dmPeerMatrixUserId(room, currentUserId) : null;
     if (fromRoom) return fromRoom;
-    // Room membership can lag or include bots; fall back to the opened peer.
+    // Membership can lag; fall back to the opened peer only for 1:1-shaped rooms.
     if (peerPersonId) {
       const mapped = peerPersonIdToMatrixUserId[peerPersonId]?.trim();
-      if (mapped) return mapped;
+      if (mapped) {
+        if (!room) return mapped;
+        if (dmOtherHumanMembers(room, currentUserId).length <= 1) {
+          return mapped;
+        }
+      }
     }
     return null;
   }, [
@@ -4995,19 +5014,31 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setDmPeerPresence(null);
       return;
     }
+    // Clear immediately so the previous peer's subtitle never sticks.
+    setDmPeerPresence(null);
     let cancelled = false;
+    let requestId = 0;
+    const peerId = dmPeerUserId;
     const load = () => {
-      void readMemberPresenceDetail(client, dmPeerUserId).then((detail) => {
-        if (!cancelled) setDmPeerPresence(detail);
+      const id = ++requestId;
+      void readMemberPresenceDetail(client, peerId).then((detail) => {
+        if (!cancelled && id === requestId) setDmPeerPresence(detail);
       });
     };
     load();
     const interval = window.setInterval(load, 30_000);
-    client.on(UserEvent.Presence, load);
+    const onPresence = (
+      _event: unknown,
+      user: { userId?: string } | undefined,
+    ) => {
+      if (user?.userId && user.userId !== peerId) return;
+      load();
+    };
+    client.on(UserEvent.Presence, onPresence);
     return () => {
       cancelled = true;
       window.clearInterval(interval);
-      client.removeListener(UserEvent.Presence, load);
+      client.removeListener(UserEvent.Presence, onPresence);
     };
   }, [isDirectConversation, client, dmPeerUserId]);
 
@@ -5029,6 +5060,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           month: 'short',
           year: 'numeric',
         }),
+      new Date(),
+      timeZone,
     );
     if (parts.key === 'lastSeenToday') {
       return t('presenceLastSeenToday', { time: parts.time });
@@ -5043,7 +5076,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       });
     }
     return t('presenceOnline');
-  }, [isDirectConversation, dmPeerPresence, formatter, t]);
+  }, [isDirectConversation, dmPeerPresence, formatter, t, timeZone]);
 
   /** Unread badges on Space / Ecosystem / Public — joined rooms only. */
   const spaceChannelUnread = useMemo(() => {

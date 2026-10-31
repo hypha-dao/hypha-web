@@ -1,6 +1,6 @@
 'use client';
 
-import type { ComponentType, ReactNode } from 'react';
+import { useState, type ComponentType, type ReactNode } from 'react';
 import {
   ArrowLeft,
   Circle,
@@ -43,6 +43,33 @@ type RoomChoiceOption = {
   /** Rounded logo for this channel (space / ecosystem). Falls back to the outline icon. */
   iconSrc?: string | null;
 };
+
+function RoomChoiceGlyph({
+  iconSrc,
+  Icon,
+}: {
+  iconSrc?: string | null;
+  Icon?: RoomChoiceIcon;
+}) {
+  const [failed, setFailed] = useState(false);
+  const src = iconSrc?.trim();
+  if (src && !failed) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- remote space logos; Avatar-sized chrome
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        className="h-5 w-5 rounded-full object-cover"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  if (Icon) {
+    return <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden />;
+  }
+  return null;
+}
 
 type HumanChatPanelHeaderProps = {
   title?: string;
@@ -182,19 +209,10 @@ export function HumanChatPanelHeader({
                             : 'bg-background text-foreground',
                         )}
                       >
-                        {option.iconSrc?.trim() ? (
-                          // eslint-disable-next-line @next/next/no-img-element -- remote space logos; Avatar-sized chrome
-                          <img
-                            src={option.iconSrc.trim()}
-                            alt=""
-                            aria-hidden
-                            className="h-5 w-5 rounded-full object-cover"
-                          />
-                        ) : Icon ? (
-                          <Icon
-                            className="h-4 w-4"
-                            strokeWidth={1.5}
-                            aria-hidden
+                        {option.iconSrc?.trim() || Icon ? (
+                          <RoomChoiceGlyph
+                            iconSrc={option.iconSrc}
+                            Icon={Icon}
                           />
                         ) : (
                           <span className="px-2 text-1">{option.label}</span>
