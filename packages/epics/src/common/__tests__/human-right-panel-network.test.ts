@@ -26,4 +26,15 @@ describe('network room join guard', () => {
     expect(source).toContain("onNetworkPage && mode === 'space'");
     expect(source).toContain('Landing on Network must never keep a DHO space');
   });
+
+  it('locks timeline paints to the intended room before join awaits (HE → HUMAI)', () => {
+    expect(source).toContain('paintedRoomId');
+    expect(source).toContain(
+      'openingTimelineRoomIdRef.current = intendedRoomId',
+    );
+    expect(source).toContain(
+      'activeRoom && painted && activeRoom === painted ? messages : []',
+    );
+    expect(source).toContain('Mid-switch both refs may be empty');
+  });
 });

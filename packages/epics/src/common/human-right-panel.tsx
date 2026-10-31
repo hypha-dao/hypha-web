@@ -1456,6 +1456,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [mode]);
 
   const [isJoining, setIsJoining] = useState(false);
+  /** Room id the `messages` array belongs to — hide timeline when it disagrees with `roomId`. */
+  const [paintedRoomId, setPaintedRoomId] = useState<string | null>(null);
   const [hasMoreOlderMessages, setHasMoreOlderMessages] = useState(false);
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
   const [autoLoadOlderPaused, setAutoLoadOlderPaused] = useState(false);
@@ -1571,8 +1573,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       matrixRef.current.unregisterRoomListener(activeRoomId);
     }
     joinedRef.current = null;
+    openingTimelineRoomIdRef.current = null;
+    messagesRoomIdRef.current = null;
+    roomIdRef.current = null;
     setRoomId(null);
     setMessages([]);
+    setPaintedRoomId(null);
     setInput('');
     disposeDraftAttachmentUrls(draftAttachmentsRef.current);
     setDraftAttachments([]);
@@ -3039,17 +3045,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   /** Room the coherence/space join effect is currently opening — drop stale paints. */
   const openingTimelineRoomIdRef = useRef<string | null>(null);
   const syncRoomMessages = useCallback((targetRoomId: string) => {
-    const wanted = openingTimelineRoomIdRef.current?.trim();
+    const wanted = openingTimelineRoomIdRef.current?.trim() || '';
+    const committed = roomIdRef.current?.trim() || '';
     const target = targetRoomId.trim();
     if (!target) return;
-    // Never paint another room's timeline into the open shell (space ↔ network,
-    // HE → HUMAI, etc.). Prefer the join target; else the committed room id.
+    // Never paint another room's timeline (HE → HUMAI, space ↔ network).
+    // Mid-switch both refs may be empty — drop every paint until a target locks.
     if (wanted) {
       if (wanted !== target) return;
-    } else if (
-      roomIdRef.current?.trim() &&
-      roomIdRef.current.trim() !== target
-    ) {
+    } else if (committed) {
+      if (committed !== target) return;
+    } else {
       return;
     }
     const existing = matrixRef.current.getRoomMessages(target);
@@ -3079,6 +3085,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         ),
       );
     });
+    setPaintedRoomId(target);
   }, []);
 
   /**
@@ -3910,6 +3917,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     roomIdRef.current = null;
     setRoomId(null);
     setMessages([]);
+    setPaintedRoomId(null);
     setError(null);
     setIsJoining(false);
   }, [
@@ -4008,11 +4016,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (previousRoomId) {
       matrixRef.current.unregisterRoomListener(previousRoomId);
     }
-    roomIdRef.current = null;
+    // Block mid-switch paints until init locks the real room id.
     openingTimelineRoomIdRef.current = null;
+    roomIdRef.current = null;
     messagesRoomIdRef.current = null;
     setRoomId(null);
     setMessages([]);
+    setPaintedRoomId(null);
 
     let cancelled = false;
     const joinEpoch = ++joinEpochRef.current;
@@ -4187,11 +4197,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (previousRoomId) {
       matrixRef.current.unregisterRoomListener(previousRoomId);
     }
-    roomIdRef.current = null;
     openingTimelineRoomIdRef.current = null;
+    roomIdRef.current = null;
     messagesRoomIdRef.current = null;
     setRoomId(null);
     setMessages([]);
+    setPaintedRoomId(null);
 
     let cancelled = false;
     const joinEpoch = ++joinEpochRef.current;
@@ -4298,23 +4309,33 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     // must not leave its error on this empty Start-a-conversation view.
     if (isStartConversation) {
       joinEpochRef.current += 1;
+      openingTimelineRoomIdRef.current = null;
+      messagesRoomIdRef.current = null;
+      roomIdRef.current = null;
+      setRoomId(null);
+      setMessages([]);
+      setPaintedRoomId(null);
       setIsJoining(false);
       setError(null);
       return;
     }
 
     const openingSpaceSlug = coherenceSpaceSlug?.trim() || '';
+    const intendedRoomId = coherenceRoomId?.trim() || null;
     const previousRoomId = roomIdRef.current?.trim();
     if (previousRoomId) {
       matrixRef.current.unregisterRoomListener(previousRoomId);
     }
+    // Lock paints to the inbox room id immediately (before any await). Clearing
+    // openingTimelineRoomIdRef to null lets a late HE paint win over HUMAI.
+    openingTimelineRoomIdRef.current = intendedRoomId;
     roomIdRef.current = null;
-    openingTimelineRoomIdRef.current = null;
     messagesRoomIdRef.current = null;
     setRoomId(null);
     // Clear the previous room's timeline immediately so a slow join cannot
     // leave another channel's messages under the new title (HE → HUMAI).
     setMessages([]);
+    setPaintedRoomId(null);
     setIsJoining(true);
     // A selected space may only know its slug until the space record loads.
     // Public map→chat also waits: we need `spaces.chatRoomId` so a misbound
@@ -4702,6 +4723,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         if (redacts.size === 0 && upserts.size === 0) return;
 
+        setPaintedRoomId(roomId);
         setMessages((prev) => {
           let next = prev;
           if (redacts.size > 0) {
@@ -4940,8 +4962,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const mergedMessages = useMemo(() => {
+    // Never show another room's rows under the open title (HE → HUMAI).
+    const activeRoom = roomId?.trim() || '';
+    const painted = paintedRoomId?.trim() || '';
+    const timelineMessages =
+      activeRoom && painted && activeRoom === painted ? messages : [];
     const withPending = (() => {
-      if (!sendingPending) return messages;
+      if (!sendingPending) return timelineMessages;
       const pendingRow: UIMessage = {
         id: sendingPending.id,
         role: 'user',
@@ -4954,7 +4981,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         },
         avatarUrl: currentUserAvatarUrl,
       };
-      return sortMessagesChronologically([...messages, pendingRow]);
+      return sortMessagesChronologically([...timelineMessages, pendingRow]);
     })();
     if (mode !== 'coherence' || !coherenceSlug?.trim()) return withPending;
     const firstTextIndex = withPending.findIndex(
@@ -4989,6 +5016,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     );
   }, [
     messages,
+    paintedRoomId,
+    roomId,
     sendingPending,
     currentUserAvatarUrl,
     mode,
@@ -6368,7 +6397,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     // Ecosystem / public rooms are alias-backed — never reuse
                     // the member space room id when switching.
                     joinedRef.current = null;
+                    openingTimelineRoomIdRef.current = null;
                     messagesRoomIdRef.current = null;
+                    roomIdRef.current = null;
                     if (timelineFlushRafRef.current != null) {
                       cancelAnimationFrame(timelineFlushRafRef.current);
                       timelineFlushRafRef.current = null;
@@ -6380,6 +6411,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     }
                     setRoomId(null);
                     setMessages([]);
+                    setPaintedRoomId(null);
                     setSpaceRoom(next);
                   },
                 }
