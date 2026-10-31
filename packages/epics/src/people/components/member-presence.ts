@@ -50,6 +50,19 @@ export function preferPresence(
   return best;
 }
 
+/**
+ * Combine person-id and MXID registry probes. A direct Matrix id that says
+ * online must win over a lagged/missing person→MXID batch that still reads
+ * offline (Messages list vs open-DM header mismatch).
+ */
+export function resolveRegisteredPresence(
+  byPerson: PresenceLevel | null | undefined,
+  byMatrix: PresenceLevel | null | undefined,
+): PresenceLevel | null {
+  if (byPerson == null && byMatrix == null) return null;
+  return preferPresence([byPerson, byMatrix]);
+}
+
 export function presenceFromRecency(
   lastTs: number | null | undefined,
   now = Date.now(),

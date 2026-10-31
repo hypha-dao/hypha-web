@@ -92,4 +92,13 @@ describe('group picker chips and radio', () => {
     expect(source).not.toMatch(/if \(dataReady\) setListSettled\(true\)/);
     expect(source).not.toMatch(/isConnecting \? t\('loading'\)/);
   });
+
+  it('shares Matrix presence lights with the open DM via the registry', () => {
+    // A separate useMemberPresence + presence={… ?? 'offline'} left list
+    // rings hollow while the header showed green/amber for the same peer.
+    expect(source).not.toContain('useMemberPresence');
+    expect(source).not.toMatch(/presence=\{presence\}/);
+    expect(source).toContain('matrixUserId={');
+    expect(source).toContain('personIdToMatrixUserId[row.person.id]');
+  });
 });

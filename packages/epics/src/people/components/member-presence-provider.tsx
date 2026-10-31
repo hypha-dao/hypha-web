@@ -13,7 +13,11 @@ import {
 import { UserEvent } from 'matrix-js-sdk';
 import { useMatrix } from '@hypha-platform/core/client';
 
-import { readMemberPresence, type PresenceLevel } from './member-presence';
+import {
+  readMemberPresence,
+  resolveRegisteredPresence,
+  type PresenceLevel,
+} from './member-presence';
 import { useMemberPresence } from './use-member-presence';
 
 type PresenceRegistryValue = {
@@ -216,26 +220,23 @@ export function useRegisteredPresence({
 }): PresenceLevel | null {
   const ctx = useContext(PresenceRegistryContext);
   const normalizedMatrixId = matrixUserId?.trim() || undefined;
+  const hasPersonId = personId != null && personId > 0;
 
   useEffect(() => {
-    if (!ctx) return;
-    if (personId != null && personId > 0) {
-      ctx.registerPersonId(personId);
-      return () => ctx.unregisterPersonId(personId);
-    }
-    return;
-  }, [ctx, personId]);
+    if (!ctx || !hasPersonId || personId == null) return;
+    ctx.registerPersonId(personId);
+    return () => ctx.unregisterPersonId(personId);
+  }, [ctx, hasPersonId, personId]);
 
   useEffect(() => {
     if (!ctx || !normalizedMatrixId) return;
-    // Prefer personId mapping when both are present — avoid double polling.
-    if (personId != null && personId > 0) return;
     ctx.registerMatrixUserId(normalizedMatrixId);
     return () => ctx.unregisterMatrixUserId(normalizedMatrixId);
-  }, [ctx, normalizedMatrixId, personId]);
+  }, [ctx, normalizedMatrixId]);
 
   if (!ctx) return null;
-  if (personId != null && personId > 0) return ctx.getByPersonId(personId);
-  if (normalizedMatrixId) return ctx.getByMatrixUserId(normalizedMatrixId);
-  return null;
+  return resolveRegisteredPresence(
+    hasPersonId ? ctx.getByPersonId(personId!) : null,
+    normalizedMatrixId ? ctx.getByMatrixUserId(normalizedMatrixId) : null,
+  );
 }

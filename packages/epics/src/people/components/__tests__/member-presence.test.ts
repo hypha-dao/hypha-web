@@ -9,6 +9,7 @@ import {
   presenceRank,
   readMemberPresence,
   readMemberPresenceDetail,
+  resolveRegisteredPresence,
   sortByPresenceThenShared,
   sortByRecencyThenPresence,
 } from '../member-presence';
@@ -304,5 +305,17 @@ describe('sort helpers', () => {
       presence,
     );
     expect(ranked.map((row) => row.person.id)).toEqual([2, 1]);
+  });
+});
+
+describe('resolveRegisteredPresence', () => {
+  it('lets a live Matrix probe outrank a lagged person-id offline', () => {
+    expect(resolveRegisteredPresence('offline', 'active')).toBe('active');
+    expect(resolveRegisteredPresence('offline', 'idle')).toBe('idle');
+  });
+
+  it('returns null only when neither probe ran', () => {
+    expect(resolveRegisteredPresence(null, undefined)).toBeNull();
+    expect(resolveRegisteredPresence('offline', null)).toBe('offline');
   });
 });

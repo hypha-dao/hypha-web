@@ -151,11 +151,9 @@ import {
   type InboxFilter,
   type JoinedChannelSnapshot,
 } from './messages-inbox';
-import { type PresenceLevel } from './member-presence';
 import { MemberHomeMark } from './member-home-mark';
 import { GroupFaces } from './group-faces';
 import { PersonAvatar } from './person-avatar';
-import { useMemberPresence } from './use-member-presence';
 
 /** Matches the first page returned for the home. Each click asks for one more. */
 const CONNECTIONS_PAGE = 12;
@@ -2243,12 +2241,6 @@ export function MyConnections({
     ],
   );
 
-  const memberPersonIds = useMemo(
-    () => members.map((row) => row.person.id),
-    [members],
-  );
-  const { presenceById } = useMemberPresence(memberPersonIds);
-
   const reachOut = useMemo(() => {
     if (!synced) return [];
     const newcomers: NewcomerCandidate[] = [];
@@ -3336,7 +3328,7 @@ export function MyConnections({
                     title={listTitle}
                     rows={shownRows}
                     showChannelTags={showChannelTags}
-                    presenceById={presenceById}
+                    personIdToMatrixUserId={personIdToMatrixUserId}
                     locale={locale}
                     justNow={t('justNow')}
                     noMessage={t('noMessage')}
@@ -3491,7 +3483,7 @@ function channelTagKey(kind: InboxChannelKind) {
 function MemberList({
   title,
   rows,
-  presenceById,
+  personIdToMatrixUserId,
   locale,
   justNow,
   noMessage,
@@ -3513,7 +3505,7 @@ function MemberList({
 }: {
   title: string;
   rows: ConnectionMemberRow[];
-  presenceById: ReadonlyMap<number, PresenceLevel>;
+  personIdToMatrixUserId: Readonly<Record<number, string>>;
   locale: string;
   justNow: string;
   noMessage: string;
@@ -3583,7 +3575,6 @@ function MemberList({
               { roomId: activeRoomId, personId: activePersonId },
               openLookup,
             );
-          const presence = presenceById.get(row.person.id) ?? 'offline';
           const ChannelIcon = row.inbox
             ? CHANNEL_MARK_ICONS[row.inbox.kind]
             : undefined;
@@ -3673,7 +3664,13 @@ function MemberList({
                     avatarSrc={row.avatarUrl}
                     userName={row.name}
                     personId={row.person.id}
-                    presence={presence}
+                    matrixUserId={
+                      personIdToMatrixUserId[row.person.id] ??
+                      openLookup?.rooms.find(
+                        (room) => room.roomId === row.roomId,
+                      )?.otherUserId ??
+                      undefined
+                    }
                   />
                 )}
                 <span className="min-w-0 flex-1 pr-2">

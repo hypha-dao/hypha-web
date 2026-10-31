@@ -6395,6 +6395,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   dmPeerUserId ??
                   undefined
                 }
+                // Same probe as the "online / last seen" subtitle so the light
+                // cannot disagree with the line under the name.
+                presence={
+                  dmPeerPresence?.known ? dmPeerPresence.level : undefined
+                }
                 size="toolbar"
                 isLoading={dmPeerPersonLoading || peerMatrixIdsLoading}
               />
