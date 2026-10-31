@@ -132,11 +132,7 @@ import { useChatRoomTyping } from './human-chat-panel/use-chat-room-typing';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { applyConversationRoomTitle } from '../people/components/my-connections';
-import {
-  MemberSpaceIcons,
-  memberProfileAsideHref,
-  usePersonMemberSpaces,
-} from '../people/components/member-space-icons';
+import { PersonAvatar } from '../people/components/person-avatar';
 import {
   chatRoomAliasLocalpart,
   computeAggregateUnreadMentionCount,
@@ -1222,22 +1218,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     : coherencePublic
     ? coherenceSpaceSlug?.trim() || routeSpaceSlug || undefined
     : routeSpaceSlug || coherenceSpaceSlug?.trim() || undefined;
-  const { spaces: peerMemberSpaces, isLoading: peerMemberSpacesLoading } =
-    usePersonMemberSpaces({
-      personAddress: isDirectConversation
-        ? coherencePeerPerson?.address
-        : undefined,
-      personSlug: isDirectConversation ? coherencePeerPerson?.slug : undefined,
-    });
-  const peerSpacesOverflowHref =
-    isDirectConversation && coherencePeerPerson?.slug
-      ? memberProfileAsideHref({
-          lang: getLocaleFromPath(pathname),
-          hostSpaceSlug: routeSpaceSlug || coherenceSpaceSlug,
-          personSlug: coherencePeerPerson.slug,
-          fallbackSpaceSlug: peerMemberSpaces[0]?.slug,
-        })
-      : null;
   const [spaceRoom, setSpaceRoom] = useState<'space' | 'ecosystem' | 'public'>(
     'space',
   );
@@ -2039,6 +2019,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherencePeerPerson.id > 0
       ? coherencePeerPerson.id
       : null;
+  const { person: dmPeerPerson, isLoading: dmPeerPersonLoading } =
+    usePersonById({
+      id: peerPersonId ?? undefined,
+    });
   const peerPersonIds = useMemo(
     () => (peerPersonId ? [peerPersonId] : []),
     [peerPersonId],
@@ -6076,13 +6060,27 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               : undefined
           }
           titleStart={
-            isDirectConversation &&
-            (peerMemberSpaces.length > 0 || peerMemberSpacesLoading) ? (
-              <MemberSpaceIcons
-                spaces={peerMemberSpaces}
-                overflowHref={peerSpacesOverflowHref}
-                isLoading={peerMemberSpacesLoading}
-                size={24}
+            isDirectConversation ? (
+              <PersonAvatar
+                avatarSrc={dmPeerPerson?.avatarUrl ?? undefined}
+                userName={
+                  coherenceTitle?.trim() ||
+                  [dmPeerPerson?.name, dmPeerPerson?.surname]
+                    .filter(Boolean)
+                    .join(' ')
+                    .trim() ||
+                  undefined
+                }
+                personId={peerPersonId ?? undefined}
+                matrixUserId={
+                  (peerPersonId
+                    ? peerPersonIdToMatrixUserId[peerPersonId]
+                    : null) ??
+                  dmPeerUserId ??
+                  undefined
+                }
+                size="md"
+                isLoading={dmPeerPersonLoading || peerMatrixIdsLoading}
               />
             ) : null
           }
@@ -6096,12 +6094,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     {
                       value: 'space',
                       label: t('spaceRoomTitle'),
+                      iconSrc: resolveSpaceDisplayLogoUrl(
+                        space,
+                        resolvedTheme === 'dark' ? 'dark' : 'light',
+                      ),
                       unreadCount: spaceChannelUnread.space.count,
                       unreadCountIsCapped: spaceChannelUnread.space.capped,
                     },
                     {
                       value: 'ecosystem',
                       label: t('ecosystemRoomTitle'),
+                      iconSrc: resolveSpaceDisplayLogoUrl(
+                        rootSpace ?? space,
+                        resolvedTheme === 'dark' ? 'dark' : 'light',
+                      ),
                       unreadCount: spaceChannelUnread.ecosystem.count,
                       unreadCountIsCapped: spaceChannelUnread.ecosystem.capped,
                     },

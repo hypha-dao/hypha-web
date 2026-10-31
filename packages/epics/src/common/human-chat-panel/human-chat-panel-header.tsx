@@ -40,6 +40,8 @@ type RoomChoiceOption = {
   /** Unread message count for this channel. */
   unreadCount?: number;
   unreadCountIsCapped?: boolean;
+  /** Rounded logo for this channel (space / ecosystem). Falls back to the outline icon. */
+  iconSrc?: string | null;
 };
 
 type HumanChatPanelHeaderProps = {
@@ -57,7 +59,7 @@ type HumanChatPanelHeaderProps = {
   mark?: string;
   /** Icon-only title. Hover shows the label (network room). */
   iconTitle?: string;
-  /** Sits before the title — e.g. peer space icons on a direct chat. */
+  /** Sits before the title — e.g. peer avatar on a direct chat. */
   titleStart?: ReactNode;
   /** Extra header actions (group rename/archive). Same 36px control row. */
   trailingEnd?: ReactNode;
@@ -180,7 +182,15 @@ export function HumanChatPanelHeader({
                             : 'bg-background text-foreground',
                         )}
                       >
-                        {Icon ? (
+                        {option.iconSrc?.trim() ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- remote space logos; Avatar-sized chrome
+                          <img
+                            src={option.iconSrc.trim()}
+                            alt=""
+                            aria-hidden
+                            className="h-5 w-5 rounded-full object-cover"
+                          />
+                        ) : Icon ? (
                           <Icon
                             className="h-4 w-4"
                             strokeWidth={1.5}

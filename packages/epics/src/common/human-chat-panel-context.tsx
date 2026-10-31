@@ -56,7 +56,7 @@ export type FocusedSpaceChat = {
   description: string | null;
 };
 
-/** Peer in a person-to-person room — drives space icons in the chat header. */
+/** Peer in a person-to-person room — drives the chat header avatar. */
 export type CoherencePeerPerson = {
   slug: string;
   address?: string | null;
