@@ -133,6 +133,8 @@ import { useChatRoomTyping } from './human-chat-panel/use-chat-room-typing';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { applyConversationRoomTitle } from '../people/components/my-connections';
+import { GroupFaces } from '../people/components/group-faces';
+import type { GroupFace } from '../people/components/member-connections';
 import { PersonAvatar } from '../people/components/person-avatar';
 import { MemberHomeMark } from '../people/components/member-home-mark';
 import {
@@ -5174,6 +5176,54 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     peerPersonIdToMatrixUserId,
   ]);
 
+  /** Same overlapping faces as the Messages group row — not the solo person glyph. */
+  const groupChatFaces = useMemo((): GroupFace[] | null => {
+    if (!isDirectConversation || !currentUserId) return null;
+    const room = client && roomId ? client.getRoom(roomId) : null;
+    if (!room || !isPeopleGroupChatRoom(room)) return null;
+    const others = dmOtherHumanMembers(room, currentUserId).slice(0, 2);
+    const faces: GroupFace[] = others.map((member) => {
+      const userId = member.userId?.trim() || '';
+      const name =
+        pickUserVisibleMemberLabel(
+          userId,
+          member.name,
+          member.rawDisplayName,
+        ) ||
+        userId ||
+        '?';
+      const fromRoster = userId
+        ? matrixUserIdToPersonAvatar.get(userId)?.trim()
+        : undefined;
+      const fromMatrix = matrixMemberAvatarSquare(client, roomId, userId, 64);
+      return {
+        name,
+        userId: userId || undefined,
+        avatarUrl: fromRoster || fromMatrix,
+      };
+    });
+    if (faces.length >= 2) return faces;
+    const titleParts = (groupTitle ?? coherenceTitle ?? '')
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
+    for (const name of titleParts) {
+      if (faces.length >= 2) break;
+      if (faces.some((face) => face.name === name)) continue;
+      faces.push({ name });
+    }
+    return faces.length > 0 ? faces : null;
+  }, [
+    isDirectConversation,
+    currentUserId,
+    client,
+    roomId,
+    mentionMembershipEpoch,
+    matrixUserIdToPersonAvatar,
+    groupTitle,
+    coherenceTitle,
+  ]);
+
   const dmPeerReadUpToEventId = useMemo(() => {
     if (!dmPeerUserId || !client || !roomId) return null;
     const room = client.getRoom(roomId);
@@ -6299,7 +6349,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               : undefined
           }
           titleStart={
-            isDirectConversation ? (
+            isDirectConversation && groupChatFaces ? (
+              <GroupFaces faces={groupChatFaces} size="header" />
+            ) : isDirectConversation ? (
               <PersonAvatar
                 avatarSrc={dmPeerPerson?.avatarUrl ?? undefined}
                 userName={

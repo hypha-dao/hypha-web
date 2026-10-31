@@ -152,6 +152,7 @@ import {
 } from './messages-inbox';
 import { type PresenceLevel } from './member-presence';
 import { MemberHomeMark } from './member-home-mark';
+import { GroupFaces } from './group-faces';
 import { PersonAvatar } from './person-avatar';
 import { useMemberPresence } from './use-member-presence';
 
@@ -3381,36 +3382,6 @@ export function MyConnections({
         </div>
       ) : null}
     </div>
-  );
-}
-
-function GroupFaces({ faces }: { faces: GroupFace[] }) {
-  const shown = faces.slice(0, 2);
-  return (
-    <span className="relative block h-10 w-10 shrink-0" aria-hidden>
-      {shown.map((face, index) => (
-        <span
-          key={`${face.name}-${index}`}
-          className={cn(
-            'absolute block size-[22px] overflow-hidden rounded-full bg-neutral-3 ring-2 ring-background group-hover/row:ring-accent-2 group-data-[active=true]/row:ring-accent-2',
-            index === 0 ? 'top-0 left-0' : 'right-0 bottom-0',
-          )}
-        >
-          {face.avatarUrl ? (
-            <img
-              src={face.avatarUrl}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span className="flex h-full w-full items-center justify-center text-[10px] font-medium text-neutral-11">
-              {face.name.replace(/^@/, '').trim().charAt(0).toUpperCase() ||
-                '?'}
-            </span>
-          )}
-        </span>
-      ))}
-    </span>
   );
 }
 
