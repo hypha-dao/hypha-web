@@ -24,7 +24,9 @@ describe('network room join guard', () => {
   it('does not inherit a DHO space slug while on Network in space mode', () => {
     expect(source).toContain('routeSpaceSlugFromLocation');
     expect(source).toContain("onNetworkPage && mode === 'space'");
-    expect(source).toContain('Landing on Network must never keep a DHO space');
+    expect(source).toContain(
+      'Entering Network clears leftover DHO / coherence space chrome',
+    );
   });
 
   it('locks timeline paints to the intended room before join awaits (HE → HUMAI)', () => {
@@ -41,7 +43,15 @@ describe('network room join guard', () => {
   it('shows the mycelium mark beside the network globe (no external-link arrow)', () => {
     expect(source).toContain('MemberHomeMark');
     expect(source).toContain(
-      "coherenceChannel === 'network' ||\n              (mode === 'space' && !spaceSlug?.trim())",
+      "coherenceChannel === 'network' || isNetworkSpaceChat",
     );
+  });
+
+  it('treats Home / Messages space mode without a slug as not the network room', () => {
+    expect(source).toContain(
+      "const isNetworkSpaceChat = onNetworkPage && mode === 'space'",
+    );
+    expect(source).toContain('!isNetworkSpaceChat');
+    expect(source).toContain('Leaving Network clears that join sentinel');
   });
 });

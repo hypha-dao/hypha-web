@@ -1237,12 +1237,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     !coherenceChannel;
   const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
   const onNetworkPage = isNetworkPath(pathname);
+  // Shared network room lives only on `/{lang}/network` in space mode.
+  // Home / Messages / wallet also have mode `space` and no slug — do not treat
+  // those as the network room (that caused hangs before the path guard, and
+  // empty Network chrome after it).
+  const isNetworkSpaceChat = onNetworkPage && mode === 'space';
   // Network page space-mode is only the shared network room — never inherit a
   // leftover DHO slug (route or coherence) or space/ecosystem tabs appear with
   // that space's timeline under the Network chrome.
   const spaceSlug = isDirectConversation
     ? undefined
-    : onNetworkPage && mode === 'space'
+    : isNetworkSpaceChat
     ? undefined
     : coherencePublic
     ? coherenceSpaceSlug?.trim() || routeSpaceSlug || undefined
@@ -2902,7 +2907,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           labelFor: resolveMemberLabel,
         })
       : rawMentionCandidates;
-    const networkRoom = mode === 'space' && !spaceSlug?.trim();
+    const networkRoom = isNetworkSpaceChat || coherenceChannel === 'network';
     const agentIcon: ChatMentionAgentIcon =
       networkRoom || isDirectConversation || !spaceSlug?.trim()
         ? { kind: 'network' }
@@ -2920,8 +2925,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       agentIcon,
     );
   }, [
+    coherenceChannel,
     currentUserId,
     isDirectConversation,
+    isNetworkSpaceChat,
     isSignalThread,
     mode,
     rawMentionCandidates,
@@ -3890,15 +3897,35 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     resetChatStateOnAuthDrop();
   }, [routeSpaceSlug, exitCoherenceChat, resetChatStateOnAuthDrop]);
 
-  // Landing on Network must never keep a DHO space / ecosystem / public
-  // timeline or room tabs. DMs stay open; everything else yields to the
-  // shared network room join effect.
+  // Entering Network clears leftover DHO / coherence space chrome so the
+  // shared room can join. Leaving Network clears that join sentinel so Home
+  // does not keep Network chrome / an empty composer with no join.
   const wasNetworkPathRef = useRef(onNetworkPage);
   useEffect(() => {
     const wasNetwork = wasNetworkPathRef.current;
     wasNetworkPathRef.current = onNetworkPage;
-    if (!onNetworkPage || wasNetwork) return;
+    if (wasNetwork === onNetworkPage) return;
     if (isDirectConversation) return;
+
+    if (!onNetworkPage) {
+      if (joinedRef.current === NETWORK_JOINED_SENTINEL) {
+        joinEpochRef.current += 1;
+        const previousRoomId = roomIdRef.current?.trim();
+        if (previousRoomId) {
+          matrixRef.current.unregisterRoomListener(previousRoomId);
+        }
+        joinedRef.current = null;
+        openingTimelineRoomIdRef.current = null;
+        messagesRoomIdRef.current = null;
+        roomIdRef.current = null;
+        setRoomId(null);
+        setMessages([]);
+        setPaintedRoomId(null);
+        setError(null);
+        setIsJoining(false);
+      }
+      return;
+    }
 
     joinEpochRef.current += 1;
     setSpaceRoom('space');
@@ -6199,7 +6226,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           mentionUserIds,
           context: isDirectConversation
             ? { kind: 'dm' }
-            : mode === 'space' && !spaceSlug?.trim()
+            : isNetworkSpaceChat
             ? { kind: 'network' }
             : mode === 'space' && spaceRoom === 'ecosystem'
             ? { kind: 'ecosystem', spaceSlug }
@@ -6343,11 +6370,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               : ''
           }
           description={dmPeerPresenceDescription}
-          iconTitle={
-            mode === 'space' && !spaceSlug?.trim()
-              ? t('networkRoomTitle')
-              : undefined
-          }
+          iconTitle={isNetworkSpaceChat ? t('networkRoomTitle') : undefined}
           titleStart={
             isDirectConversation && groupChatFaces ? (
               <GroupFaces faces={groupChatFaces} size="header" />
@@ -6373,8 +6396,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 size="toolbar"
                 isLoading={dmPeerPersonLoading || peerMatrixIdsLoading}
               />
-            ) : coherenceChannel === 'network' ||
-              (mode === 'space' && !spaceSlug?.trim()) ? (
+            ) : coherenceChannel === 'network' || isNetworkSpaceChat ? (
               // Network page + Messages network row: mycelium mark (no
               // external-link arrow) left of the globe / room title chrome.
               <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-border bg-background text-foreground">
@@ -6755,7 +6777,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           </div>
         ) : !spaceSlug?.trim() &&
           !isDirectConversation &&
-          mode !== 'space' &&
+          !isNetworkSpaceChat &&
           !coherencePublic &&
           // Inbox channel opens (network / space / …) set `coherenceChannel` and
           // often a room id — they are not the "pick a space" empty state.
@@ -7108,7 +7130,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         dmPeerUserId ? isDmMessageReadByPeer : undefined
                       }
                       welcomeText={
-                        mode === 'space' && !spaceSlug?.trim()
+                        isNetworkSpaceChat
                           ? t('networkWelcome')
                           : mode === 'space' && spaceRoom === 'ecosystem'
                           ? t('ecosystemWelcome')
@@ -7129,7 +7151,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                           : undefined
                       }
                       welcomeSenderName={
-                        mode === 'space' && !spaceSlug?.trim()
+                        isNetworkSpaceChat
                           ? t('networkRoomTitle')
                           : mode === 'space' && spaceRoom === 'ecosystem'
                           ? t('ecosystemRoomTitle')
@@ -7229,7 +7251,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       {activeTab === 'chat' &&
         (Boolean(spaceSlug?.trim()) ||
           isDirectConversation ||
-          (mode === 'space' && !spaceSlug?.trim())) &&
+          isNetworkSpaceChat) &&
         !showAuthPrompt &&
         !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 border-t border-border/70 bg-page-background p-0 dark:bg-background-2">
