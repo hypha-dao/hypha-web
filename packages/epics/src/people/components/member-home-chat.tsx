@@ -79,7 +79,12 @@ import { MemberHomeOnboardingCards } from './member-home-onboarding-cards';
 import { generatedVisualsFromParts } from '../../common/onboarding-visual-assets';
 import { useOnboardingSpaceSignature } from '../../common/use-onboarding-space-signature';
 import { MemberHomeMark } from './member-home-mark';
-import { memberHomeReplyReady } from './member-home-phase';
+import {
+  memberHomeReplyReady,
+  memberHomeShouldStartArrival,
+  memberHomeShowArrivalMask,
+  memberHomeThreadHasVisibleContent,
+} from './member-home-phase';
 import { HomeWave } from './member-home-wave';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { PersonAvatar } from './person-avatar';
@@ -734,6 +739,8 @@ export function MemberHomeChat({
   const [widgets, setWidgets] = useState<HomeWidget[]>([]);
   const opened = useRef(false);
   const startedTalk = useRef(false);
+  /** One late kick when thread items arrive after first paint with an empty screen. */
+  const lateArrivalKicked = useRef(false);
   const pendingStart = useRef<
     | { kind: 'return'; text: string }
     | {
@@ -1394,27 +1401,39 @@ export function MemberHomeChat({
     opened.current = true;
     bindHomePerson(intelligence.person.slug);
     const stored = readHomeThread();
+    // Orphan hidden arrivals (interrupted stream) are not visible content —
+    // clear them so we can greet again instead of freezing the card mask.
+    const usableStored = memberHomeThreadHasVisibleContent(stored)
+      ? stored
+      : [];
+    if (usableStored.length === 0 && stored.length > 0) {
+      writeHomeThread([]);
+    }
     const returned = consumeHomeReturn();
     const now = Date.now();
     const lastSeen = readHomeLastSeen();
     const welcome = shouldWelcomeHomeReturn(now, lastSeen);
     const part = homePartOfDay(new Date(now));
-    if (stored.length > 0) setMessages(stored);
+    if (usableStored.length > 0) setMessages(usableStored);
     if (returned != null) {
       pendingStart.current = {
         kind: 'return',
         text: homeReturnText(returned),
       };
-    } else if (!memberHomeTalkIsResting(stored) && welcome) {
-      // After login or ~2h away: welcome them back (or greet on first open).
-      // Returning from an action uses consumeHomeReturn above. Remounts within
-      // the window do not re-send — last-seen blocks the spam.
-      const visit =
-        lastSeen == null ? ('first_open' as const) : ('welcome_back' as const);
-      if (visit === 'welcome_back' || threadItems.length > 0) {
+    } else {
+      // Empty screen + work waiting must still arrive inside the 2h window.
+      // Returning from an action uses consumeHomeReturn above.
+      const start = memberHomeShouldStartArrival({
+        hasVisibleContent: usableStored.length > 0,
+        talkResting: memberHomeTalkIsResting(usableStored),
+        welcome,
+        threadItemCount: threadItems.length,
+        lastSeen,
+      });
+      if (start) {
         pendingStart.current = {
           kind: 'arrival',
-          visit,
+          visit: start.visit,
           partOfDay: part,
         };
       }
@@ -1438,9 +1457,12 @@ export function MemberHomeChat({
     pendingStart.current = null;
     if (!pending) return;
     if (pending.kind === 'return') {
+      lateArrivalKicked.current = true;
       void send(pending.text, true);
       return;
     }
+    // Open already queued an arrival — do not also late-kick the same empty screen.
+    lateArrivalKicked.current = true;
     homeVisitCue.current = {
       visit: pending.visit,
       partOfDay: pending.partOfDay,
@@ -1459,6 +1481,29 @@ export function MemberHomeChat({
         : t('homeArrival');
     void send(ask, true);
   }, [send, t, voiceHydrated]);
+
+  // Shell → full intelligence can land thread items after open already ran
+  // with an empty walk. Kick one arrival so the card mask is not idle forever.
+  useEffect(() => {
+    if (!voiceHydrated || !opened.current || !startedTalk.current) return;
+    if (lateArrivalKicked.current || pendingStart.current) return;
+    if (isStreaming) return;
+    if (threadItems.length === 0) return;
+    if (memberHomeThreadHasVisibleContent(homeMessages)) return;
+    if (memberHomeTalkIsResting(homeMessages)) return;
+    lateArrivalKicked.current = true;
+    const part = homePartOfDay(new Date());
+    homeVisitCue.current = { visit: 'welcome_back', partOfDay: part };
+    const whenKey =
+      part === 'morning'
+        ? 'homeWhenMorning'
+        : part === 'afternoon'
+        ? 'homeWhenAfternoon'
+        : part === 'evening'
+        ? 'homeWhenEvening'
+        : 'homeWhenNight';
+    void send(t('homeWelcomeBackAsk', { when: t(whenKey) }), true);
+  }, [homeMessages, isStreaming, send, t, threadItems.length, voiceHydrated]);
 
   useEffect(() => {
     const fromMessages = memberHomeItemMemory(threadItems, homeMessages);
@@ -1674,17 +1719,11 @@ export function MemberHomeChat({
       : orientation === 'investor'
       ? t('firstPromptAskInvestor')
       : t('firstPromptAskMember');
-  const showArrivalMask = useMemo(() => {
-    if (freshStart) return false;
-    if (error) return false;
-    if (liveReplyPending) return true;
-    const hasVisible = homeMessages.some((message) => {
-      if (message.metadata?.homeArrival) return false;
-      if (message.role === 'user') return true;
-      return Boolean(messageText(message));
-    });
-    return !hasVisible;
-  }, [error, freshStart, homeMessages, liveReplyPending]);
+  const showArrivalMask = memberHomeShowArrivalMask({
+    freshStart,
+    hasError: Boolean(error),
+    liveReplyPending,
+  });
 
   for (const message of homeMessages) {
     if (seenMotionIds.current.has(message.id)) continue;
