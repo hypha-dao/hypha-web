@@ -20,4 +20,10 @@ describe('network room join guard', () => {
     expect(guardAt).toBeGreaterThan(-1);
     expect(guardAt).toBeLessThan(ensureAt);
   });
+
+  it('does not inherit a DHO space slug while on Network in space mode', () => {
+    expect(source).toContain('routeSpaceSlugFromLocation');
+    expect(source).toContain("onNetworkPage && mode === 'space'");
+    expect(source).toContain('Landing on Network must never keep a DHO space');
+  });
 });

@@ -156,7 +156,10 @@ import {
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { buildDialogHref } from '../notifications/dialog-url';
-import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
+import {
+  getDhoSpaceSlugFromPathname,
+  routeSpaceSlugFromLocation,
+} from './get-dho-space-slug-from-pathname';
 import { isNetworkPath } from './use-is-space-context';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { getDhoPathOverview, getSignalPath } from './get-path-function';
@@ -1177,11 +1180,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Root-layout mounts often miss nested `useParams().id` — pathname is authoritative.
-  const routeSpaceSlug =
-    (typeof params?.id === 'string' ? params.id.trim() : '') ||
-    getDhoSpaceSlugFromPathname(pathname) ||
-    '';
+  // Pathname is authoritative. Never prefer a stale `params.id` from a prior
+  // DHO route after navigating to Network / Home (wrong space rooms in panel).
+  const routeSpaceSlug = routeSpaceSlugFromLocation({
+    pathname,
+    paramId: typeof params?.id === 'string' ? params.id : null,
+  });
 
   const matrix = useMatrix();
   const {
@@ -1230,7 +1234,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     !coherenceSlug?.trim() &&
     !coherenceChannel;
   const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
+  const onNetworkPage = isNetworkPath(pathname);
+  // Network page space-mode is only the shared network room — never inherit a
+  // leftover DHO slug (route or coherence) or space/ecosystem tabs appear with
+  // that space's timeline under the Network chrome.
   const spaceSlug = isDirectConversation
+    ? undefined
+    : onNetworkPage && mode === 'space'
     ? undefined
     : coherencePublic
     ? coherenceSpaceSlug?.trim() || routeSpaceSlug || undefined
@@ -3030,18 +3040,29 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const openingTimelineRoomIdRef = useRef<string | null>(null);
   const syncRoomMessages = useCallback((targetRoomId: string) => {
     const wanted = openingTimelineRoomIdRef.current?.trim();
-    if (wanted && wanted !== targetRoomId.trim()) return;
-    const existing = matrixRef.current.getRoomMessages(targetRoomId);
+    const target = targetRoomId.trim();
+    if (!target) return;
+    // Never paint another room's timeline into the open shell (space ↔ network,
+    // HE → HUMAI, etc.). Prefer the join target; else the committed room id.
+    if (wanted) {
+      if (wanted !== target) return;
+    } else if (
+      roomIdRef.current?.trim() &&
+      roomIdRef.current.trim() !== target
+    ) {
+      return;
+    }
+    const existing = matrixRef.current.getRoomMessages(target);
     if (!existing) return;
     setMessages((prev) => {
       if (
         existing.length === 0 &&
         prev.length > 0 &&
-        messagesRoomIdRef.current === targetRoomId
+        messagesRoomIdRef.current === target
       ) {
         return prev;
       }
-      messagesRoomIdRef.current = targetRoomId;
+      messagesRoomIdRef.current = target;
       return sortMessagesChronologically(
         existing.map((m) =>
           toUIMessage(
@@ -3050,7 +3071,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             resolveMemberLabelRef.current,
             currentUserAvatarUrlRef.current,
             resolveMemberAvatarRef.current,
-            targetRoomId,
+            target,
             matrixRef.current.client ?? null,
             formatSignalTeamNoticeRef.current,
             systemSenderLabelRef.current,
@@ -3859,6 +3880,46 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     exitCoherenceChat();
     resetChatStateOnAuthDrop();
   }, [routeSpaceSlug, exitCoherenceChat, resetChatStateOnAuthDrop]);
+
+  // Landing on Network must never keep a DHO space / ecosystem / public
+  // timeline or room tabs. DMs stay open; everything else yields to the
+  // shared network room join effect.
+  const wasNetworkPathRef = useRef(onNetworkPage);
+  useEffect(() => {
+    const wasNetwork = wasNetworkPathRef.current;
+    wasNetworkPathRef.current = onNetworkPage;
+    if (!onNetworkPage || wasNetwork) return;
+    if (isDirectConversation) return;
+
+    joinEpochRef.current += 1;
+    setSpaceRoom('space');
+    if (
+      mode === 'coherence' ||
+      coherenceChannel ||
+      coherenceSpaceSlug?.trim()
+    ) {
+      closeCoherenceChat();
+    }
+    const previousRoomId = roomIdRef.current?.trim();
+    if (previousRoomId) {
+      matrixRef.current.unregisterRoomListener(previousRoomId);
+    }
+    joinedRef.current = null;
+    openingTimelineRoomIdRef.current = null;
+    messagesRoomIdRef.current = null;
+    roomIdRef.current = null;
+    setRoomId(null);
+    setMessages([]);
+    setError(null);
+    setIsJoining(false);
+  }, [
+    onNetworkPage,
+    isDirectConversation,
+    mode,
+    coherenceChannel,
+    coherenceSpaceSlug,
+    closeCoherenceChat,
+  ]);
 
   useEffect(() => {
     hasLoadedCoherenceMessagesRef.current = false;

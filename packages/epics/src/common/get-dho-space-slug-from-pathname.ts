@@ -16,3 +16,28 @@ export function getDhoSpaceSlugFromPathname(
   const root = pathname.match(/^\/dho\/([^/]+)/);
   return root?.[1];
 }
+
+/** True for `/{lang}/dho/...` (and rare `/dho/...`) space routes. */
+export function isDhoSpacePath(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
+  return (
+    /^\/[^/]+\/dho(?:\/|$)/.test(pathname) || /^\/dho(?:\/|$)/.test(pathname)
+  );
+}
+
+/**
+ * Space slug for the human chat panel.
+ * Pathname wins. `params.id` is only a fallback on a real DHO URL — after
+ * navigating to `/network` or Home the root layout can still expose a stale
+ * `id`, which must not reopen that space's rooms.
+ */
+export function routeSpaceSlugFromLocation(input: {
+  pathname: string | null | undefined;
+  paramId?: string | null;
+}): string {
+  const fromPath = getDhoSpaceSlugFromPathname(input.pathname)?.trim() || '';
+  if (fromPath) return fromPath;
+  const param = input.paramId?.trim() || '';
+  if (!param || !isDhoSpacePath(input.pathname)) return '';
+  return param;
+}
