@@ -1439,14 +1439,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [coherenceRoomId]);
 
   useEffect(() => {
-    if (!isStartConversation) return;
-    // Opening Start-a-conversation must not keep a previous room id — the
-    // call toolbar would start a live session in that leftover room.
-    setRoomId(null);
-    setMessages([]);
-  }, [isStartConversation, coherenceTitle]);
-
-  useEffect(() => {
     if (mode !== 'coherence') {
       setSignalTeamPanelOpen(false);
     }
@@ -1473,9 +1465,24 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     uploadedCount?: number;
   }>(null);
   const joinedRef = useRef<string | null>(null);
+  // Bumped whenever the panel switches target (mode / room / start-conversation).
+  // In-flight join catches must not paint "Failed to join…" on a newer shell.
+  const joinEpochRef = useRef(0);
   const createRoomInFlightRef = useRef(
     new Map<string, Promise<{ roomId: string }>>(),
   );
+
+  useEffect(() => {
+    if (!isStartConversation) return;
+    // Opening Start-a-conversation must not keep a previous room id — the
+    // call toolbar would start a live session in that leftover room. Also
+    // drop a stale join error from a prior space/network/coherence attempt.
+    joinEpochRef.current += 1;
+    setRoomId(null);
+    setMessages([]);
+    setError(null);
+    setIsJoining(false);
+  }, [isStartConversation, coherenceTitle]);
   const createdRoomBySlugRef = useRef(new Map<string, string>());
 
   const getOrCreateCoherenceRoom = useCallback(
@@ -3946,6 +3953,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setMessages([]);
 
     let cancelled = false;
+    const joinEpoch = ++joinEpochRef.current;
     const {
       joinRoom,
       createRoom,
@@ -4059,7 +4067,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           }
         }
 
-        if (cancelled || !targetRoomId) return;
+        if (cancelled || joinEpochRef.current !== joinEpoch || !targetRoomId)
+          return;
         joinedRef.current = joinedKey;
         openingTimelineRoomIdRef.current = targetRoomId;
         roomIdRef.current = targetRoomId;
@@ -4069,7 +4078,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           () => cancelled || openingTimelineRoomIdRef.current !== targetRoomId,
         );
       } catch (err) {
-        if (!cancelled) {
+        if (!cancelled && joinEpochRef.current === joinEpoch) {
           console.error('[HumanRightPanel] Failed to join room:', err);
           setError('Failed to join chat room');
           setIsJoining(false);
@@ -4119,6 +4128,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setMessages([]);
 
     let cancelled = false;
+    const joinEpoch = ++joinEpochRef.current;
     const { ensureNetworkRoom } = matrixRef.current;
 
     const initSharedRoom = async () => {
@@ -4126,7 +4136,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setError(null);
       try {
         const { roomId: targetRoomId } = await ensureNetworkRoom();
-        if (cancelled) return;
+        if (cancelled || joinEpochRef.current !== joinEpoch) return;
         joinedRef.current = NETWORK_JOINED_SENTINEL;
         openingTimelineRoomIdRef.current = targetRoomId;
         roomIdRef.current = targetRoomId;
@@ -4136,7 +4146,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           () => cancelled || openingTimelineRoomIdRef.current !== targetRoomId,
         );
       } catch (err) {
-        if (!cancelled) {
+        if (!cancelled && joinEpochRef.current === joinEpoch) {
           console.error('[HumanRightPanel] Failed to join shared room:', err);
           setError('Failed to join chat room');
           setIsJoining(false);
@@ -4166,6 +4176,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     // Only act on actual mode transitions, not initial mount
     if (prevMode === mode) return;
+
+    // Invalidate any in-flight join from the previous mode.
+    joinEpochRef.current += 1;
 
     if (mode === 'coherence') {
       // Switching FROM space TO coherence — unregister space listener, clear state
@@ -4214,6 +4227,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (mode !== 'coherence' || !isMatrixAvailable || !isMatrixAuthenticated)
       return;
 
+    // DM shell with no room yet — do not join; a prior space/network join
+    // must not leave its error on this empty Start-a-conversation view.
+    if (isStartConversation) {
+      joinEpochRef.current += 1;
+      setIsJoining(false);
+      setError(null);
+      return;
+    }
+
     const openingSpaceSlug = coherenceSpaceSlug?.trim() || '';
     const previousRoomId = roomIdRef.current?.trim();
     if (previousRoomId) {
@@ -4253,6 +4275,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
 
     let cancelled = false;
+    const joinEpoch = ++joinEpochRef.current;
 
     const init = async () => {
       setError(null);
@@ -4402,7 +4425,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           );
         }
 
-        if (cancelled) return;
+        if (cancelled || joinEpochRef.current !== joinEpoch) return;
         openingTimelineRoomIdRef.current = targetRoomId;
         roomIdRef.current = targetRoomId;
         setRoomId(targetRoomId);
@@ -4533,6 +4556,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         // may recover only when the joined room is not the member channel.
         if (
           !cancelled &&
+          joinEpochRef.current === joinEpoch &&
           recovered &&
           recovered.getMyMembership() === 'join' &&
           recoveredIsPublic
@@ -4552,7 +4576,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           );
           return;
         }
-        if (!cancelled) {
+        if (!cancelled && joinEpochRef.current === joinEpoch) {
           console.error(
             '[HumanRightPanel] Failed to join coherence room:',
             err,
@@ -4572,6 +4596,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     mode,
+    isStartConversation,
     coherenceRoomId,
     coherenceTitle,
     coherenceSlug,
