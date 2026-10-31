@@ -8,7 +8,12 @@ import {
 } from '../matrix-chat-receipts';
 
 function roomStub(input: {
-  members?: Array<{ userId?: string; membership?: string }>;
+  members?: Array<{
+    userId?: string;
+    membership?: string;
+    name?: string;
+    rawDisplayName?: string;
+  }>;
   readUpTo?: Record<string, string | null>;
   ordering?: Record<string, number>;
 }) {
