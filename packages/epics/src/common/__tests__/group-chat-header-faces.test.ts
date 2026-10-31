@@ -20,6 +20,9 @@ describe('group chat header faces', () => {
   it('resolves header faces like the Messages list (getUser + Hypha roster)', () => {
     expect(panel).toContain('client.getUser(userId)?.avatarUrl');
     expect(panel).toContain('resolveMemberAvatar(userId)');
+    // DM group peers come from roomPeopleBySub, not only the space roster.
+    expect(panel).toContain('roomPeopleBySub.get(localpartSub)?.avatarUrl');
+    expect(panel).toContain('roomPeopleBySub.get(sub)');
     // Same mxcUrlToHttp shape as Messages `avatarHttp` — not the auth-media arity.
     expect(panel).toMatch(
       /function matrixMemberAvatarSquare[\s\S]*?mxcUrlToHttp\(mxc, px, px, 'crop'\)/,

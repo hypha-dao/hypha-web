@@ -2634,8 +2634,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       }
       const fromRoster = matrixUserIdToPersonAvatar.get(userId)?.trim();
       if (fromRoster) return fromRoster;
+      // Case-insensitive MXID key (Messages `facesWithProfiles` lowercases).
+      const fromRosterCi = matrixUserIdToPersonAvatar
+        .get(userId.toLowerCase())
+        ?.trim();
+      if (fromRosterCi) return fromRosterCi;
       const localpartSub = matrixLocalpartToPrivySub(userId);
       if (localpartSub) {
+        // DM / group peers are often not on the open space roster — use the
+        // room-member Hypha profiles Messages already loads for faces.
+        const fromRoom = roomPeopleBySub.get(localpartSub)?.avatarUrl?.trim();
+        if (fromRoom) return fromRoom;
         const bySub = personAvatarByPrivySub.get(localpartSub)?.trim();
         if (bySub) return bySub;
       }
@@ -2647,6 +2656,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       matrixLocalpartToPrivySub,
       matrixUserIdToPersonAvatar,
       personAvatarByPrivySub,
+      roomPeopleBySub,
     ],
   );
 
@@ -5213,22 +5223,33 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const others = dmOtherHumanMembers(room, currentUserId).slice(0, 2);
     const faces: GroupFace[] = others.map((member) => {
       const userId = member.userId?.trim() || '';
+      const sub = userId ? matrixUserIdToCanonicalPrivySub(userId) : null;
+      const roomPerson = sub ? roomPeopleBySub.get(sub) : undefined;
+      const hyphaName = roomPerson
+        ? [roomPerson.name, roomPerson.surname]
+            .filter(Boolean)
+            .join(' ')
+            .trim() ||
+          roomPerson.nickname?.trim() ||
+          ''
+        : '';
       const name =
+        hyphaName ||
         pickUserVisibleMemberLabel(
           userId,
           member.name,
           member.rawDisplayName,
         ) ||
-        userId ||
+        // Never use a raw MXID — Privy localparts rendered as a lone "P".
         '?';
-      // Hypha roster (space + Privy sub) first, then the same Matrix sources
-      // the Messages list uses — room member MXC and `client.getUser`.
-      const fromRoster = userId ? resolveMemberAvatar(userId) : undefined;
+      // Hypha room/space profile first (Messages `facesWithProfiles`), then
+      // Matrix member / getUser MXC — same sources as the inbox list.
+      const fromHypha = userId ? resolveMemberAvatar(userId) : undefined;
       const fromMatrix = matrixMemberAvatarSquare(client, roomId, userId, 64);
       return {
         name,
         userId: userId || undefined,
-        avatarUrl: fromRoster || fromMatrix,
+        avatarUrl: fromHypha || fromMatrix,
       };
     });
     if (faces.length >= 2) return faces;
@@ -5249,6 +5270,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     roomId,
     mentionMembershipEpoch,
     resolveMemberAvatar,
+    roomPeopleBySub,
     groupTitle,
     coherenceTitle,
   ]);
@@ -6372,7 +6394,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               : ''
           }
           description={dmPeerPresenceDescription}
-          iconTitle={isNetworkSpaceChat ? t('networkRoomTitle') : undefined}
+          iconTitle={
+            isNetworkSpaceChat || coherenceChannel === 'network'
+              ? t('networkRoomTitle')
+              : undefined
+          }
           titleStart={
             isDirectConversation && groupChatFaces ? (
               <GroupFaces faces={groupChatFaces} size="header" />
@@ -6404,8 +6430,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 isLoading={dmPeerPersonLoading || peerMatrixIdsLoading}
               />
             ) : coherenceChannel === 'network' || isNetworkSpaceChat ? (
-              // Network page + Messages network row: mycelium mark (no
-              // external-link arrow) left of the globe / room title chrome.
+              // Mycelium mark left of "Network" + earth globe (iconTitle chrome).
               <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-border bg-background text-foreground">
                 <MemberHomeMark className="h-4 w-4" />
               </span>
