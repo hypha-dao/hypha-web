@@ -54,6 +54,23 @@ describe('dmPeerMatrixUserId', () => {
     });
     expect(dmPeerMatrixUserId(room, '@me:hypha')).toBeNull();
   });
+
+  it('ignores Hypha bots when finding the single peer', () => {
+    const room = roomStub({
+      members: [
+        { userId: '@me:matrix.hypha.earth', membership: 'join' },
+        { userId: '@peer:matrix.hypha.earth', membership: 'join' },
+        {
+          userId: '@hypha_bot:matrix.hypha.earth',
+          membership: 'join',
+          name: 'hypha_bot',
+        },
+      ],
+    });
+    expect(dmPeerMatrixUserId(room, '@me:matrix.hypha.earth')).toBe(
+      '@peer:matrix.hypha.earth',
+    );
+  });
 });
 
 describe('messageIsReadByPeer', () => {

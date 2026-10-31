@@ -220,22 +220,22 @@ export async function readMemberPresenceDetail(
   }
   const live = liveStatus ? presenceFromMatrixStatus(liveStatus) : null;
   const cached = cachedPresence(client, matrixUserId);
-  const fromMessages = presenceFromRecency(
-    latestMessageTs(client, matrixUserId),
-    now,
-  );
+  const messageTs = latestMessageTs(client, matrixUserId);
+  const fromMessages = presenceFromRecency(messageTs, now);
   const self =
     client.getUserId?.() === matrixUserId ? ('active' as const) : null;
-  // Dots still use message recency; the header must not invent last-seen
-  // from chat activity when presence itself is unavailable.
+  // Dots still use message recency. Header last-seen prefers Matrix
+  // `last_active_ago`, then falls back to the latest message only when we
+  // already know presence (so a failed probe never invents a time).
   const level = preferPresence([live, cached, fromMessages, self]);
+  const presenceKnown = Boolean(liveStatus || cached || self);
   const lastActiveAt =
     (liveStatus ? lastActiveAtFromStatus(liveStatus, now) : null) ??
-    cachedLastActiveAt(client, matrixUserId, now);
+    cachedLastActiveAt(client, matrixUserId, now) ??
+    (presenceKnown && messageTs != null && messageTs > 0 ? messageTs : null);
   // Successful getPresence (even offline) is always known. A failed probe
   // with no cache stays unknown so the header stays empty.
-  if (liveStatus) return { level, lastActiveAt, known: true };
-  if (cached || self) return { level, lastActiveAt, known: true };
+  if (presenceKnown) return { level, lastActiveAt, known: true };
   return { level, lastActiveAt: null, known: false };
 }
 

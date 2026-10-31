@@ -2834,7 +2834,10 @@ export function MyConnections({
         row.inbox.signalSlug ?? '',
         null,
         spaceSlug,
-        { public: row.inbox.kind === 'space-public' },
+        {
+          public: row.inbox.kind === 'space-public',
+          channel: row.inbox.kind,
+        },
       );
       return;
     }

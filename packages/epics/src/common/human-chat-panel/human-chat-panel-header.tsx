@@ -137,8 +137,8 @@ export function HumanChatPanelHeader({
         ) : null}
         {trailingEnd}
       </div>
-      <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-        {titleStart}
+      <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
+        {titleStart ? <div className="shrink-0">{titleStart}</div> : null}
         {mark && !roomChoice ? (
           <span
             className="inline-flex shrink-0 border border-foreground bg-foreground px-3 py-1 text-1 text-background"
@@ -222,7 +222,7 @@ export function HumanChatPanelHeader({
             <Tooltip>
               <TooltipTrigger asChild>
                 <span
-                  className="inline-flex h-[36px] w-[36px] items-center justify-center border border-foreground bg-foreground text-background"
+                  className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center border border-foreground bg-foreground text-background"
                   aria-label={iconTitle}
                 >
                   <Globe2 className="h-4 w-4" strokeWidth={1.5} aria-hidden />
@@ -232,18 +232,26 @@ export function HumanChatPanelHeader({
             </Tooltip>
           </TooltipProvider>
         ) : displayTitle ? (
-          <div className="flex min-w-0 flex-col items-end gap-0.5">
-            <span className="min-w-0 truncate text-sm font-medium text-foreground">
+          <div className="flex min-w-0 flex-1 flex-col items-end gap-0.5 overflow-hidden">
+            <span
+              className="w-full truncate text-right text-sm font-medium text-foreground"
+              title={displayTitle}
+            >
               {displayTitle}
             </span>
             {displayDescription ? (
-              <p className="craft-meta max-w-full truncate text-right">
+              <p
+                className="craft-meta w-full truncate text-right"
+                title={displayDescription}
+              >
                 {displayDescription}
               </p>
             ) : null}
           </div>
         ) : displayDescription ? (
-          <p className="craft-meta line-clamp-1">{displayDescription}</p>
+          <p className="craft-meta min-w-0 flex-1 truncate text-right">
+            {displayDescription}
+          </p>
         ) : null}
       </div>
     </div>

@@ -73,6 +73,7 @@ import {
   applySignalCreatorToChatAuthor,
   isSignalDescriptionAnchorMessage,
   usePersonById,
+  DEFAULT_SPACE_AVATAR_IMAGE,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -133,6 +134,7 @@ import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { applyConversationRoomTitle } from '../people/components/my-connections';
 import { PersonAvatar } from '../people/components/person-avatar';
+import { MemberHomeMark } from '../people/components/member-home-mark';
 import {
   chatRoomAliasLocalpart,
   computeAggregateUnreadMentionCount,
@@ -1198,6 +1200,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceSpaceSlug,
     coherencePublic,
     coherencePeerPerson,
+    coherenceChannel,
     open,
     closeCoherenceChat,
     openCoherenceChat,
@@ -1209,9 +1212,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   // inherit a space from the route or a leftover home slug. Map public chat
   // also opens with an empty signal slug; it is not a DM and must still load
   // the selected space so `spaces.chatRoomId` can be checked — prefer the
-  // opened space over the current DHO route.
+  // opened space over the current DHO route. Messages channel rows pass
+  // `coherenceChannel` so space / ecosystem / network are not treated as DMs.
   const isDirectConversation =
-    mode === 'coherence' && !coherencePublic && !coherenceSlug?.trim();
+    mode === 'coherence' &&
+    !coherencePublic &&
+    !coherenceSlug?.trim() &&
+    !coherenceChannel;
   const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
   const spaceSlug = isDirectConversation
     ? undefined
@@ -4944,18 +4951,26 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [client, roomId, currentUserId, unreadBump]);
 
   const dmPeerUserId = useMemo(() => {
-    if (!isDirectConversation || !client || !roomId || !currentUserId) {
+    if (!isDirectConversation || !currentUserId) {
       return null;
     }
-    const room = client.getRoom(roomId);
-    if (!room) return null;
-    return dmPeerMatrixUserId(room, currentUserId);
+    const room = client && roomId ? client.getRoom(roomId) : null;
+    const fromRoom = room ? dmPeerMatrixUserId(room, currentUserId) : null;
+    if (fromRoom) return fromRoom;
+    // Room membership can lag or include bots; fall back to the opened peer.
+    if (peerPersonId) {
+      const mapped = peerPersonIdToMatrixUserId[peerPersonId]?.trim();
+      if (mapped) return mapped;
+    }
+    return null;
   }, [
     isDirectConversation,
     client,
     roomId,
     currentUserId,
     mentionMembershipEpoch,
+    peerPersonId,
+    peerPersonIdToMatrixUserId,
   ]);
 
   const dmPeerReadUpToEventId = useMemo(() => {
@@ -6081,6 +6096,27 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 }
                 size="md"
                 isLoading={dmPeerPersonLoading || peerMatrixIdsLoading}
+              />
+            ) : coherenceChannel === 'network' ? (
+              <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-background text-foreground">
+                <MemberHomeMark className="h-5 w-5" />
+              </span>
+            ) : coherenceChannel === 'space' ||
+              coherenceChannel === 'space-public' ||
+              coherenceChannel === 'ecosystem' ? (
+              // eslint-disable-next-line @next/next/no-img-element -- remote space logos in header chrome
+              <img
+                src={
+                  resolveSpaceDisplayLogoUrl(
+                    coherenceChannel === 'ecosystem'
+                      ? rootSpace ?? space
+                      : space,
+                    resolvedTheme === 'dark' ? 'dark' : 'light',
+                  ) ?? DEFAULT_SPACE_AVATAR_IMAGE
+                }
+                alt=""
+                aria-hidden
+                className="h-8 w-8 shrink-0 rounded-full border border-border object-cover"
               />
             ) : null
           }

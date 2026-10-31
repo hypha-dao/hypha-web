@@ -1,21 +1,40 @@
 import type { Room } from 'matrix-js-sdk';
 
+import { isHyphaBotMatrixIdentity } from './matrix-room-member-display';
+
 type RoomMemberLike = {
   userId?: string;
   membership?: string;
+  name?: string;
+  rawDisplayName?: string;
 };
 
 type RoomLike = Pick<Room, 'getEventReadUpTo' | 'hasUserReadEvent'> & {
   getMembers?: () => RoomMemberLike[];
+  getJoinedMembers?: () => RoomMemberLike[];
   compareEventOrdering?: (
     leftEventId: string,
     rightEventId: string,
   ) => number | null;
 };
 
+function roomMembers(room: RoomLike): RoomMemberLike[] {
+  try {
+    const joined = room.getJoinedMembers?.();
+    if (joined && joined.length > 0) return joined;
+  } catch {
+    // Fall through.
+  }
+  try {
+    return room.getMembers?.() ?? [];
+  } catch {
+    return [];
+  }
+}
+
 /**
- * The other person in a 1:1 DM. Null when the room is not a single peer
- * (group chat) or the peer MXID is missing.
+ * The other person in a 1:1 DM. Ignores Hypha bots so a bot invite does not
+ * look like a group. Null when there is not exactly one human peer.
  */
 export function dmPeerMatrixUserId(
   room: RoomLike,
@@ -23,10 +42,20 @@ export function dmPeerMatrixUserId(
 ): string | null {
   const me = selfId?.trim();
   if (!me) return null;
-  const others = (room.getMembers?.() ?? []).filter((member) => {
+  const others = roomMembers(room).filter((member) => {
     const userId = member.userId?.trim();
     if (!userId || userId === me) return false;
-    return member.membership === 'join' || member.membership === 'invite';
+    if (
+      member.membership &&
+      member.membership !== 'join' &&
+      member.membership !== 'invite'
+    ) {
+      return false;
+    }
+    return !isHyphaBotMatrixIdentity(
+      userId,
+      member.name || member.rawDisplayName,
+    );
   });
   if (others.length !== 1) return null;
   return others[0]?.userId?.trim() || null;

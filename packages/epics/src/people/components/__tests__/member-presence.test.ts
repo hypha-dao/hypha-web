@@ -122,6 +122,36 @@ describe('readMemberPresence', () => {
     expect(peerLastSeenLine(detail)).toEqual({ kind: 'hidden' });
   });
 
+  it('uses the latest message as last-seen when presence is offline without ago', async () => {
+    const messageAt = now - 45 * 60_000;
+    const detail = await readMemberPresenceDetail(
+      {
+        getPresence: async () => ({ presence: 'offline' }),
+        getRooms: () => [
+          {
+            getLiveTimeline: () => ({
+              getEvents: () => [
+                {
+                  getSender: () => '@ada:hypha',
+                  getType: () => 'm.room.message',
+                  getTs: () => messageAt,
+                },
+              ],
+            }),
+          },
+        ],
+      },
+      '@ada:hypha',
+      now,
+    );
+    expect(detail.known).toBe(true);
+    expect(detail.lastActiveAt).toBe(messageAt);
+    expect(peerLastSeenLine(detail)).toEqual({
+      kind: 'lastSeenAt',
+      at: messageAt,
+    });
+  });
+
   it('uses a recent message when no presence event exists', async () => {
     const level = await readMemberPresence(
       {
