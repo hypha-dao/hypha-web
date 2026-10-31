@@ -12,6 +12,7 @@ describe('labelInboxSpaces', () => {
           title: 'Hypha',
           parentId: null,
           chatRoomId: '!root:hs',
+          logoUrl: null,
         },
         {
           id: 2,
@@ -19,6 +20,7 @@ describe('labelInboxSpaces', () => {
           title: 'Hypha Platform',
           parentId: 1,
           chatRoomId: '!space:hs',
+          logoUrl: null,
         },
       ],
       new Set([2]),
@@ -30,6 +32,7 @@ describe('labelInboxSpaces', () => {
         title: 'Hypha Platform',
         parentId: 1,
         chatRoomId: '!space:hs',
+        logoUrl: null,
         rootSlug: 'hypha',
         rootTitle: 'Hypha',
       },
@@ -44,6 +47,7 @@ describe('labelInboxSpaces', () => {
         title: 'Circle',
         parentId: 99,
         chatRoomId: null,
+        logoUrl: null,
       },
     ]);
     expect(space?.rootSlug).toBe('circle');

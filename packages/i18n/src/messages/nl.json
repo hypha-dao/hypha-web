@@ -786,7 +786,9 @@
       "empty": "Nog niets in dit filter."
     },
     "noMessagesMatch": "Geen berichten komen overeen met je zoekopdracht.",
-    "noMembersMatchSearch": "Geen leden komen overeen met je zoekopdracht."
+    "noMembersMatchSearch": "Geen leden komen overeen met je zoekopdracht.",
+    "searchMembers": "Leden zoeken",
+    "startConversation": "Gesprek starten"
   },
   "NetworkFeedback": {
     "triggerLabel": "Ondersteun Hypha",
@@ -3866,7 +3868,7 @@
     "backToSpaceChat": "Terug naar de ruimtechat",
     "copyButton": "Kopiëren",
     "copiedButton": "Gekopieerd!",
-    "tabChat": "Chatten",
+    "tabChat": "Kamer",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# ongelezen vermelding} other {# ongelezen vermeldingen}}",
     "tabWithUnreadMentionsCapped": "{tabLabel}, 99 of meer ongelezen vermeldingen",
     "tabMembers": "Leden",
@@ -3879,6 +3881,7 @@
     "replyButton": "Antwoord",
     "editButton": "Bericht bewerken",
     "editingMessage": "Bericht bewerken",
+    "messageEdited": "(bewerkt)",
     "editDismiss": "Bewerking annuleren",
     "editAttachmentsNotSupported": "Bijlagen worden niet ondersteund bij het bewerken van een bericht",
     "editMediaRequiresAttachment": "Bewaar ten minste één bijlage wanneer u dit bericht bewerkt.",
@@ -4262,7 +4265,10 @@
     "unarchiveGroupConfirm": "Ja, herstellen",
     "unarchiveGroupCancel": "Annuleren",
     "unarchiveGroupFailed": "Kon deze groep niet herstellen. Probeer het opnieuw.",
-    "archivedGroupReadOnly": "Deze groep is gearchiveerd. Herstel hem om berichten te sturen."
+    "archivedGroupReadOnly": "Deze groep is gearchiveerd. Herstel hem om berichten te sturen.",
+    "typingOne": "{name} is aan het typen…",
+    "typingTwo": "{name} en {other} zijn aan het typen…",
+    "typingMany": "{count} mensen zijn aan het typen…"
   },
   "CoherenceTab": {
     "signals": "Signalen",

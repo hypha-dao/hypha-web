@@ -186,7 +186,9 @@
       "empty": "Nothing in this filter yet."
     },
     "noMessagesMatch": "No messages match your search.",
-    "noMembersMatchSearch": "No members match your search."
+    "noMembersMatchSearch": "No members match your search.",
+    "searchMembers": "Search members",
+    "startConversation": "Start a conversation"
   },
   "WelcomeFlow": {
     "step": "Step {current} of {total}",
@@ -3894,7 +3896,7 @@
     "backToSpaceChat": "Back to space chat",
     "copyButton": "Copy",
     "copiedButton": "Copied!",
-    "tabChat": "Chat",
+    "tabChat": "Room",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# unread mention} other {# unread mentions}}",
     "tabWithUnreadMentionsCapped": "{tabLabel}, 99 or more unread mentions",
     "tabMembers": "Members",
@@ -3907,6 +3909,7 @@
     "replyButton": "Reply",
     "editButton": "Edit message",
     "editingMessage": "Editing message",
+    "messageEdited": "(edited)",
     "editDismiss": "Cancel edit",
     "editAttachmentsNotSupported": "Attachments are not supported when editing a message",
     "editMediaRequiresAttachment": "Keep at least one attachment when editing this message.",
@@ -4292,7 +4295,10 @@
     "unarchiveGroupConfirm": "Yes, restore",
     "unarchiveGroupCancel": "Cancel",
     "unarchiveGroupFailed": "Could not restore this group. Try again.",
-    "archivedGroupReadOnly": "This group is archived. Restore it to send messages."
+    "archivedGroupReadOnly": "This group is archived. Restore it to send messages.",
+    "typingOne": "{name} is typing…",
+    "typingTwo": "{name} and {other} are typing…",
+    "typingMany": "{count} people are typing…"
   },
   "CoherenceTab": {
     "signals": "Signals",

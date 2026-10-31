@@ -164,7 +164,7 @@ describe('formatMemberHomeFacts', () => {
     expect(facts).toContain('Do not list signals');
     expect(facts).toContain('Do not say you opened the space');
     expect(facts).toContain(
-      'LENGTH: Typed chat and spoken voice are the same script: three or four short sentences, like a friend catching them up, then stop.',
+      'LENGTH: Typed chat and spoken voice are the same words: three or four short sentences, like a friend catching them up, then stop.',
     );
     expect(facts).toContain('Never a wall of text');
     expect(facts).toContain('never the full list');
@@ -283,10 +283,33 @@ describe('formatMemberHomeFacts', () => {
       },
       { asked: 'Send someone tokens' },
     );
-    expect(facts).toMatch(/pick someone/i);
+    expect(facts).toMatch(/three or four short sentences/i);
+    expect(facts).toMatch(/who they would like to send to/i);
+    expect(facts).toMatch(/You cannot send, transfer, or move tokens/i);
+    expect(facts).toMatch(/Never say you sent them/i);
     expect(facts).toMatch(/Do not name a closest person/i);
+    expect(facts).not.toMatch(/pick someone/i);
     expect(facts).not.toContain('People who share a space');
     expect(facts).not.toContain('Ada Lovelace (shared spaces:');
+  });
+
+  it('matches the warmer chip labels to the same list turns', () => {
+    expect(
+      formatMemberHomeFacts(home, { asked: 'Who could use a hello?' }).text,
+    ).toContain('The people list is already on screen');
+    expect(
+      formatMemberHomeFacts(home, { asked: 'Where should I show up?' }).text,
+    ).toContain('The space list is already on screen');
+    expect(
+      formatMemberHomeFacts(home, {
+        asked: 'Who could use a thank-you?',
+      }).text,
+    ).toMatch(/You cannot send, transfer, or move tokens/i);
+    expect(
+      formatMemberHomeFactsText(home, {
+        asked: 'Where is my voice needed?',
+      }),
+    ).toMatch(/they asked what needs a decision/i);
   });
 
   it('omits the connections roster on a useful ask', () => {
@@ -610,6 +633,99 @@ describe('formatMemberHomeFacts', () => {
     expect(brief.text).not.toContain('People who share a space');
   });
 
+  it('skips a title already placed when they ask what needs a decision', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+            web3ProposalId: 20,
+          },
+        ],
+      },
+      {
+        alreadyShown: ['proposal:path'],
+        asked: 'What needs a decision?',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toContain('slug=bridge');
+    expect(brief.text).not.toContain('slug=path');
+    expect(brief.text).toMatch(/they asked what needs a decision/i);
+    expect(brief.text).not.toContain('People who share a space');
+  });
+
+  it('does not re-place an already-shown card on a decision ask', () => {
+    const brief = formatMemberHomeFacts(home, {
+      alreadyShown: ['proposal:path'],
+      asked: 'What needs a decision?',
+    });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toMatch(/nothing needs their voice right now/i);
+    expect(brief.text).toMatch(/Do not call show_member_home_item/);
+    expect(brief.text).not.toMatch(/Card for this reply:/);
+    expect(brief.text).not.toMatch(/Brief ONLY the one decision item/i);
+    expect(brief.text).not.toContain('People who share a space');
+  });
+
+  it('reaches a catalog decision outside the short focus walk', () => {
+    const due = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        signals: [
+          {
+            id: 3,
+            slug: 'seed',
+            title: 'Plant the seed',
+            type: 'task',
+            priority: 'critical',
+            createdAt: '2026-10-01T00:00:00.000Z',
+            dueAt: due,
+            spaceSlug: 'grove',
+            spaceTitle: 'Grove',
+            spaceLogo: null,
+            assignedToMember: true,
+            description: 'A signal that fills the focus walk.',
+            creatorId: 2,
+            creatorName: 'Noor',
+            creatorAvatarUrl: null,
+            creatorAbout: null,
+            creatorWith: [],
+          },
+        ],
+        proposals: [
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+            web3ProposalId: 20,
+          },
+        ],
+        counts: { ...home.counts, openProposals: 1, signals: 1 },
+      },
+      {
+        alreadyShown: ['signal:seed'],
+        asked: 'What needs a decision?',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toContain('slug=bridge');
+    expect(brief.text).not.toContain('slug=seed');
+  });
+
   it('speaks a closed vote as the outcome', () => {
     const facts = formatMemberHomeFactsText({
       ...home,
@@ -847,10 +963,32 @@ describe('formatMemberHomeFacts', () => {
     const brief = formatMemberHomeFacts(home, { asked: 'Who is around?' });
     expect(brief.card).toBeNull();
     expect(brief.text).toContain('The people list is already on screen');
+    expect(brief.text).toMatch(/three or four short sentences/i);
     expect(brief.text).toContain('Do not call any tool');
     expect(brief.text).toContain('Do not rank anyone by shared spaces');
     expect(brief.text).not.toContain('Card on screen:');
     expect(brief.text).not.toContain('People who share a space');
+  });
+
+  it('keeps step into a space on the spaces list with useful tone', () => {
+    const brief = formatMemberHomeFacts(home, {
+      asked: 'Step into a space',
+    });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toContain('The space list is already on screen');
+    expect(brief.text).toMatch(/three or four short sentences/i);
+    expect(brief.text).toContain('Do not name a space');
+    expect(brief.text).toContain('Do not call any tool');
+  });
+
+  it('briefs what needs a decision like a useful ask', () => {
+    const facts = formatMemberHomeFactsText(home, {
+      asked: 'What needs a decision?',
+    });
+    expect(facts).toMatch(/they asked what needs a decision/i);
+    expect(facts).toMatch(/three or four short sentences/i);
+    expect(facts).toMatch(/same voice as "Where can I be useful\?"/i);
+    expect(facts).toContain('slug=path');
   });
 
   it('navigates the network by orientation and leaves the home queue alone', () => {

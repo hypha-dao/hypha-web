@@ -786,7 +786,9 @@
       "empty": "Сè уште нема ништо во овој филтер."
     },
     "noMessagesMatch": "Нема пораки што одговараат на пребарувањето.",
-    "noMembersMatchSearch": "Нема членови што одговараат на пребарувањето."
+    "noMembersMatchSearch": "Нема членови што одговараат на пребарувањето.",
+    "searchMembers": "Пребарај членови",
+    "startConversation": "Започни разговор"
   },
   "OnboardingAdventure": {
     "heroEyebrow": "ИНТЕЛИГЕНТНАТА ОРГАНИЗАЦИЈА",
@@ -3846,7 +3848,7 @@
     "backToSpaceChat": "Назад кон разговорот на просторот",
     "copyButton": "Копирај",
     "copiedButton": "Копирано!",
-    "tabChat": "Разговор",
+    "tabChat": "Соба",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# непрочитано спомнување} other {# непрочитани спомнувања}}",
     "tabWithUnreadMentionsCapped": "{tabLabel}, 99 или повеќе непрочитани спомнувања",
     "tabMembers": "Членови",
@@ -3859,6 +3861,7 @@
     "replyButton": "Одговори",
     "editButton": "Уреди порака",
     "editingMessage": "Уредување порака",
+    "messageEdited": "(изменето)",
     "editDismiss": "Откажи уредување",
     "editAttachmentsNotSupported": "Прилозите не се поддржани при уредување порака",
     "editMediaRequiresAttachment": "Задржи барем еден прилог при уредување на оваа порака.",
@@ -4243,7 +4246,10 @@
     "unarchiveGroupConfirm": "Да, врати",
     "unarchiveGroupCancel": "Откажи",
     "unarchiveGroupFailed": "Групата не можеше да се врати. Обиди се повторно.",
-    "archivedGroupReadOnly": "Оваа група е архивирана. Врати ја за да испраќаш пораки."
+    "archivedGroupReadOnly": "Оваа група е архивирана. Врати ја за да испраќаш пораки.",
+    "typingOne": "{name} пишува…",
+    "typingTwo": "{name} и {other} пишуваат…",
+    "typingMany": "{count} луѓе пишуваат…"
   },
   "CoherenceTab": {
     "signals": "Сигнали",

@@ -3,20 +3,13 @@
 import type { ReactNode } from 'react';
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { CountBadge, formatCountBadgeLabel } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
-export type ChatPanelTab = 'chat' | 'members' | 'mentions';
+export type ChatPanelTab = 'chat' | 'members';
 
 type HumanChatPanelTabsProps = {
   activeTab: ChatPanelTab;
   onTabChange: (tab: ChatPanelTab) => void;
-  /** Unread @mention (highlight) count for the Chat tab badge. */
-  chatMentionCount?: number;
-  chatMentionCountCapped?: boolean;
-  /** Same count, shown on the Mentions tab when non-zero. */
-  mentionTabBadgeCount?: number;
-  mentionTabBadgeCapped?: boolean;
   /** e.g. voice / video / search (space call controls); end of the tab row (right column). */
   tabRowEnd?: ReactNode;
 };
@@ -24,10 +17,6 @@ type HumanChatPanelTabsProps = {
 export function HumanChatPanelTabs({
   activeTab,
   onTabChange,
-  chatMentionCount = 0,
-  chatMentionCountCapped = false,
-  mentionTabBadgeCount = 0,
-  mentionTabBadgeCapped = false,
   tabRowEnd,
 }: HumanChatPanelTabsProps) {
   const t = useTranslations('HumanChatPanel');
@@ -53,20 +42,9 @@ export function HumanChatPanelTabs({
     }
   }, []);
 
-  const chatBadgeLabel = formatCountBadgeLabel(
-    chatMentionCount,
-    chatMentionCountCapped,
-  );
-
-  const mentionBadgeLabel = formatCountBadgeLabel(
-    mentionTabBadgeCount,
-    mentionTabBadgeCapped,
-  );
-
   const tabs: { key: ChatPanelTab; label: string }[] = [
     { key: 'chat', label: t('tabChat') },
     { key: 'members', label: t('tabMembers') },
-    { key: 'mentions', label: t('tabMentions') },
   ];
 
   const handleKeyDown = (e: React.KeyboardEvent, currentIndex: number) => {
@@ -122,25 +100,6 @@ export function HumanChatPanelTabs({
             type="button"
             role="tab"
             title={tab.label}
-            aria-label={
-              tab.key === 'chat' && chatBadgeLabel != null
-                ? chatBadgeLabel === '99+'
-                  ? t('tabWithUnreadMentionsCapped', { tabLabel: tab.label })
-                  : t('tabChatWithMentionCount', {
-                      tabLabel: tab.label,
-                      count: chatMentionCount,
-                    })
-                : tab.key === 'mentions' && mentionBadgeLabel != null
-                ? mentionBadgeLabel === '99+'
-                  ? t('tabWithUnreadMentionsCapped', {
-                      tabLabel: tab.label,
-                    })
-                  : t('tabMentionsWithMentionCount', {
-                      tabLabel: tab.label,
-                      count: mentionTabBadgeCount,
-                    })
-                : undefined
-            }
             aria-selected={activeTab === tab.key}
             aria-controls={`chat-tabpanel-${tab.key}`}
             tabIndex={activeTab === tab.key ? 0 : -1}
@@ -159,24 +118,8 @@ export function HumanChatPanelTabs({
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            <span className="inline-flex items-center gap-1.5">
-              <span className="whitespace-nowrap" title={tab.label}>
-                {tab.label}
-              </span>
-              {tab.key === 'chat' && chatBadgeLabel != null ? (
-                <CountBadge
-                  label={chatBadgeLabel}
-                  count={chatMentionCount}
-                  capped={chatMentionCountCapped}
-                />
-              ) : null}
-              {tab.key === 'mentions' && mentionBadgeLabel != null ? (
-                <CountBadge
-                  label={mentionBadgeLabel}
-                  count={mentionTabBadgeCount}
-                  capped={mentionTabBadgeCapped}
-                />
-              ) : null}
+            <span className="whitespace-nowrap" title={tab.label}>
+              {tab.label}
             </span>
           </button>
         ))}

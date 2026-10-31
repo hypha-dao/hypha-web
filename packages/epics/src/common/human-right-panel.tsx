@@ -111,8 +111,6 @@ import {
   HumanChatPanelErrorBoundary,
   HumanChatPanelTabs,
   HumanChatPanelMembers,
-  HumanChatPanelMentionBell,
-  HumanChatPanelMentionTab,
   HumanChatPanelCallToolbar,
   HumanChatPanelCallBanner,
   HumanChatPanelCallJoinStrip,
@@ -128,6 +126,8 @@ import {
   type MentionPickCandidate,
   useResolvedMentionCandidateLabel,
 } from './human-chat-panel/use-resolved-mention-candidate-label';
+import { HumanChatPanelTypingIndicator } from './human-chat-panel/human-chat-panel-typing-indicator';
+import { useChatRoomTyping } from './human-chat-panel/use-chat-room-typing';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { applyConversationRoomTitle } from '../people/components/my-connections';
@@ -168,7 +168,6 @@ import { useCallJoinInvitation } from './human-chat-panel/use-call-join-invitati
 import { HumanChatPanelCallJoinInvitation } from './human-chat-panel/human-chat-panel-call-join-invitation';
 import { shouldShowCallScaleWarning } from './human-chat-panel/call-scale-warning';
 import { resolveSignalDeepLinkWithRetry } from './human-chat-panel/resolve-signal-deep-link';
-import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
 import {
   useCallMembershipRegistry,
   type CallElsewhereEntry,
@@ -390,6 +389,8 @@ type UIMessage = {
   avatarUrl?: string;
   /** Matrix event time (origin_server_ts), for header timestamp */
   timestamp?: Date;
+  /** True when the Matrix root was edited (`m.replace`). */
+  edited?: boolean;
   /** MSC3952 intentional mentions on this event (`m.mentions.user_ids`). */
   mentionedUserIds?: string[];
   /** Matrix custom HTML for visible body (when sent with formatting). */
@@ -1014,6 +1015,7 @@ function toUIMessage(
       : {}),
     avatarUrl: isCurrentUser ? currentUserAvatarUrl : memberAvatar,
     timestamp: msg.timestamp,
+    ...(msg.edited ? { edited: true } : {}),
     reactions,
     replyTo,
     ...(msg.mentionedUserIds?.length
@@ -4590,6 +4592,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           scheduleTimelineFlush();
           return;
         }
+        // Receive chime is global (conversation timeline) — not here, so
+        // opening a thread / history catch-up does not ping.
         pendingTimelineMessagesRef.current.set(message.id, message);
         scheduleTimelineFlush();
       },
@@ -4705,147 +4709,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const notificationCentreHref = useMemo(
     () => buildDialogHref(pathname, searchParams),
     [pathname, searchParams],
-  );
-
-  const handleSelectMentionFromInbox = useCallback(
-    async (eventId: string, fromRoomId?: string) => {
-      setMentionNavigationNotice(null);
-      const targetRoom = fromRoomId?.trim();
-      const current = roomId?.trim();
-      const langMatch = pathname.match(/^\/([^/]+)\//);
-      const lang = langMatch?.[1] ?? 'en';
-      const spaceChatRoomId = space?.chatRoomId?.trim() ?? null;
-      const pathSlug = getDhoSpaceSlugFromPathname(pathname)?.trim() ?? null;
-
-      const openMentionInCurrentRoom = () => {
-        openHumanChatPanel();
-        setActiveTab('chat');
-        setScrollToEventId(eventId);
-      };
-
-      // Same room (or single-room inbox with no fromRoomId): just switch + scroll.
-      if (!targetRoom || targetRoom === current) {
-        openMentionInCurrentRoom();
-        return;
-      }
-
-      if (
-        spaceChatRoomId &&
-        targetRoom === spaceChatRoomId &&
-        spaceSlug &&
-        pathSlug === spaceSlug
-      ) {
-        if (mode === 'coherence') {
-          exitCoherenceChat();
-        }
-        openMentionInCurrentRoom();
-        return;
-      }
-
-      if (typeof window === 'undefined') {
-        setMentionNavigationNotice(t('mentionOpenFallbackRoom'));
-        return;
-      }
-
-      // Aggregated Mentions: resolve signal/coherence rooms via cache + API.
-      const signalTarget = await resolveSignalThreadByMatrixRoom(
-        targetRoom,
-        async () => authTokenRef.current,
-      );
-      if (signalTarget) {
-        rememberRoomToCoherenceSession(
-          signalTarget.roomId,
-          signalTarget.signalSlug,
-          signalTarget.signalTitle,
-          signalTarget.spaceSlug,
-        );
-
-        if (pathSlug === signalTarget.spaceSlug) {
-          openCoherenceChat(
-            signalTarget.roomId,
-            signalTarget.signalTitle,
-            signalTarget.signalSlug,
-          );
-          openMentionInCurrentRoom();
-          return;
-        }
-
-        router.push(
-          `/${lang}/dho/${
-            signalTarget.spaceSlug
-          }/overview?signal=${encodeURIComponent(
-            signalTarget.signalSlug,
-          )}&msg=${encodeURIComponent(eventId)}`,
-        );
-        openHumanChatPanel();
-        setActiveTab('chat');
-        return;
-      }
-
-      if (spaceChatRoomId && targetRoom === spaceChatRoomId) {
-        let slug =
-          window.sessionStorage
-            .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${targetRoom}`)
-            ?.trim() ?? null;
-        if (!slug) {
-          const fromLs = readRoomIdToSpaceSlugFromStorage().get(targetRoom);
-          slug = fromLs ?? null;
-        }
-        if (!slug && spaceSlug) {
-          slug = spaceSlug;
-        }
-        if (slug) {
-          router.push(
-            `/${lang}/dho/${slug}?msg=${encodeURIComponent(eventId)}`,
-          );
-          openHumanChatPanel();
-          setActiveTab('chat');
-          return;
-        }
-      }
-
-      const coherence = readRoomToCoherenceSession(targetRoom);
-      if (coherence.slug) {
-        openCoherenceChat(
-          targetRoom,
-          coherence.title || 'Conversation',
-          coherence.slug,
-        );
-        openMentionInCurrentRoom();
-        return;
-      }
-
-      let slug =
-        window.sessionStorage
-          .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${targetRoom}`)
-          ?.trim() ?? null;
-      if (!slug) {
-        const fromLs = readRoomIdToSpaceSlugFromStorage().get(targetRoom);
-        slug = fromLs ?? null;
-      }
-      if (slug) {
-        router.push(`/${lang}/dho/${slug}?msg=${encodeURIComponent(eventId)}`);
-        openHumanChatPanel();
-        setActiveTab('chat');
-        return;
-      }
-
-      // Do not fall through into the current (often space) room — that showed
-      // the welcome timeline under the "could not resolve" banner.
-      setMentionNavigationNotice(t('mentionOpenFallbackRoom'));
-    },
-    [
-      roomId,
-      pathname,
-      router,
-      openCoherenceChat,
-      openHumanChatPanel,
-      exitCoherenceChat,
-      mode,
-      space?.chatRoomId,
-      spaceSlug,
-      t,
-    ],
   );
 
   const handleConsumedScrollTarget = useCallback(() => {
@@ -5133,7 +4996,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [client, currentUserId, aggregateMentionBump]);
 
   const bellMentionCount = aggregateMentionBadge.count;
-  const bellMentionCapped = aggregateMentionBadge.capped;
 
   // Keep the header "Open chat panel" trigger in sync with unread @mentions
   // even while the panel is closed (sidebar content stays mounted off-canvas).
@@ -5185,19 +5047,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!roomId) return;
     await markRoomTimelineRead(roomId);
   }, [markRoomTimelineRead, roomId]);
-
-  /** Clear Chat/Mentions badges — marks every joined room that still has unread @mentions. */
-  const markAllUnreadMentionsRead = useCallback(async () => {
-    if (!client || !currentUserId) return;
-    for (const room of client.getRooms()) {
-      if (room.getMyMembership() !== 'join') continue;
-      const state = computeHumanChatUnreadState(room, currentUserId);
-      if (state.unreadMentionCount <= 0) continue;
-      await markRoomTimelineRead(room.roomId);
-    }
-    setUnreadBump((n) => n + 1);
-    setAggregateMentionBump((n) => n + 1);
-  }, [client, currentUserId, markRoomTimelineRead]);
 
   const handleReachedTimelineBottom = useCallback(() => {
     const now = Date.now();
@@ -5811,6 +5660,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     sendAbortControllerRef.current?.abort();
   }, []);
 
+  const { typingPeers, setComposerTyping } = useChatRoomTyping({
+    client: client ?? null,
+    roomId,
+    resolveName: resolveMemberLabel,
+  });
+
+  const handleComposerChange = useCallback(
+    (value: string) => {
+      setInput(value);
+      setComposerTyping(value.trim().length > 0);
+    },
+    [setComposerTyping],
+  );
+
   const handleSend = useCallback(async () => {
     if (!roomId) return;
     if (blockSpaceChatForMembership) {
@@ -5823,6 +5686,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     const trimmed = input.trim();
     if (!trimmed && draftAttachments.length === 0) return;
+    setComposerTyping(false);
     const text = input;
     const replyToEventId = replyDraft?.messageId;
     const editTargetEventId = editDraft?.messageId;
@@ -5896,6 +5760,25 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             mentionUserIds,
           });
         }
+        // Timeline replace can land before replacingEventId is final; mark
+        // edited immediately so the label is visible without waiting on sync.
+        const caption = wirePlain.trim();
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id !== editTargetEventId) return m;
+            const isMedia = Boolean(m.media || m.mediaSlots?.length);
+            return {
+              ...m,
+              edited: true,
+              parts: isMedia
+                ? caption
+                  ? [{ type: 'text' as const, text: caption }]
+                  : []
+                : [{ type: 'text' as const, text: wirePlain }],
+              formattedContentHtml: undefined,
+            };
+          }),
+        );
       } else {
         await matrixRef.current.sendMessage({
           roomId,
@@ -6059,6 +5942,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceRoom,
     coherenceSlug,
     coherenceTitle,
+    setComposerTyping,
     tCommon,
     t,
   ]);
@@ -6156,16 +6040,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           }
           onBack={mode === 'coherence' ? exitCoherenceChat : undefined}
           notificationSettingsHref={notificationCentreHref}
-          trailingStart={
-            showAuthedUi && roomId ? (
-              <HumanChatPanelMentionBell
-                unreadCount={bellMentionCount}
-                countIsCapped={bellMentionCapped}
-                mentionsTabActive={activeTab === 'mentions'}
-                onOpenMentions={() => setActiveTab('mentions')}
-              />
-            ) : null
-          }
           trailingEnd={
             isDirectConversation && roomId ? (
               <HumanChatPanelGroupMenu
@@ -6183,10 +6057,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           <HumanChatPanelTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            chatMentionCount={bellMentionCount}
-            chatMentionCountCapped={bellMentionCapped}
-            mentionTabBadgeCount={bellMentionCount}
-            mentionTabBadgeCapped={bellMentionCapped}
             tabRowEnd={
               (showSidebarCallChrome &&
                 !inSpaceCall &&
@@ -6910,32 +6780,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 </div>
               </div>
             )}
-            {activeTab === 'mentions' && (
-              <div
-                className="flex min-h-0 flex-1 flex-col overflow-hidden"
-                role="tabpanel"
-                id="chat-tabpanel-mentions"
-              >
-                <HumanChatPanelMentionTab
-                  client={client}
-                  roomId={roomId}
-                  currentUserId={currentUserId}
-                  resolveMemberLabel={resolveMentionMemberLabel}
-                  onSelectMessage={handleSelectMentionFromInbox}
-                  aggregatedMentions={mode === 'space'}
-                  unreadMentionCount={bellMentionCount}
-                  onMarkMentionsRead={() => {
-                    void markAllUnreadMentionsRead();
-                  }}
-                  callJoinAlertsUnmuted={
-                    callUiEnabled ? joinAlertSoundEnabled : undefined
-                  }
-                  onCallJoinAlertsUnmutedChange={
-                    callUiEnabled ? setJoinAlertSoundEnabled : undefined
-                  }
-                />
-              </div>
-            )}
           </>
         )}
       </SidebarContent>
@@ -6947,10 +6791,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 border-t border-border/70 bg-page-background p-0 dark:bg-background-2">
             <div>
+              <HumanChatPanelTypingIndicator peers={typingPeers} />
               <HumanChatPanelErrorBoundary key={roomId ?? 'composer'}>
                 <HumanChatPanelChatBar
                   value={input}
-                  onChange={setInput}
+                  onChange={handleComposerChange}
                   onSend={handleSend}
                   mentionCandidates={composerMentionCandidates}
                   mentionPickerEnabled={mentionPickerEnabled}

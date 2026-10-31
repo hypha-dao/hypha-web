@@ -786,7 +786,9 @@
       "empty": "In diesem Filter ist noch nichts."
     },
     "noMessagesMatch": "Keine Nachrichten passen zu deiner Suche.",
-    "noMembersMatchSearch": "Keine Mitglieder passen zu deiner Suche."
+    "noMembersMatchSearch": "Keine Mitglieder passen zu deiner Suche.",
+    "searchMembers": "Mitglieder suchen",
+    "startConversation": "Unterhaltung starten"
   },
   "NetworkFeedback": {
     "triggerLabel": "Hypha gestalten",
@@ -3863,7 +3865,7 @@
     "closePanel": "Panel schließen",
     "copyButton": "Kopieren",
     "copiedButton": "Kopiert!",
-    "tabChat": "Chat",
+    "tabChat": "Raum",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# ungelesene Erwähnung} other {# ungelesene Erwähnungen}}",
     "tabWithUnreadMentionsCapped": "{tabLabel}, 99 oder mehr ungelesene Erwähnungen",
     "tabMembers": "Mitglieder",
@@ -3876,6 +3878,7 @@
     "replyButton": "Antworten",
     "editButton": "Nachricht bearbeiten",
     "editingMessage": "Nachricht bearbeiten",
+    "messageEdited": "(bearbeitet)",
     "editDismiss": "Bearbeitung abbrechen",
     "editAttachmentsNotSupported": "Anhänge werden beim Bearbeiten einer Nachricht nicht unterstützt",
     "editMediaRequiresAttachment": "Behalten Sie mindestens einen Anhang beim Bearbeiten dieser Nachricht.",
@@ -4260,7 +4263,10 @@
     "unarchiveGroupConfirm": "Ja, wiederherstellen",
     "unarchiveGroupCancel": "Abbrechen",
     "unarchiveGroupFailed": "Die Gruppe konnte nicht wiederhergestellt werden. Bitte versuchen Sie es erneut.",
-    "archivedGroupReadOnly": "Diese Gruppe ist archiviert. Stelle sie wieder her, um Nachrichten zu senden."
+    "archivedGroupReadOnly": "Diese Gruppe ist archiviert. Stelle sie wieder her, um Nachrichten zu senden.",
+    "typingOne": "{name} tippt…",
+    "typingTwo": "{name} und {other} tippen…",
+    "typingMany": "{count} Personen tippen…"
   },
   "CoherenceTab": {
     "signals": "Signale",

@@ -1564,7 +1564,9 @@
       "empty": "Nada neste filtro ainda."
     },
     "noMessagesMatch": "Nenhuma mensagem corresponde à tua pesquisa.",
-    "noMembersMatchSearch": "Nenhum membro corresponde à tua pesquisa."
+    "noMembersMatchSearch": "Nenhum membro corresponde à tua pesquisa.",
+    "searchMembers": "Pesquisar membros",
+    "startConversation": "Iniciar conversa"
   },
   "NetworkFeedback": {
     "triggerLabel": "Moldar a Hypha",
@@ -3291,7 +3293,7 @@
     "closePanel": "Fechar painel",
     "copyButton": "Copiar",
     "copiedButton": "Copiado!",
-    "tabChat": "Chat",
+    "tabChat": "Sala",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# menção não lida} other {# menções não lidas}}",
     "tabWithUnreadMentionsCapped": "{tabLabel}, 99 ou mais menções não lidas",
     "tabMembers": "Membros",
@@ -3304,6 +3306,7 @@
     "replyButton": "Responder",
     "editButton": "Editar mensagem",
     "editingMessage": "Editando mensagem",
+    "messageEdited": "(editado)",
     "editDismiss": "Cancelar edição",
     "editAttachmentsNotSupported": "Anexos não são suportados ao editar uma mensagem",
     "editMediaRequiresAttachment": "Mantenha pelo menos um anexo ao editar esta mensagem.",
@@ -3688,7 +3691,10 @@
     "unarchiveGroupConfirm": "Sim, restaurar",
     "unarchiveGroupCancel": "Cancelar",
     "unarchiveGroupFailed": "Não foi possível restaurar este grupo. Tenta novamente.",
-    "archivedGroupReadOnly": "Este grupo está arquivado. Restaura-o para enviar mensagens."
+    "archivedGroupReadOnly": "Este grupo está arquivado. Restaura-o para enviar mensagens.",
+    "typingOne": "{name} está a escrever…",
+    "typingTwo": "{name} e {other} estão a escrever…",
+    "typingMany": "{count} pessoas estão a escrever…"
   },
   "CoherenceTab": {
     "signals": "Sinais",

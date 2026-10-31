@@ -16,6 +16,7 @@ import {
 
 import { web3Client } from '../../common/server/web3-rpc/client';
 import type { DbConfig } from '../../common/server/types';
+import { proposalIdsWithdrawn } from '../../governance/server/proposal-ids-withdrawn';
 import { getMemberSpaces } from '../../space/client/web3/dao-space-factory/get-member-spaces';
 import {
   labelInboxSpaces,
@@ -70,6 +71,7 @@ type SpaceRow = {
   title: string | null;
   parentId: number | null;
   chatRoomId: string | null;
+  logoUrl: string | null;
 };
 
 type SignalRow = {
@@ -91,6 +93,7 @@ function toNode(space: SpaceRow): MessageInboxSpaceNode | null {
     title,
     parentId: space.parentId,
     chatRoomId: space.chatRoomId?.trim() || null,
+    logoUrl: space.logoUrl?.trim() || null,
   };
 }
 
@@ -154,6 +157,7 @@ async function chainMemberSpaceRows(
       title: spaces.title,
       parentId: spaces.parentId,
       chatRoomId: spaces.chatRoomId,
+      logoUrl: spaces.logoUrl,
     })
     .from(spaces)
     .where(and(inArray(spaces.web3SpaceId, ids), eq(spaces.isArchived, false)));
@@ -181,8 +185,9 @@ function openSignalFilter() {
  *
  * Spaces are the ones this wallet is a member of. Signals are the ones
  * that notify this member, plus other signals in those spaces so a team
- * thread can still be named. Proposals are the open votes in those spaces.
- * Joining a room is not enough.
+ * thread can still be named. Proposals are the open votes in those spaces
+ * that have not been withdrawn — a withdrawn proposal room stays out of
+ * Messages even when it still has comments. Joining a room is not enough.
  */
 export async function getMessageInboxContext(
   {
@@ -243,6 +248,7 @@ export async function getMessageInboxContext(
         title: spaces.title,
         parentId: spaces.parentId,
         chatRoomId: spaces.chatRoomId,
+        logoUrl: spaces.logoUrl,
       })
       .from(spaces)
       .where(inArray(spaces.id, [...extraSpaceIds]));
@@ -263,6 +269,7 @@ export async function getMessageInboxContext(
         title: spaces.title,
         parentId: spaces.parentId,
         chatRoomId: spaces.chatRoomId,
+        logoUrl: spaces.logoUrl,
       })
       .from(spaces)
       .where(inArray(spaces.id, pending));
@@ -305,6 +312,7 @@ export async function getMessageInboxContext(
             title: documents.title,
             slug: documents.slug,
             spaceId: documents.spaceId,
+            web3ProposalId: documents.web3ProposalId,
           })
           .from(documents)
           .where(
@@ -317,13 +325,33 @@ export async function getMessageInboxContext(
           .orderBy(desc(documents.updatedAt))
           .limit(PROPOSAL_LABEL_LIMIT);
 
+  const withdrawnProposalIds = await proposalIdsWithdrawn(
+    proposalRows.flatMap((row) =>
+      row.web3ProposalId != null ? [row.web3ProposalId] : [],
+    ),
+  ).catch((error) => {
+    console.error(
+      '[message-inbox-context] withdrawn proposals unavailable',
+      error instanceof Error ? error.message : 'unknown',
+    );
+    return new Set<number>();
+  });
+
   const seenProposalRooms = new Set<string>();
   const proposals = proposalRows.flatMap((row) => {
     const roomId = row.chatRoomId?.trim();
     const slug = row.slug?.trim();
     const title = row.title?.trim();
     const space = row.spaceId == null ? null : byId.get(row.spaceId);
-    if (!roomId || !slug || !title || !space || seenProposalRooms.has(roomId)) {
+    if (
+      !roomId ||
+      !slug ||
+      !title ||
+      !space ||
+      seenProposalRooms.has(roomId) ||
+      (row.web3ProposalId != null &&
+        withdrawnProposalIds.has(row.web3ProposalId))
+    ) {
       return [];
     }
     seenProposalRooms.add(roomId);

@@ -47,12 +47,13 @@ import {
   visibleMatrixMemberName,
   useJwt,
   useMatrix,
+  DEFAULT_SPACE_AVATAR_IMAGE,
   useMatrixUserIdsByPersonIds,
   usePeopleBySubs,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import { listBoundChatRoomIdsAmongAction } from '@hypha-platform/core/matrix/server/actions';
-import { Badge, Button } from '@hypha-platform/ui';
+import { Badge, Button, Image } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
   ArrowUpRight,
@@ -69,6 +70,7 @@ import {
 } from 'lucide-react';
 
 import { countIncomingUnreadMessages } from '../../common/human-chat-panel/conversation-unread-count';
+import { playMessageReceiveSoundForEvent } from '../../common/human-chat-panel/message-receive-sound';
 import { contentMentionsMatrixUser } from '../../../../core/src/matrix/mentions';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { scrollMainColumnTo } from '../../common/main-column-scroll';
@@ -124,6 +126,7 @@ import {
   readRememberedDirectRoom,
   suggestConnections,
   supersededDirectRoomIds,
+  peopleMatchingSearch,
   type ConnectionSuggestion,
   type ConversationRow,
   type GroupFace,
@@ -148,6 +151,7 @@ import {
   type JoinedChannelSnapshot,
 } from './messages-inbox';
 import { type PresenceLevel } from './member-presence';
+import { MemberHomeMark } from './member-home-mark';
 import { PersonAvatar } from './person-avatar';
 import { useMemberPresence } from './use-member-presence';
 
@@ -1184,12 +1188,21 @@ function onConversationState(event: MatrixEvent) {
 }
 
 function onConversationTimeline(
-  _event: MatrixEvent,
+  event: MatrixEvent,
   room?: Room,
   toStartOfTimeline?: boolean,
+  _removed?: boolean,
+  data?: { liveEvent?: boolean },
 ) {
   if (toStartOfTimeline) return;
   refreshConversationRoom(room);
+  // Notification chime for new messages in any room — not only the open chat.
+  // History / sync catch-up sets liveEvent=false; opening a thread must stay silent.
+  playMessageReceiveSoundForEvent(event, conversationClient?.getUserId(), {
+    toStartOfTimeline,
+    liveEvent: data?.liveEvent,
+    room,
+  });
 }
 
 function onConversationReceipt(_event: MatrixEvent, room?: Room) {
@@ -1203,7 +1216,14 @@ function onConversationMembership(room?: Room) {
 function onConversationDecrypted(event: MatrixEvent) {
   const roomId = event.getRoomId();
   if (!roomId || !conversationClient) return;
-  refreshConversationRoom(conversationClient.getRoom(roomId) ?? undefined);
+  const room = conversationClient.getRoom(roomId) ?? undefined;
+  refreshConversationRoom(room);
+  // Encrypted live messages become RoomMessage only after decrypt.
+  // requireRecent: opening a room must not chime for old ciphertext catch-up.
+  playMessageReceiveSoundForEvent(event, conversationClient.getUserId(), {
+    room,
+    requireRecent: true,
+  });
 }
 
 function onConversationSignals() {
@@ -1838,7 +1858,8 @@ export function MyConnections({
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
   const [channels, setChannels] = useState<JoinedChannelSnapshot[]>([]);
-  const [inboxFilter, setInboxFilter] = useState<InboxFilter>('all');
+  // Direct skips the all-channels merge on open (faster first paint).
+  const [inboxFilter, setInboxFilter] = useState<InboxFilter>('direct');
   const [inboxVisibleCount, setInboxVisibleCount] = useState(INBOX_LIST_PAGE);
   /** Below the side-by-side layout, a channel tap replaces the menu with its messages. */
   const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
@@ -2034,17 +2055,52 @@ export function MyConnections({
       setSearching(true);
       void (async () => {
         try {
-          const response = await fetch(
-            `/api/v1/people/me/intelligence?q=${encodeURIComponent(term)}`,
-            {
-              headers: { Authorization: `Bearer ${jwt}` },
-              signal: controller.signal,
-            },
-          );
-          if (!response.ok) return;
-          const body = (await response.json()) as MemberIntelligence;
+          const headers = { Authorization: `Bearer ${jwt}` };
+          const [connectionResponse, networkResponse] = await Promise.all([
+            fetch(
+              `/api/v1/people/me/intelligence?q=${encodeURIComponent(term)}`,
+              { headers, signal: controller.signal },
+            ),
+            term.length >= 2
+              ? fetch(`/api/v1/people/search?q=${encodeURIComponent(term)}`, {
+                  headers,
+                  signal: controller.signal,
+                })
+              : Promise.resolve(null),
+          ]);
+          if (controller.signal.aborted) return;
+          const connections: ConnectionPerson[] = [];
+          if (connectionResponse.ok) {
+            const body =
+              (await connectionResponse.json()) as MemberIntelligence;
+            connections.push(...(body.connections ?? []));
+          }
+          if (networkResponse?.ok) {
+            const body = (await networkResponse.json()) as {
+              people?: Array<{
+                id: number;
+                slug: string | null;
+                name: string | null;
+                surname: string | null;
+                nickname: string | null;
+                avatarUrl: string | null;
+              }>;
+            };
+            for (const person of body.people ?? []) {
+              if (!person.id || person.id <= 0) continue;
+              connections.push({
+                id: person.id,
+                slug: person.slug,
+                name: person.name,
+                surname: person.surname,
+                nickname: person.nickname,
+                avatarUrl: person.avatarUrl,
+                sharedSpaceCount: 0,
+              });
+            }
+          }
           if (!controller.signal.aborted) {
-            setSearchDirectory(body.connections ?? []);
+            setSearchDirectory(mergeDirectoryPeople(connections));
           }
         } catch (error) {
           if (error instanceof DOMException && error.name === 'AbortError') {
@@ -2222,9 +2278,54 @@ export function MyConnections({
       STALE_CONNECTION_MS,
     );
   }, [home?.networkSignals, members, synced]);
+  /** Suggestions search: start a chat with anyone matching the name, even with no thread yet. */
+  const suggestionCards = useMemo((): ConnectionSuggestion[] => {
+    if (!needle) return reachOut;
+    const selfId = home?.person.id ?? null;
+    const hits = peopleMatchingSearch(
+      directoryPeople,
+      searchDirectory,
+      needle,
+    ).filter((person) => person.id > 0 && person.id !== selfId);
+    return hits.map((person) => {
+      const name =
+        [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+        person.nickname?.trim() ||
+        t('someone');
+      const existing = members.find((row) => row.person.id === person.id);
+      return {
+        key: `search-${person.id}`,
+        kind: 'meet' as const,
+        name,
+        avatarUrl: person.avatarUrl ?? undefined,
+        roomId: existing?.roomId ?? null,
+        lastTs: existing
+          ? connectionActivityTs(existing.lastTs, existing.preview)
+          : null,
+        person: {
+          id: person.id,
+          slug: person.slug,
+          name: person.name,
+          surname: person.surname,
+          nickname: person.nickname,
+          avatarUrl: person.avatarUrl,
+        },
+        sharedSpaceCount: person.sharedSpaceCount ?? 0,
+        spaceTitle: null,
+      };
+    });
+  }, [
+    directoryPeople,
+    home?.person.id,
+    members,
+    needle,
+    reachOut,
+    searchDirectory,
+    t,
+  ]);
   const reachOutIds = useMemo(
-    () => reachOut.map((card) => card.person.id),
-    [reachOut],
+    () => suggestionCards.map((card) => card.person.id),
+    [suggestionCards],
   );
 
   const titlesLoading =
@@ -2879,13 +2980,33 @@ export function MyConnections({
       {section === 'suggestions' ? (
         <section className="flex flex-col gap-3" aria-label={t('reachOut')}>
           <p className="text-2 text-muted-foreground">{t('suggestSentence')}</p>
-          {reachOut.length === 0 ? (
+          <label className="relative min-w-0 w-full">
+            <span className="sr-only">{t('searchMembers')}</span>
+            <Search
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
+              strokeWidth={1.5}
+              aria-hidden
+            />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') return;
+                event.stopPropagation();
+              }}
+              placeholder={t('searchMembers')}
+              className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-foreground focus-visible:ring-0"
+            />
+          </label>
+          {searching && needle ? (
+            <p className="text-2 text-muted-foreground">{t('loading')}</p>
+          ) : suggestionCards.length === 0 ? (
             <p className="text-2 text-muted-foreground">
-              {t('suggestionsEmpty')}
+              {needle ? t('noMembersMatchSearch') : t('suggestionsEmpty')}
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {reachOut.map((card) => (
+              {suggestionCards.map((card) => (
                 <button
                   key={card.key}
                   type="button"
@@ -2903,12 +3024,18 @@ export function MyConnections({
                     {card.name}
                   </span>
                   <span className="text-1 text-foreground">
-                    {card.kind === 'reconnect'
+                    {needle
+                      ? t('startConversation')
+                      : card.kind === 'reconnect'
                       ? t('longTimeNoSee')
                       : t('worthMeeting')}
                   </span>
                   <span className="w-full truncate text-1 text-muted-foreground">
-                    {card.kind === 'reconnect'
+                    {needle
+                      ? card.lastTs
+                        ? formatWhen(card.lastTs, locale, t('justNow'))
+                        : t('noMessage')
+                      : card.kind === 'reconnect'
                       ? card.lastTs
                         ? formatWhen(card.lastTs, locale, t('justNow'))
                         : t('noMessage')
@@ -3181,10 +3308,8 @@ export function MyConnections({
                 !searching ? (
                   <p className="text-2 text-muted-foreground">
                     {needle
-                      ? picking
+                      ? picking || section === 'messages'
                         ? t('noMembersMatchSearch')
-                        : section === 'messages'
-                        ? t('noMessagesMatch')
                         : t('noMatches')
                       : showChannelTags && inboxFilter !== 'direct'
                       ? t('inbox.empty')
@@ -3528,18 +3653,31 @@ function MemberList({
                   </span>
                 ) : null}
                 {showChannelTags && ChannelIcon ? (
-                  <span className="relative grid size-10 shrink-0 place-items-center border border-foreground text-foreground">
-                    <ChannelIcon
-                      className="size-4"
-                      strokeWidth={1.5}
-                      aria-hidden
-                    />
+                  <span className="relative size-10 shrink-0">
+                    <span className="grid size-full place-items-center overflow-hidden rounded-full border border-border bg-background text-foreground">
+                      {row.inbox?.kind === 'network' ? (
+                        <MemberHomeMark className="h-6 w-6" />
+                      ) : (
+                        <Image
+                          className="aspect-square h-full w-full object-cover"
+                          width={40}
+                          height={40}
+                          src={
+                            row.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE
+                          }
+                          alt=""
+                          aria-hidden
+                        />
+                      )}
+                    </span>
                     {contextHref ? (
-                      <ArrowUpRight
-                        className="pointer-events-none absolute top-px right-px size-2.5"
-                        strokeWidth={1.75}
-                        aria-hidden
-                      />
+                      <span className="pointer-events-none absolute top-0 right-0 grid size-3.5 place-items-center rounded-bl-md bg-background text-foreground">
+                        <ArrowUpRight
+                          className="size-2.5"
+                          strokeWidth={1.75}
+                          aria-hidden
+                        />
+                      </span>
                     ) : null}
                   </span>
                 ) : row.faces && row.faces.length > 0 ? (

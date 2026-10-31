@@ -87,6 +87,11 @@ export interface Message {
    */
   formattedContentHtml?: string;
   timestamp: Date;
+  /**
+   * True when this root message has been edited (`m.replace` / replacingEventId).
+   * The timeline keeps the original event id; content is the latest body.
+   */
+  edited?: boolean;
   pinned?: boolean;
   /** Matrix rich reply: event_id of the message being replied to. */
   inReplyToEventId?: string;

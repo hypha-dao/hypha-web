@@ -71,6 +71,7 @@ export type InboxSpaceLabel = {
   title: string;
   parentId: number | null;
   chatRoomId: string | null;
+  logoUrl: string | null;
   rootSlug: string;
   rootTitle: string;
 };
@@ -573,6 +574,8 @@ export type InboxChannelRow = {
   unread: number;
   roomId: string;
   inbox: InboxPlace;
+  /** Space mark for the channel list — null falls back to the default avatar. */
+  logoUrl: string | null;
   searchMembers: { name: string }[];
 };
 
@@ -603,6 +606,12 @@ export function channelRowsFromSnapshots(
   now = Date.now(),
 ): InboxChannelRow[] {
   const rows: InboxChannelRow[] = [];
+  const logoBySlug = new Map(
+    context.spaces.map((space) => [
+      space.slug.trim().toLowerCase(),
+      space.logoUrl?.trim() || null,
+    ]),
+  );
   const seen = new Set<string>();
   let networkSlot: {
     index: number;
@@ -662,6 +671,8 @@ export function channelRowsFromSnapshots(
       place.proposalTitle,
       place.proposalSlug,
     ].filter((value): value is string => Boolean(value));
+    const spaceSlug = place.spaceSlug?.trim().toLowerCase() ?? '';
+    const logoUrl = spaceSlug ? logoBySlug.get(spaceSlug) ?? null : null;
     rows.push({
       person: {
         id: channelPersonId(roomId),
@@ -680,6 +691,7 @@ export function channelRowsFromSnapshots(
       unread: snapshot.unread,
       roomId,
       inbox: place,
+      logoUrl,
       searchMembers: searchNames.map((label) => ({ name: label })),
     });
   }

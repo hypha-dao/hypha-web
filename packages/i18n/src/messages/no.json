@@ -785,7 +785,9 @@
       "empty": "Ingenting i dette filteret ennå."
     },
     "noMessagesMatch": "Ingen meldinger samsvarer med søket ditt.",
-    "noMembersMatchSearch": "Ingen medlemmer samsvarer med søket ditt."
+    "noMembersMatchSearch": "Ingen medlemmer samsvarer med søket ditt.",
+    "searchMembers": "Søk etter medlemmer",
+    "startConversation": "Start en samtale"
   },
   "NetworkFeedback": {
     "triggerLabel": "Bidra til Hypha",
@@ -3865,7 +3867,7 @@
     "backToSpaceChat": "Tilbake til romchatten",
     "copyButton": "Kopier",
     "copiedButton": "Kopiert!",
-    "tabChat": "Chat",
+    "tabChat": "Rom",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# ulest omtale} other {# uleste omtaler}}",
     "tabWithUnreadMentionsCapped": "{tabLabel}, 99 eller flere uleste omtaler",
     "tabMembers": "Medlemmer",
@@ -3878,6 +3880,7 @@
     "replyButton": "Svar",
     "editButton": "Rediger melding",
     "editingMessage": "Redigerer melding",
+    "messageEdited": "(redigert)",
     "editDismiss": "Avbryt redigering",
     "editAttachmentsNotSupported": "Vedlegg støttes ikke når du redigerer en melding",
     "editMediaRequiresAttachment": "Behold minst ett vedlegg når du redigerer denne meldingen.",
@@ -4261,7 +4264,10 @@
     "unarchiveGroupConfirm": "Ja, gjenopprett",
     "unarchiveGroupCancel": "Avbryt",
     "unarchiveGroupFailed": "Kunne ikke gjenopprette denne gruppen. Prøv igjen.",
-    "archivedGroupReadOnly": "Denne gruppen er arkivert. Gjenopprett den for å sende meldinger."
+    "archivedGroupReadOnly": "Denne gruppen er arkivert. Gjenopprett den for å sende meldinger.",
+    "typingOne": "{name} skriver…",
+    "typingTwo": "{name} og {other} skriver…",
+    "typingMany": "{count} personer skriver…"
   },
   "CoherenceTab": {
     "signals": "Signaler",

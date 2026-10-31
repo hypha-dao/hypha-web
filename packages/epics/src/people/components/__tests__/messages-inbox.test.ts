@@ -26,6 +26,7 @@ const context: InboxContext = {
       title: 'Hypha Platform',
       parentId: 1,
       chatRoomId: '!space:hs',
+      logoUrl: null,
       rootSlug: 'hypha',
       rootTitle: 'Hypha',
     },
@@ -168,6 +169,51 @@ describe('messages inbox context', () => {
     expect(row?.name).toBe('Roadmap page');
     expect(row?.inbox.kind).toBe('signal');
     expect(row?.person.id).toBeLessThan(0);
+  });
+
+  it('hides a withdrawn proposal chat even when it still has comments', () => {
+    // Server drops withdrawn ids from context.proposals; the room type alone
+    // must not keep it in Spaces → Proposals (or All).
+    const withoutWithdrawn = {
+      ...context,
+      proposals: [] as InboxContext['proposals'],
+    };
+    const rows = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!withdrawn:hs',
+          roomType: 'io.hypha.room.proposal',
+          name: 'Genesis IP Contribution',
+          aliases: [],
+          preview: 'still talking here',
+          mine: false,
+          lastTs: recent,
+          unread: 3,
+        },
+      ],
+      withoutWithdrawn,
+      'Network',
+      now,
+    );
+    expect(rows).toEqual([]);
+    expect(
+      channelIsRelevantToMember(
+        { roomId: '!withdrawn:hs', onSignalTeam: false },
+        {
+          kind: 'proposal',
+          spaceTitle: 'Hypha Platform',
+          spaceSlug: 'hypha-platform',
+          ecosystemTitle: 'Hypha',
+          ecosystemSlug: 'hypha',
+          signalTitle: null,
+          signalType: null,
+          signalSlug: null,
+          proposalTitle: 'Genesis IP Contribution',
+          proposalSlug: 'genesis-ip',
+        },
+        withoutWithdrawn,
+      ),
+    ).toBe(false);
   });
 
   it('shows a proposal chat only to a member who can vote on it', () => {
@@ -511,6 +557,7 @@ describe('messages inbox context', () => {
           title: 'Hypha',
           parentId: null,
           chatRoomId: '!hypha-space:hs',
+          logoUrl: null,
           rootSlug: 'hypha',
           rootTitle: 'Hypha',
         },

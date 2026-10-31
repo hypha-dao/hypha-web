@@ -1,0 +1,17 @@
+/*
+ * Space overview sits on a photographic / mycelium canvas. Soften craft cards
+ * just enough for the texture to read through — still opaque enough for type.
+ */
+.space-dashboard-surface {
+  --craft-card-rest: color-mix(in srgb, var(--background-2) 86%, transparent);
+}
+
+.space-dashboard-surface :is(.craft-card, .craft-card-interactive) {
+  background-color: var(--craft-card-rest);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+:is(.dark, .dark-theme, [data-theme='dark']) .space-dashboard-surface {
+  --craft-card-rest: color-mix(in srgb, var(--background-2) 78%, transparent);
+}

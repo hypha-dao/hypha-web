@@ -33,6 +33,12 @@ import { useMembers } from '@web/hooks/use-members';
 import { OverviewMonth } from './overview-month';
 import { SignalHeatMaps } from './signal-heat-map';
 import { SpaceActivityList } from './space-activity';
+import {
+  mapSpaceTreasuryAssets,
+  spaceTreasuryDistributionShare,
+  type SpaceTreasuryAsset,
+} from './space-treasury-assets';
+import './space-dashboard-surface.css';
 
 const SpaceGovernanceCharts = dynamic(
   () =>
@@ -365,12 +371,7 @@ function Quiet({ children }: { children: ReactNode }) {
   return <p className="text-2 text-neutral-11">{children}</p>;
 }
 
-type TreasuryAsset = {
-  symbol: string;
-  value: number;
-  usdEqual: number;
-  address: string;
-};
+type TreasuryAsset = SpaceTreasuryAsset;
 
 /** USDC, EURC, and the other catalogue assets that are not HYPHA. */
 function isLiquidNonHypha(asset: TreasuryAsset) {
@@ -469,21 +470,9 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
         }[];
         balance?: number;
       };
-      const assets = (body.assets ?? []).flatMap((asset) => {
-        if (!asset.symbol || !(asset.value && asset.value > 0)) return [];
-        return [
-          {
-            symbol: asset.symbol,
-            value: asset.value,
-            usdEqual:
-              typeof asset.usdEqual === 'number' &&
-              Number.isFinite(asset.usdEqual)
-                ? asset.usdEqual
-                : 0,
-            address: asset.address ?? '',
-          },
-        ];
-      });
+      // Keep zero-balance cards (e.g. newly issued HUMAILLL) so Treasury +
+      // holder graphs still mount once the space has at least one token.
+      const assets = mapSpaceTreasuryAssets(body.assets);
       const balance =
         typeof body.balance === 'number' && Number.isFinite(body.balance)
           ? body.balance
@@ -662,13 +651,17 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   const showTreasury = treasuryLoading || assets.length > 0;
   const showEcosystem = spaces.length > 0 || space?.parentId != null;
   const showSignals = signalsLoading || featuredSignals.length > 0;
-  const distributionSlices = distributionTokens.filter(
-    (asset) => asset.value > 0,
-  );
+  // Include zero-balance tokens in the distribution legend/pie so a lone
+  // unfunded issued token still appears (equal slices when total is 0).
+  const distributionSlices = distributionTokens;
   const distributionWedges = (() => {
     let cursor = -Math.PI / 2;
     return distributionSlices.map((asset, index) => {
-      const share = assetTotal > 0 ? asset.value / assetTotal : 0;
+      const share = spaceTreasuryDistributionShare(
+        asset.value,
+        assetTotal,
+        distributionSlices.length,
+      );
       const start = cursor;
       const end = cursor + share * Math.PI * 2;
       cursor = end;
@@ -684,7 +677,7 @@ export function SpaceDashboard({ spaceSlug }: { spaceSlug: string }) {
   })();
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="space-dashboard-surface flex flex-col gap-6">
       {name ? (
         <header className="flex min-w-0 flex-col gap-1 border-b-2 border-[color:var(--space-spot,var(--space-accent))] pb-3">
           {greetingLink ? (

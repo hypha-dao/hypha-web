@@ -101,34 +101,59 @@ export function memberHomeListAsk(
     "who's around",
     'who are around',
     'who should i connect with',
+    'who could use a hello',
     'quién está cerca',
+    'quién podría usar un hola',
     'qui est là',
+    "qui aurait besoin d'un bonjour",
     'quem está por perto',
+    'quem poderia usar um oi',
     'wer ist da',
+    'wer könnte einen hallo brauchen',
     'wie is er in de buurt',
+    'wie kan een hallo gebruiken',
     'hvem er i nærheten',
+    'hvem kunne trenge en hei',
     'кој е во близина',
+    'кому му треба здраво',
   ]);
   const spaces = new Set([
     'step into a space',
+    'where should i show up',
     'entrar en un espacio',
+    'dónde debería aparecer',
     'entrer dans un espace',
+    'où dois-je me montrer',
     'entrar num espaço',
+    'onde devo aparecer',
     'einen space betreten',
+    'wo sollte ich auftauchen',
     'stap een space binnen',
+    'waar moet ik opduiken',
     'gå inn i et rom',
+    'hvor bør jeg dukke opp',
     'влези во простор',
+    'каде да се појавам',
   ]);
   const tokens = new Set([
     'send someone tokens',
+    'who could use a thank-you',
+    'who could use a thank you',
     'enviar tokens a alguien',
+    'quién podría usar un agradecimiento',
     'envoyer des tokens à quelqu’un',
     "envoyer des tokens à quelqu'un",
+    "qui aurait besoin d'un merci",
     'enviar tokens a alguém',
+    'quem poderia usar um obrigado',
     'jemandem token senden',
+    'wer könnte ein dankeschön brauchen',
     'iemand tokens sturen',
+    'wie kan een bedankje gebruiken',
     'send tokens til noen',
+    'hvem kunne trenge en takk',
     'испрати токени на некого',
+    'кому му треба благодарност',
   ]);
   if (people.has(chip)) return 'people';
   if (spaces.has(chip)) return 'spaces';
@@ -138,12 +163,12 @@ export function memberHomeListAsk(
 
 function listTurnLine(kind: 'people' | 'spaces' | 'tokens') {
   if (kind === 'people') {
-    return 'This turn: they asked who is around. The people list is already on screen above your reply, online first. One short warm sentence in the same voice as "Where can I be useful?" — like a friend opening the circle, not a UI caption. Invite them toward chat or call. Never say above, below, listed, tap, or screen. Do not rank anyone by shared spaces. Do not invent who is online. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not mention a signal, a proposal, or a decision.';
+    return 'This turn: they asked who is around. The people list is already on screen above your reply, online first. Match the warmth of "Where can I be useful?" — three or four short sentences, like a friend opening the circle, then stop. Speak to them by first name. Invite a chat or a call in one gentle opening. Never say above, below, listed, tap, or screen. Do not name a specific person. Do not invent who is online. Do not rank anyone by shared spaces. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not mention a signal, a proposal, or a decision.';
   }
   if (kind === 'spaces') {
-    return 'This turn: they asked to step into a space. The space list is already on screen above your reply. One short warm sentence in the same voice as "Where can I be useful?" — like a friend opening the door, not a UI caption. Invite them to step in. Never say above, below, listed, tap, or screen. Do not name a space. Do not suggest they leave one space for another. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
+    return 'This turn: they asked to step into a space. The space list is already on screen above your reply. Match the warmth of "Where can I be useful?" — three or four short sentences, like a friend opening the door, then stop. Speak to them by first name. Notice that their spaces are ready when they are. Invite them to step into whichever one is calling them. Never say above, below, listed, tap, or screen. Do not name a space. Do not suggest they leave one space for another. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
   }
-  return 'This turn: they asked to send tokens. The send form is already on screen above your reply. One short warm sentence in the same voice as "Where can I be useful?" — like a friend offering to help send, not a UI caption. Ask who they would like to send to. Never say above, below, listed, tap, or screen. Do not name a closest person. Do not rank anyone by shared spaces. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
+  return 'This turn: they asked to send tokens. The send form is already on screen above your reply — they send, you do not. You cannot send, transfer, or move tokens. Never say you sent them, transferred them, that they are on the way, or that the send is done. Match the warmth of "Where can I be useful?" — three or four short sentences, like a friend inviting a thank-you, then stop. Speak to them by first name. Notice that a thank-you can land with someone they already share a space with. Ask who they would like to send to, in ordinary speech — never field labels. Never say above, below, listed, tap, or screen. Do not name a closest person. Do not rank anyone by shared spaces. Do not invent an amount or a token. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal.';
 }
 
 function isShareControlPhrase(text: string): boolean {
@@ -157,9 +182,12 @@ function isShareControlPhrase(text: string): boolean {
   }
   if (memberHomeListAsk(normalized)) return true;
   return (
-    /^(?:where can i be useful|step into a space|who should i connect with|who is around|what needs a decision|send someone tokens|pause|stop|enough|continue with what still needs me)[.!?]?$/.test(
+    /^(?:where can i be useful|step into a space|where should i show up|who should i connect with|who is around|who could use a hello|what needs a decision|where is my voice needed|send someone tokens|who could use a thank-you|who could use a thank you|pause|stop|enough|continue with what still needs me)[.!?]?$/.test(
       normalized,
-    ) || /\b(?:what needs a decision|needs a decision)\b/.test(normalized)
+    ) ||
+    /\b(?:what needs a decision|needs a decision|where is my voice needed)\b/.test(
+      normalized,
+    )
   );
 }
 
@@ -375,9 +403,32 @@ export function formatMemberHomeFacts(
             )}"`;
           })
           .join('\n');
-  const decisionAsk = /what needs a decision|needs a decision/i.test(
-    options?.asked ?? '',
-  );
+  const decisionAsk = (() => {
+    const chip = foldChip(options?.asked ?? '');
+    if (!chip) return false;
+    const decisions = new Set([
+      'what needs a decision',
+      'where is my voice needed',
+      'qué necesita una decisión',
+      'dónde se necesita mi voz',
+      "qu'est-ce qui demande une décision",
+      'où ma voix est-elle utile',
+      'o que precisa de uma decisão',
+      'onde minha voz é necessária',
+      'was braucht eine entscheidung',
+      'wo wird meine stimme gebraucht',
+      'wat vraagt een beslissing',
+      'waar is mijn stem nodig',
+      'hva trenger en beslutning',
+      'hvor trengs stemmen min',
+      'што бара одлука',
+      'каде е потребен мојот глас',
+    ]);
+    if (decisions.has(chip)) return true;
+    return /\b(?:what needs a decision|needs a decision)\b/i.test(
+      options?.asked ?? '',
+    );
+  })();
   const shownKeys = new Set(
     (options?.alreadyShown ?? []).map((key) => key.trim()).filter(Boolean),
   );
@@ -403,23 +454,29 @@ export function formatMemberHomeFacts(
     (namedAside ? memberHomeThreadItemKey(namedAside) : '');
   const stillOpen = (item: { kind: string; slug: string }) =>
     !asideKey || memberHomeThreadItemKey(item) !== asideKey;
+  // Decisions come from the full attention catalog, not the short focus walk —
+  // otherwise a second "What needs a decision?" cannot reach the next vote
+  // once focus is filled with signals or the first proposal.
+  const openDecisions = catalogOpen.filter(
+    (item) => item.action === 'decision' && stillOpen(item),
+  );
+  const unspokenDecision = openDecisions.find(
+    (item) => !shownKeys.has(memberHomeThreadItemKey(item)),
+  );
   // A new waiting item comes first. When every one was already placed, a
   // normal follow-up still carries that card — except a continue/return ask,
-  // which must not re-brief the same item in a loop.
-  const spoken =
-    (askedItem && stillOpen(askedItem) ? askedItem : null) ??
-    (decisionAsk
-      ? unspoken.find(
-          (item) => item.action === 'decision' && stillOpen(item),
-        ) ??
-        stillWaiting.find(
-          (item) => item.action === 'decision' && stillOpen(item),
-        )
-      : undefined) ??
-    unspoken.find(stillOpen) ??
-    (!shareTurn && !lookAsk && !continueAsk && !usefulAsk
-      ? stillWaiting.find(stillOpen) ?? null
-      : null);
+  // which must not re-brief the same item in a loop. A decision chip never
+  // re-opens an already-placed vote and never falls through to a signal.
+  const spoken = (() => {
+    if (askedItem && stillOpen(askedItem)) return askedItem;
+    if (decisionAsk) return unspokenDecision ?? null;
+    return (
+      unspoken.find(stillOpen) ??
+      (!shareTurn && !lookAsk && !continueAsk && !usefulAsk
+        ? stillWaiting.find(stillOpen) ?? null
+        : null)
+    );
+  })();
   const looked = lookAsk
     ? memberHomeThreadItemForMessage(listMemberHomeThreadCatalog(home), {
         content: options?.prior ?? '',
@@ -477,6 +534,8 @@ export function formatMemberHomeFacts(
       ? 'They just set that one aside. One line that you will leave it for another time. Do not call show_member_home_item. Do not place that card under this reply.'
       : continueAsk && !spoken
       ? 'They asked to continue. Every waiting item was already placed in earlier replies. One short line that you already covered what is open for now. Do not place the same card again. Do not invent a new person or item. Do not call show_member_home_item.'
+      : decisionAsk && !spoken
+      ? 'They asked what needs a decision. Nothing fresh is waiting on a vote that has not already been placed. One short line that nothing needs their voice right now. Do not place a card. Do not invent a proposal. Do not call show_member_home_item. Do not rank people by shared spaces.'
       : usefulAsk && !spoken
       ? 'They asked where they can be useful. Nothing fresh is waiting that has not already been placed. One short line that nothing needs them right now. Do not place a card. Do not invent a person or item. Do not call show_member_home_item. Do not rank people by shared spaces.'
       : spoken
@@ -493,18 +552,21 @@ export function formatMemberHomeFacts(
     usefulAsk
       ? 'This turn: they asked where they can be useful. Brief ONLY the one waiting item in this brief. Three or four short sentences about that one person and that one need, then stop. Call show_member_home_item once for that card. One item. One card. Forbidden, including close paraphrases: ranking people by shared spaces, "keeps showing up across the most spaces", bundling a roster person with a signal, offering to navigate to signals, inventing collaboration details not on the item line, a second topic. Do not use the connections roster for this reply.'
       : null,
+    decisionAsk && !listAsk && spoken
+      ? 'This turn: they asked what needs a decision. Brief ONLY the one decision item in this brief — the proposal, invite, or vote on the Card for this reply line. Three or four short sentences in the same voice as "Where can I be useful?", like a friend catching them up on who is asking the community for a voice, then stop. Call show_member_home_item once for that card. One item. One card. Follow INTRODUCE. Never a numbered list of proposals. Forbidden, including close paraphrases: ranking people by shared spaces, "Currently, here are the recent proposals", "requiring your decision", "Do any of these proposals stand out", inventing a second proposal, a second topic. Do not use the connections roster for this reply.'
+      : null,
     'Member home facts for this signed-in person. These are records. Keep the Hypha AI voice from the instructions above. You already know this member, the spaces they belong to, and the people they share those spaces with. Accompany them. The collective is the point. Everyone here can be helpful. No open question about what they feel like doing. One gentle opening about this item is enough. Never a command.',
-    'LENGTH: Typed chat and spoken voice are the same script: three or four short sentences, like a friend catching them up, then stop. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Never a paragraph. Never a wall of text. Never a second topic, another space, or a separate upvote nudge. Never repeat the same idea in different words. Never say the same sentence twice. Do not dump about=. Do not list every name in with=. One person and one space is enough. The detail is already on screen, so do not describe an interface.',
+    'LENGTH: Typed chat and spoken voice are the same words: three or four short sentences, like a friend catching them up, then stop. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Never a paragraph. Never a wall of text. Never a second topic, another space, or a separate upvote nudge. Never repeat the same idea in different words. Never say the same sentence twice. Do not dump about=. Do not list every name in with=. One person and one space is enough. The detail is already on screen, so do not describe an interface.',
     'INTRODUCE: You are a friend in this community, catching them up on one person who is asking for attention. Talk about the people, never the interface. Never say card, screen, or button. Never say "You can now decide on the proposal card." Address the member by first name. Speak to them by name. The person who raised it is the subject, in the active voice, by first name (the first word of creator=). Sound like care, not a task. Observation, what the community needs, then one gentle opening. Use only facts on that item\'s line. creator= and space= on one line belong together — never put a person from one line into another line\'s space. Example shapes below are shapes only: never copy their names (Suzana, Kuan, Ronnie, Marieke, Flywheel, Energy) onto a real item. Do not add a person, a number, a place, or a reason that is not written on that line. spoken= is he or she. When spoken=he, say he and his. When spoken=she, say she and her.',
     'BINDING: The words and show_member_home_item are one fact. kind=, slug=, creator=, space=, title=, summary=, and action= on the Card for this reply line are the only truth. If action=decision or action=outcome and category=invite (or title is Invite Member), this is an invite proposal in that space — never call it a signal, never invent a collaboration, a produce run, another space, or a signals board. If kind=signal, do not call it an invite or a vote. Never move creator= into a space= that is not on that same line. Never brief a different waiting item under this card.',
     'WHERE WE LEFT OFF: If a previous reply is named below, continue that conversation. One clause that picks the thread up, using their first name only if you have not just used it, then this item. Do not greet again. Do not invent a visit, a feeling, or a promise that reply did not already say. If this is the first thing you say this visit, greet them by first name as someone you already know. Do not invent where you left off.',
     'VOICE: Warm, easy, and glad to be with them. Nonviolent: say what you notice, what the people need, and one opening they can accept or leave. Empathic, never urgent. Collective: this is a community where everyone can help. Never lead with a command. Forbidden, including close paraphrases: "Want to vote", "There\'s still time to vote", "Can you review", "Take a look", "You need to".',
-    'Invite still open (title, category, or summary is someone asking to join or become a member, and action=decision): their first name has asked to join that space. The people who already belong there are who can welcome them. Example shape, not a script to copy: "Alex, Kuan has asked to join Hypha Flywheel. The people there would feel it if you sat with that. Only if it feels right."',
-    'Proposal still open (action=decision, not an invite): their first name owns it. One concrete clause from summary= or title=, as something the community is holding together. Example shape, not a script to copy: "Alex, Ronnie has been sitting with the studio costs in Hypha Energy. The people there would be glad of your voice, whenever it feels right."',
+    'Invite still open (title, category, or summary is someone asking to join or become a member, and action=decision): their first name has asked to join that space. The people who already belong there are who can welcome them. Example shape only — invent fresh wording: "Alex, Kuan has asked to join Hypha Flywheel. The people there would feel it if you sat with that. Only if it feels right."',
+    'Proposal still open (action=decision, not an invite): their first name owns it. One concrete clause from summary= or title=, as something the community is holding together. Example shape only — invent fresh wording: "Alex, Ronnie has been sitting with the studio costs in Hypha Energy. The people there would be glad of your voice, whenever it feels right."',
     'Proposal passed (action=outcome and passed=yes): it just passed. What it covers, from summary=, in one clause, then participation=% and unity=% from the record. Example shape: "Alex\'s expenses proposal just passed. It covers the IT costs, with 62% participation and 80% unity." When say= is present, that sentence states the outcome. Keep its percents.',
-    'Proposal failed (action=outcome and passed=no): it did not pass. Say what the numbers show. Low participation means it did not carry. Low unity means unity was weak. Use the percents on the line. Do not invent a quorum figure that is not written there. Example shape, not a script to copy: "Ronnie\'s proposal to fund the studio didn\'t pass. Participation stayed at 18%, and unity was weak."',
-    'Signal that is a need, or someone needing a hand: their first name could use the community, on the concrete thing, in that space. Example shape, not a script to copy: "Alex, Marieke in the energy hub could use a hand with the first interviews. It would mean a lot if you had a moment."',
-    'Signal that is a tension: their first name is naming something the community can hold, and what it is about. Example shape, not a script to copy: "Alex, Suzana is naming a tension about how decisions land. She would feel met if you stayed with it for a moment."',
+    'Proposal failed (action=outcome and passed=no): it did not pass. Say what the numbers show. Low participation means it did not carry. Low unity means unity was weak. Use the percents on the line. Do not invent a quorum figure that is not written there. Example shape only — invent fresh wording: "Ronnie\'s proposal to fund the studio didn\'t pass. Participation stayed at 18%, and unity was weak."',
+    'Signal that is a need, or someone needing a hand: their first name could use the community, on the concrete thing, in that space. Example shape only — invent fresh wording: "Alex, Marieke in the energy hub could use a hand with the first interviews. It would mean a lot if you had a moment."',
+    'Signal that is a tension: their first name is naming something the community can hold, and what it is about. Example shape only — invent fresh wording: "Alex, Suzana is naming a tension about how decisions land. She would feel met if you stayed with it for a moment."',
     'Any other signal: still their first name as the subject, the space, and one clause of what it is about. Warm and specific. Never say validate. Never offer to post unless they asked to share.',
     'POSTING: Never volunteer to post, draft, or leave a note on a signal. Never invent that they already asked for a call, a share, or a post. Never ask "Should I post it?" Forbidden, including close paraphrases: "Earlier you said", "so I can post a short note", "Should I post it?", "I can post", "I\'ll post a note", "your call could pull in". create_human_chat_message only when they clearly asked to share or post and the lines or a file are in that message. Until then, do not offer to post on their behalf.',
     'QUEUE: Never say that nothing needs them while any waiting item remains in this brief. Declining a post offer, or dropping a note idea, is not the end of the queue. Name the next waiting item instead.',
