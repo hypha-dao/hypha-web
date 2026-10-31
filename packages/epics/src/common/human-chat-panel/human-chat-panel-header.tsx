@@ -250,6 +250,12 @@ export function HumanChatPanelHeader({
                 {titleStart}
               </div>
             ) : null}
+            <span
+              className="min-w-0 truncate text-sm leading-5 font-medium text-foreground"
+              title={iconTitle}
+            >
+              {iconTitle}
+            </span>
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>

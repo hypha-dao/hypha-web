@@ -101,4 +101,11 @@ describe('group picker chips and radio', () => {
     expect(source).toContain('matrixUserId={');
     expect(source).toContain('personIdToMatrixUserId[row.person.id]');
   });
+
+  it('shows the earth globe on the Messages Network channel row', () => {
+    expect(source).toContain("row.inbox?.kind === 'network'");
+    expect(source).toContain(
+      '<Globe2 className="h-6 w-6" strokeWidth={1.5} />',
+    );
+  });
 });

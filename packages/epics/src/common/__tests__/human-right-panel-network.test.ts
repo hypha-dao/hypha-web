@@ -40,11 +40,15 @@ describe('network room join guard', () => {
     expect(source).toContain('Mid-switch both refs may be empty');
   });
 
-  it('shows the mycelium mark beside the network globe (no external-link arrow)', () => {
+  it('shows mycelium + Network label + earth globe for network chrome', () => {
     expect(source).toContain('MemberHomeMark');
     expect(source).toContain(
       "coherenceChannel === 'network' || isNetworkSpaceChat",
     );
+    expect(source).toContain(
+      "isNetworkSpaceChat || coherenceChannel === 'network'",
+    );
+    expect(source).toContain('networkRoomTitle');
   });
 
   it('treats Home / Messages space mode without a slug as not the network room', () => {

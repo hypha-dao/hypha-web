@@ -151,7 +151,6 @@ import {
   type InboxFilter,
   type JoinedChannelSnapshot,
 } from './messages-inbox';
-import { MemberHomeMark } from './member-home-mark';
 import { GroupFaces } from './group-faces';
 import { PersonAvatar } from './person-avatar';
 
@@ -3631,7 +3630,8 @@ function MemberList({
                   <span className="relative size-10 shrink-0">
                     <span className="grid size-full place-items-center overflow-hidden rounded-full border border-border bg-background text-foreground">
                       {row.inbox?.kind === 'network' ? (
-                        <MemberHomeMark className="h-6 w-6" />
+                        // Same earth mark as the Network nav / panel globe.
+                        <Globe2 className="h-6 w-6" strokeWidth={1.5} />
                       ) : (
                         <Image
                           className="aspect-square h-full w-full object-cover"
