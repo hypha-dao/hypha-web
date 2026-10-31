@@ -16,6 +16,7 @@ import {
   matrixJoinRoom,
   matrixListRoomMessages,
   matrixSendTextMessage,
+  matrixSendTyping,
   resolveUserMatrixAccessTokenForSend,
 } from '@hypha-platform/core/server';
 import { mentionAwaitingAgent, type AgentRoomLine } from './matrix-agent-turn';
@@ -140,6 +141,42 @@ function agentReplyTxnId(roomId: string, question: string): string {
 }
 
 const AGENT_WRITE_MS = 22_000;
+/** Match the human chat typing timeout so peers keep seeing the indicator. */
+const AGENT_TYPING_TIMEOUT_MS = 30_000;
+/** Re-assert typing before the homeserver expires it. */
+const AGENT_TYPING_REFRESH_MS = 20_000;
+
+/**
+ * Show "AI Agents is typing…" in the room while the model runs and the reply
+ * posts. Soft-fails with `matrixSendTyping`.
+ */
+async function withAgentTyping<T>(
+  roomId: string,
+  agentUserId: string,
+  botToken: string,
+  homeserver: string,
+  work: () => Promise<T>,
+): Promise<T> {
+  const pulse = () =>
+    matrixSendTyping(
+      roomId,
+      agentUserId,
+      true,
+      botToken,
+      homeserver,
+      AGENT_TYPING_TIMEOUT_MS,
+    );
+  await pulse();
+  const refresh = setInterval(() => {
+    void pulse();
+  }, AGENT_TYPING_REFRESH_MS);
+  try {
+    return await work();
+  } finally {
+    clearInterval(refresh);
+    await matrixSendTyping(roomId, agentUserId, false, botToken, homeserver, 0);
+  }
+}
 
 async function writeAgentText(input: {
   system: string;
@@ -345,49 +382,66 @@ export async function replyToMatrixAgentMention({
     specialist?.role ?? 'AI Agents',
   )}\n\n${AGENT_PROMPT_REST}`;
 
-  let text = '';
   try {
-    text = await writeAgentText({
-      system,
-      prompt,
-      tools: readTools as unknown as Parameters<
-        typeof generateText
-      >[0]['tools'],
-    });
-  } catch (error) {
-    console.warn(
-      '[MatrixAgent] Failed to write a reply:',
+    return await withAgentTyping(
       trimmedRoom,
-      error instanceof Error ? error.message : error,
-    );
-    return { replied: false };
-  }
-  if (!text) return { replied: false };
-
-  try {
-    await matrixJoinRoom(trimmedRoom, botToken, homeserver);
-  } catch {
-    // The agent is already in the room, or the room is one it created.
-  }
-
-  try {
-    await matrixSendTextMessage(
-      trimmedRoom,
-      text,
+      agentUserId,
       botToken,
       homeserver,
-      specialist
-        ? { [HYPHA_AGENT_SPECIALIST_FIELD]: specialist.id }
-        : undefined,
-      agentReplyTxnId(trimmedRoom, turn.question),
+      async () => {
+        let text = '';
+        try {
+          text = await writeAgentText({
+            system,
+            prompt,
+            tools: readTools as unknown as Parameters<
+              typeof generateText
+            >[0]['tools'],
+          });
+        } catch (error) {
+          console.warn(
+            '[MatrixAgent] Failed to write a reply:',
+            trimmedRoom,
+            error instanceof Error ? error.message : error,
+          );
+          return { replied: false };
+        }
+        if (!text) return { replied: false };
+
+        try {
+          await matrixJoinRoom(trimmedRoom, botToken, homeserver);
+        } catch {
+          // The agent is already in the room, or the room is one it created.
+        }
+
+        try {
+          await matrixSendTextMessage(
+            trimmedRoom,
+            text,
+            botToken,
+            homeserver,
+            specialist
+              ? { [HYPHA_AGENT_SPECIALIST_FIELD]: specialist.id }
+              : undefined,
+            agentReplyTxnId(trimmedRoom, turn.question),
+          );
+        } catch (error) {
+          console.warn(
+            '[MatrixAgent] Failed to post the reply:',
+            trimmedRoom,
+            error instanceof Error ? error.message : error,
+          );
+          return { replied: false };
+        }
+        return { replied: true };
+      },
     );
   } catch (error) {
     console.warn(
-      '[MatrixAgent] Failed to post the reply:',
+      '[MatrixAgent] Typing wrapper failed:',
       trimmedRoom,
       error instanceof Error ? error.message : error,
     );
     return { replied: false };
   }
-  return { replied: true };
 }
