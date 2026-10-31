@@ -136,9 +136,6 @@ export function HumanChatPanelHeader({
         {trailingEnd}
       </div>
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-        {displayDescription && (
-          <p className="craft-meta line-clamp-1">{displayDescription}</p>
-        )}
         {titleStart}
         {mark && !roomChoice ? (
           <span
@@ -225,9 +222,18 @@ export function HumanChatPanelHeader({
             </Tooltip>
           </TooltipProvider>
         ) : displayTitle ? (
-          <span className="min-w-0 truncate text-sm font-medium text-foreground">
-            {displayTitle}
-          </span>
+          <div className="flex min-w-0 flex-col items-end gap-0.5">
+            <span className="min-w-0 truncate text-sm font-medium text-foreground">
+              {displayTitle}
+            </span>
+            {displayDescription ? (
+              <p className="craft-meta max-w-full truncate text-right">
+                {displayDescription}
+              </p>
+            ) : null}
+          </div>
+        ) : displayDescription ? (
+          <p className="craft-meta line-clamp-1">{displayDescription}</p>
         ) : null}
       </div>
     </div>

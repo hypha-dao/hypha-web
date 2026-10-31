@@ -23,6 +23,8 @@ import {
   Image as ImageIcon,
   Loader2,
   Play,
+  Check,
+  CheckCheck,
 } from 'lucide-react';
 import {
   Skeleton,
@@ -781,6 +783,11 @@ type HumanChatPanelMessageBubbleProps = {
   unreadBoundary?: boolean;
   /** Brief flash after jumping here from a reply quote. */
   jumpFlash?: boolean;
+  /**
+   * DM-only receipt on own messages: single check = sent, double = peer read.
+   * Omit for other people's messages and for space/group rooms.
+   */
+  receiptStatus?: 'sent' | 'read' | null;
 };
 
 const MAX_VISIBLE_REACTIONS = 12;
@@ -1639,6 +1646,7 @@ export function HumanChatPanelMessageBubble({
   onCancelSendPending,
   unreadBoundary = false,
   jumpFlash = false,
+  receiptStatus = null,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
   const tCoherence = useTranslations('CoherenceTab');
@@ -2149,6 +2157,45 @@ export function HumanChatPanelMessageBubble({
                 {timestamp}
               </span>
             )}
+            {receiptStatus === 'sent' || receiptStatus === 'read' ? (
+              <span
+                className={cn(
+                  'inline-flex shrink-0 items-center',
+                  receiptStatus === 'read'
+                    ? 'text-accent-11'
+                    : 'text-muted-foreground',
+                )}
+                data-testid={
+                  receiptStatus === 'read'
+                    ? 'chat-message-receipt-read'
+                    : 'chat-message-receipt-sent'
+                }
+                aria-label={
+                  receiptStatus === 'read'
+                    ? t('messageReadAria')
+                    : t('messageSentAria')
+                }
+                title={
+                  receiptStatus === 'read'
+                    ? t('messageReadAria')
+                    : t('messageSentAria')
+                }
+              >
+                {receiptStatus === 'read' ? (
+                  <CheckCheck
+                    className="h-3.5 w-3.5"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                ) : (
+                  <Check
+                    className="h-3.5 w-3.5"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                )}
+              </span>
+            ) : null}
             {message.edited ? (
               <span
                 className="shrink-0 text-xs text-muted-foreground/80"

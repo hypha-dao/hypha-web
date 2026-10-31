@@ -5,13 +5,14 @@ import {
   ClientEvent,
   MatrixEventEvent,
   RoomStateEvent,
+  UserEvent,
   type MatrixClient,
   type MatrixEvent,
   type Room,
 } from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { Check, Plus } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
   useParams,
@@ -192,6 +193,17 @@ import { SignalTurnIntoProposalButton } from '../coherence/components/signal-tur
 import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
 import { SignalIndicativeAmounts } from '../coherence/components/signal-indicative-amounts';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
+import {
+  dmPeerMatrixUserId,
+  messageIsReadByPeer,
+  peerReadUpToEventId,
+} from './human-chat-panel/matrix-chat-receipts';
+import { peerLastSeenFormatParts } from './human-chat-panel/format-peer-last-seen';
+import {
+  peerLastSeenLine,
+  readMemberPresenceDetail,
+  type MemberPresenceDetail,
+} from '../people/components/member-presence';
 import {
   replaceMxidsWithComposerMentionTokens,
   replaceMxidsWithVisibleMentionLabels,
@@ -1146,6 +1158,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const tSpaces = useTranslations('Spaces');
   const tMember = useTranslations('MemberHome');
   const tConnections = useTranslations('Connections');
+  const formatter = useFormatter();
   const isMobile = useIsMobile() ?? false;
   const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
   const isTouchCallChrome = isMobile || prefersCoarsePointer;
@@ -1500,6 +1513,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [roomId]);
 
   const [unreadBump, setUnreadBump] = useState(0);
+  const [dmPeerPresence, setDmPeerPresence] =
+    useState<MemberPresenceDetail | null>(null);
   const [aggregateMentionBump, setAggregateMentionBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
   /** False while the open thread is scrolled up, so history must not count as read. */
@@ -4944,6 +4959,93 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return computeHumanChatUnreadState(room ?? undefined, currentUserId);
   }, [client, roomId, currentUserId, unreadBump]);
 
+  const dmPeerUserId = useMemo(() => {
+    if (!isDirectConversation || !client || !roomId || !currentUserId) {
+      return null;
+    }
+    const room = client.getRoom(roomId);
+    if (!room) return null;
+    return dmPeerMatrixUserId(room, currentUserId);
+  }, [
+    isDirectConversation,
+    client,
+    roomId,
+    currentUserId,
+    mentionMembershipEpoch,
+  ]);
+
+  const dmPeerReadUpToEventId = useMemo(() => {
+    if (!dmPeerUserId || !client || !roomId) return null;
+    const room = client.getRoom(roomId);
+    if (!room) return null;
+    return peerReadUpToEventId(room, dmPeerUserId);
+  }, [dmPeerUserId, client, roomId, unreadBump]);
+
+  const isDmMessageReadByPeer = useCallback(
+    (eventId: string) => {
+      if (!dmPeerUserId || !client || !roomId) return false;
+      const room = client.getRoom(roomId);
+      if (!room) return false;
+      return messageIsReadByPeer(room, dmPeerUserId, eventId);
+    },
+    [dmPeerUserId, client, roomId, unreadBump],
+  );
+
+  useEffect(() => {
+    if (!isDirectConversation || !client || !dmPeerUserId) {
+      setDmPeerPresence(null);
+      return;
+    }
+    let cancelled = false;
+    const load = () => {
+      void readMemberPresenceDetail(client, dmPeerUserId).then((detail) => {
+        if (!cancelled) setDmPeerPresence(detail);
+      });
+    };
+    load();
+    const interval = window.setInterval(load, 30_000);
+    client.on(UserEvent.Presence, load);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      client.removeListener(UserEvent.Presence, load);
+    };
+  }, [isDirectConversation, client, dmPeerUserId]);
+
+  const dmPeerPresenceDescription = useMemo(() => {
+    if (!isDirectConversation) return undefined;
+    const line = peerLastSeenLine(dmPeerPresence);
+    if (line.kind === 'online') return t('presenceOnline');
+    if (line.kind !== 'lastSeenAt') return undefined;
+    const parts = peerLastSeenFormatParts(
+      line.at,
+      (date) =>
+        formatter.dateTime(date, {
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
+      (date) =>
+        formatter.dateTime(date, {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        }),
+    );
+    if (parts.key === 'lastSeenToday') {
+      return t('presenceLastSeenToday', { time: parts.time });
+    }
+    if (parts.key === 'lastSeenYesterday') {
+      return t('presenceLastSeenYesterday', { time: parts.time });
+    }
+    if (parts.key === 'lastSeenDate') {
+      return t('presenceLastSeenDate', {
+        date: parts.date,
+        time: parts.time,
+      });
+    }
+    return t('presenceOnline');
+  }, [isDirectConversation, dmPeerPresence, formatter, t]);
+
   /** Unread badges on Space / Ecosystem / Public — joined rooms only. */
   const spaceChannelUnread = useMemo(() => {
     const empty = { count: 0, capped: false };
@@ -5967,6 +6069,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               ? groupTitle ?? coherenceTitle ?? undefined
               : ''
           }
+          description={dmPeerPresenceDescription}
           iconTitle={
             mode === 'space' && !spaceSlug?.trim()
               ? t('networkRoomTitle')
@@ -6664,6 +6767,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       roomId={roomId}
                       currentUserId={currentUserId}
                       currentUserAvatarUrl={currentUserAvatarUrl}
+                      dmPeerUserId={dmPeerUserId}
+                      peerReadUpToEventId={dmPeerReadUpToEventId}
+                      isMessageReadByPeer={
+                        dmPeerUserId ? isDmMessageReadByPeer : undefined
+                      }
                       welcomeText={
                         mode === 'space' && !spaceSlug?.trim()
                           ? t('networkWelcome')

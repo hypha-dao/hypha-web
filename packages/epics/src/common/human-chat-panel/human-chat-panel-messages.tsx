@@ -238,6 +238,15 @@ type HumanChatPanelMessagesProps = {
     addedEvents: number;
     hasMoreOlder: boolean;
   }>;
+  /**
+   * DM peer MXID. When set with `peerReadUpToEventId`, own messages show
+   * sent/read ticks.
+   */
+  dmPeerUserId?: string | null;
+  /** Peer's public read-receipt cursor event id for this DM. */
+  peerReadUpToEventId?: string | null;
+  /** True when an own message id is at or before the peer read cursor. */
+  isMessageReadByPeer?: (eventId: string) => boolean;
 };
 
 export function HumanChatPanelMessages({
@@ -271,6 +280,9 @@ export function HumanChatPanelMessages({
   loadingOlderMessages = false,
   enableAutoLoadOlderMessages = true,
   onLoadOlderMessages,
+  dmPeerUserId = null,
+  peerReadUpToEventId = null,
+  isMessageReadByPeer,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
   const formatter = useFormatter();
@@ -894,6 +906,17 @@ export function HumanChatPanelMessages({
                   msg.sendPending && onCancelSendPending
                     ? onCancelSendPending
                     : undefined
+                }
+                receiptStatus={
+                  !dmPeerUserId ||
+                  msg.role !== 'user' ||
+                  msg.isSynthetic ||
+                  msg.sendPending
+                    ? null
+                    : isMessageReadByPeer?.(msg.id) ||
+                      peerReadUpToEventId === msg.id
+                    ? 'read'
+                    : 'sent'
                 }
               />
             );
