@@ -157,6 +157,7 @@ import {
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { buildDialogHref } from '../notifications/dialog-url';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
+import { isNetworkPath } from './use-is-space-context';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { getDhoPathOverview, getSignalPath } from './get-path-function';
 import {
@@ -4111,8 +4112,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   // The network page has one room. An ecosystem is a root space, so that
   // room sits beside the space chat, not beside the network.
+  // Only join on `/{lang}/network` — default panel mode is `space`, and Home /
+  // Messages / wallet have no space slug, so without this guard every member
+  // page would call ensureNetworkRoom (400s + long poll → tab hang).
   useEffect(() => {
     if (mode !== 'space') return;
+    if (!isNetworkPath(pathname)) return;
     if (spaceSlug?.trim()) return;
     if (!isMatrixAvailable || !isMatrixAuthenticated) return;
     if (joinedRef.current === NETWORK_JOINED_SENTINEL) return;
@@ -4162,6 +4167,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     };
   }, [
     mode,
+    pathname,
     spaceSlug,
     isMatrixAvailable,
     isMatrixAuthenticated,
