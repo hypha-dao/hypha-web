@@ -2331,7 +2331,7 @@ export function MyConnections({
   // listSettled, or an early PEOPLE AROUND paint drops everyone as titlePending.
   const titlesLoading = peopleBySubLoading || (peerSubs.length > 0 && !jwt);
   const hasMatrixConversations =
-    rows.some((row) => row.kind === 'dm' || row.kind === 'group') ||
+    rows.some((row) => row.kind === 'person' || row.kind === 'group') ||
     channels.length > 0 ||
     pendingGroups.length > 0;
   const dataReady = messagesPeopleListReady({

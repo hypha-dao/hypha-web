@@ -217,14 +217,19 @@ describe('memberRowsForConnections', () => {
   });
 
   it('drops the signed-in member and the Hypha bot', () => {
+    // Bot identity is Matrix MXID + trusted homeserver — a display name alone
+    // is not enough (remote hypha_bot* accounts stay people).
     const rows = memberRowsForConnections(
       [
         person(7, 'Alex'),
-        person(8, 'hypha_bot'),
+        person(8, 'Hypha', 'Bot'),
         person(9, 'Vlad', 'Hramtsov'),
       ],
       [],
-      {},
+      {
+        8: '@hypha_bot_prod:matrix.hypha.earth',
+        9: '@vlad:matrix.hypha.earth',
+      },
       7,
       'Someone',
     );
