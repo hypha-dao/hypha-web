@@ -4954,10 +4954,12 @@
       "consumersDescription": "Pessoas que participam no pool de energia desta comunidade. Clique num membro para ver o seu consumo.",
       "consumerCount": "{count, plural, one {# consumidor} other {# consumidores}}",
       "noConsumers": "Nenhum consumidor registado ainda.",
+      "consumersUnavailable": "A lista de consumidores está temporariamente indisponível.",
       "sourcesTitle": "Fontes locais de energia",
       "sourcesDescription": "Ativos de produção e armazenamento que alimentam a comunidade.",
       "sourceCount": "{count, plural, one {# fonte} other {# fontes}}",
-      "noSources": "Nenhuma fonte registada ainda."
+      "noSources": "Nenhuma fonte registada ainda.",
+      "sourcesUnavailable": "A lista de fontes está temporariamente indisponível."
     },
     "credits": {
       "noBalances": "Ainda não há saldos de liquidação de membros disponíveis.",
@@ -5000,6 +5002,8 @@
     },
     "ownership": {
       "noOwnership": "Ainda não foi registada qualquer propriedade de fontes na cadeia.",
+      "ownershipUnavailable": "Os detalhes de propriedade estão temporariamente indisponíveis.",
+      "earningsUnavailable": "Os ganhos estão temporariamente indisponíveis porque não foi possível carregar a lista de fontes.",
       "earningsOverWindow": "≈ {amount} EURC neste período",
       "earnings": "Ganhos",
       "earnedFromSource": "{prefix}{amount} EURC ganhos com esta fonte",
@@ -5029,6 +5033,7 @@
       "settleHint": "Liquidar a dívida autoriza o contrato PPA a retirar o USDC indicado da sua smart wallet e depois chama <code>settleOwnDebt</code>."
     },
     "shared": {
+      "memberListUnavailable": "A lista de membros está temporariamente indisponível.",
       "gridOperatorName": "Operador de rede local",
       "gridOperatorSubtitle": "Fornecedor externo de energia",
       "basePerKwh": "Base / kWh",

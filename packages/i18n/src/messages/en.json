@@ -4992,10 +4992,12 @@
       "consumersDescription": "People taking part in this community's energy pool. Click a member to see their consumption.",
       "consumerCount": "{count, plural, one {# consumer} other {# consumers}}",
       "noConsumers": "No consumers registered yet.",
+      "consumersUnavailable": "Consumer list is temporarily unavailable.",
       "sourcesTitle": "Local energy sources",
       "sourcesDescription": "Generation and storage assets feeding the community.",
       "sourceCount": "{count, plural, one {# source} other {# sources}}",
-      "noSources": "No sources registered yet."
+      "noSources": "No sources registered yet.",
+      "sourcesUnavailable": "Source list is temporarily unavailable."
     },
     "credits": {
       "noBalances": "No member settlement balances available yet.",
@@ -5038,6 +5040,8 @@
     },
     "ownership": {
       "noOwnership": "No source ownership has been recorded on-chain yet.",
+      "ownershipUnavailable": "Ownership details are temporarily unavailable.",
+      "earningsUnavailable": "Earnings are temporarily unavailable because the source list could not be loaded.",
       "earningsOverWindow": "≈ {amount} EURC over this window",
       "earnings": "Earnings",
       "earnedFromSource": "{prefix}{amount} EURC earned from this source",
@@ -5067,6 +5071,7 @@
       "settleHint": "Settle debt approves the PPA contract to pull the quoted USDC from your smart wallet, then calls <code>settleOwnDebt</code>."
     },
     "shared": {
+      "memberListUnavailable": "Member list is temporarily unavailable.",
       "gridOperatorName": "Local grid operator",
       "gridOperatorSubtitle": "External energy supplier",
       "basePerKwh": "Base / kWh",

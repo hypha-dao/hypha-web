@@ -4952,10 +4952,12 @@
       "consumersDescription": "Personnes participant au pool énergétique de cette communauté. Cliquez sur un membre pour voir sa consommation.",
       "consumerCount": "{count, plural, one {# consommateur} other {# consommateurs}}",
       "noConsumers": "Aucun consommateur enregistré pour le moment.",
+      "consumersUnavailable": "La liste des consommateurs est temporairement indisponible.",
       "sourcesTitle": "Sources d'énergie locales",
       "sourcesDescription": "Actifs de production et de stockage alimentant la communauté.",
       "sourceCount": "{count, plural, one {# source} other {# sources}}",
-      "noSources": "Aucune source enregistrée pour le moment."
+      "noSources": "Aucune source enregistrée pour le moment.",
+      "sourcesUnavailable": "La liste des sources est temporairement indisponible."
     },
     "credits": {
       "noBalances": "Aucun solde de règlement des membres disponible pour le moment.",
@@ -4998,6 +5000,8 @@
     },
     "ownership": {
       "noOwnership": "Aucune propriété de source n'a encore été enregistrée sur la chaîne.",
+      "ownershipUnavailable": "Les détails de propriété sont temporairement indisponibles.",
+      "earningsUnavailable": "Les gains sont temporairement indisponibles car la liste des sources n'a pas pu être chargée.",
       "earningsOverWindow": "≈ {amount} EURC sur cette période",
       "earnings": "Revenus",
       "earnedFromSource": "{prefix}{amount} EURC gagnés depuis cette source",
@@ -5027,6 +5031,7 @@
       "settleHint": "Régler la dette autorise le contrat PPA à prélever l'USDC indiqué depuis votre smart wallet, puis appelle <code>settleOwnDebt</code>."
     },
     "shared": {
+      "memberListUnavailable": "La liste des membres est temporairement indisponible.",
       "gridOperatorName": "Gestionnaire de réseau local",
       "gridOperatorSubtitle": "Fournisseur d'énergie externe",
       "basePerKwh": "Base / kWh",

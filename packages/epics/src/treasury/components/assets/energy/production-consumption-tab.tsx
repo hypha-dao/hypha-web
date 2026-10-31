@@ -23,6 +23,8 @@ import {
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
+export const PRODUCTION_DEFAULT_TIMEFRAME: Timeframe = '7d';
+
 export const ProductionConsumptionTab = ({
   data,
 }: {
@@ -31,7 +33,9 @@ export const ProductionConsumptionTab = ({
   const locale = useLocale();
   const t = useTranslations('Energy.productionConsumption');
   const tShared = useTranslations('Energy.shared');
-  const [timeframe, setTimeframe] = React.useState<Timeframe>('30d');
+  const [timeframe, setTimeframe] = React.useState<Timeframe>(
+    PRODUCTION_DEFAULT_TIMEFRAME,
+  );
   const {
     data: telemetry,
     isLoading: telemetryLoading,

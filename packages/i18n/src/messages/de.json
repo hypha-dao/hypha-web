@@ -4956,10 +4956,12 @@
       "consumersDescription": "Personen, die am Energiepool dieser Gemeinschaft teilnehmen. Klicken Sie auf ein Mitglied, um den Verbrauch zu sehen.",
       "consumerCount": "{count, plural, one {# Verbraucher} other {# Verbraucher}}",
       "noConsumers": "Noch keine Verbraucher registriert.",
+      "consumersUnavailable": "Die Verbraucherliste ist vorübergehend nicht verfügbar.",
       "sourcesTitle": "Lokale Energiequellen",
       "sourcesDescription": "Erzeugungs- und Speicheranlagen, die die Gemeinschaft versorgen.",
       "sourceCount": "{count, plural, one {# Quelle} other {# Quellen}}",
-      "noSources": "Noch keine Quellen registriert."
+      "noSources": "Noch keine Quellen registriert.",
+      "sourcesUnavailable": "Die Quellenliste ist vorübergehend nicht verfügbar."
     },
     "credits": {
       "noBalances": "Noch keine Abrechnungssalden für Mitglieder verfügbar.",
@@ -5002,6 +5004,8 @@
     },
     "ownership": {
       "noOwnership": "Es wurde noch keine Quelleneigentümerschaft On-Chain erfasst.",
+      "ownershipUnavailable": "Eigentumsdetails sind vorübergehend nicht verfügbar.",
+      "earningsUnavailable": "Erträge sind vorübergehend nicht verfügbar, da die Quellenliste nicht geladen werden konnte.",
       "earningsOverWindow": "≈ {amount} EURC in diesem Zeitraum",
       "earnings": "Einnahmen",
       "earnedFromSource": "{prefix}{amount} EURC mit dieser Quelle verdient",
@@ -5031,6 +5035,7 @@
       "settleHint": "Schuld begleichen genehmigt den PPA-Vertrag, den angegebenen USDC-Betrag aus Ihrer Smart Wallet abzuziehen, und ruft anschließend <code>settleOwnDebt</code> auf."
     },
     "shared": {
+      "memberListUnavailable": "Die Mitgliederliste ist vorübergehend nicht verfügbar.",
       "gridOperatorName": "Lokaler Netzbetreiber",
       "gridOperatorSubtitle": "Externer Energielieferant",
       "basePerKwh": "Grundpreis / kWh",

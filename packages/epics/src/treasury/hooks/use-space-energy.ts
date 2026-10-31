@@ -22,6 +22,7 @@ export type EnergyParticipantProfile = {
   avatarUrl?: string | null;
   subtitle?: string | null;
   profileSlug?: string | null;
+  personId?: number | null;
   kind: 'person' | 'space' | 'institutional';
 };
 
@@ -35,6 +36,8 @@ export type SpaceEnergyMemberDetail = {
   creditInStablecoin: string | null;
   /** Consumption meter ids registered for this member on-chain (null if the read failed). */
   deviceIds: number[] | null;
+  /** False when the ownership read failed (`ownerships` is then empty, not "owns nothing"). */
+  ownershipsOk?: boolean;
   ownerships: {
     sourceId: `0x${string}`;
     sourceLabel: string;
@@ -53,6 +56,12 @@ export type SpaceEnergyResponse = {
     factoryCommunityId?: number | null;
     activatedAt: string;
   };
+  /** False when the member roster could not be read on-chain (not the same as an empty roster). */
+  memberAddressesOk?: boolean;
+  /** False when the source list could not be read on-chain (not the same as no sources). */
+  sourcesOk?: boolean;
+  /** False when a fee, balance, source or member-detail read failed; those fields are `null`. */
+  detailsOk?: boolean;
   overview?: {
     memberCount: number;
     sourceCount: number;
