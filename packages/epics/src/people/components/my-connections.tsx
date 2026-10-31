@@ -140,6 +140,7 @@ import {
   inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
+  isInboxDirectConversation,
   inboxListWindow,
   INBOX_LIST_PAGE,
   isInboxFilter,
@@ -2329,11 +2330,16 @@ export function MyConnections({
   // Keep pending titles visible while peer profiles load — do not tie this to
   // listSettled, or an early PEOPLE AROUND paint drops everyone as titlePending.
   const titlesLoading = peopleBySubLoading || (peerSubs.length > 0 && !jwt);
+  const hasMatrixConversations =
+    rows.some((row) => row.kind === 'dm' || row.kind === 'group') ||
+    channels.length > 0 ||
+    pendingGroups.length > 0;
   const dataReady = messagesPeopleListReady({
     isMatrixAvailable,
     isConnecting,
     synced,
     initialSyncComplete,
+    hasMatrixConversations,
     homeLoaded,
   });
   useEffect(() => {
@@ -2552,11 +2558,17 @@ export function MyConnections({
     return mentionNames;
   }, [channels, client, directoryPeople, peopleBySub, personIdToMatrixUserId]);
   const inboxView = useMemo(() => {
-    const direct = people.map((row) =>
+    const directAll = people.map((row) =>
       row.inbox
         ? row
         : { ...row, inbox: directInboxPlace(peopleInboxKind(row)) },
     );
+    // Joined DMs/groups only — directory people without a room are not
+    // conversations and must not make Direct/All read "12" by default.
+    const directConversations = directAll.filter(isInboxDirectConversation);
+    // Search and the group picker still need roomless directory rows.
+    const directForList =
+      picking || needle.length > 0 ? directAll : directConversations;
     const channelRows =
       section === 'messages' && !picking
         ? conversationsMatchingSearch(
@@ -2578,7 +2590,7 @@ export function MyConnections({
           )
         : [];
     const counts = inboxFilterCounts([
-      ...direct.map((row) => ({
+      ...directConversations.map((row) => ({
         kind: row.inbox?.kind ?? 'dm',
         unread: row.unread,
       })),
@@ -2587,11 +2599,14 @@ export function MyConnections({
       ),
     ]);
     if (section !== 'messages' || picking || inboxFilter === 'direct') {
-      return { rows: direct, counts };
+      return { rows: directForList, counts };
     }
     if (inboxFilter === 'all') {
       return {
-        rows: sortConversationsByLastMessage([...direct, ...channelRows]),
+        rows: sortConversationsByLastMessage([
+          ...directForList,
+          ...channelRows,
+        ]),
         counts,
       };
     }

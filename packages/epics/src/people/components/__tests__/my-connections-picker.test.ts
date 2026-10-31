@@ -75,11 +75,13 @@ describe('group picker chips and radio', () => {
     expect(source).toContain('event.stopPropagation()');
   });
 
-  it('holds PEOPLE AROUND behind a list skeleton until first Matrix sync + home', () => {
+  it('holds PEOPLE AROUND behind a list skeleton until sync has rooms or finishes', () => {
     expect(source).toContain('messagesPeopleListReady');
     expect(source).toContain('homeLoaded');
     expect(source).toContain('synced');
     expect(source).toContain('initialSyncComplete');
+    expect(source).toContain('hasMatrixConversations');
+    expect(source).toContain('isInboxDirectConversation');
     expect(source).toContain('MemberListSkeleton');
     expect(source).toContain('data-testid="messages-people-loader"');
     // Previews stay skeletoned until sync/backfill after the list paints.

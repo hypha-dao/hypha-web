@@ -366,11 +366,15 @@ export type MessagesPeopleListReadyInput = {
   /** Matrix has reached Prepared/Syncing. Not enough on its own — Syncing can be empty. */
   synced: boolean;
   /**
-   * First /sync finished (`Prepared` or `isInitialSyncComplete`). Without this,
-   * the directory paints as PEOPLE AROUND / Direct before rooms exist — every
-   * row shows "No messages yet" and the list skeleton (mask) drops too early.
+   * First /sync finished (`Prepared` or `isInitialSyncComplete`). Full catch-up
+   * can take many seconds — prefer painting once conversations already exist.
    */
   initialSyncComplete: boolean;
+  /**
+   * At least one joined DM, group, or channel room is already known. Lets the
+   * list paint during Syncing without waiting for the full initial sync.
+   */
+  hasMatrixConversations: boolean;
   /** Intelligence fetch finished (or there is no JWT to fetch). */
   homeLoaded: boolean;
   /**
@@ -385,10 +389,10 @@ export type MessagesPeopleListReadyInput = {
 };
 
 /**
- * The Messages people list is safe to paint. Wait for the first Matrix sync and
- * home intelligence so the directory does not flash before rooms exist; do not
- * wait for every room summary or peer profile (those stream in after paint via
- * `previewLoading` / title resolve).
+ * The Messages people list is safe to paint. Wait for Matrix sync + home, then
+ * either the first /sync to finish or at least one real conversation room so
+ * we do not sit on the skeleton for the full multi-second catch-up. Do not wait
+ * for every room summary or peer profile (those stream in after paint).
  *
  * Matrix unavailable and not connecting is "ready" so the empty/unavailable
  * copy can show. Callers latch this so a later room pump does not hide the list.
@@ -397,7 +401,8 @@ export function messagesPeopleListReady(
   input: MessagesPeopleListReadyInput,
 ): boolean {
   if (!input.isMatrixAvailable) return !input.isConnecting;
-  return input.synced && input.initialSyncComplete && input.homeLoaded;
+  if (!input.synced || !input.homeLoaded) return false;
+  return input.initialSyncComplete || input.hasMatrixConversations;
 }
 
 /** Union directory pages / search hits by person id. Synthetics stay out. */

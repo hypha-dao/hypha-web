@@ -1169,6 +1169,7 @@ describe('messagesPeopleListReady', () => {
     isConnecting: false,
     synced: true,
     initialSyncComplete: true,
+    hasMatrixConversations: false,
     homeLoaded: true,
   };
 
@@ -1186,10 +1187,20 @@ describe('messagesPeopleListReady', () => {
     expect(messagesPeopleListReady({ ...ready, synced: false })).toBe(false);
   });
 
-  it('does not treat Syncing-without-Prepared as ready (directory flash)', () => {
+  it('keeps the skeleton while Syncing with no rooms yet', () => {
     expect(
       messagesPeopleListReady({ ...ready, initialSyncComplete: false }),
     ).toBe(false);
+  });
+
+  it('paints once rooms exist even before initial sync finishes', () => {
+    expect(
+      messagesPeopleListReady({
+        ...ready,
+        initialSyncComplete: false,
+        hasMatrixConversations: true,
+      }),
+    ).toBe(true);
   });
 
   it('waits for home intelligence but not room/id/profile backfill', () => {

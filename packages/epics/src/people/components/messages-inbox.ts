@@ -272,6 +272,17 @@ export function inboxFilterCounts(
   return counts;
 }
 
+/**
+ * Direct / All totals and the default Direct list only include joined
+ * conversations. Directory people without a room must not inflate the count
+ * (that was the "12 by default" from People around).
+ */
+export function isInboxDirectConversation(row: {
+  roomId?: string | null;
+}): boolean {
+  return Boolean(row.roomId?.trim());
+}
+
 /** About one screen of conversations beside the channel menu. */
 export const INBOX_LIST_PAGE = 8;
 
