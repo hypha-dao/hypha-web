@@ -37,4 +37,11 @@ describe('network room join guard', () => {
     );
     expect(source).toContain('Mid-switch both refs may be empty');
   });
+
+  it('shows the mycelium mark beside the network globe (no external-link arrow)', () => {
+    expect(source).toContain('MemberHomeMark');
+    expect(source).toContain(
+      "coherenceChannel === 'network' ||\n              (mode === 'space' && !spaceSlug?.trim())",
+    );
+  });
 });

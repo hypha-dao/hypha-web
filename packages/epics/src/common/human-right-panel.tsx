@@ -6373,7 +6373,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 size="toolbar"
                 isLoading={dmPeerPersonLoading || peerMatrixIdsLoading}
               />
-            ) : coherenceChannel === 'network' ? (
+            ) : coherenceChannel === 'network' ||
+              (mode === 'space' && !spaceSlug?.trim()) ? (
+              // Network page + Messages network row: mycelium mark (no
+              // external-link arrow) left of the globe / room title chrome.
               <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-border bg-background text-foreground">
                 <MemberHomeMark className="h-4 w-4" />
               </span>
