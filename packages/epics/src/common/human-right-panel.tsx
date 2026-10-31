@@ -6134,6 +6134,21 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-background text-foreground">
                 <MemberHomeMark className="h-5 w-5" />
               </span>
+            ) : // Space context + Messages space/ecosystem channels: logo left of
+            // the room tabs / title. Room-choice tabs keep outline icons.
+            mode === 'space' && spaceSlug?.trim() ? (
+              // eslint-disable-next-line @next/next/no-img-element -- remote space logos in header chrome
+              <img
+                src={
+                  resolveSpaceDisplayLogoUrl(
+                    spaceRoom === 'ecosystem' ? rootSpace ?? space : space,
+                    resolvedTheme === 'dark' ? 'dark' : 'light',
+                  ) ?? DEFAULT_SPACE_AVATAR_IMAGE
+                }
+                alt=""
+                aria-hidden
+                className="h-8 w-8 shrink-0 rounded-full border border-border object-cover"
+              />
             ) : coherenceChannel === 'space' ||
               coherenceChannel === 'space-public' ||
               coherenceChannel === 'ecosystem' ? (
@@ -6163,20 +6178,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     {
                       value: 'space',
                       label: t('spaceRoomTitle'),
-                      iconSrc: resolveSpaceDisplayLogoUrl(
-                        space,
-                        resolvedTheme === 'dark' ? 'dark' : 'light',
-                      ),
                       unreadCount: spaceChannelUnread.space.count,
                       unreadCountIsCapped: spaceChannelUnread.space.capped,
                     },
                     {
                       value: 'ecosystem',
                       label: t('ecosystemRoomTitle'),
-                      iconSrc: resolveSpaceDisplayLogoUrl(
-                        rootSpace ?? space,
-                        resolvedTheme === 'dark' ? 'dark' : 'light',
-                      ),
                       unreadCount: spaceChannelUnread.ecosystem.count,
                       unreadCountIsCapped: spaceChannelUnread.ecosystem.capped,
                     },
