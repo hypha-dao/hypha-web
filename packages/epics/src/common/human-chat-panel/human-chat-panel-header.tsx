@@ -281,7 +281,7 @@ export function HumanChatPanelHeader({
                 </span>
                 {displayDescription ? (
                   <p
-                    className="w-full truncate text-right text-[11px] leading-4 text-muted-foreground"
+                    className="w-full truncate text-right text-[10px] leading-3 text-muted-foreground"
                     title={displayDescription}
                   >
                     {displayDescription}
@@ -289,13 +289,13 @@ export function HumanChatPanelHeader({
                 ) : null}
               </div>
             ) : displayDescription ? (
-              <p className="min-w-0 truncate text-right text-[11px] leading-4 text-muted-foreground">
+              <p className="min-w-0 truncate text-right text-[10px] leading-3 text-muted-foreground">
                 {displayDescription}
               </p>
             ) : null}
           </div>
         ) : displayDescription ? (
-          <p className="min-w-0 flex-1 truncate text-right text-[11px] leading-4 text-muted-foreground">
+          <p className="min-w-0 flex-1 truncate text-right text-[10px] leading-3 text-muted-foreground">
             {displayDescription}
           </p>
         ) : null}
