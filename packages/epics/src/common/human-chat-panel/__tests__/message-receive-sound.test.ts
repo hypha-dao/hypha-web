@@ -138,6 +138,23 @@ describe('playMessageReceiveSoundForEvent', () => {
     ).not.toThrow();
   });
 
+  it('allows stale wake floods through (cooldown coalesces to one ping)', () => {
+    vi.stubGlobal('document', {
+      visibilityState: 'visible',
+    });
+    const stale = fakeEvent({
+      ts: Date.now() - RECENT_MESSAGE_MS - 60_000,
+    });
+    expect(() =>
+      playMessageReceiveSoundForEvent(stale, '@me:hs'),
+    ).not.toThrow();
+    expect(() =>
+      playMessageReceiveSoundForEvent(stale, '@me:hs', {
+        requireRecent: true,
+      }),
+    ).not.toThrow();
+  });
+
   it('stays silent when the document is hidden', () => {
     vi.stubGlobal('document', {
       visibilityState: 'hidden',

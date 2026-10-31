@@ -11,9 +11,11 @@ import { EventType, type MatrixEvent, type Room } from 'matrix-js-sdk';
  * badge listeners), not when opening a thread. Policy:
  * - Skip history / sync catch-up (`liveEvent: false`, pagination).
  * - Skip when the tab is hidden (another device / app is in front).
- * - Skip events older than {@link RECENT_MESSAGE_MS} (laptop wake catch-up).
  * - Skip when this account already read past the event (other-device receipt).
- * - Coalesce bursts so a night of messages is one ping, not one per event.
+ * - Coalesce bursts ({@link RECEIVE_SOUND_COOLDOWN_MS}) so a night of messages
+ *   or a laptop-wake flood is **one** ping, not one per event.
+ * - Decrypt catch-up of old ciphertext uses `requireRecent` so opening a room
+ *   does not chime for ancient history; wake timeline floods stay audible once.
  *
  * When the tab is backgrounded the browser may still block audio — OneSignal
  * `chat.message` push covers that case with an OS notification sound.
@@ -22,7 +24,7 @@ import { EventType, type MatrixEvent, type Room } from 'matrix-js-sdk';
 const SOUND_KEY = 'humai-sound';
 const LEGACY_SOUND_KEY = 'hypha-member-home-sound';
 
-/** Ignore decrypt / wake catch-up for older encrypted history. */
+/** Decrypt path only — ignore older ciphertext when opening a room. */
 export const RECENT_MESSAGE_MS = 30_000;
 
 /**
@@ -168,8 +170,9 @@ export function playMessageReceiveSound(): void {
 
 /**
  * Play for a Matrix timeline / decrypt event when it is a live message from
- * someone else. Skips history pagination, sync catch-up, hidden tabs, stale
- * wake floods, and events already read on another device.
+ * someone else. Skips history pagination, sync catch-up marked non-live,
+ * hidden tabs, and events already read on another device. A wake flood of
+ * overnight events still gets **one** ping via the play cooldown.
  */
 export function playMessageReceiveSoundForEvent(
   event: MatrixEvent,
@@ -179,15 +182,18 @@ export function playMessageReceiveSoundForEvent(
     liveEvent?: boolean;
     room?: Room | null;
     /**
-     * @deprecated Prefer always-on age gate via {@link RECENT_MESSAGE_MS}.
-     * Kept so older call sites still type-check; ignored (age always applies).
+     * When true (decrypt path), skip events older than {@link RECENT_MESSAGE_MS}
+     * so room open / crypto catch-up does not chime. Timeline wake floods omit
+     * this so overnight catch-up can still produce one coalesced ping.
      */
     requireRecent?: boolean;
   },
 ): void {
   if (options?.toStartOfTimeline) return;
   if (options?.liveEvent === false) return;
-  if (!isMessageRecentEnoughForReceiveSound(event)) return;
+  if (options?.requireRecent && !isMessageRecentEnoughForReceiveSound(event)) {
+    return;
+  }
   if (!isIncomingConversationMessage(event, selfId)) return;
   if (isMessageAlreadyReadBySelf(options?.room, event, selfId)) return;
   playMessageReceiveSound();

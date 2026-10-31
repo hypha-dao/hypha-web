@@ -1219,8 +1219,10 @@ function onConversationDecrypted(event: MatrixEvent) {
   const room = conversationClient.getRoom(roomId) ?? undefined;
   refreshConversationRoom(room);
   // Encrypted live messages become RoomMessage only after decrypt.
+  // requireRecent: opening a room must not chime for old ciphertext catch-up.
   playMessageReceiveSoundForEvent(event, conversationClient.getUserId(), {
     room,
+    requireRecent: true,
   });
 }
 
