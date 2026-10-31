@@ -1865,7 +1865,6 @@ export function MyConnections({
   const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
   const [synced, setSynced] = useState(false);
   const [initialSyncComplete, setInitialSyncComplete] = useState(false);
-  const [rowsPending, setRowsPending] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedById, setSelectedById] = useState<
     Map<number, ConnectionMemberRow>
@@ -2181,7 +2180,6 @@ export function MyConnections({
       setChannels([]);
       setSynced(false);
       setInitialSyncComplete(false);
-      setRowsPending(true);
       setListSettled(false);
       return;
     }
@@ -2205,7 +2203,6 @@ export function MyConnections({
       ) {
         setInitialSyncComplete(true);
       }
-      setRowsPending(conversationRowsPending(client));
     });
   }, [client]);
 
@@ -2335,10 +2332,7 @@ export function MyConnections({
     isConnecting,
     synced,
     initialSyncComplete,
-    rowsPending,
     homeLoaded,
-    matrixIdsLoading,
-    peopleBySubLoading,
   });
   useEffect(() => {
     if (dataReady && isMatrixAvailable) setListSettled(true);
@@ -2834,7 +2828,10 @@ export function MyConnections({
         row.inbox.signalSlug ?? '',
         null,
         spaceSlug,
-        { public: row.inbox.kind === 'space-public' },
+        {
+          public: row.inbox.kind === 'space-public',
+          channel: row.inbox.kind,
+        },
       );
       return;
     }

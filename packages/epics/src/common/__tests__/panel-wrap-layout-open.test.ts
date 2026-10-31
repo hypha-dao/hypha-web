@@ -29,6 +29,8 @@ describe('chat panel open from Messages', () => {
     expect(source).toContain("searchParams?.get('spaceChat')");
     expect(source).toContain("searchParams?.get('signal')");
     expect(source).toContain('getDhoSpaceSlugFromPathname(pathname)');
+    expect(source).toContain("spaceChatDeepLink === 'network'");
+    expect(source).toContain('isNetworkPath(pathname)');
     expect(source).toMatch(/opensSignal[\s\S]*openHumanChatPanel\(\)/);
     expect(source).toContain('<HumanChatDeepLinkOpener />');
   });

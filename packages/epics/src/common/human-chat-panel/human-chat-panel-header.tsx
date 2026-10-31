@@ -1,6 +1,6 @@
 'use client';
 
-import type { ComponentType, ReactNode } from 'react';
+import { useState, type ComponentType, type ReactNode } from 'react';
 import {
   ArrowLeft,
   Circle,
@@ -40,7 +40,36 @@ type RoomChoiceOption = {
   /** Unread message count for this channel. */
   unreadCount?: number;
   unreadCountIsCapped?: boolean;
+  /** Rounded logo for this channel (space / ecosystem). Falls back to the outline icon. */
+  iconSrc?: string | null;
 };
+
+function RoomChoiceGlyph({
+  iconSrc,
+  Icon,
+}: {
+  iconSrc?: string | null;
+  Icon?: RoomChoiceIcon;
+}) {
+  const [failed, setFailed] = useState(false);
+  const src = iconSrc?.trim();
+  if (src && !failed) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- remote space logos; Avatar-sized chrome
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        className="h-5 w-5 rounded-full object-cover"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  if (Icon) {
+    return <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden />;
+  }
+  return null;
+}
 
 type HumanChatPanelHeaderProps = {
   title?: string;
@@ -57,7 +86,7 @@ type HumanChatPanelHeaderProps = {
   mark?: string;
   /** Icon-only title. Hover shows the label (network room). */
   iconTitle?: string;
-  /** Sits before the title — e.g. peer space icons on a direct chat. */
+  /** Sits before the title — e.g. peer avatar on a direct chat. */
   titleStart?: ReactNode;
   /** Extra header actions (group rename/archive). Same 36px control row. */
   trailingEnd?: ReactNode;
@@ -135,11 +164,8 @@ export function HumanChatPanelHeader({
         ) : null}
         {trailingEnd}
       </div>
-      <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-        {displayDescription && (
-          <p className="craft-meta line-clamp-1">{displayDescription}</p>
-        )}
-        {titleStart}
+      <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
+        {titleStart ? <div className="shrink-0">{titleStart}</div> : null}
         {mark && !roomChoice ? (
           <span
             className="inline-flex shrink-0 border border-foreground bg-foreground px-3 py-1 text-1 text-background"
@@ -183,11 +209,10 @@ export function HumanChatPanelHeader({
                             : 'bg-background text-foreground',
                         )}
                       >
-                        {Icon ? (
-                          <Icon
-                            className="h-4 w-4"
-                            strokeWidth={1.5}
-                            aria-hidden
+                        {option.iconSrc?.trim() || Icon ? (
+                          <RoomChoiceGlyph
+                            iconSrc={option.iconSrc}
+                            Icon={Icon}
                           />
                         ) : (
                           <span className="px-2 text-1">{option.label}</span>
@@ -215,7 +240,7 @@ export function HumanChatPanelHeader({
             <Tooltip>
               <TooltipTrigger asChild>
                 <span
-                  className="inline-flex h-[36px] w-[36px] items-center justify-center border border-foreground bg-foreground text-background"
+                  className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center border border-foreground bg-foreground text-background"
                   aria-label={iconTitle}
                 >
                   <Globe2 className="h-4 w-4" strokeWidth={1.5} aria-hidden />
@@ -225,9 +250,26 @@ export function HumanChatPanelHeader({
             </Tooltip>
           </TooltipProvider>
         ) : displayTitle ? (
-          <span className="min-w-0 truncate text-sm font-medium text-foreground">
-            {displayTitle}
-          </span>
+          <div className="flex min-w-0 flex-1 flex-col items-end gap-0.5 overflow-hidden">
+            <span
+              className="w-full truncate text-right text-sm font-medium text-foreground"
+              title={displayTitle}
+            >
+              {displayTitle}
+            </span>
+            {displayDescription ? (
+              <p
+                className="craft-meta w-full truncate text-right"
+                title={displayDescription}
+              >
+                {displayDescription}
+              </p>
+            ) : null}
+          </div>
+        ) : displayDescription ? (
+          <p className="craft-meta min-w-0 flex-1 truncate text-right">
+            {displayDescription}
+          </p>
         ) : null}
       </div>
     </div>

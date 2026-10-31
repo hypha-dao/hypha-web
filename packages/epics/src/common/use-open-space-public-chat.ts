@@ -49,7 +49,7 @@ export function useOpenSpacePublicChat() {
           '',
           space.description ?? null,
           slug,
-          { public: true },
+          { public: true, channel: 'space-public' },
         );
         openHumanChatPanel();
         return true;

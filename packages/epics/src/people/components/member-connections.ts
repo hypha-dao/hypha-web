@@ -370,19 +370,23 @@ export type MessagesPeopleListReadyInput = {
    * the 12-person directory paints as PEOPLE AROUND before rooms exist.
    */
   initialSyncComplete: boolean;
-  /** Joined rooms still waiting for a conversation summary. */
-  rowsPending: boolean;
   /** Intelligence fetch finished (or there is no JWT to fetch). */
   homeLoaded: boolean;
-  /** Person → Matrix ids still loading, so DMs cannot attach to directory rows. */
-  matrixIdsLoading: boolean;
-  /** Peer profiles still loading; unresolved DMs would drop when this settles. */
-  peopleBySubLoading: boolean;
+  /**
+   * @deprecated Ignored — room summaries, Matrix ids, and peer profiles fill in
+   * progressively via preview/title loading instead of blocking first paint.
+   */
+  rowsPending?: boolean;
+  /** @deprecated Ignored — see `rowsPending`. */
+  matrixIdsLoading?: boolean;
+  /** @deprecated Ignored — see `rowsPending`. */
+  peopleBySubLoading?: boolean;
 };
 
 /**
- * The Messages people list is safe to paint. Until then the directory (or a
- * partial Matrix store) would flash the wrong set of people.
+ * The Messages people list is safe to paint. Wait for the first Matrix sync and
+ * home intelligence so the directory does not flash before rooms exist; do not
+ * wait for every room summary or peer profile (those stream in after paint).
  *
  * Matrix unavailable and not connecting is "ready" so the empty/unavailable
  * copy can show. Callers latch this so a later room pump does not hide the list.
@@ -391,14 +395,7 @@ export function messagesPeopleListReady(
   input: MessagesPeopleListReadyInput,
 ): boolean {
   if (!input.isMatrixAvailable) return !input.isConnecting;
-  return (
-    input.synced &&
-    input.initialSyncComplete &&
-    !input.rowsPending &&
-    input.homeLoaded &&
-    !input.matrixIdsLoading &&
-    !input.peopleBySubLoading
-  );
+  return input.synced && input.initialSyncComplete && input.homeLoaded;
 }
 
 /** Union directory pages / search hits by person id. Synthetics stay out. */

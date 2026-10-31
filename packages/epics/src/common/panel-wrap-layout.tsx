@@ -36,6 +36,7 @@ import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname'
 import { isInteractiveCreatePath } from './get-path-function';
 import {
   isNetworkAiPath,
+  isNetworkPath,
   showsHumanChatIcon,
   useIsNetworkContext,
   useIsSpaceContext,
@@ -140,11 +141,17 @@ function HumanChatDeepLinkOpener() {
   const signalDeepLink = searchParams?.get('signal')?.trim() ?? null;
 
   useEffect(() => {
+    const opensNetworkChat =
+      spaceChatDeepLink === 'network' && isNetworkPath(pathname);
     const opensSpaceChat =
       spaceChatDeepLink === 'space' ||
       spaceChatDeepLink === 'ecosystem' ||
       spaceChatDeepLink === 'public';
     const opensSignal = Boolean(signalDeepLink);
+    if (opensNetworkChat) {
+      openHumanChatPanel();
+      return;
+    }
     if (!opensSpaceChat && !opensSignal) return;
     if (!getDhoSpaceSlugFromPathname(pathname)) return;
     openHumanChatPanel();

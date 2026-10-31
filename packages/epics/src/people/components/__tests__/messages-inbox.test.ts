@@ -652,7 +652,7 @@ describe('inboxContextHref', () => {
         spaceSlug: null,
         ecosystemSlug: null,
       }),
-    ).toBe('/en/network');
+    ).toBe('/en/network?spaceChat=network');
     expect(inboxContextHref('en', { ...place, kind: 'proposal' })).toBe(
       '/en/dho/hypha-platform/agreements/proposal/garden-vote',
     );
