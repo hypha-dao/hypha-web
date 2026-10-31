@@ -5533,15 +5533,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   /**
    * Messages inbox (and similar) deep-links:
    * `?spaceChat=space|ecosystem|public` opens the panel on that channel room.
+   * `?spaceChat=network` on `/{lang}/network` opens the shared network room.
    */
   useEffect(() => {
-    if (!spaceSlug?.trim()) return;
     if (readSignalDeepLinkSlug(searchParams)) return;
     const raw =
       readLiveSearchParam('spaceChat') ??
       searchParams?.get('spaceChat')?.trim() ??
       null;
-    if (raw !== 'space' && raw !== 'ecosystem' && raw !== 'public') {
+
+    const opensNetwork =
+      raw === 'network' && /^\/[^/]+\/network(?:\/|$)/.test(pathname);
+    const opensSpaceChannel =
+      Boolean(spaceSlug?.trim()) &&
+      (raw === 'space' || raw === 'ecosystem' || raw === 'public');
+
+    if (!opensNetwork && !opensSpaceChannel) {
       appliedSpaceChatRef.current = null;
       return;
     }
@@ -5566,7 +5573,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     setRoomId(null);
     setMessages([]);
-    setSpaceRoom(raw);
+    if (opensSpaceChannel && raw !== 'network') {
+      setSpaceRoom(raw);
+    }
     openHumanChatPanel();
     setActiveTab('chat');
 

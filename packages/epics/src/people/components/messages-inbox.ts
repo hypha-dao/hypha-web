@@ -509,7 +509,8 @@ export function inboxContextHref(
   const locale = lang.trim();
   if (!locale || !place) return null;
   if (place.kind === 'dm' || place.kind === 'group') return null;
-  if (place.kind === 'network') return `/${locale}/network`;
+  // Same `?spaceChat=` opener as space rooms — network has no DHO slug.
+  if (place.kind === 'network') return `/${locale}/network?spaceChat=network`;
   const space = place.spaceSlug?.trim() || '';
   if (place.kind === 'signal') {
     if (!space) return null;
