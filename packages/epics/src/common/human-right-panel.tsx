@@ -3018,7 +3018,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const messagesRoomIdRef = useRef<string | null>(null);
+  /** Room the coherence/space join effect is currently opening — drop stale paints. */
+  const openingTimelineRoomIdRef = useRef<string | null>(null);
   const syncRoomMessages = useCallback((targetRoomId: string) => {
+    const wanted = openingTimelineRoomIdRef.current?.trim();
+    if (wanted && wanted !== targetRoomId.trim()) return;
     const existing = matrixRef.current.getRoomMessages(targetRoomId);
     if (!existing) return;
     setMessages((prev) => {
@@ -3931,6 +3935,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       : spaceSlug;
     if (joinedRef.current === joinedKey) return;
 
+    const previousRoomId = roomIdRef.current?.trim();
+    if (previousRoomId) {
+      matrixRef.current.unregisterRoomListener(previousRoomId);
+    }
+    roomIdRef.current = null;
+    openingTimelineRoomIdRef.current = null;
+    messagesRoomIdRef.current = null;
+    setRoomId(null);
+    setMessages([]);
+
     let cancelled = false;
     const {
       joinRoom,
@@ -4047,8 +4061,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         if (cancelled || !targetRoomId) return;
         joinedRef.current = joinedKey;
+        openingTimelineRoomIdRef.current = targetRoomId;
+        roomIdRef.current = targetRoomId;
         setRoomId(targetRoomId);
-        void revealRoomTimeline(targetRoomId, () => cancelled);
+        void revealRoomTimeline(
+          targetRoomId,
+          () => cancelled || openingTimelineRoomIdRef.current !== targetRoomId,
+        );
       } catch (err) {
         if (!cancelled) {
           console.error('[HumanRightPanel] Failed to join room:', err);
@@ -4089,6 +4108,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!isMatrixAvailable || !isMatrixAuthenticated) return;
     if (joinedRef.current === NETWORK_JOINED_SENTINEL) return;
 
+    const previousRoomId = roomIdRef.current?.trim();
+    if (previousRoomId) {
+      matrixRef.current.unregisterRoomListener(previousRoomId);
+    }
+    roomIdRef.current = null;
+    openingTimelineRoomIdRef.current = null;
+    messagesRoomIdRef.current = null;
+    setRoomId(null);
+    setMessages([]);
+
     let cancelled = false;
     const { ensureNetworkRoom } = matrixRef.current;
 
@@ -4099,8 +4128,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         const { roomId: targetRoomId } = await ensureNetworkRoom();
         if (cancelled) return;
         joinedRef.current = NETWORK_JOINED_SENTINEL;
+        openingTimelineRoomIdRef.current = targetRoomId;
+        roomIdRef.current = targetRoomId;
         setRoomId(targetRoomId);
-        void revealRoomTimeline(targetRoomId, () => cancelled);
+        void revealRoomTimeline(
+          targetRoomId,
+          () => cancelled || openingTimelineRoomIdRef.current !== targetRoomId,
+        );
       } catch (err) {
         if (!cancelled) {
           console.error('[HumanRightPanel] Failed to join shared room:', err);
@@ -4139,6 +4173,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         matrixRef.current.unregisterRoomListener(roomId);
       }
       joinedRef.current = null; // allow space room to re-init when returning
+      openingTimelineRoomIdRef.current = null;
+      messagesRoomIdRef.current = null;
       setMessages([]);
       setRoomId(null);
       setReplyDraft(null);
@@ -4157,6 +4193,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (roomId) {
         matrixRef.current.unregisterRoomListener(roomId);
       }
+      openingTimelineRoomIdRef.current = null;
+      messagesRoomIdRef.current = null;
       setMessages([]);
       setRoomId(null);
       setReplyDraft(null);
@@ -4182,7 +4220,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       matrixRef.current.unregisterRoomListener(previousRoomId);
     }
     roomIdRef.current = null;
+    openingTimelineRoomIdRef.current = null;
+    messagesRoomIdRef.current = null;
     setRoomId(null);
+    // Clear the previous room's timeline immediately so a slow join cannot
+    // leave another channel's messages under the new title (HE → HUMAI).
+    setMessages([]);
     setIsJoining(true);
     // A selected space may only know its slug until the space record loads.
     // Public map→chat also waits: we need `spaces.chatRoomId` so a misbound
@@ -4213,7 +4256,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     const init = async () => {
       setError(null);
-      setMessages([]);
       setReplyDraft(null);
       setEditDraft(null);
       setInput('');
@@ -4361,14 +4403,26 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
 
         if (cancelled) return;
+        openingTimelineRoomIdRef.current = targetRoomId;
+        roomIdRef.current = targetRoomId;
         setRoomId(targetRoomId);
         if (coherenceSlug?.trim()) {
           rememberSignalThreadRooms([targetRoomId], { quiet: true });
         }
 
         void (async () => {
-          await revealRoomTimeline(targetRoomId, () => cancelled);
-          if (cancelled || openingSpaceSlug) return;
+          await revealRoomTimeline(
+            targetRoomId,
+            () =>
+              cancelled || openingTimelineRoomIdRef.current !== targetRoomId,
+          );
+          if (
+            cancelled ||
+            openingTimelineRoomIdRef.current !== targetRoomId ||
+            openingSpaceSlug
+          ) {
+            return;
+          }
           try {
             let description = coherenceDescription?.trim() || null;
             const signalSlug = coherenceSlug?.trim() || '';
@@ -4487,8 +4541,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             '[HumanRightPanel] Join reported a failure after the room was already open:',
             err,
           );
+          openingTimelineRoomIdRef.current = recovered.roomId;
+          roomIdRef.current = recovered.roomId;
           setRoomId(recovered.roomId);
-          void revealRoomTimeline(recovered.roomId, () => cancelled);
+          void revealRoomTimeline(
+            recovered.roomId,
+            () =>
+              cancelled ||
+              openingTimelineRoomIdRef.current !== recovered.roomId,
+          );
           return;
         }
         if (!cancelled) {
@@ -6516,7 +6577,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         ) : !spaceSlug?.trim() &&
           !isDirectConversation &&
           mode !== 'space' &&
-          !coherencePublic ? (
+          !coherencePublic &&
+          // Inbox channel opens (network / space / …) set `coherenceChannel` and
+          // often a room id — they are not the "pick a space" empty state.
+          !coherenceChannel &&
+          !coherenceRoomId?.trim() ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
             <Empty>
               <p>{t('notInSpaceEmptyState')}</p>
