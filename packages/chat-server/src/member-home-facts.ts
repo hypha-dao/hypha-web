@@ -454,23 +454,29 @@ export function formatMemberHomeFacts(
     (namedAside ? memberHomeThreadItemKey(namedAside) : '');
   const stillOpen = (item: { kind: string; slug: string }) =>
     !asideKey || memberHomeThreadItemKey(item) !== asideKey;
+  // Decisions come from the full attention catalog, not the short focus walk —
+  // otherwise a second "What needs a decision?" cannot reach the next vote
+  // once focus is filled with signals or the first proposal.
+  const openDecisions = catalogOpen.filter(
+    (item) => item.action === 'decision' && stillOpen(item),
+  );
+  const unspokenDecision = openDecisions.find(
+    (item) => !shownKeys.has(memberHomeThreadItemKey(item)),
+  );
   // A new waiting item comes first. When every one was already placed, a
   // normal follow-up still carries that card — except a continue/return ask,
-  // which must not re-brief the same item in a loop.
-  const spoken =
-    (askedItem && stillOpen(askedItem) ? askedItem : null) ??
-    (decisionAsk
-      ? unspoken.find(
-          (item) => item.action === 'decision' && stillOpen(item),
-        ) ??
-        stillWaiting.find(
-          (item) => item.action === 'decision' && stillOpen(item),
-        )
-      : undefined) ??
-    unspoken.find(stillOpen) ??
-    (!shareTurn && !lookAsk && !continueAsk && !usefulAsk
-      ? stillWaiting.find(stillOpen) ?? null
-      : null);
+  // which must not re-brief the same item in a loop. A decision chip never
+  // re-opens an already-placed vote and never falls through to a signal.
+  const spoken = (() => {
+    if (askedItem && stillOpen(askedItem)) return askedItem;
+    if (decisionAsk) return unspokenDecision ?? null;
+    return (
+      unspoken.find(stillOpen) ??
+      (!shareTurn && !lookAsk && !continueAsk && !usefulAsk
+        ? stillWaiting.find(stillOpen) ?? null
+        : null)
+    );
+  })();
   const looked = lookAsk
     ? memberHomeThreadItemForMessage(listMemberHomeThreadCatalog(home), {
         content: options?.prior ?? '',
@@ -528,6 +534,8 @@ export function formatMemberHomeFacts(
       ? 'They just set that one aside. One line that you will leave it for another time. Do not call show_member_home_item. Do not place that card under this reply.'
       : continueAsk && !spoken
       ? 'They asked to continue. Every waiting item was already placed in earlier replies. One short line that you already covered what is open for now. Do not place the same card again. Do not invent a new person or item. Do not call show_member_home_item.'
+      : decisionAsk && !spoken
+      ? 'They asked what needs a decision. Nothing fresh is waiting on a vote that has not already been placed. One short line that nothing needs their voice right now. Do not place a card. Do not invent a proposal. Do not call show_member_home_item. Do not rank people by shared spaces.'
       : usefulAsk && !spoken
       ? 'They asked where they can be useful. Nothing fresh is waiting that has not already been placed. One short line that nothing needs them right now. Do not place a card. Do not invent a person or item. Do not call show_member_home_item. Do not rank people by shared spaces.'
       : spoken
@@ -544,7 +552,7 @@ export function formatMemberHomeFacts(
     usefulAsk
       ? 'This turn: they asked where they can be useful. Brief ONLY the one waiting item in this brief. Three or four short sentences about that one person and that one need, then stop. Call show_member_home_item once for that card. One item. One card. Forbidden, including close paraphrases: ranking people by shared spaces, "keeps showing up across the most spaces", bundling a roster person with a signal, offering to navigate to signals, inventing collaboration details not on the item line, a second topic. Do not use the connections roster for this reply.'
       : null,
-    decisionAsk && !listAsk
+    decisionAsk && !listAsk && spoken
       ? 'This turn: they asked what needs a decision. Brief ONLY the one decision item in this brief — the proposal, invite, or vote on the Card for this reply line. Three or four short sentences in the same voice as "Where can I be useful?", like a friend catching them up on who is asking the community for a voice, then stop. Call show_member_home_item once for that card. One item. One card. Follow INTRODUCE. Never a numbered list of proposals. Forbidden, including close paraphrases: ranking people by shared spaces, "Currently, here are the recent proposals", "requiring your decision", "Do any of these proposals stand out", inventing a second proposal, a second topic. Do not use the connections roster for this reply.'
       : null,
     'Member home facts for this signed-in person. These are records. Keep the Hypha AI voice from the instructions above. You already know this member, the spaces they belong to, and the people they share those spaces with. Accompany them. The collective is the point. Everyone here can be helpful. No open question about what they feel like doing. One gentle opening about this item is enough. Never a command.',

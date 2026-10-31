@@ -633,6 +633,99 @@ describe('formatMemberHomeFacts', () => {
     expect(brief.text).not.toContain('People who share a space');
   });
 
+  it('skips a title already placed when they ask what needs a decision', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+            web3ProposalId: 20,
+          },
+        ],
+      },
+      {
+        alreadyShown: ['proposal:path'],
+        asked: 'What needs a decision?',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toContain('slug=bridge');
+    expect(brief.text).not.toContain('slug=path');
+    expect(brief.text).toMatch(/they asked what needs a decision/i);
+    expect(brief.text).not.toContain('People who share a space');
+  });
+
+  it('does not re-place an already-shown card on a decision ask', () => {
+    const brief = formatMemberHomeFacts(home, {
+      alreadyShown: ['proposal:path'],
+      asked: 'What needs a decision?',
+    });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toMatch(/nothing needs their voice right now/i);
+    expect(brief.text).toMatch(/Do not call show_member_home_item/);
+    expect(brief.text).not.toMatch(/Card for this reply:/);
+    expect(brief.text).not.toMatch(/Brief ONLY the one decision item/i);
+    expect(brief.text).not.toContain('People who share a space');
+  });
+
+  it('reaches a catalog decision outside the short focus walk', () => {
+    const due = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        signals: [
+          {
+            id: 3,
+            slug: 'seed',
+            title: 'Plant the seed',
+            type: 'task',
+            priority: 'critical',
+            createdAt: '2026-10-01T00:00:00.000Z',
+            dueAt: due,
+            spaceSlug: 'grove',
+            spaceTitle: 'Grove',
+            spaceLogo: null,
+            assignedToMember: true,
+            description: 'A signal that fills the focus walk.',
+            creatorId: 2,
+            creatorName: 'Noor',
+            creatorAvatarUrl: null,
+            creatorAbout: null,
+            creatorWith: [],
+          },
+        ],
+        proposals: [
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+            web3ProposalId: 20,
+          },
+        ],
+        counts: { ...home.counts, openProposals: 1, signals: 1 },
+      },
+      {
+        alreadyShown: ['signal:seed'],
+        asked: 'What needs a decision?',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toContain('slug=bridge');
+    expect(brief.text).not.toContain('slug=seed');
+  });
+
   it('speaks a closed vote as the outcome', () => {
     const facts = formatMemberHomeFactsText({
       ...home,
