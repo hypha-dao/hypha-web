@@ -30,6 +30,7 @@ import {
   useIsMobile,
   usePrefersCoarsePointer,
 } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { useAuthentication } from '@hypha-platform/authentication';
 import useSWR from 'swr';
 import {
