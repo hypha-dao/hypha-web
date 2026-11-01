@@ -47,7 +47,6 @@ import {
   visibleMatrixMemberName,
   useJwt,
   useMatrix,
-  DEFAULT_SPACE_AVATAR_IMAGE,
   useMatrixUserIdsByPersonIds,
   usePeopleBySubs,
   type MemberIntelligence,
@@ -3632,15 +3631,20 @@ function MemberList({
                       {row.inbox?.kind === 'network' ? (
                         // Same earth mark as the Network nav / panel globe.
                         <Globe2 className="h-6 w-6" strokeWidth={1.5} />
-                      ) : (
+                      ) : row.logoUrl?.trim() ? (
                         <Image
                           className="aspect-square h-full w-full object-cover"
                           width={40}
                           height={40}
-                          src={
-                            row.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE
-                          }
+                          src={row.logoUrl.trim()}
                           alt=""
+                          aria-hidden
+                        />
+                      ) : (
+                        // Quiet mark — never the legacy Hypha placeholder
+                        // (that flashed for a frame when logoUrl was late).
+                        <span
+                          className="block size-full bg-neutral-5"
                           aria-hidden
                         />
                       )}

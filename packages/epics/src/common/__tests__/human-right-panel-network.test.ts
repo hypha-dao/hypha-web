@@ -56,6 +56,16 @@ describe('network room join guard', () => {
     expect(source).toContain('messagesChannelGlyph(coherenceChannel)');
   });
 
+  it('does not flash the legacy Hypha placeholder while the space logo loads', () => {
+    expect(source).toContain('HeaderSpaceLogoMark');
+    expect(source).toContain('loading={isSpaceLoading}');
+    const headerMarkAt = source.indexOf('function HeaderSpaceLogoMark');
+    expect(headerMarkAt).toBeGreaterThan(-1);
+    expect(source.slice(headerMarkAt, headerMarkAt + 900)).not.toContain(
+      'DEFAULT_SPACE_AVATAR_IMAGE',
+    );
+  });
+
   it('treats Home / Messages space mode without a slug as not the network room', () => {
     expect(source).toContain(
       "const isNetworkSpaceChat = onNetworkPage && mode === 'space'",

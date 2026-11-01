@@ -73,7 +73,6 @@ import {
   applySignalCreatorToChatAuthor,
   isSignalDescriptionAnchorMessage,
   usePersonById,
-  DEFAULT_SPACE_AVATAR_IMAGE,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -895,6 +894,40 @@ function matrixMemberAvatarSquare(
   if (!mxc || !String(mxc).startsWith('mxc://')) return undefined;
   // Match Messages `avatarHttp` — that URL shape already loads in the inbox.
   return client.mxcUrlToHttp(mxc, px, px, 'crop') ?? undefined;
+}
+
+/**
+ * Header space mark. Never paint `DEFAULT_SPACE_AVATAR_IMAGE` (legacy Hypha
+ * glyph) while the space query is still in flight — that was the one-frame
+ * flash when opening signal / proposal / room chats from Messages.
+ */
+function HeaderSpaceLogoMark({
+  logoUrl,
+  loading,
+}: {
+  logoUrl: string | null;
+  loading: boolean;
+}) {
+  if (logoUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- remote space logos in header chrome
+      <img
+        src={logoUrl}
+        alt=""
+        aria-hidden
+        className="h-full w-full rounded-full border border-border object-cover"
+      />
+    );
+  }
+  return (
+    <span
+      className={cn(
+        'block h-full w-full rounded-full border border-border bg-neutral-5',
+        loading && 'animate-pulse',
+      )}
+      aria-hidden
+    />
+  );
 }
 
 /**
@@ -6454,36 +6487,24 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : // Space context + Messages channels: space logo left of the
             // title / room toggles / channel-type mark.
             mode === 'space' && spaceSlug?.trim() ? (
-              // eslint-disable-next-line @next/next/no-img-element -- remote space logos in header chrome
-              <img
-                src={
-                  resolveSpaceDisplayLogoUrl(
-                    spaceRoom === 'ecosystem' ? rootSpace ?? space : space,
-                    resolvedTheme === 'dark' ? 'dark' : 'light',
-                  ) ?? DEFAULT_SPACE_AVATAR_IMAGE
-                }
-                alt=""
-                aria-hidden
-                className="h-full w-full rounded-full border border-border object-cover"
+              <HeaderSpaceLogoMark
+                loading={isSpaceLoading}
+                logoUrl={resolveSpaceDisplayLogoUrl(
+                  spaceRoom === 'ecosystem' ? rootSpace ?? space : space,
+                  resolvedTheme === 'dark' ? 'dark' : 'light',
+                )}
               />
             ) : coherenceChannel === 'space' ||
               coherenceChannel === 'space-public' ||
               coherenceChannel === 'ecosystem' ||
               coherenceChannel === 'signal' ||
               coherenceChannel === 'proposal' ? (
-              // eslint-disable-next-line @next/next/no-img-element -- remote space logos in header chrome
-              <img
-                src={
-                  resolveSpaceDisplayLogoUrl(
-                    coherenceChannel === 'ecosystem'
-                      ? rootSpace ?? space
-                      : space,
-                    resolvedTheme === 'dark' ? 'dark' : 'light',
-                  ) ?? DEFAULT_SPACE_AVATAR_IMAGE
-                }
-                alt=""
-                aria-hidden
-                className="h-full w-full rounded-full border border-border object-cover"
+              <HeaderSpaceLogoMark
+                loading={isSpaceLoading}
+                logoUrl={resolveSpaceDisplayLogoUrl(
+                  coherenceChannel === 'ecosystem' ? rootSpace ?? space : space,
+                  resolvedTheme === 'dark' ? 'dark' : 'light',
+                )}
               />
             ) : null
           }
