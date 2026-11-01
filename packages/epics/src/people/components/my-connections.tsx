@@ -3677,7 +3677,7 @@ function MemberList({
                     personId={row.person.id}
                     matrixUserId={
                       personIdToMatrixUserId[row.person.id] ??
-                      openLookup?.rooms.find(
+                      openLookup?.rooms?.find(
                         (room) => room.roomId === row.roomId,
                       )?.otherUserId ??
                       undefined
