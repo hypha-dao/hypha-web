@@ -308,6 +308,8 @@ export type ChatDraftAttachment = {
   editSlot?: ChatDraftEditSlot;
 };
 
+/** Single-line composer chrome; must match `min-h-[36px]` on the textarea. */
+const COMPOSER_INPUT_MIN_PX = 36;
 /** Grow with the draft, then scroll inside so the caret stays in the text. */
 const COMPOSER_INPUT_MAX_PX = 160;
 
@@ -825,6 +827,18 @@ export function HumanChatPanelChatBar({
     if (!ta) return;
     const content = valueRef.current;
     /**
+     * Empty drafts must stay one line. Measuring `scrollHeight` while the
+     * panel width is still settling (room switch / empty welcome paint) lets
+     * the placeholder wrap and lock the box near COMPOSER_INPUT_MAX_PX — the
+     * tall empty-channel composer. Same guard as the AI panel composer.
+     */
+    if (content.length === 0) {
+      ta.style.height = `${COMPOSER_INPUT_MIN_PX}px`;
+      ta.style.minHeight = '';
+      ta.scrollTop = 0;
+      return;
+    }
+    /**
      * After send we clear to `''`. With only `height='auto'`, some browsers keep the
      * previous large scrollHeight — force a shrink before measuring.
      */
@@ -832,11 +846,11 @@ export function HumanChatPanelChatBar({
     ta.style.minHeight = '';
     void ta.offsetHeight;
     ta.style.height = 'auto';
-    const h = Math.min(Math.max(ta.scrollHeight, 36), COMPOSER_INPUT_MAX_PX);
+    const h = Math.min(
+      Math.max(ta.scrollHeight, COMPOSER_INPUT_MIN_PX),
+      COMPOSER_INPUT_MAX_PX,
+    );
     ta.style.height = `${h}px`;
-    if (content.length === 0) {
-      ta.scrollTop = 0;
-    }
   }, []);
 
   useEffect(() => {
@@ -860,6 +874,22 @@ export function HumanChatPanelChatBar({
     }
     editPreviewWasOpenRef.current = isOpen;
   }, [editPreview, autoResize]);
+
+  /** Remeasure when the shell width changes so a narrow first paint cannot stick. */
+  useLayoutEffect(() => {
+    const ta = textareaRef.current;
+    const parent = ta?.parentElement;
+    if (!ta || !parent) return;
+    let lastWidth = parent.clientWidth;
+    const observer = new ResizeObserver(() => {
+      const width = parent.clientWidth;
+      if (width === lastWidth) return;
+      lastWidth = width;
+      autoResize();
+    });
+    observer.observe(parent);
+    return () => observer.disconnect();
+  }, [autoResize]);
 
   const syncColonState = useCallback((val: string, cursor: number) => {
     const requestId = ++colonRequestIdRef.current;
