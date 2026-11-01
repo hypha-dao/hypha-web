@@ -2743,11 +2743,19 @@ export function MyConnections({
     }
   }
 
-  // Category tap: select the first conversation in the new filter so the right
-  // panel does not keep showing a chat from the previous category.
+  // Desktop / iPad (lg+): select the first conversation in the new filter so
+  // the side-by-side chat panel matches the list. Mobile stays on the list —
+  // auto-opening would skip the list and jump into fullscreen chat.
   useEffect(() => {
     if (!pendingSelectFirstInboxRef.current) return;
     if (section !== 'messages' || picking) return;
+    if (
+      typeof window === 'undefined' ||
+      !window.matchMedia('(min-width: 64rem)').matches
+    ) {
+      pendingSelectFirstInboxRef.current = false;
+      return;
+    }
     const first = inboxView.rows[0];
     if (!first) return;
     pendingSelectFirstInboxRef.current = false;
