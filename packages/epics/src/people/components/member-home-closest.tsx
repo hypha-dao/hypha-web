@@ -45,7 +45,8 @@ import { PersonAvatar } from './person-avatar';
 type ClosestPerson = MemberIntelligence['connections'][number];
 
 const VISIBLE_PEOPLE = 5;
-const PORTRAIT_PX = 32;
+/** Matches `PersonAvatar` size="md" on the live sensing row. */
+export const MEMBER_HOME_CLOSEST_PORTRAIT_PX = 32;
 
 type MemberHomeClosestProps = {
   lang: Locale;
@@ -53,6 +54,38 @@ type MemberHomeClosestProps = {
   fallbackName: string;
   onOpenChat: (person: ClosestPerson) => Promise<boolean>;
 };
+
+/**
+ * Same geometry as the live sensing row (label + 32px circles), for the home
+ * loading / partial mask so the greeting block does not jump when people land.
+ */
+export function MemberHomeClosestSkeleton({
+  count = VISIBLE_PEOPLE,
+}: {
+  count?: number;
+}) {
+  const t = useTranslations('MemberHome');
+  return (
+    <nav aria-hidden aria-busy="true" className="mt-1 min-w-0 max-w-full pb-3">
+      <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
+        {t('sensingAround')}
+      </p>
+      <div className="mt-2 flex gap-2">
+        {Array.from({ length: count }, (_, index) => (
+          <Wave
+            key={index}
+            className="rounded-full"
+            delayMs={index * 70}
+            style={{
+              width: MEMBER_HOME_CLOSEST_PORTRAIT_PX,
+              height: MEMBER_HOME_CLOSEST_PORTRAIT_PX,
+            }}
+          />
+        ))}
+      </div>
+    </nav>
+  );
+}
 
 function sameCounts(left: Map<number, number>, right: Map<number, number>) {
   if (left.size !== right.size) return false;
@@ -376,7 +409,10 @@ export function MemberHomeClosest({
                 key={index}
                 className="rounded-full"
                 delayMs={index * 70}
-                style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
+                style={{
+                  width: MEMBER_HOME_CLOSEST_PORTRAIT_PX,
+                  height: MEMBER_HOME_CLOSEST_PORTRAIT_PX,
+                }}
               />
             ),
           )}
@@ -462,7 +498,10 @@ export function MemberHomeClosest({
                 href={`/${lang}/messages`}
                 aria-label={t('seeMore')}
                 className="flex items-center justify-center rounded-full border border-neutral-7 text-1 text-neutral-12"
-                style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
+                style={{
+                  width: MEMBER_HOME_CLOSEST_PORTRAIT_PX,
+                  height: MEMBER_HOME_CLOSEST_PORTRAIT_PX,
+                }}
               >
                 {t('sensingMore', { count: rest })}
               </Link>
