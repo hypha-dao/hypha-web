@@ -5844,6 +5844,23 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     }
   }, [searchParams]);
 
+  // Tab wake / online: bump so a transient deep-link network failure retries
+  // instead of leaving "Could not load this signal link" stuck forever.
+  const [signalDeepLinkWakeEpoch, setSignalDeepLinkWakeEpoch] = useState(0);
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const onWake = () => {
+      if (document.visibilityState !== 'visible') return;
+      setSignalDeepLinkWakeEpoch((n) => n + 1);
+    };
+    document.addEventListener('visibilitychange', onWake);
+    window.addEventListener('online', onWake);
+    return () => {
+      document.removeEventListener('visibilitychange', onWake);
+      window.removeEventListener('online', onWake);
+    };
+  }, []);
+
   useEffect(() => {
     if (!spaceSlug?.trim()) return;
     const qpSignal = readSignalDeepLinkSlug(searchParams);
@@ -5861,6 +5878,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     setActiveTab('chat');
 
     if (mode === 'coherence' && coherenceSlug?.trim() === qpSignal) {
+      // Already on this signal — clear a stale wake-time network banner.
+      setSignalDeepLinkNotice(null);
       return;
     }
 
@@ -5908,12 +5927,17 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             : 'signalDeepLinkNetworkError';
         if (result.reason === 'not_found') {
           rejectedSignalSlugsRef.current.add(qpSignal);
+          setSignalDeepLinkNotice(t(messageKey));
+          stripInvalidSignalFromUrl();
+          return;
         }
+        // Auth/network after idle is often transient — keep `?signal=` so wake
+        // retries can recover, and do not tear down an already-open room.
         setSignalDeepLinkNotice(t(messageKey));
-        stripInvalidSignalFromUrl();
         return;
       }
       rejectedSignalSlugsRef.current.delete(result.signalSlug);
+      setSignalDeepLinkNotice(null);
 
       if (result.roomId) {
         rememberRoomToCoherenceSession(
@@ -5946,6 +5970,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     pathname,
     router,
     searchParams,
+    signalDeepLinkWakeEpoch,
     openCoherenceChat,
     openHumanChatPanel,
     t,

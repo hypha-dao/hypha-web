@@ -1096,8 +1096,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     if (!client) return;
 
     const retryIfNeeded = () => {
-      if (connectionStatus !== 'disconnected') return;
-      void recoverMatrixSync();
+      if (connectionStatus === 'disconnected') {
+        void recoverMatrixSync();
+        return;
+      }
+      // After long inactivity the client can still report "connected" while
+      // sync is Error/Stopped — nudge it without a full reconnect flash.
+      const syncState = client.getSyncState();
+      if (
+        syncState === MatrixSdk.SyncState.Error ||
+        syncState === MatrixSdk.SyncState.Stopped
+      ) {
+        void recoverMatrixSync();
+      }
     };
 
     const handleVisibilityChange = () => {

@@ -2386,7 +2386,11 @@ export function MyConnections({
 
   // Keep pending titles visible while peer profiles load — do not tie this to
   // listSettled, or an early PEOPLE AROUND paint drops everyone as titlePending.
-  const titlesLoading = peopleBySubLoading || (peerSubs.length > 0 && !jwt);
+  // After tab wake Privy can briefly drop `jwt`; keep painted titles if we
+  // already resolved peers so the list does not freeze on skeletons.
+  const titlesLoading =
+    peopleBySubLoading ||
+    (peerSubs.length > 0 && !jwt && peopleBySub.size === 0);
   const hasMatrixConversations =
     rows.some((row) => row.kind === 'person' || row.kind === 'group') ||
     channels.length > 0 ||
