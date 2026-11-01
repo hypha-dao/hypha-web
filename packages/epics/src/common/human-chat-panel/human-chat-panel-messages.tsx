@@ -411,21 +411,36 @@ export function HumanChatPanelMessages({
     Boolean(firstUnreadMessageId) &&
     Boolean(firstUnreadMeta.dateLabel && firstUnreadMeta.timeLabel);
 
-  const scrollToUnread = useCallback(() => {
-    if (!firstUnreadMessageId) return;
-    const root = containerRef.current;
-    if (!root) return;
-    const escaped =
-      typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
-        ? CSS.escape(firstUnreadMessageId)
-        : firstUnreadMessageId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    const el = root.querySelector(
-      `[data-matrix-event-id="${escaped}"]`,
-    ) as HTMLElement | null;
-    if (el) scrollChildIntoTimeline(root, el);
-    stickToBottomRef.current = false;
-    onTimelineAtBottomChange?.(false);
-  }, [firstUnreadMessageId, onTimelineAtBottomChange]);
+  /**
+   * Jump so the NEW divider (preferred) or first unread row sits near the top
+   * of the timeline — Slack/Discord-style. Returns false when the target is
+   * not in the DOM yet (caller may retry).
+   */
+  const scrollToUnread = useCallback(
+    (behavior: ScrollBehavior = 'smooth'): boolean => {
+      if (!firstUnreadMessageId) return false;
+      const root = containerRef.current;
+      if (!root) return false;
+      const divider = root.querySelector('[data-chat-unread-divider]');
+      const escaped =
+        typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+          ? CSS.escape(firstUnreadMessageId)
+          : firstUnreadMessageId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      const message = root.querySelector(`[data-matrix-event-id="${escaped}"]`);
+      const el =
+        divider instanceof HTMLElement
+          ? divider
+          : message instanceof HTMLElement
+          ? message
+          : null;
+      if (!el) return false;
+      scrollChildIntoTimeline(root, el, behavior);
+      stickToBottomRef.current = false;
+      onTimelineAtBottomChange?.(false);
+      return true;
+    },
+    [firstUnreadMessageId, onTimelineAtBottomChange],
+  );
 
   useEffect(() => {
     if (roomId !== prevRoomIdRef.current) {
@@ -542,14 +557,35 @@ export function HumanChatPanelMessages({
       messages.some((m) => m.id === firstUnreadMessageId);
 
     if (shouldScrollUnread) {
-      initialUnreadScrollDoneRef.current = true;
+      // Do not mark done until the target is actually in the DOM — a single
+      // rAF often runs before long timelines paint, leaving the viewport at
+      // the oldest loaded messages with the unread banner still showing.
       stickToBottomRef.current = false;
       onTimelineAtBottomChange?.(false);
-      window.requestAnimationFrame(() => {
-        scrollToUnread();
-      });
+      let cancelled = false;
+      let frames = 0;
+      let raf = 0;
+      const maxFrames = 45;
+      const tryScroll = () => {
+        if (cancelled) return;
+        // Instant jump on open (Slack/Discord); smooth is for later in-thread jumps.
+        if (scrollToUnread('auto')) {
+          initialUnreadScrollDoneRef.current = true;
+          return;
+        }
+        frames += 1;
+        if (frames < maxFrames) {
+          raf = window.requestAnimationFrame(tryScroll);
+        } else {
+          initialUnreadScrollDoneRef.current = true;
+        }
+      };
+      raf = window.requestAnimationFrame(tryScroll);
       prevLastIdRef.current = lastId;
-      return;
+      return () => {
+        cancelled = true;
+        window.cancelAnimationFrame(raf);
+      };
     }
 
     if (
