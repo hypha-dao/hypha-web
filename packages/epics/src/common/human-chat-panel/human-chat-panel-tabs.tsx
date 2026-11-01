@@ -11,7 +11,7 @@ type HumanChatPanelTabsProps = {
   activeTab: ChatPanelTab;
   onTabChange: (tab: ChatPanelTab) => void;
   /**
-   * Personalized label for the chat tab (Direct Message, Space Room, …).
+   * Personalized label for the chat tab (Direct Message, Space Channel, …).
    * Falls back to the generic "Room" copy when omitted.
    */
   chatTabLabel?: string;

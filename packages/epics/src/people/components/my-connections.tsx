@@ -1919,6 +1919,11 @@ export function MyConnections({
   const debugRooms = searchParams.get('debugRooms') === '1';
   const openedDirectChatRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
+  /** After a filter tap, open the first row once the filtered list is ready. */
+  const pendingSelectFirstInboxRef = useRef(false);
+  const openInboxRowRef = useRef<
+    ((row: ConnectionMemberRow) => void | Promise<void>) | null
+  >(null);
   const inboxFiltersRef = useRef<HTMLDivElement | null>(null);
   const chainFilterScroll = useChainScrollAtEdge();
   const setInboxFiltersRef = useCallback(
@@ -2727,6 +2732,7 @@ export function MyConnections({
       setSelectedById(new Map());
       setQuery('');
     }
+    pendingSelectFirstInboxRef.current = next !== inboxFilter;
     setInboxFilter(next);
     setInboxVisibleCount(INBOX_LIST_PAGE);
     setInboxChannelOpen(true);
@@ -2736,6 +2742,18 @@ export function MyConnections({
       // The choice still applies for this visit.
     }
   }
+
+  // Category tap: select the first conversation in the new filter so the right
+  // panel does not keep showing a chat from the previous category.
+  useEffect(() => {
+    if (!pendingSelectFirstInboxRef.current) return;
+    if (section !== 'messages' || picking) return;
+    const first = inboxView.rows[0];
+    if (!first) return;
+    pendingSelectFirstInboxRef.current = false;
+    void openInboxRowRef.current?.(first);
+  }, [inboxFilter, inboxView.rows, picking, section]);
+
   // Newest chats stay first, so a new message lands in this first screen.
   // Filter badges and the nav count still use every row, including ones
   // waiting until the list scrolls to the end.
@@ -2978,6 +2996,7 @@ export function MyConnections({
       avatarUrl: row.person.avatarUrl,
     });
   }
+  openInboxRowRef.current = openMember;
 
   const groupMemberIds = resolvedMatrixIdsForGroup(
     selectedPeople,
