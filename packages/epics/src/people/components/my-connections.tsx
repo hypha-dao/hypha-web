@@ -3654,6 +3654,17 @@ function MemberList({
                         />
                       </span>
                     ) : null}
+                    {/* Channel type on the right — same role as Network's earth,
+                        for rooms / signal / proposal / ecosystem in Messages. */}
+                    {row.inbox?.kind !== 'network' ? (
+                      <span className="pointer-events-none absolute right-0 bottom-0 grid size-3.5 place-items-center rounded-tl-md bg-foreground text-background">
+                        <ChannelIcon
+                          className="size-2.5"
+                          strokeWidth={1.75}
+                          aria-hidden
+                        />
+                      </span>
+                    ) : null}
                   </span>
                 ) : row.faces && row.faces.length > 0 ? (
                   <GroupFaces faces={row.faces} />

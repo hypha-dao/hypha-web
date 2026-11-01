@@ -204,6 +204,7 @@ import {
   peerReadUpToEventId,
 } from './human-chat-panel/matrix-chat-receipts';
 import { isPeopleGroupChatRoom } from './human-chat-panel/people-group-room';
+import { messagesChannelGlyph } from './human-chat-panel/messages-channel-glyph';
 import { peerLastSeenFormatParts } from './human-chat-panel/format-peer-last-seen';
 import {
   peerLastSeenLine,
@@ -6389,14 +6390,30 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       <SidebarHeader className="gap-0 bg-page-background p-0 dark:bg-background-2">
         <HumanChatPanelHeader
           title={
-            mode === 'coherence'
+            isNetworkSpaceChat || coherenceChannel === 'network'
+              ? t('networkRoomTitle')
+              : mode === 'coherence'
               ? groupTitle ?? coherenceTitle ?? undefined
               : ''
           }
           description={dmPeerPresenceDescription}
-          iconTitle={
+          channelIcon={
+            isNetworkSpaceChat
+              ? messagesChannelGlyph('network') ?? undefined
+              : messagesChannelGlyph(coherenceChannel) ?? undefined
+          }
+          channelIconLabel={
             isNetworkSpaceChat || coherenceChannel === 'network'
               ? t('networkRoomTitle')
+              : coherenceChannel === 'ecosystem'
+              ? t('ecosystemRoomTitle')
+              : coherenceChannel === 'space' ||
+                coherenceChannel === 'space-public'
+              ? t('spaceRoomTitle')
+              : coherenceChannel === 'signal'
+              ? tConnections('inbox.tagSignal')
+              : coherenceChannel === 'proposal'
+              ? tConnections('inbox.tagProposal')
               : undefined
           }
           titleStart={
@@ -6430,12 +6447,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 isLoading={dmPeerPersonLoading || peerMatrixIdsLoading}
               />
             ) : coherenceChannel === 'network' || isNetworkSpaceChat ? (
-              // Mycelium mark left of "Network" + earth globe (iconTitle chrome).
+              // Mycelium mark left of "Network" + earth globe.
               <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-border bg-background text-foreground">
                 <MemberHomeMark className="h-4 w-4" />
               </span>
-            ) : // Space context + Messages space/ecosystem channels: logo left of
-            // the room tabs / title. Sized to the 36px room-choice toggle.
+            ) : // Space context + Messages channels: space logo left of the
+            // title / room toggles / channel-type mark.
             mode === 'space' && spaceSlug?.trim() ? (
               // eslint-disable-next-line @next/next/no-img-element -- remote space logos in header chrome
               <img
@@ -6451,7 +6468,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               />
             ) : coherenceChannel === 'space' ||
               coherenceChannel === 'space-public' ||
-              coherenceChannel === 'ecosystem' ? (
+              coherenceChannel === 'ecosystem' ||
+              coherenceChannel === 'signal' ||
+              coherenceChannel === 'proposal' ? (
               // eslint-disable-next-line @next/next/no-img-element -- remote space logos in header chrome
               <img
                 src={

@@ -84,10 +84,20 @@ type HumanChatPanelHeaderProps = {
   notificationSettingsHref?: string | null;
   /** One room name, in the same box as the space and ecosystem choice. */
   mark?: string;
-  /** Icon-only title. Hover shows the label (network room). */
+  /**
+   * @deprecated Prefer `title` + `channelIcon` (Network used this for a
+   * hard-coded earth glyph). Kept so older callers still compile.
+   */
   iconTitle?: string;
   /** Sits before the title — e.g. peer avatar on a direct chat. */
   titleStart?: ReactNode;
+  /**
+   * Trailing channel-type mark after the title (Messages: earth / radio /
+   * proposal / ecosystem / space). Label truncates with … when long.
+   */
+  channelIcon?: RoomChoiceIcon;
+  /** Aria + tooltip for `channelIcon` (defaults to the title). */
+  channelIconLabel?: string;
   /** Extra header actions (group rename/archive). Same 36px control row. */
   trailingEnd?: ReactNode;
   /** Two rooms that sit side by side, such as a space and its ecosystem. */
@@ -108,6 +118,8 @@ export function HumanChatPanelHeader({
   mark,
   iconTitle,
   titleStart,
+  channelIcon,
+  channelIconLabel,
   trailingEnd,
   roomChoice,
 }: HumanChatPanelHeaderProps) {
@@ -115,7 +127,9 @@ export function HumanChatPanelHeader({
   const router = useRouter();
   const t = useTranslations('HumanChatPanel');
 
-  const displayTitle = title ?? t('title');
+  const ChannelGlyph = channelIcon ?? (iconTitle ? Globe2 : undefined);
+  const glyphLabel = channelIconLabel?.trim() || iconTitle?.trim() || undefined;
+  const displayTitle = (title ?? iconTitle)?.trim() || t('title');
   const displayDescription = description;
 
   return (
@@ -243,35 +257,8 @@ export function HumanChatPanelHeader({
               </div>
             </TooltipProvider>
           </>
-        ) : iconTitle ? (
-          <>
-            {titleStart ? (
-              <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden">
-                {titleStart}
-              </div>
-            ) : null}
-            <span
-              className="min-w-0 truncate text-sm leading-5 font-medium text-foreground"
-              title={iconTitle}
-            >
-              {iconTitle}
-            </span>
-            <TooltipProvider delayDuration={200}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span
-                    className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center border border-foreground bg-foreground text-background"
-                    aria-label={iconTitle}
-                  >
-                    <Globe2 className="h-4 w-4" strokeWidth={1.5} aria-hidden />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">{iconTitle}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </>
-        ) : displayTitle || titleStart ? (
-          <div className="flex min-w-0 items-center justify-end gap-2 overflow-hidden">
+        ) : displayTitle || titleStart || ChannelGlyph ? (
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
             {titleStart ? (
               <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden">
                 {titleStart}
@@ -298,6 +285,27 @@ export function HumanChatPanelHeader({
               <p className="min-w-0 truncate text-right text-[10px] leading-3 text-muted-foreground">
                 {displayDescription}
               </p>
+            ) : null}
+            {ChannelGlyph ? (
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center border border-foreground bg-foreground text-background"
+                      aria-label={glyphLabel || displayTitle}
+                    >
+                      <ChannelGlyph
+                        className="h-4 w-4"
+                        strokeWidth={1.5}
+                        aria-hidden
+                      />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {glyphLabel || displayTitle}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             ) : null}
           </div>
         ) : displayDescription ? (

@@ -45,10 +45,15 @@ describe('network room join guard', () => {
     expect(source).toContain(
       "coherenceChannel === 'network' || isNetworkSpaceChat",
     );
-    expect(source).toContain(
-      "isNetworkSpaceChat || coherenceChannel === 'network'",
-    );
+    expect(source).toContain('messagesChannelGlyph');
+    expect(source).toContain('channelIcon=');
     expect(source).toContain('networkRoomTitle');
+  });
+
+  it('puts a space logo and channel-type mark on Messages signal/proposal/ecosystem', () => {
+    expect(source).toContain("coherenceChannel === 'signal'");
+    expect(source).toContain("coherenceChannel === 'proposal'");
+    expect(source).toContain('messagesChannelGlyph(coherenceChannel)');
   });
 
   it('treats Home / Messages space mode without a slug as not the network room', () => {

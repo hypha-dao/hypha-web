@@ -684,7 +684,13 @@ export function channelRowsFromSnapshots(
       place.proposalSlug,
     ].filter((value): value is string => Boolean(value));
     const spaceSlug = place.spaceSlug?.trim().toLowerCase() ?? '';
-    const logoUrl = spaceSlug ? logoBySlug.get(spaceSlug) ?? null : null;
+    const ecosystemSlug = place.ecosystemSlug?.trim().toLowerCase() ?? '';
+    // Signal / proposal / room rows need the parent space mark. Ecosystem
+    // channels often only carry the root slug.
+    const logoUrl =
+      (spaceSlug ? logoBySlug.get(spaceSlug) : null) ??
+      (ecosystemSlug ? logoBySlug.get(ecosystemSlug) : null) ??
+      null;
     rows.push({
       person: {
         id: channelPersonId(roomId),
