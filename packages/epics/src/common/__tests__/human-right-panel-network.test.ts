@@ -35,7 +35,7 @@ describe('network room join guard', () => {
       'openingTimelineRoomIdRef.current = intendedRoomId',
     );
     expect(source).toContain(
-      'activeRoom && painted && activeRoom === painted ? messages : []',
+      'activeRoom && messages.length > 0 && (!painted || painted === activeRoom)',
     );
     expect(source).toContain('Mid-switch both refs may be empty');
   });
@@ -48,6 +48,14 @@ describe('network room join guard', () => {
     expect(source).toContain('messagesChannelGlyph');
     expect(source).toContain('channelIcon=');
     expect(source).toContain('networkRoomTitle');
+  });
+
+  it('shows the composer for Network opened from Messages inbox', () => {
+    expect(source).toContain('<HumanChatPanelChatBar');
+    expect(source).toContain("coherenceChannel === 'network'");
+    expect(source).toContain(
+      "isNetworkSpaceChat ||\n          coherenceChannel === 'network'",
+    );
   });
 
   it('puts a space logo and channel-type mark on Messages signal/proposal/ecosystem', () => {

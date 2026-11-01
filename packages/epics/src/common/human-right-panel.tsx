@@ -7454,7 +7454,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       {activeTab === 'chat' &&
         (Boolean(spaceSlug?.trim()) ||
           isDirectConversation ||
-          isNetworkSpaceChat) &&
+          isNetworkSpaceChat ||
+          coherenceChannel === 'network') &&
         !showAuthPrompt &&
         !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 border-t border-border/70 bg-page-background p-0 dark:bg-background-2">
