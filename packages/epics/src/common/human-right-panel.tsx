@@ -2911,9 +2911,15 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const isSignalThread = mode === 'coherence' && Boolean(coherenceSlug?.trim());
+  /**
+   * Only treat a signal as team-gated once the roster has finished loading and
+   * we actually have members. Using `!signalTeamRosterResolved` here locked the
+   * composer on every room switch (flash of “Only selected team members…”).
+   */
   const hasSignalTeamPolicy =
     isSignalThread &&
-    (signalTeamMemberIds.length > 0 || !signalTeamRosterResolved);
+    signalTeamRosterResolved &&
+    signalTeamMemberIds.length > 0;
   const signalTeamMemberIdSet = useMemo(
     () => new Set(signalTeamMemberIds),
     [signalTeamMemberIds],

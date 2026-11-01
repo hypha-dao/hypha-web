@@ -339,8 +339,10 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
             // left/right calc can fail when --sidebar-width is a min() value.
             // Bottom clearance: phone tab bar below xl; site footer on xl+
             // (`--site-footer-offset` from DeferredFooter) so the composer
-            // does not cover "Powered by Hypha".
-            'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) translate-x-0 overflow-visible transition-[transform,width,bottom] duration-300 ease-out md:flex xl:!top-0 xl:!bottom-[var(--site-footer-offset,0px)] xl:!h-auto',
+            // does not cover "Powered by Hypha". Do not transition `bottom` —
+            // animating clearance made the composer chrome look like it was
+            // stretching over the footer.
+            'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) translate-x-0 overflow-visible transition-[transform,width] duration-300 ease-out md:flex xl:!top-0 xl:!bottom-[var(--site-footer-offset,0px)] xl:!h-auto xl:overflow-hidden',
             side === 'left'
               ? 'left-0 max-xl:!bottom-[var(--mobile-tab-offset,0px)] max-xl:!h-auto group-data-[collapsible=offcanvas]:-translate-x-full'
               : 'right-0 max-xl:!bottom-[var(--mobile-tab-offset,0px)] max-xl:!h-auto group-data-[collapsible=offcanvas]:translate-x-full',
