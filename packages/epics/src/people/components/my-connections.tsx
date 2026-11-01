@@ -151,6 +151,7 @@ import {
   type JoinedChannelSnapshot,
 } from './messages-inbox';
 import { GroupFaces } from './group-faces';
+import { MemberHomeMark } from './member-home-mark';
 import { PersonAvatar } from './person-avatar';
 
 /** Matches the first page returned for the home. Each click asks for one more. */
@@ -3629,8 +3630,7 @@ function MemberList({
                   <span className="relative size-10 shrink-0">
                     <span className="grid size-full place-items-center overflow-hidden rounded-full border border-border bg-background text-foreground">
                       {row.inbox?.kind === 'network' ? (
-                        // Same earth mark as the Network nav / panel globe.
-                        <Globe2 className="h-6 w-6" strokeWidth={1.5} />
+                        <MemberHomeMark className="h-6 w-6" />
                       ) : row.logoUrl?.trim() ? (
                         <Image
                           className="aspect-square h-full w-full object-cover"
@@ -3652,17 +3652,6 @@ function MemberList({
                     {contextHref ? (
                       <span className="pointer-events-none absolute top-0 right-0 grid size-3.5 place-items-center rounded-bl-md bg-background text-foreground">
                         <ArrowUpRight
-                          className="size-2.5"
-                          strokeWidth={1.75}
-                          aria-hidden
-                        />
-                      </span>
-                    ) : null}
-                    {/* Channel type on the right — same role as Network's earth,
-                        for rooms / signal / proposal / ecosystem in Messages. */}
-                    {row.inbox?.kind !== 'network' ? (
-                      <span className="pointer-events-none absolute right-0 bottom-0 grid size-3.5 place-items-center rounded-tl-md bg-foreground text-background">
-                        <ChannelIcon
                           className="size-2.5"
                           strokeWidth={1.75}
                           aria-hidden

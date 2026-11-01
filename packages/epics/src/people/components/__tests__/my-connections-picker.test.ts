@@ -102,16 +102,9 @@ describe('group picker chips and radio', () => {
     expect(source).toContain('personIdToMatrixUserId[row.person.id]');
   });
 
-  it('shows the earth globe on the Messages Network channel row', () => {
+  it('keeps the mycelium mark on the Messages Network channel row', () => {
     expect(source).toContain("row.inbox?.kind === 'network'");
-    expect(source).toContain(
-      '<Globe2 className="h-6 w-6" strokeWidth={1.5} />',
-    );
-  });
-
-  it('badges room / signal / proposal / ecosystem rows with the channel-type mark', () => {
-    expect(source).toContain("row.inbox?.kind !== 'network'");
-    expect(source).toContain('absolute right-0 bottom-0');
-    expect(source).toContain('CHANNEL_MARK_ICONS');
+    expect(source).toContain('<MemberHomeMark className="h-6 w-6" />');
+    expect(source).not.toContain('absolute right-0 bottom-0');
   });
 });
