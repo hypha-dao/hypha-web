@@ -831,10 +831,30 @@ export function HumanChatPanelChatBar({
      * panel width is still settling (room switch / empty welcome paint) lets
      * the placeholder wrap and lock the box near COMPOSER_INPUT_MAX_PX — the
      * tall empty-channel composer. Same guard as the AI panel composer.
+     *
+     * Exception: a locked composer shows the lock reason as the placeholder.
+     * That copy can wrap — size to it (capped) so it is not clipped to 36px.
+     * Measure with height `0px` (not `auto`): with `rows={1}` + `min-h-[36px]`,
+     * `auto` collapses back to one line and ignores the wrapped placeholder.
      */
     if (content.length === 0) {
-      ta.style.height = `${COMPOSER_INPUT_MIN_PX}px`;
+      if (!composerLocked) {
+        ta.style.height = `${COMPOSER_INPUT_MIN_PX}px`;
+        ta.style.minHeight = '';
+        ta.scrollTop = 0;
+        return;
+      }
+      // Placeholder paint does not affect scrollHeight; temporarily mirror it.
+      ta.value = ta.placeholder || composerLockedMessage || '';
+      ta.style.height = '0px';
       ta.style.minHeight = '';
+      void ta.offsetHeight;
+      const lockedH = Math.min(
+        Math.max(ta.scrollHeight, COMPOSER_INPUT_MIN_PX),
+        COMPOSER_INPUT_MAX_PX,
+      );
+      ta.style.height = `${lockedH}px`;
+      ta.value = '';
       ta.scrollTop = 0;
       return;
     }
@@ -851,7 +871,7 @@ export function HumanChatPanelChatBar({
       COMPOSER_INPUT_MAX_PX,
     );
     ta.style.height = `${h}px`;
-  }, []);
+  }, [composerLocked, composerLockedMessage]);
 
   useEffect(() => {
     const isOpen = Boolean(replyPreview);
