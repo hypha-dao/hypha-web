@@ -2506,8 +2506,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [roomMemberMxids, roomPeopleBySub]);
   const directoryLabelByMxid = useMemo(() => {
     const labels = new Map<string, string>();
+    const setLabel = (mxid: string, label: string) => {
+      labels.set(mxid, label);
+      labels.set(mxid.toLowerCase(), label);
+    };
     for (const [userId, profile] of roomPersonByMxid) {
-      labels.set(userId, profile.label);
+      setLabel(userId, profile.label);
     }
     if (!directoryHome) return labels;
     const people = [
@@ -2519,7 +2523,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const label =
         [person.name, person.surname].filter(Boolean).join(' ').trim() ||
         person.nickname?.trim();
-      if (mxid && label) labels.set(mxid, label);
+      if (mxid && label) setLabel(mxid, label);
     }
     return labels;
   }, [directoryHome, directoryMxids, roomPersonByMxid]);
@@ -2622,12 +2626,34 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         const full = [me?.name, me?.surname].filter(Boolean).join(' ').trim();
         return full || t('you');
       }
-      const directoryLabel = directoryLabelByMxid.get(userId)?.trim();
+      // 1:1 DM opened from Messages already has the peer Person by id.
+      // Match via personId→MXID (multi-env link lookup) — Person.sub is stripped.
+      if (peerPersonId && dmPeerPerson) {
+        const peerMxid = peerPersonIdToMatrixUserId[peerPersonId]?.trim();
+        if (
+          peerMxid &&
+          (userId === peerMxid ||
+            userId.toLowerCase() === peerMxid.toLowerCase())
+        ) {
+          const fromPeer = personRosterLabel(dmPeerPerson, '');
+          if (fromPeer) return fromPeer;
+        }
+      }
+      const directoryLabel =
+        directoryLabelByMxid.get(userId)?.trim() ||
+        directoryLabelByMxid.get(userId.toLowerCase())?.trim();
       if (directoryLabel) return directoryLabel;
-      const rosterLabel = matrixUserIdToPersonLabel.get(userId)?.trim();
+      const rosterLabel =
+        matrixUserIdToPersonLabel.get(userId)?.trim() ||
+        matrixUserIdToPersonLabel.get(userId.toLowerCase())?.trim();
       if (rosterLabel) return rosterLabel;
       const localpartSub = matrixLocalpartToPrivySub(userId);
       if (localpartSub) {
+        const fromRoom = roomPeopleBySub.get(localpartSub);
+        if (fromRoom) {
+          const roomLabel = personRosterLabel(fromRoom, '');
+          if (roomLabel) return roomLabel;
+        }
         const rosterBySub = personLabelByPrivySub.get(localpartSub)?.trim();
         if (rosterBySub) return rosterBySub;
       }
@@ -2648,19 +2674,25 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           }
         }
       }
-      return visibleMatrixMemberName(userId, profileLabel);
+      return (
+        visibleMatrixMemberName(userId, profileLabel) || t('unknownMember')
+      );
     },
     [
       client,
       currentUserId,
       directoryLabelByMxid,
+      dmPeerPerson,
       matrixLocalpartToPrivySub,
       matrixProfileLabelByUserId,
       matrixUserIdToPersonLabel,
       me?.name,
       me?.surname,
+      peerPersonId,
+      peerPersonIdToMatrixUserId,
       personLabelByPrivySub,
       roomId,
+      roomPeopleBySub,
       t,
     ],
   );
@@ -2671,6 +2703,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (!userId) return undefined;
       if (currentUserId && userId === currentUserId) {
         return currentUserAvatarUrl?.trim() || undefined;
+      }
+      if (peerPersonId && dmPeerPerson) {
+        const peerMxid = peerPersonIdToMatrixUserId[peerPersonId]?.trim();
+        const peerAvatar = dmPeerPerson.avatarUrl?.trim();
+        if (
+          peerAvatar &&
+          peerMxid &&
+          (userId === peerMxid ||
+            userId.toLowerCase() === peerMxid.toLowerCase())
+        ) {
+          return peerAvatar;
+        }
       }
       const fromRoster = matrixUserIdToPersonAvatar.get(userId)?.trim();
       if (fromRoster) return fromRoster;
@@ -2693,8 +2737,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [
       currentUserAvatarUrl,
       currentUserId,
+      dmPeerPerson,
       matrixLocalpartToPrivySub,
       matrixUserIdToPersonAvatar,
+      peerPersonId,
+      peerPersonIdToMatrixUserId,
       personAvatarByPrivySub,
       roomPeopleBySub,
     ],
@@ -3887,6 +3934,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     memberLabelEpoch,
     me?.name,
     me?.surname,
+    dmPeerPerson,
+    roomPeopleBySub,
     t,
   ]);
 

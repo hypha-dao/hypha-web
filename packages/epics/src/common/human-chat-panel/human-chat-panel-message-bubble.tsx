@@ -1743,13 +1743,15 @@ export function HumanChatPanelMessageBubble({
   const resolveSenderProfile =
     Boolean(senderMatrixId) &&
     needsHyphaProfileForMatrixLabel(
-      rosterSenderLabel ?? message.senderName,
+      // Empty string from filtered technical roster labels must not block
+      // falling through to message.senderName / person lookup.
+      rosterSenderLabel || message.senderName,
       senderMatrixId,
     );
   const resolveReplyProfile =
     Boolean(replyMatrixId) &&
     needsHyphaProfileForMatrixLabel(
-      rosterReplyLabel ?? replyTo?.authorLabel,
+      rosterReplyLabel || replyTo?.authorLabel,
       replyMatrixId,
     );
 
@@ -1860,7 +1862,7 @@ export function HumanChatPanelMessageBubble({
       ? isLoadingSenderLink ||
         (Boolean(senderPrivySub ?? senderCanonicalSub) && isLoadingSenderPerson)
       : needsHyphaProfileForMatrixLabel(
-          rosterSenderLabel ?? message.senderName,
+          rosterSenderLabel || message.senderName,
           message.senderMatrixId,
         ));
 
@@ -1876,7 +1878,7 @@ export function HumanChatPanelMessageBubble({
       ? isLoadingReplyLink ||
         (Boolean(replyPrivySub ?? replyCanonicalSub) && isLoadingReplyPerson)
       : needsHyphaProfileForMatrixLabel(
-          rosterReplyLabel ?? replyTo.authorLabel,
+          rosterReplyLabel || replyTo.authorLabel,
           replyTo.sourceUserId,
         ));
 
