@@ -258,7 +258,14 @@ import {
   upsertTimelineMessages,
 } from './human-chat-panel/human-chat-timeline-order';
 
-function personRosterLabel(p: Person, unknownLabel: string): string {
+function personRosterLabel(
+  p: {
+    name?: string | null;
+    surname?: string | null;
+    nickname?: string | null;
+  },
+  unknownLabel: string,
+): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
   if (full) return full;
   if (p.nickname?.trim()) return p.nickname.trim();
