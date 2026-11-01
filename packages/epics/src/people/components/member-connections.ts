@@ -375,8 +375,11 @@ export type MessagesPeopleListReadyInput = {
    * list paint during Syncing without waiting for the full initial sync.
    */
   hasMatrixConversations: boolean;
-  /** Intelligence fetch finished (or there is no JWT to fetch). */
-  homeLoaded: boolean;
+  /**
+   * @deprecated Ignored — Direct rows come from Matrix. Home intelligence
+   * (shell/full) fills connections and suggestions after paint.
+   */
+  homeLoaded?: boolean;
   /**
    * @deprecated Ignored — room summaries, Matrix ids, and peer profiles fill in
    * progressively via preview/title loading instead of blocking first paint.
@@ -389,10 +392,10 @@ export type MessagesPeopleListReadyInput = {
 };
 
 /**
- * The Messages people list is safe to paint. Wait for Matrix sync + home, then
- * either the first /sync to finish or at least one real conversation room so
- * we do not sit on the skeleton for the full multi-second catch-up. Do not wait
- * for every room summary or peer profile (those stream in after paint).
+ * The Messages people list is safe to paint. Wait for Matrix sync, then either
+ * the first /sync to finish or at least one real conversation room so we do not
+ * sit on the skeleton for the full multi-second catch-up. Do not wait for home
+ * intelligence, room summaries, or peer profiles (those stream in after paint).
  *
  * Matrix unavailable and not connecting is "ready" so the empty/unavailable
  * copy can show. Callers latch this so a later room pump does not hide the list.
@@ -401,7 +404,7 @@ export function messagesPeopleListReady(
   input: MessagesPeopleListReadyInput,
 ): boolean {
   if (!input.isMatrixAvailable) return !input.isConnecting;
-  if (!input.synced || !input.homeLoaded) return false;
+  if (!input.synced) return false;
   return input.initialSyncComplete || input.hasMatrixConversations;
 }
 

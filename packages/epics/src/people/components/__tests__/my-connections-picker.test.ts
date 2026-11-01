@@ -77,10 +77,13 @@ describe('group picker chips and radio', () => {
 
   it('holds PEOPLE AROUND behind a list skeleton until sync has rooms or finishes', () => {
     expect(source).toContain('messagesPeopleListReady');
-    expect(source).toContain('homeLoaded');
     expect(source).toContain('synced');
     expect(source).toContain('initialSyncComplete');
     expect(source).toContain('hasMatrixConversations');
+    // Direct list reuses Home shell/full SWR keys; does not block on homeLoaded.
+    expect(source).toContain("memberId, 'shell'");
+    expect(source).toContain("memberId, 'full'");
+    expect(source).not.toContain('homeLoaded');
     expect(source).toContain('isInboxDirectConversation');
     expect(source).toContain('MemberListSkeleton');
     expect(source).toContain('data-testid="messages-people-loader"');

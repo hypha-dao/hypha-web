@@ -1175,7 +1175,6 @@ describe('messagesPeopleListReady', () => {
     synced: true,
     initialSyncComplete: true,
     hasMatrixConversations: false,
-    homeLoaded: true,
   };
 
   it('waits while Matrix is connecting', () => {
@@ -1186,7 +1185,6 @@ describe('messagesPeopleListReady', () => {
         isConnecting: true,
         synced: false,
         initialSyncComplete: false,
-        homeLoaded: false,
       }),
     ).toBe(false);
     expect(messagesPeopleListReady({ ...ready, synced: false })).toBe(false);
@@ -1208,13 +1206,11 @@ describe('messagesPeopleListReady', () => {
     ).toBe(true);
   });
 
-  it('waits for home intelligence but not room/id/profile backfill', () => {
-    expect(messagesPeopleListReady({ ...ready, homeLoaded: false })).toBe(
-      false,
-    );
+  it('does not wait for home intelligence or room/id/profile backfill', () => {
     expect(
       messagesPeopleListReady({
         ...ready,
+        homeLoaded: false,
         rowsPending: true,
         matrixIdsLoading: true,
         peopleBySubLoading: true,
@@ -1230,7 +1226,6 @@ describe('messagesPeopleListReady', () => {
         isMatrixAvailable: false,
         synced: false,
         initialSyncComplete: false,
-        homeLoaded: false,
       }),
     ).toBe(true);
   });

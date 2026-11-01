@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -13,6 +14,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   ClientEvent,
   Direction,
@@ -158,6 +160,34 @@ import { PersonAvatar } from './person-avatar';
 const CONNECTIONS_PAGE = 12;
 /** Suggestions look past the first page, up to the intelligence cap. */
 const SUGGESTION_POOL = 120;
+/** Same client budget as Home — past the server 12s race, before the function limit. */
+const HOME_INTELLIGENCE_TIMEOUT_MS = 20_000;
+
+/** Privy access tokens are JWTs; `sub` is the member id (`did:privy:…`). */
+function readJwtSubject(token: string): string | null {
+  const payload = token.split('.')[1];
+  if (!payload) return null;
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = normalized.length % 4;
+    const padded = pad ? `${normalized}${'='.repeat(4 - pad)}` : normalized;
+    const parsed = JSON.parse(atob(padded)) as { sub?: unknown };
+    return typeof parsed.sub === 'string' && parsed.sub.trim()
+      ? parsed.sub.trim()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function sameMemberHome(
+  left: MemberIntelligence | null | undefined,
+  right: MemberIntelligence | null | undefined,
+) {
+  if (left === right) return true;
+  if (left == null || right == null) return left == null && right == null;
+  return JSON.stringify(left) === JSON.stringify(right);
+}
 
 type ConnectionPerson = MemberIntelligence['connections'][number];
 type ConnectionMemberRow = MemberRow<ConnectionPerson>;
@@ -1824,7 +1854,54 @@ export function MyConnections({
   const tChat = useTranslations('MemberHome');
   const tCommon = useTranslations('Common');
   const locale = useLocale();
+  const { user } = useAuthentication();
   const { jwt } = useJwt();
+  const memberId = user?.id ?? null;
+  const jwtSubject = jwt ? readJwtSubject(jwt) : null;
+  const jwtRef = useRef(jwt);
+  const jwtOwnerRef = useRef<string | null>(null);
+  const keepHomeKey = useRef(false);
+  // Same ownership gate as Home so Messages reuses the shell/full SWR cache.
+  if (jwt && jwtSubject && memberId && jwtSubject === memberId) {
+    jwtRef.current = jwt;
+    jwtOwnerRef.current = jwtSubject;
+    keepHomeKey.current = true;
+  }
+  useLayoutEffect(() => {
+    if (!jwt || !jwtSubject || !memberId || jwtSubject !== memberId) return;
+    jwtRef.current = jwt;
+    jwtOwnerRef.current = jwtSubject;
+    keepHomeKey.current = true;
+  }, [jwt, jwtSubject, memberId]);
+  const tokenOwner = jwtSubject ?? jwtOwnerRef.current;
+  const homeKeyReady =
+    Boolean(memberId) &&
+    Boolean(tokenOwner) &&
+    tokenOwner === memberId &&
+    (Boolean(jwt) || keepHomeKey.current);
+  const fetchHome = useCallback(
+    async (scope: 'shell' | 'full') => {
+      const token = jwtRef.current;
+      if (!token || jwtOwnerRef.current !== memberId) {
+        throw new Error('Access token not ready');
+      }
+      const url =
+        scope === 'shell'
+          ? '/api/v1/people/me/intelligence?scope=shell'
+          : '/api/v1/people/me/intelligence';
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(HOME_INTELLIGENCE_TIMEOUT_MS),
+      });
+      if (response.status === 404) return null;
+      if (!response.ok) {
+        throw new Error('Failed to load home');
+      }
+      return (await response.json()) as MemberIntelligence;
+    },
+    [memberId],
+  );
   const {
     client,
     isMatrixAvailable,
@@ -1883,18 +1960,39 @@ export function MyConnections({
   const fullDirectoryRequested = useRef(false);
 
   const [listSettled, setListSettled] = useState(false);
-  const { data: home, isLoading: homeLoading } =
-    useSWR<MemberIntelligence | null>(
-      jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
-      async ([url, token]) => {
-        const response = await fetch(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!response.ok) return null;
-        return (await response.json()) as MemberIntelligence;
-      },
-    );
-  const homeLoaded = !jwt || home !== undefined || !homeLoading;
+  // Same SWR keys as Home so a prior /home visit fills this without refetch.
+  // Shell + full run in parallel here; Direct list does not wait on either.
+  const { data: shell } = useSWR<MemberIntelligence | null>(
+    homeKeyReady
+      ? (['/api/v1/people/me/intelligence', memberId, 'shell'] as const)
+      : null,
+    () => fetchHome('shell'),
+    {
+      revalidateOnFocus: false,
+      refreshInterval: 0,
+      keepPreviousData: false,
+      isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
+      compare: sameMemberHome,
+    },
+  );
+  const { data: full, error: fullError } = useSWR<MemberIntelligence | null>(
+    homeKeyReady
+      ? (['/api/v1/people/me/intelligence', memberId, 'full'] as const)
+      : null,
+    () => fetchHome('full'),
+    {
+      revalidateOnFocus: false,
+      refreshInterval: 0,
+      keepPreviousData: false,
+      isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
+      compare: sameMemberHome,
+    },
+  );
+  const homeRaw = full === undefined ? shell : full;
+  const home =
+    homeRaw?.partial && fullError
+      ? { ...homeRaw, partial: false }
+      : homeRaw ?? null;
   const { data: inboxContext } = useSWR<InboxContext>(
     section === 'messages' && jwt
       ? ['/api/v1/people/me/message-inbox-context', jwt]
@@ -2331,7 +2429,6 @@ export function MyConnections({
     synced,
     initialSyncComplete,
     hasMatrixConversations,
-    homeLoaded,
   });
   useEffect(() => {
     if (dataReady && isMatrixAvailable) setListSettled(true);
@@ -3308,9 +3405,11 @@ export function MyConnections({
                 {!listLoading &&
                 section !== 'archived' &&
                 isMatrixAvailable &&
-                home != null &&
                 shownRows.length === 0 &&
-                !searching ? (
+                !searching &&
+                // Direct/Messages empty is Matrix-driven. Suggestions wait for
+                // intelligence so "reach out" does not flash empty then fill.
+                (section === 'messages' || home != null) ? (
                   <p className="text-2 text-muted-foreground">
                     {needle
                       ? picking || section === 'messages'
