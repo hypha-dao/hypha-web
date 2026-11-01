@@ -33,11 +33,18 @@ export function messagesListFrameHeight(input: {
   viewportBottom: number;
   menuOffset: number;
   tabOffset: number;
+  /** Visible site footer covering the viewport bottom (desktop). */
+  footerOffset?: number;
   stickyGap?: number;
 }): number {
   const stickyGap = input.stickyGap ?? MESSAGES_LIST_STICKY_GAP_PX;
+  const footerOffset = Math.max(0, input.footerOffset ?? 0);
   const next = Math.floor(
-    input.viewportBottom - input.menuOffset - input.tabOffset - stickyGap,
+    input.viewportBottom -
+      input.menuOffset -
+      input.tabOffset -
+      footerOffset -
+      stickyGap,
   );
   return Number.isFinite(next) ? Math.max(160, next) : 160;
 }

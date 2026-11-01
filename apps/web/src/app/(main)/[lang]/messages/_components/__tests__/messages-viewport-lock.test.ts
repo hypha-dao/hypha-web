@@ -26,6 +26,17 @@ describe('messagesListFrameHeight', () => {
       }),
     ).toBe(628);
   });
+
+  it('leaves room for the visible site footer on desktop', () => {
+    expect(
+      messagesListFrameHeight({
+        viewportBottom: 900,
+        menuOffset: 72,
+        tabOffset: 0,
+        footerOffset: 72,
+      }),
+    ).toBe(744);
+  });
 });
 
 describe('messagesChannelMenuOverflows', () => {

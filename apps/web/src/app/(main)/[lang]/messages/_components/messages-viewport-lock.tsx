@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
+import { HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID } from '@hypha-platform/core/client';
 
 import {
   messagesChannelMenuOverflows,
@@ -49,6 +50,17 @@ function menuOffset(): number {
   return height || 72;
 }
 
+/** Desktop site footer overlap — same CSS var the fixed chat rail reads. */
+function desktopFooterOffset(): number {
+  if (!window.matchMedia(DESKTOP_MENU).matches) return 0;
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue('--site-footer-offset')
+    .trim();
+  if (!raw) return 0;
+  const px = Number.parseFloat(raw);
+  return Number.isFinite(px) ? Math.max(0, px) : 0;
+}
+
 function clearListFrameHeight(root: HTMLElement) {
   const list = root.querySelector('[data-messages-list-frame]');
   if (list instanceof HTMLElement) {
@@ -94,6 +106,7 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
           viewportBottom,
           menuOffset: menuOffset(),
           tabOffset: mobileTabOffset(),
+          footerOffset: desktopFooterOffset(),
         });
         list.style.height = `${height}px`;
         list.style.maxHeight = `${height}px`;
@@ -129,6 +142,12 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
     const observer = new ResizeObserver(fit);
     fit();
     observer.observe(document.documentElement);
+    // Footer overlap (`--site-footer-offset`) changes while the main column
+    // scrolls — re-cap the sticky list so it does not sit under the footer.
+    const scrollRoot =
+      document.getElementById(HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID) ??
+      document.scrollingElement;
+    scrollRoot?.addEventListener('scroll', fit, { passive: true });
     window.addEventListener('resize', fit);
     window.addEventListener('focus', fit);
     window.addEventListener('pageshow', fit);
@@ -137,6 +156,7 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
 
     return () => {
       observer.disconnect();
+      scrollRoot?.removeEventListener('scroll', fit);
       window.removeEventListener('resize', fit);
       window.removeEventListener('focus', fit);
       window.removeEventListener('pageshow', fit);
