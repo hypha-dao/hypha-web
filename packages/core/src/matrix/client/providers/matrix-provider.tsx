@@ -740,8 +740,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         /** Warm TURN credentials before the first call join (reduces ICE stall). */
         void evaluateMatrixTurnReadiness(matrixClient).catch(() => undefined);
 
-        await markMatrixPresenceOnline(matrixClient);
-
+        // Expose the client before presence RTTs so Messages can attach/sync.
+        // Presence still runs; a brief offline/away flash is preferable to
+        // holding the whole inbox behind /presence.
         clientRef.current = matrixClient;
         setClient(matrixClient);
         setActiveMatrixUserId(userId);
@@ -749,6 +750,12 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         setIsAuthenticated(true);
         setConnectionStatus('connected');
         setConnectionRetryFailed(false);
+        void markMatrixPresenceOnline(matrixClient).catch((error) => {
+          console.warn(
+            '[MatrixProvider] Failed to mark presence online after start:',
+            error,
+          );
+        });
       } catch (error) {
         console.error('Failed to initialize Matrix client:', error);
         if (startedClient) {
