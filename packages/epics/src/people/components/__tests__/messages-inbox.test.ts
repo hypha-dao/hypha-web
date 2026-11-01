@@ -9,6 +9,7 @@ import {
   inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
+  isInboxDirectConversation,
   inboxListWindow,
   INBOX_LIST_PAGE,
   inboxKindForRoomType,
@@ -92,6 +93,12 @@ describe('messages inbox filters', () => {
     expect(counts.signals).toEqual({ total: 1, unread: 1 });
     expect(counts.spaces).toEqual({ total: 1, unread: 1 });
     expect(counts.network).toEqual({ total: 1, unread: 0 });
+  });
+
+  it('treats only joined rooms as Direct conversations for totals', () => {
+    expect(isInboxDirectConversation({ roomId: '!dm:hs' })).toBe(true);
+    expect(isInboxDirectConversation({ roomId: null })).toBe(false);
+    expect(isInboxDirectConversation({ roomId: '  ' })).toBe(false);
   });
 
   it('keeps unread totals when the painted list is only the first screen', () => {
@@ -652,7 +659,7 @@ describe('inboxContextHref', () => {
         spaceSlug: null,
         ecosystemSlug: null,
       }),
-    ).toBe('/en/network');
+    ).toBe('/en/network?spaceChat=network');
     expect(inboxContextHref('en', { ...place, kind: 'proposal' })).toBe(
       '/en/dho/hypha-platform/agreements/proposal/garden-vote',
     );

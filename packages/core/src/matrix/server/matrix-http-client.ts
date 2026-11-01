@@ -633,6 +633,48 @@ export async function matrixSendTextMessage(
   return eventId;
 }
 
+/**
+ * Advertise Matrix typing (`m.typing`) for a user in a room.
+ * Soft-fails — ephemeral UX must never break sends or agent replies.
+ *
+ * Spec: `PUT /_matrix/client/v3/rooms/{roomId}/typing/{userId}`
+ */
+export async function matrixSendTyping(
+  roomId: string,
+  userId: string,
+  typing: boolean,
+  accessToken: string,
+  homeserver: string,
+  timeoutMs = 30_000,
+): Promise<void> {
+  try {
+    const res = await matrixFetch(
+      `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+        roomId,
+      )}/typing/${encodeURIComponent(userId)}`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(
+          typing
+            ? { typing: true, timeout: Math.max(0, timeoutMs) }
+            : { typing: false },
+        ),
+      },
+    );
+    await readMatrixJson<Record<string, never>>(res);
+  } catch (error) {
+    console.warn(
+      '[Matrix] Failed to update typing:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
 export async function matrixRedactEvent(
   roomId: string,
   eventId: string,

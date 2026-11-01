@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -13,6 +14,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   ClientEvent,
   Direction,
@@ -47,7 +49,6 @@ import {
   visibleMatrixMemberName,
   useJwt,
   useMatrix,
-  DEFAULT_SPACE_AVATAR_IMAGE,
   useMatrixUserIdsByPersonIds,
   usePeopleBySubs,
   type MemberIntelligence,
@@ -140,6 +141,7 @@ import {
   inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
+  isInboxDirectConversation,
   inboxListWindow,
   INBOX_LIST_PAGE,
   isInboxFilter,
@@ -150,15 +152,42 @@ import {
   type InboxFilter,
   type JoinedChannelSnapshot,
 } from './messages-inbox';
-import { type PresenceLevel } from './member-presence';
+import { GroupFaces } from './group-faces';
 import { MemberHomeMark } from './member-home-mark';
 import { PersonAvatar } from './person-avatar';
-import { useMemberPresence } from './use-member-presence';
 
 /** Matches the first page returned for the home. Each click asks for one more. */
 const CONNECTIONS_PAGE = 12;
 /** Suggestions look past the first page, up to the intelligence cap. */
 const SUGGESTION_POOL = 120;
+/** Same client budget as Home — past the server 12s race, before the function limit. */
+const HOME_INTELLIGENCE_TIMEOUT_MS = 20_000;
+
+/** Privy access tokens are JWTs; `sub` is the member id (`did:privy:…`). */
+function readJwtSubject(token: string): string | null {
+  const payload = token.split('.')[1];
+  if (!payload) return null;
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = normalized.length % 4;
+    const padded = pad ? `${normalized}${'='.repeat(4 - pad)}` : normalized;
+    const parsed = JSON.parse(atob(padded)) as { sub?: unknown };
+    return typeof parsed.sub === 'string' && parsed.sub.trim()
+      ? parsed.sub.trim()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function sameMemberHome(
+  left: MemberIntelligence | null | undefined,
+  right: MemberIntelligence | null | undefined,
+) {
+  if (left === right) return true;
+  if (left == null || right == null) return left == null && right == null;
+  return JSON.stringify(left) === JSON.stringify(right);
+}
 
 type ConnectionPerson = MemberIntelligence['connections'][number];
 type ConnectionMemberRow = MemberRow<ConnectionPerson>;
@@ -1825,7 +1854,54 @@ export function MyConnections({
   const tChat = useTranslations('MemberHome');
   const tCommon = useTranslations('Common');
   const locale = useLocale();
+  const { user } = useAuthentication();
   const { jwt } = useJwt();
+  const memberId = user?.id ?? null;
+  const jwtSubject = jwt ? readJwtSubject(jwt) : null;
+  const jwtRef = useRef(jwt);
+  const jwtOwnerRef = useRef<string | null>(null);
+  const keepHomeKey = useRef(false);
+  // Same ownership gate as Home so Messages reuses the shell/full SWR cache.
+  if (jwt && jwtSubject && memberId && jwtSubject === memberId) {
+    jwtRef.current = jwt;
+    jwtOwnerRef.current = jwtSubject;
+    keepHomeKey.current = true;
+  }
+  useLayoutEffect(() => {
+    if (!jwt || !jwtSubject || !memberId || jwtSubject !== memberId) return;
+    jwtRef.current = jwt;
+    jwtOwnerRef.current = jwtSubject;
+    keepHomeKey.current = true;
+  }, [jwt, jwtSubject, memberId]);
+  const tokenOwner = jwtSubject ?? jwtOwnerRef.current;
+  const homeKeyReady =
+    Boolean(memberId) &&
+    Boolean(tokenOwner) &&
+    tokenOwner === memberId &&
+    (Boolean(jwt) || keepHomeKey.current);
+  const fetchHome = useCallback(
+    async (scope: 'shell' | 'full') => {
+      const token = jwtRef.current;
+      if (!token || jwtOwnerRef.current !== memberId) {
+        throw new Error('Access token not ready');
+      }
+      const url =
+        scope === 'shell'
+          ? '/api/v1/people/me/intelligence?scope=shell'
+          : '/api/v1/people/me/intelligence';
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(HOME_INTELLIGENCE_TIMEOUT_MS),
+      });
+      if (response.status === 404) return null;
+      if (!response.ok) {
+        throw new Error('Failed to load home');
+      }
+      return (await response.json()) as MemberIntelligence;
+    },
+    [memberId],
+  );
   const {
     client,
     isMatrixAvailable,
@@ -1843,6 +1919,11 @@ export function MyConnections({
   const debugRooms = searchParams.get('debugRooms') === '1';
   const openedDirectChatRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
+  /** After a filter tap, open the first row once the filtered list is ready. */
+  const pendingSelectFirstInboxRef = useRef(false);
+  const openInboxRowRef = useRef<
+    ((row: ConnectionMemberRow) => void | Promise<void>) | null
+  >(null);
   const inboxFiltersRef = useRef<HTMLDivElement | null>(null);
   const chainFilterScroll = useChainScrollAtEdge();
   const setInboxFiltersRef = useCallback(
@@ -1865,7 +1946,6 @@ export function MyConnections({
   const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
   const [synced, setSynced] = useState(false);
   const [initialSyncComplete, setInitialSyncComplete] = useState(false);
-  const [rowsPending, setRowsPending] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedById, setSelectedById] = useState<
     Map<number, ConnectionMemberRow>
@@ -1885,18 +1965,39 @@ export function MyConnections({
   const fullDirectoryRequested = useRef(false);
 
   const [listSettled, setListSettled] = useState(false);
-  const { data: home, isLoading: homeLoading } =
-    useSWR<MemberIntelligence | null>(
-      jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
-      async ([url, token]) => {
-        const response = await fetch(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!response.ok) return null;
-        return (await response.json()) as MemberIntelligence;
-      },
-    );
-  const homeLoaded = !jwt || home !== undefined || !homeLoading;
+  // Same SWR keys as Home so a prior /home visit fills this without refetch.
+  // Shell + full run in parallel here; Direct list does not wait on either.
+  const { data: shell } = useSWR<MemberIntelligence | null>(
+    homeKeyReady
+      ? (['/api/v1/people/me/intelligence', memberId, 'shell'] as const)
+      : null,
+    () => fetchHome('shell'),
+    {
+      revalidateOnFocus: false,
+      refreshInterval: 0,
+      keepPreviousData: false,
+      isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
+      compare: sameMemberHome,
+    },
+  );
+  const { data: full, error: fullError } = useSWR<MemberIntelligence | null>(
+    homeKeyReady
+      ? (['/api/v1/people/me/intelligence', memberId, 'full'] as const)
+      : null,
+    () => fetchHome('full'),
+    {
+      revalidateOnFocus: false,
+      refreshInterval: 0,
+      keepPreviousData: false,
+      isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
+      compare: sameMemberHome,
+    },
+  );
+  const homeRaw = full === undefined ? shell : full;
+  const home =
+    homeRaw?.partial && fullError
+      ? { ...homeRaw, partial: false }
+      : homeRaw ?? null;
   const { data: inboxContext } = useSWR<InboxContext>(
     section === 'messages' && jwt
       ? ['/api/v1/people/me/message-inbox-context', jwt]
@@ -2181,7 +2282,6 @@ export function MyConnections({
       setChannels([]);
       setSynced(false);
       setInitialSyncComplete(false);
-      setRowsPending(true);
       setListSettled(false);
       return;
     }
@@ -2205,7 +2305,6 @@ export function MyConnections({
       ) {
         setInitialSyncComplete(true);
       }
-      setRowsPending(conversationRowsPending(client));
     });
   }, [client]);
 
@@ -2243,12 +2342,6 @@ export function MyConnections({
       t,
     ],
   );
-
-  const memberPersonIds = useMemo(
-    () => members.map((row) => row.person.id),
-    [members],
-  );
-  const { presenceById } = useMemberPresence(memberPersonIds);
 
   const reachOut = useMemo(() => {
     if (!synced) return [];
@@ -2328,17 +2421,19 @@ export function MyConnections({
     [suggestionCards],
   );
 
-  const titlesLoading =
-    !listSettled && (peopleBySubLoading || (peerSubs.length > 0 && !jwt));
+  // Keep pending titles visible while peer profiles load — do not tie this to
+  // listSettled, or an early PEOPLE AROUND paint drops everyone as titlePending.
+  const titlesLoading = peopleBySubLoading || (peerSubs.length > 0 && !jwt);
+  const hasMatrixConversations =
+    rows.some((row) => row.kind === 'person' || row.kind === 'group') ||
+    channels.length > 0 ||
+    pendingGroups.length > 0;
   const dataReady = messagesPeopleListReady({
     isMatrixAvailable,
     isConnecting,
     synced,
     initialSyncComplete,
-    rowsPending,
-    homeLoaded,
-    matrixIdsLoading,
-    peopleBySubLoading,
+    hasMatrixConversations,
   });
   useEffect(() => {
     if (dataReady && isMatrixAvailable) setListSettled(true);
@@ -2556,11 +2651,17 @@ export function MyConnections({
     return mentionNames;
   }, [channels, client, directoryPeople, peopleBySub, personIdToMatrixUserId]);
   const inboxView = useMemo(() => {
-    const direct = people.map((row) =>
+    const directAll = people.map((row) =>
       row.inbox
         ? row
         : { ...row, inbox: directInboxPlace(peopleInboxKind(row)) },
     );
+    // Joined DMs/groups only — directory people without a room are not
+    // conversations and must not make Direct/All read "12" by default.
+    const directConversations = directAll.filter(isInboxDirectConversation);
+    // Search and the group picker still need roomless directory rows.
+    const directForList =
+      picking || needle.length > 0 ? directAll : directConversations;
     const channelRows =
       section === 'messages' && !picking
         ? conversationsMatchingSearch(
@@ -2582,7 +2683,7 @@ export function MyConnections({
           )
         : [];
     const counts = inboxFilterCounts([
-      ...direct.map((row) => ({
+      ...directConversations.map((row) => ({
         kind: row.inbox?.kind ?? 'dm',
         unread: row.unread,
       })),
@@ -2591,11 +2692,14 @@ export function MyConnections({
       ),
     ]);
     if (section !== 'messages' || picking || inboxFilter === 'direct') {
-      return { rows: direct, counts };
+      return { rows: directForList, counts };
     }
     if (inboxFilter === 'all') {
       return {
-        rows: sortConversationsByLastMessage([...direct, ...channelRows]),
+        rows: sortConversationsByLastMessage([
+          ...directForList,
+          ...channelRows,
+        ]),
         counts,
       };
     }
@@ -2628,6 +2732,7 @@ export function MyConnections({
       setSelectedById(new Map());
       setQuery('');
     }
+    pendingSelectFirstInboxRef.current = next !== inboxFilter;
     setInboxFilter(next);
     setInboxVisibleCount(INBOX_LIST_PAGE);
     setInboxChannelOpen(true);
@@ -2637,6 +2742,26 @@ export function MyConnections({
       // The choice still applies for this visit.
     }
   }
+
+  // Desktop / iPad (lg+): select the first conversation in the new filter so
+  // the side-by-side chat panel matches the list. Mobile stays on the list —
+  // auto-opening would skip the list and jump into fullscreen chat.
+  useEffect(() => {
+    if (!pendingSelectFirstInboxRef.current) return;
+    if (section !== 'messages' || picking) return;
+    if (
+      typeof window === 'undefined' ||
+      !window.matchMedia('(min-width: 64rem)').matches
+    ) {
+      pendingSelectFirstInboxRef.current = false;
+      return;
+    }
+    const first = inboxView.rows[0];
+    if (!first) return;
+    pendingSelectFirstInboxRef.current = false;
+    void openInboxRowRef.current?.(first);
+  }, [inboxFilter, inboxView.rows, picking, section]);
+
   // Newest chats stay first, so a new message lands in this first screen.
   // Filter badges and the nav count still use every row, including ones
   // waiting until the list scrolls to the end.
@@ -2834,7 +2959,10 @@ export function MyConnections({
         row.inbox.signalSlug ?? '',
         null,
         spaceSlug,
-        { public: row.inbox.kind === 'space-public' },
+        {
+          public: row.inbox.kind === 'space-public',
+          channel: row.inbox.kind,
+        },
       );
       return;
     }
@@ -2876,6 +3004,7 @@ export function MyConnections({
       avatarUrl: row.person.avatarUrl,
     });
   }
+  openInboxRowRef.current = openMember;
 
   const groupMemberIds = resolvedMatrixIdsForGroup(
     selectedPeople,
@@ -3303,9 +3432,11 @@ export function MyConnections({
                 {!listLoading &&
                 section !== 'archived' &&
                 isMatrixAvailable &&
-                home != null &&
                 shownRows.length === 0 &&
-                !searching ? (
+                !searching &&
+                // Direct/Messages empty is Matrix-driven. Suggestions wait for
+                // intelligence so "reach out" does not flash empty then fill.
+                (section === 'messages' || home != null) ? (
                   <p className="text-2 text-muted-foreground">
                     {needle
                       ? picking || section === 'messages'
@@ -3322,7 +3453,7 @@ export function MyConnections({
                     title={listTitle}
                     rows={shownRows}
                     showChannelTags={showChannelTags}
-                    presenceById={presenceById}
+                    personIdToMatrixUserId={personIdToMatrixUserId}
                     locale={locale}
                     justNow={t('justNow')}
                     noMessage={t('noMessage')}
@@ -3385,36 +3516,6 @@ export function MyConnections({
         </div>
       ) : null}
     </div>
-  );
-}
-
-function GroupFaces({ faces }: { faces: GroupFace[] }) {
-  const shown = faces.slice(0, 2);
-  return (
-    <span className="relative block h-10 w-10 shrink-0" aria-hidden>
-      {shown.map((face, index) => (
-        <span
-          key={`${face.name}-${index}`}
-          className={cn(
-            'absolute block size-[22px] overflow-hidden rounded-full bg-neutral-3 ring-2 ring-background group-hover/row:ring-accent-2 group-data-[active=true]/row:ring-accent-2',
-            index === 0 ? 'top-0 left-0' : 'right-0 bottom-0',
-          )}
-        >
-          {face.avatarUrl ? (
-            <img
-              src={face.avatarUrl}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span className="flex h-full w-full items-center justify-center text-[10px] font-medium text-neutral-11">
-              {face.name.replace(/^@/, '').trim().charAt(0).toUpperCase() ||
-                '?'}
-            </span>
-          )}
-        </span>
-      ))}
-    </span>
   );
 }
 
@@ -3507,7 +3608,7 @@ function channelTagKey(kind: InboxChannelKind) {
 function MemberList({
   title,
   rows,
-  presenceById,
+  personIdToMatrixUserId,
   locale,
   justNow,
   noMessage,
@@ -3529,7 +3630,7 @@ function MemberList({
 }: {
   title: string;
   rows: ConnectionMemberRow[];
-  presenceById: ReadonlyMap<number, PresenceLevel>;
+  personIdToMatrixUserId: Readonly<Record<number, string>>;
   locale: string;
   justNow: string;
   noMessage: string;
@@ -3599,7 +3700,6 @@ function MemberList({
               { roomId: activeRoomId, personId: activePersonId },
               openLookup,
             );
-          const presence = presenceById.get(row.person.id) ?? 'offline';
           const ChannelIcon = row.inbox
             ? CHANNEL_MARK_ICONS[row.inbox.kind]
             : undefined;
@@ -3657,15 +3757,20 @@ function MemberList({
                     <span className="grid size-full place-items-center overflow-hidden rounded-full border border-border bg-background text-foreground">
                       {row.inbox?.kind === 'network' ? (
                         <MemberHomeMark className="h-6 w-6" />
-                      ) : (
+                      ) : row.logoUrl?.trim() ? (
                         <Image
                           className="aspect-square h-full w-full object-cover"
                           width={40}
                           height={40}
-                          src={
-                            row.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE
-                          }
+                          src={row.logoUrl.trim()}
                           alt=""
+                          aria-hidden
+                        />
+                      ) : (
+                        // Quiet mark — never the legacy Hypha placeholder
+                        // (that flashed for a frame when logoUrl was late).
+                        <span
+                          className="block size-full bg-neutral-5"
                           aria-hidden
                         />
                       )}
@@ -3689,7 +3794,13 @@ function MemberList({
                     avatarSrc={row.avatarUrl}
                     userName={row.name}
                     personId={row.person.id}
-                    presence={presence}
+                    matrixUserId={
+                      personIdToMatrixUserId[row.person.id] ??
+                      openLookup?.rooms?.find(
+                        (room) => room.roomId === row.roomId,
+                      )?.otherUserId ??
+                      undefined
+                    }
                   />
                 )}
                 <span className="min-w-0 flex-1 pr-2">

@@ -56,11 +56,29 @@ export type FocusedSpaceChat = {
   description: string | null;
 };
 
-/** Peer in a person-to-person room — drives space icons in the chat header. */
+/** Peer in a person-to-person room — drives the chat header avatar. */
 export type CoherencePeerPerson = {
   slug: string;
   address?: string | null;
   id?: number;
+};
+
+/**
+ * Non-DM channel opened from Messages. Distinguishes space / ecosystem /
+ * network headers from person-to-person chats that also use an empty slug.
+ */
+export type CoherenceOpenedChannel =
+  | 'space'
+  | 'space-public'
+  | 'ecosystem'
+  | 'network'
+  | 'signal'
+  | 'proposal';
+
+export type OpenCoherenceChatOptions = {
+  public?: boolean;
+  peerPerson?: CoherencePeerPerson | null;
+  channel?: CoherenceOpenedChannel | null;
 };
 
 export type HumanChatPanelContextValue = {
@@ -89,13 +107,15 @@ export type HumanChatPanelContextValue = {
   coherencePublic: boolean;
   /** Person on the other side of a direct chat (when known). */
   coherencePeerPerson: CoherencePeerPerson | null;
+  /** Set when opening a non-DM channel from Messages. */
+  coherenceChannel: CoherenceOpenedChannel | null;
   openCoherenceChat: (
     roomId: string | null,
     title: string,
     slug: string,
     description?: string | null,
     spaceSlug?: string | null,
-    options?: { public?: boolean; peerPerson?: CoherencePeerPerson | null },
+    options?: OpenCoherenceChatOptions,
   ) => void;
   closeCoherenceChat: () => void;
 };
@@ -117,6 +137,7 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   coherenceSpaceSlug: null,
   coherencePublic: false,
   coherencePeerPerson: null,
+  coherenceChannel: null,
   openCoherenceChat: () => {},
   closeCoherenceChat: () => {},
 });
@@ -150,6 +171,8 @@ export function HumanChatPanelProvider({
   const [coherencePublic, setCoherencePublic] = useState(false);
   const [coherencePeerPerson, setCoherencePeerPerson] =
     useState<CoherencePeerPerson | null>(null);
+  const [coherenceChannel, setCoherenceChannel] =
+    useState<CoherenceOpenedChannel | null>(null);
   const [unreadMentionCount, setUnreadMentionCountState] = useState(0);
   const [focusedSpaceChat, setFocusedSpaceChatState] =
     useState<FocusedSpaceChat | null>(null);
@@ -183,7 +206,7 @@ export function HumanChatPanelProvider({
       slug: string,
       description?: string | null,
       spaceSlug?: string | null,
-      options?: { public?: boolean; peerPerson?: CoherencePeerPerson | null },
+      options?: OpenCoherenceChatOptions,
     ) => {
       setCoherenceRoomId(roomId);
       setCoherenceTitle(title);
@@ -191,6 +214,7 @@ export function HumanChatPanelProvider({
       setCoherenceDescription(description?.trim() ? description.trim() : null);
       setCoherenceSpaceSlug(spaceSlug?.trim() ? spaceSlug.trim() : null);
       setCoherencePublic(Boolean(options?.public));
+      setCoherenceChannel(options?.channel ?? null);
       const peerSlug = options?.peerPerson?.slug?.trim() ?? '';
       const peerAddress = options?.peerPerson?.address?.trim() || null;
       const peerId =
@@ -222,6 +246,7 @@ export function HumanChatPanelProvider({
     setCoherenceSpaceSlug(null);
     setCoherencePublic(false);
     setCoherencePeerPerson(null);
+    setCoherenceChannel(null);
   }, []);
 
   const openHumanChatPanel = useCallback(() => {
@@ -251,6 +276,7 @@ export function HumanChatPanelProvider({
         coherenceSpaceSlug,
         coherencePublic,
         coherencePeerPerson,
+        coherenceChannel,
         openCoherenceChat,
         closeCoherenceChat,
       }}

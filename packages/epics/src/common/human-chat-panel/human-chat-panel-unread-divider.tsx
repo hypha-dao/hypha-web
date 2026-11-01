@@ -17,6 +17,7 @@ export function HumanChatPanelUnreadDivider({
   return (
     <div
       className={cn('relative my-2 flex h-6 w-full items-center', className)}
+      data-chat-unread-divider
       role="separator"
       aria-label={t('unreadDividerAria')}
     >

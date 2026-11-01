@@ -55,14 +55,20 @@ describe('pickUserVisibleMemberLabel', () => {
 });
 
 describe('visibleMatrixMemberName', () => {
-  it('falls back to a shortened id when every candidate is a Privy slug', () => {
+  it('hides bridged Privy locals instead of showing a shortened MXID', () => {
     expect(
       visibleMatrixMemberName(
         PROD_MXID,
         'prod_privy_did_privy_cmabc123',
         PROD_MXID,
       ),
-    ).toBe('@prod_privy…abc123:srv1294735.hstgr.cloud');
+    ).toBe('');
+  });
+
+  it('still returns a normal Matrix id when no friendly name exists', () => {
+    expect(visibleMatrixMemberName('@alice:matrix.org')).toBe(
+      '@alice:matrix.org',
+    );
   });
 });
 

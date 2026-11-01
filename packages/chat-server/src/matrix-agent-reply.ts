@@ -16,6 +16,7 @@ import {
   matrixJoinRoom,
   matrixListRoomMessages,
   matrixSendTextMessage,
+  matrixSendTyping,
   resolveUserMatrixAccessTokenForSend,
 } from '@hypha-platform/core/server';
 import { mentionAwaitingAgent, type AgentRoomLine } from './matrix-agent-turn';
@@ -140,6 +141,71 @@ function agentReplyTxnId(roomId: string, question: string): string {
 }
 
 const AGENT_WRITE_MS = 22_000;
+/** Match the human chat typing timeout so peers keep seeing the indicator. */
+const AGENT_TYPING_TIMEOUT_MS = 30_000;
+/** Re-assert typing before the homeserver expires it. */
+const AGENT_TYPING_REFRESH_MS = 20_000;
+
+/** Overlapping reply generations share one typing indicator per room+agent. */
+const agentTypingActive = new Map<string, number>();
+
+function agentTypingKey(roomId: string, agentUserId: string): string {
+  return `${roomId}\0${agentUserId}`;
+}
+
+/**
+ * Show "AI Agents is typing…" in the room while the model runs and the reply
+ * posts. Soft-fails with `matrixSendTyping`.
+ */
+async function withAgentTyping<T>(
+  roomId: string,
+  agentUserId: string,
+  botToken: string,
+  homeserver: string,
+  work: () => Promise<T>,
+): Promise<T> {
+  const key = agentTypingKey(roomId, agentUserId);
+  agentTypingActive.set(key, (agentTypingActive.get(key) ?? 0) + 1);
+
+  let refreshInFlight: Promise<unknown> = Promise.resolve();
+  const pulse = () => {
+    const pending = matrixSendTyping(
+      roomId,
+      agentUserId,
+      true,
+      botToken,
+      homeserver,
+      AGENT_TYPING_TIMEOUT_MS,
+    );
+    refreshInFlight = pending.catch(() => undefined);
+    return pending;
+  };
+  // Non-blocking start — do not spend maxDuration waiting on typing set.
+  void pulse();
+  const refresh = setInterval(() => {
+    void pulse();
+  }, AGENT_TYPING_REFRESH_MS);
+  try {
+    return await work();
+  } finally {
+    clearInterval(refresh);
+    await refreshInFlight;
+    const remaining = (agentTypingActive.get(key) ?? 1) - 1;
+    if (remaining <= 0) {
+      agentTypingActive.delete(key);
+      await matrixSendTyping(
+        roomId,
+        agentUserId,
+        false,
+        botToken,
+        homeserver,
+        0,
+      );
+    } else {
+      agentTypingActive.set(key, remaining);
+    }
+  }
+}
 
 async function writeAgentText(input: {
   system: string;
@@ -345,49 +411,66 @@ export async function replyToMatrixAgentMention({
     specialist?.role ?? 'AI Agents',
   )}\n\n${AGENT_PROMPT_REST}`;
 
-  let text = '';
   try {
-    text = await writeAgentText({
-      system,
-      prompt,
-      tools: readTools as unknown as Parameters<
-        typeof generateText
-      >[0]['tools'],
-    });
-  } catch (error) {
-    console.warn(
-      '[MatrixAgent] Failed to write a reply:',
+    return await withAgentTyping(
       trimmedRoom,
-      error instanceof Error ? error.message : error,
-    );
-    return { replied: false };
-  }
-  if (!text) return { replied: false };
-
-  try {
-    await matrixJoinRoom(trimmedRoom, botToken, homeserver);
-  } catch {
-    // The agent is already in the room, or the room is one it created.
-  }
-
-  try {
-    await matrixSendTextMessage(
-      trimmedRoom,
-      text,
+      agentUserId,
       botToken,
       homeserver,
-      specialist
-        ? { [HYPHA_AGENT_SPECIALIST_FIELD]: specialist.id }
-        : undefined,
-      agentReplyTxnId(trimmedRoom, turn.question),
+      async () => {
+        let text = '';
+        try {
+          text = await writeAgentText({
+            system,
+            prompt,
+            tools: readTools as unknown as Parameters<
+              typeof generateText
+            >[0]['tools'],
+          });
+        } catch (error) {
+          console.warn(
+            '[MatrixAgent] Failed to write a reply:',
+            trimmedRoom,
+            error instanceof Error ? error.message : error,
+          );
+          return { replied: false };
+        }
+        if (!text) return { replied: false };
+
+        try {
+          await matrixJoinRoom(trimmedRoom, botToken, homeserver);
+        } catch {
+          // The agent is already in the room, or the room is one it created.
+        }
+
+        try {
+          await matrixSendTextMessage(
+            trimmedRoom,
+            text,
+            botToken,
+            homeserver,
+            specialist
+              ? { [HYPHA_AGENT_SPECIALIST_FIELD]: specialist.id }
+              : undefined,
+            agentReplyTxnId(trimmedRoom, turn.question),
+          );
+        } catch (error) {
+          console.warn(
+            '[MatrixAgent] Failed to post the reply:',
+            trimmedRoom,
+            error instanceof Error ? error.message : error,
+          );
+          return { replied: false };
+        }
+        return { replied: true };
+      },
     );
   } catch (error) {
     console.warn(
-      '[MatrixAgent] Failed to post the reply:',
+      '[MatrixAgent] Typing wrapper failed:',
       trimmedRoom,
       error instanceof Error ? error.message : error,
     );
     return { replied: false };
   }
-  return { replied: true };
 }

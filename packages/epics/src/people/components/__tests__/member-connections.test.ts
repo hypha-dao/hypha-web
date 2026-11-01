@@ -217,14 +217,19 @@ describe('memberRowsForConnections', () => {
   });
 
   it('drops the signed-in member and the Hypha bot', () => {
+    // Bot identity is Matrix MXID + trusted homeserver — a display name alone
+    // is not enough (remote hypha_bot* accounts stay people).
     const rows = memberRowsForConnections(
       [
         person(7, 'Alex'),
-        person(8, 'hypha_bot'),
+        person(8, 'Hypha', 'Bot'),
         person(9, 'Vlad', 'Hramtsov'),
       ],
       [],
-      {},
+      {
+        8: '@hypha_bot_prod:matrix.hypha.earth',
+        9: '@vlad:matrix.hypha.earth',
+      },
       7,
       'Someone',
     );
@@ -1169,13 +1174,10 @@ describe('messagesPeopleListReady', () => {
     isConnecting: false,
     synced: true,
     initialSyncComplete: true,
-    rowsPending: false,
-    homeLoaded: true,
-    matrixIdsLoading: false,
-    peopleBySubLoading: false,
+    hasMatrixConversations: false,
   };
 
-  it('waits while Matrix is connecting or the room list has not settled', () => {
+  it('waits while Matrix is connecting', () => {
     expect(
       messagesPeopleListReady({
         ...ready,
@@ -1183,32 +1185,37 @@ describe('messagesPeopleListReady', () => {
         isConnecting: true,
         synced: false,
         initialSyncComplete: false,
-        rowsPending: true,
-        homeLoaded: false,
       }),
     ).toBe(false);
     expect(messagesPeopleListReady({ ...ready, synced: false })).toBe(false);
-    expect(messagesPeopleListReady({ ...ready, rowsPending: true })).toBe(
-      false,
-    );
   });
 
-  it('does not treat Syncing-without-Prepared as ready (directory flash)', () => {
+  it('keeps the skeleton while Syncing with no rooms yet', () => {
     expect(
       messagesPeopleListReady({ ...ready, initialSyncComplete: false }),
     ).toBe(false);
   });
 
-  it('waits for directory, Matrix ids, and peer profiles so the set of people does not swap', () => {
-    expect(messagesPeopleListReady({ ...ready, homeLoaded: false })).toBe(
-      false,
-    );
-    expect(messagesPeopleListReady({ ...ready, matrixIdsLoading: true })).toBe(
-      false,
-    );
+  it('paints once rooms exist even before initial sync finishes', () => {
     expect(
-      messagesPeopleListReady({ ...ready, peopleBySubLoading: true }),
-    ).toBe(false);
+      messagesPeopleListReady({
+        ...ready,
+        initialSyncComplete: false,
+        hasMatrixConversations: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('does not wait for home intelligence or room/id/profile backfill', () => {
+    expect(
+      messagesPeopleListReady({
+        ...ready,
+        homeLoaded: false,
+        rowsPending: true,
+        matrixIdsLoading: true,
+        peopleBySubLoading: true,
+      }),
+    ).toBe(true);
     expect(messagesPeopleListReady(ready)).toBe(true);
   });
 
@@ -1219,8 +1226,6 @@ describe('messagesPeopleListReady', () => {
         isMatrixAvailable: false,
         synced: false,
         initialSyncComplete: false,
-        rowsPending: true,
-        homeLoaded: false,
       }),
     ).toBe(true);
   });

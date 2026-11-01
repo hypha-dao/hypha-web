@@ -10,6 +10,11 @@ export type ChatPanelTab = 'chat' | 'members';
 type HumanChatPanelTabsProps = {
   activeTab: ChatPanelTab;
   onTabChange: (tab: ChatPanelTab) => void;
+  /**
+   * Personalized label for the chat tab (Direct Message, Space Channel, …).
+   * Falls back to the generic "Room" copy when omitted.
+   */
+  chatTabLabel?: string;
   /** e.g. voice / video / search (space call controls); end of the tab row (right column). */
   tabRowEnd?: ReactNode;
 };
@@ -17,6 +22,7 @@ type HumanChatPanelTabsProps = {
 export function HumanChatPanelTabs({
   activeTab,
   onTabChange,
+  chatTabLabel,
   tabRowEnd,
 }: HumanChatPanelTabsProps) {
   const t = useTranslations('HumanChatPanel');
@@ -43,7 +49,7 @@ export function HumanChatPanelTabs({
   }, []);
 
   const tabs: { key: ChatPanelTab; label: string }[] = [
-    { key: 'chat', label: t('tabChat') },
+    { key: 'chat', label: chatTabLabel?.trim() || t('tabChat') },
     { key: 'members', label: t('tabMembers') },
   ];
 

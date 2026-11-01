@@ -366,23 +366,36 @@ export type MessagesPeopleListReadyInput = {
   /** Matrix has reached Prepared/Syncing. Not enough on its own — Syncing can be empty. */
   synced: boolean;
   /**
-   * First /sync finished (`Prepared` or `isInitialSyncComplete`). Without this,
-   * the 12-person directory paints as PEOPLE AROUND before rooms exist.
+   * First /sync finished (`Prepared` or `isInitialSyncComplete`). Full catch-up
+   * can take many seconds — prefer painting once conversations already exist.
    */
   initialSyncComplete: boolean;
-  /** Joined rooms still waiting for a conversation summary. */
-  rowsPending: boolean;
-  /** Intelligence fetch finished (or there is no JWT to fetch). */
-  homeLoaded: boolean;
-  /** Person → Matrix ids still loading, so DMs cannot attach to directory rows. */
-  matrixIdsLoading: boolean;
-  /** Peer profiles still loading; unresolved DMs would drop when this settles. */
-  peopleBySubLoading: boolean;
+  /**
+   * At least one joined DM, group, or channel room is already known. Lets the
+   * list paint during Syncing without waiting for the full initial sync.
+   */
+  hasMatrixConversations: boolean;
+  /**
+   * @deprecated Ignored — Direct rows come from Matrix. Home intelligence
+   * (shell/full) fills connections and suggestions after paint.
+   */
+  homeLoaded?: boolean;
+  /**
+   * @deprecated Ignored — room summaries, Matrix ids, and peer profiles fill in
+   * progressively via preview/title loading instead of blocking first paint.
+   */
+  rowsPending?: boolean;
+  /** @deprecated Ignored — see `rowsPending`. */
+  matrixIdsLoading?: boolean;
+  /** @deprecated Ignored — see `rowsPending`. */
+  peopleBySubLoading?: boolean;
 };
 
 /**
- * The Messages people list is safe to paint. Until then the directory (or a
- * partial Matrix store) would flash the wrong set of people.
+ * The Messages people list is safe to paint. Wait for Matrix sync, then either
+ * the first /sync to finish or at least one real conversation room so we do not
+ * sit on the skeleton for the full multi-second catch-up. Do not wait for home
+ * intelligence, room summaries, or peer profiles (those stream in after paint).
  *
  * Matrix unavailable and not connecting is "ready" so the empty/unavailable
  * copy can show. Callers latch this so a later room pump does not hide the list.
@@ -391,14 +404,8 @@ export function messagesPeopleListReady(
   input: MessagesPeopleListReadyInput,
 ): boolean {
   if (!input.isMatrixAvailable) return !input.isConnecting;
-  return (
-    input.synced &&
-    input.initialSyncComplete &&
-    !input.rowsPending &&
-    input.homeLoaded &&
-    !input.matrixIdsLoading &&
-    !input.peopleBySubLoading
-  );
+  if (!input.synced) return false;
+  return input.initialSyncComplete || input.hasMatrixConversations;
 }
 
 /** Union directory pages / search hits by person id. Synthetics stay out. */

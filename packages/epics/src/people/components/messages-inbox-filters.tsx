@@ -80,7 +80,10 @@ function FilterRow({
             {title}
           </span>
           <span className="ml-auto flex shrink-0 items-center gap-2">
-            <span className="text-1 text-muted-foreground">{total}</span>
+            {/* Hide 0 while Matrix is still catching up and for empty filters. */}
+            {total > 0 ? (
+              <span className="text-1 text-muted-foreground">{total}</span>
+            ) : null}
             {unread > 0 ? (
               <span
                 className="grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1.5 text-[10px] leading-none text-background"

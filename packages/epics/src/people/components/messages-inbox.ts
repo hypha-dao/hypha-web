@@ -272,6 +272,17 @@ export function inboxFilterCounts(
   return counts;
 }
 
+/**
+ * Direct / All totals and the default Direct list only include joined
+ * conversations. Directory people without a room must not inflate the count
+ * (that was the "12 by default" from People around).
+ */
+export function isInboxDirectConversation(row: {
+  roomId?: string | null;
+}): boolean {
+  return Boolean(row.roomId?.trim());
+}
+
 /** About one screen of conversations beside the channel menu. */
 export const INBOX_LIST_PAGE = 8;
 
@@ -509,7 +520,8 @@ export function inboxContextHref(
   const locale = lang.trim();
   if (!locale || !place) return null;
   if (place.kind === 'dm' || place.kind === 'group') return null;
-  if (place.kind === 'network') return `/${locale}/network`;
+  // Same `?spaceChat=` opener as space rooms — network has no DHO slug.
+  if (place.kind === 'network') return `/${locale}/network?spaceChat=network`;
   const space = place.spaceSlug?.trim() || '';
   if (place.kind === 'signal') {
     if (!space) return null;
@@ -672,7 +684,13 @@ export function channelRowsFromSnapshots(
       place.proposalSlug,
     ].filter((value): value is string => Boolean(value));
     const spaceSlug = place.spaceSlug?.trim().toLowerCase() ?? '';
-    const logoUrl = spaceSlug ? logoBySlug.get(spaceSlug) ?? null : null;
+    const ecosystemSlug = place.ecosystemSlug?.trim().toLowerCase() ?? '';
+    // Signal / proposal / room rows need the parent space mark. Ecosystem
+    // channels often only carry the root slug.
+    const logoUrl =
+      (spaceSlug ? logoBySlug.get(spaceSlug) : null) ??
+      (ecosystemSlug ? logoBySlug.get(ecosystemSlug) : null) ??
+      null;
     rows.push({
       person: {
         id: channelPersonId(roomId),

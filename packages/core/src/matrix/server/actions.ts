@@ -119,6 +119,20 @@ export async function getAdminUserNameAction(
   return await findAdminUserName(data, { db });
 }
 
+/**
+ * Prod/preview/local share one Dendrite; `matrix_user_links` rows are still
+ * keyed by environment. Prefer the caller's env, then fall through so a
+ * Vercel preview or localhost can resolve `@prod_privy_…` members.
+ */
+function matrixEnvironmentFallbackOrder(preferred: Environment): Environment[] {
+  return [
+    preferred,
+    Environment.PRODUCTION,
+    Environment.PREVIEW,
+    Environment.DEVELOPMENT,
+  ].filter((environment, index, all) => all.indexOf(environment) === index);
+}
+
 /** Batch map Privy subs → Matrix MXIDs for the mention picker (space roster merge). */
 export async function getMatrixUserIdsByPrivySubsAction(
   {
@@ -133,7 +147,24 @@ export async function getMatrixUserIdsByPrivySubsAction(
   if (!authToken) {
     throw new Error('authToken is required for matrix user id batch lookup');
   }
-  return findMatrixUserIdsByPrivyUserIds({ privyUserIds, environment }, { db });
+  const wanted = new Set(privyUserIds.map((sub) => sub.trim()).filter(Boolean));
+  const bySub = new Map<string, string>();
+  for (const env of matrixEnvironmentFallbackOrder(environment)) {
+    const rows = await findMatrixUserIdsByPrivyUserIds(
+      { privyUserIds, environment: env },
+      { db },
+    );
+    for (const row of rows) {
+      if (!bySub.has(row.privyUserId)) {
+        bySub.set(row.privyUserId, row.matrixUserId);
+      }
+    }
+    if (bySub.size >= wanted.size) break;
+  }
+  return [...bySub.entries()].map(([privyUserId, matrixUserId]) => ({
+    privyUserId,
+    matrixUserId,
+  }));
 }
 
 /** Batch map space roster person ids → Matrix MXIDs without exposing Privy subs. */
@@ -150,7 +181,26 @@ export async function getMatrixUserIdsByPersonIdsAction(
   if (!authToken) {
     throw new Error('authToken is required for matrix user id batch lookup');
   }
-  return findMatrixUserIdsByPersonIds({ personIds, environment }, { db });
+  const byPersonId = new Map<number, string>();
+  const wanted = new Set(
+    personIds.filter((id) => Number.isFinite(id) && id > 0),
+  );
+  for (const env of matrixEnvironmentFallbackOrder(environment)) {
+    const rows = await findMatrixUserIdsByPersonIds(
+      { personIds, environment: env },
+      { db },
+    );
+    for (const row of rows) {
+      if (!byPersonId.has(row.personId)) {
+        byPersonId.set(row.personId, row.matrixUserId);
+      }
+    }
+    if (byPersonId.size >= wanted.size) break;
+  }
+  return [...byPersonId.entries()].map(([personId, matrixUserId]) => ({
+    personId,
+    matrixUserId,
+  }));
 }
 
 /**
@@ -872,7 +922,18 @@ export async function getLinkByMatrixUserIdAction(
   if (!authToken) {
     throw new Error('authToken is required to get Matrix user link by ID');
   }
-  return getLinkByMatrixUserId({ matrixUserId, environment });
+  for (const env of matrixEnvironmentFallbackOrder(environment)) {
+    try {
+      const link = await getLinkByMatrixUserId({
+        matrixUserId,
+        environment: env,
+      });
+      if (link) return link;
+    } catch {
+      // Shared Dendrite: try the next environment.
+    }
+  }
+  return null;
 }
 
 function preferredMatrixEnvironment(): Environment {
@@ -890,13 +951,9 @@ async function resolveCallerMatrixUserId(
   if (!authToken?.trim()) return null;
   const verified = await verifyPrivyAuthToken(authToken);
   if (!verified.ok) return null;
-  const order = [
+  for (const environment of matrixEnvironmentFallbackOrder(
     preferredMatrixEnvironment(),
-    Environment.PRODUCTION,
-    Environment.PREVIEW,
-    Environment.DEVELOPMENT,
-  ].filter((environment, index, all) => all.indexOf(environment) === index);
-  for (const environment of order) {
+  )) {
     try {
       const link = await getLinkByPrivyUserId({
         privyUserId: verified.userId,

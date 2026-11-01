@@ -12,7 +12,11 @@ export * from './member-space-icons';
 export * from './members-section';
 export * from './space-invite-arrival';
 export * from './person-avatar';
-export { presenceRank, readMemberPresence } from './member-presence';
+export {
+  presenceRank,
+  readMemberPresence,
+  resolveRegisteredPresence,
+} from './member-presence';
 export { PresenceDot } from './presence-dot';
 export { useMemberPresence } from './use-member-presence';
 export {
