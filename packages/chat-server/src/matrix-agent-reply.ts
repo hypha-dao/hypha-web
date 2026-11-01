@@ -146,6 +146,13 @@ const AGENT_TYPING_TIMEOUT_MS = 30_000;
 /** Re-assert typing before the homeserver expires it. */
 const AGENT_TYPING_REFRESH_MS = 20_000;
 
+/** Overlapping reply generations share one typing indicator per room+agent. */
+const agentTypingActive = new Map<string, number>();
+
+function agentTypingKey(roomId: string, agentUserId: string): string {
+  return `${roomId}\0${agentUserId}`;
+}
+
 /**
  * Show "AI Agents is typing…" in the room while the model runs and the reply
  * posts. Soft-fails with `matrixSendTyping`.
@@ -157,8 +164,12 @@ async function withAgentTyping<T>(
   homeserver: string,
   work: () => Promise<T>,
 ): Promise<T> {
-  const pulse = () =>
-    matrixSendTyping(
+  const key = agentTypingKey(roomId, agentUserId);
+  agentTypingActive.set(key, (agentTypingActive.get(key) ?? 0) + 1);
+
+  let refreshInFlight: Promise<unknown> = Promise.resolve();
+  const pulse = () => {
+    const pending = matrixSendTyping(
       roomId,
       agentUserId,
       true,
@@ -166,7 +177,11 @@ async function withAgentTyping<T>(
       homeserver,
       AGENT_TYPING_TIMEOUT_MS,
     );
-  await pulse();
+    refreshInFlight = pending.catch(() => undefined);
+    return pending;
+  };
+  // Non-blocking start — do not spend maxDuration waiting on typing set.
+  void pulse();
   const refresh = setInterval(() => {
     void pulse();
   }, AGENT_TYPING_REFRESH_MS);
@@ -174,7 +189,21 @@ async function withAgentTyping<T>(
     return await work();
   } finally {
     clearInterval(refresh);
-    await matrixSendTyping(roomId, agentUserId, false, botToken, homeserver, 0);
+    await refreshInFlight;
+    const remaining = (agentTypingActive.get(key) ?? 1) - 1;
+    if (remaining <= 0) {
+      agentTypingActive.delete(key);
+      await matrixSendTyping(
+        roomId,
+        agentUserId,
+        false,
+        botToken,
+        homeserver,
+        0,
+      );
+    } else {
+      agentTypingActive.set(key, remaining);
+    }
   }
 }
 

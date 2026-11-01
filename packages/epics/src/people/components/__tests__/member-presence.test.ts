@@ -184,6 +184,24 @@ describe('readMemberPresence', () => {
     });
   });
 
+  it('does not let a stale cached active override a live offline probe for the header', async () => {
+    const detail = await readMemberPresenceDetail(
+      {
+        getPresence: async () => ({ presence: 'offline' }),
+        getUser: () => ({
+          presence: 'online',
+          currentlyActive: true,
+          lastPresenceTs: now - 1_000,
+        }),
+      },
+      '@ada:hypha',
+      now,
+    );
+    expect(detail.level).toBe('active');
+    expect(detail.matrixLevel).toBe('offline');
+    expect(peerLastSeenLine(detail)).toEqual({ kind: 'hidden' });
+  });
+
   it('uses a recent message when no presence event exists', async () => {
     const level = await readMemberPresence(
       {

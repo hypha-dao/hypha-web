@@ -909,14 +909,18 @@ function HeaderSpaceLogoMark({
   logoUrl: string | null;
   loading: boolean;
 }) {
-  if (logoUrl) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const src = logoUrl?.trim() || null;
+  const showImage = Boolean(src && src !== failedSrc);
+  if (showImage && src) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- remote space logos in header chrome
       <img
-        src={logoUrl}
+        src={src}
         alt=""
         aria-hidden
         className="h-full w-full rounded-full border border-border object-cover"
+        onError={() => setFailedSrc(src)}
       />
     );
   }
@@ -1534,6 +1538,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     // call toolbar would start a live session in that leftover room. Also
     // drop a stale join error from a prior space/network/coherence attempt.
     joinEpochRef.current += 1;
+    roomIdRef.current = null;
     setRoomId(null);
     setMessages([]);
     setError(null);
@@ -4331,8 +4336,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     // Only act on actual mode transitions, not initial mount
     if (prevMode === mode) return;
 
-    // Invalidate any in-flight join from the previous mode.
-    joinEpochRef.current += 1;
+    // Do not bump joinEpochRef here — space/network join effects run earlier
+    // in this commit and already capture a fresh epoch; bumping again would
+    // discard their successful join when returning from coherence.
 
     if (mode === 'coherence') {
       // Switching FROM space TO coherence — unregister space listener, clear state
@@ -4932,11 +4938,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     ) => {
       if (!oldEventId) return;
       const newId = ev.getId();
-      if (!newId || oldEventId === newId) return;
+      if (!newId) return;
+      const acknowledged = ev.status == null;
 
       setMessages((prev) =>
-        prev.map((m) => (m.id === oldEventId ? { ...m, id: newId } : m)),
+        prev.map((m) => {
+          if (m.id !== oldEventId && m.id !== newId) return m;
+          if (!acknowledged) {
+            return { ...m, id: newId, sendAcknowledged: false };
+          }
+          const { sendAcknowledged: _cleared, ...rest } = m;
+          return { ...rest, id: newId };
+        }),
       );
+      if (oldEventId === newId) return;
       setReplyDraft((draft) =>
         draft?.messageId === oldEventId
           ? { ...draft, messageId: newId }
@@ -5039,10 +5054,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const mergedMessages = useMemo(() => {
     // Never show another room's rows under the open title (HE → HUMAI).
+    // Session-cache restore fills `messages` before a Matrix paint sets
+    // `paintedRoomId` — keep those rows visible for the active room.
     const activeRoom = roomId?.trim() || '';
     const painted = paintedRoomId?.trim() || '';
     const timelineMessages =
-      activeRoom && painted && activeRoom === painted ? messages : [];
+      activeRoom && messages.length > 0 && (!painted || painted === activeRoom)
+        ? messages
+        : [];
     const withPending = (() => {
       if (!sendingPending) return timelineMessages;
       const pendingRow: UIMessage = {
@@ -5288,12 +5307,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       };
     });
     if (faces.length >= 2) return faces;
+    const viewerName = [me?.name, me?.surname].filter(Boolean).join(' ').trim();
     const titleParts = (groupTitle ?? coherenceTitle ?? '')
       .split(',')
       .map((part) => part.trim())
       .filter(Boolean);
     for (const name of titleParts) {
       if (faces.length >= 2) break;
+      if (viewerName && name === viewerName) continue;
       if (faces.some((face) => face.name === name)) continue;
       faces.push({ name });
     }
@@ -5308,6 +5329,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     roomPeopleBySub,
     groupTitle,
     coherenceTitle,
+    me?.name,
+    me?.surname,
   ]);
 
   const dmPeerReadUpToEventId = useMemo(() => {
@@ -6285,7 +6308,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           mentionUserIds,
           context: isDirectConversation
             ? { kind: 'dm' }
-            : isNetworkSpaceChat
+            : isNetworkSpaceChat || coherenceChannel === 'network'
             ? { kind: 'network' }
             : mode === 'space' && spaceRoom === 'ecosystem'
             ? { kind: 'ecosystem', spaceSlug }
@@ -6398,6 +6421,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     mentionSanitizedLabelToUserId,
     blockSpaceChatForMembership,
     isDirectConversation,
+    isNetworkSpaceChat,
+    coherenceChannel,
     spaceSlug,
     mode,
     spaceRoom,

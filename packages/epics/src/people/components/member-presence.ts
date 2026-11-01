@@ -243,10 +243,15 @@ export async function readMemberPresenceDetail(
   const self =
     client.getUserId?.() === matrixUserId ? ('active' as const) : null;
   // Dots still use message recency. Header "online" uses Matrix only so a
-  // recent message cannot outrank an explicit offline status. Last-seen
-  // prefers Matrix `last_active_ago`, then the latest message when presence
-  // is already known (so a failed probe never invents a time).
-  const matrixLevel = preferPresence([live, cached, self]);
+  // recent message cannot outrank an explicit offline status. A successful
+  // live probe also outranks a stale cached `active` — otherwise the DM
+  // subtitle can stay "online" after the homeserver already says offline.
+  // Last-seen prefers Matrix `last_active_ago`, then the latest message when
+  // presence is already known (so a failed probe never invents a time).
+  const matrixLevel =
+    liveStatus != null
+      ? preferPresence([live, self])
+      : preferPresence([cached, self]);
   const level = preferPresence([live, cached, fromMessages, self]);
   const presenceKnown = Boolean(liveStatus || cached || self);
   const lastActiveAt =
