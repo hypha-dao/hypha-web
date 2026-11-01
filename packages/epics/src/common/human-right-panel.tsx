@@ -6443,6 +6443,54 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     roomId ? client?.getRoom(roomId)?.getType() : null,
   );
 
+  /** Right-panel chat tab only — personalized by channel kind. */
+  const chatTabLabel = useMemo(() => {
+    if (isNetworkSpaceChat || coherenceChannel === 'network') {
+      return t('tabChatNetwork');
+    }
+    if (
+      coherenceChannel === 'ecosystem' ||
+      (mode === 'space' && spaceRoom === 'ecosystem')
+    ) {
+      return t('tabChatEcosystem');
+    }
+    if (coherenceChannel === 'proposal') return t('tabChatProposal');
+    if (coherenceChannel === 'signal') return t('tabChatSignal');
+    if (
+      coherenceChannel === 'space-public' ||
+      coherencePublic ||
+      loadedRoomIsPublic ||
+      (mode === 'space' && spaceRoom === 'public')
+    ) {
+      return t('tabChatPublic');
+    }
+    if (
+      coherenceChannel === 'space' ||
+      (mode === 'space' && spaceRoom === 'space')
+    ) {
+      return t('tabChatSpace');
+    }
+    if (isDirectConversation) {
+      const room = client && roomId ? client.getRoom(roomId) : null;
+      if (room && isPeopleGroupChatRoom(room)) return t('tabChatGroup');
+      if (groupChatFaces) return t('tabChatGroup');
+      return t('tabChatDm');
+    }
+    return t('tabChat');
+  }, [
+    client,
+    coherenceChannel,
+    coherencePublic,
+    groupChatFaces,
+    isDirectConversation,
+    isNetworkSpaceChat,
+    loadedRoomIsPublic,
+    mode,
+    roomId,
+    spaceRoom,
+    t,
+  ]);
+
   return (
     <>
       {screenshareTabAudioPromptDialog}
@@ -6611,6 +6659,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           <HumanChatPanelTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
+            chatTabLabel={chatTabLabel}
             tabRowEnd={
               (showSidebarCallChrome &&
                 !inSpaceCall &&
