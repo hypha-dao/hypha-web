@@ -1,316 +1,96 @@
 'use client';
 
-import { ErrorAlert } from '@hypha-platform/ui';
-import {
-  COHERENCE_SIGNAL_TYPES,
-  Coherence,
-  collectExistingTags,
-  filterSignals,
-  parseSignalBoardFilters,
-  useCoherenceMutationsWeb2Rsc,
-  useFindCoherences,
-  useJwt,
-  useMe,
-  useSpaceBySlug,
-  writeSignalBoardFilters,
-} from '@hypha-platform/core/client';
-import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
+import {
+  DEFAULT_SIGNAL_TOP_WINDOW,
+  SIGNAL_TOP_WINDOWS,
+  parseSignalTopWindow,
+  rankSignalsByWindow,
+  useFindCoherences,
+  useSpaceBySlug,
+  type SignalTopWindow,
+} from '@hypha-platform/core/client';
+import { Locale } from '@hypha-platform/i18n';
+import { Button, Skeleton } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { CoherenceOrder } from '../types';
-import { buildSignalWorkflowConfigurationPath } from '../lib/signal-workflow-configuration-return';
-import {
-  DEFAULT_SIGNAL_VIEW_MODE,
-  isDefaultSignalViewMode,
-  parseSignalViewMode,
-  readStoredSignalViewMode,
-  SIGNAL_VIEW_QUERY_KEY,
-  writeStoredSignalViewMode,
-} from '../lib/signal-view-mode';
-import { SignalSection, type SignalViewMode } from './signal-section';
-import {
-  parseSignalPriorityFilters,
-  parseSignalTypeFilters,
-  SignalBoardFilters,
-} from './signal-board-filters';
-import { SignalViewControls } from './signal-view-controls';
-import { setSignalSearchParam } from '../../common/human-chat-panel/human-chat-message-link';
-import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
-import { useCoherenceSignalDeepLink } from '../hooks/use-coherence-signal-deep-link';
+import { getSignalPath } from '../../common/get-path-function';
+import { useSignalRoomActivity } from '../hooks/use-signal-room-activity';
+import { useSignalVotingMode } from '../hooks/use-signal-voting-mode';
+import { SignalFeedRow } from './signal-feed-row';
 import type { UseMembers } from '../../spaces/hooks/types';
+
+export const SIGNAL_TOP_WINDOW_QUERY_KEY = 'top';
+
+const TOP_WINDOW_LABEL_KEY: Record<SignalTopWindow, string> = {
+  '7d': 'topWindow7d',
+  '30d': 'topWindow30d',
+  all: 'topWindowAll',
+};
 
 export type CoherenceBlockProps = {
   lang: Locale;
   spaceSlug: string;
+  /** Kept for route compatibility; the feed always ranks by upvotes. */
   order?: CoherenceOrder;
   humanChatEnabled?: boolean;
-  useMembers: UseMembers;
+  useMembers?: UseMembers;
 };
 
-export function CoherenceBlock({
-  lang,
-  spaceSlug,
-  order,
-  humanChatEnabled = false,
-  useMembers,
-}: CoherenceBlockProps) {
+export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const viewParamFromUrl = searchParams.get(SIGNAL_VIEW_QUERY_KEY);
-  const [hideArchived, setHideArchived] = React.useState(true);
-  const [acknowledgeError, setAcknowledgeError] = React.useState<string | null>(
-    null,
-  );
-  const viewMode = React.useMemo(() => {
-    const fromUrl = parseSignalViewMode(viewParamFromUrl);
-    if (fromUrl) {
-      return fromUrl;
-    }
-    const stored = readStoredSignalViewMode(spaceSlug);
-    return stored ?? DEFAULT_SIGNAL_VIEW_MODE;
-  }, [viewParamFromUrl, spaceSlug]);
-  React.useLayoutEffect(() => {
-    if (parseSignalViewMode(viewParamFromUrl)) {
-      return;
-    }
-    const stored = readStoredSignalViewMode(spaceSlug);
-    if (!stored || isDefaultSignalViewMode(stored)) {
-      return;
-    }
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set(SIGNAL_VIEW_QUERY_KEY, stored);
-    router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
-  }, [pathname, router, searchParams, spaceSlug, viewParamFromUrl]);
 
-  const handleViewModeChange = React.useCallback(
-    (nextValue: SignalViewMode) => {
-      writeStoredSignalViewMode(spaceSlug, nextValue);
-      const nextParams = new URLSearchParams(searchParams.toString());
-      if (isDefaultSignalViewMode(nextValue)) {
-        nextParams.delete(SIGNAL_VIEW_QUERY_KEY);
+  const topWindow = parseSignalTopWindow(
+    searchParams.get(SIGNAL_TOP_WINDOW_QUERY_KEY),
+  );
+  const handleTopWindowChange = React.useCallback(
+    (next: SignalTopWindow) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (next === DEFAULT_SIGNAL_TOP_WINDOW) {
+        params.delete(SIGNAL_TOP_WINDOW_QUERY_KEY);
       } else {
-        nextParams.set(SIGNAL_VIEW_QUERY_KEY, nextValue);
+        params.set(SIGNAL_TOP_WINDOW_QUERY_KEY, next);
       }
-      const query = nextParams.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, {
-        scroll: false,
-      });
-    },
-    [pathname, router, searchParams, spaceSlug],
-  );
-  const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
-  const { person } = useMe();
-  const { jwt } = useJwt();
-  const { acknowledgeCoherenceAssignment } = useCoherenceMutationsWeb2Rsc(jwt);
-  const { persons: spaceMembersResult } = useMembers({
-    spaceSlug,
-    paginationDisabled: true,
-  });
-  const spaceMembers = spaceMembersResult?.data ?? [];
-  const boardFilters = React.useMemo(
-    () => parseSignalBoardFilters(searchParams),
-    [searchParams],
-  );
-  const deferredBoardFilters = React.useDeferredValue(boardFilters);
-  const handleBoardFiltersChange = React.useCallback(
-    (nextFilters: ReturnType<typeof parseSignalBoardFilters>) => {
-      const nextParams = writeSignalBoardFilters(searchParams, nextFilters);
-      const query = nextParams.toString();
+      const query = params.toString();
       router.replace(query ? `${pathname}?${query}` : pathname, {
         scroll: false,
       });
     },
     [pathname, router, searchParams],
   );
+
+  const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
   const { canMutate } = useCanMutateInSpace({
     spaceSlug,
     spaceId: space?.web3SpaceId ?? undefined,
   });
-  const workflowSettingsHref = React.useMemo(
-    () =>
-      canMutate
-        ? buildSignalWorkflowConfigurationPath(lang, spaceSlug, searchParams)
-        : null,
-    [canMutate, lang, searchParams, spaceSlug],
-  );
+  const votingMode = useSignalVotingMode(space?.web3SpaceId);
+
   const {
     coherences: signals,
     isLoading: isSignalsLoading,
-    refresh: refreshSignals,
-  } = useFindCoherences({
-    spaceSlug,
-    includeArchived: !hideArchived,
-    orderBy: order,
-  });
-  const typeFilters = React.useMemo(
-    () => parseSignalTypeFilters(searchParams.get('type')),
-    [searchParams],
+    refresh,
+  } = useFindCoherences({ spaceSlug, orderBy: 'mostupvoted' });
+
+  const ranked = React.useMemo(
+    () => rankSignalsByWindow(signals ?? [], topWindow),
+    [signals, topWindow],
   );
-  const priorityFilters = React.useMemo(
-    () => parseSignalPriorityFilters(searchParams.get('priority')),
-    [searchParams],
-  );
-  const filteredSignals = React.useMemo(() => {
-    const byTypeAndPriority = (signals ?? []).filter((signal) => {
-      const matchesPriority =
-        priorityFilters.length === 0 ||
-        priorityFilters.some((priority) => priority === signal.priority);
-      const matchesType =
-        typeFilters.length === 0 ||
-        typeFilters.includes(
-          signal.type as (typeof COHERENCE_SIGNAL_TYPES)[number],
-        );
-      return matchesPriority && matchesType;
-    });
-    return filterSignals(byTypeAndPriority, deferredBoardFilters, {
-      currentPersonId: person?.id,
-    });
-  }, [deferredBoardFilters, person?.id, priorityFilters, signals, typeFilters]);
-  const existingTags = React.useMemo(
-    () => collectExistingTags((signals ?? []).map((signal) => signal.tags)),
-    [signals],
-  );
-
-  const refresh = React.useCallback(async () => {
-    await refreshSignals();
-  }, [refreshSignals]);
-
-  const chatBasePath = React.useMemo(
-    () => `/${lang}/dho/${spaceSlug}/coherence/chat`,
-    [lang, spaceSlug],
-  );
-
-  const {
-    open: humanChatOpen,
-    openCoherenceChat,
-    mode,
-    coherenceSlug,
-  } = useHumanChatPanel();
-
-  const activeSignalSlug = React.useMemo(() => {
-    const slug = coherenceSlug?.trim() ?? null;
-    if (humanChatEnabled && humanChatOpen && mode === 'coherence' && slug) {
-      return slug;
-    }
-    return searchParams.get('signal')?.trim() || null;
-  }, [coherenceSlug, humanChatEnabled, humanChatOpen, mode, searchParams]);
-
-  const acknowledgingSlugRef = React.useRef<string | null>(null);
-  const acknowledgeAssignmentIfNeeded = React.useCallback(
-    (signal: Coherence) => {
-      const slug = signal.slug?.trim() ?? '';
-      if (
-        !slug ||
-        !person?.id ||
-        !(Array.isArray(signal.assigneeIds) ? signal.assigneeIds : []).includes(
-          person.id,
-        )
-      ) {
-        return;
-      }
-      if (signal.assigneeAcknowledgedAt?.[String(person.id)]) {
-        return;
-      }
-      if (acknowledgingSlugRef.current === slug) {
-        return;
-      }
-      acknowledgingSlugRef.current = slug;
-      void acknowledgeCoherenceAssignment({ slug })
-        .then((updated) => {
-          setAcknowledgeError(null);
-          if (!updated && acknowledgingSlugRef.current === slug) {
-            acknowledgingSlugRef.current = null;
-          }
-          return updated ? refreshSignals() : undefined;
-        })
-        .catch((error: unknown) => {
-          if (acknowledgingSlugRef.current === slug) {
-            acknowledgingSlugRef.current = null;
-          }
-          console.error(
-            'Could not acknowledge assignment or refresh signals:',
-            error,
-          );
-          setAcknowledgeError(t('errorOhSnap'));
-        });
-    },
-    [acknowledgeCoherenceAssignment, person?.id, refreshSignals, t],
-  );
-
-  React.useEffect(() => {
-    if (!humanChatEnabled) return;
-    const slug = activeSignalSlug?.trim();
-    if (!slug) return;
-    const signal = (signals ?? []).find((item) => item.slug?.trim() === slug);
-    if (!signal) return;
-    acknowledgeAssignmentIfNeeded(signal);
-  }, [
-    acknowledgeAssignmentIfNeeded,
-    activeSignalSlug,
-    humanChatEnabled,
-    signals,
-  ]);
-
-  const handleSignalClick = React.useCallback(
-    (signal: Coherence) => {
-      acknowledgeAssignmentIfNeeded(signal);
-      const slug = signal.slug?.trim() ?? '';
-      openCoherenceChat(
-        signal.roomId ?? null,
-        signal.title ?? '',
-        slug,
-        signal.description ?? null,
-      );
-      if (!slug || typeof window === 'undefined') return;
-      const href = setSignalSearchParam(pathname, window.location.search, slug);
-      const current = `${window.location.pathname}${window.location.search}`;
-      if (current !== href) {
-        window.history.replaceState(window.history.state, '', href);
-        router.replace(href, { scroll: false });
-      }
-    },
-    [acknowledgeAssignmentIfNeeded, openCoherenceChat, pathname, router],
-  );
-
-  const handleRevealArchivedSignal = React.useCallback(() => {
-    setHideArchived(false);
-  }, []);
-
-  const handleClearPriorityFilter = React.useCallback(() => {
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.delete('priority');
-    nextParams.delete('type');
-    const query = nextParams.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false,
-    });
-  }, [pathname, router, searchParams]);
-
-  useCoherenceSignalDeepLink({
-    signals,
-    isLoading: isSpaceLoading || (isSignalsLoading && !signals?.length),
-    humanChatEnabled,
-    humanChatOpen,
-    hideArchived,
-    priorityFilters,
-    typeFilters,
-    activeCoherenceSlug: coherenceSlug,
-    onOpenSignalChat: humanChatEnabled ? handleSignalClick : undefined,
-    onRevealArchivedSignal: handleRevealArchivedSignal,
-    onClearPriorityFilter: handleClearPriorityFilter,
-    onRefreshSignals: refresh,
-  });
-
-  const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;
+  const activity = useSignalRoomActivity(ranked);
+  const isLoading = isSpaceLoading || (isSignalsLoading && !signals?.length);
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="craft-page-header">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="craft-page-title text-6 font-medium">
           {t('signals')}
           {typeof signals?.length === 'number' ? (
@@ -319,42 +99,78 @@ export function CoherenceBlock({
             </span>
           ) : null}
         </h1>
+        {canMutate ? (
+          <Button asChild colorVariant="neutral" className="gap-1.5">
+            <Link
+              href={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
+              scroll={false}
+            >
+              <Plus className="craft-icon" aria-hidden />
+              {t('newSignal')}
+            </Link>
+          </Button>
+        ) : null}
       </header>
-      <SignalBoardFilters
-        typeFilters={typeFilters}
-        priorityFilters={priorityFilters}
-        boardFilters={boardFilters}
-        onBoardFiltersChange={handleBoardFiltersChange}
-        existingTags={existingTags}
-        members={spaceMembers}
-        currentPersonId={person?.id}
-        controls={
-          <SignalViewControls
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            hideArchived={hideArchived}
-            onHideArchivedChange={setHideArchived}
-            workflowSettingsHref={workflowSettingsHref}
-            createSignalHref={
-              canMutate
-                ? `/${lang}/dho/${spaceSlug}/coherence/new-signal`
-                : null
-            }
-            className="shrink-0"
-          />
-        }
-      />
-      {acknowledgeError ? <ErrorAlert lines={[acknowledgeError]} /> : null}
-      <SignalSection
-        basePath={chatBasePath}
-        web3SpaceId={space?.web3SpaceId ?? 0}
-        signals={filteredSignals}
-        isLoading={isSpaceLoading || (isSignalsLoading && !signals?.length)}
-        viewMode={viewMode}
-        refresh={refresh}
-        onSignalClick={onSignalClick}
-        activeSignalSlug={activeSignalSlug}
-      />
+
+      <div
+        role="radiogroup"
+        aria-label={t('topSignalIn')}
+        className="flex flex-wrap items-center gap-2"
+      >
+        <span className="mr-1 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+          {t('topSignalIn')}
+        </span>
+        {SIGNAL_TOP_WINDOWS.map((value) => {
+          const selected = value === topWindow;
+          return (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => handleTopWindowChange(value)}
+              className={cn(
+                'craft-chip craft-chip-interactive h-8 px-3 text-1',
+                selected &&
+                  'border-foreground bg-foreground text-background hover:border-foreground hover:bg-foreground hover:text-background',
+              )}
+            >
+              {t(TOP_WINDOW_LABEL_KEY[value] as never)}
+            </button>
+          );
+        })}
+      </div>
+
+      {isLoading ? (
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton
+              key={index}
+              loading
+              className="h-[104px] w-full rounded-none"
+            />
+          ))}
+        </div>
+      ) : ranked.length === 0 ? (
+        <p className="craft-card px-4 py-8 text-center text-1 text-muted-foreground">
+          {t('listIsEmpty')}
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {ranked.map((signal) =>
+            signal.slug ? (
+              <SignalFeedRow
+                key={signal.id}
+                signal={signal}
+                href={getSignalPath(lang, spaceSlug, signal.slug)}
+                votingMode={votingMode}
+                activity={signal.roomId ? activity[signal.roomId] : undefined}
+                refresh={refresh}
+              />
+            ) : null,
+          )}
+        </div>
+      )}
     </div>
   );
 }

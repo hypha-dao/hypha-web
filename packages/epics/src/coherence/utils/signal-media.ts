@@ -43,6 +43,25 @@ export function splitSignalMedia(input?: {
   return { images, documents };
 }
 
+export type SignalMediaCounts = {
+  videos: number;
+  images: number;
+  documents: number;
+};
+
+export function countSignalMedia(input?: {
+  leadImage?: string | null;
+  videoUrl?: string | null;
+  attachments?: SignalMediaItem[] | null;
+}): SignalMediaCounts {
+  const { images, documents } = splitSignalMedia(input);
+  return {
+    videos: input?.videoUrl?.trim() ? 1 : 0,
+    images: images.length,
+    documents: documents.length,
+  };
+}
+
 export function writeSignalCreateMedia(draft: SignalMediaDraft) {
   if (typeof window === 'undefined') return;
   if (

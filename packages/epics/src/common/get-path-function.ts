@@ -39,10 +39,9 @@ export const getSignalPath = (
   spaceSlug: string,
   signalSlug: string,
 ) => {
-  // Signals board with that card selected. `useCoherenceSignalDeepLink` scrolls
-  // to the card and opens its chat when Human chat is on. Coherence-off still
-  // redirects this tab to overview.
-  return `/${lang}/dho/${spaceSlug}/coherence?signal=${encodeURIComponent(
+  // The signal page opens its chat in the right panel when Human chat is on.
+  // Coherence-off redirects it to overview with `?signal=`.
+  return `/${lang}/dho/${spaceSlug}/coherence/signal/${encodeURIComponent(
     signalSlug,
   )}`;
 };
