@@ -4320,7 +4320,8 @@
     "archivedGroupReadOnly": "This group is archived. Restore it to send messages.",
     "typingOne": "{name} is typing…",
     "typingTwo": "{name} and {other} are typing…",
-    "typingMany": "{count} people are typing…"
+    "typingMany": "{count} people are typing…",
+    "tabSignalChat": "Chat"
   },
   "CoherenceTab": {
     "signals": "Signals",
@@ -4592,7 +4593,9 @@
     "provisioning": {
       "chatUnavailable": "Signal created but chat is currently unavailable.",
       "roomProvisionFailed": "Signal created but chat room provisioning failed.",
-      "roomLinkFailedRetry": "Signal created but chat room could not be linked. Please retry."
+      "roomLinkFailedRetry": "Signal created but chat room could not be linked. Please retry.",
+      "creatorUpvoteFailed": "Signal created, but your upvote could not be added. Upvote it from the signal page.",
+      "tagPeopleFailed": "Signal created, but tagged people could not be notified. Mention them in the signal chat."
     },
     "tagLabels": {
       "Purpose": "Purpose",
@@ -4828,7 +4831,15 @@
     "signalAttachmentsLabel": "Attachments",
     "signalNotFound": "This signal could not be found.",
     "signalFormVoteWithPercent": "Vote with % of your voting power",
-    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} of {max}"
+    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} of {max}",
+    "unknownMember": "Unknown",
+    "signalFormTagPeople": "Tag people",
+    "signalFormTagPeopleHint": "Tagged members are mentioned in the signal chat and get notified.",
+    "signalFormTagPeoplePlaceholder": "Search space members…",
+    "signalFormTagPeopleEmpty": "No matching members",
+    "signalFormTagPeopleRemove": "Remove {name}",
+    "signalLoadFailed": "Signals could not be loaded.",
+    "signalLoadRetry": "Retry"
   },
   "GlobalCallDock": {
     "callTitle": "Call - {count, plural, one {# member} other {# members}}",
@@ -4943,7 +4954,8 @@
     "totalUpvotes": "Total UpVotes",
     "oneMemberOneVote": "One member, one vote",
     "upvoteWithVotingPower": "Upvote with % of voting power",
-    "votesCount": "{count, plural, one {# vote} other {# votes}}"
+    "votesCount": "{count, plural, one {# vote} other {# votes}}",
+    "upvoteArchived": "This signal is archived and can no longer be upvoted."
   },
   "Calendar": {
     "title": "Calendar",

@@ -4288,7 +4288,8 @@
     "archivedGroupReadOnly": "Diese Gruppe ist archiviert. Stelle sie wieder her, um Nachrichten zu senden.",
     "typingOne": "{name} tippt…",
     "typingTwo": "{name} und {other} tippen…",
-    "typingMany": "{count} Personen tippen…"
+    "typingMany": "{count} Personen tippen…",
+    "tabSignalChat": "Chat"
   },
   "CoherenceTab": {
     "signals": "Signale",
@@ -4456,7 +4457,9 @@
     "provisioning": {
       "chatUnavailable": "Signal erstellt, aber der Chat ist derzeit nicht verfügbar.",
       "roomProvisionFailed": "Signal erstellt, aber die Bereitstellung des Chatraums ist fehlgeschlagen.",
-      "roomLinkFailedRetry": "Signal erstellt, aber der Chatraum konnte nicht verknüpft werden. Bitte versuchen Sie es erneut."
+      "roomLinkFailedRetry": "Signal erstellt, aber der Chatraum konnte nicht verknüpft werden. Bitte versuchen Sie es erneut.",
+      "creatorUpvoteFailed": "Signal erstellt, aber deine Unterstützung konnte nicht hinzugefügt werden. Unterstütze es auf der Signalseite.",
+      "tagPeopleFailed": "Signal erstellt, aber markierte Personen konnten nicht benachrichtigt werden. Erwähne sie im Signal-Chat."
     },
     "tagLabels": {
       "Purpose": "Zweck",
@@ -4796,7 +4799,15 @@
     "signalAttachmentsLabel": "Anhänge",
     "signalNotFound": "Dieses Signal wurde nicht gefunden.",
     "signalFormVoteWithPercent": "Mit % deiner Stimmkraft abstimmen",
-    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} von {max}"
+    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} von {max}",
+    "unknownMember": "Unbekannt",
+    "signalFormTagPeople": "Personen markieren",
+    "signalFormTagPeopleHint": "Markierte Mitglieder werden im Signal-Chat erwähnt und benachrichtigt.",
+    "signalFormTagPeoplePlaceholder": "Space-Mitglieder suchen…",
+    "signalFormTagPeopleEmpty": "Keine passenden Mitglieder",
+    "signalFormTagPeopleRemove": "{name} entfernen",
+    "signalLoadFailed": "Signale konnten nicht geladen werden.",
+    "signalLoadRetry": "Erneut versuchen"
   },
   "GlobalCallDock": {
     "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",
@@ -4907,7 +4918,8 @@
     "totalUpvotes": "UpVotes gesamt",
     "oneMemberOneVote": "Ein Mitglied, eine Stimme",
     "upvoteWithVotingPower": "Mit % der Stimmkraft hochstimmen",
-    "votesCount": "{count, plural, one {# Stimme} other {# Stimmen}}"
+    "votesCount": "{count, plural, one {# Stimme} other {# Stimmen}}",
+    "upvoteArchived": "Dieses Signal ist archiviert und kann nicht mehr unterstützt werden."
   },
   "Calendar": {
     "title": "Kalender",

@@ -4289,7 +4289,8 @@
     "archivedGroupReadOnly": "Denne gruppen er arkivert. Gjenopprett den for å sende meldinger.",
     "typingOne": "{name} skriver…",
     "typingTwo": "{name} og {other} skriver…",
-    "typingMany": "{count} personer skriver…"
+    "typingMany": "{count} personer skriver…",
+    "tabSignalChat": "Chat"
   },
   "CoherenceTab": {
     "signals": "Signaler",
@@ -4561,7 +4562,9 @@
     "provisioning": {
       "chatUnavailable": "Signalet ble opprettet, men chatten er utilgjengelig for øyeblikket.",
       "roomProvisionFailed": "Signalet ble opprettet, men klargjøring av chatterommet mislyktes.",
-      "roomLinkFailedRetry": "Signalet ble opprettet, men chatterommet kunne ikke kobles til. Prøv igjen."
+      "roomLinkFailedRetry": "Signalet ble opprettet, men chatterommet kunne ikke kobles til. Prøv igjen.",
+      "creatorUpvoteFailed": "Signalet er opprettet, men stemmen din kunne ikke legges til. Stem det opp fra signalsiden.",
+      "tagPeopleFailed": "Signalet er opprettet, men merkede personer kunne ikke varsles. Omtal dem i signalchatten."
     },
     "tagLabels": {
       "Purpose": "Formål",
@@ -4797,7 +4800,15 @@
     "signalAttachmentsLabel": "Vedlegg",
     "signalNotFound": "Fant ikke dette signalet.",
     "signalFormVoteWithPercent": "Stem med % av stemmekraften din",
-    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} av {max}"
+    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} av {max}",
+    "unknownMember": "Ukjent",
+    "signalFormTagPeople": "Merk personer",
+    "signalFormTagPeopleHint": "Merkede medlemmer omtales i signalchatten og blir varslet.",
+    "signalFormTagPeoplePlaceholder": "Søk etter medlemmer av rommet…",
+    "signalFormTagPeopleEmpty": "Ingen samsvarende medlemmer",
+    "signalFormTagPeopleRemove": "Fjern {name}",
+    "signalLoadFailed": "Kunne ikke laste inn signaler.",
+    "signalLoadRetry": "Prøv igjen"
   },
   "GlobalCallDock": {
     "callTitle": "Samtale - {count, plural, one {# medlem} other {# medlemmer}}",
@@ -4912,7 +4923,8 @@
     "totalUpvotes": "Totalt antall upvotes",
     "oneMemberOneVote": "Ett medlem, én stemme",
     "upvoteWithVotingPower": "Stem opp med % av stemmekraften",
-    "votesCount": "{count, plural, one {# stemme} other {# stemmer}}"
+    "votesCount": "{count, plural, one {# stemme} other {# stemmer}}",
+    "upvoteArchived": "Dette signalet er arkivert og kan ikke lenger stemmes opp."
   },
   "Calendar": {
     "title": "Kalender",

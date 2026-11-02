@@ -3730,7 +3730,8 @@
     "archivedGroupReadOnly": "Este grupo está archivado. Restáuralo para enviar mensajes.",
     "typingOne": "{name} está escribiendo…",
     "typingTwo": "{name} y {other} están escribiendo…",
-    "typingMany": "{count} personas están escribiendo…"
+    "typingMany": "{count} personas están escribiendo…",
+    "tabSignalChat": "Chat"
   },
   "CoherenceTab": {
     "signals": "Señales",
@@ -3898,7 +3899,9 @@
     "provisioning": {
       "chatUnavailable": "Señal creada, pero el chat no está disponible en este momento.",
       "roomProvisionFailed": "Señal creada, pero falló el aprovisionamiento de la sala de chat.",
-      "roomLinkFailedRetry": "Señal creada, pero no se pudo vincular la sala de chat. Inténtalo de nuevo."
+      "roomLinkFailedRetry": "Señal creada, pero no se pudo vincular la sala de chat. Inténtalo de nuevo.",
+      "creatorUpvoteFailed": "Señal creada, pero no se pudo añadir tu apoyo. Apóyala desde la página de la señal.",
+      "tagPeopleFailed": "Señal creada, pero no se pudo notificar a las personas etiquetadas. Menciónalas en el chat de la señal."
     },
     "tagLabels": {
       "Purpose": "Propósito",
@@ -4238,7 +4241,15 @@
     "signalAttachmentsLabel": "Adjuntos",
     "signalNotFound": "No se encontró esta señal.",
     "signalFormVoteWithPercent": "Vota con % de tu poder de voto",
-    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} de {max}"
+    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} de {max}",
+    "unknownMember": "Desconocido",
+    "signalFormTagPeople": "Etiquetar personas",
+    "signalFormTagPeopleHint": "Los miembros etiquetados se mencionan en el chat de la señal y reciben una notificación.",
+    "signalFormTagPeoplePlaceholder": "Buscar miembros del espacio…",
+    "signalFormTagPeopleEmpty": "No hay miembros que coincidan",
+    "signalFormTagPeopleRemove": "Quitar a {name}",
+    "signalLoadFailed": "No se pudieron cargar las señales.",
+    "signalLoadRetry": "Reintentar"
   },
   "GlobalCallDock": {
     "callTitle": "Llamada - {count, plural, one {# miembro} other {# miembros}}",
@@ -4349,7 +4360,8 @@
     "totalUpvotes": "UpVotes totales",
     "oneMemberOneVote": "Un miembro, un voto",
     "upvoteWithVotingPower": "Votar con % del poder de voto",
-    "votesCount": "{count, plural, one {# voto} other {# votos}}"
+    "votesCount": "{count, plural, one {# voto} other {# votos}}",
+    "upvoteArchived": "Esta señal está archivada y ya no se puede apoyar."
   },
   "BankingTab": {
     "title": "Banca",

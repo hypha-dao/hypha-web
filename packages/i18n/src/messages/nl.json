@@ -4290,7 +4290,8 @@
     "archivedGroupReadOnly": "Deze groep is gearchiveerd. Herstel hem om berichten te sturen.",
     "typingOne": "{name} is aan het typen…",
     "typingTwo": "{name} en {other} zijn aan het typen…",
-    "typingMany": "{count} mensen zijn aan het typen…"
+    "typingMany": "{count} mensen zijn aan het typen…",
+    "tabSignalChat": "Chatten"
   },
   "CoherenceTab": {
     "signals": "Signalen",
@@ -4562,7 +4563,9 @@
     "provisioning": {
       "chatUnavailable": "Signaal gemaakt, maar chat is momenteel niet beschikbaar.",
       "roomProvisionFailed": "Signaal gemaakt, maar het inrichten van de chatruimte is mislukt.",
-      "roomLinkFailedRetry": "Signaal gemaakt, maar chatroom kan niet worden gekoppeld. Probeer het opnieuw."
+      "roomLinkFailedRetry": "Signaal gemaakt, maar chatroom kan niet worden gekoppeld. Probeer het opnieuw.",
+      "creatorUpvoteFailed": "Signaal aangemaakt, maar uw stem kon niet worden toegevoegd. Stem op de signaalpagina.",
+      "tagPeopleFailed": "Signaal aangemaakt, maar getagde personen konden niet worden gemeld. Vermeld ze in de signaalchat."
     },
     "tagLabels": {
       "Purpose": "Doel",
@@ -4798,7 +4801,15 @@
     "signalAttachmentsLabel": "Bijlagen",
     "signalNotFound": "Dit signaal is niet gevonden.",
     "signalFormVoteWithPercent": "Stem met % van je stemkracht",
-    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} van {max}"
+    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} van {max}",
+    "unknownMember": "Onbekend",
+    "signalFormTagPeople": "Personen taggen",
+    "signalFormTagPeopleHint": "Getagde leden worden vermeld in de signaalchat en krijgen een melding.",
+    "signalFormTagPeoplePlaceholder": "Leden van de ruimte zoeken…",
+    "signalFormTagPeopleEmpty": "Geen overeenkomende leden",
+    "signalFormTagPeopleRemove": "{name} verwijderen",
+    "signalLoadFailed": "Signalen konden niet worden geladen.",
+    "signalLoadRetry": "Opnieuw proberen"
   },
   "GlobalCallDock": {
     "callTitle": "Oproep - {count, plural, one {# lid} other {# leden}}",
@@ -4913,7 +4924,8 @@
     "totalUpvotes": "Totaal aantal UpVotes",
     "oneMemberOneVote": "Eén lid, één stem",
     "upvoteWithVotingPower": "Omhoog stemmen met % van je stemkracht",
-    "votesCount": "{count, plural, one {# stem} other {# stemmen}}"
+    "votesCount": "{count, plural, one {# stem} other {# stemmen}}",
+    "upvoteArchived": "Dit signaal is gearchiveerd en er kan niet meer op worden gestemd."
   },
   "Calendar": {
     "title": "Kalender",

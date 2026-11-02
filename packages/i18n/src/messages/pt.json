@@ -3716,7 +3716,8 @@
     "archivedGroupReadOnly": "Este grupo está arquivado. Restaura-o para enviar mensagens.",
     "typingOne": "{name} está a escrever…",
     "typingTwo": "{name} e {other} estão a escrever…",
-    "typingMany": "{count} pessoas estão a escrever…"
+    "typingMany": "{count} pessoas estão a escrever…",
+    "tabSignalChat": "Chat"
   },
   "CoherenceTab": {
     "signals": "Sinais",
@@ -3882,7 +3883,9 @@
     "provisioning": {
       "chatUnavailable": "Sinal criado, mas o chat está indisponível no momento.",
       "roomProvisionFailed": "Sinal criado, mas a criação da sala de chat falhou.",
-      "roomLinkFailedRetry": "Sinal criado, mas não foi possível vincular a sala de chat. Tente novamente."
+      "roomLinkFailedRetry": "Sinal criado, mas não foi possível vincular a sala de chat. Tente novamente.",
+      "creatorUpvoteFailed": "Sinal criado, mas não foi possível adicionar o seu apoio. Apoie-o a partir da página do sinal.",
+      "tagPeopleFailed": "Sinal criado, mas não foi possível notificar as pessoas marcadas. Mencione-as no chat do sinal."
     },
     "tagLabels": {
       "Purpose": "Propósito",
@@ -4222,7 +4225,15 @@
     "signalAttachmentsLabel": "Anexos",
     "signalNotFound": "Não foi possível encontrar este sinal.",
     "signalFormVoteWithPercent": "Vote com % do seu poder de voto",
-    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} de {max}"
+    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} de {max}",
+    "unknownMember": "Desconhecido",
+    "signalFormTagPeople": "Marcar pessoas",
+    "signalFormTagPeopleHint": "Os membros marcados são mencionados no chat do sinal e recebem uma notificação.",
+    "signalFormTagPeoplePlaceholder": "Pesquisar membros do espaço…",
+    "signalFormTagPeopleEmpty": "Nenhum membro correspondente",
+    "signalFormTagPeopleRemove": "Remover {name}",
+    "signalLoadFailed": "Não foi possível carregar os sinais.",
+    "signalLoadRetry": "Tentar novamente"
   },
   "GlobalCallDock": {
     "callTitle": "Chamada - {count, plural, one {# membro} other {# membros}}",
@@ -4333,7 +4344,8 @@
     "totalUpvotes": "Total de UpVotes",
     "oneMemberOneVote": "Um membro, um voto",
     "upvoteWithVotingPower": "Votar com % do poder de voto",
-    "votesCount": "{count, plural, one {# voto} other {# votos}}"
+    "votesCount": "{count, plural, one {# voto} other {# votos}}",
+    "upvoteArchived": "Este sinal está arquivado e já não pode ser apoiado."
   },
   "BankingTab": {
     "title": "Banco",

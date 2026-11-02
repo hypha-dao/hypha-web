@@ -4271,7 +4271,8 @@
     "archivedGroupReadOnly": "Оваа група е архивирана. Врати ја за да испраќаш пораки.",
     "typingOne": "{name} пишува…",
     "typingTwo": "{name} и {other} пишуваат…",
-    "typingMany": "{count} луѓе пишуваат…"
+    "typingMany": "{count} луѓе пишуваат…",
+    "tabSignalChat": "Разговор"
   },
   "CoherenceTab": {
     "signals": "Сигнали",
@@ -4543,7 +4544,9 @@
     "provisioning": {
       "chatUnavailable": "Сигналот е создаден, но разговорот моментално не е достапен.",
       "roomProvisionFailed": "Сигналот е создаден, но подготовката на собата за разговор не успеа.",
-      "roomLinkFailedRetry": "Сигналот е создаден, но собата за разговор не можеше да се поврзе. Ве молиме обидете се повторно."
+      "roomLinkFailedRetry": "Сигналот е создаден, но собата за разговор не можеше да се поврзе. Ве молиме обидете се повторно.",
+      "creatorUpvoteFailed": "Сигналот е создаден, но твојата поддршка не можеше да се додаде. Поддржи го од страницата на сигналот.",
+      "tagPeopleFailed": "Сигналот е создаден, но означените луѓе не можеа да бидат известени. Спомни ги во разговорот за сигналот."
     },
     "tagLabels": {
       "Purpose": "Цел",
@@ -4779,7 +4782,15 @@
     "signalAttachmentsLabel": "Прилози",
     "signalNotFound": "Овој сигнал не може да се најде.",
     "signalFormVoteWithPercent": "Гласај со % од твојата гласачка моќ",
-    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} од {max}"
+    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} од {max}",
+    "unknownMember": "Непознат",
+    "signalFormTagPeople": "Означи луѓе",
+    "signalFormTagPeopleHint": "Означените членови се спомнуваат во разговорот за сигналот и добиваат известување.",
+    "signalFormTagPeoplePlaceholder": "Пребарај членови на просторот…",
+    "signalFormTagPeopleEmpty": "Нема соодветни членови",
+    "signalFormTagPeopleRemove": "Отстрани {name}",
+    "signalLoadFailed": "Сигналите не можеа да се вчитаат.",
+    "signalLoadRetry": "Обиди се повторно"
   },
   "GlobalCallDock": {
     "callTitle": "Повик - {count, plural, one {# член} other {# членови}}",
@@ -4894,7 +4905,8 @@
     "totalUpvotes": "Вкупно UpVotes",
     "oneMemberOneVote": "Еден член, еден глас",
     "upvoteWithVotingPower": "Гласај со % од гласачката моќ",
-    "votesCount": "{count, plural, one {# глас} other {# гласови}}"
+    "votesCount": "{count, plural, one {# глас} other {# гласови}}",
+    "upvoteArchived": "Овој сигнал е архивиран и повеќе не може да се поддржува."
   },
   "Calendar": {
     "title": "Календар",

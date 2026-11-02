@@ -3714,7 +3714,8 @@
     "archivedGroupReadOnly": "Ce groupe est archivé. Restaure-le pour envoyer des messages.",
     "typingOne": "{name} est en train d’écrire…",
     "typingTwo": "{name} et {other} sont en train d’écrire…",
-    "typingMany": "{count} personnes sont en train d’écrire…"
+    "typingMany": "{count} personnes sont en train d’écrire…",
+    "tabSignalChat": "Chat"
   },
   "CoherenceTab": {
     "signals": "Signaux",
@@ -3880,7 +3881,9 @@
     "provisioning": {
       "chatUnavailable": "Signal créé, mais le chat est actuellement indisponible.",
       "roomProvisionFailed": "Signal créé, mais l’approvisionnement de la salle de chat a échoué.",
-      "roomLinkFailedRetry": "Signal créé, mais la salle de chat n’a pas pu être liée. Veuillez réessayer."
+      "roomLinkFailedRetry": "Signal créé, mais la salle de chat n’a pas pu être liée. Veuillez réessayer.",
+      "creatorUpvoteFailed": "Signal créé, mais votre soutien n'a pas pu être ajouté. Soutenez-le depuis la page du signal.",
+      "tagPeopleFailed": "Signal créé, mais les personnes identifiées n'ont pas pu être notifiées. Mentionnez-les dans le chat du signal."
     },
     "tagLabels": {
       "Purpose": "Raison d'être",
@@ -4220,7 +4223,15 @@
     "signalAttachmentsLabel": "Pièces jointes",
     "signalNotFound": "Ce signal est introuvable.",
     "signalFormVoteWithPercent": "Votez avec % de votre pouvoir de vote",
-    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} sur {max}"
+    "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} sur {max}",
+    "unknownMember": "Inconnu",
+    "signalFormTagPeople": "Identifier des personnes",
+    "signalFormTagPeopleHint": "Les membres identifiés sont mentionnés dans le chat du signal et reçoivent une notification.",
+    "signalFormTagPeoplePlaceholder": "Rechercher des membres de l'espace…",
+    "signalFormTagPeopleEmpty": "Aucun membre correspondant",
+    "signalFormTagPeopleRemove": "Retirer {name}",
+    "signalLoadFailed": "Les signaux n'ont pas pu être chargés.",
+    "signalLoadRetry": "Réessayer"
   },
   "GlobalCallDock": {
     "callTitle": "Appel - {count, plural, one {# membre} other {# membres}}",
@@ -4331,7 +4342,8 @@
     "totalUpvotes": "Total des UpVotes",
     "oneMemberOneVote": "Un membre, une voix",
     "upvoteWithVotingPower": "Voter avec % du pouvoir de vote",
-    "votesCount": "{count, plural, one {# voix} other {# voix}}"
+    "votesCount": "{count, plural, one {# voix} other {# voix}}",
+    "upvoteArchived": "Ce signal est archivé et ne peut plus être soutenu."
   },
   "BankingTab": {
     "title": "Banque",
