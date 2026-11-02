@@ -9,7 +9,9 @@ import {
   useCoherenceMutationsWeb2Rsc,
   useFindCoherences,
   useJwt,
+  useMatrix,
   useMe,
+  usePeopleBySubs,
   usePersonById,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
@@ -22,6 +24,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
+import { matrixUserIdToCanonicalPrivySub } from '../../common/human-chat-panel/matrix-room-member-display';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { useSignalRoomActivity } from '../hooks/use-signal-room-activity';
@@ -31,6 +34,7 @@ import {
   useSignalVotingMode,
 } from '../hooks/use-signal-voting-mode';
 import { countSignalMedia, splitSignalMedia } from '../utils/signal-media';
+import { signalLastReplierLabel } from '../utils/signal-room-replies';
 import { resolveSignalVideo } from '../utils/signal-video';
 import { SignalCreateQuestButton } from './signal-create-quest-button';
 import { useSignalMediaSummary } from './signal-media-chips';
@@ -64,6 +68,97 @@ function MetaItem({
     </div>
   );
 }
+
+type MarkdownComponents = NonNullable<
+  React.ComponentProps<typeof MarkdownSuspense>['components']
+>;
+type MarkdownChildren = { children?: React.ReactNode };
+
+/** Body sized to sit with the page meta: 14px text, headings a step or two up. */
+const SIGNAL_DESCRIPTION_COMPONENTS: MarkdownComponents = {
+  h1: ({ children }: MarkdownChildren) => (
+    <h1 className="mb-1.5 mt-4 text-4 font-semibold text-foreground first:mt-0">
+      {children}
+    </h1>
+  ),
+  h2: ({ children }: MarkdownChildren) => (
+    <h2 className="mb-1.5 mt-4 text-3 font-semibold text-foreground first:mt-0">
+      {children}
+    </h2>
+  ),
+  h3: ({ children }: MarkdownChildren) => (
+    <h3 className="mb-1 mt-3 text-2 font-semibold text-foreground first:mt-0">
+      {children}
+    </h3>
+  ),
+  h4: ({ children }: MarkdownChildren) => (
+    <h4 className="mb-1 mt-3 text-2 font-semibold text-foreground first:mt-0">
+      {children}
+    </h4>
+  ),
+  p: ({ children }: MarkdownChildren) => (
+    <p className="my-2 text-2 leading-relaxed text-foreground first:mt-0 last:mb-0">
+      {children}
+    </p>
+  ),
+  ul: ({ children }: MarkdownChildren) => (
+    <ul className="my-2 ml-0 list-outside list-disc pl-4 text-2 leading-relaxed text-foreground">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }: MarkdownChildren) => (
+    <ol className="my-2 ml-0 list-outside list-decimal pl-4 text-2 leading-relaxed text-foreground">
+      {children}
+    </ol>
+  ),
+  li: ({ children }: MarkdownChildren) => (
+    <li className="my-0.5">{children}</li>
+  ),
+  blockquote: ({ children }: MarkdownChildren) => (
+    <blockquote className="my-2 border-l-2 border-border pl-3 text-2 italic text-muted-foreground">
+      {children}
+    </blockquote>
+  ),
+  strong: ({ children }: MarkdownChildren) => (
+    <strong className="font-semibold">{children}</strong>
+  ),
+  em: ({ children }: MarkdownChildren) => (
+    <em className="italic">{children}</em>
+  ),
+  u: ({ children }: MarkdownChildren) => (
+    <u className="underline">{children}</u>
+  ),
+};
+
+function SignalDescriptionFallback() {
+  return (
+    <div className="flex flex-col gap-2" aria-busy>
+      <Skeleton loading className="h-3.5 w-full rounded-none" />
+      <Skeleton loading className="h-3.5 w-11/12 rounded-none" />
+      <Skeleton loading className="h-3.5 w-2/3 rounded-none" />
+    </div>
+  );
+}
+
+/**
+ * The markdown renderer suspends whenever it renders, so the body must not
+ * re-render with the page: chat activity and list refreshes would flash the
+ * fallback over a description that did not change.
+ */
+const SignalDescriptionBody = React.memo(function SignalDescriptionBody({
+  source,
+}: {
+  source: string;
+}) {
+  return (
+    <MarkdownSuspense
+      components={SIGNAL_DESCRIPTION_COMPONENTS}
+      FallBack={<SignalDescriptionFallback />}
+    >
+      {source}
+    </MarkdownSuspense>
+  );
+});
 
 function SignalMediaSection({ signal }: { signal: Coherence }) {
   const t = useTranslations('CoherenceTab');
@@ -187,6 +282,20 @@ export function SignalPage({
 
   const activityRooms = React.useMemo(() => (signal ? [signal] : []), [signal]);
   const activity = useSignalRoomActivity(activityRooms)[signal?.roomId ?? ''];
+  const { client: matrixClient } = useMatrix();
+  const lastReplySub = activity?.lastReplySenderId
+    ? matrixUserIdToCanonicalPrivySub(activity.lastReplySenderId)
+    : null;
+  const lastReplySubs = React.useMemo(
+    () => (lastReplySub ? [lastReplySub] : []),
+    [lastReplySub],
+  );
+  const { peopleBySub: lastReplyPeople } = usePeopleBySubs({
+    subs: lastReplySubs,
+  });
+  const lastReplyPerson = lastReplySub
+    ? lastReplyPeople.get(lastReplySub)
+    : undefined;
   const { creatorDisplayName } = useSignalCreatorMeta({
     creatorId: signal?.creatorId ?? null,
     createdAt: signal?.createdAt ?? new Date(0),
@@ -314,11 +423,21 @@ export function SignalPage({
       ? activity.comments
       : Math.max(activity.comments, storedComments)
     : storedComments;
+  const fullName = (p?: { name?: string | null; surname?: string | null }) =>
+    [p?.name, p?.surname].filter(Boolean).join(' ').trim();
+  const lastReplierName = signalLastReplierLabel({
+    senderId: activity?.lastReplySenderId,
+    viewerMatrixId: matrixClient?.getUserId(),
+    viewerName: fullName(person ?? undefined),
+    personName:
+      fullName(lastReplyPerson) || lastReplyPerson?.nickname?.trim() || null,
+    matrixName: activity?.lastReplySenderName,
+  });
   const lastReply =
     activity?.lastReplyAt != null
       ? [
           format.relativeTime(new Date(activity.lastReplyAt), now),
-          activity.lastReplySenderName,
+          lastReplierName,
         ]
           .filter(Boolean)
           .join(' · ')
@@ -439,7 +558,7 @@ export function SignalPage({
         <section className="craft-card flex flex-col gap-3 p-5">
           <h2 className={cn(SECTION_LABEL_CLASS, 'm-0')}>{t('description')}</h2>
           <div className="text-2 leading-relaxed text-foreground">
-            <MarkdownSuspense>{description}</MarkdownSuspense>
+            <SignalDescriptionBody source={description} />
           </div>
         </section>
       ) : null}
