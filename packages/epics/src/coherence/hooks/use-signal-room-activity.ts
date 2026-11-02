@@ -136,6 +136,5 @@ export function useSignalRoomActivity(
     }
     return result;
     // `version` re-reads the timelines after Matrix events.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client, rooms, version]);
 }
