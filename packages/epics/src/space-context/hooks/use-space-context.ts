@@ -342,25 +342,6 @@ export async function discardSpaceContextSuggestionRequest({
   await revalidateSpaceContext(spaceSlug);
 }
 
-export async function importSpaceContextFromMemoryRequest({
-  spaceSlug,
-  getAccessToken,
-}: {
-  spaceSlug: string;
-  getAccessToken?: () => Promise<string | null | undefined>;
-}) {
-  const headers = await authHeaders(getAccessToken);
-  const response = await fetch(
-    `/api/v1/spaces/${spaceSlug}/context/import-memory`,
-    { method: 'POST', headers },
-  );
-  if (!response.ok) {
-    throw new Error('Failed to import from Space Memory');
-  }
-  await revalidateSpaceContext(spaceSlug);
-  return response.json();
-}
-
 export async function proposeSpaceContextSectionsRequest({
   spaceSlug,
   sectionKeys,

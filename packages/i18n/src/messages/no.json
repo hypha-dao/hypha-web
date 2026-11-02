@@ -5654,8 +5654,6 @@
       "title": "Ingen kontekst ennå",
       "description": "Definer hvem denne spacen er — misjon, visjon, strategi og mer. Åpne en seksjon for å diskutere den med medlemmene, nevn agenten når du vil ha et utkast, og ratifiser den med et forslag når den er klar.",
       "startMission": "Start med misjon",
-      "importMemory": "Importer fra Memory",
-      "importing": "Importerer…",
       "filter": "Ingen seksjoner i dette filteret."
     },
     "chat": {
@@ -5709,14 +5707,12 @@
     "error": {
       "load": "Kunne ikke laste konteksten for spacen.",
       "retry": "Prøv igjen",
-      "import": "Kunne ikke importere fra Space Memory.",
       "save": "Kunne ikke lagre dette utkastet.",
       "link": "Kunne ikke knytte dette forslaget til Context-seksjonene.",
       "change": "Kunne ikke oppdatere denne seksjonen. Prøv igjen.",
       "onVoting": "Denne seksjonen er til avstemning. Den kan endres etter avstemningen."
     },
     "success": {
-      "imported": "Importerte et utkast til misjonen fra Space Memory.",
       "saved": "Utkast lagret.",
       "suggested": "Seksjon foreslått. Den blir en del av Konteksten når et forslag om å legge den til blir vedtatt.",
       "removalSuggested": "Fjerning foreslått. Ta den med i et forslag for å gjennomføre den.",

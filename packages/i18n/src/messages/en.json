@@ -5671,8 +5671,6 @@
       "title": "No context yet",
       "description": "Define who this space is — mission, vision, strategy and more. Open a section to discuss it with members, mention its agent when you want a draft, and ratify it with a proposal when it is ready.",
       "startMission": "Start with Mission",
-      "importMemory": "Import from Memory",
-      "importing": "Importing…",
       "filter": "No sections in this filter."
     },
     "chat": {
@@ -5726,14 +5724,12 @@
     "error": {
       "load": "Could not load Space Context.",
       "retry": "Try again",
-      "import": "Could not import from Space Memory.",
       "save": "Could not save this draft.",
       "link": "Could not attach this proposal to the Context sections.",
       "change": "Could not update this section. Try again.",
       "onVoting": "This section is on voting. It can change after the vote."
     },
     "success": {
-      "imported": "Imported a Mission draft from Space Memory.",
       "saved": "Draft saved.",
       "suggested": "Section suggested. It joins the Context once a proposal adding it passes.",
       "removalSuggested": "Removal suggested. Include it in a proposal to apply it.",

@@ -6,14 +6,10 @@ import { useTranslations } from 'next-intl';
 
 export function SpaceContextEmpty({
   canMutate,
-  importing,
   onStartMission,
-  onImportMemory,
 }: {
   canMutate: boolean;
-  importing?: boolean;
   onStartMission: () => void;
-  onImportMemory: () => void;
 }) {
   const t = useTranslations('SpaceContext');
 
@@ -30,15 +26,6 @@ export function SpaceContextEmpty({
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Button type="button" onClick={onStartMission}>
             {t('empty.startMission')}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            colorVariant="neutral"
-            disabled={importing}
-            onClick={onImportMemory}
-          >
-            {importing ? t('empty.importing') : t('empty.importMemory')}
           </Button>
         </div>
       ) : null}

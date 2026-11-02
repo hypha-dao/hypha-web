@@ -8,13 +8,12 @@ import {
 } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../common/server/types';
 import { findSpaceBySlug } from '../../space/server/queries';
-import { getOrgMemoryBySpaceSlug } from '../../governance/server/get-org-memory-by-space-slug';
 import {
   SPACE_CONTEXT_CUSTOM_KEY_PREFIX,
   specialistForSectionKey,
   type SpaceContextSectionKey,
 } from '../constants';
-import type { SpaceContextOverview, SpaceContextSectionRecord } from '../types';
+import type { SpaceContextSectionRecord } from '../types';
 import { listSpaceContextSections } from './queries';
 import { mapSectionRow } from './map-row';
 import { firstMarkdownParagraph, normalizeSectionTitle } from '../markdown';
@@ -552,89 +551,6 @@ export async function revertSpaceContextSectionsByDocumentId(
     .where(eq(spaceContextSections.proposalDocumentId, documentId))
     .returning();
   return result.length;
-}
-
-export async function importSpaceContextFromMemory(
-  {
-    spaceSlug,
-    personId,
-    authToken,
-    requestUrlForSessionMatrix,
-  }: {
-    spaceSlug: string;
-    personId?: number | null;
-    authToken?: string;
-    requestUrlForSessionMatrix?: string;
-  },
-  { db }: DbConfig,
-): Promise<SpaceContextOverview | null> {
-  const space = await requireSpaceId(spaceSlug, db);
-  if (!space) return null;
-
-  await listSpaceContextSections({ spaceSlug }, { db });
-
-  const description = (space.description ?? '').trim();
-  const usableDescription =
-    description && description !== 'SHOULD NOT BE EMPTY' ? description : '';
-
-  let memoryExcerpt = '';
-  try {
-    const gated = await getOrgMemoryBySpaceSlug(
-      {
-        spaceSlug,
-        page: 1,
-        pageSize: 8,
-        assetsPage: 1,
-        assetsPageSize: 8,
-        requestUrlForSessionMatrix,
-      },
-      { db, authToken },
-    );
-    if (gated.access === 'ok') {
-      const titles = (gated.result.org_memory_assets ?? [])
-        .slice(0, 5)
-        .map((asset) => `- ${asset.filename}`)
-        .join('\n');
-      if (titles) {
-        memoryExcerpt = `## From Space Memory\n\n${titles}`;
-      }
-    }
-  } catch (error) {
-    console.warn(
-      '[importSpaceContextFromMemory] org memory read failed',
-      error,
-    );
-  }
-
-  const missionDraft = [usableDescription, memoryExcerpt]
-    .filter(Boolean)
-    .join('\n\n');
-
-  if (missionDraft) {
-    const [existing] = await db
-      .select()
-      .from(spaceContextSections)
-      .where(
-        and(
-          eq(spaceContextSections.spaceId, space.id),
-          eq(spaceContextSections.sectionKey, 'mission'),
-        ),
-      )
-      .limit(1);
-    if (existing && !existing.markdown.trim()) {
-      await db
-        .update(spaceContextSections)
-        .set({
-          markdown: missionDraft,
-          status: 'draft',
-          updatedByPersonId: personId ?? null,
-          updatedAt: new Date(),
-        })
-        .where(eq(spaceContextSections.id, existing.id));
-    }
-  }
-
-  return listSpaceContextSections({ spaceSlug }, { db });
 }
 
 export function leadFromSectionMarkdown(markdown: string): string {

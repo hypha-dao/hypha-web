@@ -5663,8 +5663,6 @@
       "title": "Aún no hay contexto",
       "description": "Define quién es este espacio: misión, visión, estrategia y más. Abre una sección para debatirla con los miembros, menciona a su agente cuando quieras un borrador y ratifícala con una propuesta cuando esté lista.",
       "startMission": "Empezar por la Misión",
-      "importMemory": "Importar desde Memory",
-      "importing": "Importing…",
       "filter": "No sections in this filter."
     },
     "chat": {
@@ -5718,14 +5716,12 @@
     "error": {
       "load": "Could not load Space Context.",
       "retry": "Try again",
-      "import": "Could not import from Space Memory.",
       "save": "No se pudo guardar este borrador.",
       "link": "No se pudo vincular esta propuesta a las secciones de Context.",
       "change": "No se pudo actualizar esta sección. Inténtalo de nuevo.",
       "onVoting": "Esta sección está en votación. Puede cambiar después de la votación."
     },
     "success": {
-      "imported": "Imported a Mission draft from Space Memory.",
       "saved": "Borrador guardado.",
       "suggested": "Sección sugerida. Se suma al Contexto cuando se aprueba una propuesta que la añade.",
       "removalSuggested": "Eliminación sugerida. Inclúyela en una propuesta para aplicarla.",

@@ -5649,8 +5649,6 @@
       "title": "Noch kein Kontext",
       "description": "Lege fest, wer dieser Space ist — Mission, Vision, Strategie und mehr. Öffne einen Abschnitt, um ihn mit Mitgliedern zu besprechen, erwähne seinen Agenten, wenn du einen Entwurf möchtest, und ratifiziere ihn per Vorschlag, wenn er fertig ist.",
       "startMission": "Mit der Mission starten",
-      "importMemory": "Aus Memory importieren",
-      "importing": "Importiere…",
       "filter": "Keine Abschnitte in diesem Filter."
     },
     "chat": {
@@ -5704,14 +5702,12 @@
     "error": {
       "load": "Space Context konnte nicht geladen werden.",
       "retry": "Erneut versuchen",
-      "import": "Import aus Space Memory fehlgeschlagen.",
       "save": "Dieser Entwurf konnte nicht gespeichert werden.",
       "link": "Dieser Vorschlag konnte den Context-Abschnitten nicht zugeordnet werden.",
       "change": "Dieser Abschnitt konnte nicht aktualisiert werden. Versuche es erneut.",
       "onVoting": "Dieser Abschnitt ist in Abstimmung. Er kann nach der Abstimmung geändert werden."
     },
     "success": {
-      "imported": "Ein Missionsentwurf wurde aus Space Memory importiert.",
       "saved": "Entwurf gespeichert.",
       "suggested": "Abschnitt vorgeschlagen. Er kommt in den Kontext, sobald ein Vorschlag zum Hinzufügen angenommen wird.",
       "removalSuggested": "Entfernung vorgeschlagen. Nimm sie in einen Vorschlag auf, um sie umzusetzen.",

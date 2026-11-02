@@ -1,6 +1,5 @@
 'use client';
 
-import { useAuthentication } from '@hypha-platform/authentication';
 import {
   isProposableSection,
   officialSectionMarkdown,
@@ -24,10 +23,7 @@ import {
 } from 'react';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
-import {
-  importSpaceContextFromMemoryRequest,
-  useSpaceContext,
-} from '../hooks/use-space-context';
+import { useSpaceContext } from '../hooks/use-space-context';
 import { SpaceContextAddSectionDialog } from './space-context-add-section-dialog';
 import { SpaceContextCard } from './space-context-card';
 import { SpaceContextChatPanel } from './space-context-chat-panel';
@@ -58,7 +54,6 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { getAccessToken } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug);
   const { canMutate } = useCanMutateInSpace({ spaceSlug, space });
   const { overview, error, isLoading, refresh } = useSpaceContext(spaceSlug);
@@ -100,8 +95,6 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
   );
   const [draftKey, setDraftKey] = useState<SpaceContextSectionKey | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const sections = useMemo(() => overview?.sections ?? [], [overview]);
@@ -177,24 +170,6 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
   const proposeHref = spaceContextProposeHref(locale, spaceSlug);
   const proposeSections = (keys: SpaceContextSectionKey[]) => {
     router.push(spaceContextProposeHref(locale, spaceSlug, keys));
-  };
-
-  const handleImport = async () => {
-    setImportError(null);
-    setImporting(true);
-    try {
-      await importSpaceContextFromMemoryRequest({
-        spaceSlug,
-        getAccessToken,
-      });
-      setSuccessMessage(t('success.imported'));
-      showSection('mission');
-      await refresh();
-    } catch {
-      setImportError(t('error.import'));
-    } finally {
-      setImporting(false);
-    }
   };
 
   if (isLoading) {
@@ -285,9 +260,6 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
           {successMessage ? (
             <p className="text-2 text-success-11">{successMessage}</p>
           ) : null}
-          {importError ? (
-            <p className="text-2 text-error-11">{importError}</p>
-          ) : null}
         </header>
 
         <div className="h-px w-full bg-foreground" aria-hidden />
@@ -324,9 +296,7 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
         {allEmpty && filter === 'all' ? (
           <SpaceContextEmpty
             canMutate={canMutate}
-            importing={importing}
             onStartMission={() => showSection('mission')}
-            onImportMemory={() => void handleImport()}
           />
         ) : null}
 

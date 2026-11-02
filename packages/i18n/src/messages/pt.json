@@ -5647,8 +5647,6 @@
       "title": "Ainda sem contexto",
       "description": "Defina quem é este espaço — missão, visão, estratégia e mais. Abra uma secção para a discutir com os membros, mencione o seu agente quando quiser um rascunho e ratifique-a com uma proposta quando estiver pronta.",
       "startMission": "Começar pela Missão",
-      "importMemory": "Importar da Memory",
-      "importing": "Importing…",
       "filter": "No sections in this filter."
     },
     "chat": {
@@ -5702,14 +5700,12 @@
     "error": {
       "load": "Could not load Space Context.",
       "retry": "Try again",
-      "import": "Could not import from Space Memory.",
       "save": "Não foi possível salvar este rascunho.",
       "link": "Não foi possível vincular esta proposta às seções de Context.",
       "change": "Não foi possível atualizar esta seção. Tente novamente.",
       "onVoting": "Esta seção está em votação. Pode mudar depois da votação."
     },
     "success": {
-      "imported": "Imported a Mission draft from Space Memory.",
       "saved": "Rascunho salvo.",
       "suggested": "Seção sugerida. Entra no Contexto quando uma proposta que a adiciona for aprovada.",
       "removalSuggested": "Remoção sugerida. Inclua-a numa proposta para aplicá-la.",

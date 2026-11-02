@@ -5655,8 +5655,6 @@
       "title": "Nog geen context",
       "description": "Bepaal wie deze space is — missie, visie, strategie en meer. Open een sectie om die met leden te bespreken, noem de agent wanneer je een concept wilt en bekrachtig haar met een voorstel wanneer ze klaar is.",
       "startMission": "Begin met Missie",
-      "importMemory": "Importeren uit Memory",
-      "importing": "Importing…",
       "filter": "No sections in this filter."
     },
     "chat": {
@@ -5710,14 +5708,12 @@
     "error": {
       "load": "Could not load Space Context.",
       "retry": "Try again",
-      "import": "Could not import from Space Memory.",
       "save": "Dit concept kon niet worden opgeslagen.",
       "link": "Dit voorstel kon niet aan de Context-secties worden gekoppeld.",
       "change": "Deze sectie kon niet worden bijgewerkt. Probeer het opnieuw.",
       "onVoting": "Deze sectie is in stemming. Ze kan na de stemming veranderen."
     },
     "success": {
-      "imported": "Imported a Mission draft from Space Memory.",
       "saved": "Concept opgeslagen.",
       "suggested": "Sectie voorgesteld. Ze komt in de Context zodra een voorstel om haar toe te voegen wordt aangenomen.",
       "removalSuggested": "Verwijdering voorgesteld. Neem haar op in een voorstel om haar door te voeren.",

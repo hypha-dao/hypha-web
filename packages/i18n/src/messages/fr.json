@@ -5645,8 +5645,6 @@
       "title": "Pas encore de contexte",
       "description": "Définissez qui est cet espace — mission, vision, stratégie et plus. Ouvrez une section pour en discuter avec les membres, mentionnez son agent quand vous voulez un brouillon, et ratifiez-la par une proposition quand elle est prête.",
       "startMission": "Commencer par la mission",
-      "importMemory": "Importer depuis Memory",
-      "importing": "Importing…",
       "filter": "No sections in this filter."
     },
     "chat": {
@@ -5700,14 +5698,12 @@
     "error": {
       "load": "Could not load Space Context.",
       "retry": "Try again",
-      "import": "Could not import from Space Memory.",
       "save": "Impossible d'enregistrer ce brouillon.",
       "link": "Impossible de lier cette proposition aux sections Context.",
       "change": "Impossible de mettre à jour cette section. Réessayez.",
       "onVoting": "Cette section est en vote. Elle pourra changer après le vote."
     },
     "success": {
-      "imported": "Imported a Mission draft from Space Memory.",
       "saved": "Brouillon enregistré.",
       "suggested": "Section suggérée. Elle rejoint le Contexte dès qu’une proposition qui l’ajoute est adoptée.",
       "removalSuggested": "Suppression suggérée. Incluez-la dans une proposition pour l’appliquer.",
