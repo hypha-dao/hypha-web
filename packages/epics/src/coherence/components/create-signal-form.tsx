@@ -93,6 +93,7 @@ import { useSignalVotingMode } from '../hooks/use-signal-voting-mode';
 import { formatVotingPowerCompact } from '../utils/format-voting-power';
 import type { UseMembers } from '../../spaces/hooks/types';
 import { SignalTagMergeDialog } from './signal-tag-merge-dialog';
+import { SignalTagPeopleField } from './signal-tag-people-field';
 import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
 import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
 import { EXCHANGE_SIGNAL_CAPITALS_KEY } from '../../network-exchange/exchange-draft-keys';
@@ -109,7 +110,7 @@ export interface CreateSignalFormProps {
   signalSlug?: string;
   signalRoomId?: string | null;
   initialValues?: Partial<FormValues>;
-  /** Supplies the space roster for the assignee picker. */
+  /** Supplies the space roster for the tag-people picker. */
   useMembers: UseMembers;
 }
 
@@ -251,6 +252,7 @@ export const CreateSignalForm = ({
   signalSlug,
   signalRoomId,
   initialValues,
+  useMembers,
 }: CreateSignalFormProps) => {
   const params = useParams<{ id?: string; lang?: string }>();
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
@@ -357,6 +359,9 @@ export const CreateSignalForm = ({
   const { upvote: upvoteCoherence } = useCoherenceUpvoteMutations(authToken);
   // Creator's initial upvote share of their proposal voting power (max by default).
   const [creatorVotePercent, setCreatorVotePercent] = React.useState(100);
+  const [taggedMatrixUserIds, setTaggedMatrixUserIds] = React.useState<
+    string[]
+  >([]);
   const votingMode = useSignalVotingMode(space?.web3SpaceId);
   const { votingPower: myVotingPower } = useMySignalVotingPower({
     spaceSlug: mode === 'create' ? spaceSlug : null,
@@ -408,6 +413,7 @@ export const CreateSignalForm = ({
     sendMessage,
     getRoomMessages,
     editRoomMessage,
+    ensureRoomMembers,
   } = useMatrix();
 
   const upsertSignalDescriptionMessage = React.useCallback(
@@ -952,8 +958,27 @@ export const CreateSignalForm = ({
                   linkError,
                 );
               }
-              // No signal-team roster: a signal's chat is open to the whole
-              // community, and a roster would lock the composer for others.
+              if (taggedMatrixUserIds.length > 0) {
+                // Tags are a normal chat @mention, so the existing mention
+                // notification and Messages inbox deliver them.
+                try {
+                  await ensureRoomMembers(canonicalRoomId, taggedMatrixUserIds);
+                  await sendMessage({
+                    roomId: canonicalRoomId,
+                    message: taggedMatrixUserIds.join(' '),
+                    mentionUserIds: taggedMatrixUserIds,
+                  });
+                } catch (tagError) {
+                  setSignalProvisioningNotice(
+                    t('provisioning.tagPeopleFailed'),
+                    tagError instanceof Error ? tagError.message : undefined,
+                  );
+                  console.warn(
+                    'Signal created but tagging people failed:',
+                    tagError,
+                  );
+                }
+              }
             } catch (matrixError) {
               const matrixErrorMessage =
                 matrixError instanceof Error
@@ -993,6 +1018,9 @@ export const CreateSignalForm = ({
       createCoherence,
       createRoom,
       creatorVotePercent,
+      ensureRoomMembers,
+      sendMessage,
+      taggedMatrixUserIds,
       upvoteCoherence,
       isEditAuthorized,
       joinRoom,
@@ -1198,6 +1226,26 @@ export const CreateSignalForm = ({
                   );
                 }}
               />
+              {mode === 'create' && spaceSlug ? (
+                <div
+                  className="flex flex-col gap-2"
+                  data-signal-field="tagPeople"
+                >
+                  <span className="text-2 font-medium text-foreground">
+                    {t('signalFormTagPeople')}
+                  </span>
+                  <SignalTagPeopleField
+                    spaceSlug={spaceSlug}
+                    useMembers={useMembers}
+                    value={taggedMatrixUserIds}
+                    onChange={setTaggedMatrixUserIds}
+                    disabled={isPublishing}
+                  />
+                  <p className="text-1 text-muted-foreground">
+                    {t('signalFormTagPeopleHint')}
+                  </p>
+                </div>
+              ) : null}
             </section>
             <section className="flex flex-col gap-6 border-t border-border pt-8">
               <FormField
