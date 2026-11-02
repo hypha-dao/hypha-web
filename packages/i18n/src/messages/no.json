@@ -5643,7 +5643,6 @@
       "proposalFallback": "Forslag",
       "viewProposal": "Se forslag",
       "openDiscussion": "Åpne diskusjon",
-      "proposeAmendment": "Foreslå endring",
       "contributors": "{count, plural, one {# bidragsyter} other {# bidragsytere}}",
       "edited": "redigert {when}",
       "votingClosed": "avstemningen er avsluttet",

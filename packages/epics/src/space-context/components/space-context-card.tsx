@@ -9,7 +9,7 @@ import {
   type SpaceContextSectionRecord,
 } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
-import { Button, Card, CardTitle } from '@hypha-platform/ui';
+import { Card, CardTitle } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -36,21 +36,17 @@ export function SpaceContextCard({
   spaceSlug,
   selected,
   featured,
-  canMutate,
   onOpen,
   onRead,
   onShowDraft,
-  onProposeAmendment,
 }: {
   section: SpaceContextSectionRecord;
   spaceSlug: string;
   selected?: boolean;
   featured?: boolean;
-  canMutate: boolean;
   onOpen: (key: SpaceContextSectionKey) => void;
   onRead: (key: SpaceContextSectionKey) => void;
   onShowDraft?: (key: SpaceContextSectionKey) => void;
-  onProposeAmendment?: (key: SpaceContextSectionKey) => void;
 }) {
   const t = useTranslations('SpaceContext');
   const locale = useLocale() as Locale;
@@ -111,22 +107,7 @@ export function SpaceContextCard({
           ) : null}
           <SpaceContextChangeBadge change={section.pendingChange} />
         </div>
-        {featured ? (
-          canMutate &&
-          section.status !== 'proposed' &&
-          !section.pendingChange &&
-          onProposeAmendment ? (
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              className="h-8 shrink-0 border-foreground bg-transparent px-3 text-[11px] font-semibold uppercase tracking-[0.09em] text-foreground"
-              onClick={() => onProposeAmendment(section.sectionKey)}
-            >
-              {t('card.proposeAmendment')}
-            </Button>
-          ) : null
-        ) : showStatus ? (
+        {!featured && showStatus ? (
           <SpaceContextStatusChip status={section.status} />
         ) : null}
       </div>

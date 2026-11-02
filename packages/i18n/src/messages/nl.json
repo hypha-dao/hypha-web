@@ -5644,7 +5644,6 @@
       "proposalFallback": "Proposal",
       "viewProposal": "View proposal",
       "openDiscussion": "Discussie openen",
-      "proposeAmendment": "Wijziging voorstellen",
       "contributors": "{count, plural, one {# bijdrager} other {# bijdragers}}",
       "edited": "bewerkt {when}",
       "votingClosed": "stemming gesloten",

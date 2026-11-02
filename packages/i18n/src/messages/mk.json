@@ -5625,7 +5625,6 @@
       "proposalFallback": "Предлог",
       "viewProposal": "Види предлог",
       "openDiscussion": "Отвори дискусија",
-      "proposeAmendment": "Предложи измена",
       "contributors": "{count, plural, one {# соработник} other {# соработници}}",
       "edited": "изменето {when}",
       "votingClosed": "гласањето заврши",

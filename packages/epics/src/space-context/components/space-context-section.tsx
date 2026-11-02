@@ -336,15 +336,9 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
             spaceSlug={spaceSlug}
             featured
             selected={openSection === featured.sectionKey}
-            canMutate={canMutate}
             onOpen={showSection}
             onRead={setReadingKey}
             onShowDraft={setDraftKey}
-            onProposeAmendment={(key) =>
-              isProposableSection(featured)
-                ? proposeSections([key])
-                : showSection(key)
-            }
           />
         ) : null}
 
@@ -358,7 +352,6 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
                 section={section}
                 spaceSlug={spaceSlug}
                 selected={openSection === section.sectionKey}
-                canMutate={canMutate}
                 onOpen={showSection}
                 onRead={setReadingKey}
                 onShowDraft={setDraftKey}

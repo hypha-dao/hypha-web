@@ -5634,7 +5634,6 @@
       "proposalFallback": "Proposal",
       "viewProposal": "View proposal",
       "openDiscussion": "Ouvrir la discussion",
-      "proposeAmendment": "Proposer un amendement",
       "contributors": "{count, plural, one {# contributeur} other {# contributeurs}}",
       "edited": "modifiée {when}",
       "votingClosed": "vote clos",
