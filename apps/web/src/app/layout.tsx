@@ -3,6 +3,7 @@ import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import { extractRouterConfig } from 'uploadthing/server';
 import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
+import { headers } from 'next/headers';
 
 import { hyphaFontVariables } from '@web/lib/hypha-fonts';
 
@@ -103,6 +104,39 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // SPIKE #2616 S7: conditional shell by host (throwaway).
+  const wlHost = ((await headers()).get('host') ?? '').split(':')[0] ?? '';
+  if (
+    /^(liz\.localhost|hypha-[a-z0-9]+-hypha-dao\.vercel\.app)$/.test(wlHost)
+  ) {
+    const wlLocale = await getLocale().catch(() => 'en');
+    const wlMessages = (await getMessages().catch(
+      () => defaultMessages,
+    )) as Record<string, unknown>;
+    return (
+      <Html lang={wlLocale} className={hyphaFontVariables}>
+        <SwrProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem={false}
+            storageKey="theme"
+            disableTransitionOnChange
+          >
+            <LocalizedIntlProvider locale={wlLocale} messages={wlMessages}>
+              <TooltipProvider>
+                <AuthProvider
+                  config={{ appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID! }}
+                >
+                  <GlobalCallDockProvider>{children}</GlobalCallDockProvider>
+                </AuthProvider>
+              </TooltipProvider>
+            </LocalizedIntlProvider>
+          </ThemeProvider>
+        </SwrProvider>
+      </Html>
+    );
+  }
   const shouldInjectToolbar = process.env.NODE_ENV === 'development';
   const notificationAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
   const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID ?? '';

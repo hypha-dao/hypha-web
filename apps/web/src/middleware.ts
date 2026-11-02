@@ -138,7 +138,73 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   return response;
 }
 
-export function middleware(request: NextRequest) {
+// SPIKE #2616 (V2): host -> Space map, hardcoded. Throwaway.
+const WL_HOSTS: Record<string, string> = {
+  'liz.localhost': 'cordoba-ecovillage',
+  'hypha-test.gerroza.com': 'ponta-do-sol-energy-community',
+};
+// Per-deployment Vercel URLs (spike option C: second origin without a custom domain).
+const WL_VERCEL_DEPLOY_HOST = /^hypha-[a-z0-9]+-hypha-dao\.vercel\.app$/;
+const WL_FRAME_ANCESTORS =
+  'frame-ancestors https://pr-2617.preview-app.hypha.earth http://localhost:8080;';
+const WL_SECTIONS = /^\/(overview|energy|agreements|members|treasury)(\/.*)?$/;
+
+function whiteLabelRewrite(request: NextRequest): NextResponse | null {
+  const hostname = (request.headers.get('host') ?? '').split(':')[0] ?? '';
+  const slug =
+    WL_HOSTS[hostname] ??
+    (WL_VERCEL_DEPLOY_HOST.test(hostname)
+      ? 'ponta-do-sol-energy-community'
+      : undefined);
+  if (!slug) return null;
+  const { pathname, search } = request.nextUrl;
+  const to = (path: string) => {
+    const url = request.nextUrl.clone();
+    url.pathname = path;
+    url.search = search;
+    const res = NextResponse.rewrite(url);
+    // SPIKE #2616 S5: allow framing by the test parent origins only (hardcoded).
+    res.headers.set('Content-Security-Policy', WL_FRAME_ANCESTORS);
+    return res;
+  };
+  if (pathname === '/') return to(`/en/wl/${slug}/overview`);
+  if (WL_SECTIONS.test(pathname)) return to(`/en/wl/${slug}${pathname}`);
+  const m = pathname.match(/^\/([a-z]{2})\/(wl|dho)\/([^/]+)(\/.*)?$/);
+  if (m && m[3] === slug) return to(`/${m[1]}/wl/${slug}${m[4] ?? ''}`);
+  // anything else on this host: not the mapped Space -> 404 (Q1.4)
+  return to('/en/wl/__blocked/overview');
+}
+
+// SPIKE #2616 S2 probe: edge-compatible lookup via internal API fetch (timed).
+async function s2Probe(request: NextRequest): Promise<NextResponse | null> {
+  if (!request.nextUrl.pathname.startsWith('/__s2')) return null;
+  const t0 = Date.now();
+  try {
+    const res = await fetch(
+      `${request.nextUrl.origin}/api/v1/spaces/cordoba-ecovillage`,
+      { cache: 'no-store' },
+    );
+    const body = (await res.json()) as { slug?: string } | null;
+    return NextResponse.json({
+      ok: true,
+      status: res.status,
+      ms: Date.now() - t0,
+      slug: body?.slug,
+    });
+  } catch (e) {
+    return NextResponse.json({
+      ok: false,
+      ms: Date.now() - t0,
+      error: String((e as Error)?.message ?? e).slice(0, 300),
+    });
+  }
+}
+
+export async function middleware(request: NextRequest) {
+  const probe = await s2Probe(request);
+  if (probe) return probe;
+  const wl = whiteLabelRewrite(request);
+  if (wl) return wl;
   const response = i18nMiddleware(request);
 
   if (response.status === 301 || response.status === 302) {
@@ -152,6 +218,6 @@ export const config = {
   matcher: [
     // `_matrix` — inbound Matrix Application Service transaction pushes (#2483).
     // Rewritten in next.config to /api/matrix/appservice; must skip i18n + CSP here.
-    '/((?!api|_matrix|signin|placeholder|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_matrix|signin|placeholder|spike-parent|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
   ],
 };
