@@ -28,7 +28,7 @@ import { matrixUserIdToCanonicalPrivySub } from '../../common/human-chat-panel/m
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { useSignalRoomActivity } from '../hooks/use-signal-room-activity';
-import { useIsSignalSpaceNonMember } from '../hooks/use-is-signal-space-non-member';
+import { useSignalSpaceMembership } from '../hooks/use-is-signal-space-non-member';
 import {
   signalVotingSpaceId,
   useSignalVotingMode,
@@ -265,7 +265,7 @@ export function SignalPage({
     status: votingModeStatus,
     retry: retryVotingMode,
   } = useSignalVotingMode(signalVotingSpaceId(space));
-  const isNonMember = useIsSignalSpaceNonMember(space);
+  const { isNonMember, isMembershipPending } = useSignalSpaceMembership(space);
   const {
     coherences,
     isLoading: isSignalsLoading,
@@ -503,6 +503,7 @@ export function SignalPage({
                 votingModeStatus={votingModeStatus}
                 onRetryVotingMode={retryVotingMode}
                 isNonMember={isNonMember}
+                isMembershipPending={isMembershipPending}
                 refresh={refresh}
                 archived={Boolean(signal.archived)}
                 variant="page"

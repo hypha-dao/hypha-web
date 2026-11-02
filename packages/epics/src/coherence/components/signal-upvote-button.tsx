@@ -70,6 +70,8 @@ type SignalUpvoteButtonProps = {
   onRetryVotingMode?: () => void;
   /** Signed in, but not a member or delegate of the signal's space. */
   isNonMember?: boolean;
+  /** Membership is still resolving; voting waits rather than risk a rejection. */
+  isMembershipPending?: boolean;
   refresh?: () => Promise<unknown>;
   disabled?: boolean;
   archived?: boolean;
@@ -89,6 +91,7 @@ export function SignalUpvoteButton({
   votingModeStatus = 'loading',
   onRetryVotingMode,
   isNonMember = false,
+  isMembershipPending = false,
   refresh,
   disabled = false,
   archived = false,
@@ -113,6 +116,11 @@ export function SignalUpvoteButton({
     setLocalSummary(null);
   }, [upvotes]);
 
+  // A server rejection only holds for the membership it was judged against.
+  React.useEffect(() => {
+    setRejectedAsNonMember(false);
+  }, [isNonMember, isMembershipPending, jwt, slug]);
+
   const summary = localSummary ?? upvotes ?? EMPTY_SUMMARY;
   const hasVoted = summary.myUpvote != null;
   const isMutating = isUpvoting || isRemovingUpvote;
@@ -131,6 +139,7 @@ export function SignalUpvoteButton({
     !disabled &&
     !archived &&
     !isBlockedNonMember &&
+    !isMembershipPending &&
     isVotingModeResolved;
   const isOneMemberOneVote = votingMode === 'one-member-one-vote';
   const [percent, setPercent] = React.useState(() => myUpvotePercent(summary));
@@ -382,6 +391,8 @@ export function SignalUpvoteButton({
                     ? t('upvoteArchived')
                     : isBlockedNonMember
                     ? t('upvoteMembersOnly')
+                    : jwt && isMembershipPending
+                    ? t('upvoteCheckingMembership')
                     : t('signInToUpvote')}
                 </p>
               ) : null}

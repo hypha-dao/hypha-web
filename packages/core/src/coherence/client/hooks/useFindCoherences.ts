@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useAuthentication } from '@hypha-platform/authentication';
-import useSWR, { mutate } from 'swr';
+import useSWR, { mutate, unstable_serialize, useSWRConfig } from 'swr';
 import type { PaginatedResponse } from '@hypha-platform/core/client';
 import { CoherenceType } from '../../coherence-types';
 import { CoherenceTag } from '../../coherence-tags';
@@ -280,6 +280,7 @@ export const useFindCoherences = ({
   orderBy,
 }: CoherenceQuery) => {
   const { getAccessToken } = useAuthentication();
+  const { cache } = useSWRConfig();
   const slug = spaceSlug?.trim() || null;
 
   const swrKey = slug
@@ -337,9 +338,16 @@ export const useFindCoherences = ({
     [slug, coherences],
   );
 
+  // keepPreviousData serves the last query's list while a new key loads or fails.
+  const isPreviousData =
+    coherences !== undefined &&
+    (swrKey == null ||
+      cache.get(unstable_serialize(swrKey))?.data === undefined);
+
   return {
     coherences: mergedCoherences,
     isLoading,
+    isPreviousData,
     error,
     refresh,
   };

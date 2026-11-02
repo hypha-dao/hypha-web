@@ -5479,6 +5479,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         uploadedCount: 0,
       });
     }
+    let mentionNotice: string | null = null;
     try {
       if (editTargetEventId) {
         if (savedEditDraft?.editMediaMode) {
@@ -5555,20 +5556,23 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             let unnotified: string[];
             try {
               const failed = new Set(
-                await matrixRef.current.ensureRoomMembers(roomId, notJoined),
+                await matrixRef.current.ensureRoomMembers(roomId, notJoined, {
+                  signal,
+                }),
               );
               unnotified = notJoined.filter((id) => failed.has(id));
-            } catch {
+            } catch (joinError) {
+              if (joinError instanceof SendMessageCancelledError) {
+                throw joinError;
+              }
               unnotified = notJoined;
             }
             if (unnotified.length > 0) {
-              setMentionDeliveryNotice(
-                t('signalMentionNotNotified', {
-                  names: unnotified
-                    .map((id) => resolveMentionMemberLabel(id))
-                    .join(', '),
-                }),
-              );
+              mentionNotice = t('signalMentionNotNotified', {
+                names: unnotified
+                  .map((id) => resolveMentionMemberLabel(id))
+                  .join(', '),
+              });
             }
           }
         }
@@ -5603,6 +5607,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               }
             : {}),
         });
+        // Only a delivered message from the still-current send may surface it.
+        if (mentionNotice && sendOperationTokenRef.current === sendToken) {
+          setMentionDeliveryNotice(mentionNotice);
+        }
         // Mention notifications are server-fired (#2470) from the #2483 AS receiver watching
         // this same Matrix message — no client trigger needed here anymore.
         await inviteMatrixAgentIfNeeded(

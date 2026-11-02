@@ -21,7 +21,7 @@ import { Button, ErrorAlert, Skeleton } from '@hypha-platform/ui';
 import { CoherenceOrder } from '../types';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { getSignalPath } from '../../common/get-path-function';
-import { isSignalSpaceNonMember } from '../hooks/use-is-signal-space-non-member';
+import { signalSpaceMembership } from '../hooks/use-is-signal-space-non-member';
 import { useSignalProvisioningNotice } from '../hooks/use-signal-provisioning-notice';
 import { useSignalRoomActivity } from '../hooks/use-signal-room-activity';
 import {
@@ -63,7 +63,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
     spaceSlug,
     spaceId: space?.web3SpaceId ?? undefined,
   });
-  const isNonMember = isSignalSpaceNonMember({
+  const { isNonMember, isMembershipPending } = signalSpaceMembership({
     space,
     isLoading: isMembershipLoading,
     userState,
@@ -131,6 +131,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   const {
     coherences: signals,
     isLoading: isSignalsLoading,
+    isPreviousData: isPreviousSignals,
     error: signalsError,
     refresh,
   } = useFindCoherences({
@@ -157,15 +158,18 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   );
   const activity = useSignalRoomActivity(ranked);
   const hasSignals = Boolean(signals?.length);
+  const hasCurrentQuerySignals = hasSignals && !isPreviousSignals;
   const isLoading = isSpaceLoading || (isSignalsLoading && !hasSignals);
-  const loadFailed = signalsError != null && !hasSignals && !isSignalsLoading;
+  // Same-query refresh errors keep the list; a failed new query must not hide behind the old one.
+  const loadFailed =
+    signalsError != null && !hasCurrentQuerySignals && !isSignalsLoading;
 
   return (
     <div className="flex flex-col gap-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="craft-page-title text-6 font-medium">
           {t('signals')}
-          {typeof signals?.length === 'number' ? (
+          {typeof signals?.length === 'number' && !loadFailed ? (
             <span className="ml-2 text-4 font-normal text-muted-foreground">
               | {format.number(signals.length)}
             </span>
@@ -242,6 +246,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
                 votingModeStatus={votingModeStatus}
                 onRetryVotingMode={retryVotingMode}
                 isNonMember={isNonMember}
+                isMembershipPending={isMembershipPending}
                 activity={signal.roomId ? activity[signal.roomId] : undefined}
                 refresh={refresh}
               />

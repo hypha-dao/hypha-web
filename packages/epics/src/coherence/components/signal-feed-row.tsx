@@ -50,6 +50,7 @@ type SignalFeedRowProps = {
   votingModeStatus?: SignalVotingModeStatus;
   onRetryVotingMode?: () => void;
   isNonMember?: boolean;
+  isMembershipPending?: boolean;
   activity?: SignalRoomActivity;
   refresh?: () => Promise<unknown>;
 };
@@ -61,6 +62,7 @@ export function SignalFeedRow({
   votingModeStatus,
   onRetryVotingMode,
   isNonMember,
+  isMembershipPending,
   activity,
   refresh,
 }: SignalFeedRowProps) {
@@ -103,6 +105,7 @@ export function SignalFeedRow({
         votingModeStatus={votingModeStatus}
         onRetryVotingMode={onRetryVotingMode}
         isNonMember={isNonMember}
+        isMembershipPending={isMembershipPending}
         refresh={refresh}
         archived={Boolean(signal.archived)}
         className="relative z-10"

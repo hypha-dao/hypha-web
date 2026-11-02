@@ -585,12 +585,13 @@ interface MatrixContextType {
   /**
    * Join these people into an existing group room. Invite-only rooms stay
    * invisible until the bot puppet-accepts each member. Resolves to the IDs
-   * that could not be joined.
+   * that could not be joined. An aborted `signal` stops before the next join
+   * with `SendMessageCancelledError`.
    */
   ensureRoomMembers: (
     roomId: string,
     matrixUserIds: readonly string[],
-    options?: { pruneAbsent?: boolean },
+    options?: { pruneAbsent?: boolean; signal?: AbortSignal },
   ) => Promise<string[]>;
   /** Join the single network-wide room, creating it on first use. */
   ensureNetworkRoom: () => Promise<{ roomId: string }>;
@@ -1229,7 +1230,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     async (
       roomId: string,
       matrixUserIds: readonly string[],
-      options?: { pruneAbsent?: boolean },
+      options?: { pruneAbsent?: boolean; signal?: AbortSignal },
     ): Promise<string[]> => {
       if (!client) return [...matrixUserIds];
       const trimmedRoomId = roomId.trim();
@@ -1281,6 +1282,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       }
       const failed: string[] = [];
       for (const matrixUserId of ids) {
+        throwIfAborted(options?.signal);
         try {
           const { joined } = await ensureMemberJoinedRoomAction({
             roomId: trimmedRoomId,
