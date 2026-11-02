@@ -6,8 +6,8 @@ import { Plus } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import {
+  DEFAULT_SIGNAL_SORT,
   DEFAULT_SIGNAL_TIME_FRAME,
-  defaultSignalSort,
   parseSignalSort,
   parseSignalTimeFrame,
   rankSignals,
@@ -75,10 +75,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   } = useSignalVotingMode(signalVotingSpaceId(space));
   const provisioningNoticeLines = useSignalProvisioningNotice();
 
-  const sort = parseSignalSort(
-    searchParams.get(SIGNAL_SORT_QUERY_KEY),
-    votingMode,
-  );
+  const sort = parseSignalSort(searchParams.get(SIGNAL_SORT_QUERY_KEY));
   const timeFrame = parseSignalTimeFrame(
     searchParams.get(SIGNAL_TIME_FRAME_QUERY_KEY) ??
       searchParams.get(LEGACY_TOP_WINDOW_QUERY_KEY),
@@ -110,8 +107,8 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   );
   const handleSortChange = React.useCallback(
     (next: SignalSort) =>
-      replaceQuery(SIGNAL_SORT_QUERY_KEY, next, defaultSignalSort(votingMode)),
-    [replaceQuery, votingMode],
+      replaceQuery(SIGNAL_SORT_QUERY_KEY, next, DEFAULT_SIGNAL_SORT),
+    [replaceQuery],
   );
   const handleTimeFrameChange = React.useCallback(
     (next: SignalTimeFrame) =>
@@ -182,7 +179,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
               scroll={false}
             >
               <Plus className="craft-icon" aria-hidden />
-              {t('newSignal')}
+              {t('createQuest')}
             </Link>
           </Button>
         ) : null}
@@ -193,7 +190,6 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
       <SignalFeedFilters
         sort={sort}
         timeFrame={timeFrame}
-        votingMode={votingMode}
         onSortChange={handleSortChange}
         onTimeFrameChange={handleTimeFrameChange}
         showArchived={showArchived}

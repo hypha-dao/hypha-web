@@ -3,7 +3,6 @@ import type {
   CoherenceUpvoteSummary,
   SignalRecentWindow,
 } from './types';
-import type { SignalVotingMode } from './signal-voting';
 
 /** Feed sort: newest first, or top by voter count / by voting power. */
 export const SIGNAL_SORTS = ['new', 'top-voters', 'top-power'] as const;
@@ -41,40 +40,12 @@ export const SIGNAL_RECENT_WINDOW_MS: Record<SignalRecentWindow, number> = {
 
 export const DEFAULT_SIGNAL_TIME_FRAME: SignalTimeFrame = 'week';
 
-/**
- * Top by voting power in token spaces, top by voters when each member has one
- * vote. While the voting method loads, power ranking is used: in one member,
- * one vote spaces every upvote carries a power of 1, so both orders match.
- */
-export function defaultSignalSort(
-  votingMode: SignalVotingMode | null,
-): SignalSort {
-  return votingMode === 'one-member-one-vote' ? 'top-voters' : 'top-power';
-}
+export const DEFAULT_SIGNAL_SORT: SignalSort = 'top-voters';
 
-/**
- * Top by voting power is dropped once the space is known to give each member
- * one vote. While the voting method is unresolved it stays, since it is the
- * default sort then and the menu must show it as selected.
- */
-export function availableSignalSorts(
-  votingMode: SignalVotingMode | null,
-): SignalSort[] {
-  return votingMode === 'one-member-one-vote'
-    ? ['new', 'top-voters']
-    : ['new', 'top-voters', 'top-power'];
-}
-
-export function parseSignalSort(
-  raw: string | null | undefined,
-  votingMode: SignalVotingMode | null,
-): SignalSort {
-  if (raw === 'new') return 'new';
-  if (raw === 'top-voters') return 'top-voters';
-  if (raw === 'top-power') {
-    return votingMode === 'one-member-one-vote' ? 'top-voters' : 'top-power';
-  }
-  return defaultSignalSort(votingMode);
+export function parseSignalSort(raw: string | null | undefined): SignalSort {
+  return (SIGNAL_SORTS as readonly string[]).includes(raw ?? '')
+    ? (raw as SignalSort)
+    : DEFAULT_SIGNAL_SORT;
 }
 
 const LEGACY_TIME_FRAMES: Record<string, SignalTimeFrame> = {

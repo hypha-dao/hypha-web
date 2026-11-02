@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  availableSignalSorts,
-  defaultSignalSort,
+  DEFAULT_SIGNAL_SORT,
+  SIGNAL_SORTS,
   parseSignalSort,
   parseSignalTimeFrame,
   rankSignals,
@@ -74,35 +74,20 @@ const week = {
 const none = { id: 'none', createdAt: new Date('2026-11-01') };
 
 describe('signal sort defaults', () => {
-  it('defaults to top by voting power unless each member has one vote', () => {
-    expect(defaultSignalSort('token')).toBe('top-power');
-    expect(defaultSignalSort(null)).toBe('top-power');
-    expect(defaultSignalSort('one-member-one-vote')).toBe('top-voters');
+  it('offers new, top by voters and top by voting power', () => {
+    expect(SIGNAL_SORTS).toEqual(['new', 'top-voters', 'top-power']);
   });
 
-  it('drops top by voting power only in one member, one vote spaces', () => {
-    expect(availableSignalSorts('token')).toEqual([
-      'new',
-      'top-voters',
-      'top-power',
-    ]);
-    expect(availableSignalSorts('one-member-one-vote')).toEqual([
-      'new',
-      'top-voters',
-    ]);
+  it('defaults to top by voters', () => {
+    expect(DEFAULT_SIGNAL_SORT).toBe('top-voters');
+    expect(parseSignalSort(null)).toBe('top-voters');
+    expect(parseSignalSort('bogus')).toBe('top-voters');
   });
 
-  it('keeps the default sort selectable while the voting method loads', () => {
-    expect(availableSignalSorts(null)).toContain(defaultSignalSort(null));
-    expect(availableSignalSorts(null)).toContain(parseSignalSort(null, null));
-  });
-
-  it('parses sorts against the voting method', () => {
-    expect(parseSignalSort('new', 'token')).toBe('new');
-    expect(parseSignalSort('top-power', 'one-member-one-vote')).toBe(
-      'top-voters',
-    );
-    expect(parseSignalSort('bogus', 'token')).toBe('top-power');
+  it('keeps every explicit sort', () => {
+    expect(parseSignalSort('new')).toBe('new');
+    expect(parseSignalSort('top-voters')).toBe('top-voters');
+    expect(parseSignalSort('top-power')).toBe('top-power');
   });
 
   it('defaults the time frame to this week and maps legacy windows', () => {

@@ -4,11 +4,10 @@ import React from 'react';
 import { useTranslations } from 'next-intl';
 import { Archive, ChevronDown } from 'lucide-react';
 import {
+  SIGNAL_SORTS,
   SIGNAL_TIME_FRAMES,
-  availableSignalSorts,
   type SignalSort,
   type SignalTimeFrame,
-  type SignalVotingMode,
 } from '@hypha-platform/core/client';
 import {
   DropdownMenu,
@@ -23,9 +22,7 @@ import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent
 
 type CoherenceTabKey =
   | 'signalSortNew'
-  | 'signalSortTop'
   | 'signalSortTopVoters'
-  | 'signalSortTopVotersShort'
   | 'signalSortTopPower'
   | 'signalTimeFrameNow'
   | 'signalTimeFrameToday'
@@ -43,19 +40,11 @@ const TIME_FRAME_LABEL_KEY: Record<SignalTimeFrame, CoherenceTabKey> = {
   all: 'signalTimeFrameAll',
 };
 
-function sortLabelKeys(
-  sort: SignalSort,
-  votingMode: SignalVotingMode | null,
-): { menu: CoherenceTabKey; pill: CoherenceTabKey } {
-  if (sort === 'new') return { menu: 'signalSortNew', pill: 'signalSortNew' };
-  // With one vote per member, voters is the only Top, so it reads as plain Top.
-  if (sort === 'top-voters' && votingMode === 'one-member-one-vote') {
-    return { menu: 'signalSortTop', pill: 'signalSortTop' };
-  }
-  return sort === 'top-voters'
-    ? { menu: 'signalSortTopVoters', pill: 'signalSortTopVotersShort' }
-    : { menu: 'signalSortTopPower', pill: 'signalSortTop' };
-}
+const SORT_LABEL_KEY: Record<SignalSort, CoherenceTabKey> = {
+  new: 'signalSortNew',
+  'top-voters': 'signalSortTopVoters',
+  'top-power': 'signalSortTopPower',
+};
 
 const PILL_CLASS =
   'inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-1 font-medium text-muted-foreground transition-colors duration-150 ease-out hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-foreground/10 data-[state=open]:text-foreground';
@@ -124,7 +113,6 @@ function FilterPill<T extends string>({
 export type SignalFeedFiltersProps = {
   sort: SignalSort;
   timeFrame: SignalTimeFrame;
-  votingMode: SignalVotingMode | null;
   onSortChange: (sort: SignalSort) => void;
   onTimeFrameChange: (timeFrame: SignalTimeFrame) => void;
   showArchived?: boolean;
@@ -139,7 +127,6 @@ export type SignalFeedFiltersProps = {
 export function SignalFeedFilters({
   sort,
   timeFrame,
-  votingMode,
   onSortChange,
   onTimeFrameChange,
   showArchived = false,
@@ -150,11 +137,11 @@ export function SignalFeedFilters({
 
   const sortOptions = React.useMemo(
     () =>
-      availableSignalSorts(votingMode).map((value) => ({
+      SIGNAL_SORTS.map((value) => ({
         value,
-        label: t(sortLabelKeys(value, votingMode).menu),
+        label: t(SORT_LABEL_KEY[value]),
       })),
-    [t, votingMode],
+    [t],
   );
   const timeFrameOptions = React.useMemo(
     () =>
@@ -168,7 +155,7 @@ export function SignalFeedFilters({
   return (
     <div className={cn('flex flex-wrap items-center gap-1', className)}>
       <FilterPill
-        label={t(sortLabelKeys(sort, votingMode).pill)}
+        label={t(SORT_LABEL_KEY[sort])}
         heading={t('signalSortBy')}
         value={sort}
         options={sortOptions}
