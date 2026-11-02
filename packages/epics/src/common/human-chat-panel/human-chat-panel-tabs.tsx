@@ -5,7 +5,7 @@ import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 
-export type ChatPanelTab = 'chat' | 'members';
+export type ChatPanelTab = 'chat' | 'members' | 'mentions';
 
 type HumanChatPanelTabsProps = {
   activeTab: ChatPanelTab;
@@ -15,6 +15,11 @@ type HumanChatPanelTabsProps = {
    * Falls back to the generic "Room" copy when omitted.
    */
   chatTabLabel?: string;
+  /** Tab next to the chat tab: room Members (default) or this room's @Mentions. */
+  secondaryTab?: 'members' | 'mentions';
+  /** Unread @mentions in this room, appended to the Mentions tab label when > 0. */
+  mentionCount?: number;
+  mentionCountIsCapped?: boolean;
   /** e.g. voice / video / search (space call controls); end of the tab row (right column). */
   tabRowEnd?: ReactNode;
 };
@@ -23,6 +28,9 @@ export function HumanChatPanelTabs({
   activeTab,
   onTabChange,
   chatTabLabel,
+  secondaryTab = 'members',
+  mentionCount = 0,
+  mentionCountIsCapped = false,
   tabRowEnd,
 }: HumanChatPanelTabsProps) {
   const t = useTranslations('HumanChatPanel');
@@ -48,9 +56,32 @@ export function HumanChatPanelTabs({
     }
   }, []);
 
-  const tabs: { key: ChatPanelTab; label: string }[] = [
+  const mentionCountLabel =
+    mentionCount <= 0
+      ? null
+      : mentionCountIsCapped || mentionCount >= 100
+      ? '99+'
+      : String(mentionCount);
+  const tabs: { key: ChatPanelTab; label: string; ariaLabel?: string }[] = [
     { key: 'chat', label: chatTabLabel?.trim() || t('tabChat') },
-    { key: 'members', label: t('tabMembers') },
+    secondaryTab === 'mentions'
+      ? {
+          key: 'mentions',
+          label: mentionCountLabel
+            ? `${t('tabMentions')} · ${mentionCountLabel}`
+            : t('tabMentions'),
+          ariaLabel: mentionCountLabel
+            ? mentionCountLabel === '99+'
+              ? t('tabWithUnreadMentionsCapped', {
+                  tabLabel: t('tabMentions'),
+                })
+              : t('tabMentionsWithMentionCount', {
+                  tabLabel: t('tabMentions'),
+                  count: mentionCount,
+                })
+            : undefined,
+        }
+      : { key: 'members', label: t('tabMembers') },
   ];
 
   const handleKeyDown = (e: React.KeyboardEvent, currentIndex: number) => {
@@ -106,6 +137,7 @@ export function HumanChatPanelTabs({
             type="button"
             role="tab"
             title={tab.label}
+            aria-label={tab.ariaLabel}
             aria-selected={activeTab === tab.key}
             aria-controls={`chat-tabpanel-${tab.key}`}
             tabIndex={activeTab === tab.key ? 0 : -1}

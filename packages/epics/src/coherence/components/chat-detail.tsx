@@ -10,7 +10,6 @@ import { ChatMessageInput } from './chat-message-input';
 import { ChatRoom } from './chat-room';
 import { ChatMembers } from './chat-members';
 import { ChatPins } from './chat-pins';
-import { SignalTurnIntoProposalButton } from './signal-turn-into-proposal-button';
 import { SignalIndicativeAmounts } from './signal-indicative-amounts';
 import { SignalCategoryTag } from './signal-category-tag';
 import {
@@ -173,15 +172,6 @@ export const ChatDetail = ({
             </div>
             <div className="flex shrink-0 flex-col items-end gap-2">
               <ButtonClose closeUrl={closeUrl} narrow />
-              {conversation?.slug ? (
-                <SignalTurnIntoProposalButton
-                  slug={conversation.slug}
-                  title={conversation.title}
-                  description={conversation.description}
-                  payouts={conversation.indicativePayouts}
-                  disabled={isLoading}
-                />
-              ) : null}
             </div>
           </div>
           <div className="flex flex-row w-full">

@@ -10,8 +10,6 @@ import {
   type MatrixEvent,
   type Room,
 } from 'matrix-js-sdk';
-import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
-import { Check, Plus } from 'lucide-react';
 import { useFormatter, useTimeZone, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
@@ -55,7 +53,6 @@ import {
   stripMatrixReplyFallback,
   RoomEvent,
   EventType,
-  MsgType,
   MatrixUploadTimeoutError,
   SendMessageCancelledError,
   SendMessagePartialFailureError,
@@ -70,7 +67,6 @@ import {
   type SignalTeamNotice,
   requestRemoteGroupCallLeave,
   calledSpecialistIds,
-  matrixUserIdsForPersonIds,
   applySignalCreatorToChatAuthor,
   isSignalDescriptionAnchorMessage,
   usePersonById,
@@ -115,6 +111,7 @@ import {
   HumanChatPanelErrorBoundary,
   HumanChatPanelTabs,
   HumanChatPanelMembers,
+  HumanChatPanelMentionTab,
   HumanChatPanelCallToolbar,
   HumanChatPanelCallBanner,
   HumanChatPanelCallJoinStrip,
@@ -126,10 +123,6 @@ import {
   type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
 } from './human-chat-panel';
-import {
-  type MentionPickCandidate,
-  useResolvedMentionCandidateLabel,
-} from './human-chat-panel/use-resolved-mention-candidate-label';
 import { HumanChatPanelTypingIndicator } from './human-chat-panel/human-chat-panel-typing-indicator';
 import { useChatRoomTyping } from './human-chat-panel/use-chat-room-typing';
 import type { ChatPanelTab } from './human-chat-panel';
@@ -236,11 +229,7 @@ import {
   matrixAgentSkills,
   withMatrixAgentMention,
 } from './human-chat-panel/matrix-agent-mention';
-import {
-  buildSpaceRosterMentionCandidates,
-  buildSpaceRosterSignalTeamMembers,
-  mentionCandidatesForSignalTeam,
-} from './human-chat-panel/build-space-roster-mention-candidates';
+import { buildSpaceRosterMentionCandidates } from './human-chat-panel/build-space-roster-mention-candidates';
 import {
   directConversationEmptyWelcomeKey,
   directConversationWelcomeName,
@@ -320,49 +309,6 @@ function resolveCallRecordingRoomTitle(
     return title;
   }
   return undefined;
-}
-
-function SignalTeamResolvedMemberLabel({
-  candidate,
-  fallbackLabel,
-  isOwner = false,
-  unknownMemberLabel,
-}: {
-  candidate: MentionPickCandidate;
-  fallbackLabel: string;
-  isOwner?: boolean;
-  unknownMemberLabel: string;
-}) {
-  const { resolvedLabel, busy } = useResolvedMentionCandidateLabel(candidate);
-  const syncFallback = looksLikeTechnicalMatrixDisplayName(
-    fallbackLabel,
-    candidate.userId,
-  )
-    ? ''
-    : fallbackLabel.trim();
-  const finalLabel = resolvedLabel?.trim() || syncFallback;
-  const showSkeleton =
-    busy ||
-    !finalLabel ||
-    looksLikeTechnicalMatrixDisplayName(finalLabel, candidate.userId);
-
-  if (showSkeleton) {
-    return (
-      <Skeleton
-        className="inline-block align-baseline"
-        loading
-        width={140}
-        height={16}
-      />
-    );
-  }
-
-  return (
-    <span className="truncate">
-      {finalLabel || unknownMemberLabel}
-      {isOwner ? ' 👑' : ''}
-    </span>
-  );
 }
 
 /** Sanitized labels shared by multiple members need a disambiguated composer token + map key. */
@@ -549,123 +495,6 @@ function createSignalTeamNoticeFormatter(
 type PersistedUIMessage = Omit<UIMessage, 'timestamp'> & {
   timestamp?: string;
 };
-
-type SignalTeamTimelineState = {
-  memberMatrixUserIds: string[];
-  pendingRequesterIds: string[];
-  ownerMatrixUserId: string | null;
-  /** True after a sender-trusted roster notice, even if members later left the space. */
-  hasTrustedRoster: boolean;
-};
-
-type SignalTeamEventContent = {
-  msgtype: RoomMessageEventContent['msgtype'];
-  body: RoomMessageEventContent['body'];
-  coherenceSlug: string | null;
-  memberMatrixUserIds?: string[];
-  ownerMatrixUserId?: string | null;
-  requesterMatrixUserId?: string;
-  status?: 'pending' | 'approved';
-  addedMemberMatrixUserIds?: string[];
-  removedMemberMatrixUserIds?: string[];
-  updatedAt: string;
-} & RoomMessageEventContent;
-
-function normalizeMatrixUserIds(ids: unknown): string[] {
-  if (!Array.isArray(ids)) return [];
-  return [...new Set(ids.map((id) => String(id).trim()).filter(Boolean))];
-}
-
-function roomPowerLevelForUser(
-  room: Room | undefined,
-  userId: string | null,
-): number {
-  if (!room || !userId) return 0;
-  const powerLevels = room.currentState.getStateEvents(
-    EventType.RoomPowerLevels,
-    '',
-  );
-  const content = (powerLevels?.getContent() ?? {}) as {
-    users?: Record<string, number>;
-    users_default?: number;
-  };
-  const perUser = content.users?.[userId];
-  if (typeof perUser === 'number') return perUser;
-  const fromMember = room.getMember(userId)?.powerLevel;
-  if (typeof fromMember === 'number') return fromMember;
-  return typeof content.users_default === 'number' ? content.users_default : 0;
-}
-
-function deriveSignalTeamStateFromEvents(
-  events: MatrixEvent[],
-  coherenceSlug?: string | null,
-  room?: Room,
-): SignalTeamTimelineState {
-  let memberMatrixUserIds: string[] = [];
-  const pending = new Set<string>();
-  let ownerMatrixUserId: string | null = null;
-  let hasTrustedRoster = false;
-  const targetSlug = coherenceSlug?.trim() || null;
-
-  for (const ev of events) {
-    const eventType = ev.getType();
-    if (eventType !== EventType.RoomMessage) continue;
-    const content = ev.getContent() as Record<string, unknown> | null;
-    if (!content || typeof content !== 'object') continue;
-    const eventSlug =
-      typeof content.coherenceSlug === 'string'
-        ? content.coherenceSlug.trim()
-        : '';
-    if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
-    const senderId = ev.getSender()?.trim() || null;
-    const isTrustedActor = isTrustedSignalTeamSender({
-      senderId,
-      establishedOwnerMatrixUserId: ownerMatrixUserId,
-      establishedMemberMatrixUserIds: memberMatrixUserIds,
-      powerLevel: roomPowerLevelForUser(room, senderId),
-    });
-
-    // Request marker starts with the roster marker — classify request first.
-    if (isSignalTeamRequestContent(content)) {
-      const requesterId =
-        typeof content.requesterMatrixUserId === 'string'
-          ? content.requesterMatrixUserId.trim()
-          : '';
-      if (!requesterId) continue;
-      const status =
-        typeof content.status === 'string' ? content.status.trim() : 'pending';
-      const requesterIsSender = senderId === requesterId;
-      if (!requesterIsSender && !isTrustedActor) continue;
-      if (status === 'pending') {
-        pending.add(requesterId);
-      } else {
-        pending.delete(requesterId);
-      }
-      continue;
-    }
-
-    if (!isSignalTeamRosterContent(content)) continue;
-    // Marker-only / local-echo events without an explicit member array are
-    // not a trusted-empty policy. A real empty roster sends `[]`.
-    if (!hasExplicitSignalTeamMemberList(content) || !isTrustedActor) continue;
-    hasTrustedRoster = true;
-    memberMatrixUserIds = normalizeMatrixUserIds(content.memberMatrixUserIds);
-    const nextOwnerId =
-      typeof content.ownerMatrixUserId === 'string'
-        ? content.ownerMatrixUserId.trim()
-        : '';
-    if (nextOwnerId) {
-      ownerMatrixUserId = nextOwnerId;
-    }
-  }
-
-  return {
-    memberMatrixUserIds,
-    pendingRequesterIds: [...pending],
-    ownerMatrixUserId,
-    hasTrustedRoster,
-  };
-}
 
 function readPersistedChatHistory(roomId: string): UIMessage[] {
   if (typeof window === 'undefined') return [];
@@ -1530,12 +1359,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     setGroupTitle(null);
   }, [coherenceRoomId]);
 
-  useEffect(() => {
-    if (mode !== 'coherence') {
-      setSignalTeamPanelOpen(false);
-    }
-  }, [mode]);
-
   const [isJoining, setIsJoining] = useState(false);
   /** Room id the `messages` array belongs to — hide timeline when it disagrees with `roomId`. */
   const [paintedRoomId, setPaintedRoomId] = useState<string | null>(null);
@@ -1621,27 +1444,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const handleTimelineAtBottomChange = useCallback((atBottom: boolean) => {
     timelineAtBottomRef.current = atBottom;
   }, []);
-  const [signalTeamMemberIds, setSignalTeamMemberIds] = useState<string[]>([]);
-  const [signalTeamOwnerId, setSignalTeamOwnerId] = useState<string | null>(
-    null,
-  );
-  const [signalTeamPendingRequesterIds, setSignalTeamPendingRequesterIds] =
-    useState<string[]>([]);
-  const [signalTeamPanelOpen, setSignalTeamPanelOpen] = useState(false);
-  const signalTeamPanelOpenRef = useRef(signalTeamPanelOpen);
-  signalTeamPanelOpenRef.current = signalTeamPanelOpen;
-  const documentSeedRef = useRef<SignalTeamDocumentSeed>({
-    key: '',
-    memberIds: [],
-    ownerId: null,
-  });
-  const [signalTeamDraftMemberIds, setSignalTeamDraftMemberIds] = useState<
-    string[] | null
-  >(null);
-  const [signalTeamBusy, setSignalTeamBusy] = useState(false);
-  const [signalTeamRosterResolved, setSignalTeamRosterResolved] =
-    useState(true);
-
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
   currentUserIdRef.current = currentUserId;
@@ -2911,35 +2713,21 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const isSignalThread = mode === 'coherence' && Boolean(coherenceSlug?.trim());
-  const hasSignalTeamPolicy =
-    isSignalThread &&
-    (signalTeamMemberIds.length > 0 || !signalTeamRosterResolved);
-  const signalTeamMemberIdSet = useMemo(
-    () => new Set(signalTeamMemberIds),
-    [signalTeamMemberIds],
-  );
-  const isCurrentUserSignalTeamMember = Boolean(
-    currentUserId && signalTeamMemberIdSet.has(currentUserId),
-  );
-  const canInteractWithSignalThread =
-    !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
+  useEffect(() => {
+    setActiveTab((tab) =>
+      tab === (isSignalThread ? 'members' : 'mentions') ? 'chat' : tab,
+    );
+  }, [isSignalThread]);
   const archivedGroup =
     isDirectConversation &&
     isArchivedGroupRoom(client?.getRoom(roomId ?? undefined));
   const chatComposerLocked =
-    isJoining ||
-    blockSpaceChatForMembership ||
-    !canInteractWithSignalThread ||
-    archivedGroup;
+    isJoining || blockSpaceChatForMembership || archivedGroup;
   const chatComposerLockedMessage = blockSpaceChatForMembership
     ? tCommon('joinSpaceToUse')
     : archivedGroup
     ? t('archivedGroupReadOnly')
-    : !canInteractWithSignalThread
-    ? t('signalTeamInteractionRestricted')
     : undefined;
-  const canJoinSignalThreadCall =
-    !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
 
   useEffect(() => {
     if (spaceCallState !== 'connected') return;
@@ -2984,12 +2772,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       actorDisplayName,
       spaceSlug: callSpaceSlug,
       contextLabel,
-      scope:
-        isSignalThread && hasSignalTeamPolicy ? 'signal_team' : 'space_members',
-      targetMatrixUserIds:
-        isSignalThread && hasSignalTeamPolicy
-          ? signalTeamMemberIds.filter((id) => id !== currentUserId)
-          : undefined,
+      scope: 'space_members',
       url: deepLink,
     }).catch((notifyErr) => {
       console.warn(
@@ -3003,9 +2786,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     callUiEnabled,
     coherenceSlug,
     coherenceTitle,
-    currentUserId,
-    hasSignalTeamPolicy,
-    isSignalThread,
     me?.name,
     me?.nickname,
     me?.slug,
@@ -3014,7 +2794,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     notifyCallStarted,
     pathname,
     roomId,
-    signalTeamMemberIds,
     space?.title,
     spaceCallState,
     callSpaceSlug,
@@ -3033,14 +2812,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [spaceCallState]);
 
   const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
-    const roster = isSignalThread
-      ? mentionCandidatesForSignalTeam({
-          roster: rawMentionCandidates,
-          teamMemberIds: signalTeamMemberIds,
-          currentUserId,
-          labelFor: resolveMemberLabel,
-        })
-      : rawMentionCandidates;
     const networkRoom = isNetworkSpaceChat || coherenceChannel === 'network';
     const agentIcon: ChatMentionAgentIcon =
       coherenceChannel === 'context'
@@ -3057,7 +2828,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     // One "AI Agents" row, as in Signals. A Context room still answers as its
     // section specialist; that name is the reply label, not a tag target.
     return withMatrixAgentMention(
-      roster,
+      rawMentionCandidates,
       t('agentMentionLabel'),
       contextSectionAgent?.skills ?? matrixAgentSkills(t),
       agentIcon,
@@ -3068,12 +2839,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     currentUserId,
     isDirectConversation,
     isNetworkSpaceChat,
-    isSignalThread,
-    mode,
     rawMentionCandidates,
-    resolveMemberLabel,
     resolvedTheme,
-    signalTeamMemberIds,
     space,
     spaceSlug,
     t,
@@ -3344,491 +3111,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
-  const mentionPickerEnabled =
-    canInteractWithSignalThread && mentionCandidates.length > 0;
-  const signalTeamRosterMembers = useMemo(
-    () =>
-      buildSpaceRosterSignalTeamMembers({
-        spaceMembers,
-        personIdToMatrixUserId,
-        unknownLabel: t('unknownMember'),
-      }),
-    [spaceMembers, personIdToMatrixUserId, t],
-  );
-  const signalTeamSelectableMembers = useMemo((): ChatMentionCandidate[] => {
-    const extraCandidates: ChatMentionCandidate[] = [];
-    if (currentUserId) {
-      const alreadyListed = spaceMembers.some(
-        (member) => personIdToMatrixUserId[member.id]?.trim() === currentUserId,
-      );
-      if (!alreadyListed) {
-        extraCandidates.push({
-          userId: currentUserId,
-          displayLabel:
-            [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
-            me?.nickname?.trim() ||
-            t('you'),
-          avatarUrl: me?.avatarUrl,
-        });
-      }
-    }
-
-    return buildSpaceRosterMentionCandidates({
-      spaceMembers,
-      personIdToMatrixUserId,
-      unknownLabel: t('unknownMember'),
-      extraCandidates,
-    });
-  }, [
-    spaceMembers,
-    personIdToMatrixUserId,
-    currentUserId,
-    me?.name,
-    me?.surname,
-    me?.nickname,
-    me?.avatarUrl,
-    t,
-  ]);
-  const effectiveSignalTeamMemberIds = useMemo(
-    () =>
-      isSignalThread
-        ? signalTeamMemberIds
-        : signalTeamSelectableMembers.map((member) => member.userId),
-    [isSignalThread, signalTeamMemberIds, signalTeamSelectableMembers],
-  );
-  const signalTeamEditorMemberIds = useMemo(
-    () =>
-      signalTeamDraftMemberIds != null
-        ? signalTeamDraftMemberIds
-        : effectiveSignalTeamMemberIds,
-    [signalTeamDraftMemberIds, effectiveSignalTeamMemberIds],
-  );
-  const canManageSignalTeam =
-    isSignalThread && (!hasSignalTeamPolicy || isCurrentUserSignalTeamMember);
-  const currentUserPendingSignalTeamRequest = Boolean(
-    currentUserId && signalTeamPendingRequesterIds.includes(currentUserId),
-  );
-
-  const publishSignalTeamMembers = useCallback(
-    async (
-      nextMemberIds: string[],
-      options?: {
-        addedMemberMatrixUserIds?: string[];
-        removedMemberMatrixUserIds?: string[];
-      },
-    ) => {
-      if (!client || !roomId || !isSignalThread) return;
-      try {
-        const ownerId =
-          signalTeamOwnerId?.trim() || currentUserId?.trim() || null;
-        const actorId = currentUserId?.trim() || null;
-        const deduped = normalizeMatrixUserIds([
-          ...nextMemberIds,
-          ...(ownerId ? [ownerId] : []),
-          ...(actorId ? [actorId] : []),
-        ]);
-        const added = normalizeMatrixUserIds(options?.addedMemberMatrixUserIds);
-        const removed = normalizeMatrixUserIds(
-          options?.removedMemberMatrixUserIds,
-        );
-        await client.sendEvent(roomId, EventType.RoomMessage, {
-          msgtype: MsgType.Notice,
-          body: SIGNAL_TEAM_EVENT_BODY_MARKER,
-          coherenceSlug: coherenceSlug?.trim() || null,
-          memberMatrixUserIds: deduped,
-          ownerMatrixUserId: ownerId,
-          addedMemberMatrixUserIds: added,
-          removedMemberMatrixUserIds: removed,
-          updatedAt: new Date().toISOString(),
-        } as SignalTeamEventContent);
-        setSignalTeamMemberIds(deduped);
-        if (ownerId && !signalTeamOwnerId) {
-          setSignalTeamOwnerId(ownerId);
-        }
-        setSignalTeamPendingRequesterIds((prev) =>
-          prev.filter((id) => !deduped.includes(id)),
-        );
-      } catch (error) {
-        console.error(
-          '[HumanRightPanel] publishSignalTeamMembers failed',
-          error,
-        );
-        setComposerError(t('sendFailed'));
-      }
-    },
-    [
-      client,
-      roomId,
-      isSignalThread,
-      coherenceSlug,
-      currentUserId,
-      signalTeamOwnerId,
-      t,
-    ],
-  );
-
-  const commitSignalTeamDraft = useCallback(async () => {
-    if (!signalTeamPanelOpen) return;
-    const draftIds = signalTeamDraftMemberIds;
-    setSignalTeamPanelOpen(false);
-    if (!draftIds) return;
-
-    const currentIds = normalizeMatrixUserIds(effectiveSignalTeamMemberIds);
-    const nextIds = normalizeMatrixUserIds(draftIds);
-    const addedMemberMatrixUserIds = nextIds.filter(
-      (id) => !currentIds.includes(id),
-    );
-    const removedMemberMatrixUserIds = currentIds.filter(
-      (id) => !nextIds.includes(id),
-    );
-    setSignalTeamDraftMemberIds(null);
-    if (
-      addedMemberMatrixUserIds.length === 0 &&
-      removedMemberMatrixUserIds.length === 0
-    ) {
-      return;
-    }
-    await publishSignalTeamMembers(nextIds, {
-      addedMemberMatrixUserIds,
-      removedMemberMatrixUserIds,
-    });
-  }, [
-    signalTeamPanelOpen,
-    signalTeamDraftMemberIds,
-    effectiveSignalTeamMemberIds,
-    publishSignalTeamMembers,
-  ]);
-
-  const requestSignalTeamAccess = useCallback(async () => {
-    if (!client || !roomId || !isSignalThread || !currentUserId) return;
-    setSignalTeamBusy(true);
-    try {
-      await client.sendEvent(roomId, EventType.RoomMessage, {
-        msgtype: MsgType.Notice,
-        body: SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER,
-        coherenceSlug: coherenceSlug?.trim() || null,
-        requesterMatrixUserId: currentUserId,
-        status: 'pending',
-        updatedAt: new Date().toISOString(),
-      } as SignalTeamEventContent);
-      setSignalTeamPendingRequesterIds((prev) =>
-        prev.includes(currentUserId) ? prev : [...prev, currentUserId],
-      );
-    } catch (error) {
-      console.error('[HumanRightPanel] requestSignalTeamAccess failed', error);
-      setComposerError(t('sendFailed'));
-    } finally {
-      setSignalTeamBusy(false);
-    }
-  }, [client, roomId, isSignalThread, currentUserId, coherenceSlug, t]);
-
-  const approveSignalTeamRequester = useCallback(
-    async (requesterMatrixUserId: string) => {
-      if (!client || !roomId || !isSignalThread) return;
-      const requesterId = requesterMatrixUserId.trim();
-      if (!requesterId) return;
-      setSignalTeamBusy(true);
-      try {
-        const ownerId =
-          signalTeamOwnerId?.trim() || currentUserId?.trim() || null;
-        const actorId = currentUserId?.trim() || null;
-        const nextMembers = normalizeMatrixUserIds([
-          ...effectiveSignalTeamMemberIds,
-          requesterId,
-          ...(ownerId ? [ownerId] : []),
-          ...(actorId ? [actorId] : []),
-        ]);
-        await Promise.all([
-          client.sendEvent(roomId, EventType.RoomMessage, {
-            msgtype: MsgType.Notice,
-            body: SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER,
-            coherenceSlug: coherenceSlug?.trim() || null,
-            requesterMatrixUserId: requesterId,
-            status: 'approved',
-            updatedAt: new Date().toISOString(),
-          } as SignalTeamEventContent),
-          client.sendEvent(roomId, EventType.RoomMessage, {
-            msgtype: MsgType.Notice,
-            body: SIGNAL_TEAM_EVENT_BODY_MARKER,
-            coherenceSlug: coherenceSlug?.trim() || null,
-            memberMatrixUserIds: nextMembers,
-            ownerMatrixUserId: ownerId,
-            updatedAt: new Date().toISOString(),
-          } as SignalTeamEventContent),
-        ]);
-        setSignalTeamMemberIds(nextMembers);
-        setSignalTeamPendingRequesterIds((prev) =>
-          prev.filter((id) => id !== requesterId),
-        );
-      } catch (error) {
-        console.error(
-          '[HumanRightPanel] approveSignalTeamRequester failed',
-          error,
-        );
-        setComposerError(t('sendFailed'));
-      } finally {
-        setSignalTeamBusy(false);
-      }
-    },
-    [
-      client,
-      roomId,
-      isSignalThread,
-      coherenceSlug,
-      effectiveSignalTeamMemberIds,
-      currentUserId,
-      signalTeamOwnerId,
-      t,
-    ],
-  );
-
-  useEffect(() => {
-    if (!client || !roomId || !isSignalThread) {
-      setSignalTeamMemberIds([]);
-      setSignalTeamOwnerId(null);
-      setSignalTeamPendingRequesterIds([]);
-      setSignalTeamDraftMemberIds(null);
-      setSignalTeamRosterResolved(true);
-      return;
-    }
-    const room = client.getRoom(roomId);
-    if (!room) {
-      setSignalTeamMemberIds([]);
-      setSignalTeamOwnerId(null);
-      setSignalTeamPendingRequesterIds([]);
-      setSignalTeamRosterResolved(false);
-      return;
-    }
-
-    let cancelled = false;
-    setSignalTeamRosterResolved(false);
-    const seedKey = signalTeamDocumentSeedKey(roomId, coherenceSlug);
-    documentSeedRef.current = retainSignalTeamDocumentSeed(
-      documentSeedRef.current,
-      seedKey,
-    );
-    const documentSeed = documentSeedRef.current;
-
-    const applyFromTimeline = (): {
-      usable: boolean;
-      keptValidatedRoster: boolean;
-      hasTrustedRoster: boolean;
-      hasTrustedMembers: boolean;
-    } => {
-      const timeline = room.getLiveTimeline().getEvents();
-      const next = deriveSignalTeamStateFromEvents(
-        timeline,
-        coherenceSlug,
-        room,
-      );
-      const usable = rosterIdsIntersectSpaceMap(
-        next.memberMatrixUserIds,
-        personIdToMatrixUserId,
-      );
-      const hasTrustedMembers =
-        next.hasTrustedRoster && next.memberMatrixUserIds.length > 0;
-      // Map lookup failed: keep sender-validated timeline MXIDs so
-      // currentUserId membership checks still apply. Do not clear.
-      const keepDespiteMapFailure =
-        Boolean(matrixUserIdsError) && hasTrustedMembers;
-      // Trusted notice whose members left the space: still keep those MXIDs
-      // so a non-member viewer cannot pass the membership check.
-      if (usable || keepDespiteMapFailure || hasTrustedMembers) {
-        setSignalTeamMemberIds(next.memberMatrixUserIds);
-        setSignalTeamOwnerId(next.ownerMatrixUserId);
-      } else if (next.hasTrustedRoster) {
-        // Explicit trusted-empty `memberMatrixUserIds: []` only. Marker-only
-        // or request notices must not clear a fresh create seed.
-        documentSeed.memberIds = [];
-        documentSeed.ownerId = null;
-        setSignalTeamMemberIds([]);
-        setSignalTeamOwnerId(null);
-        setSignalTeamRosterResolved(false);
-      } else if (documentSeed.memberIds.length > 0) {
-        setSignalTeamMemberIds(documentSeed.memberIds);
-        setSignalTeamOwnerId(documentSeed.ownerId);
-      } else {
-        setSignalTeamMemberIds([]);
-        setSignalTeamOwnerId(null);
-      }
-      setSignalTeamPendingRequesterIds(next.pendingRequesterIds);
-      if (!signalTeamPanelOpenRef.current) {
-        setSignalTeamDraftMemberIds(null);
-      }
-      return {
-        usable,
-        keptValidatedRoster: keepDespiteMapFailure,
-        hasTrustedRoster: next.hasTrustedRoster,
-        hasTrustedMembers,
-      };
-    };
-
-    const seedFromDocumentAssignees = async (): Promise<
-      'seeded' | 'empty' | 'failed' | 'kept-timeline' | 'kept-empty-trusted'
-    > => {
-      const slug = coherenceSlug?.trim();
-      if (!slug) return 'failed';
-      try {
-        const signal = await getCoherenceBySlug({ slug });
-        if (cancelled) return 'failed';
-        // A roster notice may have landed during the lookup — keep it.
-        const applied = applyFromTimeline();
-        if (
-          applied.usable ||
-          applied.keptValidatedRoster ||
-          applied.hasTrustedMembers
-        ) {
-          return 'kept-timeline';
-        }
-        // Trusted empty roster — do not seed the viewer or resolve open.
-        if (applied.hasTrustedRoster) {
-          return 'kept-empty-trusted';
-        }
-        const personIds = [
-          ...new Set(
-            [...(signal?.assigneeIds ?? []), signal?.creatorId, me?.id].filter(
-              (id): id is number => typeof id === 'number' && id > 0,
-            ),
-          ),
-        ];
-        const memberIds = matrixUserIdsForPersonIds(
-          personIds,
-          personIdToMatrixUserId,
-        );
-        const ownerId =
-          (typeof signal?.creatorId === 'number'
-            ? personIdToMatrixUserId[signal.creatorId]?.trim()
-            : '') ||
-          (typeof me?.id === 'number'
-            ? personIdToMatrixUserId[me.id]?.trim()
-            : '') ||
-          memberIds[0] ||
-          null;
-        if (memberIds.length === 0) return 'empty';
-        documentSeed.memberIds = memberIds;
-        documentSeed.ownerId = ownerId;
-        setSignalTeamMemberIds(memberIds);
-        setSignalTeamOwnerId(ownerId);
-        return 'seeded';
-      } catch (error) {
-        console.warn(
-          '[HumanRightPanel] Failed to seed signal team from assignees:',
-          error,
-        );
-        return 'failed';
-      }
-    };
-
-    const hydrateRosterHistory = async () => {
-      let applied = applyFromTimeline();
-      if (isLoadingMatrixUserIds) {
-        return;
-      }
-      let historyExhausted = false;
-      if (
-        !applied.usable &&
-        !applied.keptValidatedRoster &&
-        !applied.hasTrustedRoster
-      ) {
-        const maxRosterHistoryBatches = 50;
-        for (
-          let i = 0;
-          i < maxRosterHistoryBatches &&
-          !cancelled &&
-          !applied.usable &&
-          !applied.keptValidatedRoster &&
-          !applied.hasTrustedRoster;
-          i += 1
-        ) {
-          try {
-            const result = await matrixRef.current.loadRoomHistory(roomId, {
-              pageSize: 30,
-              maxBatches: 1,
-              force: i > 0,
-            });
-            if (cancelled) return;
-            applied = applyFromTimeline();
-            if (!result.hasMoreOlder) {
-              historyExhausted = true;
-              break;
-            }
-          } catch (error) {
-            if (!cancelled) {
-              console.warn(
-                '[HumanRightPanel] Signal team roster history load failed:',
-                error,
-              );
-            }
-            break;
-          }
-        }
-      }
-      if (cancelled) return;
-      if (
-        applied.usable ||
-        applied.keptValidatedRoster ||
-        applied.hasTrustedMembers
-      ) {
-        setSignalTeamRosterResolved(true);
-        return;
-      }
-      // Trusted empty roster — do not seed the viewer; stay unresolved.
-      if (applied.hasTrustedRoster) {
-        return;
-      }
-      // Incomplete scrollback (soft-fail, cap, or catch) — do not seed the
-      // viewer as a member. Stay unresolved so hydrate can retry.
-      if (!historyExhausted) {
-        return;
-      }
-      const seedResult = await seedFromDocumentAssignees();
-      if (cancelled) return;
-      // Lookup threw or a trusted empty roster arrived during lookup —
-      // stay unresolved (fail closed).
-      if (seedResult === 'failed' || seedResult === 'kept-empty-trusted') {
-        return;
-      }
-      // Map lookup failed with no mapped assignees — stay unresolved.
-      if (seedResult === 'empty' && matrixUserIdsError) {
-        return;
-      }
-      if (!cancelled) {
-        setSignalTeamRosterResolved(true);
-      }
-    };
-
-    void hydrateRosterHistory();
-
-    const onTimeline = (event: MatrixEvent, eventRoom?: Room) => {
-      if (eventRoom?.roomId !== roomId) return;
-      if (event.getType() !== EventType.RoomMessage) return;
-      const content = event.getContent() as Record<string, unknown> | null;
-      if (
-        !isSignalTeamRosterContent(content) &&
-        !isSignalTeamRequestContent(content)
-      ) {
-        return;
-      }
-      applyFromTimeline();
-    };
-
-    room.on(RoomEvent.Timeline, onTimeline);
-    return () => {
-      cancelled = true;
-      room.off(RoomEvent.Timeline, onTimeline);
-    };
-  }, [
-    client,
-    roomId,
-    isSignalThread,
-    coherenceSlug,
-    isJoining,
-    personIdToMatrixUserId,
-    isLoadingMatrixUserIds,
-    matrixUserIdsError,
-    me?.id,
-  ]);
-
+  const mentionPickerEnabled = mentionCandidates.length > 0;
   useEffect(() => {
     if (!isDirectConversation || !client || !roomId) return;
     const room = client.getRoom(roomId);
@@ -5082,6 +4365,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     [pathname, searchParams],
   );
 
+  const handleSelectMentionInRoom = useCallback((eventId: string) => {
+    setActiveTab('chat');
+    setScrollToEventId(null);
+    requestAnimationFrame(() => setScrollToEventId(eventId));
+  }, []);
+
   const handleConsumedScrollTarget = useCallback(() => {
     setScrollToEventId(null);
   }, []);
@@ -6253,10 +5542,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       setComposerError(tCommon('joinSpaceToUse'));
       return;
     }
-    if (!canInteractWithSignalThread) {
-      setComposerError(t('signalTeamInteractionRestricted'));
-      return;
-    }
     const trimmed = input.trim();
     if (!trimmed && draftAttachments.length === 0) return;
     setComposerTyping(false);
@@ -6353,6 +5638,18 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           }),
         );
       } else {
+        if (isSignalThread && mentionUserIds.length > 0) {
+          // Signal discussions are open to the whole space: pull mentioned members
+          // into the thread before sending so the server-fired mention notification
+          // (which only targets joined members) and their Messages inbox see it.
+          const threadRoom = matrixRef.current.client?.getRoom(roomId);
+          const notJoined = mentionUserIds.filter(
+            (id) => threadRoom?.getMember(id)?.membership !== 'join',
+          );
+          if (notJoined.length > 0) {
+            await matrixRef.current.ensureRoomMembers(roomId, notJoined);
+          }
+        }
         await matrixRef.current.sendMessage({
           roomId,
           message: wirePlain,
@@ -6509,7 +5806,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     input,
     roomId,
-    canInteractWithSignalThread,
     replyDraft,
     editDraft,
     draftAttachments,
@@ -6517,6 +5813,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     blockSpaceChatForMembership,
     isDirectConversation,
     isNetworkSpaceChat,
+    isSignalThread,
     coherenceChannel,
     contextSectionKey,
     spaceSlug,
@@ -6539,8 +5836,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     roomId ? client?.getRoom(roomId)?.getType() : null,
   );
 
+  /** Signal discussions are text threads (Chat | Mentions) — no call toolbar. */
+  const showSidebarCallToolbar = showSidebarCallChrome && !isSignalThread;
+
   /** Right-panel chat tab only — personalized by channel kind. */
   const chatTabLabel = useMemo(() => {
+    if (isSignalThread) return t('tabSignalChat');
     if (isNetworkSpaceChat || coherenceChannel === 'network') {
       return t('tabChatNetwork');
     }
@@ -6581,6 +5882,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     groupChatFaces,
     isDirectConversation,
     isNetworkSpaceChat,
+    isSignalThread,
     loadedRoomIsPublic,
     mode,
     roomId,
@@ -6760,13 +6062,16 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             activeTab={activeTab}
             onTabChange={setActiveTab}
             chatTabLabel={chatTabLabel}
+            secondaryTab={isSignalThread ? 'mentions' : 'members'}
+            mentionCount={unreadChatState.unreadMentionCount}
+            mentionCountIsCapped={unreadChatState.mentionCountIsCapped}
             tabRowEnd={
-              (showSidebarCallChrome &&
+              (showSidebarCallToolbar &&
                 !inSpaceCall &&
                 !spaceCallShowJoinStrip) ||
               (showAuthedUi && elsewhereCallEntries.length > 0) ? (
                 <>
-                  {showSidebarCallChrome &&
+                  {showSidebarCallToolbar &&
                   !inSpaceCall &&
                   !spaceCallShowJoinStrip ? (
                     callActionsChecked ? (
@@ -6776,17 +6081,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                         disabled={!callUiEnabled}
                         roomCallInProgressToJoin={spaceCallToolbarJoinHint}
                         onAudio={() => {
-                          if (!canJoinSignalThreadCall && isSignalThread) {
-                            void requestSignalTeamAccess();
-                            return;
-                          }
                           handleCallAudio();
                         }}
                         onVideo={() => {
-                          if (!canJoinSignalThreadCall && isSignalThread) {
-                            void requestSignalTeamAccess();
-                            return;
-                          }
                           handleCallVideo();
                         }}
                       />
@@ -6830,17 +6127,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               othersInRoomCallCount={spaceCallOthersInRoom}
               onHangupElsewhere={() => requestRemoteGroupCallLeave()}
               onJoinAudio={() => {
-                if (!canJoinSignalThreadCall && isSignalThread) {
-                  void requestSignalTeamAccess();
-                  return;
-                }
                 handleCallAudio();
               }}
               onJoinVideo={() => {
-                if (!canJoinSignalThreadCall && isSignalThread) {
-                  void requestSignalTeamAccess();
-                  return;
-                }
                 handleCallVideo();
               }}
             />
@@ -6857,17 +6146,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               busy={Boolean(pendingCallSwitch)}
               roomId={roomId}
               onJoinAudio={() => {
-                if (!canJoinSignalThreadCall && isSignalThread) {
-                  void requestSignalTeamAccess();
-                  return;
-                }
                 handleJoinCurrentRoomCallInstead('audio');
               }}
               onJoinVideo={() => {
-                if (!canJoinSignalThreadCall && isSignalThread) {
-                  void requestSignalTeamAccess();
-                  return;
-                }
                 handleJoinCurrentRoomCallInstead('video');
               }}
             />
@@ -6878,18 +6159,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             busy={spaceCallBusyJoining}
             disabled={!callUiEnabled}
             onOpenChange={setJoinInviteOpen}
-            onJoinAudio={
-              canJoinSignalThreadCall
-                ? () => {
-                    handleCallAudio();
-                  }
-                : undefined
-            }
+            onJoinAudio={() => {
+              handleCallAudio();
+            }}
             onJoinVideo={() => {
-              if (!canJoinSignalThreadCall && isSignalThread) {
-                void requestSignalTeamAccess();
-                return;
-              }
               handleCallVideo();
             }}
             onDismiss={dismissJoinInvite}
@@ -7051,19 +6324,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                 role="tabpanel"
                 id="chat-tabpanel-chat"
               >
-                {isSignalThread && coherenceSlug ? (
-                  <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border/70 px-3 py-2">
-                    <div className="flex min-w-0 flex-1 flex-col gap-2">
-                      <SignalThreadMedia slug={coherenceSlug} />
-                      <SignalIndicativeAmounts slug={coherenceSlug} />
-                    </div>
-                    <SignalTurnIntoProposalButton
-                      slug={coherenceSlug}
-                      title={coherenceTitle}
-                      description={coherenceDescription}
-                    />
-                  </div>
-                ) : null}
                 {showSidebarCallVideo && (
                   <div
                     className={
@@ -7146,194 +6406,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                     {signalDeepLinkNotice}
                   </div>
                 ) : null}
-                {isSignalThread &&
-                  hasSignalTeamPolicy &&
-                  !canInteractWithSignalThread && (
-                    <div className="mt-0 w-full border-y border-border/70 bg-muted/40 px-3 py-2 text-sm text-foreground">
-                      <p>{t('signalTeamBannerReadOnly')}</p>
-                      <div className="mt-2 flex items-center gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="h-8 min-h-8 border-[color:var(--space-accent)] bg-background px-3 text-[color:var(--space-accent)] hover:bg-accent-3 disabled:border-[color:var(--space-accent)]/45 disabled:text-[color:var(--space-accent)]/55 disabled:opacity-100"
-                          disabled={
-                            currentUserPendingSignalTeamRequest ||
-                            signalTeamBusy
-                          }
-                          onClick={() => void requestSignalTeamAccess()}
-                        >
-                          {currentUserPendingSignalTeamRequest
-                            ? t('signalTeamRequestPending')
-                            : t('signalTeamRequestAccess')}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                {isSignalThread &&
-                  canManageSignalTeam &&
-                  signalTeamPendingRequesterIds.length > 0 && (
-                    <div className="mt-0 w-full border-y border-border/70 bg-muted/40 px-3 py-2">
-                      <p className="text-xs font-medium text-foreground">
-                        {t('signalTeamPendingRequests')}
-                      </p>
-                      <div className="mt-2 space-y-1">
-                        {signalTeamPendingRequesterIds.map((requesterId) => (
-                          <div
-                            key={requesterId}
-                            className="flex items-center justify-between gap-2"
-                          >
-                            <span className="truncate text-xs text-muted-foreground">
-                              <SignalTeamResolvedMemberLabel
-                                candidate={{
-                                  userId: requesterId,
-                                  displayLabel:
-                                    resolveMentionMemberLabel(requesterId),
-                                }}
-                                fallbackLabel={resolveMentionMemberLabel(
-                                  requesterId,
-                                )}
-                                unknownMemberLabel={t('unknownMember')}
-                              />
-                            </span>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              disabled={signalTeamBusy}
-                              onClick={() =>
-                                void approveSignalTeamRequester(requesterId)
-                              }
-                            >
-                              {t('signalTeamApproveRequester')}
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                {isSignalThread && canManageSignalTeam && (
-                  <div className="mt-0 w-full border-y border-border/70 bg-muted/40 px-3 py-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-foreground">
-                        {t('signalTeamManageTitle')}
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        colorVariant="accent"
-                        className="h-7 min-h-7 self-center border-[color:var(--space-accent)] px-2.5 py-0 text-xs font-semibold leading-none whitespace-nowrap text-[color:var(--space-accent)] hover:bg-accent-3"
-                        onClick={() => {
-                          if (signalTeamPanelOpen) {
-                            void commitSignalTeamDraft();
-                            return;
-                          }
-                          setSignalTeamDraftMemberIds(
-                            normalizeMatrixUserIds(
-                              effectiveSignalTeamMemberIds,
-                            ),
-                          );
-                          setSignalTeamPanelOpen(true);
-                        }}
-                      >
-                        {signalTeamPanelOpen
-                          ? t('signalTeamManageClose')
-                          : t('signalTeamManageOpen')}
-                      </Button>
-                    </div>
-                    {signalTeamPanelOpen && (
-                      <div className="mt-2 space-y-2">
-                        <p className="text-xs text-muted-foreground">
-                          {t('signalTeamMemberListHint')}
-                        </p>
-                        {isLoadingSpaceMembers || isLoadingMatrixUserIds ? (
-                          <p className="text-sm text-muted-foreground">
-                            {t('loading')}
-                          </p>
-                        ) : (matrixUserIdsError || spaceMembersError) &&
-                          signalTeamRosterMembers.length === 0 ? (
-                          <p role="alert" className="text-sm text-destructive">
-                            {t('signalTeamMembersLoadFailed')}
-                          </p>
-                        ) : signalTeamRosterMembers.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">
-                            {t('noMembers')}
-                          </p>
-                        ) : (
-                          <div className="narrow-scrollbar grid max-h-60 gap-1 overflow-y-auto">
-                            {signalTeamRosterMembers.map((member) => {
-                              const matrixUserId = member.matrixUserId;
-                              const selected = matrixUserId
-                                ? signalTeamEditorMemberIds.includes(
-                                    matrixUserId,
-                                  )
-                                : false;
-                              const isCurrentUser =
-                                matrixUserId != null &&
-                                matrixUserId === currentUserId;
-                              const isOwner =
-                                matrixUserId != null &&
-                                matrixUserId === signalTeamOwnerId;
-                              const canToggle = Boolean(matrixUserId);
-                              return (
-                                <button
-                                  key={member.personId}
-                                  type="button"
-                                  className={`flex items-center justify-between rounded-md px-2 py-1 text-left text-sm ${
-                                    selected
-                                      ? 'border border-accent-8/55 bg-accent-3/28 ring-1 ring-accent-8/35'
-                                      : 'border border-transparent hover:bg-muted/70'
-                                  } ${!canToggle ? 'opacity-60' : ''}`}
-                                  disabled={signalTeamBusy || !canToggle}
-                                  onClick={() => {
-                                    if (!matrixUserId) return;
-                                    if (isCurrentUser && selected) return;
-                                    if (isOwner && selected) return;
-                                    const next = selected
-                                      ? signalTeamEditorMemberIds.filter(
-                                          (id) => id !== matrixUserId,
-                                        )
-                                      : [
-                                          ...signalTeamEditorMemberIds,
-                                          matrixUserId,
-                                        ];
-                                    setSignalTeamDraftMemberIds(
-                                      normalizeMatrixUserIds(next),
-                                    );
-                                  }}
-                                >
-                                  <SignalTeamResolvedMemberLabel
-                                    candidate={{
-                                      userId: matrixUserId ?? '',
-                                      displayLabel: member.displayLabel,
-                                    }}
-                                    fallbackLabel={member.displayLabel}
-                                    isOwner={isOwner}
-                                    unknownMemberLabel={t('unknownMember')}
-                                  />
-                                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                    {isOwner ? null : selected ? (
-                                      <Check className="h-3.5 w-3.5 text-accent-11" />
-                                    ) : canToggle ? (
-                                      <Plus className="h-3.5 w-3.5" />
-                                    ) : null}
-                                    {isOwner
-                                      ? t('signalTeamOwner')
-                                      : !canToggle
-                                      ? t('signalTeamNoChatAccount')
-                                      : selected
-                                      ? t('signalTeamRemoveMember')
-                                      : t('signalTeamAddMember')}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
                 {reactionError && (
                   <div
                     role="alert"
@@ -7490,6 +6562,23 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                     currentUserMatrixId={currentUserId}
                   />
                 </div>
+              </div>
+            )}
+            {activeTab === 'mentions' && (
+              <div
+                className="flex min-h-0 flex-1 flex-col overflow-hidden"
+                role="tabpanel"
+                id="chat-tabpanel-mentions"
+              >
+                <HumanChatPanelMentionTab
+                  client={client}
+                  roomId={roomId}
+                  currentUserId={currentUserId}
+                  resolveMemberLabel={resolveMentionMemberLabel}
+                  onSelectMessage={handleSelectMentionInRoom}
+                  unreadMentionCount={unreadChatState.unreadMentionCount}
+                  onMarkMentionsRead={handleMarkAsReadFromBanner}
+                />
               </div>
             )}
           </>

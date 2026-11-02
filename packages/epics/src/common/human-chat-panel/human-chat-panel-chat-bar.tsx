@@ -673,7 +673,7 @@ export function HumanChatPanelChatBar({
     mentionPickerEnabled ?? mentionCandidates.length > 0;
   const atMentionInteractable = !composerLocked && membershipAvailable;
   const mentionButtonTitle = composerLocked
-    ? composerLockedMessage || t('signalTeamInteractionRestricted')
+    ? composerLockedMessage || t('mention')
     : !membershipAvailable
     ? t('mentionNoMembers')
     : t('mention');
