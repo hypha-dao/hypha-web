@@ -10,6 +10,21 @@ export function isPersistedPersonId(
   return typeof value === 'number' && Number.isInteger(value) && value > 0;
 }
 
+/** Only the person who raised a signal may edit or delete it. */
+export function isSignalCreator({
+  viewerPersonId,
+  creatorId,
+}: {
+  viewerPersonId?: number | null;
+  creatorId?: number | null;
+}): boolean {
+  return (
+    isPersistedPersonId(viewerPersonId) &&
+    isPersistedPersonId(creatorId) &&
+    viewerPersonId === creatorId
+  );
+}
+
 /**
  * Form field for `creatorId`. Create attributes the signed-in viewer.
  * Edit keeps the stored author and never copies the viewer or an assignee.

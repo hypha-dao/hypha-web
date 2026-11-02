@@ -47,6 +47,7 @@ import {
 } from '../utils/signal-priority-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
+import { useIsSignalCreator } from '../hooks/use-is-signal-creator';
 import { SignalIndicativeAmounts } from './signal-indicative-amounts';
 import { SignalCategoryTag } from './signal-category-tag';
 import { SignalVideoPlayer } from './signal-video-player';
@@ -103,6 +104,7 @@ function SignalCardComponent({
     spaceSlug: params.id ?? '',
     web3SpaceId: currentSpace?.web3SpaceId ?? undefined,
   });
+  const isSignalCreator = useIsSignalCreator(creatorId);
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
   const locale = useLocale();
   const dateFnsLocale = React.useMemo(
@@ -282,31 +284,33 @@ function SignalCardComponent({
                 />
                 {canManageSignal && slug ? (
                   <>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      colorVariant="neutral"
-                      className={SIGNAL_CARD_ICON_BUTTON_CLASS}
-                      disabled={isLoading}
-                      aria-label={tSignalCard('editMenu')}
-                      title={tSignalCard('editMenu')}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (!params.lang || !params.id || !slug) return;
-                        const tab = params.tab ?? 'coherence';
-                        router.push(
-                          `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
-                        );
-                      }}
-                      onKeyDown={stopCardActivationKey}
-                    >
-                      <Pencil
-                        className="h-4 w-4"
-                        strokeWidth={1.25}
-                        aria-hidden
-                      />
-                    </Button>
+                    {isSignalCreator ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        colorVariant="neutral"
+                        className={SIGNAL_CARD_ICON_BUTTON_CLASS}
+                        disabled={isLoading}
+                        aria-label={tSignalCard('editMenu')}
+                        title={tSignalCard('editMenu')}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!params.lang || !params.id || !slug) return;
+                          const tab = params.tab ?? 'coherence';
+                          router.push(
+                            `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
+                          );
+                        }}
+                        onKeyDown={stopCardActivationKey}
+                      >
+                        <Pencil
+                          className="h-4 w-4"
+                          strokeWidth={1.25}
+                          aria-hidden
+                        />
+                      </Button>
+                    ) : null}
                     <Button
                       type="button"
                       variant="ghost"

@@ -4,6 +4,7 @@ import {
   creatorIdForAuthenticatedCreate,
   isSignalDescriptionAnchorMessage,
   isSignalDescriptionCopy,
+  isSignalCreator,
   omitCreatorId,
   resolveSignalCreatorDisplayName,
   resolveSignalFormCreatorId,
@@ -287,5 +288,18 @@ describe('applySignalCreatorToChatAuthor', () => {
       role: 'user',
       senderName: 'You',
     });
+  });
+});
+
+describe('isSignalCreator', () => {
+  it('allows only the stored creator', () => {
+    expect(isSignalCreator({ viewerPersonId: 7, creatorId: 7 })).toBe(true);
+    expect(isSignalCreator({ viewerPersonId: 8, creatorId: 7 })).toBe(false);
+  });
+
+  it('allows nobody when the viewer or the creator is unknown', () => {
+    expect(isSignalCreator({ viewerPersonId: null, creatorId: 7 })).toBe(false);
+    expect(isSignalCreator({ viewerPersonId: 7, creatorId: null })).toBe(false);
+    expect(isSignalCreator({ viewerPersonId: 0, creatorId: 0 })).toBe(false);
   });
 });

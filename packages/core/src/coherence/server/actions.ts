@@ -47,7 +47,10 @@ import {
   dueAtHasChanged,
   newlyAssignedPersonIds,
 } from '../signal-notification-triggers';
-import { creatorIdForAuthenticatedCreate } from '../signal-creator';
+import {
+  creatorIdForAuthenticatedCreate,
+  isSignalCreator,
+} from '../signal-creator';
 import {
   getSignalAssignedNotifier,
   getSignalLifecycleNotifier,
@@ -55,6 +58,26 @@ import {
   type SignalLifecycleKind,
   type SignalLifecycleNotifierInput,
 } from './signal-assigned-notifier';
+
+async function assertSignalCreator({
+  slug,
+  requesterPersonId,
+  action,
+}: {
+  slug: string;
+  requesterPersonId: number;
+  action: 'edit' | 'delete';
+}) {
+  const [row] = await db
+    .select({ creatorId: coherences.creatorId })
+    .from(coherences)
+    .where(eq(coherences.slug, slug))
+    .limit(1);
+  if (!row) throw new Error(`Coherence not found for slug="${slug}"`);
+  if (!isSignalCreator({ viewerPersonId: requesterPersonId, ...row })) {
+    throw new Error(`Only the signal creator can ${action} this signal`);
+  }
+}
 
 async function assertSignalWorkflowAccess({
   spaceId,
@@ -249,10 +272,10 @@ export async function deleteCoherenceBySlugAction(
       'Could not resolve authenticated user for delete coherence',
     );
   }
-  await assertCoherenceSpacePanelAuth({
+  await assertSignalCreator({
     slug: data.slug,
-    authToken,
     requesterPersonId: self.id,
+    action: 'delete',
   });
   return deleteCoherenceBySlug(
     { slug: data.slug, requesterPersonId: self.id },
@@ -288,10 +311,10 @@ export async function updateCoherenceSignalBySlugAction(
       'Could not resolve authenticated user for update coherence signal',
     );
   }
-  await assertCoherenceSpacePanelAuth({
+  await assertSignalCreator({
     slug: validated.slug,
-    authToken,
     requesterPersonId: self.id,
+    action: 'edit',
   });
 
   const [previousRow] = await db

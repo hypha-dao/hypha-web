@@ -88,7 +88,6 @@ import {
 import { updateSignalDescriptionCopyInRoom } from '../utils/signal-chat-description';
 import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
 import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
-import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 import {
   signalVotingSpaceId,
   useSignalVotingMode,
@@ -330,10 +329,6 @@ export const CreateSignalForm = ({
       ),
     );
   }, [initialValues, mode, signalSlug]);
-  const canManageSignal = useCanManageSignal({
-    spaceSlug,
-    web3SpaceId: space?.web3SpaceId ?? undefined,
-  });
   const headerCreatorId = resolveSignalFormCreatorId({
     mode,
     storedCreatorId: initialValues?.creatorId,
@@ -348,8 +343,7 @@ export const CreateSignalForm = ({
     mode === 'edit' &&
     typeof initialValues?.creatorId === 'number' &&
     person?.id === initialValues.creatorId;
-  const isEditAuthorized =
-    mode !== 'edit' || canManageSignal || isSignalCreator;
+  const isEditAuthorized = mode !== 'edit' || isSignalCreator;
 
   const {
     createCoherence,
@@ -832,7 +826,7 @@ export const CreateSignalForm = ({
             type: 'manual',
             message: t.has('editSignalNoPermission')
               ? t('editSignalNoPermission')
-              : 'Only space members and delegates can edit this signal.',
+              : 'Only the signal creator can edit this signal.',
           });
           return;
         }
@@ -888,6 +882,7 @@ export const CreateSignalForm = ({
             ) || rawMessage.toLowerCase().includes('digest');
           const isPermissionError =
             rawMessage.includes('can edit this coherence') ||
+            rawMessage.includes('Only the signal creator can') ||
             rawMessage.includes('must be a space member') ||
             rawMessage.includes('interact in this space') ||
             rawMessage.includes('Could not verify your identity');
@@ -902,7 +897,7 @@ export const CreateSignalForm = ({
           const message = isPermissionError
             ? t.has('editSignalNoPermission')
               ? t('editSignalNoPermission')
-              : 'Only space members and delegates can edit this signal.'
+              : 'Only the signal creator can edit this signal.'
             : isAuthError
             ? t.has('editSignalMissingAuth')
               ? t('editSignalMissingAuth')
@@ -1609,7 +1604,7 @@ export const CreateSignalForm = ({
                           type: 'manual',
                           message: t.has('editSignalNoPermission')
                             ? t('editSignalNoPermission')
-                            : 'Only space members and delegates can edit this signal.',
+                            : 'Only the signal creator can edit this signal.',
                         });
                         return;
                       }

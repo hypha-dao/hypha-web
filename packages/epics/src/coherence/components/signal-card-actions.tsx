@@ -23,6 +23,7 @@ import {
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
+import { useIsSignalCreator } from '../hooks/use-is-signal-creator';
 
 type SignalCardActionsProps = {
   signal: Pick<
@@ -52,6 +53,8 @@ export function SignalCardActions({
     spaceSlug: params.id ?? '',
     web3SpaceId: space?.web3SpaceId ?? undefined,
   });
+
+  const isCreator = useIsSignalCreator(signal.creatorId);
 
   const [archiveOpen, setArchiveOpen] = React.useState(false);
   const [isMutating, setIsMutating] = React.useState(false);
@@ -153,21 +156,23 @@ export function SignalCardActions({
         >
           <CalendarDays className={iconClass} aria-hidden />
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          colorVariant="neutral"
-          className={cn(
-            buttonClass,
-            'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
-          )}
-          disabled={isMutating}
-          aria-label={tSignalCard('editMenu')}
-          title={tSignalCard('editMenu')}
-          onClick={handleEdit}
-        >
-          <Pencil className={iconClass} aria-hidden />
-        </Button>
+        {isCreator ? (
+          <Button
+            type="button"
+            variant="ghost"
+            colorVariant="neutral"
+            className={cn(
+              buttonClass,
+              'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+            )}
+            disabled={isMutating}
+            aria-label={tSignalCard('editMenu')}
+            title={tSignalCard('editMenu')}
+            onClick={handleEdit}
+          >
+            <Pencil className={iconClass} aria-hidden />
+          </Button>
+        ) : null}
         {signal.archived ? (
           <Button
             type="button"
