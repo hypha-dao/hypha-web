@@ -138,7 +138,6 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   return response;
 }
 
-
 // SPIKE #2616 (V2): host -> Space map, hardcoded. Throwaway.
 const WL_HOSTS: Record<string, string> = {
   'liz.localhost': 'cordoba-ecovillage',
@@ -147,7 +146,7 @@ const WL_HOSTS: Record<string, string> = {
 const WL_SECTIONS = /^\/(overview|energy|agreements|members|treasury)(\/.*)?$/;
 
 function whiteLabelRewrite(request: NextRequest): NextResponse | null {
-  const hostname = (request.headers.get('host') ?? '').split(':')[0];
+  const hostname = (request.headers.get('host') ?? '').split(':')[0] ?? '';
   const slug = WL_HOSTS[hostname];
   if (!slug) return null;
   const { pathname, search } = request.nextUrl;
@@ -175,9 +174,18 @@ async function s2Probe(request: NextRequest): Promise<NextResponse | null> {
       { cache: 'no-store' },
     );
     const body = (await res.json()) as { slug?: string } | null;
-    return NextResponse.json({ ok: true, status: res.status, ms: Date.now() - t0, slug: body?.slug });
+    return NextResponse.json({
+      ok: true,
+      status: res.status,
+      ms: Date.now() - t0,
+      slug: body?.slug,
+    });
   } catch (e) {
-    return NextResponse.json({ ok: false, ms: Date.now() - t0, error: String((e as Error)?.message ?? e).slice(0, 300) });
+    return NextResponse.json({
+      ok: false,
+      ms: Date.now() - t0,
+      error: String((e as Error)?.message ?? e).slice(0, 300),
+    });
   }
 }
 

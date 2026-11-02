@@ -82,7 +82,11 @@ const nextConfig: NextConfig = {
         source: '/',
         // SPIKE #2616: config redirects run before middleware, so mapped hosts must be excluded here.
         missing: [
-          { type: 'host', value: '(liz\\.localhost|v1\\.localhost|hypha-test\\.gerroza\\.com)' },
+          {
+            type: 'host',
+            value:
+              '(liz\\.localhost|v1\\.localhost|hypha-test\\.gerroza\\.com)',
+          },
         ],
         destination: `/${routing.defaultLocale}/network`,
         permanent: true,
@@ -108,20 +112,28 @@ const nextConfig: NextConfig = {
     const v1 = [{ type: 'host' as const, value: 'v1\\.localhost' }];
     return {
       beforeFiles: [
-        { source: '/', has: v1, destination: '/en/wl/cordoba-ecovillage/overview' },
-        { source: '/:s(overview|energy|agreements|members|treasury)', has: v1, destination: '/en/wl/cordoba-ecovillage/:s' },
+        {
+          source: '/',
+          has: v1,
+          destination: '/en/wl/cordoba-ecovillage/overview',
+        },
+        {
+          source: '/:s(overview|energy|agreements|members|treasury)',
+          has: v1,
+          destination: '/en/wl/cordoba-ecovillage/:s',
+        },
       ],
       afterFiles: [
-      // Inbound Matrix Application Service API (#2483). Dendrite's AS `url:` is set to
-      // `<origin>` (no suffix); it appends the spec path `/_matrix/app/v1/...`. Next.js
-      // private-folder convention (`_matrix`) rules out a literal app-router folder, and
-      // the i18n/CSP middleware would otherwise intercept it (excluded in middleware.ts),
-      // so map it onto a normal API route. Legacy unprefixed variant (`/_matrix/app/...`)
-      // is not served — Dendrite uses the v1 path.
-      {
-        source: '/_matrix/app/v1/:path*',
-        destination: '/api/matrix/appservice/:path*',
-      },
+        // Inbound Matrix Application Service API (#2483). Dendrite's AS `url:` is set to
+        // `<origin>` (no suffix); it appends the spec path `/_matrix/app/v1/...`. Next.js
+        // private-folder convention (`_matrix`) rules out a literal app-router folder, and
+        // the i18n/CSP middleware would otherwise intercept it (excluded in middleware.ts),
+        // so map it onto a normal API route. Legacy unprefixed variant (`/_matrix/app/...`)
+        // is not served — Dendrite uses the v1 path.
+        {
+          source: '/_matrix/app/v1/:path*',
+          destination: '/api/matrix/appservice/:path*',
+        },
       ],
     };
   },

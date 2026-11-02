@@ -48,7 +48,11 @@ export default async function WhiteLabelRootLayout({
         >
           <LocalizedIntlProvider locale={locale} messages={messages}>
             <TooltipProvider>
-              {mode === 'none' ? inner : <GlobalCallDockProvider>{inner}</GlobalCallDockProvider>}
+              {mode === 'none' ? (
+                inner
+              ) : (
+                <GlobalCallDockProvider>{inner}</GlobalCallDockProvider>
+              )}
             </TooltipProvider>
           </LocalizedIntlProvider>
         </ThemeProvider>
