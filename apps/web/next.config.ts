@@ -51,6 +51,14 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/:path((?!api).*)*',
+        // SPIKE #2616 S5: mapped hosts are framable (CSP frame-ancestors set in middleware).
+        missing: [
+          {
+            type: 'host',
+            value:
+              '(liz\\.localhost|hypha-test\\.gerroza\\.com|hypha-[a-z0-9]+-hypha-dao\\.vercel\\.app)',
+          },
+        ],
         headers: [
           {
             key: 'X-Frame-Options',

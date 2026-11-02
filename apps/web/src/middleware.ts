@@ -145,6 +145,8 @@ const WL_HOSTS: Record<string, string> = {
 };
 // Per-deployment Vercel URLs (spike option C: second origin without a custom domain).
 const WL_VERCEL_DEPLOY_HOST = /^hypha-[a-z0-9]+-hypha-dao\.vercel\.app$/;
+const WL_FRAME_ANCESTORS =
+  'frame-ancestors https://pr-2617.preview-app.hypha.earth http://localhost:8080;';
 const WL_SECTIONS = /^\/(overview|energy|agreements|members|treasury)(\/.*)?$/;
 
 function whiteLabelRewrite(request: NextRequest): NextResponse | null {
@@ -160,7 +162,10 @@ function whiteLabelRewrite(request: NextRequest): NextResponse | null {
     const url = request.nextUrl.clone();
     url.pathname = path;
     url.search = search;
-    return NextResponse.rewrite(url);
+    const res = NextResponse.rewrite(url);
+    // SPIKE #2616 S5: allow framing by the test parent origins only (hardcoded).
+    res.headers.set('Content-Security-Policy', WL_FRAME_ANCESTORS);
+    return res;
   };
   if (pathname === '/') return to(`/en/wl/${slug}/overview`);
   if (WL_SECTIONS.test(pathname)) return to(`/en/wl/${slug}${pathname}`);
@@ -213,6 +218,6 @@ export const config = {
   matcher: [
     // `_matrix` — inbound Matrix Application Service transaction pushes (#2483).
     // Rewritten in next.config to /api/matrix/appservice; must skip i18n + CSP here.
-    '/((?!api|_matrix|signin|placeholder|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_matrix|signin|placeholder|spike-parent|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
   ],
 };

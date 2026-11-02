@@ -1,0 +1,26 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SPIKE #2616 parent page</title>
+<style>body{font:14px sans-serif;margin:8px}iframe{width:100%;height:70vh;border:1px solid #888}pre{max-height:12em;overflow:auto;background:#eee;padding:4px}</style>
+<p>origin: <b id="o"></b> | iframe src (must be https://*.vercel.app): <input id="src" size="60"> <button id="load">load</button> <button id="pop">popup login (same-origin Hypha page)</button></p>
+<iframe id="f" title="embed"></iframe>
+<pre id="log"></pre>
+<script>
+const log = (m) => { document.getElementById('log').textContent += new Date().toISOString().slice(11,19) + ' ' + m + '\n'; };
+document.getElementById('o').textContent = location.origin;
+const q = new URLSearchParams(location.search).get('src') || '';
+document.getElementById('src').value = q;
+const f = document.getElementById('f');
+f.addEventListener('load', () => log('iframe load event'));
+document.getElementById('load').onclick = () => {
+  const u = document.getElementById('src').value;
+  if (!/^https:\/\/hypha-[a-z0-9]+-hypha-dao\.vercel\.app(\/|$)/.test(u)) return log('refused src');
+  f.src = u; log('iframe src set');
+};
+document.getElementById('pop').onclick = () => {
+  const w = window.open('/en/wl-popup', 'spikepopup', 'width=480,height=720');
+  log(w ? 'popup opened' : 'popup BLOCKED (window.open returned null)');
+};
+addEventListener('message', (e) => { if (e.origin === location.origin) log('message: ' + JSON.stringify(e.data)); });
+if (q) document.getElementById('load').click();
+</script>
