@@ -92,7 +92,8 @@ export async function readSpaceContextMatrixFile(
     ASSET_MAX_BYTES_LIMIT,
   );
   const doFetch = deps.fetch ?? fetch;
-  const base = homeserver.trim().replace(/\/+$/, '');
+  let base = homeserver.trim();
+  while (base.endsWith('/')) base = base.slice(0, -1);
   const path = `${encodeURIComponent(media.serverName)}/${encodeURIComponent(
     media.mediaId,
   )}`;
