@@ -138,7 +138,54 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   return response;
 }
 
-export function middleware(request: NextRequest) {
+
+// SPIKE #2616 (V2): host -> Space map, hardcoded. Throwaway.
+const WL_HOSTS: Record<string, string> = {
+  'liz.localhost': 'cordoba-ecovillage',
+  'hypha-test.gerroza.com': 'cordoba-ecovillage',
+};
+const WL_SECTIONS = /^\/(overview|energy|agreements|members|treasury)(\/.*)?$/;
+
+function whiteLabelRewrite(request: NextRequest): NextResponse | null {
+  const hostname = (request.headers.get('host') ?? '').split(':')[0];
+  const slug = WL_HOSTS[hostname];
+  if (!slug) return null;
+  const { pathname, search } = request.nextUrl;
+  const to = (path: string) => {
+    const url = request.nextUrl.clone();
+    url.pathname = path;
+    url.search = search;
+    return NextResponse.rewrite(url);
+  };
+  if (pathname === '/') return to(`/en/wl/${slug}/overview`);
+  if (WL_SECTIONS.test(pathname)) return to(`/en/wl/${slug}${pathname}`);
+  const m = pathname.match(/^\/([a-z]{2})\/(wl|dho)\/([^/]+)(\/.*)?$/);
+  if (m && m[3] === slug) return to(`/${m[1]}/wl/${slug}${m[4] ?? ''}`);
+  // anything else on this host: not the mapped Space -> 404 (Q1.4)
+  return to('/en/wl/__blocked/overview');
+}
+
+// SPIKE #2616 S2 probe: edge-compatible lookup via internal API fetch (timed).
+async function s2Probe(request: NextRequest): Promise<NextResponse | null> {
+  if (!request.nextUrl.pathname.startsWith('/__s2')) return null;
+  const t0 = Date.now();
+  try {
+    const res = await fetch(
+      `${request.nextUrl.origin}/api/v1/spaces/cordoba-ecovillage`,
+      { cache: 'no-store' },
+    );
+    const body = (await res.json()) as { slug?: string } | null;
+    return NextResponse.json({ ok: true, status: res.status, ms: Date.now() - t0, slug: body?.slug });
+  } catch (e) {
+    return NextResponse.json({ ok: false, ms: Date.now() - t0, error: String((e as Error)?.message ?? e).slice(0, 300) });
+  }
+}
+
+export async function middleware(request: NextRequest) {
+  const probe = await s2Probe(request);
+  if (probe) return probe;
+  const wl = whiteLabelRewrite(request);
+  if (wl) return wl;
   const response = i18nMiddleware(request);
 
   if (response.status === 301 || response.status === 302) {

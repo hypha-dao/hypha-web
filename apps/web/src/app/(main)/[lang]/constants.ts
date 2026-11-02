@@ -1,6 +1,6 @@
-import { PATH_ROOT } from '../constants';
+import { PATH_ROOT } from '../../constants';
 
-export { NETWORK_HYPHA_EARTH_URL } from '../constants';
+export { NETWORK_HYPHA_EARTH_URL } from '../../constants';
 
 export const PATH_SEGMENT_LANG = ':lang';
 
