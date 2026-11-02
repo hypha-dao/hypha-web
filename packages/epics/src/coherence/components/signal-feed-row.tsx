@@ -45,7 +45,7 @@ export function useSignalShortDate() {
 type SignalFeedRowProps = {
   signal: Coherence;
   href: string;
-  votingMode: SignalVotingMode;
+  votingMode: SignalVotingMode | null;
   activity?: SignalRoomActivity;
   refresh?: () => Promise<unknown>;
 };
@@ -68,14 +68,20 @@ export function SignalFeedRow({
   );
   const media = React.useMemo(() => countSignalMedia(signal), [signal]);
   const created = shortDate(signal.createdAt);
-  const comments = activity?.comments ?? signal.messages ?? 0;
-  const lastReply = activity
-    ? activity.lastReplyAt != null
+  const storedComments = signal.messages ?? 0;
+  const comments = activity
+    ? activity.reachesRoomStart
+      ? activity.comments
+      : Math.max(activity.comments, storedComments)
+    : storedComments;
+  const lastReply =
+    activity?.lastReplyAt != null
       ? t('signalLastReply', {
           time: format.relativeTime(new Date(activity.lastReplyAt), now),
         })
-      : t('signalNoReplies')
-    : null;
+      : activity?.reachesRoomStart
+      ? t('signalNoReplies')
+      : null;
 
   return (
     <article
@@ -88,7 +94,7 @@ export function SignalFeedRow({
         upvotes={signal.upvotes}
         votingMode={votingMode}
         refresh={refresh}
-        disabled={signal.archived}
+        archived={Boolean(signal.archived)}
         className="relative z-10"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">

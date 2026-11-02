@@ -22,6 +22,11 @@ export type SignalRoomActivity = {
   people: number;
   lastReplyAt: number | null;
   lastReplySenderName: string | null;
+  /**
+   * Whether the loaded timeline goes back to the room start. When false the
+   * counts only cover the recent tail, so callers fall back to stored totals.
+   */
+  reachesRoomStart: boolean;
 };
 
 type SignalRoomRef = {
@@ -39,9 +44,10 @@ function readRoomActivity(
 
   const events = room.getLiveTimeline().getEvents();
   // The seed can only be recognised when the timeline reaches the room start.
-  let anchorPending = events.some(
+  const reachesRoomStart = events.some(
     (event) => event.getType() === EventType.RoomCreate,
   );
+  let anchorPending = reachesRoomStart;
   const senders = new Set<string>();
   let comments = 0;
   let lastReplyAt: number | null = null;
@@ -79,6 +85,7 @@ function readRoomActivity(
     lastReplySenderName: lastSenderId
       ? room.getMember(lastSenderId)?.name ?? null
       : null,
+    reachesRoomStart,
   };
 }
 

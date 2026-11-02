@@ -57,9 +57,11 @@ export function SignalUpvoteTriangle({ className }: { className?: string }) {
 type SignalUpvoteButtonProps = {
   slug?: string | null;
   upvotes?: CoherenceUpvoteSummary;
-  votingMode: SignalVotingMode;
+  /** `null` while the space's voting method is loading; voting stays closed. */
+  votingMode: SignalVotingMode | null;
   refresh?: () => Promise<unknown>;
   disabled?: boolean;
+  archived?: boolean;
   /** `feed` stacks the count over the label; `page` sits beside the title. */
   variant?: 'feed' | 'page';
   className?: string;
@@ -75,6 +77,7 @@ export function SignalUpvoteButton({
   votingMode,
   refresh,
   disabled = false,
+  archived = false,
   variant = 'feed',
   className,
 }: SignalUpvoteButtonProps) {
@@ -98,7 +101,13 @@ export function SignalUpvoteButton({
   const summary = localSummary ?? upvotes ?? EMPTY_SUMMARY;
   const hasVoted = summary.myUpvote != null;
   const isMutating = isUpvoting || isRemovingUpvote;
-  const canVote = Boolean(slug?.trim()) && Boolean(jwt) && !disabled;
+  const isVotingModeResolved = votingMode != null;
+  const canVote =
+    Boolean(slug?.trim()) &&
+    Boolean(jwt) &&
+    !disabled &&
+    !archived &&
+    isVotingModeResolved;
   const isOneMemberOneVote = votingMode === 'one-member-one-vote';
   const [percent, setPercent] = React.useState(() => myUpvotePercent(summary));
 
@@ -170,8 +179,9 @@ export function SignalUpvoteButton({
       onKeyDown={stopPropagation}
     >
       <Popover
-        open={open}
+        open={open && isVotingModeResolved}
         onOpenChange={(next) => {
+          if (next && !isVotingModeResolved) return;
           setOpen(next);
           if (next) {
             setPercent(myUpvotePercent(summary));
@@ -185,6 +195,8 @@ export function SignalUpvoteButton({
             aria-haspopup="dialog"
             aria-pressed={hasVoted}
             aria-label={`${t('upvote')} · ${summary.upvoteCount}`}
+            aria-busy={!isVotingModeResolved}
+            disabled={!isVotingModeResolved}
             data-testid="signal-upvote-cell"
             className={cn(
               'flex flex-col items-center justify-center border tabular-nums transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
@@ -192,7 +204,8 @@ export function SignalUpvoteButton({
               hasVoted
                 ? 'border-accent-9 bg-accent-9 text-accent-contrast hover:bg-accent-10'
                 : 'border-border bg-background-2 text-foreground hover:border-foreground/40',
-              isMutating && 'opacity-65',
+              (isMutating || !isVotingModeResolved) && 'opacity-65',
+              !isVotingModeResolved && 'cursor-progress',
             )}
           >
             {variant === 'feed' ? (
@@ -308,7 +321,7 @@ export function SignalUpvoteButton({
 
             {!canVote ? (
               <p className="text-1 leading-relaxed text-muted-foreground">
-                {t('signInToUpvote')}
+                {archived ? t('upvoteArchived') : t('signInToUpvote')}
               </p>
             ) : null}
 

@@ -1,4 +1,4 @@
-import { isImageAttachment } from './signal-video';
+import { isImageAttachment, resolveSignalVideo } from './signal-video';
 
 export const SIGNAL_IMAGE_LIMIT = 8;
 export const SIGNAL_DOCUMENT_LIMIT = 8;
@@ -56,7 +56,7 @@ export function countSignalMedia(input?: {
 }): SignalMediaCounts {
   const { images, documents } = splitSignalMedia(input);
   return {
-    videos: input?.videoUrl?.trim() ? 1 : 0,
+    videos: resolveSignalVideo(input?.videoUrl) ? 1 : 0,
     images: images.length,
     documents: documents.length,
   };

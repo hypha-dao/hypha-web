@@ -14,7 +14,12 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
-import { MarkdownSuspense, Skeleton, useIsMobile } from '@hypha-platform/ui';
+import {
+  Button,
+  MarkdownSuspense,
+  Skeleton,
+  useIsMobile,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -159,6 +164,7 @@ export function SignalPage({
   const {
     coherences,
     isLoading: isSignalsLoading,
+    error: signalsError,
     refresh,
   } = useFindCoherences({
     spaceSlug,
@@ -240,15 +246,52 @@ export function SignalPage({
     });
   }, [acknowledgeCoherenceAssignment, jwt, person?.id, signal]);
 
+  const [isRetrying, setIsRetrying] = React.useState(false);
+  const retryLoad = React.useCallback(async () => {
+    setIsRetrying(true);
+    try {
+      await refresh();
+    } catch {
+      // The SWR error state already drives the retry notice.
+    } finally {
+      setIsRetrying(false);
+    }
+  }, [refresh]);
+
   const feedHref = `/${lang}/dho/${spaceSlug}/coherence`;
   if (!signal) {
-    return isSignalsLoading ? (
-      <div className="flex flex-col gap-4" aria-busy>
-        <Skeleton loading className="h-4 w-48 rounded-none" />
-        <Skeleton loading className="h-48 w-full rounded-none" />
-        <Skeleton loading className="h-32 w-full rounded-none" />
-      </div>
-    ) : (
+    if (isSignalsLoading) {
+      return (
+        <div className="flex flex-col gap-4" aria-busy>
+          <Skeleton loading className="h-4 w-48 rounded-none" />
+          <Skeleton loading className="h-48 w-full rounded-none" />
+          <Skeleton loading className="h-32 w-full rounded-none" />
+        </div>
+      );
+    }
+    if (signalsError) {
+      return (
+        <div
+          role="alert"
+          className="craft-card flex flex-col items-center gap-3 px-4 py-8 text-center"
+        >
+          <p className="m-0 text-1 text-muted-foreground">
+            {t('signalLoadFailed')}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            colorVariant="neutral"
+            size="sm"
+            disabled={isRetrying}
+            onClick={() => void retryLoad()}
+          >
+            {t('signalLoadRetry')}
+          </Button>
+        </div>
+      );
+    }
+    return (
       <p className="craft-card px-4 py-8 text-center text-1 text-muted-foreground">
         {t('signalNotFound')}
       </p>
@@ -256,17 +299,23 @@ export function SignalPage({
   }
 
   const created = shortDate(signal.createdAt);
-  const comments = activity?.comments ?? signal.messages ?? 0;
-  const lastReply = activity
-    ? activity.lastReplyAt != null
+  const storedComments = signal.messages ?? 0;
+  const comments = activity
+    ? activity.reachesRoomStart
+      ? activity.comments
+      : Math.max(activity.comments, storedComments)
+    : storedComments;
+  const lastReply =
+    activity?.lastReplyAt != null
       ? [
           format.relativeTime(new Date(activity.lastReplyAt), now),
           activity.lastReplySenderName,
         ]
           .filter(Boolean)
           .join(' · ')
-      : t('signalNoReplies')
-    : null;
+      : activity?.reachesRoomStart
+      ? t('signalNoReplies')
+      : null;
   const discussion = [
     t('signalCommentsCount', { count: comments }),
     activity ? t('signalPeopleCount', { count: activity.people }) : null,
@@ -302,7 +351,7 @@ export function SignalPage({
                 upvotes={signal.upvotes}
                 votingMode={votingMode}
                 refresh={refresh}
-                disabled={signal.archived}
+                archived={Boolean(signal.archived)}
                 variant="page"
               />
               <h1 className="craft-page-title min-w-0 text-6 leading-tight">

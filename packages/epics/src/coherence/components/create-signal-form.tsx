@@ -892,17 +892,33 @@ export const CreateSignalForm = ({
         setIsClosingAfterPublish(true);
         router.push(successfulUrl);
         if (coherenceSlug) {
-          // Best-effort creator upvote; ranking still works without it.
+          // The signal already exists, so the creator upvote runs after close:
+          // retry once, then tell the creator to upvote from the signal page.
           void (async () => {
-            try {
-              await upvoteCoherence({
-                slug: coherenceSlug,
-                votingPowerPercent: creatorVotePercent,
-              });
-            } catch (upvoteError) {
+            let upvoteError: unknown = null;
+            for (let attempt = 0; attempt < 2; attempt += 1) {
+              try {
+                await upvoteCoherence({
+                  slug: coherenceSlug,
+                  votingPowerPercent: creatorVotePercent,
+                });
+                upvoteError = null;
+                break;
+              } catch (error) {
+                upvoteError = error;
+                if (attempt === 0) {
+                  await new Promise((resolve) => setTimeout(resolve, 1500));
+                }
+              }
+            }
+            if (upvoteError) {
               console.warn(
                 'Signal created but creator upvote failed:',
                 upvoteError,
+              );
+              setSignalProvisioningNotice(
+                t('provisioning.creatorUpvoteFailed'),
+                upvoteError instanceof Error ? upvoteError.message : undefined,
               );
             }
             if (spaceSlug) {
