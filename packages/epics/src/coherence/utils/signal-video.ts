@@ -1,3 +1,10 @@
+import {
+  cspMediaSrcSources,
+  isUrlAllowedByCspSources,
+  matrixHomeserverOrigin,
+  parseCspImageHosts,
+} from '@hypha-platform/core/csp';
+
 export type SignalVideoEmbed =
   | { kind: 'youtube'; src: string }
   | { kind: 'vimeo'; src: string }
@@ -82,6 +89,48 @@ export function resolveSignalVideo(
     return { kind: 'file', src: url.toString() };
   }
   return null;
+}
+
+/**
+ * Why a pasted link would not play: `unsupported` is neither YouTube, Vimeo
+ * nor a video file; `blocked` is a video file whose host the CSP `media-src`
+ * does not allow, so the browser would show a black, silent player.
+ */
+export type SignalVideoLinkProblem = 'unsupported' | 'blocked';
+
+/** The `media-src` list the middleware sends, rebuilt from public env. */
+export function signalVideoMediaSources(): string[] {
+  return cspMediaSrcSources({
+    imageHosts: parseCspImageHosts(process.env.NEXT_PUBLIC_IMAGE_HOSTS),
+    matrixOrigin: matrixHomeserverOrigin(
+      process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL,
+    ),
+  });
+}
+
+export function signalVideoLinkProblem(
+  raw: string | null | undefined,
+  {
+    mediaSources = signalVideoMediaSources(),
+    selfOrigin = typeof window === 'undefined' ? null : window.location.origin,
+  }: { mediaSources?: readonly string[]; selfOrigin?: string | null } = {},
+): SignalVideoLinkProblem | null {
+  if (!raw?.trim()) return null;
+  const video = resolveSignalVideo(raw);
+  if (!video) return 'unsupported';
+  if (video.kind !== 'file') return null;
+  return isUrlAllowedByCspSources(video.src, mediaSources, selfOrigin)
+    ? null
+    : 'blocked';
+}
+
+/** Host shown when a direct video link is blocked. */
+export function signalVideoLinkHost(raw: string | null | undefined): string {
+  try {
+    return new URL(raw?.trim() ?? '').host;
+  } catch {
+    return '';
+  }
 }
 
 function fileStem(value: string) {

@@ -4689,7 +4689,9 @@
     "signalFormVideo": "Videolenke",
     "signalFormMediaVideo": "Video",
     "signalFormMedia": "Bilder eller video",
-    "signalFormVideoHint": "Lim inn en YouTube-, Vimeo- eller direkte videolenke. Filen blir der den er, og signalet spiller den av.",
+    "signalFormVideoHint": "Lim inn en YouTube- eller Vimeo-lenke. En direkte videofil spilles bare av fra en vert Hypha tillater.",
+    "signalFormVideoBlocked": "Videofiler fra {host} kan ikke spilles av på Hypha og ville vist en svart boks. Bruk en YouTube- eller Vimeo-lenke i stedet.",
+    "signalFormVideoUnsupported": "Bruk en YouTube- eller Vimeo-lenke, eller en direkte lenke til en videofil (.mp4, .webm, .ogg eller .mov).",
     "signalFormAttachments": "Dokumenter",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint eller tekst. Flere om gangen. 16 MB hver.",
     "signalAttachments": "Dokumenter",
@@ -4938,7 +4940,9 @@
     "upvoteArchived": "Dette signalet er arkivert og kan ikke lenger stemmes opp.",
     "votingModeLoadFailed": "Kunne ikke laste inn stemmemetoden for dette rommet.",
     "votingModeRetry": "Prøv igjen",
-    "votingUnavailable": "Oppstemming åpner når dette rommet er koblet til stemming på kjeden."
+    "votingUnavailable": "Oppstemming åpner når dette rommet er koblet til stemming på kjeden.",
+    "videoCannotPlay": "Denne videoen kan ikke spilles av her.",
+    "videoOpenLink": "Åpne videolenken"
   },
   "Calendar": {
     "title": "Kalender",

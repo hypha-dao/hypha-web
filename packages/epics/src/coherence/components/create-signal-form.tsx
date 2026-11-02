@@ -93,6 +93,10 @@ import {
   signalVotingSpaceId,
   useSignalVotingMode,
 } from '../hooks/use-signal-voting-mode';
+import {
+  signalVideoLinkHost,
+  signalVideoLinkProblem,
+} from '../utils/signal-video';
 import { formatVotingPowerCompact } from '../utils/format-voting-power';
 import type { UseMembers } from '../../spaces/hooks/types';
 import { SignalTagMergeDialog } from './signal-tag-merge-dialog';
@@ -561,6 +565,25 @@ export const CreateSignalForm = ({
     control: form.control,
     name: 'videoUrl',
   });
+  const videoLinkProblemMessage = React.useCallback(
+    (raw: string | null | undefined) => {
+      const problem = signalVideoLinkProblem(raw);
+      if (problem === 'blocked') {
+        return t('signalFormVideoBlocked', { host: signalVideoLinkHost(raw) });
+      }
+      return problem === 'unsupported' ? t('signalFormVideoUnsupported') : null;
+    },
+    [t],
+  );
+  // Read after mount: `'self'` needs the page origin, which SSR does not have.
+  const [videoLinkWarning, setVideoLinkWarning] = React.useState<string | null>(
+    null,
+  );
+  React.useEffect(() => {
+    setVideoLinkWarning(
+      showVideo ? videoLinkProblemMessage(watchedVideoUrl) : null,
+    );
+  }, [showVideo, videoLinkProblemMessage, watchedVideoUrl]);
   React.useEffect(() => {
     if (keptImages.length > 0 || imageFiles.length > 0) setShowImages(true);
   }, [imageFiles.length, keptImages.length]);
@@ -734,6 +757,13 @@ export const CreateSignalForm = ({
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
       form.clearErrors('root');
+      const videoProblem = videoLinkProblemMessage(data.videoUrl);
+      if (videoProblem) {
+        form.setError('videoUrl', { type: 'manual', message: videoProblem });
+        form.setError('root', { type: 'manual', message: videoProblem });
+        scrollSignalField(formRef.current, 'videoUrl');
+        return;
+      }
       const storedCreatorId =
         typeof data.creatorId === 'number' && data.creatorId > 0
           ? data.creatorId
@@ -1089,6 +1119,7 @@ export const CreateSignalForm = ({
       person?.id,
       reportPublishFailure,
       spaceId,
+      videoLinkProblemMessage,
     ],
   );
 
@@ -1479,7 +1510,7 @@ export const CreateSignalForm = ({
                 <FormField
                   control={form.control}
                   name="videoUrl"
-                  render={({ field }) => (
+                  render={({ field, fieldState }) => (
                     <FormItem data-signal-field="videoUrl">
                       <FormLabel className="text-foreground">
                         {t('signalFormVideo')}
@@ -1490,12 +1521,26 @@ export const CreateSignalForm = ({
                           disabled={isMutating}
                           placeholder="https://"
                           value={field.value ?? ''}
-                          onChange={field.onChange}
+                          onChange={(event) => {
+                            field.onChange(event);
+                            if (fieldState.error?.type === 'manual') {
+                              form.clearErrors('videoUrl');
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormDescription>
                         {t('signalFormVideoHint')}
                       </FormDescription>
+                      {videoLinkWarning && !fieldState.error ? (
+                        <p
+                          role="alert"
+                          className="text-sm text-destructive"
+                          data-testid="signal-video-link-warning"
+                        >
+                          {videoLinkWarning}
+                        </p>
+                      ) : null}
                       <FormMessage />
                     </FormItem>
                   )}

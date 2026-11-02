@@ -4720,7 +4720,9 @@
     "signalFormVideo": "Video link",
     "signalFormMediaVideo": "Video",
     "signalFormMedia": "Images or video",
-    "signalFormVideoHint": "Paste a YouTube, Vimeo, or direct video link. The file stays where it is, and the signal plays it.",
+    "signalFormVideoHint": "Paste a YouTube or Vimeo link. A direct video file only plays from a host Hypha allows.",
+    "signalFormVideoBlocked": "Video files from {host} cannot play on Hypha and would show as a black box. Use a YouTube or Vimeo link instead.",
+    "signalFormVideoUnsupported": "Use a YouTube or Vimeo link, or a direct link to a video file (.mp4, .webm, .ogg or .mov).",
     "signalFormAttachments": "Documents",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint, or text. Add several. 16 MB each.",
     "signalAttachments": "Documents",
@@ -4969,7 +4971,9 @@
     "upvoteArchived": "This signal is archived and can no longer be upvoted.",
     "votingModeLoadFailed": "This space's voting method could not be loaded.",
     "votingModeRetry": "Retry",
-    "votingUnavailable": "Upvoting opens once this space is linked to on-chain voting."
+    "votingUnavailable": "Upvoting opens once this space is linked to on-chain voting.",
+    "videoCannotPlay": "This video cannot play here.",
+    "videoOpenLink": "Open the video link"
   },
   "Calendar": {
     "title": "Calendar",

@@ -27,6 +27,10 @@ import {
   type LinkedTreasuryPayout,
 } from './linked-treasury-amount';
 import { SignalTypeIcon } from '../coherence/components/signal-type-icon';
+import {
+  signalVideoLinkHost,
+  signalVideoLinkProblem,
+} from '../coherence/utils/signal-video';
 import { MemberSpaceSelect } from './member-space-select';
 import { useMemberNamedSpaces } from './use-member-named-spaces';
 import {
@@ -176,8 +180,16 @@ export function NetworkExchangeShareCard({
     ) {
       return;
     }
-    if (mediaKind === 'video' && video && !/^https?:\/\//i.test(video)) {
-      setNote(tSignals('signalFormVideoHint'));
+    const videoProblem =
+      mediaKind === 'video' ? signalVideoLinkProblem(video) : null;
+    if (videoProblem) {
+      setNote(
+        videoProblem === 'blocked'
+          ? tSignals('signalFormVideoBlocked', {
+              host: signalVideoLinkHost(video),
+            })
+          : tSignals('signalFormVideoUnsupported'),
+      );
       return;
     }
     const indicativePayouts = completePayouts(payouts);

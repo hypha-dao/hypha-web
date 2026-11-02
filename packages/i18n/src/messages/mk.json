@@ -4671,7 +4671,9 @@
     "signalFormVideo": "Видео врска",
     "signalFormMediaVideo": "Видео",
     "signalFormMedia": "Слики или видео",
-    "signalFormVideoHint": "Залепете врска од YouTube, Vimeo или директно видео. Датотеката останува каде што е, а сигналот ја пушта.",
+    "signalFormVideoHint": "Залепете врска од YouTube или Vimeo. Директна видео датотека се пушта само од домаќин што Hypha го дозволува.",
+    "signalFormVideoBlocked": "Видео датотеките од {host} не може да се пуштат на Hypha и би се прикажале како црно поле. Наместо тоа, користете врска од YouTube или Vimeo.",
+    "signalFormVideoUnsupported": "Користете врска од YouTube или Vimeo, или директна врска до видео датотека (.mp4, .webm, .ogg или .mov).",
     "signalFormAttachments": "Документи",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint или текст. Неколку одеднаш. По 16 MB.",
     "signalAttachments": "Документи",
@@ -4920,7 +4922,9 @@
     "upvoteArchived": "Овој сигнал е архивиран и повеќе не може да се поддржува.",
     "votingModeLoadFailed": "Методот на гласање на овој простор не можеше да се вчита.",
     "votingModeRetry": "Обиди се повторно",
-    "votingUnavailable": "Гласањето ќе се отвори откако овој простор ќе се поврзе со гласање на блокчејн."
+    "votingUnavailable": "Гласањето ќе се отвори откако овој простор ќе се поврзе со гласање на блокчејн.",
+    "videoCannotPlay": "Ова видео не може да се пушти тука.",
+    "videoOpenLink": "Отвори ја врската до видеото"
   },
   "Calendar": {
     "title": "Календар",

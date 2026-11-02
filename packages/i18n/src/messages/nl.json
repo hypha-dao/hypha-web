@@ -4690,7 +4690,9 @@
     "signalFormVideo": "Videolink",
     "signalFormMediaVideo": "Video",
     "signalFormMedia": "Afbeeldingen of video",
-    "signalFormVideoHint": "Plak een YouTube-, Vimeo- of directe videolink. Het bestand blijft waar het is en het signaal speelt het af.",
+    "signalFormVideoHint": "Plak een YouTube- of Vimeo-link. Een direct videobestand speelt alleen af vanaf een host die Hypha toestaat.",
+    "signalFormVideoBlocked": "Videobestanden van {host} kunnen niet afspelen op Hypha en zouden als een zwart vlak verschijnen. Gebruik in plaats daarvan een YouTube- of Vimeo-link.",
+    "signalFormVideoUnsupported": "Gebruik een YouTube- of Vimeo-link, of een directe link naar een videobestand (.mp4, .webm, .ogg of .mov).",
     "signalFormAttachments": "Documenten",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint of tekst. Meerdere tegelijk. 16 MB per stuk.",
     "signalAttachments": "Documenten",
@@ -4939,7 +4941,9 @@
     "upvoteArchived": "Dit signaal is gearchiveerd en er kan niet meer op worden gestemd.",
     "votingModeLoadFailed": "De stemmethode van deze ruimte kon niet worden geladen.",
     "votingModeRetry": "Opnieuw proberen",
-    "votingUnavailable": "Upvoten kan zodra deze space aan on-chain stemmen is gekoppeld."
+    "votingUnavailable": "Upvoten kan zodra deze space aan on-chain stemmen is gekoppeld.",
+    "videoCannotPlay": "Deze video kan hier niet afspelen.",
+    "videoOpenLink": "Videolink openen"
   },
   "Calendar": {
     "title": "Kalender",

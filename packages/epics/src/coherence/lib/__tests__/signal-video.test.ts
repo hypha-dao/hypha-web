@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   resolveSignalVideo,
+  signalVideoLinkHost,
+  signalVideoLinkProblem,
   signalVideoPoster,
   vimeoPosterId,
 } from '../../utils/signal-video';
@@ -48,5 +50,47 @@ describe('resolveSignalVideo', () => {
     expect(resolveSignalVideo('https://example.com/notes')).toBeNull();
     expect(resolveSignalVideo('https://notyoutube.com/watch?v=abc')).toBeNull();
     expect(resolveSignalVideo('https://notvimeo.com/123456789')).toBeNull();
+  });
+});
+
+describe('signalVideoLinkProblem', () => {
+  const options = {
+    mediaSources: ["'self'", 'https://*.ufs.sh', 'https://utfs.io'],
+    selfOrigin: 'https://app.hypha.earth',
+  };
+
+  it('accepts an empty field, YouTube and Vimeo links', () => {
+    expect(signalVideoLinkProblem('', options)).toBeNull();
+    expect(
+      signalVideoLinkProblem('https://youtu.be/abc123XYZ_0', options),
+    ).toBeNull();
+    expect(
+      signalVideoLinkProblem('https://vimeo.com/1231830761', options),
+    ).toBeNull();
+  });
+
+  it('accepts a video file the media-src policy allows', () => {
+    expect(
+      signalVideoLinkProblem('https://abc.ufs.sh/f/clip.mp4', options),
+    ).toBeNull();
+    expect(
+      signalVideoLinkProblem('https://app.hypha.earth/clip.webm', options),
+    ).toBeNull();
+  });
+
+  it('blocks a video file from a host the policy does not allow', () => {
+    expect(
+      signalVideoLinkProblem('https://cdn.example.com/clip.mp4', options),
+    ).toBe('blocked');
+    expect(signalVideoLinkHost('https://cdn.example.com/clip.mp4')).toBe(
+      'cdn.example.com',
+    );
+  });
+
+  it('rejects a link that is not a video at all', () => {
+    expect(
+      signalVideoLinkProblem('https://example.com/watch-this', options),
+    ).toBe('unsupported');
+    expect(signalVideoLinkProblem('not a link', options)).toBe('unsupported');
   });
 });

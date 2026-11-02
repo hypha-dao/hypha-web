@@ -4112,7 +4112,9 @@
     "signalFormVideo": "Lien vidéo",
     "signalFormMediaVideo": "Vidéo",
     "signalFormMedia": "Images ou vidéo",
-    "signalFormVideoHint": "Collez un lien YouTube, Vimeo ou un lien direct. Le fichier reste là où il est, et le signal le lit.",
+    "signalFormVideoHint": "Collez un lien YouTube ou Vimeo. Un fichier vidéo direct ne se lit que depuis un hôte autorisé par Hypha.",
+    "signalFormVideoBlocked": "Les fichiers vidéo de {host} ne peuvent pas être lus sur Hypha et apparaîtraient comme un cadre noir. Utilisez plutôt un lien YouTube ou Vimeo.",
+    "signalFormVideoUnsupported": "Utilisez un lien YouTube ou Vimeo, ou un lien direct vers un fichier vidéo (.mp4, .webm, .ogg ou .mov).",
     "signalFormAttachments": "Documents",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint ou texte. Plusieurs à la fois. 16 Mo chacun.",
     "signalAttachments": "Documents",
@@ -4357,7 +4359,9 @@
     "upvoteArchived": "Ce signal est archivé et ne peut plus être soutenu.",
     "votingModeLoadFailed": "La méthode de vote de cet espace n'a pas pu être chargée.",
     "votingModeRetry": "Réessayer",
-    "votingUnavailable": "Les votes seront possibles dès que cet espace sera relié au vote on-chain."
+    "votingUnavailable": "Les votes seront possibles dès que cet espace sera relié au vote on-chain.",
+    "videoCannotPlay": "Cette vidéo ne peut pas être lue ici.",
+    "videoOpenLink": "Ouvrir le lien de la vidéo"
   },
   "BankingTab": {
     "title": "Banque",
