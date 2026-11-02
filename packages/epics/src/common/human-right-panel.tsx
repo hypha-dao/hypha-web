@@ -123,6 +123,7 @@ import {
   type ChatPanelAttachmentMedia,
 } from './human-chat-panel';
 import { HumanChatPanelTypingIndicator } from './human-chat-panel/human-chat-panel-typing-indicator';
+import { isSignalThreadJoin } from './human-chat-panel/signal-thread-join';
 import { useChatRoomTyping } from './human-chat-panel/use-chat-room-typing';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
@@ -3771,6 +3772,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     }
 
     const openingSpaceSlug = coherenceSpaceSlug?.trim() || '';
+    const signalThreadJoin = isSignalThreadJoin({
+      coherenceSlug,
+      spaceSlug: openingSpaceSlug,
+      isPublic: coherencePublic,
+    });
     const intendedRoomId = coherenceRoomId?.trim() || null;
     const previousRoomId = roomIdRef.current?.trim();
     if (previousRoomId) {
@@ -3804,7 +3810,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     if (
       openingSpaceSlug &&
       isSpaceLoading &&
-      (coherencePublic || !coherenceRoomId?.trim()) &&
+      (coherencePublic || (!coherenceRoomId?.trim() && !signalThreadJoin)) &&
       !knownPublicRoomId
     ) {
       return () => {
@@ -3864,7 +3870,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             );
           }
           targetRoomId = acceptedPublicRoomId;
-        } else if (!targetRoomId && openingSpaceSlug) {
+        } else if (!targetRoomId && openingSpaceSlug && !signalThreadJoin) {
           targetRoomId =
             space?.chatRoomId?.trim() ||
             getStoredRoomId(openingSpaceSlug) ||
@@ -3873,7 +3879,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
         // A space room must not be created as a signal room.
         // Public map→chat must not create/join `spaces.chatRoomId` either.
-        if (!targetRoomId && openingSpaceSlug && !coherencePublic) {
+        if (
+          !targetRoomId &&
+          openingSpaceSlug &&
+          !coherencePublic &&
+          !signalThreadJoin
+        ) {
           if (blockSpaceChatForMembership) {
             setIsJoining(false);
             return;
@@ -3901,6 +3912,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                 slug: openingSpaceSlug,
                 chatRoomId: newRoomId,
               });
+              if (cancelled || joinEpochRef.current !== joinEpoch) return;
               openCoherenceChat(
                 newRoomId,
                 coherenceTitle || space?.title || openingSpaceSlug,
@@ -3947,8 +3959,17 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               slug: coherenceSlug,
               roomId: newRoomId,
             });
+            // The viewer may have opened another signal while this one's room
+            // was created; reopening it then would show the wrong thread.
+            if (cancelled || joinEpochRef.current !== joinEpoch) return;
             // Update context so subsequent opens don't re-create
-            openCoherenceChat(newRoomId, coherenceTitle || '', coherenceSlug);
+            openCoherenceChat(
+              newRoomId,
+              coherenceTitle || '',
+              coherenceSlug,
+              coherenceDescription,
+              coherenceSpaceSlug,
+            );
           } catch (err) {
             console.warn(
               '[HumanRightPanel] Failed to persist roomId to coherence:',
@@ -3980,7 +4001,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           if (
             cancelled ||
             openingTimelineRoomIdRef.current !== targetRoomId ||
-            openingSpaceSlug
+            (openingSpaceSlug && !signalThreadJoin)
           ) {
             return;
           }
