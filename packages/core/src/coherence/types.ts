@@ -121,6 +121,8 @@ export type CoherenceUpvoteSummary = {
   voters: CoherenceUpvoter[];
   /** The requesting user's own upvote, when authenticated. */
   myUpvote: { votingPower: string; maxVotingPower: string } | null;
+  /** Voting power of upvotes first cast within the trailing window, all voters (not capped). */
+  recentVotingPower?: { last7Days: string; last30Days: string };
 };
 
 export type Coherence = {

@@ -39,6 +39,7 @@ import {
   applyCoherenceUpvoteRemoval,
 } from './apply-coherence-upvote';
 import type { CoherenceUpvoteSummary } from '../types';
+import { getMemberVotingPower } from './web3/get-member-voting-power';
 import { findPersonsBySlug } from '../../people/server/queries';
 import { findSpaceBySlug } from '../../space/server/queries';
 import { newlyMentionedSlugs } from '../signal-mentions';
@@ -533,6 +534,27 @@ export async function removeCoherenceUpvoteAction(
   });
 
   return applyCoherenceUpvoteRemoval({ coherence, actor: self }, { db });
+}
+
+/**
+ * The caller's current voting power in a space, from the same on-chain source
+ * a signal upvote snapshots. Null when it cannot be resolved (signed out, no
+ * linked wallet, or the space is not on-chain).
+ */
+export async function getMySignalVotingPowerAction(
+  { spaceSlug }: { spaceSlug: string },
+  { authToken }: { authToken?: string },
+): Promise<{ votingPower: string; tokenDecimals: number } | null> {
+  if (!authToken) return null;
+  const self = await findSelf({ db: getDb({ authToken }) });
+  if (!self?.address) return null;
+  const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+  if (space?.web3SpaceId == null) return null;
+  const { votingPower, tokenDecimals } = await getMemberVotingPower({
+    memberAddress: self.address as `0x${string}`,
+    web3SpaceId: space.web3SpaceId,
+  });
+  return { votingPower: votingPower.toString(), tokenDecimals };
 }
 
 export async function getSignalWorkflowConfigAction(

@@ -9,6 +9,7 @@ import { DbConfig } from '../../server';
 import type { CoherenceUpvoteSummary, CoherenceUpvoter } from '../types';
 
 const MAX_VOTERS_PER_SUMMARY = 12;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const EMPTY_COHERENCE_UPVOTE_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
@@ -57,6 +58,7 @@ export const findCoherenceUpvoteSummaries = async (
       votingPower: coherenceUpvotes.votingPower,
       maxVotingPower: coherenceUpvotes.maxVotingPower,
       tokenDecimals: coherenceUpvotes.tokenDecimals,
+      createdAt: coherenceUpvotes.createdAt,
       name: people.name,
       surname: people.surname,
       avatarUrl: people.avatarUrl,
@@ -67,6 +69,11 @@ export const findCoherenceUpvoteSummaries = async (
 
   const summaries: Record<number, CoherenceUpvoteSummary> = {};
   const totals = new Map<number, bigint>();
+  const last7Days = new Map<number, bigint>();
+  const last30Days = new Map<number, bigint>();
+  const now = Date.now();
+  const since7Days = now - 7 * DAY_MS;
+  const since30Days = now - 30 * DAY_MS;
 
   for (const row of rows) {
     const summary = (summaries[row.coherenceId] ??= {
@@ -80,6 +87,19 @@ export const findCoherenceUpvoteSummaries = async (
       power = 0n;
     }
     totals.set(row.coherenceId, (totals.get(row.coherenceId) ?? 0n) + power);
+    const castAt = new Date(row.createdAt).getTime();
+    if (castAt >= since30Days) {
+      last30Days.set(
+        row.coherenceId,
+        (last30Days.get(row.coherenceId) ?? 0n) + power,
+      );
+    }
+    if (castAt >= since7Days) {
+      last7Days.set(
+        row.coherenceId,
+        (last7Days.get(row.coherenceId) ?? 0n) + power,
+      );
+    }
     summary.upvoteCount += 1;
     summary.tokenDecimals = Math.max(summary.tokenDecimals, row.tokenDecimals);
     const voter: CoherenceUpvoter = {
@@ -98,9 +118,12 @@ export const findCoherenceUpvoteSummaries = async (
   }
 
   for (const [coherenceId, summary] of Object.entries(summaries)) {
-    summary.totalVotingPower = (
-      totals.get(Number(coherenceId)) ?? 0n
-    ).toString();
+    const id = Number(coherenceId);
+    summary.totalVotingPower = (totals.get(id) ?? 0n).toString();
+    summary.recentVotingPower = {
+      last7Days: (last7Days.get(id) ?? 0n).toString(),
+      last30Days: (last30Days.get(id) ?? 0n).toString(),
+    };
     summary.voters.sort((a, b) => {
       const diff = BigInt(b.votingPower) - BigInt(a.votingPower);
       return diff > 0n ? 1 : diff < 0n ? -1 : 0;
