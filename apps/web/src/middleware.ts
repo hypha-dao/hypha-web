@@ -143,11 +143,17 @@ const WL_HOSTS: Record<string, string> = {
   'liz.localhost': 'cordoba-ecovillage',
   'hypha-test.gerroza.com': 'ponta-do-sol-energy-community',
 };
+// Per-deployment Vercel URLs (spike option C: second origin without a custom domain).
+const WL_VERCEL_DEPLOY_HOST = /^hypha-[a-z0-9]+-hypha-dao\.vercel\.app$/;
 const WL_SECTIONS = /^\/(overview|energy|agreements|members|treasury)(\/.*)?$/;
 
 function whiteLabelRewrite(request: NextRequest): NextResponse | null {
   const hostname = (request.headers.get('host') ?? '').split(':')[0] ?? '';
-  const slug = WL_HOSTS[hostname];
+  const slug =
+    WL_HOSTS[hostname] ??
+    (WL_VERCEL_DEPLOY_HOST.test(hostname)
+      ? 'ponta-do-sol-energy-community'
+      : undefined);
   if (!slug) return null;
   const { pathname, search } = request.nextUrl;
   const to = (path: string) => {

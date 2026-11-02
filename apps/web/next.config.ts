@@ -85,7 +85,7 @@ const nextConfig: NextConfig = {
           {
             type: 'host',
             value:
-              '(liz\\.localhost|v1\\.localhost|hypha-test\\.gerroza\\.com)',
+              '(liz\\.localhost|v1\\.localhost|hypha-test\\.gerroza\\.com|hypha-[a-z0-9]+-hypha-dao\\.vercel\\.app)',
           },
         ],
         destination: `/${routing.defaultLocale}/network`,
