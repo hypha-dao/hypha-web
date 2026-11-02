@@ -235,6 +235,8 @@ export type MatrixDiscussionThreadProps = {
   /** Prefix for console warnings. */
   logLabel: string;
   messagesClassName?: string;
+  /** Wraps the typing indicator and composer. */
+  composerClassName?: string;
   /** Shown above the composer while the room has no messages. */
   emptyHint?: React.ReactNode;
 };
@@ -260,6 +262,7 @@ export function MatrixDiscussionThread({
   unavailableLabel,
   logLabel,
   messagesClassName,
+  composerClassName,
   emptyHint,
 }: MatrixDiscussionThreadProps) {
   const tChat = useTranslations('HumanChatPanel');
@@ -1168,51 +1171,53 @@ export function MatrixDiscussionThread({
           {composerError}
         </p>
       ) : null}
-      <HumanChatPanelTypingIndicator peers={typingPeers} />
-      <HumanChatPanelChatBar
-        value={input}
-        onChange={(next) => {
-          setComposerError(null);
-          setInput(next);
-          setComposerTyping(
-            next.trim().length > 0 || draftAttachments.length > 0,
-          );
-        }}
-        onSend={sendMessage}
-        placeholder={placeholder}
-        mentionCandidates={mentionCandidates}
-        mentionPickerEnabled={mentionCandidates.length > 0}
-        getMentionComposerLabel={getMentionComposerLabel}
-        draftAttachments={draftAttachments}
-        onDraftAttachmentsChange={setDraftAttachments}
-        composerLocked={false}
-        composerLockedMessage={connectingLabel}
-        replyPreview={
-          replyDraft
-            ? {
-                authorLabel: replyDraft.authorLabel,
-                excerpt: replyDraft.excerpt,
-                sourceUserId: replyDraft.sourceUserId,
-                isYou: replyDraft.isYou,
-                onDismiss: () => setReplyDraft(null),
-              }
-            : undefined
-        }
-        editPreview={
-          editDraft
-            ? {
-                excerpt: editDraft.excerpt,
-                onDismiss: () => {
-                  setEditDraft(null);
-                  setInput('');
-                  disposeDraftAttachmentUrls(draftAttachmentsRef.current);
-                  setDraftAttachments([]);
-                  setComposerError(null);
-                },
-              }
-            : undefined
-        }
-      />
+      <div className={composerClassName}>
+        <HumanChatPanelTypingIndicator peers={typingPeers} />
+        <HumanChatPanelChatBar
+          value={input}
+          onChange={(next) => {
+            setComposerError(null);
+            setInput(next);
+            setComposerTyping(
+              next.trim().length > 0 || draftAttachments.length > 0,
+            );
+          }}
+          onSend={sendMessage}
+          placeholder={placeholder}
+          mentionCandidates={mentionCandidates}
+          mentionPickerEnabled={mentionCandidates.length > 0}
+          getMentionComposerLabel={getMentionComposerLabel}
+          draftAttachments={draftAttachments}
+          onDraftAttachmentsChange={setDraftAttachments}
+          composerLocked={false}
+          composerLockedMessage={connectingLabel}
+          replyPreview={
+            replyDraft
+              ? {
+                  authorLabel: replyDraft.authorLabel,
+                  excerpt: replyDraft.excerpt,
+                  sourceUserId: replyDraft.sourceUserId,
+                  isYou: replyDraft.isYou,
+                  onDismiss: () => setReplyDraft(null),
+                }
+              : undefined
+          }
+          editPreview={
+            editDraft
+              ? {
+                  excerpt: editDraft.excerpt,
+                  onDismiss: () => {
+                    setEditDraft(null);
+                    setInput('');
+                    disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+                    setDraftAttachments([]);
+                    setComposerError(null);
+                  },
+                }
+              : undefined
+          }
+        />
+      </div>
     </AgentMentionLabelProvider>
   );
 }

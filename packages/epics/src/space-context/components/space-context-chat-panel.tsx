@@ -292,6 +292,7 @@ function SpaceContextSectionBody({
             unavailableLabel={t('chat.unavailable')}
             logLabel="SpaceContextChatPanel"
             messagesClassName="flex min-h-[14rem] flex-1 flex-col"
+            composerClassName="-mx-4 border-t border-border/70"
           />
         )}
       </div>
