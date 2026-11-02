@@ -116,10 +116,32 @@ export async function listSpaceContextSections(
     .leftJoin(people, eq(people.id, spaceContextSections.updatedByPersonId))
     .where(eq(spaceContextSections.spaceId, space.id));
 
+  const sectionIds = rows.map((row) => row.section.id);
+  const messageCountRows =
+    sectionIds.length === 0
+      ? []
+      : await db
+          .select({
+            sectionId: spaceContextSectionMessages.sectionId,
+            count: sql<number>`count(*)::int`,
+          })
+          .from(spaceContextSectionMessages)
+          .where(inArray(spaceContextSectionMessages.sectionId, sectionIds))
+          .groupBy(spaceContextSectionMessages.sectionId);
+  const messageCountBySection = new Map(
+    messageCountRows.map((row) => [row.sectionId, Number(row.count) || 0]),
+  );
+
   const removedSections: SpaceContextRemovedSection[] = [];
   const liveRows = rows.filter((row) => {
     const { section } = row;
-    if (isUntouchedRetiredDefaultRow(section)) return false;
+    if (
+      isUntouchedRetiredDefaultRow(section, {
+        discussionMessageCount: messageCountBySection.get(section.id) ?? 0,
+      })
+    ) {
+      return false;
+    }
     if (section.removedAt == null || section.pendingChange === 'add') {
       return true;
     }
@@ -136,9 +158,9 @@ export async function listSpaceContextSections(
     return false;
   });
 
-  const sectionIds = liveRows.map((row) => row.section.id);
+  const liveSectionIds = liveRows.map((row) => row.section.id);
   const contributorRows =
-    sectionIds.length === 0
+    liveSectionIds.length === 0
       ? []
       : await db
           .select({
@@ -148,7 +170,7 @@ export async function listSpaceContextSections(
           .from(spaceContextSectionMessages)
           .where(
             and(
-              inArray(spaceContextSectionMessages.sectionId, sectionIds),
+              inArray(spaceContextSectionMessages.sectionId, liveSectionIds),
               sql`${spaceContextSectionMessages.personId} is not null`,
             ),
           )

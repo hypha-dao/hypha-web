@@ -37,14 +37,32 @@ describe('space context catalog', () => {
       ratifiedDocumentId: null,
       chatRoomId: null,
     };
-    const untouched = (overrides: Record<string, unknown>) =>
-      isUntouchedRetiredDefaultRow({ ...row, ...overrides } as never);
+    const untouched = (
+      overrides: Record<string, unknown>,
+      activity?: { discussionMessageCount?: number },
+    ) =>
+      isUntouchedRetiredDefaultRow({ ...row, ...overrides } as never, activity);
     expect(untouched({})).toBe(true);
     expect(untouched({ sectionKey: 'how_we_decide' })).toBe(true);
     expect(untouched({ sectionKey: 'mission' })).toBe(false);
     expect(untouched({ markdown: '- Slack', status: 'draft' })).toBe(false);
-    expect(untouched({ chatRoomId: '!room:hypha' })).toBe(false);
+    // Opening the panel stores a room before anyone writes. That alone
+    // does not keep a retired default; a message in it does.
+    expect(untouched({ chatRoomId: '!room:hypha' })).toBe(true);
+    expect(
+      untouched({ chatRoomId: '!room:hypha' }, { discussionMessageCount: 1 }),
+    ).toBe(false);
+    expect(
+      untouched({ sectionKey: 'how_we_decide', chatRoomId: '!room:hypha' }),
+    ).toBe(true);
     expect(untouched({ sectionKey: 'custom-a1b2c3d4' })).toBe(false);
+    expect(
+      untouched({
+        sectionKey: 'custom-a1b2c3d4',
+        chatRoomId: '!room:hypha',
+        title: 'Tools we use',
+      }),
+    ).toBe(false);
     expect(
       untouched({
         status: 'ratified',

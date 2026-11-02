@@ -92,10 +92,13 @@ export function mapSectionRow(
  * as an empty "Not started" card. Judged from the mapped record, so a raw
  * status the card rewrites (a ratified section whose agreement was deleted,
  * an unknown status) does not keep the card on screen. A draft, a proposal,
- * a live ratification, a discussion room, or any visible text keeps it.
+ * a live ratification, any visible text, or a discussion message keeps it.
+ * A Matrix room id alone does not: opening the panel stores one before
+ * anyone writes.
  */
 export function isUntouchedRetiredDefaultRow(
   row: SpaceContextSection,
+  activity?: { discussionMessageCount?: number },
 ): boolean {
   if (
     !isBuiltinSpaceContextSectionKey(row.sectionKey) ||
@@ -110,7 +113,7 @@ export function isUntouchedRetiredDefaultRow(
   if (
     mapped.proposalDocumentId != null ||
     mapped.ratifiedDocumentId != null ||
-    mapped.chatRoomId
+    (activity?.discussionMessageCount ?? 0) > 0
   ) {
     return false;
   }
