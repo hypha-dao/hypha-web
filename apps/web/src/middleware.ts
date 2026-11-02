@@ -141,7 +141,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
 // SPIKE #2616 (V2): host -> Space map, hardcoded. Throwaway.
 const WL_HOSTS: Record<string, string> = {
   'liz.localhost': 'cordoba-ecovillage',
-  'hypha-test.gerroza.com': 'cordoba-ecovillage',
+  'hypha-test.gerroza.com': 'ponta-do-sol-energy-community',
 };
 const WL_SECTIONS = /^\/(overview|energy|agreements|members|treasury)(\/.*)?$/;
 
