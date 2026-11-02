@@ -50,6 +50,8 @@ export type NotificationCentreFormProps = {
   pushActive?: boolean;
   /** The browser SDK has reported this browser's push state. False keeps that one switch on a skeleton. */
   pushStateReady?: boolean;
+  /** The SDK cannot run in this browser: the push switch is disabled with an explanation. */
+  pushUnavailable?: boolean;
   subscribe: () => Promise<void>;
   unsubscribe: () => Promise<void>;
   /** Asks for browser permission and opts this browser in; resolves to whether push is now on. */
@@ -186,6 +188,7 @@ export const NotificationCentreForm = ({
   subscribed,
   pushActive,
   pushStateReady = true,
+  pushUnavailable = false,
   subscribe,
   unsubscribe,
   enableBrowserPush,
@@ -427,7 +430,7 @@ export const NotificationCentreForm = ({
                     <Skeleton
                       width="100%"
                       height="64px"
-                      loading={!pushStateReady}
+                      loading={!pushStateReady && !pushUnavailable}
                     >
                       <GeneralSetting
                         id="browserNotifications"
@@ -435,12 +438,21 @@ export const NotificationCentreForm = ({
                         title={tNotificationCentre(
                           'channels.browserNotifications',
                         )}
-                        description={optionalText(
-                          'channels.browserDescription',
-                          'Alerts on this browser or device. Turn it on in each browser you use.',
-                        )}
-                        checked={field.value === 'yes'}
-                        disabled={preferencesDisabled || pushPending}
+                        description={
+                          pushUnavailable
+                            ? optionalText(
+                                'channels.browserUnavailable',
+                                'Push notifications can’t be turned on in this browser or device.',
+                              )
+                            : optionalText(
+                                'channels.browserDescription',
+                                'Alerts on this browser or device. Turn it on in each browser you use.',
+                              )
+                        }
+                        checked={!pushUnavailable && field.value === 'yes'}
+                        disabled={
+                          preferencesDisabled || pushPending || pushUnavailable
+                        }
                         onCheckedChange={handleBrowserToggle}
                       />
                     </Skeleton>

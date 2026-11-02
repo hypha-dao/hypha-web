@@ -28,6 +28,8 @@ export interface INotificationsContext {
   pushActive: boolean;
   setPushActive: React.Dispatch<React.SetStateAction<boolean>>;
   loggedIn: boolean;
+  /** The SDK failed to start (e.g. an unsupported browser): this device can't manage push. */
+  initFailed: boolean;
 }
 
 export interface NotificationConfiguration {
@@ -48,6 +50,7 @@ export const NotificationsContext = React.createContext<INotificationsContext>({
   pushActive: false,
   setPushActive: (_: React.SetStateAction<boolean>) => {},
   loggedIn: false,
+  initFailed: false,
 });
 
 /** Opt-in tags (`subscribed`): only an explicit `'true'` counts. */
@@ -126,6 +129,7 @@ export const useNotifications = ({
     setSubscribed,
     pushActive,
     setPushActive,
+    initFailed,
   } = React.useContext(NotificationsContext);
   const [error, setError] = React.useState<string | null>(null);
   const [preferences, setPreferences] =
@@ -302,6 +306,8 @@ export const useNotifications = ({
     pushActive,
     /** This browser's push state (permission/subscription) comes from the SDK and may never be ready. */
     pushStateReady: initialized,
+    /** The SDK could not start in this browser, so push can't be turned on here. */
+    pushUnavailable: !initialized && initFailed,
     subscribe,
     unsubscribe,
     enableBrowserPush,

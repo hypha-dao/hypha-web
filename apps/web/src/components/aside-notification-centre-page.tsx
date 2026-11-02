@@ -28,6 +28,7 @@ export default function AsideNotificationCentrePage({
     subscribed,
     pushActive,
     pushStateReady,
+    pushUnavailable,
     subscribe,
     unsubscribe,
     enableBrowserPush,
@@ -61,6 +62,7 @@ export default function AsideNotificationCentrePage({
           subscribed={subscribed}
           pushActive={pushActive}
           pushStateReady={pushStateReady}
+          pushUnavailable={pushUnavailable}
           enableBrowserPush={enableBrowserPush}
           subscribe={subscribe}
           unsubscribe={unsubscribe}
