@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   authorizeSpacePanelInteraction,
   escapeUntrustedDataBoundary,
+  readSpaceContextMatrixFile,
   readSpaceContextSharedSource,
 } from '@hypha-platform/core/server';
 
@@ -12,14 +13,16 @@ const inputSchema = z.object({
     .trim()
     .min(1)
     .describe(
-      'Exact https URL a member shared in this chat: a pasted link or the link of an uploaded document',
+      'Exact URL a member shared in this chat: a pasted https link, the link of an uploaded document, or the mxc:// URL of an attached file',
     ),
   filename: z
     .string()
     .trim()
     .max(200)
     .optional()
-    .describe('Document name from the Markdown link label, when there is one'),
+    .describe(
+      'Document name from the Markdown link label or the attached file line, when there is one',
+    ),
   max_bytes: z
     .number()
     .int()
@@ -37,10 +40,11 @@ export function createReadSpaceContextSourceTool(
   authToken: string,
   spaceSlug: string,
   sharedUrls: string[],
+  matrix?: { homeserver: string; accessToken: string },
 ) {
   return tool({
     description:
-      'Read a link or uploaded document a member shared in this Space Context chat. Returns web page text (HTML to text), PDF text, plain text or Markdown, and images or Office files for multimodal reading. Only URLs that appear in member messages can be read. max_bytes default 2 MiB.',
+      'Read a link, uploaded document or attached file a member shared in this Space Context chat. Returns web page text (HTML to text), PDF text, plain text or Markdown, and images or Office files for multimodal reading. Only URLs that appear in member messages can be read. max_bytes default 2 MiB.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -61,6 +65,23 @@ export function createReadSpaceContextSourceTool(
           error: auth.message,
           code: 'access_denied' as const,
         };
+      }
+      if (parsed.data.url.toLowerCase().startsWith('mxc://')) {
+        if (!matrix) {
+          return {
+            ok: false as const,
+            error: 'Attached files cannot be read right now',
+            code: 'fetch_failed' as const,
+          };
+        }
+        return readSpaceContextMatrixFile({
+          mxcUrl: parsed.data.url,
+          filename: parsed.data.filename,
+          maxBytes: parsed.data.max_bytes,
+          sharedUrls,
+          homeserver: matrix.homeserver,
+          accessToken: matrix.accessToken,
+        });
       }
       return readSpaceContextSharedSource({
         url: parsed.data.url,

@@ -20,7 +20,12 @@ import {
   matrixSendTyping,
   resolveUserMatrixAccessTokenForSend,
 } from '@hypha-platform/core/server';
-import { mentionAwaitingAgent, type AgentRoomLine } from './matrix-agent-turn';
+import {
+  isMatrixMediaMsgtype,
+  mediaEventText,
+  mentionAwaitingAgent,
+  type AgentRoomLine,
+} from './matrix-agent-turn';
 import { writeSpaceContextAgentReply } from './matrix-space-context-agent';
 import { createChatTools } from './tools';
 import { getHyphaChatModel } from './stream-chat';
@@ -91,7 +96,9 @@ function readTextEvents(
     const content = row.content;
     if (!content || typeof content !== 'object') continue;
     const bodyContent = content as Record<string, unknown>;
-    if (bodyContent.msgtype !== 'm.text') continue;
+    const msgtype = bodyContent.msgtype;
+    const isMedia = isMatrixMediaMsgtype(msgtype);
+    if (msgtype !== 'm.text' && !isMedia) continue;
     const relates = bodyContent['m.relates_to'];
     if (
       relates &&
@@ -101,8 +108,11 @@ function readTextEvents(
       continue;
     }
     const sender = typeof row.sender === 'string' ? row.sender : '';
-    const body =
-      typeof bodyContent.body === 'string' ? bodyContent.body.trim() : '';
+    const body = isMedia
+      ? mediaEventText(bodyContent)
+      : typeof bodyContent.body === 'string'
+      ? bodyContent.body.trim()
+      : '';
     if (!sender || !body) continue;
     lines.push({
       sender,
@@ -403,6 +413,7 @@ export async function replyToMatrixAgentMention({
         agentUserId,
         newestFirst: lines,
         requestUrl,
+        matrixMedia: { homeserver, accessToken: botToken },
       });
     } catch (error) {
       console.warn(

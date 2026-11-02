@@ -111,6 +111,7 @@ export async function writeSpaceContextAgentReply({
   agentUserId,
   newestFirst,
   requestUrl,
+  matrixMedia,
 }: {
   roomId: string;
   authToken: string;
@@ -119,6 +120,8 @@ export async function writeSpaceContextAgentReply({
   agentUserId: string;
   newestFirst: AgentRoomLine[];
   requestUrl?: string;
+  /** Lets the agent read files members attached in the room. */
+  matrixMedia?: { homeserver: string; accessToken: string };
 }): Promise<string | null> {
   const specialist = specialistForSectionKey(sectionKey);
   const turn = mentionAwaitingAgent(newestFirst, agentUserId, {
@@ -153,6 +156,7 @@ export async function writeSpaceContextAgentReply({
       authToken,
       spaceSlug,
       extractSharedSourceUrls(memberTexts),
+      matrixMedia,
     ),
   };
   if (canWrite) {

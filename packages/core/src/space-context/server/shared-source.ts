@@ -240,11 +240,14 @@ function trimUrlCandidate(candidate: string): string {
   }
 }
 
-/** https links found in member messages, normalized and de-duplicated. */
+/**
+ * https links and attached Matrix files (`mxc://`) found in member messages,
+ * normalized and de-duplicated.
+ */
 export function extractSharedSourceUrls(texts: string[]): string[] {
   const found = new Set<string>();
   for (const text of texts) {
-    for (const match of text.matchAll(/https:\/\/[^\s<>"'`]+/gi)) {
+    for (const match of text.matchAll(/(?:https|mxc):\/\/[^\s<>"'`]+/gi)) {
       const href = comparableUrl(trimUrlCandidate(match[0]));
       if (href) found.add(href);
     }

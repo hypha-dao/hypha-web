@@ -1,8 +1,46 @@
+import { HYPHA_MEDIA_BUNDLE_FIELD } from '@hypha-platform/core/client';
+
 export type AgentRoomLine = {
   sender: string;
   body: string;
   mentionsAgent: boolean;
 };
+
+const MEDIA_MSGTYPES = new Set(['m.file', 'm.image', 'm.audio', 'm.video']);
+
+export function isMatrixMediaMsgtype(msgtype: unknown): boolean {
+  return typeof msgtype === 'string' && MEDIA_MSGTYPES.has(msgtype);
+}
+
+function oneLine(value: string): string {
+  return value.replace(/[\r\n]+/g, ' ').trim();
+}
+
+/** Caption plus one "Attached file" line per file, so the agent can read it. */
+export function mediaEventText(content: Record<string, unknown>): string {
+  const files: string[] = [];
+  const addFile = (item: unknown) => {
+    if (!item || typeof item !== 'object') return;
+    const slot = item as Record<string, unknown>;
+    const url = typeof slot.url === 'string' ? slot.url.trim() : '';
+    if (!url.startsWith('mxc://')) return;
+    const name =
+      (typeof slot.filename === 'string' && oneLine(slot.filename)) ||
+      (typeof slot.body === 'string' && oneLine(slot.body)) ||
+      'attachment';
+    files.push(`Attached file: ${name} (${url})`);
+  };
+  addFile(content);
+  const bundle = content[HYPHA_MEDIA_BUNDLE_FIELD];
+  if (Array.isArray(bundle)) bundle.forEach(addFile);
+
+  const body = typeof content.body === 'string' ? content.body.trim() : '';
+  const filename =
+    typeof content.filename === 'string' ? content.filename.trim() : '';
+  // Without a caption, Matrix puts the file name in the body.
+  const caption = filename && body !== filename ? body : '';
+  return [caption, ...files].filter(Boolean).join('\n');
+}
 
 export type AgentTurnLimits = {
   /** Earlier lines kept before the mention. */

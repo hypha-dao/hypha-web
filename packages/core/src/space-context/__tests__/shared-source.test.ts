@@ -15,6 +15,10 @@ import {
   readSpaceContextSharedSource,
   type SharedSourceFetchOnce,
 } from '../server/read-shared-source';
+import {
+  parseMatrixContentUri,
+  readSpaceContextMatrixFile,
+} from '../server/read-matrix-shared-file';
 
 const encode = (value: string) => new TextEncoder().encode(value);
 const mockFetchOnce = (
@@ -108,6 +112,19 @@ describe('extractSharedSourceUrls', () => {
       'https://abc.ufs.sh/f/key123',
       'https://en.wikipedia.org/wiki/Commons_(economics)',
     ]);
+  });
+
+  it('finds files attached in the room', () => {
+    const urls = extractSharedSourceUrls([
+      'Draft from this\nAttached file: plan.pdf (mxc://matrix.hypha.earth/AbC123)',
+    ]);
+    expect(urls).toEqual(['mxc://matrix.hypha.earth/AbC123']);
+    expect(isSharedSourceUrl('mxc://matrix.hypha.earth/AbC123', urls)).toBe(
+      true,
+    );
+    expect(isSharedSourceUrl('mxc://matrix.hypha.earth/Other', urls)).toBe(
+      false,
+    );
   });
 
   it('matches shared URLs ignoring fragments and trailing slash normalization', () => {
@@ -291,5 +308,94 @@ describe('readSpaceContextSharedSource', () => {
       { fetchOnce },
     );
     expect(fetchOnce.mock.calls[0]?.[1]).toBe(4 * 1024 * 1024);
+  });
+});
+
+describe('readSpaceContextMatrixFile', () => {
+  const mxcUrl = 'mxc://matrix.hypha.earth/AbC123';
+  const base = {
+    mxcUrl,
+    filename: 'plan.md',
+    sharedUrls: [mxcUrl],
+    homeserver: 'https://matrix.hypha.earth/',
+    accessToken: 'bot-token',
+  };
+
+  it('parses Matrix content URIs', () => {
+    expect(parseMatrixContentUri(mxcUrl)).toEqual({
+      serverName: 'matrix.hypha.earth',
+      mediaId: 'AbC123',
+    });
+    expect(parseMatrixContentUri('mxc://matrix.hypha.earth/../x')).toBeNull();
+    expect(parseMatrixContentUri('https://matrix.hypha.earth/x')).toBeNull();
+  });
+
+  it('reads an attached file through the homeserver with the bot token', async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response('# Mission\n\nWe grow commons.', {
+          headers: { 'content-type': 'text/markdown' },
+        }),
+    );
+    const result = await readSpaceContextMatrixFile(base, {
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      mode: 'text',
+      filename: 'plan.md',
+      url: mxcUrl,
+    });
+    expect(result.ok && result.text).toContain('We grow commons.');
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
+    expect(url).toBe(
+      'https://matrix.hypha.earth/_matrix/client/v1/media/download/matrix.hypha.earth/AbC123',
+    );
+    expect(init.headers).toEqual({ Authorization: 'Bearer bot-token' });
+  });
+
+  it('falls back to the legacy media path on older homeservers', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('', { status: 404 }))
+      .mockResolvedValueOnce(
+        new Response('plain text', {
+          headers: { 'content-type': 'text/plain' },
+        }),
+      );
+    const result = await readSpaceContextMatrixFile(base, {
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    expect(result.ok).toBe(true);
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'https://matrix.hypha.earth/_matrix/media/v3/download/matrix.hypha.earth/AbC123',
+    );
+  });
+
+  it('refuses files that were not attached in the room', async () => {
+    const fetchMock = vi.fn();
+    const result = await readSpaceContextMatrixFile(
+      { ...base, sharedUrls: [] },
+      { fetch: fetchMock as unknown as typeof fetch },
+    );
+    expect(result).toMatchObject({ ok: false, code: 'not_shared' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('stops reading files over the size limit', async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response('x'.repeat(4096), {
+          headers: { 'content-type': 'text/plain' },
+        }),
+    );
+    const result = await readSpaceContextMatrixFile(
+      { ...base, maxBytes: 1024 },
+      { fetch: fetchMock as unknown as typeof fetch },
+    );
+    expect(result).toMatchObject({ ok: false, code: 'too_large' });
   });
 });
