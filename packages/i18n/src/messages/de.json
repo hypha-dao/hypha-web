@@ -4254,6 +4254,7 @@
     "signalTeamAccessApproved": "Signal-Team-Zugang genehmigt",
     "mentionOpenFallbackRoom": "Dieser Raum konnte im lokalen Kontext nicht aufgelöst werden. Öffnen Sie den zugehörigen Space und versuchen Sie es erneut.",
     "mentionOpenFallbackMissingMessage": "Diese Erwähnung ist in der geladenen Timeline noch nicht verfügbar. Bitte versuchen Sie es gleich noch einmal.",
+    "signalMentionNotNotified": "{names} konnte nicht zu diesem Signal-Chat hinzugefügt werden und wurde daher nicht benachrichtigt.",
     "groupChatMenu": "Gruppenchat-Optionen",
     "renameGroup": "Gruppe umbenennen",
     "renameGroupTitle": "Diese Gruppe umbenennen",
@@ -4815,7 +4816,8 @@
     "signalTimeFrameWeek": "Diese Woche",
     "signalTimeFrameMonth": "Diesen Monat",
     "signalTimeFrameYear": "Dieses Jahr",
-    "signalTimeFrameAll": "Gesamte Zeit"
+    "signalTimeFrameAll": "Gesamte Zeit",
+    "signalShowArchived": "Archivierte anzeigen"
   },
   "GlobalCallDock": {
     "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",
@@ -4919,6 +4921,7 @@
     "supportersCount": "{count, plural, =0 {Noch keine UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Mitglied",
     "signInToUpvote": "Melde dich als Space-Mitglied an, um Signale zu unterstützen.",
+    "upvoteMembersOnly": "Nur Mitglieder und Delegierte dieses Space können Signale upvoten.",
     "upvoteFailed": "Deine Stimme konnte nicht aktualisiert werden. Bitte erneut versuchen.",
     "sharedWithNetwork": "Mit dem Netzwerk geteilt",
     "upvoted": "Hochgestimmt",
@@ -4929,7 +4932,8 @@
     "votesCount": "{count, plural, one {# Stimme} other {# Stimmen}}",
     "upvoteArchived": "Dieses Signal ist archiviert und kann nicht mehr unterstützt werden.",
     "votingModeLoadFailed": "Die Abstimmungsmethode dieses Space konnte nicht geladen werden.",
-    "votingModeRetry": "Erneut versuchen"
+    "votingModeRetry": "Erneut versuchen",
+    "votingUnavailable": "Upvotes sind möglich, sobald dieser Space mit On-Chain-Abstimmungen verknüpft ist."
   },
   "Calendar": {
     "title": "Kalender",

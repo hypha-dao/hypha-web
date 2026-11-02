@@ -4286,6 +4286,7 @@
     "signalTeamAccessApproved": "Signal team access approved",
     "mentionOpenFallbackRoom": "We could not resolve that room from your local context. Open the related space and try again.",
     "mentionOpenFallbackMissingMessage": "That mention message is not available in the loaded timeline yet. Try again in a moment.",
+    "signalMentionNotNotified": "{names} could not be added to this signal chat, so they were not notified.",
     "groupChatMenu": "Group chat options",
     "renameGroup": "Rename group",
     "renameGroupTitle": "Rename this group",
@@ -4847,7 +4848,8 @@
     "signalTimeFrameWeek": "This Week",
     "signalTimeFrameMonth": "This Month",
     "signalTimeFrameYear": "This Year",
-    "signalTimeFrameAll": "All Time"
+    "signalTimeFrameAll": "All Time",
+    "signalShowArchived": "Show archived"
   },
   "GlobalCallDock": {
     "callTitle": "Call - {count, plural, one {# member} other {# members}}",
@@ -4955,6 +4957,7 @@
     "supportersCount": "{count, plural, =0 {No UpVoters yet} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Member",
     "signInToUpvote": "Sign in as a space member to upvote signals.",
+    "upvoteMembersOnly": "Only members and delegates of this space can upvote signals.",
     "upvoteFailed": "Could not update your upvote. Try again.",
     "sharedWithNetwork": "Shared with the network",
     "upvoted": "Upvoted",
@@ -4965,7 +4968,8 @@
     "votesCount": "{count, plural, one {# vote} other {# votes}}",
     "upvoteArchived": "This signal is archived and can no longer be upvoted.",
     "votingModeLoadFailed": "This space's voting method could not be loaded.",
-    "votingModeRetry": "Retry"
+    "votingModeRetry": "Retry",
+    "votingUnavailable": "Upvoting opens once this space is linked to on-chain voting."
   },
   "Calendar": {
     "title": "Calendar",

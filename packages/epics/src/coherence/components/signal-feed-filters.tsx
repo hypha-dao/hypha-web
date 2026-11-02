@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { ChevronDown } from 'lucide-react';
+import { Archive, ChevronDown } from 'lucide-react';
 import {
   SIGNAL_TIME_FRAMES,
   availableSignalSorts,
@@ -49,7 +49,7 @@ function sortLabelKeys(
 ): { menu: CoherenceTabKey; pill: CoherenceTabKey } {
   if (sort === 'new') return { menu: 'signalSortNew', pill: 'signalSortNew' };
   // With one vote per member, voters is the only Top, so it reads as plain Top.
-  if (sort === 'top-voters' && votingMode !== 'token') {
+  if (sort === 'top-voters' && votingMode === 'one-member-one-vote') {
     return { menu: 'signalSortTop', pill: 'signalSortTop' };
   }
   return sort === 'top-voters'
@@ -127,16 +127,23 @@ export type SignalFeedFiltersProps = {
   votingMode: SignalVotingMode | null;
   onSortChange: (sort: SignalSort) => void;
   onTimeFrameChange: (timeFrame: SignalTimeFrame) => void;
+  showArchived?: boolean;
+  onShowArchivedChange?: (showArchived: boolean) => void;
   className?: string;
 };
 
-/** Sort pill, plus a time frame pill while a Top sort is selected. */
+/**
+ * Sort pill, a time frame pill while a Top sort is selected, and a toggle
+ * that brings archived signals back into the feed.
+ */
 export function SignalFeedFilters({
   sort,
   timeFrame,
   votingMode,
   onSortChange,
   onTimeFrameChange,
+  showArchived = false,
+  onShowArchivedChange,
   className,
 }: SignalFeedFiltersProps) {
   const t = useTranslations('CoherenceTab');
@@ -177,6 +184,21 @@ export function SignalFeedFilters({
           onChange={onTimeFrameChange}
           testId="signal-time-frame-pill"
         />
+      ) : null}
+      {onShowArchivedChange ? (
+        <button
+          type="button"
+          aria-pressed={showArchived}
+          onClick={() => onShowArchivedChange(!showArchived)}
+          className={cn(
+            PILL_CLASS,
+            showArchived && 'bg-foreground/10 text-foreground',
+          )}
+          data-testid="signal-show-archived-toggle"
+        >
+          <Archive className="size-4 shrink-0" aria-hidden />
+          {t('signalShowArchived')}
+        </button>
       ) : null}
     </div>
   );

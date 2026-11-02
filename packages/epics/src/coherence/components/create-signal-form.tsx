@@ -89,7 +89,10 @@ import { upsertSignalDescriptionInRoom } from '../utils/signal-chat-description'
 import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
 import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
-import { useSignalVotingMode } from '../hooks/use-signal-voting-mode';
+import {
+  signalVotingSpaceId,
+  useSignalVotingMode,
+} from '../hooks/use-signal-voting-mode';
 import { formatVotingPowerCompact } from '../utils/format-voting-power';
 import type { UseMembers } from '../../spaces/hooks/types';
 import { SignalTagMergeDialog } from './signal-tag-merge-dialog';
@@ -260,6 +263,7 @@ export const CreateSignalForm = ({
   const locale = useLocale();
   const { workflow } = useSignalWorkflow(spaceSlug);
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tSignalCard = useTranslations('SignalCard');
   const translateEditor = React.useCallback(
     (
       key: string,
@@ -361,7 +365,11 @@ export const CreateSignalForm = ({
   const [taggedMatrixUserIds, setTaggedMatrixUserIds] = React.useState<
     string[]
   >([]);
-  const { votingMode } = useSignalVotingMode(space?.web3SpaceId);
+  const {
+    votingMode,
+    status: votingModeStatus,
+    retry: retryVotingMode,
+  } = useSignalVotingMode(signalVotingSpaceId(space));
   const { votingPower: myVotingPower } = useMySignalVotingPower({
     spaceSlug: mode === 'create' ? spaceSlug : null,
     authToken,
@@ -891,7 +899,14 @@ export const CreateSignalForm = ({
         // best-effort follow-up work that must not hold the form open.
         setIsClosingAfterPublish(true);
         router.push(successfulUrl);
-        if (coherenceSlug) {
+        if (coherenceSlug && votingMode == null) {
+          // Without a resolved voting method the chosen share is unknown, so
+          // the creator upvotes from the signal page instead of at 100%.
+          if (votingModeStatus !== 'unavailable') {
+            setSignalProvisioningNotice(t('provisioning.creatorUpvoteFailed'));
+          }
+          if (spaceSlug) void revalidateCoherences(spaceSlug);
+        } else if (coherenceSlug) {
           // The signal already exists, so the creator upvote runs after close:
           // retry once, then tell the creator to upvote from the signal page.
           void (async () => {
@@ -994,7 +1009,7 @@ export const CreateSignalForm = ({
                       mentionUserIds: joined,
                     });
                   }
-                  if (notJoined.size > 0) {
+                  if (taggedMatrixUserIds.some((id) => notJoined.has(id))) {
                     setSignalProvisioningNotice(
                       t('provisioning.tagPeopleFailed'),
                     );
@@ -1049,6 +1064,8 @@ export const CreateSignalForm = ({
       createCoherence,
       createRoom,
       creatorVotePercent,
+      votingMode,
+      votingModeStatus,
       ensureRoomMembers,
       sendMessage,
       taggedMatrixUserIds,
@@ -1304,6 +1321,28 @@ export const CreateSignalForm = ({
                 )}
               />
             </section>
+            {mode === 'create' && votingModeStatus === 'error' ? (
+              <section className="flex flex-col gap-3 border-t border-border pt-8">
+                <Label className="text-foreground">
+                  {t('signalFormVoteWithPercent')}
+                </Label>
+                <div
+                  role="alert"
+                  className="flex flex-wrap items-center justify-between gap-3 border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
+                >
+                  <span>{tSignalCard('votingModeLoadFailed')}</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    colorVariant="neutral"
+                    size="sm"
+                    onClick={retryVotingMode}
+                  >
+                    {tSignalCard('votingModeRetry')}
+                  </Button>
+                </div>
+              </section>
+            ) : null}
             {mode === 'create' && votingMode === 'token' ? (
               <section className="flex flex-col gap-3 border-t border-border pt-8">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">

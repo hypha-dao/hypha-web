@@ -3682,6 +3682,7 @@
     "signalTeamAccessApproved": "Acesso à equipe Signal aprovado",
     "mentionOpenFallbackRoom": "Não foi possível resolver essa sala no seu contexto local. Abra o espaço relacionado e tente novamente.",
     "mentionOpenFallbackMissingMessage": "Essa mensagem de menção ainda não está disponível na linha do tempo carregada. Tente novamente em instantes.",
+    "signalMentionNotNotified": "Não foi possível adicionar {names} a este chat do sinal, então não receberam a notificação.",
     "groupChatMenu": "Opções do grupo",
     "renameGroup": "Renomear grupo",
     "renameGroupTitle": "Renomear este grupo",
@@ -4241,7 +4242,8 @@
     "signalTimeFrameWeek": "Esta semana",
     "signalTimeFrameMonth": "Este mês",
     "signalTimeFrameYear": "Este ano",
-    "signalTimeFrameAll": "Sempre"
+    "signalTimeFrameAll": "Sempre",
+    "signalShowArchived": "Mostrar arquivados"
   },
   "GlobalCallDock": {
     "callTitle": "Chamada - {count, plural, one {# membro} other {# membros}}",
@@ -4345,6 +4347,7 @@
     "supportersCount": "{count, plural, =0 {Ainda sem UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Membro",
     "signInToUpvote": "Inicie sessão como membro do espaço para apoiar sinais.",
+    "upvoteMembersOnly": "Somente membros e delegados deste espaço podem votar em sinais.",
     "upvoteFailed": "Não foi possível atualizar o seu voto. Tente novamente.",
     "sharedWithNetwork": "Partilhado com a rede",
     "upvoted": "Votado",
@@ -4355,7 +4358,8 @@
     "votesCount": "{count, plural, one {# voto} other {# votos}}",
     "upvoteArchived": "Este sinal está arquivado e já não pode ser apoiado.",
     "votingModeLoadFailed": "Não foi possível carregar o método de votação deste espaço.",
-    "votingModeRetry": "Tentar novamente"
+    "votingModeRetry": "Tentar novamente",
+    "votingUnavailable": "Os votos ficam disponíveis quando este espaço estiver ligado à votação on-chain."
   },
   "BankingTab": {
     "title": "Banco",

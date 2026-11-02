@@ -11,6 +11,7 @@ import { SignalUpvoteButton } from './signal-upvote-button';
 import { SignalMediaChips } from './signal-media-chips';
 import { countSignalMedia } from '../utils/signal-media';
 import type { SignalRoomActivity } from '../hooks/use-signal-room-activity';
+import type { SignalVotingModeStatus } from '../hooks/use-signal-voting-mode';
 
 export function signalOneLiner(description?: string | null): string {
   return stripDescription(
@@ -46,8 +47,9 @@ type SignalFeedRowProps = {
   signal: Coherence;
   href: string;
   votingMode: SignalVotingMode | null;
-  votingModeError?: boolean;
+  votingModeStatus?: SignalVotingModeStatus;
   onRetryVotingMode?: () => void;
+  isNonMember?: boolean;
   activity?: SignalRoomActivity;
   refresh?: () => Promise<unknown>;
 };
@@ -56,8 +58,9 @@ export function SignalFeedRow({
   signal,
   href,
   votingMode,
-  votingModeError,
+  votingModeStatus,
   onRetryVotingMode,
+  isNonMember,
   activity,
   refresh,
 }: SignalFeedRowProps) {
@@ -97,8 +100,9 @@ export function SignalFeedRow({
         slug={signal.slug}
         upvotes={signal.upvotes}
         votingMode={votingMode}
-        votingModeError={votingModeError}
+        votingModeStatus={votingModeStatus}
         onRetryVotingMode={onRetryVotingMode}
+        isNonMember={isNonMember}
         refresh={refresh}
         archived={Boolean(signal.archived)}
         className="relative z-10"

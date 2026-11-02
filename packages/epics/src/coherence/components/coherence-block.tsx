@@ -17,12 +17,17 @@ import {
   type SignalTimeFrame,
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
-import { Button, Skeleton } from '@hypha-platform/ui';
+import { Button, ErrorAlert, Skeleton } from '@hypha-platform/ui';
 import { CoherenceOrder } from '../types';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { getSignalPath } from '../../common/get-path-function';
+import { isSignalSpaceNonMember } from '../hooks/use-is-signal-space-non-member';
+import { useSignalProvisioningNotice } from '../hooks/use-signal-provisioning-notice';
 import { useSignalRoomActivity } from '../hooks/use-signal-room-activity';
-import { useSignalVotingMode } from '../hooks/use-signal-voting-mode';
+import {
+  signalVotingSpaceId,
+  useSignalVotingMode,
+} from '../hooks/use-signal-voting-mode';
 import { SignalFeedFilters } from './signal-feed-filters';
 import { SignalFeedRow } from './signal-feed-row';
 import type { UseMembers } from '../../spaces/hooks/types';
@@ -31,6 +36,7 @@ export const SIGNAL_SORT_QUERY_KEY = 'sort';
 export const SIGNAL_TIME_FRAME_QUERY_KEY = 't';
 /** Earlier `?top=7d|30d|all` links still open on the matching time frame. */
 const LEGACY_TOP_WINDOW_QUERY_KEY = 'top';
+export const SIGNAL_ARCHIVED_QUERY_KEY = 'archived';
 
 export type CoherenceBlockProps = {
   lang: Locale;
@@ -49,15 +55,25 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   const searchParams = useSearchParams();
 
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
-  const { canMutate } = useCanMutateInSpace({
+  const {
+    canMutate,
+    isLoading: isMembershipLoading,
+    userState,
+  } = useCanMutateInSpace({
     spaceSlug,
     spaceId: space?.web3SpaceId ?? undefined,
   });
+  const isNonMember = isSignalSpaceNonMember({
+    space,
+    isLoading: isMembershipLoading,
+    userState,
+  });
   const {
     votingMode,
-    hasError: votingModeError,
+    status: votingModeStatus,
     retry: retryVotingMode,
-  } = useSignalVotingMode(space?.web3SpaceId);
+  } = useSignalVotingMode(signalVotingSpaceId(space));
+  const provisioningNoticeLines = useSignalProvisioningNotice();
 
   const sort = parseSignalSort(
     searchParams.get(SIGNAL_SORT_QUERY_KEY),
@@ -67,11 +83,22 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
     searchParams.get(SIGNAL_TIME_FRAME_QUERY_KEY) ??
       searchParams.get(LEGACY_TOP_WINDOW_QUERY_KEY),
   );
+  const showArchived = searchParams.get(SIGNAL_ARCHIVED_QUERY_KEY) === '1';
 
   const replaceQuery = React.useCallback(
     (key: string, value: string, defaultValue: string) => {
       const params = new URLSearchParams(searchParams.toString());
-      params.delete(LEGACY_TOP_WINDOW_QUERY_KEY);
+      const legacyTop = params.get(LEGACY_TOP_WINDOW_QUERY_KEY);
+      if (legacyTop != null) {
+        params.delete(LEGACY_TOP_WINDOW_QUERY_KEY);
+        const legacyTimeFrame = parseSignalTimeFrame(legacyTop);
+        if (
+          !params.has(SIGNAL_TIME_FRAME_QUERY_KEY) &&
+          legacyTimeFrame !== DEFAULT_SIGNAL_TIME_FRAME
+        ) {
+          params.set(SIGNAL_TIME_FRAME_QUERY_KEY, legacyTimeFrame);
+        }
+      }
       if (value === defaultValue) params.delete(key);
       else params.set(key, value);
       const query = params.toString();
@@ -95,19 +122,43 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
       ),
     [replaceQuery],
   );
+  const handleShowArchivedChange = React.useCallback(
+    (next: boolean) =>
+      replaceQuery(SIGNAL_ARCHIVED_QUERY_KEY, next ? '1' : '0', '0'),
+    [replaceQuery],
+  );
 
   const {
     coherences: signals,
     isLoading: isSignalsLoading,
+    error: signalsError,
     refresh,
-  } = useFindCoherences({ spaceSlug, orderBy: 'mostupvoted' });
+  } = useFindCoherences({
+    spaceSlug,
+    orderBy: 'mostupvoted',
+    includeArchived: showArchived,
+  });
+
+  const [isRetrying, setIsRetrying] = React.useState(false);
+  const retryLoad = React.useCallback(async () => {
+    setIsRetrying(true);
+    try {
+      await refresh();
+    } catch {
+      // The SWR error state already drives the retry notice.
+    } finally {
+      setIsRetrying(false);
+    }
+  }, [refresh]);
 
   const ranked = React.useMemo(
     () => rankSignals(signals ?? [], { sort, timeFrame }),
     [signals, sort, timeFrame],
   );
   const activity = useSignalRoomActivity(ranked);
-  const isLoading = isSpaceLoading || (isSignalsLoading && !signals?.length);
+  const hasSignals = Boolean(signals?.length);
+  const isLoading = isSpaceLoading || (isSignalsLoading && !hasSignals);
+  const loadFailed = signalsError != null && !hasSignals && !isSignalsLoading;
 
   return (
     <div className="flex flex-col gap-4">
@@ -133,12 +184,16 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
         ) : null}
       </header>
 
+      <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
+
       <SignalFeedFilters
         sort={sort}
         timeFrame={timeFrame}
         votingMode={votingMode}
         onSortChange={handleSortChange}
         onTimeFrameChange={handleTimeFrameChange}
+        showArchived={showArchived}
+        onShowArchivedChange={handleShowArchivedChange}
         className="-ml-3.5"
       />
 
@@ -151,6 +206,25 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
               className="h-[104px] w-full rounded-none"
             />
           ))}
+        </div>
+      ) : loadFailed ? (
+        <div
+          role="alert"
+          className="craft-card flex flex-col items-center gap-3 px-4 py-8 text-center"
+        >
+          <p className="m-0 text-1 text-muted-foreground">
+            {t('signalLoadFailed')}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            colorVariant="neutral"
+            size="sm"
+            disabled={isRetrying}
+            onClick={() => void retryLoad()}
+          >
+            {t('signalLoadRetry')}
+          </Button>
         </div>
       ) : ranked.length === 0 ? (
         <p className="craft-card px-4 py-8 text-center text-1 text-muted-foreground">
@@ -165,8 +239,9 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
                 signal={signal}
                 href={getSignalPath(lang, spaceSlug, signal.slug)}
                 votingMode={votingMode}
-                votingModeError={votingModeError}
+                votingModeStatus={votingModeStatus}
                 onRetryVotingMode={retryVotingMode}
+                isNonMember={isNonMember}
                 activity={signal.roomId ? activity[signal.roomId] : undefined}
                 refresh={refresh}
               />

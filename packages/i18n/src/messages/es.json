@@ -3696,6 +3696,7 @@
     "signalTeamAccessApproved": "Acceso al equipo Signal aprobado",
     "mentionOpenFallbackRoom": "No pudimos resolver esa sala desde tu contexto local. Abre el espacio correspondiente e inténtalo de nuevo.",
     "mentionOpenFallbackMissingMessage": "Ese mensaje de mención aún no está disponible en la cronología cargada. Vuelve a intentarlo en un momento.",
+    "signalMentionNotNotified": "No se pudo añadir a {names} a este chat de la señal, así que no recibieron la notificación.",
     "groupChatMenu": "Opciones del chat de grupo",
     "renameGroup": "Renombrar grupo",
     "renameGroupTitle": "Renombrar este grupo",
@@ -4257,7 +4258,8 @@
     "signalTimeFrameWeek": "Esta semana",
     "signalTimeFrameMonth": "Este mes",
     "signalTimeFrameYear": "Este año",
-    "signalTimeFrameAll": "Todo el tiempo"
+    "signalTimeFrameAll": "Todo el tiempo",
+    "signalShowArchived": "Mostrar archivadas"
   },
   "GlobalCallDock": {
     "callTitle": "Llamada - {count, plural, one {# miembro} other {# miembros}}",
@@ -4361,6 +4363,7 @@
     "supportersCount": "{count, plural, =0 {Aún sin UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Miembro",
     "signInToUpvote": "Inicia sesión como miembro del espacio para apoyar señales.",
+    "upvoteMembersOnly": "Solo los miembros y delegados de este espacio pueden votar señales.",
     "upvoteFailed": "No se pudo actualizar tu voto. Inténtalo de nuevo.",
     "sharedWithNetwork": "Compartido con la red",
     "upvoted": "Votado",
@@ -4371,7 +4374,8 @@
     "votesCount": "{count, plural, one {# voto} other {# votos}}",
     "upvoteArchived": "Esta señal está archivada y ya no se puede apoyar.",
     "votingModeLoadFailed": "No se pudo cargar el método de votación de este espacio.",
-    "votingModeRetry": "Reintentar"
+    "votingModeRetry": "Reintentar",
+    "votingUnavailable": "Los votos se habilitan cuando este espacio esté vinculado a la votación on-chain."
   },
   "BankingTab": {
     "title": "Banca",

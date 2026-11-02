@@ -4256,6 +4256,7 @@
     "signalTeamAccessApproved": "Toegang tot signaalteam goedgekeurd",
     "mentionOpenFallbackRoom": "We konden die kamer niet oplossen vanuit uw lokale context. Open de gerelateerde ruimte en probeer het opnieuw.",
     "mentionOpenFallbackMissingMessage": "Dat vermeldingsbericht is nog niet beschikbaar in de geladen tijdlijn. Probeer het zo nog eens.",
+    "signalMentionNotNotified": "{names} kon niet aan deze signaalchat worden toegevoegd en heeft dus geen melding gekregen.",
     "groupChatMenu": "Groepschatopties",
     "renameGroup": "Groep hernoemen",
     "renameGroupTitle": "Deze groep hernoemen",
@@ -4817,7 +4818,8 @@
     "signalTimeFrameWeek": "Deze week",
     "signalTimeFrameMonth": "Deze maand",
     "signalTimeFrameYear": "Dit jaar",
-    "signalTimeFrameAll": "Altijd"
+    "signalTimeFrameAll": "Altijd",
+    "signalShowArchived": "Gearchiveerde tonen"
   },
   "GlobalCallDock": {
     "callTitle": "Oproep - {count, plural, one {# lid} other {# leden}}",
@@ -4925,6 +4927,7 @@
     "supportersCount": "{count, plural, =0 {Nog geen UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Lid",
     "signInToUpvote": "Meld u aan als lid van de ruimte om signalen te stemmen.",
+    "upvoteMembersOnly": "Alleen leden en gedelegeerden van deze space kunnen signalen upvoten.",
     "upvoteFailed": "Kan uw upvote niet bijwerken. Probeer het opnieuw.",
     "sharedWithNetwork": "Gedeeld met het netwerk",
     "upvoted": "Gestemd",
@@ -4935,7 +4938,8 @@
     "votesCount": "{count, plural, one {# stem} other {# stemmen}}",
     "upvoteArchived": "Dit signaal is gearchiveerd en er kan niet meer op worden gestemd.",
     "votingModeLoadFailed": "De stemmethode van deze ruimte kon niet worden geladen.",
-    "votingModeRetry": "Opnieuw proberen"
+    "votingModeRetry": "Opnieuw proberen",
+    "votingUnavailable": "Upvoten kan zodra deze space aan on-chain stemmen is gekoppeld."
   },
   "Calendar": {
     "title": "Kalender",

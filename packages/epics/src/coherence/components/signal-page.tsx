@@ -25,7 +25,11 @@ import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { useSignalRoomActivity } from '../hooks/use-signal-room-activity';
-import { useSignalVotingMode } from '../hooks/use-signal-voting-mode';
+import { useIsSignalSpaceNonMember } from '../hooks/use-is-signal-space-non-member';
+import {
+  signalVotingSpaceId,
+  useSignalVotingMode,
+} from '../hooks/use-signal-voting-mode';
 import { countSignalMedia, splitSignalMedia } from '../utils/signal-media';
 import { resolveSignalVideo } from '../utils/signal-video';
 import { SignalCreateQuestButton } from './signal-create-quest-button';
@@ -162,9 +166,10 @@ export function SignalPage({
   const { space } = useSpaceBySlug(spaceSlug);
   const {
     votingMode,
-    hasError: votingModeError,
+    status: votingModeStatus,
     retry: retryVotingMode,
-  } = useSignalVotingMode(space?.web3SpaceId);
+  } = useSignalVotingMode(signalVotingSpaceId(space));
+  const isNonMember = useIsSignalSpaceNonMember(space);
   const {
     coherences,
     isLoading: isSignalsLoading,
@@ -375,8 +380,9 @@ export function SignalPage({
                 slug={signal.slug}
                 upvotes={signal.upvotes}
                 votingMode={votingMode}
-                votingModeError={votingModeError}
+                votingModeStatus={votingModeStatus}
                 onRetryVotingMode={retryVotingMode}
+                isNonMember={isNonMember}
                 refresh={refresh}
                 archived={Boolean(signal.archived)}
                 variant="page"

@@ -4237,6 +4237,7 @@
     "signalTeamAccessApproved": "Пристапот до тимот на сигналот е одобрен",
     "mentionOpenFallbackRoom": "Не можевме да ја пронајдеме таа соба од твојот локален контекст. Отвори го поврзаниот простор и обиди се повторно.",
     "mentionOpenFallbackMissingMessage": "Таа порака со спомнување сè уште не е достапна во вчитаната временска линија. Обиди се повторно за момент.",
+    "signalMentionNotNotified": "{names} не можеше да се додаде во овој разговор за сигналот, па не беше известен.",
     "groupChatMenu": "Опции за групен разговор",
     "renameGroup": "Преименувај група",
     "renameGroupTitle": "Преименувај ја оваа група",
@@ -4798,7 +4799,8 @@
     "signalTimeFrameWeek": "Оваа недела",
     "signalTimeFrameMonth": "Овој месец",
     "signalTimeFrameYear": "Оваа година",
-    "signalTimeFrameAll": "Сето време"
+    "signalTimeFrameAll": "Сето време",
+    "signalShowArchived": "Прикажи архивирани"
   },
   "GlobalCallDock": {
     "callTitle": "Повик - {count, plural, one {# член} other {# членови}}",
@@ -4906,6 +4908,7 @@
     "supportersCount": "{count, plural, =0 {Сè уште нема UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Член",
     "signInToUpvote": "Најави се како член на просторот за да поддржуваш сигнали.",
+    "upvoteMembersOnly": "Само членовите и делегатите на овој простор можат да гласаат за сигнали.",
     "upvoteFailed": "Твојата поддршка не можеше да се ажурира. Обиди се повторно.",
     "sharedWithNetwork": "Споделено со мрежата",
     "upvoted": "Гласано",
@@ -4916,7 +4919,8 @@
     "votesCount": "{count, plural, one {# глас} other {# гласови}}",
     "upvoteArchived": "Овој сигнал е архивиран и повеќе не може да се поддржува.",
     "votingModeLoadFailed": "Методот на гласање на овој простор не можеше да се вчита.",
-    "votingModeRetry": "Обиди се повторно"
+    "votingModeRetry": "Обиди се повторно",
+    "votingUnavailable": "Гласањето ќе се отвори откако овој простор ќе се поврзе со гласање на блокчејн."
   },
   "Calendar": {
     "title": "Календар",

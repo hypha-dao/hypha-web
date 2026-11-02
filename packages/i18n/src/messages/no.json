@@ -4255,6 +4255,7 @@
     "signalTeamAccessApproved": "Tilgang til Signal-teamet er godkjent",
     "mentionOpenFallbackRoom": "Vi kunne ikke finne det rommet ut fra din lokale kontekst. Åpne det tilhørende rommet og prøv igjen.",
     "mentionOpenFallbackMissingMessage": "Den omtalte meldingen er ikke tilgjengelig i den innlastede tidslinjen ennå. Prøv igjen om et øyeblikk.",
+    "signalMentionNotNotified": "{names} kunne ikke legges til i denne signalchatten, så de fikk ikke varsel.",
     "groupChatMenu": "Gruppechatvalg",
     "renameGroup": "Gi gruppen nytt navn",
     "renameGroupTitle": "Gi denne gruppen nytt navn",
@@ -4816,7 +4817,8 @@
     "signalTimeFrameWeek": "Denne uken",
     "signalTimeFrameMonth": "Denne måneden",
     "signalTimeFrameYear": "Dette året",
-    "signalTimeFrameAll": "All tid"
+    "signalTimeFrameAll": "All tid",
+    "signalShowArchived": "Vis arkiverte"
   },
   "GlobalCallDock": {
     "callTitle": "Samtale - {count, plural, one {# medlem} other {# medlemmer}}",
@@ -4924,6 +4926,7 @@
     "supportersCount": "{count, plural, =0 {Ingen upvotes ennå} one {# upvoter} other {# upvotere}}",
     "anonymousSupporter": "Medlem",
     "signInToUpvote": "Logg inn som medlem av rommet for å stemme opp signaler.",
+    "upvoteMembersOnly": "Bare medlemmer og delegater i dette rommet kan stemme opp signaler.",
     "upvoteFailed": "Kunne ikke oppdatere upvoten din. Prøv igjen.",
     "sharedWithNetwork": "Delt med nettverket",
     "upvoted": "Stemt opp",
@@ -4934,7 +4937,8 @@
     "votesCount": "{count, plural, one {# stemme} other {# stemmer}}",
     "upvoteArchived": "Dette signalet er arkivert og kan ikke lenger stemmes opp.",
     "votingModeLoadFailed": "Kunne ikke laste inn stemmemetoden for dette rommet.",
-    "votingModeRetry": "Prøv igjen"
+    "votingModeRetry": "Prøv igjen",
+    "votingUnavailable": "Oppstemming åpner når dette rommet er koblet til stemming på kjeden."
   },
   "Calendar": {
     "title": "Kalender",

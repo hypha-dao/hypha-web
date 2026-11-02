@@ -80,7 +80,7 @@ describe('signal sort defaults', () => {
     expect(defaultSignalSort('one-member-one-vote')).toBe('top-voters');
   });
 
-  it('offers top by voting power only in token spaces', () => {
+  it('drops top by voting power only in one member, one vote spaces', () => {
     expect(availableSignalSorts('token')).toEqual([
       'new',
       'top-voters',
@@ -90,6 +90,11 @@ describe('signal sort defaults', () => {
       'new',
       'top-voters',
     ]);
+  });
+
+  it('keeps the default sort selectable while the voting method loads', () => {
+    expect(availableSignalSorts(null)).toContain(defaultSignalSort(null));
+    expect(availableSignalSorts(null)).toContain(parseSignalSort(null, null));
   });
 
   it('parses sorts against the voting method', () => {

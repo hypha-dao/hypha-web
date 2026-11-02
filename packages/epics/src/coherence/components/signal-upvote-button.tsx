@@ -21,6 +21,9 @@ import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { formatVotingPowerCompact } from '../utils/format-voting-power';
+import type { SignalVotingModeStatus } from '../hooks/use-signal-voting-mode';
+
+const MEMBERSHIP_ERROR_PATTERN = /space member or delegate/i;
 
 const EMPTY_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
@@ -59,9 +62,14 @@ type SignalUpvoteButtonProps = {
   upvotes?: CoherenceUpvoteSummary;
   /** `null` while the space's voting method is loading; voting stays closed. */
   votingMode: SignalVotingMode | null;
-  /** The voting method could not be read; the panel offers a retry instead. */
-  votingModeError?: boolean;
+  /**
+   * `error` offers a retry; `unavailable` means the space has no on-chain
+   * voting, so the panel explains that instead of waiting forever.
+   */
+  votingModeStatus?: SignalVotingModeStatus;
   onRetryVotingMode?: () => void;
+  /** Signed in, but not a member or delegate of the signal's space. */
+  isNonMember?: boolean;
   refresh?: () => Promise<unknown>;
   disabled?: boolean;
   archived?: boolean;
@@ -78,8 +86,9 @@ export function SignalUpvoteButton({
   slug,
   upvotes,
   votingMode,
-  votingModeError = false,
+  votingModeStatus = 'loading',
   onRetryVotingMode,
+  isNonMember = false,
   refresh,
   disabled = false,
   archived = false,
@@ -98,6 +107,7 @@ export function SignalUpvoteButton({
     React.useState<CoherenceUpvoteSummary | null>(null);
   const [open, setOpen] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [rejectedAsNonMember, setRejectedAsNonMember] = React.useState(false);
 
   React.useEffect(() => {
     setLocalSummary(null);
@@ -107,13 +117,20 @@ export function SignalUpvoteButton({
   const hasVoted = summary.myUpvote != null;
   const isMutating = isUpvoting || isRemovingUpvote;
   const isVotingModeResolved = votingMode != null;
-  const showVotingModeError = !isVotingModeResolved && votingModeError;
-  const canOpen = isVotingModeResolved || showVotingModeError;
+  const showVotingModeError =
+    !isVotingModeResolved && votingModeStatus === 'error';
+  const showVotingUnavailable =
+    !isVotingModeResolved && votingModeStatus === 'unavailable';
+  const canOpen =
+    isVotingModeResolved || showVotingModeError || showVotingUnavailable;
+  const isBlockedNonMember =
+    Boolean(jwt) && (isNonMember || rejectedAsNonMember);
   const canVote =
     Boolean(slug?.trim()) &&
     Boolean(jwt) &&
     !disabled &&
     !archived &&
+    !isBlockedNonMember &&
     isVotingModeResolved;
   const isOneMemberOneVote = votingMode === 'one-member-one-vote';
   const [percent, setPercent] = React.useState(() => myUpvotePercent(summary));
@@ -148,6 +165,13 @@ export function SignalUpvoteButton({
         if (next) await applyResult(next);
       } catch (err) {
         console.warn('Could not update signal upvote:', err);
+        if (
+          err instanceof Error &&
+          MEMBERSHIP_ERROR_PATTERN.test(err.message)
+        ) {
+          setRejectedAsNonMember(true);
+          return;
+        }
         setError(t('upvoteFailed'));
       }
     },
@@ -272,6 +296,10 @@ export function SignalUpvoteButton({
                 </Button>
               ) : null}
             </div>
+          ) : showVotingUnavailable ? (
+            <p className="p-3 text-1 leading-relaxed text-muted-foreground">
+              {t('votingUnavailable')}
+            </p>
           ) : (
             <div className="flex flex-col gap-3 p-3">
               <div className="flex items-center justify-between gap-3">
@@ -350,7 +378,11 @@ export function SignalUpvoteButton({
 
               {!canVote ? (
                 <p className="text-1 leading-relaxed text-muted-foreground">
-                  {archived ? t('upvoteArchived') : t('signInToUpvote')}
+                  {archived
+                    ? t('upvoteArchived')
+                    : isBlockedNonMember
+                    ? t('upvoteMembersOnly')
+                    : t('signInToUpvote')}
                 </p>
               ) : null}
 

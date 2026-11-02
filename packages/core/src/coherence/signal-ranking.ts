@@ -52,13 +52,17 @@ export function defaultSignalSort(
   return votingMode === 'one-member-one-vote' ? 'top-voters' : 'top-power';
 }
 
-/** Top by voting power is only offered when the space votes with tokens. */
+/**
+ * Top by voting power is dropped once the space is known to give each member
+ * one vote. While the voting method is unresolved it stays, since it is the
+ * default sort then and the menu must show it as selected.
+ */
 export function availableSignalSorts(
   votingMode: SignalVotingMode | null,
 ): SignalSort[] {
-  return votingMode === 'token'
-    ? ['new', 'top-voters', 'top-power']
-    : ['new', 'top-voters'];
+  return votingMode === 'one-member-one-vote'
+    ? ['new', 'top-voters']
+    : ['new', 'top-voters', 'top-power'];
 }
 
 export function parseSignalSort(

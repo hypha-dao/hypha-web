@@ -999,6 +999,7 @@ function getMessagePlainText(m: UIMessage): string {
 }
 
 const COHERENCE_ROOM_JOIN_TIMEOUT_MS = 20_000;
+const MENTION_DELIVERY_NOTICE_DISMISS_MS = 8_000;
 
 function promiseWithTimeout<T>(
   promise: Promise<T>,
@@ -1367,6 +1368,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
   const [scrollToEventId, setScrollToEventId] = useState<string | null>(null);
   const [mentionNavigationNotice, setMentionNavigationNotice] = useState<
+    string | null
+  >(null);
+  /** Mentioned people who could not be pulled into a signal thread. */
+  const [mentionDeliveryNotice, setMentionDeliveryNotice] = useState<
     string | null
   >(null);
   /** Shown in timeline after a short delay while large attachment sends run. */
@@ -5550,6 +5555,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     const sendToken = Symbol('send');
     sendOperationTokenRef.current = sendToken;
     setComposerError(null);
+    setMentionDeliveryNotice(null);
     setInput('');
     clearComposerDraft(roomId);
     setDraftAttachments([]);
@@ -5638,7 +5644,26 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             (id) => threadRoom?.getMember(id)?.membership !== 'join',
           );
           if (notJoined.length > 0) {
-            await matrixRef.current.ensureRoomMembers(roomId, notJoined);
+            // A failed join only costs that person the notification; the
+            // message itself still goes out.
+            let unnotified: string[];
+            try {
+              const failed = new Set(
+                await matrixRef.current.ensureRoomMembers(roomId, notJoined),
+              );
+              unnotified = notJoined.filter((id) => failed.has(id));
+            } catch {
+              unnotified = notJoined;
+            }
+            if (unnotified.length > 0) {
+              setMentionDeliveryNotice(
+                t('signalMentionNotNotified', {
+                  names: unnotified
+                    .map((id) => resolveMentionMemberLabel(id))
+                    .join(', '),
+                }),
+              );
+            }
           }
         }
         await matrixRef.current.sendMessage({
@@ -5813,9 +5838,23 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceSlug,
     coherenceTitle,
     setComposerTyping,
+    resolveMentionMemberLabel,
     tCommon,
     t,
   ]);
+
+  useEffect(() => {
+    setMentionDeliveryNotice(null);
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!mentionDeliveryNotice) return;
+    const timer = window.setTimeout(
+      () => setMentionDeliveryNotice(null),
+      MENTION_DELIVERY_NOTICE_DISMISS_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [mentionDeliveryNotice]);
 
   useEffect(() => {
     return () => {
@@ -6370,6 +6409,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                     className="mt-0 w-full border-y border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300"
                   >
                     {mentionNavigationNotice}
+                  </div>
+                )}
+                {mentionDeliveryNotice && (
+                  <div
+                    role="status"
+                    className="mt-0 w-full border-y border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300"
+                  >
+                    {mentionDeliveryNotice}
                   </div>
                 )}
                 <HumanChatPanelConnectionBanner
