@@ -6,6 +6,7 @@ import {
   EventType,
   RoomEvent,
   SyncState,
+  UserEvent,
   type MatrixClient,
 } from 'matrix-js-sdk';
 import {
@@ -202,11 +203,13 @@ export function useSignalRoomActivity(
     client.on(RoomEvent.Timeline, onTimeline);
     client.on(ClientEvent.Room, schedule);
     client.on(ClientEvent.Sync, onSync);
+    client.on(UserEvent.DisplayName, schedule);
     return () => {
       if (frame != null) window.cancelAnimationFrame(frame);
       client.off(RoomEvent.Timeline, onTimeline);
       client.off(ClientEvent.Room, schedule);
       client.off(ClientEvent.Sync, onSync);
+      client.off(UserEvent.DisplayName, schedule);
     };
   }, [client, rooms]);
 

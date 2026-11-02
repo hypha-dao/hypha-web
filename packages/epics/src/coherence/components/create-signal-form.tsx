@@ -833,7 +833,7 @@ export const CreateSignalForm = ({
         }
         setIsPublishing(true);
         try {
-          const media = await resolveSignalMedia(data.videoUrl ?? null);
+          const media = await resolveSignalMedia(parsed.videoUrl ?? null);
           const updatedSignal = await updateCoherenceSignalBySlug({
             slug: signalSlug,
             title: parsed.title,
@@ -919,7 +919,7 @@ export const CreateSignalForm = ({
       }
       setIsPublishing(true);
       try {
-        const media = await resolveSignalMedia(data.videoUrl ?? null);
+        const media = await resolveSignalMedia(parsed.videoUrl ?? null);
         const coherence = await createCoherence({ ...parsed, ...media });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
