@@ -5766,12 +5766,9 @@
       "customLead": "En seksjon medlemmene har lagt til i Konteksten for dette området.",
       "official": "Ratifisert tekst",
       "noOfficial": "Ingenting er ratifisert ennå.",
-      "draft": "Utkast — ikke ratifisert",
-      "proposed": "Foreslått tekst — til avstemning",
       "suggestRemoval": "Foreslå fjerning",
       "cancelRemoval": "Trekk forslaget om fjerning",
-      "withdrawAddition": "Trekk forslaget",
-      "close": "Lukk"
+      "withdrawAddition": "Trekk forslaget"
     },
     "addSection": {
       "open": "Legg til seksjon",

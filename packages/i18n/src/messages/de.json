@@ -5761,12 +5761,9 @@
       "customLead": "Ein Abschnitt, den Mitglieder dem Kontext dieses Space hinzugefügt haben.",
       "official": "Ratifizierter Text",
       "noOfficial": "Noch nichts ratifiziert.",
-      "draft": "Entwurf — nicht ratifiziert",
-      "proposed": "Vorgeschlagener Text — in Abstimmung",
       "suggestRemoval": "Entfernen vorschlagen",
       "cancelRemoval": "Entfernungsvorschlag zurückziehen",
-      "withdrawAddition": "Vorschlag zurückziehen",
-      "close": "Schließen"
+      "withdrawAddition": "Vorschlag zurückziehen"
     },
     "addSection": {
       "open": "Abschnitt hinzufügen",

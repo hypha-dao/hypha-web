@@ -5775,12 +5775,9 @@
       "customLead": "Una sección que los miembros añadieron al Contexto de este espacio.",
       "official": "Texto ratificado",
       "noOfficial": "Aún no hay nada ratificado.",
-      "draft": "Borrador — sin ratificar",
-      "proposed": "Texto propuesto — en votación",
       "suggestRemoval": "Sugerir eliminar",
       "cancelRemoval": "Retirar la sugerencia de eliminar",
-      "withdrawAddition": "Retirar la sugerencia",
-      "close": "Cerrar"
+      "withdrawAddition": "Retirar la sugerencia"
     },
     "addSection": {
       "open": "Añadir sección",

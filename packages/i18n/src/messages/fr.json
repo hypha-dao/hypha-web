@@ -5757,12 +5757,9 @@
       "customLead": "Une section ajoutée par les membres au Contexte de cet espace.",
       "official": "Texte ratifié",
       "noOfficial": "Rien n’est encore ratifié.",
-      "draft": "Brouillon — non ratifié",
-      "proposed": "Texte proposé — en vote",
       "suggestRemoval": "Suggérer la suppression",
       "cancelRemoval": "Retirer la suggestion de suppression",
-      "withdrawAddition": "Retirer la suggestion",
-      "close": "Fermer"
+      "withdrawAddition": "Retirer la suggestion"
     },
     "addSection": {
       "open": "Ajouter une section",

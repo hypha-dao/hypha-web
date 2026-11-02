@@ -12,15 +12,17 @@ import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { Button, Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
   type KeyboardEvent,
 } from 'react';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import {
   importSpaceContextFromMemoryRequest,
@@ -30,14 +32,28 @@ import { SpaceContextAddSectionDialog } from './space-context-add-section-dialog
 import { SpaceContextCard } from './space-context-card';
 import { SpaceContextChatPanel } from './space-context-chat-panel';
 import { SpaceContextEmpty } from './space-context-empty';
-import { SpaceContextReaderDialog } from './space-context-reader-dialog';
+import { spaceContextProposeHref } from './propose-href';
 
 const FILTERS: SpaceContextFilter[] = ['all', 'ratified', 'proposed', 'drafts'];
+const SECTION_PARAM = 'section';
+
+/** Mirrors the open section into `?section=` so the panel can be linked. */
+function writeSectionParam(sectionKey: SpaceContextSectionKey | null) {
+  if (typeof window === 'undefined') return;
+  const params = new URLSearchParams(window.location.search);
+  if (sectionKey) params.set(SECTION_PARAM, sectionKey);
+  else params.delete(SECTION_PARAM);
+  const query = params.toString();
+  const href = `${window.location.pathname}${query ? `?${query}` : ''}`;
+  if (href === `${window.location.pathname}${window.location.search}`) return;
+  window.history.replaceState(window.history.state, '', href);
+}
 
 export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
   const t = useTranslations('SpaceContext');
   const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { getAccessToken } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug);
   const { canMutate } = useCanMutateInSpace({ spaceSlug, space });
@@ -62,12 +78,19 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
     setFilter(nextFilter);
     filterTabRefs.current[next]?.focus();
   };
-  const [openSection, setOpenSection] = useState<SpaceContextSectionKey | null>(
-    null,
-  );
-  const [readerKey, setReaderKey] = useState<SpaceContextSectionKey | null>(
-    null,
-  );
+  const {
+    panelAvailable,
+    spaceContextSection,
+    openSpaceContextSection,
+    closeSpaceContextSection,
+  } = useHumanChatPanel();
+  const [inlineSection, setInlineSection] =
+    useState<SpaceContextSectionKey | null>(null);
+  const openSection = panelAvailable
+    ? spaceContextSection?.spaceSlug === spaceSlug
+      ? spaceContextSection.sectionKey
+      : null
+    : inlineSection;
   const [addOpen, setAddOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
@@ -78,15 +101,47 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
     (section) => !section.markdown.trim() && !section.ratifiedMarkdown?.trim(),
   );
   const hasEligibleSection = sections.some(isProposableSection);
-  const readerSection =
-    sections.find((section) => section.sectionKey === readerKey) ?? null;
+
+  const showSection = useCallback(
+    (sectionKey: SpaceContextSectionKey) => {
+      if (panelAvailable) {
+        openSpaceContextSection({ spaceSlug, sectionKey });
+      } else {
+        setInlineSection(sectionKey);
+      }
+      writeSectionParam(sectionKey);
+    },
+    [openSpaceContextSection, panelAvailable, spaceSlug],
+  );
+  const hideSection = useCallback(() => {
+    if (panelAvailable) closeSpaceContextSection();
+    else setInlineSection(null);
+  }, [closeSpaceContextSection, panelAvailable]);
 
   useEffect(() => {
-    if (!overview) return;
-    const keys = new Set(sections.map((section) => section.sectionKey));
-    if (openSection && !keys.has(openSection)) setOpenSection(null);
-    if (readerKey && !keys.has(readerKey)) setReaderKey(null);
-  }, [openSection, overview, readerKey, sections]);
+    if (!overview || !openSection) return;
+    if (!sections.some((section) => section.sectionKey === openSection)) {
+      hideSection();
+    }
+  }, [hideSection, openSection, overview, sections]);
+
+  const sectionParam = searchParams?.get(SECTION_PARAM)?.trim() || null;
+  const appliedSectionParamRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!overview || !sectionParam) return;
+    if (appliedSectionParamRef.current === sectionParam) return;
+    appliedSectionParamRef.current = sectionParam;
+    const linked = sections.find(
+      (section) => section.sectionKey === sectionParam,
+    );
+    if (linked) showSection(linked.sectionKey);
+  }, [overview, sectionParam, sections, showSection]);
+
+  const shownSectionRef = useRef(openSection);
+  useEffect(() => {
+    if (shownSectionRef.current && !openSection) writeSectionParam(null);
+    shownSectionRef.current = openSection;
+  }, [openSection]);
   const ratifiedPercent =
     overview && overview.totalCount > 0
       ? Math.round((overview.ratifiedCount / overview.totalCount) * 100)
@@ -106,14 +161,9 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
     [featured, filter, sections],
   );
 
-  const proposeHref = `/${locale}/dho/${spaceSlug}/context/create`;
-  const openDiscussion = (key: SpaceContextSectionKey) => {
-    setReaderKey(null);
-    setOpenSection(key);
-  };
+  const proposeHref = spaceContextProposeHref(locale, spaceSlug);
   const proposeSections = (keys: SpaceContextSectionKey[]) => {
-    const query = new URLSearchParams({ sections: keys.join(',') });
-    router.push(`${proposeHref}?${query.toString()}`);
+    router.push(spaceContextProposeHref(locale, spaceSlug, keys));
   };
 
   const handleImport = async () => {
@@ -125,7 +175,7 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
         getAccessToken,
       });
       setSuccessMessage(t('success.imported'));
-      setOpenSection('mission');
+      showSection('mission');
       await refresh();
     } catch {
       setImportError(t('error.import'));
@@ -262,7 +312,7 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
           <SpaceContextEmpty
             canMutate={canMutate}
             importing={importing}
-            onStartMission={() => setOpenSection('mission')}
+            onStartMission={() => showSection('mission')}
             onImportMemory={() => void handleImport()}
           />
         ) : null}
@@ -274,12 +324,11 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
             featured
             selected={openSection === featured.sectionKey}
             canMutate={canMutate}
-            onRead={setReaderKey}
-            onOpen={openDiscussion}
+            onOpen={showSection}
             onProposeAmendment={(key) =>
               isProposableSection(featured)
                 ? proposeSections([key])
-                : openDiscussion(key)
+                : showSection(key)
             }
           />
         ) : null}
@@ -295,26 +344,12 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
                 spaceSlug={spaceSlug}
                 selected={openSection === section.sectionKey}
                 canMutate={canMutate}
-                onRead={setReaderKey}
-                onOpen={openDiscussion}
+                onOpen={showSection}
               />
             ))}
           </div>
         )}
       </div>
-
-      <SpaceContextReaderDialog
-        section={readerSection}
-        spaceSlug={spaceSlug}
-        canMutate={canMutate}
-        onClose={() => setReaderKey(null)}
-        onOpenDiscussion={openDiscussion}
-        onPropose={proposeSections}
-        onChanged={async (message) => {
-          setSuccessMessage(message);
-          await refresh();
-        }}
-      />
 
       {canMutate ? (
         <SpaceContextAddSectionDialog
@@ -325,23 +360,19 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
           onSuggested={async (key) => {
             setSuccessMessage(t('success.suggested'));
             await refresh();
-            openDiscussion(key);
+            showSection(key);
           }}
         />
       ) : null}
 
-      {openSection ? (
+      {openSection && !panelAvailable ? (
         <div className="xl:sticky xl:top-4 xl:self-start">
           <SpaceContextChatPanel
             spaceSlug={spaceSlug}
             spaceTitle={overview.spaceTitle}
             sectionKey={openSection}
             canMutate={canMutate}
-            onClose={() => setOpenSection(null)}
-            onDraftSaved={async () => {
-              setSuccessMessage(t('success.saved'));
-              await refresh();
-            }}
+            onClose={hideSection}
             onPropose={proposeSections}
           />
         </div>

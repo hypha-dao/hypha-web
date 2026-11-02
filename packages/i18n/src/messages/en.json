@@ -5783,12 +5783,9 @@
       "customLead": "A section members added to this space's Context.",
       "official": "Ratified text",
       "noOfficial": "Nothing ratified yet.",
-      "draft": "Draft — not ratified",
-      "proposed": "Proposed text — on voting",
       "suggestRemoval": "Suggest removing",
       "cancelRemoval": "Withdraw removal suggestion",
-      "withdrawAddition": "Withdraw suggestion",
-      "close": "Close"
+      "withdrawAddition": "Withdraw suggestion"
     },
     "addSection": {
       "open": "Add section",

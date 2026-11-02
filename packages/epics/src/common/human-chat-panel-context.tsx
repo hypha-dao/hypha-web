@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useCallback, useContext, useState } from 'react';
+import type { SpaceContextSectionKey } from '@hypha-platform/core/client';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 /**
  * Shared panel context type used by both AI and Human panel triggers.
@@ -81,6 +88,12 @@ export type OpenCoherenceChatOptions = {
   channel?: CoherenceOpenedChannel | null;
 };
 
+/** Space Context section shown in the right panel in place of a chat. */
+export type SpaceContextPanelSection = {
+  spaceSlug: string;
+  sectionKey: SpaceContextSectionKey;
+};
+
 export type HumanChatPanelContextValue = {
   open: boolean;
   toggle: () => void;
@@ -118,6 +131,13 @@ export type HumanChatPanelContextValue = {
     options?: OpenCoherenceChatOptions,
   ) => void;
   closeCoherenceChat: () => void;
+  /** True while the layout renders the right panel on this route. */
+  panelAvailable: boolean;
+  setPanelAvailable: (available: boolean) => void;
+  spaceContextSection: SpaceContextPanelSection | null;
+  /** Opens the right panel on a Space Context section (detail + discussion). */
+  openSpaceContextSection: (section: SpaceContextPanelSection) => void;
+  closeSpaceContextSection: () => void;
 };
 
 const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
@@ -140,6 +160,11 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   coherenceChannel: null,
   openCoherenceChat: () => {},
   closeCoherenceChat: () => {},
+  panelAvailable: false,
+  setPanelAvailable: () => {},
+  spaceContextSection: null,
+  openSpaceContextSection: () => {},
+  closeSpaceContextSection: () => {},
 });
 
 /**
@@ -176,6 +201,30 @@ export function HumanChatPanelProvider({
   const [unreadMentionCount, setUnreadMentionCountState] = useState(0);
   const [focusedSpaceChat, setFocusedSpaceChatState] =
     useState<FocusedSpaceChat | null>(null);
+  const [panelAvailable, setPanelAvailable] = useState(false);
+  const [spaceContextSection, setSpaceContextSection] =
+    useState<SpaceContextPanelSection | null>(null);
+
+  useEffect(() => {
+    if (!open) setSpaceContextSection(null);
+  }, [open]);
+
+  const openSpaceContextSection = useCallback(
+    (section: SpaceContextPanelSection) => {
+      setSpaceContextSection((prev) =>
+        prev?.spaceSlug === section.spaceSlug &&
+        prev.sectionKey === section.sectionKey
+          ? prev
+          : section,
+      );
+      setOpen(true);
+    },
+    [setOpen],
+  );
+
+  const closeSpaceContextSection = useCallback(() => {
+    setSpaceContextSection(null);
+  }, []);
 
   const setUnreadMentionCount = useCallback((count: number) => {
     const next = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
@@ -231,6 +280,7 @@ export function HumanChatPanelProvider({
           : null,
       );
       setMode('coherence');
+      setSpaceContextSection(null);
       // Idempotently open the sidebar — avoids race condition with toggle()
       setOpen(true);
     },
@@ -279,6 +329,11 @@ export function HumanChatPanelProvider({
         coherenceChannel,
         openCoherenceChat,
         closeCoherenceChat,
+        panelAvailable,
+        setPanelAvailable,
+        spaceContextSection,
+        openSpaceContextSection,
+        closeSpaceContextSection,
       }}
     >
       {children}

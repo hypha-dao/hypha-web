@@ -14,7 +14,7 @@ import { Button, Card, CardTitle } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, type MouseEvent, type ReactNode } from 'react';
 import {
   InlineText,
   MemoryProse,
@@ -30,6 +30,8 @@ export type SpaceContextT = ReturnType<typeof useTranslations<'SpaceContext'>>;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
+const NESTED_CONTROLS =
+  'a, button, input, textarea, select, label, [role="button"]';
 
 export function SpaceContextCard({
   section,
@@ -37,7 +39,6 @@ export function SpaceContextCard({
   selected,
   featured,
   canMutate,
-  onRead,
   onOpen,
   onProposeAmendment,
 }: {
@@ -46,7 +47,6 @@ export function SpaceContextCard({
   selected?: boolean;
   featured?: boolean;
   canMutate: boolean;
-  onRead: (key: SpaceContextSectionKey) => void;
   onOpen: (key: SpaceContextSectionKey) => void;
   onProposeAmendment?: (key: SpaceContextSectionKey) => void;
 }) {
@@ -67,10 +67,19 @@ export function SpaceContextCard({
     : null;
   const notice = sectionNotice(section, t);
 
+  const openFromSurface = (event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.closest(NESTED_CONTROLS)) return;
+    // Dragging to select text should not open the panel.
+    if (window.getSelection()?.toString()) return;
+    onOpen(section.sectionKey);
+  };
+
   return (
     <Card
+      onClick={openFromSurface}
       className={cn(
-        'relative flex h-full flex-col transition-colors hover:border-neutral-11',
+        'relative flex h-full cursor-pointer flex-col transition-colors hover:border-neutral-11',
         featured
           ? 'gap-2.5 border-success-11 px-6 pb-[18px] pt-5'
           : 'min-h-[210px] gap-3.5 p-6',
@@ -88,8 +97,8 @@ export function SpaceContextCard({
           >
             <button
               type="button"
-              className="text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:ring-1 focus-visible:after:ring-ring"
-              onClick={() => onRead(section.sectionKey)}
+              className="text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              onClick={() => onOpen(section.sectionKey)}
               aria-label={t('card.read', { section: title })}
             >
               {title}
@@ -107,7 +116,7 @@ export function SpaceContextCard({
               type="button"
               variant="outline"
               colorVariant="neutral"
-              className="relative z-10 h-8 shrink-0 border-foreground bg-transparent px-3 text-[11px] font-semibold uppercase tracking-[0.09em] text-foreground"
+              className="h-8 shrink-0 border-foreground bg-transparent px-3 text-[11px] font-semibold uppercase tracking-[0.09em] text-foreground"
               onClick={() => onProposeAmendment(section.sectionKey)}
             >
               {t('card.proposeAmendment')}
@@ -184,7 +193,7 @@ export function SpaceContextCard({
           !featured && 'border-t border-border/60 pt-2.5',
         )}
       >
-        <div className="relative z-10 min-w-0 truncate text-[11px] text-neutral-11">
+        <div className="min-w-0 truncate text-[11px] text-neutral-11">
           {section.status === 'proposed' ? (
             <ProposedFooterMeta section={section} />
           ) : (
@@ -234,7 +243,7 @@ function CardAction({
 }) {
   const t = useTranslations('SpaceContext');
   const className =
-    'relative z-10 inline-flex shrink-0 items-center gap-1 text-1 font-bold text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+    'inline-flex shrink-0 items-center gap-1 text-1 font-bold text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
   if (proposalHref) {
     return (

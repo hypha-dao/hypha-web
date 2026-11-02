@@ -8,28 +8,52 @@ import {
   HYPHA_ROOM_TYPES,
   officialSectionMarkdown,
   specialistForSectionKey,
+  stripMatchingLeadingHeading,
   uploadChatAttachmentFile,
   useMatrix,
+  useSpaceBySlug,
+  type BuiltinSpaceContextSectionKey,
   type SpaceContextSectionKey,
+  type SpaceContextSectionRecord,
 } from '@hypha-platform/core/client';
-import { Button } from '@hypha-platform/ui';
+import type { Locale } from '@hypha-platform/i18n';
+import { Button, SidebarContent, SidebarHeader } from '@hypha-platform/ui';
 import { AtSign, Paperclip, X } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { MemoryProse } from '../../coherence/components/memory-prose';
+import { getProposalPath } from '../../common/get-path-function';
+import { HumanChatPanelHeader } from '../../common/human-chat-panel/human-chat-panel-header';
 import {
   MatrixDiscussionThread,
   type MatrixDiscussionComposerTools,
 } from '../../common/matrix-discussion-thread';
+import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import {
-  SpaceContextChangeBadge,
-  SpaceContextStatusChip,
-} from './space-context-status-chip';
-import {
+  discardSpaceContextSuggestionRequest,
   patchSpaceContextSectionRequest,
+  revalidateSpaceContext,
+  setSpaceContextRemovalSuggestedRequest,
   SpaceContextRequestError,
   storeSpaceContextChatRoomRequest,
   useSpaceContextSection,
 } from '../hooks/use-space-context';
+import { agreementNumber } from './agreement-number';
+import { spaceContextProposeHref } from './propose-href';
+import { sectionNotice } from './space-context-card';
+import {
+  SpaceContextChangeBadge,
+  SpaceContextStatusChip,
+} from './space-context-status-chip';
 
 const MAX_SHARED_DOCUMENTS = 5;
 const SHARED_DOCUMENT_ACCEPT = [
@@ -53,6 +77,54 @@ function markdownLinkLabel(name: string): string {
   return name.replace(/[\r\n]+/g, ' ').replace(/[\\[\]]/g, '\\$&');
 }
 
+function useSectionTitle(
+  spaceSlug: string,
+  sectionKey: SpaceContextSectionKey,
+): string {
+  const { detail } = useSpaceContextSection(spaceSlug, sectionKey);
+  return detail?.section.sectionKey === sectionKey
+    ? detail.section.title
+    : headingForSectionKey(sectionKey);
+}
+
+/** A Context section inside the shared right panel, where signals and chats open. */
+export function SpaceContextSidePanel({
+  spaceSlug,
+  sectionKey,
+  onClose,
+}: {
+  spaceSlug: string;
+  sectionKey: SpaceContextSectionKey;
+  onClose: () => void;
+}) {
+  const locale = useLocale();
+  const router = useRouter();
+  const { space } = useSpaceBySlug(spaceSlug);
+  const { canMutate } = useCanMutateInSpace({ spaceSlug, space });
+  const sectionTitle = useSectionTitle(spaceSlug, sectionKey);
+
+  return (
+    <>
+      <SidebarHeader className="gap-0 bg-page-background p-0 dark:bg-background-2">
+        <HumanChatPanelHeader title={sectionTitle} onBack={onClose} />
+      </SidebarHeader>
+      <SidebarContent className="flex min-h-0 flex-col gap-0 overflow-y-auto bg-page-background dark:bg-background-2">
+        <SpaceContextSectionBody
+          spaceSlug={spaceSlug}
+          spaceTitle={space?.title}
+          sectionKey={sectionKey}
+          canMutate={canMutate}
+          onClose={onClose}
+          onPropose={(keys) =>
+            router.push(spaceContextProposeHref(locale, spaceSlug, keys))
+          }
+        />
+      </SidebarContent>
+    </>
+  );
+}
+
+/** Same section panel beside the cards, for layouts without the right panel. */
 export function SpaceContextChatPanel({
   spaceSlug,
   spaceTitle,
@@ -60,7 +132,6 @@ export function SpaceContextChatPanel({
   canMutate,
   onClose,
   onPropose,
-  onDraftSaved,
 }: {
   spaceSlug: string;
   spaceTitle?: string;
@@ -68,7 +139,56 @@ export function SpaceContextChatPanel({
   canMutate: boolean;
   onClose: () => void;
   onPropose: (keys: SpaceContextSectionKey[]) => void;
-  onDraftSaved?: () => void | Promise<void>;
+}) {
+  const t = useTranslations('SpaceContext');
+  const sectionTitle = useSectionTitle(spaceSlug, sectionKey);
+
+  return (
+    <aside className="flex h-full min-h-[40rem] w-full flex-col border border-border/70 bg-background-2 xl:w-[28rem] xl:shrink-0">
+      <header className="flex items-start justify-between gap-3 border-b border-border/70 px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-11">
+            {t('chat.title')}
+          </p>
+          <h2 className="mt-1 truncate text-3 font-medium">{sectionTitle}</h2>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          colorVariant="neutral"
+          size="icon"
+          aria-label={t('chat.close')}
+          onClick={onClose}
+        >
+          <X className="size-4" strokeWidth={1.25} />
+        </Button>
+      </header>
+      <SpaceContextSectionBody
+        spaceSlug={spaceSlug}
+        spaceTitle={spaceTitle}
+        sectionKey={sectionKey}
+        canMutate={canMutate}
+        onClose={onClose}
+        onPropose={onPropose}
+      />
+    </aside>
+  );
+}
+
+function SpaceContextSectionBody({
+  spaceSlug,
+  spaceTitle,
+  sectionKey,
+  canMutate,
+  onClose,
+  onPropose,
+}: {
+  spaceSlug: string;
+  spaceTitle?: string;
+  sectionKey: SpaceContextSectionKey;
+  canMutate: boolean;
+  onClose: () => void;
+  onPropose: (keys: SpaceContextSectionKey[]) => void;
 }) {
   const t = useTranslations('SpaceContext');
   const { getAccessToken } = useAuthentication();
@@ -147,14 +267,9 @@ export function SpaceContextChatPanel({
       if (savedFlashTimer.current) clearTimeout(savedFlashTimer.current);
       savedFlashTimer.current = setTimeout(() => setSavedFlash(false), 2500);
       try {
-        await refresh();
+        await revalidateSpaceContext(spaceSlug);
       } catch {
         // Refresh must not turn a successful PATCH into a failed save.
-      }
-      try {
-        await onDraftSaved?.();
-      } catch {
-        // Post-save callbacks must not turn a successful PATCH into a failed save.
       }
       return true;
     } catch (err) {
@@ -207,7 +322,8 @@ export function SpaceContextChatPanel({
 
   const draftLocked =
     !canMutate || saving || detail?.section.status === 'proposed';
-  const section = detail?.section;
+  const section =
+    detail?.section.sectionKey === sectionKey ? detail.section : undefined;
   const hasOfficialText = section
     ? officialSectionMarkdown(section) != null
     : false;
@@ -221,35 +337,15 @@ export function SpaceContextChatPanel({
       draftDirty);
 
   return (
-    <aside className="flex h-full min-h-[40rem] w-full flex-col border border-border/70 bg-background-2 xl:w-[28rem] xl:shrink-0">
-      <header className="flex items-start justify-between gap-3 border-b border-border/70 px-4 py-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-11">
-            {t('chat.title')}
-          </p>
-          <div className="mt-1 flex items-center gap-2">
-            <h2 className="truncate text-3 font-medium">{sectionTitle}</h2>
-            {detail ? (
-              <>
-                <SpaceContextStatusChip status={detail.section.status} />
-                <SpaceContextChangeBadge
-                  change={detail.section.pendingChange}
-                />
-              </>
-            ) : null}
-          </div>
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          colorVariant="neutral"
-          size="icon"
-          aria-label={t('chat.close')}
-          onClick={onClose}
-        >
-          <X className="size-4" strokeWidth={1.25} />
-        </Button>
-      </header>
+    <>
+      {section ? (
+        <SectionInfo
+          section={section}
+          spaceSlug={spaceSlug}
+          canMutate={canMutate}
+          onWithdrawn={onClose}
+        />
+      ) : null}
 
       <div className="flex items-start gap-3 border-b border-border/70 px-4 py-3">
         <span
@@ -401,7 +497,217 @@ export function SpaceContextChatPanel({
           />
         )}
       </div>
-    </aside>
+    </>
+  );
+}
+
+/** Status, ratified text and add/remove suggestions for the open section. */
+function SectionInfo({
+  section,
+  spaceSlug,
+  canMutate,
+  onWithdrawn,
+}: {
+  section: SpaceContextSectionRecord;
+  spaceSlug: string;
+  canMutate: boolean;
+  onWithdrawn: () => void;
+}) {
+  const t = useTranslations('SpaceContext');
+  const locale = useLocale() as Locale;
+  const { getAccessToken } = useAuthentication();
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const official = officialSectionMarkdown(section);
+  const officialBody = official
+    ? stripMatchingLeadingHeading(official, section.title)
+    : '';
+  const notice = sectionNotice(section, t);
+  const onVoting = section.status === 'proposed';
+  const proposalHref =
+    onVoting && section.proposalSlug
+      ? getProposalPath(locale, spaceSlug, section.proposalSlug)
+      : null;
+  const agreementHref = section.ratifiedSlug
+    ? getProposalPath(locale, spaceSlug, section.ratifiedSlug)
+    : null;
+  const canSuggestRemoval =
+    canMutate && !onVoting && section.pendingChange !== 'add';
+  const canWithdrawAddition =
+    canMutate && !onVoting && section.pendingChange === 'add';
+
+  const run = async (action: () => Promise<unknown>, done: string) => {
+    setActionError(null);
+    setMessage(null);
+    setBusy(true);
+    try {
+      await action();
+      setMessage(done);
+      await revalidateSpaceContext(spaceSlug);
+      return true;
+    } catch {
+      setActionError(t('error.change'));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleRemoval = () =>
+    run(
+      () =>
+        setSpaceContextRemovalSuggestedRequest({
+          spaceSlug,
+          sectionKey: section.sectionKey,
+          suggested: section.pendingChange !== 'remove',
+          getAccessToken,
+        }),
+      section.pendingChange === 'remove'
+        ? t('success.removalWithdrawn')
+        : t('success.removalSuggested'),
+    );
+
+  const withdrawAddition = async () => {
+    const done = await run(
+      () =>
+        discardSpaceContextSuggestionRequest({
+          spaceSlug,
+          sectionKey: section.sectionKey,
+          getAccessToken,
+        }),
+      t('success.additionWithdrawn'),
+    );
+    if (done) onWithdrawn();
+  };
+
+  return (
+    <div className="space-y-4 border-b border-border/70 px-4 py-3">
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <SpaceContextStatusChip status={section.status} />
+          <SpaceContextChangeBadge change={section.pendingChange} />
+        </div>
+        <p className="text-1 text-neutral-11">
+          {section.isCustom
+            ? t('reader.customLead')
+            : t(`leads.${section.sectionKey as BuiltinSpaceContextSectionKey}`)}
+        </p>
+      </div>
+
+      {notice ? (
+        <p className="border border-dashed border-neutral-6 px-3 py-2 text-1 text-neutral-11">
+          {notice}
+        </p>
+      ) : null}
+
+      <InfoBlock
+        label={t('reader.official')}
+        meta={
+          official != null && section.ratifiedDocumentId != null ? (
+            <InfoLink
+              href={agreementHref}
+              label={t('card.agreementRef', {
+                agreement: agreementNumber(
+                  section.ratifiedWeb3Id,
+                  section.ratifiedDocumentId,
+                ),
+              })}
+            />
+          ) : null
+        }
+      >
+        {officialBody.trim() ? (
+          <MemoryProse
+            source={officialBody}
+            className="text-2 leading-relaxed text-foreground"
+          />
+        ) : (
+          <p className="text-2 text-neutral-11">{t('reader.noOfficial')}</p>
+        )}
+      </InfoBlock>
+
+      {proposalHref ? (
+        <InfoLink href={proposalHref} label={t('card.viewProposal')} />
+      ) : null}
+
+      {canSuggestRemoval || canWithdrawAddition ? (
+        <div className="flex flex-wrap gap-2">
+          {canSuggestRemoval ? (
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              className="h-8 px-2"
+              disabled={busy}
+              onClick={() => void toggleRemoval()}
+            >
+              {section.pendingChange === 'remove'
+                ? t('reader.cancelRemoval')
+                : t('reader.suggestRemoval')}
+            </Button>
+          ) : null}
+          {canWithdrawAddition ? (
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              className="h-8 px-2"
+              disabled={busy}
+              onClick={() => void withdrawAddition()}
+            >
+              {t('reader.withdrawAddition')}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {actionError ? (
+        <p className="text-2 text-error-11" role="alert">
+          {actionError}
+        </p>
+      ) : message ? (
+        <p className="text-2 text-neutral-11" role="status">
+          {message}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function InfoBlock({
+  label,
+  meta,
+  children,
+}: {
+  label: string;
+  meta?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="space-y-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-11">
+          {label}
+        </h3>
+        {meta ? <span className="text-[11px]">{meta}</span> : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function InfoLink({ href, label }: { href: string | null; label: string }) {
+  if (!href) return <span className="text-neutral-11">{label}</span>;
+  return (
+    <Link
+      href={href}
+      scroll={false}
+      className="text-1 font-semibold text-foreground underline-offset-2 hover:underline"
+    >
+      {label}
+    </Link>
   );
 }
 

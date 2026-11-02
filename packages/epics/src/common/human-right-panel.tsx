@@ -196,6 +196,7 @@ import {
 import { SignalTurnIntoProposalButton } from '../coherence/components/signal-turn-into-proposal-button';
 import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
 import { SignalIndicativeAmounts } from '../coherence/components/signal-indicative-amounts';
+import { SpaceContextSidePanel } from '../space-context/components/space-context-chat-panel';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
   dmOtherHumanMembers,
@@ -1211,7 +1212,33 @@ type HumanRightPanelProps = {
   useMembers: UseMembers;
 };
 
-export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
+/** Right panel host: a Space Context section when one is selected, else chat. */
+export function HumanRightPanel(props: HumanRightPanelProps) {
+  const pathname = usePathname() ?? '';
+  const { spaceContextSection, closeSpaceContextSection } = useHumanChatPanel();
+  const routeSpaceSlug = getDhoSpaceSlugFromPathname(pathname) || '';
+  const section =
+    spaceContextSection?.spaceSlug === routeSpaceSlug
+      ? spaceContextSection
+      : null;
+
+  useEffect(() => {
+    if (spaceContextSection && !section) closeSpaceContextSection();
+  }, [closeSpaceContextSection, section, spaceContextSection]);
+
+  if (section) {
+    return (
+      <SpaceContextSidePanel
+        spaceSlug={section.spaceSlug}
+        sectionKey={section.sectionKey}
+        onClose={closeSpaceContextSection}
+      />
+    );
+  }
+  return <HumanChatRightPanel {...props} />;
+}
+
+function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const t = useTranslations('HumanChatPanel');
   const tCommon = useTranslations('Common');
   const tSpaces = useTranslations('Spaces');

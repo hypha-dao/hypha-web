@@ -5767,12 +5767,9 @@
       "customLead": "Een sectie die leden aan de Context van deze space hebben toegevoegd.",
       "official": "Bekrachtigde tekst",
       "noOfficial": "Nog niets bekrachtigd.",
-      "draft": "Concept — niet bekrachtigd",
-      "proposed": "Voorgestelde tekst — in stemming",
       "suggestRemoval": "Verwijderen voorstellen",
       "cancelRemoval": "Verwijderingsvoorstel intrekken",
-      "withdrawAddition": "Voorstel intrekken",
-      "close": "Sluiten"
+      "withdrawAddition": "Voorstel intrekken"
     },
     "addSection": {
       "open": "Sectie toevoegen",
