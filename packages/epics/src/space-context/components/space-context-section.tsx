@@ -31,6 +31,10 @@ import {
 import { SpaceContextAddSectionDialog } from './space-context-add-section-dialog';
 import { SpaceContextCard } from './space-context-card';
 import { SpaceContextChatPanel } from './space-context-chat-panel';
+import {
+  SpaceContextDraftDialog,
+  SpaceContextReadDialog,
+} from './space-context-dialogs';
 import { SpaceContextEmpty } from './space-context-empty';
 import { spaceContextProposeHref } from './propose-href';
 
@@ -91,6 +95,10 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
       ? spaceContextSection.sectionKey
       : null
     : inlineSection;
+  const [readingKey, setReadingKey] = useState<SpaceContextSectionKey | null>(
+    null,
+  );
+  const [draftKey, setDraftKey] = useState<SpaceContextSectionKey | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
@@ -160,6 +168,11 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
       ),
     [featured, filter, sections],
   );
+
+  const readingSection =
+    sections.find((section) => section.sectionKey === readingKey) ?? null;
+  const draftSection =
+    sections.find((section) => section.sectionKey === draftKey) ?? null;
 
   const proposeHref = spaceContextProposeHref(locale, spaceSlug);
   const proposeSections = (keys: SpaceContextSectionKey[]) => {
@@ -325,6 +338,8 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
             selected={openSection === featured.sectionKey}
             canMutate={canMutate}
             onOpen={showSection}
+            onRead={setReadingKey}
+            onShowDraft={setDraftKey}
             onProposeAmendment={(key) =>
               isProposableSection(featured)
                 ? proposeSections([key])
@@ -345,11 +360,32 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
                 selected={openSection === section.sectionKey}
                 canMutate={canMutate}
                 onOpen={showSection}
+                onRead={setReadingKey}
+                onShowDraft={setDraftKey}
               />
             ))}
           </div>
         )}
       </div>
+
+      <SpaceContextReadDialog
+        section={readingSection}
+        onClose={() => setReadingKey(null)}
+      />
+      {draftSection ? (
+        <SpaceContextDraftDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setDraftKey(null);
+          }}
+          spaceSlug={spaceSlug}
+          sectionKey={draftSection.sectionKey}
+          sectionTitle={draftSection.title}
+          markdown={draftSection.markdown}
+          canEdit={canMutate}
+          onVoting={draftSection.status === 'proposed'}
+        />
+      ) : null}
 
       {canMutate ? (
         <SpaceContextAddSectionDialog

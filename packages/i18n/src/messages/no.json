@@ -5632,15 +5632,6 @@
       "proposed": "Til avstemning",
       "drafts": "Utkast"
     },
-    "leads": {
-      "mission": "Hvorfor spacen finnes.",
-      "vision": "Fremtiden vi bygger mot.",
-      "strategy": "Hvordan vi kommer dit de neste 2–3 årene.",
-      "objectives": "Målbare mål for denne sesongen.",
-      "key_repositories": "Kode, dokumenter og data spacen er avhengig av.",
-      "tools": "Oversikt over verktøyene spacen bruker.",
-      "how_we_decide": "Hvordan denne spacen tar imot arbeid og velger funksjoner."
-    },
     "status": {
       "ratified": "Ratifisert",
       "onVoting": "Til avstemning",
@@ -5651,23 +5642,14 @@
       "emptyBody": "Ingen utkast ennå.",
       "proposalFallback": "Forslag",
       "viewProposal": "Se forslag",
-      "view": "Se",
-      "open": "Åpne",
       "openDiscussion": "Åpne diskusjon",
-      "startDiscussion": "Start diskusjon",
       "proposeAmendment": "Foreslå endring",
-      "agreementRef": "Avtale #{agreement}",
-      "ratifiedVia": "Ratifisert via",
-      "draftedBy": "utarbeidet av {name}",
-      "version": "v{version}",
       "contributors": "{count, plural, one {# bidragsyter} other {# bidragsytere}}",
       "edited": "redigert {when}",
       "votingClosed": "avstemningen er avsluttet",
       "daysLeft": "{count, plural, one {# dag} other {# dager}} igjen",
       "hoursLeft": "{count, plural, one {# time} other {# timer}} igjen",
-      "read": "Les {section}",
-      "draftText": "Utkast — ikke ratifisert",
-      "proposedText": "Foreslått tekst — til avstemning"
+      "read": "Les {section}"
     },
     "empty": {
       "title": "Ingen kontekst ennå",
@@ -5680,42 +5662,32 @@
     "chat": {
       "title": "Seksjonsdiskusjon",
       "close": "Lukk diskusjon",
-      "agent": "{agent} · agent for {section}",
-      "agentHint": "Medlemmene diskuterer her. {agent} svarer bare når noen nevner @{agent}.",
-      "empty": "Ingen meldinger ennå. Diskuter {section} med medlemmene her, og nevn @{agent} når dere vil ha en gjennomgang eller et utkast.",
       "loadError": "Kunne ikke laste chatten for denne seksjonen.",
       "connecting": "Kobler til diskusjonen…",
       "unavailable": "Diskusjonen er ikke tilgjengelig nå. Prøv igjen senere.",
       "signInHint": "Logg inn for å diskutere denne seksjonen med medlemmene.",
       "membersOnly": "Bare medlemmer av spacen kan delta i denne diskusjonen.",
       "roomTitle": "{section} · Kontekst — {space}",
-      "placeholder": "Skriv til medlemmene, eller nevn @{agent}…",
-      "askAgent": "Spør @{agent}",
       "draftLabel": "Felles utkast",
-      "draftHint": "Lim inn eksisterende tekst for {section} her eller rediger den sammen. Lagre for å dele den med medlemmene.",
+      "showDraft": "Vis utkast",
       "draftPlaceholder": "Lim inn eller skriv {section} her…",
       "draftUpdated": "Et medlem eller agenten lagret et nyere utkast.",
       "loadLatest": "Last inn nyeste",
       "saveDraft": "Lagre utkast",
       "saving": "Lagrer…",
-      "saved": "Lagret",
       "propose": "Foreslå for ratifisering",
-      "keepDrafting": "Fortsett utkastet",
-      "attach": "Legg ved dokument",
-      "attachHint": "Lim inn en lenke eller legg ved et dokument, og nevn deretter @{agent} for å lage et utkast fra det.",
-      "attachTooLarge": "Filer kan være maks {maxSize}.",
-      "attachLimit": "Legg ved opptil {max} dokumenter om gangen.",
-      "uploading": "Laster opp…",
-      "uploadFailed": "Kunne ikke laste opp dokumentet. Prøv igjen.",
-      "sharedDocument": "Delt dokument",
       "skills": {
         "review": "Er dette en god {section}? Hva mangler eller er vagt?",
         "refine": "Forbedre det felles utkastet ut fra det vi diskuterte over.",
         "draft": "Gjør denne diskusjonen om til et utkast for {section} og lagre det.",
         "fromSource": "Les den delte lenken eller dokumentet og skriv {section} ut fra det."
       },
-      "draftHintRatified": "Endringer her er et utkast. Den ratifiserte {section} endres først når et forslag blir vedtatt.",
       "draftLockedHint": "Denne seksjonen er til avstemning. Utkastet kan endres etter avstemningen."
+    },
+    "draft": {
+      "label": "Siste utkast",
+      "edit": "Rediger utkast",
+      "cancel": "Avbryt"
     },
     "proposeForm": {
       "header": "Opprett et forslag",
@@ -5758,14 +5730,9 @@
     },
     "notice": {
       "addition": "Foreslått seksjon. Den blir en del av Konteksten først når et forslag om å legge den til blir vedtatt.",
-      "removal": "Fjerning foreslått. Seksjonen blir værende til et forslag om å fjerne den blir vedtatt.",
-      "amendmentOnVoting": "En endring er til avstemning. Den ratifiserte teksten gjelder til den blir vedtatt.",
-      "draftChanges": "Utkastendringer venter. De blir offisielle først når et forslag blir vedtatt."
+      "removal": "Fjerning foreslått. Seksjonen blir værende til et forslag om å fjerne den blir vedtatt."
     },
     "reader": {
-      "customLead": "En seksjon medlemmene har lagt til i Konteksten for dette området.",
-      "official": "Ratifisert tekst",
-      "noOfficial": "Ingenting er ratifisert ennå.",
       "suggestRemoval": "Foreslå fjerning",
       "cancelRemoval": "Trekk forslaget om fjerning",
       "withdrawAddition": "Trekk forslaget"

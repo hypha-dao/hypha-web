@@ -5625,15 +5625,6 @@
       "proposed": "Em votação",
       "drafts": "Rascunhos"
     },
-    "leads": {
-      "mission": "Why the space exists.",
-      "vision": "The future we are building toward.",
-      "strategy": "How we get there over the next 2–3 years.",
-      "objectives": "Measurable goals for this season.",
-      "key_repositories": "Code, docs and data the space relies on.",
-      "tools": "Inventory of tools the space uses.",
-      "how_we_decide": "How this space accepts work and chooses features."
-    },
     "status": {
       "ratified": "Ratificada",
       "onVoting": "Em votação",
@@ -5644,23 +5635,14 @@
       "emptyBody": "No draft yet.",
       "proposalFallback": "Proposal",
       "viewProposal": "View proposal",
-      "view": "View",
-      "open": "Open",
       "openDiscussion": "Abrir discussão",
-      "startDiscussion": "Iniciar discussão",
       "proposeAmendment": "Propor emenda",
-      "agreementRef": "Acordo #{agreement}",
-      "ratifiedVia": "Ratificada pelo",
-      "draftedBy": "redigida por {name}",
-      "version": "v{version}",
       "contributors": "{count, plural, one {# colaborador} other {# colaboradores}}",
       "edited": "editada {when}",
       "votingClosed": "votação encerrada",
       "daysLeft": "{count, plural, one {falta # dia} other {faltam # dias}}",
       "hoursLeft": "{count, plural, one {falta # hora} other {faltam # horas}}",
-      "read": "Ler {section}",
-      "draftText": "Rascunho — não ratificado",
-      "proposedText": "Texto proposto — em votação"
+      "read": "Ler {section}"
     },
     "empty": {
       "title": "Ainda sem contexto",
@@ -5673,42 +5655,32 @@
     "chat": {
       "title": "Discussão da secção",
       "close": "Fechar discussão",
-      "agent": "{agent} · agente de {section}",
-      "agentHint": "Os membros discutem aqui. {agent} só responde quando alguém menciona @{agent}.",
-      "empty": "Ainda não há mensagens. Discutam aqui {section} com os membros e mencionem @{agent} quando quiserem uma revisão ou um rascunho.",
       "loadError": "Could not load this section chat.",
       "connecting": "A ligar à discussão…",
       "unavailable": "A discussão não está disponível agora. Tente mais tarde.",
       "signInHint": "Inicie sessão para discutir esta secção com os membros.",
       "membersOnly": "Apenas membros do espaço podem participar nesta discussão.",
       "roomTitle": "{section} · Contexto — {space}",
-      "placeholder": "Escreva aos membros ou mencione @{agent}…",
-      "askAgent": "Perguntar a @{agent}",
       "draftLabel": "Rascunho partilhado",
-      "draftHint": "Cole aqui o texto existente de {section} ou edite-o em conjunto. Guarde para o partilhar com os membros.",
+      "showDraft": "Ver rascunho",
       "draftPlaceholder": "Cole ou escreva {section} aqui…",
       "draftUpdated": "Um membro ou o agente guardou um rascunho mais recente.",
       "loadLatest": "Carregar o mais recente",
       "saveDraft": "Save draft",
       "saving": "Salvando…",
-      "saved": "Salvo",
       "propose": "Propose to ratify",
-      "keepDrafting": "Keep drafting",
-      "attach": "Anexar documento",
-      "attachHint": "Cole uma ligação ou anexe um documento e depois mencione @{agent} para redigir a partir dele.",
-      "attachTooLarge": "Os arquivos devem ter {maxSize} ou menos.",
-      "attachLimit": "Anexe até {max} documentos por vez.",
-      "uploading": "Enviando…",
-      "uploadFailed": "Não foi possível enviar o documento. Tente novamente.",
-      "sharedDocument": "Documento compartilhado",
       "skills": {
         "review": "Esta é uma boa {section}? O que falta ou é vago?",
         "refine": "Melhora o rascunho partilhado com o que discutimos acima.",
         "draft": "Transforma esta discussão num rascunho de {section} e guarda-o.",
         "fromSource": "Lê a ligação ou o documento partilhado e redige {section} a partir dele."
       },
-      "draftHintRatified": "As alterações aqui são um rascunho. {section} ratificada só muda quando uma proposta for aprovada.",
       "draftLockedHint": "Esta seção está em votação. O rascunho pode mudar depois da votação."
+    },
+    "draft": {
+      "label": "Rascunho mais recente",
+      "edit": "Editar rascunho",
+      "cancel": "Cancelar"
     },
     "proposeForm": {
       "header": "Criar uma proposta",
@@ -5751,14 +5723,9 @@
     },
     "notice": {
       "addition": "Seção sugerida. Entra no Contexto só quando uma proposta que a adiciona for aprovada.",
-      "removal": "Remoção sugerida. A seção fica até ser aprovada uma proposta que a remove.",
-      "amendmentOnVoting": "Há uma emenda em votação. O texto ratificado vale até ela ser aprovada.",
-      "draftChanges": "Alterações de rascunho pendentes. Só ficam oficiais quando uma proposta for aprovada."
+      "removal": "Remoção sugerida. A seção fica até ser aprovada uma proposta que a remove."
     },
     "reader": {
-      "customLead": "Uma seção que os membros adicionaram ao Contexto deste espaço.",
-      "official": "Texto ratificado",
-      "noOfficial": "Nada ratificado ainda.",
       "suggestRemoval": "Sugerir remoção",
       "cancelRemoval": "Retirar a sugestão de remoção",
       "withdrawAddition": "Retirar a sugestão"

@@ -5641,15 +5641,6 @@
       "proposed": "En votación",
       "drafts": "Borradores"
     },
-    "leads": {
-      "mission": "Why the space exists.",
-      "vision": "The future we are building toward.",
-      "strategy": "How we get there over the next 2–3 years.",
-      "objectives": "Measurable goals for this season.",
-      "key_repositories": "Code, docs and data the space relies on.",
-      "tools": "Inventory of tools the space uses.",
-      "how_we_decide": "How this space accepts work and chooses features."
-    },
     "status": {
       "ratified": "Ratificada",
       "onVoting": "En votación",
@@ -5660,23 +5651,14 @@
       "emptyBody": "No draft yet.",
       "proposalFallback": "Proposal",
       "viewProposal": "View proposal",
-      "view": "View",
-      "open": "Open",
       "openDiscussion": "Abrir debate",
-      "startDiscussion": "Iniciar debate",
       "proposeAmendment": "Proponer enmienda",
-      "agreementRef": "Acuerdo #{agreement}",
-      "ratifiedVia": "Ratificada mediante",
-      "draftedBy": "redactada por {name}",
-      "version": "v{version}",
       "contributors": "{count, plural, one {# colaborador} other {# colaboradores}}",
       "edited": "editada {when}",
       "votingClosed": "votación cerrada",
       "daysLeft": "{count, plural, one {queda # día} other {quedan # días}}",
       "hoursLeft": "{count, plural, one {queda # hora} other {quedan # horas}}",
-      "read": "Leer {section}",
-      "draftText": "Borrador — sin ratificar",
-      "proposedText": "Texto propuesto — en votación"
+      "read": "Leer {section}"
     },
     "empty": {
       "title": "Aún no hay contexto",
@@ -5689,42 +5671,32 @@
     "chat": {
       "title": "Debate de la sección",
       "close": "Cerrar debate",
-      "agent": "{agent} · agente de {section}",
-      "agentHint": "Aquí debaten los miembros. {agent} solo responde cuando alguien menciona a @{agent}.",
-      "empty": "Aún no hay mensajes. Debatid aquí {section} con los miembros y mencionad a @{agent} cuando queráis una revisión o un borrador.",
       "loadError": "Could not load this section chat.",
       "connecting": "Conectando con el debate…",
       "unavailable": "El debate no está disponible ahora. Inténtalo más tarde.",
       "signInHint": "Inicia sesión para debatir esta sección con los miembros.",
       "membersOnly": "Solo los miembros del espacio pueden unirse a este debate.",
       "roomTitle": "{section} · Contexto — {space}",
-      "placeholder": "Escribe a los miembros o menciona a @{agent}…",
-      "askAgent": "Preguntar a @{agent}",
       "draftLabel": "Borrador compartido",
-      "draftHint": "Pega aquí el texto existente de {section} o edítalo en grupo. Guarda para compartirlo con los miembros.",
+      "showDraft": "Ver borrador",
       "draftPlaceholder": "Pega o escribe aquí {section}…",
       "draftUpdated": "Un miembro o el agente guardó un borrador más reciente.",
       "loadLatest": "Cargar el último",
       "saveDraft": "Save draft",
       "saving": "Guardando…",
-      "saved": "Guardado",
       "propose": "Propose to ratify",
-      "keepDrafting": "Keep drafting",
-      "attach": "Adjuntar documento",
-      "attachHint": "Pega un enlace o adjunta un documento y menciona a @{agent} para redactar a partir de él.",
-      "attachTooLarge": "Los archivos deben pesar {maxSize} o menos.",
-      "attachLimit": "Adjunta hasta {max} documentos a la vez.",
-      "uploading": "Subiendo…",
-      "uploadFailed": "No se pudo subir el documento. Inténtalo de nuevo.",
-      "sharedDocument": "Documento compartido",
       "skills": {
         "review": "¿Es esta una buena {section}? ¿Qué falta o es vago?",
         "refine": "Mejora el borrador compartido con lo que hemos debatido arriba.",
         "draft": "Convierte este debate en un borrador de {section} y guárdalo.",
         "fromSource": "Lee el enlace o documento compartido y redacta {section} a partir de él."
       },
-      "draftHintRatified": "Los cambios aquí son un borrador. {section} ratificada solo cambia cuando se aprueba una propuesta.",
       "draftLockedHint": "Esta sección está en votación. El borrador puede cambiar después de la votación."
+    },
+    "draft": {
+      "label": "Último borrador",
+      "edit": "Editar borrador",
+      "cancel": "Cancelar"
     },
     "proposeForm": {
       "header": "Crear una propuesta",
@@ -5767,14 +5739,9 @@
     },
     "notice": {
       "addition": "Sección sugerida. Se suma al Contexto solo cuando se aprueba una propuesta que la añade.",
-      "removal": "Eliminación sugerida. La sección se mantiene hasta que se aprueba una propuesta que la elimina.",
-      "amendmentOnVoting": "Hay una enmienda en votación. El texto ratificado se mantiene hasta que se apruebe.",
-      "draftChanges": "Cambios de borrador pendientes. Solo son oficiales cuando se aprueba una propuesta."
+      "removal": "Eliminación sugerida. La sección se mantiene hasta que se aprueba una propuesta que la elimina."
     },
     "reader": {
-      "customLead": "Una sección que los miembros añadieron al Contexto de este espacio.",
-      "official": "Texto ratificado",
-      "noOfficial": "Aún no hay nada ratificado.",
       "suggestRemoval": "Sugerir eliminar",
       "cancelRemoval": "Retirar la sugerencia de eliminar",
       "withdrawAddition": "Retirar la sugerencia"

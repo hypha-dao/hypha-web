@@ -5627,15 +5627,6 @@
       "proposed": "In Abstimmung",
       "drafts": "Entwürfe"
     },
-    "leads": {
-      "mission": "Warum der Space existiert.",
-      "vision": "Die Zukunft, auf die wir hinarbeiten.",
-      "strategy": "Wie wir dort in den nächsten 2–3 Jahren hinkommen.",
-      "objectives": "Messbare Ziele für diese Saison.",
-      "key_repositories": "Code, Docs und Daten, auf die der Space setzt.",
-      "tools": "Inventar der Tools, die der Space nutzt.",
-      "how_we_decide": "Wie dieser Space Arbeit annimmt und Features wählt."
-    },
     "status": {
       "ratified": "Ratifiziert",
       "onVoting": "In Abstimmung",
@@ -5646,23 +5637,14 @@
       "emptyBody": "Noch kein Entwurf.",
       "proposalFallback": "Vorschlag",
       "viewProposal": "Vorschlag ansehen",
-      "view": "Ansehen",
-      "open": "Öffnen",
       "openDiscussion": "Diskussion öffnen",
-      "startDiscussion": "Diskussion starten",
       "proposeAmendment": "Änderung vorschlagen",
-      "agreementRef": "Vereinbarung #{agreement}",
-      "ratifiedVia": "Ratifiziert durch",
-      "draftedBy": "entworfen von {name}",
-      "version": "v{version}",
       "contributors": "{count, plural, one {# Mitwirkende Person} other {# Mitwirkende}}",
       "edited": "bearbeitet {when}",
       "votingClosed": "Abstimmung beendet",
       "daysLeft": "noch {count, plural, one {# Tag} other {# Tage}}",
       "hoursLeft": "noch {count, plural, one {# Stunde} other {# Stunden}}",
-      "read": "{section} lesen",
-      "draftText": "Entwurf — nicht ratifiziert",
-      "proposedText": "Vorgeschlagener Text — in Abstimmung"
+      "read": "{section} lesen"
     },
     "empty": {
       "title": "Noch kein Kontext",
@@ -5675,42 +5657,32 @@
     "chat": {
       "title": "Abschnittsdiskussion",
       "close": "Diskussion schließen",
-      "agent": "{agent} · Agent für {section}",
-      "agentHint": "Hier diskutieren Mitglieder. {agent} antwortet nur, wenn jemand @{agent} erwähnt.",
-      "empty": "Noch keine Nachrichten. Besprecht hier gemeinsam {section} und erwähnt @{agent}, wenn ihr eine Prüfung oder einen Entwurf möchtet.",
       "loadError": "Dieser Abschnittschat konnte nicht geladen werden.",
       "connecting": "Verbindung zur Diskussion wird hergestellt…",
       "unavailable": "Die Diskussion ist gerade nicht verfügbar. Versuche es später erneut.",
       "signInHint": "Melde dich an, um diesen Abschnitt mit Mitgliedern zu besprechen.",
       "membersOnly": "Nur Mitglieder des Space können an dieser Diskussion teilnehmen.",
       "roomTitle": "{section} · Kontext — {space}",
-      "placeholder": "Schreibe den Mitgliedern oder erwähne @{agent}…",
-      "askAgent": "@{agent} fragen",
       "draftLabel": "Gemeinsamer Entwurf",
-      "draftHint": "Füge hier vorhandenen Text für {section} ein oder bearbeitet ihn gemeinsam. Speichern teilt ihn mit den Mitgliedern.",
+      "showDraft": "Entwurf anzeigen",
       "draftPlaceholder": "{section} hier einfügen oder schreiben…",
       "draftUpdated": "Ein Mitglied oder der Agent hat einen neueren Entwurf gespeichert.",
       "loadLatest": "Neuesten laden",
       "saveDraft": "Entwurf speichern",
       "saving": "Speichere…",
-      "saved": "Gespeichert",
       "propose": "Zur Ratifizierung vorschlagen",
-      "keepDrafting": "Weiter entwerfen",
-      "attach": "Dokument anhängen",
-      "attachHint": "Füge einen Link ein oder hänge ein Dokument an und erwähne dann @{agent}, um daraus einen Entwurf zu erstellen.",
-      "attachTooLarge": "Dateien dürfen höchstens {maxSize} groß sein.",
-      "attachLimit": "Hängt bis zu {max} Dokumente auf einmal an.",
-      "uploading": "Lade hoch…",
-      "uploadFailed": "Das Dokument konnte nicht hochgeladen werden. Versucht es erneut.",
-      "sharedDocument": "Geteiltes Dokument",
       "skills": {
         "review": "Ist das eine gute {section}? Was fehlt oder ist vage?",
         "refine": "Überarbeite den gemeinsamen Entwurf anhand unserer Diskussion oben.",
         "draft": "Mach aus dieser Diskussion einen Entwurf für {section} und speichere ihn.",
         "fromSource": "Lies den geteilten Link oder das Dokument und entwirf daraus {section}."
       },
-      "draftHintRatified": "Änderungen hier sind ein Entwurf. {section} in ratifizierter Fassung ändert sich erst, wenn ein Vorschlag angenommen wird.",
       "draftLockedHint": "Dieser Abschnitt ist in Abstimmung. Der Entwurf kann nach der Abstimmung geändert werden."
+    },
+    "draft": {
+      "label": "Neuester Entwurf",
+      "edit": "Entwurf bearbeiten",
+      "cancel": "Abbrechen"
     },
     "proposeForm": {
       "header": "Vorschlag erstellen",
@@ -5753,14 +5725,9 @@
     },
     "notice": {
       "addition": "Vorgeschlagener Abschnitt. Er kommt erst in den Kontext, wenn ein Vorschlag zum Hinzufügen angenommen wird.",
-      "removal": "Entfernung vorgeschlagen. Der Abschnitt bleibt, bis ein Vorschlag zum Entfernen angenommen wird.",
-      "amendmentOnVoting": "Eine Änderung ist in Abstimmung. Der ratifizierte Text gilt, bis sie angenommen wird.",
-      "draftChanges": "Entwurfsänderungen offen. Sie werden erst verbindlich, wenn ein Vorschlag angenommen wird."
+      "removal": "Entfernung vorgeschlagen. Der Abschnitt bleibt, bis ein Vorschlag zum Entfernen angenommen wird."
     },
     "reader": {
-      "customLead": "Ein Abschnitt, den Mitglieder dem Kontext dieses Space hinzugefügt haben.",
-      "official": "Ratifizierter Text",
-      "noOfficial": "Noch nichts ratifiziert.",
       "suggestRemoval": "Entfernen vorschlagen",
       "cancelRemoval": "Entfernungsvorschlag zurückziehen",
       "withdrawAddition": "Vorschlag zurückziehen"

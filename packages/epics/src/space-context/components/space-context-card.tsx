@@ -5,7 +5,6 @@ import {
   splitLeadParagraph,
   stripMatchingLeadingHeading,
   useProposalDetailsWeb3Rpc,
-  type BuiltinSpaceContextSectionKey,
   type SpaceContextSectionKey,
   type SpaceContextSectionRecord,
 } from '@hypha-platform/core/client';
@@ -20,7 +19,6 @@ import {
   MemoryProse,
 } from '../../coherence/components/memory-prose';
 import { getProposalPath } from '../../common/get-path-function';
-import { agreementNumber } from './agreement-number';
 import {
   SpaceContextChangeBadge,
   SpaceContextStatusChip,
@@ -40,6 +38,8 @@ export function SpaceContextCard({
   featured,
   canMutate,
   onOpen,
+  onRead,
+  onShowDraft,
   onProposeAmendment,
 }: {
   section: SpaceContextSectionRecord;
@@ -48,6 +48,8 @@ export function SpaceContextCard({
   featured?: boolean;
   canMutate: boolean;
   onOpen: (key: SpaceContextSectionKey) => void;
+  onRead: (key: SpaceContextSectionKey) => void;
+  onShowDraft?: (key: SpaceContextSectionKey) => void;
   onProposeAmendment?: (key: SpaceContextSectionKey) => void;
 }) {
   const t = useTranslations('SpaceContext');
@@ -62,27 +64,27 @@ export function SpaceContextCard({
     section.status === 'proposed' && section.proposalSlug
       ? getProposalPath(locale, spaceSlug, section.proposalSlug)
       : null;
-  const agreementHref = section.ratifiedSlug
-    ? getProposalPath(locale, spaceSlug, section.ratifiedSlug)
-    : null;
   const notice = sectionNotice(section, t);
+  const showStatus = section.status !== 'ratified';
+  const draftHidden =
+    !unofficial && section.hasDraftChanges && !!section.markdown.trim();
+  const linkClassName =
+    'inline-flex shrink-0 items-center gap-1 text-1 font-bold text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
-  const openFromSurface = (event: MouseEvent<HTMLDivElement>) => {
+  const readFromSurface = (event: MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
     if (target.closest(NESTED_CONTROLS)) return;
-    // Dragging to select text should not open the panel.
+    // Dragging to select text should not open the reader.
     if (window.getSelection()?.toString()) return;
-    onOpen(section.sectionKey);
+    onRead(section.sectionKey);
   };
 
   return (
     <Card
-      onClick={openFromSurface}
+      onClick={readFromSurface}
       className={cn(
         'relative flex h-full cursor-pointer flex-col transition-colors hover:border-neutral-11',
-        featured
-          ? 'gap-2.5 border-success-11 px-6 pb-[18px] pt-5'
-          : 'min-h-[210px] gap-3.5 p-6',
+        featured ? 'gap-2.5 px-6 pb-[18px] pt-5' : 'min-h-[210px] gap-3.5 p-6',
         selected && 'border-foreground',
         (unofficial || section.pendingChange) && 'border-dashed',
       )}
@@ -98,13 +100,15 @@ export function SpaceContextCard({
             <button
               type="button"
               className="text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              onClick={() => onOpen(section.sectionKey)}
+              onClick={() => onRead(section.sectionKey)}
               aria-label={t('card.read', { section: title })}
             >
               {title}
             </button>
           </CardTitle>
-          {featured ? <SpaceContextStatusChip status={section.status} /> : null}
+          {featured && showStatus ? (
+            <SpaceContextStatusChip status={section.status} />
+          ) : null}
           <SpaceContextChangeBadge change={section.pendingChange} />
         </div>
         {featured ? (
@@ -122,15 +126,10 @@ export function SpaceContextCard({
               {t('card.proposeAmendment')}
             </Button>
           ) : null
-        ) : (
+        ) : showStatus ? (
           <SpaceContextStatusChip status={section.status} />
-        )}
+        ) : null}
       </div>
-      {featured || section.isCustom ? null : (
-        <p className="-mt-2 text-1 text-neutral-11">
-          {t(`leads.${section.sectionKey as BuiltinSpaceContextSectionKey}`)}
-        </p>
-      )}
       <div className="relative flex-1">
         {empty ? (
           <p className="text-[13px] leading-snug text-neutral-11">
@@ -138,13 +137,6 @@ export function SpaceContextCard({
           </p>
         ) : (
           <>
-            {unofficial ? (
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-11">
-                {section.status === 'proposed'
-                  ? t('card.proposedText')
-                  : t('card.draftText')}
-              </p>
-            ) : null}
             <div
               className={cn(
                 featured ? 'max-h-[28rem]' : 'max-h-44',
@@ -189,82 +181,63 @@ export function SpaceContextCard({
       ) : null}
       <div
         className={cn(
-          'flex items-center justify-between gap-3',
+          'space-y-2',
           !featured && 'border-t border-border/60 pt-2.5',
         )}
       >
-        <div className="min-w-0 truncate text-[11px] text-neutral-11">
-          {section.status === 'proposed' ? (
-            <ProposedFooterMeta section={section} />
-          ) : (
-            <FooterParts
-              parts={staticFooterParts({
-                section,
-                featured: !!featured,
-                agreementHref,
-              })}
-            />
-          )}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 truncate text-[11px] text-neutral-11">
+            {section.status === 'proposed' ? (
+              <ProposedFooterMeta section={section} />
+            ) : section.status === 'draft' ? (
+              <DraftFooterMeta section={section} />
+            ) : null}
+          </div>
+          <button
+            type="button"
+            className={linkClassName}
+            onClick={() => onOpen(section.sectionKey)}
+          >
+            {t('card.openDiscussion')}
+            <span aria-hidden>→</span>
+          </button>
         </div>
-        <CardAction
-          section={section}
-          canMutate={canMutate}
-          proposalHref={proposalHref}
-          onOpen={onOpen}
-        />
+        {proposalHref || (draftHidden && onShowDraft) ? (
+          <div className="flex flex-wrap items-center gap-4">
+            {draftHidden && onShowDraft ? (
+              <button
+                type="button"
+                className={linkClassName}
+                onClick={() => onShowDraft(section.sectionKey)}
+              >
+                {t('chat.showDraft')}
+              </button>
+            ) : null}
+            {proposalHref ? (
+              <Link
+                href={proposalHref}
+                scroll={false}
+                className={linkClassName}
+              >
+                {t('card.viewProposal')}
+                <span aria-hidden>→</span>
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </Card>
   );
 }
 
-/** One line telling members what is official and what is only suggested. */
+/** One line about a suggested addition or removal of the section. */
 export function sectionNotice(
   section: SpaceContextSectionRecord,
   t: SpaceContextT,
 ): string | null {
   if (section.pendingChange === 'remove') return t('notice.removal');
   if (section.pendingChange === 'add') return t('notice.addition');
-  if (officialSectionMarkdown(section) == null) return null;
-  if (section.status === 'proposed') return t('notice.amendmentOnVoting');
-  if (section.hasDraftChanges) return t('notice.draftChanges');
   return null;
-}
-
-function CardAction({
-  section,
-  canMutate,
-  proposalHref,
-  onOpen,
-}: {
-  section: SpaceContextSectionRecord;
-  canMutate: boolean;
-  proposalHref: string | null;
-  onOpen: (key: SpaceContextSectionKey) => void;
-}) {
-  const t = useTranslations('SpaceContext');
-  const className =
-    'inline-flex shrink-0 items-center gap-1 text-1 font-bold text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
-
-  if (proposalHref) {
-    return (
-      <Link href={proposalHref} scroll={false} className={className}>
-        {t('card.viewProposal')}
-        <span aria-hidden>→</span>
-      </Link>
-    );
-  }
-
-  const label = ctaLabel(section, canMutate, t);
-  return (
-    <button
-      type="button"
-      className={className}
-      onClick={() => onOpen(section.sectionKey)}
-    >
-      {label}
-      {label === t('card.view') ? null : <span aria-hidden>→</span>}
-    </button>
-  );
 }
 
 function FooterParts({ parts }: { parts: ReactNode[] }) {
@@ -278,90 +251,6 @@ function FooterParts({ parts }: { parts: ReactNode[] }) {
       ))}
     </>
   );
-}
-
-function AgreementRef({ href, label }: { href: string | null; label: string }) {
-  if (!href) return <>{label}</>;
-  return (
-    <Link
-      href={href}
-      scroll={false}
-      className="text-neutral-12 underline-offset-2 hover:underline"
-    >
-      {label}
-    </Link>
-  );
-}
-
-function staticFooterParts({
-  section,
-  featured,
-  agreementHref,
-}: {
-  section: SpaceContextSectionRecord;
-  featured: boolean;
-  agreementHref: string | null;
-}): ReactNode[] {
-  if (section.status === 'ratified') {
-    return [
-      <RatifiedFooterMeta
-        key="ratified"
-        section={section}
-        featured={featured}
-        agreementHref={agreementHref}
-      />,
-    ];
-  }
-  if (section.status === 'draft') {
-    return [<DraftFooterMeta key="draft" section={section} />];
-  }
-  return ['—'];
-}
-
-function RatifiedFooterMeta({
-  section,
-  featured,
-  agreementHref,
-}: {
-  section: SpaceContextSectionRecord;
-  featured: boolean;
-  agreementHref: string | null;
-}) {
-  const t = useTranslations('SpaceContext');
-  const format = useFormatter();
-  const agreement = agreementNumber(
-    section.ratifiedWeb3Id,
-    section.ratifiedDocumentId,
-  );
-  const ratifiedAt = section.ratifiedAt ? new Date(section.ratifiedAt) : null;
-  const ref = (
-    <AgreementRef
-      href={agreementHref}
-      label={t('card.agreementRef', { agreement })}
-    />
-  );
-
-  if (featured) {
-    const parts: ReactNode[] = [
-      <Fragment key="via">
-        {t('card.ratifiedVia')} {ref}
-      </Fragment>,
-    ];
-    if (ratifiedAt) {
-      parts.push(format.dateTime(ratifiedAt, { dateStyle: 'medium' }));
-    }
-    if (section.lastEditorName) {
-      parts.push(t('card.draftedBy', { name: section.lastEditorName }));
-    }
-    parts.push(t('card.version', { version: section.version }));
-    return <FooterParts parts={parts} />;
-  }
-
-  const parts: ReactNode[] = [t('status.ratified'), ref];
-  if (ratifiedAt) {
-    parts.push(format.dateTime(ratifiedAt, { month: 'short', day: 'numeric' }));
-  }
-  return <FooterParts parts={parts} />;
 }
 
 function DraftFooterMeta({ section }: { section: SpaceContextSectionRecord }) {
@@ -413,17 +302,4 @@ function ProposedFooterMeta({
     );
   }
   return <FooterParts parts={parts} />;
-}
-
-function ctaLabel(
-  section: SpaceContextSectionRecord,
-  canMutate: boolean,
-  t: SpaceContextT,
-): string {
-  if (section.status === 'proposed') return t('card.view');
-  if (!canMutate) {
-    return section.status === 'ratified' ? t('card.view') : t('card.open');
-  }
-  if (section.status === 'not_started') return t('card.startDiscussion');
-  return t('card.openDiscussion');
 }

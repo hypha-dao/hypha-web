@@ -5633,15 +5633,6 @@
       "proposed": "In stemming",
       "drafts": "Concepten"
     },
-    "leads": {
-      "mission": "Why the space exists.",
-      "vision": "The future we are building toward.",
-      "strategy": "How we get there over the next 2–3 years.",
-      "objectives": "Measurable goals for this season.",
-      "key_repositories": "Code, docs and data the space relies on.",
-      "tools": "Inventory of tools the space uses.",
-      "how_we_decide": "How this space accepts work and chooses features."
-    },
     "status": {
       "ratified": "Bekrachtigd",
       "onVoting": "In stemming",
@@ -5652,23 +5643,14 @@
       "emptyBody": "No draft yet.",
       "proposalFallback": "Proposal",
       "viewProposal": "View proposal",
-      "view": "View",
-      "open": "Open",
       "openDiscussion": "Discussie openen",
-      "startDiscussion": "Discussie starten",
       "proposeAmendment": "Wijziging voorstellen",
-      "agreementRef": "Overeenkomst #{agreement}",
-      "ratifiedVia": "Bekrachtigd via",
-      "draftedBy": "opgesteld door {name}",
-      "version": "v{version}",
       "contributors": "{count, plural, one {# bijdrager} other {# bijdragers}}",
       "edited": "bewerkt {when}",
       "votingClosed": "stemming gesloten",
       "daysLeft": "nog {count, plural, one {# dag} other {# dagen}}",
       "hoursLeft": "nog {count, plural, one {# uur} other {# uur}}",
-      "read": "{section} lezen",
-      "draftText": "Concept — niet bekrachtigd",
-      "proposedText": "Voorgestelde tekst — in stemming"
+      "read": "{section} lezen"
     },
     "empty": {
       "title": "Nog geen context",
@@ -5681,42 +5663,32 @@
     "chat": {
       "title": "Sectiediscussie",
       "close": "Discussie sluiten",
-      "agent": "{agent} · agent voor {section}",
-      "agentHint": "Leden discussiëren hier. {agent} antwoordt alleen als iemand @{agent} noemt.",
-      "empty": "Nog geen berichten. Bespreek hier {section} met de leden en noem @{agent} wanneer je een review of concept wilt.",
       "loadError": "Could not load this section chat.",
       "connecting": "Verbinden met de discussie…",
       "unavailable": "De discussie is nu niet beschikbaar. Probeer het later opnieuw.",
       "signInHint": "Log in om deze sectie met leden te bespreken.",
       "membersOnly": "Alleen leden van de space kunnen aan deze discussie deelnemen.",
       "roomTitle": "{section} · Context — {space}",
-      "placeholder": "Stuur de leden een bericht of noem @{agent}…",
-      "askAgent": "Vraag @{agent}",
       "draftLabel": "Gedeeld concept",
-      "draftHint": "Plak hier bestaande tekst voor {section} of bewerk die samen. Sla op om het met leden te delen.",
+      "showDraft": "Concept tonen",
       "draftPlaceholder": "Plak of schrijf hier {section}…",
       "draftUpdated": "Een lid of de agent heeft een nieuwer concept opgeslagen.",
       "loadLatest": "Nieuwste laden",
       "saveDraft": "Save draft",
       "saving": "Opslaan…",
-      "saved": "Opgeslagen",
       "propose": "Propose to ratify",
-      "keepDrafting": "Keep drafting",
-      "attach": "Document bijvoegen",
-      "attachHint": "Plak een link of voeg een document toe en noem dan @{agent} om er een concept van te maken.",
-      "attachTooLarge": "Bestanden mogen maximaal {maxSize} zijn.",
-      "attachLimit": "Voeg maximaal {max} documenten tegelijk toe.",
-      "uploading": "Uploaden…",
-      "uploadFailed": "Het document kon niet worden geüpload. Probeer het opnieuw.",
-      "sharedDocument": "Gedeeld document",
       "skills": {
         "review": "Is dit een goede {section}? Wat ontbreekt of is vaag?",
         "refine": "Verbeter het gedeelde concept met wat we hierboven bespraken.",
         "draft": "Maak van deze discussie een concept voor {section} en sla het op.",
         "fromSource": "Lees de gedeelde link of het document en schrijf {section} op basis daarvan."
       },
-      "draftHintRatified": "Wijzigingen hier zijn een concept. De bekrachtigde {section} verandert pas als een voorstel wordt aangenomen.",
       "draftLockedHint": "Deze sectie is in stemming. Het concept kan na de stemming veranderen."
+    },
+    "draft": {
+      "label": "Nieuwste concept",
+      "edit": "Concept bewerken",
+      "cancel": "Annuleren"
     },
     "proposeForm": {
       "header": "Create a proposal",
@@ -5759,14 +5731,9 @@
     },
     "notice": {
       "addition": "Voorgestelde sectie. Ze komt pas in de Context als een voorstel om haar toe te voegen wordt aangenomen.",
-      "removal": "Verwijdering voorgesteld. De sectie blijft tot een voorstel om haar te verwijderen wordt aangenomen.",
-      "amendmentOnVoting": "Er is een wijziging in stemming. De bekrachtigde tekst blijft gelden tot die wordt aangenomen.",
-      "draftChanges": "Conceptwijzigingen staan open. Ze worden pas officieel als een voorstel wordt aangenomen."
+      "removal": "Verwijdering voorgesteld. De sectie blijft tot een voorstel om haar te verwijderen wordt aangenomen."
     },
     "reader": {
-      "customLead": "Een sectie die leden aan de Context van deze space hebben toegevoegd.",
-      "official": "Bekrachtigde tekst",
-      "noOfficial": "Nog niets bekrachtigd.",
       "suggestRemoval": "Verwijderen voorstellen",
       "cancelRemoval": "Verwijderingsvoorstel intrekken",
       "withdrawAddition": "Voorstel intrekken"

@@ -211,14 +211,6 @@ export type MatrixDiscussionAgent = {
   skills: readonly MatrixAgentSkill[];
 };
 
-export type MatrixDiscussionComposerTools = {
-  /** Add text to the end of the composer, on its own paragraph. */
-  appendToComposer: (text: string) => void;
-  /** Start the composer with an @mention of the agent. */
-  mentionAgent: () => void;
-  composerLocked: boolean;
-};
-
 export type MatrixDiscussionThreadProps = {
   /** Identity of the discussed entity. The live room resets when it changes. */
   threadKey: string;
@@ -245,9 +237,6 @@ export type MatrixDiscussionThreadProps = {
   messagesClassName?: string;
   /** Shown above the composer while the room has no messages. */
   emptyHint?: React.ReactNode;
-  renderComposerTools?: (
-    tools: MatrixDiscussionComposerTools,
-  ) => React.ReactNode;
 };
 
 /**
@@ -272,7 +261,6 @@ export function MatrixDiscussionThread({
   logLabel,
   messagesClassName,
   emptyHint,
-  renderComposerTools,
 }: MatrixDiscussionThreadProps) {
   const tChat = useTranslations('HumanChatPanel');
   const { jwt: authToken } = useJwt();
@@ -1086,33 +1074,6 @@ export function MatrixDiscussionThread({
     tChat,
   ]);
 
-  const appendToComposer = React.useCallback((text: string) => {
-    const addition = text.trim();
-    if (!addition) return;
-    setComposerError(null);
-    setInput((current) =>
-      current.trim() ? `${current.trimEnd()}\n\n${addition}` : addition,
-    );
-  }, []);
-
-  const agentMentionToken = React.useMemo(() => {
-    const agentRow = mentionCandidates.find((candidate) =>
-      isHyphaBotMatrixIdentity(candidate.userId, candidate.displayLabel),
-    );
-    return agentRow ? `@${getMentionComposerLabel(agentRow)}` : null;
-  }, [getMentionComposerLabel, mentionCandidates]);
-
-  const mentionAgent = React.useCallback(() => {
-    if (!agentMentionToken) return;
-    setComposerError(null);
-    setInput((current) => {
-      if (current.includes(agentMentionToken)) return current;
-      return current.trim()
-        ? `${agentMentionToken} ${current.trimStart()}`
-        : `${agentMentionToken} `;
-    });
-  }, [agentMentionToken]);
-
   if (provisionError) {
     return (
       <p className="text-1 text-error-11" role="alert">
@@ -1252,11 +1213,6 @@ export function MatrixDiscussionThread({
             : undefined
         }
       />
-      {renderComposerTools?.({
-        appendToComposer,
-        mentionAgent,
-        composerLocked: false,
-      })}
     </AgentMentionLabelProvider>
   );
 }

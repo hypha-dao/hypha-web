@@ -2,80 +2,39 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
-  CHAT_ATTACHMENT_MAX_BYTES,
-  CHAT_ATTACHMENT_MAX_SIZE_LABEL,
   headingForSectionKey,
   HYPHA_ROOM_TYPES,
-  officialSectionMarkdown,
   specialistForSectionKey,
-  stripMatchingLeadingHeading,
-  uploadChatAttachmentFile,
   useMatrix,
   useSpaceBySlug,
-  type BuiltinSpaceContextSectionKey,
   type SpaceContextSectionKey,
   type SpaceContextSectionRecord,
 } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 import { Button, SidebarContent, SidebarHeader } from '@hypha-platform/ui';
-import { AtSign, Paperclip, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
-import { MemoryProse } from '../../coherence/components/memory-prose';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getProposalPath } from '../../common/get-path-function';
 import { HumanChatPanelHeader } from '../../common/human-chat-panel/human-chat-panel-header';
-import {
-  MatrixDiscussionThread,
-  type MatrixDiscussionComposerTools,
-} from '../../common/matrix-discussion-thread';
+import { MatrixDiscussionThread } from '../../common/matrix-discussion-thread';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import {
   discardSpaceContextSuggestionRequest,
-  patchSpaceContextSectionRequest,
   revalidateSpaceContext,
   setSpaceContextRemovalSuggestedRequest,
-  SpaceContextRequestError,
   storeSpaceContextChatRoomRequest,
   useSpaceContextSection,
 } from '../hooks/use-space-context';
-import { agreementNumber } from './agreement-number';
 import { spaceContextProposeHref } from './propose-href';
 import { sectionNotice } from './space-context-card';
+import { SpaceContextDraftDialog } from './space-context-dialogs';
 import {
   SpaceContextChangeBadge,
   SpaceContextStatusChip,
 } from './space-context-status-chip';
-
-const MAX_SHARED_DOCUMENTS = 5;
-const SHARED_DOCUMENT_ACCEPT = [
-  '.pdf',
-  '.doc',
-  '.docx',
-  '.ppt',
-  '.pptx',
-  '.xls',
-  '.xlsx',
-  '.md',
-  '.markdown',
-  '.txt',
-  'application/pdf',
-  'text/plain',
-  'text/markdown',
-  'image/*',
-].join(',');
-
-function markdownLinkLabel(name: string): string {
-  return name.replace(/[\r\n]+/g, ' ').replace(/[\\[\]]/g, '\\$&');
-}
 
 function useSectionTitle(
   spaceSlug: string,
@@ -191,6 +150,7 @@ function SpaceContextSectionBody({
   onPropose: (keys: SpaceContextSectionKey[]) => void;
 }) {
   const t = useTranslations('SpaceContext');
+  const tCoherence = useTranslations('CoherenceTab');
   const { getAccessToken } = useAuthentication();
   const { isMatrixAvailable } = useMatrix();
   const { detail, isLoading, error, refresh } = useSpaceContextSection(
@@ -202,91 +162,11 @@ function SpaceContextSectionBody({
     detail?.section.sectionKey === sectionKey
       ? detail.section.title
       : headingForSectionKey(sectionKey);
-  const agentName = specialist.agentName;
-  const [draft, setDraft] = useState('');
-  const [draftDirty, setDraftDirty] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [savedFlash, setSavedFlash] = useState(false);
-  const hydratedSectionRef = useRef<SpaceContextSectionKey | null>(null);
-  const baseMarkdownRef = useRef('');
-  const savedFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const remoteMarkdown = detail?.section.markdown ?? '';
-  const remoteChanged =
-    draftDirty && !!detail && remoteMarkdown !== baseMarkdownRef.current;
+  const [draftOpen, setDraftOpen] = useState(false);
 
   useEffect(() => {
-    setDraftDirty(false);
-    setSaveError(null);
+    setDraftOpen(false);
   }, [sectionKey]);
-
-  useEffect(() => {
-    if (!detail || detail.section.sectionKey !== sectionKey) return;
-    const sectionChanged = hydratedSectionRef.current !== sectionKey;
-    if (!sectionChanged && draftDirty) return;
-    hydratedSectionRef.current = sectionKey;
-    baseMarkdownRef.current = detail.section.markdown;
-    setDraft(detail.section.markdown);
-  }, [detail, draftDirty, sectionKey]);
-
-  useEffect(() => {
-    return () => {
-      if (savedFlashTimer.current) clearTimeout(savedFlashTimer.current);
-    };
-  }, []);
-
-  const loadLatestDraft = () => {
-    baseMarkdownRef.current = remoteMarkdown;
-    setDraft(remoteMarkdown);
-    setDraftDirty(false);
-  };
-
-  const handleSaveDraft = async () => {
-    if (
-      !detail ||
-      !canMutate ||
-      saving ||
-      detail.section.status === 'proposed'
-    ) {
-      return false;
-    }
-    setSaveError(null);
-    setSaving(true);
-    try {
-      await patchSpaceContextSectionRequest({
-        spaceSlug,
-        sectionKey,
-        markdown: draft,
-        getAccessToken,
-      });
-      baseMarkdownRef.current = draft;
-      setDraftDirty(false);
-      setSavedFlash(true);
-      setSaving(false);
-      if (savedFlashTimer.current) clearTimeout(savedFlashTimer.current);
-      savedFlashTimer.current = setTimeout(() => setSavedFlash(false), 2500);
-      try {
-        await revalidateSpaceContext(spaceSlug);
-      } catch {
-        // Refresh must not turn a successful PATCH into a failed save.
-      }
-      return true;
-    } catch (err) {
-      setSaveError(
-        err instanceof SpaceContextRequestError && err.code === 'on_voting'
-          ? t('error.onVoting')
-          : t('error.save'),
-      );
-      setSaving(false);
-      return false;
-    }
-  };
-
-  const handlePropose = async () => {
-    const saved = await handleSaveDraft();
-    if (saved) onPropose([sectionKey]);
-  };
 
   const persistRoomId = useCallback(
     (roomId: string) =>
@@ -301,7 +181,7 @@ function SpaceContextSectionBody({
 
   const agent = useMemo(
     () => ({
-      label: agentName,
+      label: specialist.agentName,
       skills: (['review', 'refine', 'draft', 'fromSource'] as const).map(
         (id) => ({
           id,
@@ -309,7 +189,7 @@ function SpaceContextSectionBody({
         }),
       ),
     }),
-    [agentName, sectionTitle, t],
+    [specialist.agentName, sectionTitle, t],
   );
   const agentContext = useMemo(
     () => ({ kind: 'space_context' as const, sectionKey }),
@@ -320,21 +200,16 @@ function SpaceContextSectionBody({
     void refresh();
   }, [refresh]);
 
-  const draftLocked =
-    !canMutate || saving || detail?.section.status === 'proposed';
   const section =
     detail?.section.sectionKey === sectionKey ? detail.section : undefined;
-  const hasOfficialText = section
-    ? officialSectionMarkdown(section) != null
-    : false;
+  const onVoting = section?.status === 'proposed';
   const canPropose =
     canMutate &&
     !!section &&
-    section.status !== 'proposed' &&
+    !onVoting &&
     (section.status !== 'ratified' ||
       section.hasDraftChanges ||
-      section.pendingChange != null ||
-      draftDirty);
+      section.pendingChange != null);
 
   return (
     <>
@@ -347,114 +222,50 @@ function SpaceContextSectionBody({
         />
       ) : null}
 
-      <div className="flex items-start gap-3 border-b border-border/70 px-4 py-3">
-        <span
-          className="flex size-8 shrink-0 items-center justify-center bg-foreground text-[11px] font-semibold text-background"
-          aria-hidden
-        >
-          {specialist.avatarLabel}
-        </span>
-        <div className="min-w-0">
-          <p className="text-2 font-medium">
-            {t('chat.agent', { agent: agentName, section: sectionTitle })}
-          </p>
-          <p className="text-1 text-neutral-11">
-            {t('chat.agentHint', { agent: agentName })}
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-2 border-b border-border/70 px-4 py-3">
+      <div className="space-y-3 border-b border-border/70 px-4 py-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em]">
             {t('chat.draftLabel')}
           </p>
-          {canMutate ? (
-            <Button
-              type="button"
-              variant="ghost"
-              colorVariant="neutral"
-              className="h-8 px-2"
-              disabled={draftLocked || !detail}
-              onClick={() => void handleSaveDraft()}
-            >
-              {saving
-                ? t('chat.saving')
-                : savedFlash
-                ? t('chat.saved')
-                : t('chat.saveDraft')}
-            </Button>
-          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            colorVariant="neutral"
+            className="h-8 px-2"
+            disabled={!section}
+            onClick={() => setDraftOpen(true)}
+          >
+            {t('chat.showDraft')}
+          </Button>
         </div>
-        {canMutate ? (
-          <p className="text-1 text-neutral-11">
-            {section?.status === 'proposed'
-              ? t('chat.draftLockedHint')
-              : hasOfficialText
-              ? t('chat.draftHintRatified', { section: sectionTitle })
-              : t('chat.draftHint', { section: sectionTitle })}
-          </p>
-        ) : null}
-        <textarea
-          value={draft}
-          onChange={(event) => {
-            setDraft(event.target.value);
-            setDraftDirty(true);
-          }}
-          disabled={draftLocked}
-          rows={6}
-          placeholder={t('chat.draftPlaceholder', { section: sectionTitle })}
-          className="w-full resize-y border border-border/70 bg-background px-3 py-2 text-2 outline-none"
-          aria-label={t('chat.draftLabel')}
-        />
-        {remoteChanged ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 text-1 text-neutral-11">
-            <span>{t('chat.draftUpdated')}</span>
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              className="h-7 px-2"
-              onClick={loadLatestDraft}
-            >
-              {t('chat.loadLatest')}
-            </Button>
-          </div>
-        ) : null}
-        {saveError ? (
-          <p className="text-2 text-error-11">{saveError}</p>
-        ) : savedFlash ? (
-          <p className="text-2 text-success-11">{t('success.saved')}</p>
-        ) : null}
         {canPropose ? (
-          <div className="flex flex-wrap gap-2 pt-1">
-            <Button
-              type="button"
-              disabled={
-                !detail ||
-                saving ||
-                (!draft.trim() && section?.pendingChange !== 'remove')
-              }
-              onClick={() => void handlePropose()}
-            >
-              {t('chat.propose')}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              disabled={saving || !detail}
-              onClick={() => void handleSaveDraft()}
-            >
-              {saving ? t('chat.saving') : t('chat.keepDrafting')}
-            </Button>
-          </div>
+          <Button
+            type="button"
+            disabled={
+              !section.markdown.trim() && section.pendingChange !== 'remove'
+            }
+            onClick={() => onPropose([sectionKey])}
+          >
+            {t('chat.propose')}
+          </Button>
         ) : null}
       </div>
+      {section ? (
+        <SpaceContextDraftDialog
+          open={draftOpen}
+          onOpenChange={setDraftOpen}
+          spaceSlug={spaceSlug}
+          sectionKey={sectionKey}
+          sectionTitle={sectionTitle}
+          markdown={section.markdown}
+          canEdit={canMutate}
+          onVoting={onVoting}
+        />
+      ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-3">
         {error ? (
-          <p className="text-2 text-error-11">{t('chat.loadError')}</p>
+          <p className="text-2 text-neutral-11">{t('chat.loadError')}</p>
         ) : !canMutate ? (
           <p className="text-2 text-neutral-11">{t('chat.membersOnly')}</p>
         ) : !isMatrixAvailable ? (
@@ -477,23 +288,11 @@ function SpaceContextSectionBody({
             agent={agent}
             agentContext={agentContext}
             onAgentMessage={handleAgentMessage}
-            placeholder={t('chat.placeholder', { agent: agentName })}
+            placeholder={tCoherence('saySomething')}
             connectingLabel={t('chat.connecting')}
             unavailableLabel={t('chat.unavailable')}
             logLabel="SpaceContextChatPanel"
             messagesClassName="flex min-h-[14rem] flex-1 flex-col"
-            emptyHint={
-              <p className="text-2 text-neutral-11">
-                {t('chat.empty', { section: sectionTitle, agent: agentName })}
-              </p>
-            }
-            renderComposerTools={(tools) => (
-              <ComposerTools
-                {...tools}
-                agentName={agentName}
-                getAccessToken={getAccessToken}
-              />
-            )}
           />
         )}
       </div>
@@ -501,7 +300,7 @@ function SpaceContextSectionBody({
   );
 }
 
-/** Status, ratified text and add/remove suggestions for the open section. */
+/** Suggested additions or removals, and the proposal link while on voting. */
 function SectionInfo({
   section,
   spaceSlug,
@@ -520,19 +319,13 @@ function SectionInfo({
   const [message, setMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const official = officialSectionMarkdown(section);
-  const officialBody = official
-    ? stripMatchingLeadingHeading(official, section.title)
-    : '';
   const notice = sectionNotice(section, t);
   const onVoting = section.status === 'proposed';
+  const showStatus = section.status !== 'ratified';
   const proposalHref =
     onVoting && section.proposalSlug
       ? getProposalPath(locale, spaceSlug, section.proposalSlug)
       : null;
-  const agreementHref = section.ratifiedSlug
-    ? getProposalPath(locale, spaceSlug, section.ratifiedSlug)
-    : null;
   const canSuggestRemoval =
     canMutate && !onVoting && section.pendingChange !== 'add';
   const canWithdrawAddition =
@@ -582,19 +375,27 @@ function SectionInfo({
     if (done) onWithdrawn();
   };
 
+  if (
+    !showStatus &&
+    !section.pendingChange &&
+    !canSuggestRemoval &&
+    !canWithdrawAddition &&
+    !message &&
+    !actionError
+  ) {
+    return null;
+  }
+
   return (
-    <div className="space-y-4 border-b border-border/70 px-4 py-3">
-      <div className="space-y-2">
+    <div className="space-y-3 border-b border-border/70 px-4 py-3">
+      {showStatus || section.pendingChange ? (
         <div className="flex flex-wrap items-center gap-2">
-          <SpaceContextStatusChip status={section.status} />
+          {showStatus ? (
+            <SpaceContextStatusChip status={section.status} />
+          ) : null}
           <SpaceContextChangeBadge change={section.pendingChange} />
         </div>
-        <p className="text-1 text-neutral-11">
-          {section.isCustom
-            ? t('reader.customLead')
-            : t(`leads.${section.sectionKey as BuiltinSpaceContextSectionKey}`)}
-        </p>
-      </div>
+      ) : null}
 
       {notice ? (
         <p className="border border-dashed border-neutral-6 px-3 py-2 text-1 text-neutral-11">
@@ -602,34 +403,14 @@ function SectionInfo({
         </p>
       ) : null}
 
-      <InfoBlock
-        label={t('reader.official')}
-        meta={
-          official != null && section.ratifiedDocumentId != null ? (
-            <InfoLink
-              href={agreementHref}
-              label={t('card.agreementRef', {
-                agreement: agreementNumber(
-                  section.ratifiedWeb3Id,
-                  section.ratifiedDocumentId,
-                ),
-              })}
-            />
-          ) : null
-        }
-      >
-        {officialBody.trim() ? (
-          <MemoryProse
-            source={officialBody}
-            className="text-2 leading-relaxed text-foreground"
-          />
-        ) : (
-          <p className="text-2 text-neutral-11">{t('reader.noOfficial')}</p>
-        )}
-      </InfoBlock>
-
       {proposalHref ? (
-        <InfoLink href={proposalHref} label={t('card.viewProposal')} />
+        <Link
+          href={proposalHref}
+          scroll={false}
+          className="text-1 font-semibold text-foreground underline-offset-2 hover:underline"
+        >
+          {t('card.viewProposal')}
+        </Link>
       ) : null}
 
       {canSuggestRemoval || canWithdrawAddition ? (
@@ -672,149 +453,6 @@ function SectionInfo({
           {message}
         </p>
       ) : null}
-    </div>
-  );
-}
-
-function InfoBlock({
-  label,
-  meta,
-  children,
-}: {
-  label: string;
-  meta?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <section className="space-y-2">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-11">
-          {label}
-        </h3>
-        {meta ? <span className="text-[11px]">{meta}</span> : null}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function InfoLink({ href, label }: { href: string | null; label: string }) {
-  if (!href) return <span className="text-neutral-11">{label}</span>;
-  return (
-    <Link
-      href={href}
-      scroll={false}
-      className="text-1 font-semibold text-foreground underline-offset-2 hover:underline"
-    >
-      {label}
-    </Link>
-  );
-}
-
-function ComposerTools({
-  appendToComposer,
-  mentionAgent,
-  composerLocked,
-  agentName,
-  getAccessToken,
-}: MatrixDiscussionComposerTools & {
-  agentName: string;
-  getAccessToken?: () => Promise<string | null | undefined>;
-}) {
-  const t = useTranslations('SpaceContext');
-  const [uploading, setUploading] = useState(false);
-  const [attachError, setAttachError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const uploadFiles = async (list: FileList | null) => {
-    if (!list || list.length === 0) return;
-    const files = Array.from(list);
-    const tooLarge = files.some(
-      (file) => file.size > CHAT_ATTACHMENT_MAX_BYTES,
-    );
-    const accepted = files
-      .filter((file) => file.size <= CHAT_ATTACHMENT_MAX_BYTES)
-      .slice(0, MAX_SHARED_DOCUMENTS);
-    setAttachError(
-      tooLarge
-        ? t('chat.attachTooLarge', { maxSize: CHAT_ATTACHMENT_MAX_SIZE_LABEL })
-        : files.length > MAX_SHARED_DOCUMENTS
-        ? t('chat.attachLimit', { max: MAX_SHARED_DOCUMENTS })
-        : null,
-    );
-    if (accepted.length === 0) return;
-    setUploading(true);
-    try {
-      const token = (await getAccessToken?.())?.trim();
-      if (!token) throw new Error('Authentication is required.');
-      const uploads = await Promise.all(
-        accepted.map((file) => uploadChatAttachmentFile(file, token)),
-      );
-      // The thread keeps only the name and link; the agent reads the file
-      // from that link when someone asks it to.
-      appendToComposer(
-        uploads
-          .map(
-            (upload, index) =>
-              `${t('chat.sharedDocument')}: [${markdownLinkLabel(
-                accepted[index]?.name || 'document',
-              )}](${upload.url})`,
-          )
-          .join('\n'),
-      );
-    } catch {
-      setAttachError(t('chat.uploadFailed'));
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  return (
-    <div className="space-y-1">
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          className="sr-only"
-          tabIndex={-1}
-          aria-hidden="true"
-          multiple
-          accept={SHARED_DOCUMENT_ACCEPT}
-          onChange={(event) => {
-            void uploadFiles(event.target.files);
-            event.target.value = '';
-          }}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          colorVariant="neutral"
-          className="h-8 gap-1.5 px-2"
-          disabled={composerLocked || uploading}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Paperclip className="size-3.5" strokeWidth={1.25} />
-          {uploading ? t('chat.uploading') : t('chat.attach')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          colorVariant="neutral"
-          className="h-8 gap-1.5 px-2"
-          disabled={composerLocked}
-          onClick={mentionAgent}
-        >
-          <AtSign className="size-3.5" strokeWidth={1.25} />
-          {t('chat.askAgent', { agent: agentName })}
-        </Button>
-      </div>
-      {attachError ? (
-        <p className="text-1 text-error-11">{attachError}</p>
-      ) : (
-        <p className="text-1 text-neutral-11">
-          {t('chat.attachHint', { agent: agentName })}
-        </p>
-      )}
     </div>
   );
 }

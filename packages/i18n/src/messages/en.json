@@ -5649,15 +5649,6 @@
       "proposed": "On voting",
       "drafts": "Drafts"
     },
-    "leads": {
-      "mission": "Why the space exists.",
-      "vision": "The future we are building toward.",
-      "strategy": "How we get there over the next 2–3 years.",
-      "objectives": "Measurable goals for this season.",
-      "key_repositories": "Code, docs and data the space relies on.",
-      "tools": "Inventory of tools the space uses.",
-      "how_we_decide": "How this space accepts work and chooses features."
-    },
     "status": {
       "ratified": "Ratified",
       "onVoting": "On voting",
@@ -5668,23 +5659,14 @@
       "emptyBody": "No draft yet.",
       "proposalFallback": "Proposal",
       "viewProposal": "View proposal",
-      "view": "View",
-      "open": "Open",
       "openDiscussion": "Open discussion",
-      "startDiscussion": "Start discussion",
       "proposeAmendment": "Propose amendment",
-      "agreementRef": "Agreement #{agreement}",
-      "ratifiedVia": "Ratified via",
-      "draftedBy": "drafted by {name}",
-      "version": "v{version}",
       "contributors": "{count, plural, one {# contributor} other {# contributors}}",
       "edited": "edited {when}",
       "votingClosed": "voting closed",
       "daysLeft": "{count, plural, one {# day} other {# days}} left",
       "hoursLeft": "{count, plural, one {# hour} other {# hours}} left",
-      "read": "Read {section}",
-      "draftText": "Draft — not ratified",
-      "proposedText": "Proposed text — on voting"
+      "read": "Read {section}"
     },
     "empty": {
       "title": "No context yet",
@@ -5697,42 +5679,32 @@
     "chat": {
       "title": "Section discussion",
       "close": "Close discussion",
-      "agent": "{agent} · {section} agent",
-      "agentHint": "Members discuss here. {agent} replies only when someone mentions @{agent}.",
-      "empty": "No messages yet. Discuss the {section} with members here, and mention @{agent} when you want it reviewed or drafted.",
       "loadError": "Could not load this section chat.",
       "connecting": "Connecting to the discussion…",
       "unavailable": "The discussion is unavailable right now. Try again later.",
       "signInHint": "Sign in to discuss this section with members.",
       "membersOnly": "Only space members can join this discussion.",
       "roomTitle": "{section} · Context — {space}",
-      "placeholder": "Message members, or mention @{agent}…",
-      "askAgent": "Ask @{agent}",
       "draftLabel": "Shared draft",
-      "draftHint": "Paste existing {section} text here or edit it together. Save to share it with members.",
+      "showDraft": "Show draft",
       "draftPlaceholder": "Paste or write the {section} here…",
       "draftUpdated": "A member or the agent saved a newer draft.",
       "loadLatest": "Load latest",
       "saveDraft": "Save draft",
       "saving": "Saving…",
-      "saved": "Saved",
       "propose": "Propose to ratify",
-      "keepDrafting": "Keep drafting",
-      "attach": "Attach document",
-      "attachHint": "Paste a link or attach a document, then mention @{agent} to draft from it.",
-      "attachTooLarge": "Files must be {maxSize} or smaller.",
-      "attachLimit": "Attach up to {max} documents at a time.",
-      "uploading": "Uploading…",
-      "uploadFailed": "Could not upload the document. Try again.",
-      "sharedDocument": "Shared document",
       "skills": {
         "review": "Is this a good {section}? What is missing or vague?",
         "refine": "Refine the shared draft using what we discussed above.",
         "draft": "Turn this discussion into a {section} draft and save it.",
         "fromSource": "Read the shared link or document and draft the {section} from it."
       },
-      "draftHintRatified": "Edits here are a draft. The ratified {section} changes only when a proposal passes.",
       "draftLockedHint": "This section is on voting. The draft can change after the vote."
+    },
+    "draft": {
+      "label": "Latest draft",
+      "edit": "Edit draft",
+      "cancel": "Cancel"
     },
     "proposeForm": {
       "header": "Create a proposal",
@@ -5775,14 +5747,9 @@
     },
     "notice": {
       "addition": "Suggested section. It joins the Context only when a proposal adding it passes.",
-      "removal": "Removal suggested. The section stays until a proposal removing it passes.",
-      "amendmentOnVoting": "An amendment is on voting. The ratified text stays until it passes.",
-      "draftChanges": "Draft changes pending. They become official only when a proposal passes."
+      "removal": "Removal suggested. The section stays until a proposal removing it passes."
     },
     "reader": {
-      "customLead": "A section members added to this space's Context.",
-      "official": "Ratified text",
-      "noOfficial": "Nothing ratified yet.",
       "suggestRemoval": "Suggest removing",
       "cancelRemoval": "Withdraw removal suggestion",
       "withdrawAddition": "Withdraw suggestion"
