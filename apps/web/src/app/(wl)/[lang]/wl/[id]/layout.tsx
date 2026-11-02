@@ -4,6 +4,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { WlNav } from './wl-nav';
+import { WlAuth } from './wl-auth';
 import { getWlAllowedSlugs } from './wl-config';
 
 export default async function WlSpaceLayout({
@@ -26,6 +27,7 @@ export default async function WlSpaceLayout({
           <img src={space.logoUrl} alt="" className="h-10 w-10 rounded" />
         ) : null}
         <h1 className="text-xl font-semibold">{space.title}</h1>
+        <WlAuth />
       </header>
       <WlNav lang={lang} id={id} />
       {children}
