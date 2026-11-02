@@ -566,6 +566,7 @@ export const CreateSignalForm = ({
       if (problem === 'blocked') {
         return t('signalFormVideoBlocked', { host: signalVideoLinkHost(raw) });
       }
+      if (problem === 'too-long') return t('signalFormVideoTooLong');
       return problem === 'unsupported' ? t('signalFormVideoUnsupported') : null;
     },
     [t],

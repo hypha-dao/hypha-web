@@ -4704,6 +4704,7 @@
     "signalFormVideoHint": "Lim inn en YouTube- eller Vimeo-lenke. En direkte videofil spilles bare av fra en vert Hypha tillater.",
     "signalFormVideoBlocked": "Videofiler fra {host} kan ikke spilles av på Hypha og ville vist en svart boks. Bruk en YouTube- eller Vimeo-lenke i stedet.",
     "signalFormVideoUnsupported": "Bruk en YouTube- eller Vimeo-lenke, eller en direkte lenke til en videofil (.mp4, .webm, .ogg eller .mov).",
+    "signalFormVideoTooLong": "Videolenker kan ikke være lengre enn 2000 tegn.",
     "signalFormAttachments": "Dokumenter",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint eller tekst. Flere om gangen. 16 MB hver.",
     "signalAttachments": "Dokumenter",

@@ -5,6 +5,7 @@ import {
   ClientEvent,
   EventType,
   RoomEvent,
+  SyncState,
   type MatrixClient,
 } from 'matrix-js-sdk';
 import {
@@ -174,14 +175,38 @@ export function useSignalRoomActivity(
     ) => {
       if (room?.roomId && watched.has(room.roomId)) schedule();
     };
+    const timelineCursor = (roomId: string): string | null => {
+      const events = client.getRoom(roomId)?.getLiveTimeline().getEvents();
+      if (!events?.length) return null;
+      const last = events[events.length - 1];
+      return `${events.length}:${events[0]?.getId() ?? ''}:${
+        last?.getId() ?? ''
+      }`;
+    };
+    const cursors = new Map<string, string | null>();
+    for (const roomId of watched) cursors.set(roomId, timelineCursor(roomId));
+    // Sync fires for typing, receipts and presence too. Rescan only when the
+    // initial sync lands, or when a watched room's live timeline actually moved.
+    const onSync = (state: SyncState, prevState: SyncState | null) => {
+      const prepared =
+        state === SyncState.Prepared && prevState !== SyncState.Prepared;
+      let timelineChanged = false;
+      for (const roomId of watched) {
+        const next = timelineCursor(roomId);
+        if (cursors.get(roomId) === next) continue;
+        cursors.set(roomId, next);
+        timelineChanged = true;
+      }
+      if (prepared || timelineChanged) schedule();
+    };
     client.on(RoomEvent.Timeline, onTimeline);
     client.on(ClientEvent.Room, schedule);
-    client.on(ClientEvent.Sync, schedule);
+    client.on(ClientEvent.Sync, onSync);
     return () => {
       if (frame != null) window.cancelAnimationFrame(frame);
       client.off(RoomEvent.Timeline, onTimeline);
       client.off(ClientEvent.Room, schedule);
-      client.off(ClientEvent.Sync, schedule);
+      client.off(ClientEvent.Sync, onSync);
     };
   }, [client, rooms]);
 

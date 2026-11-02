@@ -4127,6 +4127,7 @@
     "signalFormVideoHint": "Collez un lien YouTube ou Vimeo. Un fichier vidéo direct ne se lit que depuis un hôte autorisé par Hypha.",
     "signalFormVideoBlocked": "Les fichiers vidéo de {host} ne peuvent pas être lus sur Hypha et apparaîtraient comme un cadre noir. Utilisez plutôt un lien YouTube ou Vimeo.",
     "signalFormVideoUnsupported": "Utilisez un lien YouTube ou Vimeo, ou un lien direct vers un fichier vidéo (.mp4, .webm, .ogg ou .mov).",
+    "signalFormVideoTooLong": "Les liens vidéo ne peuvent pas dépasser 2000 caractères.",
     "signalFormAttachments": "Documents",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint ou texte. Plusieurs à la fois. 16 Mo chacun.",
     "signalAttachments": "Documents",

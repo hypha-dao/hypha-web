@@ -188,6 +188,8 @@ export function NetworkExchangeShareCard({
           ? tSignals('signalFormVideoBlocked', {
               host: signalVideoLinkHost(video),
             })
+          : videoProblem === 'too-long'
+          ? tSignals('signalFormVideoTooLong')
           : tSignals('signalFormVideoUnsupported'),
       );
       return;
@@ -217,9 +219,7 @@ export function NetworkExchangeShareCard({
         uploadSignalMedia,
       );
       const linkedVideo =
-        mediaKind === 'video' && /^https?:\/\//i.test(video)
-          ? video.slice(0, 2000)
-          : '';
+        mediaKind === 'video' && /^https?:\/\//i.test(video) ? video : '';
       const spaceId = await resolveSpaceId(spaceSlug, space?.id);
       if (!spaceId) {
         throw new Error('space');

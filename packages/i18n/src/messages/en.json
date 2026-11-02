@@ -4735,6 +4735,7 @@
     "signalFormVideoHint": "Paste a YouTube or Vimeo link. A direct video file only plays from a host Hypha allows.",
     "signalFormVideoBlocked": "Video files from {host} cannot play on Hypha and would show as a black box. Use a YouTube or Vimeo link instead.",
     "signalFormVideoUnsupported": "Use a YouTube or Vimeo link, or a direct link to a video file (.mp4, .webm, .ogg or .mov).",
+    "signalFormVideoTooLong": "Video links must be 2000 characters or fewer.",
     "signalFormAttachments": "Documents",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint, or text. Add several. 16 MB each.",
     "signalAttachments": "Documents",

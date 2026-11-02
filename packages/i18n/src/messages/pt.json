@@ -4129,6 +4129,7 @@
     "signalFormVideoHint": "Cole uma ligação do YouTube ou Vimeo. Um ficheiro de vídeo direto só é reproduzido a partir de um anfitrião que o Hypha permite.",
     "signalFormVideoBlocked": "Os ficheiros de vídeo de {host} não podem ser reproduzidos no Hypha e apareceriam como uma caixa preta. Use antes uma ligação do YouTube ou Vimeo.",
     "signalFormVideoUnsupported": "Use uma ligação do YouTube ou Vimeo, ou uma ligação direta para um ficheiro de vídeo (.mp4, .webm, .ogg ou .mov).",
+    "signalFormVideoTooLong": "As ligações de vídeo não podem ter mais de 2000 caracteres.",
     "signalFormAttachments": "Documentos",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint ou texto. Vários de uma vez. 16 MB cada.",
     "signalAttachments": "Documentos",

@@ -4705,6 +4705,7 @@
     "signalFormVideoHint": "Plak een YouTube- of Vimeo-link. Een direct videobestand speelt alleen af vanaf een host die Hypha toestaat.",
     "signalFormVideoBlocked": "Videobestanden van {host} kunnen niet afspelen op Hypha en zouden als een zwart vlak verschijnen. Gebruik in plaats daarvan een YouTube- of Vimeo-link.",
     "signalFormVideoUnsupported": "Gebruik een YouTube- of Vimeo-link, of een directe link naar een videobestand (.mp4, .webm, .ogg of .mov).",
+    "signalFormVideoTooLong": "Videolinks mogen maximaal 2000 tekens lang zijn.",
     "signalFormAttachments": "Documenten",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint of tekst. Meerdere tegelijk. 16 MB per stuk.",
     "signalAttachments": "Documenten",

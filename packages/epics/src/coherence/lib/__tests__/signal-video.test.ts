@@ -87,6 +87,18 @@ describe('signalVideoLinkProblem', () => {
     );
   });
 
+  it('rejects a link longer than 2000 characters', () => {
+    const url = `https://youtu.be/${'a'.repeat(1990)}`;
+    expect(url.length).toBeGreaterThan(2000);
+    expect(signalVideoLinkProblem(url, options)).toBe('too-long');
+    expect(
+      signalVideoLinkProblem(
+        `${'https://youtu.be/abc123XYZ_0'}${' '.repeat(2000)}`,
+        options,
+      ),
+    ).toBeNull();
+  });
+
   it('rejects a link that is not a video at all', () => {
     expect(
       signalVideoLinkProblem('https://example.com/watch-this', options),

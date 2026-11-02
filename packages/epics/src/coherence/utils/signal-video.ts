@@ -96,7 +96,10 @@ export function resolveSignalVideo(
  * nor a video file; `blocked` is a video file whose host the CSP `media-src`
  * does not allow, so the browser would show a black, silent player.
  */
-export type SignalVideoLinkProblem = 'unsupported' | 'blocked';
+/** Saved video links are capped here; longer ones are rejected, never truncated. */
+export const SIGNAL_VIDEO_URL_MAX_LENGTH = 2000;
+
+export type SignalVideoLinkProblem = 'unsupported' | 'blocked' | 'too-long';
 
 /** The `media-src` list the middleware sends, rebuilt from public env. */
 export function signalVideoMediaSources(): string[] {
@@ -115,8 +118,10 @@ export function signalVideoLinkProblem(
     selfOrigin = typeof window === 'undefined' ? null : window.location.origin,
   }: { mediaSources?: readonly string[]; selfOrigin?: string | null } = {},
 ): SignalVideoLinkProblem | null {
-  if (!raw?.trim()) return null;
-  const video = resolveSignalVideo(raw);
+  const trimmed = raw?.trim() ?? '';
+  if (!trimmed) return null;
+  if (trimmed.length > SIGNAL_VIDEO_URL_MAX_LENGTH) return 'too-long';
+  const video = resolveSignalVideo(trimmed);
   if (!video) return 'unsupported';
   if (video.kind !== 'file') return null;
   return isUrlAllowedByCspSources(video.src, mediaSources, selfOrigin)

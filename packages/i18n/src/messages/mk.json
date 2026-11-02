@@ -4686,6 +4686,7 @@
     "signalFormVideoHint": "Залепете врска од YouTube или Vimeo. Директна видео датотека се пушта само од домаќин што Hypha го дозволува.",
     "signalFormVideoBlocked": "Видео датотеките од {host} не може да се пуштат на Hypha и би се прикажале како црно поле. Наместо тоа, користете врска од YouTube или Vimeo.",
     "signalFormVideoUnsupported": "Користете врска од YouTube или Vimeo, или директна врска до видео датотека (.mp4, .webm, .ogg или .mov).",
+    "signalFormVideoTooLong": "Видео врските не смеат да бидат подолги од 2000 знаци.",
     "signalFormAttachments": "Документи",
     "signalFormAttachmentsHint": "PDF, Word, Excel, PowerPoint или текст. Неколку одеднаш. По 16 MB.",
     "signalAttachments": "Документи",
