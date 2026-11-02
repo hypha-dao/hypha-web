@@ -5653,6 +5653,7 @@
     },
     "chat": {
       "title": "Abschnittsdiskussion",
+      "empty": "Starte ein Gespräch, um an einem Entwurf für {section} zu arbeiten.",
       "close": "Diskussion schließen",
       "loadError": "Dieser Abschnittschat konnte nicht geladen werden.",
       "connecting": "Verbindung zur Diskussion wird hergestellt…",

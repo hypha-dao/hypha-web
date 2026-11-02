@@ -5649,6 +5649,7 @@
     },
     "chat": {
       "title": "Discussion de la section",
+      "empty": "Lance une conversation pour travailler sur un brouillon de {section}.",
       "close": "Fermer la discussion",
       "loadError": "Could not load this section chat.",
       "connecting": "Connexion à la discussion…",

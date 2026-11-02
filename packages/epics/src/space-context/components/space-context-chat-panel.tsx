@@ -287,6 +287,8 @@ function SpaceContextSectionBody({
             agent={agent}
             agentContext={agentContext}
             onAgentMessage={handleAgentMessage}
+            welcomeText={t('chat.empty', { section: sectionTitle })}
+            welcomeSenderName={t('chat.title')}
             placeholder={tCoherence('saySomething')}
             connectingLabel={t('chat.connecting')}
             unavailableLabel={t('chat.unavailable')}

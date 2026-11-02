@@ -237,6 +237,12 @@ export type MatrixDiscussionThreadProps = {
   messagesClassName?: string;
   /** Wraps the typing indicator and composer. */
   composerClassName?: string;
+  /**
+   * Empty-room welcome. Without these, the thread uses the direct-message
+   * welcome from Human Chat.
+   */
+  welcomeText?: string;
+  welcomeSenderName?: string;
   /** Shown above the composer while the room has no messages. */
   emptyHint?: React.ReactNode;
 };
@@ -263,6 +269,8 @@ export function MatrixDiscussionThread({
   logLabel,
   messagesClassName,
   composerClassName,
+  welcomeText,
+  welcomeSenderName,
   emptyHint,
 }: MatrixDiscussionThreadProps) {
   const tChat = useTranslations('HumanChatPanel');
@@ -1093,6 +1101,8 @@ export function MatrixDiscussionThread({
           roomId={roomId}
           currentUserId={currentUserId}
           currentUserAvatarUrl={currentUserAvatarUrl}
+          welcomeText={welcomeText}
+          welcomeSenderName={welcomeSenderName}
           onReply={handleReplyToMessage}
           onJumpToOriginalMessage={(eventId) => {
             const id = eventId.trim();

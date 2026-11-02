@@ -5658,6 +5658,7 @@
     },
     "chat": {
       "title": "Seksjonsdiskusjon",
+      "empty": "Start en samtale for å jobbe med et utkast til {section}.",
       "close": "Lukk diskusjon",
       "loadError": "Kunne ikke laste chatten for denne seksjonen.",
       "connecting": "Kobler til diskusjonen…",

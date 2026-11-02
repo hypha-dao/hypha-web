@@ -5667,6 +5667,7 @@
     },
     "chat": {
       "title": "Debate de la sección",
+      "empty": "Empieza una conversación para trabajar en un borrador de {section}.",
       "close": "Cerrar debate",
       "loadError": "Could not load this section chat.",
       "connecting": "Conectando con el debate…",

@@ -5659,6 +5659,7 @@
     },
     "chat": {
       "title": "Sectiediscussie",
+      "empty": "Start een gesprek om aan een concept voor {section} te werken.",
       "close": "Discussie sluiten",
       "loadError": "Could not load this section chat.",
       "connecting": "Verbinden met de discussie…",

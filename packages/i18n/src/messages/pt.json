@@ -5651,6 +5651,7 @@
     },
     "chat": {
       "title": "Discussão da secção",
+      "empty": "Começa uma conversa para trabalhar num rascunho de {section}.",
       "close": "Fechar discussão",
       "loadError": "Could not load this section chat.",
       "connecting": "A ligar à discussão…",

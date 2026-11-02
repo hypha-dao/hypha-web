@@ -5675,6 +5675,7 @@
     },
     "chat": {
       "title": "Section discussion",
+      "empty": "Start a conversation to work on a draft for {section}.",
       "close": "Close discussion",
       "loadError": "Could not load this section chat.",
       "connecting": "Connecting to the discussion…",
