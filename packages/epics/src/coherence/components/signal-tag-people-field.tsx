@@ -122,6 +122,7 @@ export function SignalTagPeopleField({
     if (value.includes(matrixUserId)) return;
     onChange([...value, matrixUserId]);
     setQuery('');
+    setActiveIndex(0);
   };
   const removeTag = (matrixUserId: string) => {
     onChange(value.filter((id) => id !== matrixUserId));

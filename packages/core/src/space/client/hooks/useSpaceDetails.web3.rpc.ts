@@ -10,7 +10,7 @@ export const useSpaceDetailsWeb3Rpc = ({
 }: {
   spaceId?: number | null;
 }) => {
-  const { data, isLoading, error } = useSWR(
+  const { data, isLoading, error, mutate } = useSWR(
     spaceId != null ? [spaceId, 'spaceDetails'] : null,
     async ([spaceId]) =>
       publicClient.readContract(getSpaceDetails({ spaceId: BigInt(spaceId) })),
@@ -49,5 +49,6 @@ export const useSpaceDetailsWeb3Rpc = ({
     spaceDetails,
     isLoading,
     error,
+    refresh: mutate,
   };
 };

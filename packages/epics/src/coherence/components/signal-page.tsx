@@ -160,7 +160,11 @@ export function SignalPage({
   const isMobile = useIsMobile();
 
   const { space } = useSpaceBySlug(spaceSlug);
-  const votingMode = useSignalVotingMode(space?.web3SpaceId);
+  const {
+    votingMode,
+    hasError: votingModeError,
+    retry: retryVotingMode,
+  } = useSignalVotingMode(space?.web3SpaceId);
   const {
     coherences,
     isLoading: isSignalsLoading,
@@ -318,7 +322,9 @@ export function SignalPage({
       : null;
   const discussion = [
     t('signalCommentsCount', { count: comments }),
-    activity ? t('signalPeopleCount', { count: activity.people }) : null,
+    activity?.reachesRoomStart
+      ? t('signalPeopleCount', { count: activity.people })
+      : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -341,6 +347,25 @@ export function SignalPage({
         <span className="truncate text-foreground">{signal.title}</span>
       </nav>
 
+      {signalsError ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
+        >
+          <span>{t('signalLoadFailed')}</span>
+          <Button
+            type="button"
+            variant="outline"
+            colorVariant="neutral"
+            size="sm"
+            disabled={isRetrying}
+            onClick={() => void retryLoad()}
+          >
+            {t('signalLoadRetry')}
+          </Button>
+        </div>
+      ) : null}
+
       <section className="craft-card flex flex-col gap-5 p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -350,6 +375,8 @@ export function SignalPage({
                 slug={signal.slug}
                 upvotes={signal.upvotes}
                 votingMode={votingMode}
+                votingModeError={votingModeError}
+                onRetryVotingMode={retryVotingMode}
                 refresh={refresh}
                 archived={Boolean(signal.archived)}
                 variant="page"

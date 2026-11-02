@@ -6,32 +6,31 @@ import { Plus } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import {
-  DEFAULT_SIGNAL_TOP_WINDOW,
-  SIGNAL_TOP_WINDOWS,
-  parseSignalTopWindow,
-  rankSignalsByWindow,
+  DEFAULT_SIGNAL_TIME_FRAME,
+  defaultSignalSort,
+  parseSignalSort,
+  parseSignalTimeFrame,
+  rankSignals,
   useFindCoherences,
   useSpaceBySlug,
-  type SignalTopWindow,
+  type SignalSort,
+  type SignalTimeFrame,
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import { Button, Skeleton } from '@hypha-platform/ui';
-import { cn } from '@hypha-platform/ui-utils';
 import { CoherenceOrder } from '../types';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { getSignalPath } from '../../common/get-path-function';
 import { useSignalRoomActivity } from '../hooks/use-signal-room-activity';
 import { useSignalVotingMode } from '../hooks/use-signal-voting-mode';
+import { SignalFeedFilters } from './signal-feed-filters';
 import { SignalFeedRow } from './signal-feed-row';
 import type { UseMembers } from '../../spaces/hooks/types';
 
-export const SIGNAL_TOP_WINDOW_QUERY_KEY = 'top';
-
-const TOP_WINDOW_LABEL_KEY: Record<SignalTopWindow, string> = {
-  '7d': 'topWindow7d',
-  '30d': 'topWindow30d',
-  all: 'topWindowAll',
-};
+export const SIGNAL_SORT_QUERY_KEY = 'sort';
+export const SIGNAL_TIME_FRAME_QUERY_KEY = 't';
+/** Earlier `?top=7d|30d|all` links still open on the matching time frame. */
+const LEGACY_TOP_WINDOW_QUERY_KEY = 'top';
 
 export type CoherenceBlockProps = {
   lang: Locale;
@@ -49,17 +48,32 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const topWindow = parseSignalTopWindow(
-    searchParams.get(SIGNAL_TOP_WINDOW_QUERY_KEY),
+  const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
+  const { canMutate } = useCanMutateInSpace({
+    spaceSlug,
+    spaceId: space?.web3SpaceId ?? undefined,
+  });
+  const {
+    votingMode,
+    hasError: votingModeError,
+    retry: retryVotingMode,
+  } = useSignalVotingMode(space?.web3SpaceId);
+
+  const sort = parseSignalSort(
+    searchParams.get(SIGNAL_SORT_QUERY_KEY),
+    votingMode,
   );
-  const handleTopWindowChange = React.useCallback(
-    (next: SignalTopWindow) => {
+  const timeFrame = parseSignalTimeFrame(
+    searchParams.get(SIGNAL_TIME_FRAME_QUERY_KEY) ??
+      searchParams.get(LEGACY_TOP_WINDOW_QUERY_KEY),
+  );
+
+  const replaceQuery = React.useCallback(
+    (key: string, value: string, defaultValue: string) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (next === DEFAULT_SIGNAL_TOP_WINDOW) {
-        params.delete(SIGNAL_TOP_WINDOW_QUERY_KEY);
-      } else {
-        params.set(SIGNAL_TOP_WINDOW_QUERY_KEY, next);
-      }
+      params.delete(LEGACY_TOP_WINDOW_QUERY_KEY);
+      if (value === defaultValue) params.delete(key);
+      else params.set(key, value);
       const query = params.toString();
       router.replace(query ? `${pathname}?${query}` : pathname, {
         scroll: false,
@@ -67,13 +81,20 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
     },
     [pathname, router, searchParams],
   );
-
-  const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
-  const { canMutate } = useCanMutateInSpace({
-    spaceSlug,
-    spaceId: space?.web3SpaceId ?? undefined,
-  });
-  const votingMode = useSignalVotingMode(space?.web3SpaceId);
+  const handleSortChange = React.useCallback(
+    (next: SignalSort) =>
+      replaceQuery(SIGNAL_SORT_QUERY_KEY, next, defaultSignalSort(votingMode)),
+    [replaceQuery, votingMode],
+  );
+  const handleTimeFrameChange = React.useCallback(
+    (next: SignalTimeFrame) =>
+      replaceQuery(
+        SIGNAL_TIME_FRAME_QUERY_KEY,
+        next,
+        DEFAULT_SIGNAL_TIME_FRAME,
+      ),
+    [replaceQuery],
+  );
 
   const {
     coherences: signals,
@@ -82,8 +103,8 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   } = useFindCoherences({ spaceSlug, orderBy: 'mostupvoted' });
 
   const ranked = React.useMemo(
-    () => rankSignalsByWindow(signals ?? [], topWindow),
-    [signals, topWindow],
+    () => rankSignals(signals ?? [], { sort, timeFrame }),
+    [signals, sort, timeFrame],
   );
   const activity = useSignalRoomActivity(ranked);
   const isLoading = isSpaceLoading || (isSignalsLoading && !signals?.length);
@@ -112,34 +133,14 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
         ) : null}
       </header>
 
-      <div
-        role="radiogroup"
-        aria-label={t('topSignalIn')}
-        className="flex flex-wrap items-center gap-2"
-      >
-        <span className="mr-1 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-          {t('topSignalIn')}
-        </span>
-        {SIGNAL_TOP_WINDOWS.map((value) => {
-          const selected = value === topWindow;
-          return (
-            <button
-              key={value}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              onClick={() => handleTopWindowChange(value)}
-              className={cn(
-                'craft-chip craft-chip-interactive h-8 px-3 text-1',
-                selected &&
-                  'border-foreground bg-foreground text-background hover:border-foreground hover:bg-foreground hover:text-background',
-              )}
-            >
-              {t(TOP_WINDOW_LABEL_KEY[value] as never)}
-            </button>
-          );
-        })}
-      </div>
+      <SignalFeedFilters
+        sort={sort}
+        timeFrame={timeFrame}
+        votingMode={votingMode}
+        onSortChange={handleSortChange}
+        onTimeFrameChange={handleTimeFrameChange}
+        className="-ml-3.5"
+      />
 
       {isLoading ? (
         <div className="flex flex-col gap-2">
@@ -164,6 +165,8 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
                 signal={signal}
                 href={getSignalPath(lang, spaceSlug, signal.slug)}
                 votingMode={votingMode}
+                votingModeError={votingModeError}
+                onRetryVotingMode={retryVotingMode}
                 activity={signal.roomId ? activity[signal.roomId] : undefined}
                 refresh={refresh}
               />

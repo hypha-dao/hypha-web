@@ -4200,10 +4200,6 @@
     "spaceMemoryCallsBody": "Enregistrements et transcriptions d’appels.",
     "spaceMemoryAiDiscussionsBody": "Mémoires du chat IA.",
     "spaceMemoryFilesBody": "Téléversements et pièces jointes.",
-    "topSignalIn": "Signal phare sur",
-    "topWindow7d": "7 derniers jours",
-    "topWindow30d": "30 derniers jours",
-    "topWindowAll": "Depuis le début",
     "signalCreated": "Créé {date}",
     "signalLastReply": "Dernière réponse {time}",
     "signalNoReplies": "Pas encore de réponse",
@@ -4230,7 +4226,20 @@
     "signalFormTagPeopleEmpty": "Aucun membre correspondant",
     "signalFormTagPeopleRemove": "Retirer {name}",
     "signalLoadFailed": "Les signaux n'ont pas pu être chargés.",
-    "signalLoadRetry": "Réessayer"
+    "signalLoadRetry": "Réessayer",
+    "signalSortBy": "Trier par",
+    "signalSortNew": "Nouveaux",
+    "signalSortTop": "Top",
+    "signalSortTopVoters": "Top par votants",
+    "signalSortTopVotersShort": "Top votants",
+    "signalSortTopPower": "Top par pouvoir de vote",
+    "signalTimeFrame": "Période",
+    "signalTimeFrameNow": "Maintenant",
+    "signalTimeFrameToday": "Aujourd'hui",
+    "signalTimeFrameWeek": "Cette semaine",
+    "signalTimeFrameMonth": "Ce mois-ci",
+    "signalTimeFrameYear": "Cette année",
+    "signalTimeFrameAll": "Depuis toujours"
   },
   "GlobalCallDock": {
     "callTitle": "Appel - {count, plural, one {# membre} other {# membres}}",
@@ -4342,7 +4351,9 @@
     "oneMemberOneVote": "Un membre, une voix",
     "upvoteWithVotingPower": "Voter avec % du pouvoir de vote",
     "votesCount": "{count, plural, one {# voix} other {# voix}}",
-    "upvoteArchived": "Ce signal est archivé et ne peut plus être soutenu."
+    "upvoteArchived": "Ce signal est archivé et ne peut plus être soutenu.",
+    "votingModeLoadFailed": "La méthode de vote de cet espace n'a pas pu être chargée.",
+    "votingModeRetry": "Réessayer"
   },
   "BankingTab": {
     "title": "Banque",

@@ -4759,10 +4759,6 @@
     "spaceMemoryCallsBody": "Снимки и транскрипти од повици.",
     "spaceMemoryAiDiscussionsBody": "Мемории од AI разговор.",
     "spaceMemoryFilesBody": "Прикачувања и прилози.",
-    "topSignalIn": "Најсилен сигнал во",
-    "topWindow7d": "Последни 7 дена",
-    "topWindow30d": "Последни 30 дена",
-    "topWindowAll": "Сето време",
     "signalCreated": "Создаден {date}",
     "signalLastReply": "Последен одговор {time}",
     "signalNoReplies": "Сè уште нема одговори",
@@ -4789,7 +4785,20 @@
     "signalFormTagPeopleEmpty": "Нема соодветни членови",
     "signalFormTagPeopleRemove": "Отстрани {name}",
     "signalLoadFailed": "Сигналите не можеа да се вчитаат.",
-    "signalLoadRetry": "Обиди се повторно"
+    "signalLoadRetry": "Обиди се повторно",
+    "signalSortBy": "Подреди по",
+    "signalSortNew": "Нови",
+    "signalSortTop": "Најдобри",
+    "signalSortTopVoters": "Најдобри по гласачи",
+    "signalSortTopVotersShort": "Најмногу гласачи",
+    "signalSortTopPower": "Најдобри по гласачка моќ",
+    "signalTimeFrame": "Период",
+    "signalTimeFrameNow": "Сега",
+    "signalTimeFrameToday": "Денес",
+    "signalTimeFrameWeek": "Оваа недела",
+    "signalTimeFrameMonth": "Овој месец",
+    "signalTimeFrameYear": "Оваа година",
+    "signalTimeFrameAll": "Сето време"
   },
   "GlobalCallDock": {
     "callTitle": "Повик - {count, plural, one {# член} other {# членови}}",
@@ -4905,7 +4914,9 @@
     "oneMemberOneVote": "Еден член, еден глас",
     "upvoteWithVotingPower": "Гласај со % од гласачката моќ",
     "votesCount": "{count, plural, one {# глас} other {# гласови}}",
-    "upvoteArchived": "Овој сигнал е архивиран и повеќе не може да се поддржува."
+    "upvoteArchived": "Овој сигнал е архивиран и повеќе не може да се поддржува.",
+    "votingModeLoadFailed": "Методот на гласање на овој простор не можеше да се вчита.",
+    "votingModeRetry": "Обиди се повторно"
   },
   "Calendar": {
     "title": "Календар",

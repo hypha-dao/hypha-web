@@ -361,7 +361,7 @@ export const CreateSignalForm = ({
   const [taggedMatrixUserIds, setTaggedMatrixUserIds] = React.useState<
     string[]
   >([]);
-  const votingMode = useSignalVotingMode(space?.web3SpaceId);
+  const { votingMode } = useSignalVotingMode(space?.web3SpaceId);
   const { votingPower: myVotingPower } = useMySignalVotingPower({
     spaceSlug: mode === 'create' ? spaceSlug : null,
     authToken,
@@ -630,6 +630,7 @@ export const CreateSignalForm = ({
 
   const handleResetForm = React.useCallback(() => {
     form.reset(formDefaults);
+    setTaggedMatrixUserIds([]);
   }, [form, formDefaults]);
 
   const setSignalProvisioningNotice = React.useCallback(
@@ -977,12 +978,27 @@ export const CreateSignalForm = ({
                 // Tags are a normal chat @mention, so the existing mention
                 // notification and Messages inbox deliver them.
                 try {
-                  await ensureRoomMembers(canonicalRoomId, taggedMatrixUserIds);
-                  await sendMessage({
-                    roomId: canonicalRoomId,
-                    message: taggedMatrixUserIds.join(' '),
-                    mentionUserIds: taggedMatrixUserIds,
-                  });
+                  const notJoined = new Set(
+                    await ensureRoomMembers(
+                      canonicalRoomId,
+                      taggedMatrixUserIds,
+                    ),
+                  );
+                  const joined = taggedMatrixUserIds.filter(
+                    (id) => !notJoined.has(id),
+                  );
+                  if (joined.length > 0) {
+                    await sendMessage({
+                      roomId: canonicalRoomId,
+                      message: joined.join(' '),
+                      mentionUserIds: joined,
+                    });
+                  }
+                  if (notJoined.size > 0) {
+                    setSignalProvisioningNotice(
+                      t('provisioning.tagPeopleFailed'),
+                    );
+                  }
                 } catch (tagError) {
                   setSignalProvisioningNotice(
                     t('provisioning.tagPeopleFailed'),

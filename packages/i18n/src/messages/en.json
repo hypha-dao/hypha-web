@@ -4808,10 +4808,6 @@
     "spaceMemoryCallsBody": "Call recordings and transcripts.",
     "spaceMemoryAiDiscussionsBody": "Memories from AI chat.",
     "spaceMemoryFilesBody": "Uploads and attachments.",
-    "topSignalIn": "Top signal in",
-    "topWindow7d": "Last 7 days",
-    "topWindow30d": "Last 30 days",
-    "topWindowAll": "All time",
     "signalCreated": "Created {date}",
     "signalLastReply": "Last reply {time}",
     "signalNoReplies": "No replies yet",
@@ -4838,7 +4834,20 @@
     "signalFormTagPeopleEmpty": "No matching members",
     "signalFormTagPeopleRemove": "Remove {name}",
     "signalLoadFailed": "Signals could not be loaded.",
-    "signalLoadRetry": "Retry"
+    "signalLoadRetry": "Retry",
+    "signalSortBy": "Sort by",
+    "signalSortNew": "New",
+    "signalSortTop": "Top",
+    "signalSortTopVoters": "Top by voters",
+    "signalSortTopVotersShort": "Top voters",
+    "signalSortTopPower": "Top by voting power",
+    "signalTimeFrame": "Time frame",
+    "signalTimeFrameNow": "Now",
+    "signalTimeFrameToday": "Today",
+    "signalTimeFrameWeek": "This Week",
+    "signalTimeFrameMonth": "This Month",
+    "signalTimeFrameYear": "This Year",
+    "signalTimeFrameAll": "All Time"
   },
   "GlobalCallDock": {
     "callTitle": "Call - {count, plural, one {# member} other {# members}}",
@@ -4954,7 +4963,9 @@
     "oneMemberOneVote": "One member, one vote",
     "upvoteWithVotingPower": "Upvote with % of voting power",
     "votesCount": "{count, plural, one {# vote} other {# votes}}",
-    "upvoteArchived": "This signal is archived and can no longer be upvoted."
+    "upvoteArchived": "This signal is archived and can no longer be upvoted.",
+    "votingModeLoadFailed": "This space's voting method could not be loaded.",
+    "votingModeRetry": "Retry"
   },
   "Calendar": {
     "title": "Calendar",

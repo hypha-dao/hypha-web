@@ -4218,10 +4218,6 @@
     "spaceMemoryCallsBody": "Grabaciones y transcripciones de llamadas.",
     "spaceMemoryAiDiscussionsBody": "Memorias del chat con IA.",
     "spaceMemoryFilesBody": "Cargas y archivos adjuntos.",
-    "topSignalIn": "Señal principal en",
-    "topWindow7d": "Últimos 7 días",
-    "topWindow30d": "Últimos 30 días",
-    "topWindowAll": "Todo el tiempo",
     "signalCreated": "Creada {date}",
     "signalLastReply": "Última respuesta {time}",
     "signalNoReplies": "Aún sin respuestas",
@@ -4248,7 +4244,20 @@
     "signalFormTagPeopleEmpty": "No hay miembros que coincidan",
     "signalFormTagPeopleRemove": "Quitar a {name}",
     "signalLoadFailed": "No se pudieron cargar las señales.",
-    "signalLoadRetry": "Reintentar"
+    "signalLoadRetry": "Reintentar",
+    "signalSortBy": "Ordenar por",
+    "signalSortNew": "Nuevas",
+    "signalSortTop": "Top",
+    "signalSortTopVoters": "Top por votantes",
+    "signalSortTopVotersShort": "Top votantes",
+    "signalSortTopPower": "Top por poder de voto",
+    "signalTimeFrame": "Periodo",
+    "signalTimeFrameNow": "Ahora",
+    "signalTimeFrameToday": "Hoy",
+    "signalTimeFrameWeek": "Esta semana",
+    "signalTimeFrameMonth": "Este mes",
+    "signalTimeFrameYear": "Este año",
+    "signalTimeFrameAll": "Todo el tiempo"
   },
   "GlobalCallDock": {
     "callTitle": "Llamada - {count, plural, one {# miembro} other {# miembros}}",
@@ -4360,7 +4369,9 @@
     "oneMemberOneVote": "Un miembro, un voto",
     "upvoteWithVotingPower": "Votar con % del poder de voto",
     "votesCount": "{count, plural, one {# voto} other {# votos}}",
-    "upvoteArchived": "Esta señal está archivada y ya no se puede apoyar."
+    "upvoteArchived": "Esta señal está archivada y ya no se puede apoyar.",
+    "votingModeLoadFailed": "No se pudo cargar el método de votación de este espacio.",
+    "votingModeRetry": "Reintentar"
   },
   "BankingTab": {
     "title": "Banca",

@@ -23,7 +23,6 @@ import {
   SidebarContent,
   SidebarFooter,
   useSidebar,
-  Button,
   Skeleton,
   useIsMobile,
   usePrefersCoarsePointer,
@@ -1196,11 +1195,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     return root;
   }, [isOrganisationLoading, organisationSpaces, space]);
   const effectiveSpaceWeb3Id = space?.web3SpaceId ?? undefined;
-  const {
-    persons: spaceMembersResult,
-    isLoading: isLoadingSpaceMembers,
-    error: spaceMembersError,
-  } = useSpaceMembersAndDelegates({
+  const { persons: spaceMembersResult } = useSpaceMembersAndDelegates({
     spaceSlug,
     web3SpaceId: effectiveSpaceWeb3Id,
     useMembers,
@@ -2382,11 +2377,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const { subToMatrixUserId } = useMatrixUserIdsByPrivySubs({
     privySubs: rosterSubs,
   });
-  const {
-    personIdToMatrixUserId,
-    isLoading: isLoadingMatrixUserIds,
-    error: matrixUserIdsError,
-  } = useMatrixUserIdsByPersonIds({
+  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
     personIds: rosterPersonIds,
   });
 
@@ -6570,15 +6561,34 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                 role="tabpanel"
                 id="chat-tabpanel-mentions"
               >
-                <HumanChatPanelMentionTab
-                  client={client}
-                  roomId={roomId}
-                  currentUserId={currentUserId}
-                  resolveMemberLabel={resolveMentionMemberLabel}
-                  onSelectMessage={handleSelectMentionInRoom}
-                  unreadMentionCount={unreadChatState.unreadMentionCount}
-                  onMarkMentionsRead={handleMarkAsReadFromBanner}
+                {error && (
+                  <div
+                    role="alert"
+                    className="mt-0 w-full border-y border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    {error}
+                  </div>
+                )}
+                <HumanChatPanelConnectionBanner
+                  connectionStatus={connectionStatus}
+                  connectionRetryFailed={connectionRetryFailed}
+                  onRetry={() => {
+                    void retryMatrixConnection();
+                  }}
                 />
+                {isJoining ? (
+                  <HumanChatPanelLoader showPreview />
+                ) : error ? null : (
+                  <HumanChatPanelMentionTab
+                    client={client}
+                    roomId={roomId}
+                    currentUserId={currentUserId}
+                    resolveMemberLabel={resolveMentionMemberLabel}
+                    onSelectMessage={handleSelectMentionInRoom}
+                    unreadMentionCount={unreadChatState.unreadMentionCount}
+                    onMarkMentionsRead={handleMarkAsReadFromBanner}
+                  />
+                )}
               </div>
             )}
           </>

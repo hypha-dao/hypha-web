@@ -4777,10 +4777,6 @@
     "spaceMemoryCallsBody": "Samtaleopptak og transkripsjoner.",
     "spaceMemoryAiDiscussionsBody": "Minner fra AI-chat.",
     "spaceMemoryFilesBody": "Opplastinger og vedlegg.",
-    "topSignalIn": "Toppsignal i",
-    "topWindow7d": "Siste 7 dager",
-    "topWindow30d": "Siste 30 dager",
-    "topWindowAll": "All tid",
     "signalCreated": "Opprettet {date}",
     "signalLastReply": "Siste svar {time}",
     "signalNoReplies": "Ingen svar ennå",
@@ -4807,7 +4803,20 @@
     "signalFormTagPeopleEmpty": "Ingen samsvarende medlemmer",
     "signalFormTagPeopleRemove": "Fjern {name}",
     "signalLoadFailed": "Kunne ikke laste inn signaler.",
-    "signalLoadRetry": "Prøv igjen"
+    "signalLoadRetry": "Prøv igjen",
+    "signalSortBy": "Sorter etter",
+    "signalSortNew": "Nye",
+    "signalSortTop": "Topp",
+    "signalSortTopVoters": "Topp etter velgere",
+    "signalSortTopVotersShort": "Flest velgere",
+    "signalSortTopPower": "Topp etter stemmevekt",
+    "signalTimeFrame": "Tidsrom",
+    "signalTimeFrameNow": "Nå",
+    "signalTimeFrameToday": "I dag",
+    "signalTimeFrameWeek": "Denne uken",
+    "signalTimeFrameMonth": "Denne måneden",
+    "signalTimeFrameYear": "Dette året",
+    "signalTimeFrameAll": "All tid"
   },
   "GlobalCallDock": {
     "callTitle": "Samtale - {count, plural, one {# medlem} other {# medlemmer}}",
@@ -4923,7 +4932,9 @@
     "oneMemberOneVote": "Ett medlem, én stemme",
     "upvoteWithVotingPower": "Stem opp med % av stemmekraften",
     "votesCount": "{count, plural, one {# stemme} other {# stemmer}}",
-    "upvoteArchived": "Dette signalet er arkivert og kan ikke lenger stemmes opp."
+    "upvoteArchived": "Dette signalet er arkivert og kan ikke lenger stemmes opp.",
+    "votingModeLoadFailed": "Kunne ikke laste inn stemmemetoden for dette rommet.",
+    "votingModeRetry": "Prøv igjen"
   },
   "Calendar": {
     "title": "Kalender",

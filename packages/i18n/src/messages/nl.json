@@ -4778,10 +4778,6 @@
     "spaceMemoryCallsBody": "Gespreksopnamen en transcripties.",
     "spaceMemoryAiDiscussionsBody": "Herinneringen uit AI-chat.",
     "spaceMemoryFilesBody": "Uploads en bijlagen.",
-    "topSignalIn": "Topsignaal in",
-    "topWindow7d": "Laatste 7 dagen",
-    "topWindow30d": "Laatste 30 dagen",
-    "topWindowAll": "Altijd",
     "signalCreated": "Aangemaakt {date}",
     "signalLastReply": "Laatste reactie {time}",
     "signalNoReplies": "Nog geen reacties",
@@ -4808,7 +4804,20 @@
     "signalFormTagPeopleEmpty": "Geen overeenkomende leden",
     "signalFormTagPeopleRemove": "{name} verwijderen",
     "signalLoadFailed": "Signalen konden niet worden geladen.",
-    "signalLoadRetry": "Opnieuw proberen"
+    "signalLoadRetry": "Opnieuw proberen",
+    "signalSortBy": "Sorteren op",
+    "signalSortNew": "Nieuw",
+    "signalSortTop": "Top",
+    "signalSortTopVoters": "Top op stemmers",
+    "signalSortTopVotersShort": "Top stemmers",
+    "signalSortTopPower": "Top op stemkracht",
+    "signalTimeFrame": "Periode",
+    "signalTimeFrameNow": "Nu",
+    "signalTimeFrameToday": "Vandaag",
+    "signalTimeFrameWeek": "Deze week",
+    "signalTimeFrameMonth": "Deze maand",
+    "signalTimeFrameYear": "Dit jaar",
+    "signalTimeFrameAll": "Altijd"
   },
   "GlobalCallDock": {
     "callTitle": "Oproep - {count, plural, one {# lid} other {# leden}}",
@@ -4924,7 +4933,9 @@
     "oneMemberOneVote": "Eén lid, één stem",
     "upvoteWithVotingPower": "Omhoog stemmen met % van je stemkracht",
     "votesCount": "{count, plural, one {# stem} other {# stemmen}}",
-    "upvoteArchived": "Dit signaal is gearchiveerd en er kan niet meer op worden gestemd."
+    "upvoteArchived": "Dit signaal is gearchiveerd en er kan niet meer op worden gestemd.",
+    "votingModeLoadFailed": "De stemmethode van deze ruimte kon niet worden geladen.",
+    "votingModeRetry": "Opnieuw proberen"
   },
   "Calendar": {
     "title": "Kalender",

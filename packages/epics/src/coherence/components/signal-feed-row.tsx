@@ -46,6 +46,8 @@ type SignalFeedRowProps = {
   signal: Coherence;
   href: string;
   votingMode: SignalVotingMode | null;
+  votingModeError?: boolean;
+  onRetryVotingMode?: () => void;
   activity?: SignalRoomActivity;
   refresh?: () => Promise<unknown>;
 };
@@ -54,6 +56,8 @@ export function SignalFeedRow({
   signal,
   href,
   votingMode,
+  votingModeError,
+  onRetryVotingMode,
   activity,
   refresh,
 }: SignalFeedRowProps) {
@@ -93,6 +97,8 @@ export function SignalFeedRow({
         slug={signal.slug}
         upvotes={signal.upvotes}
         votingMode={votingMode}
+        votingModeError={votingModeError}
+        onRetryVotingMode={onRetryVotingMode}
         refresh={refresh}
         archived={Boolean(signal.archived)}
         className="relative z-10"

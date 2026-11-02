@@ -59,6 +59,9 @@ type SignalUpvoteButtonProps = {
   upvotes?: CoherenceUpvoteSummary;
   /** `null` while the space's voting method is loading; voting stays closed. */
   votingMode: SignalVotingMode | null;
+  /** The voting method could not be read; the panel offers a retry instead. */
+  votingModeError?: boolean;
+  onRetryVotingMode?: () => void;
   refresh?: () => Promise<unknown>;
   disabled?: boolean;
   archived?: boolean;
@@ -75,6 +78,8 @@ export function SignalUpvoteButton({
   slug,
   upvotes,
   votingMode,
+  votingModeError = false,
+  onRetryVotingMode,
   refresh,
   disabled = false,
   archived = false,
@@ -102,6 +107,8 @@ export function SignalUpvoteButton({
   const hasVoted = summary.myUpvote != null;
   const isMutating = isUpvoting || isRemovingUpvote;
   const isVotingModeResolved = votingMode != null;
+  const showVotingModeError = !isVotingModeResolved && votingModeError;
+  const canOpen = isVotingModeResolved || showVotingModeError;
   const canVote =
     Boolean(slug?.trim()) &&
     Boolean(jwt) &&
@@ -179,9 +186,9 @@ export function SignalUpvoteButton({
       onKeyDown={stopPropagation}
     >
       <Popover
-        open={open && isVotingModeResolved}
+        open={open && canOpen}
         onOpenChange={(next) => {
-          if (next && !isVotingModeResolved) return;
+          if (next && !canOpen) return;
           setOpen(next);
           if (next) {
             setPercent(myUpvotePercent(summary));
@@ -195,8 +202,8 @@ export function SignalUpvoteButton({
             aria-haspopup="dialog"
             aria-pressed={hasVoted}
             aria-label={`${t('upvote')} · ${summary.upvoteCount}`}
-            aria-busy={!isVotingModeResolved}
-            disabled={!isVotingModeResolved}
+            aria-busy={!canOpen}
+            disabled={!canOpen}
             data-testid="signal-upvote-cell"
             className={cn(
               'flex flex-col items-center justify-center border tabular-nums transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
@@ -204,8 +211,8 @@ export function SignalUpvoteButton({
               hasVoted
                 ? 'border-accent-9 bg-accent-9 text-accent-contrast hover:bg-accent-10'
                 : 'border-border bg-background-2 text-foreground hover:border-foreground/40',
-              (isMutating || !isVotingModeResolved) && 'opacity-65',
-              !isVotingModeResolved && 'cursor-progress',
+              (isMutating || !canOpen) && 'opacity-65',
+              !canOpen && 'cursor-progress',
             )}
           >
             {variant === 'feed' ? (
@@ -244,133 +251,156 @@ export function SignalUpvoteButton({
           data-space-accent-scope
           onClick={stopPropagation}
         >
-          <div className="flex flex-col gap-3 p-3">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-1 text-muted-foreground">
-                {isOneMemberOneVote ? t('totalUpvotes') : t('totalSupport')}
-              </span>
-              <span className="text-3 font-semibold tabular-nums text-foreground">
-                {totalLabel}
-              </span>
-            </div>
-
-            {isOneMemberOneVote ? (
-              <>
-                <span className="-mt-2 text-1 text-muted-foreground">
-                  {t('oneMemberOneVote')}
-                </span>
-                {canVote ? (
-                  <Button
-                    type="button"
-                    variant={hasVoted ? 'default' : 'outline'}
-                    colorVariant="accent"
-                    className="w-full gap-2"
-                    disabled={isMutating}
-                    aria-pressed={hasVoted}
-                    onClick={() => void handleToggle()}
-                  >
-                    <SignalUpvoteTriangle />
-                    {hasVoted ? t('upvoted') : t('upvote')}
-                  </Button>
-                ) : null}
-              </>
-            ) : canVote ? (
-              <>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-1 text-foreground">
-                    {t('upvoteWithVotingPower')}
-                  </span>
-                  <span className="text-1 font-semibold tabular-nums text-foreground">
-                    {percent}%
-                  </span>
-                </div>
-                <Slider
-                  min={1}
-                  max={100}
-                  step={1}
-                  value={[percent]}
-                  onValueChange={(value) => setPercent(value[0] ?? 100)}
-                  disabled={isMutating}
-                  aria-label={t('upvoteWithVotingPower')}
-                />
-                <Button
-                  type="button"
-                  colorVariant="accent"
-                  className="w-full gap-2"
-                  disabled={isMutating}
-                  onClick={() => void handleApplyPercent()}
-                >
-                  <SignalUpvoteTriangle />
-                  {hasVoted ? t('updateUpvote') : t('upvote')}
-                </Button>
-                {hasVoted ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    colorVariant="neutral"
-                    size="sm"
-                    className="-mt-1 w-full text-muted-foreground hover:text-foreground"
-                    disabled={isMutating}
-                    onClick={() => void handleRemove()}
-                  >
-                    {t('removeUpvote')}
-                  </Button>
-                ) : null}
-              </>
-            ) : null}
-
-            {!canVote ? (
-              <p className="text-1 leading-relaxed text-muted-foreground">
-                {archived ? t('upvoteArchived') : t('signInToUpvote')}
-              </p>
-            ) : null}
-
-            {error ? (
+          {showVotingModeError ? (
+            <div className="flex flex-col gap-3 p-3">
               <p
                 role="alert"
                 className="border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
               >
-                {error}
+                {t('votingModeLoadFailed')}
               </p>
-            ) : null}
+              {onRetryVotingMode ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  colorVariant="neutral"
+                  size="sm"
+                  className="w-full"
+                  onClick={onRetryVotingMode}
+                >
+                  {t('votingModeRetry')}
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-1 text-muted-foreground">
+                  {isOneMemberOneVote ? t('totalUpvotes') : t('totalSupport')}
+                </span>
+                <span className="text-3 font-semibold tabular-nums text-foreground">
+                  {totalLabel}
+                </span>
+              </div>
 
-            <Separator className="bg-border/70" />
-            <span className="text-1 text-muted-foreground">
-              {t('supportersCount', { count: summary.upvoteCount })}
-            </span>
-            {summary.voters.length > 0 ? (
-              <ul className="-mt-1 flex max-h-48 flex-col gap-1.5 overflow-y-auto narrow-scrollbar">
-                {summary.voters.map((voter) => (
-                  <li
-                    key={voter.personId}
-                    className="flex items-center justify-between gap-2 border border-border/70 px-2.5 py-2"
+              {isOneMemberOneVote ? (
+                <>
+                  <span className="-mt-2 text-1 text-muted-foreground">
+                    {t('oneMemberOneVote')}
+                  </span>
+                  {canVote ? (
+                    <Button
+                      type="button"
+                      variant={hasVoted ? 'default' : 'outline'}
+                      colorVariant="accent"
+                      className="w-full gap-2"
+                      disabled={isMutating}
+                      aria-pressed={hasVoted}
+                      onClick={() => void handleToggle()}
+                    >
+                      <SignalUpvoteTriangle />
+                      {hasVoted ? t('upvoted') : t('upvote')}
+                    </Button>
+                  ) : null}
+                </>
+              ) : canVote ? (
+                <>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-1 text-foreground">
+                      {t('upvoteWithVotingPower')}
+                    </span>
+                    <span className="text-1 font-semibold tabular-nums text-foreground">
+                      {percent}%
+                    </span>
+                  </div>
+                  <Slider
+                    min={1}
+                    max={100}
+                    step={1}
+                    value={[percent]}
+                    onValueChange={(value) => setPercent(value[0] ?? 100)}
+                    disabled={isMutating}
+                    aria-label={t('upvoteWithVotingPower')}
+                  />
+                  <Button
+                    type="button"
+                    colorVariant="accent"
+                    className="w-full gap-2"
+                    disabled={isMutating}
+                    onClick={() => void handleApplyPercent()}
                   >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <PersonAvatar
-                        size="sm"
-                        shape="circle"
-                        avatarSrc={voter.avatarUrl ?? ''}
-                        userName={voter.name ?? undefined}
-                        personId={voter.personId}
-                      />
-                      <span className="truncate text-1 text-foreground">
-                        {voter.name || t('anonymousSupporter')}
+                    <SignalUpvoteTriangle />
+                    {hasVoted ? t('updateUpvote') : t('upvote')}
+                  </Button>
+                  {hasVoted ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      colorVariant="neutral"
+                      size="sm"
+                      className="-mt-1 w-full text-muted-foreground hover:text-foreground"
+                      disabled={isMutating}
+                      onClick={() => void handleRemove()}
+                    >
+                      {t('removeUpvote')}
+                    </Button>
+                  ) : null}
+                </>
+              ) : null}
+
+              {!canVote ? (
+                <p className="text-1 leading-relaxed text-muted-foreground">
+                  {archived ? t('upvoteArchived') : t('signInToUpvote')}
+                </p>
+              ) : null}
+
+              {error ? (
+                <p
+                  role="alert"
+                  className="border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
+                >
+                  {error}
+                </p>
+              ) : null}
+
+              <Separator className="bg-border/70" />
+              <span className="text-1 text-muted-foreground">
+                {t('supportersCount', { count: summary.upvoteCount })}
+              </span>
+              {summary.voters.length > 0 ? (
+                <ul className="-mt-1 flex max-h-48 flex-col gap-1.5 overflow-y-auto narrow-scrollbar">
+                  {summary.voters.map((voter) => (
+                    <li
+                      key={voter.personId}
+                      className="flex items-center justify-between gap-2 border border-border/70 px-2.5 py-2"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <PersonAvatar
+                          size="sm"
+                          shape="circle"
+                          avatarSrc={voter.avatarUrl ?? ''}
+                          userName={voter.name ?? undefined}
+                          personId={voter.personId}
+                        />
+                        <span className="truncate text-1 text-foreground">
+                          {voter.name || t('anonymousSupporter')}
+                        </span>
                       </span>
-                    </span>
-                    <span className="shrink-0 text-1 tabular-nums text-muted-foreground">
-                      {isOneMemberOneVote
-                        ? t('votesCount', { count: 1 })
-                        : formatVotingPowerCompact(
-                            voter.votingPower,
-                            summary.tokenDecimals,
-                            locale,
-                          )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
+                      <span className="shrink-0 text-1 tabular-nums text-muted-foreground">
+                        {isOneMemberOneVote
+                          ? t('votesCount', { count: 1 })
+                          : formatVotingPowerCompact(
+                              voter.votingPower,
+                              summary.tokenDecimals,
+                              locale,
+                            )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          )}
         </PopoverContent>
       </Popover>
     </div>

@@ -121,8 +121,17 @@ export type CoherenceUpvoteSummary = {
   voters: CoherenceUpvoter[];
   /** The requesting user's own upvote, when authenticated. */
   myUpvote: { votingPower: string; maxVotingPower: string } | null;
-  /** Voting power of upvotes first cast within the trailing window, all voters (not capped). */
-  recentVotingPower?: { last7Days: string; last30Days: string };
+  /** Upvotes first cast within each trailing window, all voters (not capped). */
+  recentUpvotes?: Record<SignalRecentWindow, SignalWindowUpvotes>;
+};
+
+/** Trailing windows: past hour, 24 hours, 7, 30 and 365 days. */
+export type SignalRecentWindow = 'now' | 'today' | 'week' | 'month' | 'year';
+
+export type SignalWindowUpvotes = {
+  /** Voting power in raw units. */
+  votingPower: string;
+  voters: number;
 };
 
 export type Coherence = {

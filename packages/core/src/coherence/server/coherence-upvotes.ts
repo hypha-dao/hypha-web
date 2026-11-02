@@ -6,10 +6,30 @@ import {
 } from '@hypha-platform/storage-postgres';
 import { and, eq, inArray } from 'drizzle-orm';
 import { DbConfig } from '../../server';
-import type { CoherenceUpvoteSummary, CoherenceUpvoter } from '../types';
+import {
+  SIGNAL_RECENT_WINDOWS,
+  SIGNAL_RECENT_WINDOW_MS,
+} from '../signal-ranking';
+import type {
+  CoherenceUpvoteSummary,
+  CoherenceUpvoter,
+  SignalRecentWindow,
+  SignalWindowUpvotes,
+} from '../types';
 
 const MAX_VOTERS_PER_SUMMARY = 12;
-const DAY_MS = 24 * 60 * 60 * 1000;
+
+function emptyRecentTotals(): Record<
+  SignalRecentWindow,
+  { votingPower: bigint; voters: number }
+> {
+  return Object.fromEntries(
+    SIGNAL_RECENT_WINDOWS.map((window) => [
+      window,
+      { votingPower: 0n, voters: 0 },
+    ]),
+  ) as Record<SignalRecentWindow, { votingPower: bigint; voters: number }>;
+}
 
 export const EMPTY_COHERENCE_UPVOTE_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
@@ -69,11 +89,11 @@ export const findCoherenceUpvoteSummaries = async (
 
   const summaries: Record<number, CoherenceUpvoteSummary> = {};
   const totals = new Map<number, bigint>();
-  const last7Days = new Map<number, bigint>();
-  const last30Days = new Map<number, bigint>();
+  const recent = new Map<
+    number,
+    Record<SignalRecentWindow, { votingPower: bigint; voters: number }>
+  >();
   const now = Date.now();
-  const since7Days = now - 7 * DAY_MS;
-  const since30Days = now - 30 * DAY_MS;
 
   for (const row of rows) {
     const summary = (summaries[row.coherenceId] ??= {
@@ -88,17 +108,15 @@ export const findCoherenceUpvoteSummaries = async (
     }
     totals.set(row.coherenceId, (totals.get(row.coherenceId) ?? 0n) + power);
     const castAt = new Date(row.createdAt).getTime();
-    if (castAt >= since30Days) {
-      last30Days.set(
-        row.coherenceId,
-        (last30Days.get(row.coherenceId) ?? 0n) + power,
-      );
+    let windows = recent.get(row.coherenceId);
+    if (!windows) {
+      windows = emptyRecentTotals();
+      recent.set(row.coherenceId, windows);
     }
-    if (castAt >= since7Days) {
-      last7Days.set(
-        row.coherenceId,
-        (last7Days.get(row.coherenceId) ?? 0n) + power,
-      );
+    for (const window of SIGNAL_RECENT_WINDOWS) {
+      if (castAt < now - SIGNAL_RECENT_WINDOW_MS[window]) continue;
+      windows[window].votingPower += power;
+      windows[window].voters += 1;
     }
     summary.upvoteCount += 1;
     summary.tokenDecimals = Math.max(summary.tokenDecimals, row.tokenDecimals);
@@ -120,10 +138,16 @@ export const findCoherenceUpvoteSummaries = async (
   for (const [coherenceId, summary] of Object.entries(summaries)) {
     const id = Number(coherenceId);
     summary.totalVotingPower = (totals.get(id) ?? 0n).toString();
-    summary.recentVotingPower = {
-      last7Days: (last7Days.get(id) ?? 0n).toString(),
-      last30Days: (last30Days.get(id) ?? 0n).toString(),
-    };
+    const windows = recent.get(id) ?? emptyRecentTotals();
+    summary.recentUpvotes = Object.fromEntries(
+      SIGNAL_RECENT_WINDOWS.map((window) => [
+        window,
+        {
+          votingPower: windows[window].votingPower.toString(),
+          voters: windows[window].voters,
+        },
+      ]),
+    ) as Record<SignalRecentWindow, SignalWindowUpvotes>;
     summary.voters.sort((a, b) => {
       const diff = BigInt(b.votingPower) - BigInt(a.votingPower);
       return diff > 0n ? 1 : diff < 0n ? -1 : 0;

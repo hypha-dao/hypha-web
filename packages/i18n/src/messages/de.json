@@ -4776,10 +4776,6 @@
     "spaceMemoryCallsBody": "Anrufaufzeichnungen und Transkripte.",
     "spaceMemoryAiDiscussionsBody": "Erinnerungen aus dem KI-Chat.",
     "spaceMemoryFilesBody": "Uploads und Anhänge.",
-    "topSignalIn": "Top-Signal in",
-    "topWindow7d": "Letzte 7 Tage",
-    "topWindow30d": "Letzte 30 Tage",
-    "topWindowAll": "Gesamter Zeitraum",
     "signalCreated": "Erstellt {date}",
     "signalLastReply": "Letzte Antwort {time}",
     "signalNoReplies": "Noch keine Antworten",
@@ -4806,7 +4802,20 @@
     "signalFormTagPeopleEmpty": "Keine passenden Mitglieder",
     "signalFormTagPeopleRemove": "{name} entfernen",
     "signalLoadFailed": "Signale konnten nicht geladen werden.",
-    "signalLoadRetry": "Erneut versuchen"
+    "signalLoadRetry": "Erneut versuchen",
+    "signalSortBy": "Sortieren nach",
+    "signalSortNew": "Neu",
+    "signalSortTop": "Top",
+    "signalSortTopVoters": "Top nach Unterstützern",
+    "signalSortTopVotersShort": "Top Unterstützer",
+    "signalSortTopPower": "Top nach Stimmkraft",
+    "signalTimeFrame": "Zeitraum",
+    "signalTimeFrameNow": "Jetzt",
+    "signalTimeFrameToday": "Heute",
+    "signalTimeFrameWeek": "Diese Woche",
+    "signalTimeFrameMonth": "Diesen Monat",
+    "signalTimeFrameYear": "Dieses Jahr",
+    "signalTimeFrameAll": "Gesamte Zeit"
   },
   "GlobalCallDock": {
     "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",
@@ -4918,7 +4927,9 @@
     "oneMemberOneVote": "Ein Mitglied, eine Stimme",
     "upvoteWithVotingPower": "Mit % der Stimmkraft hochstimmen",
     "votesCount": "{count, plural, one {# Stimme} other {# Stimmen}}",
-    "upvoteArchived": "Dieses Signal ist archiviert und kann nicht mehr unterstützt werden."
+    "upvoteArchived": "Dieses Signal ist archiviert und kann nicht mehr unterstützt werden.",
+    "votingModeLoadFailed": "Die Abstimmungsmethode dieses Space konnte nicht geladen werden.",
+    "votingModeRetry": "Erneut versuchen"
   },
   "Calendar": {
     "title": "Kalender",
