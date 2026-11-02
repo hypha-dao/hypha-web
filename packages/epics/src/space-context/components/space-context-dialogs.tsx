@@ -23,6 +23,7 @@ import { MemoryProse } from '../../coherence/components/memory-prose';
 import {
   patchSpaceContextSectionRequest,
   revalidateSpaceContext,
+  setSpaceContextRemovalSuggestedRequest,
   SpaceContextRequestError,
 } from '../hooks/use-space-context';
 
@@ -32,12 +33,59 @@ const DIALOG_WIDTH =
 /** The whole section, for reading long text without the card's cut-off. */
 export function SpaceContextReadDialog({
   section,
+  spaceSlug,
+  canMutate,
   onClose,
 }: {
   section: SpaceContextSectionRecord | null;
+  spaceSlug: string;
+  canMutate: boolean;
   onClose: () => void;
 }) {
   const t = useTranslations('SpaceContext');
+  const { getAccessToken } = useAuthentication();
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const sectionKey = section?.sectionKey;
+
+  useEffect(() => {
+    setMessage(null);
+    setActionError(null);
+  }, [sectionKey]);
+
+  const canSuggestRemoval =
+    canMutate &&
+    section != null &&
+    section.status !== 'proposed' &&
+    section.pendingChange !== 'add';
+
+  const toggleRemoval = async () => {
+    if (!section || busy) return;
+    const suggested = section.pendingChange !== 'remove';
+    setActionError(null);
+    setMessage(null);
+    setBusy(true);
+    try {
+      await setSpaceContextRemovalSuggestedRequest({
+        spaceSlug,
+        sectionKey: section.sectionKey,
+        suggested,
+        getAccessToken,
+      });
+      setMessage(
+        suggested
+          ? t('success.removalSuggested')
+          : t('success.removalWithdrawn'),
+      );
+      await revalidateSpaceContext(spaceSlug);
+    } catch {
+      setActionError(t('error.change'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const body = section
     ? stripMatchingLeadingHeading(
         officialSectionMarkdown(section) ?? section.markdown,
@@ -70,6 +118,30 @@ export function SpaceContextReadDialog({
           ) : (
             <p className="text-2 text-neutral-11">{t('card.emptyBody')}</p>
           )}
+          {actionError ? (
+            <p className="text-2 text-error-11" role="alert">
+              {actionError}
+            </p>
+          ) : message ? (
+            <p className="text-2 text-neutral-11" role="status">
+              {message}
+            </p>
+          ) : null}
+          {canSuggestRemoval ? (
+            <DialogFooter className="gap-2 sm:space-x-0">
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="neutral"
+                disabled={busy}
+                onClick={() => void toggleRemoval()}
+              >
+                {section.pendingChange === 'remove'
+                  ? t('reader.cancelRemoval')
+                  : t('reader.suggestRemoval')}
+              </Button>
+            </DialogFooter>
+          ) : null}
         </DialogContent>
       ) : null}
     </Dialog>

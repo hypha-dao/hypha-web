@@ -24,7 +24,6 @@ import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.
 import {
   discardSpaceContextSuggestionRequest,
   revalidateSpaceContext,
-  setSpaceContextRemovalSuggestedRequest,
   storeSpaceContextChatRoomRequest,
   useSpaceContextSection,
 } from '../hooks/use-space-context';
@@ -326,8 +325,6 @@ function SectionInfo({
     onVoting && section.proposalSlug
       ? getProposalPath(locale, spaceSlug, section.proposalSlug)
       : null;
-  const canSuggestRemoval =
-    canMutate && !onVoting && section.pendingChange !== 'add';
   const canWithdrawAddition =
     canMutate && !onVoting && section.pendingChange === 'add';
 
@@ -348,20 +345,6 @@ function SectionInfo({
     }
   };
 
-  const toggleRemoval = () =>
-    run(
-      () =>
-        setSpaceContextRemovalSuggestedRequest({
-          spaceSlug,
-          sectionKey: section.sectionKey,
-          suggested: section.pendingChange !== 'remove',
-          getAccessToken,
-        }),
-      section.pendingChange === 'remove'
-        ? t('success.removalWithdrawn')
-        : t('success.removalSuggested'),
-    );
-
   const withdrawAddition = async () => {
     const done = await run(
       () =>
@@ -378,7 +361,6 @@ function SectionInfo({
   if (
     !showStatus &&
     !section.pendingChange &&
-    !canSuggestRemoval &&
     !canWithdrawAddition &&
     !message &&
     !actionError
@@ -413,34 +395,18 @@ function SectionInfo({
         </Link>
       ) : null}
 
-      {canSuggestRemoval || canWithdrawAddition ? (
+      {canWithdrawAddition ? (
         <div className="flex flex-wrap gap-2">
-          {canSuggestRemoval ? (
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              className="h-8 px-2"
-              disabled={busy}
-              onClick={() => void toggleRemoval()}
-            >
-              {section.pendingChange === 'remove'
-                ? t('reader.cancelRemoval')
-                : t('reader.suggestRemoval')}
-            </Button>
-          ) : null}
-          {canWithdrawAddition ? (
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              className="h-8 px-2"
-              disabled={busy}
-              onClick={() => void withdrawAddition()}
-            >
-              {t('reader.withdrawAddition')}
-            </Button>
-          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            colorVariant="neutral"
+            className="h-8 px-2"
+            disabled={busy}
+            onClick={() => void withdrawAddition()}
+          >
+            {t('reader.withdrawAddition')}
+          </Button>
         </div>
       ) : null}
 

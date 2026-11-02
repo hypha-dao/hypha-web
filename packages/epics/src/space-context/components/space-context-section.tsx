@@ -370,6 +370,8 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
 
       <SpaceContextReadDialog
         section={readingSection}
+        spaceSlug={spaceSlug}
+        canMutate={canMutate}
         onClose={() => setReadingKey(null)}
       />
       {draftSection ? (
