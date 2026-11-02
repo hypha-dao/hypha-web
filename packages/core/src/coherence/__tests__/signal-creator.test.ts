@@ -3,6 +3,7 @@ import {
   applySignalCreatorToChatAuthor,
   creatorIdForAuthenticatedCreate,
   isSignalDescriptionAnchorMessage,
+  isSignalDescriptionCopy,
   omitCreatorId,
   resolveSignalCreatorDisplayName,
   resolveSignalFormCreatorId,
@@ -210,6 +211,45 @@ describe('isSignalDescriptionAnchorMessage', () => {
         signalDescription: pathological,
       }),
     ).toBe(true);
+  });
+
+  it('treats no first message as an anchor when the signal has no description', () => {
+    expect(
+      isSignalDescriptionAnchorMessage({
+        isFirstChatTextMessage: true,
+        messageContent: 'first real reply',
+        signalDescription: '',
+      }),
+    ).toBe(false);
+  });
+});
+
+describe('isSignalDescriptionCopy', () => {
+  it('matches a seed posted with rich-text space entities decoded', () => {
+    expect(
+      isSignalDescriptionCopy({
+        messageContent: 'Fix the bridge now',
+        signalDescription: 'Fix the bridge&#x20;now&nbsp;',
+      }),
+    ).toBe(true);
+  });
+
+  it('does not match a reply that only quotes part of the description', () => {
+    expect(
+      isSignalDescriptionCopy({
+        messageContent: 'Fix the bridge',
+        signalDescription: 'Fix the bridge now',
+      }),
+    ).toBe(false);
+  });
+
+  it('does not match anything when the description is empty', () => {
+    expect(
+      isSignalDescriptionCopy({
+        messageContent: 'hello',
+        signalDescription: '   ',
+      }),
+    ).toBe(false);
   });
 });
 

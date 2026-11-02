@@ -173,24 +173,7 @@ import {
   type CallElsewhereEntry,
 } from './human-chat-panel/use-call-membership-registry';
 import { HumanChatPanelElsewhereCallIndicator } from './human-chat-panel/human-chat-panel-elsewhere-call-indicator';
-import {
-  getCoherenceBySlug,
-  seedAiSignalDescriptionAsAgent,
-} from '@hypha-platform/core/coherence/server/web3';
-import { upsertSignalDescriptionInRoom } from '../coherence/utils/signal-chat-description';
-import {
-  hasExplicitSignalTeamMemberList,
-  isSignalTeamRequestContent,
-  isSignalTeamRosterContent,
-  isTrustedSignalTeamSender,
-  retainSignalTeamDocumentSeed,
-  rosterIdsIntersectSpaceMap,
-  signalTeamDocumentSeedKey,
-  type SignalTeamDocumentSeed,
-} from '../coherence/utils/signal-team-access';
-import { SignalTurnIntoProposalButton } from '../coherence/components/signal-turn-into-proposal-button';
-import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
-import { SignalIndicativeAmounts } from '../coherence/components/signal-indicative-amounts';
+import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
 import { SpaceContextSidePanel } from '../space-context/components/space-context-chat-panel';
 import { useSpaceContextSectionAgent } from '../space-context/hooks/use-space-context-section-agent';
 import { AgentMentionLabelProvider } from './human-chat-panel/agent-mention-label-context';
@@ -3992,107 +3975,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           rememberSignalThreadRooms([targetRoomId], { quiet: true });
         }
 
-        void (async () => {
-          await revealRoomTimeline(
-            targetRoomId,
-            () =>
-              cancelled || openingTimelineRoomIdRef.current !== targetRoomId,
-          );
-          if (
-            cancelled ||
-            openingTimelineRoomIdRef.current !== targetRoomId ||
-            (openingSpaceSlug && !signalThreadJoin)
-          ) {
-            return;
-          }
-          try {
-            let description = coherenceDescription?.trim() || null;
-            const signalSlug = coherenceSlug?.trim() || '';
-            let signedByAgent = false;
-            let blockMemberSeed = false;
-            if (signalSlug) {
-              try {
-                const seeded = await seedAiSignalDescriptionAsAgent({
-                  slug: signalSlug,
-                  roomId: targetRoomId,
-                  authToken: authTokenRef.current ?? undefined,
-                });
-                if (seeded.ok && seeded.signed) {
-                  signedByAgent = true;
-                  if (seeded.unredactedEventId) {
-                    try {
-                      await matrixRef.current.redactRoomEvent({
-                        roomId: targetRoomId,
-                        eventId: seeded.unredactedEventId,
-                      });
-                    } catch {
-                      // Only the account that posted the copy can remove it.
-                    }
-                  }
-                } else if (!seeded.ok && seeded.reason !== 'not-found') {
-                  blockMemberSeed = true;
-                }
-              } catch (agentSeedError) {
-                console.warn(
-                  '[HumanRightPanel] Failed to sign the signal as the agent:',
-                  agentSeedError,
-                );
-              }
-            }
-            if (signedByAgent) {
-              if (!cancelled) {
-                await matrixRef.current.loadRoomHistory(targetRoomId, {
-                  force: true,
-                  pageSize: 30,
-                  maxBatches: 1,
-                });
-                syncRoomMessages(targetRoomId);
-              }
-              return;
-            }
-            if (blockMemberSeed) return;
-            if (!description && signalSlug) {
-              const signal = await getCoherenceBySlug({
-                slug: signalSlug,
-              });
-              description = signal?.description?.trim() || null;
-            }
-            if (description) {
-              await upsertSignalDescriptionInRoom({
-                roomId: targetRoomId,
-                description,
-                mode: 'safe',
-                matrix: {
-                  joinRoom: (id) => matrixRef.current.joinRoom(id),
-                  loadRoomHistory: (id) =>
-                    matrixRef.current.loadRoomHistory(id, {
-                      pageSize: 30,
-                      maxBatches: 1,
-                    }),
-                  getRoomMessages: (id) =>
-                    matrixRef.current.getRoomMessages(id),
-                  sendMessage: (params) =>
-                    matrixRef.current.sendMessage(params),
-                  editRoomMessage: (params) =>
-                    matrixRef.current.editRoomMessage(params),
-                },
-              });
-              if (!cancelled) {
-                await matrixRef.current.loadRoomHistory(targetRoomId, {
-                  force: true,
-                  pageSize: 30,
-                  maxBatches: 1,
-                });
-                syncRoomMessages(targetRoomId);
-              }
-            }
-          } catch (seedError) {
-            console.warn(
-              '[HumanRightPanel] Failed to seed signal description in chat:',
-              seedError,
-            );
-          }
-        })();
+        void revealRoomTimeline(
+          targetRoomId,
+          () => cancelled || openingTimelineRoomIdRef.current !== targetRoomId,
+        );
       } catch (err) {
         const knownId = coherenceRoomId?.trim();
         const recovered = knownId
@@ -4170,7 +4056,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     blockSpaceChatForMembership,
     getOrCreateCoherenceRoom,
     revealRoomTimeline,
-    syncRoomMessages,
   ]);
 
   // Register listener for incoming messages

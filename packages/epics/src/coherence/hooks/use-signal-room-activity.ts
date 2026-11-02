@@ -10,17 +10,26 @@ import {
 import {
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
-  isSignalDescriptionAnchorMessage,
   useMatrix,
 } from '@hypha-platform/core/client';
-import { isHyphaBotMatrixIdentity } from '../../common/human-chat-panel/matrix-room-member-display';
+import {
+  isHyphaBotMatrixIdentity,
+  pickUserVisibleMemberLabel,
+} from '../../common/human-chat-panel/matrix-room-member-display';
+import {
+  sameSignalRoomActivity,
+  summarizeSignalReplies,
+  type SignalRoomMessage,
+} from '../utils/signal-room-replies';
 
 export type SignalRoomActivity = {
-  /** Replies in the loaded live timeline; the description seed is not a reply. */
+  /** Replies in the loaded live timeline; description copies are not replies. */
   comments: number;
   /** Distinct people who replied. */
   people: number;
   lastReplyAt: number | null;
+  lastReplySenderId: string | null;
+  /** Matrix display name, only when it is a real name (never a bridged id). */
   lastReplySenderName: string | null;
   /**
    * Whether the loaded timeline goes back to the room start. When false the
@@ -34,6 +43,11 @@ type SignalRoomRef = {
   description?: string | null;
 };
 
+function messageBody(content: unknown): string | null {
+  const body = (content as { body?: unknown } | null)?.body;
+  return typeof body === 'string' ? body : null;
+}
+
 function readRoomActivity(
   client: MatrixClient,
   roomId: string,
@@ -43,105 +57,133 @@ function readRoomActivity(
   if (!room || room.getMyMembership() !== 'join') return null;
 
   const events = room.getLiveTimeline().getEvents();
-  // The seed can only be recognised when the timeline reaches the room start.
   const reachesRoomStart = events.some(
     (event) => event.getType() === EventType.RoomCreate,
   );
-  let anchorPending = reachesRoomStart;
-  const senders = new Set<string>();
-  let comments = 0;
-  let lastReplyAt: number | null = null;
-  let lastSenderId: string | null = null;
+  const editedBodies = new Map<string, string>();
+  for (const event of events) {
+    if (event.getType() !== EventType.RoomMessage) continue;
+    const target = getMessageReplaceTargetEventId(event);
+    if (!target) continue;
+    const next = messageBody(
+      (event.getContent() as { 'm.new_content'?: unknown })['m.new_content'],
+    );
+    if (next != null) editedBodies.set(target, next);
+  }
 
+  const messages: SignalRoomMessage[] = [];
   for (const event of events) {
     if (event.getType() !== EventType.RoomMessage) continue;
     if (isRedactedRoomMessageEvent(event)) continue;
     if (getMessageReplaceTargetEventId(event) != null) continue;
     const sender = event.getSender();
-    if (!sender || isHyphaBotMatrixIdentity(sender)) continue;
-    if (anchorPending) {
-      anchorPending = false;
-      const body = (event.getContent() as { body?: unknown })?.body;
-      if (
-        isSignalDescriptionAnchorMessage({
-          isFirstChatTextMessage: true,
-          messageContent: typeof body === 'string' ? body : null,
-          signalDescription: description,
-        })
-      ) {
-        continue;
-      }
-    }
-    comments += 1;
-    senders.add(sender);
-    lastReplyAt = event.getTs();
-    lastSenderId = sender;
+    if (!sender) continue;
+    const eventId = event.getId();
+    messages.push({
+      sender,
+      ts: event.getTs(),
+      body: messageBody(event.getContent()),
+      editedBody: eventId ? editedBodies.get(eventId) ?? null : null,
+    });
   }
 
+  const summary = summarizeSignalReplies(messages, description, {
+    isBot: (sender) => isHyphaBotMatrixIdentity(sender),
+  });
+  const member = summary.lastReplySenderId
+    ? room.getMember(summary.lastReplySenderId)
+    : null;
   return {
-    comments,
-    people: senders.size,
-    lastReplyAt,
-    lastReplySenderName: lastSenderId
-      ? room.getMember(lastSenderId)?.name ?? null
-      : null,
+    ...summary,
+    lastReplySenderName:
+      summary.lastReplySenderId && member
+        ? pickUserVisibleMemberLabel(
+            summary.lastReplySenderId,
+            member.name,
+            member.user?.displayName,
+            member.rawDisplayName,
+          )
+        : null,
     reachesRoomStart,
   };
 }
 
+function readAllActivity(
+  client: MatrixClient | null | undefined,
+  rooms: readonly SignalRoomRef[],
+): Record<string, SignalRoomActivity> {
+  const result: Record<string, SignalRoomActivity> = {};
+  if (!client) return result;
+  for (const room of rooms) {
+    const roomId = room.roomId?.trim();
+    if (!roomId) continue;
+    const activity = readRoomActivity(client, roomId, room.description);
+    if (activity) result[roomId] = activity;
+  }
+  return result;
+}
+
+function sameActivityMap(
+  a: Record<string, SignalRoomActivity>,
+  b: Record<string, SignalRoomActivity>,
+): boolean {
+  const keys = Object.keys(a);
+  if (keys.length !== Object.keys(b).length) return false;
+  return keys.every((key) => {
+    const next = b[key];
+    return next != null && sameSignalRoomActivity(a[key]!, next);
+  });
+}
+
 /**
  * Reply counts and last reply per signal room, read from the viewer's Matrix
- * sync. Rooms the viewer has not joined are missing from the result.
+ * sync. Rooms the viewer has not joined are missing from the result. The
+ * value only changes when a count or the last reply changes, so typing and
+ * other sync traffic do not re-render callers.
  */
 export function useSignalRoomActivity(
   rooms: readonly SignalRoomRef[],
 ): Record<string, SignalRoomActivity> {
   const { client } = useMatrix();
-  const [version, setVersion] = React.useState(0);
-
-  const roomKey = rooms
-    .map((room) => room.roomId?.trim() ?? '')
-    .filter(Boolean)
-    .join('|');
+  const [activity, setActivity] = React.useState<
+    Record<string, SignalRoomActivity>
+  >(() => readAllActivity(client, rooms));
 
   React.useEffect(() => {
-    if (!client || !roomKey) return;
-    const watched = new Set(roomKey.split('|'));
+    const refresh = () => {
+      const next = readAllActivity(client, rooms);
+      setActivity((prev) => (sameActivityMap(prev, next) ? prev : next));
+    };
+    refresh();
+    if (!client) return;
+    const watched = new Set(
+      rooms.map((room) => room.roomId?.trim() ?? '').filter(Boolean),
+    );
+    if (watched.size === 0) return;
     let frame: number | null = null;
-    const bump = () => {
+    const schedule = () => {
       if (frame != null) return;
       frame = window.requestAnimationFrame(() => {
         frame = null;
-        setVersion((value) => value + 1);
+        refresh();
       });
     };
     const onTimeline = (
       _event: unknown,
       room: { roomId?: string } | undefined,
     ) => {
-      if (room?.roomId && watched.has(room.roomId)) bump();
+      if (room?.roomId && watched.has(room.roomId)) schedule();
     };
     client.on(RoomEvent.Timeline, onTimeline);
-    client.on(ClientEvent.Room, bump);
-    client.on(ClientEvent.Sync, bump);
+    client.on(ClientEvent.Room, schedule);
+    client.on(ClientEvent.Sync, schedule);
     return () => {
       if (frame != null) window.cancelAnimationFrame(frame);
       client.off(RoomEvent.Timeline, onTimeline);
-      client.off(ClientEvent.Room, bump);
-      client.off(ClientEvent.Sync, bump);
+      client.off(ClientEvent.Room, schedule);
+      client.off(ClientEvent.Sync, schedule);
     };
-  }, [client, roomKey]);
+  }, [client, rooms]);
 
-  return React.useMemo(() => {
-    const result: Record<string, SignalRoomActivity> = {};
-    if (!client) return result;
-    for (const room of rooms) {
-      const roomId = room.roomId?.trim();
-      if (!roomId) continue;
-      const activity = readRoomActivity(client, roomId, room.description);
-      if (activity) result[roomId] = activity;
-    }
-    return result;
-    // `version` re-reads the timelines after Matrix events.
-  }, [client, rooms, version]);
+  return activity;
 }

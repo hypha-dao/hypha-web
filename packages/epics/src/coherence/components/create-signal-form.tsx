@@ -85,7 +85,7 @@ import {
   SIGNAL_PROVISIONING_NOTICE_EVENT,
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
 } from '../constants';
-import { upsertSignalDescriptionInRoom } from '../utils/signal-chat-description';
+import { updateSignalDescriptionCopyInRoom } from '../utils/signal-chat-description';
 import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
 import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
@@ -427,23 +427,25 @@ export const CreateSignalForm = ({
     ensureRoomMembers,
   } = useMatrix();
 
-  const upsertSignalDescriptionMessage = React.useCallback(
+  const updateSignalDescriptionCopy = React.useCallback(
     async ({
       roomId,
+      previousDescription,
       description,
     }: {
       roomId: string;
+      previousDescription?: string | null;
       description?: string | null;
     }) => {
       if (!isMatrixAvailable || !roomId?.trim()) return;
-      await upsertSignalDescriptionInRoom({
+      await updateSignalDescriptionCopyInRoom({
         roomId,
+        previousDescription,
         description,
         matrix: {
           joinRoom,
           loadRoomHistory,
           getRoomMessages,
-          sendMessage,
           editRoomMessage,
         },
       });
@@ -454,7 +456,6 @@ export const CreateSignalForm = ({
       isMatrixAvailable,
       joinRoom,
       loadRoomHistory,
-      sendMessage,
     ],
   );
 
@@ -865,8 +866,9 @@ export const CreateSignalForm = ({
             void mutate([attributionSlug, 'signal-creator-attribution']);
           }
           if (updatedSignal?.roomId) {
-            void upsertSignalDescriptionMessage({
+            void updateSignalDescriptionCopy({
               roomId: updatedSignal.roomId,
+              previousDescription: initialValues?.description,
               description: parsed.description,
             }).catch((matrixSyncError) => {
               console.warn(
@@ -987,18 +989,6 @@ export const CreateSignalForm = ({
               });
               roomId = roomCreationResult.roomId;
               const canonicalRoomId = await joinRoom(roomId);
-              await loadRoomHistory(canonicalRoomId);
-              try {
-                await upsertSignalDescriptionMessage({
-                  roomId: canonicalRoomId,
-                  description: coherence.description,
-                });
-              } catch (messageSeedError) {
-                console.warn(
-                  'Signal room created but failed to seed description message:',
-                  messageSeedError,
-                );
-              }
 
               try {
                 await updateCoherenceBySlug({
@@ -1102,11 +1092,11 @@ export const CreateSignalForm = ({
       upvoteCoherence,
       isEditAuthorized,
       joinRoom,
-      loadRoomHistory,
       updateCoherenceBySlug,
       updateCoherenceSignalBySlug,
       isMatrixAvailable,
-      upsertSignalDescriptionMessage,
+      updateSignalDescriptionCopy,
+      initialValues?.description,
       mode,
       setSignalProvisioningNotice,
       signalSlug,

@@ -82,20 +82,52 @@ export function resolveSignalCreatorDisplayName({
   return creatorName?.trim() || 'Member';
 }
 
+function decodeSignalTextEntity(code: number, fallback: string): string {
+  if (!Number.isFinite(code) || code < 0 || code > 0x10ffff) return fallback;
+  return String.fromCodePoint(code);
+}
+
 function collapseSignalText(value: string): string {
   return (
     value
       // `[^<>]` cannot cross another delimiter, so a long run of '<' is linear.
       .replace(/<[^<>]*>/g, ' ')
+      // The chat seed was posted with rich-text space entities decoded.
+      .replace(/&#x([0-9a-fA-F]+);/g, (match, hex: string) =>
+        decodeSignalTextEntity(Number.parseInt(hex, 16), match),
+      )
+      .replace(/&#(\d+);/g, (match, dec: string) =>
+        decodeSignalTextEntity(Number.parseInt(dec, 10), match),
+      )
+      .replace(/&nbsp;/gi, ' ')
       .replace(/\s+/g, ' ')
       .trim()
   );
 }
 
 /**
- * The first text row in a signal room is the description seed. Later chat
- * keeps its Matrix sender. Content is compared after stripping tags so a
- * rich-text description still matches the seeded body.
+ * Whether a chat message is a copy of the signal description. Older signal
+ * rooms got the description posted into chat; that copy is not a reply.
+ */
+export function isSignalDescriptionCopy({
+  messageContent,
+  signalDescription,
+}: {
+  messageContent?: string | null;
+  signalDescription?: string | null;
+}): boolean {
+  const message = collapseSignalText(messageContent ?? '');
+  if (!message) return false;
+  const description = collapseSignalText(signalDescription ?? '');
+  if (!description) return false;
+  return message === description;
+}
+
+/**
+ * The first text row in an older signal room can be the description seed.
+ * Later chat keeps its Matrix sender. Content is compared after stripping
+ * tags so a rich-text description still matches the seeded body. A signal
+ * without a description never had a seed.
  */
 export function isSignalDescriptionAnchorMessage({
   isFirstChatTextMessage,
@@ -107,11 +139,7 @@ export function isSignalDescriptionAnchorMessage({
   signalDescription?: string | null;
 }): boolean {
   if (!isFirstChatTextMessage) return false;
-  const message = collapseSignalText(messageContent ?? '');
-  if (!message) return false;
-  const description = collapseSignalText(signalDescription ?? '');
-  if (!description) return true;
-  return message === description;
+  return isSignalDescriptionCopy({ messageContent, signalDescription });
 }
 
 /**
