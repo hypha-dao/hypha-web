@@ -95,7 +95,6 @@ import type { UseMembers } from '../../spaces/hooks/types';
 import { SignalTagMergeDialog } from './signal-tag-merge-dialog';
 import { SignalTagPeopleField } from './signal-tag-people-field';
 import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
-import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
 import { EXCHANGE_SIGNAL_CAPITALS_KEY } from '../../network-exchange/exchange-draft-keys';
 
 type FormValues = SignalFormValues;
@@ -1060,19 +1059,6 @@ export const CreateSignalForm = ({
     ],
   );
 
-  const handleTurnIntoProposal = () => {
-    const values = form.getValues();
-    stageSignalAsContributionProposal({
-      title: values.title,
-      description: values.description,
-      payouts: values.indicativePayouts ?? [],
-    });
-    if (!lang || !spaceSlug) return;
-    router.push(
-      `/${lang}/dho/${spaceSlug}/agreements/create/propose-contribution`,
-    );
-  };
-
   const handleInvalid = (errors?: Record<string, unknown>) => {
     const issue = firstSignalFieldIssue(errors);
     const field = issue?.field.split('.')[0] ?? '';
@@ -1595,17 +1581,6 @@ export const CreateSignalForm = ({
                         : 'Archive'}
                     </Button>
                   </ConfirmDialog>
-                ) : null}
-                {mode === 'edit' ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    colorVariant="neutral"
-                    disabled={isMutating || !spaceSlug}
-                    onClick={handleTurnIntoProposal}
-                  >
-                    {t('turnIntoProposal')}
-                  </Button>
                 ) : null}
                 <Button
                   type="submit"

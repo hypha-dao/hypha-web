@@ -29,7 +29,6 @@ import {
   Archive,
   ArchiveRestore,
   CalendarDays,
-  FilePlus,
   Globe2,
   Pencil,
 } from 'lucide-react';
@@ -48,7 +47,6 @@ import {
 } from '../utils/signal-priority-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
-import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
 import { SignalIndicativeAmounts } from './signal-indicative-amounts';
 import { SignalCategoryTag } from './signal-category-tag';
 import { SignalVideoPlayer } from './signal-video-player';
@@ -185,20 +183,6 @@ function SignalCardComponent({
       setIsArchiveMutating(false);
     }
   }, [archived, slug, isArchiveMutating, refresh, t, updateCoherenceBySlug]);
-
-  const handleTurnIntoProposal = (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (!params.lang || !params.id) return;
-    stageSignalAsContributionProposal({
-      title,
-      description,
-      payouts: indicativePayouts,
-    });
-    router.push(
-      `/${params.lang}/dho/${params.id}/agreements/create/propose-contribution`,
-    );
-  };
 
   const metaParts: Array<{ key: string; node: React.ReactNode }> = [];
   if (creatorDisplayName) {
@@ -452,21 +436,6 @@ function SignalCardComponent({
             refresh={refresh}
             disabled={isLoading || Boolean(archived)}
           />
-          {!archived ? (
-            <Button
-              type="button"
-              variant="ghost"
-              colorVariant="neutral"
-              className={SIGNAL_CARD_ICON_BUTTON_CLASS}
-              disabled={isLoading}
-              aria-label={t('turnIntoProposal')}
-              title={t('turnIntoProposal')}
-              onClick={handleTurnIntoProposal}
-              onKeyDown={stopCardActivationKey}
-            >
-              <FilePlus className="h-4 w-4" strokeWidth={1.25} aria-hidden />
-            </Button>
-          ) : null}
           {onOpenConversation && !archived ? (
             <Button
               variant="ghost"

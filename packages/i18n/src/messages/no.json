@@ -4682,7 +4682,6 @@
     "indicativeTokensHint": "Disse beløpene definerer forespørselen eller ressursen. Ingen midler flyttes før et forslag er opprettet og godkjent.",
     "shareWithNetwork": "Del med nettverket",
     "shareWithNetworkHint": "Når dette er på, er signalet synlig for nettverksmedlemmer utenfor dette spacet.",
-    "turnIntoProposal": "Gjør om til et forslag",
     "proposal": "Forslag",
     "signalFormImage": "Bilder",
     "signalFormImageHint": "JPEG, PNG, WebP eller GIF. Flere om gangen. 16 MB hver.",

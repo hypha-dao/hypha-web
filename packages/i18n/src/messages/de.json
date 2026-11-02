@@ -4681,7 +4681,6 @@
     "indicativeTokensHint": "Diese Beträge legen die Anfrage oder die Ressource fest. Es werden keine Mittel bewegt, bis ein Vorschlag erstellt und angenommen wurde.",
     "shareWithNetwork": "Mit dem Netzwerk teilen",
     "shareWithNetworkHint": "Wenn das an ist, ist das Signal für Netzwerkmitglieder außerhalb dieses Space sichtbar.",
-    "turnIntoProposal": "In einen Vorschlag umwandeln",
     "proposal": "Vorschlag",
     "signalFormImage": "Bilder",
     "signalFormImageHint": "JPEG, PNG, WebP oder GIF. Mehrere möglich. Je 16 MB.",

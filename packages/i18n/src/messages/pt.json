@@ -4107,7 +4107,6 @@
     "indicativeTokensHint": "Estes montantes definem o pedido ou o recurso. Nenhum fundo se move até que uma proposta seja criada e aprovada.",
     "shareWithNetwork": "Partilhar com a rede",
     "shareWithNetworkHint": "Quando está ativo, o sinal fica visível para membros da rede fora deste espaço.",
-    "turnIntoProposal": "Transformar numa proposta",
     "proposal": "Proposta",
     "signalFormImage": "Imagens",
     "signalFormImageHint": "JPEG, PNG, WebP ou GIF. Várias de uma vez. 16 MB cada.",

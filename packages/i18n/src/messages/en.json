@@ -4713,7 +4713,6 @@
     "indicativeTokensHint": "These amounts define the request or resource. No funds move until a proposal is created and approved.",
     "shareWithNetwork": "Share with the network",
     "shareWithNetworkHint": "When this is on, the signal is visible to network members outside this space.",
-    "turnIntoProposal": "Turn into a proposal",
     "proposal": "Proposal",
     "signalFormImage": "Images",
     "signalFormImageHint": "JPEG, PNG, WebP, or GIF. Add several. 16 MB each.",
