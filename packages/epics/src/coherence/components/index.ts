@@ -32,7 +32,7 @@ export * from './signal-upvote-button';
 export * from './signal-type-badge';
 export * from './signal-feed-row';
 export * from './signal-media-chips';
-export * from './signal-create-project-button';
+export * from './signal-create-quest-button';
 export * from './signal-page';
 export * from './space-memory-section';
 export * from './space-memory-timeline-item';

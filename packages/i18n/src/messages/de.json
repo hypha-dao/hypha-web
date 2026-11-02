@@ -4786,7 +4786,7 @@
     "signalDocumentsCount": "{count, plural, one {# Dokument} other {# Dokumente}}",
     "signalMedia": "Medien",
     "signalDownload": "Herunterladen",
-    "createProject": "Projekt erstellen",
+    "createQuest": "Mission erstellen",
     "signalCreatedBy": "Erstellt von",
     "signalCreatedLabel": "Erstellt",
     "signalLastReplyLabel": "Letzte Antwort",

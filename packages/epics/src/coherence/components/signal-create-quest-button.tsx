@@ -15,12 +15,8 @@ import {
 } from '@hypha-platform/ui';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 
-/** Projects are not built yet, so the action only says so. */
-export function SignalCreateProjectButton({
-  className,
-}: {
-  className?: string;
-}) {
+/** Quests are not built yet, so the action only says so. */
+export function SignalCreateQuestButton({ className }: { className?: string }) {
   const t = useTranslations('CoherenceTab');
   const tCommon = useTranslations('Common');
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
@@ -32,10 +28,10 @@ export function SignalCreateProjectButton({
           type="button"
           colorVariant="accent"
           className={className}
-          data-testid="signal-create-project"
+          data-testid="signal-create-quest"
         >
           <Sparkles className="craft-icon" aria-hidden />
-          {t('createProject')}
+          {t('createQuest')}
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -46,7 +42,7 @@ export function SignalCreateProjectButton({
         <DialogHeader>
           <DialogTitle>{t('comingSoon')}</DialogTitle>
           <DialogDescription className="sr-only">
-            {t('createProject')}
+            {t('createQuest')}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

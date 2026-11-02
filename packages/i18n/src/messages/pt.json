@@ -4212,7 +4212,7 @@
     "signalDocumentsCount": "{count, plural, one {# documento} other {# documentos}}",
     "signalMedia": "Mídia",
     "signalDownload": "Baixar",
-    "createProject": "Criar projeto",
+    "createQuest": "Criar missão",
     "signalCreatedBy": "Criado por",
     "signalCreatedLabel": "Criado",
     "signalLastReplyLabel": "Última resposta",

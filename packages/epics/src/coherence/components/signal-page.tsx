@@ -28,7 +28,7 @@ import { useSignalRoomActivity } from '../hooks/use-signal-room-activity';
 import { useSignalVotingMode } from '../hooks/use-signal-voting-mode';
 import { countSignalMedia, splitSignalMedia } from '../utils/signal-media';
 import { resolveSignalVideo } from '../utils/signal-video';
-import { SignalCreateProjectButton } from './signal-create-project-button';
+import { SignalCreateQuestButton } from './signal-create-quest-button';
 import { useSignalMediaSummary } from './signal-media-chips';
 import { useSignalShortDate } from './signal-feed-row';
 import { SignalTypeBadge } from './signal-type-badge';
@@ -386,7 +386,7 @@ export function SignalPage({
               </h1>
             </div>
           </div>
-          <SignalCreateProjectButton className="shrink-0 self-start" />
+          <SignalCreateQuestButton className="shrink-0 self-start" />
         </div>
 
         <dl className="m-0 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-border/70 pt-4 lg:grid-cols-5">
