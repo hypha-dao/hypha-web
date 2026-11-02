@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  SPACE_CONTEXT_DEFAULT_SECTION_KEYS,
   SPACE_CONTEXT_SECTION_KEYS,
   SPACE_CONTEXT_SPECIALISTS,
   buildProposalMarkdown,
@@ -13,10 +14,52 @@ import {
   splitLeadParagraph,
   statusMatchesFilter,
 } from '../index';
-import { mapSectionRow } from '../server/map-row';
+import { isUntouchedRetiredDefaultRow, mapSectionRow } from '../server/map-row';
 
 describe('space context catalog', () => {
-  it('seeds seven starting sections', () => {
+  it('seeds five starting sections', () => {
+    expect(SPACE_CONTEXT_DEFAULT_SECTION_KEYS).toEqual([
+      'mission',
+      'vision',
+      'strategy',
+      'objectives',
+      'key_repositories',
+    ]);
+  });
+
+  it('keeps tools and how we decide readable where a space wrote them', () => {
+    const row = {
+      sectionKey: 'tools',
+      markdown: '',
+      status: 'not_started',
+      pendingChange: null,
+      proposalDocumentId: null,
+      ratifiedDocumentId: null,
+      chatRoomId: null,
+    };
+    expect(isUntouchedRetiredDefaultRow(row)).toBe(true);
+    expect(
+      isUntouchedRetiredDefaultRow({ ...row, sectionKey: 'how_we_decide' }),
+    ).toBe(true);
+    expect(
+      isUntouchedRetiredDefaultRow({ ...row, sectionKey: 'mission' }),
+    ).toBe(false);
+    expect(
+      isUntouchedRetiredDefaultRow({
+        ...row,
+        markdown: '- Slack',
+        status: 'draft',
+      }),
+    ).toBe(false);
+    expect(
+      isUntouchedRetiredDefaultRow({ ...row, chatRoomId: '!room:hypha' }),
+    ).toBe(false);
+    expect(
+      isUntouchedRetiredDefaultRow({ ...row, sectionKey: 'custom-a1b2c3d4' }),
+    ).toBe(false);
+  });
+
+  it('still recognises every built-in section key', () => {
     expect(SPACE_CONTEXT_SECTION_KEYS).toEqual([
       'mission',
       'vision',
@@ -112,7 +155,23 @@ describe('space context markdown', () => {
     ]);
   });
 
-  it('names every starting section', () => {
+  it('reads proposals written before Objectives became Short-term goals', () => {
+    expect(
+      sectionKeysFromProposalMarkdown(
+        '## Objectives\n\nShip v1.\n\n## Short-term goals\n\nShip v2.',
+      ),
+    ).toEqual(['objectives']);
+    expect(
+      sectionKeysFromProposalMarkdown(
+        buildProposalMarkdown([
+          { key: 'objectives', title: 'Short-term goals', markdown: 'Ship.' },
+        ]),
+      ),
+    ).toEqual(['objectives']);
+  });
+
+  it('names every built-in section', () => {
+    expect(headingForSectionKey('objectives')).toBe('Short-term goals');
     expect(headingForSectionKey('tools')).toBe('Tools we use');
     expect(headingForSectionKey('how_we_decide')).toBe(
       'How we decide what we work on',

@@ -18,7 +18,7 @@ export function createSaveSpaceContextDraftTool(
       .trim()
       .min(1)
       .describe(
-        'mission | vision | strategy | objectives | key_repositories | tools | how_we_decide, or a custom-… key from get_space_context',
+        'mission | vision | strategy | objectives (Short-term goals) | key_repositories, or another key from get_space_context (custom-…, or tools / how_we_decide where a space still has them)',
       ),
     markdown: z.string().max(80_000),
   });

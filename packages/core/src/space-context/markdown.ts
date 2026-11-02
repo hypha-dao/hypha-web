@@ -78,7 +78,7 @@ export function headingForSectionKey(key: SpaceContextSectionKey): string {
     case 'strategy':
       return 'Strategy';
     case 'objectives':
-      return 'Objectives';
+      return 'Short-term goals';
     case 'key_repositories':
       return 'Key repositories';
     case 'tools':
@@ -133,16 +133,21 @@ export function splitLeadParagraph(source: string): {
   };
 }
 
+/** Headings earlier proposals used before a section was renamed. */
+const LEGACY_SECTION_HEADINGS: Record<string, SpaceContextSectionKey> = {
+  objectives: 'objectives',
+};
+
 /** Reverse of `buildProposalMarkdown` headings — used when resubmitting a Context proposal. */
 export function sectionKeysFromProposalMarkdown(
   markdown: string,
 ): SpaceContextSectionKey[] {
-  const titles = new Map(
-    SPACE_CONTEXT_SECTION_KEYS.map((key) => [
-      headingForSectionKey(key).toLowerCase(),
-      key,
-    ]),
-  );
+  const titles = new Map<string, SpaceContextSectionKey>([
+    ...Object.entries(LEGACY_SECTION_HEADINGS),
+    ...SPACE_CONTEXT_SECTION_KEYS.map(
+      (key) => [headingForSectionKey(key).toLowerCase(), key] as const,
+    ),
+  ]);
   const found: SpaceContextSectionKey[] = [];
   const seen = new Set<SpaceContextSectionKey>();
   for (const line of markdown.replace(/\r\n/g, '\n').split('\n')) {

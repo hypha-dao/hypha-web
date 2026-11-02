@@ -12,6 +12,7 @@ import { findSpaceBySlug } from '../../space/server/queries';
 import {
   isBuiltinSpaceContextSectionKey,
   isSpaceContextSectionKey,
+  SPACE_CONTEXT_DEFAULT_SECTION_KEYS,
   SPACE_CONTEXT_SECTION_KEYS,
   SPACE_CONTEXT_SECTION_ORDER,
   specialistForSectionKey,
@@ -25,7 +26,11 @@ import type {
   SpaceContextSectionDetail,
   SpaceContextSectionRecord,
 } from '../types';
-import { mapSectionRow, sectionTitleFromRow } from './map-row';
+import {
+  isUntouchedRetiredDefaultRow,
+  mapSectionRow,
+  sectionTitleFromRow,
+} from './map-row';
 
 async function ensureSectionsForSpace(
   spaceId: number,
@@ -36,7 +41,9 @@ async function ensureSectionsForSpace(
     .from(spaceContextSections)
     .where(eq(spaceContextSections.spaceId, spaceId));
   const have = new Set(existing.map((row) => row.sectionKey));
-  const missing = SPACE_CONTEXT_SECTION_KEYS.filter((key) => !have.has(key));
+  const missing = SPACE_CONTEXT_DEFAULT_SECTION_KEYS.filter(
+    (key) => !have.has(key),
+  );
   if (missing.length === 0) return;
 
   await db.insert(spaceContextSections).values(
@@ -112,6 +119,7 @@ export async function listSpaceContextSections(
   const removedSections: SpaceContextRemovedSection[] = [];
   const liveRows = rows.filter((row) => {
     const { section } = row;
+    if (isUntouchedRetiredDefaultRow(section)) return false;
     if (section.removedAt == null || section.pendingChange === 'add') {
       return true;
     }

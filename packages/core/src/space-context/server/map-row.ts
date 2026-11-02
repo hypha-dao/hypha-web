@@ -1,6 +1,7 @@
 import type { SpaceContextSection } from '@hypha-platform/storage-postgres';
 import {
   isBuiltinSpaceContextSectionKey,
+  isDefaultSpaceContextSectionKey,
   isSpaceContextPendingChange,
   isSpaceContextSectionKey,
   isSpaceContextStatus,
@@ -23,6 +24,34 @@ export function sectionTitleFromRow(
   const key = row.sectionKey as SpaceContextSectionKey;
   if (isBuiltinSpaceContextSectionKey(key)) return headingForSectionKey(key);
   return row.title?.trim() || headingForSectionKey(key);
+}
+
+/**
+ * A built-in that is no longer seeded and was never written to, discussed or
+ * proposed. Spaces seeded before it left the defaults still have this row.
+ */
+export function isUntouchedRetiredDefaultRow(
+  row: Pick<
+    SpaceContextSection,
+    | 'sectionKey'
+    | 'markdown'
+    | 'status'
+    | 'pendingChange'
+    | 'proposalDocumentId'
+    | 'ratifiedDocumentId'
+    | 'chatRoomId'
+  >,
+): boolean {
+  return (
+    isBuiltinSpaceContextSectionKey(row.sectionKey) &&
+    !isDefaultSpaceContextSectionKey(row.sectionKey) &&
+    !row.markdown?.trim() &&
+    row.status === 'not_started' &&
+    row.pendingChange == null &&
+    row.proposalDocumentId == null &&
+    row.ratifiedDocumentId == null &&
+    !row.chatRoomId?.trim()
+  );
 }
 
 export function mapSectionRow(

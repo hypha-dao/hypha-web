@@ -11,6 +11,21 @@ export const SPACE_CONTEXT_SECTION_KEYS = [
 export type BuiltinSpaceContextSectionKey =
   (typeof SPACE_CONTEXT_SECTION_KEYS)[number];
 
+/** Sections every space starts with; the other built-ins stay readable where a space already wrote them. */
+export const SPACE_CONTEXT_DEFAULT_SECTION_KEYS = [
+  'mission',
+  'vision',
+  'strategy',
+  'objectives',
+  'key_repositories',
+] as const satisfies readonly BuiltinSpaceContextSectionKey[];
+
+export function isDefaultSpaceContextSectionKey(value: string): boolean {
+  return (SPACE_CONTEXT_DEFAULT_SECTION_KEYS as readonly string[]).includes(
+    value,
+  );
+}
+
 /** Key of a section members added to their space's Context. */
 export type CustomSpaceContextSectionKey = `custom-${string}`;
 
@@ -104,16 +119,16 @@ export const SPACE_CONTEXT_SPECIALISTS: Record<
     focus: 'How we get there over the next years',
     avatarLabel: 'AS',
     brief:
-      'Strategy is the few choices for the next 2–3 years that move the space toward its vision: 3–5 pillars, each with a one-line rationale, plus what the space will not do. Test a draft: are there real trade-offs? Does each pillar trace to the vision? Leave measurable targets to Objectives.',
+      'Strategy is the few choices for the next 2–3 years that move the space toward its vision: 3–5 pillars, each with a one-line rationale, plus what the space will not do. Test a draft: are there real trade-offs? Does each pillar trace to the vision? Leave measurable targets to Short-term goals.',
   },
   objectives: {
     agentKey: 'objectives',
     agentName: 'Pulse Objectives',
-    role: 'Objectives specialist',
+    role: 'Short-term goals specialist',
     focus: 'Measurable goals for this season',
     avatarLabel: 'PO',
     brief:
-      'Objectives are 3–5 measurable goals for the current season. Each has an outcome, a metric, a target, a date, and an owner when known, and traces to a strategy pillar. Test a draft: reject vague verbs (improve, explore, support) without a number or a date.',
+      'Short-term goals are 3–5 measurable goals for the current season. Each has an outcome, a metric, a target, a date, and an owner when known, and traces to a strategy pillar. Test a draft: reject vague verbs (improve, explore, support) without a number or a date.',
   },
   key_repositories: {
     agentKey: 'key_repositories',
@@ -152,7 +167,7 @@ export const SPACE_CONTEXT_CUSTOM_SPECIALIST: SpaceContextSpecialist = {
   focus: 'A section this space added to its Context',
   avatarLabel: 'SC',
   brief:
-    'This section was added by the space itself. Infer its purpose from its title and the discussion: what a newcomer needs to know about that topic to work in this space. Keep it factual and operational, short paragraphs or lists. Test a draft: does every line belong under the title? Would a new member act differently after reading it? Point overlaps with Mission, Vision, Strategy, Objectives, repositories, tools, or decision-making to those sections.',
+    'This section was added by the space itself. Infer its purpose from its title and the discussion: what a newcomer needs to know about that topic to work in this space. Keep it factual and operational, short paragraphs or lists. Test a draft: does every line belong under the title? Would a new member act differently after reading it? Point overlaps with Mission, Vision, Strategy, Short-term goals, or Key repositories to those sections.',
 };
 
 export function isBuiltinSpaceContextSectionKey(

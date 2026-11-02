@@ -17,7 +17,7 @@ export function createGetSpaceContextTool(authToken: string): ChatRouteTool {
 
   return {
     description:
-      'Read-only: Space Context Markdown sections for a space (mission, vision, strategy, objectives, key repositories, tools, how we decide, plus sections the space added). Status is not_started, draft, proposed, or ratified. `markdown` is the official text for ratified sections; `draft_markdown` is an unratified amendment; `pending_change` is a suggested add or remove that applies only when its proposal passes.',
+      'Read-only: Space Context Markdown sections for a space (mission, vision, strategy, short-term goals (key `objectives`), key repositories, plus sections the space added; older spaces may also have tools and how we decide). Status is not_started, draft, proposed, or ratified. `markdown` is the official text for ratified sections; `draft_markdown` is an unratified amendment; `pending_change` is a suggested add or remove that applies only when its proposal passes.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
