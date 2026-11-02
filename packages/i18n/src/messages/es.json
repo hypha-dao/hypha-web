@@ -5761,11 +5761,6 @@
       "removalWithdrawn": "Sugerencia de eliminar retirada.",
       "additionWithdrawn": "Sugerencia retirada."
     },
-    "passed": {
-      "withVotes": "Acuerdo #{agreement} «{title}» aprobado — {yes} % sí, {quorum} % de quórum. Las secciones ya están ratificadas.",
-      "plain": "Acuerdo #{agreement} «{title}» aprobado. Las secciones ya están ratificadas.",
-      "viewAgreement": "Ver acuerdo"
-    },
     "change": {
       "add": "Sección sugerida",
       "remove": "Eliminación sugerida"

@@ -5747,11 +5747,6 @@
       "removalWithdrawn": "Entfernungsvorschlag zurückgezogen.",
       "additionWithdrawn": "Vorschlag zurückgezogen."
     },
-    "passed": {
-      "withVotes": "Vereinbarung #{agreement} „{title}“ angenommen — {yes} % Ja, {quorum} % Quorum. Die Abschnitte sind jetzt ratifiziert.",
-      "plain": "Vereinbarung #{agreement} „{title}“ angenommen. Die Abschnitte sind jetzt ratifiziert.",
-      "viewAgreement": "Vereinbarung ansehen"
-    },
     "change": {
       "add": "Vorgeschlagener Abschnitt",
       "remove": "Entfernung vorgeschlagen"

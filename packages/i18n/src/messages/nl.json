@@ -5753,11 +5753,6 @@
       "removalWithdrawn": "Verwijderingsvoorstel ingetrokken.",
       "additionWithdrawn": "Voorstel ingetrokken."
     },
-    "passed": {
-      "withVotes": "Overeenkomst #{agreement} “{title}” aangenomen — {yes}% ja, {quorum}% quorum. De secties zijn nu bekrachtigd.",
-      "plain": "Overeenkomst #{agreement} “{title}” aangenomen. De secties zijn nu bekrachtigd.",
-      "viewAgreement": "Overeenkomst bekijken"
-    },
     "change": {
       "add": "Voorgestelde sectie",
       "remove": "Verwijdering voorgesteld"

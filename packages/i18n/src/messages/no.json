@@ -5752,11 +5752,6 @@
       "removalWithdrawn": "Forslaget om fjerning er trukket.",
       "additionWithdrawn": "Forslaget er trukket."
     },
-    "passed": {
-      "withVotes": "Avtale #{agreement} «{title}» er vedtatt — {yes} % ja, {quorum} % quorum. Seksjonene er nå ratifisert.",
-      "plain": "Avtale #{agreement} «{title}» er vedtatt. Seksjonene er nå ratifisert.",
-      "viewAgreement": "Se avtalen"
-    },
     "change": {
       "add": "Foreslått seksjon",
       "remove": "Fjerning foreslått"

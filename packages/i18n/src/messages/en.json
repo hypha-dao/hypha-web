@@ -5769,11 +5769,6 @@
       "removalWithdrawn": "Removal suggestion withdrawn.",
       "additionWithdrawn": "Suggestion withdrawn."
     },
-    "passed": {
-      "withVotes": "Agreement #{agreement} “{title}” passed — {yes}% yes, {quorum}% quorum. Sections are now ratified.",
-      "plain": "Agreement #{agreement} “{title}” passed. Sections are now ratified.",
-      "viewAgreement": "View agreement"
-    },
     "change": {
       "add": "Suggested section",
       "remove": "Removal suggested"

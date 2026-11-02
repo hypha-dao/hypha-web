@@ -30,7 +30,6 @@ import { SpaceContextAddSectionDialog } from './space-context-add-section-dialog
 import { SpaceContextCard } from './space-context-card';
 import { SpaceContextChatPanel } from './space-context-chat-panel';
 import { SpaceContextEmpty } from './space-context-empty';
-import { SpaceContextPassedBanner } from './space-context-passed-banner';
 import { SpaceContextReaderDialog } from './space-context-reader-dialog';
 
 const FILTERS: SpaceContextFilter[] = ['all', 'ratified', 'proposed', 'drafts'];
@@ -168,8 +167,6 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
   return (
     <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
       <div className="min-w-0 flex-1 space-y-6">
-        <SpaceContextPassedBanner spaceSlug={spaceSlug} sections={sections} />
-
         <header className="craft-page-header space-y-3">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
