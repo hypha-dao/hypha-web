@@ -5,6 +5,7 @@ import { ListFilter, X } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
+  canonicalSignalType,
   COHERENCE_SIGNAL_TYPES,
   type CoherenceSignalType,
   type Person,
@@ -61,7 +62,11 @@ function parseAllowed<T extends string>(
 export function parseSignalTypeFilters(
   raw: string | null,
 ): CoherenceSignalType[] {
-  return parseAllowed(raw, COHERENCE_SIGNAL_TYPES);
+  const mapped = raw
+    ?.split(',')
+    .map((part) => canonicalSignalType(part))
+    .join(',');
+  return parseAllowed(mapped ?? null, COHERENCE_SIGNAL_TYPES);
 }
 
 export function parseSignalPriorityFilters(

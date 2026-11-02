@@ -4546,9 +4546,10 @@
       "Tension": "Tension",
       "Risk": "Risk",
       "Action": "Proof of Action",
-      "Impact": "Impact Evidence",
+      "Impact": "Proof of Action",
       "Trend": "Trend",
-      "Proposal": "Proposal"
+      "Proposal": "Proposal",
+      "Bug": "Bug"
     },
     "typeDescriptions": {
       "Need": "Someone is asking for a hand.",
@@ -4557,10 +4558,11 @@
       "Insight": "Shifts how we see things.",
       "Tension": "Something isn’t aligned.",
       "Risk": "We could be hurt by this.",
-      "Action": "Where the money went.",
+      "Action": "Stories and real-world outcomes.",
       "Impact": "Stories and real-world outcomes.",
       "Trend": "Emerging pattern across spaces",
-      "Proposal": "Governance action or vote needed"
+      "Proposal": "Governance action or vote needed",
+      "Bug": "Something is broken."
     },
     "priorities": {
       "critical": "Critical",

@@ -4516,9 +4516,10 @@
       "Tension": "Knelpunt",
       "Risk": "Risico",
       "Action": "Bewijs van actie",
-      "Impact": "Impactbewijs",
+      "Impact": "Bewijs van actie",
       "Trend": "Trend",
-      "Proposal": "Voorstel"
+      "Proposal": "Voorstel",
+      "Bug": "Bug"
     },
     "typeDescriptions": {
       "Need": "Iemand vraagt om een hand.",
@@ -4527,10 +4528,11 @@
       "Insight": "Verandert de manier waarop we dingen zien.",
       "Tension": "Er klopt iets niet.",
       "Risk": "Wij kunnen hierdoor gewond raken.",
-      "Action": "Waar het geld naartoe ging.",
+      "Action": "Verhalen en resultaten in de praktijk.",
       "Impact": "Verhalen en resultaten in de praktijk.",
       "Trend": "Opkomend patroon in ruimtes",
-      "Proposal": "Bestuursactie of stemming nodig"
+      "Proposal": "Bestuursactie of stemming nodig",
+      "Bug": "Er is iets kapot."
     },
     "priorities": {
       "critical": "Kritiek",

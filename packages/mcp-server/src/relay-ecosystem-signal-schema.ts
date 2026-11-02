@@ -17,12 +17,14 @@ export const relayEcosystemSignalInputSchema = z
         'Tension',
         'Risk',
         'Action',
+        'Bug',
         'Impact',
         'Trend',
         'Proposal',
       ])
       .optional()
-      .default('Opportunity'),
+      .default('Opportunity')
+      .transform((value) => (value === 'Impact' ? 'Action' : value)),
     priority: z
       .enum(['critical', 'high', 'medium', 'low'])
       .optional()

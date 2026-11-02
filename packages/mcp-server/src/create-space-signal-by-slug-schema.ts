@@ -24,12 +24,14 @@ export const createSpaceSignalBySlugInputSchema = z.object({
       'Tension',
       'Risk',
       'Action',
+      'Bug',
       'Impact',
       'Trend',
       'Proposal',
     ])
     .optional()
-    .default('Insight'),
+    .default('Insight')
+    .transform((value) => (value === 'Impact' ? 'Action' : value)),
   priority: z
     .enum(['critical', 'high', 'medium', 'low'])
     .optional()

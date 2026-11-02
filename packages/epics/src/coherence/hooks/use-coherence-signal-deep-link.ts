@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Coherence } from '@hypha-platform/core/client';
+import { canonicalSignalType, Coherence } from '@hypha-platform/core/client';
 import {
   pickSignalDeepLinkTarget,
   readLiveSignalSlugFromUrl,
@@ -111,7 +111,8 @@ export function useCoherenceSignalDeepLink({
     if (
       (priorityFilters.length > 0 &&
         !priorityFilters.includes(signal.priority ?? '')) ||
-      (typeFilters.length > 0 && !typeFilters.includes(signal.type))
+      (typeFilters.length > 0 &&
+        !typeFilters.includes(canonicalSignalType(signal.type)))
     ) {
       onClearPriorityFilter?.();
       return;

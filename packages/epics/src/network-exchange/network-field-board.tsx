@@ -207,8 +207,9 @@ export function NetworkFieldBoard({
   const impactCount = selected
     ? signals.filter(
         (signal) =>
-          signal.spaceSlug === selected.spaceSlug &&
-          (signal.type === 'Impact' || signal.type === 'Insight'),
+          (signal.spaceSlug === selected.spaceSlug &&
+            signal.type === 'Action') ||
+          signal.type === 'Insight',
       ).length
     : 0;
 

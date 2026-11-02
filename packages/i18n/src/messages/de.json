@@ -4410,9 +4410,10 @@
       "Tension": "Spannung",
       "Risk": "Risiko",
       "Action": "Handlungsnachweis",
-      "Impact": "Wirkungsbelege",
+      "Impact": "Handlungsnachweis",
       "Trend": "Trend",
-      "Proposal": "Vorschlag"
+      "Proposal": "Vorschlag",
+      "Bug": "Bug"
     },
     "typeDescriptions": {
       "Need": "Jemand bittet um eine Hand.",
@@ -4421,10 +4422,11 @@
       "Insight": "Datengetriebene Beobachtung oder Entdeckung",
       "Tension": "Konflikt oder Meinungsverschiedenheit, die gelöst werden muss",
       "Risk": "Bedrohung, Sorge oder Gefahr",
-      "Action": "Wohin das Geld geflossen ist.",
+      "Action": "Geschichten und Ergebnisse aus der Praxis.",
       "Impact": "Geschichten und Ergebnisse aus der Praxis.",
       "Trend": "Aufkommendes Muster über Räume hinweg",
-      "Proposal": "Governance-Aktion oder Abstimmung erforderlich"
+      "Proposal": "Governance-Aktion oder Abstimmung erforderlich",
+      "Bug": "Etwas ist kaputt."
     },
     "priorities": {
       "critical": "Kritisch",

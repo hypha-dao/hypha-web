@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { COHERENCE_SIGNAL_TYPES } from './coherence-types';
+import {
+  COHERENCE_SIGNAL_TYPES,
+  type CoherenceSignalType,
+} from './coherence-types';
 import { COHERENCE_PRIORITIES } from './coherence-priorities';
 
 const coherenceTagsSchema = z
@@ -123,8 +126,15 @@ const signalAttachmentsSchema = z
 
 import { parseCapitalKeys } from '../network/capitals';
 
+/** Accepts a legacy Impact evidence value and stores it as proof of action. */
+export const signalTypeSchema = z
+  .union([z.enum(COHERENCE_SIGNAL_TYPES), z.literal('Impact')])
+  .transform(
+    (value): CoherenceSignalType => (value === 'Impact' ? 'Action' : value),
+  );
+
 const coherenceSignalFields = {
-  type: z.enum(COHERENCE_SIGNAL_TYPES),
+  type: signalTypeSchema,
   priority: z.enum(COHERENCE_PRIORITIES),
   title: z
     .string()
@@ -262,7 +272,7 @@ const patchDueAtSchema = z
  */
 export const schemaIngestSignal = z
   .object({
-    type: z.enum(COHERENCE_SIGNAL_TYPES),
+    type: signalTypeSchema,
     priority: z.enum(COHERENCE_PRIORITIES).default('medium'),
     title: z.string().trim().min(1).max(50),
     description: z.string().trim().min(1).max(4000),
@@ -279,7 +289,7 @@ export const schemaIngestSignal = z
 
 export const schemaPatchIngestedSignal = z
   .object({
-    type: z.enum(COHERENCE_SIGNAL_TYPES).optional(),
+    type: signalTypeSchema.optional(),
     priority: z.enum(COHERENCE_PRIORITIES).optional(),
     title: z.string().trim().min(1).max(50).optional(),
     description: z.string().trim().min(1).max(4000).optional(),

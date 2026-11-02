@@ -204,12 +204,9 @@ describe('signalTypesForOrientation', () => {
       'Opportunity',
       'Insight',
     ]);
-    expect(signalTypesForOrientation('investor')).toEqual(['Impact']);
+    expect(signalTypesForOrientation('investor')).toEqual(['Action']);
     const member = new Set(signalTypesForOrientation('member'));
     for (const type of signalTypesForOrientation('builder')) {
-      expect(member.has(type)).toBe(false);
-    }
-    for (const type of signalTypesForOrientation('investor')) {
       expect(member.has(type)).toBe(false);
     }
   });

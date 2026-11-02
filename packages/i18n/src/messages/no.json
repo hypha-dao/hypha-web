@@ -4515,9 +4515,10 @@
       "Tension": "Spenning",
       "Risk": "Risiko",
       "Action": "Handlingsbevis",
-      "Impact": "Virkningsevidens",
+      "Impact": "Handlingsbevis",
       "Trend": "Trend",
-      "Proposal": "Forslag"
+      "Proposal": "Forslag",
+      "Bug": "Bug"
     },
     "typeDescriptions": {
       "Need": "Noen ber om en hånd.",
@@ -4526,10 +4527,11 @@
       "Insight": "Endrer hvordan vi ser ting.",
       "Tension": "Noe er ikke i samsvar.",
       "Risk": "Dette kan skade oss.",
-      "Action": "Hvor pengene gikk.",
+      "Action": "Historier og resultater i praksis.",
       "Impact": "Historier og resultater i praksis.",
       "Trend": "Fremvoksende mønster på tvers av rom",
-      "Proposal": "Styringshandling eller avstemning kreves"
+      "Proposal": "Styringshandling eller avstemning kreves",
+      "Bug": "Noe er ødelagt."
     },
     "priorities": {
       "critical": "Kritisk",

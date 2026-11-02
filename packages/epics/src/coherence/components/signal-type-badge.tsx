@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  canonicalSignalType,
   COHERENCE_SIGNAL_TYPES,
   COHERENCE_TYPE_OPTIONS,
 } from '@hypha-platform/core/client';
@@ -30,7 +31,7 @@ export function SignalTypeBadge({
   className,
 }: SignalTypeBadgeProps) {
   const t = useTranslations('CoherenceTab');
-  const value = type?.trim() ?? '';
+  const value = canonicalSignalType(type);
   if (!value) return null;
 
   if (!(COHERENCE_SIGNAL_TYPES as readonly string[]).includes(value)) {

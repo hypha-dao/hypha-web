@@ -1,5 +1,9 @@
 import { Coherence as DbCoherence } from '@hypha-platform/storage-postgres';
-import { COHERENCE_TYPES, CoherenceType } from '../../coherence-types';
+import {
+  canonicalSignalType,
+  COHERENCE_TYPES,
+  CoherenceType,
+} from '../../coherence-types';
 import { CoherenceTag } from '../../coherence-tags';
 import {
   COHERENCE_PRIORITIES,
@@ -70,9 +74,10 @@ export function normalizeCoherence({
   capitals,
   ...rest
 }: DbCoherence & { capitals?: unknown }): Coherence {
+  const signalType = canonicalSignalType(type);
   return {
-    type: (COHERENCE_TYPES as readonly string[]).includes(type)
-      ? (type as CoherenceType)
+    type: (COHERENCE_TYPES as readonly string[]).includes(signalType)
+      ? (signalType as CoherenceType)
       : 'Opportunity',
     priority:
       priority !== null &&

@@ -1,6 +1,6 @@
 import {
   ArrowUpRight,
-  BookOpen,
+  Bug,
   Flame,
   Layers,
   Lightbulb,
@@ -18,7 +18,7 @@ const SIGNAL_TYPE_ICONS: Record<string, LucideIcon> = {
   Tension: Flame,
   Risk: TriangleAlert,
   Action: Receipt,
-  Impact: BookOpen,
+  Bug,
 };
 
 /** Lucide icon for a signal type, shared by filters, chips, and cards. */

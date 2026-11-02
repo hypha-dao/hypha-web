@@ -14,15 +14,15 @@ export const NETWORK_HORIZON_CANDIDATE_LIMIT = 48;
 export const NETWORK_SIGNAL_TYPES = ['Need', 'Opportunity'] as const;
 
 /**
- * One way of showing up, one set of signals. The sets do not overlap, so a
- * builder feed never carries a member's needs and a funder's outcomes stay
- * with the investor role.
+ * One way of showing up, one set of signals. Builder signals stay out of the
+ * member feed. Proof of action now includes the stories that used to be
+ * impact evidence, so members and investors both follow it.
  */
 export function signalTypesForOrientation(
   orientation: 'member' | 'builder' | 'investor' | null | undefined,
 ): readonly string[] {
   if (orientation === 'builder') return ['Opportunity', 'Insight'];
-  if (orientation === 'investor') return ['Impact'];
+  if (orientation === 'investor') return ['Action'];
   if (orientation === 'member') return ['Need', 'Resource', 'Action'];
   return [];
 }

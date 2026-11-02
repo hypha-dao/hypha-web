@@ -3838,9 +3838,10 @@
       "Tension": "Tensão",
       "Risk": "Risco",
       "Action": "Prova de ação",
-      "Impact": "Evidência de impacto",
+      "Impact": "Prova de ação",
       "Trend": "Tendência",
-      "Proposal": "Proposta"
+      "Proposal": "Proposta",
+      "Bug": "Bug"
     },
     "typeDescriptions": {
       "Need": "Alguém pede uma mão.",
@@ -3849,10 +3850,11 @@
       "Insight": "Observação ou descoberta baseada em dados",
       "Tension": "Conflito ou desacordo que precisa de resolução",
       "Risk": "Ameaça, preocupação ou perigo",
-      "Action": "Para onde foi o dinheiro.",
+      "Action": "Histórias e resultados no mundo real.",
       "Impact": "Histórias e resultados no mundo real.",
       "Trend": "Padrão emergente entre espaços",
-      "Proposal": "Ação de governança ou voto necessário"
+      "Proposal": "Ação de governança ou voto necessário",
+      "Bug": "Algo está avariado."
     },
     "priorities": {
       "critical": "Crítica",
