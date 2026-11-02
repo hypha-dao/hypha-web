@@ -37,26 +37,55 @@ describe('space context catalog', () => {
       ratifiedDocumentId: null,
       chatRoomId: null,
     };
-    expect(isUntouchedRetiredDefaultRow(row)).toBe(true);
+    const untouched = (overrides: Record<string, unknown>) =>
+      isUntouchedRetiredDefaultRow({ ...row, ...overrides } as never);
+    expect(untouched({})).toBe(true);
+    expect(untouched({ sectionKey: 'how_we_decide' })).toBe(true);
+    expect(untouched({ sectionKey: 'mission' })).toBe(false);
+    expect(untouched({ markdown: '- Slack', status: 'draft' })).toBe(false);
+    expect(untouched({ chatRoomId: '!room:hypha' })).toBe(false);
+    expect(untouched({ sectionKey: 'custom-a1b2c3d4' })).toBe(false);
     expect(
-      isUntouchedRetiredDefaultRow({ ...row, sectionKey: 'how_we_decide' }),
-    ).toBe(true);
-    expect(
-      isUntouchedRetiredDefaultRow({ ...row, sectionKey: 'mission' }),
-    ).toBe(false);
-    expect(
-      isUntouchedRetiredDefaultRow({
-        ...row,
+      untouched({
+        status: 'ratified',
         markdown: '- Slack',
-        status: 'draft',
+        ratifiedDocumentId: 4,
+        ratifiedMarkdown: '- Slack',
       }),
     ).toBe(false);
+  });
+
+  it('hides a retired default the card renders as an empty Not started card', () => {
+    const row = {
+      sectionKey: 'tools',
+      markdown: '',
+      status: 'not_started',
+      pendingChange: null,
+      proposalDocumentId: null,
+      ratifiedDocumentId: null,
+      chatRoomId: null,
+    };
+    const untouched = (overrides: Record<string, unknown>) =>
+      isUntouchedRetiredDefaultRow({ ...row, ...overrides } as never);
+    // Agreement deleted: the column stays "ratified", the link is nulled,
+    // and the card rewrites that to Not started with no body.
+    const deletedAgreement = {
+      status: 'ratified',
+      ratifiedDocumentId: null,
+      ratifiedMarkdown: '',
+      markdown: '',
+    };
     expect(
-      isUntouchedRetiredDefaultRow({ ...row, chatRoomId: '!room:hypha' }),
-    ).toBe(false);
+      mapSectionRow({ ...row, ...deletedAgreement } as never)?.status,
+    ).toBe('not_started');
+    expect(untouched(deletedAgreement)).toBe(true);
     expect(
-      isUntouchedRetiredDefaultRow({ ...row, sectionKey: 'custom-a1b2c3d4' }),
-    ).toBe(false);
+      untouched({ ...deletedAgreement, sectionKey: 'how_we_decide' }),
+    ).toBe(true);
+    expect(untouched({ markdown: ' \n\t ' })).toBe(true);
+    expect(untouched({ markdown: '# Tools we use\n' })).toBe(true);
+    expect(untouched({ status: 'not started' })).toBe(true);
+    expect(untouched({ pendingChange: '' })).toBe(true);
   });
 
   it('still recognises every built-in section key', () => {

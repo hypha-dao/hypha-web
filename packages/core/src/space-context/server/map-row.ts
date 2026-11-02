@@ -8,7 +8,7 @@ import {
   type SpaceContextSectionKey,
   type SpaceContextStatus,
 } from '../constants';
-import { headingForSectionKey } from '../markdown';
+import { headingForSectionKey, stripMatchingLeadingHeading } from '../markdown';
 import type { SpaceContextSectionRecord } from '../types';
 
 function toIso(value: Date | string | null | undefined): string | null {
@@ -24,34 +24,6 @@ export function sectionTitleFromRow(
   const key = row.sectionKey as SpaceContextSectionKey;
   if (isBuiltinSpaceContextSectionKey(key)) return headingForSectionKey(key);
   return row.title?.trim() || headingForSectionKey(key);
-}
-
-/**
- * A built-in that is no longer seeded and was never written to, discussed or
- * proposed. Spaces seeded before it left the defaults still have this row.
- */
-export function isUntouchedRetiredDefaultRow(
-  row: Pick<
-    SpaceContextSection,
-    | 'sectionKey'
-    | 'markdown'
-    | 'status'
-    | 'pendingChange'
-    | 'proposalDocumentId'
-    | 'ratifiedDocumentId'
-    | 'chatRoomId'
-  >,
-): boolean {
-  return (
-    isBuiltinSpaceContextSectionKey(row.sectionKey) &&
-    !isDefaultSpaceContextSectionKey(row.sectionKey) &&
-    !row.markdown?.trim() &&
-    row.status === 'not_started' &&
-    row.pendingChange == null &&
-    row.proposalDocumentId == null &&
-    row.ratifiedDocumentId == null &&
-    !row.chatRoomId?.trim()
-  );
 }
 
 export function mapSectionRow(
@@ -113,4 +85,38 @@ export function mapSectionRow(
     contributorCount: extras?.contributorCount ?? 0,
     lastEditorName: extras?.lastEditorName ?? null,
   };
+}
+
+/**
+ * A built-in that is no longer seeded and that the Context page would render
+ * as an empty "Not started" card. Judged from the mapped record, so a raw
+ * status the card rewrites (a ratified section whose agreement was deleted,
+ * an unknown status) does not keep the card on screen. A draft, a proposal,
+ * a live ratification, a discussion room, or any visible text keeps it.
+ */
+export function isUntouchedRetiredDefaultRow(
+  row: SpaceContextSection,
+): boolean {
+  if (
+    !isBuiltinSpaceContextSectionKey(row.sectionKey) ||
+    isDefaultSpaceContextSectionKey(row.sectionKey)
+  ) {
+    return false;
+  }
+  const mapped = mapSectionRow(row);
+  if (!mapped || mapped.status !== 'not_started' || mapped.pendingChange) {
+    return false;
+  }
+  if (
+    mapped.proposalDocumentId != null ||
+    mapped.ratifiedDocumentId != null ||
+    mapped.chatRoomId
+  ) {
+    return false;
+  }
+  const visible = stripMatchingLeadingHeading(
+    mapped.markdown,
+    mapped.title,
+  ).trim();
+  return visible.length === 0;
 }
