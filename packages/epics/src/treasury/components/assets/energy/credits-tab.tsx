@@ -7,18 +7,22 @@ import { EnergyPersonCard, GridOperatorCard } from './shared';
 import { ENERGY_PALETTE } from './charts';
 import {
   formatStablecoinMicro,
+  UNAVAILABLE,
   resolveEnergyParticipantDisplay,
+  resolveEnergyPersonId,
 } from './format';
 import type { EnergyTabProps } from './energy-tab-props';
 import { energyAvatarLoading } from './energy-tab-props';
 
+/** `null` amounts failed to load on-chain; they are not zero. */
 type Row = {
   address: string;
-  toSettleMicro: bigint;
-  creditMicro: bigint;
+  toSettleMicro: bigint | null;
+  creditMicro: bigint | null;
 };
 
 const toBigInt = (value: string | null | undefined) => {
+  if (value === null) return null;
   if (!value) return 0n;
   try {
     return BigInt(value);
@@ -43,12 +47,14 @@ const internalToStablecoinMicro = (internal: bigint) => {
 
 const sortRows = (a: Row, b: Row) => {
   const rank = (row: Row) =>
-    row.toSettleMicro > 0n ? 2 : row.creditMicro > 0n ? 1 : 0;
+    (row.toSettleMicro ?? 0n) > 0n ? 2 : (row.creditMicro ?? 0n) > 0n ? 1 : 0;
   const rankDiff = rank(b) - rank(a);
   if (rankDiff !== 0) return rankDiff;
 
   const magnitude = (row: Row) =>
-    row.toSettleMicro > 0n ? row.toSettleMicro : row.creditMicro;
+    (row.toSettleMicro ?? 0n) > 0n
+      ? row.toSettleMicro ?? 0n
+      : row.creditMicro ?? 0n;
   const aMag = magnitude(a);
   const bMag = magnitude(b);
   if (aMag > bMag) return -1;
@@ -58,9 +64,12 @@ const sortRows = (a: Row, b: Row) => {
 
 export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
   const t = useTranslations('Energy.credits');
+  const tShared = useTranslations('Energy.shared');
+  const rosterUnavailable = data.memberAddressesOk === false;
   const details = data.memberDetails ?? [];
   const participantProfiles = data.participantProfiles;
   const gridOperator = data.roles?.gridOperator ?? null;
+  const gridBalanceUnavailable = data.overview?.gridBalance === null;
   const gridBalanceInternal = toSignedBigInt(data.overview?.gridBalance);
 
   const rows = React.useMemo(() => {
@@ -82,12 +91,26 @@ export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
       ? internalToStablecoinMicro(gridBalanceInternal)
       : 0n;
 
+  const rosterUnavailableMessage = (
+    <p className="text-2 text-neutral-11">{tShared('memberListUnavailable')}</p>
+  );
+
+  if (rosterUnavailable && !gridOperator) {
+    return rosterUnavailableMessage;
+  }
+
   if (!details.length && !gridOperator) {
     return <p className="text-2 text-neutral-11">{t('noBalances')}</p>;
   }
 
-  const totalToSettle = rows.reduce((acc, r) => acc + r.toSettleMicro, 0n);
-  const totalCredit = rows.reduce((acc, r) => acc + r.creditMicro, 0n);
+  // A partial sum would understate what is owed, so any missing amount (or
+  // roster) makes the totals unavailable.
+  const sumOrNull = (values: (bigint | null)[]) =>
+    rosterUnavailable || values.some((value) => value === null)
+      ? null
+      : values.reduce<bigint>((acc, value) => acc + (value ?? 0n), 0n);
+  const totalToSettle = sumOrNull(rows.map((r) => r.toSettleMicro));
+  const totalCredit = sumOrNull(rows.map((r) => r.creditMicro));
 
   const eurcAmount = (micro: bigint) =>
     `${formatStablecoinMicro(micro.toString())} EURC`;
@@ -101,7 +124,7 @@ export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
             className="mt-1 text-5 font-semibold"
             style={{ color: ENERGY_PALETTE[4] }}
           >
-            {formatStablecoinMicro(totalToSettle.toString())}
+            {formatStablecoinMicro(totalToSettle?.toString())}
           </p>
         </div>
         <div className="craft-card p-4">
@@ -110,7 +133,7 @@ export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
             className="mt-1 text-5 font-semibold"
             style={{ color: ENERGY_PALETTE[1] }}
           >
-            {formatStablecoinMicro(totalCredit.toString())}
+            {formatStablecoinMicro(totalCredit?.toString())}
           </p>
         </div>
       </div>
@@ -142,7 +165,9 @@ export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
                       })}
                     </p>
                   ) : null}
-                  {gridToSettleMicro === 0n && gridReceivableMicro === 0n ? (
+                  {gridBalanceUnavailable ? (
+                    <p className="font-medium text-neutral-11">{UNAVAILABLE}</p>
+                  ) : gridToSettleMicro === 0n && gridReceivableMicro === 0n ? (
                     <p className="font-medium text-neutral-11">
                       {t('balanced')}
                     </p>
@@ -155,7 +180,9 @@ export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
         </Card>
       ) : null}
 
-      {rows.length ? (
+      {rosterUnavailable ? (
+        rosterUnavailableMessage
+      ) : rows.length ? (
         <Card>
           <CardHeader>
             <CardTitle>{t('memberSettlement')}</CardTitle>
@@ -172,6 +199,11 @@ export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
                   <EnergyPersonCard
                     address={row.address}
                     person={people[row.address.toLowerCase()]}
+                    personId={resolveEnergyPersonId(
+                      row.address,
+                      people,
+                      participantProfiles,
+                    )}
                     displayName={display.displayName}
                     avatarUrl={display.avatarUrl}
                     subtitle={display.subtitle}
@@ -182,31 +214,41 @@ export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
                     )}
                     right={
                       <div className="text-right">
-                        {row.toSettleMicro > 0n ? (
-                          <p
-                            className="font-medium"
-                            style={{ color: ENERGY_PALETTE[4] }}
-                          >
-                            {t('toSettle', {
-                              amount: eurcAmount(row.toSettleMicro),
-                            })}
-                          </p>
-                        ) : null}
-                        {row.creditMicro > 0n ? (
-                          <p
-                            className="font-medium"
-                            style={{ color: ENERGY_PALETTE[1] }}
-                          >
-                            {t('receivable', {
-                              amount: eurcAmount(row.creditMicro),
-                            })}
-                          </p>
-                        ) : null}
-                        {row.toSettleMicro === 0n && row.creditMicro === 0n ? (
+                        {row.toSettleMicro === null ||
+                        row.creditMicro === null ? (
                           <p className="font-medium text-neutral-11">
-                            {t('zeroEurc')}
+                            {UNAVAILABLE}
                           </p>
-                        ) : null}
+                        ) : (
+                          <>
+                            {row.toSettleMicro > 0n ? (
+                              <p
+                                className="font-medium"
+                                style={{ color: ENERGY_PALETTE[4] }}
+                              >
+                                {t('toSettle', {
+                                  amount: eurcAmount(row.toSettleMicro),
+                                })}
+                              </p>
+                            ) : null}
+                            {row.creditMicro > 0n ? (
+                              <p
+                                className="font-medium"
+                                style={{ color: ENERGY_PALETTE[1] }}
+                              >
+                                {t('receivable', {
+                                  amount: eurcAmount(row.creditMicro),
+                                })}
+                              </p>
+                            ) : null}
+                            {row.toSettleMicro === 0n &&
+                            row.creditMicro === 0n ? (
+                              <p className="font-medium text-neutral-11">
+                                {t('zeroEurc')}
+                              </p>
+                            ) : null}
+                          </>
+                        )}
                       </div>
                     }
                   />

@@ -13,8 +13,10 @@ import { type EnergyPerson } from './use-energy-people';
 import {
   formatBpsPct,
   resolveEnergyParticipantDisplay,
+  resolveEnergyPersonId,
   sourceDisplayName,
   shortAddr,
+  UNAVAILABLE,
 } from './format';
 import {
   buildSourceProductionSeries,
@@ -34,8 +36,11 @@ type SourceGroup = {
   name: string;
   /** Index of this source in the registered source list (`data.sources`). */
   sourceIndex: number;
-  /** On-chain internal price units: value / 100 = stablecoin per kWh. */
-  basePricePerKwh: number;
+  /**
+   * On-chain internal price units: value / 100 = stablecoin per kWh.
+   * Null when this source was not in the loaded source list.
+   */
+  basePricePerKwh: number | null;
   owners: Owner[];
 };
 
@@ -50,13 +55,14 @@ const useSourceProduction = (
   sourceName: string,
   granularity: Granularity,
   locale: string,
+  enabled = true,
 ) => {
   const cfg = granularityConfig(granularity);
   const {
     data: telemetry,
     isLoading,
     error,
-  } = useSpaceEnergyTelemetry(cfg.period);
+  } = useSpaceEnergyTelemetry(cfg.period, { enabled });
 
   const live = Boolean(
     telemetry?.enabled && telemetry.configured && !error && telemetry.dataFrom,
@@ -132,11 +138,14 @@ const OwnerEarningsChart = ({
     locale,
   );
 
-  const earnings = earningsFromProduction(
-    production.values,
-    group.basePricePerKwh,
-    owner.bps,
-  );
+  const earnings =
+    group.basePricePerKwh === null
+      ? []
+      : earningsFromProduction(
+          production.values,
+          group.basePricePerKwh,
+          owner.bps,
+        );
   const total = earnings.reduce((a, b) => a + b, 0);
 
   const series: ChartSeries[] = [
@@ -197,6 +206,7 @@ const OwnerEarningsRow = ({
   totalEarned,
   totalIsPlaceholder,
   earningsLoading,
+  earningsUnavailable,
 }: {
   group: SourceGroup;
   owner: Owner;
@@ -205,9 +215,10 @@ const OwnerEarningsRow = ({
   personId?: number;
   isLoading?: boolean;
   accent: string;
-  totalEarned: number;
+  totalEarned: number | null;
   totalIsPlaceholder: boolean;
   earningsLoading?: boolean;
+  earningsUnavailable: boolean;
 }) => {
   const t = useTranslations('Energy.ownership');
   const [expanded, setExpanded] = React.useState(false);
@@ -230,7 +241,9 @@ const OwnerEarningsRow = ({
         />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{displayName}</p>
-          {earningsLoading ? (
+          {earningsUnavailable || totalEarned === null ? (
+            <p className="truncate text-1 text-neutral-11">{UNAVAILABLE}</p>
+          ) : earningsLoading ? (
             <EnergyTextSkeleton className="mt-1 w-48" />
           ) : (
             <p className="truncate text-1 text-neutral-11">
@@ -257,7 +270,13 @@ const OwnerEarningsRow = ({
         />
       </button>
       {expanded ? (
-        <OwnerEarningsChart group={group} owner={owner} accent={accent} />
+        earningsUnavailable ? (
+          <p className="border-t border-border px-3 pb-3 pt-3 text-1 text-neutral-11">
+            {t('earningsUnavailable')}
+          </p>
+        ) : (
+          <OwnerEarningsChart group={group} owner={owner} accent={accent} />
+        )
       ) : null}
     </div>
   );
@@ -269,12 +288,14 @@ const SourceOwnershipCard = ({
   people,
   participantProfiles,
   peopleLoading,
+  earningsUnavailable,
 }: {
   group: SourceGroup;
   accent: string;
   people: Record<string, EnergyPerson | null>;
   participantProfiles?: Record<string, EnergyParticipantProfile>;
   peopleLoading: boolean;
+  earningsUnavailable: boolean;
 }) => {
   const locale = useLocale();
   const t = useTranslations('Energy.ownership');
@@ -284,6 +305,7 @@ const SourceOwnershipCard = ({
     group.name,
     'monthly',
     locale,
+    !earningsUnavailable,
   );
   const totalProductionKwh = production.values.reduce((a, b) => a + b, 0);
 
@@ -312,7 +334,11 @@ const SourceOwnershipCard = ({
               owner={owner}
               displayName={display.displayName}
               avatarUrl={display.avatarUrl}
-              personId={people[owner.address.toLowerCase()]?.id}
+              personId={resolveEnergyPersonId(
+                owner.address,
+                people,
+                participantProfiles,
+              )}
               isLoading={energyAvatarLoading(
                 owner.address,
                 peopleLoading,
@@ -320,16 +346,21 @@ const SourceOwnershipCard = ({
               )}
               accent={accent}
               totalEarned={
-                totalProductionKwh *
-                (group.basePricePerKwh / 100) *
-                (owner.bps / 10_000)
+                group.basePricePerKwh === null
+                  ? null
+                  : totalProductionKwh *
+                    (group.basePricePerKwh / 100) *
+                    (owner.bps / 10_000)
               }
               totalIsPlaceholder={production.isPlaceholder}
               earningsLoading={production.isLoading}
+              earningsUnavailable={earningsUnavailable}
             />
           );
         })}
-        {production.isLoading ? (
+        {earningsUnavailable ? (
+          <p className="text-1 text-neutral-11">{t('earningsUnavailable')}</p>
+        ) : production.isLoading ? (
           <EnergyTextSkeleton className="w-64" />
         ) : (
           <p className="text-1 text-neutral-11">
@@ -410,7 +441,7 @@ export const OwnershipTab = ({
             meta?.displayName,
           ),
           sourceIndex: meta?.index ?? index,
-          basePricePerKwh: meta?.basePricePerKwh ?? 0,
+          basePricePerKwh: meta ? meta.basePricePerKwh : null,
           owners: value.owners.sort((a, b) => b.bps - a.bps),
         };
       });
@@ -418,6 +449,21 @@ export const OwnershipTab = ({
   }, [details, sourceMeta, tShared]);
 
   const participantProfiles = data.participantProfiles;
+
+  if (data.memberAddressesOk === false) {
+    return (
+      <p className="text-2 text-neutral-11">
+        {tShared('memberListUnavailable')}
+      </p>
+    );
+  }
+
+  // An empty or partial grouping would misstate who owns the sources.
+  if (details.some((member) => member.ownershipsOk === false)) {
+    return (
+      <p className="text-2 text-neutral-11">{t('ownershipUnavailable')}</p>
+    );
+  }
 
   if (!groups.length) {
     return <p className="text-2 text-neutral-11">{t('noOwnership')}</p>;
@@ -433,6 +479,7 @@ export const OwnershipTab = ({
           people={people}
           participantProfiles={participantProfiles}
           peopleLoading={peopleLoading}
+          earningsUnavailable={group.basePricePerKwh === null}
         />
       ))}
     </div>

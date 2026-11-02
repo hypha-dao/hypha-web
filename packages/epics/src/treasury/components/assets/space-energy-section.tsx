@@ -7,9 +7,13 @@ import { UsersIcon, ZapIcon, CoinsIcon } from 'lucide-react';
 import { useSpaceEnergy } from '../../hooks/use-space-energy';
 import { StatCard } from './energy/shared';
 import { ENERGY_PALETTE } from './energy/charts';
-import { formatStablecoinMicro } from './energy/format';
+import { formatStablecoinMicro, UNAVAILABLE } from './energy/format';
 import { EnergyOverviewTab } from './energy/overview-tab';
-import { ProductionConsumptionTab } from './energy/production-consumption-tab';
+import {
+  PRODUCTION_DEFAULT_TIMEFRAME,
+  ProductionConsumptionTab,
+} from './energy/production-consumption-tab';
+import { useSpaceEnergyTelemetry } from '../../hooks/use-space-energy-telemetry';
 import { OwnershipTab } from './energy/ownership-tab';
 import { CreditsTab } from './energy/credits-tab';
 import { useEnergyPeople } from './energy/use-energy-people';
@@ -24,6 +28,15 @@ export const SpaceEnergySection = () => {
   const { data, isLoading } = useSpaceEnergy();
   const [tab, setTab] = React.useState<string>('overview');
 
+  // Start telemetry with the overview so the Production tab and the consumer
+  // cards (daily = 30d) open from cache. The tabs themselves poll.
+  const prefetchTelemetry = {
+    enabled: Boolean(data?.enabled),
+    refreshInterval: 0,
+  };
+  useSpaceEnergyTelemetry(PRODUCTION_DEFAULT_TIMEFRAME, prefetchTelemetry);
+  useSpaceEnergyTelemetry('30d', prefetchTelemetry);
+
   const memberAddresses = React.useMemo(
     () =>
       data?.enabled && data.members
@@ -32,7 +45,17 @@ export const SpaceEnergySection = () => {
     [data?.enabled, data?.members],
   );
 
-  const { people, isLoading: peopleLoading } = useEnergyPeople(memberAddresses);
+  const unresolvedMemberAddresses = React.useMemo(
+    () =>
+      memberAddresses.filter(
+        (address) => !data?.participantProfiles?.[address]?.displayName,
+      ),
+    [data?.participantProfiles, memberAddresses],
+  );
+
+  const { people, isLoading: peopleLoading } = useEnergyPeople(
+    unresolvedMemberAddresses,
+  );
 
   const avatarUrls = React.useMemo(() => {
     const urls = new Set<string>();
@@ -73,13 +96,13 @@ export const SpaceEnergySection = () => {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard
           label={tOverview('statConsumers')}
-          value={consumerCount}
+          value={data.memberAddressesOk === false ? UNAVAILABLE : consumerCount}
           accent={ENERGY_PALETTE[2]}
           icon={<UsersIcon size={16} />}
         />
         <StatCard
           label={tOverview('statSources')}
-          value={overview.sourceCount}
+          value={data.sourcesOk === false ? UNAVAILABLE : overview.sourceCount}
           accent={ENERGY_PALETTE[0]}
           icon={<ZapIcon size={16} />}
         />
