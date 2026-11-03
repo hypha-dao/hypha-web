@@ -2391,7 +2391,7 @@ export function MyConnections({
   // (a partial cache must not hide the rest of the inbox).
   const titlesLoading =
     peopleBySubLoading ||
-    (!jwt && pendingSubs.length > 0) ||
+    (!jwt && pendingSubs.size > 0) ||
     (peerSubs.length > 0 && !jwt && peopleBySub.size === 0);
   const hasMatrixConversations =
     rows.some((row) => row.kind === 'person' || row.kind === 'group') ||
