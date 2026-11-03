@@ -4389,7 +4389,7 @@
     "spaceMemoryOutline": "Inhalt",
     "newMemoryUploadDocumentsTitle": "Dokumente hochladen",
     "newMemoryUploadingFiles": "Space-Memories werden hochgeladen...",
-    "newMemoryAttachmentsRequired": "Bitte laden Sie mindestens ein Dokument für diese Erinnerung hoch.",
+    "newMemoryAttachmentsRequired": "Bitte fügen Sie mindestens ein Bild, einen Videolink oder ein Dokument für diese Erinnerung hinzu.",
     "newMemory": "Neue Erinnerung",
     "spaceMemoryEmptyTab": "In dieser Ansicht wurden keine Einträge gefunden.",
     "spaceMemoryAiChatEmpty": "AI-Chat-Erinnerungen sind noch nicht verfügbar.",
@@ -4773,7 +4773,8 @@
     "spaceMemoryConversationsBody": "Geschriebene Gesprächszusammenfassungen.",
     "spaceMemoryCallsBody": "Anrufaufzeichnungen und Transkripte.",
     "spaceMemoryAiDiscussionsBody": "Erinnerungen aus dem KI-Chat.",
-    "spaceMemoryFilesBody": "Uploads und Anhänge."
+    "spaceMemoryFilesBody": "Uploads und Anhänge.",
+    "newMemoryDocumentHint": "PDF — max. 16 MB"
   },
   "GlobalCallDock": {
     "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",

@@ -4391,7 +4391,7 @@
     "spaceMemoryOutline": "Overzicht",
     "newMemoryUploadDocumentsTitle": "Documenten uploaden",
     "newMemoryUploadingFiles": "Ruimteherinneringen uploaden...",
-    "newMemoryAttachmentsRequired": "Upload ten minste één document voor dit geheugen.",
+    "newMemoryAttachmentsRequired": "Voeg ten minste één afbeelding, videolink of document toe voor dit geheugen.",
     "newMemory": "Nieuw geheugen",
     "tagGroup": {
       "purpose": "Doel & strategie",
@@ -4775,7 +4775,8 @@
     "spaceMemoryConversationsBody": "Geschreven gespreksamenvattingen.",
     "spaceMemoryCallsBody": "Gespreksopnamen en transcripties.",
     "spaceMemoryAiDiscussionsBody": "Herinneringen uit AI-chat.",
-    "spaceMemoryFilesBody": "Uploads en bijlagen."
+    "spaceMemoryFilesBody": "Uploads en bijlagen.",
+    "newMemoryDocumentHint": "PDF — max. 16 MB"
   },
   "GlobalCallDock": {
     "callTitle": "Oproep - {count, plural, one {# lid} other {# leden}}",

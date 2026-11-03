@@ -3817,7 +3817,7 @@
     "spaceMemoryOutline": "Índice",
     "newMemoryUploadDocumentsTitle": "Carregar documentos",
     "newMemoryUploadingFiles": "A carregar memórias do espaço...",
-    "newMemoryAttachmentsRequired": "Carregue pelo menos um documento para esta memória.",
+    "newMemoryAttachmentsRequired": "Adicione pelo menos uma imagem, um link de vídeo ou um documento para esta memória.",
     "newMemory": "Nova memória",
     "spaceMemoryEmptyTab": "Nenhum item encontrado nesta visualização.",
     "spaceMemoryAiChatEmpty": "As memórias do chat com IA ainda não estão disponíveis.",
@@ -4199,7 +4199,8 @@
     "spaceMemoryConversationsBody": "Resumos escritos de conversas.",
     "spaceMemoryCallsBody": "Gravações e transcrições de chamadas.",
     "spaceMemoryAiDiscussionsBody": "Memórias do chat com IA.",
-    "spaceMemoryFilesBody": "Envios e anexos."
+    "spaceMemoryFilesBody": "Envios e anexos.",
+    "newMemoryDocumentHint": "PDF — máx. 16 MB"
   },
   "GlobalCallDock": {
     "callTitle": "Chamada - {count, plural, one {# membro} other {# membros}}",

@@ -4420,8 +4420,9 @@
     "spaceMemoryFilesHint": "Uploads and attachments, when you need the detail.",
     "spaceMemoryOutline": "Outline",
     "newMemoryUploadDocumentsTitle": "Upload Documents",
+    "newMemoryDocumentHint": "PDF — max 16MB",
     "newMemoryUploadingFiles": "Uploading space memories...",
-    "newMemoryAttachmentsRequired": "Please upload at least one document for this memory.",
+    "newMemoryAttachmentsRequired": "Please add at least one image, video link, or document for this memory.",
     "newMemory": "New memory",
     "tagGroup": {
       "purpose": "Purpose & strategy",

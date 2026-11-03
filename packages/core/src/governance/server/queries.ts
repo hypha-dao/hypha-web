@@ -84,6 +84,7 @@ export const mapToDocument = (
     slug: dbDocument.slug ?? '',
     state: dbDocument.state as DocumentState,
     leadImage: dbDocument.leadImage || '',
+    videoUrl: dbDocument.videoUrl ?? null,
     attachments: dbDocument.attachments || [],
     createdAt: dbDocument.createdAt,
     updatedAt: dbDocument.updatedAt,

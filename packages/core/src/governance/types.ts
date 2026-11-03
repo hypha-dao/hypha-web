@@ -46,6 +46,8 @@ export type Document = {
   updatedAt: Date;
   creator?: Creator;
   leadImage?: string;
+  /** YouTube / Vimeo / direct video link (Space Memory mirrors Signals). */
+  videoUrl?: string | null;
   attachments?: (string | Attachment)[];
   web3ProposalId: number | null;
   label?: string;
@@ -58,6 +60,7 @@ export interface CreateAgreementInput {
   title: string;
   description: string;
   leadImage?: string;
+  videoUrl?: string | null;
   attachments?: (string | Attachment)[];
   web3ProposalId?: number;
   state?: DocumentState;
@@ -69,6 +72,7 @@ export interface CreateAgreementInput {
 
 export interface UpdateAgreementInput {
   leadImage?: string;
+  videoUrl?: string | null;
   slug?: string;
   attachments?: (string | Attachment)[];
   web3ProposalId?: number | null;

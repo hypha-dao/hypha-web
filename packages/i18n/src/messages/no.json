@@ -4390,7 +4390,7 @@
     "spaceMemoryOutline": "Oversikt",
     "newMemoryUploadDocumentsTitle": "Last opp dokumenter",
     "newMemoryUploadingFiles": "Laster opp romminner...",
-    "newMemoryAttachmentsRequired": "Last opp minst ett dokument for dette minnet.",
+    "newMemoryAttachmentsRequired": "Legg til minst ett bilde, videolink eller dokument for dette minnet.",
     "newMemory": "Nytt minne",
     "tagGroup": {
       "purpose": "Formål og strategi",
@@ -4774,7 +4774,8 @@
     "spaceMemoryConversationsBody": "Skrevne samtalesammendrag.",
     "spaceMemoryCallsBody": "Samtaleopptak og transkripsjoner.",
     "spaceMemoryAiDiscussionsBody": "Minner fra AI-chat.",
-    "spaceMemoryFilesBody": "Opplastinger og vedlegg."
+    "spaceMemoryFilesBody": "Opplastinger og vedlegg.",
+    "newMemoryDocumentHint": "PDF — maks. 16 MB"
   },
   "GlobalCallDock": {
     "callTitle": "Samtale - {count, plural, one {# medlem} other {# medlemmer}}",

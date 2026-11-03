@@ -3346,6 +3346,8 @@
     "replyingTo": "Réponse à {author}",
     "replyDismiss": "Annuler la réponse",
     "replyOriginalUnavailable": "Message d’origine indisponible",
+    "messageReadMore": "Lire la suite",
+    "messageShowLess": "Réduire",
     "replyJumpToOriginal": "Aller au message d’origine",
     "moreButton": "Plus",
     "composerAttachMenu": "Ajouter une pièce jointe",
@@ -3815,7 +3817,7 @@
     "spaceMemoryOutline": "Sommaire",
     "newMemoryUploadDocumentsTitle": "Téléverser des documents",
     "newMemoryUploadingFiles": "Téléversement des souvenirs de l'espace...",
-    "newMemoryAttachmentsRequired": "Veuillez téléverser au moins un document pour ce souvenir.",
+    "newMemoryAttachmentsRequired": "Veuillez ajouter au moins une image, un lien vidéo ou un document pour ce souvenir.",
     "newMemory": "Nouvelle mémoire",
     "spaceMemoryEmptyTab": "Aucun élément trouvé dans cette vue.",
     "spaceMemoryAiChatEmpty": "Les mémoires du chat IA ne sont pas encore disponibles.",
@@ -4197,7 +4199,8 @@
     "spaceMemoryConversationsBody": "Résumés écrits de conversations.",
     "spaceMemoryCallsBody": "Enregistrements et transcriptions d’appels.",
     "spaceMemoryAiDiscussionsBody": "Mémoires du chat IA.",
-    "spaceMemoryFilesBody": "Téléversements et pièces jointes."
+    "spaceMemoryFilesBody": "Téléversements et pièces jointes.",
+    "newMemoryDocumentHint": "PDF — max. 16 Mo"
   },
   "GlobalCallDock": {
     "callTitle": "Appel - {count, plural, one {# membre} other {# membres}}",

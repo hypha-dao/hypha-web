@@ -3831,7 +3831,7 @@
     "spaceMemoryOutline": "Índice",
     "newMemoryUploadDocumentsTitle": "Subir documentos",
     "newMemoryUploadingFiles": "Subiendo recuerdos del espacio...",
-    "newMemoryAttachmentsRequired": "Sube al menos un documento para este recuerdo.",
+    "newMemoryAttachmentsRequired": "Añade al menos una imagen, un enlace de vídeo o un documento para este recuerdo.",
     "newMemory": "Nueva memoria",
     "spaceMemoryEmptyTab": "No se encontraron elementos en esta vista.",
     "spaceMemoryAiChatEmpty": "Las memorias del chat con IA aún no están disponibles.",
@@ -4215,7 +4215,8 @@
     "spaceMemoryConversationsBody": "Resúmenes escritos de conversaciones.",
     "spaceMemoryCallsBody": "Grabaciones y transcripciones de llamadas.",
     "spaceMemoryAiDiscussionsBody": "Memorias del chat con IA.",
-    "spaceMemoryFilesBody": "Cargas y archivos adjuntos."
+    "spaceMemoryFilesBody": "Cargas y archivos adjuntos.",
+    "newMemoryDocumentHint": "PDF — máx. 16 MB"
   },
   "GlobalCallDock": {
     "callTitle": "Llamada - {count, plural, one {# miembro} other {# miembros}}",

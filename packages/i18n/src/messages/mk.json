@@ -4372,7 +4372,7 @@
     "spaceMemoryOutline": "Содржина",
     "newMemoryUploadDocumentsTitle": "Прикачи документи",
     "newMemoryUploadingFiles": "Се прикачуваат мемории на просторот...",
-    "newMemoryAttachmentsRequired": "Ве молиме прикачете барем еден документ за оваа меморија.",
+    "newMemoryAttachmentsRequired": "Ве молиме додадете барем една слика, видео линк или документ за оваа меморија.",
     "newMemory": "Нова меморија",
     "tagGroup": {
       "purpose": "Цел и стратегија",
@@ -4756,7 +4756,8 @@
     "spaceMemoryConversationsBody": "Запишани резимеа од разговори.",
     "spaceMemoryCallsBody": "Снимки и транскрипти од повици.",
     "spaceMemoryAiDiscussionsBody": "Мемории од AI разговор.",
-    "spaceMemoryFilesBody": "Прикачувања и прилози."
+    "spaceMemoryFilesBody": "Прикачувања и прилози.",
+    "newMemoryDocumentHint": "PDF — макс. 16 MB"
   },
   "GlobalCallDock": {
     "callTitle": "Повик - {count, plural, one {# член} other {# членови}}",

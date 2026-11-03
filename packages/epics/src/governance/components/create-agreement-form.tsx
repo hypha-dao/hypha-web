@@ -32,9 +32,15 @@ const baseCreateAgreementFormSchema =
   schemaCreateAgreementForm.extend(createAgreementFiles);
 
 const schemaCreateMemoryForm = baseCreateAgreementFormSchema.refine(
-  (data) => (data.attachments?.length ?? 0) > 0,
+  (data) => {
+    const hasAttachments = (data.attachments?.length ?? 0) > 0;
+    const videoUrl =
+      typeof data.videoUrl === 'string' ? data.videoUrl.trim() : '';
+    return hasAttachments || videoUrl.length > 0;
+  },
   {
-    message: 'Please upload at least one document for this memory.',
+    message:
+      'Please add at least one image, video link, or document for this memory.',
     path: ['attachments'],
   },
 );
@@ -102,6 +108,7 @@ export const CreateAgreementForm = ({
       title: '',
       description: '',
       leadImage: undefined,
+      videoUrl: '',
       attachments: undefined,
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
