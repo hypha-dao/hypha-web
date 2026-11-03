@@ -562,26 +562,36 @@ export type SpaceCallTranscriptDetail = {
   occurred_at: string;
 };
 
-/** Full transcript text for the Space Memory detail view, behind the org-memory access gate. */
+/**
+ * Full transcript text for the Space Memory detail view. Off-chain spaces have
+ * no on-chain visibility rule, so they require a signed-in member.
+ */
 export async function getSpaceCallTranscriptForMember(
   { spaceSlug, transcriptId }: { spaceSlug: string; transcriptId: number },
   { db, authToken }: DbConfig & { authToken?: string },
 ): Promise<
   | { access: 'ok'; transcript: SpaceCallTranscriptDetail | null }
-  | { access: 'denied'; message: string }
+  | { access: 'denied'; message: string; httpStatus: number }
 > {
   const host = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
   if (!host) return { access: 'ok', transcript: null };
 
-  if (host.web3SpaceId != null) {
-    if (!canConvertToBigInt(host.web3SpaceId)) {
-      return {
-        access: 'denied',
-        message: `Space "${host.slug}" has an invalid on-chain space id.`,
-      };
-    }
-    const gate = await checkSpaceAccessForSpace(host, authToken);
-    if (!gate.hasAccess) return { access: 'denied', message: gate.message };
+  if (host.web3SpaceId != null && !canConvertToBigInt(host.web3SpaceId)) {
+    return {
+      access: 'denied',
+      message: `Space "${host.slug}" has an invalid on-chain space id.`,
+      httpStatus: 403,
+    };
+  }
+  const gate = await checkSpaceAccessForSpace(host, authToken, {
+    requireMembershipWhenOffChain: true,
+  });
+  if (!gate.hasAccess) {
+    return {
+      access: 'denied',
+      message: gate.message,
+      httpStatus: gate.httpStatus,
+    };
   }
 
   const row = (await getSpaceCallArtifactById(

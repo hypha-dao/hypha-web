@@ -46,7 +46,10 @@ export async function GET(
       { db, authToken },
     );
     if (gated.access === 'denied') {
-      return NextResponse.json({ error: gated.message }, { status: 403 });
+      return NextResponse.json(
+        { error: gated.message },
+        { status: gated.httpStatus },
+      );
     }
     if (!gated.transcript) {
       return NextResponse.json(
