@@ -1871,6 +1871,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           navigationTarget.coherenceChat.roomId,
           navigationTarget.coherenceChat.title,
           navigationTarget.coherenceChat.slug,
+          null,
+          null,
+          { channel: 'signal' },
         );
         openHumanChatPanel();
       }
@@ -1904,6 +1907,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           navigationTarget.coherenceChat.roomId,
           navigationTarget.coherenceChat.title,
           navigationTarget.coherenceChat.slug,
+          null,
+          null,
+          { channel: 'signal' },
         );
       }
       openHumanChatPanel();

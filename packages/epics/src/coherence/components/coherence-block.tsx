@@ -265,6 +265,8 @@ export function CoherenceBlock({
         signal.title ?? '',
         slug,
         signal.description ?? null,
+        null,
+        { channel: 'signal' },
       );
       if (!slug || typeof window === 'undefined') return;
       const href = setSignalSearchParam(pathname, window.location.search, slug);

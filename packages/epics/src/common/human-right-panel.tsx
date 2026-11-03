@@ -2598,10 +2598,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         if (sub) mxid = subToMatrixUserId[sub]?.trim();
       }
       if (!mxid) continue;
-      m.set(mxid, personRosterLabel(p, t('unknownMember')));
+      // Empty fallback — never stash i18n "Unknown" as a resolved roster label.
+      m.set(mxid, personRosterLabel(p, ''));
     }
     return m;
-  }, [spaceMembers, personIdToMatrixUserId, subToMatrixUserId, t]);
+  }, [spaceMembers, personIdToMatrixUserId, subToMatrixUserId]);
 
   /** Hypha profile photos keyed by Matrix MXID — preferred over Matrix MXC avatars in the timeline. */
   const matrixUserIdToPersonAvatar = useMemo(() => {
@@ -2627,10 +2628,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     for (const p of spaceMembers) {
       const sub = p.sub?.trim();
       if (!sub) continue;
-      m.set(sub, personRosterLabel(p, t('unknownMember')));
+      // Empty fallback — never stash i18n "Unknown" as a resolved roster label.
+      m.set(sub, personRosterLabel(p, ''));
     }
     return m;
-  }, [spaceMembers, t]);
+  }, [spaceMembers]);
 
   const personAvatarByPrivySub = useMemo(() => {
     const m = new Map<string, string>();
@@ -2912,9 +2914,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const isSignalThread = mode === 'coherence' && Boolean(coherenceSlug?.trim());
   /**
-   * Only treat a signal as team-gated once the roster has finished loading and
-   * we actually have members. Using `!signalTeamRosterResolved` here locked the
-   * composer on every room switch (flash of “Only selected team members…”).
+   * Team policy is only known after the roster resolves. While unresolved,
+   * keep manage/interact gates closed so a failed hydrate cannot briefly open
+   * controls to non-members. Composer lock still waits for a resolved
+   * non-empty roster (see `hasSignalTeamPolicy`) to avoid the room-switch
+   * “Only selected team members…” flash.
    */
   const hasSignalTeamPolicy =
     isSignalThread &&
@@ -3410,7 +3414,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     [signalTeamDraftMemberIds, effectiveSignalTeamMemberIds],
   );
   const canManageSignalTeam =
-    isSignalThread && (!hasSignalTeamPolicy || isCurrentUserSignalTeamMember);
+    isSignalThread &&
+    signalTeamRosterResolved &&
+    (!hasSignalTeamPolicy || isCurrentUserSignalTeamMember);
   const currentUserPendingSignalTeamRequest = Boolean(
     currentUserId && signalTeamPendingRequesterIds.includes(currentUserId),
   );
@@ -4634,6 +4640,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                 coherenceSlug || openingSpaceSlug,
                 coherenceDescription,
                 openingSpaceSlug,
+                coherenceChannel ? { channel: coherenceChannel } : undefined,
               );
             } catch (err) {
               console.warn(
@@ -4675,7 +4682,18 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               roomId: newRoomId,
             });
             // Update context so subsequent opens don't re-create
-            openCoherenceChat(newRoomId, coherenceTitle || '', coherenceSlug);
+            openCoherenceChat(
+              newRoomId,
+              coherenceTitle || '',
+              coherenceSlug,
+              null,
+              null,
+              coherenceChannel
+                ? { channel: coherenceChannel }
+                : coherenceSlug?.trim()
+                ? { channel: 'signal' }
+                : undefined,
+            );
           } catch (err) {
             console.warn(
               '[HumanRightPanel] Failed to persist roomId to coherence:',
@@ -5839,10 +5857,17 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   ]);
 
   useEffect(() => {
-    if (!readSignalDeepLinkSlug(searchParams)) {
+    const qpSignal = readSignalDeepLinkSlug(searchParams);
+    if (!qpSignal) {
+      setSignalDeepLinkNotice(null);
+      return;
+    }
+    // Already viewing this signal (Messages / space board / deep link) — never
+    // leave a stale "Could not load this signal link" banner over a live room.
+    if (mode === 'coherence' && coherenceSlug?.trim() === qpSignal) {
       setSignalDeepLinkNotice(null);
     }
-  }, [searchParams]);
+  }, [coherenceSlug, mode, searchParams]);
 
   // Tab wake / online: bump so a transient deep-link network failure retries
   // instead of leaving "Could not load this signal link" stuck forever.
@@ -5872,7 +5897,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     // open chat). Resolving here races that path and can strip the param on a
     // transient API failure before the board selects the card. Match only the
     // tab segment so a space slug like `coherence-team` still resolves here.
-    if (/^\/[^/]+\/dho\/[^/]+\/coherence(?:\/|$)/.test(pathname)) return;
+    if (/^\/[^/]+\/dho\/[^/]+\/coherence(?:\/|$)/.test(pathname)) {
+      setSignalDeepLinkNotice(null);
+      return;
+    }
 
     openHumanChatPanel();
     setActiveTab('chat');
@@ -5919,6 +5947,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       if (readLiveSearchParam('signal') !== qpSignal) return;
 
       if (!result.ok) {
+        // Chat may already be open from Messages / board click while this
+        // lookup failed — do not paint a false connection error over it.
+        if (mode === 'coherence' && coherenceSlug?.trim() === qpSignal) {
+          setSignalDeepLinkNotice(null);
+          return;
+        }
         const messageKey =
           result.reason === 'auth_not_ready'
             ? 'signalDeepLinkAuthNotReady'
@@ -5953,6 +5987,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         result.signalSlug,
         null,
         result.spaceSlug,
+        { channel: 'signal' },
       );
       openHumanChatPanel();
       setActiveTab('chat');
@@ -6268,6 +6303,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     client: client ?? null,
     roomId,
     resolveName: resolveMemberLabel,
+    unknownMemberLabel: t('unknownMember'),
   });
 
   const handleComposerChange = useCallback(
@@ -6584,6 +6620,16 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     if (coherenceChannel === 'proposal') return t('tabChatProposal');
     if (coherenceChannel === 'context') return t('tabChatContext');
     if (coherenceChannel === 'signal') return t('tabChatSignal');
+    // Space board / deep-link opens historically omitted `channel`. A coherence
+    // slug in chat mode is a signal thread — do not fall through to "Room".
+    if (
+      mode === 'coherence' &&
+      coherenceSlug?.trim() &&
+      !coherenceChannel &&
+      !isDirectConversation
+    ) {
+      return t('tabChatSignal');
+    }
     if (
       coherenceChannel === 'space-public' ||
       coherencePublic ||
@@ -6609,6 +6655,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     client,
     coherenceChannel,
     coherencePublic,
+    coherenceSlug,
     groupChatFaces,
     isDirectConversation,
     isNetworkSpaceChat,

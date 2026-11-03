@@ -368,6 +368,7 @@ export function MemberHomeThreadCard({
             slug,
             item.summary,
             item.spaceSlug,
+            { channel: isSignal ? 'signal' : 'proposal' },
           );
           return;
         }

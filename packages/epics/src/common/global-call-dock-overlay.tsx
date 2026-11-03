@@ -1112,6 +1112,9 @@ export function GlobalCallDockOverlay({
         signalTarget.roomId,
         signalTarget.signalTitle,
         signalTarget.signalSlug,
+        null,
+        signalTarget.spaceSlug,
+        { channel: 'signal' },
       );
     }
 

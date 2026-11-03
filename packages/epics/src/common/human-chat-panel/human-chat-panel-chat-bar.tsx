@@ -833,10 +833,14 @@ export function HumanChatPanelChatBar({
      * composer regression. Do not temporarily write the placeholder into
      * `value` to measure: that flashes lock copy when switching rooms.
      * Lock reasons already appear in the banner above; the input stays compact.
+     * Force a collapse pass first so a previous tall scrollHeight cannot stick.
      */
-    if (content.length === 0) {
+    if (content.length === 0 || ta.clientWidth < 48) {
+      ta.style.height = '0px';
+      ta.style.minHeight = '0px';
+      void ta.offsetHeight;
       ta.style.height = `${COMPOSER_INPUT_MIN_PX}px`;
-      ta.style.minHeight = '';
+      ta.style.minHeight = `${COMPOSER_INPUT_MIN_PX}px`;
       ta.scrollTop = 0;
       return;
     }

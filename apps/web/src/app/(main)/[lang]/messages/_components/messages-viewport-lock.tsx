@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
-import { HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID } from '@hypha-platform/core/client';
 
 import {
   messagesChannelMenuOverflows,
@@ -50,17 +49,6 @@ function menuOffset(): number {
   return height || 72;
 }
 
-/** Desktop site footer overlap — same CSS var the fixed chat rail reads. */
-function desktopFooterOffset(): number {
-  if (!window.matchMedia(DESKTOP_MENU).matches) return 0;
-  const raw = getComputedStyle(document.documentElement)
-    .getPropertyValue('--site-footer-offset')
-    .trim();
-  if (!raw) return 0;
-  const px = Number.parseFloat(raw);
-  return Number.isFinite(px) ? Math.max(0, px) : 0;
-}
-
 function clearListFrameHeight(root: HTMLElement) {
   const list = root.querySelector('[data-messages-list-frame]');
   if (list instanceof HTMLElement) {
@@ -81,12 +69,20 @@ function clearListFrameHeight(root: HTMLElement) {
  * under the top bar. The list scrolls on its own. The menu scrolls on its
  * own only when it is taller than that same cap, so the unread counts stay
  * on screen. Footer stays below the fold in normal page flow.
+ *
+ * Do not re-cap on page scroll: sticky columns + maxHeight/overflow flips
+ * on every scroll made the category menu jump and left a white void / clipped
+ * paint above the card.
  */
 export function MessagesViewportLock({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fit = () => {
+    let lastAppliedHeight = -1;
+    let lastOverflows: boolean | null = null;
+    let raf = 0;
+
+    const fitNow = () => {
       const root = ref.current;
       if (!root) return;
       const list = root.querySelector('[data-messages-list-frame]');
@@ -106,34 +102,51 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
           viewportBottom,
           menuOffset: menuOffset(),
           tabOffset: mobileTabOffset(),
-          footerOffset: desktopFooterOffset(),
         });
-        list.style.height = `${height}px`;
-        list.style.maxHeight = `${height}px`;
         const filters = root.querySelector('[data-messages-filters]');
-        if (filters instanceof HTMLElement) {
-          // Measure the menu itself. The frame's scrollHeight collapses
-          // once max-height is applied, which would hide a tall menu's
-          // overflow and clip the unread counts.
-          const menu =
-            filters.querySelector('nav') ?? filters.firstElementChild;
-          const contentHeight =
-            menu instanceof HTMLElement
-              ? menu.offsetHeight
-              : filters.scrollHeight;
-          // Same cap as the list. A shorter menu stays in the page scroll.
-          // A taller one scrolls inside the cap so its counts cannot be
-          // pushed off screen the way an inflated list used to do.
-          filters.style.maxHeight = `${height}px`;
-          filters.style.minHeight = '0';
-          const overflows = messagesChannelMenuOverflows(contentHeight, height);
+        const menu =
+          filters instanceof HTMLElement
+            ? filters.querySelector('nav') ?? filters.firstElementChild
+            : null;
+        const contentHeight =
+          menu instanceof HTMLElement
+            ? menu.offsetHeight
+            : filters instanceof HTMLElement
+            ? filters.scrollHeight
+            : 0;
+        const overflows = messagesChannelMenuOverflows(contentHeight, height);
+
+        if (lastAppliedHeight !== height) {
+          lastAppliedHeight = height;
+          list.style.height = `${height}px`;
+          list.style.maxHeight = `${height}px`;
+          if (filters instanceof HTMLElement) {
+            filters.style.maxHeight = `${height}px`;
+            filters.style.minHeight = '0';
+          }
+        }
+
+        if (filters instanceof HTMLElement && lastOverflows !== overflows) {
+          lastOverflows = overflows;
+          // Keep overflow stable once the menu can exceed the cap — clearing
+          // and re-applying on every fit made sticky columns thrash.
           filters.style.overflowY = overflows ? 'auto' : '';
           filters.style.overscrollBehavior = overflows ? 'contain' : '';
         }
         return;
       }
 
+      lastAppliedHeight = -1;
+      lastOverflows = null;
       clearListFrameHeight(root);
+    };
+
+    const fit = () => {
+      if (raf) return;
+      raf = window.requestAnimationFrame(() => {
+        raf = 0;
+        fitNow();
+      });
     };
 
     const onVisible = () => {
@@ -142,12 +155,6 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
     const observer = new ResizeObserver(fit);
     fit();
     observer.observe(document.documentElement);
-    // Footer overlap (`--site-footer-offset`) changes while the main column
-    // scrolls — re-cap the sticky list so it does not sit under the footer.
-    const scrollRoot =
-      document.getElementById(HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID) ??
-      document.scrollingElement;
-    scrollRoot?.addEventListener('scroll', fit, { passive: true });
     window.addEventListener('resize', fit);
     window.addEventListener('focus', fit);
     window.addEventListener('pageshow', fit);
@@ -155,8 +162,8 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
     window.visualViewport?.addEventListener('resize', fit);
 
     return () => {
+      if (raf) window.cancelAnimationFrame(raf);
       observer.disconnect();
-      scrollRoot?.removeEventListener('scroll', fit);
       window.removeEventListener('resize', fit);
       window.removeEventListener('focus', fit);
       window.removeEventListener('pageshow', fit);

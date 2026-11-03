@@ -782,6 +782,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [],
   );
 
+  const pendingSyncRestartAfterCallRef = React.useRef(false);
+
   const recoverMatrixSync = React.useCallback(async (): Promise<boolean> => {
     const existingClient = clientRef.current;
     if (!existingClient) return false;
@@ -797,8 +799,17 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           syncState === MatrixSdk.SyncState.Error ||
           syncState === MatrixSdk.SyncState.Stopped
         ) {
-          existingClient.stopClient();
-          await existingClient.startClient();
+          // stopClient() ends MatrixRTC / group-call membership. During a live
+          // call only nudge sync (same as in-call token refresh); restart after
+          // the call ends.
+          if (isGroupCallSessionActive()) {
+            pendingSyncRestartAfterCallRef.current = true;
+            retryMatrixClientSync(existingClient);
+          } else {
+            pendingSyncRestartAfterCallRef.current = false;
+            existingClient.stopClient();
+            await existingClient.startClient();
+          }
         } else {
           retryMatrixClientSync(existingClient);
         }
@@ -997,13 +1008,20 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
   React.useEffect(() => {
     return subscribeGroupCallSessionActive(() => {
-      if (!pendingClientRecycleRef.current || isGroupCallSessionActive()) {
+      if (isGroupCallSessionActive()) {
+        return;
+      }
+      if (pendingSyncRestartAfterCallRef.current) {
+        pendingSyncRestartAfterCallRef.current = false;
+        void recoverMatrixSync();
+      }
+      if (!pendingClientRecycleRef.current) {
         return;
       }
       pendingClientRecycleRef.current = false;
       recycleMatrixClient();
     });
-  }, [recycleMatrixClient]);
+  }, [recoverMatrixSync, recycleMatrixClient]);
 
   React.useEffect(() => {
     clientRef.current = client;

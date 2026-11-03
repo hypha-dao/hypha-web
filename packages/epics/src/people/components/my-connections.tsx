@@ -2386,10 +2386,12 @@ export function MyConnections({
 
   // Keep pending titles visible while peer profiles load — do not tie this to
   // listSettled, or an early PEOPLE AROUND paint drops everyone as titlePending.
-  // After tab wake Privy can briefly drop `jwt`; keep painted titles if we
-  // already resolved peers so the list does not freeze on skeletons.
+  // After tab wake Privy can briefly drop `jwt`; keep painted titles if every
+  // peer is already resolved, but stay pending while any sub is still waiting
+  // (a partial cache must not hide the rest of the inbox).
   const titlesLoading =
     peopleBySubLoading ||
+    (!jwt && pendingSubs.length > 0) ||
     (peerSubs.length > 0 && !jwt && peopleBySub.size === 0);
   const hasMatrixConversations =
     rows.some((row) => row.kind === 'person' || row.kind === 'group') ||
@@ -3169,8 +3171,9 @@ export function MyConnections({
               className={cn(
                 // Same sticky edge as the conversation list. Page scroll and
                 // the list's own scroll are unchanged. The unread counts stay
-                // in view instead of leaving with the page.
-                'narrow-scrollbar w-full shrink-0 lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:w-80 lg:self-start lg:min-h-0 lg:bg-page-background',
+                // in view instead of leaving with the page. Clip paint so a
+                // sticky reflow cannot leave glyphs in the gap above the card.
+                'narrow-scrollbar w-full shrink-0 overflow-x-hidden lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:w-80 lg:self-start lg:min-h-0 lg:overflow-y-hidden lg:bg-page-background',
                 picking || inboxChannelOpen
                   ? 'hidden lg:block'
                   : 'lg:flex-none',
