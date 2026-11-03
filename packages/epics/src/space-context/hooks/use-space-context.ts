@@ -135,9 +135,11 @@ export function useSpaceContext(spaceSlug: string | undefined) {
     },
     {
       revalidateOnFocus: true,
+      // Backup for the card's refresh when a proposal passes. The card itself
+      // revalidates as soon as the vote shows executed.
       refreshInterval: (latest) =>
         latest?.sections.some((section) => section.status === 'proposed')
-          ? 15_000
+          ? 5_000
           : 0,
     },
   );

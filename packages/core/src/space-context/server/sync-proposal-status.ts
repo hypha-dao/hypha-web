@@ -43,10 +43,13 @@ export async function syncSpaceContextProposalStatuses(
     .where(inArray(documents.id, documentIds));
 
   const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+  // The proposal page reads the latest block, so a passed vote shows as closed
+  // there at once. On Base the safe head trails that by about a minute, which
+  // left the card on "On voting" until safe caught up.
   const outcomes =
     space?.web3SpaceId != null
       ? await fetchProposalOutcomeSetsForSpace(space.web3SpaceId, {
-          blockTag: 'safe',
+          blockTag: 'latest',
         })
       : null;
 

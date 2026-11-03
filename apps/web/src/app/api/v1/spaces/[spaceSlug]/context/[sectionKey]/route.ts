@@ -7,6 +7,7 @@ import {
   schemaPatchSpaceContextSection,
   setSpaceContextSectionChatRoom,
   setSpaceContextSectionRemovalSuggested,
+  syncSpaceContextProposalStatuses,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import {
@@ -29,6 +30,10 @@ export async function GET(
   try {
     const auth = await authorizeContextRead(request, spaceSlug);
     if (!auth.ok) return auth.response;
+
+    // The open discussion shows the same status chip as the card. Sync here
+    // too, so a passed vote updates the panel on the same refresh.
+    await syncSpaceContextProposalStatuses({ spaceSlug }, { db });
 
     const detail = await getSpaceContextSection(
       { spaceSlug, sectionKey },

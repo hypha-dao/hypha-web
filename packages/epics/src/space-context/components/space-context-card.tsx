@@ -13,12 +13,13 @@ import { Card, CardTitle } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Fragment, type MouseEvent, type ReactNode } from 'react';
+import { Fragment, useEffect, type MouseEvent, type ReactNode } from 'react';
 import {
   InlineText,
   MemoryProse,
 } from '../../coherence/components/memory-prose';
 import { getProposalPath } from '../../common/get-path-function';
+import { revalidateSpaceContext } from '../hooks/use-space-context';
 import {
   SpaceContextChangeBadge,
   SpaceContextStatusChip,
@@ -169,7 +170,7 @@ export function SpaceContextCard({
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 truncate text-[11px] text-neutral-11">
             {section.status === 'proposed' ? (
-              <ProposedFooterMeta section={section} />
+              <ProposedFooterMeta section={section} spaceSlug={spaceSlug} />
             ) : section.status === 'draft' ? (
               <DraftFooterMeta section={section} />
             ) : null}
@@ -256,13 +257,38 @@ function DraftFooterMeta({ section }: { section: SpaceContextSectionRecord }) {
 
 function ProposedFooterMeta({
   section,
+  spaceSlug,
 }: {
   section: SpaceContextSectionRecord;
+  spaceSlug: string;
 }) {
   const t = useTranslations('SpaceContext');
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: section.proposalWeb3Id,
   });
+  const settled = Boolean(
+    proposalDetails?.executed || proposalDetails?.expired,
+  );
+
+  // The footer already reads the latest block, so it says "Voting closed" the
+  // moment the proposal passes. Ask the server to ratify then, instead of
+  // waiting for the overview poll. A few tries cover a node that lags the tx.
+  useEffect(() => {
+    if (!settled) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const attempt = (n: number) => {
+      if (cancelled) return;
+      void revalidateSpaceContext(spaceSlug);
+      if (n + 1 < 4) timer = setTimeout(() => attempt(n + 1), 2_000);
+    };
+    attempt(0);
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [settled, spaceSlug]);
+
   const parts: ReactNode[] = [t('status.onVoting')];
 
   if (!proposalDetails) {
