@@ -37,6 +37,7 @@ import {
   countCommaSeparatedNames,
   isArchivedGroupRoom,
   isGroupCreateContent,
+  isSpaceContextSectionKey,
   peopleConversationKindForListing,
   readCreateContent,
   resolveConversationCacheEntry,
@@ -2965,6 +2966,12 @@ export function MyConnections({
         {
           public: row.inbox.kind === 'space-public',
           channel: row.inbox.kind,
+          contextSectionKey:
+            row.inbox.kind === 'context' &&
+            row.inbox.contextSectionKey &&
+            isSpaceContextSectionKey(row.inbox.contextSectionKey)
+              ? row.inbox.contextSectionKey
+              : null,
         },
       );
       return;

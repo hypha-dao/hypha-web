@@ -87,6 +87,8 @@ export type OpenCoherenceChatOptions = {
   public?: boolean;
   peerPerson?: CoherencePeerPerson | null;
   channel?: CoherenceOpenedChannel | null;
+  /** Context section whose room this is, so its section agent answers. */
+  contextSectionKey?: SpaceContextSectionKey | null;
 };
 
 /** Space Context section shown in the right panel in place of a chat. */
@@ -123,6 +125,8 @@ export type HumanChatPanelContextValue = {
   coherencePeerPerson: CoherencePeerPerson | null;
   /** Set when opening a non-DM channel from Messages. */
   coherenceChannel: CoherenceOpenedChannel | null;
+  /** Set with `coherenceChannel: 'context'` for a Context section room. */
+  coherenceContextSectionKey: SpaceContextSectionKey | null;
   openCoherenceChat: (
     roomId: string | null,
     title: string,
@@ -159,6 +163,7 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   coherencePublic: false,
   coherencePeerPerson: null,
   coherenceChannel: null,
+  coherenceContextSectionKey: null,
   openCoherenceChat: () => {},
   closeCoherenceChat: () => {},
   panelAvailable: false,
@@ -199,6 +204,8 @@ export function HumanChatPanelProvider({
     useState<CoherencePeerPerson | null>(null);
   const [coherenceChannel, setCoherenceChannel] =
     useState<CoherenceOpenedChannel | null>(null);
+  const [coherenceContextSectionKey, setCoherenceContextSectionKey] =
+    useState<SpaceContextSectionKey | null>(null);
   const [unreadMentionCount, setUnreadMentionCountState] = useState(0);
   const [focusedSpaceChat, setFocusedSpaceChatState] =
     useState<FocusedSpaceChat | null>(null);
@@ -265,6 +272,11 @@ export function HumanChatPanelProvider({
       setCoherenceSpaceSlug(spaceSlug?.trim() ? spaceSlug.trim() : null);
       setCoherencePublic(Boolean(options?.public));
       setCoherenceChannel(options?.channel ?? null);
+      setCoherenceContextSectionKey(
+        options?.channel === 'context'
+          ? options.contextSectionKey ?? null
+          : null,
+      );
       const peerSlug = options?.peerPerson?.slug?.trim() ?? '';
       const peerAddress = options?.peerPerson?.address?.trim() || null;
       const peerId =
@@ -298,6 +310,7 @@ export function HumanChatPanelProvider({
     setCoherencePublic(false);
     setCoherencePeerPerson(null);
     setCoherenceChannel(null);
+    setCoherenceContextSectionKey(null);
   }, []);
 
   const openHumanChatPanel = useCallback(() => {
@@ -328,6 +341,7 @@ export function HumanChatPanelProvider({
         coherencePublic,
         coherencePeerPerson,
         coherenceChannel,
+        coherenceContextSectionKey,
         openCoherenceChat,
         closeCoherenceChat,
         panelAvailable,

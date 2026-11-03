@@ -74,6 +74,7 @@ import {
   applySignalCreatorToChatAuthor,
   isSignalDescriptionAnchorMessage,
   usePersonById,
+  headingForSectionKey,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -197,6 +198,8 @@ import { SignalTurnIntoProposalButton } from '../coherence/components/signal-tur
 import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
 import { SignalIndicativeAmounts } from '../coherence/components/signal-indicative-amounts';
 import { SpaceContextSidePanel } from '../space-context/components/space-context-chat-panel';
+import { useSpaceContextSectionAgent } from '../space-context/hooks/use-space-context-section-agent';
+import { AgentMentionLabelProvider } from './human-chat-panel/agent-mention-label-context';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
   dmOtherHumanMembers,
@@ -1291,6 +1294,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     coherencePublic,
     coherencePeerPerson,
     coherenceChannel,
+    coherenceContextSectionKey,
     open,
     closeCoherenceChat,
     openCoherenceChat,
@@ -1298,6 +1302,19 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     closeHumanChatPanel,
     setUnreadMentionCount,
   } = useHumanChatPanel();
+  // A Context section room opened from Messages is answered by that section's
+  // agent, the same one its Context tab discussion uses.
+  const contextSectionKey =
+    mode === 'coherence' && coherenceChannel === 'context'
+      ? coherenceContextSectionKey
+      : null;
+  const contextSectionAgent = useSpaceContextSectionAgent(
+    contextSectionKey,
+    coherenceTitle?.trim() ||
+      (contextSectionKey ? headingForSectionKey(contextSectionKey) : ''),
+  );
+  const agentMentionLabel =
+    contextSectionAgent?.label ?? t('agentMentionLabel');
   // Person-to-person rooms (PM / group) have a title and no signal slug — never
   // inherit a space from the route or a leftover home slug. Map public chat
   // also opens with an empty signal slug; it is not a DM and must still load
@@ -2654,7 +2671,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     (userId: string | undefined) => {
       if (!userId) return t('unknownMember');
       if (isHyphaBotMatrixIdentity(userId)) {
-        return t('agentMentionLabel');
+        return agentMentionLabel;
       }
       if (currentUserId && userId === currentUserId) {
         const full = [me?.name, me?.surname].filter(Boolean).join(' ').trim();
@@ -2713,6 +2730,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       );
     },
     [
+      agentMentionLabel,
       client,
       currentUserId,
       directoryLabelByMxid,
@@ -3053,12 +3071,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           };
     return withMatrixAgentMention(
       roster,
-      t('agentMentionLabel'),
-      matrixAgentSkills(t),
+      agentMentionLabel,
+      contextSectionAgent?.skills ?? matrixAgentSkills(t),
       agentIcon,
     );
   }, [
+    agentMentionLabel,
     coherenceChannel,
+    contextSectionAgent,
     currentUserId,
     isDirectConversation,
     isNetworkSpaceChat,
@@ -6091,7 +6111,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         target.role === 'user'
           ? t('you')
           : isHyphaBotMatrixIdentity(target.senderMatrixId, target.senderName)
-          ? t('agentMentionLabel')
+          ? agentMentionLabel
           : target.role === 'member' && target.senderMatrixId
           ? resolveMemberLabel(target.senderMatrixId)
           : target.senderName ?? t('unknownMember');
@@ -6113,7 +6133,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           : {}),
       });
     },
-    [mentionLabelByUserId, messages, resolveMemberLabel, t],
+    [agentMentionLabel, mentionLabelByUserId, messages, resolveMemberLabel, t],
   );
 
   const handleEditMessage = useCallback(
@@ -6391,6 +6411,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           mentionUserIds,
           context: isDirectConversation
             ? { kind: 'dm' }
+            : contextSectionKey
+            ? {
+                kind: 'space_context',
+                spaceSlug,
+                sectionKey: contextSectionKey,
+              }
             : isNetworkSpaceChat || coherenceChannel === 'network'
             ? { kind: 'network' }
             : mode === 'space' && spaceRoom === 'ecosystem'
@@ -6506,6 +6532,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     isDirectConversation,
     isNetworkSpaceChat,
     coherenceChannel,
+    contextSectionKey,
     spaceSlug,
     mode,
     spaceRoom,
@@ -6576,7 +6603,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   ]);
 
   return (
-    <>
+    <AgentMentionLabelProvider value={agentMentionLabel}>
       {screenshareTabAudioPromptDialog}
       <SidebarHeader className="gap-0 bg-page-background p-0 dark:bg-background-2">
         <HumanChatPanelHeader
@@ -7541,6 +7568,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             </div>
           </SidebarFooter>
         )}
-    </>
+    </AgentMentionLabelProvider>
   );
 }

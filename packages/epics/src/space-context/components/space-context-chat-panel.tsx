@@ -4,7 +4,6 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import {
   headingForSectionKey,
   HYPHA_ROOM_TYPES,
-  specialistForSectionKey,
   useMatrix,
   useSpaceBySlug,
   type SpaceContextSectionKey,
@@ -27,6 +26,7 @@ import {
   storeSpaceContextChatRoomRequest,
   useSpaceContextSection,
 } from '../hooks/use-space-context';
+import { useSpaceContextSectionAgent } from '../hooks/use-space-context-section-agent';
 import { spaceContextProposeHref } from './propose-href';
 import { sectionNotice } from './space-context-card';
 import { SpaceContextDraftDialog } from './space-context-dialogs';
@@ -156,7 +156,6 @@ function SpaceContextSectionBody({
     spaceSlug,
     sectionKey,
   );
-  const specialist = specialistForSectionKey(sectionKey);
   const sectionTitle =
     detail?.section.sectionKey === sectionKey
       ? detail.section.title
@@ -178,18 +177,7 @@ function SpaceContextSectionBody({
     [getAccessToken, sectionKey, spaceSlug],
   );
 
-  const agent = useMemo(
-    () => ({
-      label: specialist.agentName,
-      skills: (['review', 'refine', 'draft', 'fromSource'] as const).map(
-        (id) => ({
-          id,
-          prompt: t(`chat.skills.${id}`, { section: sectionTitle }),
-        }),
-      ),
-    }),
-    [specialist.agentName, sectionTitle, t],
-  );
+  const agent = useSpaceContextSectionAgent(sectionKey, sectionTitle);
   const agentContext = useMemo(
     () => ({ kind: 'space_context' as const, sectionKey }),
     [sectionKey],
