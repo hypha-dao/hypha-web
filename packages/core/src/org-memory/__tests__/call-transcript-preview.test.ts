@@ -91,9 +91,11 @@ describe('callTranscriptPreview', () => {
   });
 
   it('keeps a short ellipsis summary that is a transcript prefix', () => {
-    expect(
-      callTranscriptPreview({ text: FLYWHEEL_TEXT, summary: 'We agreed…' }),
-    ).toBe('We agreed…');
+    const summary = 'yeah the only thing that the call was good…';
+    expect(FLYWHEEL_TEXT.startsWith(summary.replace(/…$/, ''))).toBe(true);
+    expect(callTranscriptPreview({ text: FLYWHEEL_TEXT, summary })).toBe(
+      summary,
+    );
   });
 
   it('regenerates the 320-char auto-cut of a speaker-labelled transcript', () => {
