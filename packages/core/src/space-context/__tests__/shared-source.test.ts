@@ -21,6 +21,33 @@ import {
 } from '../server/read-matrix-shared-file';
 
 const encode = (value: string) => new TextEncoder().encode(value);
+
+/** One-page PDF with a single line of Helvetica text. */
+function buildPdf(text: string, { xrefShift = 0 } = {}): Uint8Array {
+  const stream = `BT /F1 18 Tf 72 720 Td (${text}) Tj ET`;
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ];
+  let body = '%PDF-1.4\n';
+  const offsets: number[] = [];
+  objects.forEach((object, index) => {
+    offsets.push(body.length + xrefShift);
+    body += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
+  const xrefAt = body.length;
+  body += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (const offset of offsets) {
+    body += `${String(offset).padStart(10, '0')} 00000 n \n`;
+  }
+  body += `trailer\n<< /Size ${
+    objects.length + 1
+  } /Root 1 0 R >>\nstartxref\n${xrefAt}\n%%EOF\n`;
+  return encode(body);
+}
 const mockFetchOnce = (
   impl: SharedSourceFetchOnce = async () => ({
     ok: false,
@@ -223,6 +250,42 @@ describe('decodeSharedSourceBytes', () => {
     });
     expect(result).toMatchObject({ ok: false, code: 'unsupported_type' });
   });
+
+  it('extracts the text of a PDF', async () => {
+    const result = await decodeSharedSourceBytes({
+      bytes: buildPdf('Mission: shared tools for community-run groups.'),
+      contentType: 'application/pdf',
+      filename: 'mission-notes.pdf',
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      mode: 'text',
+      mime: 'application/pdf',
+      filename: 'mission-notes.pdf',
+    });
+    expect(result.ok && result.text).toContain(
+      'Mission: shared tools for community-run groups.',
+    );
+  });
+
+  it('extracts a small PDF whose cross-reference offsets are wrong', async () => {
+    const result = await decodeSharedSourceBytes({
+      bytes: buildPdf('Notes from a hand-made file.', { xrefShift: 3 }),
+      contentType: null,
+      filename: 'notes.pdf',
+    });
+    expect(result).toMatchObject({ ok: true, mode: 'text' });
+    expect(result.ok && result.text).toContain('Notes from a hand-made file.');
+  }, 15_000);
+
+  it('reports a file that only claims to be a PDF', async () => {
+    const result = await decodeSharedSourceBytes({
+      bytes: encode('%PDF-1.4 not really'),
+      contentType: 'application/pdf',
+      filename: 'broken.pdf',
+    });
+    expect(result).toMatchObject({ ok: false, code: 'decode_failed' });
+  }, 15_000);
 });
 
 describe('filenameFromContentDisposition', () => {
@@ -356,6 +419,30 @@ describe('readSpaceContextMatrixFile', () => {
     );
     expect(init.headers).toEqual({ Authorization: 'Bearer bot-token' });
   });
+
+  it('reads the text of an attached PDF', async () => {
+    const pdf = buildPdf('Aura reads the Mission notes.');
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(pdf, {
+          headers: {
+            'content-type': 'application/pdf',
+            'content-length': String(pdf.byteLength),
+          },
+        }),
+    );
+    const result = await readSpaceContextMatrixFile(
+      { ...base, filename: 'mission-notes.pdf' },
+      { fetch: fetchMock as unknown as typeof fetch },
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      mode: 'text',
+      mime: 'application/pdf',
+      filename: 'mission-notes.pdf',
+    });
+    expect(result.ok && result.text).toContain('Aura reads the Mission notes.');
+  }, 15_000);
 
   it('falls back to the legacy media path on older homeservers', async () => {
     const fetchMock = vi

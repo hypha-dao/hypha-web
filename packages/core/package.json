@@ -24,6 +24,7 @@
     "livekit-server-sdk": "^2.18.0",
     "matrix-js-sdk": "^40.0.0",
     "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^5.7.284",
     "pg": "^8.13.1",
     "rrule": "^2.8.1",
     "server-only": "^0.0.1"
