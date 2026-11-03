@@ -9,7 +9,6 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { Input } from '@hypha-platform/ui';
-import { cn } from '@hypha-platform/ui-utils';
 import type { UseMembers } from '../../spaces';
 import { useSpaceMembersAndDelegates } from '../../spaces/hooks/use-space-members-and-delegates';
 import { buildSpaceRosterMentionCandidates } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
@@ -156,7 +155,7 @@ export function SignalTagPeopleField({
           })}
         </ul>
       ) : null}
-      <div className="relative">
+      <div className="relative w-full">
         <AtSign
           className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
           aria-hidden
@@ -165,7 +164,7 @@ export function SignalTagPeopleField({
           value={query}
           disabled={disabled}
           placeholder={t('signalFormTagPeoplePlaceholder')}
-          className="rounded-none pl-8"
+          className="rounded-none pl-8 text-left"
           role="combobox"
           aria-expanded={showList}
           aria-controls={listboxId}
@@ -200,12 +199,10 @@ export function SignalTagPeopleField({
           <div
             id={listboxId}
             role="listbox"
-            className={cn(
-              'absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-y-auto border border-border bg-background p-1 shadow-md',
-            )}
+            className="absolute left-0 right-0 top-full z-20 mt-1 flex w-full max-h-64 flex-col items-stretch overflow-y-auto border border-border bg-background !text-left shadow-md"
           >
             {matches.length === 0 ? (
-              <p className="px-2 py-1.5 text-1 text-muted-foreground">
+              <p className="px-3 py-1.5 text-left text-1 text-muted-foreground">
                 {t('signalFormTagPeopleEmpty')}
               </p>
             ) : (
@@ -216,6 +213,7 @@ export function SignalTagPeopleField({
                   matrixFallbackLabel={candidate.displayLabel}
                   matrixFallbackAvatarUrl={candidate.avatarUrl}
                   isActive={index === activeIndex}
+                  className="!flex !w-full !justify-start !px-3 !text-left [&_span]:!text-left"
                   onPick={() => addTag(candidate.userId)}
                   onLabelResolved={handleLabelResolved}
                 />

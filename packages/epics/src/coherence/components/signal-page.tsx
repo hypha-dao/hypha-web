@@ -24,6 +24,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
+import { shouldCloseSignalDetailChat } from '../lib/signal-detail-chat';
 import { matrixUserIdToCanonicalPrivySub } from '../../common/human-chat-panel/matrix-room-member-display';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
@@ -313,6 +314,8 @@ export function SignalPage({
     mode: chatMode,
     coherenceSlug: chatSlug,
     openCoherenceChat,
+    closeCoherenceChat,
+    closeHumanChatPanel,
   } = useHumanChatPanel();
   const openChat = React.useCallback(() => {
     if (!signal?.slug) return;
@@ -343,6 +346,43 @@ export function SignalPage({
     openChat,
     signal,
   ]);
+
+  const signalChatRef = React.useRef({
+    mode: chatMode,
+    slug: chatSlug,
+    closeCoherenceChat,
+    closeHumanChatPanel,
+  });
+  signalChatRef.current = {
+    mode: chatMode,
+    slug: chatSlug,
+    closeCoherenceChat,
+    closeHumanChatPanel,
+  };
+  const closeOpenedSignalChat = React.useCallback(() => {
+    const current = signalChatRef.current;
+    if (
+      !shouldCloseSignalDetailChat({
+        mode: current.mode,
+        chatSlug: current.slug,
+        signalSlug,
+      })
+    ) {
+      return;
+    }
+    current.closeCoherenceChat();
+    current.closeHumanChatPanel();
+  }, [signalSlug]);
+  // Close before paint so the feed does not keep this signal's chat open.
+  // Browser back unmounts the page without the breadcrumb click.
+  React.useLayoutEffect(() => {
+    return () => {
+      closeOpenedSignalChat();
+      if (autoOpenedForRef.current === signalSlug) {
+        autoOpenedForRef.current = null;
+      }
+    };
+  }, [closeOpenedSignalChat, signalSlug]);
 
   const { person } = useMe();
   const { jwt } = useJwt();

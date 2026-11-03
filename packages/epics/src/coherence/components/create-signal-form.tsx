@@ -1236,6 +1236,7 @@ export const CreateSignalForm = ({
                           <RichTextEditor
                             editorRef={null}
                             bordered={false}
+                            className="signal-description-editor"
                             markdown={descriptionValue}
                             translation={translateEditor}
                             placeholder={t('descriptionPlaceholder')}
