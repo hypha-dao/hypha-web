@@ -45,6 +45,7 @@ const SAVE_PATTERNS = words([
   'save|store',
   `keep\\s+${IT}`,
   `(?:put|write|add|use|apply|set|make|turn)\\s+(?:[^.?!\\n]{0,40}\\s)?(?:in|into|as)\\s+(?:the\\s+|a\\s+)?draft`,
+  `(?:make|create|write)\\s+(?:a|the|our)\\s+(?:[^.?!\\n]{0,40}\\s)?draft`,
   '(?:update|replace|overwrite|fill in|fill)\\s+the\\s+draft',
   // pt
   'salvar|salve|salva|guardar|guarde|gravar|grave|como rascunho|no rascunho',

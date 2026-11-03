@@ -71,6 +71,17 @@ describe('agent intent', () => {
     expect(detectSpaceContextAgentIntent('Put this into the draft')).toBe(
       'save_draft',
     );
+    expect(detectSpaceContextAgentIntent('Okay make a draft from that')).toBe(
+      'save_draft',
+    );
+    expect(
+      detectSpaceContextAgentIntent(
+        'Please read the attached PDF and create a Mission draft from it.',
+      ),
+    ).toBe('save_draft');
+    expect(
+      detectSpaceContextAgentIntent('What would a good draft look like?'),
+    ).toBe('answer');
     expect(detectSpaceContextAgentIntent('Bitte als Entwurf speichern')).toBe(
       'save_draft',
     );
