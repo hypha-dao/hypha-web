@@ -520,7 +520,7 @@ export function SignalPage({
               creatorId={signal.creatorId}
               className="flex items-center gap-2"
             />
-            <SignalCreateQuestButton />
+            <SignalCreateQuestButton lang={lang} spaceSlug={spaceSlug} />
           </div>
         </div>
 

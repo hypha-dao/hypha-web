@@ -58,6 +58,25 @@ describe('summarizeSignalReplies', () => {
     expect(summary.lastReplyAt).toBeNull();
   });
 
+  it('counts a seed once the current edit is no longer the description', () => {
+    const summary = summarizeSignalReplies(
+      [message(ALEX, 1, 'Fix the bridge', 'I can bring tools')],
+      'Fix the bridge',
+      { isBot },
+    );
+    expect(summary.comments).toBe(1);
+    expect(summary.lastReplySenderId).toBe(ALEX);
+  });
+
+  it('excludes an edit that matches the description even when the original body does not', () => {
+    const summary = summarizeSignalReplies(
+      [message(ALEX, 1, 'I can bring tools', 'Fix the bridge')],
+      'Fix the bridge',
+      { isBot },
+    );
+    expect(summary.comments).toBe(0);
+  });
+
   it('skips bot posts', () => {
     const summary = summarizeSignalReplies(
       [message(BOT, 1, 'Fix the bridge'), message(ALEX, 2, 'On it')],

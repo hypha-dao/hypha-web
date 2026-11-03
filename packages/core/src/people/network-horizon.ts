@@ -15,15 +15,15 @@ export const NETWORK_SIGNAL_TYPES = ['Need', 'Opportunity'] as const;
 
 /**
  * One way of showing up, one set of signals. Builder signals stay out of the
- * member feed. Proof of action now includes the stories that used to be
- * impact evidence, so members and investors both follow it.
+ * member feed. Impact evidence is its own type again, so members and
+ * investors follow both proof of action and those stories.
  */
 export function signalTypesForOrientation(
   orientation: 'member' | 'builder' | 'investor' | null | undefined,
 ): readonly string[] {
   if (orientation === 'builder') return ['Opportunity', 'Insight'];
-  if (orientation === 'investor') return ['Action'];
-  if (orientation === 'member') return ['Need', 'Resource', 'Action'];
+  if (orientation === 'investor') return ['Action', 'Impact'];
+  if (orientation === 'member') return ['Need', 'Resource', 'Action', 'Impact'];
   return [];
 }
 

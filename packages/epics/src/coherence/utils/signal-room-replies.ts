@@ -31,12 +31,10 @@ export function summarizeSignalReplies(
   let lastReplySenderId: string | null = null;
   for (const message of messages) {
     if (isBot(message.sender)) continue;
-    const isCopy = [message.body, message.editedBody].some((content) =>
-      isSignalDescriptionCopy({
-        messageContent: content,
-        signalDescription: description,
-      }),
-    );
+    const isCopy = isSignalDescriptionCopy({
+      messageContent: message.editedBody ?? message.body,
+      signalDescription: description,
+    });
     if (isCopy) continue;
     comments += 1;
     senders.add(message.sender);
