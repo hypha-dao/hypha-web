@@ -24,7 +24,7 @@ export default async function OrganisationPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceSlug={id}>
-      <SpaceOverviewEntry stay={stay}>
+      <SpaceOverviewEntry spaceSlug={id} stay={stay}>
         {searchParams.invite ? (
           <div className="px-4 pt-4 sm:px-5">
             <SpaceInviteArrival

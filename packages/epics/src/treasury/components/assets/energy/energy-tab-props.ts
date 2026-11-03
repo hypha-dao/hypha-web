@@ -2,6 +2,7 @@ import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
 import type { EnergyPeopleMap } from './use-energy-people';
 
 export type EnergyTabProps = {
+  spaceSlug: string;
   data: SpaceEnergyResponse;
   people: EnergyPeopleMap;
   peopleLoading: boolean;

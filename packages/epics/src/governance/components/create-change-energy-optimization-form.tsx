@@ -57,6 +57,7 @@ const ChangeEnergyOptimizationPlugin = ({
 export const CreateChangeEnergyOptimizationForm = ({
   spaceId,
   web3SpaceId,
+  spaceSlug,
   successfulUrl,
   backUrl,
   members = [],
@@ -64,6 +65,7 @@ export const CreateChangeEnergyOptimizationForm = ({
 }: {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
+  spaceSlug: string;
   successfulUrl: string;
   backUrl?: string;
   members?: Person[];
@@ -71,7 +73,7 @@ export const CreateChangeEnergyOptimizationForm = ({
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const t = useTranslations('Energy');
-  const { data: spaceEnergy } = useSpaceEnergy();
+  const { data: spaceEnergy } = useSpaceEnergy(spaceSlug);
   const communityProxyAddress = spaceEnergy?.activation?.communityProxyAddress;
 
   const schema = React.useMemo(

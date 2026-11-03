@@ -20,9 +20,11 @@ import { EnergyChartSkeleton, EnergyTextSkeleton } from './loading-skeletons';
 const ConsumerConsumptionChart = ({
   address,
   deviceIds,
+  spaceSlug,
 }: {
   address: string;
   deviceIds: number[] | null;
+  spaceSlug: string;
 }) => {
   const locale = useLocale();
   const t = useTranslations('Energy.consumerCard');
@@ -33,7 +35,7 @@ const ConsumerConsumptionChart = ({
     data: telemetry,
     isLoading,
     error,
-  } = useSpaceEnergyTelemetry(cfg.period);
+  } = useSpaceEnergyTelemetry(cfg.period, spaceSlug);
 
   const useLiveTelemetry = Boolean(
     telemetry?.enabled && telemetry.configured && !error && telemetry.dataFrom,
@@ -116,6 +118,7 @@ const ConsumerConsumptionChart = ({
 };
 
 export const ConsumerConsumptionCard = ({
+  spaceSlug,
   address,
   displayName,
   avatarUrl,
@@ -124,6 +127,7 @@ export const ConsumerConsumptionCard = ({
   isLoading,
   deviceIds,
 }: {
+  spaceSlug: string;
   address: string;
   displayName: string;
   avatarUrl?: string;
@@ -166,7 +170,11 @@ export const ConsumerConsumptionCard = ({
         />
       </button>
       {expanded ? (
-        <ConsumerConsumptionChart address={address} deviceIds={deviceIds} />
+        <ConsumerConsumptionChart
+          address={address}
+          deviceIds={deviceIds}
+          spaceSlug={spaceSlug}
+        />
       ) : null}
     </div>
   );

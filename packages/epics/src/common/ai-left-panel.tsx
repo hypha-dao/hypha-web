@@ -527,7 +527,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     false,
   );
   const { person: me } = useMe();
-  const { data: spaceEnergyData } = useSpaceEnergy();
+  const { data: spaceEnergyData } = useSpaceEnergy(spaceSlugFromPath);
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
   const activeSpaceChatRoomId = activeSpaces?.[0]?.chatRoomId?.trim() || null;
