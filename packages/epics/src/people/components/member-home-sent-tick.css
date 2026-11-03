@@ -1,14 +1,16 @@
 .sent-tick {
   display: grid;
-  width: 56px;
-  height: 56px;
+  /* Larger confirmation mark — fills the empty success space without
+     changing the draw animation or mark proportions. */
+  width: 104px;
+  height: 104px;
   color: var(--foreground);
   animation: sent-tick-in 640ms cubic-bezier(0.16, 0.84, 0.24, 1) both;
 }
 
 .sent-tick svg {
-  width: 56px;
-  height: 56px;
+  width: 104px;
+  height: 104px;
   overflow: visible;
 }
 

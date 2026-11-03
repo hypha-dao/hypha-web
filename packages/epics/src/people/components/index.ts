@@ -12,7 +12,11 @@ export * from './member-space-icons';
 export * from './members-section';
 export * from './space-invite-arrival';
 export * from './person-avatar';
-export { presenceRank, readMemberPresence } from './member-presence';
+export {
+  presenceRank,
+  readMemberPresence,
+  resolveRegisteredPresence,
+} from './member-presence';
 export { PresenceDot } from './presence-dot';
 export { useMemberPresence } from './use-member-presence';
 export {
@@ -20,6 +24,7 @@ export {
   useRegisteredPresence,
 } from './member-presence-provider';
 export * from './person-head';
+export * from './profile-story';
 export * from './person-label';
 export * from './signup-panel';
 export * from './signup-flow';
@@ -32,6 +37,7 @@ export * from './member-home-notifications';
 export * from './mobile-tab-bar';
 export * from './spaces-rail-control';
 export * from './my-connections';
+export * from './account-required-gate';
 export * from './member-home-phase';
 export { MemberHomeSendTokensWidget } from './member-home-chat-widgets';
 export * from './people-transfer-form';

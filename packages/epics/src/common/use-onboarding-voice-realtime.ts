@@ -11,12 +11,16 @@ import {
   extractRealtimeErrorInfo,
   fetchRealtimeVoiceSession,
   isIgnorableRealtimeError,
+  isShortDecisionTranscript,
   isSubstantiveUserTranscript,
   microphoneCaptureErrorCode,
   RealtimeVoiceSessionRequestError,
   setLocalMicEnabled,
   setRealtimeRemoteAudioMuted,
+  prefetchExactSpeechPcm,
   speakAssistantTextViaRealtime,
+  startExactSpeechPlayback,
+  unlockExactSpeechPlayback,
   type RealtimeServerEvent,
   type RealtimeVoiceConnection,
 } from './onboarding-voice-realtime-client';
@@ -26,9 +30,10 @@ import {
   resumeSilentAudioStream,
 } from './onboarding-voice-mic';
 import {
-  extractEarlySpeakableSentence,
+  firstCompletedSpeakableSentence,
   prepareAssistantTextForSpeech,
   resolveSpeechRemainderAfterEarlyPrefix,
+  stripMarkdownForSpeech,
   stopOnboardingSpeech,
   type SpeechPlaybackController,
 } from './onboarding-voice-speech';
@@ -49,6 +54,8 @@ type UseOnboardingVoiceRealtimeOptions = {
   enabled: boolean;
   isChatStreaming?: boolean;
   lastAssistantText?: string;
+  /** Latest assistant bubble id — empty while the next reply has not started. */
+  lastAssistantMessageId?: string;
   locale?: string;
   conversationContext?: VoiceSessionContext;
   recentTranscriptSummary?: string;
@@ -69,6 +76,11 @@ type UseOnboardingVoiceRealtimeOptions = {
    * this so voice and the chat bubble stay on one finished script.
    */
   speakEarlyLeadIn?: boolean;
+  /**
+   * When true, speak the bubble text itself. The shared speech filter drops
+   * a short line, and the previous reply is what the member hears instead.
+   */
+  speakDisplayedText?: boolean;
 };
 
 function mapSessionErrorToVoiceCode(status: number): VoiceInterviewErrorCode {
@@ -165,9 +177,30 @@ function restoreListeningIfConnected(
 
 /** Delay before reopening mic after assistant playback — avoids echo retriggering STT. */
 const MIC_UNMUTE_DELAY_MS = 450;
+/** Breath between early lead-in and the rest — about one to two seconds after the period. */
+const SENTENCE_HANDOFF_PAUSE_MS = 1200;
 
 function unmuteMicrophone(connection: RealtimeVoiceConnection | null) {
   setLocalMicEnabled(connection, true);
+}
+
+/** The speaker playing back into an open mic must not start another turn. */
+function isEchoOfLastSpoken(transcript: string, spoken: string): boolean {
+  const fold = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  const heard = fold(transcript);
+  const said = fold(spoken);
+  if (!heard || !said || heard.length < 12) return false;
+  if (said.includes(heard) || heard.includes(said)) return true;
+  const heardWords = new Set(heard.split(' '));
+  const saidWords = said.split(' ').filter(Boolean);
+  if (saidWords.length < 4) return false;
+  const shared = saidWords.filter((word) => heardWords.has(word)).length;
+  return shared / saidWords.length >= 0.7;
 }
 
 function muteMicrophone(connection: RealtimeVoiceConnection | null) {
@@ -180,6 +213,7 @@ export function useOnboardingVoiceRealtime({
   enabled,
   isChatStreaming = false,
   lastAssistantText = '',
+  lastAssistantMessageId = '',
   locale,
   conversationContext,
   recentTranscriptSummary,
@@ -191,6 +225,7 @@ export function useOnboardingVoiceRealtime({
   captureMicrophone = true,
   speakReplies = true,
   speakEarlyLeadIn = true,
+  speakDisplayedText = false,
 }: UseOnboardingVoiceRealtimeOptions) {
   const connectionRef = useRef<RealtimeVoiceConnection | null>(null);
   const connectInFlightRef = useRef(false);
@@ -221,6 +256,13 @@ export function useOnboardingVoiceRealtime({
   const earlySpeechStartedRef = useRef(false);
   const earlySpokenPrefixRef = useRef('');
   const pendingRemainderSpeakRef = useRef<string | null>(null);
+  /** Warm the next sentence while the early lead-in finishes (keeps the gap ~1–2s). */
+  const pendingRemainderPcmRef = useRef<{
+    text: string;
+    pcm: Promise<ArrayBuffer | null>;
+    abort: AbortController;
+  } | null>(null);
+  const remainderHandoffTimerRef = useRef<number | null>(null);
   const queuedSpeakableRef = useRef<string | null>(null);
   /** Spoken into a paused element. Said again on the next click. */
   const replayOnUnlockRef = useRef<string | null>(null);
@@ -230,9 +272,18 @@ export function useOnboardingVoiceRealtime({
   const replacingSpeechRef = useRef(false);
   const realtimeRespeakCountRef = useRef(0);
   const assistantTextAtStreamStartRef = useRef('');
+  const assistantMessageIdAtStreamStartRef = useRef('');
+  const lastSpokenAssistantMessageIdRef = useRef('');
+  /** The bubble on screen when speech turned on. Later bubbles are read. */
+  const speechBaselinedRef = useRef(false);
+  const seenAssistantMessageIdRef = useRef('');
   const speakAssistantReplyRef = useRef<(spoken: string) => void>(() => {});
+  /** True only between our response.create and its response.created. */
+  const expectingRealtimeResponseRef = useRef(false);
   const lastAssistantTextRef = useRef(lastAssistantText);
   lastAssistantTextRef.current = lastAssistantText;
+  const lastAssistantMessageIdRef = useRef(lastAssistantMessageId);
+  lastAssistantMessageIdRef.current = lastAssistantMessageId;
   const onFallbackRef = useRef(onFallback);
   const onStopChatRef = useRef(onStopChat);
   const onSendTranscriptRef = useRef(onSendTranscript);
@@ -242,6 +293,8 @@ export function useOnboardingVoiceRealtime({
   const [phase, setPhase] = useState<VoiceInterviewPhase>('idle');
   phaseRef.current = phase;
   const [liveTranscript, setLiveTranscript] = useState('');
+  /** Partial STT while the person is still talking. */
+  const interimDictationRef = useRef('');
   const [voiceError, setVoiceError] = useState<VoiceInterviewErrorCode | null>(
     null,
   );
@@ -255,8 +308,13 @@ export function useOnboardingVoiceRealtime({
   isChatStreamingRef.current = isChatStreaming;
   const captureMicrophoneRef = useRef(captureMicrophone);
   const speakRepliesRef = useRef(speakReplies);
+  const speakDisplayedTextRef = useRef(speakDisplayedText);
+  const getAccessTokenRef = useRef(getAccessToken);
+  const speechAuthTokenRef = useRef<Promise<string | null> | null>(null);
   const micNeedsGestureRef = useRef(false);
   captureMicrophoneRef.current = captureMicrophone;
+  speakDisplayedTextRef.current = speakDisplayedText;
+  getAccessTokenRef.current = getAccessToken;
   speakRepliesRef.current = speakReplies;
   const [userSpeaking, setUserSpeaking] = useState(false);
 
@@ -315,24 +373,72 @@ export function useOnboardingVoiceRealtime({
     }, MIC_UNMUTE_DELAY_MS);
   }, [clearMicRestoreTimer]);
 
+  const clearRemainderPrefetch = useCallback(() => {
+    pendingRemainderPcmRef.current?.abort.abort();
+    pendingRemainderPcmRef.current = null;
+    if (remainderHandoffTimerRef.current != null) {
+      window.clearTimeout(remainderHandoffTimerRef.current);
+      remainderHandoffTimerRef.current = null;
+    }
+  }, []);
+
+  const warmRemainderSpeech = useCallback(
+    (remainder: string) => {
+      const text = remainder.trim();
+      if (!text) return;
+      clearRemainderPrefetch();
+      const abort = new AbortController();
+      const pcm = (async () => {
+        if (!speechAuthTokenRef.current) {
+          speechAuthTokenRef.current = Promise.resolve(
+            getAccessTokenRef.current?.() ?? null,
+          ).then((token) => token?.trim() || null);
+        }
+        const token = await speechAuthTokenRef.current;
+        if (!token || abort.signal.aborted) return null;
+        return prefetchExactSpeechPcm({
+          text,
+          authToken: token,
+          signal: abort.signal,
+        });
+      })();
+      pendingRemainderPcmRef.current = { text, pcm, abort };
+    },
+    [clearRemainderPrefetch],
+  );
+
   const flushPendingRemainderOrRestoreMic = useCallback(() => {
     const remainder = pendingRemainderSpeakRef.current?.trim();
     if (remainder && enabledRef.current) {
       pendingRemainderSpeakRef.current = null;
-      speakAssistantReplyRef.current(remainder);
+      // Keep a short breath after the period, then continue — prefetch should
+      // already be warm so this stays near one to two seconds.
+      remainderHandoffTimerRef.current = window.setTimeout(() => {
+        remainderHandoffTimerRef.current = null;
+        if (!enabledRef.current) {
+          clearRemainderPrefetch();
+          return;
+        }
+        speakAssistantReplyRef.current(remainder);
+      }, SENTENCE_HANDOFF_PAUSE_MS);
       return;
     }
+    clearRemainderPrefetch();
     scheduleMicRestoreForUserTurn();
-  }, [scheduleMicRestoreForUserTurn]);
+  }, [clearRemainderPrefetch, scheduleMicRestoreForUserTurn]);
 
   const finishRealtimeSpeakPlayback = useCallback(() => {
     if (!realtimeSpeakInFlightRef.current) return;
+    cancelSpeechRef.current?.();
+    cancelSpeechRef.current = null;
     clearPlaybackFallbackTimer();
     realtimeSpeakInFlightRef.current = false;
     activeRealtimeResponseIdRef.current = null;
     realtimeAudioHeardRef.current = false;
     flushPendingRemainderOrRestoreMic();
   }, [clearPlaybackFallbackTimer, flushPendingRemainderOrRestoreMic]);
+  const finishRealtimeSpeakPlaybackRef = useRef(finishRealtimeSpeakPlayback);
+  finishRealtimeSpeakPlaybackRef.current = finishRealtimeSpeakPlayback;
 
   const schedulePlaybackEndFallback = useCallback(
     (speakable: string) => {
@@ -360,6 +466,7 @@ export function useOnboardingVoiceRealtime({
     earlySpeechStartedRef.current = false;
     earlySpokenPrefixRef.current = '';
     pendingRemainderSpeakRef.current = null;
+    clearRemainderPrefetch();
     releaseMic(connectionRef.current);
     if (realtimeSpeakInFlightRef.current) {
       const connection = connectionRef.current;
@@ -375,6 +482,7 @@ export function useOnboardingVoiceRealtime({
     awaitingAssistantSpeakRef.current = false;
     wasStreamingRef.current = false;
   }, [
+    clearRemainderPrefetch,
     clearInterruptTimer,
     clearMicRestoreTimer,
     clearPlaybackFallbackTimer,
@@ -390,9 +498,13 @@ export function useOnboardingVoiceRealtime({
     onStopChatRef.current?.();
     gracefulInterruptPendingRef.current = true;
     speechPlaybackRef.current?.requestGracefulStop();
+    cancelSpeechRef.current?.();
+    cancelSpeechRef.current = null;
+    realtimeSpeakInFlightRef.current = false;
+    clearPlaybackFallbackTimer();
     releaseMic(connectionRef.current);
     setPhase('listening');
-  }, []);
+  }, [clearPlaybackFallbackTimer]);
 
   const rememberUnheardSpeech = useCallback((speakable: string) => {
     replayGenerationRef.current += 1;
@@ -416,12 +528,91 @@ export function useOnboardingVoiceRealtime({
       interruptSpeechStartedAtRef.current = null;
       // Close the mic before the line starts so the open microphone cannot cut it off.
       muteMicrophone(connection);
+      if (speakDisplayedTextRef.current) {
+        // The chat script is the only voice. The realtime model must stay
+        // silent, or the member hears two speakers at once.
+        setRealtimeRemoteAudioMuted(connection, true);
+        connection.remoteAudio.pause();
+        // Home reads the bubble. response.create writes a new line, so this
+        // path synthesizes the script and cancels any model speech.
+        unlockExactSpeechPlayback();
+        expectingRealtimeResponseRef.current = false;
+        cancelActiveRealtimeResponse(
+          connection,
+          activeRealtimeResponseIdRef.current,
+        );
+        clearRealtimeOutputAudioBuffer(connection);
+        connection.remoteAudio.pause();
+        const playbackToken = speakable;
+        let live: { stop: () => void } | null = null;
+        let stopped = false;
+        const stop = () => {
+          stopped = true;
+          live?.stop();
+        };
+        // Stop the previous recording before this one starts. Its completion
+        // must not cancel the line that is about to play.
+        cancelSpeechRef.current?.();
+        cancelSpeechRef.current = stop;
+        realtimeSpeakInFlightRef.current = true;
+        void (async () => {
+          if (!speechAuthTokenRef.current) {
+            speechAuthTokenRef.current = Promise.resolve(
+              getAccessTokenRef.current?.() ?? null,
+            ).then((token) => token?.trim() || null);
+          }
+          const token = await speechAuthTokenRef.current;
+          if (!token) speechAuthTokenRef.current = null;
+          if (stopped || !realtimeSpeakInFlightRef.current) return;
+          if (!token) {
+            realtimeSpeakInFlightRef.current = false;
+            releaseMic(connection);
+            rememberUnheardSpeech(playbackToken);
+            setPhase(connectionRef.current ? 'listening' : 'idle');
+            return;
+          }
+          const warmed = pendingRemainderPcmRef.current;
+          let prefetched: ArrayBuffer | null = null;
+          if (warmed && warmed.text === playbackToken) {
+            pendingRemainderPcmRef.current = null;
+            prefetched = await warmed.pcm;
+          }
+          const playback = startExactSpeechPlayback({
+            text: playbackToken,
+            authToken: token,
+            pcm: prefetched,
+          });
+          live = playback;
+          if (stopped || !realtimeSpeakInFlightRef.current) {
+            playback.stop();
+            return;
+          }
+          const spoken = await playback.done;
+          if (cancelSpeechRef.current === stop) cancelSpeechRef.current = null;
+          if (stopped || !realtimeSpeakInFlightRef.current) return;
+          if (!spoken) {
+            realtimeSpeakInFlightRef.current = false;
+            releaseMic(connection);
+            rememberUnheardSpeech(playbackToken);
+            setPhase(connectionRef.current ? 'listening' : 'idle');
+            return;
+          }
+          finishRealtimeSpeakPlaybackRef.current();
+        })();
+        queuedSpeakableRef.current = null;
+        setPhase('speaking');
+        return true;
+      }
+      setRealtimeRemoteAudioMuted(connection, false);
+      void connection.remoteAudio.play().catch(() => undefined);
+      expectingRealtimeResponseRef.current = true;
       if (
         !speakAssistantTextViaRealtime(connection, speakable, {
           activeResponseId: activeRealtimeResponseIdRef.current,
           locale,
         })
       ) {
+        expectingRealtimeResponseRef.current = false;
         if (replacing) replacingSpeechRef.current = false;
         releaseMic(connection);
         queuedSpeakableRef.current = speakable;
@@ -430,15 +621,49 @@ export function useOnboardingVoiceRealtime({
         return false;
       }
       queuedSpeakableRef.current = null;
-      rememberUnheardSpeech(speakable);
+      // Only keep a click-to-replay when autoplay is blocked. Always remembering
+      // the line re-speaks the previous bubble on the next pointerdown.
+      void connection.remoteAudio.play().then(
+        () => {
+          replayOnUnlockRef.current = null;
+        },
+        () => {
+          rememberUnheardSpeech(speakable);
+        },
+      );
       realtimeSpeakInFlightRef.current = true;
       setPhase('speaking');
       return true;
     },
-    [clearInterruptTimer, locale, rememberUnheardSpeech, releaseMic],
+    [
+      clearInterruptTimer,
+      locale,
+      rememberUnheardSpeech,
+      releaseMic,
+      schedulePlaybackEndFallback,
+    ],
   );
   const speakViaRealtimeRef = useRef(speakViaRealtime);
   speakViaRealtimeRef.current = speakViaRealtime;
+
+  const scriptForSpeech = useCallback((spoken: string) => {
+    const trimmed = spoken.trim();
+    if (!trimmed) return '';
+    // Still the unchanged bubble from before this turn — do not read it again.
+    if (awaitingAssistantSpeakRef.current) {
+      const startedId = assistantMessageIdAtStreamStartRef.current;
+      const startedText = assistantTextAtStreamStartRef.current.trim();
+      const stillPriorBubble =
+        Boolean(startedId) &&
+        lastAssistantMessageIdRef.current === startedId &&
+        trimmed === startedText;
+      if (stillPriorBubble || (!startedId && trimmed === startedText)) {
+        return '';
+      }
+    }
+    if (speakDisplayedTextRef.current) return stripMarkdownForSpeech(trimmed);
+    return prepareAssistantTextForSpeech(trimmed);
+  }, []);
 
   const speakAssistantReply = useCallback(
     (spoken: string) => {
@@ -454,18 +679,23 @@ export function useOnboardingVoiceRealtime({
       stopBrowserSpeech();
       interimAckSpokenRef.current = false;
 
-      const speakable = prepareAssistantTextForSpeech(spoken);
-      if (!speakable || spoken === lastSpokenAssistantRef.current) {
+      const speakable = scriptForSpeech(spoken);
+      const messageId = lastAssistantMessageIdRef.current;
+      const alreadySaid =
+        spoken === lastSpokenAssistantRef.current &&
+        messageId === lastSpokenAssistantMessageIdRef.current;
+      if (!speakable || alreadySaid) {
         setPhase(connectionRef.current ? 'listening' : 'idle');
         return;
       }
 
       lastSpokenAssistantRef.current = spoken;
+      lastSpokenAssistantMessageIdRef.current = messageId;
       realtimeAudioHeardRef.current = false;
       realtimeRespeakCountRef.current = 0;
       speakViaRealtime(speakable);
     },
-    [speakViaRealtime],
+    [scriptForSpeech, speakViaRealtime],
   );
   speakAssistantReplyRef.current = speakAssistantReply;
 
@@ -476,9 +706,22 @@ export function useOnboardingVoiceRealtime({
         return;
       }
 
+      const shortDecision = isShortDecisionTranscript(normalized);
+      // Let the chat script finish. A real interruption still gets through.
+      // Short yes / no answers are intentional turns, not ambient blips.
+      if (
+        speakDisplayedTextRef.current &&
+        realtimeSpeakInFlightRef.current &&
+        !shortDecision &&
+        !hasClearInterruptIntentFromTranscript(normalized)
+      ) {
+        return;
+      }
+
       if (
         Boolean(speechPlaybackRef.current) &&
         phaseRef.current === 'speaking' &&
+        !shortDecision &&
         !hasClearInterruptIntentFromTranscript(normalized)
       ) {
         return;
@@ -486,6 +729,8 @@ export function useOnboardingVoiceRealtime({
 
       if (!isSubstantiveUserTranscript(normalized)) {
         userTurnSpeechStartedAtRef.current = null;
+        interimDictationRef.current = '';
+        setLiveTranscript('');
         releaseMic(connectionRef.current);
         restoreListeningIfConnected(connectionRef.current, setPhase);
         return;
@@ -496,11 +741,14 @@ export function useOnboardingVoiceRealtime({
       const speechDurationMs =
         speechStartedAt === null ? null : Date.now() - speechStartedAt;
       if (
+        !shortDecision &&
         speechDurationMs !== null &&
         speechDurationMs < MIN_USER_TURN_SPEECH_MS &&
         countTranscriptWords(normalized) < 3 &&
         !hasClearInterruptIntentFromTranscript(normalized)
       ) {
+        interimDictationRef.current = '';
+        setLiveTranscript('');
         releaseMic(connectionRef.current);
         restoreListeningIfConnected(connectionRef.current, setPhase);
         return;
@@ -563,6 +811,7 @@ export function useOnboardingVoiceRealtime({
         setPhase(connectionRef.current ? 'listening' : 'idle');
       } finally {
         sendInFlightRef.current = false;
+        interimDictationRef.current = '';
         setLiveTranscript('');
       }
     },
@@ -581,6 +830,7 @@ export function useOnboardingVoiceRealtime({
     earlySpeechStartedRef.current = false;
     earlySpokenPrefixRef.current = '';
     pendingRemainderSpeakRef.current = null;
+    clearRemainderPrefetch();
     pendingBargeInTranscriptRef.current = null;
     activeRealtimeResponseIdRef.current = null;
     realtimeSpeakInFlightRef.current = false;
@@ -599,6 +849,7 @@ export function useOnboardingVoiceRealtime({
     clearConnectRetryTimer,
     clearMicRestoreTimer,
     clearPlaybackFallbackTimer,
+    clearRemainderPrefetch,
     stopBrowserSpeech,
   ]);
 
@@ -638,6 +889,20 @@ export function useOnboardingVoiceRealtime({
         event.type === 'response.output_audio.delta' ||
         event.type === 'response.audio.delta'
       ) {
+        if (speakDisplayedTextRef.current) {
+          const connection = connectionRef.current;
+          const responseId =
+            (typeof event.response_id === 'string' && event.response_id) ||
+            event.response?.id ||
+            activeRealtimeResponseIdRef.current;
+          cancelActiveRealtimeResponse(connection, responseId);
+          clearRealtimeOutputAudioBuffer(connection);
+          if (connection) {
+            setRealtimeRemoteAudioMuted(connection, true);
+            connection.remoteAudio.pause();
+          }
+          return;
+        }
         realtimeAudioHeardRef.current = true;
         const audio = connectionRef.current?.remoteAudio;
         if (audio && speakRepliesRef.current) {
@@ -673,15 +938,30 @@ export function useOnboardingVoiceRealtime({
         event.type === 'output_audio_buffer.stopped' &&
         connectionRef.current
       ) {
-        if (gracefulInterruptPendingRef.current) {
-          completeUserBargeInInterrupt();
-        } else if (realtimeSpeakInFlightRef.current) {
-          finishRealtimeSpeakPlayback();
+        // Home is speaking the chat line through its own audio. Clearing the
+        // realtime buffer must not cancel that recording.
+        if (!speakDisplayedTextRef.current) {
+          if (gracefulInterruptPendingRef.current) {
+            completeUserBargeInInterrupt();
+          } else if (realtimeSpeakInFlightRef.current) {
+            finishRealtimeSpeakPlayback();
+          }
         }
       }
 
       if (event.type === 'input_audio_buffer.speech_started') {
-        if (!captureMicrophoneRef.current) return;
+        if (!captureMicrophoneRef.current) {
+          clearRealtimeInputAudioBuffer(connectionRef.current);
+          return;
+        }
+        // Home is reading the chat script. Speaker bleed into the mic must
+        // not cut that recording off mid-sentence.
+        if (speakDisplayedTextRef.current && realtimeSpeakInFlightRef.current) {
+          clearRealtimeInputAudioBuffer(connectionRef.current);
+          return;
+        }
+        interimDictationRef.current = '';
+        setLiveTranscript('');
         setUserSpeaking(true);
         const assistantBusy =
           phaseRef.current === 'speaking' ||
@@ -728,11 +1008,32 @@ export function useOnboardingVoiceRealtime({
       }
 
       if (event.type === 'response.created') {
-        replacingSpeechRef.current = false;
         const responseId =
           typeof event.response?.id === 'string'
             ? event.response.id.trim()
             : '';
+        if (speakDisplayedTextRef.current) {
+          const connection = connectionRef.current;
+          cancelActiveRealtimeResponse(connection, responseId);
+          clearRealtimeOutputAudioBuffer(connection);
+          if (connection) {
+            setRealtimeRemoteAudioMuted(connection, true);
+            connection.remoteAudio.pause();
+          }
+          return;
+        }
+        // Server VAD can still open a turn from room noise or the speaker.
+        // Only the chat reply we just asked for may be heard.
+        if (!expectingRealtimeResponseRef.current) {
+          const connection = connectionRef.current;
+          if (responseId) {
+            cancelActiveRealtimeResponse(connection, responseId);
+          }
+          clearRealtimeOutputAudioBuffer(connection);
+          return;
+        }
+        expectingRealtimeResponseRef.current = false;
+        replacingSpeechRef.current = false;
         if (responseId) {
           activeRealtimeResponseIdRef.current = responseId;
         }
@@ -759,8 +1060,9 @@ export function useOnboardingVoiceRealtime({
           realtimeSpeakInFlightRef.current = false;
           activeRealtimeResponseIdRef.current = null;
           pendingRemainderSpeakRef.current = null;
+          clearRemainderPrefetch();
           const spoken = lastAssistantTextRef.current.trim();
-          const speakable = prepareAssistantTextForSpeech(spoken);
+          const speakable = scriptForSpeech(spoken);
           if (speakable && realtimeRespeakCountRef.current < 1) {
             realtimeRespeakCountRef.current += 1;
             speakViaRealtime(speakable);
@@ -771,17 +1073,45 @@ export function useOnboardingVoiceRealtime({
       }
 
       if (
-        event.type === 'conversation.item.input_audio_transcription.completed'
+        event.type === 'conversation.item.input_audio_transcription.delta' ||
+        event.type === 'input_audio_transcription.delta'
       ) {
         if (!captureMicrophoneRef.current) return;
+        const delta =
+          typeof event.delta === 'string'
+            ? event.delta
+            : typeof event.transcript === 'string'
+            ? event.transcript
+            : '';
+        if (!delta) return;
+        interimDictationRef.current = `${interimDictationRef.current}${delta}`;
+        const preview = interimDictationRef.current.trim();
+        if (preview) setLiveTranscript(preview);
+      }
+
+      if (
+        event.type === 'conversation.item.input_audio_transcription.completed'
+      ) {
+        if (!captureMicrophoneRef.current) {
+          clearRealtimeInputAudioBuffer(connectionRef.current);
+          return;
+        }
         const transcript =
           typeof event.transcript === 'string' ? event.transcript.trim() : '';
+        interimDictationRef.current = '';
+        if (isEchoOfLastSpoken(transcript, lastSpokenAssistantRef.current)) {
+          setLiveTranscript('');
+          clearRealtimeInputAudioBuffer(connectionRef.current);
+          return;
+        }
         if (transcript) {
+          setLiveTranscript(transcript);
           void sendTranscriptToChat(transcript).catch(() => {
             setVoiceError('error');
             setPhase(connectionRef.current ? 'listening' : 'idle');
           });
         } else {
+          setLiveTranscript('');
           restoreListeningIfConnected(connectionRef.current, setPhase);
         }
       }
@@ -797,6 +1127,7 @@ export function useOnboardingVoiceRealtime({
         event.type === 'response.done' ||
         event.type === 'response.completed'
       ) {
+        if (speakDisplayedTextRef.current) return;
         if (realtimeSpeakInFlightRef.current) {
           const heardAudio = realtimeAudioHeardRef.current;
           if (!heardAudio) {
@@ -804,8 +1135,9 @@ export function useOnboardingVoiceRealtime({
             activeRealtimeResponseIdRef.current = null;
             realtimeAudioHeardRef.current = false;
             pendingRemainderSpeakRef.current = null;
+            clearRemainderPrefetch();
             const spoken = lastAssistantTextRef.current.trim();
-            const speakable = prepareAssistantTextForSpeech(spoken);
+            const speakable = scriptForSpeech(spoken);
             if (speakable && realtimeRespeakCountRef.current < 1) {
               realtimeRespeakCountRef.current += 1;
               speakViaRealtime(speakable);
@@ -814,14 +1146,14 @@ export function useOnboardingVoiceRealtime({
             }
           } else {
             schedulePlaybackEndFallback(
-              prepareAssistantTextForSpeech(lastSpokenAssistantRef.current) ||
-                '',
+              scriptForSpeech(lastSpokenAssistantRef.current) || '',
             );
           }
         }
       }
 
       if (event.type === 'response.cancelled') {
+        if (speakDisplayedTextRef.current) return;
         const cancelledId =
           (typeof event.response_id === 'string' && event.response_id) ||
           event.response?.id ||
@@ -847,12 +1179,14 @@ export function useOnboardingVoiceRealtime({
     },
     [
       beginGracefulUserBargeIn,
+      clearRemainderPrefetch,
       completeUserBargeInInterrupt,
       finishRealtimeSpeakPlayback,
       scheduleMicRestoreForUserTurn,
       schedulePlaybackEndFallback,
       sendTranscriptToChat,
       speakViaRealtime,
+      scriptForSpeech,
       clearInterruptTimer,
     ],
   );
@@ -943,10 +1277,13 @@ export function useOnboardingVoiceRealtime({
       setVoiceError(null);
       micNeedsGestureRef.current = false;
       resumeSilentAudioStream(connection.localStream);
-      if (speakRepliesRef.current) {
+      if (speakDisplayedTextRef.current) {
+        setRealtimeRemoteAudioMuted(connection, true);
+        connection.remoteAudio.pause();
+      } else if (speakRepliesRef.current) {
         setRealtimeRemoteAudioMuted(connection, false);
+        void connection.remoteAudio.play().catch(() => undefined);
       }
-      void connection.remoteAudio.play().catch(() => undefined);
       // Leave the mic closed when a line is already waiting. Opening it now
       // lets the room cut the reply off before the speaker starts.
       if (queuedSpeakableRef.current) {
@@ -1026,6 +1363,7 @@ export function useOnboardingVoiceRealtime({
     clearMicRestoreTimer();
     clearPlaybackFallbackTimer();
     pendingRemainderSpeakRef.current = null;
+    clearRemainderPrefetch();
     queuedSpeakableRef.current = null;
     replayGenerationRef.current += 1;
     replayOnUnlockRef.current = null;
@@ -1054,6 +1392,7 @@ export function useOnboardingVoiceRealtime({
   }, [
     clearMicRestoreTimer,
     clearPlaybackFallbackTimer,
+    clearRemainderPrefetch,
     releaseMic,
     stopBrowserSpeech,
   ]);
@@ -1066,6 +1405,15 @@ export function useOnboardingVoiceRealtime({
   useEffect(() => {
     if (!speakReplies) stopSpeaking();
   }, [speakReplies, stopSpeaking]);
+
+  // Warm Privy auth before the next bubble so speak does not wait on getAccessToken.
+  useEffect(() => {
+    if (!enabled || !speakReplies) return;
+    if (speechAuthTokenRef.current) return;
+    speechAuthTokenRef.current = Promise.resolve(
+      getAccessTokenRef.current?.() ?? null,
+    ).then((token) => token?.trim() || null);
+  }, [enabled, speakReplies]);
 
   const stopListening = useCallback(() => {
     disconnect();
@@ -1137,6 +1485,7 @@ export function useOnboardingVoiceRealtime({
   useEffect(() => {
     if (!enabled) return;
     const unlock = () => {
+      unlockExactSpeechPlayback();
       const connection = connectionRef.current;
       if (connection) resumeSilentAudioStream(connection.localStream);
       if (connection && speakRepliesRef.current) {
@@ -1182,31 +1531,51 @@ export function useOnboardingVoiceRealtime({
 
   useEffect(() => {
     if (!enabled || !isChatStreaming) return;
+    const starting = !wasStreamingRef.current;
     wasStreamingRef.current = true;
     awaitingAssistantSpeakRef.current = true;
+    if (!starting) return;
     stopBrowserSpeech();
     interimAckSpokenRef.current = false;
     earlySpeechStartedRef.current = false;
     earlySpokenPrefixRef.current = '';
     pendingRemainderSpeakRef.current = null;
+    clearRemainderPrefetch();
     // Drop any unfinished replay of a prior reply so a new chat turn cannot
     // unlock into the old signal again.
     queuedSpeakableRef.current = null;
     replayOnUnlockRef.current = null;
     lastSpokenAssistantRef.current = '';
+    lastSpokenAssistantMessageIdRef.current = '';
     assistantTextAtStreamStartRef.current = lastAssistantTextRef.current;
-    if (realtimeSpeakInFlightRef.current) {
-      cancelActiveRealtimeResponse(
-        connectionRef.current,
-        activeRealtimeResponseIdRef.current,
-      );
-      clearRealtimeOutputAudioBuffer(connectionRef.current);
+    assistantMessageIdAtStreamStartRef.current =
+      lastAssistantMessageIdRef.current;
+    if (!speechAuthTokenRef.current) {
+      speechAuthTokenRef.current = Promise.resolve(
+        getAccessTokenRef.current?.() ?? null,
+      ).then((token) => token?.trim() || null);
+    }
+    const connection = connectionRef.current;
+    // The previous line keeps playing after its response has finished.
+    // Stop that audio before this turn, or the member hears the old reply.
+    cancelActiveRealtimeResponse(
+      connection,
+      activeRealtimeResponseIdRef.current,
+    );
+    clearRealtimeOutputAudioBuffer(connection);
+    if (connection) {
+      connection.remoteAudio.pause();
+      try {
+        connection.remoteAudio.currentTime = 0;
+      } catch {
+        // A live playback track can reject seeking.
+      }
     }
     activeRealtimeResponseIdRef.current = null;
     realtimeSpeakInFlightRef.current = false;
     realtimeAudioHeardRef.current = false;
     setPhase('processing');
-  }, [enabled, isChatStreaming, stopBrowserSpeech]);
+  }, [clearRemainderPrefetch, enabled, isChatStreaming, stopBrowserSpeech]);
 
   useEffect(() => {
     if (!enabled || !isChatStreaming || !awaitingAssistantSpeakRef.current) {
@@ -1214,15 +1583,23 @@ export function useOnboardingVoiceRealtime({
     }
     if (!speakEarlyLeadIn) return;
     if (earlySpeechStartedRef.current) return;
-    // Until the new assistant message arrives, lastAssistantText is still the
-    // previous turn — do not re-speak it as an "early" lead-in.
-    if (
-      lastAssistantText.trim() === assistantTextAtStreamStartRef.current.trim()
-    ) {
-      return;
+    // Until the new assistant message arrives, do not re-speak the previous
+    // turn as an "early" lead-in.
+    {
+      const startedId = assistantMessageIdAtStreamStartRef.current;
+      const startedText = assistantTextAtStreamStartRef.current.trim();
+      const stillPriorBubble =
+        Boolean(startedId) &&
+        lastAssistantMessageId === startedId &&
+        lastAssistantText.trim() === startedText;
+      if (stillPriorBubble || lastAssistantText.trim() === startedText) {
+        return;
+      }
     }
 
-    const earlySentence = extractEarlySpeakableSentence(lastAssistantText);
+    const earlySentence = firstCompletedSpeakableSentence(
+      scriptForSpeech(lastAssistantText),
+    );
     if (!earlySentence) return;
 
     earlySpeechStartedRef.current = true;
@@ -1237,21 +1614,47 @@ export function useOnboardingVoiceRealtime({
   }, [
     enabled,
     isChatStreaming,
+    lastAssistantMessageId,
     lastAssistantText,
+    scriptForSpeech,
     speakAssistantReply,
     speakEarlyLeadIn,
   ]);
 
   useEffect(() => {
-    if (!enabled || isChatStreaming) return;
-    if (!awaitingAssistantSpeakRef.current && !wasStreamingRef.current) return;
+    if (!enabled) return;
+    if (!speechBaselinedRef.current) {
+      speechBaselinedRef.current = true;
+      seenAssistantMessageIdRef.current = lastAssistantMessageId;
+      return;
+    }
+    if (isChatStreaming) return;
 
     const spoken = lastAssistantText.trim();
+    // A chip or a card reply is written here, with no model stream. Read it
+    // even when Home uses Realtime (speakDisplayedText=false) for streamed
+    // turns — otherwise "Step into a space" / tokens / people stay silent
+    // while "Where can I be useful?" (streamed) still speaks.
+    if (!awaitingAssistantSpeakRef.current && !wasStreamingRef.current) {
+      if (
+        !spoken ||
+        !lastAssistantMessageId ||
+        lastAssistantMessageId === seenAssistantMessageIdRef.current
+      ) {
+        return;
+      }
+      seenAssistantMessageIdRef.current = lastAssistantMessageId;
+      speakAssistantReply(spoken);
+      return;
+    }
     const startedFrom = assistantTextAtStreamStartRef.current.trim();
-    // The reply often lands after the stream flag drops, and until it does
-    // lastAssistantText is still the previous turn. Keep this turn until the
-    // new text is here, or the opening greeting is never spoken.
-    if (!spoken || spoken === startedFrom) {
+    const startedId = assistantMessageIdAtStreamStartRef.current;
+    const stillPriorBubble =
+      Boolean(startedId) &&
+      lastAssistantMessageId === startedId &&
+      spoken === startedFrom;
+    // Wait for a new bubble (or new words) before speaking.
+    if (!spoken || stillPriorBubble || spoken === startedFrom) {
       const timer = window.setTimeout(() => {
         if (!enabledRef.current || isChatStreamingRef.current) return;
         if (!awaitingAssistantSpeakRef.current && !wasStreamingRef.current) {
@@ -1259,16 +1662,25 @@ export function useOnboardingVoiceRealtime({
         }
         const latest = lastAssistantTextRef.current.trim();
         const started = assistantTextAtStreamStartRef.current.trim();
-        if (latest && latest !== started) return;
+        const latestId = lastAssistantMessageIdRef.current;
+        const startedMessageId = assistantMessageIdAtStreamStartRef.current;
+        const stillWaiting =
+          !latest ||
+          latest === started ||
+          (Boolean(startedMessageId) &&
+            latestId === startedMessageId &&
+            latest === started);
+        if (!stillWaiting) return;
         awaitingAssistantSpeakRef.current = false;
         wasStreamingRef.current = false;
         if (!realtimeSpeakInFlightRef.current && connectionRef.current) {
           setPhase('listening');
         }
-      }, 1200);
+      }, 6000);
       return () => window.clearTimeout(timer);
     }
 
+    seenAssistantMessageIdRef.current = lastAssistantMessageId;
     awaitingAssistantSpeakRef.current = false;
     wasStreamingRef.current = false;
 
@@ -1276,23 +1688,36 @@ export function useOnboardingVoiceRealtime({
       earlySpeechStartedRef.current = false;
       earlySpokenPrefixRef.current = '';
       pendingRemainderSpeakRef.current = null;
+      clearRemainderPrefetch();
       if (!realtimeSpeakInFlightRef.current && !speechPlaybackRef.current) {
         setPhase(connectionRef.current ? 'listening' : 'idle');
       }
       return;
     }
 
-    const speakable = prepareAssistantTextForSpeech(spoken);
+    const speakable = scriptForSpeech(spoken);
     const earlyPrefix = earlySpokenPrefixRef.current.trim();
     const remainder = resolveSpeechRemainderAfterEarlyPrefix(
       speakable,
       earlyPrefix,
     );
+    const earlyStillPlaying = Boolean(
+      earlyPrefix &&
+        (realtimeSpeakInFlightRef.current || speechPlaybackRef.current),
+    );
+    // Prefix no longer matches the finished bubble (cleaned/rewritten). Speaking
+    // the full script while the lead-in is still playing is two voices on one
+    // reply — stop the lead-in and read the finished line once.
+    const prefixLost =
+      Boolean(earlyPrefix) &&
+      remainder === speakable.trim() &&
+      !speakable.trim().startsWith(earlyPrefix);
     earlySpeechStartedRef.current = false;
     earlySpokenPrefixRef.current = '';
 
     if (!speakable) {
       pendingRemainderSpeakRef.current = null;
+      clearRemainderPrefetch();
       if (!realtimeSpeakInFlightRef.current && !speechPlaybackRef.current) {
         setPhase(connectionRef.current ? 'listening' : 'idle');
       }
@@ -1302,6 +1727,7 @@ export function useOnboardingVoiceRealtime({
     if (!remainder) {
       lastSpokenAssistantRef.current = spoken;
       pendingRemainderSpeakRef.current = null;
+      clearRemainderPrefetch();
       // Early lead-in already covered this turn — let in-flight TTS finish.
       if (!realtimeSpeakInFlightRef.current && !speechPlaybackRef.current) {
         scheduleMicRestoreForUserTurn();
@@ -1309,20 +1735,35 @@ export function useOnboardingVoiceRealtime({
       return;
     }
 
-    if (realtimeSpeakInFlightRef.current || speechPlaybackRef.current) {
+    if (prefixLost && earlyStillPlaying) {
+      pendingRemainderSpeakRef.current = null;
+      clearRemainderPrefetch();
+      speakAssistantReply(speakable);
+      return;
+    }
+
+    // An early lead-in is still this turn: finish it, then say the rest.
+    // Any other audio is the previous bubble. The chat has moved on.
+    if (earlyStillPlaying) {
       pendingRemainderSpeakRef.current = remainder;
+      warmRemainderSpeech(remainder);
       lastSpokenAssistantRef.current = spoken;
       return;
     }
 
     pendingRemainderSpeakRef.current = null;
+    clearRemainderPrefetch();
     speakAssistantReply(remainder);
   }, [
+    clearRemainderPrefetch,
     enabled,
     isChatStreaming,
+    lastAssistantMessageId,
     lastAssistantText,
     scheduleMicRestoreForUserTurn,
+    scriptForSpeech,
     speakAssistantReply,
+    warmRemainderSpeech,
   ]);
 
   return {

@@ -19,7 +19,10 @@ export function createShowMemberHomeItemTool(
   });
 
   const waiting =
-    items.map((item) => `${item.kind} slug=${item.slug}`).join('; ') || 'none';
+    items
+      .slice(0, 8)
+      .map((item) => `${item.kind} slug=${item.slug}`)
+      .join('; ') || 'none';
 
   return {
     description: `Place one home card inside this reply. Call it once, for the waiting item this reply is about. Pass kind and the slug from the facts line. Waiting: ${waiting}. A title is accepted when it names exactly one of those. Do not say that you are showing it, do not repeat its title, and never tell the member the item is unavailable.`,

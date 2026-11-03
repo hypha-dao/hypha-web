@@ -6,7 +6,8 @@ export const PIPELINE_SWIMLANES = [
   'Tenders',
 ] as const;
 
-export type PipelineSwimlane = (typeof PIPELINE_SWIMLANES)[number];
+/** Track slug stored on deals. Space-configurable; defaults keep these values. */
+export type PipelineSwimlane = string;
 
 export const PIPELINE_STATUSES = [
   'Identified',
@@ -18,7 +19,46 @@ export const PIPELINE_STATUSES = [
   'Lost',
 ] as const;
 
-export type PipelineStatus = (typeof PIPELINE_STATUSES)[number];
+/** Stage slug stored on deals. Space-configurable; defaults keep these values. */
+export type PipelineStatus = string;
+
+export type PipelineStageTerminal = 'won' | 'lost';
+
+export type PipelineStageDefinition = {
+  slug: string;
+  name: string;
+  position?: number;
+  terminal?: PipelineStageTerminal;
+};
+
+export type PipelineTrackDefinition = {
+  slug: string;
+  name: string;
+  position?: number;
+};
+
+export const DEFAULT_PIPELINE_PAGE_TITLE = 'Pipeline';
+export const DEFAULT_PIPELINE_ITEM_SINGULAR = 'Opportunity';
+export const DEFAULT_PIPELINE_ITEM_PLURAL = 'Opportunities';
+
+export const DEFAULT_PIPELINE_TRACKS: PipelineTrackDefinition[] =
+  PIPELINE_SWIMLANES.map((slug, position) => ({
+    slug,
+    name: slug,
+    position,
+  }));
+
+export const DEFAULT_PIPELINE_STAGES: PipelineStageDefinition[] =
+  PIPELINE_STATUSES.map((slug, position) => ({
+    slug,
+    name: slug,
+    position,
+    ...(slug === 'Won'
+      ? { terminal: 'won' as const }
+      : slug === 'Lost'
+      ? { terminal: 'lost' as const }
+      : {}),
+  }));
 
 export const DEAL_PRIORITIES = ['low', 'medium', 'high', 'critical'] as const;
 
@@ -67,8 +107,86 @@ export type Region = string;
  * a Won deal is certain, a Lost deal is not happening.
  */
 export const TERMINAL_STAGE_PROBABILITIES: Readonly<
-  Partial<Record<PipelineStatus, number>>
+  Partial<Record<string, number>>
 > = { Won: 100, Lost: 0 };
+
+export function terminalProbabilityForStage(
+  stage: Pick<PipelineStageDefinition, 'slug' | 'terminal'>,
+): number | undefined {
+  if (stage.terminal === 'won' || stage.slug === 'Won') return 100;
+  if (stage.terminal === 'lost' || stage.slug === 'Lost') return 0;
+  return TERMINAL_STAGE_PROBABILITIES[stage.slug];
+}
+
+export function isTerminalWonStatus(
+  status: string,
+  stages?: readonly PipelineStageDefinition[],
+): boolean {
+  if (stages?.length) {
+    return stages.some(
+      (stage) =>
+        stage.slug === status &&
+        (stage.terminal === 'won' || stage.slug === 'Won'),
+    );
+  }
+  return status === 'Won';
+}
+
+export function isTerminalLostStatus(
+  status: string,
+  stages?: readonly PipelineStageDefinition[],
+): boolean {
+  if (stages?.length) {
+    return stages.some(
+      (stage) =>
+        stage.slug === status &&
+        (stage.terminal === 'lost' || stage.slug === 'Lost'),
+    );
+  }
+  return status === 'Lost';
+}
+
+export function isClosedPipelineStatus(
+  status: string,
+  stages?: readonly PipelineStageDefinition[],
+): boolean {
+  return (
+    isTerminalWonStatus(status, stages) || isTerminalLostStatus(status, stages)
+  );
+}
+
+export function resolveDefaultTrackSlug(
+  tracks: readonly PipelineTrackDefinition[],
+): PipelineSwimlane {
+  return tracks[0]?.slug ?? PIPELINE_SWIMLANES[0];
+}
+
+export function resolveDefaultStageSlug(
+  stages: readonly PipelineStageDefinition[],
+): PipelineStatus {
+  const firstOpen = [...stages]
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+    .find((stage) => terminalProbabilityForStage(stage) === undefined);
+  return firstOpen?.slug ?? stages[0]?.slug ?? PIPELINE_STATUSES[0];
+}
+
+/**
+ * Moving a deal to another track always restarts it on the default open
+ * stage unless the caller sent an explicit status with the same write.
+ * Shared stages (Proposal on Sales and Tenders) still reset — the new
+ * track's default, not "still listed", is the rule.
+ */
+export function resolveStatusAfterTrackChange({
+  stages,
+  explicitStatus,
+}: {
+  stages: readonly PipelineStageDefinition[];
+  currentStatus?: string;
+  explicitStatus?: string;
+}): PipelineStatus {
+  if (explicitStatus) return explicitStatus;
+  return resolveDefaultStageSlug(stages);
+}
 
 export const PIPELINE_PROBABILITY: Record<
   PipelineSwimlane,
@@ -259,15 +377,51 @@ export function currencyForCountry(code: string | null | undefined): string {
   return '€';
 }
 
+/**
+ * Read one success-rate cell. Always keyed by track slug + stage slug —
+ * never by column index and never by falling through to another track.
+ */
+export function getProbabilityCell(
+  matrix: Record<string, Record<string, number>> | undefined,
+  trackSlug: string,
+  stageSlug: string,
+): number | undefined {
+  if (!matrix || !trackSlug || !stageSlug) return undefined;
+  const lane = matrix[trackSlug];
+  if (!lane || Array.isArray(lane) || typeof lane !== 'object') {
+    return undefined;
+  }
+  if (!Object.prototype.hasOwnProperty.call(lane, stageSlug)) {
+    return undefined;
+  }
+  const value = lane[stageSlug];
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+export function seedStageProbability(swimlane: string, status: string): number {
+  const terminal = TERMINAL_STAGE_PROBABILITIES[status];
+  if (terminal !== undefined) return terminal;
+  const seedLane = PIPELINE_PROBABILITY[swimlane];
+  if (!seedLane) return 0;
+  return seedLane[status] ?? 0;
+}
+
 export function getDealProbability(
   swimlane: PipelineSwimlane,
   status: PipelineStatus,
-  probabilities?: Record<PipelineSwimlane, Record<PipelineStatus, number>>,
+  probabilities?: Record<string, Record<string, number>>,
+  stages?: readonly PipelineStageDefinition[],
 ): number {
-  return (
-    probabilities?.[swimlane]?.[status] ??
-    PIPELINE_PROBABILITY[swimlane][status]
-  );
+  const stage = stages?.find((item) => item.slug === status);
+  if (stage) {
+    const terminal = terminalProbabilityForStage(stage);
+    if (terminal !== undefined) return terminal;
+  }
+  const cell = getProbabilityCell(probabilities, swimlane, status);
+  if (cell !== undefined) return cell;
+  return seedStageProbability(swimlane, status);
 }
 
 /**
@@ -281,7 +435,8 @@ export function effectiveSuccessRate(
     pipelineSwimlane: PipelineSwimlane;
     pipelineStatus: PipelineStatus;
   },
-  probabilities?: Record<PipelineSwimlane, Record<PipelineStatus, number>>,
+  probabilities?: Record<string, Record<string, number>>,
+  stages?: readonly PipelineStageDefinition[],
 ): number {
   return (
     deal.successRate ??
@@ -289,6 +444,7 @@ export function effectiveSuccessRate(
       deal.pipelineSwimlane,
       deal.pipelineStatus,
       probabilities,
+      stages,
     )
   );
 }
@@ -297,9 +453,12 @@ export function getWeightedValue(
   value: number,
   swimlane: PipelineSwimlane,
   status: PipelineStatus,
-  probabilities?: Record<PipelineSwimlane, Record<PipelineStatus, number>>,
+  probabilities?: Record<string, Record<string, number>>,
+  stages?: readonly PipelineStageDefinition[],
 ): number {
-  return (value * getDealProbability(swimlane, status, probabilities)) / 100;
+  return (
+    (value * getDealProbability(swimlane, status, probabilities, stages)) / 100
+  );
 }
 
 export function isGrantOrTenderSwimlane(swimlane: string): boolean {

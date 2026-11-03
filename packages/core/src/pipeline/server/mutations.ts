@@ -12,7 +12,8 @@ import type {
   UpdatePipelineSavedViewInput,
 } from '../types';
 import { mapDealRow } from './queries';
-import { regionForCountry } from '../constants';
+import { regionForCountry, resolveStatusAfterTrackChange } from '../constants';
+import { readPipelineConfig } from './pipeline-config';
 
 function numericOrNull(value: number | null | undefined): string | null {
   if (value == null) return null;
@@ -82,11 +83,35 @@ export async function updateDealById(
 
   if (updates.title !== undefined) patch.title = updates.title;
   if (updates.ownerId !== undefined) patch.ownerId = updates.ownerId;
+
+  const swimlaneOrStatusTouched =
+    updates.pipelineSwimlane !== undefined ||
+    updates.pipelineStatus !== undefined;
+  const [existing] = swimlaneOrStatusTouched
+    ? await db
+        .select({
+          pipelineStatus: deals.pipelineStatus,
+          pipelineSwimlane: deals.pipelineSwimlane,
+        })
+        .from(deals)
+        .where(and(eq(deals.id, id), eq(deals.spaceId, spaceId)))
+    : [];
+
   if (updates.pipelineSwimlane !== undefined) {
     patch.pipelineSwimlane = updates.pipelineSwimlane;
   }
   if (updates.pipelineStatus !== undefined) {
     patch.pipelineStatus = updates.pipelineStatus;
+  } else if (
+    existing &&
+    updates.pipelineSwimlane !== undefined &&
+    updates.pipelineSwimlane !== existing.pipelineSwimlane
+  ) {
+    const config = await readPipelineConfig({ spaceId }, { db });
+    patch.pipelineStatus = resolveStatusAfterTrackChange({
+      stages: config.stages,
+      currentStatus: existing.pipelineStatus,
+    });
   }
   if (updates.status !== undefined) patch.status = updates.status;
   if (updates.priority !== undefined) patch.priority = updates.priority;
@@ -116,28 +141,18 @@ export async function updateDealById(
   }
   if (updates.successRate !== undefined) {
     patch.successRate = updates.successRate;
-  } else if (
-    updates.pipelineStatus !== undefined ||
-    updates.pipelineSwimlane !== undefined
-  ) {
-    // Moving to another stage re-seeds the deal from the stage default:
+  } else if (existing) {
+    // Moving to another stage or track re-seeds from the stage default:
     // clear the per-deal override unless one is explicitly provided. Only do
-    // so on an actual stage change — re-submitting the current stage must not
+    // so on an actual change — re-submitting the current stage must not
     // discard the override.
-    const [existing] = await db
-      .select({
-        pipelineStatus: deals.pipelineStatus,
-        pipelineSwimlane: deals.pipelineSwimlane,
-      })
-      .from(deals)
-      .where(and(eq(deals.id, id), eq(deals.spaceId, spaceId)));
-    const stageChanged =
-      existing != null &&
-      ((updates.pipelineStatus !== undefined &&
-        updates.pipelineStatus !== existing.pipelineStatus) ||
-        (updates.pipelineSwimlane !== undefined &&
-          updates.pipelineSwimlane !== existing.pipelineSwimlane));
-    if (stageChanged) {
+    const swimlaneChanged =
+      updates.pipelineSwimlane !== undefined &&
+      updates.pipelineSwimlane !== existing.pipelineSwimlane;
+    const nextStatus = patch.pipelineStatus ?? updates.pipelineStatus;
+    const statusChanged =
+      nextStatus !== undefined && nextStatus !== existing.pipelineStatus;
+    if (swimlaneChanged || statusChanged) {
       patch.successRate = null;
     }
   }

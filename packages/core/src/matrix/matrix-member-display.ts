@@ -1,15 +1,89 @@
 import type { MatrixClient, RoomMember } from 'matrix-js-sdk';
 
-/** Production and preview org-bot accounts. People meet them as AI Agents. */
+/**
+ * Prod and preview share one Dendrite. These org-bot MXIDs stay trusted even
+ * when `NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS` was not baked into
+ * the browser bundle. Localparts still have to match `hypha-bot` / `hypha_bot`
+ * on these homeservers — this is not an any-homeserver match.
+ */
+const SHARED_DENDRITE_HYPHA_BOT_USER_IDS = [
+  '@hypha_bot_prod:matrix.hypha.earth',
+  '@hypha_bot_preview:matrix.hypha.earth',
+] as const;
+
+/** This env's bot plus any extra bot MXIDs (prod/preview share one Dendrite). */
+export function configuredHyphaBotUserIds(): string[] {
+  const primary = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim();
+  // Browser bundles only see NEXT_PUBLIC_* ; the unprefixed name stays for server.
+  const additional = [
+    process.env.NEXT_PUBLIC_HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS,
+    process.env.HYPHA_MATRIX_ADDITIONAL_BOT_USER_IDS,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(',')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return [
+    ...new Set(
+      [primary, ...additional, ...SHARED_DENDRITE_HYPHA_BOT_USER_IDS].filter(
+        (id): id is string => Boolean(id),
+      ),
+    ),
+  ];
+}
+
+function matrixIdServerName(userId: string): string | null {
+  const trimmed = userId.trim();
+  const colon = trimmed.lastIndexOf(':');
+  if (!trimmed.startsWith('@') || colon <= 1 || colon === trimmed.length - 1) {
+    return null;
+  }
+  return trimmed.slice(colon + 1);
+}
+
+/**
+ * Trusted Hypha bots only: configured MXIDs (`NEXT_PUBLIC_MATRIX_BOT_USER_ID`
+ * / extra bot IDs from #2569) plus `hypha-bot` / `hypha_bot` localparts on
+ * those homeservers. A matching name on any other server is a person.
+ * The optional label is accepted for existing call sites and is not a
+ * trust signal.
+ */
 export function isHyphaBotMatrixIdentity(
   userId?: string | null,
   label?: string | null,
 ): boolean {
-  const configured = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim();
+  void label;
   const id = userId?.trim();
-  if (configured && id && id === configured) return true;
-  const local = id?.replace(/^@/, '').split(':')[0] ?? '';
-  return /hypha[_-]bot/i.test(local) || /hypha[_-]bot/i.test(label ?? '');
+  if (!id) return false;
+  const configured = configuredHyphaBotUserIds();
+  if (configured.includes(id)) return true;
+  const local = id.replace(/^@/, '').split(':')[0] ?? '';
+  if (!/hypha[_-]bot/i.test(local)) return false;
+  const server = matrixIdServerName(id);
+  if (!server) return false;
+  const homeServers = new Set(
+    configured
+      .map((bot) => matrixIdServerName(bot)?.toLowerCase())
+      .filter((value): value is string => Boolean(value)),
+  );
+  return homeServers.has(server.toLowerCase());
+}
+
+/** Joined humans only — configured bots, extra bots, and Hypha bot identities. */
+export function countHumanMatrixMembers(
+  memberIds: readonly (string | null | undefined)[],
+  labels?: Readonly<Record<string, string | null | undefined>>,
+): number {
+  void labels;
+  let count = 0;
+  for (const raw of memberIds) {
+    const id = raw?.trim();
+    if (!id) continue;
+    if (isHyphaBotMatrixIdentity(id)) continue;
+    count += 1;
+  }
+  return count;
 }
 
 /** Matrix often prefixes displaynames with `@` — strip for localpart-style checks. */
@@ -47,6 +121,24 @@ export function pickUserVisibleMemberLabel(
   return null;
 }
 
+/**
+ * Hypha profile or Matrix display name, then a shortened id.
+ * Bridged Privy locals stay hidden — return empty so callers can show
+ * "Unknown member" instead of `@prod_privy…`.
+ */
+export function visibleMatrixMemberName(
+  matrixUserId: string,
+  ...candidates: Array<string | undefined | null>
+): string {
+  const picked = pickUserVisibleMemberLabel(matrixUserId, ...candidates);
+  if (picked) return picked;
+  const shortened = shortenMatrixIdForDisplay(matrixUserId);
+  if (needsHyphaProfileResolutionForMatrixLabel(shortened)) {
+    return '';
+  }
+  return shortened;
+}
+
 /** Matrix `m.room.member` displayname can mirror the ugly localpart — treat as absent. */
 export function looksLikeTechnicalMatrixDisplayName(
   label: string | undefined,
@@ -54,7 +146,7 @@ export function looksLikeTechnicalMatrixDisplayName(
 ): boolean {
   const l = label?.trim() ?? '';
   if (!l || l === matrixUserId) return true;
-  if (isHyphaBotMatrixIdentity(matrixUserId, l)) return true;
+  if (isHyphaBotMatrixIdentity(matrixUserId)) return true;
   const stem = displayNameStem(l);
   if (/^did:privy:/i.test(stem) || /^did:privy:/i.test(l)) return true;
   if (stemLooksLikeBridgedPrivyLocalpart(stem)) return true;
@@ -92,6 +184,41 @@ export function matrixUserIdToCanonicalPrivySub(userId: string): string | null {
   const bridged = localpart.match(/^(?:dev|prev|prod)_privy_did_privy_(.+)$/i);
   if (bridged?.[1]) return `did:privy:${bridged[1]}`;
   return null;
+}
+
+/** Deduped `did:privy:*` subs from bridged Matrix user ids. */
+export function uniqueCanonicalPrivySubsFromMxids(
+  userIds: readonly (string | null | undefined)[],
+): string[] {
+  const subs = new Set<string>();
+  for (const id of userIds) {
+    const sub = id ? matrixUserIdToCanonicalPrivySub(id) : null;
+    if (sub) subs.add(sub);
+  }
+  return [...subs];
+}
+
+/**
+ * `@prod_privy_did_privy_…` without a homeserver still names a bridged user.
+ * Prefer a joined member with that localpart; otherwise synthesize an MXID so
+ * person lookup can run from the localpart.
+ */
+export function resolveBridgedLocalHandleToMxid(
+  handle: string,
+  memberUserIds: readonly string[] = [],
+  fallbackHomeserver = 'matrix',
+): string | null {
+  const local = handle.trim().replace(/^@/, '');
+  if (!local || local.includes(':')) return null;
+  if (!speakerLabelToCanonicalPrivySub(local)) return null;
+  const wanted = local.toLowerCase();
+  for (const id of memberUserIds) {
+    const trimmed = id.trim();
+    const memberLocal = trimmed.replace(/^@/, '').split(':')[0]?.toLowerCase();
+    if (memberLocal === wanted) return trimmed;
+  }
+  const domain = fallbackHomeserver.trim() || 'matrix';
+  return `@${local}:${domain}`;
 }
 
 /** Resolve Hypha `did:privy:*` from a transcript speaker label (MXID or bare localpart). */

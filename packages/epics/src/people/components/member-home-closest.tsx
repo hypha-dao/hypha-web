@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   ClientEvent,
@@ -46,7 +45,8 @@ import { PersonAvatar } from './person-avatar';
 type ClosestPerson = MemberIntelligence['connections'][number];
 
 const VISIBLE_PEOPLE = 5;
-const PORTRAIT_PX = 32;
+/** Matches `PersonAvatar` size="md" on the live sensing row. */
+export const MEMBER_HOME_CLOSEST_PORTRAIT_PX = 32;
 
 type MemberHomeClosestProps = {
   lang: Locale;
@@ -54,6 +54,38 @@ type MemberHomeClosestProps = {
   fallbackName: string;
   onOpenChat: (person: ClosestPerson) => Promise<boolean>;
 };
+
+/**
+ * Same geometry as the live sensing row (label + 32px circles), for the home
+ * loading / partial mask so the greeting block does not jump when people land.
+ */
+export function MemberHomeClosestSkeleton({
+  count = VISIBLE_PEOPLE,
+}: {
+  count?: number;
+}) {
+  const t = useTranslations('MemberHome');
+  return (
+    <nav aria-hidden aria-busy="true" className="mt-1 min-w-0 max-w-full pb-3">
+      <p className="text-1 tracking-[0.12em] text-neutral-11 uppercase">
+        {t('sensingAround')}
+      </p>
+      <div className="mt-2 flex gap-2">
+        {Array.from({ length: count }, (_, index) => (
+          <Wave
+            key={index}
+            className="rounded-full"
+            delayMs={index * 70}
+            style={{
+              width: MEMBER_HOME_CLOSEST_PORTRAIT_PX,
+              height: MEMBER_HOME_CLOSEST_PORTRAIT_PX,
+            }}
+          />
+        ))}
+      </div>
+    </nav>
+  );
+}
 
 function sameCounts(left: Map<number, number>, right: Map<number, number>) {
   if (left.size !== right.size) return false;
@@ -184,8 +216,34 @@ export function findDirectRoomId(
   const remembered = readRememberedDirectRoom(selfUserId, otherUserId);
   const rememberedRoom = remembered ? client.getRoom(remembered) : null;
   const rememberedMembership = rememberedRoom?.getMyMembership();
-  if (rememberedMembership === 'join' || rememberedMembership === 'invite') {
-    return remembered;
+  if (
+    rememberedRoom &&
+    (rememberedMembership === 'join' || rememberedMembership === 'invite')
+  ) {
+    const participants = [
+      ...new Set(
+        rememberedRoom
+          .getMembers()
+          .filter(
+            (member) =>
+              member.membership === 'join' || member.membership === 'invite',
+          )
+          .map((member) => member.userId)
+          .filter((id) => id && !isHyphaBotMatrixIdentity(id))
+          .map((id) => id.toLowerCase()),
+      ),
+    ];
+    const self = selfUserId.trim().toLowerCase();
+    const other = otherUserId.trim().toLowerCase();
+    if (
+      self &&
+      other &&
+      participants.length === 2 &&
+      participants.includes(self) &&
+      participants.includes(other)
+    ) {
+      return remembered;
+    }
   }
   return null;
 }
@@ -208,7 +266,6 @@ export function MemberHomeClosest({
   onOpenChat,
 }: MemberHomeClosestProps) {
   const t = useTranslations('MemberHome');
-  const router = useRouter();
   const matrix = useMatrix();
   const [messageCounts, setMessageCounts] = useState<Map<number, number>>(
     () => new Map(),
@@ -352,7 +409,10 @@ export function MemberHomeClosest({
                 key={index}
                 className="rounded-full"
                 delayMs={index * 70}
-                style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
+                style={{
+                  width: MEMBER_HOME_CLOSEST_PORTRAIT_PX,
+                  height: MEMBER_HOME_CLOSEST_PORTRAIT_PX,
+                }}
               />
             ),
           )}
@@ -416,14 +476,10 @@ export function MemberHomeClosest({
                       if (openingRef.current) return;
                       openingRef.current = true;
                       setOpeningId(person.id);
-                      void onOpenChat(person)
-                        .then((opened) => {
-                          if (!opened) router.push(href);
-                        })
-                        .finally(() => {
-                          openingRef.current = false;
-                          setOpeningId(null);
-                        });
+                      void onOpenChat(person).finally(() => {
+                        openingRef.current = false;
+                        setOpeningId(null);
+                      });
                     }}
                   >
                     {portrait}
@@ -442,7 +498,10 @@ export function MemberHomeClosest({
                 href={`/${lang}/messages`}
                 aria-label={t('seeMore')}
                 className="flex items-center justify-center rounded-full border border-neutral-7 text-1 text-neutral-12"
-                style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
+                style={{
+                  width: MEMBER_HOME_CLOSEST_PORTRAIT_PX,
+                  height: MEMBER_HOME_CLOSEST_PORTRAIT_PX,
+                }}
               >
                 {t('sensingMore', { count: rest })}
               </Link>

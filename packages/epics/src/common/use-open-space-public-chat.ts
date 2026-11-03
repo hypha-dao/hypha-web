@@ -1,13 +1,17 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useMatrix } from '@hypha-platform/core/client';
+import {
+  useMatrix,
+  waitForAcceptedPublicRoomId,
+} from '@hypha-platform/core/client';
 
 import { useHumanChatPanel } from './human-chat-panel-context';
 
 /** Open a space’s public channel (network connect) — never the member room. */
 export function useOpenSpacePublicChat() {
-  const { ensurePublicRoom, isMatrixAvailable, isAuthenticated } = useMatrix();
+  const { ensurePublicRoom, isMatrixAvailable, isAuthenticated, client } =
+    useMatrix();
   const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,6 +21,8 @@ export function useOpenSpacePublicChat() {
       slug: string;
       title: string;
       description?: string | null;
+      /** `spaces.chatRoomId` — so a misbound public alias can be detached. */
+      memberRoomId?: string | null;
     }) => {
       const slug = space.slug.trim();
       if (!slug || opening) return false;
@@ -27,14 +33,23 @@ export function useOpenSpacePublicChat() {
       setOpening(true);
       setError(null);
       try {
-        const { roomId } = await ensurePublicRoom(slug);
-        openCoherenceChat(
+        const memberRoomId = space.memberRoomId?.trim() || null;
+        const { roomId } = await ensurePublicRoom(slug, memberRoomId);
+        const publicRoomId = await waitForAcceptedPublicRoomId({
           roomId,
+          memberRoomId,
+          readRoomType: () => client?.getRoom(roomId)?.getType() ?? null,
+        });
+        if (!publicRoomId) {
+          throw new Error('Public channel resolved to the space channel');
+        }
+        openCoherenceChat(
+          publicRoomId,
           space.title,
           '',
           space.description ?? null,
           slug,
-          { public: true },
+          { public: true, channel: 'space-public' },
         );
         openHumanChatPanel();
         return true;
@@ -46,6 +61,7 @@ export function useOpenSpacePublicChat() {
       }
     },
     [
+      client,
       ensurePublicRoom,
       isAuthenticated,
       isMatrixAvailable,

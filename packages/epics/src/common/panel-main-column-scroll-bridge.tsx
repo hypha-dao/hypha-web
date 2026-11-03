@@ -9,6 +9,8 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID } from '@hypha-platform/core/client';
+import { HumanChatPanelErrorBoundary } from './human-chat-panel/human-chat-panel-error-boundary';
+import { shouldPreventChatSheetEscapeDismiss } from './human-chat-panel/composer-escape';
 import { setMainColumnScrollRoot } from './main-column-scroll';
 
 type Props = {
@@ -127,9 +129,12 @@ export function PanelDualSidebarScrollBridge({
             collapsible="offcanvas"
             mobileWidth="100vw"
             className="z-[50]"
+            shouldPreventEscapeDismiss={shouldPreventChatSheetEscapeDismiss}
           >
             <SidebarResizeHandle />
-            {rightContent}
+            <HumanChatPanelErrorBoundary>
+              {rightContent}
+            </HumanChatPanelErrorBoundary>
           </Sidebar>
         </SidebarProvider>
       </SidebarInset>

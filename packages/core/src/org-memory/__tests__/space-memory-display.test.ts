@@ -3,6 +3,8 @@ import {
   deriveSpaceMemoryDisplayTitle,
   humanizeMemoryExcerpt,
   looksLikeTechnicalSpaceMemoryName,
+  memoryBodyWithoutRepeatedTitle,
+  scrubTechnicalIdentityTokens,
   stripTechnicalSpeakerFromExcerpt,
 } from '../space-memory-display';
 
@@ -52,6 +54,14 @@ describe('stripTechnicalSpeakerFromExcerpt', () => {
   });
 });
 
+describe('scrubTechnicalIdentityTokens', () => {
+  it('removes bare bridged privy locals from free text', () => {
+    expect(
+      scrubTechnicalIdentityTokens('hello prod_privy_did_privy_cmabc123 there'),
+    ).toBe('hello there');
+  });
+});
+
 describe('humanizeMemoryExcerpt', () => {
   it('keeps the sentences from a Matrix reply dump', () => {
     expect(
@@ -61,6 +71,14 @@ describe('humanizeMemoryExcerpt', () => {
     ).toBe(
       'How was the call yesterday Did you notice any improvement, or still had issues during the call? The changes I made were mainly to be able to recover correctly when ther...',
     );
+  });
+
+  it('strips bridged speakers from call transcript excerpts', () => {
+    expect(
+      humanizeMemoryExcerpt(
+        'prod_privy_did_privy_abc: ok recording with voice only\nprod_privy_did_privy_def: then we switched to video',
+      ),
+    ).toBe('ok recording with voice only\nthen we switched to video');
   });
 
   it('leaves ordinary markdown alone', () => {
@@ -89,5 +107,58 @@ describe('deriveSpaceMemoryDisplayTitle', () => {
           'prod_privy_did_privy_abc: ok recording with voice only and then shifting to video',
       }),
     ).toBe('ok recording with voice only and then shifting to video');
+  });
+
+  it('falls back when the excerpt lead is URL spam', () => {
+    expect(
+      deriveSpaceMemoryDisplayTitle({
+        source: 'discussion_summary',
+        name: 'discussion-summary-1.md',
+        textExcerpt:
+          'Hypha call capture notice Hypha call capture notice https://pr.example/overview https://io.example/website',
+      }),
+    ).toBe('Conversation summary');
+  });
+});
+
+describe('memoryBodyWithoutRepeatedTitle', () => {
+  it('strips a title that was derived from the opening of the body', () => {
+    const body =
+      'We aligned on shipping the memory timeline next. Then we reviewed recordings.';
+    expect(
+      memoryBodyWithoutRepeatedTitle(
+        'We aligned on shipping the memory timeline next.',
+        body,
+      ),
+    ).toBe('Then we reviewed recordings.');
+  });
+
+  it('strips a truncated title that ends with an ellipsis', () => {
+    const body =
+      'Hypha call capture notice https://example.com/overview and more notes.';
+    expect(
+      memoryBodyWithoutRepeatedTitle(
+        'Hypha call capture notice https://example.com/overvi…',
+        body,
+      ),
+    ).toBe('and more notes.');
+  });
+
+  it('returns empty when title and body are the same sentence', () => {
+    expect(
+      memoryBodyWithoutRepeatedTitle(
+        'Short summary only.',
+        'Short summary only.',
+      ),
+    ).toBe('');
+  });
+
+  it('leaves unrelated bodies intact', () => {
+    expect(
+      memoryBodyWithoutRepeatedTitle(
+        'Hypha Core Team',
+        'Notes from the weekly sync.',
+      ),
+    ).toBe('Notes from the weekly sync.');
   });
 });

@@ -4,7 +4,7 @@ import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, type MouseEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { RxCross1 } from 'react-icons/rx';
 import { createAsideOverlayCloseHandler } from './aside-overlay-close';
@@ -15,6 +15,8 @@ type ButtonCloseProps = {
   narrow?: boolean;
   className?: string;
   preferBack?: boolean;
+  /** Replaces link navigation (e.g. query-param dialogs that close by editing the URL). */
+  onClose?: () => void;
 };
 
 export const ButtonClose = ({
@@ -23,6 +25,7 @@ export const ButtonClose = ({
   narrow = false,
   className,
   preferBack = false,
+  onClose,
 }: ButtonCloseProps) => {
   const t = useTranslations('Common');
   const pathname = usePathname();
@@ -55,7 +58,14 @@ export const ButtonClose = ({
     [closeUrl, pathname, router],
   );
 
-  const onClick = preferBack ? handleClick : undefined;
+  const onClick = onClose
+    ? (event: MouseEvent<HTMLAnchorElement>) => {
+        event.preventDefault();
+        onClose();
+      }
+    : preferBack
+    ? handleClick
+    : undefined;
 
   return (
     <Button asChild variant="ghost" colorVariant="neutral" title={title}>

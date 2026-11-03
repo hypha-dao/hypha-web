@@ -128,27 +128,42 @@ export function requestMatrixAgentReply({
   const token = authToken?.trim();
   if (!agentUserId || !token || !mentionUserIds.includes(agentUserId)) return;
   const resolvedSlug = context?.spaceSlug?.trim() || spaceSlug?.trim() || null;
-  void fetch('/api/matrix/agent-reply', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      roomId,
-      spaceSlug: resolvedSlug,
-      context: context
-        ? {
-            kind: context.kind,
-            spaceSlug: resolvedSlug,
-            documentSlug: context.documentSlug?.trim() || null,
-            documentTitle: context.documentTitle?.trim() || null,
-            signalSlug: context.signalSlug?.trim() || null,
-            signalTitle: context.signalTitle?.trim() || null,
-          }
-        : null,
-    }),
-  }).catch(() => {
-    // The room stays as the people left it when the reply cannot be posted.
+  const payload = JSON.stringify({
+    roomId,
+    spaceSlug: resolvedSlug,
+    context: context
+      ? {
+          kind: context.kind,
+          spaceSlug: resolvedSlug,
+          documentSlug: context.documentSlug?.trim() || null,
+          documentTitle: context.documentTitle?.trim() || null,
+          signalSlug: context.signalSlug?.trim() || null,
+          signalTitle: context.signalTitle?.trim() || null,
+        }
+      : null,
   });
+  const ask = () =>
+    fetch('/api/matrix/agent-reply', {
+      method: 'POST',
+      keepalive: true,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: payload,
+    }).then(async (response) => {
+      if (!response.ok) return false;
+      const data = (await response.json().catch(() => null)) as {
+        replied?: boolean;
+      } | null;
+      return Boolean(data?.replied);
+    });
+  void ask()
+    .catch(() => false)
+    .then(async (replied) => {
+      if (replied) return;
+      // The mention can land in the room after the first read. Ask once more.
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await ask().catch(() => undefined);
+    });
 }

@@ -62,6 +62,11 @@ export type MemberIntelligence = {
     notifications: number;
     capitalAsks: number;
   };
+  /**
+   * Shell payload: spaces, proposals, and signals are in. The chain roster,
+   * vote checks, and creator captions are still loading.
+   */
+  partial?: boolean;
   guidance: {
     narrative: string;
   };
@@ -121,6 +126,12 @@ export type MemberIntelligence = {
      * not be read. A failed read is not expiry.
      */
     expired?: boolean;
+    /**
+     * True when the creator (or owner) withdrew this proposal on-chain.
+     * Withdrawn ids still look open on getProposalCore (0% tallies, future
+     * end time) — Agreements already hides them; Home must too.
+     */
+    withdrawn?: boolean;
     /**
      * Set when the chain vote has closed. Participation is the share of
      * voting power that voted. Unity is the yes share of the votes cast.
@@ -355,6 +366,10 @@ export function peopleSharingMemberSpaces({
   };
 }
 
+function compactUsername(value: string) {
+  return value.toLowerCase().replace(/[@._\s-]/g, '');
+}
+
 function personMatchesQuery(
   person: {
     name: string | null;
@@ -364,11 +379,13 @@ function personMatchesQuery(
   },
   needle: string,
 ) {
-  return [person.name, person.surname, person.nickname, person.slug]
+  const fields = [person.name, person.surname, person.nickname, person.slug]
     .filter((part): part is string => Boolean(part?.trim()))
-    .join(' ')
-    .toLowerCase()
-    .includes(needle);
+    .map((part) => part.toLowerCase());
+  if (fields.join(' ').includes(needle)) return true;
+  const compact = compactUsername(needle);
+  if (!compact) return false;
+  return fields.some((part) => compactUsername(part).includes(compact));
 }
 
 /**

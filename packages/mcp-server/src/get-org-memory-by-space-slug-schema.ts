@@ -16,6 +16,13 @@ export type GetOrgMemoryBySpaceSlugInput = z.infer<
   typeof getOrgMemoryBySpaceSlugInputSchema
 >;
 
+const spaceMemoryBranchSchema = z.enum([
+  'conversations',
+  'calls',
+  'ai',
+  'files',
+]);
+
 const orgMemoryAssetSchema = z.object({
   source: z.enum([
     'proposal_upload',
@@ -42,6 +49,7 @@ const orgMemoryAssetSchema = z.object({
   call_transcript_id: z.number().int().optional(),
   discussion_summary_id: z.number().int().optional(),
   text_excerpt: z.string().optional(),
+  category: spaceMemoryBranchSchema.optional(),
   occurred_at: z.string(),
 });
 
@@ -52,6 +60,20 @@ const assetsPaginationSchema = z.object({
   total_pages: z.number(),
   has_next_page: z.boolean(),
   has_previous_page: z.boolean(),
+});
+
+const assetsCategoryCountsSchema = z.object({
+  conversations: z.number(),
+  calls: z.number(),
+  ai: z.number(),
+  files: z.number(),
+});
+
+const assetsCategoryMarkdownSchema = z.object({
+  conversations: z.string(),
+  calls: z.string(),
+  ai: z.string(),
+  files: z.string(),
 });
 
 const matrixFetchMetaSchema = z.object({
@@ -83,6 +105,8 @@ export const getOrgMemoryBySpaceSlugOutputSchema =
   getPeopleBySpaceSlugOutputSchema.extend({
     org_memory_assets: z.array(orgMemoryAssetSchema),
     assets_pagination: assetsPaginationSchema,
+    assets_category_counts: assetsCategoryCountsSchema.optional(),
+    assets_category_markdown: assetsCategoryMarkdownSchema.optional(),
     matrix_fetch: matrixFetchMetaSchema,
   });
 

@@ -3,52 +3,63 @@ import React from 'react';
 import useSWR from 'swr';
 import { TransferWithEntity } from './types';
 import { useJwt } from '@hypha-platform/core/client';
+import { buildUserTransfersEndpoint } from './build-user-transfers-endpoint';
+
+export { buildUserTransfersEndpoint } from './build-user-transfers-endpoint';
 
 export const useUserTransfers = ({
   sort,
   refreshInterval = 10000,
   personSlug,
+  token,
 }: {
   sort?: { sort: string };
   refreshInterval?: number;
   personSlug?: string;
+  token?: string;
 }) => {
   const { jwt } = useJwt();
+  const waitingForAuth = Boolean(personSlug) && !jwt;
 
   const endpoint = React.useMemo(() => {
     if (!personSlug) return '';
-    const base = `/api/v1/people/${personSlug}/transactions`;
-    return sort?.sort ? `${base}?sort=${encodeURIComponent(sort.sort)}` : base;
-  }, [personSlug, sort]);
+    return buildUserTransfersEndpoint({
+      personSlug,
+      sort: sort?.sort,
+      token,
+    });
+  }, [personSlug, sort, token]);
 
-  const { data, isLoading, error } = useSWR(
+  const { data, isLoading, error, mutate } = useSWR(
     personSlug && jwt ? [endpoint, jwt] : null,
     async ([endpoint, jwt]) => {
-      try {
-        const res = await fetch(endpoint, {
-          headers: {
-            Authorization: `Bearer ${jwt}`,
-          },
-        });
-        if (!res.ok) {
-          throw new Error(`Failed to fetch transactions: ${res.statusText}`);
-        }
-        return await res.json();
-      } catch (err) {
-        console.error('Fetch error:', err);
-        throw err;
+      const res = await fetch(endpoint, {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+        },
+      });
+      // Any non-2xx (400 included) must surface as an error, not an empty list.
+      if (!res.ok) {
+        throw new Error(`Failed to fetch transactions: ${res.status}`);
       }
+      const payload = await res.json();
+      if (!Array.isArray(payload)) {
+        throw new Error('Failed to fetch transactions: invalid payload');
+      }
+      return payload as TransferWithEntity[];
     },
     {
       refreshInterval,
       keepPreviousData: true,
       errorRetryCount: 3,
+      shouldRetryOnError: true,
     },
   );
 
   return {
-    transfers: (data as TransferWithEntity[]) || [],
-    isLoading,
+    transfers: error ? [] : data || [],
+    isLoading: isLoading || waitingForAuth,
     error,
+    retry: mutate,
   };
 };

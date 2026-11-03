@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ClientEvent, SyncState } from 'matrix-js-sdk';
 import {
   useJwt,
   useMatrix,
@@ -11,7 +10,11 @@ import {
 
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
-import { rememberDirectRoom } from './member-connections';
+import { rememberPersonDirectRoom } from './member-connections';
+import {
+  noticeKeyForOpenPersonRoomError,
+  openOrEnsurePersonRoom,
+} from './open-person-room';
 
 type HomePerson = {
   id: number;
@@ -21,6 +24,8 @@ type HomePerson = {
   nickname: string | null;
   avatarUrl: string | null;
   sharedSpaceCount?: number;
+  /** Wallet used when the chat panel loads this person's spaces. */
+  address?: string | null;
   /** Space this conversation belongs to, when it was opened from one. */
   spaceSlug?: string | null;
 };
@@ -35,6 +40,7 @@ type MemberHomePeopleProps = {
   onOpenChatReady?: (openChat: MemberHomeOpenChat) => void;
   onOpenCallReady?: (openCall: MemberHomeOpenChat) => void;
   onOpenVideoReady?: (openVideo: MemberHomeOpenChat) => void;
+  onNotice?: (notice: string | null) => void;
 };
 
 function labelOf(person: HomePerson, fallback: string) {
@@ -51,6 +57,7 @@ export function MemberHomePeople({
   onOpenChatReady,
   onOpenCallReady,
   onOpenVideoReady,
+  onNotice,
 }: MemberHomePeopleProps) {
   const t = useTranslations('MemberHome');
   const { openCoherenceChat } = useHumanChatPanel();
@@ -67,13 +74,16 @@ export function MemberHomePeople({
     for (const person of people) ids.add(person.id);
     return [...ids];
   }, [extraPersonIds, people]);
-  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
-    personIds,
-  });
+  const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
+    useMatrixUserIdsByPersonIds({
+      personIds,
+    });
   const matrixRef = useRef(matrix);
   matrixRef.current = matrix;
   const matrixIdsRef = useRef(personIdToMatrixUserId);
   matrixIdsRef.current = personIdToMatrixUserId;
+  const matrixIdsLoadingRef = useRef(matrixIdsLoading);
+  matrixIdsLoadingRef.current = matrixIdsLoading;
   const knownMatrixIdsRef = useRef<Record<number, string>>({});
   if (Object.keys(personIdToMatrixUserId).length > 0) {
     knownMatrixIdsRef.current = {
@@ -86,42 +96,18 @@ export function MemberHomePeople({
   function showRoom(roomId: string | null, title: string, person?: HomePerson) {
     // PM / group rooms are private — never attach a space slug or the AI and
     // @-mentions inherit that space's roster.
-    const peerSlug = person?.slug?.trim();
+    const peerSlug = person?.slug?.trim() ?? '';
+    const peerAddress = person?.address?.trim() || null;
+    const peerId = person?.id && person.id > 0 ? person.id : undefined;
     openCoherenceChat(roomId, title, '', null, null, {
-      peerPerson: peerSlug ? { slug: peerSlug } : null,
-    });
-  }
-
-  async function waitForMatrix() {
-    for (let attempt = 0; attempt < 30; attempt += 1) {
-      const current = matrixRef.current;
-      if (current.isAuthenticated && current.client) {
-        await waitForRoomList(current.client);
-        return current;
-      }
-      await new Promise((resolve) => window.setTimeout(resolve, 100));
-    }
-    return matrixRef.current;
-  }
-
-  function waitForRoomList(client: NonNullable<typeof matrix.client>) {
-    const state = client.getSyncState();
-    if (state === SyncState.Prepared || state === SyncState.Syncing) {
-      return Promise.resolve();
-    }
-    return new Promise<void>((resolve) => {
-      const timer = window.setTimeout(finish, 4000);
-      const onSync = (next: SyncState | null) => {
-        if (next === SyncState.Prepared || next === SyncState.Syncing) {
-          finish();
-        }
-      };
-      function finish() {
-        window.clearTimeout(timer);
-        client.removeListener(ClientEvent.Sync, onSync);
-        resolve();
-      }
-      client.on(ClientEvent.Sync, onSync);
+      peerPerson:
+        peerSlug || peerId || peerAddress
+          ? {
+              slug: peerSlug,
+              id: peerId,
+              address: peerAddress,
+            }
+          : null,
     });
   }
 
@@ -130,6 +116,7 @@ export function MemberHomePeople({
       const mxid =
         matrixIdsRef.current[personId] ?? knownMatrixIdsRef.current[personId];
       if (mxid) return mxid;
+      if (!matrixIdsLoadingRef.current && attempt > 2) return null;
       await new Promise((resolve) => window.setTimeout(resolve, 100));
     }
     return (
@@ -139,23 +126,31 @@ export function MemberHomePeople({
     );
   }
 
-  async function resolvePersonRoom(person: HomePerson, title: string) {
-    const ready = await waitForMatrix();
-    const client = ready.client;
-    const selfId = client?.getUserId() ?? '';
-    if (!ready.isAuthenticated || !client) {
-      setNotice(t('matrixUnavailable'));
-      return null;
+  async function resolvePersonRoom(
+    person: HomePerson,
+    title: string,
+  ): Promise<
+    | { status: 'ready'; roomId: string }
+    | { status: 'start-conversation' }
+    | { status: 'failed' }
+  > {
+    try {
+      const roomId = await openOrEnsurePersonRoom({
+        getMatrix: () => matrixRef.current,
+        personId: person.id,
+        title,
+        waitForMatrixUserId,
+      });
+      return { status: 'ready', roomId };
+    } catch (error) {
+      if (
+        noticeKeyForOpenPersonRoomError(error) === 'matrixPersonUnavailable'
+      ) {
+        return { status: 'start-conversation' };
+      }
+      setNotice(t(noticeKeyForOpenPersonRoomError(error)));
+      return { status: 'failed' };
     }
-    const mxid = await waitForMatrixUserId(person.id);
-    if (!selfId) return null;
-    if (!mxid) {
-      setNotice(t('matrixFailed'));
-      return null;
-    }
-    const { roomId } = await ready.ensureDirectRoom(mxid, title);
-    rememberDirectRoom(selfId, mxid, roomId);
-    return roomId;
   }
 
   async function openPersonChat(person: HomePerson): Promise<boolean> {
@@ -171,13 +166,17 @@ export function MemberHomePeople({
     setNotice(null);
     const title = labelOf(person, fallbackName);
     try {
-      const roomId = await resolvePersonRoom(person, title);
-      if (!roomId) {
-        setNotice((current) => current ?? t('matrixUnavailable'));
-        return false;
+      const result = await resolvePersonRoom(person, title);
+      if (result.status === 'failed') return false;
+      if (result.status === 'ready') {
+        rememberPersonDirectRoom(person.id, result.roomId);
+        showRoom(result.roomId, title, person);
+        return true;
       }
-      showRoom(roomId, title, person);
-      return true;
+      // Listed people still open Start-a-conversation when no mxid/room yet.
+      // Never surface "That person does not have chat yet." for a list tap.
+      showRoom(null, title, person);
+      return false;
     } catch {
       setNotice(t('matrixFailed'));
       return false;
@@ -197,14 +196,15 @@ export function MemberHomePeople({
     setNotice(null);
     const title = labelOf(person, fallbackName);
     try {
-      const roomId = await resolvePersonRoom(person, title);
-      if (!roomId) {
-        setNotice(t('matrixUnavailable'));
+      const result = await resolvePersonRoom(person, title);
+      if (result.status === 'start-conversation') {
+        setNotice(t('matrixPersonUnavailable'));
         return false;
       }
-      showRoom(roomId, title, person);
+      if (result.status !== 'ready') return false;
+      showRoom(result.roomId, title, person);
       const start = video ? startVideoForRoom : startAudioForRoom;
-      await start(roomId, null, undefined, jwt, {
+      await start(result.roomId, null, undefined, jwt, {
         roomTitle: title,
       });
       return true;
@@ -225,10 +225,15 @@ export function MemberHomePeople({
     onOpenVideoReady?.((person) => openPersonVideoRef.current(person));
   }, [onOpenVideoReady]);
 
+  useEffect(() => {
+    onNotice?.(notice);
+    return () => onNotice?.(null);
+  }, [notice, onNotice]);
+
   if (!notice) return null;
 
   return (
-    <p className="text-1 text-error-11" role="alert">
+    <p className="text-1 text-error-11 @min-[68rem]/home:hidden" role="alert">
       {notice}
     </p>
   );

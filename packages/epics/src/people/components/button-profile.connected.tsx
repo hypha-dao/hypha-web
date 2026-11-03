@@ -1,7 +1,13 @@
 'use client';
 
 import { ButtonProfile } from './button-profile';
-import { useRouter, useParams, usePathname } from 'next/navigation';
+import {
+  useRouter,
+  useParams,
+  usePathname,
+  useSearchParams,
+} from 'next/navigation';
+import { buildDialogHref } from '../../notifications/dialog-url';
 import {
   ProfileUseAuthentication,
   ResolvePostAuthRedirectPathOrDefault,
@@ -11,6 +17,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -28,8 +35,10 @@ import {
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
 import {
-  isMessagesOrSpacesNavHref,
-  shouldShowMessagesAndSpacesNav,
+  isMessagesNavHref,
+  isSpacesNavHref,
+  shouldShowMessagesNav,
+  shouldShowSpacesScreen,
 } from './app-nav-visibility';
 
 type ConnectedButtonProfileProps = {
@@ -65,10 +74,16 @@ export const ConnectedButtonProfile = ({
     isLoading: isAuthLoading,
   } = useAuthentication();
   const { person, isLoading: isPersonLoading, meError } = useMe();
+  // After inactivity a /me refresh can briefly look like "no profile". Once
+  // this session has seen a person, do not send them to the welcome flow.
+  const hadPersonRef = useRef(false);
+  if (person) hadPersonRef.current = true;
+  if (!isAuthenticated) hadPersonRef.current = false;
 
   const router = useRouter();
   const pathname = usePathname();
-  const { lang, id } = useParams();
+  const { lang } = useParams();
+  const searchParams = useSearchParams();
   const { resolvedTheme, setTheme } = useTheme();
   const locale = typeof lang === 'string' ? lang : undefined;
   const onboardingUrl = locale
@@ -84,23 +99,13 @@ export const ConnectedButtonProfile = ({
       ? baseRedirectPath
       : resolveAccountEntryPath({ lang: locale, hasProfile: true });
 
-  const notificationCentrePath = useMemo(() => {
-    if (!isPersonLoading && person?.slug) {
-      if (pathname.includes('/network')) {
-        return `/${lang}/network/notification-centre`;
-      } else if (pathname.includes('/my-wallet')) {
-        return `/${lang}/my-wallet/notification-centre`;
-      } else if (pathname.includes('/my-spaces')) {
-        return `/${lang}/my-spaces/notification-centre`;
-      } else if (pathname.includes('/dho/')) {
-        return `/${lang}/dho/${id}/agreements/notification-centre`;
-      } else {
-        return `/${lang}/profile/${person.slug}/notification-centre`;
-      }
-    } else {
-      return undefined;
-    }
-  }, [lang, id, person, isPersonLoading, pathname]);
+  const notificationCentrePath = useMemo(
+    () =>
+      !isPersonLoading && person?.slug
+        ? buildDialogHref(pathname, searchParams)
+        : undefined,
+    [person, isPersonLoading, pathname, searchParams],
+  );
 
   useEffect(() => {
     if (isAuthLoading || isPersonLoading || !isAuthenticated) {
@@ -115,6 +120,9 @@ export const ConnectedButtonProfile = ({
       return;
     }
     if (person === null) {
+      if (hadPersonRef.current) {
+        return;
+      }
       if (
         pathname !== newUserRedirectPath &&
         pathname !== signupPath &&
@@ -216,10 +224,16 @@ export const ConnectedButtonProfile = ({
   };
 
   const visibleNavItems = useMemo(() => {
-    if (shouldShowMessagesAndSpacesNav(person?.primaryOrientation)) {
-      return navItems;
-    }
-    return navItems.filter((item) => !isMessagesOrSpacesNavHref(item.href));
+    const orientation = person?.primaryOrientation;
+    return navItems.filter((item) => {
+      if (isMessagesNavHref(item.href) && !shouldShowMessagesNav(orientation)) {
+        return false;
+      }
+      if (isSpacesNavHref(item.href) && !shouldShowSpacesScreen(orientation)) {
+        return false;
+      }
+      return true;
+    });
   }, [navItems, person?.primaryOrientation]);
 
   return (
@@ -227,6 +241,7 @@ export const ConnectedButtonProfile = ({
       address={user?.wallet?.address}
       person={person ?? undefined}
       isConnected={isAuthenticated}
+      isAuthLoading={isAuthLoading}
       onLogin={login}
       onLogout={handleLogout}
       loggingOut={loggingOut}

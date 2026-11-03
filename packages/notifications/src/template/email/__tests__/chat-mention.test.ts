@@ -40,10 +40,11 @@ describe('emailChatMention', () => {
   it('renders settings link and unsubscribe; omits settings link when unset', () => {
     const withSettings = emailChatMention({
       url,
-      settingsUrl: 'https://app.hypha.earth/en/network/notification-centre',
+      settingsUrl:
+        'https://app.hypha.earth/en/network?dialog=notification-centre',
     });
     expect(withSettings.body).toContain(
-      'href="https://app.hypha.earth/en/network/notification-centre"',
+      'href="https://app.hypha.earth/en/network?dialog=notification-centre"',
     );
     expect(withSettings.body).toContain('[unsubscribe_url]');
     expect(emailChatMention({ url }).body).not.toContain(

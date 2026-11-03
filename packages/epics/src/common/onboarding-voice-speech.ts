@@ -115,7 +115,27 @@ function isSpokenNoiseSentence(sentence: string): boolean {
   ) {
     return true;
   }
+  // Relay meta that leaked when prompts labeled the chat reply as a "script".
+  // Anchor to end of sentence so a full reply line is not wiped before split.
+  if (
+    /^i(?:'ll| will) read (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
+    /^here(?:'s| is) (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
+    /^reading (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
+    /^let me read (?:the )?script[.!?]?\s*$/i.test(trimmed) ||
+    /^the script (?:says|is|goes)[.!?]?\s*$/i.test(trimmed) ||
+    /^request completed[.!?]?\s*$/i.test(trimmed) ||
+    /^request complete[.!?]?\s*$/i.test(trimmed)
+  ) {
+    return true;
+  }
   return false;
+}
+
+/** Drop a leading "the script says …" label; keep the words after it. */
+function stripLeadingScriptRelayLabel(text: string): string {
+  return text
+    .replace(/^the script (?:says|is|goes)\s*[:\-–—,]?\s*/i, '')
+    .trim();
 }
 
 /**
@@ -133,7 +153,9 @@ export function prepareAssistantTextForSpeech(text: string): string {
     .map((rawLine) => {
       const trimmedRaw = rawLine.trim();
       if (/^[-*•]\s/.test(trimmedRaw)) return '';
-      return stripMarkdown(trimmedRaw).replace(/\s+/g, ' ').trim();
+      return stripLeadingScriptRelayLabel(
+        stripMarkdown(trimmedRaw).replace(/\s+/g, ' ').trim(),
+      );
     })
     .filter(Boolean);
   const lineFiltered = lines.filter((line) => !isSpokenNoiseSentence(line));
@@ -142,9 +164,9 @@ export function prepareAssistantTextForSpeech(text: string): string {
   if (!collapsed) return '';
 
   const sentences = collapsed.split(/(?<=[.!?])\s+/).filter(Boolean);
-  const spoken = sentences.filter(
-    (sentence) => !isSpokenNoiseSentence(sentence),
-  );
+  const spoken = sentences
+    .map(stripLeadingScriptRelayLabel)
+    .filter((sentence) => !isSpokenNoiseSentence(sentence));
 
   if (spoken.length > 0) {
     return takeSpokenSentences(spoken).join(' ').trim();
@@ -200,20 +222,29 @@ function isTrivialSpeechRemainder(remainder: string): boolean {
 }
 
 /**
- * First completed speakable sentence ready for early TTS while chat is still
- * streaming (covers voice tool-ack lead-ins before tools finish).
+ * First completed sentence of an already-prepared script. Used so early speech
+ * and the later remainder share the same words.
  */
-export function extractEarlySpeakableSentence(text: string): string | null {
-  const speakable = prepareAssistantTextForSpeech(text);
-  if (!speakable) return null;
-
-  const firstSentence = speakable.match(/^(.+?[.!?])(?:\s|$)/)?.[1]?.trim();
+export function firstCompletedSpeakableSentence(
+  speakable: string,
+): string | null {
+  const text = speakable.replace(/\s+/g, ' ').trim();
+  if (!text) return null;
+  const firstSentence = text.match(/^(.+?[.!?])(?:\s|$)/)?.[1]?.trim();
   if (!firstSentence) return null;
   if (firstSentence.length < EARLY_SPEECH_MIN_SENTENCE_CHARS) return null;
   if (countSpeechWords(firstSentence) < EARLY_SPEECH_MIN_SENTENCE_WORDS) {
     return null;
   }
   return firstSentence;
+}
+
+/**
+ * First completed speakable sentence ready for early TTS while chat is still
+ * streaming (covers voice tool-ack lead-ins before tools finish).
+ */
+export function extractEarlySpeakableSentence(text: string): string | null {
+  return firstCompletedSpeakableSentence(prepareAssistantTextForSpeech(text));
 }
 
 /**

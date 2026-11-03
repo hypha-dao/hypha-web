@@ -2,7 +2,10 @@
 
 import {
   buildSpaceMemoryItemsFromOrgMemoryPayload,
+  collapseDuplicateDiscussionSummaries,
+  EMPTY_SPACE_MEMORY_BRANCH_COUNTS,
   type OrgMemorySpaceMemoryPayload,
+  type SpaceMemoryBranchCounts,
   type SpaceMemoryItem,
 } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -11,7 +14,7 @@ import React from 'react';
 import useSWRInfinite from 'swr/infinite';
 import { mutate } from 'swr';
 
-const ASSETS_PAGE_SIZE = 12;
+const ASSETS_PAGE_SIZE = 24;
 
 export const SPACE_MEMORY_ORG_SWR_KEY = 'space-memory-org' as const;
 
@@ -108,9 +111,19 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
   const lastLoadedPage = loadedPages[loadedPages.length - 1];
 
   const items = React.useMemo(() => {
-    return loadedPages.flatMap((page) =>
+    const merged = loadedPages.flatMap((page) =>
       buildSpaceMemoryItemsFromOrgMemoryPayload(page),
     );
+    // Guard against overlapping infinite pages repeating the same asset.
+    const seen = new Set<string>();
+    const unique: SpaceMemoryItem[] = [];
+    for (const row of merged) {
+      if (seen.has(row.id)) continue;
+      seen.add(row.id);
+      unique.push(row);
+    }
+    // Identical discussion-summary refreshes (different ids, same body).
+    return collapseDuplicateDiscussionSummaries(unique);
   }, [loadedPages]);
 
   const totalCount = React.useMemo(() => {
@@ -120,6 +133,19 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
     }
     return items.length;
   }, [loadedPages, items.length]);
+
+  const categoryCounts = React.useMemo((): SpaceMemoryBranchCounts => {
+    const fromServer = loadedPages[0]?.assets_category_counts;
+    if (fromServer) {
+      return {
+        conversations: fromServer.conversations ?? 0,
+        calls: fromServer.calls ?? 0,
+        ai: fromServer.ai ?? 0,
+        files: fromServer.files ?? 0,
+      };
+    }
+    return { ...EMPTY_SPACE_MEMORY_BRANCH_COUNTS };
+  }, [loadedPages]);
 
   const hasMore = Boolean(lastLoadedPage?.assets_pagination?.has_next_page);
 
@@ -140,6 +166,7 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
   return {
     items,
     totalCount,
+    categoryCounts,
     isLoading: Boolean(isLoading && loadedPageCount === 0),
     isLoadingMore: Boolean(isValidating && size > loadedPageCount),
     error: listError,

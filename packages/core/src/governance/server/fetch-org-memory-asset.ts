@@ -9,12 +9,19 @@ import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { HYPHA_MEDIA_BUNDLE_FIELD } from '../../matrix/rich-reply';
 import { findAllDocumentsBySpaceSlugWithoutPagination } from './queries';
 import { parseOrgMemoryAssetKey } from '../../org-memory/org-memory-asset-key';
+import {
+  formatCallTranscriptMarkdown,
+  formatDiscussionSummaryMarkdown,
+  formatMemoryDocumentMarkdown,
+} from '../../org-memory/space-memory-markdown';
+import { isMemoryDocument } from '../space-memory-document-label';
 import { getSpaceCallArtifactById } from './call-artifacts';
 import type {
   SpaceCallRecording,
   SpaceCallTranscript,
   SpaceDiscussionSummary,
 } from '@hypha-platform/storage-postgres';
+import { stripDescription } from '@hypha-platform/ui-utils';
 
 const DEFAULT_MAX_BYTES = 2 * 1024 * 1024; // 2 MiB
 const DEFAULT_FETCH_TIMEOUT_MS = 25_000;
@@ -701,6 +708,65 @@ export async function fetchOrgMemoryAsset(
     } else {
       fetchUrl = recording.mediaUri;
     }
+  } else if (key.k === 'mem') {
+    const doc = docs.find((row) => row.id === key.d);
+    if (!doc || !isMemoryDocument(doc)) {
+      return {
+        access: 'ok',
+        result: {
+          ok: false,
+          error: 'Memory document not found for this space',
+          code: 'not_found',
+        },
+      };
+    }
+    const attachmentUrl = key.u?.trim();
+    if (attachmentUrl) {
+      const hit = findProposalAsset(docs, key.d, attachmentUrl);
+      if (!hit) {
+        return {
+          access: 'ok',
+          result: {
+            ok: false,
+            error: 'Memory attachment not found for this space',
+            code: 'not_found',
+          },
+        };
+      }
+      fetchUrl = hit.url.trim();
+      filename = hit.filename;
+    } else {
+      const markdown = formatMemoryDocumentMarkdown({
+        title: doc.title?.trim() || `Memory ${doc.id}`,
+        description: stripDescription(doc.description ?? '').trim(),
+        documentId: doc.id,
+        occurredAt: doc.updatedAt,
+        spaceSlug,
+        documentSlug: doc.slug,
+      });
+      const byteLength = Buffer.byteLength(markdown, 'utf8');
+      if (byteLength > max_bytes) {
+        return {
+          access: 'ok',
+          result: {
+            ok: false,
+            error: `Response size ${byteLength} exceeds max_bytes`,
+            code: 'too_large',
+          },
+        };
+      }
+      const { text, truncated } = truncateText(markdown, MAX_TEXT_CHARS);
+      return {
+        access: 'ok',
+        result: buildSuccessText(
+          `memory-${doc.id}.md`,
+          'text/markdown',
+          text,
+          truncated,
+          byteLength,
+        ),
+      };
+    }
   } else if (key.k === 'ct') {
     const transcript = (await getSpaceCallArtifactById(
       { kind: 'transcript', id: key.i, spaceId: host.id },
@@ -716,7 +782,13 @@ export async function fetchOrgMemoryAsset(
         },
       };
     }
-    const textPayload = transcript.text;
+    const textPayload = formatCallTranscriptMarkdown({
+      callSessionId: transcript.callSessionId,
+      text: transcript.text,
+      summary: transcript.summary,
+      occurredAt: transcript.createdAt,
+      spaceSlug,
+    });
     const byteLength = Buffer.byteLength(textPayload, 'utf8');
     if (byteLength > max_bytes) {
       return {
@@ -732,8 +804,8 @@ export async function fetchOrgMemoryAsset(
     return {
       access: 'ok',
       result: buildSuccessText(
-        `call-transcript-${transcript.callSessionId}.txt`,
-        'text/plain',
+        `call-transcript-${transcript.callSessionId}.md`,
+        'text/markdown',
         text,
         truncated,
         byteLength,
@@ -759,9 +831,13 @@ export async function fetchOrgMemoryAsset(
           (b: unknown): b is string => typeof b === 'string',
         )
       : [];
-    const body = [summary.summary, ...bullets.map((b) => `- ${b}`)]
-      .join('\n')
-      .trim();
+    const body = formatDiscussionSummaryMarkdown({
+      id: summary.id,
+      summary: summary.summary,
+      bullets,
+      occurredAt: summary.createdAt,
+      spaceSlug,
+    });
     const byteLength = Buffer.byteLength(body, 'utf8');
     if (byteLength > max_bytes) {
       return {

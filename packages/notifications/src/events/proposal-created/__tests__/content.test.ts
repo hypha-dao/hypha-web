@@ -73,7 +73,7 @@ describe('buildProposalCreatedContent — rendered in code', () => {
     proposalTitle: 'Fund the thing',
     url: 'https://app.hypha.earth/en/dho/hypha-energy/agreements/proposal/fund',
     notificationSettingsUrl:
-      'https://app.hypha.earth/en/network/notification-centre',
+      'https://app.hypha.earth/en/network?dialog=notification-centre',
   };
 
   it.each([

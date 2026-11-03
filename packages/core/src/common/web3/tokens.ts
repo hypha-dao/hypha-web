@@ -149,6 +149,59 @@ export function isKnownTreasuryToken(
 
 const EVM_ADDRESS = /^0x[a-fA-F0-9]{40}$/i;
 
+/**
+ * Lowercased allowlist used by wallet / treasury visibility filters:
+ * DB-registered addresses plus any extra platform addresses (energy
+ * community, space-issued, the member energy token, …).
+ */
+export function buildKnownTreasuryAddressSet(
+  dbTokens: readonly { address?: string | null }[],
+  extraAddresses: Iterable<string | null | undefined> = [],
+): Set<string> {
+  const known = new Set<string>();
+  for (const token of dbTokens) {
+    if (token.address && EVM_ADDRESS.test(token.address)) {
+      known.add(token.address.toLowerCase());
+    }
+  }
+  for (const address of extraAddresses) {
+    if (address && EVM_ADDRESS.test(address)) {
+      known.add(address.toLowerCase());
+    }
+  }
+  return known;
+}
+
+/**
+ * Final visibility gate for wallet / treasury token lists and activity rows.
+ * Drops hidden deployments, invalid addresses, and unknown airdrop / spam
+ * tokens. Catalogue stables and HYPHA always pass.
+ */
+export function isVisibleWalletToken(
+  address: string | null | undefined,
+  knownAddresses: ReadonlySet<string>,
+): boolean {
+  if (!address || !EVM_ADDRESS.test(address) || isHiddenToken(address)) {
+    return false;
+  }
+  return isKnownTreasuryToken(address, knownAddresses);
+}
+
+/**
+ * Keep activity rows for allowed tokens, then apply `limit`. Filtering first
+ * stops hidden spam from consuming page slots.
+ */
+export function selectVisibleTransfers<T extends { token: string }>(
+  transfers: readonly T[],
+  knownAddresses: ReadonlySet<string>,
+  limit?: number,
+): T[] {
+  const visible = transfers.filter((transfer) =>
+    isVisibleWalletToken(transfer.token, knownAddresses),
+  );
+  return limit == null ? visible : visible.slice(0, limit);
+}
+
 /** Alchemy (or other indexer) ERC-20 balance row used to discover held tokens. */
 export type HeldTokenBalance = {
   tokenAddress?: string;

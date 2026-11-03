@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
@@ -23,13 +23,19 @@ import { SpaceSwitcherMark } from '../../spaces/components/space-switcher-option
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { celebrate } from './member-home-celebrate';
 import {
+  HOME_QUEUE_EVENT,
   homeReturnText,
   markHomeActed,
+  readHomeActed,
   rememberHomeAction,
 } from './member-home-resume';
 import { MemberHomeProposalBody } from './member-home-proposal-body';
 import { PersonAvatar } from './person-avatar';
+import { SentTick } from './member-home-sent-tick';
 import './member-home-banner.css';
+
+/** The tick mark finishes just after 900ms. Let it sit, then ask for the next item. */
+const TICK_THEN_NEXT_MS = 1100;
 
 const SIGNAL_TYPES = [
   'Need',
@@ -59,6 +65,8 @@ type MemberHomeThreadCardProps = {
   item: MemberHomeThreadItem;
   proposal: MemberIntelligence['proposals'][number] | null;
   onAsk: (text: string, hidden?: boolean) => void;
+  /** The tick is on screen. Stop the current voice line before the next item. */
+  onSettled?: () => void;
   onReach: (person: ReachPerson, mode: 'call' | 'chat') => Promise<boolean>;
   /** Side panel uses the spaces-tile scale. The conversation card stays larger. */
   compact?: boolean;
@@ -68,6 +76,11 @@ type MemberHomeThreadCardProps = {
   assistant?: boolean;
   /** Classic lead card: title opens the item, picture sits beside the text. */
   board?: boolean;
+  /**
+   * The member already acted. The card stays in the thread with a tick
+   * instead of leaving when the live queue moves on.
+   */
+  done?: boolean;
 };
 
 function kindLabel(
@@ -110,11 +123,13 @@ export function MemberHomeThreadCard({
   item,
   proposal,
   onAsk,
+  onSettled,
   onReach,
   compact = false,
   chat = false,
   assistant = true,
   board = false,
+  done = false,
 }: MemberHomeThreadCardProps) {
   const t = useTranslations('MemberHome');
   const tTypes = useTranslations('CoherenceTab');
@@ -123,7 +138,61 @@ export function MemberHomeThreadCard({
   const { resolvedTheme } = useTheme();
   const [busy, setBusy] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
+  const [kept, setKept] = useState(false);
   const held = useRef(false);
+  const continued = useRef(false);
+  const continueTimer = useRef<number | null>(null);
+  const itemTitleRef = useRef(item.title);
+  itemTitleRef.current = item.title;
+  const onAskRef = useRef(onAsk);
+  const onSettledRef = useRef(onSettled);
+  onAskRef.current = onAsk;
+  onSettledRef.current = onSettled;
+  // Local keep paints the tick before storage catches up.
+  const complete = done || kept;
+
+  useEffect(() => {
+    return () => {
+      if (continueTimer.current != null) {
+        window.clearTimeout(continueTimer.current);
+      }
+    };
+  }, []);
+
+  function beginNextAfterTick(text: string) {
+    if (continued.current || !assistant) return;
+    continued.current = true;
+    onSettledRef.current?.();
+    const reduce = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    continueTimer.current = window.setTimeout(
+      () => {
+        onAskRef.current(text, true);
+      },
+      reduce ? 200 : TICK_THEN_NEXT_MS,
+    );
+  }
+
+  function settleWithoutNext() {
+    continued.current = true;
+    onSettledRef.current?.();
+  }
+
+  const itemKey = memberHomeThreadItemKey(item);
+  useEffect(() => {
+    if (!assistant) return;
+    // Storage already knows this one. Loading the thread must not ask again.
+    let already = readHomeActed().includes(itemKey);
+    const onActed = () => {
+      if (already || continued.current) return;
+      if (!readHomeActed().includes(itemKey)) return;
+      already = true;
+      beginNextAfterTick(homeReturnText(itemTitleRef.current));
+    };
+    window.addEventListener(HOME_QUEUE_EVENT, onActed);
+    return () => window.removeEventListener(HOME_QUEUE_EVENT, onActed);
+  }, [assistant, itemKey]);
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const spaceIconUrl = resolveSpaceDisplayLogoUrl(
     item.spaceLogo ?? proposal?.spaceLogo,
@@ -214,6 +283,8 @@ export function MemberHomeThreadCard({
   }
 
   function noteAction() {
+    setKept(true);
+    settleWithoutNext();
     rememberHomeAction(memberHomeThreadItemKey(item), item.title);
   }
 
@@ -221,12 +292,14 @@ export function MemberHomeThreadCard({
   function moveOn(leaves: boolean) {
     if (!assistant || !isSignal) return;
     const key = memberHomeThreadItemKey(item);
+    setKept(true);
     if (leaves) {
+      settleWithoutNext();
       rememberHomeAction(key, item.title);
       return;
     }
+    beginNextAfterTick(homeReturnText(item.title));
     markHomeActed(key);
-    onAsk(homeReturnText(item.title), true);
   }
 
   async function reach(mode: 'call' | 'chat') {
@@ -412,7 +485,7 @@ export function MemberHomeThreadCard({
           <p
             className={
               chat
-                ? 'mt-2 line-clamp-2 text-1 leading-relaxed text-neutral-12'
+                ? 'mt-2 text-1 leading-relaxed text-neutral-12'
                 : compact
                 ? 'mt-3 text-1 leading-relaxed text-neutral-12'
                 : 'mt-3 text-2 leading-relaxed text-neutral-12'
@@ -429,6 +502,7 @@ export function MemberHomeThreadCard({
             documentSlug={proposal?.slug ?? item.slug}
             compact={compact}
             chat={chat}
+            settled={complete}
             onClosed={rememberOutcome}
           />
         ) : null}
@@ -449,7 +523,32 @@ export function MemberHomeThreadCard({
           </p>
         ) : null}
         <div className={cn('flex flex-col gap-2', chat ? 'mt-2' : 'mt-3')}>
-          {outcome ? (
+          {complete ? (
+            <div
+              className="flex flex-col items-center px-2 py-4 text-center"
+              aria-live="polite"
+            >
+              <SentTick />
+              <p
+                className={cn(
+                  // Body face + normal tracking: heading + tight tracking
+                  // mashed the em dash / apostrophe in "Thanks — I'm with you".
+                  'mt-3 font-medium text-foreground',
+                  chat ? 'text-2' : 'text-3',
+                )}
+              >
+                {outcome
+                  ? t('gotItDone')
+                  : isProposal
+                  ? t('threadCardVoted')
+                  : t('threadCardNoted')}
+              </p>
+              <p className="mt-1 text-1 text-neutral-11">
+                {t('threadCardKept')}
+              </p>
+            </div>
+          ) : null}
+          {!complete && outcome ? (
             <Button
               type="button"
               {...choiceProps('got-it', true)}
@@ -459,19 +558,15 @@ export function MemberHomeThreadCard({
                 if (!confirm('got-it')) return;
                 const key = memberHomeThreadItemKey(item);
                 const title = item.title;
-                // Hold the card briefly so the button can show it was received
-                // before the queue advances and unmounts this card.
-                window.setTimeout(() => {
-                  markHomeActed(key);
-                  if (!assistant) return;
-                  onAsk(t('gotItChosen', { title }), true);
-                }, 700);
+                setKept(true);
+                if (assistant) beginNextAfterTick(t('gotItChosen', { title }));
+                markHomeActed(key);
               }}
             >
-              {chosen === 'got-it' ? t('gotItDone') : t('gotIt')}
+              {t('gotIt')}
             </Button>
           ) : null}
-          {!outcome && ownDeadline ? (
+          {!complete && !outcome && ownDeadline ? (
             <Button asChild {...choiceProps('update', true)}>
               <Link
                 href={signalHref}
@@ -484,7 +579,7 @@ export function MemberHomeThreadCard({
               </Link>
             </Button>
           ) : null}
-          {!outcome && leadCta ? (
+          {!complete && !outcome && leadCta ? (
             <Button
               type="button"
               {...choiceProps(leadCta, true)}
@@ -496,7 +591,7 @@ export function MemberHomeThreadCard({
               {labelFor(leadCta)}
             </Button>
           ) : null}
-          {!outcome && !isSignal && assistant ? (
+          {!complete && !outcome && !isSignal && assistant ? (
             <div
               className={cn(
                 'grid gap-2',
@@ -538,7 +633,7 @@ export function MemberHomeThreadCard({
               </Button>
             </div>
           ) : null}
-          {!outcome && (companionCta || assistant) ? (
+          {!complete && !outcome && (companionCta || assistant) ? (
             <div
               className={cn(
                 'grid gap-2',
@@ -573,30 +668,41 @@ export function MemberHomeThreadCard({
               ) : null}
             </div>
           ) : null}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            {!outcome && assistant ? (
-              <button
-                type="button"
-                className="text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
+          {!complete ? (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              {!outcome && assistant ? (
+                <button
+                  type="button"
+                  className="text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
+                  onClick={() => {
+                    if (!confirm('no')) return;
+                    ask(t('noChosen', { title: item.title }));
+                  }}
+                >
+                  {t('noThanks')}
+                </button>
+              ) : null}
+              <Link
+                href={visitHref}
                 onClick={() => {
-                  if (!confirm('no')) return;
-                  ask(t('noChosen', { title: item.title }));
+                  if (isSignal) moveOn(true);
+                  else noteAction();
                 }}
+                className="text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
               >
-                {t('noThanks')}
-              </button>
-            ) : null}
-            <Link
-              href={visitHref}
-              onClick={() => {
-                if (isSignal) moveOn(true);
-                else noteAction();
-              }}
-              className="text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
-            >
-              {t('visitSpace')}
-            </Link>
-          </div>
+                {t('visitSpace')}
+              </Link>
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <Link
+                href={visitHref}
+                className="text-1 text-neutral-11 underline-offset-2 hover:text-foreground hover:underline"
+              >
+                {t('visitSpace')}
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </section>

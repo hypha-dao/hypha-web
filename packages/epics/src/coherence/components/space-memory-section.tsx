@@ -1,10 +1,15 @@
 'use client';
 
-import { FC } from 'react';
-import { Text } from '@radix-ui/themes';
+import { type ElementType, type FC } from 'react';
 import Link from 'next/link';
-import { SearchIcon } from 'lucide-react';
-import { Button, Input, SectionLoadMore } from '@hypha-platform/ui';
+import {
+  FileText,
+  MessagesSquare,
+  Radio,
+  SearchIcon,
+  Sparkles,
+} from 'lucide-react';
+import { Button, Input } from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import React from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -13,21 +18,51 @@ import {
   SpaceMemoryItem,
   deriveSpaceMemoryDisplayTitle,
   filterSpaceMemoryItems,
+  memoryBodyWithoutRepeatedTitle,
+  spaceMemoryBranchForItem,
+  type SpaceMemoryBranch,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
-import { MemoryProse, firstMemoryParagraph } from './memory-prose';
+import { MemoryProse } from './memory-prose';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
-import { cn } from '@hypha-platform/ui-utils';
-
-type MemoryBranch = 'conversations' | 'calls' | 'ai' | 'files';
+import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
+import { spaceMemoryListHeight } from './space-memory-list-height';
+import { useChainScrollAtEdge } from '../../common/chain-scroll-at-edge';
 
 type SpaceMemorySectionProps = {
   spaceSlug: string;
 };
+
+const DESKTOP_MENU = '(min-width: 80rem)';
+const DESKTOP_SPLIT = '(min-width: 64rem)';
+
+const BRANCH_ICONS: Record<SpaceMemoryBranch, ElementType> = {
+  conversations: MessagesSquare,
+  calls: Radio,
+  ai: Sparkles,
+  files: FileText,
+};
+
+function mobileTabOffset(): number {
+  if (typeof window === 'undefined') return 0;
+  if (window.matchMedia(DESKTOP_MENU).matches) return 0;
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue('--mobile-tab-offset')
+    .trim();
+  if (!raw) return 96;
+  const probe = document.createElement('div');
+  probe.style.position = 'absolute';
+  probe.style.height = raw;
+  probe.style.visibility = 'hidden';
+  document.body.appendChild(probe);
+  const height = probe.getBoundingClientRect().height;
+  probe.remove();
+  return height || 96;
+}
 
 export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   spaceSlug,
@@ -36,6 +71,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   const {
     items,
     totalCount,
+    categoryCounts,
     isLoading,
     isLoadingMore,
     error,
@@ -55,15 +91,20 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   const matrixChatRoomId = space?.chatRoomId?.trim() || null;
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
   const format = useFormatter();
-  const [branch, setBranch] = React.useState<MemoryBranch>('conversations');
+  const [branch, setBranch] =
+    React.useState<SpaceMemoryBranch>('conversations');
   const branchChosen = React.useRef(false);
-
-  const isAiChatItem = React.useCallback(
-    (row: SpaceMemoryItem) =>
-      row.source === 'matrix_chat' &&
-      row.context.documentLabel?.toLowerCase().includes('ai chat') === true,
-    [],
+  const listFrameRef = React.useRef<HTMLDivElement | null>(null);
+  const listScrollRef = React.useRef<HTMLDivElement | null>(null);
+  const chainScroll = useChainScrollAtEdge();
+  const setListScroll = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      listScrollRef.current = node;
+      chainScroll(node);
+    },
+    [chainScroll],
   );
+  const listEndRef = React.useRef<HTMLLIElement | null>(null);
 
   const stateLabel = React.useCallback(
     (state: DocumentState) =>
@@ -117,67 +158,65 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     () => filterSpaceMemoryItems(items, searchTerm),
     [items, searchTerm],
   );
+
+  // Space orientation — the space's own description, not the latest memory item.
+  const spaceOrientation = React.useMemo(() => {
+    const raw = space?.description?.trim() ?? '';
+    if (!raw) return '';
+    return stripMarkdown(stripDescription(raw), {
+      extraNewlines: true,
+    }).trim();
+  }, [space?.description]);
+
   const conversations = React.useMemo(
-    () => visible.filter((row) => row.source === 'discussion_summary'),
-    [visible],
-  );
-  const calls = React.useMemo(
     () =>
       visible.filter(
-        (row) =>
-          row.source === 'call_recording' || row.source === 'call_transcript',
+        (row) => spaceMemoryBranchForItem(row) === 'conversations',
       ),
     [visible],
   );
+  const calls = React.useMemo(
+    () => visible.filter((row) => spaceMemoryBranchForItem(row) === 'calls'),
+    [visible],
+  );
   const aiDiscussions = React.useMemo(
-    () => visible.filter((row) => isAiChatItem(row)),
-    [isAiChatItem, visible],
+    () => visible.filter((row) => spaceMemoryBranchForItem(row) === 'ai'),
+    [visible],
   );
-  const readingIds = React.useMemo(() => {
-    const ids = new Set<string>();
-    for (const row of conversations) ids.add(row.id);
-    for (const row of calls) ids.add(row.id);
-    for (const row of aiDiscussions) ids.add(row.id);
-    return ids;
-  }, [aiDiscussions, calls, conversations]);
   const files = React.useMemo(
-    () => visible.filter((row) => !readingIds.has(row.id)),
-    [readingIds, visible],
+    () => visible.filter((row) => spaceMemoryBranchForItem(row) === 'files'),
+    [visible],
   );
-  const lead = React.useMemo(() => {
-    const written = items.find(
-      (row) =>
-        row.source === 'discussion_summary' &&
-        Boolean(row.context.textExcerpt?.trim()),
-    );
-    if (written) return written;
-    return (
-      items.find(
-        (row) =>
-          row.source === 'call_transcript' &&
-          Boolean(row.context.textExcerpt?.trim()),
-      ) ?? null
-    );
-  }, [items]);
-  const leadExcerpt = lead?.context.textExcerpt?.trim() ?? '';
-  const leadText = leadExcerpt ? firstMemoryParagraph(leadExcerpt) : '';
   const branches: Array<{
-    id: MemoryBranch;
+    id: SpaceMemoryBranch;
     label: string;
+    body: string;
     count: number;
   }> = [
     {
       id: 'conversations',
       label: t('spaceMemoryConversations'),
-      count: conversations.length,
+      body: t('spaceMemoryConversationsBody'),
+      count: categoryCounts.conversations,
     },
-    { id: 'calls', label: t('spaceMemoryCalls'), count: calls.length },
+    {
+      id: 'calls',
+      label: t('spaceMemoryCalls'),
+      body: t('spaceMemoryCallsBody'),
+      count: categoryCounts.calls,
+    },
     {
       id: 'ai',
       label: t('spaceMemoryAiDiscussions'),
-      count: aiDiscussions.length,
+      body: t('spaceMemoryAiDiscussionsBody'),
+      count: categoryCounts.ai,
     },
-    { id: 'files', label: t('spaceMemoryFiles'), count: files.length },
+    {
+      id: 'files',
+      label: t('spaceMemoryFiles'),
+      body: t('spaceMemoryFilesBody'),
+      count: categoryCounts.files,
+    },
   ];
   const activeRows =
     branch === 'conversations'
@@ -190,27 +229,106 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
 
   React.useEffect(() => {
     if (branchChosen.current || isLoading || searchTerm.trim()) return;
-    if (conversations.length > 0) return;
-    if (calls.length > 0) setBranch('calls');
-    else if (aiDiscussions.length > 0) setBranch('ai');
-    else if (files.length > 0) setBranch('files');
+    if (categoryCounts.conversations > 0) return;
+    if (categoryCounts.calls > 0) setBranch('calls');
+    else if (categoryCounts.ai > 0) setBranch('ai');
+    else if (categoryCounts.files > 0) setBranch('files');
+  }, [categoryCounts, isLoading, searchTerm]);
+
+  // Keep fetching until the active category has rows or the catalog ends.
+  React.useEffect(() => {
+    if (isLoading || isLoadingMore || !hasMore) return;
+    if (activeRows.length > 0) return;
+    if (categoryCounts[branch] <= 0) return;
+    loadMore();
   }, [
-    aiDiscussions.length,
-    calls.length,
-    conversations.length,
-    files.length,
+    activeRows.length,
+    branch,
+    categoryCounts,
+    hasMore,
     isLoading,
-    searchTerm,
+    isLoadingMore,
+    loadMore,
   ]);
+
+  React.useEffect(() => {
+    // Page still scrolls. Cap the right list to the viewport so it scrolls
+    // inside its frame. Do not size from a scrolled frameTop — that grew
+    // the box on every wheel tick and dragged the filters away.
+    const fit = () => {
+      const frame = listFrameRef.current;
+      if (!frame) return;
+      if (!window.matchMedia(DESKTOP_SPLIT).matches) {
+        frame.style.height = '';
+        frame.style.maxHeight = '';
+        return;
+      }
+      const viewportBottom = window.visualViewport
+        ? window.visualViewport.offsetTop + window.visualViewport.height
+        : window.innerHeight;
+      const rawMenu = getComputedStyle(document.documentElement)
+        .getPropertyValue('--menu-top-height')
+        .trim();
+      let menuOffset = 72;
+      if (rawMenu) {
+        const probe = document.createElement('div');
+        probe.style.position = 'absolute';
+        probe.style.height = rawMenu;
+        probe.style.visibility = 'hidden';
+        document.body.appendChild(probe);
+        menuOffset = probe.getBoundingClientRect().height || 72;
+        probe.remove();
+      }
+      const height = spaceMemoryListHeight({
+        viewportBottom,
+        menuOffset,
+        tabOffset: mobileTabOffset(),
+      });
+      frame.style.height = `${height}px`;
+      frame.style.maxHeight = `${height}px`;
+    };
+
+    const observer = new ResizeObserver(fit);
+    fit();
+    observer.observe(document.documentElement);
+    window.addEventListener('resize', fit);
+    window.visualViewport?.addEventListener('resize', fit);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', fit);
+      window.visualViewport?.removeEventListener('resize', fit);
+      if (listFrameRef.current) {
+        listFrameRef.current.style.height = '';
+        listFrameRef.current.style.maxHeight = '';
+      }
+    };
+  }, [isLoading, spaceOrientation, searchTerm]);
+
+  React.useEffect(() => {
+    if (isLoading || !hasMore) return;
+    const root = listScrollRef.current;
+    const sentinel = listEndRef.current;
+    if (!root || !sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        loadMore();
+      },
+      { root, rootMargin: '160px 0px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [activeRows.length, hasMore, isLoading, isLoadingMore, loadMore]);
 
   const newMemoryHref = `/${lang}/dho/${id}/memory/new-memory`;
 
   return (
     <section
-      className="flex w-full flex-col gap-4 py-2"
+      className="flex w-full min-w-0 flex-col gap-4 py-2"
       aria-label={t('spaceMemory')}
     >
-      <header className="flex flex-wrap items-end justify-between gap-2">
+      <header className="flex shrink-0 flex-wrap items-end justify-between gap-2">
         <div className="craft-page-header">
           <h1 className="craft-page-title text-6 font-medium">
             {t('spaceMemory')}
@@ -222,7 +340,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
           </h1>
         </div>
       </header>
-      <div className="flex w-full items-center gap-2 lg:gap-3">
+      <div className="flex w-full shrink-0 items-center gap-2 lg:gap-3">
         <Input
           type="search"
           value={searchTerm}
@@ -251,9 +369,9 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
 
       {error ? (
         <div className="flex w-full flex-col items-center gap-2 px-4">
-          <Text className="text-center text-muted-foreground">
+          <p className="text-center text-muted-foreground">
             {t('spaceMemoryError')}
-          </Text>
+          </p>
           <Button
             type="button"
             variant="outline"
@@ -264,24 +382,17 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
           </Button>
         </div>
       ) : isLoading ? (
-        <Text className="text-muted-foreground">{t('spaceMemoryLoading')}</Text>
+        <p className="text-muted-foreground">{t('spaceMemoryLoading')}</p>
       ) : (
         <>
-          <article className="border border-border bg-background px-5 py-5">
+          <article className="shrink-0 border border-border bg-background px-5 py-5">
             <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
               {t('spaceMemoryWhere')}
             </p>
-            {lead && leadText ? (
-              <>
-                <div className="mt-3 max-w-3xl text-3 leading-relaxed">
-                  <MemoryProse source={leadText} />
-                </div>
-                <p className="mt-3 text-1 text-neutral-11">
-                  {format.dateTime(new Date(lead.uploadedAt), {
-                    dateStyle: 'medium',
-                  })}
-                </p>
-              </>
+            {spaceOrientation ? (
+              <div className="mt-3 max-w-3xl text-3 leading-relaxed">
+                <MemoryProse source={spaceOrientation} />
+              </div>
             ) : (
               <p className="mt-3 max-w-3xl text-2 leading-relaxed text-neutral-11">
                 {t('spaceMemoryWhereEmpty')}
@@ -289,152 +400,181 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
             )}
           </article>
 
-          <div className="grid items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
+          <div
+            className={cn(
+              'flex min-h-0 min-w-0 flex-1 flex-col gap-4',
+              'lg:flex-row lg:items-start lg:gap-6',
+            )}
+          >
             <nav
               aria-label={t('spaceMemoryOutline')}
-              className="grid gap-px lg:sticky lg:top-4"
+              className="w-full shrink-0 self-start lg:w-80"
             >
-              {branches.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  aria-current={branch === item.id ? 'true' : undefined}
-                  onClick={() => {
-                    branchChosen.current = true;
-                    setBranch(item.id);
-                  }}
-                  className={cn(
-                    'flex items-baseline justify-between gap-3 border border-transparent px-3 py-2 text-left text-1',
-                    branch === item.id
-                      ? 'border-foreground text-foreground'
-                      : 'text-neutral-11 hover:text-foreground',
-                  )}
-                >
-                  <span>{item.label}</span>
-                  <span className="tabular-nums">{item.count}</span>
-                </button>
-              ))}
+              <div className="border border-border bg-background">
+                {branches.map((item) => {
+                  const Icon = BRANCH_ICONS[item.id];
+                  const selected = branch === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      aria-current={selected ? 'true' : undefined}
+                      aria-pressed={selected}
+                      onClick={() => {
+                        branchChosen.current = true;
+                        setBranch(item.id);
+                        listScrollRef.current?.scrollTo({ top: 0 });
+                      }}
+                      className={cn(
+                        'flex w-full min-w-0 items-start gap-3 border-b border-border px-4 py-4 text-left hover:bg-accent-2',
+                        selected && 'bg-accent-2',
+                      )}
+                    >
+                      <Icon
+                        className="mt-0.5 size-4 shrink-0 text-foreground"
+                        strokeWidth={1.5}
+                        aria-hidden
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-baseline gap-3">
+                          <span
+                            className={cn(
+                              'min-w-0 truncate text-3 text-foreground',
+                              selected && 'font-medium',
+                            )}
+                          >
+                            {item.label}
+                          </span>
+                          <span className="ml-auto shrink-0 text-1 text-muted-foreground">
+                            {item.count}
+                          </span>
+                        </span>
+                        <span className="mt-1 block text-2 text-muted-foreground">
+                          {item.body}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </nav>
 
-            <div className="min-w-0">
-              {branch === 'files' ? (
-                <p className="mb-4 text-1 text-neutral-11">
-                  {t('spaceMemoryFilesHint')}
-                </p>
-              ) : null}
-              {activeRows.length === 0 ? (
-                <Empty>
-                  <p>
-                    {searchTerm.trim()
-                      ? t('spaceMemoryEmptySearch')
-                      : branch === 'calls'
-                      ? t('spaceMemoryCallsEmpty')
-                      : branch === 'ai'
-                      ? t('spaceMemoryAiChatEmpty')
-                      : branch === 'files'
-                      ? t('spaceMemoryEmpty')
-                      : t('spaceMemoryConversationsEmpty')}
-                  </p>
-                </Empty>
-              ) : branch === 'files' ? (
-                <ul className="m-0 grid list-none grid-cols-1 items-stretch gap-2 p-0 md:grid-cols-2">
-                  {files.map((row) => (
-                    <SpaceMemoryTimelineItem
-                      key={row.id}
-                      item={row}
-                      contextLine={contextLineForItem(row)}
-                      matrixChatRoomId={matrixChatRoomId}
-                      openLabel={t('spaceMemoryOpenAsset', { name: row.name })}
-                    />
-                  ))}
-                </ul>
-              ) : (
-                <ul className="m-0 grid list-none gap-4 p-0">
-                  {activeRows.map((row) => {
-                    const title = deriveSpaceMemoryDisplayTitle({
-                      source: row.source,
-                      name: row.name,
-                      contextTitle: row.context.contextTitle,
-                      textExcerpt: row.context.textExcerpt,
-                      documentTitle: row.context.documentTitle,
-                    });
-                    const body = row.context.textExcerpt?.trim() ?? '';
-                    const media =
-                      row.url.startsWith('http://') ||
-                      row.url.startsWith('https://')
-                        ? row.url
-                        : null;
-                    return (
-                      <li
+            <div
+              ref={listFrameRef}
+              data-space-memory-list-frame=""
+              className="flex min-h-0 min-w-0 flex-1 flex-col overflow-visible border border-border bg-background lg:overflow-hidden lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]"
+            >
+              <div
+                ref={setListScroll}
+                className="narrow-scrollbar min-h-0 flex-1 overflow-visible lg:overflow-y-auto lg:overscroll-contain"
+              >
+                {activeRows.length === 0 ? (
+                  <div className="px-4 py-6">
+                    <Empty>
+                      <p>
+                        {searchTerm.trim()
+                          ? t('spaceMemoryEmptySearch')
+                          : isLoadingMore ||
+                            (hasMore && categoryCounts[branch] > 0)
+                          ? t('spaceMemoryLoading')
+                          : branch === 'calls'
+                          ? t('spaceMemoryCallsEmpty')
+                          : branch === 'ai'
+                          ? t('spaceMemoryAiChatEmpty')
+                          : branch === 'files'
+                          ? t('spaceMemoryEmpty')
+                          : t('spaceMemoryConversationsEmpty')}
+                      </p>
+                    </Empty>
+                  </div>
+                ) : branch === 'files' ? (
+                  <ul className="m-0 grid list-none grid-cols-1 items-stretch gap-2 p-3 md:grid-cols-2">
+                    {files.map((row) => (
+                      <SpaceMemoryTimelineItem
                         key={row.id}
-                        className="border border-border bg-background px-5 py-5"
-                      >
-                        <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
-                          {contextLineForItem(row)}
-                        </p>
-                        <h2
-                          className="mt-2 text-3"
-                          style={{ fontFamily: 'var(--font-family-heading)' }}
+                        item={row}
+                        contextLine={contextLineForItem(row)}
+                        matrixChatRoomId={matrixChatRoomId}
+                        openLabel={t('spaceMemoryOpenAsset', {
+                          name: row.name,
+                        })}
+                      />
+                    ))}
+                    <li ref={listEndRef} aria-hidden className="h-px w-full" />
+                  </ul>
+                ) : (
+                  <ul className="m-0 grid list-none gap-4 p-3">
+                    {activeRows.map((row) => {
+                      const title = deriveSpaceMemoryDisplayTitle({
+                        source: row.source,
+                        name: row.name,
+                        contextTitle: row.context.contextTitle,
+                        textExcerpt: row.context.textExcerpt,
+                        documentTitle: row.context.documentTitle,
+                      });
+                      const rawBody = row.context.textExcerpt?.trim() ?? '';
+                      const body = memoryBodyWithoutRepeatedTitle(
+                        title,
+                        rawBody,
+                      );
+                      if (row.source === 'call_recording') {
+                        return (
+                          <SpaceMemoryTimelineItem
+                            key={row.id}
+                            item={row}
+                            contextLine={contextLineForItem(row)}
+                            matrixChatRoomId={matrixChatRoomId}
+                            openLabel={t('spaceMemoryOpenAsset', {
+                              name: row.name,
+                            })}
+                          />
+                        );
+                      }
+                      return (
+                        <li
+                          key={row.id}
+                          className="border border-border bg-background px-5 py-5"
                         >
-                          {title}
-                        </h2>
-                        <p className="mt-1 text-1 text-neutral-11">
-                          {format.dateTime(new Date(row.uploadedAt), {
-                            dateStyle: 'medium',
-                          })}
-                        </p>
-                        {row.source === 'call_recording' && media ? (
-                          row.kind === 'video' ? (
-                            <video
-                              controls
-                              src={media}
-                              className="mt-4 max-h-72 w-full bg-background"
-                              preload="metadata"
-                            >
-                              <track kind="captions" />
-                            </video>
-                          ) : (
-                            <audio
-                              controls
-                              src={media}
-                              className="mt-4 w-full"
-                              preload="metadata"
-                            >
-                              <track kind="captions" />
-                            </audio>
-                          )
-                        ) : null}
-                        {body ? (
-                          <div className="mt-4 max-w-3xl">
-                            <MemoryProse source={body} />
-                          </div>
-                        ) : null}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+                          <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
+                            {contextLineForItem(row)}
+                          </p>
+                          <h2
+                            className="mt-2 text-3"
+                            style={{
+                              fontFamily: 'var(--font-family-heading)',
+                            }}
+                          >
+                            {title}
+                          </h2>
+                          <p className="mt-1 text-1 text-neutral-11">
+                            {format.dateTime(new Date(row.uploadedAt), {
+                              dateStyle: 'medium',
+                            })}
+                          </p>
+                          {body ? (
+                            <div className="mt-4 max-w-3xl">
+                              <MemoryProse source={body} />
+                            </div>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                    <li ref={listEndRef} aria-hidden className="h-px w-full" />
+                  </ul>
+                )}
+                {isLoadingMore ? (
+                  <p className="px-4 py-3 text-center text-1 text-neutral-11">
+                    {t('spaceMemoryLoading')}
+                  </p>
+                ) : null}
+                {loadMoreError ? (
+                  <p className="px-4 py-3 text-center text-1 text-destructive">
+                    {t('spaceMemoryLoadMoreError')}
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
-
-          {totalCount > 0 ? (
-            <div className="flex w-full flex-col items-center gap-2">
-              <SectionLoadMore
-                onClick={loadMore}
-                disabled={!hasMore}
-                isLoading={isLoadingMore}
-              >
-                <Text className="line-clamp-3 max-w-md text-center text-sm leading-snug">
-                  {hasMore ? t('loadMore') : t('noMore')}
-                </Text>
-              </SectionLoadMore>
-              {loadMoreError ? (
-                <Text className="max-w-md text-center text-sm text-destructive">
-                  {t('spaceMemoryLoadMoreError')}
-                </Text>
-              ) : null}
-            </div>
-          ) : null}
         </>
       )}
     </section>

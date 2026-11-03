@@ -3,3 +3,4 @@ export { useMe } from './use-me';
 export { usePendingRewards } from './usePendingRewards';
 export { usePersonById } from './usePersonById';
 export { usePersonBySub } from './usePersonBySub';
+export { usePeopleBySubs } from './usePeopleBySubs';

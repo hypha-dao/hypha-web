@@ -133,9 +133,9 @@ export default async function DhoLayout({
   const accentLogoHref =
     rawLogo && isSafeImageUrl(rawLogo) ? rawLogo : DEFAULT_SPACE_AVATAR_IMAGE;
 
-  const compactBannerSpaceArchived =
-    spaceFlags.includes('archived') ||
-    (rawSpaceMembers !== null && rawSpaceMembers === 0);
+  // Member count is not archive state. A space that was just created has no
+  // indexed members yet, and that was painting the Archived badge until reload.
+  const compactBannerSpaceArchived = spaceFlags.includes('archived');
 
   return (
     <SpaceAccentPortalBridge>

@@ -32,9 +32,30 @@ export async function POST(request: NextRequest) {
     const validatedData = validationResult.data;
     const db = getDb({ authToken });
     const before = await findPersonById({ id: validatedData.id }, { db });
-    const updatedProfile = await updatePerson(validatedData as Person, {
-      db,
-    });
+    if (!before) {
+      return NextResponse.json({ error: 'Person not found' }, { status: 404 });
+    }
+    // Merge onto the existing row so optional fields omitted from the body
+    // (e.g. preferredCurrency on an unrelated edit) are not wiped, and the
+    // update always has a full Person shape for slug / image retention.
+    const updatedProfile = await updatePerson(
+      {
+        ...before,
+        ...validatedData,
+        id: before.id,
+        slug: before.slug,
+        createdAt: before.createdAt,
+        updatedAt: before.updatedAt,
+        preferredCurrency:
+          validatedData.preferredCurrency ?? before.preferredCurrency,
+        links: validatedData.links ?? before.links,
+        avatarUrl: validatedData.avatarUrl ?? before.avatarUrl,
+        leadImageUrl: validatedData.leadImageUrl ?? before.leadImageUrl,
+      } as Person,
+      {
+        db,
+      },
+    );
     const beforeSlug = before?.slug;
     const afterSlug = updatedProfile.slug;
     if (beforeSlug || afterSlug) {

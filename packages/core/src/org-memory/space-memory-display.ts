@@ -29,6 +29,43 @@ export function looksLikeTechnicalSpaceMemoryName(value: string): boolean {
   return false;
 }
 
+/**
+ * Drop a title that was derived from the opening of the same body so the
+ * Space Memory card does not repeat the first sentence under the heading.
+ */
+export function memoryBodyWithoutRepeatedTitle(
+  title: string,
+  body: string,
+): string {
+  const heading = title.replace(/\s+/g, ' ').trim();
+  const text = body.replace(/\s+/g, ' ').trim();
+  if (!heading || !text) return body.trim();
+  if (text.toLowerCase() === heading.toLowerCase()) return '';
+  // Titles from firstSentence may end with … while the body is the full text.
+  const truncated = /…$|\.\.\.$/u.test(heading);
+  const headingBare = heading
+    .replace(/…$/u, '')
+    .replace(/\.\.\.$/u, '')
+    .trim();
+  const lower = text.toLowerCase();
+  for (const prefix of [heading, headingBare]) {
+    if (!prefix) continue;
+    if (!lower.startsWith(prefix.toLowerCase())) continue;
+    let rest = text.slice(prefix.length);
+    // Truncated titles cut mid-token — drop the leftover stump (`ew` from `overview`).
+    if (truncated && prefix === headingBare) {
+      rest = rest.replace(/^\S+/u, '');
+    }
+    return rest.replace(/^[\s—–\-:.,]+/u, '').trim();
+  }
+  return body.trim();
+}
+
+/** Fingerprint for collapsing append-only discussion summary snapshots. */
+export function discussionSummaryContentKey(text: string): string {
+  return text.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
 function firstSentence(text: string, maxLen = 120): string {
   const compact = text.replace(/\s+/g, ' ').trim();
   if (!compact) return '';
@@ -44,16 +81,73 @@ function firstSentence(text: string, maxLen = 120): string {
   return (stop > 40 ? cut.slice(0, stop + 1) : `${cut}…`).trim();
 }
 
+/** True when an excerpt lead is link spam or a stuttered phrase — not a title. */
+export function looksLikeLowSignalMemoryTitle(value: string): boolean {
+  const compact = value.replace(/\s+/g, ' ').trim();
+  if (!compact) return true;
+  const urls = compact.match(/https?:\/\/\S+/gi) ?? [];
+  const withoutUrls = compact
+    .replace(/https?:\/\/\S+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (urls.length > 0 && withoutUrls.length < 48) return true;
+  if (urls.length >= 2) return true;
+  const words = withoutUrls.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length >= 4) {
+    const half = Math.floor(words.length / 2);
+    const a = words.slice(0, half).join(' ');
+    const b = words.slice(half, half * 2).join(' ');
+    if (a && a === b) return true;
+  }
+  return false;
+}
+
+const BRIDGED_PRIVY_ID =
+  /@?(?:dev|prev|prod)_privy_did_privy_[a-z0-9]+(?::[^\s:,]+)?/gi;
+const DID_PRIVY = /did:privy:[a-z0-9]+/gi;
+
+/** Drop bridged Privy / Matrix ids that leak into memory titles and bodies. */
+export function scrubTechnicalIdentityTokens(text: string): string {
+  return text
+    .replace(BRIDGED_PRIVY_ID, ' ')
+    .replace(DID_PRIVY, ' ')
+    .replace(/[^\S\n]{2,}/g, ' ')
+    .replace(/[^\S\n]+\n/g, '\n')
+    .replace(/\n[^\S\n]+/g, '\n')
+    .trim();
+}
+
 /**
  * Discussion summaries are markdown, but Matrix reply fallbacks land in them
  * as `<@user:server>` mentions and `>` quotes. Keep the sentences.
+ * Call transcripts often start with bridged `prod_privy_…:` speaker labels.
  */
 export function humanizeMemoryExcerpt(source: string): string {
   const trimmed = source.replace(/\r\n/g, '\n').trim();
   if (!trimmed) return '';
+
+  const rawLines = trimmed.split('\n');
+  const hasTechnicalSpeakers = rawLines.some((line) => {
+    const parsed = splitSpeakerLabeledTranscriptLine(line.trim());
+    if (!parsed || !looksLikeTechnicalSpeakerLabel(parsed.speaker)) {
+      return false;
+    }
+    // Reply dumps wrap MXIDs in `<@…>` / `>`; real transcript lines are bare.
+    return !/[<>]/.test(parsed.speaker);
+  });
+  if (hasTechnicalSpeakers) {
+    return rawLines
+      .map((line) =>
+        scrubTechnicalIdentityTokens(stripTechnicalSpeakerFromExcerpt(line)),
+      )
+      .filter(Boolean)
+      .join('\n')
+      .trim();
+  }
+
   const mention = /<?@[A-Za-z0-9._=\-/]+:[A-Za-z0-9.\-]+(?::\d+)?>?/;
   if (!mention.test(trimmed) && !/(?:^|\s)>+/.test(trimmed)) {
-    return trimmed;
+    return scrubTechnicalIdentityTokens(trimmed);
   }
   const withoutMentions = trimmed.replace(new RegExp(mention.source, 'g'), ' ');
   const lines = withoutMentions
@@ -66,7 +160,7 @@ export function humanizeMemoryExcerpt(source: string): string {
         .trim(),
     )
     .filter(Boolean);
-  return lines.join(' ');
+  return scrubTechnicalIdentityTokens(lines.join(' '));
 }
 
 /** Strip a technical speaker prefix from a transcript excerpt line. */
@@ -74,11 +168,13 @@ export function stripTechnicalSpeakerFromExcerpt(excerpt: string): string {
   const trimmed = excerpt.trim();
   if (!trimmed) return '';
   const parsed = splitSpeakerLabeledTranscriptLine(trimmed);
-  if (!parsed) return trimmed;
+  if (!parsed) return scrubTechnicalIdentityTokens(trimmed);
   const body = parsed.body.trim();
-  if (!body) return trimmed;
-  if (looksLikeTechnicalSpeakerLabel(parsed.speaker)) return body;
-  return trimmed;
+  if (!body) return '';
+  if (looksLikeTechnicalSpeakerLabel(parsed.speaker)) {
+    return scrubTechnicalIdentityTokens(body);
+  }
+  return scrubTechnicalIdentityTokens(trimmed);
 }
 
 function pickHumanReadableCandidate(
@@ -110,7 +206,11 @@ export function deriveSpaceMemoryDisplayTitle(input: {
     input.textExcerpt?.trim() ?? '',
   );
   const fromExcerpt = firstSentence(excerptBody);
-  if (fromExcerpt && !looksLikeTechnicalSpaceMemoryName(fromExcerpt)) {
+  if (
+    fromExcerpt &&
+    !looksLikeTechnicalSpaceMemoryName(fromExcerpt) &&
+    !looksLikeLowSignalMemoryTitle(fromExcerpt)
+  ) {
     return fromExcerpt;
   }
 

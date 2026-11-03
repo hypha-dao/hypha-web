@@ -3,8 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   bindHomePerson,
   consumeHomeReturn,
+  HOME_WELCOME_BACK_AFTER_MS,
+  homePartOfDay,
+  readHomeLastSeen,
   readHomeThread,
   rememberHomeAction,
+  shouldWelcomeHomeReturn,
+  touchHomeLastSeen,
   writeHomeThread,
 } from '../member-home-resume';
 
@@ -86,6 +91,42 @@ describe('home thread resume', () => {
     expect(readHomeThread()).toEqual([]);
   });
 
+  it('keeps the home item card under a reply after the next message', () => {
+    writeHomeThread([
+      {
+        id: 'a1',
+        role: 'assistant',
+        metadata: { homeItem: { kind: 'proposal', slug: 'garden-vote' } },
+        parts: [
+          { type: 'text', text: 'Vlad brought a vote in Hypha Flywheel.' },
+          {
+            type: 'tool-show_member_home_item',
+            state: 'output-available',
+            input: { kind: 'proposal', slug: 'garden-vote' },
+            output: { kind: 'proposal', slug: 'garden-vote' },
+          },
+        ],
+      } as never,
+      {
+        id: 'a2',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Suzana raised a tension next.' }],
+      },
+    ]);
+
+    const [first] = readHomeThread();
+    expect(first?.metadata).toEqual({
+      homeItem: { kind: 'proposal', slug: 'garden-vote' },
+    });
+    const tool = first?.parts?.find(
+      (part) => part.type === 'tool-show_member_home_item',
+    ) as { output?: { kind?: string; slug?: string } } | undefined;
+    expect(tool?.output).toEqual({
+      kind: 'proposal',
+      slug: 'garden-vote',
+    });
+  });
+
   it('keeps the onboarding card that belongs under the reply', () => {
     writeHomeThread([
       {
@@ -157,5 +198,22 @@ describe('home thread resume', () => {
 
     expect(consumeHomeReturn()).toBe('Garden proposal');
     expect(consumeHomeReturn()).toBeNull();
+  });
+
+  it('welcomes on first open and after two hours away', () => {
+    expect(shouldWelcomeHomeReturn(1_000)).toBe(true);
+    touchHomeLastSeen(1_000);
+    expect(readHomeLastSeen()).toBe(1_000);
+    expect(shouldWelcomeHomeReturn(1_000 + 60 * 60 * 1000, 1_000)).toBe(false);
+    expect(
+      shouldWelcomeHomeReturn(1_000 + HOME_WELCOME_BACK_AFTER_MS, 1_000),
+    ).toBe(true);
+  });
+
+  it('names the local part of day for a welcome line', () => {
+    expect(homePartOfDay(new Date('2026-06-01T08:00:00'))).toBe('morning');
+    expect(homePartOfDay(new Date('2026-06-01T14:00:00'))).toBe('afternoon');
+    expect(homePartOfDay(new Date('2026-06-01T19:00:00'))).toBe('evening');
+    expect(homePartOfDay(new Date('2026-06-01T23:00:00'))).toBe('night');
   });
 });

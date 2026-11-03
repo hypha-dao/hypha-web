@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
 import {
-  listMemberHomeThreadItems,
+  listSpaceAttentionLead,
   useJwt,
   type MemberHomeThreadItem,
   type MemberIntelligence,
@@ -13,6 +13,7 @@ import {
 import type { Locale } from '@hypha-platform/i18n';
 
 import { getProposalPath, getSignalPath } from '../../common/get-path-function';
+import { HOME_REFRESH_EVENT } from '../../people/components/member-home-resume';
 
 function stripTags(value: string) {
   let out = '';
@@ -63,7 +64,7 @@ export function SpaceAttention({
   const t = useTranslations('OverviewOps');
   const tCoherence = useTranslations('CoherenceTab');
   const { jwt } = useJwt();
-  const { data, isLoading } = useSWR<MemberIntelligence | null>(
+  const { data, isLoading, mutate } = useSWR<MemberIntelligence | null>(
     jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
     async ([url, token]) => {
       const response = await fetch(url, {
@@ -73,25 +74,32 @@ export function SpaceAttention({
       if (!response.ok) return null;
       return (await response.json()) as MemberIntelligence;
     },
+    {
+      // Votes and signal status changes land elsewhere; keep this tile fresh.
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      refreshInterval: 30_000,
+    },
   );
 
-  const queue = useMemo(() => {
-    if (!data) return [];
-    return listMemberHomeThreadItems(data).filter(
-      (item) => item.spaceSlug === spaceSlug,
-    );
-  }, [data, spaceSlug]);
+  useEffect(() => {
+    const refresh = () => {
+      void mutate();
+    };
+    window.addEventListener(HOME_REFRESH_EVENT, refresh);
+    return () => window.removeEventListener(HOME_REFRESH_EVENT, refresh);
+  }, [mutate]);
+
+  const lead = useMemo(() => {
+    if (!data) return null;
+    return listSpaceAttentionLead(data, spaceSlug, turn);
+  }, [data, spaceSlug, turn]);
 
   if (!jwt) return null;
 
   const inSpace =
     data?.spaces.some((space) => space.slug === spaceSlug) ?? false;
-  if (!isLoading && (!data || !inSpace) && queue.length === 0) return null;
-
-  const lead =
-    queue.length > 0
-      ? queue[((turn % queue.length) + queue.length) % queue.length] ?? null
-      : null;
+  if (!isLoading && (!data || !inSpace) && lead == null) return null;
 
   const eyebrow = (item: MemberHomeThreadItem) => {
     if (item.category) {

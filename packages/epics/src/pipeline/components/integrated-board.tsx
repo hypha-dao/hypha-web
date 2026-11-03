@@ -4,7 +4,8 @@ import React from 'react';
 import Link from 'next/link';
 import {
   filterDeals,
-  PIPELINE_SWIMLANES,
+  findTrackName,
+  resolveDefaultTrackSlug,
   useDealMutations,
   useDeals,
   usePipelineConfig,
@@ -48,26 +49,41 @@ export function IntegratedBoard({
   const t = useTranslations('Pipeline');
   const [filters, setFilters] = React.useState<DealFilters>({});
   const [newOpen, setNewOpen] = React.useState(false);
-  const [newSwimlane, setNewSwimlane] =
-    React.useState<PipelineSwimlane>('Sales');
+  const [newSwimlane, setNewSwimlane] = React.useState<PipelineSwimlane>('');
   const { deals, isLoading } = useDeals({ spaceSlug });
   const { moveDealToStatus } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
-  const { probabilities } = usePipelineConfig(spaceSlug);
+  const {
+    pageTitle,
+    itemPlural,
+    tracks,
+    stages,
+    probabilities,
+    error: configError,
+    refresh: refreshConfig,
+    isLoading: isConfigLoading,
+  } = usePipelineConfig(spaceSlug);
   const { collapsedLanes, toggleLane } = useCollapsedPipelineLanes(spaceSlug);
+  const defaultTrack = resolveDefaultTrackSlug(tracks);
 
   const filtered = React.useMemo(
     () => filterDeals(deals, filters),
     [deals, filters],
   );
 
-  const visibleSwimlanes = React.useMemo(() => {
-    if (!filters.swimlane) return PIPELINE_SWIMLANES;
+  const visibleTracks = React.useMemo(() => {
+    if (!filters.swimlane) return tracks;
     const selected = Array.isArray(filters.swimlane)
       ? filters.swimlane
       : [filters.swimlane];
-    return PIPELINE_SWIMLANES.filter((swimlane) => selected.includes(swimlane));
-  }, [filters.swimlane]);
+    return tracks.filter((track) => selected.includes(track.slug));
+  }, [filters.swimlane, tracks]);
+
+  const unmatchedDeals = React.useMemo(() => {
+    if (isConfigLoading) return [];
+    const known = new Set(tracks.map((track) => track.slug));
+    return filtered.filter((deal) => !known.has(deal.pipelineSwimlane));
+  }, [filtered, isConfigLoading, tracks]);
 
   const onMoveStatus = React.useCallback(
     async (dealId: number, status: PipelineStatus) => {
@@ -82,7 +98,9 @@ export function IntegratedBoard({
     <div className="relative flex min-w-0 flex-col gap-4 pb-16">
       <header className="craft-page-header">
         <div className="flex w-full flex-wrap items-center justify-between gap-3">
-          <h1 className="craft-page-title text-6 font-medium">{t('title')}</h1>
+          <h1 className="craft-page-title text-6 font-medium">
+            {pageTitle || t('title')}
+          </h1>
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
@@ -116,24 +134,51 @@ export function IntegratedBoard({
         countryFocus={countryFocus}
       />
 
-      <PipelineSummary deals={filtered} probabilities={probabilities} />
+      <PipelineSummary
+        deals={filtered}
+        tracks={tracks}
+        stages={stages}
+        probabilities={probabilities}
+        itemPlural={itemPlural}
+      />
+
+      {configError ? (
+        <div
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-6 bg-red-2 px-3 py-2 text-2 text-red-11"
+          role="alert"
+        >
+          <span>{t('configLoadFailed')}</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void refreshConfig();
+            }}
+          >
+            {t('retry')}
+          </Button>
+        </div>
+      ) : null}
 
       {isLoading && deals.length === 0 ? (
-        <div className="text-2 text-neutral-11">{t('loading')}</div>
+        <div className="text-2 text-neutral-11">
+          {t('loading', { items: itemPlural })}
+        </div>
       ) : (
         <div className="flex min-w-0 flex-col">
-          {visibleSwimlanes.map((swimlane) => {
+          {visibleTracks.map((track) => {
             const laneDeals = filtered.filter(
-              (d) => d.pipelineSwimlane === swimlane,
+              (d) => d.pipelineSwimlane === track.slug,
             );
             return (
               <PipelineLaneSection
-                key={swimlane}
-                laneSlug={swimlane}
-                title={swimlane}
+                key={track.slug}
+                laneSlug={track.slug}
+                title={findTrackName(tracks, track.slug)}
                 count={laneDeals.length}
-                collapsed={collapsedLanes.includes(swimlane)}
-                onToggle={() => toggleLane(swimlane)}
+                collapsed={collapsedLanes.includes(track.slug)}
+                onToggle={() => toggleLane(track.slug)}
                 actions={
                   <>
                     <Button
@@ -141,14 +186,14 @@ export function IntegratedBoard({
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        setNewSwimlane(swimlane);
+                        setNewSwimlane(track.slug);
                         setNewOpen(true);
                       }}
                     >
                       <Plus className="size-3.5" />
                     </Button>
                     <Link
-                      href={getTrackHref(swimlane)}
+                      href={getTrackHref(track.slug)}
                       className="text-1 whitespace-nowrap text-accent-11 hover:underline"
                     >
                       {t('openTrack')}
@@ -158,6 +203,7 @@ export function IntegratedBoard({
               >
                 <KanbanBoard
                   deals={laneDeals}
+                  stages={stages}
                   onDealClick={(deal) => onDealOpen(deal.id)}
                   onMoveStatus={onMoveStatus}
                   activeDealId={activeDealId}
@@ -166,12 +212,30 @@ export function IntegratedBoard({
               </PipelineLaneSection>
             );
           })}
+          {unmatchedDeals.length > 0 ? (
+            <PipelineLaneSection
+              laneSlug="__unassigned"
+              title={t('unassignedLane')}
+              count={unmatchedDeals.length}
+              collapsed={collapsedLanes.includes('__unassigned')}
+              onToggle={() => toggleLane('__unassigned')}
+            >
+              <KanbanBoard
+                deals={unmatchedDeals}
+                stages={stages}
+                onDealClick={(deal) => onDealOpen(deal.id)}
+                onMoveStatus={onMoveStatus}
+                activeDealId={activeDealId}
+                probabilities={probabilities}
+              />
+            </PipelineLaneSection>
+          ) : null}
         </div>
       )}
 
       <DealCreateFab
         onClick={() => {
-          setNewSwimlane('Sales');
+          setNewSwimlane(defaultTrack);
           setNewOpen(true);
         }}
       />
@@ -180,7 +244,7 @@ export function IntegratedBoard({
         useMembers={useMembers}
         open={newOpen}
         onOpenChange={setNewOpen}
-        defaultSwimlane={newSwimlane}
+        defaultSwimlane={newSwimlane || defaultTrack}
       />
     </div>
   );

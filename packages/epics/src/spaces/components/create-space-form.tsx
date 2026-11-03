@@ -60,7 +60,9 @@ import {
   SignalWorkflowSettings,
   type SignalWorkflowSettingsHandle,
 } from '../../coherence/components/signal-workflow-settings';
+import { PipelineLabelSettings } from '../../pipeline/components/pipeline-label-settings';
 import { PipelineRegionSettings } from '../../pipeline/components/pipeline-region-settings';
+import { PipelineTrackSettings } from '../../pipeline/components/pipeline-track-settings';
 import { PipelineProbabilitySettings } from '../../pipeline/components/pipeline-probability-settings';
 import {
   SpaceCapitalsFields,
@@ -1108,6 +1110,8 @@ export const SpaceForm = ({
             {pipelineEnabled ? (
               <>
                 <Separator />
+                <PipelineLabelSettings spaceSlug={spaceSlug} />
+                <PipelineTrackSettings spaceSlug={spaceSlug} />
                 <PipelineRegionSettings spaceSlug={spaceSlug} />
                 <PipelineProbabilitySettings spaceSlug={spaceSlug} />
               </>

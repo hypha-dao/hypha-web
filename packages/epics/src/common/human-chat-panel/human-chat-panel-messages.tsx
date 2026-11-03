@@ -13,16 +13,47 @@ import { useFormatter, useTranslations } from 'next-intl';
 
 import { Button } from '@hypha-platform/ui';
 
+import { useIsMobile, usePrefersCoarsePointer } from '@hypha-platform/ui';
+
 import { HumanChatPanelDateSeparator } from './human-chat-panel-date-separator';
 import { HumanChatPanelUnreadDivider } from './human-chat-panel-unread-divider';
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
+import { touchComposerFromViewportFlags } from './touch-composer-flags';
 import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
+import {
+  asTimelineDate,
+  shouldStickChatTimelineToBottom,
+  sortMessagesChronologically,
+} from './human-chat-timeline-order';
+
+/**
+ * Scroll a row inside the timeline scroller only — never call `scrollIntoView`,
+ * which also moves ancestor panels (e.g. the proposal overlay).
+ * Pin near the top so a reply that is already “just above” still moves
+ * clearly instead of centering in place with no visible jump.
+ */
+function scrollChildIntoTimeline(
+  container: HTMLElement,
+  child: HTMLElement,
+  behavior: ScrollBehavior = 'smooth',
+) {
+  const cRect = container.getBoundingClientRect();
+  const eRect = child.getBoundingClientRect();
+  const topPad = Math.min(72, Math.max(24, cRect.height * 0.12));
+  const next = container.scrollTop + (eRect.top - cRect.top) - topPad;
+  container.scrollTo({
+    top: Math.max(0, next),
+    behavior,
+  });
+}
 
 type UIMessage = {
   id: string;
   role: 'user' | 'member';
   /** Non-Matrix / system rows: no reply or reactions. */
   isSynthetic?: boolean;
+  /** False while Matrix still holds a local echo / failed send. */
+  sendAcknowledged?: boolean;
   sendPending?: {
     attachmentCount: number;
     captionPreview: string;
@@ -41,6 +72,8 @@ type UIMessage = {
   agentSpecialistId?: string;
   avatarUrl?: string;
   timestamp?: Date;
+  /** True when the Matrix root was edited (`m.replace`). */
+  edited?: boolean;
   formattedContentHtml?: string;
   reactions?: Array<{
     emoji: string;
@@ -49,6 +82,8 @@ type UIMessage = {
     reactorUserIds?: string[];
   }>;
   replyTo?: {
+    /** Matrix event id of the quoted message (scroll target). */
+    eventId?: string;
     authorLabel: string;
     excerpt?: string;
     /** Matrix MXID of quoted author (for avatar refresh). */
@@ -57,10 +92,12 @@ type UIMessage = {
   };
 };
 
-function dayKeyLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+function dayKeyLocal(d: Date): string | null {
+  const date = asTimelineDate(d);
+  if (!date) return null;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
 
@@ -68,12 +105,36 @@ function formatDateDividerLabel(
   date: Date,
   formatter: ReturnType<typeof useFormatter>,
 ): string {
-  return formatter.dateTime(date, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  const safe = asTimelineDate(date);
+  if (!safe) return '';
+  try {
+    return formatter.dateTime(safe, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch {
+    return '';
+  }
+}
+
+/** Compact date for the unread strip — full weekday wraps poorly beside the action. */
+function formatUnreadBannerDateLabel(
+  date: Date,
+  formatter: ReturnType<typeof useFormatter>,
+): string {
+  const safe = asTimelineDate(date);
+  if (!safe) return '';
+  try {
+    return formatter.dateTime(safe, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return '';
+  }
 }
 
 type TimelineRow =
@@ -93,12 +154,13 @@ function buildTimelineRows(
   const rows: TimelineRow[] = [];
   let prevDay: string | null = null;
   let insertedUnread = !firstUnreadMessageId;
+  const ordered = sortMessagesChronologically(messages);
 
-  for (const msg of messages) {
-    const ts = msg.timestamp;
+  for (const msg of ordered) {
+    const ts = asTimelineDate(msg.timestamp);
     if (ts) {
       const dk = dayKeyLocal(ts);
-      if (dk !== prevDay) {
+      if (dk && dk !== prevDay) {
         rows.push({
           kind: 'date',
           key: `day-${dk}`,
@@ -140,6 +202,8 @@ type HumanChatPanelMessagesProps = {
   welcomeText?: string;
   welcomeSenderName?: string;
   onReply?: (messageId: string) => void;
+  /** Jump the timeline to the quoted original when a reply header is clicked. */
+  onJumpToOriginalMessage?: (eventId: string) => void;
   onEditMessage?: (messageId: string) => void;
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
   onToggleReaction?: (messageId: string, emoji: string) => void;
@@ -158,6 +222,8 @@ type HumanChatPanelMessagesProps = {
   unreadNotificationCount?: number;
   /** Called when the scroll viewport reaches the bottom (mark read). */
   onReachedTimelineBottom?: () => void;
+  /** False while the member is reading earlier messages. */
+  onTimelineAtBottomChange?: (atBottom: boolean) => void;
   /** When false the thread is off-screen, so reaching the bottom must not count as read. */
   viewportActive?: boolean;
   /** User clicked “Mark as read” in the banner. */
@@ -174,6 +240,15 @@ type HumanChatPanelMessagesProps = {
     addedEvents: number;
     hasMoreOlder: boolean;
   }>;
+  /**
+   * DM peer MXID. When set with `peerReadUpToEventId`, own messages show
+   * sent/read ticks.
+   */
+  dmPeerUserId?: string | null;
+  /** Peer's public read-receipt cursor event id for this DM. */
+  peerReadUpToEventId?: string | null;
+  /** True when an own message id is at or before the peer read cursor. */
+  isMessageReadByPeer?: (eventId: string) => boolean;
 };
 
 export function HumanChatPanelMessages({
@@ -185,6 +260,7 @@ export function HumanChatPanelMessages({
   welcomeText,
   welcomeSenderName,
   onReply,
+  onJumpToOriginalMessage,
   onEditMessage,
   onDeleteMessage,
   onToggleReaction,
@@ -196,6 +272,7 @@ export function HumanChatPanelMessages({
   unreadCountIsCapped = false,
   unreadNotificationCount = 0,
   onReachedTimelineBottom,
+  onTimelineAtBottomChange,
   viewportActive = true,
   onMarkAsReadFromBanner,
   scrollTargetEventId,
@@ -205,9 +282,18 @@ export function HumanChatPanelMessages({
   loadingOlderMessages = false,
   enableAutoLoadOlderMessages = true,
   onLoadOlderMessages,
+  dmPeerUserId = null,
+  peerReadUpToEventId = null,
+  isMessageReadByPeer,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
   const formatter = useFormatter();
+  const isMobile = useIsMobile();
+  const prefersCoarsePointer = usePrefersCoarsePointer();
+  const isTouchComposer = touchComposerFromViewportFlags(
+    isMobile,
+    prefersCoarsePointer,
+  );
 
   const welcomeMessage: UIMessage = {
     id: 'welcome',
@@ -217,7 +303,6 @@ export function HumanChatPanelMessages({
     senderName: welcomeSenderName ?? t('chatRoomTitle'),
   };
   const containerRef = useRef<HTMLDivElement>(null);
-  const prevLenRef = useRef(0);
   const prevLastIdRef = useRef<string | null>(null);
   const stickToBottomRef = useRef(true);
   const initialUnreadScrollDoneRef = useRef(false);
@@ -235,6 +320,34 @@ export function HumanChatPanelMessages({
   /** Retry deep-link target lookup across timeline growth before falling back. */
   const scrollTargetMissCountRef = useRef(0);
   const scrollTargetMissHandledRef = useRef<string | null>(null);
+  /** Brief flash on the jumped-to row so a nearby original is still obvious. */
+  const [jumpFlashMessageId, setJumpFlashMessageId] = useState<string | null>(
+    null,
+  );
+  const jumpFlashClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flashJumpedMessage = useCallback((messageId: string) => {
+    if (jumpFlashClearRef.current != null) {
+      clearTimeout(jumpFlashClearRef.current);
+      jumpFlashClearRef.current = null;
+    }
+    setJumpFlashMessageId(messageId);
+    jumpFlashClearRef.current = setTimeout(() => {
+      jumpFlashClearRef.current = null;
+      setJumpFlashMessageId((current) =>
+        current === messageId ? null : current,
+      );
+    }, 1400);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (jumpFlashClearRef.current != null) {
+        clearTimeout(jumpFlashClearRef.current);
+      }
+    },
+    [],
+  );
 
   /** At most one floating action bar: pointer hover, or locked while that row's hover emoji picker is open. */
   const [hoverActionMessageId, setHoverActionMessageId] = useState<
@@ -248,7 +361,10 @@ export function HumanChatPanelMessages({
   /** Pointer left row while hover picker was open (portal); hide bar when picker closes. */
   const leaveWhileLockedRef = useRef<string | null>(null);
 
-  const displayMessages = messages.length > 0 ? messages : [welcomeMessage];
+  const displayMessages =
+    messages.length > 0
+      ? sortMessagesChronologically(messages)
+      : [welcomeMessage];
 
   const timelineRows = useMemo(
     () => buildTimelineRows(displayMessages, firstUnreadMessageId),
@@ -263,38 +379,68 @@ export function HumanChatPanelMessages({
       };
     }
     const target = displayMessages.find((m) => m.id === firstUnreadMessageId);
-    const ts = target?.timestamp;
+    const ts = asTimelineDate(target?.timestamp);
     if (!ts) {
       return {
         dateLabel: null as string | null,
         timeLabel: null as string | null,
       };
     }
-    return {
-      dateLabel: formatDateDividerLabel(ts, formatter),
-      timeLabel: formatter.dateTime(ts, {
+    try {
+      const dateLabel = formatUnreadBannerDateLabel(ts, formatter);
+      const timeLabel = formatter.dateTime(ts, {
         timeStyle: 'short',
         dateStyle: undefined,
-      }),
-    };
+      });
+      if (!dateLabel || !timeLabel) {
+        return {
+          dateLabel: null as string | null,
+          timeLabel: null as string | null,
+        };
+      }
+      return { dateLabel, timeLabel };
+    } catch {
+      return {
+        dateLabel: null as string | null,
+        timeLabel: null as string | null,
+      };
+    }
   }, [displayMessages, firstUnreadMessageId, formatter]);
 
   const showUnreadBanner =
     Boolean(firstUnreadMessageId) &&
     Boolean(firstUnreadMeta.dateLabel && firstUnreadMeta.timeLabel);
 
-  const scrollToUnread = useCallback(() => {
-    if (!firstUnreadMessageId) return;
-    const escaped =
-      typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
-        ? CSS.escape(firstUnreadMessageId)
-        : firstUnreadMessageId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    const el = document.querySelector(
-      `[data-matrix-event-id="${escaped}"]`,
-    ) as HTMLElement | null;
-    el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    stickToBottomRef.current = false;
-  }, [firstUnreadMessageId]);
+  /**
+   * Jump so the NEW divider (preferred) or first unread row sits near the top
+   * of the timeline — Slack/Discord-style. Returns false when the target is
+   * not in the DOM yet (caller may retry).
+   */
+  const scrollToUnread = useCallback(
+    (behavior: ScrollBehavior = 'smooth'): boolean => {
+      if (!firstUnreadMessageId) return false;
+      const root = containerRef.current;
+      if (!root) return false;
+      const divider = root.querySelector('[data-chat-unread-divider]');
+      const escaped =
+        typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+          ? CSS.escape(firstUnreadMessageId)
+          : firstUnreadMessageId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      const message = root.querySelector(`[data-matrix-event-id="${escaped}"]`);
+      const el =
+        divider instanceof HTMLElement
+          ? divider
+          : message instanceof HTMLElement
+          ? message
+          : null;
+      if (!el) return false;
+      scrollChildIntoTimeline(root, el, behavior);
+      stickToBottomRef.current = false;
+      onTimelineAtBottomChange?.(false);
+      return true;
+    },
+    [firstUnreadMessageId, onTimelineAtBottomChange],
+  );
 
   useEffect(() => {
     if (roomId !== prevRoomIdRef.current) {
@@ -397,13 +543,13 @@ export function HumanChatPanelMessages({
 
     const len = messages.length;
     const lastId = len > 0 ? messages[len - 1]!.id : null;
-    const prevLen = prevLenRef.current;
     const prevLastId = prevLastIdRef.current;
 
-    const appended =
+    const newestIsOwn =
       len > 0 &&
       lastId != null &&
-      (prevLen === 0 || (len >= prevLen && lastId !== prevLastId));
+      lastId !== prevLastId &&
+      messages[len - 1]?.role === 'user';
 
     const shouldScrollUnread =
       Boolean(firstUnreadMessageId) &&
@@ -411,60 +557,110 @@ export function HumanChatPanelMessages({
       messages.some((m) => m.id === firstUnreadMessageId);
 
     if (shouldScrollUnread) {
-      initialUnreadScrollDoneRef.current = true;
+      // Do not mark done until the target is actually in the DOM — a single
+      // rAF often runs before long timelines paint, leaving the viewport at
+      // the oldest loaded messages with the unread banner still showing.
       stickToBottomRef.current = false;
-      window.requestAnimationFrame(() => {
-        scrollToUnread();
-      });
-      prevLenRef.current = len;
+      onTimelineAtBottomChange?.(false);
+      let cancelled = false;
+      let frames = 0;
+      let raf = 0;
+      const maxFrames = 45;
+      const tryScroll = () => {
+        if (cancelled) return;
+        // Instant jump on open (Slack/Discord); smooth is for later in-thread jumps.
+        if (scrollToUnread('auto')) {
+          initialUnreadScrollDoneRef.current = true;
+          return;
+        }
+        frames += 1;
+        if (frames < maxFrames) {
+          raf = window.requestAnimationFrame(tryScroll);
+        } else {
+          initialUnreadScrollDoneRef.current = true;
+        }
+      };
+      raf = window.requestAnimationFrame(tryScroll);
       prevLastIdRef.current = lastId;
-      return;
+      return () => {
+        cancelled = true;
+        window.cancelAnimationFrame(raf);
+      };
     }
 
-    if (appended) {
+    if (
+      shouldStickChatTimelineToBottom({
+        alreadyStuckToBottom: stickToBottomRef.current,
+        newestMessageIsOwn: newestIsOwn,
+        isStreaming,
+      })
+    ) {
       stickToBottomRef.current = true;
-    }
-
-    if (stickToBottomRef.current || isStreaming) {
+      onTimelineAtBottomChange?.(true);
       container.scrollTop = container.scrollHeight;
     }
 
-    prevLenRef.current = len;
     prevLastIdRef.current = lastId;
-  }, [messages, isStreaming, firstUnreadMessageId, scrollToUnread]);
+  }, [
+    messages,
+    isStreaming,
+    firstUnreadMessageId,
+    onTimelineAtBottomChange,
+    scrollToUnread,
+  ]);
 
   useLayoutEffect(() => {
     if (!scrollTargetEventId) return;
     if (scrollTargetConsumedRef.current === scrollTargetEventId) return;
     const root = containerRef.current;
     if (!root) return;
+
     const esc =
       typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
         ? CSS.escape(scrollTargetEventId)
         : scrollTargetEventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    const row = root.querySelector(`[data-matrix-event-id="${esc}"]`);
-    if (row instanceof HTMLElement) {
-      row.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      stickToBottomRef.current = false;
-      scrollTargetConsumedRef.current = scrollTargetEventId;
-      scrollTargetMissCountRef.current = 0;
-      scrollTargetMissHandledRef.current = null;
-      onConsumedScrollTarget?.();
-      return;
-    }
 
-    scrollTargetMissCountRef.current += 1;
-    if (
-      scrollTargetMissCountRef.current >= 12 &&
-      scrollTargetMissHandledRef.current !== scrollTargetEventId
-    ) {
-      scrollTargetMissHandledRef.current = scrollTargetEventId;
-      onScrollTargetNotFound?.(scrollTargetEventId);
-    }
+    let cancelled = false;
+    let frames = 0;
+    const maxFrames = 24;
+
+    const tryJump = () => {
+      if (cancelled) return;
+      const row = root.querySelector(`[data-matrix-event-id="${esc}"]`);
+      if (row instanceof HTMLElement) {
+        stickToBottomRef.current = false;
+        onTimelineAtBottomChange?.(false);
+        scrollChildIntoTimeline(root, row);
+        flashJumpedMessage(scrollTargetEventId);
+        scrollTargetConsumedRef.current = scrollTargetEventId;
+        scrollTargetMissCountRef.current = 0;
+        scrollTargetMissHandledRef.current = null;
+        onConsumedScrollTarget?.();
+        return;
+      }
+
+      frames += 1;
+      if (frames >= maxFrames) {
+        if (scrollTargetMissHandledRef.current !== scrollTargetEventId) {
+          scrollTargetMissHandledRef.current = scrollTargetEventId;
+          onScrollTargetNotFound?.(scrollTargetEventId);
+        }
+        return;
+      }
+      scrollTargetMissCountRef.current = frames;
+      requestAnimationFrame(tryJump);
+    };
+
+    tryJump();
+    return () => {
+      cancelled = true;
+    };
   }, [
     scrollTargetEventId,
+    flashJumpedMessage,
     onConsumedScrollTarget,
     onScrollTargetNotFound,
+    onTimelineAtBottomChange,
     timelineRows.length,
   ]);
 
@@ -502,20 +698,49 @@ export function HumanChatPanelMessages({
     };
   }, [onReachedTimelineBottom, timelineRows.length, viewportActive]);
 
+  useEffect(() => {
+    if (
+      !isTouchComposer ||
+      (hoverActionMessageId == null && lockActionMessageId == null)
+    ) {
+      return;
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (
+        target.closest(
+          '[data-radix-popper-content-wrapper], [data-radix-menu-content], [role="menu"], [role="listbox"], [data-chat-message-actions]',
+        )
+      ) {
+        return;
+      }
+      const row = target.closest('[data-matrix-event-id]');
+      if (row && containerRef.current?.contains(row)) return;
+      setHoverActionMessageId(null);
+      setLockActionMessageId(null);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [hoverActionMessageId, isTouchComposer, lockActionMessageId]);
+
   const messageIndexForStreaming = displayMessages.length - 1;
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <div
+      className="flex min-h-0 min-w-0 flex-1 flex-col"
+      data-hypha-room-id={roomId?.trim() || undefined}
+    >
       {showUnreadBanner &&
       firstUnreadMeta.dateLabel &&
       firstUnreadMeta.timeLabel ? (
         <div
           role="status"
           aria-live="polite"
-          className="border-b border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_40%,transparent)] bg-[color:var(--color-accent-9,var(--space-accent,#4a65d8))] px-3 py-2 shadow-sm"
+          className="shrink-0 border-b border-border bg-muted/40 px-4 py-2.5"
         >
-          <div className="flex items-start justify-between gap-2">
-            <p className="min-w-0 flex-1 text-xs font-medium leading-snug text-[color:var(--color-accent-contrast,#f8fafc)]">
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-w-0 flex-1 text-xs leading-snug text-muted-foreground">
               {unreadNotificationCount <= 0
                 ? t('unreadBannerSince', {
                     date: firstUnreadMeta.dateLabel,
@@ -535,8 +760,9 @@ export function HumanChatPanelMessages({
             <Button
               type="button"
               variant="outline"
+              colorVariant="neutral"
               size="sm"
-              className="h-7 shrink-0 border-[color:color-mix(in_srgb,var(--color-accent-contrast,#f8fafc)_35%,transparent)] bg-[color:color-mix(in_srgb,var(--color-accent-contrast,#f8fafc)_12%,transparent)] text-xs text-[color:var(--color-accent-contrast,#f8fafc)] hover:bg-[color:color-mix(in_srgb,var(--color-accent-contrast,#f8fafc)_22%,transparent)]"
+              className="h-8 shrink-0 px-3 text-xs"
               onClick={() => {
                 onMarkAsReadFromBanner?.();
               }}
@@ -555,7 +781,11 @@ export function HumanChatPanelMessages({
           const threshold = 80;
           const distanceFromBottom =
             el.scrollHeight - el.scrollTop - el.clientHeight;
-          stickToBottomRef.current = distanceFromBottom <= threshold;
+          const atBottom = distanceFromBottom <= threshold;
+          if (stickToBottomRef.current !== atBottom) {
+            stickToBottomRef.current = atBottom;
+            onTimelineAtBottomChange?.(atBottom);
+          }
         }}
         className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 py-3"
       >
@@ -631,20 +861,41 @@ export function HumanChatPanelMessages({
                 resolveMatrixMemberLabel={resolveMatrixMemberLabel}
                 resolveSenderDisplayLabel={resolveSenderDisplayLabel}
                 isActionBarVisible={isActionBarVisible}
+                jumpFlash={jumpFlashMessageId === msg.id}
                 unreadBoundary={row.isFirstUnread}
-                onRowPointerEnter={() => {
-                  leaveWhileLockedRef.current = null;
-                  setHoverActionMessageId(msg.id);
-                }}
-                onRowPointerLeave={() => {
-                  if (lockActionMessageIdRef.current === msg.id) {
-                    leaveWhileLockedRef.current = msg.id;
-                    return;
-                  }
-                  setHoverActionMessageId((current) =>
-                    current === msg.id ? null : current,
-                  );
-                }}
+                isTouchComposer={isTouchComposer}
+                onRowPointerEnter={
+                  isTouchComposer
+                    ? undefined
+                    : () => {
+                        leaveWhileLockedRef.current = null;
+                        setHoverActionMessageId(msg.id);
+                      }
+                }
+                onRowPointerLeave={
+                  isTouchComposer
+                    ? undefined
+                    : () => {
+                        if (lockActionMessageIdRef.current === msg.id) {
+                          leaveWhileLockedRef.current = msg.id;
+                          return;
+                        }
+                        setHoverActionMessageId((current) =>
+                          current === msg.id ? null : current,
+                        );
+                      }
+                }
+                onRowActivate={
+                  isTouchComposer
+                    ? () => {
+                        leaveWhileLockedRef.current = null;
+                        setHoverActionMessageId((current) =>
+                          current === msg.id ? null : msg.id,
+                        );
+                        setLockActionMessageId(null);
+                      }
+                    : undefined
+                }
                 onHoverReactPickerOpenChange={(open) => {
                   if (open) {
                     setLockActionMessageId(msg.id);
@@ -668,6 +919,11 @@ export function HumanChatPanelMessages({
                 onReply={
                   canInteract && onReply ? () => onReply(msg.id) : undefined
                 }
+                onJumpToOriginal={
+                  canInteract && onJumpToOriginalMessage && msg.replyTo?.eventId
+                    ? () => onJumpToOriginalMessage(msg.replyTo!.eventId!)
+                    : undefined
+                }
                 onEdit={
                   canInteract &&
                   onEditMessage &&
@@ -688,6 +944,18 @@ export function HumanChatPanelMessages({
                   msg.sendPending && onCancelSendPending
                     ? onCancelSendPending
                     : undefined
+                }
+                receiptStatus={
+                  !dmPeerUserId ||
+                  msg.role !== 'user' ||
+                  msg.isSynthetic ||
+                  msg.sendPending ||
+                  msg.sendAcknowledged === false
+                    ? null
+                    : isMessageReadByPeer?.(msg.id) ||
+                      peerReadUpToEventId === msg.id
+                    ? 'read'
+                    : 'sent'
                 }
               />
             );

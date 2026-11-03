@@ -136,24 +136,30 @@ function EnergyCommunityCard({
         {t('thisMonth')}
       </p>
       <dl className="mt-2 grid gap-2">
-        <div className="flex items-baseline justify-between gap-4">
-          <dt className="text-1 text-neutral-11">{t('you')}</dt>
-          <dd className="text-right text-2 tabular-nums">
-            {t('used', { kwh: formatKwh(community.youUsedKwh, missing) })}
-            <span className="text-neutral-11"> · </span>
-            {t('made', { kwh: formatKwh(community.youMadeKwh, missing) })}
+        <div className="flex items-start justify-between gap-4">
+          <dt className="shrink-0 text-1 text-neutral-11">{t('you')}</dt>
+          <dd className="text-right text-1 tabular-nums">
+            <div>
+              {t('consumed', { kwh: formatKwh(community.youUsedKwh, missing) })}
+            </div>
+            <div>
+              {t('produced', { kwh: formatKwh(community.youMadeKwh, missing) })}
+            </div>
           </dd>
         </div>
-        <div className="flex items-baseline justify-between gap-4">
-          <dt className="text-1 text-neutral-11">{t('community')}</dt>
-          <dd className="text-right text-2 tabular-nums">
-            {t('used', {
-              kwh: formatKwh(community.communityUsedKwh, missing),
-            })}
-            <span className="text-neutral-11"> · </span>
-            {t('made', {
-              kwh: formatKwh(community.communityMadeKwh, missing),
-            })}
+        <div className="flex items-start justify-between gap-4">
+          <dt className="shrink-0 text-1 text-neutral-11">{t('community')}</dt>
+          <dd className="text-right text-1 tabular-nums">
+            <div>
+              {t('consumed', {
+                kwh: formatKwh(community.communityUsedKwh, missing),
+              })}
+            </div>
+            <div>
+              {t('produced', {
+                kwh: formatKwh(community.communityMadeKwh, missing),
+              })}
+            </div>
           </dd>
         </div>
       </dl>
@@ -165,13 +171,13 @@ function EnergyCommunityCard({
           <>
             <div className="flex items-baseline justify-between gap-4">
               <dt className="text-1 text-neutral-11">{t('thisMonth')}</dt>
-              <dd className="text-2 tabular-nums">
+              <dd className="text-1 tabular-nums">
                 {money(community.oweThisMonth)}
               </dd>
             </div>
             <div className="flex items-baseline justify-between gap-4">
               <dt className="text-1 text-neutral-11">{t('lastMonth')}</dt>
-              <dd className="text-2 tabular-nums">
+              <dd className="text-1 tabular-nums">
                 {money(community.oweLastMonth)}
               </dd>
             </div>
@@ -179,7 +185,7 @@ function EnergyCommunityCard({
         ) : (
           <div className="flex items-baseline justify-between gap-4">
             <dt className="text-1 text-neutral-11">{t('toSettle')}</dt>
-            <dd className="text-2 tabular-nums">
+            <dd className="text-1 tabular-nums">
               {money(community.settleAmount)}
             </dd>
           </div>
@@ -204,6 +210,9 @@ function EnergyCommunityCard({
   );
 }
 
+/** Above the 8s route deadline so a late but valid body is not aborted. */
+const ENERGY_HOME_TIMEOUT_MS = 12_000;
+
 export function useMemberEnergyCommunities(
   personSlug: string | null | undefined,
 ) {
@@ -216,9 +225,10 @@ export function useMemberEnergyCommunities(
     async ([path, token]) => {
       const response = await fetch(path, {
         headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(ENERGY_HOME_TIMEOUT_MS),
       });
       if (!response.ok) {
-        throw new Error(`Failed to fetch member energy: ${response.status}`);
+        throw new Error('Failed to load energy home');
       }
       return (await response.json()) as MemberEnergyHomeResponse;
     },

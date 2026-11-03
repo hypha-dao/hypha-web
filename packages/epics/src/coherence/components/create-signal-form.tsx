@@ -48,6 +48,10 @@ import {
   Person,
   resolveDefaultBoard,
   schemaCreateCoherenceForm,
+  schemaEditCoherenceForm,
+  signalFormSchemaForMode,
+  type SignalFormValues,
+  resolveSignalFormCreatorId,
   parseCapitalKeys,
   type CapitalKey,
   collectExistingTags,
@@ -66,6 +70,9 @@ import {
   usePersonById,
   useSignalWorkflow,
   useSpaceBySlug,
+  matrixUserIdsForPersonIds,
+  publishSignalTeamNotice,
+  resolveMatrixUserIdsByPersonIds,
 } from '@hypha-platform/core/client';
 import React from 'react';
 import {
@@ -83,6 +90,7 @@ import {
   type SignalMediaItem,
 } from '../utils/signal-media';
 import { useScrollToErrors } from '../../hooks';
+import { mutate } from 'swr';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -96,6 +104,7 @@ import {
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
 } from '../constants';
 import { upsertSignalDescriptionInRoom } from '../utils/signal-chat-description';
+import { unmappedPersonIds } from '../utils/signal-team-access';
 import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
 import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
 import { toLocalDueDateInputValue } from '../utils/signal-due-date';
@@ -109,7 +118,7 @@ import { useTokens } from '../../treasury/hooks/use-tokens';
 import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
 import { EXCHANGE_SIGNAL_CAPITALS_KEY } from '../../network-exchange/exchange-draft-keys';
 
-type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
+type FormValues = SignalFormValues;
 
 export interface CreateSignalFormProps {
   spaceId: number;
@@ -351,6 +360,16 @@ export const CreateSignalForm = ({
     spaceSlug,
     web3SpaceId: space?.web3SpaceId ?? undefined,
   });
+  const headerCreatorId = resolveSignalFormCreatorId({
+    mode,
+    storedCreatorId: initialValues?.creatorId,
+    viewerId: person?.id,
+  });
+  const { person: storedCreatorPerson } = usePersonById({
+    id: headerCreatorId ?? undefined,
+  });
+  const headerPerson =
+    mode === 'edit' ? storedCreatorPerson ?? undefined : person;
   const isSignalCreator =
     mode === 'edit' &&
     typeof initialValues?.creatorId === 'number' &&
@@ -462,7 +481,12 @@ export const CreateSignalForm = ({
     () => ({
       title: initialValues?.title ?? '',
       description: initialValues?.description ?? '',
-      creatorId: initialValues?.creatorId ?? person?.id ?? 0,
+      creatorId:
+        resolveSignalFormCreatorId({
+          mode,
+          storedCreatorId: initialValues?.creatorId,
+          viewerId: person?.id,
+        }) ?? 0,
       spaceId: initialValues?.spaceId ?? spaceId,
       archived: initialValues?.archived ?? false,
       type:
@@ -509,7 +533,9 @@ export const CreateSignalForm = ({
     // Keep typed title/description as-is while editing. Zod `.trim()` still
     // applies on submit via the resolver; `raw: true` stops it from writing
     // the trimmed value back into the field on validate.
-    resolver: zodResolver(schemaCreateCoherenceForm, undefined, { raw: true }),
+    resolver: zodResolver(signalFormSchemaForMode(mode), undefined, {
+      raw: true,
+    }),
     defaultValues: formDefaults,
   });
   React.useEffect(() => {
@@ -518,8 +544,18 @@ export const CreateSignalForm = ({
   }, [form, formDefaults, mode, signalSlug]);
   React.useEffect(() => {
     if (mode === 'edit' || !person?.id) return;
-    if (form.getValues('creatorId') === person.id) return;
-    form.setValue('creatorId', person.id);
+    const nextCreatorId = resolveSignalFormCreatorId({
+      mode: 'create',
+      storedCreatorId: form.getValues('creatorId'),
+      viewerId: person.id,
+    });
+    if (
+      nextCreatorId == null ||
+      form.getValues('creatorId') === nextCreatorId
+    ) {
+      return;
+    }
+    form.setValue('creatorId', nextCreatorId);
   }, [form, mode, person?.id]);
   React.useEffect(() => {
     const videoUrl = createMediaDraft.current?.videoUrl?.trim();
@@ -734,19 +770,9 @@ export const CreateSignalForm = ({
     ];
   }, [existingBoardTags, t]);
 
-  React.useEffect(() => {
-    const { isDirty } = form.getFieldState('creatorId');
-    if (!isDirty && person?.id) {
-      form.setValue('creatorId', person.id, {
-        shouldDirty: false,
-        shouldTouch: false,
-        shouldValidate: true,
-      });
-    }
-  }, [person, form]);
-
   // `person` can resolve after mount, so the creator default has to be applied
-  // once it lands rather than only through `defaultValues`.
+  // once it lands rather than only through `defaultValues`. Never copy the
+  // viewer onto creatorId in edit — that reattributes someone else's signal.
   React.useEffect(() => {
     if (mode !== 'create' || !person?.id) return;
     const { isDirty } = form.getFieldState('assigneeIds');
@@ -899,11 +925,16 @@ export const CreateSignalForm = ({
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
       form.clearErrors('root');
-      const creatorId =
+      const storedCreatorId =
         typeof data.creatorId === 'number' && data.creatorId > 0
           ? data.creatorId
-          : person?.id;
-      if (!creatorId) {
+          : null;
+      // Create attributes the signed-in viewer. Edit never substitutes them.
+      const creatorId =
+        mode === 'create'
+          ? storedCreatorId ?? person?.id ?? null
+          : storedCreatorId;
+      if (mode === 'create' && !creatorId) {
         reportPublishFailure(
           new Error('authToken is required'),
           'Your session expired. Please sign in again before saving.',
@@ -919,11 +950,15 @@ export const CreateSignalForm = ({
       }
       let parsed: FormValues;
       try {
-        parsed = schemaCreateCoherenceForm.parse({
+        parsed = (
+          mode === 'edit' ? schemaEditCoherenceForm : schemaCreateCoherenceForm
+        ).parse({
           ...data,
-          creatorId,
+          ...(mode === 'create'
+            ? { creatorId }
+            : { creatorId: storedCreatorId }),
           spaceId: data.spaceId > 0 ? data.spaceId : spaceId,
-        });
+        }) as FormValues;
       } catch (error) {
         reportPublishFailure(
           error,
@@ -986,6 +1021,10 @@ export const CreateSignalForm = ({
           // list refresh finish in the background.
           setIsClosingAfterPublish(true);
           router.push(successfulUrl);
+          const attributionSlug = signalSlug?.trim() || '';
+          if (attributionSlug) {
+            void mutate([attributionSlug, 'signal-creator-attribution']);
+          }
           if (updatedSignal?.roomId) {
             void upsertSignalDescriptionMessage({
               roomId: updatedSignal.roomId,
@@ -1047,6 +1086,35 @@ export const CreateSignalForm = ({
         const coherence = await createCoherence({ ...parsed, ...media });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
+        const teamPersonIds = [
+          ...new Set(
+            [
+              ...(parsed.assigneeIds ?? []),
+              ...(coherence.assigneeIds ?? []),
+              creatorId,
+            ].filter((id): id is number => typeof id === 'number' && id > 0),
+          ),
+        ];
+        const assigneePersonIds = [
+          ...new Set(
+            [
+              ...(parsed.assigneeIds ?? []),
+              ...(coherence.assigneeIds ?? []),
+            ].filter((id): id is number => typeof id === 'number' && id > 0),
+          ),
+        ];
+        // Resolve MXIDs before navigate so we use the same person→Matrix map
+        // Manage compares against — not client.getUserId(), which can differ.
+        const resolveTeamMatrixIds = resolveMatrixUserIdsByPersonIds({
+          personIds: teamPersonIds,
+          authToken,
+        }).catch((resolveError) => {
+          console.warn(
+            'Signal room created but failed to resolve team Matrix ids:',
+            resolveError,
+          );
+          return {} as Record<number, string>;
+        });
         // Close the panel as soon as the signal exists — everything below is
         // best-effort follow-up work that must not hold the form open.
         setIsClosingAfterPublish(true);
@@ -1098,6 +1166,78 @@ export const CreateSignalForm = ({
                   messageSeedError,
                 );
               }
+
+              try {
+                await updateCoherenceBySlug({
+                  slug: coherenceSlug,
+                  roomId: canonicalRoomId,
+                });
+              } catch (linkError) {
+                const linkErrorMessage =
+                  linkError instanceof Error
+                    ? linkError.message
+                    : String(linkError);
+                setSignalProvisioningNotice(
+                  t('provisioning.roomLinkFailedRetry'),
+                  linkErrorMessage,
+                );
+                console.warn(
+                  'Signal created and room provisioned but room linking failed:',
+                  linkError,
+                );
+              }
+
+              // Seed the Matrix signal-team roster from create-time assignees
+              // + creator using the same person→MXID map Manage reads.
+              // Later assignee edits do not rewrite that roster (team picker).
+              if (matrixClient) {
+                try {
+                  const personIdToMatrixUserId = await resolveTeamMatrixIds;
+                  const missingAssigneeIds = unmappedPersonIds(
+                    assigneePersonIds,
+                    personIdToMatrixUserId,
+                  );
+                  if (missingAssigneeIds.length > 0) {
+                    console.warn(
+                      'Skipping signal team notice: assignee(s) missing Matrix ids',
+                      missingAssigneeIds,
+                    );
+                  } else {
+                    const teamIdsToSeed = matrixUserIdsForPersonIds(
+                      teamPersonIds,
+                      personIdToMatrixUserId,
+                    );
+                    const ownerMatrixUserId =
+                      (typeof creatorId === 'number'
+                        ? personIdToMatrixUserId[creatorId]?.trim()
+                        : undefined) ||
+                      matrixClient.getUserId?.()?.trim() ||
+                      null;
+                    const addedMemberMatrixUserIds = matrixUserIdsForPersonIds(
+                      assigneePersonIds,
+                      personIdToMatrixUserId,
+                    );
+                    if (teamIdsToSeed.length > 0 || ownerMatrixUserId) {
+                      await publishSignalTeamNotice({
+                        client: matrixClient,
+                        roomId: canonicalRoomId,
+                        coherenceSlug,
+                        memberMatrixUserIds: teamIdsToSeed,
+                        ownerMatrixUserId,
+                        actorMatrixUserId:
+                          matrixClient.getUserId?.()?.trim() ||
+                          ownerMatrixUserId,
+                        addedMemberMatrixUserIds,
+                      });
+                    }
+                  }
+                } catch (teamSeedError) {
+                  console.warn(
+                    'Signal room created but failed to seed signal team:',
+                    teamSeedError,
+                  );
+                }
+              }
             } catch (matrixError) {
               const matrixErrorMessage =
                 matrixError instanceof Error
@@ -1112,23 +1252,6 @@ export const CreateSignalForm = ({
                 matrixError,
               );
               return;
-            }
-
-            try {
-              await updateCoherenceBySlug({ slug: coherenceSlug, roomId });
-            } catch (linkError) {
-              const linkErrorMessage =
-                linkError instanceof Error
-                  ? linkError.message
-                  : String(linkError);
-              setSignalProvisioningNotice(
-                t('provisioning.roomLinkFailedRetry'),
-                linkErrorMessage,
-              );
-              console.warn(
-                'Signal created and room provisioned but room linking failed:',
-                linkError,
-              );
             }
           })();
         } else {
@@ -1158,6 +1281,7 @@ export const CreateSignalForm = ({
       isEditAuthorized,
       joinRoom,
       loadRoomHistory,
+      matrixClient,
       updateCoherenceBySlug,
       updateCoherenceSignalBySlug,
       isMatrixAvailable,
@@ -1288,11 +1412,11 @@ export const CreateSignalForm = ({
                 size="lg"
                 shape="circle"
                 isLoading={isMutating}
-                avatarSrc={person?.avatarUrl || ''}
-                userName={[person?.name, person?.surname]
+                avatarSrc={headerPerson?.avatarUrl || ''}
+                userName={[headerPerson?.name, headerPerson?.surname]
                   .filter(Boolean)
                   .join(' ')}
-                personId={person?.id}
+                personId={headerPerson?.id}
               />
               <div className="flex w-full min-w-0 flex-col gap-1.5 sm:gap-2">
                 <FormField
@@ -1317,7 +1441,7 @@ export const CreateSignalForm = ({
                   )}
                 />
                 <Text className="text-1 text-neutral-11">
-                  {person?.name} {person?.surname}
+                  {headerPerson?.name} {headerPerson?.surname}
                 </Text>
               </div>
             </div>

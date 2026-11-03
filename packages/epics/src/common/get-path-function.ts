@@ -20,11 +20,28 @@ export const getProposalPath = (
   return `/${lang}/dho/${spaceSlug}/agreements/proposal/${proposalSlug}`;
 };
 
+export type SpaceChatRoom = 'space' | 'ecosystem' | 'public';
+
+/**
+ * Space dashboard with the human-chat panel on a channel room
+ * (member space, ecosystem, or public).
+ */
+export const getSpaceChatPath = (
+  lang: Locale,
+  spaceSlug: string,
+  room: SpaceChatRoom = 'space',
+) => {
+  return `/${lang}/dho/${spaceSlug}/overview?spaceChat=${room}`;
+};
+
 export const getSignalPath = (
   lang: Locale,
   spaceSlug: string,
   signalSlug: string,
 ) => {
+  // Signals board with that card selected. `useCoherenceSignalDeepLink` scrolls
+  // to the card and opens its chat when Human chat is on. Coherence-off still
+  // redirects this tab to overview.
   return `/${lang}/dho/${spaceSlug}/coherence?signal=${encodeURIComponent(
     signalSlug,
   )}`;

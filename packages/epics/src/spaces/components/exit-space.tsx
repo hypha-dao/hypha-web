@@ -85,7 +85,9 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
       );
 
       if (currentSpace?.web3SpaceId === web3SpaceId && params?.lang) {
-        router.push(`/${params.lang}/my-spaces`);
+        const next =
+          person?.primaryOrientation === 'member' ? 'home' : 'my-spaces';
+        router.push(`/${params.lang}/${next}`);
       }
     } catch (err) {
       setJustExit(false);

@@ -2,6 +2,7 @@
 
 import {
   Fragment,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -22,6 +23,8 @@ import {
   Image as ImageIcon,
   Loader2,
   Play,
+  Check,
+  CheckCheck,
 } from 'lucide-react';
 import {
   Skeleton,
@@ -48,6 +51,8 @@ import { MemberHomeMark } from '../../people/components/member-home-mark';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
+import { looksLikeTechnicalMatrixDisplayName } from './matrix-room-member-display';
+import { useResolvedMatrixMemberLabel } from './use-resolved-matrix-member-label';
 import {
   HumanChatPanelMessageOverflow,
   pushRecentChatReaction,
@@ -63,6 +68,8 @@ import {
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
   pickUserVisibleMemberLabel,
+  resolveBridgedLocalHandleToMxid,
+  visibleMatrixMemberName,
 } from './matrix-room-member-display';
 import {
   type ChatPanelAttachmentMedia,
@@ -73,6 +80,7 @@ import {
   ChatVoiceAudioRow,
   formatVoiceDurationLabel,
 } from './human-chat-panel-voice-audio-row';
+import { asTimelineDate } from './human-chat-timeline-order';
 
 type Reaction = {
   emoji: string;
@@ -220,7 +228,32 @@ function useMxcUrls(
   }, [client, mxc]);
 }
 
-/** Single-image timeline row: preserve intrinsic aspect when known. */
+/**
+ * Single-image frame: shrink-wrap the bitmap so portrait shots are not
+ * letterboxed inside a full-width aspect box (`max-h` + `object-contain`).
+ */
+function timelineImageFrameClass(
+  mediaInfo?: { w?: number; h?: number } | null,
+) {
+  const w = mediaInfo?.w;
+  const h = mediaInfo?.h;
+  const known = Boolean(w && h && w > 0 && h > 0);
+  const portrait = known && (h as number) > (w as number);
+  // Unknown dims: allow a taller max so portrait screenshots still read well.
+  const tall = portrait || !known;
+  return {
+    frame: cn(
+      'relative w-fit overflow-hidden rounded-lg border border-border/60 bg-muted/30',
+      tall ? 'max-w-[min(100%,20rem)]' : 'max-w-md',
+    ),
+    img: cn(
+      'block h-auto w-auto max-w-full object-contain',
+      tall ? 'max-h-[min(28rem,65vh)]' : 'max-h-72',
+    ),
+  };
+}
+
+/** Single-image timeline row: shrink-wrap intrinsic size within max bounds. */
 function TimelineImageSlot({
   media,
   tOpen,
@@ -234,19 +267,10 @@ function TimelineImageSlot({
     client,
     media.mxcUrl,
   );
+  const frame = timelineImageFrameClass(media.mediaInfo);
 
   return (
-    <div
-      className="relative shrink-0 overflow-hidden rounded-lg border border-border bg-muted/30"
-      style={
-        media.mediaInfo?.w &&
-        media.mediaInfo?.h &&
-        media.mediaInfo.w > 0 &&
-        media.mediaInfo.h > 0
-          ? { aspectRatio: `${media.mediaInfo.w} / ${media.mediaInfo.h}` }
-          : { width: 'min(200px, 72vw)', minHeight: '120px' }
-      }
-    >
+    <div className={cn('relative shrink-0', frame.frame)}>
       {mediaPreviewUrl && mediaDownloadUrl ? (
         <>
           <a
@@ -266,7 +290,7 @@ function TimelineImageSlot({
               }
             }}
             className={cn(
-              'block h-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+              'block cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
               media.spoiler && !spoilerRevealed && 'pointer-events-none',
             )}
             aria-label={tOpen('openAttachmentInNewTab')}
@@ -277,7 +301,7 @@ function TimelineImageSlot({
               downloadUrl={mediaDownloadUrl}
               alt={media.filename ?? ''}
               className={cn(
-                'h-full max-h-72 w-full object-contain',
+                frame.img,
                 media.spoiler && !spoilerRevealed && 'blur-2xl',
               )}
             />
@@ -695,6 +719,9 @@ type HumanChatPanelMessageBubbleProps = {
   isActionBarVisible?: boolean;
   onRowPointerEnter?: () => void;
   onRowPointerLeave?: () => void;
+  /** Touch: tap the row to toggle the same action bar used on web. */
+  onRowActivate?: () => void;
+  isTouchComposer?: boolean;
   /** Notify when the hover-bar emoji picker opens/closes (parent may lock visibility). */
   onHoverReactPickerOpenChange?: (open: boolean) => void;
   /** Active Matrix room (for message link + overflow). */
@@ -715,6 +742,8 @@ type HumanChatPanelMessageBubbleProps = {
     agentSpecialistId?: string;
     avatarUrl?: string;
     timestamp?: Date;
+    /** True when the Matrix root was edited (`m.replace`). */
+    edited?: boolean;
     reactions?: Reaction[];
     /** Matrix formatted_body (subset) for rich display */
     formattedContentHtml?: string;
@@ -727,6 +756,8 @@ type HumanChatPanelMessageBubbleProps = {
     };
     /** Rich reply: quoted context above the new text */
     replyTo?: {
+      /** Matrix event id of the quoted message (scroll target). */
+      eventId?: string;
       authorLabel: string;
       /** When omitted, UI shows “original unavailable” */
       excerpt?: string;
@@ -739,6 +770,8 @@ type HumanChatPanelMessageBubbleProps = {
   isStreaming?: boolean;
   /** When set, Reply is enabled (omit for synthetic messages like welcome). */
   onReply?: () => void;
+  /** When set, the reply quote scrolls the timeline to the original. */
+  onJumpToOriginal?: () => void;
   /** When set, Edit is enabled (own text messages only; parent omits otherwise). */
   onEdit?: () => void;
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
@@ -748,6 +781,13 @@ type HumanChatPanelMessageBubbleProps = {
   onCancelSendPending?: () => void;
   /** Timeline chrome: first unread row (Discord-style emphasis). */
   unreadBoundary?: boolean;
+  /** Brief flash after jumping here from a reply quote. */
+  jumpFlash?: boolean;
+  /**
+   * DM-only receipt on own messages: single check = sent, double = peer read.
+   * Omit for other people's messages and for space/group rooms.
+   */
+  receiptStatus?: 'sent' | 'read' | null;
 };
 
 const MAX_VISIBLE_REACTIONS = 12;
@@ -845,6 +885,8 @@ function formatTimestamp(
   date: Date,
   t: (key: string, values?: Record<string, string>) => string,
 ): string {
+  const safe = asTimelineDate(date);
+  if (!safe) return '';
   const now = new Date();
   const startOfToday = new Date(
     now.getFullYear(),
@@ -852,16 +894,16 @@ function formatTimestamp(
     now.getDate(),
   );
   const startOfMessageDay = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
+    safe.getFullYear(),
+    safe.getMonth(),
+    safe.getDate(),
   );
   const dayDiff = Math.round(
     (startOfToday.getTime() - startOfMessageDay.getTime()) /
       (24 * 60 * 60 * 1000),
   );
 
-  const timeStr = date.toLocaleTimeString(undefined, {
+  const timeStr = safe.toLocaleTimeString(undefined, {
     hour: 'numeric',
     minute: '2-digit',
   });
@@ -873,10 +915,10 @@ function formatTimestamp(
     return t('timestampYesterday', { time: timeStr });
   }
 
-  const dateStr = date.toLocaleDateString(undefined, {
+  const dateStr = safe.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
-    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    year: safe.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
   });
   return t('timestampDate', { date: dateStr, time: timeStr });
 }
@@ -1313,10 +1355,11 @@ function MxidMentionPill({
   const t = useTranslations('HumanChatPanel');
   const displayLabel = useMemo(() => {
     if (isHyphaBotMatrixIdentity(fullMxid, syncLabel)) {
-      return t('agentMentionLabel');
+      const label = t('agentMentionLabel').trim();
+      return label.startsWith('@') ? label : `@${label}`;
     }
     const fromPerson = person ? formatPersonDisplayName(person) : '';
-    const visible = pickUserVisibleMemberLabel(fullMxid, fromPerson, syncLabel);
+    const visible = visibleMatrixMemberName(fullMxid, fromPerson, syncLabel);
     if (!visible) return '';
     return visible.startsWith('@') ? visible : `@${visible}`;
   }, [person, syncLabel, fullMxid, t]);
@@ -1353,6 +1396,7 @@ export function renderTextWithMentions(
   text: string,
   resolveMx: (matrixUserId: string) => string,
   viewerMentionTintRow = false,
+  memberUserIds: readonly string[] = [],
 ): React.ReactNode[] {
   const segments = splitPlainTextMatrixMentions(text);
   const localHandleRe = /(^|[^\w.+-])@([^\s@]{1,100}?)(?=\s|$|[.,!?;:])/g;
@@ -1377,14 +1421,29 @@ export function renderTextWithMentions(
           </span>,
         );
       }
-      chunks.push(
-        <span
-          key={`${keyBase}-at-${keyN++}`}
-          className={chatMentionPillClass(viewerMentionTintRow)}
-        >
-          @{handle}
-        </span>,
+      const bridgedMxid = resolveBridgedLocalHandleToMxid(
+        handle,
+        memberUserIds,
       );
+      if (bridgedMxid) {
+        chunks.push(
+          <MxidMentionPill
+            key={`${keyBase}-at-${keyN++}`}
+            fullMxid={bridgedMxid}
+            syncLabel={resolveMx(bridgedMxid).trim() || `@${handle}`}
+            viewerMentionTintRow={viewerMentionTintRow}
+          />,
+        );
+      } else {
+        chunks.push(
+          <span
+            key={`${keyBase}-at-${keyN++}`}
+            className={chatMentionPillClass(viewerMentionTintRow)}
+          >
+            @{handle}
+          </span>,
+        );
+      }
       last = mentionStart + handle.length + 1;
     }
     if (last < fragment.length) {
@@ -1455,22 +1514,113 @@ function resolveMatrixPlainAndHtmlFragments(
   fragment: string,
   resolveMx: (matrixUserId: string) => string,
   viewerMentionTintRow = false,
+  memberUserIds: readonly string[] = [],
 ): React.ReactNode[] {
-  return renderTextWithMentions(fragment, resolveMx, viewerMentionTintRow);
+  return renderTextWithMentions(
+    fragment,
+    resolveMx,
+    viewerMentionTintRow,
+    memberUserIds,
+  );
 }
 
-function reactionTooltipText(
-  reaction: Reaction,
-  resolveLabel: (userId: string) => string,
-  t: (key: string, values?: TranslationValues) => string,
-): string | undefined {
-  const ids = reaction.reactorUserIds;
-  if (!ids?.length) return undefined;
-  const names = ids.map((id) => resolveLabel(id));
-  return t('reactionReactorsTooltip', {
-    names: names.join(', '),
-    emoji: reaction.emoji,
+function visibleReactionName(userId: string, label: string): string {
+  const name = label.trim();
+  if (!name || looksLikeTechnicalMatrixDisplayName(name, userId)) return '';
+  return name;
+}
+
+function ReactionReactorName({
+  userId,
+  roomId,
+  resolveLabel,
+  onResolved,
+}: {
+  userId: string;
+  roomId?: string | null;
+  resolveLabel: (userId: string) => string;
+  onResolved: (userId: string, name: string) => void;
+}) {
+  const fallback = resolveLabel(userId);
+  const resolved = useResolvedMatrixMemberLabel({
+    matrixUserId: userId,
+    roomId,
+    fallbackLabel: fallback,
   });
+  const name = visibleReactionName(userId, resolved || fallback);
+  useEffect(() => {
+    onResolved(userId, name);
+  }, [name, onResolved, userId]);
+  return null;
+}
+
+function ReactionReactorsTooltip({
+  reaction,
+  roomId,
+  resolveLabel,
+  t,
+  children,
+}: {
+  reaction: Reaction;
+  roomId?: string | null;
+  resolveLabel: (userId: string) => string;
+  t: (key: string, values?: TranslationValues) => string;
+  children: ReactNode;
+}) {
+  const ids = reaction.reactorUserIds ?? [];
+  const [names, setNames] = useState<ReadonlyMap<string, string>>(() => {
+    const initial = new Map<string, string>();
+    for (const userId of ids) {
+      const name = visibleReactionName(userId, resolveLabel(userId));
+      if (name) initial.set(userId, name);
+    }
+    return initial;
+  });
+  const onResolved = useCallback((userId: string, name: string) => {
+    setNames((prev) => {
+      if ((prev.get(userId) ?? '') === name) return prev;
+      const next = new Map(prev);
+      if (name) next.set(userId, name);
+      else next.delete(userId);
+      return next;
+    });
+  }, []);
+  const shown = ids
+    .map((userId) => names.get(userId)?.trim() ?? '')
+    .filter(Boolean);
+  const label =
+    shown.length > 0
+      ? t('reactionReactorsTooltip', {
+          names: shown.join(', '),
+          emoji: reaction.emoji,
+        })
+      : null;
+  return (
+    <>
+      {ids.map((userId) => (
+        <ReactionReactorName
+          key={userId}
+          userId={userId}
+          roomId={roomId}
+          resolveLabel={resolveLabel}
+          onResolved={onResolved}
+        />
+      ))}
+      {label ? (
+        <Tooltip delayDuration={300}>
+          <TooltipTrigger asChild>{children}</TooltipTrigger>
+          <TooltipContent
+            side="top"
+            className="max-w-xs text-left text-xs leading-snug"
+          >
+            {label}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        children
+      )}
+    </>
+  );
 }
 
 export function HumanChatPanelMessageBubble({
@@ -1480,6 +1630,8 @@ export function HumanChatPanelMessageBubble({
   isActionBarVisible = false,
   onRowPointerEnter,
   onRowPointerLeave,
+  onRowActivate,
+  isTouchComposer = false,
   onHoverReactPickerOpenChange,
   message,
   isStreaming,
@@ -1487,11 +1639,14 @@ export function HumanChatPanelMessageBubble({
   currentUserId,
   currentUserAvatarUrl,
   onReply,
+  onJumpToOriginal,
   onEdit,
   onDeleteMessage,
   onReact,
   onCancelSendPending,
   unreadBoundary = false,
+  jumpFlash = false,
+  receiptStatus = null,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
   const tCoherence = useTranslations('CoherenceTab');
@@ -1508,6 +1663,12 @@ export function HumanChatPanelMessageBubble({
         matrixMemberDisplayLabelFromRoom(client, roomId ?? null, matrixUserId)),
     [resolveMatrixMemberLabel, client, roomId],
   );
+  const roomMemberUserIds = useMemo(() => {
+    const room = client?.getRoom(roomId ?? undefined);
+    return (room?.getMembers() ?? [])
+      .map((member) => member.userId?.trim())
+      .filter((id): id is string => Boolean(id));
+  }, [client, roomId]);
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
@@ -1582,13 +1743,15 @@ export function HumanChatPanelMessageBubble({
   const resolveSenderProfile =
     Boolean(senderMatrixId) &&
     needsHyphaProfileForMatrixLabel(
-      rosterSenderLabel ?? message.senderName,
+      // Empty string from filtered technical roster labels must not block
+      // falling through to message.senderName / person lookup.
+      rosterSenderLabel || message.senderName,
       senderMatrixId,
     );
   const resolveReplyProfile =
     Boolean(replyMatrixId) &&
     needsHyphaProfileForMatrixLabel(
-      rosterReplyLabel ?? replyTo?.authorLabel,
+      rosterReplyLabel || replyTo?.authorLabel,
       replyMatrixId,
     );
 
@@ -1633,14 +1796,14 @@ export function HumanChatPanelMessageBubble({
       : '';
     const visible =
       message.senderMatrixId != null
-        ? pickUserVisibleMemberLabel(
+        ? visibleMatrixMemberName(
             message.senderMatrixId,
             fromPerson,
             rosterSenderLabel,
             message.senderName,
           )
         : fromPerson || rosterSenderLabel?.trim() || message.senderName?.trim();
-    return visible ?? t('unknownMember');
+    return visible || t('unknownMember');
   }, [
     message.role,
     message.senderMatrixId,
@@ -1658,14 +1821,14 @@ export function HumanChatPanelMessageBubble({
     const fromPerson = replyPerson ? formatPersonDisplayName(replyPerson) : '';
     const visible =
       replyTo.sourceUserId != null
-        ? pickUserVisibleMemberLabel(
+        ? visibleMatrixMemberName(
             replyTo.sourceUserId,
             fromPerson,
             rosterReplyLabel,
             replyTo.authorLabel,
           )
         : fromPerson || rosterReplyLabel?.trim() || replyTo.authorLabel?.trim();
-    return visible ?? t('unknownMember');
+    return visible || t('unknownMember');
   }, [replyPerson, replyTo, rosterReplyLabel, t]);
 
   const senderHasVisibleLabel = useMemo(() => {
@@ -1699,7 +1862,7 @@ export function HumanChatPanelMessageBubble({
       ? isLoadingSenderLink ||
         (Boolean(senderPrivySub ?? senderCanonicalSub) && isLoadingSenderPerson)
       : needsHyphaProfileForMatrixLabel(
-          rosterSenderLabel ?? message.senderName,
+          rosterSenderLabel || message.senderName,
           message.senderMatrixId,
         ));
 
@@ -1715,7 +1878,7 @@ export function HumanChatPanelMessageBubble({
       ? isLoadingReplyLink ||
         (Boolean(replyPrivySub ?? replyCanonicalSub) && isLoadingReplyPerson)
       : needsHyphaProfileForMatrixLabel(
-          rosterReplyLabel ?? replyTo.authorLabel,
+          rosterReplyLabel || replyTo.authorLabel,
           replyTo.sourceUserId,
         ));
 
@@ -1745,8 +1908,9 @@ export function HumanChatPanelMessageBubble({
       !replyHeaderAvatarResolved?.trim() &&
       (isLoadingReplyLink ||
         (Boolean(replyPrivySub ?? replyCanonicalSub) && isLoadingReplyPerson)));
-  const timestamp = message.timestamp
-    ? formatTimestamp(message.timestamp, t)
+  const safeTimestamp = asTimelineDate(message.timestamp);
+  const timestamp = safeTimestamp
+    ? formatTimestamp(safeTimestamp, t)
     : undefined;
   const reactions = message.reactions ?? [];
   const isSendPendingRow = Boolean(message.sendPending);
@@ -1802,7 +1966,7 @@ export function HumanChatPanelMessageBubble({
     Boolean(message.mediaSlots && message.mediaSlots.length > 0);
   const textBodyClassName = cn(
     /* Shared with the AI panel: 13px, a little tighter than body text. */
-    'text-[13px] leading-[1.35] text-foreground',
+    'text-[13px] leading-[1.35] whitespace-pre-wrap break-words text-foreground',
     hasInlineMedia ? 'mt-0.5' : 'mt-0',
     !textExpanded && 'line-clamp-10',
   );
@@ -1827,6 +1991,50 @@ export function HumanChatPanelMessageBubble({
     return () => ro.disconnect();
   }, [textContent, textExpanded, richTextHtml, hasInlineMedia]);
 
+  const replyExcerpt =
+    replyTo && replyTo.excerpt != null && replyTo.excerpt !== '' ? (
+      // Keep MXIDs / @handles so mention pills can resolve Privy locals to
+      // names; omit only bare technical slugs with no mention syntax.
+      needsHyphaProfileResolutionForMatrixLabel(replyTo.excerpt) &&
+      !replyTo.excerpt.includes('@') &&
+      !/\s/.test(replyTo.excerpt.trim()) ? null : (
+        <span className="min-w-0 truncate font-normal">
+          {renderTextWithMentions(
+            replyTo.excerpt,
+            bodyResolveMx,
+            false,
+            roomMemberUserIds,
+          )}
+        </span>
+      )
+    ) : replyTo ? (
+      <span className="italic">{t('replyOriginalUnavailable')}</span>
+    ) : null;
+
+  const replyContextBody = replyTo ? (
+    <>
+      <div ref={replyAvatarMeasureRef} className="shrink-0">
+        <PersonAvatar
+          size="sm"
+          className="rounded-full"
+          avatarSrc={replyHeaderAvatarResolved}
+          userName={replyAuthorLabelForUi}
+          isLoading={replyAvatarLoading}
+          personId={replyPerson?.id}
+          matrixUserId={replyTo.sourceUserId}
+        />
+      </div>
+      <span className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
+        <span className="shrink-0 font-semibold text-muted-foreground">
+          {replyAuthorLabelForUi.startsWith('@')
+            ? replyAuthorLabelForUi
+            : `@${replyAuthorLabelForUi}`}
+        </span>
+        {replyExcerpt}
+      </span>
+    </>
+  ) : null;
+
   const row = (moreSlot: ReactNode | null) => (
     <div
       ref={messageRowRef}
@@ -1837,6 +2045,7 @@ export function HumanChatPanelMessageBubble({
         'hover:bg-foreground/[0.04] focus-within:bg-foreground/[0.04]',
         // Keep the floating action bar above neighbouring rows while it is open.
         isActionBarVisible && 'z-20',
+        jumpFlash && 'bg-accent-3',
         highlightMentionForViewer && 'border-l-2 border-l-accent-9',
         unreadBoundary &&
           !highlightMentionForViewer &&
@@ -1844,6 +2053,28 @@ export function HumanChatPanelMessageBubble({
       )}
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}
+      onPointerUp={
+        onRowActivate
+          ? (event) => {
+              if (
+                event.pointerType !== 'touch' &&
+                event.pointerType !== 'pen'
+              ) {
+                return;
+              }
+              const target = event.target;
+              if (!(target instanceof Element)) return;
+              if (
+                target.closest(
+                  'button, a, input, textarea, [role="menuitem"], [data-chat-message-actions]',
+                )
+              ) {
+                return;
+              }
+              onRowActivate();
+            }
+          : undefined
+      }
     >
       {replyTo && (
         <ChatReplyConnectorMeasured
@@ -1852,38 +2083,30 @@ export function HumanChatPanelMessageBubble({
           mainAvatarRef={mainAvatarMeasureRef}
         />
       )}
-      {replyTo && (
+      {replyTo && replyContextBody ? (
         <div
           data-testid="chat-message-reply-context"
           className="relative z-[1] mb-0.5 flex min-h-[20px] items-center gap-1.5 pl-12"
         >
-          <div ref={replyAvatarMeasureRef} className="shrink-0">
-            <PersonAvatar
-              size="sm"
-              className="rounded-full"
-              avatarSrc={replyHeaderAvatarResolved}
-              userName={replyAuthorLabelForUi}
-              isLoading={replyAvatarLoading}
-              personId={replyPerson?.id}
-              matrixUserId={replyTo?.sourceUserId}
-            />
-          </div>
-          <p className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
-            <span className="shrink-0 font-semibold text-muted-foreground">
-              {replyAuthorLabelForUi.startsWith('@')
-                ? replyAuthorLabelForUi
-                : `@${replyAuthorLabelForUi}`}
-            </span>
-            {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
-              <span className="min-w-0 truncate font-normal">
-                {replyTo.excerpt}
-              </span>
-            ) : (
-              <span className="italic">{t('replyOriginalUnavailable')}</span>
-            )}
-          </p>
+          {onJumpToOriginal ? (
+            <button
+              type="button"
+              data-testid="chat-message-reply-jump"
+              aria-label={t('replyJumpToOriginal')}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onJumpToOriginal();
+              }}
+              className="flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-left outline-none transition-colors hover:[&_span]:text-foreground focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              {replyContextBody}
+            </button>
+          ) : (
+            replyContextBody
+          )}
         </div>
-      )}
+      ) : null}
 
       <div className="flex items-start gap-2">
         {/* Main avatar: first row in this column is sender name — aligns with "You" */}
@@ -1936,6 +2159,53 @@ export function HumanChatPanelMessageBubble({
                 {timestamp}
               </span>
             )}
+            {receiptStatus === 'sent' || receiptStatus === 'read' ? (
+              <span
+                className={cn(
+                  'inline-flex shrink-0 items-center',
+                  receiptStatus === 'read'
+                    ? 'text-accent-11'
+                    : 'text-muted-foreground',
+                )}
+                data-testid={
+                  receiptStatus === 'read'
+                    ? 'chat-message-receipt-read'
+                    : 'chat-message-receipt-sent'
+                }
+                aria-label={
+                  receiptStatus === 'read'
+                    ? t('messageReadAria')
+                    : t('messageSentAria')
+                }
+                title={
+                  receiptStatus === 'read'
+                    ? t('messageReadAria')
+                    : t('messageSentAria')
+                }
+              >
+                {receiptStatus === 'read' ? (
+                  <CheckCheck
+                    className="h-3.5 w-3.5"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                ) : (
+                  <Check
+                    className="h-3.5 w-3.5"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                )}
+              </span>
+            ) : null}
+            {message.edited ? (
+              <span
+                className="shrink-0 text-xs text-muted-foreground/80"
+                data-testid="chat-message-edited"
+              >
+                {t('messageEdited')}
+              </span>
+            ) : null}
           </div>
 
           {message.sendPending && (
@@ -2014,6 +2284,7 @@ export function HumanChatPanelMessageBubble({
                       fragment,
                       bodyResolveMx,
                       highlightMentionForViewer,
+                      roomMemberUserIds,
                     )
                   }
                 />
@@ -2047,6 +2318,7 @@ export function HumanChatPanelMessageBubble({
                   textContent,
                   bodyResolveMx,
                   highlightMentionForViewer,
+                  roomMemberUserIds,
                 )}
               </div>
             ))}
@@ -2059,6 +2331,13 @@ export function HumanChatPanelMessageBubble({
               {textExpanded ? t('messageShowLess') : t('messageReadMore')}
             </button>
           ) : null}
+
+          {message.mediaSlots?.length === 1 &&
+            message.mediaSlots[0]?.msgtype === 'm.image' && (
+              <div className="mt-0.5" data-testid="chat-message-media-image">
+                <TimelineImageSlot media={message.mediaSlots[0]} tOpen={t} />
+              </div>
+            )}
 
           {message.mediaSlots && message.mediaSlots.length > 1 && (
             <div
@@ -2132,18 +2411,11 @@ export function HumanChatPanelMessageBubble({
             message.media &&
             message.media.msgtype === 'm.image' && (
               <div
-                className="relative mt-0.5 max-w-md overflow-hidden rounded-lg border border-border/60 bg-muted/30"
+                className={cn(
+                  'mt-0.5',
+                  timelineImageFrameClass(message.media.mediaInfo).frame,
+                )}
                 data-testid="chat-message-media-image"
-                style={
-                  message.media.mediaInfo?.w &&
-                  message.media.mediaInfo?.h &&
-                  message.media.mediaInfo.w > 0 &&
-                  message.media.mediaInfo.h > 0
-                    ? {
-                        aspectRatio: `${message.media.mediaInfo.w} / ${message.media.mediaInfo.h}`,
-                      }
-                    : undefined
-                }
               >
                 {mediaPreviewUrl && mediaDownloadUrl ? (
                   <>
@@ -2181,7 +2453,7 @@ export function HumanChatPanelMessageBubble({
                         downloadUrl={mediaDownloadUrl}
                         alt={message.media.filename ?? ''}
                         className={cn(
-                          'max-h-72 w-full object-contain',
+                          timelineImageFrameClass(message.media.mediaInfo).img,
                           message.media.spoiler &&
                             !spoilerRevealed &&
                             'blur-2xl',
@@ -2307,9 +2579,6 @@ export function HumanChatPanelMessageBubble({
               className="mt-0.5 flex flex-wrap items-center gap-0.5"
             >
               {visibleReactions.map((reaction) => {
-                const tooltip =
-                  resolveReactionReactorLabel &&
-                  reactionTooltipText(reaction, resolveReactionReactorLabel, t);
                 const pill = (
                   <button
                     type="button"
@@ -2345,17 +2614,20 @@ export function HumanChatPanelMessageBubble({
                   </button>
                 );
 
-                if (tooltip) {
+                if (
+                  resolveReactionReactorLabel &&
+                  reaction.reactorUserIds?.length
+                ) {
                   return (
-                    <Tooltip key={reaction.emoji} delayDuration={300}>
-                      <TooltipTrigger asChild>{pill}</TooltipTrigger>
-                      <TooltipContent
-                        side="top"
-                        className="max-w-xs text-left text-xs leading-snug"
-                      >
-                        {tooltip}
-                      </TooltipContent>
-                    </Tooltip>
+                    <ReactionReactorsTooltip
+                      key={reaction.emoji}
+                      reaction={reaction}
+                      roomId={roomId}
+                      resolveLabel={resolveReactionReactorLabel}
+                      t={t}
+                    >
+                      {pill}
+                    </ReactionReactorsTooltip>
                   );
                 }
                 return <Fragment key={reaction.emoji}>{pill}</Fragment>;
@@ -2396,9 +2668,15 @@ export function HumanChatPanelMessageBubble({
 
       {/* Discord-style floating bar: compact height, tight to icon row */}
       <div
+        data-chat-message-actions=""
         className={cn(
-          'absolute right-3 z-10 flex h-6 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
-          replyTo ? 'top-[calc(1.25rem+0.125rem)]' : 'top-0',
+          'absolute right-3 z-10 flex items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
+          isTouchComposer
+            ? 'top-2 h-9 translate-y-0'
+            : cn(
+                'h-6 -translate-y-1/2',
+                replyTo ? 'top-[calc(1.25rem+0.125rem)]' : 'top-0',
+              ),
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
@@ -2420,7 +2698,10 @@ export function HumanChatPanelMessageBubble({
         >
           <button
             type="button"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+            className={cn(
+              'flex shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block',
+              isTouchComposer ? 'h-9 w-9' : 'h-6 w-6',
+            )}
             aria-label={t('reactButton')}
             disabled={!canReact}
             aria-disabled={!canReact}
@@ -2431,7 +2712,10 @@ export function HumanChatPanelMessageBubble({
         </HumanChatPanelEmojiPicker>
         <button
           type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+          className={cn(
+            'flex shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block',
+            isTouchComposer ? 'h-9 w-9' : 'h-6 w-6',
+          )}
           aria-label={t('editButton')}
           disabled={!canEdit}
           aria-disabled={!canEdit}
@@ -2441,7 +2725,10 @@ export function HumanChatPanelMessageBubble({
         </button>
         <button
           type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+          className={cn(
+            'flex shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block',
+            isTouchComposer ? 'h-9 w-9' : 'h-6 w-6',
+          )}
           aria-label={t('replyButton')}
           disabled={!canReply}
           aria-disabled={!canReply}
@@ -2472,6 +2759,7 @@ export function HumanChatPanelMessageBubble({
       onDeleteMessage={onDeleteMessage}
       currentUserId={currentUserId}
       senderMatrixId={message.senderMatrixId}
+      isTouchComposer={isTouchComposer}
       resolveMatrixMemberLabel={bodyResolveMx}
       message={{
         parts: message.parts,

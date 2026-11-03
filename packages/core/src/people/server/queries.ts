@@ -602,3 +602,53 @@ export const findPersonBySub = async (
 
   return mapPersonRow(db, person);
 };
+
+const PEOPLE_BY_SUBS_LIMIT = 40;
+
+/** Name fields for Matrix mention/search resolution. Skips orientation extras. */
+export type PersonLabelBySub = {
+  id: number;
+  sub: string;
+  name: string | null;
+  surname: string | null;
+  nickname: string | null;
+  slug: string | null;
+  avatarUrl: string | null;
+};
+
+export async function findPeopleBySubs(
+  { subs }: { subs: readonly string[] },
+  { db }: DbConfig,
+): Promise<PersonLabelBySub[]> {
+  const unique = [
+    ...new Set(subs.map((sub) => sub.trim()).filter(Boolean)),
+  ].slice(0, PEOPLE_BY_SUBS_LIMIT);
+  if (unique.length === 0) return [];
+  const rows = await db
+    .select({
+      id: people.id,
+      sub: people.sub,
+      name: people.name,
+      surname: people.surname,
+      nickname: people.nickname,
+      slug: people.slug,
+      avatarUrl: people.avatarUrl,
+    })
+    .from(people)
+    .where(inArray(people.sub, unique));
+  return rows.flatMap((row) =>
+    row.sub
+      ? [
+          {
+            id: row.id,
+            sub: row.sub,
+            name: row.name,
+            surname: row.surname,
+            nickname: row.nickname,
+            slug: row.slug,
+            avatarUrl: row.avatarUrl,
+          },
+        ]
+      : [],
+  );
+}

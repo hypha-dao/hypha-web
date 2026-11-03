@@ -4,7 +4,6 @@ import React from 'react';
 import {
   DEAL_PRIORITIES,
   DEAL_STATUSES,
-  PIPELINE_SWIMLANES,
   usePipelineConfig,
   type DealFilters,
   type DealPriority,
@@ -119,7 +118,7 @@ export function FilterBar({
 }: FilterBarProps) {
   const t = useTranslations('Pipeline');
   const locale = useLocale();
-  const { regions } = usePipelineConfig(spaceSlug);
+  const { regions, tracks, itemSingular } = usePipelineConfig(spaceSlug);
   const { persons } = useMembers({ spaceSlug, paginationDisabled: true });
   const members = persons?.data ?? [];
   const regionNames = React.useMemo(() => {
@@ -237,9 +236,9 @@ export function FilterBar({
                     <SelectItem value="all">
                       {t('filters.allSwimlanes')}
                     </SelectItem>
-                    {PIPELINE_SWIMLANES.map((swimlane) => (
-                      <SelectItem key={swimlane} value={swimlane}>
-                        {swimlane}
+                    {tracks.map((track) => (
+                      <SelectItem key={track.slug} value={track.slug}>
+                        {track.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -335,7 +334,7 @@ export function FilterBar({
                   </SelectContent>
                 </Select>
               </MenuField>
-              <MenuField label={t('filters.status')}>
+              <MenuField label={t('filters.status', { item: itemSingular })}>
                 <Select
                   value={asList(filters.status)[0] ?? 'all'}
                   onValueChange={(value) =>
@@ -405,11 +404,13 @@ export function FilterBar({
                   </SelectContent>
                 </Select>
               </MenuField>
-              <MenuField label={t('filters.tagLabel')}>
+              <MenuField label={t('filters.tagLabel', { item: itemSingular })}>
                 <Input
                   rootClassName="min-h-6"
                   className="h-6 min-h-6 w-full py-1"
-                  placeholder={t('filters.tagPlaceholder')}
+                  placeholder={t('filters.tagPlaceholder', {
+                    item: itemSingular,
+                  })}
                   value={filters.tag ?? ''}
                   onChange={(event) =>
                     onChange({
@@ -439,7 +440,10 @@ export function FilterBar({
           {visibleSwimlanes.map((swimlane) => (
             <FilterTag
               key={swimlane}
-              label={swimlane}
+              label={
+                tracks.find((track) => track.slug === swimlane)?.name ??
+                swimlane
+              }
               onRemove={() =>
                 onChange({
                   ...filters,

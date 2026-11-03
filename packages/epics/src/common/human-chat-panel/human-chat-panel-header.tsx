@@ -1,9 +1,10 @@
 'use client';
 
-import type { ComponentType, ReactNode } from 'react';
+import { useState, type ComponentType, type ReactNode } from 'react';
 import {
   ArrowLeft,
   Circle,
+  Globe,
   Globe2,
   PanelRightClose,
   Settings,
@@ -30,7 +31,7 @@ type RoomChoiceIcon = ComponentType<{
 const ROOM_CHOICE_ICONS: Record<string, RoomChoiceIcon> = {
   space: Circle,
   ecosystem: Target,
-  public: Globe2,
+  public: Globe,
 };
 
 type RoomChoiceOption = {
@@ -39,7 +40,36 @@ type RoomChoiceOption = {
   /** Unread message count for this channel. */
   unreadCount?: number;
   unreadCountIsCapped?: boolean;
+  /** Rounded logo for this channel (space / ecosystem). Falls back to the outline icon. */
+  iconSrc?: string | null;
 };
+
+function RoomChoiceGlyph({
+  iconSrc,
+  Icon,
+}: {
+  iconSrc?: string | null;
+  Icon?: RoomChoiceIcon;
+}) {
+  const [failed, setFailed] = useState(false);
+  const src = iconSrc?.trim();
+  if (src && !failed) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- remote space logos; Avatar-sized chrome
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        className="h-5 w-5 rounded-full object-cover"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  if (Icon) {
+    return <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden />;
+  }
+  return null;
+}
 
 type HumanChatPanelHeaderProps = {
   title?: string;
@@ -54,10 +84,22 @@ type HumanChatPanelHeaderProps = {
   notificationSettingsHref?: string | null;
   /** One room name, in the same box as the space and ecosystem choice. */
   mark?: string;
-  /** Icon-only title. Hover shows the label (network room). */
+  /**
+   * @deprecated Prefer `title` + `channelIcon` (Network used this for a
+   * hard-coded earth glyph). Kept so older callers still compile.
+   */
   iconTitle?: string;
-  /** Sits before the title — e.g. peer space icons on a direct chat. */
+  /** Sits before the title — e.g. peer avatar on a direct chat. */
   titleStart?: ReactNode;
+  /**
+   * Trailing channel-type mark after the title (Messages: earth / radio /
+   * proposal / ecosystem / space). Label truncates with … when long.
+   */
+  channelIcon?: RoomChoiceIcon;
+  /** Aria + tooltip for `channelIcon` (defaults to the title). */
+  channelIconLabel?: string;
+  /** Extra header actions (group rename/archive). Same 36px control row. */
+  trailingEnd?: ReactNode;
   /** Two rooms that sit side by side, such as a space and its ecosystem. */
   roomChoice?: {
     value: string;
@@ -76,13 +118,18 @@ export function HumanChatPanelHeader({
   mark,
   iconTitle,
   titleStart,
+  channelIcon,
+  channelIconLabel,
+  trailingEnd,
   roomChoice,
 }: HumanChatPanelHeaderProps) {
   const { setOpen, setOpenMobile } = useSidebar();
   const router = useRouter();
   const t = useTranslations('HumanChatPanel');
 
-  const displayTitle = title ?? t('title');
+  const ChannelGlyph = channelIcon ?? (iconTitle ? Globe2 : undefined);
+  const glyphLabel = channelIconLabel?.trim() || iconTitle?.trim() || undefined;
+  const displayTitle = (title ?? iconTitle)?.trim() || t('title');
   const displayDescription = description;
 
   return (
@@ -129,97 +176,142 @@ export function HumanChatPanelHeader({
             <Settings className="craft-icon" aria-hidden />
           </button>
         ) : null}
+        {trailingEnd}
       </div>
-      <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-        {displayDescription && (
-          <p className="craft-meta line-clamp-1">{displayDescription}</p>
-        )}
-        {titleStart}
+      <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
         {mark && !roomChoice ? (
-          <span className="inline-flex shrink-0 border border-foreground bg-foreground px-3 py-1 text-1 text-background">
+          <span
+            className="inline-flex shrink-0 border border-foreground bg-foreground px-3 py-1 text-1 text-background"
+            data-testid="chat-panel-archived-badge"
+          >
             {mark}
           </span>
         ) : null}
         {roomChoice ? (
-          <TooltipProvider delayDuration={200}>
-            <div
-              role="group"
-              aria-label={roomChoice.ariaLabel}
-              className="inline-flex shrink-0 border border-foreground"
-            >
-              {roomChoice.options.map((option) => {
-                const selected = roomChoice.value === option.value;
-                const Icon = ROOM_CHOICE_ICONS[option.value];
-                const unread = option.unreadCount ?? 0;
-                const unreadLabel =
-                  unread > 0
-                    ? option.unreadCountIsCapped || unread >= 100
-                      ? t('channelUnreadCappedAria', { channel: option.label })
-                      : t('channelUnreadAria', {
-                          channel: option.label,
-                          count: unread,
-                        })
-                    : option.label;
-                return (
-                  <Tooltip key={option.value}>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        aria-pressed={selected}
-                        aria-label={unreadLabel}
-                        onClick={() => roomChoice.onChange(option.value)}
-                        className={cn(
-                          'relative inline-flex h-[36px] w-[36px] items-center justify-center',
-                          selected
-                            ? 'bg-foreground text-background'
-                            : 'bg-background text-foreground',
-                        )}
-                      >
-                        {Icon ? (
-                          <Icon
-                            className="h-4 w-4"
-                            strokeWidth={1.5}
-                            aria-hidden
-                          />
-                        ) : (
-                          <span className="px-2 text-1">{option.label}</span>
-                        )}
-                        {unread > 0 ? (
-                          <CountBadge
-                            count={unread}
-                            capped={option.unreadCountIsCapped}
-                            size="sm"
-                            className="absolute -right-1 -top-1 z-10"
-                          />
-                        ) : null}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      {option.label}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </div>
-          </TooltipProvider>
-        ) : iconTitle ? (
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              <TooltipTrigger asChild>
+          <>
+            {titleStart ? (
+              <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden">
+                {titleStart}
+              </div>
+            ) : null}
+            <TooltipProvider delayDuration={200}>
+              <div
+                role="group"
+                aria-label={roomChoice.ariaLabel}
+                className="inline-flex h-[36px] shrink-0 border border-foreground"
+              >
+                {roomChoice.options.map((option) => {
+                  const selected = roomChoice.value === option.value;
+                  const Icon = ROOM_CHOICE_ICONS[option.value];
+                  const unread = option.unreadCount ?? 0;
+                  const unreadLabel =
+                    unread > 0
+                      ? option.unreadCountIsCapped || unread >= 100
+                        ? t('channelUnreadCappedAria', {
+                            channel: option.label,
+                          })
+                        : t('channelUnreadAria', {
+                            channel: option.label,
+                            count: unread,
+                          })
+                      : option.label;
+                  return (
+                    <Tooltip key={option.value}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-pressed={selected}
+                          aria-label={unreadLabel}
+                          onClick={() => roomChoice.onChange(option.value)}
+                          className={cn(
+                            'relative inline-flex h-full w-[36px] items-center justify-center',
+                            selected
+                              ? 'bg-foreground text-background'
+                              : 'bg-background text-foreground',
+                          )}
+                        >
+                          {option.iconSrc?.trim() || Icon ? (
+                            <RoomChoiceGlyph
+                              iconSrc={option.iconSrc}
+                              Icon={Icon}
+                            />
+                          ) : (
+                            <span className="px-2 text-1">{option.label}</span>
+                          )}
+                          {unread > 0 ? (
+                            <CountBadge
+                              count={unread}
+                              capped={option.unreadCountIsCapped}
+                              size="sm"
+                              className="absolute -right-1 -top-1 z-10"
+                            />
+                          ) : null}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        {option.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
+          </>
+        ) : displayTitle || titleStart || ChannelGlyph ? (
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
+            {titleStart ? (
+              <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden">
+                {titleStart}
+              </div>
+            ) : null}
+            {displayTitle ? (
+              <div className="flex min-w-0 flex-col items-end justify-center gap-0 overflow-hidden">
                 <span
-                  className="inline-flex h-[36px] w-[36px] items-center justify-center border border-foreground bg-foreground text-background"
-                  aria-label={iconTitle}
+                  className="w-full truncate text-right text-sm leading-5 font-medium text-foreground"
+                  title={displayTitle}
                 >
-                  <Globe2 className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                  {displayTitle}
                 </span>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{iconTitle}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ) : displayTitle ? (
-          <span className="min-w-0 truncate text-sm font-medium text-foreground">
-            {displayTitle}
-          </span>
+                {displayDescription ? (
+                  <p
+                    className="w-full truncate text-right text-[10px] leading-3 text-muted-foreground"
+                    title={displayDescription}
+                  >
+                    {displayDescription}
+                  </p>
+                ) : null}
+              </div>
+            ) : displayDescription ? (
+              <p className="min-w-0 truncate text-right text-[10px] leading-3 text-muted-foreground">
+                {displayDescription}
+              </p>
+            ) : null}
+            {ChannelGlyph ? (
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center border border-foreground bg-foreground text-background"
+                      aria-label={glyphLabel || displayTitle}
+                    >
+                      <ChannelGlyph
+                        className="h-4 w-4"
+                        strokeWidth={1.5}
+                        aria-hidden
+                      />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {glyphLabel || displayTitle}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : null}
+          </div>
+        ) : displayDescription ? (
+          <p className="min-w-0 flex-1 truncate text-right text-[10px] leading-3 text-muted-foreground">
+            {displayDescription}
+          </p>
         ) : null}
       </div>
     </div>

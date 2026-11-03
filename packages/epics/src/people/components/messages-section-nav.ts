@@ -1,9 +1,12 @@
 import type { ElementType } from 'react';
-import { MessagesSquare, Sparkles } from 'lucide-react';
+import { Archive, MessagesSquare, Sparkles } from 'lucide-react';
 
-export type MessagesSectionNavKey = 'messages' | 'suggestions';
+export type MessagesSectionNavKey = 'messages' | 'suggestions' | 'archived';
 
-export type MessagesSectionLabelKey = 'tabs.messages' | 'tabs.suggestions';
+export type MessagesSectionLabelKey =
+  | 'tabs.messages'
+  | 'tabs.suggestions'
+  | 'tabs.archived';
 
 export type MessagesSectionNavItem = {
   key: MessagesSectionNavKey;
@@ -29,6 +32,12 @@ export function buildMessagesSectionNavItems(
       labelKey: 'tabs.suggestions',
       href: `${base}/suggestions`,
       icon: Sparkles,
+    },
+    {
+      key: 'archived',
+      labelKey: 'tabs.archived',
+      href: `${base}/archived`,
+      icon: Archive,
     },
   ];
 }

@@ -21,7 +21,6 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { SignalCardActions } from './signal-card-actions';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { SignalCreatorMeta } from './signal-creator-meta';
-import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalOwnerSeen } from './signal-owner-seen';
 import { SignalIndicativeAmounts } from './signal-indicative-amounts';
@@ -61,8 +60,8 @@ type SignalListViewProps = {
   readOnly?: boolean;
 };
 
-function SignalListAssigneeMeta({ signal }: { signal: Coherence }) {
-  const { createdAtRelative } = useSignalCreatorMeta({
+function SignalListCreatorMeta({ signal }: { signal: Coherence }) {
+  const { createdAtRelative, creatorDisplayName } = useSignalCreatorMeta({
     creatorId: signal.creatorId,
     createdAt: signal.createdAt,
     description: signal.description,
@@ -70,26 +69,11 @@ function SignalListAssigneeMeta({ signal }: { signal: Coherence }) {
     tags: signal.tags,
   });
 
-  const hasPersonSlot =
-    resolveSignalPersonIds({
-      assigneeIds: signal.assigneeIds,
-      fallbackPersonId: signal.creatorId,
-    }).length > 0;
-
   return (
     <SignalCreatorMeta
       createdAtRelative={createdAtRelative}
       className="mt-0.5"
-      personSlot={
-        hasPersonSlot ? (
-          <SignalAssignee
-            assigneeIds={signal.assigneeIds}
-            fallbackPersonId={signal.creatorId}
-            variant="meta"
-            className="text-[11px] text-muted-foreground"
-          />
-        ) : null
-      }
+      creatorDisplayName={creatorDisplayName}
     />
   );
 }
@@ -237,7 +221,7 @@ export function SignalListView({
                       maxVisible={3}
                       className="mt-1"
                     />
-                    <SignalListAssigneeMeta signal={signal} />
+                    <SignalListCreatorMeta signal={signal} />
                     <SignalOwnerSeen
                       assigneeIds={signal.assigneeIds}
                       acknowledgements={signal.assigneeAcknowledgedAt}

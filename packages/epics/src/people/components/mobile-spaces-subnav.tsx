@@ -14,10 +14,13 @@ export function MobileSpacesSubnav({
   lang,
   activeSlug,
   embedded = false,
+  layout = 'column',
 }: {
   lang: Locale;
   activeSlug?: string | null;
   embedded?: boolean;
+  /** Row sits under the header with the top-bar circle. Column fills the AI rail. */
+  layout?: 'column' | 'row';
 }) {
   const { jwt } = useJwt();
 
@@ -41,6 +44,7 @@ export function MobileSpacesSubnav({
       isLoading={isLoading && spaces.length === 0}
       activeSlug={activeSlug}
       embedded={embedded}
+      layout={layout}
     />
   );
 }

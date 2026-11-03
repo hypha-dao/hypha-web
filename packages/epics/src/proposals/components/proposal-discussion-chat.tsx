@@ -3,7 +3,7 @@
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { mutate as mutateCache } from 'swr';
+import useSWR, { mutate as mutateCache } from 'swr';
 import {
   RoomEvent,
   RoomStateEvent,
@@ -20,8 +20,10 @@ import {
   useAgreementMutationsWeb2Rsc,
   useJwt,
   useMatrix,
+  useMatrixUserIdsByPersonIds,
   useMe,
   useSpaceBySlug,
+  type Person,
 } from '@hypha-platform/core/client';
 import { Separator } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -30,8 +32,12 @@ import type { MatrixClient } from 'matrix-js-sdk';
 import {
   HumanChatPanelChatBar,
   HumanChatPanelMessages,
+  type ChatDraftAttachment,
   type ChatMentionCandidate,
+  type ChatPanelAttachmentMedia,
 } from '../../common/human-chat-panel';
+import { HumanChatPanelTypingIndicator } from '../../common/human-chat-panel/human-chat-panel-typing-indicator';
+import { useChatRoomTyping } from '../../common/human-chat-panel/use-chat-room-typing';
 import {
   inviteMatrixAgentIfNeeded,
   matrixAgentSkills,
@@ -48,7 +54,39 @@ import {
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
 } from '../../common/human-chat-panel/human-chat-display-mention';
+import { buildSpaceRosterMentionCandidates } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
+
+async function loadSpaceMembers(
+  spaceSlug: string,
+  authToken: string | null,
+): Promise<Person[]> {
+  const headers: HeadersInit = {};
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  const people: Person[] = [];
+  const pageSize = 100;
+  for (let page = 1; page <= 20; page += 1) {
+    const response = await fetch(
+      `/api/v1/spaces/${encodeURIComponent(
+        spaceSlug,
+      )}/members?page=${page}&pageSize=${pageSize}`,
+      { headers },
+    );
+    if (!response.ok) break;
+    const body = (await response.json()) as {
+      persons?: {
+        data?: Person[];
+        pagination?: { pageCount?: number };
+      };
+    };
+    const batch = body.persons?.data ?? [];
+    people.push(...batch);
+    const pageCount = body.persons?.pagination?.pageCount;
+    if (batch.length < pageSize) break;
+    if (pageCount != null && page >= pageCount) break;
+  }
+  return people;
+}
 
 function matrixMemberAvatarSquare(
   client: MatrixClient | null | undefined,
@@ -73,11 +111,14 @@ type PanelMessage = {
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
+  media?: ChatPanelAttachmentMedia;
+  mediaSlots?: ChatPanelAttachmentMedia[];
   senderName?: string;
   senderMatrixId?: string;
   agentSpecialistId?: string;
   avatarUrl?: string;
   timestamp?: Date;
+  edited?: boolean;
   formattedContentHtml?: string;
   reactions?: Array<{
     emoji: string;
@@ -86,6 +127,7 @@ type PanelMessage = {
     reactorUserIds?: string[];
   }>;
   replyTo?: {
+    eventId?: string;
     authorLabel: string;
     excerpt?: string;
     sourceUserId?: string;
@@ -93,6 +135,20 @@ type PanelMessage = {
   };
   mentionedUserIds?: string[];
 };
+
+function disposeDraftAttachmentUrls(drafts: readonly ChatDraftAttachment[]) {
+  for (const draft of drafts) {
+    if (draft.previewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(draft.previewUrl);
+    }
+  }
+}
+
+function isMatrixMediaMsgtype(
+  msgtype: Message['msgtype'],
+): msgtype is 'm.file' | 'm.image' | 'm.audio' {
+  return msgtype === 'm.file' || msgtype === 'm.image' || msgtype === 'm.audio';
+}
 
 type ReplyDraft = {
   messageId: string;
@@ -194,6 +250,7 @@ export function ProposalDiscussionChat({
     registerRoomListener,
     unregisterRoomListener,
     sendMessage: sendMatrixMessage,
+    ensureRoomMembers,
     editRoomMessage,
     redactRoomEvent,
     toggleReaction,
@@ -205,8 +262,22 @@ export function ProposalDiscussionChat({
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [input, setInput] = React.useState('');
+  const [draftAttachments, setDraftAttachments] = React.useState<
+    ChatDraftAttachment[]
+  >([]);
+  const draftAttachmentsRef = React.useRef(draftAttachments);
+  draftAttachmentsRef.current = draftAttachments;
   const [replyDraft, setReplyDraft] = React.useState<ReplyDraft | null>(null);
+  const [scrollToEventId, setScrollToEventId] = React.useState<string | null>(
+    null,
+  );
   const [editDraft, setEditDraft] = React.useState<EditDraft | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+    };
+  }, []);
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = React.useState(0);
   const [provisionError, setProvisionError] = React.useState<string | null>(
     null,
@@ -220,6 +291,7 @@ export function ProposalDiscussionChat({
 
   const registeredRoomIdRef = React.useRef<string | null>(null);
   const pendingRoomRef = React.useRef<Promise<string | null> | null>(null);
+  const backfillTokenRef = React.useRef(0);
   const roomIdRef = React.useRef(roomId);
   roomIdRef.current = roomId;
   const titleRef = React.useRef(title);
@@ -252,6 +324,32 @@ export function ProposalDiscussionChat({
 
   const currentUserId = client?.getUserId() ?? null;
   const agentLabel = tChat('agentMentionLabel');
+  const memberSpaceSlug = spaceSlug?.trim() || '';
+  const { data: spaceMembers = [] } = useSWR(
+    memberSpaceSlug
+      ? ['proposal-chat-members', memberSpaceSlug, authToken ?? null]
+      : null,
+    () => loadSpaceMembers(memberSpaceSlug, authToken ?? null),
+  );
+  const rosterPersonIds = React.useMemo(
+    () =>
+      spaceMembers
+        .map((member) => member.id)
+        .filter((id): id is number => Number.isFinite(id) && id > 0),
+    [spaceMembers],
+  );
+  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
+    personIds: rosterPersonIds,
+  });
+  const voterMatrixIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    for (const matrixUserId of Object.values(personIdToMatrixUserId)) {
+      const id = matrixUserId?.trim();
+      if (id) ids.add(id);
+    }
+    return [...ids].sort();
+  }, [personIdToMatrixUserId]);
+  const invitedVotersKeyRef = React.useRef('');
 
   const resolveMemberLabel = React.useCallback(
     (userId: string | undefined) => {
@@ -299,10 +397,47 @@ export function ProposalDiscussionChat({
           ? currentUserAvatarUrl
           : resolveMemberAvatar(replyAuthorId)
         : undefined;
+      const mediaMsgtype = msg.msgtype;
+      const isMedia = isMatrixMediaMsgtype(mediaMsgtype);
+      const strippedMediaBody = isMedia
+        ? stripMatrixReplyFallback(msg.content).trim()
+        : '';
+      const mediaFilenameForCaption = (msg.filename ?? msg.content).trim();
+      const captionForMedia =
+        isMedia &&
+        strippedMediaBody.length > 0 &&
+        strippedMediaBody !== mediaFilenameForCaption
+          ? strippedMediaBody
+          : '';
+      const media: ChatPanelAttachmentMedia | undefined = isMedia
+        ? {
+            msgtype: mediaMsgtype,
+            mxcUrl: msg.mxcUrl,
+            filename: msg.filename ?? msg.content,
+            mediaInfo: msg.mediaInfo,
+            spoiler: msg.spoiler,
+          }
+        : undefined;
+      const mediaSlots: ChatPanelAttachmentMedia[] | undefined =
+        isMedia && msg.mediaBundle && msg.mediaBundle.length > 1
+          ? msg.mediaBundle.map((slot) => ({
+              msgtype: slot.msgtype,
+              mxcUrl: slot.mxcUrl,
+              filename: slot.filename ?? '',
+              mediaInfo: slot.mediaInfo,
+              spoiler: slot.spoiler,
+            }))
+          : undefined;
       return {
         id: msg.id,
         role: isCurrentUser ? 'user' : 'member',
-        parts: [{ type: 'text', text: msg.content }],
+        parts: isMedia
+          ? captionForMedia
+            ? [{ type: 'text', text: captionForMedia }]
+            : []
+          : [{ type: 'text', text: msg.content }],
+        ...(media ? { media } : {}),
+        ...(mediaSlots ? { mediaSlots } : {}),
         senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
         senderMatrixId: msg.sender,
         ...(msg.agentSpecialistId
@@ -310,7 +445,9 @@ export function ProposalDiscussionChat({
           : {}),
         ...(avatarUrl ? { avatarUrl } : {}),
         timestamp: msg.timestamp,
-        formattedContentHtml: msg.formattedContentHtml,
+        ...(msg.edited ? { edited: true } : {}),
+        formattedContentHtml:
+          isMedia && !captionForMedia ? undefined : msg.formattedContentHtml,
         reactions: msg.reactions?.map((reaction) => ({
           emoji: reaction.key,
           count: reaction.count,
@@ -320,6 +457,7 @@ export function ProposalDiscussionChat({
         ...(msg.inReplyToEventId
           ? {
               replyTo: {
+                eventId: msg.inReplyToEventId,
                 authorLabel: resolveMemberLabel(replyAuthorId),
                 excerpt: msg.inReplyToBodyPreview,
                 sourceUserId: replyAuthorId,
@@ -451,6 +589,7 @@ export function ProposalDiscussionChat({
       if (id) unregisterRoomListenerRef.current(id);
       registeredRoomIdRef.current = null;
       hydratedRoomIdRef.current = null;
+      backfillTokenRef.current += 1;
     };
   }, [documentSlug]);
 
@@ -488,6 +627,7 @@ export function ProposalDiscussionChat({
         registerRoomListenerRef.current(
           canonicalId,
           async (message: Message) => {
+            // Receive chime is global (conversation timeline) — not on open room.
             setMessages((prev) => {
               if (message.redacted) {
                 return prev.filter((item) => item.id !== message.id);
@@ -610,42 +750,58 @@ export function ProposalDiscussionChat({
   }, [client, roomId]);
 
   const mentionCandidates = React.useMemo((): ChatMentionCandidate[] => {
-    if (!client || !roomId) return [];
-    const room = client.getRoom(roomId);
-    if (!room) return [];
-    const list: ChatMentionCandidate[] = [];
-    for (const member of room.getJoinedMembers()) {
-      const userId = member.userId;
-      if (!userId) continue;
-      if (currentUserId && userId === currentUserId) continue;
-      list.push({
-        userId,
-        displayLabel: matrixMemberDisplayLabel(member, userId),
-      });
+    const joined: ChatMentionCandidate[] = [];
+    const room = client && roomId ? client.getRoom(roomId) : null;
+    if (room) {
+      for (const member of room.getJoinedMembers()) {
+        const userId = member.userId;
+        if (!userId) continue;
+        if (currentUserId && userId === currentUserId) continue;
+        joined.push({
+          userId,
+          displayLabel: matrixMemberDisplayLabel(member, userId),
+        });
+      }
     }
-    list.sort((a, b) =>
-      a.displayLabel.localeCompare(b.displayLabel, undefined, {
-        sensitivity: 'base',
-      }),
-    );
+    const roster = buildSpaceRosterMentionCandidates({
+      spaceMembers,
+      personIdToMatrixUserId,
+      unknownLabel: tChat('unknownMember'),
+      extraCandidates: joined,
+    }).filter((candidate) => candidate.userId !== currentUserId);
     const logoUrl = resolveSpaceDisplayLogoUrl(
       space,
       resolvedTheme === 'dark' ? 'dark' : 'light',
     );
-    return withMatrixAgentMention(list, agentLabel, matrixAgentSkills(tChat), {
-      kind: 'space',
-      logoUrl,
-    });
+    return withMatrixAgentMention(
+      roster,
+      agentLabel,
+      matrixAgentSkills(tChat),
+      {
+        kind: 'space',
+        logoUrl,
+      },
+    );
   }, [
     agentLabel,
     client,
     currentUserId,
     mentionMembershipEpoch,
+    personIdToMatrixUserId,
     resolvedTheme,
     roomId,
     space,
+    spaceMembers,
     tChat,
   ]);
+
+  React.useEffect(() => {
+    if (!roomId || voterMatrixIds.length === 0) return;
+    const key = `${roomId}:${voterMatrixIds.join(',')}`;
+    if (invitedVotersKeyRef.current === key) return;
+    invitedVotersKeyRef.current = key;
+    void ensureRoomMembers(roomId, voterMatrixIds);
+  }, [ensureRoomMembers, roomId, voterMatrixIds]);
 
   const mentionLabelByUserId = React.useMemo(
     () =>
@@ -783,9 +939,16 @@ export function ProposalDiscussionChat({
     [refreshRoomMessages, roomId, tChat, toggleReaction],
   );
 
+  const { typingPeers, setComposerTyping } = useChatRoomTyping({
+    client: client ?? null,
+    roomId,
+    resolveName: resolveMemberLabel,
+  });
+
   const sendMessage = React.useCallback(async () => {
     const trimmed = input.trim();
-    if (!trimmed) return;
+    const attachments = draftAttachments;
+    if (!trimmed && attachments.length === 0) return;
     const targetRoom = roomIdRef.current ?? roomId ?? (await ensureRoom());
     if (!targetRoom) return;
     const replyToEventId = replyDraft?.messageId;
@@ -793,26 +956,56 @@ export function ProposalDiscussionChat({
     const savedReply = replyDraft;
     const savedEdit = editDraft;
     const savedInput = input;
+    const savedAttachments = attachments;
     setComposerError(null);
+    setComposerTyping(false);
+    setInput('');
+    setDraftAttachments([]);
     try {
       const { wirePlain, mentionUserIds } = wireComposerPlainForMatrixSend(
-        input,
+        savedInput,
         mentionSanitizedLabelToUserId,
       );
       if (editTargetEventId) {
+        if (savedAttachments.length > 0) {
+          throw new Error(tChat('editAttachmentsNotSupported'));
+        }
         await editRoomMessage({
           roomId: targetRoom,
           targetEventId: editTargetEventId,
           message: wirePlain,
           mentionUserIds,
         });
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === editTargetEventId
+              ? { ...message, content: wirePlain, edited: true }
+              : message,
+          ),
+        );
       } else {
         await sendMatrixMessage({
           roomId: targetRoom,
           message: wirePlain,
           mentionUserIds,
           ...(replyToEventId ? { replyToEventId } : {}),
+          ...(savedAttachments.length > 0
+            ? {
+                attachments: savedAttachments.map((attachment) => ({
+                  file: attachment.file,
+                  kind: (attachment.kind === 'image'
+                    ? 'image'
+                    : attachment.kind === 'audio'
+                    ? 'audio'
+                    : 'file') as 'image' | 'audio' | 'file',
+                  spoiler: attachment.spoiler,
+                })),
+              }
+            : {}),
         });
+        if (mentionUserIds.length > 0) {
+          void ensureRoomMembers(targetRoom, mentionUserIds);
+        }
         await inviteMatrixAgentIfNeeded(client, targetRoom, mentionUserIds);
         requestMatrixAgentReply({
           authToken,
@@ -827,12 +1020,13 @@ export function ProposalDiscussionChat({
         });
       }
       refreshRoomMessages(targetRoom);
-      setInput('');
+      disposeDraftAttachmentUrls(savedAttachments);
       setReplyDraft(null);
       setEditDraft(null);
     } catch (error) {
       console.warn('[ProposalDiscussionChat] send failed', error);
       setInput(savedInput);
+      setDraftAttachments(savedAttachments);
       setReplyDraft(savedReply);
       setEditDraft(savedEdit);
       setComposerError(tChat('sendFailed'));
@@ -840,6 +1034,8 @@ export function ProposalDiscussionChat({
   }, [
     authToken,
     client,
+    draftAttachments,
+    ensureRoomMembers,
     documentSlug,
     editDraft,
     editRoomMessage,
@@ -850,6 +1046,7 @@ export function ProposalDiscussionChat({
     replyDraft,
     roomId,
     sendMatrixMessage,
+    setComposerTyping,
     spaceSlug,
     tChat,
     title,
@@ -904,6 +1101,65 @@ export function ProposalDiscussionChat({
               currentUserId={currentUserId}
               currentUserAvatarUrl={currentUserAvatarUrl}
               onReply={handleReplyToMessage}
+              onJumpToOriginalMessage={(eventId) => {
+                const id = eventId.trim();
+                if (!id) return;
+                setScrollToEventId(null);
+                requestAnimationFrame(() => setScrollToEventId(id));
+              }}
+              scrollTargetEventId={scrollToEventId}
+              onConsumedScrollTarget={() => setScrollToEventId(null)}
+              onScrollTargetNotFound={(eventId) => {
+                const targetRoomId = roomId?.trim();
+                if (!targetRoomId) {
+                  setScrollToEventId(null);
+                  return;
+                }
+                void (async () => {
+                  const token = backfillTokenRef.current;
+                  let hasMore = true;
+                  for (let attempt = 0; attempt < 12 && hasMore; attempt += 1) {
+                    let result;
+                    try {
+                      result = await loadRoomHistoryRef.current(targetRoomId, {
+                        force: true,
+                        maxBatches: 3,
+                      });
+                    } catch {
+                      if (backfillTokenRef.current !== token) return;
+                      setScrollToEventId(null);
+                      return;
+                    }
+                    if (backfillTokenRef.current !== token) return;
+                    hasMore = result.hasMoreOlder;
+                    refreshRoomMessages(targetRoomId);
+                    // Wait for React to commit the refreshed rows before DOM lookup.
+                    await new Promise<void>((resolve) => {
+                      requestAnimationFrame(() =>
+                        requestAnimationFrame(() => resolve()),
+                      );
+                    });
+                    if (backfillTokenRef.current !== token) return;
+                    const escaped =
+                      typeof CSS !== 'undefined' &&
+                      typeof CSS.escape === 'function'
+                        ? CSS.escape(eventId)
+                        : eventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                    if (
+                      document.querySelector(
+                        `[data-matrix-event-id="${escaped}"]`,
+                      ) != null
+                    ) {
+                      // Keep the target set so the child can consume/jump.
+                      setScrollToEventId(eventId);
+                      return;
+                    }
+                    if (!hasMore) break;
+                  }
+                  if (backfillTokenRef.current !== token) return;
+                  setScrollToEventId(null);
+                })();
+              }}
               onEditMessage={handleEditMessage}
               onDeleteMessage={handleDeleteMessage}
               onToggleReaction={handleToggleReaction}
@@ -922,17 +1178,23 @@ export function ProposalDiscussionChat({
               {composerError}
             </p>
           ) : null}
+          <HumanChatPanelTypingIndicator peers={typingPeers} />
           <HumanChatPanelChatBar
             value={input}
             onChange={(next) => {
               setComposerError(null);
               setInput(next);
+              setComposerTyping(
+                next.trim().length > 0 || draftAttachments.length > 0,
+              );
             }}
             onSend={sendMessage}
             placeholder={tCoherence('saySomething')}
             mentionCandidates={mentionCandidates}
             mentionPickerEnabled={mentionCandidates.length > 0}
             getMentionComposerLabel={getMentionComposerLabel}
+            draftAttachments={draftAttachments}
+            onDraftAttachmentsChange={setDraftAttachments}
             composerLocked={Boolean(provisionError)}
             composerLockedMessage={provisionError ?? t('discussion.connecting')}
             replyPreview={
@@ -953,6 +1215,8 @@ export function ProposalDiscussionChat({
                     onDismiss: () => {
                       setEditDraft(null);
                       setInput('');
+                      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+                      setDraftAttachments([]);
                       setComposerError(null);
                     },
                   }

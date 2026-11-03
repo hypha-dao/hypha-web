@@ -182,6 +182,25 @@ export const schemaCreateCoherenceWeb2 = z.object(createCoherenceWeb2Props);
 export const schemaCreateCoherence = schemaCreateCoherenceWeb2;
 export const schemaCreateCoherenceForm = schemaCreateCoherenceWeb2;
 
+/** Edit must not require a creator — system signals have `creatorId: null`. */
+export const schemaEditCoherenceForm = schemaCreateCoherenceWeb2.extend({
+  creatorId: z
+    .union([z.number().int(), z.null()])
+    .optional()
+    .transform((id) => (typeof id === 'number' && id > 0 ? id : null)),
+});
+
+/** Shared create/edit form values. `creatorId` is null for system signals. */
+export type SignalFormValues = z.infer<typeof schemaEditCoherenceForm>;
+
+export function signalFormSchemaForMode(
+  mode: 'create' | 'edit',
+): z.ZodType<SignalFormValues> {
+  return (
+    mode === 'edit' ? schemaEditCoherenceForm : schemaCreateCoherenceForm
+  ) as z.ZodType<SignalFormValues>;
+}
+
 export const schemaUpdateCoherenceSignalBySlug = z.object({
   slug: coherenceSlugSchema,
   ...coherenceSignalFields,

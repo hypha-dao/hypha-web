@@ -5,6 +5,7 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { useLocale } from 'next-intl';
 import {
   type Coherence,
+  resolveSignalCreatorDisplayName,
   useMe,
   usePersonById,
   useSpaceBySlug,
@@ -122,24 +123,35 @@ export function useSignalCreatorMeta({
     );
   }, [creatorKind, creatorPerson, relaySourceSpace, relaySourceSpaceSlug]);
 
-  const isCreator = person?.id === creatorId;
-
   const creatorDisplayName = React.useMemo(() => {
-    if (isCreator) {
-      const currentUserName = [person?.name, person?.surname]
-        .filter(Boolean)
-        .join(' ')
-        .trim();
-      return currentUserName || 'You';
-    }
-
-    if (creatorKind !== 'person') return creatorLabel;
-
+    const currentUserName = [person?.name, person?.surname]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
     const resolvedPersonName = [creatorPerson?.name, creatorPerson?.surname]
       .filter(Boolean)
       .join(' ')
       .trim();
-    if (resolvedPersonName) return resolvedPersonName;
+
+    if (creatorKind !== 'person') {
+      return resolveSignalCreatorDisplayName({
+        viewerPersonId: person?.id,
+        creatorId,
+        viewerName: currentUserName,
+        creatorName: resolvedPersonName,
+        creatorKind,
+        nonPersonLabel: creatorLabel,
+      });
+    }
+
+    const fromHelper = resolveSignalCreatorDisplayName({
+      viewerPersonId: person?.id,
+      creatorId,
+      viewerName: currentUserName,
+      creatorName: resolvedPersonName,
+      creatorKind: 'person',
+    });
+    if (fromHelper !== 'Member') return fromHelper;
 
     const raw = `${creatorId ?? ''}`.trim();
     if (!raw) return creatorLabel;
@@ -159,7 +171,7 @@ export function useSignalCreatorMeta({
     creatorLabel,
     creatorPerson?.name,
     creatorPerson?.surname,
-    isCreator,
+    person?.id,
     person?.name,
     person?.surname,
   ]);

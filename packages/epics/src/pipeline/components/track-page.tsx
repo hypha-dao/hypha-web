@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import {
   filterDeals,
+  findTrackName,
   useDealMutations,
   useDeals,
   usePipelineConfig,
@@ -51,7 +52,9 @@ export function TrackPage({
   const { deals, isLoading } = useDeals({ spaceSlug });
   const { moveDealToStatus } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
-  const { probabilities } = usePipelineConfig(spaceSlug);
+  const { tracks, stages, probabilities, itemPlural } =
+    usePipelineConfig(spaceSlug);
+  const trackName = findTrackName(tracks, swimlane);
   const { collapsedLanes, toggleLane } = useCollapsedPipelineLanes(spaceSlug);
 
   React.useEffect(() => {
@@ -83,7 +86,7 @@ export function TrackPage({
             ← {t('backToBoard')}
           </Link>
           <h1 className="craft-page-title text-6 font-medium">
-            {t('trackTitle', { swimlane })}
+            {t('trackTitle', { swimlane: trackName })}
           </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -119,20 +122,29 @@ export function TrackPage({
         lockedSwimlane={swimlane}
       />
 
-      <PipelineSummary deals={filtered} probabilities={probabilities} />
+      <PipelineSummary
+        deals={filtered}
+        tracks={tracks.filter((track) => track.slug === swimlane)}
+        stages={stages}
+        probabilities={probabilities}
+        itemPlural={itemPlural}
+      />
 
       {isLoading && deals.length === 0 ? (
-        <div className="text-2 text-neutral-11">{t('loading')}</div>
+        <div className="text-2 text-neutral-11">
+          {t('loading', { items: itemPlural })}
+        </div>
       ) : (
         <PipelineLaneSection
           laneSlug={swimlane}
-          title={swimlane}
+          title={trackName}
           count={filtered.length}
           collapsed={collapsedLanes.includes(swimlane)}
           onToggle={() => toggleLane(swimlane)}
         >
           <KanbanBoard
             deals={filtered}
+            stages={stages}
             onDealClick={(deal) => onDealOpen(deal.id)}
             onMoveStatus={onMoveStatus}
             activeDealId={activeDealId}

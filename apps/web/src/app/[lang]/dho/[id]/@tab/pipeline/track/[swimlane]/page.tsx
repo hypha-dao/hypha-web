@@ -1,7 +1,7 @@
 import { SpaceTabAccessWrapper } from '@hypha-platform/epics';
 import {
   findSpaceBySlug,
-  PIPELINE_SWIMLANES,
+  readPipelineConfig,
   type PipelineSwimlane,
 } from '@hypha-platform/core/server';
 import { Locale } from '@hypha-platform/i18n';
@@ -20,9 +20,6 @@ export default async function PipelineTrackPage(props: PageProps) {
   const { lang, id, swimlane: swimlaneRaw } = params;
 
   const swimlane = decodeURIComponent(swimlaneRaw) as PipelineSwimlane;
-  if (!PIPELINE_SWIMLANES.includes(swimlane)) {
-    notFound();
-  }
 
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
   if (!spaceFromDb) {
@@ -30,6 +27,14 @@ export default async function PipelineTrackPage(props: PageProps) {
   }
   if (!spaceFromDb.pipelineEnabled) {
     redirect(getDhoPathOverview(lang, id));
+  }
+
+  const pipelineConfig = await readPipelineConfig(
+    { spaceId: spaceFromDb.id },
+    { db },
+  );
+  if (!pipelineConfig.tracks.some((track) => track.slug === swimlane)) {
+    notFound();
   }
 
   return (

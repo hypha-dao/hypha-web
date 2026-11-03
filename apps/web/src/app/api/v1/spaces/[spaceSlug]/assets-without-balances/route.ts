@@ -19,7 +19,8 @@ import {
   Token,
   TOKENS,
   ALLOWED_SPACES,
-  isHiddenToken,
+  isVisibleWalletToken,
+  buildKnownTreasuryAddressSet,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -201,14 +202,10 @@ export async function GET(
     // proposal pickers (Deploy Funds, Pay for Expenses, …) match the treasury
     // list. Alchemy discovers ERC-20s; keep only DB / catalogue /
     // energy-community addresses so spam stays out.
-    const dbKnownAddresses = new Set(
-      rawDbTokens
-        .filter((t) => t.address && /^0x[a-fA-F0-9]{40}$/i.test(t.address))
-        .map((t) => t.address!.toLowerCase()),
+    const dbKnownAddresses = buildKnownTreasuryAddressSet(
+      rawDbTokens,
+      getEnergyCommunityTokenAddresses(),
     );
-    for (const address of getEnergyCommunityTokenAddresses()) {
-      dbKnownAddresses.add(address);
-    }
 
     try {
       const held = await getTokenBalancesByAddress(spaceAddress);
@@ -221,8 +218,17 @@ export async function GET(
       console.warn('Failed to fetch held token balances:', error);
     }
 
-    const allTokens: Token[] = Array.from(addressMap.values()).filter(
-      (token) => !isHiddenToken(token.address),
+    const knownForDisplay = buildKnownTreasuryAddressSet(
+      [],
+      [
+        ...dbKnownAddresses,
+        ...regularTokens,
+        ...ownershipTokens,
+        ...decayingTokens,
+      ],
+    );
+    const allTokens: Token[] = Array.from(addressMap.values()).filter((token) =>
+      isVisibleWalletToken(token.address, knownForDisplay),
     );
 
     const resolvedAssets = await Promise.all(

@@ -23,6 +23,8 @@ type MemberHomeProposalBodyProps = {
   compact?: boolean;
   /** Inside the AI chat. Drop the repeated closed label and tighten the meters. */
   chat?: boolean;
+  /** The member already voted. Keep the meters and drop the Yes/No controls. */
+  settled?: boolean;
   /** The chain vote is over. Participation and unity are whole percents. */
   onClosed?: (outcome: {
     passed: boolean;
@@ -59,13 +61,15 @@ export function MemberHomeProposalBody({
   documentSlug,
   compact = false,
   chat = false,
+  settled = false,
   onClosed,
 }: MemberHomeProposalBodyProps) {
   const t = useTranslations('MemberHome');
   const tVoting = useTranslations('ProposalDetails');
-  const { proposalDetails } = useProposalDetailsWeb3Rpc({
-    proposalId,
-  });
+  const { proposalDetails, refreshUntilVoteApplied } =
+    useProposalDetailsWeb3Rpc({
+      proposalId,
+    });
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: spaceId ?? undefined,
   });
@@ -83,6 +87,17 @@ export function MemberHomeProposalBody({
     !proposalDetails.expired &&
     !isPast(proposalDetails.endTime);
   const reportedOutcome = useRef<string | null>(null);
+  const sawOpenVote = useRef(!settled);
+  const refreshedVote = useRef(false);
+  useEffect(() => {
+    if (!settled) {
+      sawOpenVote.current = true;
+      return;
+    }
+    if (!sawOpenVote.current || refreshedVote.current) return;
+    refreshedVote.current = true;
+    void refreshUntilVoteApplied();
+  }, [refreshUntilVoteApplied, settled]);
   useEffect(() => {
     if (!onClosed || proposalDetails == null || voteOpen) return;
     const quorumTarget =
@@ -204,6 +219,7 @@ export function MemberHomeProposalBody({
             spaceDetails?.quorum != null ? Number(spaceDetails.quorum) : 0
           }
           hideTargets={spaceDetails?.quorum == null}
+          hasUserVoted={settled}
           indicatorColor="bg-accent-12"
           dense={chat}
         />
@@ -212,11 +228,12 @@ export function MemberHomeProposalBody({
           value={proposalDetails?.unityPercentage ?? 0}
           target={spaceDetails?.unity != null ? Number(spaceDetails.unity) : 0}
           hideTargets={spaceDetails?.unity == null}
+          hasUserVoted={settled}
           indicatorColor="bg-accent-9"
           dense={chat}
         />
       </div>
-      {canVote && proposalDetails != null ? (
+      {!settled && canVote && proposalDetails != null ? (
         <MemberHomeVote
           open={voteOpen}
           proposalId={proposalId}
@@ -224,7 +241,7 @@ export function MemberHomeProposalBody({
           documentSlug={documentSlug}
           tokenSymbol={proposalDetails.tokens[0]?.symbol}
         />
-      ) : canVote ? null : (
+      ) : !settled && !canVote ? (
         <p
           className={
             compact ? 'text-1 text-neutral-11' : 'text-2 text-neutral-11'
@@ -232,7 +249,7 @@ export function MemberHomeProposalBody({
         >
           {t('voteNeedsChain')}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -223,6 +223,7 @@ export function MemberHomeConnectionsWidget({
   people,
   isLoading,
   fallbackName,
+  notice,
   onChat,
   onCall,
   onVideo,
@@ -231,6 +232,7 @@ export function MemberHomeConnectionsWidget({
   people: HomeConnection[];
   isLoading: boolean;
   fallbackName: string;
+  notice?: string | null;
   onChat?: (person: HomeConnection) => Promise<boolean>;
   onCall?: (person: HomeConnection) => Promise<boolean>;
   onVideo?: (person: HomeConnection) => Promise<boolean>;
@@ -240,10 +242,16 @@ export function MemberHomeConnectionsWidget({
 
   return (
     <Widget title={t('connections')} busy={isLoading}>
+      {notice ? (
+        <p className="mb-3 text-1 text-error-11" role="alert">
+          {notice}
+        </p>
+      ) : null}
       {isLoading ? (
         <ul className="flex flex-col gap-3" aria-hidden>
           {Array.from({ length: 3 }, (_, index) => (
             <li key={index} className="flex items-center gap-2">
+              {/* PersonAvatar size="md" */}
               <HomeWave
                 className="h-8 w-8 shrink-0 rounded-full"
                 delayMs={index * 80}
@@ -252,11 +260,12 @@ export function MemberHomeConnectionsWidget({
                 <HomeWave className="h-3 w-28" delayMs={index * 80 + 40} />
                 <HomeWave className="h-3 w-16" delayMs={index * 80 + 80} />
               </div>
+              {/* Button size="icon" is 40×40 */}
               <div className="flex shrink-0 gap-1">
                 {Array.from({ length: 3 }, (__, action) => (
                   <HomeWave
                     key={action}
-                    className="h-8 w-8"
+                    className="h-10 w-10"
                     delayMs={index * 80 + action * 40}
                   />
                 ))}

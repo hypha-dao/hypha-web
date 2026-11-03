@@ -1,9 +1,7 @@
 'use client';
 
-import { Button, Skeleton } from '@hypha-platform/ui';
-import { RxPencil2 } from 'react-icons/rx';
+import { Skeleton } from '@hypha-platform/ui';
 import { MailIcon, MapPinIcon } from 'lucide-react';
-import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import React from 'react';
@@ -69,8 +67,7 @@ export const PersonHead = ({
   const format = useFormatter();
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
   const { isMe, person: me } = useMe();
-  const { lang, personSlug: personSlugRaw } =
-    useParams<ProfileComponentParams>();
+  const { personSlug: personSlugRaw } = useParams<ProfileComponentParams>();
   const personSlug = tryDecodeUriPart(personSlugRaw);
 
   /**
@@ -240,23 +237,6 @@ export const PersonHead = ({
             slug={self.slug}
             isLoading={isLoading}
           />
-          <Skeleton loading={isLoading} width={120} height={35}>
-            <Link
-              href={
-                isOwnProfile
-                  ? `/${lang}/profile/${encodeURIComponent(
-                      me?.slug ?? self.slug,
-                    )}/edit`
-                  : {}
-              }
-              scroll={false}
-            >
-              <Button colorVariant="accent" disabled={!isOwnProfile}>
-                <RxPencil2 />
-                {tProfile('editProfile')}
-              </Button>
-            </Link>
-          </Skeleton>
         </div>
       </div>
     </SpaceAccentFromImages>

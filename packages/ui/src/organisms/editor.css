@@ -31,7 +31,8 @@
   min-height: calc(var(--spacing-9) + var(--spacing-8) + var(--spacing-2));
   line-height: var(--text-3--line-height);
   color: var(--foreground);
-  caret-color: var(--foreground);
+  /* Ink / space-solid — not a paper-adjacent step that vanishes on the field. */
+  caret-color: var(--accent-9);
 }
 
 .richtext-editor-content-host .tiptap:focus,
@@ -47,9 +48,15 @@
   pointer-events: none;
 }
 
+/*
+ * accent-4 is the panel fill (paper-adjacent). That made selected text
+ * nearly invisible on the editor surface. Mix the solid accent so the
+ * highlight reads at a similar contrast to the OS selection chrome.
+ */
+.richtext-editor-content-host .tiptap::selection,
 .richtext-editor-content-host .tiptap ::selection {
-  background-color: var(--accent-4);
-  color: var(--accent-12);
+  background-color: color-mix(in srgb, var(--accent-9) 44%, transparent);
+  color: var(--foreground);
 }
 
 .richtext-editor-content-host .tiptap ul,
@@ -138,6 +145,7 @@
 .richtext-editor-content-host .tiptap h3,
 .richtext-editor-content-host .tiptap h4 {
   color: var(--foreground);
+  caret-color: var(--accent-9);
 }
 
 .richtext-editor-content-host .tiptap p {

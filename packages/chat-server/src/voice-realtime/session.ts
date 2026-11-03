@@ -14,12 +14,12 @@ import {
   resolveRealtimeAudioInputConfig,
   type RealtimeAudioInputConfig,
 } from './audio-input-config';
+import { resolveHomeSpeechVoice, resolveSpeechVoice } from './speech-voice';
 
 export const MISSING_OPENAI_KEY_MESSAGE =
   'Hypha voice Realtime is not configured: OPENAI_API_KEY is missing.';
 
 const DEFAULT_OPENAI_REALTIME_MODEL = 'gpt-realtime';
-const DEFAULT_OPENAI_REALTIME_VOICE = 'marin';
 const DEFAULT_OPENAI_REALTIME_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 
 export type RealtimeVoiceSessionResult = {
@@ -52,10 +52,11 @@ function resolveOpenAiRealtimeModel(): string {
   );
 }
 
-function resolveOpenAiRealtimeVoice(): string {
-  return (
-    process.env.OPENAI_REALTIME_VOICE?.trim() || DEFAULT_OPENAI_REALTIME_VOICE
-  );
+function resolveOpenAiRealtimeVoice(
+  mode: RealtimeVoiceSessionRequest['conversationContext']['mode'],
+): string {
+  if (mode === 'member_home') return resolveHomeSpeechVoice();
+  return resolveSpeechVoice();
 }
 
 function resolveOpenAiRealtimeTranscriptionModel(): string {
@@ -115,7 +116,7 @@ export async function createRealtimeVoiceSession(
   }
 
   const model = resolveOpenAiRealtimeModel();
-  const voice = resolveOpenAiRealtimeVoice();
+  const voice = resolveOpenAiRealtimeVoice(payload.conversationContext.mode);
   const transcriptionModel = resolveOpenAiRealtimeTranscriptionModel();
   const audioInput = resolveRealtimeAudioInputConfig(transcriptionModel);
   const locale =

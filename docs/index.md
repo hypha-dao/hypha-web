@@ -31,4 +31,5 @@ Feature requirements and specifications are in [docs/requirements/](./requiremen
 | [MCP `get_documents_by_space_slug`](./requirements/mcp-get-documents-by-space-slug-tech-spec.md) | MCP read tool for space documents (DB + access parity); **§8** org memory roadmap (upload URLs today; Matrix via catalogue) |
 | [Chat AI `get_documents_by_space_slug`](./requirements/chat-ai-get-documents-by-space-slug-integration.md) | Hypha AI / chat-server integration; prompt + fetch guidance for **attachments** / org memory alignment |
 | [Documents and media overview](./architecture/documents-and-media-overview.md) | **§4** org memory + **§4.7** MCP / Chat AI |
+| [Matrix room types](./architecture/matrix-room-types.md) | `io.hypha.room.*` create types and how Messages lists / badges each |
 | [Space Memory panel](./plans/space-memory-panel.md) | Coherence UI plan; **§9** MCP / Chat |

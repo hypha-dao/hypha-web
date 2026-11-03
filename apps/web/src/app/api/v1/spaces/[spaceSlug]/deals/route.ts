@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  assertDealFitsPipelineConfig,
   createDeal,
   findDealsBySpaceId,
+  readPipelineConfig,
   schemaCreateDeal,
   schemaDealFiltersQuery,
   type DealFilters,
@@ -92,6 +94,21 @@ export async function POST(
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Invalid deal payload', details: parsed.error.flatten() },
+        { status: 400 },
+      );
+    }
+
+    const pipelineConfig = await readPipelineConfig(
+      { spaceId: space.id },
+      { db },
+    );
+    try {
+      assertDealFitsPipelineConfig(parsed.data, pipelineConfig);
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error: err instanceof Error ? err.message : 'Invalid pipeline fields',
+        },
         { status: 400 },
       );
     }

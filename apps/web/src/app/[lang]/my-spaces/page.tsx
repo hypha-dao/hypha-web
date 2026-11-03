@@ -12,6 +12,7 @@ import {
 } from '@hypha-platform/core/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { MemberSpacesScreenGate } from './member-spaces-screen-gate';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -70,28 +71,11 @@ export default async function Index(props: PageProps) {
   );
 
   return (
-    <div className="w-full min-w-0">
-      <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9">
-        <div className="flex flex-col gap-4 xl:hidden">
-          {mobileTitle}
-          <Suspense fallback={null}>
-            <MySpacesControls
-              lang={lang}
-              query={query}
-              order={order}
-              showCreateButton
-            />
-          </Suspense>
-          <MySpacesIconBoard
-            lang={lang}
-            spaces={mySpaces}
-            order={order}
-            query={query}
-          />
-        </div>
-        <div className="hidden min-w-0 flex-col gap-9 xl:flex">
-          <div className="flex min-w-0 flex-col gap-9">
-            {title}
+    <MemberSpacesScreenGate lang={lang}>
+      <div className="w-full min-w-0">
+        <Container className="flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9">
+          <div className="flex flex-col gap-4 xl:hidden">
+            {mobileTitle}
             <Suspense fallback={null}>
               <MySpacesControls
                 lang={lang}
@@ -100,15 +84,34 @@ export default async function Index(props: PageProps) {
                 showCreateButton
               />
             </Suspense>
+            <MySpacesIconBoard
+              lang={lang}
+              spaces={mySpaces}
+              order={order}
+              query={query}
+            />
           </div>
-          <MySpacesBoard
-            lang={lang}
-            spaces={mySpaces}
-            order={order}
-            query={query}
-          />
-        </div>
-      </Container>
-    </div>
+          <div className="hidden min-w-0 flex-col gap-9 xl:flex">
+            <div className="flex min-w-0 flex-col gap-9">
+              {title}
+              <Suspense fallback={null}>
+                <MySpacesControls
+                  lang={lang}
+                  query={query}
+                  order={order}
+                  showCreateButton
+                />
+              </Suspense>
+            </div>
+            <MySpacesBoard
+              lang={lang}
+              spaces={mySpaces}
+              order={order}
+              query={query}
+            />
+          </div>
+        </Container>
+      </div>
+    </MemberSpacesScreenGate>
   );
 }

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  assertDealFitsPipelineConfig,
   deleteDealById,
   findDealById,
+  readPipelineConfig,
   schemaUpdateDeal,
   updateDealById,
 } from '@hypha-platform/core/server';
@@ -65,6 +67,21 @@ export async function PATCH(
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Invalid deal payload', details: parsed.error.flatten() },
+        { status: 400 },
+      );
+    }
+
+    const pipelineConfig = await readPipelineConfig(
+      { spaceId: space.id },
+      { db },
+    );
+    try {
+      assertDealFitsPipelineConfig(parsed.data, pipelineConfig);
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error: err instanceof Error ? err.message : 'Invalid pipeline fields',
+        },
         { status: 400 },
       );
     }

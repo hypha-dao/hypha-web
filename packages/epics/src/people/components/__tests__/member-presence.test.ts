@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import {
   latestMessageTs,
+  peerLastSeenLine,
   preferPresence,
   presenceFromMatrixStatus,
   presenceFromRecency,
   presenceRank,
   readMemberPresence,
+  readMemberPresenceDetail,
+  resolveRegisteredPresence,
   sortByPresenceThenShared,
   sortByRecencyThenPresence,
 } from '../member-presence';
@@ -83,6 +86,120 @@ describe('readMemberPresence', () => {
       now,
     );
     expect(level).toBe('active');
+  });
+
+  it('exposes last-active time from the homeserver for the DM header', async () => {
+    const now = 1_700_000_000_000;
+    const ago = 2 * 60 * 60_000;
+    const detail = await readMemberPresenceDetail(
+      {
+        getPresence: async () => ({
+          presence: 'offline',
+          last_active_ago: ago,
+        }),
+      },
+      '@ada:hypha',
+      now,
+    );
+    expect(detail.known).toBe(true);
+    expect(detail.level).toBe('offline');
+    expect(detail.lastActiveAt).toBe(now - ago);
+    expect(peerLastSeenLine(detail)).toEqual({
+      kind: 'lastSeenAt',
+      at: now - ago,
+    });
+  });
+
+  it('hides the DM last-seen line when presence probes fail', async () => {
+    const detail = await readMemberPresenceDetail(
+      {
+        getPresence: async () => {
+          throw new Error('presence disabled');
+        },
+      },
+      '@ada:hypha',
+    );
+    expect(detail.known).toBe(false);
+    expect(peerLastSeenLine(detail)).toEqual({ kind: 'hidden' });
+  });
+
+  it('uses the latest message as last-seen when presence is offline without ago', async () => {
+    const messageAt = now - 45 * 60_000;
+    const detail = await readMemberPresenceDetail(
+      {
+        getPresence: async () => ({ presence: 'offline' }),
+        getRooms: () => [
+          {
+            getLiveTimeline: () => ({
+              getEvents: () => [
+                {
+                  getSender: () => '@ada:hypha',
+                  getType: () => 'm.room.message',
+                  getTs: () => messageAt,
+                },
+              ],
+            }),
+          },
+        ],
+      },
+      '@ada:hypha',
+      now,
+    );
+    expect(detail.known).toBe(true);
+    expect(detail.matrixLevel).toBe('offline');
+    expect(detail.lastActiveAt).toBe(messageAt);
+    expect(peerLastSeenLine(detail)).toEqual({
+      kind: 'lastSeenAt',
+      at: messageAt,
+    });
+  });
+
+  it('does not show online when Matrix is offline but a recent message exists', async () => {
+    const messageAt = now - 60_000;
+    const detail = await readMemberPresenceDetail(
+      {
+        getPresence: async () => ({ presence: 'offline' }),
+        getRooms: () => [
+          {
+            getLiveTimeline: () => ({
+              getEvents: () => [
+                {
+                  getSender: () => '@ada:hypha',
+                  getType: () => 'm.room.message',
+                  getTs: () => messageAt,
+                },
+              ],
+            }),
+          },
+        ],
+      },
+      '@ada:hypha',
+      now,
+    );
+    expect(detail.level).toBe('active');
+    expect(detail.matrixLevel).toBe('offline');
+    expect(peerLastSeenLine(detail)).toEqual({
+      kind: 'lastSeenAt',
+      at: messageAt,
+    });
+  });
+
+  it('does not let a stale cached active override a live offline probe for the header', async () => {
+    const detail = await readMemberPresenceDetail(
+      {
+        getPresence: async () => ({ presence: 'offline' }),
+        getUser: () => ({
+          presence: 'online',
+          currentlyActive: true,
+          lastPresenceTs: now - 1_000,
+        }),
+      },
+      '@ada:hypha',
+      now,
+    );
+    expect(detail.level).toBe('active');
+    expect(detail.matrixLevel).toBe('offline');
+    expect(peerLastSeenLine(detail)).toEqual({ kind: 'hidden' });
   });
 
   it('uses a recent message when no presence event exists', async () => {
@@ -206,5 +323,17 @@ describe('sort helpers', () => {
       presence,
     );
     expect(ranked.map((row) => row.person.id)).toEqual([2, 1]);
+  });
+});
+
+describe('resolveRegisteredPresence', () => {
+  it('lets a live Matrix probe outrank a lagged person-id offline', () => {
+    expect(resolveRegisteredPresence('offline', 'active')).toBe('active');
+    expect(resolveRegisteredPresence('offline', 'idle')).toBe('idle');
+  });
+
+  it('returns null only when neither probe ran', () => {
+    expect(resolveRegisteredPresence(null, undefined)).toBeNull();
+    expect(resolveRegisteredPresence('offline', null)).toBe('offline');
   });
 });

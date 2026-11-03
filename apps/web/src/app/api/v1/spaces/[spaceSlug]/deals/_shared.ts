@@ -18,7 +18,7 @@ export async function resolvePipelineSpace(spaceSlug: string) {
     return {
       space: null,
       error: NextResponse.json(
-        { error: 'Deal Pipeline is not enabled for this space' },
+        { error: 'Pipeline is not enabled for this space' },
         { status: 404 },
       ),
     };

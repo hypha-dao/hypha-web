@@ -74,7 +74,6 @@ type HumanChatPanelCallBannerProps = {
   onVoiceProcessingPresetChange: (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => void;
-  presenterVoiceBoostActive?: boolean;
   unsupportedVoiceProcessingConstraints?: {
     autoGainControl: boolean;
     echoCancellation: boolean;
@@ -183,7 +182,6 @@ export function HumanChatPanelCallBanner({
   onStopScreenshare,
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
-  presenterVoiceBoostActive = false,
   unsupportedVoiceProcessingConstraints = null,
   captureMode,
   capturePreference,
@@ -584,7 +582,6 @@ export function HumanChatPanelCallBanner({
                 onStopScreenshare={onStopScreenshare}
                 voiceProcessingPreset={voiceProcessingPreset}
                 onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
-                presenterVoiceBoostActive={presenterVoiceBoostActive}
                 unsupportedVoiceProcessingConstraints={
                   unsupportedVoiceProcessingConstraints
                 }

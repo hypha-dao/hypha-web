@@ -49,10 +49,12 @@ import {
   writeHomeView,
   type HomeView,
 } from './member-home-view';
-import { useConversationUnreadCount } from './my-connections';
-import { shouldShowMessagesAndSpacesNav } from './app-nav-visibility';
+import { useMessagesScreenCount } from './my-connections';
+import {
+  shouldShowMessagesNav,
+  shouldShowSpacesScreen,
+} from './app-nav-visibility';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
-import { useSpacesRailControl } from './spaces-rail-control';
 
 const OPEN_MOBILE_CREATE = 'hypha:open-mobile-create';
 
@@ -73,15 +75,12 @@ function segmentActive(pathname: string, segment: string) {
 }
 
 function shouldShowMobileSpacesRail(pathname: string) {
-  if (
-    segmentActive(pathname, 'my-dashboard') ||
-    segmentActive(pathname, 'home')
-  )
-    return false;
   return (
     segmentActive(pathname, 'connections') ||
     segmentActive(pathname, 'messages') ||
     segmentActive(pathname, 'my-wallet') ||
+    segmentActive(pathname, 'my-dashboard') ||
+    segmentActive(pathname, 'home') ||
     Boolean(getDhoSpaceSlugFromPathname(pathname)) ||
     isNetworkPath(pathname)
   );
@@ -92,7 +91,6 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { open: isAiOpen } = useAiPanel();
-  const { open: spacesRailOpen } = useSpacesRailControl();
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
   // While the AI panel is open the spaces list takes the left menu slot.
   const showSpacesRail = shouldShowMobileSpacesRail(pathname) && !isAiOpen;
@@ -125,22 +123,16 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
     <div
       className={cn(
         showSpacesRail &&
-          'max-xl:flex max-xl:w-full max-xl:min-w-0 max-xl:flex-row max-xl:items-start',
+          'max-xl:flex max-xl:w-full max-xl:min-w-0 max-xl:flex-col',
         slideIn &&
           'max-md:animate-in max-md:slide-in-from-right max-md:duration-300 max-md:ease-out',
       )}
     >
       {showSpacesRail ? (
-        <div
-          className={cn(
-            // Sit under the sticky MenuTop — top-0 clipped the first icons.
-            // Stay mounted while closed so the top-bar control can open it.
-            spacesRailOpen
-              ? 'sticky top-[var(--menu-top-height,4.5rem)] z-10 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] w-[44px] shrink-0 bg-background xl:hidden'
-              : 'hidden',
-          )}
-        >
-          <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} />
+        // One row under the header circle — same chrome as the top toggle,
+        // not a side column that floats next to the page.
+        <div className="w-full shrink-0 xl:hidden">
+          <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} layout="row" />
         </div>
       ) : null}
       <div className={cn(showSpacesRail && 'min-w-0 flex-1')}>{children}</div>
@@ -166,9 +158,9 @@ export function MobileTabBar({
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { person } = useMe();
-  const showMessagesAndSpaces = shouldShowMessagesAndSpacesNav(
-    person?.primaryOrientation,
-  );
+  const showMessages = shouldShowMessagesNav(person?.primaryOrientation);
+  const showSpaces = shouldShowSpacesScreen(person?.primaryOrientation);
+  const appTabCount = 3 + Number(showMessages) + Number(showSpaces);
   const onHome =
     pathname === `/${lang}/my-dashboard` ||
     pathname === `/${lang}/my-dashboard/` ||
@@ -182,7 +174,7 @@ export function MobileTabBar({
   const [createOpen, setCreateOpen] = useState(false);
   const [homeView, setHomeView] = useState<HomeView>('ai');
   const [mounted, setMounted] = useState(false);
-  const unreadCount = useConversationUnreadCount();
+  const unreadCount = useMessagesScreenCount();
 
   useEffect(() => {
     setMounted(true);
@@ -565,9 +557,7 @@ export function MobileTabBar({
             className="mx-auto grid max-w-lg items-end px-1"
             style={{
               height: TAB_BAR_PX,
-              gridTemplateColumns: showMessagesAndSpaces
-                ? 'repeat(5, minmax(0, 1fr))'
-                : 'repeat(3, minmax(0, 1fr))',
+              gridTemplateColumns: `repeat(${appTabCount}, minmax(0, 1fr))`,
             }}
           >
             <TabLink
@@ -577,7 +567,7 @@ export function MobileTabBar({
               onClick={() => setCreateOpen(false)}
               icon={<House className={iconClass} strokeWidth={1.25} />}
             />
-            {showMessagesAndSpaces ? (
+            {showMessages ? (
               <TabLink
                 href={connectionsHref}
                 label={t('chat')}
@@ -599,7 +589,7 @@ export function MobileTabBar({
                 <Wallet className="block h-5 w-5 shrink-0" strokeWidth={1.25} />
               }
             />
-            {showMessagesAndSpaces ? (
+            {showSpaces ? (
               <TabLink
                 href={spacesHref}
                 label={t('mySpaces')}
@@ -655,8 +645,11 @@ function TabLink({
           {icon}
         </TabGlyph>
         {badge > 0 ? (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center bg-foreground px-0.5 text-[9px] font-medium leading-none text-background">
-            <span className="translate-y-px">{badge > 99 ? '99+' : badge}</span>
+          <span
+            className="absolute -top-1 -right-1 inline-grid min-h-4 min-w-4 place-items-center bg-foreground px-1 text-[9px] font-medium leading-none tabular-nums text-background"
+            aria-hidden
+          >
+            {badge > 99 ? '99+' : badge}
           </span>
         ) : null}
       </span>

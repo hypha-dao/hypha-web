@@ -1,22 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ZodError } from 'zod';
 import {
   getTransfersByAddress,
   getTokenMeta,
   findAllTokens,
+  findPeopleByWeb3Addresses,
+  findSpaceByAddresses,
+  findPersonBySlug,
+  getDb,
+  findTransfersByTransactionHashes,
 } from '@hypha-platform/core/server';
 import {
   schemaGetTransfersQuery,
+  resolveTransferTokenFilter,
   validTokenTypes,
   TokenType,
+  buildKnownTreasuryAddressSet,
+  selectVisibleTransfers,
+  getEnergyCommunityTokenAddresses,
 } from '@hypha-platform/core/client';
-import {
-  findPeopleByWeb3Addresses,
-  findSpaceByAddresses,
-} from '@hypha-platform/core/server';
-import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { ProfileRouteParams } from '@hypha-platform/epics';
-import { findAllTransfers } from '@hypha-platform/core/server';
+
+/** Default page when the client omits `limit` (schema max is 50 when set). */
+const DEFAULT_PERSON_TRANSFER_LIMIT = 100;
 
 /**
  * A route to get ERC20 transfers for a user.
@@ -27,7 +34,8 @@ import { findAllTransfers } from '@hypha-platform/core/server';
  * - toDate: timestamp of the end date from which to get the transfers. Optional
  * - fromBlock: the minimum block number from which to get the transfers. Optional
  * - toBlock: the maximum block number from which to get the transfers. Optional
- * - limit: the desired number of the result. Not greater than 50. When omitted, all available transfers are returned
+ * - limit: the desired number of the result. Not greater than 50. When omitted,
+ *   the newest {@link DEFAULT_PERSON_TRANSFER_LIMIT} visible transfers are returned
  */
 
 export async function GET(
@@ -41,12 +49,15 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { fromDate, toDate, fromBlock, toBlock, limit, token } =
-    schemaGetTransfersQuery.parse(
-      Object.fromEntries(request.nextUrl.searchParams.entries()),
+  try {
+    const { fromDate, toDate, fromBlock, toBlock, limit } =
+      schemaGetTransfersQuery.parse(
+        Object.fromEntries(request.nextUrl.searchParams.entries()),
+      );
+    const tokenFilter = resolveTransferTokenFilter(
+      request.nextUrl.searchParams.get('token'),
     );
 
-  try {
     const person = await findPersonBySlug(
       { slug: personSlug },
       { db: getDb({ authToken }) },
@@ -56,26 +67,56 @@ export async function GET(
       return NextResponse.json({ error: 'Person not found' }, { status: 404 });
     }
 
-    const address = person.address as `0x${string}`;
+    const address = (person.address ?? '').trim() as `0x${string}`;
     if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
       return NextResponse.json(
         { error: 'Invalid or missing address' },
         { status: 400 },
       );
     }
-    const transfers = await getTransfersByAddress({
+
+    // Tokens first so Alchemy can filter/page against the allowlist before
+    // metadata. Loading memos for the whole transfers table used to run in
+    // parallel with that fetch and could 500 a spam-heavy wallet.
+    const rawDbTokens = await findAllTokens(
+      { db: getDb({ authToken }) },
+      { search: undefined },
+    );
+    const dbKnownAddresses = buildKnownTreasuryAddressSet(
+      rawDbTokens,
+      getEnergyCommunityTokenAddresses(),
+    );
+    const pageLimit = limit ?? DEFAULT_PERSON_TRANSFER_LIMIT;
+
+    const fetchedTransfers = await getTransfersByAddress({
       address,
-      contractAddresses: token,
+      contractAddresses: tokenFilter,
       fromDate,
       toDate,
       fromBlock,
       toBlock,
-      limit,
+      limit: pageLimit,
+      knownAddresses: dbKnownAddresses,
     });
 
-    const dbTransfers = await findAllTransfers(
+    const fromTime = fromDate?.getTime();
+    const toTime = toDate?.getTime();
+    // Drop spam before `limit` so hidden airdrops do not eat page slots.
+    const transfers = selectVisibleTransfers(
+      fetchedTransfers
+        .filter(
+          (transfer) =>
+            (fromTime === undefined || transfer.timestamp >= fromTime) &&
+            (toTime === undefined || transfer.timestamp <= toTime),
+        )
+        .sort((a, b) => b.block_number - a.block_number),
+      dbKnownAddresses,
+      pageLimit,
+    );
+
+    const dbTransfers = await findTransfersByTransactionHashes(
       { db: getDb({ authToken }) },
-      {},
+      transfers.map((transfer) => transfer.transaction_hash),
     );
 
     const memoMap = new Map(
@@ -85,10 +126,6 @@ export async function GET(
       ]),
     );
 
-    const rawDbTokens = await findAllTokens(
-      { db: getDb({ authToken }) },
-      { search: undefined },
-    );
     const dbTokens = rawDbTokens.map((token) => ({
       agreementId: token.agreementId ?? undefined,
       spaceId: token.spaceId ?? undefined,
@@ -221,6 +258,12 @@ export async function GET(
 
     return NextResponse.json(validTransfers);
   } catch (error: any) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid query parameters' },
+        { status: 400 },
+      );
+    }
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);
     if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {

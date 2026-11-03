@@ -1,9 +1,11 @@
 import {
+  coherences,
   matrixUserLinks,
   people,
+  spaces,
   type MatrixUserLink,
 } from '@hypha-platform/storage-postgres';
-import { and, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, like } from 'drizzle-orm';
 
 import { Environment } from '../../coherence/types';
 import { DbConfig } from '../../server';
@@ -139,3 +141,68 @@ export const findAdminUserName = async (
 
   return response.privyUserId;
 };
+
+/** Space member rooms and signal threads must not be treated as Messages groups. */
+export async function isRoomBoundToSpaceOrSignal(
+  { roomId }: { roomId: string },
+  { db }: DbConfig,
+): Promise<boolean> {
+  const trimmed = roomId.trim();
+  if (!trimmed) return false;
+  try {
+    const [space] = await db
+      .select({ id: spaces.id })
+      .from(spaces)
+      .where(eq(spaces.chatRoomId, trimmed))
+      .limit(1);
+    if (space) return true;
+    const [signal] = await db
+      .select({ id: coherences.id })
+      .from(coherences)
+      .where(eq(coherences.roomId, trimmed))
+      .limit(1);
+    return Boolean(signal);
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to check space/signal room binding:',
+      trimmed,
+      error instanceof Error ? error.message : error,
+    );
+    // Fail closed: a lookup error must not authorize rename/archive.
+    return true;
+  }
+}
+
+/** Room ids already used as a space chat or a signal thread (including archived). */
+export async function findBoundChatRoomIdsAmong(
+  { roomIds }: { roomIds: readonly string[] },
+  { db }: DbConfig,
+): Promise<string[]> {
+  const ids = [
+    ...new Set(roomIds.map((roomId) => roomId.trim()).filter(Boolean)),
+  ];
+  if (ids.length === 0) return [];
+  try {
+    const spaceRows = await db
+      .select({ roomId: spaces.chatRoomId })
+      .from(spaces)
+      .where(inArray(spaces.chatRoomId, ids));
+    const signalRows = await db
+      .select({ roomId: coherences.roomId })
+      .from(coherences)
+      .where(inArray(coherences.roomId, ids));
+    const bound = new Set<string>();
+    for (const row of [...spaceRows, ...signalRows]) {
+      const roomId = row.roomId?.trim();
+      if (roomId) bound.add(roomId);
+    }
+    return [...bound];
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Failed to list space/signal room bindings:',
+      error instanceof Error ? error.message : error,
+    );
+    // Do not report unknown rooms as bound. The client persists this result.
+    throw error;
+  }
+}

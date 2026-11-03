@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { AsideOverlayLayoutProvider } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -12,10 +12,18 @@ import {
   pushMainColumnOverlayScrollLock,
 } from './main-column-scroll';
 
+/** Keep the panel at the top while discussion chat settles (focus / scrollIntoView). */
+const OPEN_SCROLL_PIN_MS = 350;
+
 type ProposalOverlayShellProps = {
   children: ReactNode;
   /** Merged onto the inner scroll panel (after defaults) — use for narrower modals e.g. member profile. */
   className?: string;
+  /**
+   * Stack above another open overlay (e.g. a `?dialog=` host opened from the nav bar while an
+   * `@aside` overlay is open). Stays below the side panels (`z-[50]`).
+   */
+  elevated?: boolean;
 };
 
 /**
@@ -58,6 +66,7 @@ type ProposalOverlayShellProps = {
 export function ProposalOverlayShell({
   children,
   className,
+  elevated = false,
 }: ProposalOverlayShellProps) {
   const tModalAside = useTranslations('ModalAside');
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
@@ -67,6 +76,55 @@ export function ProposalOverlayShell({
     pushMainColumnOverlayScrollLock();
     return () => {
       popMainColumnOverlayScrollLock();
+    };
+  }, []);
+
+  /**
+   * Open at the proposal title, not Discussion. Radix open-autofocus and nested
+   * chat `scrollIntoView` / composer focus otherwise drag this panel down.
+   */
+  useLayoutEffect(() => {
+    const el = overlayPanelRef.current;
+    if (!el) return;
+    el.scrollTop = 0;
+    let cancelled = false;
+    const pinUntil = performance.now() + OPEN_SCROLL_PIN_MS;
+    const pin = () => {
+      if (!cancelled && el.scrollTop !== 0) el.scrollTop = 0;
+    };
+    const onScroll = () => {
+      if (performance.now() > pinUntil) return;
+      pin();
+    };
+    el.addEventListener('scroll', onScroll);
+    const userInputEvents = [
+      'wheel',
+      'touchstart',
+      'keydown',
+      'pointerdown',
+    ] as const;
+    const releasePin = () => {
+      cancelled = true;
+      el.removeEventListener('scroll', onScroll);
+      for (const type of userInputEvents) {
+        el.removeEventListener(type, releasePin);
+      }
+    };
+    for (const type of userInputEvents) {
+      el.addEventListener(type, releasePin, { passive: true });
+    }
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      pin();
+      raf2 = requestAnimationFrame(pin);
+    });
+    const release = window.setTimeout(releasePin, OPEN_SCROLL_PIN_MS);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+      window.clearTimeout(release);
+      releasePin();
     };
   }, []);
 
@@ -114,7 +172,8 @@ export function ProposalOverlayShell({
           {/* Plain scrim below MenuTop (z-30); starts under --menu-top-height */}
           <div
             className={cn(
-              'fixed bottom-0 z-40 hidden bg-black/45 md:block',
+              'fixed bottom-0 hidden bg-black/45 md:block',
+              elevated ? 'z-[42]' : 'z-40',
               'left-[var(--sidebar-left-width,0px)] right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))]',
               'top-[var(--menu-top-height,70px)]',
             )}
@@ -122,10 +181,31 @@ export function ProposalOverlayShell({
           />
           <DialogPrimitive.Content
             aria-describedby={undefined}
-            onInteractOutside={(e) => e.preventDefault()}
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              const panel = overlayPanelRef.current;
+              if (!panel) return;
+              panel.scrollTop = 0;
+              panel.focus({ preventScroll: true });
+            }}
+            onInteractOutside={(event) => {
+              // Composer attach / emoji / selects portal to body. Blocking those
+              // pointer events makes discussion tools feel read-only.
+              const target = event.target;
+              if (
+                target instanceof Element &&
+                target.closest(
+                  '[data-radix-popper-content-wrapper], [role="listbox"], [data-testid="hypha-emoji-picker-panel"]',
+                )
+              ) {
+                return;
+              }
+              event.preventDefault();
+            }}
             onEscapeKeyDown={(e) => e.preventDefault()}
             className={cn(
-              'fixed z-[41] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-0 max-md:top-[var(--menu-top-height,70px)] max-md:right-0 max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-page-background max-md:shadow-none max-md:dark:bg-background-2',
+              elevated ? 'z-[43]' : 'z-[41]',
+              'fixed outline-none max-md:inset-auto max-md:bottom-0 max-md:left-0 max-md:top-[var(--menu-top-height,70px)] max-md:right-0 max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-page-background max-md:shadow-none max-md:dark:bg-background-2',
               /* Host is click-through on desktop so MenuTop (z-30) stays usable; modal surface re-enables hits */
               'pointer-events-auto md:pointer-events-none',
               'md:left-[var(--sidebar-left-width,0px)] md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] md:bottom-0 md:top-[var(--menu-top-height,70px)] md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-5',
@@ -156,6 +236,7 @@ export function ProposalOverlayShell({
                 id="proposal-overlay-panel"
                 role="document"
                 tabIndex={-1}
+                style={{ overflowAnchor: 'none' }}
               >
                 <div className="p-4 lg:p-7">{children}</div>
               </div>

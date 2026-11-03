@@ -16,9 +16,9 @@ export type RealtimeAudioInputConfig = {
   transcription: { model: string };
 };
 
-/** Live Voice VAD — tuned for room noise and natural breathing pauses. */
-const DEFAULT_VAD_THRESHOLD = 0.72;
-const DEFAULT_VAD_SILENCE_MS = 1000;
+/** Live Voice VAD — sensitive enough for a quiet "yes", still filters room noise. */
+const DEFAULT_VAD_THRESHOLD = 0.55;
+const DEFAULT_VAD_SILENCE_MS = 700;
 const DEFAULT_PREFIX_PADDING_MS = 350;
 
 function clampVadThreshold(value: number): number {

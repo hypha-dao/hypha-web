@@ -5,7 +5,7 @@ import { Clock, UserCircle2 } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 
 type SignalCreatorMetaProps = {
-  /** Prefer `personSlot` when the label is a React node (e.g. resolved assignee). */
+  /** Prefer `personSlot` when the label is a React node (e.g. resolved creator). */
   creatorDisplayName?: string | null;
   personSlot?: ReactNode;
   createdAtRelative: string;

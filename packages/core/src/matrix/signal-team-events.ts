@@ -73,6 +73,23 @@ function normalizeMatrixUserIds(ids: unknown): string[] {
   return [...new Set(ids.map((id) => String(id).trim()).filter(Boolean))];
 }
 
+/** Resolve assignee person ids to Matrix user ids for a signal-team roster. */
+export function matrixUserIdsForPersonIds(
+  personIds: readonly number[] | null | undefined,
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+): string[] {
+  if (!personIds?.length) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const id of personIds) {
+    const mxid = personIdToMatrixUserId[id]?.trim();
+    if (!mxid || seen.has(mxid)) continue;
+    seen.add(mxid);
+    out.push(mxid);
+  }
+  return out;
+}
+
 function formatMatrixUserIdForPlainText(userId: string): string {
   const trimmed = userId.trim();
   return trimmed.startsWith('@') ? trimmed : `@${trimmed}`;

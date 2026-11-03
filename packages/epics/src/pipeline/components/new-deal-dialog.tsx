@@ -6,8 +6,8 @@ import {
   DEAL_CONTACT_TYPES,
   DEAL_PRIORITIES,
   isGrantOrTenderSwimlane,
-  PIPELINE_STATUSES,
-  PIPELINE_SWIMLANES,
+  resolveDefaultStageSlug,
+  resolveDefaultTrackSlug,
   resolveRegionForSpace,
   useDealMutations,
   usePipelineConfig,
@@ -81,12 +81,26 @@ export function NewDealDialog({
   useMembers,
   open,
   onOpenChange,
-  defaultSwimlane = 'Sales',
+  defaultSwimlane,
 }: NewDealDialogProps) {
   const t = useTranslations('Pipeline');
   const { createDeal, isCreating } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
-  const { regions, defaultRegion } = usePipelineConfig(spaceSlug);
+  const {
+    regions,
+    defaultRegion,
+    tracks,
+    stages,
+    itemSingular,
+    itemPlural,
+    isLoading: isConfigLoading,
+  } = usePipelineConfig(spaceSlug);
+  const itemLabels = { item: itemSingular, items: itemPlural };
+  const resolvedDefaultSwimlane =
+    defaultSwimlane && tracks.some((track) => track.slug === defaultSwimlane)
+      ? defaultSwimlane
+      : resolveDefaultTrackSlug(tracks);
+  const defaultStatus = resolveDefaultStageSlug(stages);
   const { persons, isLoading: isLoadingMembers } = useMembers({
     spaceSlug,
     paginationDisabled: true,
@@ -98,9 +112,11 @@ export function NewDealDialog({
   );
   const [teamMemberIds, setTeamMemberIds] = React.useState<string[]>([]);
   const [swimlane, setSwimlane] = React.useState<PipelineSwimlane | ''>(
-    defaultSwimlane,
+    resolvedDefaultSwimlane,
   );
-  const [status, setStatus] = React.useState<PipelineStatus>('Identified');
+  const [status, setStatus] = React.useState<PipelineStatus>(defaultStatus);
+  const swimlaneTouchedRef = React.useRef(false);
+  const statusTouchedRef = React.useRef(false);
   const [region, setRegion] = React.useState<Region>(defaultRegion);
   const [country, setCountry] = React.useState<string | null>(null);
   const [value, setValue] = React.useState('');
@@ -135,8 +151,10 @@ export function NewDealDialog({
     setTitle('');
     setAccountManagerId(null);
     setTeamMemberIds([]);
-    setSwimlane(defaultSwimlane);
-    setStatus('Identified');
+    swimlaneTouchedRef.current = false;
+    statusTouchedRef.current = false;
+    setSwimlane(resolvedDefaultSwimlane);
+    setStatus(defaultStatus);
     setRegion(defaultRegion);
     setCountry(null);
     setValue('');
@@ -151,7 +169,7 @@ export function NewDealDialog({
     setMobile('');
     setLinkedin('');
     setError(null);
-  }, [defaultRegion, defaultSwimlane]);
+  }, [defaultRegion, defaultStatus, resolvedDefaultSwimlane]);
 
   // Reset only on the closed → open transition. `resetForm`'s identity can
   // change while the dialog is open (async pipeline config resolving); that
@@ -165,15 +183,47 @@ export function NewDealDialog({
     }
   }, [open, resetForm]);
 
+  React.useEffect(() => {
+    if (isConfigLoading) return;
+    if (
+      !swimlaneTouchedRef.current ||
+      !tracks.some((track) => track.slug === swimlane)
+    ) {
+      setSwimlane(resolvedDefaultSwimlane);
+    }
+    if (
+      !statusTouchedRef.current ||
+      !stages.some((stage) => stage.slug === status)
+    ) {
+      setStatus(defaultStatus);
+    }
+  }, [
+    defaultStatus,
+    isConfigLoading,
+    resolvedDefaultSwimlane,
+    stages,
+    status,
+    swimlane,
+    tracks,
+  ]);
+
   const canSubmit =
     Boolean(title.trim()) &&
     Boolean(swimlane) &&
     Boolean(region) &&
     Boolean(status) &&
-    Boolean(firstName.trim());
+    Boolean(firstName.trim()) &&
+    !isConfigLoading;
 
   const submit = async () => {
-    if (!title.trim() || !swimlane || !region || !status || !firstName.trim()) {
+    if (
+      isConfigLoading ||
+      !title.trim() ||
+      !swimlane ||
+      !region ||
+      !status ||
+      !firstName.trim()
+    ) {
       setError(t('newDeal.validationRequired'));
       return;
     }
@@ -265,14 +315,14 @@ export function NewDealDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>{t('newDeal.title')}</DialogTitle>
+          <DialogTitle>{t('newDeal.title', itemLabels)}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3">
           <SectionTitle>{t('newDeal.overviewSection')}</SectionTitle>
 
           <Field label={t('newDeal.titleLabel')} required>
             <Input
-              placeholder={t('newDeal.titlePlaceholder')}
+              placeholder={t('newDeal.titlePlaceholder', itemLabels)}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -321,17 +371,18 @@ export function NewDealDialog({
             <Select
               value={swimlane || undefined}
               onValueChange={(v) => {
+                swimlaneTouchedRef.current = true;
                 setSwimlane(v as PipelineSwimlane);
-                setStatus('Identified');
+                setStatus(defaultStatus);
               }}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t('newDeal.swimlanePlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                {PIPELINE_SWIMLANES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
+                {tracks.map((track) => (
+                  <SelectItem key={track.slug} value={track.slug}>
+                    {track.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -380,7 +431,10 @@ export function NewDealDialog({
             <Select
               value={status}
               disabled={!swimlane}
-              onValueChange={(v) => setStatus(v as PipelineStatus)}
+              onValueChange={(v) => {
+                statusTouchedRef.current = true;
+                setStatus(v as PipelineStatus);
+              }}
             >
               <SelectTrigger>
                 <SelectValue
@@ -388,9 +442,9 @@ export function NewDealDialog({
                 />
               </SelectTrigger>
               <SelectContent>
-                {PIPELINE_STATUSES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
+                {stages.map((stage) => (
+                  <SelectItem key={stage.slug} value={stage.slug}>
+                    {stage.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -537,7 +591,7 @@ export function NewDealDialog({
             </Button>
             <Button
               type="button"
-              disabled={!canSubmit || isCreating}
+              disabled={!canSubmit || isCreating || isConfigLoading}
               onClick={submit}
             >
               {t('newDeal.create')}
@@ -553,7 +607,7 @@ export function NewDealDialog({
           className="fixed bottom-4 right-4 z-[300] flex items-center gap-2 rounded-md border border-neutral-6 bg-neutral-1 px-4 py-2.5 text-2 text-neutral-12 shadow-lg"
         >
           <Check className="size-4 text-accent-11" />
-          {t('newDeal.created')}
+          {t('newDeal.created', itemLabels)}
         </div>
       ) : null}
     </Dialog>

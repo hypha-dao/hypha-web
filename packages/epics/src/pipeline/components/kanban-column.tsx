@@ -1,7 +1,11 @@
 'use client';
 
 import React from 'react';
-import type { Deal, ProbabilityMatrix } from '@hypha-platform/core/client';
+import type {
+  Deal,
+  PipelineStageDefinition,
+  ProbabilityMatrix,
+} from '@hypha-platform/core/client';
 import {
   effectiveSuccessRate,
   type PipelineStatus,
@@ -26,22 +30,26 @@ import {
 
 type KanbanColumnProps = {
   status: PipelineStatus;
+  label?: string;
   deals: Deal[];
   onDealClick?: (deal: Deal) => void;
   onDropDeal: (dealId: number, status: PipelineStatus) => void;
   activeDealId?: number | null;
   wide?: boolean;
   probabilities?: ProbabilityMatrix;
+  stages?: PipelineStageDefinition[];
 };
 
 export function KanbanColumn({
   status,
+  label,
   deals,
   onDealClick,
   onDropDeal,
   activeDealId,
   wide = false,
   probabilities,
+  stages,
 }: KanbanColumnProps) {
   const columnRef = React.useRef<HTMLDivElement>(null);
   const format = useFormatter();
@@ -55,7 +63,8 @@ export function KanbanColumn({
     const currency = d.currency || '€';
     const totals = byCurrency.get(currency) ?? { total: 0, weighted: 0 };
     totals.total += d.value;
-    totals.weighted += (d.value * effectiveSuccessRate(d, probabilities)) / 100;
+    totals.weighted +=
+      (d.value * effectiveSuccessRate(d, probabilities, stages)) / 100;
     byCurrency.set(currency, totals);
   }
   const formatTotals = (
@@ -103,7 +112,7 @@ export function KanbanColumn({
     >
       <div className="flex shrink-0 flex-col gap-0.5 border-b border-border/40 px-3 py-2">
         <div className="truncate text-2 font-medium text-neutral-12">
-          {status}
+          {label || status}
         </div>
         <div className="text-1 text-neutral-11">
           {deals.length} · {formatTotals((totals) => totals.total)} ·{' '}

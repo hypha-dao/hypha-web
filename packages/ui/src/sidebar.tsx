@@ -32,6 +32,35 @@ const SIDEBAR_WIDTH_MOBILE = '18rem';
 const SIDEBAR_WIDTH_ICON = '3rem';
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 
+function isEmojiMartEvent(event: Event) {
+  const path =
+    typeof event.composedPath === 'function'
+      ? event.composedPath()
+      : [event.target];
+  return path.some((node) => {
+    if (!(node instanceof Element)) return false;
+    return (
+      node.tagName === 'EM-EMOJI-PICKER' ||
+      Boolean(node.closest?.('[data-hypha-emoji-picker]'))
+    );
+  });
+}
+
+function isEditableKeyboardTarget(
+  target: EventTarget | null,
+  event: KeyboardEvent,
+): boolean {
+  const nodes =
+    typeof event.composedPath === 'function' ? event.composedPath() : [target];
+  for (const node of nodes) {
+    if (!(node instanceof HTMLElement)) continue;
+    if (node.isContentEditable) return true;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(node.tagName)) return true;
+    if (node.tagName === 'EM-EMOJI-PICKER') return true;
+  }
+  return false;
+}
+
 type SidebarContextProps = {
   state: 'expanded' | 'collapsed';
   open: boolean;
@@ -104,13 +133,7 @@ const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
-        const target = event.target as HTMLElement | null;
-        const isEditable =
-          target instanceof HTMLElement &&
-          (target.isContentEditable ||
-            ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
-
-        if (isEditable) {
+        if (isEditableKeyboardTarget(event.target, event)) {
           return;
         }
 
@@ -186,6 +209,11 @@ export interface SidebarProps extends React.ComponentProps<'div'> {
   collapsible?: 'offcanvas' | 'icon' | 'none';
   /** Optional mobile sheet width override (e.g. "100vw"). */
   mobileWidth?: string;
+  /**
+   * When this returns true, the mobile Sheet does not dismiss on Escape.
+   * Callers own overlay selectors — do not hard-code product markup here.
+   */
+  shouldPreventEscapeDismiss?: (event: KeyboardEvent) => boolean;
 }
 
 const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
@@ -195,6 +223,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
       variant = 'sidebar',
       collapsible = 'offcanvas',
       mobileWidth,
+      shouldPreventEscapeDismiss,
       className,
       children,
       ...props
@@ -244,6 +273,19 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
             }
             {...props}
             side={side}
+            onEscapeKeyDown={(event) => {
+              if (shouldPreventEscapeDismiss?.(event)) {
+                event.preventDefault();
+              }
+            }}
+            onPointerDownOutside={(event) => {
+              const original = event.detail.originalEvent;
+              if (isEmojiMartEvent(original)) event.preventDefault();
+            }}
+            onInteractOutside={(event) => {
+              const original = event.detail.originalEvent;
+              if (isEmojiMartEvent(original)) event.preventDefault();
+            }}
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Sidebar</SheetTitle>
@@ -298,7 +340,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
             'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) translate-x-0 overflow-visible transition-[transform,width,bottom] duration-300 ease-out md:flex',
             side === 'left'
               ? 'left-0 max-xl:!bottom-[var(--mobile-tab-offset,0px)] max-xl:!h-auto group-data-[collapsible=offcanvas]:-translate-x-full'
-              : 'right-0 group-data-[collapsible=offcanvas]:translate-x-full',
+              : 'right-0 max-xl:!bottom-[var(--mobile-tab-offset,0px)] max-xl:!h-auto group-data-[collapsible=offcanvas]:translate-x-full',
             // Adjust the padding for floating and inset variants.
             variant === 'floating' || variant === 'inset'
               ? 'p-2'

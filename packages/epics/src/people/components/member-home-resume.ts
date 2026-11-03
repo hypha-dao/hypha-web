@@ -1,9 +1,32 @@
 import type { UIMessage } from 'ai';
+import {
+  memberHomeThreadItemKey,
+  type MemberHomeThreadItem,
+} from '@hypha-platform/core/client';
 
-const THREAD_KEY = 'hypha-member-home-thread';
+const THREAD_KEY = 'hypha-member-home-thread-v2';
 const RETURN_KEY = 'hypha-member-home-return';
 const ACTED_KEY = 'hypha-member-home-acted';
 const CHOICES_KEY = 'hypha-member-home-choices';
+/** Cards already shown in the thread. Kept after the live queue moves on. */
+const SHOWN_KEY = 'hypha-member-home-shown-items';
+/** Last time this member opened home in this browser. */
+const LAST_SEEN_KEY = 'hypha-member-home-last-seen';
+
+/** After this long away, home greets them as a returning friend. */
+export const HOME_WELCOME_BACK_AFTER_MS = 2 * 60 * 60 * 1000;
+
+export type HomePartOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
+
+/** Local part of day for a welcome-back line. */
+export function homePartOfDay(at: Date = new Date()): HomePartOfDay {
+  const hour = at.getHours();
+  if (hour < 5) return 'night';
+  if (hour < 12) return 'morning';
+  if (hour < 17) return 'afternoon';
+  if (hour < 21) return 'evening';
+  return 'night';
+}
 
 /** The signed-in member. Storage is per person so a shared browser does not mix threads. */
 let boundPerson = '';
@@ -46,6 +69,39 @@ function removeStored(base: string) {
   if (!key || typeof window === 'undefined') return;
   window.localStorage.removeItem(key);
   window.sessionStorage.removeItem(base);
+}
+
+export function readHomeLastSeen(): number | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = readStored(LAST_SEEN_KEY);
+    if (!raw) return null;
+    const at = Number(raw);
+    return Number.isFinite(at) && at > 0 ? at : null;
+  } catch {
+    return null;
+  }
+}
+
+export function touchHomeLastSeen(at: number = Date.now()) {
+  if (typeof window === 'undefined') return;
+  try {
+    writeStored(LAST_SEEN_KEY, String(at));
+  } catch {
+    // The visit still runs without a lasting stamp.
+  }
+}
+
+/**
+ * True when home should open with a welcome-back (or first) greeting —
+ * never seen here, or away longer than HOME_WELCOME_BACK_AFTER_MS.
+ */
+export function shouldWelcomeHomeReturn(
+  at: number = Date.now(),
+  lastSeen: number | null = readHomeLastSeen(),
+): boolean {
+  if (lastSeen == null) return true;
+  return at - lastSeen >= HOME_WELCOME_BACK_AFTER_MS;
 }
 
 /** Same-tab signal. Storage events do not fire in the tab that wrote them. */
@@ -122,6 +178,59 @@ export function readHomeActed() {
   return readList(ACTED_KEY);
 }
 
+function isStoredThreadItem(value: unknown): value is MemberHomeThreadItem {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Partial<MemberHomeThreadItem>;
+  return (
+    (item.kind === 'proposal' || item.kind === 'signal') &&
+    typeof item.slug === 'string' &&
+    item.slug.trim().length > 0 &&
+    typeof item.title === 'string' &&
+    typeof item.spaceSlug === 'string' &&
+    typeof item.spaceTitle === 'string' &&
+    typeof item.documentKind === 'string' &&
+    typeof item.authoredByMember === 'boolean' &&
+    (item.action === 'decision' ||
+      item.action === 'validate' ||
+      item.action === 'outcome')
+  );
+}
+
+/** Cards that already appeared in chat. The live catalog may have moved on. */
+export function readHomeShownItems(): MemberHomeThreadItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = readStored(SHOWN_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isStoredThreadItem).slice(-40);
+  } catch {
+    return [];
+  }
+}
+
+/** Keep a shown card so the thread can confirm it after the member acts. */
+export function rememberHomeShownItem(item: MemberHomeThreadItem) {
+  if (typeof window === 'undefined') return;
+  const key = memberHomeThreadItemKey(item);
+  if (!key) return;
+  try {
+    const current = readHomeShownItems();
+    // Already last with this key — rewriting would only reshuffle storage and
+    // wake queue listeners for no reason.
+    const last = current[current.length - 1];
+    if (last && memberHomeThreadItemKey(last) === key) return;
+    const next = current.filter(
+      (shown) => memberHomeThreadItemKey(shown) !== key,
+    );
+    next.push(item);
+    writeStored(SHOWN_KEY, JSON.stringify(next.slice(-40)));
+  } catch {
+    // The open catalog still carries the card for this visit.
+  }
+}
+
 export function readHomeChoices(): {
   passed: string[];
   deferred: string[];
@@ -161,7 +270,11 @@ export function writeHomeChoices(choices: {
 }) {
   if (typeof window === 'undefined') return;
   try {
-    writeStored(CHOICES_KEY, JSON.stringify(choices));
+    const serialized = JSON.stringify(choices);
+    // Same payload must not notify — listeners setState and can loop with
+    // the chat effect that writes choices on every homeMessages change.
+    if (readStored(CHOICES_KEY) === serialized) return;
+    writeStored(CHOICES_KEY, serialized);
     notifyHomeQueue();
   } catch {
     // The conversation still carries the choice when storage is blocked.
@@ -297,9 +410,48 @@ function visualPartForStorage(part: UIMessage['parts'][number]) {
 type StoredThreadPart =
   | { type: 'text'; text: string }
   | NonNullable<ReturnType<typeof guidancePartForStorage>>
-  | NonNullable<ReturnType<typeof visualPartForStorage>>;
+  | NonNullable<ReturnType<typeof visualPartForStorage>>
+  | NonNullable<ReturnType<typeof homeItemPartForStorage>>;
 
 /** One array type. A union of arrays is not a valid `flatMap` result. */
+function isHomeItemPart(part: { type?: unknown; toolName?: unknown }) {
+  if (part.type === 'tool-show_member_home_item') return true;
+  return (
+    part.type === 'dynamic-tool' && part.toolName === 'show_member_home_item'
+  );
+}
+
+function homeItemRef(value: unknown): { kind: string; slug: string } | null {
+  if (!value || typeof value !== 'object') return null;
+  const row = value as { kind?: unknown; slug?: unknown };
+  if (row.kind !== 'proposal' && row.kind !== 'signal') return null;
+  if (typeof row.slug !== 'string' || !row.slug.trim()) return null;
+  return { kind: row.kind, slug: row.slug.trim() };
+}
+
+/** Keep the card kind and slug. The full tool payload is not needed to restore it. */
+function homeItemPartForStorage(part: UIMessage['parts'][number]) {
+  if (!isHomeItemPart(part)) return null;
+  const record = part as {
+    state?: unknown;
+    output?: unknown;
+    input?: unknown;
+    args?: unknown;
+  };
+  if (record.state === 'input-streaming') return null;
+  const ref =
+    homeItemRef(record.output) ??
+    homeItemRef(record.input) ??
+    homeItemRef(record.args);
+  if (!ref) return null;
+  return {
+    type: 'tool-show_member_home_item' as const,
+    state: 'output-available' as const,
+    input: ref,
+    output: ref,
+  };
+}
+
 function storedThreadParts(
   part: UIMessage['parts'][number] | object,
 ): StoredThreadPart[] {
@@ -311,7 +463,9 @@ function storedThreadParts(
   const guidance = guidancePartForStorage(messagePart);
   if (guidance) return [guidance];
   const visuals = visualPartForStorage(messagePart);
-  return visuals ? [visuals] : [];
+  if (visuals) return [visuals];
+  const homeItem = homeItemPartForStorage(messagePart);
+  return homeItem ? [homeItem] : [];
 }
 
 export function readHomeThread(): UIMessage[] {
@@ -357,10 +511,23 @@ export function readHomeThread(): UIMessage[] {
   }
 }
 
+function isHomeErrorMessage(message: { metadata?: unknown }) {
+  const metadata = message.metadata;
+  return (
+    metadata != null &&
+    typeof metadata === 'object' &&
+    'homeError' in metadata &&
+    (metadata as { homeError?: unknown }).homeError === true
+  );
+}
+
 export function writeHomeThread(messages: readonly UIMessage[]) {
-  if (typeof window === 'undefined' || messages.length === 0) return;
+  const persistable = messages.filter(
+    (message) => !isHomeErrorMessage(message),
+  );
+  if (typeof window === 'undefined' || persistable.length === 0) return;
   try {
-    const stored = messages.slice(-40).map((message) => ({
+    const stored = persistable.slice(-40).map((message) => ({
       id: message.id,
       role: message.role,
       metadata: message.metadata,

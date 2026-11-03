@@ -1,7 +1,7 @@
 import { VercelToolbar } from '@vercel/toolbar/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import { extractRouterConfig } from 'uploadthing/server';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
 
 import { hyphaFontVariables } from '@web/lib/hypha-fonts';
@@ -27,6 +27,7 @@ import {
 
 import { DeferredFooter } from '@web/components/deferred-footer';
 import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
+import { NotificationCentreDialogHost } from '@web/components/notification-centre-dialog-host';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
 import { ConnectedGlobalCallDock } from '@web/components/connected-global-call-dock';
 import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
@@ -53,6 +54,12 @@ import { ConnectedMenuTop } from '@web/components/connected-menu-top';
 import { LocalizedIntlProvider } from '@web/components/localized-intl-provider';
 import { SwrProvider } from '@web/components/swr-provider';
 import '@web/utils/initialize-proxy';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   title: 'Hypha',
@@ -297,6 +304,50 @@ export default async function RootLayout({
                                     }
                                     mobileAction={
                                       <>
+                                        <Suspense fallback={null}>
+                                          <ConnectedButtonProfile
+                                            newUserRedirectPath="/profile/signup"
+                                            baseRedirectPath={`/${locale}/home`}
+                                            navItems={[
+                                              {
+                                                label: navHomeLabel,
+                                                href: `/${locale}/home`,
+                                              },
+                                              {
+                                                label: navMessagesLabel,
+                                                href: `/${locale}/messages`,
+                                              },
+                                              {
+                                                label: navMyWalletLabel,
+                                                href: `/${locale}/my-wallet`,
+                                              },
+                                              {
+                                                label: navMySpacesLabel,
+                                                href: `/${locale}/my-spaces`,
+                                              },
+                                              {
+                                                label: navNetworkLabel,
+                                                href: `/${locale}/network`,
+                                              },
+                                            ]}
+                                            showNetworkFeedback
+                                            trailingBeforeProfile={
+                                              isLanguageSelectVisible ? (
+                                                <ConnectedLanguageSelect
+                                                  selectLanguageLabel={
+                                                    navSelectLanguageLabel
+                                                  }
+                                                />
+                                              ) : undefined
+                                            }
+                                            compact
+                                          />
+                                        </Suspense>
+                                      </>
+                                    }
+                                  >
+                                    <div className="hidden xl:flex">
+                                      <Suspense fallback={null}>
                                         <ConnectedButtonProfile
                                           newUserRedirectPath="/profile/signup"
                                           baseRedirectPath={`/${locale}/home`}
@@ -332,48 +383,8 @@ export default async function RootLayout({
                                               />
                                             ) : undefined
                                           }
-                                          compact
                                         />
-                                      </>
-                                    }
-                                  >
-                                    <div className="hidden xl:flex">
-                                      <ConnectedButtonProfile
-                                        newUserRedirectPath="/profile/signup"
-                                        baseRedirectPath={`/${locale}/home`}
-                                        navItems={[
-                                          {
-                                            label: navHomeLabel,
-                                            href: `/${locale}/home`,
-                                          },
-                                          {
-                                            label: navMessagesLabel,
-                                            href: `/${locale}/messages`,
-                                          },
-                                          {
-                                            label: navMyWalletLabel,
-                                            href: `/${locale}/my-wallet`,
-                                          },
-                                          {
-                                            label: navMySpacesLabel,
-                                            href: `/${locale}/my-spaces`,
-                                          },
-                                          {
-                                            label: navNetworkLabel,
-                                            href: `/${locale}/network`,
-                                          },
-                                        ]}
-                                        showNetworkFeedback
-                                        trailingBeforeProfile={
-                                          isLanguageSelectVisible ? (
-                                            <ConnectedLanguageSelect
-                                              selectLanguageLabel={
-                                                navSelectLanguageLabel
-                                              }
-                                            />
-                                          ) : undefined
-                                        }
-                                      />
+                                      </Suspense>
                                     </div>
                                   </ConnectedMenuTop>
                                 </div>
@@ -425,6 +436,9 @@ export default async function RootLayout({
                                 />
                               </HideInPopup>
                             </PanelWrapLayout>
+                            <Suspense fallback={null}>
+                              <NotificationCentreDialogHost />
+                            </Suspense>
                             {/* Outside capture root so tab screen share excludes the floating dock. */}
                             {humanChatEnabled && <ConnectedGlobalCallDock />}
                           </GlobalCallDockProvider>

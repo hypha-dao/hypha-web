@@ -395,6 +395,10 @@ export function messageFromRoomMessageEvent(
     throw new Error('Matrix room message event missing id or sender');
   }
 
+  // Prefer replacingEvent() so local-echo edits (id not final yet) still
+  // count as edited; replacingEventId() alone can be empty until sync.
+  const edited = Boolean(event.replacingEventId() || event.replacingEvent());
+
   if (isMedia) {
     const spoilerVal = content[HYPHA_SPOILER_FIELD];
     const mxcUrl =
@@ -466,10 +470,12 @@ export function messageFromRoomMessageEvent(
     return {
       id,
       sender,
+      sendAcknowledged: event.status == null,
       msgtype: msgtypeRaw as Message['msgtype'],
       content: rawBody,
       formattedContentHtml,
       timestamp: new Date(event.getTs()),
+      ...(edited ? { edited: true } : {}),
       pinned,
       inReplyToEventId: replyToId,
       inReplyToSender,
@@ -497,9 +503,11 @@ export function messageFromRoomMessageEvent(
   return {
     id,
     sender,
+    sendAcknowledged: event.status == null,
     content: displayBody,
     formattedContentHtml,
     timestamp: new Date(event.getTs()),
+    ...(edited ? { edited: true } : {}),
     pinned,
     inReplyToEventId: replyToId,
     inReplyToSender,

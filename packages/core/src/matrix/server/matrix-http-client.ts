@@ -296,6 +296,11 @@ export async function matrixCreateRoom(
   accessToken: string,
   homeserver: string,
   roomType?: string,
+  initialState?: Array<{
+    type: string;
+    state_key?: string;
+    content: Record<string, unknown>;
+  }>,
 ): Promise<string> {
   const res = await matrixFetch(`${homeserver}/_matrix/client/v3/createRoom`, {
     method: 'POST',
@@ -308,6 +313,7 @@ export async function matrixCreateRoom(
       preset: 'private_chat',
       visibility: 'private',
       ...(roomType ? { creation_content: { type: roomType } } : {}),
+      ...(initialState?.length ? { initial_state: initialState } : {}),
     }),
   });
   const data = await readMatrixJson<{ room_id?: string }>(res);
@@ -550,20 +556,62 @@ export async function matrixGetJoinOrInviteRoomMembers(
   return [...ids];
 }
 
+export async function matrixGetStateEvent<T = Record<string, unknown>>(
+  roomId: string,
+  eventType: string,
+  stateKey: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<T | null> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/state/${encodeURIComponent(eventType)}/${encodeURIComponent(stateKey)}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  if (res.status === 404) return null;
+  return readMatrixJson<T>(res);
+}
+
+export async function matrixSendStateEvent(
+  roomId: string,
+  eventType: string,
+  stateKey: string,
+  content: Record<string, unknown>,
+  accessToken: string,
+  homeserver: string,
+): Promise<void> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/state/${encodeURIComponent(eventType)}/${encodeURIComponent(stateKey)}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(content),
+    },
+  );
+  await readMatrixJson<Record<string, unknown>>(res);
+}
+
 export async function matrixSendTextMessage(
   roomId: string,
   message: string,
   accessToken: string,
   homeserver: string,
   extraContent?: Record<string, string>,
+  txnId?: string,
 ): Promise<string> {
-  const txnId = `hypha.${Date.now()}.${Math.random()
-    .toString(36)
-    .slice(2, 10)}`;
+  const transactionId =
+    txnId?.trim() ||
+    `hypha.${Date.now()}.${Math.random().toString(36).slice(2, 10)}`;
   const res = await matrixFetch(
     `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
       roomId,
-    )}/send/m.room.message/${encodeURIComponent(txnId)}`,
+    )}/send/m.room.message/${encodeURIComponent(transactionId)}`,
     {
       method: 'PUT',
       headers: {
@@ -583,4 +631,76 @@ export async function matrixSendTextMessage(
     throw new Error('Matrix send returned no event_id');
   }
   return eventId;
+}
+
+/**
+ * Advertise Matrix typing (`m.typing`) for a user in a room.
+ * Soft-fails — ephemeral UX must never break sends or agent replies.
+ *
+ * Spec: `PUT /_matrix/client/v3/rooms/{roomId}/typing/{userId}`
+ */
+export async function matrixSendTyping(
+  roomId: string,
+  userId: string,
+  typing: boolean,
+  accessToken: string,
+  homeserver: string,
+  timeoutMs = 30_000,
+): Promise<void> {
+  try {
+    const res = await matrixFetch(
+      `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+        roomId,
+      )}/typing/${encodeURIComponent(userId)}`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(
+          typing
+            ? { typing: true, timeout: Math.max(0, timeoutMs) }
+            : { typing: false },
+        ),
+      },
+    );
+    await readMatrixJson<Record<string, never>>(res);
+  } catch (error) {
+    console.warn(
+      '[Matrix] Failed to update typing:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
+export async function matrixRedactEvent(
+  roomId: string,
+  eventId: string,
+  accessToken: string,
+  homeserver: string,
+  txnId?: string,
+): Promise<void> {
+  const transactionId =
+    txnId?.trim() ||
+    `hypha.redact.${Date.now()}.${Math.random().toString(36).slice(2, 10)}`;
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/redact/${encodeURIComponent(eventId)}/${encodeURIComponent(
+      transactionId,
+    )}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        reason: 'AI signal description is signed by the agent that wrote it.',
+      }),
+    },
+  );
+  await readMatrixJson<{ event_id?: string }>(res);
 }

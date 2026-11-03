@@ -39,6 +39,8 @@ import {
 export type NotificationCentreFormProps = {
   person?: Person;
   closeUrl: string;
+  /** When set, closing (and saving) calls this instead of navigating to `closeUrl`. */
+  onClose?: () => void;
   isLoading?: boolean;
   /** Visitor is not logged in: show an empty state instead of the settings. */
   signedOut?: boolean;
@@ -175,6 +177,7 @@ function GeneralSetting({
 export const NotificationCentreForm = ({
   person,
   closeUrl,
+  onClose,
   isLoading,
   signedOut,
   error,
@@ -238,9 +241,10 @@ export const NotificationCentreForm = ({
           };
         }),
       });
-      router.push(closeUrl);
+      if (onClose) onClose();
+      else router.push(closeUrl);
     },
-    [saveConfigurations, router, closeUrl],
+    [saveConfigurations, router, closeUrl, onClose],
   );
 
   const handleInvalid = async (err?: any) => {
@@ -329,6 +333,7 @@ export const NotificationCentreForm = ({
         <ModalStickyNavigation
           contextTitle={tModalAside('notificationCentre')}
           closeUrl={closeUrl}
+          onClose={onClose}
           showBack={false}
         />
         <Empty>
@@ -346,6 +351,7 @@ export const NotificationCentreForm = ({
       <ModalStickyNavigation
         contextTitle={tModalAside('notificationCentre')}
         closeUrl={closeUrl}
+        onClose={onClose}
         showBack={false}
       />
       <Form {...form}>

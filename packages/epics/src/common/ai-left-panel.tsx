@@ -5,6 +5,7 @@ import {
   useCallback,
   useMemo,
   useEffect,
+  useLayoutEffect,
   useRef,
   type ElementType,
   type ReactNode,
@@ -19,9 +20,13 @@ import Link from 'next/link';
 import {
   ArrowLeftRight,
   Globe2,
+  LayoutGrid,
   Menu,
   PanelLeftClose,
+  Rows3,
   Settings,
+  Sparkles,
+  Target,
   Volume2,
   VolumeX,
 } from 'lucide-react';
@@ -77,10 +82,32 @@ import {
   isMessagesSectionNavActive,
   isMessagesSectionPath,
 } from '../people/components/messages-section-nav';
+import {
+  HOME_VIEW_EVENT,
+  readHomeView,
+  writeHomeView,
+  type HomeView,
+} from '../people/components/member-home-view';
 import { MobileSpacesSubnav } from '../people/components/mobile-spaces-subnav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
+import {
+  isMemberHomePath,
+  isMySpacesPath,
+  isNetworkAiPath,
+} from './use-is-space-context';
+import {
+  MY_SPACES_LISTING_EVENT,
+  readMySpacesListing,
+  writeMySpacesListing,
+  type MySpacesListing,
+} from '../spaces/components/my-spaces-listing';
+import {
+  NETWORK_AI_CHAT_ID,
+  readNetworkAiChatMessages,
+  saveNetworkAiChatMessages,
+} from './network-ai-chat-persistence';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 import {
   useCompactHeaderMode,
@@ -104,7 +131,6 @@ import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 import { AiPanelSubscriptionBanner } from '../spaces/components/ai-panel-subscription-banner';
 import { useSalesBanner } from '../spaces/hooks/use-sales-banner';
 import {
-  MAX_RECENT_SPACE_HISTORY,
   MAX_VISIBLE_RECENT_SPACES,
   readRecentSpaceSlugs,
   subscribeRecentSpaceSlugs,
@@ -208,6 +234,7 @@ import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
 import { isInteractiveCreatePath } from './get-path-function';
 import { readSpaceVoiceOn, writeSpaceVoiceOn } from './ai-panel-discovery-mode';
 import {
+  buildMemberHomeVoiceSessionContext,
   buildSpaceAdvisorVoiceSessionContext,
   type VoiceSessionContext,
 } from './space-voice-session-context';
@@ -252,7 +279,12 @@ import {
   readSpaceAiChatMessages,
   saveSpaceAiChatMessages,
 } from './space-ai-chat-persistence';
+import { setHomeLeftPanelVoiceActive } from './home-left-panel-voice';
 import { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
+import {
+  readHomeActed,
+  readHomeChoices,
+} from '../people/components/member-home-resume';
 import type { SpaceLocationValue } from '../spaces/components/space-location-picker';
 
 function extractAssistantTextFromMessage(
@@ -361,6 +393,30 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tNetwork = useTranslations('NetworkExchange');
   const tMyWallet = useTranslations('MyWallet');
   const tConnections = useTranslations('Connections');
+  const tHome = useTranslations('MemberHome');
+  const [homeView, setHomeView] = useState<HomeView>('ai');
+  const [mySpacesListing, setMySpacesListing] =
+    useState<MySpacesListing>('spaces');
+  useEffect(() => {
+    const sync = () => setHomeView(readHomeView());
+    sync();
+    window.addEventListener(HOME_VIEW_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(HOME_VIEW_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+  useEffect(() => {
+    const sync = () => setMySpacesListing(readMySpacesListing());
+    sync();
+    window.addEventListener(MY_SPACES_LISTING_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(MY_SPACES_LISTING_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
   const router = useRouter();
   const config = useConfig();
   const { resolvedTheme } = useTheme();
@@ -435,21 +491,29 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
-  const [micOn, setMicOn] = useState(true);
-  const [soundOn, setSoundOn] = useState(true);
+  const [micOn, setMicOn] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
   const [voiceReady, setVoiceReady] = useState(false);
 
+  // Home, messages, wallet, my spaces, and network share one Network AI
+  // discussion. Space / ecosystem and interactive create keep their own paths.
+  const isMemberAiSurface =
+    !spaceSlug?.trim() && !isOnboardingPath && isNetworkAiPath(pathname);
+  const voicePrefSlug =
+    spaceSlug?.trim() || (isMemberAiSurface ? 'member' : undefined);
+
   useEffect(() => {
-    setMicOn(readSpaceVoiceOn(spaceSlug, 'mic'));
-    setSoundOn(readSpaceVoiceOn(spaceSlug, 'sound'));
+    // Both start off. Turning either on keeps that choice until they turn it off.
+    setMicOn(readSpaceVoiceOn(voicePrefSlug, 'mic'));
+    setSoundOn(readSpaceVoiceOn(voicePrefSlug, 'sound'));
     setVoiceReady(true);
-  }, [spaceSlug]);
+  }, [voicePrefSlug]);
 
   const conversationOpen =
-    Boolean(spaceSlug?.trim()) &&
     isAiOpen &&
     !blockSpaceAiForActivityAccess &&
-    !blockSpaceAiForInteraction;
+    !blockSpaceAiForInteraction &&
+    (Boolean(spaceSlug?.trim()) || isMemberAiSurface);
   const dialogue = conversationOpen && voiceReady && (micOn || soundOn);
   const isVoiceInterview = dialogue;
   const {
@@ -511,11 +575,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const skipNextChatResetRef = useRef(false);
   const onboardingHandoffHydratedRef = useRef(false);
   const chatHydratedForSlugRef = useRef<string | null>(null);
+  // One shared id across network screens so the discussion continues.
+  // Space / ecosystem stays slug-keyed and unchanged.
   const spaceChatId = spaceSlug?.trim()
     ? `space-ai-${spaceSlug.trim()}`
-    : pathname.includes('/my-wallet')
-    ? 'member-ai'
-    : 'space-ai-global';
+    : NETWORK_AI_CHAT_ID;
   const {
     createSpace: createSpaceWithWalletFlow,
     space: walletCreatedSpace,
@@ -567,7 +631,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     () =>
       recentSpaceSlugs
         .filter((slug): slug is string => typeof slug === 'string' && !!slug)
-        .slice(0, MAX_RECENT_SPACE_HISTORY),
+        .slice(0, MAX_VISIBLE_RECENT_SPACES),
     [recentSpaceSlugs],
   );
   const { spaces: recentSpacesData, error: recentSpacesError } =
@@ -707,6 +771,50 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     }));
   }, [lang, pathname, spaceSlug, tMyWallet]);
 
+  const homeNavItems = useMemo<NavItem[]>(() => {
+    if (spaceSlug || !isMemberHomePath(pathname)) return [];
+    return [
+      {
+        key: 'home-ai',
+        label: tHome('viewAi'),
+        icon: Sparkles,
+        href: '',
+        active: homeView === 'ai',
+        onSelect: () => writeHomeView('ai'),
+      },
+      {
+        key: 'home-classic',
+        label: tHome('viewClassic'),
+        icon: Rows3,
+        href: '',
+        active: homeView === 'classic',
+        onSelect: () => writeHomeView('classic'),
+      },
+    ];
+  }, [homeView, pathname, spaceSlug, tHome]);
+
+  const spacesNavItems = useMemo<NavItem[]>(() => {
+    if (spaceSlug || !isMySpacesPath(pathname)) return [];
+    return [
+      {
+        key: 'my-spaces-cards',
+        label: tSpaces('navSpaces'),
+        icon: LayoutGrid,
+        href: '',
+        active: mySpacesListing === 'spaces',
+        onSelect: () => writeMySpacesListing('spaces'),
+      },
+      {
+        key: 'my-spaces-ecosystems',
+        label: tSpaces('navEcosystems'),
+        icon: Target,
+        href: '',
+        active: mySpacesListing === 'ecosystems',
+        onSelect: () => writeMySpacesListing('ecosystems'),
+      },
+    ];
+  }, [mySpacesListing, pathname, spaceSlug, tSpaces]);
+
   const messagesNavItems = useMemo<NavItem[]>(() => {
     if (spaceSlug || !lang) return [];
     if (!isMessagesSectionPath(pathname)) return [];
@@ -727,6 +835,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       ? networkNavItems
       : walletNavItems.length > 0
       ? walletNavItems
+      : homeNavItems.length > 0
+      ? homeNavItems
+      : spacesNavItems.length > 0
+      ? spacesNavItems
       : messagesNavItems;
 
   const isSpaceSettingsActive = useMemo(
@@ -795,16 +907,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       prompt: t(`suggestions.${id}`),
       tagLabel: t(`suggestionTags.${id}`),
     });
-    if (pathname.includes('/network') && !spaceSlug) {
+    // Member surfaces: the left panel is the network outlook. Home keeps the
+    // personal prompts. Builder and funder keep their own network prompts.
+    if (isMemberAiSurface) {
       const orientation = me?.primaryOrientation;
       const ids =
         orientation === 'builder'
           ? [
+              'networkBuilderKnow',
               'findResources',
-              'createSpace',
               'networkBuilderNeeds',
               'networkBuilderPeople',
-              'createEcosystem',
+              'networkBuilderWatch',
             ]
           : orientation === 'investor'
           ? [
@@ -823,16 +937,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             ];
       return ids.map(card);
     }
-    // Member wallet: personal assistant, not space-scoped tools.
-    if (pathname.includes('/my-wallet') && !spaceSlug) {
-      return [
-        'networkMemberUseful',
-        'networkMemberPeople',
-        'networkMemberSpaces',
-        'createSpace',
-        'sharedNeeds',
-      ].map(card);
-    }
     return [
       ...(!spaceSlug ? [card('createSpace'), card('createEcosystem')] : []),
       card('spaceHealth'),
@@ -842,13 +946,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       card('spaceMemory'),
       card('valueFlows'),
     ];
-  }, [me?.primaryOrientation, pathname, spaceSlug, t]);
+  }, [isMemberAiSurface, me?.primaryOrientation, spaceSlug, t]);
 
   const welcomeText = useMemo(() => {
-    if (pathname.includes('/my-wallet') && !spaceSlug) {
-      return t('welcomeNetworkMember');
-    }
-    if (!(pathname.includes('/network') && !spaceSlug)) return t('welcome');
+    if (!isMemberAiSurface) return t('welcome');
     if (me?.primaryOrientation === 'builder') {
       return t('welcomeNetworkBuilder');
     }
@@ -856,7 +957,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       return t('welcomeNetworkFunder');
     }
     return t('welcomeNetworkMember');
-  }, [me?.primaryOrientation, pathname, spaceSlug, t]);
+  }, [isMemberAiSurface, me?.primaryOrientation, t]);
 
   const handleOverlayClose = useCallback(() => {
     hideAiOverlay();
@@ -899,6 +1000,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           <button
             type="button"
             aria-label={item.label}
+            aria-current={item.active ? 'page' : undefined}
             disabled={isDisabled}
             onClick={() => {
               if (isDisabled) return;
@@ -1172,6 +1274,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       return;
     }
 
+    // Leaving Network AI for a space: keep the planetary discussion for return.
+    if (!previousSlug && nextSlug) {
+      const networkStored = toStoredOnboardingChatMessages(messagesRef.current);
+      if (networkStored.length) {
+        saveNetworkAiChatMessages(networkStored);
+      }
+    }
+
     if (previousSlug && isSpaceSetupContext(onboardingContext)) {
       const { staleOnboardingContext } = resolveChatTransportBody({
         spaceSlug: nextSlug ?? undefined,
@@ -1197,6 +1307,24 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     sealedNavigationKeyRef.current = null;
     stop();
     clearError();
+
+    if (!nextSlug) {
+      const stored = readNetworkAiChatMessages();
+      if (stored?.length) {
+        chatHydratedForSlugRef.current = NETWORK_AI_CHAT_ID;
+        setMessages(
+          stored.map((message) => ({
+            id: message.id,
+            role: message.role,
+            parts: message.parts ?? [],
+          })) as Parameters<typeof setMessages>[0],
+        );
+      } else {
+        setMessages([]);
+      }
+      return;
+    }
+
     setMessages([]);
   }, [
     activeSpaceName,
@@ -1245,6 +1373,29 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     }
   }, [isOnboardingSetup, messages.length, setMessages, spaceSlug]);
 
+  // Network AI hydrate (home / messages / wallet / my-spaces / network).
+  useEffect(() => {
+    if (spaceSlug?.trim()) return;
+    if (chatHydratedForSlugRef.current === NETWORK_AI_CHAT_ID) return;
+
+    if (messages.length > 0) {
+      chatHydratedForSlugRef.current = NETWORK_AI_CHAT_ID;
+      return;
+    }
+
+    chatHydratedForSlugRef.current = NETWORK_AI_CHAT_ID;
+    const stored = readNetworkAiChatMessages();
+    if (stored?.length) {
+      setMessages(
+        stored.map((message) => ({
+          id: message.id,
+          role: message.role,
+          parts: message.parts ?? [],
+        })) as Parameters<typeof setMessages>[0],
+      );
+    }
+  }, [messages.length, setMessages, spaceSlug]);
+
   useEffect(() => {
     const slug = spaceSlug?.trim();
     if (!slug || !messages.length) return;
@@ -1255,6 +1406,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     }
     saveSpaceAiChatMessages(slug, stored);
   }, [isOnboardingSetup, messages, spaceSlug]);
+
+  useEffect(() => {
+    if (spaceSlug?.trim() || !messages.length) return;
+    saveNetworkAiChatMessages(toStoredOnboardingChatMessages(messages));
+  }, [messages, spaceSlug]);
 
   const buildMessageOptions = useCallback(
     async (contextOverride?: OnboardingConversationContext | undefined) => {
@@ -1277,15 +1433,38 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         activeSpaceTitle: activeSpaceName,
         onboardingContext: activeContext,
         isOnboardingPath,
-        discoveryMode: isVoiceInterview ? 'voice_interview' : undefined,
+        // Member screens read the bubble aloud. Space and interactive create
+        // keep the live voice interview path.
+        discoveryMode:
+          isVoiceInterview && !isMemberAiSurface
+            ? 'voice_interview'
+            : undefined,
         activeProposalFormSnapshot: readActiveProposalFormSnapshot(pathname),
         locale: lang,
       });
-      return { body, headers: hdrs };
+      // Network screens share the member brief. The open tool set answers
+      // with hidden tool calls and the bubble stays empty.
+      return {
+        body: isMemberAiSurface
+          ? {
+              ...body,
+              memberHome: true,
+              // Left panel is always network navigation. Home owns the
+              // personal proposal/signal queue for every orientation.
+              networkOutlook: true,
+              memberHomeMemory: {
+                ...readHomeChoices(),
+                acted: readHomeActed(),
+              },
+            }
+          : body,
+        headers: hdrs,
+      };
     },
     [
       activeSpaceName,
       getAccessToken,
+      isMemberAiSurface,
       isVoiceInterview,
       isOnboardingPath,
       isOnboardingSetup,
@@ -2868,15 +3047,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     };
   }, [handleOnboardingVotingMethodSelect, isStreaming, onboardingContext]);
 
-  const lastAssistantText = useMemo(() => {
+  const lastAssistantMessage = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i -= 1) {
-      const text = extractAssistantTextFromMessage(
-        messages[i] as ChatUIMessage,
-      );
-      if (text) return text;
+      const message = messages[i] as ChatUIMessage | undefined;
+      const text = extractAssistantTextFromMessage(message);
+      if (text && message) return message;
     }
-    return '';
+    return null;
   }, [messages]);
+  const lastAssistantText = lastAssistantMessage
+    ? extractAssistantTextFromMessage(lastAssistantMessage)
+    : '';
+  const lastAssistantMessageId = lastAssistantMessage?.id ?? '';
 
   const handleVoiceTranscriptSend = useCallback(
     async (text: string) => {
@@ -2954,41 +3136,95 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   );
 
   const voiceSessionContext = useMemo((): VoiceSessionContext | undefined => {
-    if (!isVoiceInterview || !spaceSlug?.trim()) return undefined;
-    if (isOnboardingSetup && onboardingContext) {
-      return { ...onboardingContext, discoveryMode: 'voice_interview' };
+    if (!isVoiceInterview) return undefined;
+    if (spaceSlug?.trim()) {
+      if (isOnboardingSetup && onboardingContext) {
+        return { ...onboardingContext, discoveryMode: 'voice_interview' };
+      }
+      return buildSpaceAdvisorVoiceSessionContext({
+        spaceSlug,
+        locale: lang,
+      });
     }
-    return buildSpaceAdvisorVoiceSessionContext({
-      spaceSlug,
-      locale: lang,
-    });
-  }, [isOnboardingSetup, isVoiceInterview, lang, onboardingContext, spaceSlug]);
+    if (isMemberAiSurface) {
+      return buildMemberHomeVoiceSessionContext({ locale: lang });
+    }
+    return undefined;
+  }, [
+    isMemberAiSurface,
+    isOnboardingSetup,
+    isVoiceInterview,
+    lang,
+    onboardingContext,
+    spaceSlug,
+  ]);
 
   const voiceInterview = useOnboardingVoiceDiscovery({
     enabled: isVoiceInterview && !isLoading && isAuthenticated,
     isStreaming,
     lastAssistantText,
+    lastAssistantMessageId,
     locale: lang,
-    activeSpaceSlug: spaceSlug,
+    activeSpaceSlug: voicePrefSlug,
     conversationContext: voiceSessionContext,
-    recentTranscriptSummary,
+    recentTranscriptSummary: isMemberAiSurface
+      ? undefined
+      : recentTranscriptSummary,
     getAccessToken,
-    onStopChat: stop,
+    // An open mic must not cancel a member-panel reply that is still writing.
+    onStopChat: isMemberAiSurface ? undefined : stop,
     onSendTranscript: handleVoiceTranscriptSend,
     onTranscriptTurn: handleVoiceTranscriptTurn,
     captureMicrophone: micOn,
+    // On Home the center chat yields while this panel's sound is on, so the
+    // two speakers do not play at once.
     speakReplies: soundOn,
+    // Match LIVE: Realtime marin on every surface. Exact-speech TTS changed
+    // the home speaker away from production rhythm and tone.
+    speakEarlyLeadIn: !isMemberAiSurface,
+    speakDisplayedText: false,
   });
+
+  useLayoutEffect(() => {
+    const speaking = isMemberHomePath(pathname) && conversationOpen && soundOn;
+    setHomeLeftPanelVoiceActive(speaking);
+    return () => {
+      if (speaking) setHomeLeftPanelVoiceActive(false);
+    };
+  }, [conversationOpen, pathname, soundOn]);
+
+  // Show dictation in the composer while they speak, so they can see it land.
+  const lastDictationRef = useRef('');
+  useEffect(() => {
+    if (!conversationOpen || !micOn) {
+      lastDictationRef.current = '';
+      return;
+    }
+    const live = voiceInterview.liveTranscript.trim();
+    if (live) {
+      lastDictationRef.current = live;
+      setInput(live);
+      return;
+    }
+    if (!lastDictationRef.current) return;
+    const previous = lastDictationRef.current;
+    lastDictationRef.current = '';
+    setInput((current) => (current.trim() === previous ? '' : current));
+  }, [conversationOpen, micOn, voiceInterview.liveTranscript]);
 
   const toggleSound = useCallback(() => {
     setSoundOn((current) => {
       const next = !current;
       if (next) void voiceInterview.startListening();
       else voiceInterview.stopSpeaking();
-      writeSpaceVoiceOn(spaceSlug, 'sound', next);
+      writeSpaceVoiceOn(voicePrefSlug, 'sound', next);
       return next;
     });
-  }, [spaceSlug, voiceInterview.startListening, voiceInterview.stopSpeaking]);
+  }, [
+    voiceInterview.startListening,
+    voiceInterview.stopSpeaking,
+    voicePrefSlug,
+  ]);
 
   const toggleMic = useCallback(() => {
     const micNeedsGrant =
@@ -3001,14 +3237,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     setMicOn((current) => {
       const next = !current;
       if (next) void voiceInterview.startListening();
-      writeSpaceVoiceOn(spaceSlug, 'mic', next);
+      writeSpaceVoiceOn(voicePrefSlug, 'mic', next);
       return next;
     });
   }, [
     micOn,
-    spaceSlug,
     voiceInterview.startListening,
     voiceInterview.voiceError,
+    voicePrefSlug,
   ]);
 
   const handleTriggerClick = useCallback(() => {
@@ -3411,11 +3647,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             onSelect={handleSuggestionSelect}
             variant="tags"
           />
-        ) : null}
-        {conversationOpen && micOn && voiceInterview.liveTranscript ? (
-          <p className="px-4 pb-1 text-1 text-neutral-11">
-            “{voiceInterview.liveTranscript}”
-          </p>
         ) : null}
         {dialogue && voiceInterview.voiceError ? (
           <p className="px-4 pb-1 text-1 text-neutral-11">

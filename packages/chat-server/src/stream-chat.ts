@@ -15,13 +15,21 @@ import type {
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
 import {
-  listMemberHomeThreadItems,
+  listMemberHomeThreadCatalog,
   SHOW_MEMBER_HOME_ITEM_TOOL,
   memberHomeItemMemory,
   mergeMemberHomeMemory,
   shownMemberHomeItemKeys,
 } from '@hypha-platform/core/client';
-import { formatMemberHomeFacts } from './member-home-facts';
+import {
+  formatMemberHomeFacts,
+  formatNetworkOutlookFacts,
+  memberHomeListAsk,
+} from './member-home-facts';
+import {
+  homeSpokenScriptIsComplete,
+  homeTurnShouldStop,
+} from './home-spoken-script';
 import { loadMemberHomeFacts } from './load-member-home-facts';
 import {
   buildSpaceContextSnapshot,
@@ -65,10 +73,15 @@ import {
   safeChatTool,
   createGetDocumentsBySpaceSlugTool,
   createGetEcosystemBySpaceSlugTool,
+  createGetNetworkEcosystemPatternsTool,
   createGetSignalsBySpaceSlugTool,
   createGetTokenHoldingsBySpaceSlugTool,
+  createHumanChatMessageTool,
+  createMcpNavigationTool,
+  createSearchSpacesTool,
   getSpaceBySlugTool,
 } from './tools/index';
+import { createGenerateSpaceVisualAssetsTool } from './tools/generate-space-visual-assets';
 
 const VOICE_MODE_ACTIVE_DIRECTIVES = `${STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES}
 CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS reads it word for word). Human summary only — ${VOICE_SPOKEN_SENTENCE_LIMIT} natural sentences, no Title/Description/field labels, no numbered lists, no form structure. Draft first, one small reaction ask.
@@ -101,7 +114,7 @@ function parseEnvNumber(
 }
 const OPENROUTER_REQUEST_TIMEOUT_MS = parseEnvNumber(
   process.env.OPENROUTER_REQUEST_TIMEOUT_MS,
-  20_000,
+  90_000,
   1_000,
 );
 const OPENROUTER_MAX_ATTEMPTS = Math.max(
@@ -188,7 +201,9 @@ function createResilientOpenRouterFetch(baseFetch: typeof fetch): typeof fetch {
     init?: Parameters<typeof fetch>[1],
   ) => {
     if (isOpenRouterCircuitOpen()) {
-      throw new Error('OpenRouter circuit open');
+      return openRouterUnavailableResponse(
+        new Error('OpenRouter circuit open'),
+      );
     }
 
     let attempt = 0;
@@ -243,7 +258,7 @@ function createResilientOpenRouterFetch(baseFetch: typeof fetch): typeof fetch {
 
         if (!retryable || attempt >= OPENROUTER_MAX_ATTEMPTS) {
           recordOpenRouterFailure();
-          throw error;
+          return openRouterUnavailableResponse(error);
         }
         await sleep(150 * attempt);
       } finally {
@@ -252,8 +267,30 @@ function createResilientOpenRouterFetch(baseFetch: typeof fetch): typeof fetch {
     }
 
     recordOpenRouterFailure();
-    throw new Error('OpenRouter request failed after retries');
+    return openRouterUnavailableResponse(
+      new Error('OpenRouter request failed after retries'),
+    );
   };
+}
+
+function openRouterUnavailableResponse(error: unknown): Response {
+  console.error('[chat][openrouter][unavailable]', {
+    message: messageFromUnknownError(error),
+    ...(error instanceof Error
+      ? { name: error.name, stack: error.stack }
+      : { error }),
+  });
+  return new Response(
+    JSON.stringify({
+      error: {
+        message: 'Hypha AI provider is temporarily unavailable.',
+      },
+    }),
+    {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
 }
 
 /** @see https://openrouter.ai/docs/api/reference/authorization — Referer + title are required for many keys. */
@@ -986,16 +1023,32 @@ async function buildDeterministicSpaceFallback({
 function createOpenRouterAuthRecoveryTransform(
   debugRequestId: string,
   deterministicFallback: DeterministicFallbackContext | null,
+  errorsAsText: boolean,
+  homeErrorMark?: { current: boolean },
 ): StreamTextTransform<ToolSet> {
   return () => {
     const nextTextId = createIdGenerator({ prefix: 't', size: 12 });
+    let sawSpokenText = false;
     return new TransformStream<
       TextStreamPart<ToolSet>,
       TextStreamPart<ToolSet>
     >({
       transform(chunk, controller) {
+        if (chunk.type === 'text-delta') {
+          const content =
+            'text' in chunk && typeof chunk.text === 'string' ? chunk.text : '';
+          if (content.length > 0) {
+            sawSpokenText = true;
+          }
+        }
         if (chunk.type !== 'error') {
           controller.enqueue(chunk);
+          return;
+        }
+        // A trailing provider error after a spoken reply must not mark the
+        // home turn as homeError (that dropped a good answer from the thread).
+        // text-start alone is not a reply — only a non-empty text-delta is.
+        if (errorsAsText && sawSpokenText) {
           return;
         }
 
@@ -1029,6 +1082,7 @@ function createOpenRouterAuthRecoveryTransform(
               ? { statusCode: err.statusCode, url: err.url }
               : {}),
           });
+          if (errorsAsText && homeErrorMark) homeErrorMark.current = true;
           const id = nextTextId();
           controller.enqueue({ type: 'text-start', id });
           controller.enqueue({
@@ -1044,7 +1098,24 @@ function createOpenRouterAuthRecoveryTransform(
           return;
         }
 
-        controller.enqueue(chunk);
+        if (!errorsAsText) {
+          controller.enqueue(chunk);
+          return;
+        }
+        if (homeErrorMark) homeErrorMark.current = true;
+        console.error('[chat][openrouter][stream-error]', {
+          debugRequestId,
+          message,
+        });
+        const id = nextTextId();
+        controller.enqueue({ type: 'text-start', id });
+        controller.enqueue({
+          type: 'text-delta',
+          id,
+          text:
+            deterministicFallback?.text ?? OPENROUTER_TEMP_UNAVAILABLE_REPLY,
+        });
+        controller.enqueue({ type: 'text-end', id });
       },
     });
   };
@@ -1075,12 +1146,16 @@ export type ChatStreamCallbacks = {
   ecosystemAutomationEnabled?: boolean;
   /** Personal home: same Hypha AI voice, plus this member's records. */
   memberHome?: boolean;
+  /** Member left panel: one network opportunity that fits them, not the home queue. */
+  networkOutlook?: boolean;
   memberHomeMemory?: {
     passed?: string[];
     deferred?: string[];
     settled?: string[];
     acted?: string[];
   };
+  memberHomeVisit?: 'welcome_back' | 'first_open' | null;
+  memberHomePartOfDay?: 'morning' | 'afternoon' | 'evening' | 'night' | null;
 };
 
 function sanitizeMessagesToTextOnly(
@@ -1350,14 +1425,23 @@ export async function createChatStreamResult(
     ecosystemAutomationEnabled,
     locale,
     memberHome,
+    networkOutlook,
     memberHomeMemory,
+    memberHomeVisit,
+    memberHomePartOfDay,
   }: ChatStreamCallbacks,
-): Promise<ReturnType<typeof streamText>> {
+): Promise<
+  ReturnType<typeof streamText> & {
+    memberHomeCard: { kind: string; slug: string } | null;
+    homeError: { current: boolean };
+  }
+> {
+  const homeError = { current: false };
   const memberHomeRecord = memberHome
     ? await loadMemberHomeFacts(authToken)
     : null;
   const memberHomeItems = memberHomeRecord
-    ? listMemberHomeThreadItems(memberHomeRecord.home)
+    ? listMemberHomeThreadCatalog(memberHomeRecord.home)
     : [];
   const memberHomeMemoryFromMessages = memberHomeRecord
     ? memberHomeItemMemory(memberHomeItems, messages)
@@ -1368,27 +1452,49 @@ export async function createChatStreamResult(
   const memberHomeLastUserText = memberHomeRecord
     ? extractLastUserText(messages)
     : null;
-  const memberHomeFacts = memberHomeRecord
-    ? formatMemberHomeFacts(memberHomeRecord.home, {
-        alreadyShown: shownMemberHomeItemKeys(memberHomeItems, messages),
-        passed: memberHomeChoices?.passed,
-        deferred: memberHomeChoices?.deferred,
-        recalled: memberHomeMemoryFromMessages?.recalled,
-        settled: memberHomeChoices?.settled,
-        held: memberHomeMemoryFromMessages?.held,
-        acted: memberHomeMemory?.acted,
-        resumed: /carried out the recommended action/i.test(
-          memberHomeLastUserText ?? '',
-        ),
-        notADecision: /not a proposal|nothing to decide/i.test(
-          memberHomeLastUserText ?? '',
-        ),
-        asked: memberHomeLastUserText,
-        prior: extractLastAssistantText(messages),
-        attached: lastUserAttachedFile(messages),
-      })
+  const memberHomeShown = memberHomeRecord
+    ? shownMemberHomeItemKeys(memberHomeItems, messages)
+    : [];
+  const memberHomeBrief = memberHomeRecord
+    ? networkOutlook
+      ? formatNetworkOutlookFacts(memberHomeRecord.home, {
+          alreadyShown: memberHomeShown,
+          passed: memberHomeChoices?.passed,
+          deferred: memberHomeChoices?.deferred,
+          settled: memberHomeChoices?.settled,
+          acted: memberHomeMemory?.acted,
+          asked: memberHomeLastUserText,
+        })
+      : formatMemberHomeFacts(memberHomeRecord.home, {
+          alreadyShown: memberHomeShown,
+          passed: memberHomeChoices?.passed,
+          deferred: memberHomeChoices?.deferred,
+          recalled: memberHomeMemoryFromMessages?.recalled,
+          settled: memberHomeChoices?.settled,
+          held: memberHomeMemoryFromMessages?.held,
+          acted: memberHomeMemory?.acted,
+          resumed: /carried out the recommended action/i.test(
+            memberHomeLastUserText ?? '',
+          ),
+          visit: memberHomeVisit ?? null,
+          partOfDay: memberHomePartOfDay ?? null,
+          notADecision: /not a proposal|nothing to decide/i.test(
+            memberHomeLastUserText ?? '',
+          ),
+          asked: memberHomeLastUserText,
+          prior: extractLastAssistantText(messages),
+          attached: lastUserAttachedFile(messages),
+        })
     : null;
-  const modelMessages = await convertMessagesSafely(messages, debugRequestId);
+  const memberHomeFacts = memberHomeBrief?.text ?? null;
+  const memberHomeCard = memberHomeBrief?.card ?? null;
+  const memberHomeList = networkOutlook
+    ? null
+    : memberHomeListAsk(memberHomeLastUserText);
+  const modelMessages = await convertMessagesSafely(
+    memberHomeRecord ? messages.slice(-8) : messages,
+    debugRequestId,
+  );
   const lastUserText = extractLastUserText(messages);
   const recentUserTexts = extractRecentUserTexts(messages);
   const normalizedConversationContext = normalizeConversationContext(
@@ -1399,46 +1505,79 @@ export async function createChatStreamResult(
     locale,
     conversationContext: normalizedConversationContext,
   });
-  const tools = createChatTools(
-    authToken,
-    requestUrlForSessionMatrix,
-    normalizedConversationContext,
-    {
-      onboardingWriteToolsEnabled: onboardingWriteToolsEnabled !== false,
-      ecosystemAutomationEnabled: ecosystemAutomationEnabled !== false,
-    },
-    lastUserText,
-    recentUserTexts,
-    activeProposalFormSnapshot,
-    chatLocale,
-  );
-  if (memberHomeRecord) {
-    tools[SHOW_MEMBER_HOME_ITEM_TOOL] = safeChatTool(
-      SHOW_MEMBER_HOME_ITEM_TOOL,
-      createShowMemberHomeItemTool(memberHomeItems),
-    );
-  }
-  const deterministicFallback = await buildDeterministicSpaceFallback({
-    lastUserText,
-    spaceSlug,
-    authToken,
-    debugRequestId,
-  });
-  const requestedSpaceSlug = spaceSlug?.trim() || '';
-  const voiceSpaceSlug =
-    requestedSpaceSlug || memberHomeRecord?.chatSpaceSlug || '';
-  const spaceContextSnapshot = requestedSpaceSlug
-    ? await buildSpaceContextSnapshot(
-        requestedSpaceSlug,
-        activeSpaceTitle,
+  // Network outlook must not see the home waiting queue. show_member_home_item
+  // lists signal/proposal slugs in its description, which pulls the model back
+  // into the home loop the left panel was meant to leave behind.
+  const tools = memberHomeRecord
+    ? networkOutlook
+      ? {
+          search_spaces: safeChatTool(
+            'search_spaces',
+            createSearchSpacesTool(),
+          ),
+          get_network_ecosystem_patterns: safeChatTool(
+            'get_network_ecosystem_patterns',
+            createGetNetworkEcosystemPatternsTool(),
+          ),
+          mcp_navigation: safeChatTool(
+            'mcp_navigation',
+            createMcpNavigationTool(authToken),
+          ),
+        }
+      : {
+          [SHOW_MEMBER_HOME_ITEM_TOOL]: safeChatTool(
+            SHOW_MEMBER_HOME_ITEM_TOOL,
+            createShowMemberHomeItemTool(memberHomeItems),
+          ),
+          create_human_chat_message: safeChatTool(
+            'create_human_chat_message',
+            createHumanChatMessageTool(authToken, requestUrlForSessionMatrix),
+          ),
+          mcp_navigation: safeChatTool(
+            'mcp_navigation',
+            createMcpNavigationTool(authToken),
+          ),
+          generate_space_visual_assets: safeChatTool(
+            'generate_space_visual_assets',
+            createGenerateSpaceVisualAssetsTool(),
+          ),
+        }
+    : createChatTools(
         authToken,
-      )
-    : null;
-  const memberBrief = spaceContextSnapshot
+        requestUrlForSessionMatrix,
+        normalizedConversationContext,
+        {
+          onboardingWriteToolsEnabled: onboardingWriteToolsEnabled !== false,
+          ecosystemAutomationEnabled: ecosystemAutomationEnabled !== false,
+        },
+        lastUserText,
+        recentUserTexts,
+        activeProposalFormSnapshot,
+        chatLocale,
+      );
+  const deterministicFallback = memberHomeRecord
     ? null
-    : await loadSignedInMemberBrief(authToken);
+    : await buildDeterministicSpaceFallback({
+        lastUserText,
+        spaceSlug,
+        authToken,
+        debugRequestId,
+      });
+  const requestedSpaceSlug = spaceSlug?.trim() || '';
+  const spaceContextSnapshot =
+    memberHomeRecord || !requestedSpaceSlug
+      ? null
+      : await buildSpaceContextSnapshot(
+          requestedSpaceSlug,
+          activeSpaceTitle,
+          authToken,
+        );
+  const memberBrief =
+    memberHomeRecord || spaceContextSnapshot
+      ? null
+      : await loadSignedInMemberBrief(authToken);
   const effectiveSystemPrompt = buildEffectiveSystemPrompt(
-    voiceSpaceSlug || spaceSlug,
+    memberHomeRecord ? null : requestedSpaceSlug || spaceSlug,
     lastUserText,
     normalizedConversationContext,
     spaceContextSnapshot,
@@ -1519,70 +1658,83 @@ export async function createChatStreamResult(
       normalizedConversationContext?.activeGovernanceProposal
         ?.collectedFields ?? snapshotWalkthrough?.collectedFields,
   });
-  const systemPrompt =
-    normalizedConversationContext?.mode === 'onboarding_setup'
-      ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
-          normalizedConversationContext.setupPhase ?? 'discover'
-        }.\n${ONBOARDING_TRANSPARENCY_GUIDELINES}\n${ONBOARDING_CATEGORY_GUIDELINES}\n${ONBOARDING_CREATION_CONFIRMATION_GUIDELINES}\n${SOUND_ADVISOR_GUIDELINES}\n${ECOSYSTEM_NESTED_SPACES_GUIDELINES}\n- Discovery order (single space): (1) journey cards, (2) name and purpose, (3) principles reaction, (4) org discovery, (5) activation mode, (6) transparency discoverability then activity access, (7) entry method, (8) location, (9) logo and hero banner.\n- Discovery order (full ecosystem): same through (4), then (5) root-space role and ecosystem structure, (6) functional domains and propose_organisation_blueprint—confirm nested-space plan BEFORE activation, (7) activation mode, (8) transparency, (9) entry method, (10) location, (11) logo and hero banner, (12) create root space ONLY (never create_ecosystem_space during onboarding), (13) left panel execute—nested spaces one at a time on-chain with create_space_from_onboarding and parent_space_slug.\n- Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until onboarding_guidance shows the current step is complete—including nested-space blueprint confirmation before operational settings.\n- After org discovery, use assigned_category_groups and suggested_categories from onboarding_guidance—do not ask users to confirm or invent tags.\n- After ecosystem root creation the user lands on ecosystem navigation with the left AI panel open—nested spaces from the saved blueprint are the mandatory next step, not governance.\n- User-facing vocabulary: say nested spaces only—never subspace, subspaces, or child space.\n- After single-space onboarding creation, the user lands on the coherence view with the AI panel open—finish voting method and entry method setup first, then help with the first signal once governance basics are settled.\n- When the user selects journey, activation, transparency, entry method, or location via onboarding UI, pass values into onboarding_guidance known_answers and create tools. For location, always use the address search and map card—never ask users to confirm latitude or longitude in chat.\n- After wallet handoff, instruct the user to complete the wallet signing prompt (standard signatures and 2FA/MFA wallets). If signing fails, explain clearly and offer retry—never loop on verbal confirmations.${
-          resolveLatestVisualGenerationIntent(recentUserTexts)
-            ? '\n- The user asked for generated visuals in this thread. You MUST call generate_space_visual_assets or create_space_from_onboarding with generate_visuals=true in this turn. Never say images must wait until after creation. HARD RULE: generated visuals are always text-free — no words, letters, or space name in the image; do not request wording for rendering. visual_vibe must describe a real photograph or a quiet physical emblem: place, material, daylight. Never request neon, glowing roots, god rays, or fantasy CGI.'
-            : ''
-        }${
-          (normalizedConversationContext.setupPhase === 'execute' ||
-            normalizedConversationContext.setupPhase === 'verify') &&
-          !pendingEcosystemChildren
-            ? `\n${POST_CREATE_GOVERNANCE_SETUP_GUIDELINES}\n${PROPOSAL_DISCOVERY_GUIDELINES}\n- Post-create phase (space is live): finish governance setup before signals or member-gated read tools. Recommend a voting method or use the voting method card — when the user accepts, call prepare_governance_proposal with change_voting_method in the same turn (partial: true opens the form). Then entry method if skipped during discover. Do NOT call create_space_setup_proposal with collective_agreement for voting or entry method. Do NOT call get_signals_by_space_slug or other member-gated tools until voting method and entry method are settled.${
-                postCreateVotingMethodDirective
-                  ? `\n${postCreateVotingMethodDirective}`
-                  : ''
-              }${
-                activeGovernanceProposalDirective
-                  ? `\n${activeGovernanceProposalDirective}`
-                  : ''
-              }${
-                proposalAcceptanceDirective
-                  ? `\n${proposalAcceptanceDirective}`
-                  : ''
-              }`
-            : ''
-        }${
-          normalizedConversationContext.setupPhase === 'confirm'
-            ? '\n- The user already confirmed creation in this thread. Do not ask for another confirmation. Proceed with create_space_from_onboarding (no dry_run) only when logo_url and lead_image_url are set, then wallet signing.'
-            : ''
-        }${ecosystemExecuteDirective ? `\n${ecosystemExecuteDirective}` : ''}${
-          voiceDiscoveryActive
-            ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: friendly and joyful, about people helping each other. Name the step, then ask if they want to pursue it ("Ready to take a look?"). They decide. On yes, be glad and name the next step. On no, "All good", then the next step. Do not close with "let me know if you want anything else". Stop only if they ask to pause. Keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
-            : ''
-        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
-          localizedEntryMethodGuidelines
-            ? `\n${localizedEntryMethodGuidelines}`
-            : ''
+  const systemPrompt = memberHomeRecord
+    ? networkOutlook
+      ? // Lean prompt only. The full advisor prompt trains signal/proposal
+        // briefing and fights the network brief when concatenated.
+        `You are Hypha, a friend looking across the wider Hypha network with this member. This left panel is network navigation by how they show up — builder, funder, or member. It is not their home. Do not continue any earlier turn that briefed a personal signal, proposal, or decision from their own spaces.
+
+Use only the brief below. Write three or four short sentences, warm and specific. Address them by first name. Offer one concrete navigation step on the network: a kind of place to look, people to meet, or ask to search for. You may call search_spaces, get_network_ecosystem_patterns, or mcp_navigation when that helps them move. Prefer ordinary language over tool talk.
+
+Forbidden, including close paraphrases: naming or continuing a signal or proposal they raised, "your signal", "the signal you raised", "still open on", briefing any home-queue title, calling show_member_home_item, inventing that a card is on screen, ranking people by shared spaces from home, walking what needs a decision in their spaces. Never mention a card, a screen, or a button. Every sentence ends with a full stop. Never stop in the middle of a sentence. Do not think out loud.${
+          onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''
         }`
-      : voiceDiscoveryActive && spaceSlug?.trim()
-      ? `${effectiveSystemPrompt}\n\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice discovery mode is active for this space: the AI does it for them—reflect what you heard, propose drafts and next steps, one small ask at a time, short conversational replies (no bullet lists or markdown in voice turns). Continuous discovery applies: learn the space with tools, adapt to circumstances, and handle the next move toward purpose—not a fixed checklist.${
-          proposalAcceptanceDirective
-            ? `\n\n${proposalAcceptanceDirective}`
-            : ''
-        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
-          localizedEntryMethodGuidelines
-            ? `\n${localizedEntryMethodGuidelines}`
-            : ''
-        }`
-      : `${effectiveSystemPrompt}${
-          proposalFormStateDirective ? `\n\n${proposalFormStateDirective}` : ''
-        }${
-          activeGovernanceProposalDirective
-            ? `\n\n${activeGovernanceProposalDirective}`
-            : ''
-        }${
-          proposalAcceptanceDirective
-            ? `\n\n${proposalAcceptanceDirective}`
-            : ''
-        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
-          localizedEntryMethodGuidelines
-            ? `\n${localizedEntryMethodGuidelines}`
-            : ''
-        }`;
+      : `${effectiveSystemPrompt}\n\nYou are Hypha, a friend in this community, speaking to this member at home. Use only the brief below. Write three or four short sentences, the way you would catch up a friend. Those sentences are read aloud word for word, so write them the way you would say them to a friend: easy, close, and specific. Contractions are welcome. Do not sound like you are reading a notice. Address them by first name. The person asking for attention is the subject, by first name, in the active voice. Say what the community needs, not what task to complete. Every name, number, and place must be written in the brief. Do not add one that is not. Never mention a card, a screen, or a button. Never sound like a checklist. ${
+          memberHomeList
+            ? 'The list they asked for is already on screen. Write at most two short warm sentences in the same voice as "Where can I be useful?" — like a friend opening that door, not a UI caption. Never say above, below, listed, tap, screen, or button. Do not call any tool. Do not write a function call, XML, DSML, a slug, or a parameter. Do not open a signal or a proposal. Do not think out loud.'
+            : memberHomeCard
+            ? 'Call show_member_home_item once for the one item in the brief first. Do not write sentences in the same step as that call. After the card is placed, write three or four short sentences under it. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. You may also call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not mention tools, slugs, or instructions. Do not call any other tool. Do not think out loud.'
+            : 'Write the sentences first. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Do not call show_member_home_item. You may call create_human_chat_message, mcp_navigation, or generate_space_visual_assets when the brief or a visual request requires them. Do not mention tools, slugs, or instructions. Do not call any other tool. Do not think out loud.'
+        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
+    : normalizedConversationContext?.mode === 'onboarding_setup'
+    ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
+        normalizedConversationContext.setupPhase ?? 'discover'
+      }.\n${ONBOARDING_TRANSPARENCY_GUIDELINES}\n${ONBOARDING_CATEGORY_GUIDELINES}\n${ONBOARDING_CREATION_CONFIRMATION_GUIDELINES}\n${SOUND_ADVISOR_GUIDELINES}\n${ECOSYSTEM_NESTED_SPACES_GUIDELINES}\n- Discovery order (single space): (1) journey cards, (2) name and purpose, (3) principles reaction, (4) org discovery, (5) activation mode, (6) transparency discoverability then activity access, (7) entry method, (8) location, (9) logo and hero banner.\n- Discovery order (full ecosystem): same through (4), then (5) root-space role and ecosystem structure, (6) functional domains and propose_organisation_blueprint—confirm nested-space plan BEFORE activation, (7) activation mode, (8) transparency, (9) entry method, (10) location, (11) logo and hero banner, (12) create root space ONLY (never create_ecosystem_space during onboarding), (13) left panel execute—nested spaces one at a time on-chain with create_space_from_onboarding and parent_space_slug.\n- Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until onboarding_guidance shows the current step is complete—including nested-space blueprint confirmation before operational settings.\n- After org discovery, use assigned_category_groups and suggested_categories from onboarding_guidance—do not ask users to confirm or invent tags.\n- After ecosystem root creation the user lands on ecosystem navigation with the left AI panel open—nested spaces from the saved blueprint are the mandatory next step, not governance.\n- User-facing vocabulary: say nested spaces only—never subspace, subspaces, or child space.\n- After single-space onboarding creation, the user lands on the coherence view with the AI panel open—finish voting method and entry method setup first, then help with the first signal once governance basics are settled.\n- When the user selects journey, activation, transparency, entry method, or location via onboarding UI, pass values into onboarding_guidance known_answers and create tools. For location, always use the address search and map card—never ask users to confirm latitude or longitude in chat.\n- After wallet handoff, instruct the user to complete the wallet signing prompt (standard signatures and 2FA/MFA wallets). If signing fails, explain clearly and offer retry—never loop on verbal confirmations.${
+        resolveLatestVisualGenerationIntent(recentUserTexts)
+          ? '\n- The user asked for generated visuals in this thread. You MUST call generate_space_visual_assets or create_space_from_onboarding with generate_visuals=true in this turn. Never say images must wait until after creation. HARD RULE: generated visuals are always text-free — no words, letters, or space name in the image; do not request wording for rendering. visual_vibe must describe a real photograph or a quiet physical emblem: place, material, daylight. Never request neon, glowing roots, god rays, or fantasy CGI.'
+          : ''
+      }${
+        (normalizedConversationContext.setupPhase === 'execute' ||
+          normalizedConversationContext.setupPhase === 'verify') &&
+        !pendingEcosystemChildren
+          ? `\n${POST_CREATE_GOVERNANCE_SETUP_GUIDELINES}\n${PROPOSAL_DISCOVERY_GUIDELINES}\n- Post-create phase (space is live): finish governance setup before signals or member-gated read tools. Recommend a voting method or use the voting method card — when the user accepts, call prepare_governance_proposal with change_voting_method in the same turn (partial: true opens the form). Then entry method if skipped during discover. Do NOT call create_space_setup_proposal with collective_agreement for voting or entry method. Do NOT call get_signals_by_space_slug or other member-gated tools until voting method and entry method are settled.${
+              postCreateVotingMethodDirective
+                ? `\n${postCreateVotingMethodDirective}`
+                : ''
+            }${
+              activeGovernanceProposalDirective
+                ? `\n${activeGovernanceProposalDirective}`
+                : ''
+            }${
+              proposalAcceptanceDirective
+                ? `\n${proposalAcceptanceDirective}`
+                : ''
+            }`
+          : ''
+      }${
+        normalizedConversationContext.setupPhase === 'confirm'
+          ? '\n- The user already confirmed creation in this thread. Do not ask for another confirmation. Proceed with create_space_from_onboarding (no dry_run) only when logo_url and lead_image_url are set, then wallet signing.'
+          : ''
+      }${ecosystemExecuteDirective ? `\n${ecosystemExecuteDirective}` : ''}${
+        voiceDiscoveryActive
+          ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: friendly and joyful, about people helping each other. Name the step, then ask if they want to pursue it ("Ready to take a look?"). They decide. On yes, be glad and name the next step. On no, "All good", then the next step. Do not close with "let me know if you want anything else". Stop only if they ask to pause. Keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
+          : ''
+      }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
+        localizedEntryMethodGuidelines
+          ? `\n${localizedEntryMethodGuidelines}`
+          : ''
+      }`
+    : voiceDiscoveryActive && spaceSlug?.trim()
+    ? `${effectiveSystemPrompt}\n\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice discovery mode is active for this space: the AI does it for them—reflect what you heard, propose drafts and next steps, one small ask at a time, short conversational replies (no bullet lists or markdown in voice turns). Continuous discovery applies: learn the space with tools, adapt to circumstances, and handle the next move toward purpose—not a fixed checklist.${
+        proposalAcceptanceDirective ? `\n\n${proposalAcceptanceDirective}` : ''
+      }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
+        localizedEntryMethodGuidelines
+          ? `\n${localizedEntryMethodGuidelines}`
+          : ''
+      }`
+    : `${effectiveSystemPrompt}${
+        proposalFormStateDirective ? `\n\n${proposalFormStateDirective}` : ''
+      }${
+        activeGovernanceProposalDirective
+          ? `\n\n${activeGovernanceProposalDirective}`
+          : ''
+      }${
+        proposalAcceptanceDirective ? `\n\n${proposalAcceptanceDirective}` : ''
+      }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
+        localizedEntryMethodGuidelines
+          ? `\n${localizedEntryMethodGuidelines}`
+          : ''
+      }`;
 
   if (modelMessages.length === 0) {
     console.warn('[chat][empty-model-messages]', {
@@ -1609,16 +1761,27 @@ export async function createChatStreamResult(
 
   const homeVisualDirective =
     memberHomeRecord &&
+    !networkOutlook &&
     (resolveLatestVisualGenerationIntent(recentUserTexts) ||
       agreedToGeneratedVisuals(lastUserText, lastAssistantText))
       ? 'The member wants a logo and a banner generated now. You MUST call generate_space_visual_assets in this turn before describing any image. Do not say the images exist until that tool returns logo_url and lead_image_url. Describe them only after the tool succeeds. Never paste the URLs.'
       : '';
 
-  return streamText({
-    model: openrouterWithHyphaHeaders(openRouterModelId),
-    system: [systemPrompt, memberHomeFacts, homeVisualDirective]
-      .filter(Boolean)
-      .join('\n\n'),
+  const homeSystem = [systemPrompt, memberHomeFacts, homeVisualDirective]
+    .filter(Boolean)
+    .join('\n\n');
+
+  const result = streamText({
+    model: memberHomeRecord
+      ? openrouterWithHyphaHeaders(openRouterModelId, {
+          // Reasoning holds the first token. The card tool still has to run,
+          // so this stays on the normal provider instead of the fastest one.
+          reasoning: { effort: 'none', exclude: true },
+        })
+      : openrouterWithHyphaHeaders(openRouterModelId),
+    // The fetch wrapper already retries. Another SDK retry would stack on a slow turn.
+    maxRetries: 0,
+    system: homeSystem,
     messages:
       modelMessages.length > 0
         ? modelMessages
@@ -1632,7 +1795,65 @@ export async function createChatStreamResult(
 
     // Cast: ChatRouteTool's generic Zod input doesn't satisfy ai's CoreTool typing, but is structurally compatible at runtime.
     tools: tools as unknown as Parameters<typeof streamText>[0]['tools'],
-    stopWhen: stepCountIs(6),
+    // After the waiting-item card, the next step is speech only. Share and
+    // visual turns still need their tools on later steps.
+    prepareStep: memberHomeRecord
+      ? ({ stepNumber, steps }) => {
+          const previous = steps[steps.length - 1];
+          const previousText = previous?.text?.trim() ?? '';
+          const unfinished =
+            previousText.length > 0 &&
+            !homeSpokenScriptIsComplete(previousText);
+          // Network outlook has no home cards. After speech starts, finish
+          // the sentences without falling back into a home tool.
+          if (networkOutlook) {
+            if (stepNumber > 0 && unfinished) {
+              return {
+                toolChoice: 'none' as const,
+                system: `${homeSystem}\n\nThe last sentence was cut off. Finish that sentence with a full stop, using only the brief, then stop. Do not repeat the sentences already written. Do not call a tool. Do not name a personal signal or proposal.`,
+              };
+            }
+            return {};
+          }
+          const cardShown = steps.some((step) =>
+            (step.toolCalls ?? []).some(
+              (call) => call.toolName === 'show_member_home_item',
+            ),
+          );
+          // A list chip already has its own panel. A tool call here opens
+          // the next signal instead, or leaks the call as text.
+          if (memberHomeList || (stepNumber > 0 && unfinished)) {
+            return {
+              toolChoice: 'none' as const,
+              ...(unfinished
+                ? {
+                    system: `${homeSystem}\n\nThe last sentence was cut off. Finish that sentence with a full stop, using only the brief, then stop. Do not repeat the sentences already written. Do not call a tool.`,
+                  }
+                : {}),
+            };
+          }
+          // Card first: place the item, then speak under it on the next step.
+          if (memberHomeCard && !cardShown) {
+            return {
+              toolChoice: {
+                type: 'tool' as const,
+                toolName: 'show_member_home_item',
+              },
+              system: `${homeSystem}\n\nCall show_member_home_item once for the card in the brief. Do not write any sentence in this step. Do not think out loud.`,
+            };
+          }
+          if (stepNumber > 0 && memberHomeCard && cardShown) {
+            return {
+              toolChoice: 'none' as const,
+              system: `${homeSystem}\n\nThe item is already on screen. Write three or four short sentences about the person and what they need now. Every sentence ends with a full stop. Never stop in the middle of a sentence, and never end on a dash or a colon. Do not call a tool. Never say card, screen, above, below, or button.`,
+            };
+          }
+          return {};
+        }
+      : undefined,
+    stopWhen: memberHomeRecord
+      ? ({ steps }) => homeTurnShouldStop(steps)
+      : stepCountIs(6),
     onStepFinish: (event) => {
       if (!OPENROUTER_DEBUG) return;
 
@@ -1692,6 +1913,9 @@ export async function createChatStreamResult(
     experimental_transform: createOpenRouterAuthRecoveryTransform(
       debugRequestId,
       deterministicFallback,
+      memberHomeRecord != null,
+      homeError,
     ),
   });
+  return Object.assign(result, { memberHomeCard, homeError });
 }

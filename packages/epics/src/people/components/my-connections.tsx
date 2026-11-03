@@ -1,35 +1,81 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   ClientEvent,
+  Direction,
   EventType,
   MatrixEventEvent,
   NotificationCountType,
   RoomEvent,
+  RoomStateEvent,
   SyncState,
+  type EventTimeline,
   type MatrixClient,
   type MatrixEvent,
   type Room,
 } from 'matrix-js-sdk';
 import {
+  GROUP_ROOM_ARCHIVED_STATE,
+  GROUP_ROOM_CREATOR_STATE,
   HYPHA_ROOM_TYPES,
+  conversationActivityTs,
+  countCommaSeparatedNames,
+  isArchivedGroupRoom,
+  isGroupCreateContent,
+  peopleConversationKindForListing,
+  readCreateContent,
+  resolveConversationCacheEntry,
+  readRoomNameState,
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
+  matrixUserIdToCanonicalPrivySub,
+  pickUserVisibleMemberLabel,
+  sortConversationsByLastMessage,
+  visibleMatrixMemberName,
   useJwt,
   useMatrix,
   useMatrixUserIdsByPersonIds,
+  usePeopleBySubs,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
-import { Button } from '@hypha-platform/ui';
+import { listBoundChatRoomIdsAmongAction } from '@hypha-platform/core/matrix/server/actions';
+import { Badge, Button, Image } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { Search, Users, X } from 'lucide-react';
+import {
+  ArrowUpRight,
+  ChevronLeft,
+  Circle,
+  FileText,
+  Globe,
+  Globe2,
+  Radio,
+  Search,
+  Target,
+  Users,
+  X,
+} from 'lucide-react';
 
 import { countIncomingUnreadMessages } from '../../common/human-chat-panel/conversation-unread-count';
+import { playMessageReceiveSoundForEvent } from '../../common/human-chat-panel/message-receive-sound';
+import { contentMentionsMatrixUser } from '../../../../core/src/matrix/mentions';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
+import { scrollMainColumnTo } from '../../common/main-column-scroll';
+import { useChainScrollAtEdge } from '../../common/chain-scroll-at-edge';
 import {
   CONVERSATION_UNREAD_EVENT,
   notifyConversationUnreadChanged,
@@ -45,17 +91,34 @@ import {
   looksLikeHyphaBot,
   facesWithProfiles,
   groupRowsForConnections,
+  conversationsMatchingSearch,
+  listedConversationIsOpen,
+  listedConversationOpenTarget,
+  readRememberedPersonDirectRoom,
+  rememberPersonDirectRoom,
+  membersForGroupPicker,
+  conversationsVisibleInSection,
+  enrichSearchMembers,
+  messagesPeopleListReady,
   isPeopleListGroup,
+  isRememberedBoundChatRoom,
   isRememberedGroupChatRoom,
-  memberRowsForConnections,
   messagePreview,
-  previewWithNames,
+  previewForInboxDisplay,
+  senderFirstName,
   rememberGroupChatMembers,
+  rememberBoundChatRooms,
   rememberGroupChatRooms,
   rememberedGroupChatMemberIds,
   rememberSignalThreadRooms,
   subscribeSignalThreadRooms,
-  unreadRoomsMissingFromMembers,
+  applyResolvedPeerTitles,
+  conversationPeerSubs,
+  mergeDirectoryPeople,
+  personRowsFromDmRooms,
+  nextSelectedMembers,
+  resolvedMatrixIdsForGroup,
+  visibleMemberRowsAfterTitleResolve,
   STALE_CONNECTION_MS,
   connectionActivityTs,
   collectDirectPairRoomHints,
@@ -64,23 +127,67 @@ import {
   readRememberedDirectRoom,
   suggestConnections,
   supersededDirectRoomIds,
+  peopleMatchingSearch,
   type ConnectionSuggestion,
   type ConversationRow,
   type GroupFace,
   type MemberRow,
   type NewcomerCandidate,
 } from './member-connections';
+import { MessagesInboxFilters } from './messages-inbox-filters';
 import {
-  sortByRecencyThenPresence,
-  type PresenceLevel,
-} from './member-presence';
+  channelRowsFromSnapshots,
+  directInboxPlace,
+  inboxContextHref,
+  inboxContextLine,
+  inboxFilterCounts,
+  isInboxDirectConversation,
+  inboxListWindow,
+  INBOX_LIST_PAGE,
+  isInboxFilter,
+  peopleInboxKind,
+  rowMatchesInboxFilter,
+  type InboxChannelKind,
+  type InboxContext,
+  type InboxFilter,
+  type JoinedChannelSnapshot,
+} from './messages-inbox';
+import { GroupFaces } from './group-faces';
+import { MemberHomeMark } from './member-home-mark';
 import { PersonAvatar } from './person-avatar';
-import { useMemberPresence } from './use-member-presence';
 
 /** Matches the first page returned for the home. Each click asks for one more. */
 const CONNECTIONS_PAGE = 12;
 /** Suggestions look past the first page, up to the intelligence cap. */
 const SUGGESTION_POOL = 120;
+/** Same client budget as Home — past the server 12s race, before the function limit. */
+const HOME_INTELLIGENCE_TIMEOUT_MS = 20_000;
+
+/** Privy access tokens are JWTs; `sub` is the member id (`did:privy:…`). */
+function readJwtSubject(token: string): string | null {
+  const payload = token.split('.')[1];
+  if (!payload) return null;
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = normalized.length % 4;
+    const padded = pad ? `${normalized}${'='.repeat(4 - pad)}` : normalized;
+    const parsed = JSON.parse(atob(padded)) as { sub?: unknown };
+    return typeof parsed.sub === 'string' && parsed.sub.trim()
+      ? parsed.sub.trim()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function sameMemberHome(
+  left: MemberIntelligence | null | undefined,
+  right: MemberIntelligence | null | undefined,
+) {
+  if (left === right) return true;
+  if (left == null || right == null) return left == null && right == null;
+  return JSON.stringify(left) === JSON.stringify(right);
+}
 
 type ConnectionPerson = MemberIntelligence['connections'][number];
 type ConnectionMemberRow = MemberRow<ConnectionPerson>;
@@ -93,8 +200,14 @@ function botUserId() {
 const PREVIEW_TAIL = 24;
 /** People on screen are built before the browser paints. */
 const SYNC_ROOM_BUDGET = 16;
+/** Recent DMs from m.direct, so priority chats are tappable without Load more. */
+const PRIORITY_DM_BUDGET = 64;
 /** Everyone else fills while the browser is idle. */
 const IDLE_ROOM_CHUNK = 8;
+/** One short history pull so a quiet channel still shows its last line. */
+const CHANNEL_PREVIEW_SCROLLBACK = 30;
+/** Space requests so channel preview backfill does not trip homeserver 429s. */
+const CHANNEL_PREVIEW_STAGGER_MS = 350;
 
 function eventsForPreview(room: Room): MatrixEvent[] {
   const live = room.getLiveTimeline().getEvents();
@@ -140,31 +253,114 @@ function lastRoomMessage(room: Room, selfId: string | null) {
     const preview = messagePreview(body, (matrixUserId) => {
       const member = room.getMember(matrixUserId);
       if (!member) return '';
-      return matrixMemberDisplayLabel(member, matrixUserId);
+      const label = matrixMemberDisplayLabel(member, matrixUserId);
+      if (looksLikeTechnicalMatrixDisplayName(label, matrixUserId)) return '';
+      return label;
     });
     if (!preview) continue;
     const sender = event.getSender();
     return {
       preview,
       mine: Boolean(selfId && sender === selfId),
-      ts: event.getTs(),
+      ts: conversationActivityTs(event.getTs()),
+      sender,
     };
   }
-  const ts = room.getLastActiveTimestamp();
   return {
     preview: '',
     mine: false,
-    ts: ts > 0 ? ts : null,
+    ts: null,
+    sender: null,
   };
 }
 
-function conversationRowFromRoom(
-  client: MatrixClient,
-  room: Room,
-): ConversationRow | null {
-  if (room.getMyMembership() !== 'join') {
-    return null;
+function withSenderName<
+  T extends {
+    faces?: readonly unknown[];
+    inbox?: { kind: string };
+    senderUserId?: string | null;
+    roomId?: string | null;
+    searchMembers?: readonly { name: string; userId?: string }[];
+    senderName?: string;
+  },
+>(
+  row: T,
+  peopleBySub: {
+    get(
+      key: string,
+    ): { name?: string | null; nickname?: string | null } | undefined;
+  },
+  client: MatrixClient | null,
+): T {
+  const shared =
+    Boolean(row.faces) || (row.inbox != null && row.inbox.kind !== 'dm');
+  if (!shared) return row;
+  const mxid = row.senderUserId?.trim();
+  if (!mxid) return { ...row, senderName: undefined };
+  const sub = matrixUserIdToCanonicalPrivySub(mxid);
+  const person = sub ? peopleBySub.get(sub) : undefined;
+  const listed = row.searchMembers?.find(
+    (member) => member.userId?.trim().toLowerCase() === mxid.toLowerCase(),
+  );
+  const member = row.roomId
+    ? client?.getRoom(row.roomId)?.getMember(mxid)
+    : null;
+  const senderName = senderFirstName({
+    profileName: person?.name,
+    profileNickname: person?.nickname,
+    memberName: listed?.name,
+    matrixLabel: member ? matrixMemberDisplayLabel(member, mxid) : '',
+    senderUserId: mxid,
+  });
+  return { ...row, senderName: senderName || undefined };
+}
+
+function debugRoomsEnabled() {
+  if (typeof window === 'undefined') return false;
+  try {
+    return (
+      new URLSearchParams(window.location.search).get('debugRooms') === '1'
+    );
+  } catch {
+    return false;
   }
+}
+
+function logDroppedRoom(room: Room, details: Record<string, unknown>): null {
+  if (debugRoomsEnabled()) {
+    console.debug('[debugRooms] dropped', {
+      roomId: room.roomId,
+      roomName: room.name,
+      roomType: room.getType() ?? null,
+      membership: room.getMyMembership(),
+      ...details,
+    });
+  }
+  return null;
+}
+
+export type RoomListingInspection = {
+  roomId: string;
+  name: string;
+  nameState: string | null;
+  roomType: string | null;
+  membership: string;
+  loadedHumanCount: number;
+  summaryJoinedCount: number;
+  othersCount: number;
+  titleMemberHint: number;
+  rememberedHumanCount: number;
+  archived: boolean;
+  createdAsGroup: boolean;
+  kind: 'group' | 'person' | null;
+  listed: boolean;
+  cached: boolean;
+  reason: string;
+};
+
+function inspectBase(room: Room, client: MatrixClient) {
+  const membership = room.getMyMembership() || '';
+  const roomType = room.getType() ?? null;
   const botId = botUserId();
   const selfId = client.getUserId();
   const knownMembers = room
@@ -181,40 +377,144 @@ function conversationRowFromRoom(
     return !isHyphaBot(member.userId, member.name || member.rawDisplayName);
   });
   const others = members.filter((member) => member.userId !== selfId);
-  if (others.length === 0) {
-    return null;
-  }
+  const nameState = readRoomNameState(room);
+  const titleMemberHint = countCommaSeparatedNames(
+    nameState || room.name || '',
+  );
+  const rememberedHumanCount =
+    rememberedGroupChatMemberIds(room.roomId).length + (selfId ? 1 : 0);
+  const createdAsGroup = isGroupCreateContent(readCreateContent(room));
+  const archived = isArchivedGroupRoom(room);
+  return {
+    membership,
+    roomType,
+    members,
+    others,
+    nameState,
+    titleMemberHint,
+    rememberedHumanCount,
+    createdAsGroup,
+    archived,
+    selfId,
+    loadedHumanCount: members.length,
+    summaryJoinedCount: room.getJoinedMemberCount?.() ?? members.length,
+  };
+}
 
-  const roomType = room.getType();
+function inspectionFrom(
+  room: Room,
+  base: ReturnType<typeof inspectBase>,
+  reason: string,
+  kind: 'group' | 'person' | null,
+  listed: boolean,
+): RoomListingInspection {
+  return {
+    roomId: room.roomId,
+    name: (base.nameState || room.name || '').trim(),
+    nameState: base.nameState,
+    roomType: base.roomType,
+    membership: base.membership,
+    loadedHumanCount: base.loadedHumanCount,
+    summaryJoinedCount: base.summaryJoinedCount,
+    othersCount: base.others.length,
+    titleMemberHint: base.titleMemberHint,
+    rememberedHumanCount: base.rememberedHumanCount,
+    archived: base.archived,
+    createdAsGroup: base.createdAsGroup,
+    kind,
+    listed,
+    cached: false,
+    reason,
+  };
+}
+
+function classifyConversationRoom(
+  client: MatrixClient,
+  room: Room,
+): { row: ConversationRow | null; inspection: RoomListingInspection } {
+  const base = inspectBase(room, client);
+  const drop = (reason: string, kind: 'group' | 'person' | null = null) => ({
+    row: null as ConversationRow | null,
+    inspection: inspectionFrom(room, base, reason, kind, false),
+  });
+  if (base.membership !== 'join') {
+    return drop('not-joined');
+  }
+  if (isRememberedBoundChatRoom(room.roomId)) {
+    const typed = base.roomType?.trim() || null;
+    // Untyped people groups can be cached as bound by mistake. Only trust
+    // the cache for other Hypha room types (space, signal, …).
+    if (
+      typed &&
+      typed.startsWith('io.hypha.room.') &&
+      typed !== HYPHA_ROOM_TYPES.dm &&
+      typed !== HYPHA_ROOM_TYPES.group
+    ) {
+      return drop('space-or-signal');
+    }
+  }
   // Space, signal, proposal, public, network and ecosystem rooms are not
   // private conversations, whoever is in them.
   if (
-    roomType?.startsWith('io.hypha.room.') &&
-    roomType !== HYPHA_ROOM_TYPES.dm &&
-    roomType !== HYPHA_ROOM_TYPES.group
+    base.roomType?.startsWith('io.hypha.room.') &&
+    base.roomType !== HYPHA_ROOM_TYPES.dm &&
+    base.roomType !== HYPHA_ROOM_TYPES.group
   ) {
-    return null;
+    return drop('hypha-typed');
   }
-  const kind =
-    roomType === HYPHA_ROOM_TYPES.group || others.length > 1
-      ? 'group'
-      : 'person';
-  // A 1:1 is only a room created as a DM. Two-person space, signal and untyped
-  // rooms are not private messages.
-  if (kind === 'person' && room.getType() !== HYPHA_ROOM_TYPES.dm) {
-    return null;
+  const overrideName = conversationTitleOverrides.get(room.roomId)?.trim();
+  const kind = peopleConversationKindForListing({
+    roomType: base.roomType,
+    loadedHumanCount: base.loadedHumanCount,
+    summaryJoinedCount: base.summaryJoinedCount,
+    createdAsGroup: base.createdAsGroup,
+    hasRoomName: Boolean(base.nameState) || base.titleMemberHint > 2,
+    titleMemberHint: base.titleMemberHint,
+    rememberedHumanCount: base.rememberedHumanCount,
+    rememberedAsGroup: isRememberedGroupChatRoom(room.roomId),
+  });
+  if (
+    !base.roomType &&
+    (base.nameState || base.titleMemberHint > 1) &&
+    base.members.length < 3 &&
+    typeof room.loadMembersIfNeeded === 'function'
+  ) {
+    void room.loadMembersIfNeeded().catch(() => undefined);
   }
-  const other = others.length === 1 ? others[0] : undefined;
+  // Group-typed rooms stay listed before lazy members arrive. Person chats
+  // still need the other human so they can attach to a directory row.
+  if (base.others.length === 0 && kind !== 'group') {
+    return drop('no-other-members', kind);
+  }
+  // Untyped rooms that are not groups are dropped. If they were also in
+  // m.direct they used to become `person` and then vanish from the list.
+  if (!kind) {
+    return drop('not-people-conversation');
+  }
+  const other = base.others.length === 1 ? base.others[0] : undefined;
+  const personLabel =
+    kind === 'person' && other
+      ? pickUserVisibleMemberLabel(
+          other.userId,
+          other.name,
+          other.user?.displayName,
+          other.rawDisplayName,
+        )
+      : null;
   const name =
-    (kind === 'person' ? other?.name || other?.rawDisplayName : room.name) ||
-    room.name ||
+    overrideName ||
+    (kind === 'person' ? personLabel : base.nameState || room.name) ||
+    (kind === 'person' ? '' : room.name || base.nameState) ||
     '';
+  if (overrideName && room.name.trim() === overrideName) {
+    conversationTitleOverrides.delete(room.roomId);
+  }
   if (
     isHyphaBot(other?.userId, name) ||
     looksLikeHyphaBot(room.name) ||
     looksLikeHyphaBot(name)
   ) {
-    return null;
+    return drop('bot', kind);
   }
   const mxc =
     kind === 'person'
@@ -222,10 +522,12 @@ function conversationRowFromRoom(
       : room.getMxcAvatarUrl();
   const faces =
     kind === 'group'
-      ? others.slice(0, 2).map((member) => ({
-          name:
-            (member.name || member.rawDisplayName || '').trim() ||
+      ? base.others.slice(0, 2).map((member) => ({
+          name: visibleMatrixMemberName(
             member.userId,
+            member.name,
+            member.rawDisplayName,
+          ),
           userId: member.userId,
           avatarUrl: avatarHttp(
             client,
@@ -250,33 +552,113 @@ function conversationRowFromRoom(
     isRememberedSignalThreadRoom(room.roomId) || signalMarkerInTimeline;
   if (signalThread) {
     rememberSignalThreadRooms([room.roomId], { quiet: true });
-    return null;
+    return drop('signal', kind);
   }
-  const last = lastRoomMessage(room, selfId);
+  const last = lastRoomMessage(room, base.selfId);
   // Always walk real incoming messages. The SDK notification total still
   // counts hidden call/signal notices, which inflated the Messages badge.
-  const unread = countIncomingUnreadMessages(room, selfId, isHyphaBot);
+  const unread = countIncomingUnreadMessages(room, base.selfId, isHyphaBot);
+  const searchMembers =
+    kind === 'group'
+      ? base.others.map((member) => ({
+          name: visibleMatrixMemberName(
+            member.userId,
+            member.name,
+            member.rawDisplayName,
+          ),
+          userId: member.userId,
+        }))
+      : undefined;
 
-  return {
+  const row: ConversationRow = {
     roomId: room.roomId,
     name: name.trim(),
     avatarUrl: avatarHttp(client, mxc),
     preview: last.preview,
     mine: last.mine,
-    lastTs: last.ts,
+    senderUserId: last.sender,
+    lastTs: last.ts ?? (kind === 'group' ? groupFallbackTimestamp(room) : null),
     unread,
-    memberCount: members.length,
+    memberCount: base.members.length,
     otherUserId: other?.userId ?? null,
     roomType: room.getType() ?? null,
     faces,
     groupChat: kind === 'group' && isRememberedGroupChatRoom(room.roomId),
     kind,
+    archived: base.archived,
+    searchMembers,
+  };
+  if (kind === 'group' && !isPeopleListGroup(row)) {
+    return drop('not-people-group', kind);
+  }
+  return {
+    row,
+    inspection: inspectionFrom(
+      room,
+      base,
+      base.archived ? 'listed-archived' : 'listed',
+      kind,
+      true,
+    ),
   };
 }
 
+function conversationRowFromRoom(
+  client: MatrixClient,
+  room: Room,
+): ConversationRow | null {
+  const { row, inspection } = classifyConversationRoom(client, room);
+  if (!row) {
+    logDroppedRoom(room, inspection);
+  }
+  return row;
+}
+
+/** Every joined or invited room, with the Messages-list filter reason. */
+export function inspectJoinedAndInvitedRooms(
+  client: MatrixClient,
+): RoomListingInspection[] {
+  return client
+    .getRooms()
+    .filter((room) => {
+      const membership = room.getMyMembership();
+      return membership === 'join' || membership === 'invite';
+    })
+    .map((room) => {
+      if (room.getMyMembership() === 'join') {
+        cachedConversation(client, room);
+      }
+      const inspection = classifyConversationRoom(client, room).inspection;
+      return {
+        ...inspection,
+        cached: Boolean(conversationCache.get(room.roomId)?.row),
+      };
+    })
+    .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function logRoomListingDump(client: MatrixClient) {
+  if (!debugRoomsEnabled()) return;
+  console.info('[debugRooms] joined and invited rooms', {
+    rooms: inspectJoinedAndInvitedRooms(client),
+  });
+}
+
+function groupFallbackTimestamp(room: Room): number | null {
+  const create = room.currentState?.getStateEvents?.('m.room.create', '');
+  const event = Array.isArray(create) ? create[0] : create;
+  const createdTs =
+    event && typeof event.getTs === 'function' ? event.getTs() : 0;
+  if (createdTs > 0) return createdTs;
+  if (typeof room.getLastActiveTimestamp === 'function') {
+    const active = room.getLastActiveTimestamp();
+    if (active > 0) return active;
+  }
+  return null;
+}
+
 function sortConversationRows(rows: ConversationRow[]) {
-  rows.sort((left, right) => (right.lastTs ?? 0) - (left.lastTs ?? 0));
-  return rows;
+  return sortConversationsByLastMessage(rows);
 }
 
 function sameConversationRows(
@@ -294,7 +676,8 @@ function sameConversationRows(
       current.lastTs !== next.lastTs ||
       current.unread !== next.unread ||
       current.mine !== next.mine ||
-      current.name !== next.name
+      current.name !== next.name ||
+      current.archived !== next.archived
     ) {
       return false;
     }
@@ -311,6 +694,7 @@ type CachedConversation = { stamp: string; row: ConversationRow | null };
  * The people currently listed are summarised first; the rest wait for idle time.
  */
 const conversationCache = new Map<string, CachedConversation>();
+const conversationTitleOverrides = new Map<string, string>();
 const conversationListeners = new Set<() => void>();
 let conversationClient: MatrixClient | null = null;
 let listeningClient: MatrixClient | null = null;
@@ -502,15 +886,27 @@ function roomStamp(room: Room, selfId: string | null) {
     last?.getTs() ?? 0,
     clear,
     receipt,
+    room.getType() ?? '',
+    readRoomNameState(room) ?? '',
+    room.getJoinedMemberCount?.() ?? 0,
+    room.getMembers?.().length ?? 0,
+    isArchivedGroupRoom(room) ? '1' : '0',
+    room.name || '',
+    isRememberedGroupChatRoom(room.roomId) ? '1' : '0',
+    isRememberedBoundChatRoom(room.roomId) ? '1' : '0',
+    isRememberedSignalThreadRoom(room.roomId) ? '1' : '0',
+    conversationTitleOverrides.get(room.roomId) ?? '',
+    rememberedGroupChatMemberIds(room.roomId).join(','),
   ].join(':');
 }
 
 function cachedConversation(client: MatrixClient, room: Room) {
   const stamp = roomStamp(room, client.getUserId());
-  const hit = conversationCache.get(room.roomId);
-  if (hit?.stamp === stamp) return hit;
-  const row = conversationRowFromRoom(client, room);
-  const entry = { stamp, row };
+  const entry = resolveConversationCacheEntry(
+    conversationCache.get(room.roomId),
+    stamp,
+    () => conversationRowFromRoom(client, room),
+  );
   conversationCache.set(room.roomId, entry);
   return entry;
 }
@@ -519,6 +915,82 @@ function conversationIsFresh(client: MatrixClient, room: Room) {
   const hit = conversationCache.get(room.roomId);
   if (!hit) return false;
   return hit.stamp === roomStamp(room, client.getUserId());
+}
+
+function recentDirectRoomIds(client: MatrixClient): string[] {
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+  const add = (roomId: string | undefined) => {
+    const id = roomId?.trim();
+    if (!id || seen.has(id)) return;
+    const room = client.getRoom(id);
+    if (room?.getMyMembership() !== 'join') return;
+    if (room.getType() !== HYPHA_ROOM_TYPES.dm) return;
+    seen.add(id);
+    ordered.push(id);
+  };
+  const direct = client.getAccountData(EventType.Direct)?.getContent() as
+    | Record<string, string[] | undefined>
+    | undefined;
+  if (direct) {
+    for (const roomIds of Object.values(direct)) {
+      if (!Array.isArray(roomIds)) continue;
+      for (const roomId of roomIds) add(roomId);
+    }
+  }
+  const recent: { id: string; ts: number }[] = [];
+  for (const room of client.getRooms()) {
+    if (seen.has(room.roomId)) continue;
+    if (room.getMyMembership() !== 'join') continue;
+    if (room.getType() !== HYPHA_ROOM_TYPES.dm) continue;
+    recent.push({
+      id: room.roomId,
+      ts:
+        typeof room.getLastActiveTimestamp === 'function'
+          ? room.getLastActiveTimestamp()
+          : 0,
+    });
+  }
+  recent.sort((left, right) => right.ts - left.ts);
+  for (const item of recent) add(item.id);
+  return ordered;
+}
+
+function pumpPriorityConversationRooms(
+  client: MatrixClient,
+  front: readonly string[],
+) {
+  enqueueConversationRooms(client, front);
+  pumpConversationRooms(
+    Math.min(PRIORITY_DM_BUDGET, Math.max(SYNC_ROOM_BUDGET, front.length, 1)),
+  );
+}
+
+function peopleGroupRoomIds(client: MatrixClient): string[] {
+  const ids: string[] = [];
+  for (const room of client.getRooms()) {
+    const membership = room.getMyMembership();
+    if (membership !== 'join') continue;
+    if (room.getType() === HYPHA_ROOM_TYPES.group) {
+      ids.push(room.roomId);
+      continue;
+    }
+    if (isGroupCreateContent(readCreateContent(room))) {
+      ids.push(room.roomId);
+      continue;
+    }
+    if (isRememberedGroupChatRoom(room.roomId)) {
+      ids.push(room.roomId);
+      continue;
+    }
+    if (
+      !room.getType() &&
+      (readRoomNameState(room) || countCommaSeparatedNames(room.name) > 2)
+    ) {
+      ids.push(room.roomId);
+    }
+  }
+  return ids;
 }
 
 function priorityRoomIds(
@@ -671,21 +1143,95 @@ function refreshConversationRoom(room: Room | undefined) {
   notifyConversationListeners();
 }
 
+const MAX_BOUND_LOOKUP_IDS = 100;
+const checkedBoundRoomIds = new Set<string>();
+let conversationBoundLookupToken: string | null = null;
+let boundLookupInFlight = false;
+
+function setConversationBoundLookupToken(token: string | null | undefined) {
+  conversationBoundLookupToken = token?.trim() || null;
+}
+
+function refreshBoundChatRooms(client: MatrixClient) {
+  const authToken = conversationBoundLookupToken;
+  if (!authToken) return;
+  if (boundLookupInFlight) return;
+  const roomIds = client
+    .getRooms()
+    .map((room) => room.roomId)
+    .filter((id) => !checkedBoundRoomIds.has(id));
+  if (roomIds.length === 0) return;
+  boundLookupInFlight = true;
+  void (async () => {
+    try {
+      for (let i = 0; i < roomIds.length; i += MAX_BOUND_LOOKUP_IDS) {
+        const chunk = roomIds.slice(i, i + MAX_BOUND_LOOKUP_IDS);
+        const ids = await listBoundChatRoomIdsAmongAction(chunk, {
+          authToken,
+        });
+        for (const id of chunk) checkedBoundRoomIds.add(id);
+        rememberBoundChatRooms(ids);
+        let changed = false;
+        for (const id of ids) {
+          if (!conversationCache.has(id)) continue;
+          conversationCache.delete(id);
+          const room = client.getRoom(id);
+          if (room) cachedConversation(client, room);
+          changed = true;
+        }
+        if (changed) notifyConversationListeners();
+      }
+    } catch (error) {
+      console.warn('Failed to check bound chat rooms', error);
+    } finally {
+      boundLookupInFlight = false;
+    }
+  })();
+}
+
 function onConversationSync() {
   const client = conversationClient;
   if (!client) return;
-  enqueueConversationRooms(client, []);
+  refreshBoundChatRooms(client);
+  logRoomListingDump(client);
+  enqueueConversationRooms(client, peopleGroupRoomIds(client));
+  // Summarise enough rooms on this tick that last-message order is already
+  // correct before the list paints. The idle pump finishes any remainder.
+  pumpConversationRooms(SYNC_ROOM_BUDGET);
   scheduleConversationPump();
   notifyConversationListeners();
 }
 
+function onConversationState(event: MatrixEvent) {
+  const type = event.getType();
+  if (
+    type !== EventType.RoomName &&
+    type !== GROUP_ROOM_ARCHIVED_STATE &&
+    type !== GROUP_ROOM_CREATOR_STATE
+  ) {
+    return;
+  }
+  const roomId = event.getRoomId();
+  if (!roomId || !conversationClient) return;
+  refreshConversationRoom(conversationClient.getRoom(roomId) ?? undefined);
+}
+
 function onConversationTimeline(
-  _event: MatrixEvent,
+  event: MatrixEvent,
   room?: Room,
   toStartOfTimeline?: boolean,
+  _removed?: boolean,
+  data?: { liveEvent?: boolean },
 ) {
   if (toStartOfTimeline) return;
   refreshConversationRoom(room);
+  // Notification chime for new messages in any room — not only the open chat.
+  // History / sync catch-up sets liveEvent=false; opening a thread must stay silent.
+  playMessageReceiveSoundForEvent(event, conversationClient?.getUserId(), {
+    toStartOfTimeline,
+    liveEvent: data?.liveEvent,
+    room,
+  });
 }
 
 function onConversationReceipt(_event: MatrixEvent, room?: Room) {
@@ -699,7 +1245,14 @@ function onConversationMembership(room?: Room) {
 function onConversationDecrypted(event: MatrixEvent) {
   const roomId = event.getRoomId();
   if (!roomId || !conversationClient) return;
-  refreshConversationRoom(conversationClient.getRoom(roomId) ?? undefined);
+  const room = conversationClient.getRoom(roomId) ?? undefined;
+  refreshConversationRoom(room);
+  // Encrypted live messages become RoomMessage only after decrypt.
+  // requireRecent: opening a room must not chime for old ciphertext catch-up.
+  playMessageReceiveSoundForEvent(event, conversationClient.getUserId(), {
+    room,
+    requireRecent: true,
+  });
 }
 
 function onConversationSignals() {
@@ -728,6 +1281,7 @@ function listenForConversationRows(client: MatrixClient) {
   client.on(RoomEvent.Timeline, onConversationTimeline);
   client.on(RoomEvent.Receipt, onConversationReceipt);
   client.on(RoomEvent.MyMembership, onConversationMembership);
+  client.on(RoomStateEvent.Events, onConversationState);
   client.on(MatrixEventEvent.Decrypted, onConversationDecrypted);
   window.addEventListener(CONVERSATION_UNREAD_EVENT, onConversationUnreadEvent);
   releaseSignalRooms = subscribeSignalThreadRooms(onConversationSignals);
@@ -738,6 +1292,7 @@ function stopListeningForConversationRows(client: MatrixClient) {
   client.removeListener(RoomEvent.Timeline, onConversationTimeline);
   client.removeListener(RoomEvent.Receipt, onConversationReceipt);
   client.removeListener(RoomEvent.MyMembership, onConversationMembership);
+  client.removeListener(RoomStateEvent.Events, onConversationState);
   client.removeListener(MatrixEventEvent.Decrypted, onConversationDecrypted);
   window.removeEventListener(
     CONVERSATION_UNREAD_EVENT,
@@ -753,7 +1308,9 @@ function useConversationClient(client: MatrixClient) {
   if (conversationClient === client) return;
   if (listeningClient) stopListeningForConversationRows(listeningClient);
   conversationClient = client;
+  checkedBoundRoomIds.clear();
   conversationCache.clear();
+  conversationTitleOverrides.clear();
   supersededReadEventIds.clear();
   if (supersededReadTimer) {
     window.clearTimeout(supersededReadTimer);
@@ -777,10 +1334,29 @@ export function conversationRowsPending(client: MatrixClient) {
     );
 }
 
+/** Apply a group rename to the list immediately, before Matrix echoes `m.room.name`. */
+export function applyConversationRoomTitle(roomId: string, name: string) {
+  const id = roomId.trim();
+  const title = name.trim();
+  if (!id || !title) return;
+  rememberGroupChatRooms([id]);
+  conversationTitleOverrides.set(id, title);
+  const client = conversationClient;
+  if (!client) {
+    notifyConversationListeners();
+    return;
+  }
+  conversationCache.delete(id);
+  const room = client.getRoom(id);
+  if (room) cachedConversation(client, room);
+  notifyConversationListeners();
+}
+
 export function conversationRowsSnapshot(client: MatrixClient) {
   const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
-    const row = conversationCache.get(room.roomId)?.row;
+    if (room.getMyMembership() !== 'join') continue;
+    const row = cachedConversation(client, room).row;
     if (row) rows.push(row);
   }
   return sortConversationRows(rows);
@@ -789,6 +1365,7 @@ export function conversationRowsSnapshot(client: MatrixClient) {
 export function conversationUnreadSnapshot(client: MatrixClient) {
   const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
+    if (room.getMyMembership() !== 'join') continue;
     const row = conversationCache.get(room.roomId)?.row;
     if (row) rows.push(row);
   }
@@ -809,7 +1386,12 @@ export function attachConversationList(
   useConversationClient(client);
   conversationListeners.add(onChange);
   listenForConversationRows(client);
-  enqueueConversationRooms(client, []);
+  refreshBoundChatRooms(client);
+  logRoomListingDump(client);
+  pumpPriorityConversationRooms(client, [
+    ...peopleGroupRoomIds(client),
+    ...recentDirectRoomIds(client),
+  ]);
   scheduleConversationPump();
   onChange();
   return () => {
@@ -823,21 +1405,23 @@ export function attachConversationList(
 /** Move these people's direct rooms to the front and build them immediately. */
 export function prioritizeConversationRooms(
   client: MatrixClient,
-  matrixUserIds: readonly string[],
+  matrixUserIds: readonly string[] = [],
 ) {
-  if (matrixUserIds.length === 0) return;
   useConversationClient(client);
-  const roomIds = priorityRoomIds(client, matrixUserIds);
-  enqueueConversationRooms(client, roomIds);
-  pumpConversationRooms(
-    Math.min(SYNC_ROOM_BUDGET, Math.max(roomIds.length, 1)),
-  );
+  const roomIds = [
+    ...peopleGroupRoomIds(client),
+    ...priorityRoomIds(client, matrixUserIds),
+    ...recentDirectRoomIds(client),
+  ];
+  if (roomIds.length === 0) return;
+  pumpPriorityConversationRooms(client, roomIds);
 }
 
 export function readConversationRows(client: MatrixClient): ConversationRow[] {
   useConversationClient(client);
   const rows: ConversationRow[] = [];
   for (const room of client.getRooms()) {
+    if (room.getMyMembership() !== 'join') continue;
     const row = cachedConversation(client, room).row;
     if (row) rows.push(row);
   }
@@ -850,6 +1434,64 @@ export function sumConversationUnread(client: MatrixClient | null) {
 }
 
 export { notifyConversationUnreadChanged };
+
+/**
+ * Unread total for the Messages nav badge: typed DMs/groups plus space /
+ * signal / proposal / ecosystem channels that All messages would list.
+ * Follows Matrix receipts live so the badge updates when a message arrives —
+ * not only after opening Messages.
+ */
+export function useMessagesScreenCount() {
+  const { client } = useMatrix();
+  const { jwt } = useJwt();
+  const { data: inboxContext } = useSWR<InboxContext>(
+    jwt ? ['/api/v1/people/me/message-inbox-context', jwt, 'nav-badge'] : null,
+    async ([url, token]) => {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Throw so SWR keeps the last good context instead of zeroing signal
+      // unreads on a transient non-OK response.
+      if (!response.ok) {
+        throw new Error(`message-inbox-context ${response.status}`);
+      }
+      return (await response.json()) as InboxContext;
+    },
+    { refreshInterval: 60_000 },
+  );
+  const context = inboxContext ?? EMPTY_INBOX_CONTEXT;
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!client) {
+      setCount(0);
+      return;
+    }
+    let timer = 0;
+    let stopped = false;
+    const publish = () => {
+      timer = 0;
+      if (stopped) return;
+      const next = messagesScreenUnreadSnapshot(client, context);
+      setCount((prev) => (prev === next ? prev : next));
+    };
+    // Coalesce, but do not keep postponing: the total should climb as each
+    // chunk of rooms is summarised, not after the last person in the backlog.
+    const schedule = () => {
+      if (timer) return;
+      timer = window.setTimeout(publish, 150);
+    };
+    const unsubscribe = attachConversationList(client, schedule);
+    publish();
+    return () => {
+      stopped = true;
+      window.clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [client, context]);
+
+  return count;
+}
 
 export function useConversationUnreadCount() {
   const { client } = useMatrix();
@@ -868,8 +1510,6 @@ export function useConversationUnreadCount() {
       const next = conversationUnreadSnapshot(client);
       setCount((prev) => (prev === next ? prev : next));
     };
-    // Coalesce, but do not keep postponing: the total should climb as each
-    // chunk of rooms is summarised, not after the last person in the backlog.
     const schedule = () => {
       if (timer) return;
       timer = window.setTimeout(publish, 150);
@@ -901,29 +1541,416 @@ function formatWhen(ts: number, locale: string, justNow: string) {
   }).format(ts);
 }
 
+const INBOX_CHANNEL_TYPES = new Set<string>([
+  HYPHA_ROOM_TYPES.space,
+  HYPHA_ROOM_TYPES.spacePublic,
+  HYPHA_ROOM_TYPES.signal,
+  HYPHA_ROOM_TYPES.proposal,
+  HYPHA_ROOM_TYPES.ecosystem,
+  HYPHA_ROOM_TYPES.network,
+]);
+
+const INBOX_FILTER_KEY = 'hypha.messages-inbox-filter';
+
+const EMPTY_INBOX_CONTEXT: InboxContext = {
+  spaces: [],
+  signals: [],
+  proposals: [],
+};
+
+function roomAliases(room: Room): string[] {
+  const aliased = room as Room & {
+    getCanonicalAlias?: () => string | null | undefined;
+    getAltAliases?: () => readonly string[] | null | undefined;
+  };
+  const aliases: string[] = [];
+  const canonical = aliased.getCanonicalAlias?.()?.trim();
+  if (canonical) aliases.push(canonical);
+  for (const alias of aliased.getAltAliases?.() ?? []) {
+    if (typeof alias === 'string' && alias.trim()) aliases.push(alias.trim());
+  }
+  return aliases;
+}
+
+const SIGNAL_TEAM_BODY_MARKER = '[hypha:signal-team]';
+const SIGNAL_TEAM_REQUEST_BODY_MARKER = '[hypha:signal-team-request]';
+
+function isSignalTeamNoticeBody(body: string): boolean {
+  return (
+    body.startsWith(SIGNAL_TEAM_BODY_MARKER) ||
+    body.startsWith(SIGNAL_TEAM_REQUEST_BODY_MARKER)
+  );
+}
+
+/** Events already in memory. Does not paginate or create anything. */
+function loadedRoomEvents(room: Room): MatrixEvent[] {
+  const collected: MatrixEvent[] = [];
+  const seen = new Set<string>();
+  let timeline: EventTimeline | null = room.getLiveTimeline();
+  for (let hop = 0; timeline && hop < 6; hop += 1) {
+    for (const event of timeline.getEvents()) {
+      const id = event.getId();
+      if (id) {
+        if (seen.has(id)) continue;
+        seen.add(id);
+      }
+      collected.push(event);
+    }
+    const previous = timeline.getNeighbouringTimeline(Direction.Backward);
+    timeline = previous && previous !== timeline ? previous : null;
+  }
+  return collected;
+}
+
+/**
+ * Time of the latest real message already loaded. Team bookkeeping notices
+ * are not conversation, so they do not keep a quiet channel on screen.
+ */
+function latestChannelMessage(
+  room: Room,
+  selfId: string | null,
+): {
+  preview: string;
+  mine: boolean;
+  ts: number | null;
+  sender: string | null;
+} {
+  const events = loadedRoomEvents(room);
+  let best: {
+    preview: string;
+    mine: boolean;
+    ts: number;
+    sender: string | null;
+  } | null = null;
+  let encryptedTs = 0;
+  for (const event of events) {
+    if (!event || event.isRedacted()) continue;
+    const ts = event.getTs() || 0;
+    const type = event.getType();
+    // A new message can still be encrypted when the list is built. Its time
+    // is enough to keep the channel; the words appear once it decrypts.
+    if (type === 'm.room.encrypted') {
+      if (ts > encryptedTs) encryptedTs = ts;
+      continue;
+    }
+    if (type !== EventType.RoomMessage) continue;
+    const content = event.getContent() as { body?: unknown } | undefined;
+    const body = typeof content?.body === 'string' ? content.body.trim() : '';
+    if (!body || isSignalTeamNoticeBody(body)) continue;
+    if (best && ts <= best.ts) continue;
+    const preview = messagePreview(body, (matrixUserId) => {
+      const member = room.getMember(matrixUserId);
+      if (!member) return '';
+      const label = matrixMemberDisplayLabel(member, matrixUserId);
+      if (looksLikeTechnicalMatrixDisplayName(label, matrixUserId)) return '';
+      return label;
+    });
+    const sender = event.getSender() ?? null;
+    const activity = conversationActivityTs(ts);
+    if (!activity) continue;
+    best = {
+      preview,
+      mine: Boolean(selfId && sender === selfId),
+      ts: activity,
+      sender,
+    };
+  }
+  if (best) return best;
+  if (encryptedTs > 0) {
+    return { preview: '', mine: false, ts: encryptedTs, sender: null };
+  }
+  const notified =
+    typeof room.getUnreadNotificationCount === 'function'
+      ? room.getUnreadNotificationCount(NotificationCountType.Total)
+      : 0;
+  if (notified > 0) {
+    const active =
+      typeof room.getLastActiveTimestamp === 'function'
+        ? room.getLastActiveTimestamp()
+        : 0;
+    return {
+      preview: '',
+      mine: false,
+      ts: active > 0 ? active : Date.now(),
+      sender: null,
+    };
+  }
+  return { preview: '', mine: false, ts: null, sender: null };
+}
+
+function signalMembershipHint(
+  room: Room,
+  selfId: string | null,
+): { onSignalTeam: boolean; mentioned: boolean } {
+  if (!selfId) return { onSignalTeam: false, mentioned: false };
+  let team: { ts: number; members: string[]; owner: string | null } | null =
+    null;
+  let mentioned = false;
+  for (const event of loadedRoomEvents(room)) {
+    if (event.isRedacted() || event.getType() !== EventType.RoomMessage) {
+      continue;
+    }
+    const content = event.getContent() as Record<string, unknown> | undefined;
+    if (!content) continue;
+    const body = typeof content.body === 'string' ? content.body.trim() : '';
+    const msgtype =
+      typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
+    if (
+      body.startsWith(SIGNAL_TEAM_BODY_MARKER) ||
+      msgtype === 'io.hypha.signal.team.v1'
+    ) {
+      const members = Array.isArray(content.memberMatrixUserIds)
+        ? content.memberMatrixUserIds.filter(
+            (id): id is string =>
+              typeof id === 'string' && id.trim().length > 0,
+          )
+        : [];
+      const owner =
+        typeof content.ownerMatrixUserId === 'string'
+          ? content.ownerMatrixUserId.trim()
+          : null;
+      const ts = event.getTs() || 0;
+      if (!team || ts >= team.ts) team = { ts, members, owner };
+    }
+    if (!mentioned && contentMentionsMatrixUser(content, selfId)) {
+      mentioned = true;
+    }
+  }
+  const onSignalTeam = Boolean(
+    team &&
+      (team.owner === selfId ||
+        team.members.some((id) => id.trim() === selfId)),
+  );
+  return { onSignalTeam, mentioned };
+}
+
+/** Joined space, signal, ecosystem, and network rooms. Direct chats stay out. */
+function joinedChannelSnapshots(client: MatrixClient): JoinedChannelSnapshot[] {
+  const selfId = client.getUserId();
+  const snapshots: JoinedChannelSnapshot[] = [];
+  for (const room of client.getRooms()) {
+    if (room.getMyMembership() !== 'join') continue;
+    const roomType = room.getType()?.trim() || '';
+    // Older Hypha, ecosystem, and network rooms have no create-event type.
+    // They stay in the snapshot so an alias or a stored room id can name them.
+    // A typed direct or group room is not a channel. Proposal rooms are.
+    if (roomType && !INBOX_CHANNEL_TYPES.has(roomType)) continue;
+    const named = (readRoomNameState(room) || room.name || '').trim();
+    const last = latestChannelMessage(room, selfId);
+    const signal =
+      roomType === HYPHA_ROOM_TYPES.signal
+        ? signalMembershipHint(room, selfId)
+        : { onSignalTeam: false, mentioned: false };
+    snapshots.push({
+      roomId: room.roomId,
+      roomType,
+      name: looksLikeTechnicalMatrixDisplayName(named, room.roomId)
+        ? ''
+        : named,
+      aliases: roomAliases(room),
+      preview: last.preview,
+      mine: last.mine,
+      senderUserId: last.sender,
+      lastTs: last.ts,
+      unread: countIncomingUnreadMessages(room, selfId, isHyphaBot),
+      onSignalTeam: signal.onSignalTeam,
+      mentioned: signal.mentioned,
+    });
+  }
+  snapshots.sort((left, right) => left.roomId.localeCompare(right.roomId));
+  return snapshots;
+}
+
+/** Same unread total as All messages: people list + relevant channel rows. */
+function messagesScreenUnreadSnapshot(
+  client: MatrixClient,
+  context: InboxContext,
+) {
+  const channelUnread = channelRowsFromSnapshots(
+    joinedChannelSnapshots(client),
+    context,
+    '',
+  ).reduce((sum, row) => sum + (row.unread > 0 ? row.unread : 0), 0);
+  return conversationUnreadSnapshot(client) + channelUnread;
+}
+
+const channelPreviewAttempted = new Set<string>();
+let channelPreviewBackfillInFlight = false;
+
+/**
+ * Visible channel rows with a timestamp but no readable line yet: pull a short
+ * scrollback once so "No messages yet" is not lying about an empty timeline.
+ */
+async function backfillChannelPreviews(
+  client: MatrixClient,
+  roomIds: readonly string[],
+): Promise<boolean> {
+  const needed = roomIds.filter((roomId) => {
+    if (!roomId || channelPreviewAttempted.has(roomId)) return false;
+    const room = client.getRoom(roomId);
+    if (!room || room.getMyMembership() !== 'join') return false;
+    return !latestChannelMessage(room, client.getUserId()).preview;
+  });
+  if (needed.length === 0) return false;
+  if (channelPreviewBackfillInFlight) return true;
+  channelPreviewBackfillInFlight = true;
+  let changed = false;
+  try {
+    for (const roomId of needed) {
+      channelPreviewAttempted.add(roomId);
+      const room = client.getRoom(roomId);
+      if (!room) continue;
+      try {
+        await client.scrollback(room, CHANNEL_PREVIEW_SCROLLBACK);
+        changed = true;
+      } catch {
+        // Keep the row; a later sync or open may still fill the preview.
+      }
+      await new Promise((resolve) =>
+        window.setTimeout(resolve, CHANNEL_PREVIEW_STAGGER_MS),
+      );
+    }
+  } finally {
+    channelPreviewBackfillInFlight = false;
+  }
+  if (changed) notifyConversationListeners();
+  return false;
+}
+
+function sameChannelSnapshots(
+  current: readonly JoinedChannelSnapshot[],
+  next: readonly JoinedChannelSnapshot[],
+) {
+  if (current.length !== next.length) return false;
+  for (let index = 0; index < current.length; index += 1) {
+    const left = current[index];
+    const right = next[index];
+    if (!left || !right) return false;
+    if (
+      left.roomId !== right.roomId ||
+      left.roomType !== right.roomType ||
+      left.name !== right.name ||
+      left.preview !== right.preview ||
+      left.senderUserId !== right.senderUserId ||
+      left.mine !== right.mine ||
+      left.unread !== right.unread ||
+      left.lastTs !== right.lastTs ||
+      left.onSignalTeam !== right.onSignalTeam ||
+      left.mentioned !== right.mentioned
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function MyConnections({
   section = 'messages',
 }: {
-  /** Messages is the conversation list. Suggestions is its own screen. */
-  section?: 'messages' | 'suggestions';
+  /** Messages is the conversation list. Suggestions and Archived are their own screens. */
+  section?: 'messages' | 'suggestions' | 'archived';
 }) {
   const t = useTranslations('Connections');
   const tChat = useTranslations('MemberHome');
   const tCommon = useTranslations('Common');
   const locale = useLocale();
+  const { user } = useAuthentication();
   const { jwt } = useJwt();
-  const { client, isMatrixAvailable, createRoom, ensureRoomMembers } =
-    useMatrix();
-  const { openCoherenceChat } = useHumanChatPanel();
+  const memberId = user?.id ?? null;
+  const jwtSubject = jwt ? readJwtSubject(jwt) : null;
+  const jwtRef = useRef(jwt);
+  const jwtOwnerRef = useRef<string | null>(null);
+  const keepHomeKey = useRef(false);
+  // Same ownership gate as Home so Messages reuses the shell/full SWR cache.
+  if (jwt && jwtSubject && memberId && jwtSubject === memberId) {
+    jwtRef.current = jwt;
+    jwtOwnerRef.current = jwtSubject;
+    keepHomeKey.current = true;
+  }
+  useLayoutEffect(() => {
+    if (!jwt || !jwtSubject || !memberId || jwtSubject !== memberId) return;
+    jwtRef.current = jwt;
+    jwtOwnerRef.current = jwtSubject;
+    keepHomeKey.current = true;
+  }, [jwt, jwtSubject, memberId]);
+  const tokenOwner = jwtSubject ?? jwtOwnerRef.current;
+  const homeKeyReady =
+    Boolean(memberId) &&
+    Boolean(tokenOwner) &&
+    tokenOwner === memberId &&
+    (Boolean(jwt) || keepHomeKey.current);
+  const fetchHome = useCallback(
+    async (scope: 'shell' | 'full') => {
+      const token = jwtRef.current;
+      if (!token || jwtOwnerRef.current !== memberId) {
+        throw new Error('Access token not ready');
+      }
+      const url =
+        scope === 'shell'
+          ? '/api/v1/people/me/intelligence?scope=shell'
+          : '/api/v1/people/me/intelligence';
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(HOME_INTELLIGENCE_TIMEOUT_MS),
+      });
+      if (response.status === 404) return null;
+      if (!response.ok) {
+        throw new Error('Failed to load home');
+      }
+      return (await response.json()) as MemberIntelligence;
+    },
+    [memberId],
+  );
+  const {
+    client,
+    isMatrixAvailable,
+    isConnecting,
+    createRoom,
+    ensureRoomMembers,
+  } = useMatrix();
+  useEffect(() => {
+    setConversationBoundLookupToken(jwt);
+    if (client && jwt?.trim()) refreshBoundChatRooms(client);
+  }, [client, jwt]);
+  const { openCoherenceChat, coherenceRoomId, coherencePeerPerson } =
+    useHumanChatPanel();
   const searchParams = useSearchParams();
+  const debugRooms = searchParams.get('debugRooms') === '1';
   const openedDirectChatRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
+  /** After a filter tap, open the first row once the filtered list is ready. */
+  const pendingSelectFirstInboxRef = useRef(false);
+  const openInboxRowRef = useRef<
+    ((row: ConnectionMemberRow) => void | Promise<void>) | null
+  >(null);
+  const inboxFiltersRef = useRef<HTMLDivElement | null>(null);
+  const chainFilterScroll = useChainScrollAtEdge();
+  const setInboxFiltersRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      inboxFiltersRef.current = node;
+      chainFilterScroll(node);
+    },
+    [chainFilterScroll],
+  );
+  const inboxListRef = useRef<HTMLUListElement | null>(null);
+  const inboxEndRef = useRef<HTMLLIElement | null>(null);
+  const inboxNavReady = useRef(false);
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
+  const [channels, setChannels] = useState<JoinedChannelSnapshot[]>([]);
+  // Direct skips the all-channels merge on open (faster first paint).
+  const [inboxFilter, setInboxFilter] = useState<InboxFilter>('direct');
+  const [inboxVisibleCount, setInboxVisibleCount] = useState(INBOX_LIST_PAGE);
+  /** Below the side-by-side layout, a channel tap replaces the menu with its messages. */
+  const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
   const [synced, setSynced] = useState(false);
-  const [rowsPending, setRowsPending] = useState(true);
+  const [initialSyncComplete, setInitialSyncComplete] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selectedById, setSelectedById] = useState<
+    Map<number, ConnectionMemberRow>
+  >(() => new Map());
+  const selected = useMemo(() => new Set(selectedById.keys()), [selectedById]);
   const [picking, setPicking] = useState(false);
   const [starting, setStarting] = useState(false);
   const [pendingGroups, setPendingGroups] = useState<ConversationRow[]>([]);
@@ -935,18 +1962,74 @@ export function MyConnections({
   const [loadingMore, setLoadingMore] = useState(false);
   const [moreFailed, setMoreFailed] = useState(false);
   const [directoryComplete, setDirectoryComplete] = useState(false);
-  const suggestionPoolRequested = useRef(false);
+  const fullDirectoryRequested = useRef(false);
 
-  const { data: home } = useSWR<MemberIntelligence | null>(
-    jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
+  const [listSettled, setListSettled] = useState(false);
+  // Same SWR keys as Home so a prior /home visit fills this without refetch.
+  // Shell + full run in parallel here; Direct list does not wait on either.
+  const { data: shell } = useSWR<MemberIntelligence | null>(
+    homeKeyReady
+      ? (['/api/v1/people/me/intelligence', memberId, 'shell'] as const)
+      : null,
+    () => fetchHome('shell'),
+    {
+      revalidateOnFocus: false,
+      refreshInterval: 0,
+      keepPreviousData: false,
+      isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
+      compare: sameMemberHome,
+    },
+  );
+  const { data: full, error: fullError } = useSWR<MemberIntelligence | null>(
+    homeKeyReady
+      ? (['/api/v1/people/me/intelligence', memberId, 'full'] as const)
+      : null,
+    () => fetchHome('full'),
+    {
+      revalidateOnFocus: false,
+      refreshInterval: 0,
+      keepPreviousData: false,
+      isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
+      compare: sameMemberHome,
+    },
+  );
+  const homeRaw = full === undefined ? shell : full;
+  const home =
+    homeRaw?.partial && fullError
+      ? { ...homeRaw, partial: false }
+      : homeRaw ?? null;
+  const { data: inboxContext } = useSWR<InboxContext>(
+    section === 'messages' && jwt
+      ? ['/api/v1/people/me/message-inbox-context', jwt]
+      : null,
     async ([url, token]) => {
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) return null;
-      return (await response.json()) as MemberIntelligence;
+      if (!response.ok) return EMPTY_INBOX_CONTEXT;
+      return (await response.json()) as InboxContext;
     },
   );
+  useEffect(() => {
+    try {
+      const stored = window.sessionStorage.getItem(INBOX_FILTER_KEY);
+      if (isInboxFilter(stored)) setInboxFilter(stored);
+    } catch {
+      // Private mode can block session storage. The default filter still works.
+    }
+  }, []);
+  useEffect(() => {
+    if (!inboxNavReady.current) {
+      inboxNavReady.current = true;
+      return;
+    }
+    scrollMainColumnTo(0);
+    if (window.matchMedia('(min-width: 64rem)').matches) return;
+    const target = inboxChannelOpen
+      ? inboxListRef.current
+      : inboxFiltersRef.current;
+    target?.scrollTo({ top: 0 });
+  }, [inboxChannelOpen]);
 
   const connections =
     directory && directory.length >= (home?.connections.length ?? 0)
@@ -959,12 +2042,41 @@ export function MyConnections({
   const hasMorePeople =
     !directoryComplete && connections.length < connectionTotal;
   const needle = query.trim().toLowerCase();
-  const listed =
-    needle && searchDirectory != null ? searchDirectory : connections;
+  const wantsFullDirectory =
+    section === 'suggestions' || picking || Boolean(query.trim());
+  const directoryPeople = mergeDirectoryPeople(
+    connections,
+    needle || picking ? searchDirectory : null,
+  );
+  const peerSubs = useMemo(() => {
+    const fromChannels = channels.flatMap((channel) => {
+      const sub = channel.senderUserId
+        ? matrixUserIdToCanonicalPrivySub(channel.senderUserId)
+        : null;
+      return sub ? [sub] : [];
+    });
+    return [...new Set([...conversationPeerSubs(rows), ...fromChannels])];
+  }, [channels, rows]);
+  const {
+    peopleBySub,
+    pendingSubs,
+    isLoading: peopleBySubLoading,
+  } = usePeopleBySubs({
+    subs: peerSubs,
+  });
+  const peerPersonIds = useMemo(() => {
+    const ids: number[] = [];
+    for (const person of peopleBySub.values()) {
+      if (typeof person.id === 'number' && person.id > 0) ids.push(person.id);
+    }
+    return ids;
+  }, [peopleBySub]);
   const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
     useMatrixUserIdsByPersonIds({
       personIds: [
-        ...listed.map((person) => person.id),
+        ...directoryPeople.map((person) => person.id),
+        ...peerPersonIds,
+        ...[...selectedById.keys()].filter((id) => id > 0),
         ...(home?.person.id != null ? [home.person.id] : []),
       ],
     });
@@ -1044,17 +2156,52 @@ export function MyConnections({
       setSearching(true);
       void (async () => {
         try {
-          const response = await fetch(
-            `/api/v1/people/me/intelligence?q=${encodeURIComponent(term)}`,
-            {
-              headers: { Authorization: `Bearer ${jwt}` },
-              signal: controller.signal,
-            },
-          );
-          if (!response.ok) return;
-          const body = (await response.json()) as MemberIntelligence;
+          const headers = { Authorization: `Bearer ${jwt}` };
+          const [connectionResponse, networkResponse] = await Promise.all([
+            fetch(
+              `/api/v1/people/me/intelligence?q=${encodeURIComponent(term)}`,
+              { headers, signal: controller.signal },
+            ),
+            term.length >= 2
+              ? fetch(`/api/v1/people/search?q=${encodeURIComponent(term)}`, {
+                  headers,
+                  signal: controller.signal,
+                })
+              : Promise.resolve(null),
+          ]);
+          if (controller.signal.aborted) return;
+          const connections: ConnectionPerson[] = [];
+          if (connectionResponse.ok) {
+            const body =
+              (await connectionResponse.json()) as MemberIntelligence;
+            connections.push(...(body.connections ?? []));
+          }
+          if (networkResponse?.ok) {
+            const body = (await networkResponse.json()) as {
+              people?: Array<{
+                id: number;
+                slug: string | null;
+                name: string | null;
+                surname: string | null;
+                nickname: string | null;
+                avatarUrl: string | null;
+              }>;
+            };
+            for (const person of body.people ?? []) {
+              if (!person.id || person.id <= 0) continue;
+              connections.push({
+                id: person.id,
+                slug: person.slug,
+                name: person.name,
+                surname: person.surname,
+                nickname: person.nickname,
+                avatarUrl: person.avatarUrl,
+                sharedSpaceCount: 0,
+              });
+            }
+          }
           if (!controller.signal.aborted) {
-            setSearchDirectory(body.connections ?? []);
+            setSearchDirectory(mergeDirectoryPeople(connections));
           }
         } catch (error) {
           if (error instanceof DOMException && error.name === 'AbortError') {
@@ -1072,11 +2219,17 @@ export function MyConnections({
   }, [jwt, query]);
 
   useEffect(() => {
-    if (section !== 'suggestions' || !jwt || suggestionPoolRequested.current) {
+    if (!wantsFullDirectory || !jwt || fullDirectoryRequested.current) {
       return;
     }
-    suggestionPoolRequested.current = true;
+    if (home == null) return;
+    if (directoryComplete || connections.length >= connectionTotal) {
+      fullDirectoryRequested.current = true;
+      return;
+    }
+    fullDirectoryRequested.current = true;
     const controller = new AbortController();
+    let succeeded = false;
     void (async () => {
       try {
         const response = await fetch(
@@ -1086,33 +2239,50 @@ export function MyConnections({
             signal: controller.signal,
           },
         );
-        if (!response.ok) return;
+        if (!response.ok) {
+          fullDirectoryRequested.current = false;
+          return;
+        }
         const body = (await response.json()) as MemberIntelligence;
         if (controller.signal.aborted) return;
         const page = body.connections ?? [];
-        if (page.length === 0) return;
+        if (page.length === 0) {
+          setDirectoryComplete(true);
+          succeeded = true;
+          return;
+        }
         setDirectory(page);
-        if (page.length >= (body.counts?.connections ?? page.length)) {
+        if (page.length >= (body.counts?.connections ?? connectionTotal)) {
           setDirectoryComplete(true);
         }
+        succeeded = true;
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
         }
-        suggestionPoolRequested.current = false;
+        fullDirectoryRequested.current = false;
       }
     })();
     return () => {
       controller.abort();
-      suggestionPoolRequested.current = false;
+      if (!succeeded) fullDirectoryRequested.current = false;
     };
-  }, [jwt, section]);
+  }, [
+    connectionTotal,
+    connections.length,
+    directoryComplete,
+    home,
+    jwt,
+    wantsFullDirectory,
+  ]);
 
   useEffect(() => {
     if (!client) {
       setRows([]);
+      setChannels([]);
       setSynced(false);
-      setRowsPending(true);
+      setInitialSyncComplete(false);
+      setListSettled(false);
       return;
     }
     return attachConversationList(client, () => {
@@ -1120,11 +2290,21 @@ export function MyConnections({
         const next = conversationRowsSnapshot(client);
         return sameConversationRows(current, next) ? current : next;
       });
+      setChannels((current) => {
+        const next = joinedChannelSnapshots(client);
+        return sameChannelSnapshots(current, next) ? current : next;
+      });
       const state = client.getSyncState();
       if (state === SyncState.Prepared || state === SyncState.Syncing) {
         setSynced(true);
       }
-      setRowsPending(conversationRowsPending(client));
+      if (
+        state === SyncState.Prepared ||
+        (typeof client.isInitialSyncComplete === 'function' &&
+          client.isInitialSyncComplete())
+      ) {
+        setInitialSyncComplete(true);
+      }
     });
   }, [client]);
 
@@ -1142,29 +2322,26 @@ export function MyConnections({
     );
   }, [home?.signals]);
 
-  const members = useMemo(() => {
-    const directoryRows = memberRowsForConnections(
-      listed,
-      rows,
-      personIdToMatrixUserId,
-      home?.person.id ?? null,
-      t('someone'),
-    );
-    return [
-      ...unreadRoomsMissingFromMembers(
+  const members = useMemo(
+    () =>
+      personRowsFromDmRooms(
+        directoryPeople,
         rows,
-        directoryRows,
         personIdToMatrixUserId,
+        home?.person.id ?? null,
+        t('someone'),
+        directoryPeople,
+        peopleBySub,
       ),
-      ...directoryRows,
-    ];
-  }, [home?.person.id, listed, personIdToMatrixUserId, rows, t]);
-
-  const memberPersonIds = useMemo(
-    () => members.map((row) => row.person.id),
-    [members],
+    [
+      directoryPeople,
+      home?.person.id,
+      peopleBySub,
+      personIdToMatrixUserId,
+      rows,
+      t,
+    ],
   );
-  const { presenceById } = useMemberPresence(memberPersonIds);
 
   const reachOut = useMemo(() => {
     if (!synced) return [];
@@ -1194,9 +2371,99 @@ export function MyConnections({
       STALE_CONNECTION_MS,
     );
   }, [home?.networkSignals, members, synced]);
+  /** Suggestions search: start a chat with anyone matching the name, even with no thread yet. */
+  const suggestionCards = useMemo((): ConnectionSuggestion[] => {
+    if (!needle) return reachOut;
+    const selfId = home?.person.id ?? null;
+    const hits = peopleMatchingSearch(
+      directoryPeople,
+      searchDirectory,
+      needle,
+    ).filter((person) => person.id > 0 && person.id !== selfId);
+    return hits.map((person) => {
+      const name =
+        [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+        person.nickname?.trim() ||
+        t('someone');
+      const existing = members.find((row) => row.person.id === person.id);
+      return {
+        key: `search-${person.id}`,
+        kind: 'meet' as const,
+        name,
+        avatarUrl: person.avatarUrl ?? undefined,
+        roomId: existing?.roomId ?? null,
+        lastTs: existing
+          ? connectionActivityTs(existing.lastTs, existing.preview)
+          : null,
+        person: {
+          id: person.id,
+          slug: person.slug,
+          name: person.name,
+          surname: person.surname,
+          nickname: person.nickname,
+          avatarUrl: person.avatarUrl,
+        },
+        sharedSpaceCount: person.sharedSpaceCount ?? 0,
+        spaceTitle: null,
+      };
+    });
+  }, [
+    directoryPeople,
+    home?.person.id,
+    members,
+    needle,
+    reachOut,
+    searchDirectory,
+    t,
+  ]);
   const reachOutIds = useMemo(
-    () => reachOut.map((card) => card.person.id),
-    [reachOut],
+    () => suggestionCards.map((card) => card.person.id),
+    [suggestionCards],
+  );
+
+  // Keep pending titles visible while peer profiles load — do not tie this to
+  // listSettled, or an early PEOPLE AROUND paint drops everyone as titlePending.
+  const titlesLoading = peopleBySubLoading || (peerSubs.length > 0 && !jwt);
+  const hasMatrixConversations =
+    rows.some((row) => row.kind === 'person' || row.kind === 'group') ||
+    channels.length > 0 ||
+    pendingGroups.length > 0;
+  const dataReady = messagesPeopleListReady({
+    isMatrixAvailable,
+    isConnecting,
+    synced,
+    initialSyncComplete,
+    hasMatrixConversations,
+  });
+  useEffect(() => {
+    if (dataReady && isMatrixAvailable) setListSettled(true);
+  }, [dataReady, isMatrixAvailable]);
+  const listLoading = !listSettled && !dataReady;
+  const resolvedMembers = useMemo(
+    () =>
+      applyResolvedPeerTitles(
+        members,
+        rows,
+        peopleBySub,
+        personIdToMatrixUserId,
+        {
+          loading: titlesLoading,
+          pendingSubs,
+          hideUnresolved: true,
+        },
+      ),
+    [
+      members,
+      pendingSubs,
+      peopleBySub,
+      personIdToMatrixUserId,
+      rows,
+      titlesLoading,
+    ],
+  );
+  const titledMembers = useMemo(
+    () => visibleMemberRowsAfterTitleResolve(resolvedMembers, titlesLoading),
+    [resolvedMembers, titlesLoading],
   );
 
   const people = useMemo(() => {
@@ -1211,8 +2478,10 @@ export function MyConnections({
       const local = id.replace(/^@/, '').split(':')[0]?.toLowerCase();
       if (local) mentionNames.set(local, clean);
     };
-    for (const row of members) {
-      const mxid = personIdToMatrixUserId[row.person.id];
+    for (const row of resolvedMembers) {
+      const mxid =
+        personIdToMatrixUserId[row.person.id] ||
+        rows.find((room) => room.roomId === row.roomId)?.otherUserId;
       if (!mxid) continue;
       const avatar = row.avatarUrl || row.person.avatarUrl || undefined;
       profiles.set(mxid.toLowerCase(), {
@@ -1232,6 +2501,33 @@ export function MyConnections({
     const liveGroupIds = new Set(
       rows.filter((row) => row.kind === 'group').map((row) => row.roomId),
     );
+    const peopleByMxid = new Map<
+      string,
+      {
+        name?: string | null;
+        nickname?: string | null;
+        slug?: string | null;
+      }
+    >();
+    for (const row of rows) {
+      if (row.kind !== 'group') continue;
+      for (const member of row.searchMembers ?? []) {
+        const mxid = member.userId?.trim();
+        if (!mxid) continue;
+        const sub = matrixUserIdToCanonicalPrivySub(mxid);
+        const person = sub ? peopleBySub.get(sub) : undefined;
+        if (!person) continue;
+        const name =
+          [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+          person.nickname?.trim() ||
+          '';
+        peopleByMxid.set(mxid.toLowerCase(), {
+          name,
+          nickname: person.nickname,
+          slug: person.slug,
+        });
+      }
+    }
     const conversations = [
       ...rows.map((row) => {
         if (row.kind !== 'group') return row;
@@ -1244,51 +2540,354 @@ export function MyConnections({
           ...row,
           name: row.name.trim() || pending?.name || row.name,
           faces: facesWithProfiles(faces, profiles),
-          lastTs: row.lastTs ?? pending?.lastTs ?? row.lastTs,
+          lastTs: row.lastTs,
+          searchMembers: enrichSearchMembers(
+            row.searchMembers,
+            profiles,
+            resolvedMembers,
+            personIdToMatrixUserId,
+            peopleByMxid,
+          ),
         };
       }),
       ...pendingGroups
         .filter((group) => !liveGroupIds.has(group.roomId))
         .map((group) => ({
           ...group,
+          name:
+            conversationTitleOverrides.get(group.roomId)?.trim() || group.name,
           faces: facesWithProfiles(group.faces, profiles),
+          archived: isArchivedGroupRoom(client?.getRoom(group.roomId)),
         })),
     ];
+    for (const [mxid, profile] of peopleByMxid) {
+      if (profile.name) rememberName(mxid, profile.name);
+    }
     for (const row of conversations) {
       for (const face of row.faces ?? []) {
         if (face.userId && face.name) rememberName(face.userId, face.name);
+      }
+      for (const member of row.searchMembers ?? []) {
+        if (member.userId && member.name)
+          rememberName(member.userId, member.name);
       }
     }
     const groups = picking
       ? []
       : groupRowsForConnections<ConnectionPerson>(conversations, t('someone'));
-    const source = [...groups, ...members];
-    const filtered = needle
-      ? source.filter((row) => {
-          const haystack = [row.name, row.person.nickname, row.person.slug]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-          return haystack.includes(needle);
-        })
-      : source;
-    const named = filtered.map((row) => ({
-      ...row,
-      preview: previewWithNames(row.preview, mentionNames),
-    }));
-    return sortByRecencyThenPresence(named, presenceById);
+    const listedGroups = conversationsVisibleInSection(
+      groups,
+      section === 'archived' ? 'archived' : 'messages',
+    );
+    const matchingGroups = conversationsMatchingSearch(listedGroups, needle);
+    const matchingMembers = conversationsMatchingSearch(
+      membersForGroupPicker(titledMembers, picking),
+      needle,
+    );
+    const source =
+      section === 'archived'
+        ? matchingGroups
+        : [...matchingGroups, ...matchingMembers];
+    const named = source.map((row) => {
+      const preview = previewForInboxDisplay(row.preview, mentionNames);
+      return withSenderName(
+        {
+          ...row,
+          preview,
+        },
+        peopleBySub,
+        client,
+      );
+    });
+    return sortConversationsByLastMessage(named);
   }, [
+    client,
     home?.person,
-    members,
     needle,
     pendingGroups,
+    peopleBySub,
     personIdToMatrixUserId,
     picking,
-    presenceById,
+    resolvedMembers,
     rows,
+    section,
+    t,
+    titledMembers,
+  ]);
+  const inboxMentionNames = useMemo(() => {
+    const mentionNames = new Map<string, string>();
+    const rememberName = (mxid: string, name: string) => {
+      const clean = name.trim();
+      const id = mxid.trim();
+      if (!id || !clean) return;
+      if (looksLikeTechnicalMatrixDisplayName(clean, id)) return;
+      mentionNames.set(id.toLowerCase(), clean);
+      const local = id.replace(/^@/, '').split(':')[0]?.toLowerCase();
+      if (local) mentionNames.set(local, clean);
+    };
+    for (const [personId, mxid] of Object.entries(personIdToMatrixUserId)) {
+      if (!mxid) continue;
+      const id = Number(personId);
+      const fromDirectory = directoryPeople.find((person) => person.id === id);
+      const sub = matrixUserIdToCanonicalPrivySub(mxid);
+      const fromSub = sub ? peopleBySub.get(sub) : undefined;
+      const person = fromDirectory ?? fromSub;
+      if (!person) continue;
+      const name =
+        [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+        person.nickname?.trim() ||
+        '';
+      if (name) rememberName(mxid, name);
+    }
+    for (const channel of channels) {
+      const mxid = channel.senderUserId?.trim();
+      if (!mxid) continue;
+      const room = client?.getRoom(channel.roomId);
+      const member = room?.getMember(mxid);
+      if (!member) continue;
+      const label = matrixMemberDisplayLabel(member, mxid);
+      if (label) rememberName(mxid, label);
+    }
+    return mentionNames;
+  }, [channels, client, directoryPeople, peopleBySub, personIdToMatrixUserId]);
+  const inboxView = useMemo(() => {
+    const directAll = people.map((row) =>
+      row.inbox
+        ? row
+        : { ...row, inbox: directInboxPlace(peopleInboxKind(row)) },
+    );
+    // Joined DMs/groups only — directory people without a room are not
+    // conversations and must not make Direct/All read "12" by default.
+    const directConversations = directAll.filter(isInboxDirectConversation);
+    // Search and the group picker still need roomless directory rows.
+    const directForList =
+      picking || needle.length > 0 ? directAll : directConversations;
+    const channelRows =
+      section === 'messages' && !picking
+        ? conversationsMatchingSearch(
+            channelRowsFromSnapshots(
+              channels,
+              inboxContext ?? EMPTY_INBOX_CONTEXT,
+              t('inbox.networkTitle'),
+            ) as ConnectionMemberRow[],
+            needle,
+          ).map((row) =>
+            withSenderName(
+              {
+                ...row,
+                preview: previewForInboxDisplay(row.preview, inboxMentionNames),
+              },
+              peopleBySub,
+              client,
+            ),
+          )
+        : [];
+    const counts = inboxFilterCounts([
+      ...directConversations.map((row) => ({
+        kind: row.inbox?.kind ?? 'dm',
+        unread: row.unread,
+      })),
+      ...channelRows.flatMap((row) =>
+        row.inbox ? [{ kind: row.inbox.kind, unread: row.unread }] : [],
+      ),
+    ]);
+    if (section !== 'messages' || picking || inboxFilter === 'direct') {
+      return { rows: directForList, counts };
+    }
+    if (inboxFilter === 'all') {
+      return {
+        rows: sortConversationsByLastMessage([
+          ...directForList,
+          ...channelRows,
+        ]),
+        counts,
+      };
+    }
+    return {
+      rows: sortConversationsByLastMessage(
+        channelRows.filter(
+          (row) =>
+            row.inbox != null &&
+            rowMatchesInboxFilter(row.inbox.kind, inboxFilter),
+        ),
+      ),
+      counts,
+    };
+  }, [
+    channels,
+    client,
+    inboxContext,
+    inboxFilter,
+    inboxMentionNames,
+    needle,
+    people,
+    peopleBySub,
+    picking,
+    section,
     t,
   ]);
-  const selectedPeople = members.filter((row) => selected.has(row.person.id));
+  function selectInboxFilter(next: InboxFilter) {
+    if (picking) {
+      setPicking(false);
+      setSelectedById(new Map());
+      setQuery('');
+    }
+    pendingSelectFirstInboxRef.current = next !== inboxFilter;
+    setInboxFilter(next);
+    setInboxVisibleCount(INBOX_LIST_PAGE);
+    setInboxChannelOpen(true);
+    try {
+      window.sessionStorage.setItem(INBOX_FILTER_KEY, next);
+    } catch {
+      // The choice still applies for this visit.
+    }
+  }
+
+  // Desktop / iPad (lg+): select the first conversation in the new filter so
+  // the side-by-side chat panel matches the list. Mobile stays on the list —
+  // auto-opening would skip the list and jump into fullscreen chat.
+  useEffect(() => {
+    if (!pendingSelectFirstInboxRef.current) return;
+    if (section !== 'messages' || picking) return;
+    if (
+      typeof window === 'undefined' ||
+      !window.matchMedia('(min-width: 64rem)').matches
+    ) {
+      pendingSelectFirstInboxRef.current = false;
+      return;
+    }
+    const first = inboxView.rows[0];
+    if (!first) return;
+    pendingSelectFirstInboxRef.current = false;
+    void openInboxRowRef.current?.(first);
+  }, [inboxFilter, inboxView.rows, picking, section]);
+
+  // Newest chats stay first, so a new message lands in this first screen.
+  // Filter badges and the nav count still use every row, including ones
+  // waiting until the list scrolls to the end.
+  const pagingInbox = section === 'messages' && !picking && needle.length === 0;
+  const inboxWindow = pagingInbox
+    ? inboxListWindow(inboxView.rows, inboxVisibleCount)
+    : null;
+  const shownRows = inboxWindow
+    ? inboxWindow.rows
+    : section === 'messages' && !picking
+    ? inboxView.rows
+    : people;
+  const missingChannelPreviewIds = useMemo(() => {
+    if (section !== 'messages' || picking) return [] as string[];
+    return shownRows
+      .filter(
+        (row) =>
+          row.inbox &&
+          row.inbox.kind !== 'dm' &&
+          row.inbox.kind !== 'group' &&
+          row.roomId &&
+          !row.preview.trim() &&
+          row.lastTs != null &&
+          !channelPreviewAttempted.has(row.roomId),
+      )
+      .map((row) => row.roomId as string)
+      .slice(0, IDLE_ROOM_CHUNK);
+  }, [picking, section, shownRows]);
+  const [channelPreviewsPending, setChannelPreviewsPending] = useState(false);
+  useEffect(() => {
+    if (!client || listLoading || missingChannelPreviewIds.length === 0) {
+      setChannelPreviewsPending(false);
+      return;
+    }
+    if (channelPreviewBackfillInFlight) {
+      setChannelPreviewsPending(true);
+      return;
+    }
+    let cancelled = false;
+    setChannelPreviewsPending(true);
+    void backfillChannelPreviews(client, missingChannelPreviewIds).finally(
+      () => {
+        if (!cancelled) setChannelPreviewsPending(false);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [client, listLoading, missingChannelPreviewIds]);
+  const hasMoreInboxRows = inboxWindow?.hasMore ?? false;
+  const canLoadMoreInbox =
+    !moreFailed &&
+    (hasMoreInboxRows ||
+      (hasMorePeople &&
+        !needle &&
+        section !== 'archived' &&
+        (picking || inboxFilter === 'all' || inboxFilter === 'direct')));
+  useEffect(() => {
+    const root = inboxListRef.current;
+    if (!root || section !== 'messages' || picking) return;
+    const row = root.querySelector<HTMLElement>(
+      '[data-active-conversation="true"]',
+    );
+    if (!row) return;
+    const rootRect = root.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    if (rowRect.top < rootRect.top) {
+      root.scrollTop -= rootRect.top - rowRect.top;
+    } else if (rowRect.bottom > rootRect.bottom) {
+      root.scrollTop += rowRect.bottom - rootRect.bottom;
+    }
+  }, [
+    coherencePeerPerson?.id,
+    coherenceRoomId,
+    inboxChannelOpen,
+    inboxFilter,
+    picking,
+    section,
+    shownRows,
+  ]);
+  const listTitle =
+    section === 'archived'
+      ? t('tabs.archived')
+      : section === 'messages' && !picking
+      ? t(`inbox.${inboxFilter}Title`)
+      : t('people');
+  const showChannelTags = section === 'messages' && !picking;
+  const selectedPeople = useMemo(
+    () => [...selectedById.values()],
+    [selectedById],
+  );
+  const roomDiagnostics = useMemo(
+    () => (debugRooms && client ? inspectJoinedAndInvitedRooms(client) : []),
+    [client, debugRooms, rows, synced],
+  );
+
+  const loadMoreInbox = useCallback(() => {
+    if (hasMoreInboxRows) {
+      setInboxVisibleCount((current) => current + INBOX_LIST_PAGE);
+      return;
+    }
+    if (loadingMore || !jwt || !hasMorePeople) return;
+    void loadMorePeople();
+  }, [hasMoreInboxRows, hasMorePeople, jwt, loadingMore]);
+
+  useEffect(() => {
+    if (listLoading || !canLoadMoreInbox) return;
+    const root = inboxListRef.current;
+    const sentinel = inboxEndRef.current;
+    if (!root || !sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        loadMoreInbox();
+      },
+      { root, rootMargin: '160px 0px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [
+    canLoadMoreInbox,
+    listLoading,
+    loadMoreInbox,
+    loadingMore,
+    shownRows.length,
+  ]);
 
   async function loadMorePeople() {
     if (loadingMore || !jwt || !hasMorePeople) return;
@@ -1300,7 +2899,7 @@ export function MyConnections({
     );
     try {
       const response = await fetch(
-        `/api/v1/people/me/intelligence?connections=${next}`,
+        `/api/v1/people/me/intelligence?connections=${next}&scope=shell`,
         { headers: { Authorization: `Bearer ${jwt}` } },
       );
       if (!response.ok) {
@@ -1309,7 +2908,12 @@ export function MyConnections({
       }
       const body = (await response.json()) as MemberIntelligence;
       const page = body.connections ?? [];
+      const total = body.counts?.connections ?? connectionTotal;
       if (page.length <= connections.length) {
+        if (connections.length < total) {
+          setMoreFailed(true);
+          return;
+        }
         setDirectoryComplete(true);
         return;
       }
@@ -1324,31 +2928,74 @@ export function MyConnections({
     }
   }
 
-  function toggleSelected(id: number) {
-    setSelected((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  function toggleSelected(row: ConnectionMemberRow) {
+    setSelectedById((current) => nextSelectedMembers(current, row));
   }
 
   function exitPicking() {
     setPicking(false);
-    setSelected(new Set());
+    setSelectedById(new Map());
+    setQuery('');
   }
 
   async function openMember(row: ConnectionMemberRow) {
     if (picking) {
-      toggleSelected(row.person.id);
+      toggleSelected(row);
+      return;
+    }
+    if (
+      row.inbox &&
+      row.inbox.kind !== 'dm' &&
+      row.inbox.kind !== 'group' &&
+      row.roomId
+    ) {
+      const spaceSlug =
+        row.inbox.kind === 'network'
+          ? null
+          : row.inbox.spaceSlug || row.inbox.ecosystemSlug;
+      openCoherenceChat(
+        row.roomId,
+        row.name,
+        row.inbox.signalSlug ?? '',
+        null,
+        spaceSlug,
+        {
+          public: row.inbox.kind === 'space-public',
+          channel: row.inbox.kind,
+        },
+      );
       return;
     }
     setNotice(null);
-    if (row.person.id < 0 && row.roomId) {
-      openCoherenceChat(row.roomId, row.name, '', null, null);
+    const target = listedConversationOpenTarget(row, {
+      rooms: rows,
+      personIdToMatrixUserId,
+      peopleBySub,
+      rememberedRoomId: readRememberedPersonDirectRoom(row.person.id),
+    });
+    if (target?.kind === 'listed-room') {
+      rememberPersonDirectRoom(row.person.id, target.roomId);
+      openCoherenceChat(target.roomId, target.title, '', null, null, {
+        peerPerson:
+          target.peerSlug || row.person.id > 0
+            ? {
+                slug: target.peerSlug || row.person.slug?.trim() || '',
+                id: row.person.id > 0 ? row.person.id : undefined,
+              }
+            : null,
+      });
       return;
     }
-    const opened = await openChatRef.current?.({
+    if (!target) {
+      setNotice(tChat('matrixUnavailable'));
+      return;
+    }
+    const openChat = openChatRef.current;
+    if (!openChat) {
+      setNotice(tChat('matrixUnavailable'));
+      return;
+    }
+    await openChat({
       id: row.person.id,
       slug: row.person.slug,
       name: row.person.name,
@@ -1356,11 +3003,29 @@ export function MyConnections({
       nickname: row.person.nickname,
       avatarUrl: row.person.avatarUrl,
     });
-    if (!opened) setNotice(tChat('matrixUnavailable'));
   }
+  openInboxRowRef.current = openMember;
+
+  const groupMemberIds = resolvedMatrixIdsForGroup(
+    selectedPeople,
+    personIdToMatrixUserId,
+  );
+  const canStartGroup =
+    selectedPeople.length >= 2 &&
+    !starting &&
+    !matrixIdsLoading &&
+    groupMemberIds != null;
 
   async function startGroupChat() {
     if (selectedPeople.length < 2 || starting) return;
+    const memberIds = resolvedMatrixIdsForGroup(
+      selectedPeople,
+      personIdToMatrixUserId,
+    );
+    if (!memberIds) {
+      setNotice(tChat('matrixFailed'));
+      return;
+    }
     setStarting(true);
     setNotice(null);
     const requester = [home?.person.name, home?.person.surname]
@@ -1376,11 +3041,8 @@ export function MyConnections({
     }));
     try {
       const { roomId } = await createRoom(title, {
+        grantCreatorPl100: true,
         roomType: HYPHA_ROOM_TYPES.group,
-      });
-      const memberIds = selectedPeople.flatMap((row) => {
-        const mxid = personIdToMatrixUserId[row.person.id]?.trim();
-        return mxid ? [mxid] : [];
       });
       rememberGroupChatMembers(roomId, memberIds);
       await ensureRoomMembers(roomId, memberIds);
@@ -1417,7 +3079,12 @@ export function MyConnections({
       openCoherenceChat(card.roomId, card.name, '', null, null);
       return;
     }
-    const opened = await openChatRef.current?.({
+    const openChat = openChatRef.current;
+    if (!openChat) {
+      setNotice(tChat('matrixUnavailable'));
+      return;
+    }
+    await openChat({
       id: card.person.id,
       slug: card.person.slug,
       name: card.person.name,
@@ -1425,14 +3092,13 @@ export function MyConnections({
       nickname: card.person.nickname,
       avatarUrl: card.person.avatarUrl,
     });
-    if (!opened) setNotice(tChat('matrixUnavailable'));
   }
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <MemberHomePeople
         people={connections}
-        extraPersonIds={reachOutIds}
+        extraPersonIds={[...reachOutIds, ...peerPersonIds]}
         chatSpaceSlug={home?.chatSpaceSlug ?? null}
         fallbackName={t('someone')}
         onOpenChatReady={(openChat) => {
@@ -1443,13 +3109,33 @@ export function MyConnections({
       {section === 'suggestions' ? (
         <section className="flex flex-col gap-3" aria-label={t('reachOut')}>
           <p className="text-2 text-muted-foreground">{t('suggestSentence')}</p>
-          {reachOut.length === 0 ? (
+          <label className="relative min-w-0 w-full">
+            <span className="sr-only">{t('searchMembers')}</span>
+            <Search
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
+              strokeWidth={1.5}
+              aria-hidden
+            />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') return;
+                event.stopPropagation();
+              }}
+              placeholder={t('searchMembers')}
+              className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-foreground focus-visible:ring-0"
+            />
+          </label>
+          {searching && needle ? (
+            <p className="text-2 text-muted-foreground">{t('loading')}</p>
+          ) : suggestionCards.length === 0 ? (
             <p className="text-2 text-muted-foreground">
-              {t('suggestionsEmpty')}
+              {needle ? t('noMembersMatchSearch') : t('suggestionsEmpty')}
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {reachOut.map((card) => (
+              {suggestionCards.map((card) => (
                 <button
                   key={card.key}
                   type="button"
@@ -1467,12 +3153,18 @@ export function MyConnections({
                     {card.name}
                   </span>
                   <span className="text-1 text-foreground">
-                    {card.kind === 'reconnect'
+                    {needle
+                      ? t('startConversation')
+                      : card.kind === 'reconnect'
                       ? t('longTimeNoSee')
                       : t('worthMeeting')}
                   </span>
                   <span className="w-full truncate text-1 text-muted-foreground">
-                    {card.kind === 'reconnect'
+                    {needle
+                      ? card.lastTs
+                        ? formatWhen(card.lastTs, locale, t('justNow'))
+                        : t('noMessage')
+                      : card.kind === 'reconnect'
                       ? card.lastTs
                         ? formatWhen(card.lastTs, locale, t('justNow'))
                         : t('noMessage')
@@ -1489,206 +3181,438 @@ export function MyConnections({
         </section>
       ) : null}
 
-      {section === 'messages' ? (
-        <>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <label className="relative min-w-0 flex-1">
-                <span className="sr-only">{t('search')}</span>
-                <Search
-                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
+      {section === 'messages' || section === 'archived' ? (
+        <div
+          className={cn(
+            'flex min-h-0 min-w-0 flex-1 flex-col gap-6',
+            section === 'messages' &&
+              'min-h-0 flex-1 gap-4 lg:flex-row lg:items-start lg:gap-6',
+          )}
+        >
+          {section === 'messages' ? (
+            <div
+              ref={setInboxFiltersRef}
+              data-messages-filters=""
+              className={cn(
+                // Same sticky edge as the conversation list. Page scroll and
+                // the list's own scroll are unchanged. The unread counts stay
+                // in view instead of leaving with the page.
+                'narrow-scrollbar w-full shrink-0 lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:w-80 lg:self-start lg:min-h-0 lg:bg-page-background',
+                picking || inboxChannelOpen
+                  ? 'hidden lg:block'
+                  : 'lg:flex-none',
+              )}
+            >
+              <MessagesInboxFilters
+                value={inboxFilter}
+                counts={inboxView.counts}
+                onChange={selectInboxFilter}
+              />
+            </div>
+          ) : null}
+          <div
+            data-messages-list-frame=""
+            className={cn(
+              'min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-visible lg:overflow-hidden',
+              // Sticky + viewport height from MessagesViewportLock so the
+              // list scrolls inside while the page still moves.
+              'lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]',
+              section === 'messages' && !picking && !inboxChannelOpen
+                ? 'hidden lg:flex'
+                : 'flex',
+            )}
+          >
+            {section === 'messages' && !picking ? (
+              <button
+                type="button"
+                aria-label={tCommon('back')}
+                className="flex shrink-0 items-center gap-1 self-start text-3 text-foreground lg:hidden"
+                onClick={() => setInboxChannelOpen(false)}
+              >
+                <ChevronLeft
+                  className="size-4 shrink-0"
                   strokeWidth={1.5}
                   aria-hidden
                 />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder={t('search')}
-                  className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </label>
-              {picking ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  className="shrink-0"
-                  onClick={exitPicking}
-                >
-                  {t('cancelPick')}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  className="shrink-0 gap-1.5"
-                  disabled={!isMatrixAvailable || people.length < 2}
-                  onClick={() => setPicking(true)}
-                >
-                  <Users className="size-3.5" strokeWidth={1.5} aria-hidden />
-                  {t('groupCall')}
-                </Button>
-              )}
-            </div>
-
-            {picking && selectedPeople.length > 0 ? (
-              <div
-                className="flex gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                aria-label={t('selectedCount', {
-                  count: selectedPeople.length,
-                })}
-              >
-                {selectedPeople.map((row) => (
-                  <button
-                    key={row.person.id}
-                    type="button"
-                    className="flex w-16 shrink-0 flex-col items-center gap-1 text-center"
-                    aria-label={t('removeSelected', { name: row.name })}
-                    onClick={() => toggleSelected(row.person.id)}
-                  >
-                    <span className="relative inline-flex">
-                      <PersonAvatar
-                        size="chat"
-                        shape="circle"
-                        avatarSrc={row.avatarUrl}
-                        userName={row.name}
-                        personId={row.person.id}
-                      />
-                      <span
-                        className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-foreground text-background"
+                {t(`inbox.${inboxFilter}Title`)}
+              </button>
+            ) : null}
+            <div className="flex min-h-0 flex-1 flex-col gap-3">
+              <div className="flex shrink-0 flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="relative min-w-0 flex-1">
+                    <span className="sr-only">{t('search')}</span>
+                    <Search
+                      className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
+                      strokeWidth={1.5}
+                      aria-hidden
+                    />
+                    <input
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') return;
+                        event.stopPropagation();
+                      }}
+                      placeholder={t('search')}
+                      className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-foreground focus-visible:ring-0"
+                    />
+                  </label>
+                  {section === 'archived' ? null : picking ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      className="shrink-0"
+                      onClick={exitPicking}
+                    >
+                      {t('cancelPick')}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      className="shrink-0 gap-1.5"
+                      disabled={!isMatrixAvailable || people.length < 2}
+                      onClick={() => setPicking(true)}
+                    >
+                      <Users
+                        className="size-3.5"
+                        strokeWidth={1.5}
                         aria-hidden
+                      />
+                      {t('groupCall')}
+                    </Button>
+                  )}
+                </div>
+
+                {picking && selectedPeople.length > 0 ? (
+                  <div
+                    className="flex gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    aria-label={t('selectedCount', {
+                      count: selectedPeople.length,
+                    })}
+                  >
+                    {selectedPeople.map((row) => (
+                      <button
+                        key={row.person.id}
+                        type="button"
+                        className="flex w-16 shrink-0 flex-col items-center gap-1 text-center"
+                        aria-label={t('removeSelected', { name: row.name })}
+                        onClick={() => toggleSelected(row)}
                       >
-                        <X className="size-2.5" strokeWidth={2.5} />
-                      </span>
-                    </span>
-                    <span className="w-full truncate text-1 text-neutral-11">
-                      {row.name.split(' ')[0] || row.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : null}
+                        <span className="relative inline-flex">
+                          <PersonAvatar
+                            size="chat"
+                            shape="circle"
+                            avatarSrc={row.avatarUrl}
+                            userName={row.name}
+                            personId={row.person.id}
+                          />
+                          <span
+                            className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-foreground text-background"
+                            aria-hidden
+                          >
+                            <X className="size-2.5" strokeWidth={2.5} />
+                          </span>
+                        </span>
+                        <span className="w-full truncate text-1 text-neutral-11">
+                          {row.name.split(' ')[0] || row.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
 
-            {picking ? (
-              <div className="flex items-center justify-between gap-3">
-                <p className="min-w-0 flex-1 truncate text-1 text-neutral-11">
-                  {selectedPeople.length > 0
-                    ? t('selectedCount', { count: selectedPeople.length })
-                    : t('pickMembers')}
+                {picking ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="min-w-0 flex-1 truncate text-1 text-neutral-11">
+                      {selectedPeople.length > 0
+                        ? t('selectedCount', { count: selectedPeople.length })
+                        : t('pickMembers')}
+                    </p>
+                    <Button
+                      type="button"
+                      disabled={!canStartGroup}
+                      className="shrink-0 gap-1.5"
+                      onClick={() => void startGroupChat()}
+                    >
+                      <Users
+                        className="size-3.5"
+                        strokeWidth={1.5}
+                        aria-hidden
+                      />
+                      {t('startGroupCall')}
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+
+              {notice ? (
+                <p className="text-1 text-error-11" role="alert">
+                  {notice}
                 </p>
-                <Button
-                  type="button"
-                  disabled={selectedPeople.length < 2 || starting}
-                  className="shrink-0 gap-1.5"
-                  onClick={() => void startGroupChat()}
+              ) : null}
+
+              {debugRooms ? (
+                <div
+                  className="overflow-x-auto border border-border bg-muted/30 p-3 text-[11px] leading-4 text-muted-foreground"
+                  data-testid="debug-rooms"
                 >
-                  <Users className="size-3.5" strokeWidth={1.5} aria-hidden />
-                  {t('startGroupCall')}
-                </Button>
+                  <p className="mb-2 font-medium text-foreground">
+                    debugRooms ({roomDiagnostics.length})
+                  </p>
+                  <table className="w-full border-collapse text-left">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="py-1 pr-2">reason</th>
+                        <th className="py-1 pr-2">cache</th>
+                        <th className="py-1 pr-2">membership</th>
+                        <th className="py-1 pr-2">type</th>
+                        <th className="py-1 pr-2">members</th>
+                        <th className="py-1 pr-2">name</th>
+                        <th className="py-1">roomId</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {roomDiagnostics.map((room) => (
+                        <tr
+                          key={room.roomId}
+                          className="border-b border-border/60"
+                        >
+                          <td className="py-1 pr-2 whitespace-nowrap">
+                            {room.reason}
+                          </td>
+                          <td className="py-1 pr-2">
+                            {room.cached ? 'row' : 'missing'}
+                          </td>
+                          <td className="py-1 pr-2">{room.membership}</td>
+                          <td className="py-1 pr-2">{room.roomType || '—'}</td>
+                          <td className="py-1 pr-2 whitespace-nowrap">
+                            {room.loadedHumanCount}/{room.summaryJoinedCount} o
+                            {room.othersCount}
+                            {room.archived ? ' archived' : ''}
+                          </td>
+                          <td className="py-1 pr-2">{room.name || '—'}</td>
+                          <td className="py-1 break-all">{room.roomId}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+
+              {!isMatrixAvailable && !isConnecting && !notice ? (
+                <p className="text-2 text-muted-foreground">
+                  {tChat('matrixUnavailable')}
+                </p>
+              ) : null}
+
+              <div className="flex min-h-0 flex-1 flex-col gap-3">
+                {listLoading ? (
+                  <MemberListSkeleton
+                    title={
+                      section === 'archived' ? t('tabs.archived') : t('people')
+                    }
+                    loadingLabel={t('loading')}
+                  />
+                ) : null}
+
+                {!listLoading &&
+                section === 'archived' &&
+                isMatrixAvailable &&
+                people.length === 0 &&
+                !searching ? (
+                  <p className="text-2 text-muted-foreground">
+                    {needle ? t('noMembersMatchSearch') : t('archivedEmpty')}
+                  </p>
+                ) : null}
+
+                {!listLoading &&
+                section !== 'archived' &&
+                isMatrixAvailable &&
+                shownRows.length === 0 &&
+                !searching &&
+                // Direct/Messages empty is Matrix-driven. Suggestions wait for
+                // intelligence so "reach out" does not flash empty then fill.
+                (section === 'messages' || home != null) ? (
+                  <p className="text-2 text-muted-foreground">
+                    {needle
+                      ? picking || section === 'messages'
+                        ? t('noMembersMatchSearch')
+                        : t('noMatches')
+                      : showChannelTags && inboxFilter !== 'direct'
+                      ? t('inbox.empty')
+                      : t('empty')}
+                  </p>
+                ) : null}
+
+                {!listLoading && shownRows.length > 0 ? (
+                  <MemberList
+                    title={listTitle}
+                    rows={shownRows}
+                    showChannelTags={showChannelTags}
+                    personIdToMatrixUserId={personIdToMatrixUserId}
+                    locale={locale}
+                    justNow={t('justNow')}
+                    noMessage={t('noMessage')}
+                    archivedLabel={t('tabs.archived')}
+                    previewLoading={
+                      !initialSyncComplete || channelPreviewsPending
+                    }
+                    loadingLabel={t('loading')}
+                    youLabel={(message) => t('youWrote', { message })}
+                    unreadLabel={(count) => t('unread', { count })}
+                    selectLabel={(name) => t('selectMember', { name })}
+                    picking={picking}
+                    selected={selected}
+                    activeRoomId={coherenceRoomId}
+                    activePersonId={coherencePeerPerson?.id ?? null}
+                    openLookup={{
+                      rooms: rows,
+                      personIdToMatrixUserId,
+                      peopleBySub,
+                    }}
+                    onOpen={(row) => void openMember(row)}
+                    scrollRef={inboxListRef}
+                    footer={
+                      canLoadMoreInbox ? (
+                        <li
+                          ref={inboxEndRef}
+                          className="h-px w-full list-none"
+                          aria-hidden
+                        />
+                      ) : null
+                    }
+                  />
+                ) : null}
+
+                {moreFailed ? (
+                  <div className="flex shrink-0 flex-col items-center gap-2">
+                    <p
+                      className="text-center text-1 text-error-11"
+                      role="alert"
+                    >
+                      {t('loadMoreFailed')}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      disabled={loadingMore}
+                      onClick={() => {
+                        setMoreFailed(false);
+                        void loadMorePeople();
+                      }}
+                    >
+                      {tCommon('loadMore')}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
-          </div>
-
-          {notice ? (
-            <p className="text-1 text-error-11" role="alert">
-              {notice}
-            </p>
-          ) : null}
-
-          {!isMatrixAvailable ? (
-            <p className="text-2 text-muted-foreground">
-              {tChat('matrixUnavailable')}
-            </p>
-          ) : null}
-
-          {home != null && people.length === 0 && !searching ? (
-            <p className="text-2 text-muted-foreground">
-              {needle ? t('noMatches') : t('empty')}
-            </p>
-          ) : null}
-
-          {people.length > 0 ? (
-            <MemberList
-              title={t('people')}
-              rows={people}
-              presenceById={presenceById}
-              locale={locale}
-              justNow={t('justNow')}
-              noMessage={t('noMessage')}
-              previewLoading={!synced || rowsPending || matrixIdsLoading}
-              loadingLabel={t('loading')}
-              youLabel={(message) => t('youWrote', { message })}
-              unreadLabel={(count) => t('unread', { count })}
-              selectLabel={(name) => t('selectMember', { name })}
-              picking={picking}
-              selected={selected}
-              onOpen={(row) => void openMember(row)}
-            />
-          ) : null}
-
-          {hasMorePeople && !needle ? (
-            <div className="flex justify-center">
-              <Button
-                type="button"
-                variant="outline"
-                colorVariant="neutral"
-                disabled={loadingMore}
-                onClick={() => void loadMorePeople()}
-              >
-                {tCommon('loadMore')}
-              </Button>
             </div>
-          ) : null}
-
-          {moreFailed ? (
-            <p className="text-center text-1 text-error-11" role="alert">
-              {t('loadMoreFailed')}
-            </p>
-          ) : null}
-        </>
+          </div>
+        </div>
       ) : null}
     </div>
   );
 }
 
-function GroupFaces({ faces }: { faces: GroupFace[] }) {
-  const shown = faces.slice(0, 2);
+const MEMBER_LIST_SKELETON_ROWS = 6;
+
+export function MessagesPeopleListSkeleton() {
+  const t = useTranslations('Connections');
+  return <MemberListSkeleton title={t('people')} loadingLabel={t('loading')} />;
+}
+
+function MemberListSkeleton({
+  title,
+  loadingLabel,
+}: {
+  title: string;
+  loadingLabel: string;
+}) {
   return (
-    <span className="relative block h-10 w-10 shrink-0" aria-hidden>
-      {shown.map((face, index) => (
-        <span
-          key={`${face.name}-${index}`}
-          className={cn(
-            'absolute block size-[22px] overflow-hidden rounded-full bg-neutral-3 ring-2 ring-background group-hover/row:ring-accent-2',
-            index === 0 ? 'top-0 left-0' : 'right-0 bottom-0',
-          )}
-        >
-          {face.avatarUrl ? (
-            <img
-              src={face.avatarUrl}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span className="flex h-full w-full items-center justify-center text-[10px] font-medium text-neutral-11">
-              {face.name.replace(/^@/, '').trim().charAt(0).toUpperCase() ||
-                '?'}
+    <section
+      className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-none border border-border bg-background"
+      role="status"
+      aria-busy="true"
+      aria-label={loadingLabel}
+      data-testid="messages-people-loader"
+    >
+      <h2 className="shrink-0 border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
+        {title}
+      </h2>
+      <ul className="min-h-0 flex-1 overflow-y-auto" aria-hidden>
+        {Array.from({ length: MEMBER_LIST_SKELETON_ROWS }, (_, index) => (
+          <li
+            key={index}
+            className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0"
+          >
+            <span className="size-10 shrink-0 animate-pulse rounded-full bg-neutral-5" />
+            <span className="min-w-0 flex-1">
+              <span className="my-0.5 block h-4 w-32 max-w-[60%] animate-pulse rounded-sm bg-neutral-5" />
+              <span className="mt-1.5 block h-3 w-40 max-w-full animate-pulse rounded-sm bg-neutral-5" />
             </span>
-          )}
-        </span>
-      ))}
-    </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
+}
+
+const CHANNEL_MARK_ICONS: Partial<Record<InboxChannelKind, typeof Circle>> = {
+  space: Circle,
+  'space-public': Globe,
+  signal: Radio,
+  proposal: FileText,
+  ecosystem: Target,
+  network: Globe2,
+};
+
+const SIGNAL_TYPE_KEYS = new Set([
+  'Need',
+  'Resource',
+  'Opportunity',
+  'Insight',
+  'Tension',
+  'Risk',
+  'Action',
+  'Impact',
+  'Trend',
+  'Proposal',
+]);
+
+function channelTagKey(kind: InboxChannelKind) {
+  switch (kind) {
+    case 'dm':
+      return 'inbox.tagDm';
+    case 'group':
+      return 'inbox.tagGroup';
+    case 'space':
+      return 'inbox.tagSpace';
+    case 'space-public':
+      return 'inbox.tagSpacePublic';
+    case 'signal':
+      return 'inbox.tagSignal';
+    case 'proposal':
+      return 'inbox.tagProposal';
+    case 'ecosystem':
+      return 'inbox.tagEcosystem';
+    case 'network':
+      return 'inbox.tagNetwork';
+  }
 }
 
 function MemberList({
   title,
   rows,
-  presenceById,
+  personIdToMatrixUserId,
   locale,
   justNow,
   noMessage,
+  archivedLabel,
   previewLoading,
   loadingLabel,
   youLabel,
@@ -1696,15 +3620,22 @@ function MemberList({
   selectLabel,
   picking,
   selected,
+  activeRoomId = null,
+  activePersonId = null,
+  openLookup,
   onOpen,
+  showChannelTags = false,
+  scrollRef,
+  footer = null,
 }: {
   title: string;
   rows: ConnectionMemberRow[];
-  presenceById: ReadonlyMap<number, PresenceLevel>;
+  personIdToMatrixUserId: Readonly<Record<number, string>>;
   locale: string;
   justNow: string;
   noMessage: string;
-  /** Rooms are still loading, so a missing conversation is not yet "empty". */
+  archivedLabel: string;
+  /** Channel history or sync is still filling in — show a skeleton, not "empty". */
   previewLoading: boolean;
   loadingLabel: string;
   youLabel: (message: string) => string;
@@ -1712,55 +3643,149 @@ function MemberList({
   selectLabel: (name: string) => string;
   picking: boolean;
   selected: Set<number>;
+  activeRoomId?: string | null;
+  activePersonId?: number | null;
+  openLookup?: Parameters<typeof listedConversationIsOpen>[2];
   onOpen: (row: ConnectionMemberRow) => void;
+  showChannelTags?: boolean;
+  /** Scrollport for the conversation rows. The title stays fixed above it. */
+  scrollRef?: Ref<HTMLUListElement>;
+  footer?: ReactNode;
 }) {
+  const tInbox = useTranslations('Connections');
+  const tTypes = useTranslations('CoherenceTab.types');
+  const chainScroll = useChainScrollAtEdge();
+  const setListRef = useCallback(
+    (node: HTMLUListElement | null) => {
+      chainScroll(node);
+      if (typeof scrollRef === 'function') scrollRef(node);
+      else if (scrollRef) scrollRef.current = node;
+    },
+    [chainScroll, scrollRef],
+  );
   return (
-    <section className="overflow-hidden rounded-none border border-border bg-background">
-      <h2 className="border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
+    <section className="flex min-h-0 flex-1 flex-col overflow-visible rounded-none border border-border bg-background lg:overflow-hidden">
+      <h2 className="shrink-0 border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {title}
       </h2>
-      <ul>
+      <ul
+        ref={setListRef}
+        className="narrow-scrollbar min-h-0 flex-1 overflow-visible lg:overflow-y-auto lg:overscroll-contain"
+      >
         {rows.map((row) => {
-          const loadingPreview = !row.roomId && previewLoading;
-          const preview = row.preview
+          const previewText = previewForInboxDisplay(row.preview);
+          const loadingPreview =
+            previewLoading &&
+            Boolean(row.roomId) &&
+            !previewText &&
+            row.lastTs != null;
+          const preview = previewText
             ? row.mine
-              ? youLabel(row.preview)
-              : row.preview
+              ? youLabel(previewText)
+              : row.senderName
+              ? tInbox('theyWrote', {
+                  name: row.senderName,
+                  message: previewText,
+                })
+              : previewText
             : noMessage;
           const when = row.lastTs
             ? formatWhen(row.lastTs, locale, justNow)
             : '';
           const checked = selected.has(row.person.id);
-          const presence = presenceById.get(row.person.id) ?? 'offline';
+          const active =
+            !picking &&
+            listedConversationIsOpen(
+              row,
+              { roomId: activeRoomId, personId: activePersonId },
+              openLookup,
+            );
+          const ChannelIcon = row.inbox
+            ? CHANNEL_MARK_ICONS[row.inbox.kind]
+            : undefined;
+          const contextHref =
+            showChannelTags && !picking && ChannelIcon
+              ? inboxContextHref(locale, row.inbox)
+              : null;
+          const signalType =
+            row.inbox?.signalType && SIGNAL_TYPE_KEYS.has(row.inbox.signalType)
+              ? tTypes(row.inbox.signalType as 'Need')
+              : row.inbox?.signalType ?? null;
+          const context =
+            showChannelTags && row.inbox
+              ? inboxContextLine(row.inbox, signalType)
+              : null;
           return (
             <li
               key={row.roomId ?? row.person.id}
-              className="border-b border-border last:border-b-0"
+              data-active-conversation={active ? 'true' : undefined}
+              className="relative border-b border-border last:border-b-0"
             >
               <button
                 type="button"
                 onClick={() => onOpen(row)}
                 aria-pressed={picking ? checked : undefined}
+                aria-current={active ? 'true' : undefined}
                 aria-label={picking ? selectLabel(row.name) : undefined}
+                data-active={active ? 'true' : undefined}
                 className={cn(
                   'group/row flex w-full min-w-0 items-center gap-3 px-4 py-3 text-left hover:bg-accent-2',
+                  active && 'bg-accent-2',
                   picking && checked && 'bg-accent-2/60',
                 )}
               >
                 {picking ? (
                   <span
-                    aria-hidden
+                    role="presentation"
                     className={cn(
                       'grid size-5 shrink-0 place-items-center rounded-full border border-neutral-8',
                       checked && 'border-foreground bg-foreground',
                     )}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onOpen(row);
+                    }}
                   >
                     {checked ? (
                       <span className="size-2 rounded-full bg-background" />
                     ) : null}
                   </span>
                 ) : null}
-                {row.faces && row.faces.length > 0 ? (
+                {showChannelTags && ChannelIcon ? (
+                  <span className="relative size-10 shrink-0">
+                    <span className="grid size-full place-items-center overflow-hidden rounded-full border border-border bg-background text-foreground">
+                      {row.inbox?.kind === 'network' ? (
+                        <MemberHomeMark className="h-6 w-6" />
+                      ) : row.logoUrl?.trim() ? (
+                        <Image
+                          className="aspect-square h-full w-full object-cover"
+                          width={40}
+                          height={40}
+                          src={row.logoUrl.trim()}
+                          alt=""
+                          aria-hidden
+                        />
+                      ) : (
+                        // Quiet mark — never the legacy Hypha placeholder
+                        // (that flashed for a frame when logoUrl was late).
+                        <span
+                          className="block size-full bg-neutral-5"
+                          aria-hidden
+                        />
+                      )}
+                    </span>
+                    {contextHref ? (
+                      <span className="pointer-events-none absolute top-0 right-0 grid size-3.5 place-items-center rounded-bl-md bg-background text-foreground">
+                        <ArrowUpRight
+                          className="size-2.5"
+                          strokeWidth={1.75}
+                          aria-hidden
+                        />
+                      </span>
+                    ) : null}
+                  </span>
+                ) : row.faces && row.faces.length > 0 ? (
                   <GroupFaces faces={row.faces} />
                 ) : (
                   <PersonAvatar
@@ -1769,25 +3794,72 @@ function MemberList({
                     avatarSrc={row.avatarUrl}
                     userName={row.name}
                     personId={row.person.id}
-                    presence={presence}
+                    matrixUserId={
+                      personIdToMatrixUserId[row.person.id] ??
+                      openLookup?.rooms?.find(
+                        (room) => room.roomId === row.roomId,
+                      )?.otherUserId ??
+                      undefined
+                    }
                   />
                 )}
                 <span className="min-w-0 flex-1 pr-2">
                   <span className="flex items-baseline justify-between gap-3">
-                    <span
-                      className={cn(
-                        'min-w-0 truncate text-2 text-foreground',
-                        row.unread > 0 && 'font-semibold',
-                      )}
-                    >
-                      {row.name}
-                    </span>
+                    {row.titlePending ? (
+                      <span
+                        role="status"
+                        aria-busy="true"
+                        aria-label={loadingLabel}
+                        className="my-0.5 block h-4 w-32 max-w-[60%] animate-pulse rounded-sm bg-neutral-5"
+                      />
+                    ) : (
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span
+                          className={cn(
+                            'min-w-0 truncate text-2 text-foreground',
+                            row.unread > 0 && 'font-semibold',
+                          )}
+                        >
+                          {row.name}
+                        </span>
+                        {row.archived ? (
+                          <Badge
+                            variant="outline"
+                            colorVariant="neutral"
+                            size={1}
+                            className="shrink-0"
+                            data-testid="archived-conversation-badge"
+                          >
+                            {archivedLabel}
+                          </Badge>
+                        ) : null}
+                      </span>
+                    )}
                     {when ? (
                       <span className="shrink-0 text-1 text-muted-foreground">
                         {when}
                       </span>
                     ) : null}
                   </span>
+                  {showChannelTags && row.inbox ? (
+                    <span className="mt-1.5 flex min-w-0 items-center gap-2">
+                      <span className="inline-flex shrink-0 items-center gap-1 border border-border px-1.5 py-0.5 text-1 leading-none text-foreground">
+                        {ChannelIcon ? (
+                          <ChannelIcon
+                            className="size-3 shrink-0"
+                            strokeWidth={1.5}
+                            aria-hidden
+                          />
+                        ) : null}
+                        {tInbox(channelTagKey(row.inbox.kind))}
+                      </span>
+                      {context ? (
+                        <span className="min-w-0 truncate text-1 text-muted-foreground">
+                          {context}
+                        </span>
+                      ) : null}
+                    </span>
+                  ) : null}
                   <span className="mt-0.5 flex items-center justify-between gap-3">
                     {loadingPreview ? (
                       <span
@@ -1812,9 +3884,18 @@ function MemberList({
                   </span>
                 </span>
               </button>
+              {contextHref && ChannelIcon ? (
+                <Link
+                  href={contextHref}
+                  scroll={false}
+                  aria-label={tInbox('inbox.openContext', { name: row.name })}
+                  className="absolute top-1/2 left-4 z-10 size-10 -translate-y-1/2 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+                />
+              ) : null}
             </li>
           );
         })}
+        {footer}
       </ul>
     </section>
   );

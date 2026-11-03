@@ -20,7 +20,8 @@ import {
   Token,
   ALLOWED_SPACES,
   getTokenDecimals,
-  isHiddenToken,
+  isVisibleWalletToken,
+  buildKnownTreasuryAddressSet,
   selectKnownHeldTokens,
   getEnergyCommunityTokensForSpace,
   getAllEnergyCommunityTokens,
@@ -230,14 +231,10 @@ export async function GET(
     // energy-community addresses so spam stays out (same filter as person
     // wallets). Do not mark these issuedBySpace — the UI already shows
     // non-issued tokens when their balance is > 0.
-    const dbKnownAddresses = new Set(
-      rawDbTokens
-        .filter((t) => t.address && /^0x[a-fA-F0-9]{40}$/i.test(t.address))
-        .map((t) => t.address!.toLowerCase()),
+    const dbKnownAddresses = buildKnownTreasuryAddressSet(
+      rawDbTokens,
+      getEnergyCommunityTokenAddresses(),
     );
-    for (const address of getEnergyCommunityTokenAddresses()) {
-      dbKnownAddresses.add(address);
-    }
 
     try {
       const held = await getTokenBalancesByAddress(spaceAddress);
@@ -250,8 +247,12 @@ export async function GET(
       console.warn('Failed to fetch held token balances:', error);
     }
 
-    const allTokens: Token[] = Array.from(addressMap.values()).filter(
-      (token) => !isHiddenToken(token.address),
+    const knownForDisplay = buildKnownTreasuryAddressSet(
+      [],
+      [...dbKnownAddresses, ...issuedBySpaceAddresses],
+    );
+    const allTokens: Token[] = Array.from(addressMap.values()).filter((token) =>
+      isVisibleWalletToken(token.address, knownForDisplay),
     );
 
     // Rates are needed to sum tokens priced in different currencies into one
