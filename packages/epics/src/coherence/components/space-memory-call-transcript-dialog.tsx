@@ -45,13 +45,25 @@ export function SpaceMemoryCallTranscriptDialog({
   const t = useTranslations('CoherenceTab');
   const tCommon = useTranslations('Common');
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
-  const { getAccessToken } = useAuthentication();
+  const {
+    getAccessToken,
+    user,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+  } = useAuthentication();
+  const userId = user?.id?.trim() || null;
+  const signedOut = !isAuthLoading && (!isAuthenticated || !userId);
 
   const { data, error, isLoading, mutate } = useSWR(
-    open
-      ? (['space-memory-call-transcript', spaceSlug, transcriptId] as const)
+    open && !isAuthLoading && isAuthenticated && userId
+      ? ([
+          'space-memory-call-transcript',
+          userId,
+          spaceSlug,
+          transcriptId,
+        ] as const)
       : null,
-    async ([, slug, id]) => {
+    async ([, , slug, id]) => {
       const token = await getAccessToken();
       const res = await fetch(
         `/api/v1/spaces/${encodeURIComponent(slug)}/call-transcripts/${id}`,
@@ -93,7 +105,11 @@ export function SpaceMemoryCallTranscriptDialog({
             '[scrollbar-gutter:stable]',
           )}
         >
-          {error ? (
+          {signedOut ? (
+            <p className="text-2 text-muted-foreground">
+              {t('spaceMemoryFullTranscriptError')}
+            </p>
+          ) : error ? (
             <div className="flex flex-col items-start gap-3">
               <p className="text-2 text-muted-foreground">
                 {t('spaceMemoryFullTranscriptError')}
