@@ -3866,6 +3866,7 @@
     "connectionRetryingLabel": "Opnieuw proberen…",
     "connectionLostRetry": "Opnieuw proberen",
     "chatThreadCrashedDescription": "Dit chatvenster is vastgelopen. Probeer het opnieuw.",
+    "messageRowCrashed": "Dit bericht kon niet worden weergegeven.",
     "openPanel": "Chatpaneel openen",
     "openPanelWithUnreadMentions": "Chatpaneel openen (ongelezen vermeldingen)",
     "hidePanel": "Chatpaneel verbergen",

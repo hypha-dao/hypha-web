@@ -58,8 +58,11 @@ export function GroupFaces({
               />
             ) : (
               <span className="flex h-full w-full items-center justify-center text-[10px] font-medium text-neutral-11">
-                {entry.name.replace(/^@/, '').trim().charAt(0).toUpperCase() ||
-                  '?'}
+                {String(entry.name ?? '')
+                  .replace(/^@/, '')
+                  .trim()
+                  .charAt(0)
+                  .toUpperCase() || '?'}
               </span>
             )}
           </span>

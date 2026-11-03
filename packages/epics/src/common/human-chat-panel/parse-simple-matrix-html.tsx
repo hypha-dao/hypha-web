@@ -279,6 +279,11 @@ export function ChatMessageRichText({
   html: string;
   transformText?: (fragment: string) => ReactNode;
 }) {
-  const nodes = parseSimpleMatrixHtml(html);
+  let nodes: SimpleHtmlNode[] = [];
+  try {
+    nodes = parseSimpleMatrixHtml(html);
+  } catch {
+    return null;
+  }
   return <>{renderSimpleHtmlNodes(nodes, '', transformText)}</>;
 }

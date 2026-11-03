@@ -43,11 +43,11 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
   useIsMobile,
   usePrefersCoarsePointer,
 } from '@hypha-platform/ui';
@@ -844,25 +844,33 @@ export function HumanChatPanelMessageOverflow({
       )}
 
       {touchComposer ? (
-        <Sheet
+        /*
+         * Always Dialog — never Sheet. Chat already lives in a mobile Sheet; a
+         * nested Sheet focus trap has crashed the messages ErrorBoundary
+         * (header + composer stay; center shows “This chat view crashed”).
+         */
+        <Dialog
           open={actionSheetOpen}
           onOpenChange={(open) => {
             setActionSheetOpen(open);
             if (!open) setReactionPickerOpen(false);
           }}
         >
-          <SheetContent
-            side="bottom"
-            showClose={false}
+          <DialogContent
+            hideCloseButton
+            overlayClassName="bg-black/45"
             className={cn(
-              'max-h-[min(85vh,640px)] gap-0 rounded-t-2xl border-border p-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+              /* Bottom sheet layout — override centered Dialog defaults */
+              'left-0 right-0 top-auto bottom-0 w-full max-w-none translate-x-0 translate-y-0',
+              'max-h-[min(85vh,640px)] gap-0 rounded-t-2xl border-border p-0',
+              'pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:rounded-t-2xl',
               'bg-background font-sans text-foreground shadow-lg',
             )}
           >
-            <SheetHeader className="sr-only">
-              <SheetTitle>{t('moreButton')}</SheetTitle>
-              <SheetDescription>{t('moreButton')}</SheetDescription>
-            </SheetHeader>
+            <DialogHeader className="sr-only">
+              <DialogTitle>{t('moreButton')}</DialogTitle>
+              <DialogDescription>{t('moreButton')}</DialogDescription>
+            </DialogHeader>
             <div
               className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-muted-foreground/30"
               aria-hidden
@@ -875,8 +883,8 @@ export function HumanChatPanelMessageOverflow({
             >
               {sheetMenu}
             </div>
-          </SheetContent>
-        </Sheet>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       <AlertDialog

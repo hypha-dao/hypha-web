@@ -3292,6 +3292,7 @@
     "connectionRetryingLabel": "Nouvelle tentative…",
     "connectionLostRetry": "Réessayer",
     "chatThreadCrashedDescription": "Cette vue du chat a planté. Réessayez.",
+    "messageRowCrashed": "Impossible d'afficher ce message.",
     "openPanel": "Ouvrir le panneau de chat",
     "openPanelWithUnreadMentions": "Ouvrir le panneau de chat (mentions non lues)",
     "hidePanel": "Masquer le panneau de chat",

@@ -3894,6 +3894,7 @@
     "connectionRetryingLabel": "Retrying…",
     "connectionLostRetry": "Retry",
     "chatThreadCrashedDescription": "This chat view crashed. Try again.",
+    "messageRowCrashed": "Couldn't display this message.",
     "openPanel": "Open chat panel",
     "openPanelWithUnreadMentions": "Open chat panel (unread mentions)",
     "hidePanel": "Hide chat panel",

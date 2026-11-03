@@ -3846,6 +3846,7 @@
     "connectionRetryingLabel": "Повторен обид…",
     "connectionLostRetry": "Обиди се повторно",
     "chatThreadCrashedDescription": "Овој приказ на разговорот падна. Обиди се повторно.",
+    "messageRowCrashed": "Не можеше да се прикаже оваа порака.",
     "openPanel": "Отвори панел за разговор",
     "openPanelWithUnreadMentions": "Отвори панел за разговор (непрочитани спомнувања)",
     "hidePanel": "Сокриј панел за разговор",

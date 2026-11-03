@@ -17,6 +17,7 @@ import { useIsMobile, usePrefersCoarsePointer } from '@hypha-platform/ui';
 
 import { HumanChatPanelDateSeparator } from './human-chat-panel-date-separator';
 import { HumanChatPanelUnreadDivider } from './human-chat-panel-unread-divider';
+import { HumanChatPanelMessageErrorBoundary } from './human-chat-panel-error-boundary';
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
 import { toggleExpandedMessageId } from './message-text-expanded';
 import { touchComposerFromViewportFlags } from './touch-composer-flags';
@@ -863,116 +864,132 @@ export function HumanChatPanelMessages({
               (hoverActionMessageId === msg.id && lockActionMessageId == null);
 
             return (
-              <HumanChatPanelMessageBubble
+              <HumanChatPanelMessageErrorBoundary
                 key={row.key}
-                message={msg}
-                welcomeMark={msg.id === 'welcome' ? welcomeMark : undefined}
-                textExpanded={expandedMessageIds.has(msg.id)}
-                onToggleTextExpanded={toggleMessageExpanded}
-                roomId={roomId}
-                currentUserId={currentUserId}
-                currentUserAvatarUrl={currentUserAvatarUrl}
-                resolveReactionReactorLabel={resolveReactionReactorLabel}
-                resolveMatrixMemberLabel={resolveMatrixMemberLabel}
-                resolveSenderDisplayLabel={resolveSenderDisplayLabel}
-                isActionBarVisible={isActionBarVisible}
-                jumpFlash={jumpFlashMessageId === msg.id}
-                unreadBoundary={row.isFirstUnread}
-                isTouchComposer={isTouchComposer}
-                onRowPointerEnter={
-                  isTouchComposer
-                    ? undefined
-                    : () => {
-                        leaveWhileLockedRef.current = null;
-                        setHoverActionMessageId(msg.id);
-                      }
-                }
-                onRowPointerLeave={
-                  isTouchComposer
-                    ? undefined
-                    : () => {
-                        if (lockActionMessageIdRef.current === msg.id) {
-                          leaveWhileLockedRef.current = msg.id;
-                          return;
+                fallbackLabel={t('messageRowCrashed')}
+              >
+                <HumanChatPanelMessageBubble
+                  message={msg}
+                  welcomeMark={msg.id === 'welcome' ? welcomeMark : undefined}
+                  textExpanded={expandedMessageIds.has(msg.id)}
+                  onToggleTextExpanded={toggleMessageExpanded}
+                  roomId={roomId}
+                  currentUserId={currentUserId}
+                  currentUserAvatarUrl={currentUserAvatarUrl}
+                  resolveReactionReactorLabel={resolveReactionReactorLabel}
+                  resolveMatrixMemberLabel={resolveMatrixMemberLabel}
+                  resolveSenderDisplayLabel={resolveSenderDisplayLabel}
+                  isActionBarVisible={isActionBarVisible}
+                  jumpFlash={jumpFlashMessageId === msg.id}
+                  unreadBoundary={row.isFirstUnread}
+                  isTouchComposer={isTouchComposer}
+                  onRowPointerEnter={
+                    isTouchComposer
+                      ? undefined
+                      : () => {
+                          leaveWhileLockedRef.current = null;
+                          setHoverActionMessageId(msg.id);
                         }
-                        setHoverActionMessageId((current) =>
-                          current === msg.id ? null : current,
-                        );
-                      }
-                }
-                onRowActivate={
-                  isTouchComposer
-                    ? () => {
-                        leaveWhileLockedRef.current = null;
-                        setHoverActionMessageId((current) =>
-                          current === msg.id ? null : msg.id,
-                        );
-                        setLockActionMessageId(null);
-                      }
-                    : undefined
-                }
-                onHoverReactPickerOpenChange={(open) => {
-                  if (open) {
-                    setLockActionMessageId(msg.id);
-                    return;
                   }
-                  setLockActionMessageId((cur) =>
-                    cur === msg.id ? null : cur,
-                  );
-                  if (leaveWhileLockedRef.current === msg.id) {
-                    leaveWhileLockedRef.current = null;
-                    setHoverActionMessageId((current) =>
-                      current === msg.id ? null : current,
+                  onRowPointerLeave={
+                    isTouchComposer
+                      ? undefined
+                      : () => {
+                          if (lockActionMessageIdRef.current === msg.id) {
+                            leaveWhileLockedRef.current = msg.id;
+                            return;
+                          }
+                          setHoverActionMessageId((current) =>
+                            current === msg.id ? null : current,
+                          );
+                        }
+                  }
+                  onRowActivate={
+                    isTouchComposer
+                      ? () => {
+                          leaveWhileLockedRef.current = null;
+                          setHoverActionMessageId((current) =>
+                            current === msg.id ? null : msg.id,
+                          );
+                          setLockActionMessageId(null);
+                        }
+                      : undefined
+                  }
+                  onHoverReactPickerOpenChange={(open) => {
+                    if (open) {
+                      setLockActionMessageId(msg.id);
+                      return;
+                    }
+                    setLockActionMessageId((cur) =>
+                      cur === msg.id ? null : cur,
                     );
+                    if (leaveWhileLockedRef.current === msg.id) {
+                      leaveWhileLockedRef.current = null;
+                      setHoverActionMessageId((current) =>
+                        current === msg.id ? null : current,
+                      );
+                    }
+                  }}
+                  isStreaming={
+                    msg.role === 'member' &&
+                    isStreaming &&
+                    index === messageIndexForStreaming
                   }
-                }}
-                isStreaming={
-                  msg.role === 'member' &&
-                  isStreaming &&
-                  index === messageIndexForStreaming
-                }
-                onReply={
-                  canInteract && onReply ? () => onReply(msg.id) : undefined
-                }
-                onJumpToOriginal={
-                  canInteract && onJumpToOriginalMessage && msg.replyTo?.eventId
-                    ? () => onJumpToOriginalMessage(msg.replyTo!.eventId!)
-                    : undefined
-                }
-                onEdit={
-                  canInteract &&
-                  onEditMessage &&
-                  msg.role === 'user' &&
-                  !msg.sendPending
-                    ? () => onEditMessage(msg.id)
-                    : undefined
-                }
-                onDeleteMessage={
-                  canInteract && onDeleteMessage ? onDeleteMessage : undefined
-                }
-                onReact={
-                  canInteract && onToggleReaction
-                    ? (emoji: string) => onToggleReaction(msg.id, emoji)
-                    : undefined
-                }
-                onCancelSendPending={
-                  msg.sendPending && onCancelSendPending
-                    ? onCancelSendPending
-                    : undefined
-                }
-                receiptStatus={
-                  !dmPeerUserId ||
-                  msg.role !== 'user' ||
-                  msg.isSynthetic ||
-                  msg.sendPending ||
-                  msg.sendAcknowledged === false
-                    ? null
-                    : isMessageReadByPeer?.(msg.id) ||
-                      peerReadUpToEventId === msg.id
-                    ? 'read'
-                    : 'sent'
-                }
-              />
+                  onReply={
+                    canInteract && onReply ? () => onReply(msg.id) : undefined
+                  }
+                  onJumpToOriginal={
+                    canInteract &&
+                    onJumpToOriginalMessage &&
+                    msg.replyTo?.eventId
+                      ? () => onJumpToOriginalMessage(msg.replyTo!.eventId!)
+                      : undefined
+                  }
+                  onEdit={
+                    canInteract &&
+                    onEditMessage &&
+                    msg.role === 'user' &&
+                    !msg.sendPending
+                      ? () => onEditMessage(msg.id)
+                      : undefined
+                  }
+                  onDeleteMessage={
+                    canInteract && onDeleteMessage ? onDeleteMessage : undefined
+                  }
+                  onReact={
+                    canInteract && onToggleReaction
+                      ? (emoji: string) => onToggleReaction(msg.id, emoji)
+                      : undefined
+                  }
+                  onCancelSendPending={
+                    msg.sendPending && onCancelSendPending
+                      ? onCancelSendPending
+                      : undefined
+                  }
+                  receiptStatus={(() => {
+                    if (
+                      !dmPeerUserId ||
+                      msg.role !== 'user' ||
+                      msg.isSynthetic ||
+                      msg.sendPending ||
+                      msg.sendAcknowledged === false
+                    ) {
+                      return null;
+                    }
+                    try {
+                      if (
+                        isMessageReadByPeer?.(msg.id) ||
+                        peerReadUpToEventId === msg.id
+                      ) {
+                        return 'read';
+                      }
+                    } catch {
+                      // Corrupt receipt cursor must not wipe the timeline.
+                    }
+                    return 'sent';
+                  })()}
+                />
+              </HumanChatPanelMessageErrorBoundary>
             );
           })}
         </div>

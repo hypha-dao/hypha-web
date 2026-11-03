@@ -1668,7 +1668,14 @@ export function HumanChatPanelMessageBubble({
   const specialist = message.agentSpecialistId
     ? specialistById(message.agentSpecialistId)
     : null;
-  const specialistName = specialist ? tCoherence(specialist.roleKey) : null;
+  let specialistName: string | null = null;
+  if (specialist) {
+    try {
+      specialistName = tCoherence(specialist.roleKey);
+    } catch {
+      specialistName = null;
+    }
+  }
   const format = useFormatter();
   const { client } = useMatrix();
   const bodyResolveMx = useMemo(
@@ -1680,9 +1687,14 @@ export function HumanChatPanelMessageBubble({
   );
   const roomMemberUserIds = useMemo(() => {
     const room = client?.getRoom(roomId ?? undefined);
-    return (room?.getMembers() ?? [])
-      .map((member) => member.userId?.trim())
-      .filter((id): id is string => Boolean(id));
+    if (!room) return [];
+    try {
+      return (room.getMembers?.() ?? [])
+        .map((member) => member.userId?.trim())
+        .filter((id): id is string => Boolean(id));
+    } catch {
+      return [];
+    }
   }, [client, roomId]);
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
@@ -1705,21 +1717,29 @@ export function HumanChatPanelMessageBubble({
   const mediaDownloadUrl = useMemo(() => {
     const mxc = message.media?.mxcUrl;
     if (!mxc || !client) return null;
-    return client.mxcUrlToHttp(
-      mxc,
-      undefined,
-      undefined,
-      undefined,
-      true,
-      false,
-      false,
-    );
+    try {
+      return client.mxcUrlToHttp(
+        mxc,
+        undefined,
+        undefined,
+        undefined,
+        true,
+        false,
+        false,
+      );
+    } catch {
+      return null;
+    }
   }, [client, message.media?.mxcUrl]);
 
   const mediaPreviewUrl = useMemo(() => {
     const mxc = message.media?.mxcUrl;
     if (!mxc || !client) return null;
-    return client.mxcUrlToHttp(mxc, 800, 600, 'scale', true, false, false);
+    try {
+      return client.mxcUrlToHttp(mxc, 800, 600, 'scale', true, false, false);
+    } catch {
+      return null;
+    }
   }, [client, message.media?.mxcUrl]);
 
   // TODO: Handle non-text parts (file attachments, tool results, etc.)
@@ -1729,23 +1749,34 @@ export function HumanChatPanelMessageBubble({
     ) ?? [];
   const textContent = textParts.map((p) => p.text).join('');
   const replyTo = message.replyTo;
-  const jumboLayout = textContent
-    ? getEmojiOnlyJumboLayout(textContent, Boolean(replyTo))
-    : { mode: 'normal' as const };
+  let jumboLayout: ReturnType<typeof getEmojiOnlyJumboLayout> = {
+    mode: 'normal',
+  };
+  if (textContent) {
+    try {
+      jumboLayout = getEmojiOnlyJumboLayout(textContent, Boolean(replyTo));
+    } catch {
+      jumboLayout = { mode: 'normal' };
+    }
+  }
 
   /** Prefer Matrix formatted_body; otherwise derive HTML from Discord-like markup in body. */
   const richTextHtml = useMemo(() => {
-    if (message.formattedContentHtml?.trim()) {
-      return message.formattedContentHtml;
-    }
-    if (!textContent.trim() || jumboLayout.mode === 'jumbo') {
+    try {
+      if (message.formattedContentHtml?.trim()) {
+        return message.formattedContentHtml;
+      }
+      if (!textContent.trim() || jumboLayout.mode === 'jumbo') {
+        return null;
+      }
+      if (!chatMarkupLooksFormatted(textContent)) {
+        return null;
+      }
+      const html = chatMarkupToHtml(textContent);
+      return html || null;
+    } catch {
       return null;
     }
-    if (!chatMarkupLooksFormatted(textContent)) {
-      return null;
-    }
-    const html = chatMarkupToHtml(textContent);
-    return html || null;
   }, [message.formattedContentHtml, textContent, jumboLayout.mode]);
 
   const rosterSenderLabel =

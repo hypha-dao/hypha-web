@@ -3292,6 +3292,7 @@
     "connectionRetryingLabel": "A tentar novamente…",
     "connectionLostRetry": "Tentar novamente",
     "chatThreadCrashedDescription": "Esta vista do chat falhou. Tente novamente.",
+    "messageRowCrashed": "Não foi possível mostrar esta mensagem.",
     "openPanel": "Abrir painel de chat",
     "openPanelWithUnreadMentions": "Abrir painel de chat (menções não lidas)",
     "hidePanel": "Ocultar painel de chat",

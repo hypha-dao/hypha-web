@@ -3865,6 +3865,7 @@
     "connectionRetryingLabel": "Prøver igjen…",
     "connectionLostRetry": "Prøv igjen",
     "chatThreadCrashedDescription": "Denne chatvisningen krasjet. Prøv igjen.",
+    "messageRowCrashed": "Kunne ikke vise denne meldingen.",
     "openPanel": "Åpne chatpanelet",
     "openPanelWithUnreadMentions": "Åpne chatpanelet (uleste omtaler)",
     "hidePanel": "Skjul chatpanelet",
