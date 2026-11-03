@@ -5,6 +5,7 @@ import {
   ClientEvent,
   MatrixEventEvent,
   RoomStateEvent,
+  SyncState,
   UserEvent,
   type MatrixClient,
   type MatrixEvent,
@@ -1171,6 +1172,11 @@ function getMessagePlainText(m: UIMessage): string {
 }
 
 const COHERENCE_ROOM_JOIN_TIMEOUT_MS = 20_000;
+/** Extra wait after joinRoom when the SDK store still has no Room object. */
+const ROOM_STORE_HYDRATE_ATTEMPTS = 40;
+const ROOM_STORE_HYDRATE_GAP_MS = 100;
+/** Space joins used to race before the first sync settled. */
+const SPACE_JOIN_SYNC_WAIT_MS = 8_000;
 
 function promiseWithTimeout<T>(
   promise: Promise<T>,
@@ -1192,6 +1198,52 @@ function promiseWithTimeout<T>(
       },
     );
   });
+}
+
+/** Wait until Matrix sync is Prepared/Syncing (or timeout). Never throws. */
+async function waitForMatrixSyncReady(
+  client: MatrixClient | null | undefined,
+  options: { timeoutMs: number; isCancelled: () => boolean },
+): Promise<void> {
+  if (!client || options.isCancelled()) return;
+  const state = client.getSyncState();
+  if (state === SyncState.Prepared || state === SyncState.Syncing) return;
+
+  await new Promise<void>((resolve) => {
+    const finish = () => {
+      window.clearTimeout(timer);
+      client.removeListener(ClientEvent.Sync, onSync);
+      resolve();
+    };
+    const onSync = (next: SyncState | null) => {
+      if (next === SyncState.Prepared || next === SyncState.Syncing) {
+        finish();
+      }
+    };
+    const timer = window.setTimeout(finish, options.timeoutMs);
+    client.on(ClientEvent.Sync, onSync);
+    if (options.isCancelled()) finish();
+  });
+}
+
+/**
+ * joinRoom can return before `client.getRoom` is populated. Prefer waiting;
+ * still return the joined id so store lag is not painted as a failed join.
+ */
+async function waitForJoinedRoomInStore(
+  client: MatrixClient | null | undefined,
+  roomId: string,
+  options: { isCancelled: () => boolean },
+): Promise<string> {
+  if (!client || client.getRoom(roomId) || options.isCancelled()) {
+    return roomId;
+  }
+  for (let i = 0; i < ROOM_STORE_HYDRATE_ATTEMPTS; i++) {
+    if (options.isCancelled()) return roomId;
+    await new Promise((r) => setTimeout(r, ROOM_STORE_HYDRATE_GAP_MS));
+    if (client.getRoom(roomId)) return roomId;
+  }
+  return roomId;
 }
 
 type HumanRightPanelProps = {
@@ -1381,21 +1433,15 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     [spaceMembersResult],
   );
   const welcomePartner = useMemo(() => {
-    if (mode === 'coherence') {
-      return directConversationWelcomeName({
-        mode,
-        coherenceSlug,
-        coherenceTitle,
-      });
-    }
-    const names = spaceMembers
-      .filter((person) => person.id !== me?.id)
-      .map((person) => personRosterLabel(person, ''))
-      .filter((name) => name.length > 0)
-      .sort((left, right) => left.localeCompare(right));
-    const named = names.find((name) => name.includes(' '));
-    return named ?? names[0] ?? null;
-  }, [coherenceSlug, coherenceTitle, me?.id, mode, spaceMembers]);
+    // Space channels use the generic "other members of this space" copy. A
+    // roster person's name made failed/empty space joins look like a DM.
+    if (mode !== 'coherence') return null;
+    return directConversationWelcomeName({
+      mode,
+      coherenceSlug,
+      coherenceTitle,
+    });
+  }, [coherenceSlug, coherenceTitle, mode]);
   const { access: spaceActivityAccess, isLoading: isDiscoverabilityLoading } =
     useSpaceDiscoverability({
       spaceId: effectiveSpaceWeb3Id ? BigInt(effectiveSpaceWeb3Id) : undefined,
@@ -4231,13 +4277,26 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       setIsJoining(true);
       setError(null);
       try {
+        await waitForMatrixSyncReady(client, {
+          timeoutMs: SPACE_JOIN_SYNC_WAIT_MS,
+          isCancelled: () => cancelled || joinEpochRef.current !== joinEpoch,
+        });
+        if (cancelled || joinEpochRef.current !== joinEpoch) return;
+
         let targetRoomId: string | null = null;
 
         if (openingEcosystem) {
           const { roomId: ecosystemRoomId } = await ensureEcosystemRoom(
             ecosystemSlug,
           );
-          targetRoomId = ecosystemRoomId;
+          targetRoomId = await waitForJoinedRoomInStore(
+            client,
+            ecosystemRoomId,
+            {
+              isCancelled: () =>
+                cancelled || joinEpochRef.current !== joinEpoch,
+            },
+          );
         } else if (openingPublic) {
           const previousRoomId = roomIdRef.current?.trim();
           if (previousRoomId) {
@@ -4262,7 +4321,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           if (!acceptedPublicRoomId) {
             throw new Error('Public channel resolved to the space channel');
           }
-          targetRoomId = acceptedPublicRoomId;
+          targetRoomId = await waitForJoinedRoomInStore(
+            client,
+            acceptedPublicRoomId,
+            {
+              isCancelled: () =>
+                cancelled || joinEpochRef.current !== joinEpoch,
+            },
+          );
         } else {
           const canonicalRoomId = space?.chatRoomId?.trim() || null;
           const storedRoomId = getStoredRoomId(spaceSlug);
@@ -4279,11 +4345,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
           const ensureJoined = async (roomIdOrAlias: string) => {
             const canonicalId = await joinRoom(roomIdOrAlias);
-            const room = client?.getRoom(canonicalId);
-            if (!room) {
-              throw new Error('Room not available in Matrix client after join');
-            }
-            return canonicalId;
+            // Do not throw when the store still lags — that painted
+            // "Failed to join chat room" on otherwise healthy joins.
+            return waitForJoinedRoomInStore(client, canonicalId, {
+              isCancelled: () =>
+                cancelled || joinEpochRef.current !== joinEpoch,
+            });
           };
 
           if (targetRoomId) {
@@ -4405,7 +4472,20 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       setIsJoining(true);
       setError(null);
       try {
-        const { roomId: targetRoomId } = await ensureNetworkRoom();
+        const { client } = matrixRef.current;
+        await waitForMatrixSyncReady(client, {
+          timeoutMs: SPACE_JOIN_SYNC_WAIT_MS,
+          isCancelled: () => cancelled || joinEpochRef.current !== joinEpoch,
+        });
+        if (cancelled || joinEpochRef.current !== joinEpoch) return;
+        const { roomId: joinedRoomId } = await ensureNetworkRoom();
+        const targetRoomId = await waitForJoinedRoomInStore(
+          client,
+          joinedRoomId,
+          {
+            isCancelled: () => cancelled || joinEpochRef.current !== joinEpoch,
+          },
+        );
         if (cancelled || joinEpochRef.current !== joinEpoch) return;
         joinedRef.current = NETWORK_JOINED_SENTINEL;
         openingTimelineRoomIdRef.current = targetRoomId;

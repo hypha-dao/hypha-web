@@ -2313,11 +2313,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         void ensureRoomCallPowerLevels(client, resolvedId).catch((error) => {
           console.warn('Cannot ensure Matrix call power levels:', error);
         });
-        // The store can lag the join by a moment. Don't hold the thread open
-        // for the old 10s poll, and don't report that lag as a failed join.
-        for (let i = 0; i < 20; i++) {
+        // The store can lag the join by a moment. Wait a few seconds (not the
+        // old 10s poll). Callers must not treat remaining lag as a failed join.
+        for (let i = 0; i < 40; i++) {
           if (client.getRoom(resolvedId)) return resolvedId;
-          await new Promise((r) => setTimeout(r, 50));
+          await new Promise((r) => setTimeout(r, 75));
         }
         return alreadyJoinedRoomId(client, resolvedId) ?? resolvedId;
       } catch (error) {
