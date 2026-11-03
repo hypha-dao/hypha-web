@@ -38,7 +38,7 @@ type SignalBoardFiltersProps = {
   existingTags: string[];
   members: Person[];
   currentPersonId?: number | null;
-  /** Add, view, and archive controls. They stay on the search row. */
+  /** Add and view controls. They stay on the search row. */
   controls?: ReactNode;
 };
 

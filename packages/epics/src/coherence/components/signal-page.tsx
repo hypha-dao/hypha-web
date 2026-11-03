@@ -505,7 +505,6 @@ export function SignalPage({
                 isNonMember={isNonMember}
                 isMembershipPending={isMembershipPending}
                 refresh={refresh}
-                archived={Boolean(signal.archived)}
                 variant="page"
               />
               <h1 className="craft-page-title min-w-0 text-6 leading-tight">

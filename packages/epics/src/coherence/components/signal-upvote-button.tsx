@@ -74,7 +74,6 @@ type SignalUpvoteButtonProps = {
   isMembershipPending?: boolean;
   refresh?: () => Promise<unknown>;
   disabled?: boolean;
-  archived?: boolean;
   /** `feed` stacks the count over the label; `page` sits beside the title. */
   variant?: 'feed' | 'page';
   className?: string;
@@ -94,7 +93,6 @@ export function SignalUpvoteButton({
   isMembershipPending = false,
   refresh,
   disabled = false,
-  archived = false,
   variant = 'feed',
   className,
 }: SignalUpvoteButtonProps) {
@@ -137,7 +135,6 @@ export function SignalUpvoteButton({
     Boolean(slug?.trim()) &&
     Boolean(jwt) &&
     !disabled &&
-    !archived &&
     !isBlockedNonMember &&
     !isMembershipPending &&
     isVotingModeResolved;
@@ -387,9 +384,7 @@ export function SignalUpvoteButton({
 
               {!canVote ? (
                 <p className="text-1 leading-relaxed text-muted-foreground">
-                  {archived
-                    ? t('upvoteArchived')
-                    : isBlockedNonMember
+                  {isBlockedNonMember
                     ? t('upvoteMembersOnly')
                     : jwt && isMembershipPending
                     ? t('upvoteCheckingMembership')

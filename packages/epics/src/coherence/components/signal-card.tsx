@@ -3,18 +3,9 @@
 import {
   Coherence,
   COHERENCE_PRIORITY_OPTIONS,
-  useCoherenceMutationsWeb2Rsc,
-  useJwt,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
   Button,
   Card,
   CardContent,
@@ -25,15 +16,8 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import {
-  Archive,
-  ArchiveRestore,
-  CalendarDays,
-  Globe2,
-  Pencil,
-} from 'lucide-react';
+import { CalendarDays, Globe2, Pencil } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
-import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { SignalDescriptionButton } from './signal-description-dialog';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
@@ -54,8 +38,8 @@ import { SignalVideoPlayer } from './signal-video-player';
 import { resolveSignalVideo } from '../utils/signal-video';
 
 /**
- * File, edit, and archive on a signal card. `size-9` is 64px in this theme,
- * so the hit area is locked at 36px instead of a spacing token.
+ * File and edit on a signal card. `size-9` is 64px in this theme, so the hit
+ * area is locked at 36px instead of a spacing token.
  */
 const SIGNAL_CARD_ICON_BUTTON_CLASS =
   'box-border inline-flex h-[36px] w-[36px] min-h-[36px] min-w-[36px] max-h-[36px] max-w-[36px] shrink-0 items-center justify-center gap-0 rounded-none border border-border bg-background-2 p-0 leading-none shadow-none text-muted-foreground hover:border-border hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [&_svg]:pointer-events-none [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]';
@@ -78,7 +62,6 @@ function SignalCardComponent({
   createdAt,
   tags,
   indicativePayouts = [],
-  archived,
   messages = 0,
   roomId,
   creatorId,
@@ -93,8 +76,6 @@ function SignalCardComponent({
   sharedWithNetwork = false,
   isActive = false,
 }: SignalCardProps & Coherence) {
-  const { jwt: authToken } = useJwt();
-  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
   const tSignalCard = useTranslations('SignalCard');
   const router = useRouter();
@@ -105,7 +86,6 @@ function SignalCardComponent({
     web3SpaceId: currentSpace?.web3SpaceId ?? undefined,
   });
   const isSignalCreator = useIsSignalCreator(creatorId);
-  const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
   const locale = useLocale();
   const dateFnsLocale = React.useMemo(
     () => resolveDateFnsLocale(locale),
@@ -124,10 +104,6 @@ function SignalCardComponent({
     if (!Number.isFinite(parsed) || parsed < 0) return 0;
     return Math.trunc(parsed);
   }, [messages]);
-  const [archiveDialogOpen, setArchiveDialogOpen] = React.useState(false);
-  const [isArchiveMutating, setIsArchiveMutating] = React.useState(false);
-  const [archiveError, setArchiveError] = React.useState<string | null>(null);
-
   const { creatorDisplayName } = useSignalCreatorMeta({
     creatorId,
     createdAt,
@@ -158,33 +134,6 @@ function SignalCardComponent({
         : '',
     [createdAtDate, dateFnsLocale],
   );
-
-  const handleToggleArchive = React.useCallback(async (): Promise<boolean> => {
-    if (!slug || isArchiveMutating) return false;
-    setArchiveError(null);
-    setIsArchiveMutating(true);
-    try {
-      await updateCoherenceBySlug({ slug, archived: !archived });
-      try {
-        await refresh();
-      } catch (refreshErr) {
-        console.warn(
-          'Signal archive state updated but refresh failed:',
-          refreshErr,
-        );
-      }
-      return true;
-    } catch (error) {
-      console.warn(
-        archived ? 'Could not unarchive signal:' : 'Could not archive signal:',
-        error,
-      );
-      setArchiveError(t('errorOhSnap'));
-      return false;
-    } finally {
-      setIsArchiveMutating(false);
-    }
-  }, [archived, slug, isArchiveMutating, refresh, t, updateCoherenceBySlug]);
 
   const metaParts: Array<{ key: string; node: React.ReactNode }> = [];
   if (creatorDisplayName) {
@@ -311,43 +260,6 @@ function SignalCardComponent({
                         />
                       </Button>
                     ) : null}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      colorVariant="neutral"
-                      className={SIGNAL_CARD_ICON_BUTTON_CLASS}
-                      disabled={isLoading || isArchiveMutating}
-                      aria-label={
-                        archived
-                          ? t('unarchiveConversation')
-                          : t('archiveConversation')
-                      }
-                      title={
-                        archived
-                          ? t('unarchiveConversation')
-                          : t('archiveConversation')
-                      }
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setArchiveDialogOpen(true);
-                      }}
-                      onKeyDown={stopCardActivationKey}
-                    >
-                      {archived ? (
-                        <ArchiveRestore
-                          className="h-4 w-4"
-                          strokeWidth={1.25}
-                          aria-hidden
-                        />
-                      ) : (
-                        <Archive
-                          className="h-4 w-4"
-                          strokeWidth={1.25}
-                          aria-hidden
-                        />
-                      )}
-                    </Button>
                   </>
                 ) : null}
               </div>
@@ -438,9 +350,9 @@ function SignalCardComponent({
             slug={slug}
             upvotes={upvotes}
             refresh={refresh}
-            disabled={isLoading || Boolean(archived)}
+            disabled={isLoading}
           />
-          {onOpenConversation && !archived ? (
+          {onOpenConversation ? (
             <Button
               variant="ghost"
               colorVariant="neutral"
@@ -459,66 +371,6 @@ function SignalCardComponent({
             </Button>
           ) : null}
         </div>
-        <AlertDialog
-          open={archiveDialogOpen}
-          onOpenChange={(open) => {
-            if (isArchiveMutating) return;
-            setArchiveDialogOpen(open);
-            if (!open) setArchiveError(null);
-          }}
-        >
-          <AlertDialogContent
-            overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65"
-            className="border-l-[3px] border-l-[var(--space-accent)]"
-            style={spaceAccentPortalStyle}
-            data-space-accent-scope=""
-            onClick={(e) => e.stopPropagation()}
-          >
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {archived
-                  ? t('unarchiveConversation')
-                  : t('archiveConversation')}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {archived ? t('unarchiveConfirm') : t('archiveConfirm')}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            {archiveError ? (
-              <p
-                role="alert"
-                className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-              >
-                {archiveError}
-              </p>
-            ) : null}
-            <AlertDialogFooter>
-              <AlertDialogCancel asChild>
-                <Button
-                  variant="outline"
-                  colorVariant="neutral"
-                  disabled={isArchiveMutating}
-                  onKeyDown={stopCardActivationKey}
-                >
-                  {t('noLeave')}
-                </Button>
-              </AlertDialogCancel>
-              <Button
-                type="button"
-                colorVariant="accent"
-                disabled={isArchiveMutating}
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  const updated = await handleToggleArchive();
-                  if (updated) setArchiveDialogOpen(false);
-                }}
-                onKeyDown={stopCardActivationKey}
-              >
-                {archived ? t('yesUnarchive') : t('yesArchive')}
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </CardContent>
     </Card>
   );

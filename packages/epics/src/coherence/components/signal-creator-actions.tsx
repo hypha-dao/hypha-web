@@ -32,8 +32,7 @@ type SignalCreatorActionsProps = {
 
 /**
  * Edit and Delete for the person who raised the signal. Everyone else sees
- * nothing; the server enforces the same rule. Delete is permanent — archive
- * is the reversible way to hide a signal.
+ * nothing; the server enforces the same rule. Delete is permanent.
  */
 export function SignalCreatorActions({
   lang,

@@ -3,7 +3,6 @@ import {
   Card,
   CardContent,
   CardTitle,
-  ConfirmDialog,
   Input,
   Skeleton,
 } from '@hypha-platform/ui';
@@ -17,8 +16,6 @@ import {
 import React from 'react';
 import {
   Coherence,
-  useCoherenceMutationsWeb2Rsc,
-  useJwt,
   useMatrix,
   usePersonById,
 } from '@hypha-platform/core/client';
@@ -33,20 +30,15 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
   title,
   description,
   creatorId,
-  archived,
   roomId,
-  slug,
   views = 0,
   messages = 0,
-  refresh,
 }) => {
   const [message, setMessage] = React.useState<string>('');
   const { isLoading: isPersonLoading, person: creator } = usePersonById({
     id: creatorId,
   });
   const { sendMessage: sendMatrixMessage } = useMatrix();
-  const { jwt: authToken } = useJwt();
-  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
 
   const sendMessage = React.useCallback(async () => {
     if (!roomId) {
@@ -61,16 +53,6 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
     console.log('Propose agreement');
     //TODO
   };
-
-  const handleUnarchive = React.useCallback(async () => {
-    if (!slug) return;
-    try {
-      await updateCoherenceBySlug({ slug, archived: false });
-      await refresh();
-    } catch (error) {
-      console.warn('Could not unarchive conversation:', error);
-    }
-  }, [slug, refresh, updateCoherenceBySlug]);
 
   return (
     <Card className="h-full w-full space-y-5 pt-5">
@@ -133,77 +115,50 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
           </div>
         </div>
         <div className="w-full space-y-2">
-          {!archived && (
-            <div className="flex flex-grow text-1 text-neutral-11">
-              <Input
-                className="w-full"
-                placeholder="Say something..."
-                value={message}
-                rightIcon={
-                  <Button
-                    variant="ghost"
-                    colorVariant="neutral"
-                    className="w-6 h-6 p-0 pointer-events-auto!"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      sendMessage();
-                    }}
-                  >
-                    <PaperPlaneIcon />
-                  </Button>
-                }
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    sendMessage();
-                  }
-                }}
-                onChange={(e) => setMessage(e.target.value)}
-              />
-            </div>
-          )}
           <div className="flex flex-grow text-1 text-neutral-11">
-            {archived ? (
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                }}
-              >
-                <ConfirmDialog
-                  title="Unarchive Conversation"
-                  description="Do you really want to unarchive this conversation?"
-                  customAcceptButtonText="Yes, unarchive"
-                  customRejectButtonText="No, leave"
-                  onAcceptClicked={handleUnarchive}
+            <Input
+              className="w-full"
+              placeholder="Say something..."
+              value={message}
+              rightIcon={
+                <Button
+                  variant="ghost"
+                  colorVariant="neutral"
+                  className="w-6 h-6 p-0 pointer-events-auto!"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    sendMessage();
+                  }}
                 >
-                  <Button
-                    variant="outline"
-                    colorVariant="accent"
-                    className="w-full"
-                  >
-                    Unarchive
-                  </Button>
-                </ConfirmDialog>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                colorVariant="accent"
-                className="w-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  proposeAgreement();
-                }}
-              >
-                Propose Agreement
-              </Button>
-            )}
+                  <PaperPlaneIcon />
+                </Button>
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  sendMessage();
+                }
+              }}
+              onChange={(e) => setMessage(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-grow text-1 text-neutral-11">
+            <Button
+              variant="outline"
+              colorVariant="accent"
+              className="w-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                proposeAgreement();
+              }}
+            >
+              Propose Agreement
+            </Button>
           </div>
         </div>
       </CardContent>

@@ -19,24 +19,15 @@ export function ConversationGrid({
 }: ConversationGridProps) {
   return (
     <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2">
-      {conversations.map((conversation) =>
-        conversation.archived ? (
+      {conversations.map((conversation) => (
+        <Link key={conversation.id} href={`${basePath}/${conversation.slug}`}>
           <ConversationCard
-            key={conversation.id}
             {...conversation}
             isLoading={isLoading}
             refresh={refresh}
           />
-        ) : (
-          <Link key={conversation.id} href={`${basePath}/${conversation.slug}`}>
-            <ConversationCard
-              {...conversation}
-              isLoading={isLoading}
-              refresh={refresh}
-            />
-          </Link>
-        ),
-      )}
+        </Link>
+      ))}
     </div>
   );
 }
