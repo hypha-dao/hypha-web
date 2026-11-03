@@ -153,13 +153,17 @@ export const useNotifications = ({
     [setSubscribed],
   );
 
+  // Kept in a ref so a new function identity from the auth provider doesn't re-run the load
+  // effect (which would refetch and overwrite unsaved edits).
+  const getAccessTokenRef = React.useRef(getAccessToken);
+  getAccessTokenRef.current = getAccessToken;
   const withToken = React.useCallback(async () => {
-    const authToken = await getAccessToken();
+    const authToken = await getAccessTokenRef.current();
     if (!authToken) {
       throw new Error('No access token available');
     }
     return { authToken };
-  }, [getAccessToken]);
+  }, []);
 
   React.useEffect(() => {
     if (!personSlug) {
