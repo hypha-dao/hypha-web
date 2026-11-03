@@ -57,9 +57,12 @@ export type NotificationCentreFormProps = {
   /** Asks for browser permission and opts this browser in; resolves to whether push is now on. */
   enableBrowserPush: () => Promise<boolean>;
   configuration?: NotificationConfiguration;
+  /** Resolves to whether the settings were saved; the panel only closes on success. */
   saveConfigurations: (
     configuration: NotificationConfiguration,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
+  /** Fetches the stored settings again after a failed load. */
+  reloadSettings?: () => Promise<void>;
 };
 
 function getSwitch(value: boolean): YesNo {
@@ -194,6 +197,7 @@ export const NotificationCentreForm = ({
   enableBrowserPush,
   configuration,
   saveConfigurations,
+  reloadSettings,
 }: NotificationCentreFormProps) => {
   const tNotificationCentre = useTranslations('NotificationCentre');
   const tModalAside = useTranslations('ModalAside');
@@ -237,7 +241,7 @@ export const NotificationCentreForm = ({
 
   const handleSubmit = React.useCallback(
     async (values: NotificationCentreFormValues) => {
-      await saveConfigurations({
+      const saved = await saveConfigurations({
         browserNotifications: parseSwitch(values.browserNotifications),
         emailNotifications: parseSwitch(values.emailNotifications),
         subscriptions: values.subscriptions.map((subscription) => {
@@ -247,6 +251,8 @@ export const NotificationCentreForm = ({
           };
         }),
       });
+      // Keep the panel (and the edits) open when the save failed, so the error is seen.
+      if (!saved) return;
       if (onClose) onClose();
       else router.push(closeUrl);
     },
@@ -298,7 +304,12 @@ export const NotificationCentreForm = ({
   // The stored settings come from the server: until they arrive, show a skeleton rather than the
   // form's all-on defaults (which would flash and then jump to the real values).
   const settingsLoading = Boolean(person) && !configuration && !error;
-  const preferencesDisabled = !subscribed;
+  // Never offer to save defaults the server didn't confirm (e.g. after a failed load).
+  const settingsUnavailable = Boolean(person) && !configuration;
+  const preferencesDisabled = !subscribed || settingsUnavailable;
+  // Loading failed: the only action is to fetch again (the button never saves in this state).
+  const canRetryLoad =
+    settingsUnavailable && Boolean(error) && Boolean(reloadSettings);
   const isDirty = form.formState.isDirty;
 
   const { fields: subscriptions } = useFieldArray({
@@ -389,7 +400,7 @@ export const NotificationCentreForm = ({
               />
             </Skeleton>
             {error && <FormMessage>{error}</FormMessage>}
-            <Skeleton width="100%" height="480px" loading={settingsLoading}>
+            <Skeleton width="100%" height="480px" loading={settingsUnavailable}>
               <fieldset
                 disabled={preferencesDisabled}
                 className={cn(
@@ -532,14 +543,15 @@ export const NotificationCentreForm = ({
                   </span>
                 )}
                 <Button
-                  type="submit"
+                  type={canRetryLoad ? 'button' : 'submit'}
+                  onClick={canRetryLoad ? () => reloadSettings?.() : undefined}
                   variant="default"
                   className="rounded-lg justify-start text-white w-fit"
                   disabled={
                     isLoading ||
                     settingsLoading ||
-                    preferencesDisabled ||
-                    (!isDirty && !error)
+                    (!canRetryLoad &&
+                      (preferencesDisabled || (!isDirty && !error)))
                   }
                 >
                   {error

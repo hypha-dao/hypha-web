@@ -32,6 +32,7 @@ export default function AsideNotificationCentrePage({
     subscribe,
     unsubscribe,
     enableBrowserPush,
+    reloadSettings,
     error,
     configuration,
     saveConfigurations,
@@ -68,6 +69,7 @@ export default function AsideNotificationCentrePage({
           unsubscribe={unsubscribe}
           configuration={configuration}
           saveConfigurations={saveConfigurations}
+          reloadSettings={reloadSettings}
         />
       </LoadingBackdrop>
     </ProposalOverlayShell>

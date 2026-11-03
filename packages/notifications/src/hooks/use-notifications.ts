@@ -165,6 +165,22 @@ export const useNotifications = ({
     return { authToken };
   }, []);
 
+  const loadPreferences = React.useCallback(
+    async (isCancelled: () => boolean = () => false) => {
+      try {
+        const prefs = await getNotificationPreferencesAction(await withToken());
+        if (!isCancelled()) {
+          setError(null);
+          applyPreferences(prefs);
+        }
+      } catch (err) {
+        console.warn('Failed to load notification settings', err);
+        if (!isCancelled()) setError('Could not load notification settings.');
+      }
+    },
+    [withToken, applyPreferences],
+  );
+
   React.useEffect(() => {
     if (!personSlug) {
       setPreferences(undefined);
@@ -172,19 +188,17 @@ export const useNotifications = ({
       return;
     }
     let cancelled = false;
-    (async () => {
-      try {
-        const prefs = await getNotificationPreferencesAction(await withToken());
-        if (!cancelled) applyPreferences(prefs);
-      } catch (err) {
-        console.warn('Failed to load notification settings', err);
-        if (!cancelled) setError('Could not load notification settings.');
-      }
-    })();
+    loadPreferences(() => cancelled);
     return () => {
       cancelled = true;
     };
-  }, [personSlug, withToken, applyPreferences]);
+  }, [personSlug, loadPreferences]);
+
+  /** Retry after a failed load: fetch the stored settings again (never saves anything). */
+  const reloadSettings = React.useCallback(async () => {
+    setError(null);
+    await loadPreferences();
+  }, [loadPreferences]);
 
   const subscribe = React.useCallback(async () => {
     setError(null);
@@ -251,12 +265,12 @@ export const useNotifications = ({
   }, [applyPreferences, withToken]);
 
   const saveConfigurations = React.useCallback(
-    async (configuration: NotificationConfiguration) => {
+    async (configuration: NotificationConfiguration): Promise<boolean> => {
       if (isLoading || !person) {
         console.warn(
           'Cannot save notification settings while user data is loading',
         );
-        return;
+        return false;
       }
       setError(null);
       try {
@@ -289,9 +303,11 @@ export const useNotifications = ({
             await withToken(),
           ),
         );
+        return true;
       } catch (err) {
         console.warn('Failed to save notification configuration', err);
         setError('Could not save notification settings. Please try again.');
+        return false;
       }
     },
     [
@@ -315,6 +331,7 @@ export const useNotifications = ({
     subscribe,
     unsubscribe,
     enableBrowserPush,
+    reloadSettings,
     configuration,
     setConfiguration,
     saveConfigurations,

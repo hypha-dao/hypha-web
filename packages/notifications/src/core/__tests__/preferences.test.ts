@@ -40,7 +40,8 @@ describe('notification preferences (server side)', () => {
       sdk.getUser.mockRejectedValue(notFound);
       const prefs = await getNotificationPreferences('alice');
       expect(prefs.subscribed).toBe(false);
-      expect(prefs.emailEnabled).toBe(true);
+      // Email can't be delivered without a subscription, so it is not shown as on.
+      expect(prefs.emailEnabled).toBe(false);
       expect(prefs.pushTagEnabled).toBe(true);
       expect(prefs.subscriptions.every((s) => s.value)).toBe(true);
       expect(sdk.createUser).not.toHaveBeenCalled();
@@ -263,6 +264,112 @@ describe('notification preferences (server side)', () => {
         subscriptions: [],
       });
       expect(sdk.createSubscription).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('email delivery state', () => {
+    const enabledSub = {
+      id: 's1',
+      type: 'Email',
+      token: 'a@example.com',
+      enabled: true,
+    };
+
+    it('shows email on only with the tag allowing it AND an enabled subscription for the address', async () => {
+      sdk.getUser.mockResolvedValue(user({}, [enabledSub]));
+      expect(
+        (await getNotificationPreferences('alice', 'a@example.com'))
+          .emailEnabled,
+      ).toBe(true);
+      expect(
+        (await getNotificationPreferences('alice', 'other@example.com'))
+          .emailEnabled,
+      ).toBe(false);
+      sdk.getUser.mockResolvedValue(user({ email: 'disabled' }, [enabledSub]));
+      expect(
+        (await getNotificationPreferences('alice', 'a@example.com'))
+          .emailEnabled,
+      ).toBe(false);
+      sdk.getUser.mockResolvedValue(
+        user({}, [{ ...enabledSub, enabled: false }]),
+      );
+      expect(
+        (await getNotificationPreferences('alice', 'a@example.com'))
+          .emailEnabled,
+      ).toBe(false);
+    });
+
+    it('enrol creates the Email subscription before writing the tags', async () => {
+      sdk.getUser.mockResolvedValue(user());
+      const order: string[] = [];
+      sdk.createSubscription.mockImplementation(async () =>
+        order.push('subscription'),
+      );
+      sdk.updateUser.mockImplementation(async () => order.push('tags'));
+      const prefs = await enrolNotifications('alice', 'a@example.com');
+      expect(order).toEqual(['subscription', 'tags']);
+      expect(prefs.emailEnabled).toBe(true);
+    });
+
+    it('enrol keeps an explicit email opt-out: no subscription is created', async () => {
+      sdk.getUser.mockResolvedValue(user({ email: 'disabled' }));
+      const prefs = await enrolNotifications('alice', 'a@example.com');
+      expect(sdk.createSubscription).not.toHaveBeenCalled();
+      expect(prefs.emailEnabled).toBe(false);
+    });
+
+    it('enrol does not re-enable a subscription that was unsubscribed from an email', async () => {
+      sdk.getUser.mockResolvedValue(
+        user({}, [{ ...enabledSub, enabled: false }]),
+      );
+      const prefs = await enrolNotifications('alice', 'a@example.com');
+      expect(sdk.updateSubscription).not.toHaveBeenCalled();
+      expect(prefs.emailEnabled).toBe(false);
+    });
+
+    it('enrol without an address creates nothing and shows email off', async () => {
+      sdk.getUser.mockResolvedValue(user());
+      const prefs = await enrolNotifications('alice', undefined);
+      expect(sdk.createSubscription).not.toHaveBeenCalled();
+      expect(prefs.emailEnabled).toBe(false);
+    });
+
+    it('save with email on and no address stores the email tag as disabled', async () => {
+      sdk.getUser.mockResolvedValue(user());
+      const prefs = await saveNotificationPreferences('alice', undefined, {
+        emailEnabled: true,
+        subscriptions: [],
+      });
+      expect(sdk.updateUser.mock.calls[0][3].properties.tags.email).toBe(
+        'disabled',
+      );
+      expect(prefs.emailEnabled).toBe(false);
+    });
+
+    it('save with email on does not write the tag if creating the subscription fails', async () => {
+      sdk.getUser.mockResolvedValue(user());
+      sdk.createSubscription.mockRejectedValue(new Error('boom'));
+      await expect(
+        saveNotificationPreferences('alice', 'a@example.com', {
+          emailEnabled: true,
+          subscriptions: [],
+        }),
+      ).rejects.toThrow('boom');
+      expect(sdk.updateUser).not.toHaveBeenCalled();
+    });
+
+    it('save with email off writes the tag before removing the subscription', async () => {
+      sdk.getUser.mockResolvedValue(user({}, [enabledSub]));
+      const order: string[] = [];
+      sdk.updateUser.mockImplementation(async () => order.push('tags'));
+      sdk.deleteSubscription.mockImplementation(async () =>
+        order.push('delete'),
+      );
+      await saveNotificationPreferences('alice', 'a@example.com', {
+        emailEnabled: false,
+        subscriptions: [],
+      });
+      expect(order).toEqual(['tags', 'delete']);
     });
   });
 });

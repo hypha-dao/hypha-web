@@ -24,22 +24,22 @@ async function requirePerson(authToken: string | undefined) {
 export async function getNotificationPreferencesAction({
   authToken,
 }: AuthArgs): Promise<NotificationPreferences> {
-  const { slug } = await requirePerson(authToken);
-  return getNotificationPreferences(slug);
+  const { slug, email } = await requirePerson(authToken);
+  return getNotificationPreferences(slug, email);
 }
 
 export async function enrolNotificationsAction({
   authToken,
 }: AuthArgs): Promise<NotificationPreferences> {
-  const { slug } = await requirePerson(authToken);
-  return enrolNotifications(slug);
+  const { slug, email } = await requirePerson(authToken);
+  return enrolNotifications(slug, email);
 }
 
 export async function unenrolNotificationsAction({
   authToken,
 }: AuthArgs): Promise<NotificationPreferences> {
-  const { slug } = await requirePerson(authToken);
-  return unenrolNotifications(slug);
+  const { slug, email } = await requirePerson(authToken);
+  return unenrolNotifications(slug, email);
 }
 
 export async function saveNotificationPreferencesAction(
