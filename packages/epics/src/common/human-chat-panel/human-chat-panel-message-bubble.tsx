@@ -2003,12 +2003,26 @@ export function HumanChatPanelMessageBubble({
   const hasInlineMedia =
     Boolean(message.media) ||
     Boolean(message.mediaSlots && message.mediaSlots.length > 0);
+  /*
+   * Prefer max-height over `-webkit-line-clamp`. On iOS WebKit, `line-clamp`
+   * + `whitespace-pre-wrap` often makes scrollHeight === clientHeight, so the
+   * Read more control never appears even though the body looks truncated.
+   */
   const textBodyClassName = cn(
     /* Shared with the AI panel: 13px, a little tighter than body text. */
     'text-[13px] leading-[1.35] whitespace-pre-wrap break-words text-foreground',
+    /* Touch: native iOS selection must not win over the long-press action sheet. */
+    isTouchComposer && 'select-none [-webkit-touch-callout:none]',
     hasInlineMedia ? 'mt-0.5' : 'mt-0',
-    !textExpanded && 'line-clamp-10',
+    !textExpanded && 'max-h-[calc(1.35em*10)] overflow-hidden',
   );
+  const textLooksLong =
+    textContent.split('\n').length > 10 || textContent.length > 500;
+
+  useEffect(() => {
+    setTextExpanded(false);
+    setTextCanExpand(Boolean(textContent.trim()) && textLooksLong);
+  }, [message.id, textContent, richTextHtml, textLooksLong]);
 
   useLayoutEffect(() => {
     const el = textBodyRef.current;
@@ -2018,13 +2032,14 @@ export function HumanChatPanelMessageBubble({
     }
     if (textExpanded) return;
     const measure = () => {
-      setTextCanExpand(el.scrollHeight > el.clientHeight + 1);
+      const overflows = el.scrollHeight > el.clientHeight + 1;
+      setTextCanExpand(overflows || textLooksLong);
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [textContent, textExpanded, richTextHtml, hasInlineMedia]);
+  }, [textContent, textExpanded, richTextHtml, hasInlineMedia, textLooksLong]);
 
   const replyExcerpt =
     replyTo && replyTo.excerpt != null && replyTo.excerpt !== '' ? (

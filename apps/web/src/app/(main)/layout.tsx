@@ -21,6 +21,7 @@ import {
   HumanSidebarTrigger,
   MobileContentFrame,
   MobileTabBar,
+  AppIconUnreadBadge,
   RecentSpaceHistoryTracker,
   SpacesRailProvider,
 } from '@hypha-platform/epics';
@@ -58,12 +59,32 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  // Matches light paper; dark theme still uses MenuTop fill under translucent status bar.
+  themeColor: '#fbfaf8',
 };
 
 export const metadata: Metadata = {
   title: 'Hypha',
   description:
     "Hypha's complete DAO toolkit helps individuals, projects, and organizations achieve more together",
+  applicationName: 'Hypha',
+  /*
+   * iOS Home Screen: standalone hides Safari’s X|host chrome that was covering
+   * MenuTop. Next 15 emits `mobile-web-app-capable` from `appleWebApp.capable`;
+   * iOS still requires the legacy `apple-mobile-web-app-capable` tag (see
+   * vercel/next.js#74524), so both are set below.
+   */
+  appleWebApp: {
+    capable: true,
+    title: 'Hypha',
+    // Translucent so MenuTop’s bg fills the status-bar band; safe-area padding
+    // on MenuTop keeps icons clear of the notch / Dynamic Island.
+    statusBarStyle: 'black-translucent',
+  },
+  other: {
+    'apple-mobile-web-app-capable': 'yes',
+    'mobile-web-app-capable': 'yes',
+  },
   icons: {
     icon: [
       {
@@ -282,8 +303,14 @@ export default async function RootLayout({
                                   : undefined
                               }
                             >
-                              {/* Fixed menu bar — clamped to center column by SidebarInset */}
-                              <div className="sticky top-0 z-40 shrink-0 bg-page-background">
+                              {/*
+                                Sticky menu bar — clamped to center column by SidebarInset.
+                                Safe-area lives on MenuTop itself so `--menu-top-height`
+                                includes the notch/status-bar inset and overlays stay aligned.
+                                `-mb-px` + matching shadow seal the 1px Safari/iOS gap where
+                                scrolling content (or rubber-band) shows through under the bar.
+                              */}
+                              <div className="sticky top-0 z-40 -mb-px shrink-0 bg-page-background shadow-[0_1px_0_0_var(--page-background)]">
                                 <ConnectedMenuTop
                                   aiChatEnabled={aiChatEnabled}
                                   logoHref={ROOT_URL}
@@ -429,6 +456,12 @@ export default async function RootLayout({
                               <MobileTabBar
                                 spaceMemoryEnabled={spaceMemoryEnabled}
                               />
+                              {/*
+                                Home Screen / installed PWA icon badge. Must sit
+                                under ConditionalMatrixProvider so the unread
+                                total can read the Matrix client.
+                              */}
+                              {humanChatEnabled ? <AppIconUnreadBadge /> : null}
                             </PanelWrapLayout>
                             <Suspense fallback={null}>
                               <NotificationCentreDialogHost />

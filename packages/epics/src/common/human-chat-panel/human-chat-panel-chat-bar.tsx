@@ -768,15 +768,32 @@ export function HumanChatPanelChatBar({
     top: number;
     left: number;
   } | null>(null);
+  /**
+   * Touch: dock format controls under the textarea instead of anchoring a
+   * floating bubble to the selection (that fights iOS Cut/Copy/Paste).
+   */
+  const [touchFormatVisible, setTouchFormatVisible] = useState(false);
+  const touchFormatTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   /** While true, user is dragging a selection — hide format bar until pointerup. */
   const pointerSelectingRef = useRef(false);
   const [composerDragDepth, setComposerDragDepth] = useState(0);
   const isComposerDropActive = composerDragDepth > 0;
 
+  const clearTouchFormatTimer = useCallback(() => {
+    if (touchFormatTimerRef.current != null) {
+      clearTimeout(touchFormatTimerRef.current);
+      touchFormatTimerRef.current = null;
+    }
+  }, []);
+
   const updateSelectionBar = useCallback(() => {
     const el = textareaRef.current;
     if (!el || document.activeElement !== el) {
       setSelectionBar(null);
+      setTouchFormatVisible(false);
+      clearTouchFormatTimer();
       return;
     }
     if (pointerSelectingRef.current) {
@@ -786,6 +803,18 @@ export function HumanChatPanelChatBar({
     const end = el.selectionEnd ?? 0;
     if (start === end || colonOpen || atOpen) {
       setSelectionBar(null);
+      setTouchFormatVisible(false);
+      clearTouchFormatTimer();
+      return;
+    }
+    if (isTouchComposer) {
+      // Native callout owns the selection; show a docked strip after settle.
+      setSelectionBar(null);
+      clearTouchFormatTimer();
+      touchFormatTimerRef.current = setTimeout(() => {
+        touchFormatTimerRef.current = null;
+        setTouchFormatVisible(true);
+      }, 350);
       return;
     }
     const local = getTextareaSelectionCenter(el);
@@ -804,7 +833,7 @@ export function HumanChatPanelChatBar({
       top: local.top + (taRect.top - wrapRect.top),
       left: local.left + (taRect.left - wrapRect.left),
     });
-  }, [colonOpen, atOpen]);
+  }, [atOpen, clearTouchFormatTimer, colonOpen, isTouchComposer]);
 
   useEffect(() => {
     const endPointerSelect = () => {
@@ -1091,8 +1120,14 @@ export function HumanChatPanelChatBar({
   }, [value, onChange, autoResize, syncAtState, atMentionInteractable]);
 
   useEffect(() => {
-    if (colonOpen || atOpen) setSelectionBar(null);
-  }, [colonOpen, atOpen]);
+    if (colonOpen || atOpen) {
+      setSelectionBar(null);
+      setTouchFormatVisible(false);
+      clearTouchFormatTimer();
+    }
+  }, [atOpen, clearTouchFormatTimer, colonOpen]);
+
+  useEffect(() => () => clearTouchFormatTimer(), [clearTouchFormatTimer]);
 
   useEffect(() => {
     const onSel = () => updateSelectionBar();
@@ -1926,7 +1961,7 @@ export function HumanChatPanelChatBar({
             </p>
           </div>
         )}
-        {selectionBar && (
+        {!isTouchComposer && selectionBar ? (
           <div
             className="absolute z-30 flex -translate-x-1/2 -translate-y-full flex-col items-center gap-0"
             style={{
@@ -2003,7 +2038,7 @@ export function HumanChatPanelChatBar({
               <div className="h-0 w-0 border-x-[5px] border-b-[6px] border-x-transparent border-b-popover" />
             </div>
           </div>
-        )}
+        ) : null}
         <input
           ref={fileInputRef}
           id={fileInputId}
@@ -2343,6 +2378,8 @@ export function HumanChatPanelChatBar({
             onBlur={() => {
               setComposerFocused(false);
               setSelectionBar(null);
+              setTouchFormatVisible(false);
+              clearTouchFormatTimer();
             }}
             onKeyDown={handleKeyDown}
             onFocus={() => {
@@ -2374,6 +2411,70 @@ export function HumanChatPanelChatBar({
         </div>
 
         <div className="flex min-w-0 flex-col gap-1 px-2 pb-2.5 pt-0">
+          {isTouchComposer && touchFormatVisible ? (
+            <div
+              role="toolbar"
+              aria-label={t('formatSelectionBar')}
+              className="flex w-full items-center justify-start gap-0.5 overflow-x-auto rounded-md border border-border bg-muted/40 px-1 py-0.5"
+              onMouseDown={(e) => e.preventDefault()}
+              onPointerDown={(e) => e.preventDefault()}
+            >
+              <button
+                type="button"
+                className={fmtBtn}
+                title={t('bold')}
+                aria-label={t('bold')}
+                onClick={() => applyFormat('bold')}
+              >
+                <Bold className="h-3.5 w-3.5" strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                className={fmtBtn}
+                title={t('italic')}
+                aria-label={t('italic')}
+                onClick={() => applyFormat('italic')}
+              >
+                <Italic className="h-3.5 w-3.5" strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                className={fmtBtn}
+                title={t('strikethrough')}
+                aria-label={t('strikethrough')}
+                onClick={() => applyFormat('strike')}
+              >
+                <Strikethrough className="h-3.5 w-3.5" strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                className={fmtBtn}
+                title={t('blockquote')}
+                aria-label={t('blockquote')}
+                onClick={() => applyFormat('blockquote')}
+              >
+                <TextQuote className="h-3.5 w-3.5" strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                className={fmtBtn}
+                title={t('inlineCode')}
+                aria-label={t('inlineCode')}
+                onClick={() => applyFormat('code')}
+              >
+                <Code className="h-3.5 w-3.5" strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                className={fmtBtn}
+                title={t('spoiler')}
+                aria-label={t('spoiler')}
+                onClick={() => applyFormat('spoiler')}
+              >
+                <Eye className="h-3.5 w-3.5" strokeWidth={2} />
+              </button>
+            </div>
+          ) : null}
           {(voiceError || attachError) && (
             <p role="alert" className="text-xs text-destructive">
               {voiceError ?? attachError}

@@ -1,8 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
 import {
   Copy,
   Link2,
@@ -37,6 +43,11 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
   useIsMobile,
   usePrefersCoarsePointer,
 } from '@hypha-platform/ui';
@@ -55,6 +66,59 @@ import { touchComposerFromViewportFlags } from './touch-composer-flags';
 const RECENT_REACTIONS_STORAGE_KEY = 'hypha-chat-recent-reactions';
 const RECENT_REACTIONS_BUMP_EVENT = 'hypha-chat-recent-reactions-bump';
 const DEFAULT_QUICK_REACTIONS = ['👍', '🎵', '🙏', '✅'] as const;
+/**
+ * Discord-style hold before the mobile action sheet opens.
+ * Stay under iOS’s ~500ms loupe/selection timer so our sheet wins the gesture.
+ */
+const TOUCH_LONG_PRESS_MS = 350;
+const TOUCH_LONG_PRESS_MOVE_PX = 12;
+
+function clearNativeTextSelection() {
+  try {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      selection.removeAllRanges();
+    }
+  } catch {
+    // ignore
+  }
+}
+
+/** Plain buttons so MenuSections can render inside a bottom Sheet. */
+function SheetMenuItem({
+  children,
+  onSelect,
+  disabled,
+  className,
+}: {
+  children?: ReactNode;
+  onSelect?: (event: Event) => void;
+  disabled?: boolean;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      className={cn(
+        'flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-3 text-left text-sm outline-none',
+        'hover:bg-muted focus-visible:bg-muted disabled:pointer-events-none disabled:opacity-40',
+        className,
+      )}
+      onClick={(event) => {
+        onSelect?.(event.nativeEvent);
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SheetMenuSeparator({ className }: { className?: string }) {
+  return (
+    <div className={cn('my-1 h-px bg-border', className)} role="separator" />
+  );
+}
 
 type UIMessagePart =
   | { type: 'text'; text: string }
@@ -369,9 +433,93 @@ export function HumanChatPanelMessageOverflow({
   const touchComposer = isTouchComposer ?? inferredTouch;
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [actionSheetOpen, setActionSheetOpen] = useState(false);
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressOriginRef = useRef<{ x: number; y: number } | null>(null);
+  const longPressOpenedRef = useRef(false);
+  const longPressRootRef = useRef<HTMLDivElement>(null);
+  const selectionLockRafRef = useRef(0);
+  const selectionCssLockRef = useRef(false);
+
+  const stopSelectionLock = useCallback(() => {
+    if (selectionLockRafRef.current) {
+      cancelAnimationFrame(selectionLockRafRef.current);
+      selectionLockRafRef.current = 0;
+    }
+    if (selectionCssLockRef.current && typeof document !== 'undefined') {
+      selectionCssLockRef.current = false;
+      document.documentElement.style.removeProperty('-webkit-user-select');
+      document.documentElement.style.removeProperty('user-select');
+    }
+  }, []);
+
+  const startSelectionLock = useCallback(() => {
+    if (typeof document === 'undefined') return;
+    selectionCssLockRef.current = true;
+    document.documentElement.style.setProperty('-webkit-user-select', 'none');
+    document.documentElement.style.setProperty('user-select', 'none');
+    clearNativeTextSelection();
+    const tick = () => {
+      clearNativeTextSelection();
+      selectionLockRafRef.current = requestAnimationFrame(tick);
+    };
+    if (selectionLockRafRef.current) {
+      cancelAnimationFrame(selectionLockRafRef.current);
+    }
+    selectionLockRafRef.current = requestAnimationFrame(tick);
+  }, []);
+
+  const clearLongPressTimer = useCallback(() => {
+    if (longPressTimerRef.current != null) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    longPressOriginRef.current = null;
+  }, []);
+
+  const openActionSheet = useCallback(() => {
+    startSelectionLock();
+    clearNativeTextSelection();
+    setReactionPickerOpen(false);
+    setDropdownOpen(false);
+    setActionSheetOpen(true);
+  }, [startSelectionLock]);
+
+  useEffect(() => {
+    if (!actionSheetOpen) {
+      stopSelectionLock();
+      clearNativeTextSelection();
+    }
+  }, [actionSheetOpen, stopSelectionLock]);
+
+  useEffect(
+    () => () => {
+      clearLongPressTimer();
+      stopSelectionLock();
+    },
+    [clearLongPressTimer, stopSelectionLock],
+  );
+
+  /*
+   * iOS WebKit still starts a text selection / callout on long-press even with
+   * `user-select: none`. Block `selectstart` so only the Discord-style sheet
+   * appears; pointer handlers clear ranges while the gesture is active.
+   */
+  useEffect(() => {
+    if (!touchComposer) return;
+    const el = longPressRootRef.current;
+    if (!el) return;
+    const onSelectStart = (event: Event) => {
+      event.preventDefault();
+    };
+    el.addEventListener('selectstart', onSelectStart);
+    return () => {
+      el.removeEventListener('selectstart', onSelectStart);
+    };
+  }, [touchComposer]);
 
   const plain = useMemo(() => getMessagePlainTextBody(message), [message]);
   const speakablePlain = useMemo(() => {
@@ -438,12 +586,18 @@ export function HumanChatPanelMessageOverflow({
       await onDeleteMessage(messageId);
       setDeleteOpen(false);
       setDropdownOpen(false);
+      setActionSheetOpen(false);
     } catch {
       setDeleteError(t('messageDeleteFailed'));
     } finally {
       setDeleteBusy(false);
     }
   }, [canDelete, deleteBusy, messageId, onDeleteMessage, t]);
+
+  const closeActionSheet = useCallback(() => {
+    setActionSheetOpen(false);
+    setReactionPickerOpen(false);
+  }, []);
 
   if (disabled) {
     return typeof children === 'function' ? (
@@ -468,7 +622,11 @@ export function HumanChatPanelMessageOverflow({
     copyMessageLinkTarget,
     onSpeak,
     canDelete,
-    onRequestDelete: () => setDeleteOpen(true),
+    onRequestDelete: () => {
+      setActionSheetOpen(false);
+      setDropdownOpen(false);
+      setDeleteOpen(true);
+    },
   } as const;
 
   const contextMenu = (
@@ -492,49 +650,97 @@ export function HumanChatPanelMessageOverflow({
     />
   );
 
-  const dropdownMenu =
-    touchComposer && reactionPickerOpen ? (
-      <HumanChatPanelEmojiMartSurface
-        ariaLabel={t('addReactionButton')}
-        onEmojiSelect={(native) => {
-          pushRecentChatReaction(native);
-          if (onReact) void onReact(native);
-          setReactionPickerOpen(false);
-          setDropdownOpen(false);
-        }}
-      />
-    ) : (
-      <MenuSections
-        {...menuPropsBase}
-        onAfterAddReaction={() => setDropdownOpen(false)}
-        onAfterQuickReaction={() => setDropdownOpen(false)}
-        onOpenFullReactionPicker={
-          touchComposer ? () => setReactionPickerOpen(true) : undefined
-        }
-        Sub={DropdownMenuSub}
-        SubTrigger={DropdownMenuSubTrigger}
-        SubContent={DropdownMenuSubContent}
-        Item={DropdownMenuItem}
-        Separator={DropdownMenuSeparator}
-      />
-    );
+  /** Desktop ⋯ only — touch opens the bottom sheet instead. */
+  const dropdownMenu = (
+    <MenuSections
+      {...menuPropsBase}
+      onAfterAddReaction={() => setDropdownOpen(false)}
+      onAfterQuickReaction={() => setDropdownOpen(false)}
+      Sub={DropdownMenuSub}
+      SubTrigger={DropdownMenuSubTrigger}
+      SubContent={DropdownMenuSubContent}
+      Item={DropdownMenuItem}
+      Separator={DropdownMenuSeparator}
+    />
+  );
 
-  const moreSlot = (
+  const sheetMenu = reactionPickerOpen ? (
+    <HumanChatPanelEmojiMartSurface
+      ariaLabel={t('addReactionButton')}
+      onEmojiSelect={(native) => {
+        pushRecentChatReaction(native);
+        if (onReact) void onReact(native);
+        closeActionSheet();
+      }}
+    />
+  ) : (
+    <MenuSections
+      {...menuPropsBase}
+      onAfterAddReaction={closeActionSheet}
+      onAfterQuickReaction={closeActionSheet}
+      onOpenFullReactionPicker={() => setReactionPickerOpen(true)}
+      onEdit={
+        onEdit
+          ? () => {
+              closeActionSheet();
+              onEdit();
+            }
+          : undefined
+      }
+      onReply={
+        onReply
+          ? () => {
+              closeActionSheet();
+              onReply();
+            }
+          : undefined
+      }
+      onCopyText={() => {
+        void onCopyText();
+        closeActionSheet();
+      }}
+      onCopyLink={() => {
+        void onCopyLink();
+        closeActionSheet();
+      }}
+      onSpeak={() => {
+        onSpeak();
+        closeActionSheet();
+      }}
+      Sub={DropdownMenuSub}
+      SubTrigger={DropdownMenuSubTrigger}
+      SubContent={DropdownMenuSubContent}
+      Item={SheetMenuItem as typeof DropdownMenuItem}
+      Separator={SheetMenuSeparator as typeof DropdownMenuSeparator}
+    />
+  );
+
+  const moreSlot = touchComposer ? (
+    <button
+      type="button"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:block"
+      aria-label={t('moreButton')}
+      aria-expanded={actionSheetOpen}
+      onClick={(event) => {
+        event.stopPropagation();
+        openActionSheet();
+      }}
+    >
+      <MoreHorizontal className="h-3 w-3" strokeWidth={2} aria-hidden />
+    </button>
+  ) : (
     <DropdownMenu
       open={dropdownOpen}
       onOpenChange={(open) => {
         setDropdownOpen(open);
         if (!open) setReactionPickerOpen(false);
       }}
-      modal={touchComposer}
+      modal={false}
     >
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className={cn(
-            'flex shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:block',
-            touchComposer ? 'h-9 w-9' : 'h-6 w-6',
-          )}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:block"
           aria-label={t('moreButton')}
           aria-expanded={dropdownOpen}
         >
@@ -543,15 +749,10 @@ export function HumanChatPanelMessageOverflow({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        side={touchComposer ? 'top' : 'bottom'}
+        side="bottom"
         sideOffset={4}
         collisionPadding={16}
-        className={cn(
-          'min-w-[220px] p-1',
-          touchComposer &&
-            reactionPickerOpen &&
-            'w-auto max-w-[min(100vw-2rem,352px)] p-0',
-        )}
+        className="min-w-[220px] p-1"
       >
         {dropdownMenu}
       </DropdownMenuContent>
@@ -564,7 +765,75 @@ export function HumanChatPanelMessageOverflow({
   return (
     <>
       {touchComposer ? (
-        rowInner
+        <div
+          ref={longPressRootRef}
+          className="select-none [-webkit-touch-callout:none] [&_*]:select-none [&_*]:[-webkit-touch-callout:none]"
+          data-chat-message-long-press=""
+          onPointerDownCapture={(event) => {
+            if (event.pointerType !== 'touch' && event.pointerType !== 'pen') {
+              return;
+            }
+            if (event.button !== 0) return;
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            if (
+              target.closest(
+                'button, a, input, textarea, [role="menuitem"], [data-chat-message-actions]',
+              )
+            ) {
+              return;
+            }
+            clearLongPressTimer();
+            longPressOpenedRef.current = false;
+            clearNativeTextSelection();
+            startSelectionLock();
+            longPressOriginRef.current = {
+              x: event.clientX,
+              y: event.clientY,
+            };
+            longPressTimerRef.current = setTimeout(() => {
+              longPressTimerRef.current = null;
+              longPressOpenedRef.current = true;
+              openActionSheet();
+            }, TOUCH_LONG_PRESS_MS);
+          }}
+          onPointerMoveCapture={(event) => {
+            const origin = longPressOriginRef.current;
+            if (!origin || longPressTimerRef.current == null) return;
+            const dx = event.clientX - origin.x;
+            const dy = event.clientY - origin.y;
+            if (
+              dx * dx + dy * dy >
+              TOUCH_LONG_PRESS_MOVE_PX * TOUCH_LONG_PRESS_MOVE_PX
+            ) {
+              clearLongPressTimer();
+              stopSelectionLock();
+            }
+          }}
+          onPointerUpCapture={(event) => {
+            clearLongPressTimer();
+            if (!longPressOpenedRef.current) {
+              stopSelectionLock();
+              return;
+            }
+            longPressOpenedRef.current = false;
+            // Suppress the tap that would toggle the floating mini toolbar.
+            event.stopPropagation();
+            clearNativeTextSelection();
+          }}
+          onPointerCancelCapture={() => {
+            clearLongPressTimer();
+            longPressOpenedRef.current = false;
+            stopSelectionLock();
+          }}
+          onContextMenu={(event) => {
+            // Native callout / text select — long-press owns this gesture.
+            event.preventDefault();
+            clearNativeTextSelection();
+          }}
+        >
+          {rowInner}
+        </div>
       ) : (
         <ContextMenu>
           <ContextMenuTrigger asChild>{rowInner}</ContextMenuTrigger>
@@ -573,6 +842,42 @@ export function HumanChatPanelMessageOverflow({
           </ContextMenuContent>
         </ContextMenu>
       )}
+
+      {touchComposer ? (
+        <Sheet
+          open={actionSheetOpen}
+          onOpenChange={(open) => {
+            setActionSheetOpen(open);
+            if (!open) setReactionPickerOpen(false);
+          }}
+        >
+          <SheetContent
+            side="bottom"
+            showClose={false}
+            className={cn(
+              'max-h-[min(85vh,640px)] gap-0 rounded-t-2xl border-border p-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+              'bg-background font-sans text-foreground shadow-lg',
+            )}
+          >
+            <SheetHeader className="sr-only">
+              <SheetTitle>{t('moreButton')}</SheetTitle>
+              <SheetDescription>{t('moreButton')}</SheetDescription>
+            </SheetHeader>
+            <div
+              className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-muted-foreground/30"
+              aria-hidden
+            />
+            <div
+              className={cn(
+                'overflow-y-auto px-2 pb-2 pt-3',
+                reactionPickerOpen && 'px-0 pt-0',
+              )}
+            >
+              {sheetMenu}
+            </div>
+          </SheetContent>
+        </Sheet>
+      ) : null}
 
       <AlertDialog
         open={deleteOpen}

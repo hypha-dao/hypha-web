@@ -203,7 +203,14 @@ export const MenuTop = ({
     <header
       ref={headerRef}
       className={clsx(
-        'relative z-30 flex h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
+        /*
+         * `viewport-fit=cover` paints under the iOS status bar / notch. Without
+         * the top safe-area inset the 70px row sits under system chrome and, once
+         * sticky, clips “above the fold” (only icon feet remain). Padding + height
+         * keep the interactive row at 70px; ResizeObserver still publishes the
+         * full painted height so overlays start below MenuTop.
+         */
+        'relative z-30 box-border flex h-[calc(70px+env(safe-area-inset-top,0px))] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 pt-[env(safe-area-inset-top,0px)]',
         'hypha-topbar bg-page-background px-4',
         /*
          * Span the flex gap between SidebarInset and the fixed left rail so the underline meets
