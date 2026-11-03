@@ -18,6 +18,7 @@ import {
 } from '@hypha-platform/ui-utils';
 import {
   DocumentStatus,
+  decodeHtmlEntities,
   stripHyphaInvestmentFormMarker,
   useEvents,
 } from '@hypha-platform/core/client';
@@ -100,21 +101,12 @@ function stripDescription(description: string): string {
   // that markdown renders as bold text + raw JSON on the card preview. Strip it
   // so the card shows only the user-authored description.
   const withoutEnergyMarker = stripEnergyProposalMarker(withoutExchangeDetails);
-  return stripMdxComments(stripHtmlComments(withoutEnergyMarker))
-    .replace(/\\([\[\]\(\)\{\}])/g, '$1')
-    .replace(/&#x([0-9A-Fa-f]+);/gi, (full, hex) => {
-      const codePoint = Number.parseInt(hex, 16);
-      if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff)
-        return full;
-      return String.fromCodePoint(codePoint);
-    })
-    .replace(/&#(\d+);/g, (full, dec) => {
-      const codePoint = Number.parseInt(dec, 10);
-      if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff)
-        return full;
-      return String.fromCodePoint(codePoint);
-    })
-    .trim();
+  return decodeHtmlEntities(
+    stripMdxComments(stripHtmlComments(withoutEnergyMarker)).replace(
+      /\\([\[\]\(\)\{\}])/g,
+      '$1',
+    ),
+  ).trim();
 }
 
 export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
@@ -173,7 +165,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
           <Image
             className="h-full w-full rounded-none object-cover"
             src={leadImage || '/placeholder/document-lead-image.webp'}
-            alt={title || ''}
+            alt={decodeHtmlEntities(title || '')}
             width={250}
             height={LEAD_IMAGE_HEIGHT_PX}
           />
@@ -194,7 +186,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
             loading={isLoading}
           >
             <CardTitle className="line-clamp-2 text-3 font-medium tracking-tight">
-              {title}
+              {decodeHtmlEntities(title || '')}
             </CardTitle>
           </Skeleton>
           <PersonLabel isLoading={isLoading} creator={creator} />

@@ -1,3 +1,4 @@
+import { decodeHtmlEntities } from '../common/decode-html-entities';
 import type { MemberIntelligence } from './member-intelligence';
 import {
   balanceMemberHomeThread,
@@ -268,13 +269,16 @@ function collectMemberHomeThreadItems(
 
   const push = (item: MemberHomeThreadItem) => {
     const slug = item.slug.trim();
-    if (!slug || isMemberOwnJoinTitle(home.person, item.title)) return;
-    const key = memberHomeThreadItemKey({ ...item, slug });
+    const title = decodeHtmlEntities(item.title);
+    if (!slug || isMemberOwnJoinTitle(home.person, title)) return;
+    const key = memberHomeThreadItemKey({ ...item, slug, title });
     if (seen.has(key)) return;
     seen.add(key);
     items.push({
       ...item,
       slug,
+      title,
+      summary: item.summary ? decodeHtmlEntities(item.summary) : item.summary,
       spaceLogo: item.spaceLogo ?? logosBySlug.get(item.spaceSlug) ?? null,
     });
   };
