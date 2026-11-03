@@ -1,5 +1,13 @@
 import type { ComponentType } from 'react';
-import { Circle, FileText, Globe, Globe2, Radio, Target } from 'lucide-react';
+import {
+  BookOpen,
+  Circle,
+  FileText,
+  Globe,
+  Globe2,
+  Radio,
+  Target,
+} from 'lucide-react';
 
 import type { CoherenceOpenedChannel } from '../human-chat-panel-context';
 
@@ -20,6 +28,7 @@ export const MESSAGES_CHANNEL_GLYPH: Record<
   ecosystem: Target,
   signal: Radio,
   proposal: FileText,
+  context: BookOpen,
 };
 
 export function messagesChannelGlyph(

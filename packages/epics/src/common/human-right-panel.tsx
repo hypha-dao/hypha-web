@@ -6538,6 +6538,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       return t('tabChatEcosystem');
     }
     if (coherenceChannel === 'proposal') return t('tabChatProposal');
+    if (coherenceChannel === 'context') return t('tabChatContext');
     if (coherenceChannel === 'signal') return t('tabChatSignal');
     if (
       coherenceChannel === 'space-public' ||
@@ -6604,6 +6605,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               ? tConnections('inbox.tagSignal')
               : coherenceChannel === 'proposal'
               ? tConnections('inbox.tagProposal')
+              : coherenceChannel === 'context'
+              ? tConnections('inbox.tagContext')
               : undefined
           }
           titleStart={
@@ -6655,7 +6658,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               coherenceChannel === 'space-public' ||
               coherenceChannel === 'ecosystem' ||
               coherenceChannel === 'signal' ||
-              coherenceChannel === 'proposal' ? (
+              coherenceChannel === 'proposal' ||
+              coherenceChannel === 'context' ? (
               <HeaderSpaceLogoMark
                 loading={isSpaceLoading}
                 logoUrl={resolveSpaceDisplayLogoUrl(

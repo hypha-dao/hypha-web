@@ -80,7 +80,8 @@ export type CoherenceOpenedChannel =
   | 'ecosystem'
   | 'network'
   | 'signal'
-  | 'proposal';
+  | 'proposal'
+  | 'context';
 
 export type OpenCoherenceChatOptions = {
   public?: boolean;
