@@ -271,7 +271,7 @@ function collectMemberHomeThreadItems(
     const slug = item.slug.trim();
     const title = decodeHtmlEntities(item.title);
     if (!slug || isMemberOwnJoinTitle(home.person, title)) return;
-    const key = memberHomeThreadItemKey({ ...item, slug, title });
+    const key = memberHomeThreadItemKey({ kind: item.kind, slug });
     if (seen.has(key)) return;
     seen.add(key);
     items.push({
