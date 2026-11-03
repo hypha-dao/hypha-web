@@ -12,6 +12,12 @@ import {
   truncateText,
   utf8Decode,
 } from '../../common/server/asset-content';
+import {
+  extractOfficeText,
+  looksLikeZip,
+  OFFICE_FORMAT_MIME,
+  officeFormatForMime,
+} from '../../common/server/office-text';
 
 const MAX_URL_LENGTH = 2048;
 
@@ -449,6 +455,41 @@ function looksLikePdf(bytes: Uint8Array): boolean {
   );
 }
 
+export const SUPPORTED_SOURCE_TYPES =
+  'Supported: web pages, PDF, Word (.docx), PowerPoint (.pptx), Excel (.xlsx), OpenDocument (.odt, .odp, .ods), plain text, Markdown, CSV, JSON and images.';
+
+const ZIP_MIMES = new Set([
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/octet-stream',
+]);
+
+const LEGACY_OFFICE_MIMES = new Set([
+  'application/msword',
+  'application/vnd.ms-word',
+  'application/vnd.ms-excel',
+  'application/vnd.ms-powerpoint',
+]);
+
+const OFFICE_EXTENSION = /\.(?:docx|docm|pptx|pptm|xlsx|xlsm|odt|odp|ods)$/i;
+
+const EXTENSION_MIMES: Array<[string, string]> = [
+  ['.odt', OFFICE_FORMAT_MIME.odt],
+  ['.odp', OFFICE_FORMAT_MIME.odp],
+  ['.ods', OFFICE_FORMAT_MIME.ods],
+  ['.markdown', 'text/markdown'],
+  ['.csv', 'text/csv'],
+  ['.tsv', 'text/tab-separated-values'],
+  ['.json', 'application/json'],
+  ['.html', 'text/html'],
+  ['.htm', 'text/html'],
+];
+
+function mimeForExtension(filename: string): string | null {
+  const name = filename.toLowerCase();
+  return EXTENSION_MIMES.find(([ext]) => name.endsWith(ext))?.[1] ?? null;
+}
+
 function looksLikeText(bytes: Uint8Array): boolean {
   if (bytes.includes(0)) return false;
   return utf8Decode(bytes.subarray(0, Math.min(bytes.length, 64_000))) !== null;
@@ -471,9 +512,9 @@ export function filenameFromContentDisposition(
 }
 
 /**
- * Turn fetched bytes into model-ready content: HTML and text become text, PDFs
- * become extracted text, images and Office files stay binary for multimodal
- * models — the same decoding the org-memory asset reader uses.
+ * Turn fetched bytes into model-ready content: HTML, text, PDFs and Office or
+ * OpenDocument files become text; images stay binary for multimodal models.
+ * Anything else is refused with the list of supported types.
  */
 export async function decodeSharedSourceBytes({
   bytes,
@@ -488,6 +529,9 @@ export async function decodeSharedSourceBytes({
   | SpaceContextSharedSourceFailure
 > {
   let mime = normalizeMime(contentType, filename).toLowerCase();
+  if (mime === 'application/octet-stream') {
+    mime = mimeForExtension(filename) ?? mime;
+  }
   if (mime === 'application/octet-stream') {
     if (looksLikePdf(bytes)) mime = 'application/pdf';
     else if (looksLikeText(bytes)) mime = 'text/plain';
@@ -557,7 +601,55 @@ export async function decodeSharedSourceBytes({
       byte_length: byteLength,
     };
   }
-  if (isImageMime(mime) || isOfficeDocMime(mime)) {
+  if (
+    looksLikeZip(bytes) &&
+    (officeFormatForMime(mime) ||
+      isOfficeDocMime(mime) ||
+      ZIP_MIMES.has(mime) ||
+      OFFICE_EXTENSION.test(filename))
+  ) {
+    const office = extractOfficeText(bytes, { maxChars: ASSET_MAX_TEXT_CHARS });
+    if (office.ok) {
+      if (!office.text) {
+        return {
+          ok: false,
+          error: `${filename} has no readable text`,
+          code: 'decode_failed',
+        };
+      }
+      return {
+        ok: true,
+        filename,
+        mime: OFFICE_FORMAT_MIME[office.format],
+        mode: 'text',
+        text: office.text,
+        text_truncated: office.truncated,
+        byte_length: byteLength,
+      };
+    }
+    if (office.reason === 'too_large') {
+      return {
+        ok: false,
+        error: `${filename} is too large to read`,
+        code: 'too_large',
+      };
+    }
+    if (office.reason === 'unreadable') {
+      return {
+        ok: false,
+        error: `Could not read ${filename}; it may be damaged or password-protected`,
+        code: 'decode_failed',
+      };
+    }
+  }
+  if (officeFormatForMime(mime) && !looksLikeZip(bytes)) {
+    return {
+      ok: false,
+      error: `Could not read ${filename}; it may be password-protected, damaged or saved in an older Office format. Save it as .docx, .xlsx, .pptx or PDF and share it again.`,
+      code: 'decode_failed',
+    };
+  }
+  if (isImageMime(mime)) {
     return {
       ok: true,
       filename,
@@ -567,9 +659,16 @@ export async function decodeSharedSourceBytes({
       byte_length: byteLength,
     };
   }
+  if (LEGACY_OFFICE_MIMES.has(mime)) {
+    return {
+      ok: false,
+      error: `${filename} is an older Office format (.doc, .xls or .ppt) that cannot be read. Save it as .docx, .xlsx, .pptx or PDF and share it again. ${SUPPORTED_SOURCE_TYPES}`,
+      code: 'unsupported_type',
+    };
+  }
   return {
     ok: false,
-    error: `Unsupported file type: ${mime}`,
+    error: `Unsupported file type (${mime}). ${SUPPORTED_SOURCE_TYPES}`,
     code: 'unsupported_type',
   };
 }

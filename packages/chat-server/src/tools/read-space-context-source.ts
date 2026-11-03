@@ -44,7 +44,7 @@ export function createReadSpaceContextSourceTool(
 ) {
   return tool({
     description:
-      'Read a link, uploaded document or attached file a member shared in this Space Context chat. Returns web page text (HTML to text), PDF text, plain text or Markdown, and images or Office files for multimodal reading. Only URLs that appear in member messages can be read. max_bytes default 2 MiB.',
+      'Read a link, uploaded document or attached file a member shared in this Space Context chat. Returns the text of web pages, PDFs, Word (.docx), PowerPoint (.pptx), Excel (.xlsx), OpenDocument (.odt, .odp, .ods), plain text, Markdown, CSV and JSON files; images come back for multimodal reading. Older .doc, .xls and .ppt files and other types are refused with the list of supported types; relay that to the member. Only URLs that appear in member messages can be read. max_bytes default 2 MiB.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
