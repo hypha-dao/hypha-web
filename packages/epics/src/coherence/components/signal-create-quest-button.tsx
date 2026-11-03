@@ -31,7 +31,7 @@ export function SignalCreateQuestButton({ className }: { className?: string }) {
           data-testid="signal-create-quest"
         >
           <Sparkles className="craft-icon" aria-hidden />
-          {t('createQuest')}
+          {t('createSignal')}
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -42,7 +42,7 @@ export function SignalCreateQuestButton({ className }: { className?: string }) {
         <DialogHeader>
           <DialogTitle>{t('comingSoon')}</DialogTitle>
           <DialogDescription className="sr-only">
-            {t('createQuest')}
+            {t('createSignal')}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

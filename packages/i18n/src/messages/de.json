@@ -497,6 +497,7 @@
     "filterInsight": "Einsicht",
     "filterAction": "Handlungsnachweis",
     "filterImpact": "Wirkungsbelege",
+    "filterBug": "Bug",
     "byLine": "{name} · {space}",
     "fieldEmpty": "Noch nichts mit dem Netzwerk geteilt.",
     "storiesEmpty": "Noch keine Geschichten mit dem Netzwerk geteilt.",
@@ -4411,7 +4412,7 @@
       "Tension": "Spannung",
       "Risk": "Risiko",
       "Action": "Handlungsnachweis",
-      "Impact": "Handlungsnachweis",
+      "Impact": "Wirkungsbelege",
       "Trend": "Trend",
       "Proposal": "Vorschlag",
       "Bug": "Bug"
@@ -4423,7 +4424,7 @@
       "Insight": "Datengetriebene Beobachtung oder Entdeckung",
       "Tension": "Konflikt oder Meinungsverschiedenheit, die gelöst werden muss",
       "Risk": "Bedrohung, Sorge oder Gefahr",
-      "Action": "Geschichten und Ergebnisse aus der Praxis.",
+      "Action": "Wohin das Geld geflossen ist.",
       "Impact": "Geschichten und Ergebnisse aus der Praxis.",
       "Trend": "Aufkommendes Muster über Räume hinweg",
       "Proposal": "Governance-Aktion oder Abstimmung erforderlich",
@@ -4803,6 +4804,7 @@
     "signalMedia": "Medien",
     "signalDownload": "Herunterladen",
     "createQuest": "Mission erstellen",
+    "createSignal": "Signal erstellen",
     "signalCreatedBy": "Erstellt von",
     "signalCreatedLabel": "Erstellt",
     "signalLastReplyLabel": "Letzte Antwort",
@@ -4829,8 +4831,7 @@
     "signalTimeFrameWeek": "Diese Woche",
     "signalTimeFrameMonth": "Diesen Monat",
     "signalTimeFrameYear": "Dieses Jahr",
-    "signalTimeFrameAll": "Gesamte Zeit",
-    "signalShowArchived": "Archivierte anzeigen"
+    "signalTimeFrameAll": "Gesamte Zeit"
   },
   "GlobalCallDock": {
     "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",

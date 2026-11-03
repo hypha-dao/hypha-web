@@ -6,6 +6,7 @@ export const COHERENCE_SIGNAL_TYPES = [
   'Tension',
   'Risk',
   'Action',
+  'Impact',
   'Bug',
 ] as const;
 
@@ -19,23 +20,17 @@ export const COHERENCE_TYPES = [
 
 export type CoherenceType = (typeof COHERENCE_TYPES)[number];
 
-/**
- * Impact evidence is proof of action now. Reads and writes treat a stored
- * `Impact` as `Action` so older signals stay visible while the data moves.
- */
+/** Trim a stored type. Impact evidence and proof of action are separate types. */
 export function canonicalSignalType(type: string | null | undefined): string {
-  const value = type?.trim() ?? '';
-  return value === 'Impact' ? 'Action' : value;
+  return type?.trim() ?? '';
 }
 
-/** Query values, including the legacy `Impact` rows that now mean `Action`. */
+/** Query values for the given types, with blanks dropped. */
 export function storedSignalTypes(types: readonly string[]): string[] {
   const stored = new Set<string>();
   for (const type of types) {
     const canonical = canonicalSignalType(type);
-    if (!canonical) continue;
-    stored.add(canonical);
-    if (canonical === 'Action') stored.add('Impact');
+    if (canonical) stored.add(canonical);
   }
   return [...stored];
 }
@@ -94,6 +89,13 @@ export const COHERENCE_TYPE_OPTIONS: {
     colorVariant: 'neutral',
     type: 'Action',
     title: 'Proof of Action',
+    description: 'Where the money went',
+  },
+  {
+    icon: 'BookOpen',
+    colorVariant: 'success',
+    type: 'Impact',
+    title: 'Impact Evidence',
     description: 'Stories and real-world outcomes',
   },
   {

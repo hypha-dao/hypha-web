@@ -23,8 +23,7 @@ export const relayEcosystemSignalInputSchema = z
         'Proposal',
       ])
       .optional()
-      .default('Opportunity')
-      .transform((value) => (value === 'Impact' ? 'Action' : value)),
+      .default('Opportunity'),
     priority: z
       .enum(['critical', 'high', 'medium', 'low'])
       .optional()

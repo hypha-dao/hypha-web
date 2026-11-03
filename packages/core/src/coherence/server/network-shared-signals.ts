@@ -30,8 +30,8 @@ function rowsOf(result: unknown): unknown[] {
 }
 
 function asKind(value: unknown): NetworkSignalKind | null {
-  if (value === 'Impact') return 'Action';
-  if (value === 'Need' || value === 'Action') return value;
+  if (value === 'Need' || value === 'Action' || value === 'Impact')
+    return value;
   return null;
 }
 
@@ -73,10 +73,7 @@ export async function listNetworkSharedSignals(
     from coherences c
     inner join spaces s on s.id = c.space_id
     where c.shared_with_network = true
-      and (
-        c.type = ${type}
-        or (${type} = 'Action' and c.type = 'Impact')
-      )
+      and c.type = ${type}
       and coalesce(c.archived, false) = false
       and s.is_archived = false
       and c.slug is not null
@@ -118,8 +115,8 @@ export async function listNetworkSpaceRanks({
   const result = await db.execute(sql`
     select s.id, s.slug, s.title, s.location_label, s.chat_room_id,
       count(*) filter (where c.type = 'Need')::int as need_count,
-      count(*) filter (where c.type in ('Action', 'Impact'))::int as action_count,
-      0::int as impact_count
+      count(*) filter (where c.type = 'Action')::int as action_count,
+      count(*) filter (where c.type = 'Impact')::int as impact_count
     from coherences c
     inner join spaces s on s.id = c.space_id
     where c.shared_with_network = true
@@ -167,8 +164,8 @@ export async function listNetworkOpenNeeds({
     inner join spaces s on s.id = c.space_id
     left join (
       select space_id,
-        count(*) filter (where type in ('Action', 'Impact'))::int as action_count,
-        0::int as impact_count
+        count(*) filter (where type = 'Action')::int as action_count,
+        count(*) filter (where type = 'Impact')::int as impact_count
       from coherences
       where shared_with_network = true
         and type in ('Action', 'Impact')

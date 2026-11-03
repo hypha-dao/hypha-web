@@ -357,6 +357,7 @@
     "filterInsight": "Insight",
     "filterAction": "Proof of Action",
     "filterImpact": "Impact Evidence",
+    "filterBug": "Bug",
     "filterResource": "Resource",
     "reciprocalTitle": "Reciprocal Exchange",
     "shareExchangeTitle": "Share a {type}",
@@ -4547,7 +4548,7 @@
       "Tension": "Tension",
       "Risk": "Risk",
       "Action": "Proof of Action",
-      "Impact": "Proof of Action",
+      "Impact": "Impact Evidence",
       "Trend": "Trend",
       "Proposal": "Proposal",
       "Bug": "Bug"
@@ -4559,7 +4560,7 @@
       "Insight": "Shifts how we see things.",
       "Tension": "Something isn’t aligned.",
       "Risk": "We could be hurt by this.",
-      "Action": "Stories and real-world outcomes.",
+      "Action": "Where the money went.",
       "Impact": "Stories and real-world outcomes.",
       "Trend": "Emerging pattern across spaces",
       "Proposal": "Governance action or vote needed",
@@ -4835,6 +4836,7 @@
     "signalMedia": "Media",
     "signalDownload": "Download",
     "createQuest": "Create quest",
+    "createSignal": "Create signal",
     "signalCreatedBy": "Created by",
     "signalCreatedLabel": "Created",
     "signalLastReplyLabel": "Last reply",
@@ -4861,8 +4863,7 @@
     "signalTimeFrameWeek": "This Week",
     "signalTimeFrameMonth": "This Month",
     "signalTimeFrameYear": "This Year",
-    "signalTimeFrameAll": "All Time",
-    "signalShowArchived": "Show archived"
+    "signalTimeFrameAll": "All Time"
   },
   "GlobalCallDock": {
     "callTitle": "Call - {count, plural, one {# member} other {# members}}",

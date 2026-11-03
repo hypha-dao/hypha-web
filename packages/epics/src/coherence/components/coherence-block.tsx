@@ -36,7 +36,7 @@ export const SIGNAL_SORT_QUERY_KEY = 'sort';
 export const SIGNAL_TIME_FRAME_QUERY_KEY = 't';
 /** Earlier `?top=7d|30d|all` links still open on the matching time frame. */
 const LEGACY_TOP_WINDOW_QUERY_KEY = 'top';
-export const SIGNAL_ARCHIVED_QUERY_KEY = 'archived';
+const ARCHIVED_QUERY_KEY = 'archived';
 
 export type CoherenceBlockProps = {
   lang: Locale;
@@ -80,7 +80,15 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
     searchParams.get(SIGNAL_TIME_FRAME_QUERY_KEY) ??
       searchParams.get(LEGACY_TOP_WINDOW_QUERY_KEY),
   );
-  const showArchived = searchParams.get(SIGNAL_ARCHIVED_QUERY_KEY) === '1';
+  React.useEffect(() => {
+    if (!searchParams.has(ARCHIVED_QUERY_KEY)) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(ARCHIVED_QUERY_KEY);
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  }, [pathname, router, searchParams]);
 
   const replaceQuery = React.useCallback(
     (key: string, value: string, defaultValue: string) => {
@@ -119,12 +127,6 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
       ),
     [replaceQuery],
   );
-  const handleShowArchivedChange = React.useCallback(
-    (next: boolean) =>
-      replaceQuery(SIGNAL_ARCHIVED_QUERY_KEY, next ? '1' : '0', '0'),
-    [replaceQuery],
-  );
-
   const {
     coherences: signals,
     isLoading: isSignalsLoading,
@@ -134,7 +136,6 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   } = useFindCoherences({
     spaceSlug,
     orderBy: 'mostupvoted',
-    includeArchived: showArchived,
   });
 
   const [isRetrying, setIsRetrying] = React.useState(false);
@@ -192,8 +193,6 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
         timeFrame={timeFrame}
         onSortChange={handleSortChange}
         onTimeFrameChange={handleTimeFrameChange}
-        showArchived={showArchived}
-        onShowArchivedChange={handleShowArchivedChange}
         className="-ml-3.5"
       />
 

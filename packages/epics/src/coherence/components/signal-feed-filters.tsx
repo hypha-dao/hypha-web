@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { Archive, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import {
   SIGNAL_SORTS,
   SIGNAL_TIME_FRAMES,
@@ -115,22 +115,17 @@ export type SignalFeedFiltersProps = {
   timeFrame: SignalTimeFrame;
   onSortChange: (sort: SignalSort) => void;
   onTimeFrameChange: (timeFrame: SignalTimeFrame) => void;
-  showArchived?: boolean;
-  onShowArchivedChange?: (showArchived: boolean) => void;
   className?: string;
 };
 
 /**
- * Sort pill, a time frame pill while a Top sort is selected, and a toggle
- * that brings archived signals back into the feed.
+ * Sort pill, and a time frame pill while a Top sort is selected.
  */
 export function SignalFeedFilters({
   sort,
   timeFrame,
   onSortChange,
   onTimeFrameChange,
-  showArchived = false,
-  onShowArchivedChange,
   className,
 }: SignalFeedFiltersProps) {
   const t = useTranslations('CoherenceTab');
@@ -171,21 +166,6 @@ export function SignalFeedFilters({
           onChange={onTimeFrameChange}
           testId="signal-time-frame-pill"
         />
-      ) : null}
-      {onShowArchivedChange ? (
-        <button
-          type="button"
-          aria-pressed={showArchived}
-          onClick={() => onShowArchivedChange(!showArchived)}
-          className={cn(
-            PILL_CLASS,
-            showArchived && 'bg-foreground/10 text-foreground',
-          )}
-          data-testid="signal-show-archived-toggle"
-        >
-          <Archive className="size-4 shrink-0" aria-hidden />
-          {t('signalShowArchived')}
-        </button>
       ) : null}
     </div>
   );

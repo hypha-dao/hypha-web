@@ -97,6 +97,7 @@ function typeLabel(
   if (type === 'Tension') return t('filterTension');
   if (type === 'Insight') return t('filterInsight');
   if (type === 'Action') return t('filterAction');
+  if (type === 'Bug') return t('filterBug');
   return t('filterImpact');
 }
 

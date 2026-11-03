@@ -497,6 +497,7 @@
     "filterInsight": "Inzicht",
     "filterAction": "Bewijs van actie",
     "filterImpact": "Impactbewijs",
+    "filterBug": "Bug",
     "byLine": "{name} · {space}",
     "fieldEmpty": "Nog niets gedeeld met het netwerk.",
     "storiesEmpty": "Nog geen verhalen gedeeld met het netwerk.",
@@ -4517,7 +4518,7 @@
       "Tension": "Knelpunt",
       "Risk": "Risico",
       "Action": "Bewijs van actie",
-      "Impact": "Bewijs van actie",
+      "Impact": "Impactbewijs",
       "Trend": "Trend",
       "Proposal": "Voorstel",
       "Bug": "Bug"
@@ -4529,7 +4530,7 @@
       "Insight": "Verandert de manier waarop we dingen zien.",
       "Tension": "Er klopt iets niet.",
       "Risk": "Wij kunnen hierdoor gewond raken.",
-      "Action": "Verhalen en resultaten in de praktijk.",
+      "Action": "Waar het geld naartoe ging.",
       "Impact": "Verhalen en resultaten in de praktijk.",
       "Trend": "Opkomend patroon in ruimtes",
       "Proposal": "Bestuursactie of stemming nodig",
@@ -4805,6 +4806,7 @@
     "signalMedia": "Media",
     "signalDownload": "Downloaden",
     "createQuest": "Speurtocht aanmaken",
+    "createSignal": "Signaal maken",
     "signalCreatedBy": "Aangemaakt door",
     "signalCreatedLabel": "Aangemaakt",
     "signalLastReplyLabel": "Laatste reactie",
@@ -4831,8 +4833,7 @@
     "signalTimeFrameWeek": "Deze week",
     "signalTimeFrameMonth": "Deze maand",
     "signalTimeFrameYear": "Dit jaar",
-    "signalTimeFrameAll": "Altijd",
-    "signalShowArchived": "Gearchiveerde tonen"
+    "signalTimeFrameAll": "Altijd"
   },
   "GlobalCallDock": {
     "callTitle": "Oproep - {count, plural, one {# lid} other {# leden}}",

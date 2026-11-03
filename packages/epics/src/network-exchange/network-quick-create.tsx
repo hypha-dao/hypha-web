@@ -90,6 +90,7 @@ function signalKindLabel(
   if (option === 'Tension') return t('filterTension');
   if (option === 'Insight') return t('filterInsight');
   if (option === 'Action') return t('filterAction');
+  if (option === 'Bug') return t('filterBug');
   return t('filterImpact');
 }
 

@@ -11,6 +11,7 @@ export const NETWORK_FIELD_KINDS = [
   'Tension',
   'Risk',
   'Action',
+  'Impact',
   'Bug',
 ] as const;
 

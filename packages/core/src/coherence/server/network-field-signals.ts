@@ -127,7 +127,6 @@ export async function listNetworkFieldSignals(
   const allowed = kinds.filter((kind) => isFieldKind(kind));
   if (allowed.length === 0) return [];
   const stored = new Set<string>(allowed);
-  if (stored.has('Action')) stored.add('Impact');
   const result = await db.execute(sql`
     select c.slug, c.title, c.description, c.type, c.lead_image, c.video_url,
            c.attachments, c.updated_at, c.priority, c.due_at, c.tags,

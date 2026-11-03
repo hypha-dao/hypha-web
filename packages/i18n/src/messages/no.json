@@ -497,6 +497,7 @@
     "filterInsight": "Innsikt",
     "filterAction": "Handlingsbevis",
     "filterImpact": "Virkningsevidens",
+    "filterBug": "Bug",
     "byLine": "{name} · {space}",
     "fieldEmpty": "Ingenting er delt med nettverket ennå.",
     "storiesEmpty": "Ingen historier er delt med nettverket ennå.",
@@ -4516,7 +4517,7 @@
       "Tension": "Spenning",
       "Risk": "Risiko",
       "Action": "Handlingsbevis",
-      "Impact": "Handlingsbevis",
+      "Impact": "Virkningsevidens",
       "Trend": "Trend",
       "Proposal": "Forslag",
       "Bug": "Bug"
@@ -4528,7 +4529,7 @@
       "Insight": "Endrer hvordan vi ser ting.",
       "Tension": "Noe er ikke i samsvar.",
       "Risk": "Dette kan skade oss.",
-      "Action": "Historier og resultater i praksis.",
+      "Action": "Hvor pengene gikk.",
       "Impact": "Historier og resultater i praksis.",
       "Trend": "Fremvoksende mønster på tvers av rom",
       "Proposal": "Styringshandling eller avstemning kreves",
@@ -4804,6 +4805,7 @@
     "signalMedia": "Media",
     "signalDownload": "Last ned",
     "createQuest": "Opprett oppdrag",
+    "createSignal": "Opprett signal",
     "signalCreatedBy": "Opprettet av",
     "signalCreatedLabel": "Opprettet",
     "signalLastReplyLabel": "Siste svar",
@@ -4830,8 +4832,7 @@
     "signalTimeFrameWeek": "Denne uken",
     "signalTimeFrameMonth": "Denne måneden",
     "signalTimeFrameYear": "Dette året",
-    "signalTimeFrameAll": "All tid",
-    "signalShowArchived": "Vis arkiverte"
+    "signalTimeFrameAll": "All tid"
   },
   "GlobalCallDock": {
     "callTitle": "Samtale - {count, plural, one {# medlem} other {# medlemmer}}",

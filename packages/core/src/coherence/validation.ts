@@ -1,8 +1,5 @@
 import { z } from 'zod';
-import {
-  COHERENCE_SIGNAL_TYPES,
-  type CoherenceSignalType,
-} from './coherence-types';
+import { COHERENCE_SIGNAL_TYPES } from './coherence-types';
 import { COHERENCE_PRIORITIES } from './coherence-priorities';
 
 const coherenceTagsSchema = z
@@ -126,12 +123,7 @@ const signalAttachmentsSchema = z
 
 import { parseCapitalKeys } from '../network/capitals';
 
-/** Accepts a legacy Impact evidence value and stores it as proof of action. */
-export const signalTypeSchema = z
-  .union([z.enum(COHERENCE_SIGNAL_TYPES), z.literal('Impact')])
-  .transform(
-    (value): CoherenceSignalType => (value === 'Impact' ? 'Action' : value),
-  );
+export const signalTypeSchema = z.enum(COHERENCE_SIGNAL_TYPES);
 
 const coherenceSignalFields = {
   type: signalTypeSchema,

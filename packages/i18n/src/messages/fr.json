@@ -497,6 +497,7 @@
     "filterInsight": "Aperçu",
     "filterAction": "Preuve d'action",
     "filterImpact": "Preuve d'impact",
+    "filterBug": "Bug",
     "byLine": "{name} · {space}",
     "fieldEmpty": "Rien n'est encore partagé avec le réseau.",
     "storiesEmpty": "Aucune histoire n'est encore partagée avec le réseau.",
@@ -3837,7 +3838,7 @@
       "Tension": "Tension",
       "Risk": "Risque",
       "Action": "Preuve d'action",
-      "Impact": "Preuve d'action",
+      "Impact": "Preuve d'impact",
       "Trend": "Tendance",
       "Proposal": "Proposition",
       "Bug": "Bug"
@@ -3849,7 +3850,7 @@
       "Insight": "Observation ou découverte basée sur les données",
       "Tension": "Conflit ou désaccord nécessitant une résolution",
       "Risk": "Menace, préoccupation ou danger",
-      "Action": "Récits et résultats concrets.",
+      "Action": "Où est allé l'argent.",
       "Impact": "Récits et résultats concrets.",
       "Trend": "Modèle émergent à travers les espaces",
       "Proposal": "Action de gouvernance ou vote nécessaire",
@@ -4227,6 +4228,7 @@
     "signalMedia": "Médias",
     "signalDownload": "Télécharger",
     "createQuest": "Créer une mission",
+    "createSignal": "Créer un signal",
     "signalCreatedBy": "Créé par",
     "signalCreatedLabel": "Créé",
     "signalLastReplyLabel": "Dernière réponse",
@@ -4253,8 +4255,7 @@
     "signalTimeFrameWeek": "Cette semaine",
     "signalTimeFrameMonth": "Ce mois-ci",
     "signalTimeFrameYear": "Cette année",
-    "signalTimeFrameAll": "Depuis toujours",
-    "signalShowArchived": "Afficher les archivés"
+    "signalTimeFrameAll": "Depuis toujours"
   },
   "GlobalCallDock": {
     "callTitle": "Appel - {count, plural, one {# membre} other {# membres}}",

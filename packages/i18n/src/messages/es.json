@@ -497,6 +497,7 @@
     "filterInsight": "Percepción",
     "filterAction": "Prueba de acción",
     "filterImpact": "Evidencia de impacto",
+    "filterBug": "Bug",
     "byLine": "{name} · {space}",
     "fieldEmpty": "Aún no hay nada compartido con la red.",
     "storiesEmpty": "Aún no hay historias compartidas con la red.",
@@ -3853,7 +3854,7 @@
       "Tension": "Tensión",
       "Risk": "Riesgo",
       "Action": "Prueba de acción",
-      "Impact": "Prueba de acción",
+      "Impact": "Evidencia de impacto",
       "Trend": "Tendencia",
       "Proposal": "Propuesta",
       "Bug": "Bug"
@@ -3865,7 +3866,7 @@
       "Insight": "Observación o descubrimiento basado en datos",
       "Tension": "Conflicto o desacuerdo que necesita resolución",
       "Risk": "Amenaza, preocupación o peligro",
-      "Action": "Historias y resultados en el mundo real.",
+      "Action": "Adónde fue el dinero.",
       "Impact": "Historias y resultados en el mundo real.",
       "Trend": "Patrón emergente entre espacios",
       "Proposal": "Acción de gobernanza o voto necesario",
@@ -4245,6 +4246,7 @@
     "signalMedia": "Multimedia",
     "signalDownload": "Descargar",
     "createQuest": "Crear misión",
+    "createSignal": "Crear señal",
     "signalCreatedBy": "Creada por",
     "signalCreatedLabel": "Creada",
     "signalLastReplyLabel": "Última respuesta",
@@ -4271,8 +4273,7 @@
     "signalTimeFrameWeek": "Esta semana",
     "signalTimeFrameMonth": "Este mes",
     "signalTimeFrameYear": "Este año",
-    "signalTimeFrameAll": "Todo el tiempo",
-    "signalShowArchived": "Mostrar archivadas"
+    "signalTimeFrameAll": "Todo el tiempo"
   },
   "GlobalCallDock": {
     "callTitle": "Llamada - {count, plural, one {# miembro} other {# miembros}}",

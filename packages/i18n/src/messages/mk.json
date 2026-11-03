@@ -497,6 +497,7 @@
     "filterInsight": "Увид",
     "filterAction": "Доказ за дејство",
     "filterImpact": "Доказ за влијание",
+    "filterBug": "Bug",
     "byLine": "{name} · {space}",
     "fieldEmpty": "Сè уште ништо не е споделено со мрежата.",
     "storiesEmpty": "Сè уште нема приказни споделени со мрежата.",
@@ -4498,7 +4499,7 @@
       "Tension": "Тензија",
       "Risk": "Ризик",
       "Action": "Доказ за дејство",
-      "Impact": "Доказ за дејство",
+      "Impact": "Доказ за влијание",
       "Trend": "Тренд",
       "Proposal": "Предлог",
       "Bug": "Bug"
@@ -4510,7 +4511,7 @@
       "Insight": "Го менува начинот на кој гледаме на работите.",
       "Tension": "Нешто не е усогласено.",
       "Risk": "Ова може да ни наштети.",
-      "Action": "Приказни и резултати од реалниот свет.",
+      "Action": "Каде отишле парите.",
       "Impact": "Приказни и резултати од реалниот свет.",
       "Trend": "Образец што се појавува низ просторите",
       "Proposal": "Потребна е управувачка акција или гласање",
@@ -4786,6 +4787,7 @@
     "signalMedia": "Медиуми",
     "signalDownload": "Преземи",
     "createQuest": "Создај потрага",
+    "createSignal": "Создај сигнал",
     "signalCreatedBy": "Создаден од",
     "signalCreatedLabel": "Создаден",
     "signalLastReplyLabel": "Последен одговор",
@@ -4812,8 +4814,7 @@
     "signalTimeFrameWeek": "Оваа недела",
     "signalTimeFrameMonth": "Овој месец",
     "signalTimeFrameYear": "Оваа година",
-    "signalTimeFrameAll": "Сето време",
-    "signalShowArchived": "Прикажи архивирани"
+    "signalTimeFrameAll": "Сето време"
   },
   "GlobalCallDock": {
     "callTitle": "Повик - {count, plural, one {# член} other {# членови}}",
