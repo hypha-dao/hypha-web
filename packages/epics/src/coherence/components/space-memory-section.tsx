@@ -27,6 +27,7 @@ import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
 import { MemoryProse } from './memory-prose';
+import { SpaceMemoryCallTranscriptDialog } from './space-memory-call-transcript-dialog';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
@@ -105,6 +106,8 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     [chainScroll],
   );
   const listEndRef = React.useRef<HTMLLIElement | null>(null);
+  const [openTranscript, setOpenTranscript] =
+    React.useState<SpaceMemoryItem | null>(null);
 
   const stateLabel = React.useCallback(
     (state: DocumentState) =>
@@ -517,6 +520,9 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                         title,
                         rawBody,
                       );
+                      const canOpenTranscript =
+                        row.source === 'call_transcript' &&
+                        row.context.callTranscriptId != null;
                       if (row.source === 'call_recording') {
                         return (
                           <SpaceMemoryTimelineItem
@@ -533,7 +539,11 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                       return (
                         <li
                           key={row.id}
-                          className="border border-border bg-background px-5 py-5"
+                          className={cn(
+                            'border border-border bg-background px-5 py-5',
+                            canOpenTranscript &&
+                              'relative transition-colors hover:bg-accent-2 focus-within:bg-accent-2',
+                          )}
                         >
                           <p className="text-1 uppercase tracking-[0.12em] text-neutral-11">
                             {contextLineForItem(row)}
@@ -544,7 +554,21 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                               fontFamily: 'var(--font-family-heading)',
                             }}
                           >
-                            {title}
+                            {canOpenTranscript ? (
+                              <button
+                                type="button"
+                                onClick={() => setOpenTranscript(row)}
+                                aria-haspopup="dialog"
+                                aria-label={`${t(
+                                  'spaceMemoryReadFullTranscript',
+                                )}: ${title}`}
+                                className="text-left outline-none after:absolute after:inset-0 after:content-[''] focus-visible:underline"
+                              >
+                                {title}
+                              </button>
+                            ) : (
+                              title
+                            )}
                           </h2>
                           <p className="mt-1 text-1 text-neutral-11">
                             {format.dateTime(new Date(row.uploadedAt), {
@@ -555,6 +579,14 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                             <div className="mt-4 max-w-3xl">
                               <MemoryProse source={body} />
                             </div>
+                          ) : null}
+                          {canOpenTranscript ? (
+                            <p
+                              aria-hidden
+                              className="mt-3 text-1 text-neutral-11 underline underline-offset-2"
+                            >
+                              {t('spaceMemoryReadFullTranscript')}
+                            </p>
                           ) : null}
                         </li>
                       );
@@ -577,6 +609,28 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
           </div>
         </>
       )}
+      {openTranscript?.context.callTranscriptId != null ? (
+        <SpaceMemoryCallTranscriptDialog
+          open
+          onOpenChange={(next) => {
+            if (!next) setOpenTranscript(null);
+          }}
+          spaceSlug={spaceSlug}
+          transcriptId={openTranscript.context.callTranscriptId}
+          title={deriveSpaceMemoryDisplayTitle({
+            source: openTranscript.source,
+            name: openTranscript.name,
+            contextTitle: openTranscript.context.contextTitle,
+            textExcerpt: openTranscript.context.textExcerpt,
+            documentTitle: openTranscript.context.documentTitle,
+          })}
+          subtitle={`${contextLineForItem(openTranscript)} · ${format.dateTime(
+            new Date(openTranscript.uploadedAt),
+            { dateStyle: 'medium' },
+          )}`}
+          matrixChatRoomId={matrixChatRoomId}
+        />
+      ) : null}
     </section>
   );
 };
