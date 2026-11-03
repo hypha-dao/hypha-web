@@ -163,7 +163,7 @@ export function SpaceMemoryCallTranscriptDialog({
             variant="outline"
             colorVariant="neutral"
             className="w-full sm:w-auto"
-            disabled={!body}
+            disabled={!body || Boolean(error)}
             onClick={() => void handleCopy()}
           >
             {copyState === 'copied'
