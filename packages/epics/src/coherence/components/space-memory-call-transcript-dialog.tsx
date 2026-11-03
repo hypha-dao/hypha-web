@@ -48,23 +48,21 @@ export function SpaceMemoryCallTranscriptDialog({
   const {
     getAccessToken,
     user,
-    isAuthenticated,
     isLoading: isAuthLoading,
   } = useAuthentication();
   const userId = user?.id?.trim() || null;
-  const signedOut = !isAuthLoading && (!isAuthenticated || !userId);
 
   const { data, error, isLoading, mutate } = useSWR(
-    open && !isAuthLoading && isAuthenticated && userId
+    open && !isAuthLoading
       ? ([
           'space-memory-call-transcript',
-          userId,
+          userId ?? 'anonymous',
           spaceSlug,
           transcriptId,
         ] as const)
       : null,
-    async ([, , slug, id]) => {
-      const token = await getAccessToken();
+    async ([, scope, slug, id]) => {
+      const token = scope === 'anonymous' ? null : await getAccessToken();
       const res = await fetch(
         `/api/v1/spaces/${encodeURIComponent(slug)}/call-transcripts/${id}`,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} },
@@ -105,11 +103,7 @@ export function SpaceMemoryCallTranscriptDialog({
             '[scrollbar-gutter:stable]',
           )}
         >
-          {signedOut ? (
-            <p className="text-2 text-muted-foreground">
-              {t('spaceMemoryFullTranscriptError')}
-            </p>
-          ) : error ? (
+          {error ? (
             <div className="flex flex-col items-start gap-3">
               <p className="text-2 text-muted-foreground">
                 {t('spaceMemoryFullTranscriptError')}
