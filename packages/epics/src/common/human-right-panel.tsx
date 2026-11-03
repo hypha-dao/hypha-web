@@ -1547,6 +1547,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const [composerError, setComposerError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
+  const [groupDetailsOpen, setGroupDetailsOpen] = useState(false);
+  const [groupAddPeopleOpen, setGroupAddPeopleOpen] = useState(false);
+  useEffect(() => {
+    setGroupDetailsOpen(false);
+    setGroupAddPeopleOpen(false);
+  }, [roomId]);
   const [scrollToEventId, setScrollToEventId] = useState<string | null>(null);
   const [mentionNavigationNotice, setMentionNavigationNotice] = useState<
     string | null
@@ -2936,6 +2942,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const archivedGroup =
     isDirectConversation &&
     isArchivedGroupRoom(client?.getRoom(roomId ?? undefined));
+  const isPeopleGroupConversation = useMemo(() => {
+    if (!isDirectConversation || !roomId) return false;
+    const room = client?.getRoom(roomId) ?? null;
+    return Boolean(room && isPeopleGroupChatRoom(room));
+  }, [client, isDirectConversation, roomId]);
   const chatComposerLocked =
     isJoining ||
     blockSpaceChatForMembership ||
@@ -5532,6 +5543,56 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     return t('presenceOnline');
   }, [isDirectConversation, dmPeerPresence, formatter, t, timeZone]);
 
+  /**
+   * Group / space / channel rooms: online count belongs on the chat tab too
+   * (not only Members). 1:1 DMs keep `dmPeerPresenceDescription` instead.
+   */
+  const [roomOnlineCount, setRoomOnlineCount] = useState<number | null>(null);
+  const showRoomOnlineStrip = Boolean(
+    roomId &&
+      !(isDirectConversation && !groupChatFaces) &&
+      roomOnlineCount != null,
+  );
+  useEffect(() => {
+    if (!roomId || !isMatrixAvailable || !isMatrixAuthenticated) {
+      setRoomOnlineCount(null);
+      return;
+    }
+    if (isDirectConversation && !groupChatFaces) {
+      setRoomOnlineCount(null);
+      return;
+    }
+    let cancelled = false;
+    const load = () => {
+      void matrixRef.current.getRoomMembers(roomId).then(
+        (members) => {
+          if (cancelled) return;
+          setRoomOnlineCount(
+            members.filter(
+              (member) =>
+                member.presence && !isHyphaBotMatrixIdentity(member.userId),
+            ).length,
+          );
+        },
+        () => {
+          if (!cancelled) setRoomOnlineCount(null);
+        },
+      );
+    };
+    load();
+    const interval = window.setInterval(load, 30_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [
+    groupChatFaces,
+    isDirectConversation,
+    isMatrixAuthenticated,
+    isMatrixAvailable,
+    roomId,
+  ]);
+
   /** Unread badges on Space / Ecosystem / Public — joined rooms only. */
   const spaceChannelUnread = useMemo(() => {
     const empty = { count: 0, capped: false };
@@ -6678,7 +6739,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               ? groupTitle ?? coherenceTitle ?? undefined
               : ''
           }
-          description={dmPeerPresenceDescription}
+          description={
+            isDirectConversation && !groupChatFaces
+              ? dmPeerPresenceDescription
+              : roomOnlineCount != null
+              ? t('roomOnlineCount', { count: roomOnlineCount })
+              : undefined
+          }
           channelIcon={
             isNetworkSpaceChat
               ? messagesChannelGlyph('network') ?? undefined
@@ -6820,39 +6887,60 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           }
           onBack={mode === 'coherence' ? exitCoherenceChat : undefined}
           notificationSettingsHref={notificationCentreHref}
-          trailingEnd={
-            isDirectConversation && roomId ? (
-              <HumanChatPanelGroupMenu
-                roomId={roomId}
-                title={groupTitle ?? coherenceTitle ?? ''}
-                onRenamed={(name) => {
-                  applyConversationRoomTitle(roomId, name);
-                  setGroupTitle(name);
-                }}
-              />
-            ) : null
+          onTitleActivate={
+            isPeopleGroupConversation && roomId
+              ? () => setGroupDetailsOpen(true)
+              : undefined
           }
+          titleActivateLabel={t('groupDetailsAria')}
         />
+        {isPeopleGroupConversation && roomId ? (
+          <HumanChatPanelGroupMenu
+            roomId={roomId}
+            title={groupTitle ?? coherenceTitle ?? ''}
+            detailsOpen={groupDetailsOpen}
+            onDetailsOpenChange={setGroupDetailsOpen}
+            addPeopleOpen={groupAddPeopleOpen}
+            onAddPeopleOpenChange={setGroupAddPeopleOpen}
+            onRenamed={(name) => {
+              applyConversationRoomTitle(roomId, name);
+              setGroupTitle(name);
+            }}
+          />
+        ) : null}
         <>
           <HumanChatPanelTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
             chatTabLabel={chatTabLabel}
             tabRowEnd={
-              (showSidebarCallChrome &&
-                !inSpaceCall &&
-                !spaceCallShowJoinStrip) ||
+              /*
+               * Phone/video must stay visible whenever this room is callable —
+               * do not gate on `showSidebarCallChrome` / `callAppliesToCurrentChatRoom`.
+               * That flag is for in-room session chrome (banner, stage). When a
+               * session is bound to another room, gating hid the icons entirely
+               * (and `elsewhereCallEntries` also excludes the bound session).
+               */
+              (callUiEnabled &&
+                !(showSidebarCallChrome && inSpaceCall) &&
+                !(showSidebarCallChrome && spaceCallShowJoinStrip)) ||
               (showAuthedUi && elsewhereCallEntries.length > 0) ? (
                 <>
-                  {showSidebarCallChrome &&
-                  !inSpaceCall &&
-                  !spaceCallShowJoinStrip ? (
-                    callActionsChecked ? (
+                  {callUiEnabled &&
+                  !(showSidebarCallChrome && inSpaceCall) &&
+                  !(showSidebarCallChrome && spaceCallShowJoinStrip) ? (
+                    callActionsChecked || !showSidebarCallChrome ? (
                       <HumanChatPanelCallToolbar
-                        callState={spaceCallState}
-                        callKind={spaceCallKind}
+                        callState={
+                          showSidebarCallChrome ? spaceCallState : 'idle'
+                        }
+                        callKind={showSidebarCallChrome ? spaceCallKind : null}
                         disabled={!callUiEnabled}
-                        roomCallInProgressToJoin={spaceCallToolbarJoinHint}
+                        roomCallInProgressToJoin={
+                          showSidebarCallChrome
+                            ? spaceCallToolbarJoinHint
+                            : false
+                        }
                         onAudio={() => {
                           if (!canJoinSignalThreadCall && isSignalThread) {
                             void requestSignalTeamAccess();
@@ -6897,6 +6985,21 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               ) : null
             }
           />
+          {activeTab === 'chat' && showRoomOnlineStrip ? (
+            <button
+              type="button"
+              onClick={() => setActiveTab('members')}
+              className="flex h-9 w-full shrink-0 items-center justify-between gap-2 border-b border-border/70 bg-page-background px-3 text-left text-xs text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground dark:bg-background-2"
+              aria-label={t('viewMembersAria')}
+            >
+              <span className="truncate font-medium">
+                {t('roomOnlineCount', { count: roomOnlineCount ?? 0 })}
+              </span>
+              <span className="shrink-0 text-muted-foreground">
+                {t('tabMembers')}
+              </span>
+            </button>
+          ) : null}
           {spaceCallShowRefreshUi && (
             <HumanChatPanelCallJoinStrip
               deviceCount={spaceCallRoomGroupDeviceCount}
@@ -7566,6 +7669,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                       spaceCallState === 'connected'
                     }
                     currentUserMatrixId={currentUserId}
+                    onAddPeople={
+                      isPeopleGroupConversation && !archivedGroup
+                        ? () => setGroupAddPeopleOpen(true)
+                        : undefined
+                    }
                   />
                 </div>
               </div>

@@ -799,7 +799,7 @@ export function HumanChatPanelMessages({
             onTimelineAtBottomChange?.(atBottom);
           }
         }}
-        className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 py-3"
+        className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch] px-4 py-3"
       >
         {/* Top padding keeps the floating action bar from clipping at the edge. */}
         <div className="flex flex-col gap-2 pt-3">

@@ -262,7 +262,10 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
             data-sidebar="sidebar"
             data-mobile="true"
             className={cn(
-              'w-(--sidebar-width) max-w-none sm:max-w-none bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden',
+              // `overflow-hidden` + column flex: keep SidebarHeader (back / call)
+              // pinned. Without it iOS can scroll the whole sheet and bury the
+              // back control under message history (Discord keeps that chrome sticky).
+              'flex h-full w-(--sidebar-width) max-w-none flex-col overflow-hidden sm:max-w-none bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden',
               className,
             )}
             style={
@@ -291,7 +294,9 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
               <SheetTitle>Sidebar</SheetTitle>
               <SheetDescription>Displays the mobile sidebar.</SheetDescription>
             </SheetHeader>
-            <div className="flex h-full w-full flex-col">{children}</div>
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+              {children}
+            </div>
           </SheetContent>
         </Sheet>
       );
