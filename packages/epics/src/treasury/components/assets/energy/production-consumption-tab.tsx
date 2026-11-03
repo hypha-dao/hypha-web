@@ -25,8 +25,10 @@ const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
 export const ProductionConsumptionTab = ({
   data,
+  spaceSlug,
 }: {
   data: SpaceEnergyResponse;
+  spaceSlug: string;
 }) => {
   const locale = useLocale();
   const t = useTranslations('Energy.productionConsumption');
@@ -36,7 +38,7 @@ export const ProductionConsumptionTab = ({
     data: telemetry,
     isLoading: telemetryLoading,
     error: telemetryError,
-  } = useSpaceEnergyTelemetry(timeframe);
+  } = useSpaceEnergyTelemetry(timeframe, spaceSlug);
 
   const sourceFallback = tShared('source');
 

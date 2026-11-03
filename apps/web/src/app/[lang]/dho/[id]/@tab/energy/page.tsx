@@ -23,7 +23,7 @@ export default async function EnergyPage(props: PageProps) {
       spaceSlug={id}
     >
       <div className="flex flex-col gap-6 py-4">
-        <SpaceEnergySection />
+        <SpaceEnergySection spaceSlug={id} />
       </div>
     </SpaceTabAccessWrapper>
   );

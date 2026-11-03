@@ -33,6 +33,7 @@ export default async function CreateChangeEnergyOptimizationProposalPage({
         backUrl={backUrl}
         spaceId={spaceFromDb.id}
         web3SpaceId={spaceFromDb.web3SpaceId}
+        spaceSlug={id}
         members={members}
         spaces={spaces}
       />

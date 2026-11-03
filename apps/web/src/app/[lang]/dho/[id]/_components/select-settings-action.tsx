@@ -55,7 +55,7 @@ export const SelectSettingsAction = ({
     spaceId: space?.web3SpaceId ?? undefined,
   });
   const t = useTranslations('SpaceSettingsAction');
-  const { data: spaceEnergy } = useSpaceEnergy();
+  const { data: spaceEnergy } = useSpaceEnergy(daoSlug);
   const isEnergyCommunity = spaceEnergy?.enabled === true;
   const isActionDisabled = isMutateLoading || !canMutate;
 
