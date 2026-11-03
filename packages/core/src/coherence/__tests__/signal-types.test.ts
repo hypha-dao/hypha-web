@@ -42,6 +42,7 @@ describe('signal types', () => {
     expect(canonicalSignalType('Bug')).toBe('Bug');
     expect(storedSignalTypes(['Action', 'Need'])).toEqual(['Action', 'Need']);
     expect(storedSignalTypes(['Impact'])).toEqual(['Impact']);
+    expect(storedSignalTypes([' Impact ', '', 'Impact'])).toEqual(['Impact']);
   });
 
   it('stores impact evidence and bug as themselves', () => {

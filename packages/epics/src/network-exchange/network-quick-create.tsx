@@ -792,7 +792,7 @@ export function NetworkQuickCreate({
             <button
               type="button"
               disabled={!spaceSlug || !storyTitle.trim()}
-              onClick={() => openSignal('Action', storyTitle)}
+              onClick={() => openSignal('Impact', storyTitle)}
               className="h-10 border border-foreground bg-foreground text-1 uppercase tracking-[0.12em] text-background disabled:border-border disabled:bg-neutral-3 disabled:text-neutral-11"
             >
               {t('post')}
