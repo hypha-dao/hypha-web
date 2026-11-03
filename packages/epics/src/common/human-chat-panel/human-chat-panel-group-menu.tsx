@@ -42,12 +42,6 @@ import {
   DialogTitle,
   Input,
   Label,
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  useIsMobile,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -130,7 +124,10 @@ export function HumanChatPanelGroupMenu({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [debouncedAddQuery] = useDebounce(addQuery.trim(), 200);
 
-<<<<<<< HEAD
+  useEffect(() => {
+    if (detailsOpen) setArchiveCheck((value) => value + 1);
+  }, [detailsOpen]);
+
   // Shared-space page stays up while a search is in flight. Typing used to
   // replace this request, so a search ran against an empty directory.
   const {
@@ -139,13 +136,6 @@ export function HumanChatPanelGroupMenu({
     isLoading: directoryLoading,
     isValidating: directoryValidating,
   } = useSWR<MemberIntelligence>(
-=======
-  useEffect(() => {
-    if (detailsOpen) setArchiveCheck((value) => value + 1);
-  }, [detailsOpen]);
-
-  const { data: home } = useSWR<MemberIntelligence | null>(
->>>>>>> 777f8986a (fix(chat): sticky mobile chrome, presence strip, and group details UX)
     addOpen && jwt
       ? ['/api/v1/people/me/intelligence', jwt, 'add-people-directory']
       : null,
@@ -534,48 +524,24 @@ export function HumanChatPanelGroupMenu({
 
   return (
     <>
-      {isMobile ? (
-        <Sheet
-          open={detailsOpen}
-          onOpenChange={(open) => onDetailsOpenChange?.(open)}
-        >
-          <SheetContent
-            side="bottom"
-            showClose={false}
-            className={cn(
-              'max-h-[min(85vh,480px)] gap-0 rounded-t-2xl border-border p-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]',
-              'bg-background font-sans text-foreground shadow-lg',
-            )}
-          >
-            <SheetHeader className="border-b border-border/70 px-4 py-3 text-left">
-              <SheetTitle className="truncate text-base">{title}</SheetTitle>
-              <SheetDescription className="sr-only">
-                {t('groupDetailsDescription')}
-              </SheetDescription>
-            </SheetHeader>
-            <div
-              className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-muted-foreground/30"
-              aria-hidden
-            />
-            {detailsActions}
-          </SheetContent>
-        </Sheet>
-      ) : (
-        <Dialog
-          open={detailsOpen}
-          onOpenChange={(open) => onDetailsOpenChange?.(open)}
-        >
-          <DialogContent className="max-w-sm gap-0 p-0">
-            <DialogHeader className="border-b border-border/70 px-4 py-3 text-left">
-              <DialogTitle className="truncate text-base">{title}</DialogTitle>
-              <DialogDescription className="sr-only">
-                {t('groupDetailsDescription')}
-              </DialogDescription>
-            </DialogHeader>
-            {detailsActions}
-          </DialogContent>
-        </Dialog>
-      )}
+      {/*
+        Always Dialog — never Sheet. Chat already lives in a mobile Sheet; a
+        nested Sheet focus trap has crashed the whole HumanChatPanel boundary.
+      */}
+      <Dialog
+        open={detailsOpen}
+        onOpenChange={(open) => onDetailsOpenChange?.(open)}
+      >
+        <DialogContent className="max-w-sm gap-0 p-0">
+          <DialogHeader className="border-b border-border/70 px-4 py-3 text-left">
+            <DialogTitle className="truncate text-base">{title}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {t('groupDetailsDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          {detailsActions}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
         <DialogContent>

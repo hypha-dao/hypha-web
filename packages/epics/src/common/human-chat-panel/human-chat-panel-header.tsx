@@ -270,13 +270,23 @@ export function HumanChatPanelHeader({
         ) : displayTitle || titleStart || ChannelGlyph ? (
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
             {onTitleActivate ? (
-              <button
-                type="button"
+              // Use a div control — a native <button> cannot wrap the avatar
+              // cluster / title stack (div/p), and React 19 DOM repair of that
+              // invalid nesting can throw and trip HumanChatPanelErrorBoundary.
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={onTitleActivate}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onTitleActivate();
+                  }
+                }}
                 aria-label={titleActivateAria}
                 title={titleActivateAria}
                 className={cn(
-                  'flex min-w-0 max-w-full items-center justify-end gap-2 rounded-none px-1 py-0.5',
+                  'flex min-w-0 max-w-full cursor-pointer items-center justify-end gap-2 rounded-none px-1 py-0.5',
                   'text-right transition-colors hover:bg-foreground/[0.04]',
                   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                 )}
@@ -304,7 +314,7 @@ export function HumanChatPanelHeader({
                     ) : null}
                   </div>
                 ) : null}
-              </button>
+              </div>
             ) : (
               <>
                 {titleStart ? (

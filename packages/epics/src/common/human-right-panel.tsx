@@ -6892,7 +6892,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               ? () => setGroupDetailsOpen(true)
               : undefined
           }
-          titleActivateLabel={t('groupDetailsAria')}
+          titleActivateLabel={
+            isPeopleGroupConversation ? t('groupDetailsAria') : undefined
+          }
         />
         {isPeopleGroupConversation && roomId ? (
           <HumanChatPanelGroupMenu
