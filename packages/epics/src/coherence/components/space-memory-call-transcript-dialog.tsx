@@ -79,6 +79,32 @@ export function SpaceMemoryCallTranscriptDialog({
     () => data?.text.replace(/\r\n/g, '\n').trim() ?? '',
     [data?.text],
   );
+  const transcriptRef = React.useRef<HTMLDivElement>(null);
+  const [copyState, setCopyState] = React.useState<
+    'idle' | 'copied' | 'failed'
+  >('idle');
+
+  React.useEffect(() => {
+    if (copyState === 'idle') return;
+    const timer = window.setTimeout(() => setCopyState('idle'), 2000);
+    return () => window.clearTimeout(timer);
+  }, [copyState]);
+
+  const handleCopy = async () => {
+    // textContent is the rendered excerpt, including speaker names resolved so far.
+    const text =
+      transcriptRef.current?.textContent?.replace(/\u00a0/g, ' ') ?? '';
+    if (!text.trim()) {
+      setCopyState('failed');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyState('copied');
+    } catch {
+      setCopyState('failed');
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -122,14 +148,30 @@ export function SpaceMemoryCallTranscriptDialog({
               {t('spaceMemoryFullTranscriptLoading')}
             </p>
           ) : (
-            <ResolvedCallTranscriptExcerpt
-              excerpt={body}
-              roomId={matrixChatRoomId}
-              className="whitespace-pre-wrap text-2 leading-relaxed text-foreground"
-            />
+            <div ref={transcriptRef}>
+              <ResolvedCallTranscriptExcerpt
+                excerpt={body}
+                roomId={matrixChatRoomId}
+                className="whitespace-pre-wrap text-2 leading-relaxed text-foreground"
+              />
+            </div>
           )}
         </div>
-        <DialogFooter className="shrink-0 border-t border-border/60 px-6 py-4">
+        <DialogFooter className="shrink-0 gap-2 border-t border-border/60 px-6 py-4 sm:space-x-0">
+          <Button
+            type="button"
+            variant="outline"
+            colorVariant="neutral"
+            className="w-full sm:w-auto"
+            disabled={!body}
+            onClick={() => void handleCopy()}
+          >
+            {copyState === 'copied'
+              ? t('spaceMemoryTranscriptCopied')
+              : copyState === 'failed'
+              ? t('spaceMemoryCopyTranscriptFailed')
+              : t('spaceMemoryCopyTranscript')}
+          </Button>
           <Button
             type="button"
             variant="outline"
