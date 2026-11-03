@@ -5,6 +5,7 @@ const LEGACY_ELLIPSIS = /(?:\.\.\.|…)$/u;
 /**
  * Plain-text preview for a call transcript: ends on a sentence when one lands
  * late enough, otherwise on the last whole word followed by `…`.
+ * An unbroken token with no space inside the window is the one hard cut.
  */
 export function previewCallTranscriptText(
   text: string,
@@ -12,7 +13,9 @@ export function previewCallTranscriptText(
 ): string {
   const compact = text.replace(/\s+/g, ' ').trim();
   if (!compact || compact.length <= maxLen) return compact;
-  const cut = compact.slice(0, maxLen);
+  let cut = compact.slice(0, maxLen);
+  // `slice` counts UTF-16 units, so an emoji can be split across the cut.
+  if (/[\uD800-\uDBFF]$/u.test(cut)) cut = cut.slice(0, -1);
   const sentenceStop = Math.max(
     cut.lastIndexOf('. '),
     cut.lastIndexOf('! '),
@@ -20,8 +23,9 @@ export function previewCallTranscriptText(
   );
   if (sentenceStop > maxLen * 0.4) return cut.slice(0, sentenceStop + 1);
   // A space exactly at `maxLen` means the cut already ends on a whole word.
+  // Any earlier space wins too — only a window with no space is hard-cut.
   const wordStop = compact[maxLen] === ' ' ? maxLen : cut.lastIndexOf(' ');
-  const head = (wordStop > maxLen * 0.5 ? cut.slice(0, wordStop) : cut)
+  const head = (wordStop > 0 ? cut.slice(0, wordStop) : cut)
     .replace(/[\s,;:—–-]+$/u, '')
     .trim();
   return `${head}…`;
@@ -48,6 +52,9 @@ function isAutoCutOfTranscript(summary: string, text: string): boolean {
   if (!LEGACY_ELLIPSIS.test(summary)) return false;
   const head = summary.replace(LEGACY_ELLIPSIS, '').trim();
   if (!head) return true;
+  // Short caller summaries ("We agreed…") are also prefixes. Legacy auto-cuts
+  // were sliced at the preview limit, so only a head near that length qualifies.
+  if (head.length < CALL_TRANSCRIPT_PREVIEW_MAX_CHARS - 5) return false;
   const compactText = text.replace(/\s+/g, ' ').trim();
   return compactText.startsWith(head.replace(/\s+/g, ' '));
 }

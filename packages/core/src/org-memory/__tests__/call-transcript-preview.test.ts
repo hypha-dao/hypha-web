@@ -5,6 +5,20 @@ import {
 } from '../call-transcript-preview';
 import { buildSpaceMemoryItemsFromOrgMemoryPayload } from '../build-space-memory-items';
 
+function hasUnpairedSurrogate(value: string): boolean {
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const next = value.charCodeAt(i + 1);
+      if (!(next >= 0xdc00 && next <= 0xdfff)) return true;
+      i += 1;
+      continue;
+    }
+    if (code >= 0xdc00 && code <= 0xdfff) return true;
+  }
+  return false;
+}
+
 const FLYWHEEL_TEXT =
   "yeah the only thing that the call was good I think there's a lot we can do together you know so there's cross pollination you know into all of these projects and because I'm involved in quite a few I see the connections right so what was apparent to me is that we keep circling the same questions and nobody writes them down";
 
@@ -29,6 +43,24 @@ describe('previewCallTranscriptText', () => {
     );
   });
 
+  it('drops a high surrogate when an emoji straddles the cut', () => {
+    const emoji = '👍';
+    const text = `words ${emoji} and more words after the emoji`;
+    const preview = previewCallTranscriptText(text, text.indexOf(emoji) + 1);
+    expect(preview).toBe('words…');
+    expect(hasUnpairedSurrogate(preview)).toBe(false);
+  });
+
+  it('breaks on the last space even when it sits in the first half', () => {
+    expect(previewCallTranscriptText(`hi ${'x'.repeat(30)}`, 20)).toBe('hi…');
+  });
+
+  it('hard-cuts only when the window has no space', () => {
+    expect(
+      previewCallTranscriptText(`${'x'.repeat(40)} trailing words`, 20),
+    ).toBe(`${'x'.repeat(20)}…`);
+  });
+
   it('prefers a late sentence stop', () => {
     const text = `${'word '.repeat(30)}end of thought. ${'more '.repeat(40)}`;
     const preview = previewCallTranscriptText(text, 200);
@@ -47,16 +79,21 @@ describe('callTranscriptPreview', () => {
   });
 
   it('regenerates legacy mid-word auto-cuts from the full text', () => {
-    const legacy = `${FLYWHEEL_TEXT.slice(0, 248)}...`;
-    expect(legacy).toMatch(/apparent t\.\.\.$/);
-    const preview = callTranscriptPreview({
-      text: FLYWHEEL_TEXT,
-      summary: legacy,
-    });
+    const text = `${'intro '.repeat(12)}${FLYWHEEL_TEXT}`;
+    const legacy = `${text.slice(0, 320)}...`;
+    expect(legacy.replace(/\.\.\.$/, '').length).toBeGreaterThanOrEqual(315);
+    const preview = callTranscriptPreview({ text, summary: legacy });
+    expect(preview).not.toBe(legacy);
     expect(preview).not.toMatch(/\.\.\.$/);
     expect(preview.endsWith('…')).toBe(true);
     const head = preview.slice(0, -1);
-    expect(FLYWHEEL_TEXT[head.length]).toBe(' ');
+    expect(text[head.length]).toBe(' ');
+  });
+
+  it('keeps a short ellipsis summary that is a transcript prefix', () => {
+    expect(
+      callTranscriptPreview({ text: FLYWHEEL_TEXT, summary: 'We agreed…' }),
+    ).toBe('We agreed…');
   });
 
   it('regenerates the 320-char auto-cut of a speaker-labelled transcript', () => {
