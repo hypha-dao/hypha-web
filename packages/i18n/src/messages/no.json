@@ -4784,7 +4784,6 @@
     "signalDocumentsCount": "{count, plural, one {# dokument} other {# dokumenter}}",
     "signalMedia": "Media",
     "signalDownload": "Last ned",
-    "createQuest": "Opprett oppdrag",
     "createSignal": "Opprett signal",
     "signalCreatedBy": "Opprettet av",
     "signalCreatedLabel": "Opprettet",

@@ -36,7 +36,6 @@ import {
 import { countSignalMedia, splitSignalMedia } from '../utils/signal-media';
 import { signalLastReplierLabel } from '../utils/signal-room-replies';
 import { resolveSignalVideo } from '../utils/signal-video';
-import { SignalCreateQuestButton } from './signal-create-quest-button';
 import { SignalCreatorActions } from './signal-creator-actions';
 import { useSignalMediaSummary } from './signal-media-chips';
 import { useSignalShortDate } from './signal-feed-row';
@@ -520,7 +519,6 @@ export function SignalPage({
               creatorId={signal.creatorId}
               className="flex items-center gap-2"
             />
-            <SignalCreateQuestButton lang={lang} spaceSlug={spaceSlug} />
           </div>
         </div>
 

@@ -4785,7 +4785,6 @@
     "signalDocumentsCount": "{count, plural, one {# document} other {# documenten}}",
     "signalMedia": "Media",
     "signalDownload": "Downloaden",
-    "createQuest": "Speurtocht aanmaken",
     "createSignal": "Signaal maken",
     "signalCreatedBy": "Aangemaakt door",
     "signalCreatedLabel": "Aangemaakt",

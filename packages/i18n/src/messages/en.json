@@ -4815,7 +4815,6 @@
     "signalDocumentsCount": "{count, plural, one {# doc} other {# docs}}",
     "signalMedia": "Media",
     "signalDownload": "Download",
-    "createQuest": "Create quest",
     "createSignal": "Create signal",
     "signalCreatedBy": "Created by",
     "signalCreatedLabel": "Created",

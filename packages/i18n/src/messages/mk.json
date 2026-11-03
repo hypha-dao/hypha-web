@@ -4766,7 +4766,6 @@
     "signalDocumentsCount": "{count, plural, one {# документ} other {# документи}}",
     "signalMedia": "Медиуми",
     "signalDownload": "Преземи",
-    "createQuest": "Создај потрага",
     "createSignal": "Создај сигнал",
     "signalCreatedBy": "Создаден од",
     "signalCreatedLabel": "Создаден",

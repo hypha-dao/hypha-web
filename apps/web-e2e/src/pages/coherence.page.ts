@@ -55,9 +55,9 @@ export class CoherencePage extends BasePage {
       /^(signals|signaux|sinais|señales|signale)(\s*\|\s*\d+)?\s*$/i,
     );
 
-    // Signals list header link — CoherenceTab.createQuest full phrases per locale
+    // Signals list header link — CoherenceTab.createSignal per locale
     this.newSignalButton = page.getByRole('link', {
-      name: /create quest|créer une mission|mission erstellen|crear misión|criar missão/i,
+      name: /create signal|signal erstellen|crear señal|créer un signal|criar sinal|signaal maken|opprett signal|создај сигнал/i,
     });
 
     // Search input — full placeholders from CoherenceTab.searchSignals (per locale)

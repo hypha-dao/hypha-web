@@ -180,7 +180,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
               scroll={false}
             >
               <Plus className="craft-icon" aria-hidden />
-              {t('createQuest')}
+              {t('createSignal')}
             </Link>
           </Button>
         ) : null}

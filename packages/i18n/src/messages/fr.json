@@ -4207,7 +4207,6 @@
     "signalDocumentsCount": "{count, plural, one {# document} other {# documents}}",
     "signalMedia": "Médias",
     "signalDownload": "Télécharger",
-    "createQuest": "Créer une mission",
     "createSignal": "Créer un signal",
     "signalCreatedBy": "Créé par",
     "signalCreatedLabel": "Créé",
