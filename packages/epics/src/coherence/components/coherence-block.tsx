@@ -174,7 +174,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
           ) : null}
         </h1>
         {canMutate ? (
-          <Button asChild colorVariant="neutral" className="gap-1.5">
+          <Button asChild variant="default" colorVariant="accent">
             <Link
               href={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
               scroll={false}
@@ -193,7 +193,6 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
         timeFrame={timeFrame}
         onSortChange={handleSortChange}
         onTimeFrameChange={handleTimeFrameChange}
-        className="-ml-3.5"
       />
 
       {isLoading ? (

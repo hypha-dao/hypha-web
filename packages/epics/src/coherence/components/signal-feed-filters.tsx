@@ -10,6 +10,7 @@ import {
   type SignalTimeFrame,
 } from '@hypha-platform/core/client';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
@@ -46,14 +47,11 @@ const SORT_LABEL_KEY: Record<SignalSort, CoherenceTabKey> = {
   'top-power': 'signalSortTopPower',
 };
 
-const PILL_CLASS =
-  'inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-1 font-medium text-muted-foreground transition-colors duration-150 ease-out hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-foreground/10 data-[state=open]:text-foreground';
-
 const MENU_CLASS =
-  'min-w-44 rounded-xl border border-border/80 bg-background-2 p-1.5 text-foreground shadow-md';
+  'min-w-44 rounded-none border border-border bg-background p-1 text-foreground shadow-none';
 
 const ITEM_CLASS =
-  'rounded-lg py-2.5 pl-8 pr-3 text-2 data-[state=checked]:bg-foreground/5';
+  'rounded-none text-1 uppercase tracking-[0.12em] data-[state=checked]:bg-foreground/5';
 
 type FilterPillProps<T extends string> = {
   label: string;
@@ -76,10 +74,19 @@ function FilterPill<T extends string>({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" className={PILL_CLASS} data-testid={testId}>
+        <Button
+          type="button"
+          variant="outline"
+          data-testid={testId}
+          className="data-[state=open]:border-foreground/40 data-[state=open]:bg-foreground/5"
+        >
           {label}
-          <ChevronDown className="size-4 shrink-0" aria-hidden />
-        </button>
+          <ChevronDown
+            className="size-3.5 shrink-0"
+            strokeWidth={1.25}
+            aria-hidden
+          />
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
@@ -119,7 +126,7 @@ export type SignalFeedFiltersProps = {
 };
 
 /**
- * Sort pill, and a time frame pill while a Top sort is selected.
+ * Sort control, and a time frame control while a Top sort is selected.
  */
 export function SignalFeedFilters({
   sort,
@@ -148,7 +155,7 @@ export function SignalFeedFilters({
   );
 
   return (
-    <div className={cn('flex flex-wrap items-center gap-1', className)}>
+    <div className={cn('flex flex-wrap items-center gap-2', className)}>
       <FilterPill
         label={t(SORT_LABEL_KEY[sort])}
         heading={t('signalSortBy')}
