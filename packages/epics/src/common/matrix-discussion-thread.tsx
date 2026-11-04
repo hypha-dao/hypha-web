@@ -24,7 +24,10 @@ import {
   type HyphaRoomType,
   type Person,
 } from '@hypha-platform/core/client';
-import type { MatrixClient } from 'matrix-js-sdk';
+import {
+  calledAgentAvatarUrl,
+  matrixMemberAvatarSquare,
+} from './human-chat-panel/matrix-member-avatar';
 
 import {
   HumanChatPanelChatBar,
@@ -85,23 +88,6 @@ async function loadSpaceMembers(
     if (pageCount != null && page >= pageCount) break;
   }
   return people;
-}
-
-function matrixMemberAvatarSquare(
-  client: MatrixClient | null | undefined,
-  roomId: string | null | undefined,
-  userId: string | undefined,
-  px: number,
-): string | undefined {
-  if (!client || !roomId || !userId) return undefined;
-  const room = client.getRoom(roomId);
-  const member = room?.getMember(userId);
-  if (!member) return undefined;
-  const mxc = member.getMxcAvatarUrl();
-  if (!mxc || !mxc.startsWith('mxc://')) return undefined;
-  return (
-    client.mxcUrlToHttp(mxc, px, px, 'crop', true, false, false) ?? undefined
-  );
 }
 
 type PanelMessage = {
@@ -423,7 +409,17 @@ export function MatrixDiscussionThread({
         return currentUserAvatarUrl;
       }
       if (isHyphaBotMatrixIdentity(userId)) {
-        return agentAvatarUrl || undefined;
+        // Same portrait Signals uses: the bot's Matrix profile, then the
+        // space mark. Never a display-name initials tile.
+        return calledAgentAvatarUrl({
+          matrixAvatarUrl: matrixMemberAvatarSquare(
+            clientRef.current,
+            roomIdRef.current,
+            userId,
+            96,
+          ),
+          spaceLogoUrl: agentAvatarUrl,
+        });
       }
       return matrixMemberAvatarSquare(
         clientRef.current,

@@ -75,11 +75,16 @@ import {
   isSignalDescriptionAnchorMessage,
   usePersonById,
   headingForSectionKey,
+  DEFAULT_SPACE_AVATAR_IMAGE,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
   isChatPanelVideoFile,
 } from './human-chat-panel/chat-panel-media-types';
+import {
+  calledAgentAvatarUrl,
+  matrixMemberAvatarSquare,
+} from './human-chat-panel/matrix-member-avatar';
 import { UseMembers } from '../spaces';
 import { useSpaceMembersAndDelegates } from '../spaces/hooks/use-space-members-and-delegates';
 import {
@@ -888,27 +893,6 @@ function clearStoredRoomId(spaceSlug: string): void {
 }
 
 /**
- * Matrix member avatar → HTTP thumbnail for `<img>`.
- * Same sources as the Messages list: room member MXC, then the global user
- * store (group headers often miss room-member avatars while `getUser` has them).
- */
-function matrixMemberAvatarSquare(
-  client: MatrixClient | null | undefined,
-  roomId: string | null | undefined,
-  userId: string | undefined,
-  px: number,
-): string | undefined {
-  if (!client || !userId) return undefined;
-  const room = roomId ? client.getRoom(roomId) : null;
-  const member = room?.getMember(userId);
-  const mxc =
-    member?.getMxcAvatarUrl() || client.getUser(userId)?.avatarUrl || undefined;
-  if (!mxc || !String(mxc).startsWith('mxc://')) return undefined;
-  // Match Messages `avatarHttp` — that URL shape already loads in the inbox.
-  return client.mxcUrlToHttp(mxc, px, px, 'crop') ?? undefined;
-}
-
-/**
  * Header space mark. Never paint `DEFAULT_SPACE_AVATAR_IMAGE` (legacy Hypha
  * glyph) while the space query is still in flight — that was the one-frame
  * flash when opening signal / proposal / room chats from Messages.
@@ -959,18 +943,29 @@ function toUIMessage(
   clientForAvatars?: MatrixClient | null,
   formatSignalTeamNotice?: SignalTeamNoticeFormatter,
   systemSenderLabel?: string,
+  /**
+   * Context rooms only. Used when the agent has no Matrix profile picture,
+   * so the bubble matches the @ row instead of letter initials.
+   */
+  contextAgentAvatarFallback?: string,
 ): UIMessage {
   const resolveAvatarForUser = (userId: string | undefined) => {
     if (!userId) return undefined;
-    return (
+    const resolved =
       resolveMemberAvatar?.(userId) ??
       matrixMemberAvatarSquare(
         clientForAvatars ?? null,
         roomIdForAvatars ?? null,
         userId,
         96,
-      )
-    );
+      );
+    if (!contextAgentAvatarFallback || !isHyphaBotMatrixIdentity(userId)) {
+      return resolved;
+    }
+    return calledAgentAvatarUrl({
+      matrixAvatarUrl: resolved,
+      spaceLogoUrl: contextAgentAvatarFallback,
+    });
   };
 
   const isCurrentUser = currentUserId ? msg.sender === currentUserId : false;
@@ -1904,6 +1899,16 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const { resolvedTheme } = useTheme();
+  // Context call-agent only. Signals keeps its own portrait (Matrix profile,
+  // or the specialist tile when that profile is missing).
+  const contextAgentAvatarFallback = contextSectionKey
+    ? resolveSpaceDisplayLogoUrl(
+        space,
+        resolvedTheme === 'dark' ? 'dark' : 'light',
+      ) || DEFAULT_SPACE_AVATAR_IMAGE
+    : undefined;
+  const contextAgentAvatarFallbackRef = useRef(contextAgentAvatarFallback);
+  contextAgentAvatarFallbackRef.current = contextAgentAvatarFallback;
   const elsewhereCallSpaceSlugs = useMemo(
     () =>
       Array.from(
@@ -3244,6 +3249,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             matrixRef.current.client ?? null,
             formatSignalTeamNoticeRef.current,
             systemSenderLabelRef.current,
+            contextAgentAvatarFallbackRef.current,
           ),
         ),
       );
@@ -4928,6 +4934,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                 matrixRef.current.client ?? null,
                 formatSignalTeamNoticeRef.current,
                 systemSenderLabelRef.current,
+                contextAgentAvatarFallbackRef.current,
               ),
             );
           }

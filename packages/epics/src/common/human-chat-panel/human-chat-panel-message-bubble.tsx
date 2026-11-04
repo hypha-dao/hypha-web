@@ -2120,7 +2120,7 @@ export function HumanChatPanelMessageBubble({
           <div ref={mainAvatarMeasureRef} className="relative">
             {message.id === 'welcome' ? (
               <MemberHomeMark className="h-10 w-10" />
-            ) : specialistName ? (
+            ) : specialistName && !mainAvatarSrc?.trim() ? (
               <div
                 className={`flex h-10 w-10 items-center justify-center text-xs font-semibold ${tagGroupAccentClass(
                   specialist?.id ?? '',
