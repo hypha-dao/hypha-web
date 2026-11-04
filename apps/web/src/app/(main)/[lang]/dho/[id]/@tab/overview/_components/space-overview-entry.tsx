@@ -9,13 +9,15 @@ import { useSpaceEnergy } from '@hypha-platform/epics';
  * when the menu asks for the space dashboard (`board=space`) or an invite is open.
  */
 export function SpaceOverviewEntry({
+  spaceSlug,
   stay,
   children,
 }: {
+  spaceSlug: string;
   stay: boolean;
   children: ReactNode;
 }) {
-  const { data, isLoading, error } = useSpaceEnergy();
+  const { data, isLoading, error } = useSpaceEnergy(spaceSlug);
   const pathname = usePathname();
   const router = useRouter();
   const energyHome = !stay && data?.enabled === true;

@@ -30,6 +30,7 @@ export default async function CreateWhitelistEnergySettlementProposalPage({
         backUrl={backUrl}
         spaceId={spaceFromDb.id}
         web3SpaceId={spaceFromDb.web3SpaceId}
+        spaceSlug={id}
       />
     </ProposalOverlayShell>
   );

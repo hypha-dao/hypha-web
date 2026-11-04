@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
   // strict Content-Security-Policy is added, allow TURN/STUN (connect-src) and
   // any recording/CDN origins. See docs/requirements/voice-video-call-phase-0-runbook.md
   serverExternalPackages: ['matrix-js-sdk'],
+  // Unmatched URLs have no root layout once the app lives in the (main) route
+  // group; render app/global-not-found.tsx for them instead.
+  experimental: {
+    globalNotFound: true,
+  },
   webpack: (config) => {
     // Single module path for matrix-js-sdk (require.resolve from apps/web needs
     // matrix-js-sdk as a direct dependency). Avoids "Multiple matrix-js-sdk

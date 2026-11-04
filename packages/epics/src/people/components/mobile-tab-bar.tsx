@@ -205,7 +205,7 @@ export function MobileTabBar({
 
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
   const { space } = useSpaceBySlug(spaceSlug ?? '');
-  const { data: spaceEnergy } = useSpaceEnergy();
+  const { data: spaceEnergy } = useSpaceEnergy(spaceSlug);
   const networkRoute = isNetworkPath(pathname);
   const secondLevel = useMemo((): Array<{
     key: string;

@@ -4,7 +4,7 @@ import { Button } from '@hypha-platform/ui';
 import { GlobeIcon } from '@radix-ui/react-icons';
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import RootLayout from './layout';
+import RootLayout from './(main)/layout';
 
 export const metadata: Metadata = {
   title: 'Hypha: Page Not Found',

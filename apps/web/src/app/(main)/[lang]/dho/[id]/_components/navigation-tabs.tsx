@@ -50,7 +50,7 @@ export function NavigationTabs({
     () => getActiveTabFromPath(pathname),
     [pathname],
   );
-  const { data: spaceEnergy } = useSpaceEnergy();
+  const { data: spaceEnergy } = useSpaceEnergy(id);
   const { space } = useSpaceBySlug(id);
 
   const labelFor = React.useCallback(

@@ -18,9 +18,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { ArrowTopRightIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useTranslations } from 'next-intl';
 
-import { EcosystemMembershipModules } from '@web/app/[lang]/dho/[id]/_components/ecosystem-membership-modules';
-import { MyceliumEcosystem } from '@web/app/[lang]/dho/[id]/_components/mycelium-ecosystem';
-import type { VisibleSpace } from '@web/app/[lang]/dho/[id]/_components/types';
+import { EcosystemMembershipModules } from '@web/app/(main)/[lang]/dho/[id]/_components/ecosystem-membership-modules';
+import { MyceliumEcosystem } from '@web/app/(main)/[lang]/dho/[id]/_components/mycelium-ecosystem';
+import type { VisibleSpace } from '@web/app/(main)/[lang]/dho/[id]/_components/types';
 
 type HierarchyNode = {
   name: string;
