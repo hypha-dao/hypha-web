@@ -72,7 +72,7 @@ Award-oriented product UI: airy, calm, intentional — light-first canvas, soft 
 
 ### Fonts
 
-Two sans + mono — wired via `apps/web/src/lib/hypha-fonts.ts` (`hyphaFontVariables` on root + signin `<Html>`).
+Two sans + mono — wired via `apps/web/src/lib/hypha-fonts.ts` (`hyphaFontVariables` on root `<Html>`).
 
 | Role             | Face              | next/font var      | Token                                |
 | ---------------- | ----------------- | ------------------ | ------------------------------------ |
