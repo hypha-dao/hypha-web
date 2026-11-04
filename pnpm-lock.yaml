@@ -766,6 +766,9 @@ importers:
       '@ai-sdk/react':
         specifier: ^3.0.107
         version: 3.0.140(react@19.1.2)(zod@4.6.7)
+      '@hypha-platform/auth-server':
+        specifier: workspace:*
+        version: link:../../packages/auth-server
       '@hypha-platform/authentication':
         specifier: workspace:*
         version: link:../../packages/authentication
@@ -31503,7 +31506,7 @@ snapshots:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 1.6.1(@types/node@22.16.5)(@vitest/ui@1.6.1)(jsdom@26.0.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(less@4.1.3)(lightningcss@1.30.1)(sass@1.86.3)(stylus@0.64.0)(terser@5.39.0)
+      vitest: 1.6.1(@types/node@22.15.33)(@vitest/ui@1.6.1)(jsdom@26.0.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(less@4.1.3)(lightningcss@1.30.1)(sass@1.86.3)(stylus@0.64.0)(terser@5.39.0)
 
   '@vitest/utils@1.6.1':
     dependencies:
