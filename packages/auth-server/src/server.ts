@@ -6,3 +6,5 @@ export * from './redact';
 export { createPrivyTokenVerifier } from './privy';
 export * from './handler';
 export * from './connected-apps';
+export * from './protected';
+export * from './consent';
