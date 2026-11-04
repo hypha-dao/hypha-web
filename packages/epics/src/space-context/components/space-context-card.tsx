@@ -13,7 +13,15 @@ import { Card, CardTitle } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Fragment, useEffect, type MouseEvent, type ReactNode } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 import {
   InlineText,
   MemoryProse,
@@ -68,6 +76,23 @@ export function SpaceContextCard({
   const linkClassName =
     'inline-flex shrink-0 items-center gap-1 text-1 font-bold text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [bodyOverflows, setBodyOverflows] = useState(false);
+  useLayoutEffect(() => {
+    const el = bodyRef.current;
+    if (!el || empty) {
+      setBodyOverflows(false);
+      return;
+    }
+    const measure = () => {
+      setBodyOverflows(el.scrollHeight > el.clientHeight + 1);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [empty, featured, lead, rest, unofficial]);
+
   const readFromSurface = (event: MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
     if (target.closest(NESTED_CONTROLS)) return;
@@ -112,50 +137,51 @@ export function SpaceContextCard({
           <SpaceContextStatusChip status={section.status} />
         ) : null}
       </div>
-      <div className="relative flex-1">
+      <div className="flex-1">
         {empty ? (
           <p className="text-[13px] leading-snug text-neutral-11">
             {t('card.emptyBody')}
           </p>
         ) : (
-          <>
-            <div
-              className={cn(
-                featured ? 'max-h-[28rem]' : 'max-h-44',
-                'space-y-3.5 overflow-hidden',
-                unofficial &&
-                  'border-l-2 border-dashed border-neutral-6 pl-3 text-neutral-11',
-              )}
-            >
-              {lead ? (
-                <p
+          <div
+            ref={bodyRef}
+            className={cn(
+              featured ? 'max-h-[28rem]' : 'max-h-44',
+              'relative space-y-3.5 overflow-hidden',
+              unofficial &&
+                'border-l-2 border-dashed border-neutral-6 pl-3 text-neutral-11',
+            )}
+          >
+            {lead ? (
+              <p
+                className={cn(
+                  unofficial ? 'text-neutral-11' : 'text-foreground',
+                  featured
+                    ? 'max-w-3xl text-4 leading-snug'
+                    : 'text-[13px] leading-snug',
+                )}
+              >
+                <InlineText source={lead} />
+              </p>
+            ) : null}
+            {rest ? (
+              <div className="border-t border-border/60 pt-3.5">
+                <MemoryProse
+                  source={rest}
                   className={cn(
+                    'text-[13px] leading-relaxed',
                     unofficial ? 'text-neutral-11' : 'text-foreground',
-                    featured
-                      ? 'max-w-3xl text-4 leading-snug'
-                      : 'text-[13px] leading-snug',
                   )}
-                >
-                  <InlineText source={lead} />
-                </p>
-              ) : null}
-              {rest ? (
-                <div className="border-t border-border/60 pt-3.5">
-                  <MemoryProse
-                    source={rest}
-                    className={cn(
-                      'text-[13px] leading-relaxed',
-                      unofficial ? 'text-neutral-11' : 'text-foreground',
-                    )}
-                  />
-                </div>
-              ) : null}
-            </div>
-            <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-background-2 to-transparent"
-              aria-hidden
-            />
-          </>
+                />
+              </div>
+            ) : null}
+            {bodyOverflows ? (
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-background-2 to-transparent"
+                aria-hidden
+              />
+            ) : null}
+          </div>
         )}
       </div>
       {notice ? (
