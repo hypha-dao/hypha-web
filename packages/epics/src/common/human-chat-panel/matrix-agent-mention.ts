@@ -27,11 +27,13 @@ export function matrixAgentSkills(
   ];
 }
 
-/** The single AI Agents picker row, not a person and not a section specialist. */
-export function isAgentMentionPick(member: {
-  rowKey?: string;
-  agentIcon?: unknown;
-}): boolean {
+/**
+ * The single AI Agents picker row, not a person and not a section specialist.
+ * `displayLabel` is the chip text the composer inserts ("AI Agents").
+ */
+export function isAgentMentionPick(
+  member: Pick<ChatMentionCandidate, 'rowKey' | 'agentIcon' | 'displayLabel'>,
+): boolean {
   return member.rowKey === 'agent' || member.agentIcon != null;
 }
 
