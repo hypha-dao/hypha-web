@@ -45,7 +45,8 @@ export function createAuthServer(
 ) {
   const pool = deps.pool ?? createAuthDbPool(config.databaseUrl);
   const verifyPrivyToken =
-    deps.verifyPrivyToken ?? createPrivyTokenVerifier(config.privyAppId);
+    deps.verifyPrivyToken ??
+    createPrivyTokenVerifier(config.privyAppId, config.privyJwksUrlOverride);
 
   const gate = (personId: string | null | undefined) =>
     isPersonAllowed(config, personId);

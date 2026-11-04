@@ -6,22 +6,25 @@ export type PrivyVerifyResult =
 
 export type PrivyTokenVerifier = (token: string) => Promise<PrivyVerifyResult>;
 
-const jwksByApp = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+const jwksByUrl = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
 /**
  * Verifies a Privy access token with Privy's public keys (no app secret involved) and
  * returns the Privy user id. The token is only read here: it is never stored, logged or
  * passed on.
  */
-export function createPrivyTokenVerifier(appId: string): PrivyTokenVerifier {
+export function createPrivyTokenVerifier(
+  appId: string,
+  jwksUrlOverride?: string,
+): PrivyTokenVerifier {
+  const jwksUrl =
+    jwksUrlOverride ?? `https://auth.privy.io/api/v1/apps/${appId}/jwks.json`;
   return async (token) => {
     try {
-      let jwks = jwksByApp.get(appId);
+      let jwks = jwksByUrl.get(jwksUrl);
       if (!jwks) {
-        jwks = createRemoteJWKSet(
-          new URL(`https://auth.privy.io/api/v1/apps/${appId}/jwks.json`),
-        );
-        jwksByApp.set(appId, jwks);
+        jwks = createRemoteJWKSet(new URL(jwksUrl));
+        jwksByUrl.set(jwksUrl, jwks);
       }
       const { payload } = await jwtVerify(token, jwks, {
         issuer: 'privy.io',

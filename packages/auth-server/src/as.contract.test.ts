@@ -423,6 +423,30 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
     expect(
       loadAuthServerConfig({ ...on, AUTH_SERVER_SECRET: 'short' }).enabled,
     ).toBe(false);
+    // The dev-only Privy key override is honoured only for a localhost issuer outside production.
+    const dev = {
+      ...on,
+      AUTH_SERVER_DEV_PRIVY_JWKS_URL: 'http://127.0.0.1:4010/jwks',
+    };
+    expect(
+      (loadAuthServerConfig(dev) as { privyJwksUrlOverride?: string })
+        .privyJwksUrlOverride,
+    ).toBeDefined();
+    expect(
+      (
+        loadAuthServerConfig({ ...dev, NODE_ENV: 'production' }) as {
+          privyJwksUrlOverride?: string;
+        }
+      ).privyJwksUrlOverride,
+    ).toBeUndefined();
+    expect(
+      (
+        loadAuthServerConfig({
+          ...dev,
+          AUTH_SERVER_ISSUER: 'https://as.example.org',
+        }) as { privyJwksUrlOverride?: string }
+      ).privyJwksUrlOverride,
+    ).toBeUndefined();
     const off = createAuthServerHandler(
       () => ({ enabled: false, reason: 'x' }),
       () => {

@@ -28,6 +28,11 @@ export type AuthServerConfig = {
   secret: string;
   databaseUrl: string;
   privyAppId: string;
+  /**
+   * Local testing only: where to fetch Privy's public keys from. Ignored unless the issuer is a
+   * localhost host and this is not a production build.
+   */
+  privyJwksUrlOverride?: string;
   allowedPersonIds: ReadonlySet<string>;
   /** Resource indicators (RFC 8707) access tokens may be issued for. */
   resources: readonly string[];
@@ -105,6 +110,12 @@ export function loadAuthServerConfig(
     secret,
     databaseUrl,
     privyAppId,
+    privyJwksUrlOverride:
+      LOCAL_HOSTNAME.test(new URL(issuer).hostname) &&
+      env.NODE_ENV !== 'production' &&
+      env.AUTH_SERVER_DEV_PRIVY_JWKS_URL
+        ? env.AUTH_SERVER_DEV_PRIVY_JWKS_URL
+        : undefined,
     allowedPersonIds: new Set(parseList(env.AUTH_SERVER_ALLOWED_PERSON_IDS)),
     resources: parseList(env.AUTH_SERVER_RESOURCES),
   };
