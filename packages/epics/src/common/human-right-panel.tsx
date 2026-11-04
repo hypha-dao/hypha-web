@@ -75,16 +75,12 @@ import {
   isSignalDescriptionAnchorMessage,
   usePersonById,
   headingForSectionKey,
-  DEFAULT_SPACE_AVATAR_IMAGE,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
   isChatPanelVideoFile,
 } from './human-chat-panel/chat-panel-media-types';
-import {
-  calledAgentAvatarUrl,
-  matrixMemberAvatarSquare,
-} from './human-chat-panel/matrix-member-avatar';
+import { matrixMemberAvatarSquare } from './human-chat-panel/matrix-member-avatar';
 import { UseMembers } from '../spaces';
 import { useSpaceMembersAndDelegates } from '../spaces/hooks/use-space-members-and-delegates';
 import {
@@ -943,29 +939,21 @@ function toUIMessage(
   clientForAvatars?: MatrixClient | null,
   formatSignalTeamNotice?: SignalTeamNoticeFormatter,
   systemSenderLabel?: string,
-  /**
-   * Context rooms only. Used when the agent has no Matrix profile picture,
-   * so the bubble matches the @ row instead of letter initials.
-   */
-  contextAgentAvatarFallback?: string,
 ): UIMessage {
   const resolveAvatarForUser = (userId: string | undefined) => {
     if (!userId) return undefined;
-    const resolved =
+    // Agent replies use a square initials tile in the bubble. Do not attach
+    // the bot's profile photo or a space logo as if it were a person.
+    if (isHyphaBotMatrixIdentity(userId)) return undefined;
+    return (
       resolveMemberAvatar?.(userId) ??
       matrixMemberAvatarSquare(
         clientForAvatars ?? null,
         roomIdForAvatars ?? null,
         userId,
         96,
-      );
-    if (!contextAgentAvatarFallback || !isHyphaBotMatrixIdentity(userId)) {
-      return resolved;
-    }
-    return calledAgentAvatarUrl({
-      matrixAvatarUrl: resolved,
-      spaceLogoUrl: contextAgentAvatarFallback,
-    });
+      )
+    );
   };
 
   const isCurrentUser = currentUserId ? msg.sender === currentUserId : false;
@@ -1899,16 +1887,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const { resolvedTheme } = useTheme();
-  // Context call-agent only. Signals keeps its own portrait (Matrix profile,
-  // or the specialist tile when that profile is missing).
-  const contextAgentAvatarFallback = contextSectionKey
-    ? resolveSpaceDisplayLogoUrl(
-        space,
-        resolvedTheme === 'dark' ? 'dark' : 'light',
-      ) || DEFAULT_SPACE_AVATAR_IMAGE
-    : undefined;
-  const contextAgentAvatarFallbackRef = useRef(contextAgentAvatarFallback);
-  contextAgentAvatarFallbackRef.current = contextAgentAvatarFallback;
   const elsewhereCallSpaceSlugs = useMemo(
     () =>
       Array.from(
@@ -3249,7 +3227,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             matrixRef.current.client ?? null,
             formatSignalTeamNoticeRef.current,
             systemSenderLabelRef.current,
-            contextAgentAvatarFallbackRef.current,
           ),
         ),
       );
@@ -4934,7 +4911,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                 matrixRef.current.client ?? null,
                 formatSignalTeamNoticeRef.current,
                 systemSenderLabelRef.current,
-                contextAgentAvatarFallbackRef.current,
               ),
             );
           }

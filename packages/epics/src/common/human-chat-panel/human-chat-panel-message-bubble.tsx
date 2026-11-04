@@ -44,9 +44,9 @@ import {
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
 import {
-  getAgentAvatarInitials,
-  tagGroupAccentClass,
-} from '../ai-agent-competencies';
+  AgentInitialsAvatar,
+  isAgentChatAuthor,
+} from './agent-initials-avatar';
 import { MemberHomeMark } from '../../people/components/member-home-mark';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
@@ -1902,17 +1902,32 @@ export function HumanChatPanelMessageBubble({
 
   const senderName = specialistName ?? resolvedSenderName;
   const replyAuthorLabelForUi = replyTo ? resolvedReplyAuthorLabel : '';
+  const senderIsAgent =
+    message.id !== 'welcome' &&
+    isAgentChatAuthor({
+      agentSpecialistId: message.agentSpecialistId,
+      matrixUserId: message.senderMatrixId,
+      label: message.senderName,
+    });
+  const replyAuthorIsAgent = Boolean(
+    replyTo &&
+      isAgentChatAuthor({
+        matrixUserId: replyTo.sourceUserId,
+        label: replyTo.authorLabel,
+      }),
+  );
   const mainAvatarSrc =
     message.role === 'user'
       ? currentUserAvatarUrl?.trim() || message.avatarUrl
       : senderPerson?.avatarUrl?.trim() || message.avatarUrl;
   const mainAvatarLoading =
-    senderProfileLoading ||
-    (message.role === 'member' &&
-      !mainAvatarSrc?.trim() &&
-      (isLoadingSenderLink ||
-        (Boolean(senderPrivySub ?? senderCanonicalSub) &&
-          isLoadingSenderPerson)));
+    !senderIsAgent &&
+    (senderProfileLoading ||
+      (message.role === 'member' &&
+        !mainAvatarSrc?.trim() &&
+        (isLoadingSenderLink ||
+          (Boolean(senderPrivySub ?? senderCanonicalSub) &&
+            isLoadingSenderPerson))));
   const replyHeaderAvatarResolved =
     replyTo &&
     currentUserId &&
@@ -1921,11 +1936,13 @@ export function HumanChatPanelMessageBubble({
       ? currentUserAvatarUrl ?? replyTo.authorAvatarUrl
       : replyPerson?.avatarUrl ?? replyTo?.authorAvatarUrl;
   const replyAvatarLoading =
-    replyProfileLoading ||
-    (Boolean(replyTo) &&
-      !replyHeaderAvatarResolved?.trim() &&
-      (isLoadingReplyLink ||
-        (Boolean(replyPrivySub ?? replyCanonicalSub) && isLoadingReplyPerson)));
+    !replyAuthorIsAgent &&
+    (replyProfileLoading ||
+      (Boolean(replyTo) &&
+        !replyHeaderAvatarResolved?.trim() &&
+        (isLoadingReplyLink ||
+          (Boolean(replyPrivySub ?? replyCanonicalSub) &&
+            isLoadingReplyPerson))));
   const safeTimestamp = asTimelineDate(message.timestamp);
   const timestamp = safeTimestamp
     ? formatTimestamp(safeTimestamp, t)
@@ -2028,15 +2045,19 @@ export function HumanChatPanelMessageBubble({
   const replyContextBody = replyTo ? (
     <>
       <div ref={replyAvatarMeasureRef} className="shrink-0">
-        <PersonAvatar
-          size="sm"
-          className="rounded-full"
-          avatarSrc={replyHeaderAvatarResolved}
-          userName={replyAuthorLabelForUi}
-          isLoading={replyAvatarLoading}
-          personId={replyPerson?.id}
-          matrixUserId={replyTo.sourceUserId}
-        />
+        {replyAuthorIsAgent ? (
+          <AgentInitialsAvatar name={replyAuthorLabelForUi} size="sm" />
+        ) : (
+          <PersonAvatar
+            size="sm"
+            className="rounded-full"
+            avatarSrc={replyHeaderAvatarResolved}
+            userName={replyAuthorLabelForUi}
+            isLoading={replyAvatarLoading}
+            personId={replyPerson?.id}
+            matrixUserId={replyTo.sourceUserId}
+          />
+        )}
       </div>
       <span className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
         <span className="shrink-0 font-semibold text-muted-foreground">
@@ -2131,15 +2152,8 @@ export function HumanChatPanelMessageBubble({
           <div ref={mainAvatarMeasureRef} className="relative">
             {message.id === 'welcome' ? (
               <MemberHomeMark className="h-10 w-10" />
-            ) : specialistName && !mainAvatarSrc?.trim() ? (
-              <div
-                className={`flex h-10 w-10 items-center justify-center text-xs font-semibold ${tagGroupAccentClass(
-                  specialist?.id ?? '',
-                )}`}
-                aria-hidden
-              >
-                {getAgentAvatarInitials(specialistName)}
-              </div>
+            ) : senderIsAgent ? (
+              <AgentInitialsAvatar name={senderName} />
             ) : (
               <PersonAvatar
                 size="chat"

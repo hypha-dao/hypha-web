@@ -24,10 +24,7 @@ import {
   type HyphaRoomType,
   type Person,
 } from '@hypha-platform/core/client';
-import {
-  calledAgentAvatarUrl,
-  matrixMemberAvatarSquare,
-} from './human-chat-panel/matrix-member-avatar';
+import { matrixMemberAvatarSquare } from './human-chat-panel/matrix-member-avatar';
 
 import {
   HumanChatPanelChatBar,
@@ -268,10 +265,6 @@ export function MatrixDiscussionThread({
   const { resolvedTheme } = useTheme();
   const { space } = useSpaceBySlug(spaceSlug ?? '');
   const currentUserAvatarUrl = me?.avatarUrl?.trim() || undefined;
-  const agentAvatarUrl = resolveSpaceDisplayLogoUrl(
-    space,
-    resolvedTheme === 'dark' ? 'dark' : 'light',
-  );
   const {
     client,
     createRoom,
@@ -409,17 +402,9 @@ export function MatrixDiscussionThread({
         return currentUserAvatarUrl;
       }
       if (isHyphaBotMatrixIdentity(userId)) {
-        // Same portrait Signals uses: the bot's Matrix profile, then the
-        // space mark. Never a display-name initials tile.
-        return calledAgentAvatarUrl({
-          matrixAvatarUrl: matrixMemberAvatarSquare(
-            clientRef.current,
-            roomIdRef.current,
-            userId,
-            96,
-          ),
-          spaceLogoUrl: agentAvatarUrl,
-        });
+        // The reply paints a square initials tile. A profile photo or space
+        // logo would read as a person's picture.
+        return undefined;
       }
       return matrixMemberAvatarSquare(
         clientRef.current,
@@ -428,7 +413,7 @@ export function MatrixDiscussionThread({
         96,
       );
     },
-    [agentAvatarUrl, currentUserAvatarUrl, currentUserId],
+    [currentUserAvatarUrl, currentUserId],
   );
 
   const panelMessages = React.useMemo((): PanelMessage[] => {
