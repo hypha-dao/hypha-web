@@ -131,7 +131,7 @@ export const SPACE_CONTEXT_SPECIALISTS: Record<
     focus: 'Measurable goals for this season',
     avatarLabel: 'PO',
     brief:
-      'Short-term goals are 3–5 measurable goals for the current season. Each has an outcome, a metric, a target, a date, and an owner when known, and traces to a strategy pillar. Test a draft: reject vague verbs (improve, explore, support) without a number or a date.',
+      'Short-term goals are 3–5 measurable goals for the current season. Each has an outcome, a metric, a target, a date, and an owner when known, and traces to a strategy pillar. When the outcome is known and the date is not, propose the end of the current quarter as an ISO date. Leave the owner blank when unknown and ask once; do not leave bracket placeholders. Test a draft: reject vague verbs (improve, explore, support) without a number or a date.',
   },
   key_repositories: {
     agentKey: 'key_repositories',
@@ -140,7 +140,7 @@ export const SPACE_CONTEXT_SPECIALISTS: Record<
     focus: 'Code, docs, and data the space relies on',
     avatarLabel: 'AR',
     brief:
-      'Key repositories list the code, documents, and data the space relies on. Each entry: name, link, what it holds, maintainer, access (public or private), and status. Group by type. Only use links members shared; mark a missing link as TODO rather than guessing one.',
+      'Key repositories list the code, documents, and data the space relies on. Each entry: name, link, what it holds, maintainer, access (public or private), and status. Group by type. Only use links members shared. Fill access and status from those links. If the maintainer is missing, ask once. Do not invent a link, and do not leave a list of TODOs.',
   },
   tools: {
     agentKey: 'tools',

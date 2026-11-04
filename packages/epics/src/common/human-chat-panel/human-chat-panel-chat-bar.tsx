@@ -83,6 +83,7 @@ import {
 } from './human-chat-panel-voice-audio-row';
 import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row';
 import { formatComposerMentionToken } from './human-chat-display-mention';
+import { isAgentMentionPick } from './matrix-agent-mention';
 import { mentionCandidateMatchRank } from './human-chat-mention-search';
 import { resolveReplyPreviewAuthorLookup } from './reply-preview-author';
 import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';
@@ -978,14 +979,22 @@ export function HumanChatPanelChatBar({
       const tok = atTokenRef.current;
       if (!el || !tok) return;
       const prompt = member.prompt?.trim();
-      const labelForMerge = prompt
+      // The agent row stays "AI Agents" after insert. A resolved person or
+      // section-specialist name must not replace the picker label.
+      const agentPick = isAgentMentionPick(member);
+      const resolvedLabel = agentPick ? undefined : resolvedComposerLabel;
+      const labelForMerge = agentPick
         ? member.displayLabel
-        : resolvedComposerLabel?.trim() || member.displayLabel;
-      const labelForToken = prompt
+        : prompt
+        ? member.displayLabel
+        : resolvedLabel?.trim() || member.displayLabel;
+      const labelForToken = agentPick
         ? getMentionComposerLabel?.(member, member.displayLabel) ??
           member.displayLabel
-        : getMentionComposerLabel?.(member, resolvedComposerLabel) ??
-          labelForMerge;
+        : prompt
+        ? getMentionComposerLabel?.(member, member.displayLabel) ??
+          member.displayLabel
+        : getMentionComposerLabel?.(member, resolvedLabel) ?? labelForMerge;
       const token = formatComposerMentionToken(labelForToken);
       const insertion = prompt ? `${token}${prompt} ` : token;
       onMergeMentionDisplayLabel?.(member.userId, labelForMerge);

@@ -6,6 +6,7 @@ import {
   authorizeSpacePanelInteraction,
   buildSpaceContextAgentPrompt,
   detectSpaceContextAgentIntent,
+  isSandboxOrThrowawaySpace,
   extractSharedSourceUrls,
   findSpaceBySlug,
   getSpaceContextSection,
@@ -182,6 +183,11 @@ export async function writeSpaceContextAgentReply({
     specialistMemory: detail.specialistMemory?.memoryMarkdown ?? '',
     intent,
     proposeUrl,
+    sandbox: isSandboxOrThrowawaySpace({
+      flags: space.flags,
+      slug: space.slug,
+      title: space.title,
+    }),
   });
   const prompt = [
     turn.earlier

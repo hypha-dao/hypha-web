@@ -5,6 +5,8 @@ import {
   SPACE_CONTEXT_SPECIALISTS,
   buildProposalMarkdown,
   buildSpaceContextAgentPrompt,
+  isSandboxOrThrowawaySpace,
+  spaceContextQuarterEndIso,
   escapeUntrustedDataBoundary,
   firstMarkdownParagraph,
   headingForSectionKey,
@@ -353,5 +355,112 @@ describe('section agent prompt', () => {
     });
     expect(prompt).toContain('Lumen Vision');
     expect(prompt).toContain('on voting');
+  });
+
+  it('offers keep, rewrite, and a sandbox variant when text already exists', () => {
+    const prompt = buildSpaceContextAgentPrompt({
+      sectionKey: 'strategy',
+      spaceTitle: 'Throwaway lag-fix retest',
+      spaceSlug: 'myspace-stale-oa-20261027-1059',
+      draftMarkdown: 'Ship the commons.',
+      ratifiedMarkdown: 'Ship the commons.',
+      status: 'ratified',
+      specialistMemory: '',
+      sandbox: true,
+      now: new Date(Date.UTC(2026, 10, 4)),
+    });
+    expect(prompt).toContain('tightened rewrite');
+    expect(prompt).toContain('identical to the ratified text');
+    expect(prompt).toContain('exactly "Notes"');
+    expect(prompt).toContain('this sandbox is where the practice is proven');
+    expect(prompt).not.toContain('2026-12-31');
+  });
+
+  it('does not force alternatives when the section is still empty', () => {
+    const prompt = buildSpaceContextAgentPrompt({
+      sectionKey: 'mission',
+      spaceTitle: 'Hypha',
+      spaceSlug: 'hypha',
+      draftMarkdown: '',
+      ratifiedMarkdown: null,
+      status: 'not_started',
+      specialistMemory: '',
+    });
+    expect(prompt).not.toContain('tightened rewrite');
+    expect(prompt).not.toContain('sandbox or throwaway');
+    expect(prompt).toContain('exactly "Notes"');
+  });
+
+  it('fills goal dates and repository access without placeholder walls', () => {
+    const goals = buildSpaceContextAgentPrompt({
+      sectionKey: 'objectives',
+      spaceTitle: 'Hypha',
+      spaceSlug: 'hypha',
+      draftMarkdown: 'Outcome: ship Context.',
+      ratifiedMarkdown: null,
+      status: 'draft',
+      specialistMemory: '',
+      now: new Date(Date.UTC(2026, 10, 4)),
+    });
+    expect(goals).toContain('2026-12-31');
+    expect(goals).toContain('Leave the owner blank');
+    expect(goals).toContain('exactly "Notes"');
+
+    const repos = buildSpaceContextAgentPrompt({
+      sectionKey: 'key_repositories',
+      spaceTitle: 'Hypha',
+      spaceSlug: 'hypha',
+      draftMarkdown: '',
+      ratifiedMarkdown: 'https://github.com/hypha-dao/hypha-web',
+      status: 'ratified',
+      specialistMemory: '',
+    });
+    expect(repos).toContain('fill Access and Status');
+    expect(repos).toContain('ask once under Notes');
+    expect(repos).not.toContain('mark a missing link as TODO');
+  });
+});
+
+describe('sandbox detection', () => {
+  it('uses the sandbox flag or a throwaway slug or title', () => {
+    expect(
+      isSandboxOrThrowawaySpace({
+        flags: ['sandbox'],
+        slug: 'hypha',
+        title: 'Hypha',
+      }),
+    ).toBe(true);
+    expect(
+      isSandboxOrThrowawaySpace({
+        flags: [],
+        slug: 'myspace-throwaway',
+        title: 'Hypha',
+      }),
+    ).toBe(true);
+    expect(
+      isSandboxOrThrowawaySpace({
+        slug: 'myspace-stale-oa-20261027-1059',
+        title: 'Throwaway lag-fix retest',
+      }),
+    ).toBe(true);
+    expect(
+      isSandboxOrThrowawaySpace({
+        flags: ['demo'],
+        slug: 'hypha',
+        title: 'Hypha',
+      }),
+    ).toBe(false);
+  });
+
+  it('names the quarter end as an ISO date', () => {
+    expect(spaceContextQuarterEndIso(new Date(Date.UTC(2026, 10, 4)))).toBe(
+      '2026-12-31',
+    );
+    expect(spaceContextQuarterEndIso(new Date(Date.UTC(2026, 0, 15)))).toBe(
+      '2026-03-31',
+    );
+    expect(spaceContextQuarterEndIso(new Date(Date.UTC(2026, 3, 1)))).toBe(
+      '2026-06-30',
+    );
   });
 });

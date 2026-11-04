@@ -82,6 +82,7 @@ import {
 } from './human-chat-panel-voice-audio-row';
 import { asTimelineDate } from './human-chat-timeline-order';
 import { useAgentMentionLabel } from './agent-mention-label-context';
+import { botMentionChipText } from './human-chat-display-mention';
 
 type Reaction = {
   emoji: string;
@@ -780,6 +781,12 @@ type HumanChatPanelMessageBubbleProps = {
   onReact?: (emoji: string) => void | Promise<void>;
   /** Cancel in-flight attachment send (pending row only). */
   onCancelSendPending?: () => void;
+  /**
+   * Body expand state for this message id. The parent list owns the set so a
+   * click cannot expand a different row.
+   */
+  textExpanded?: boolean;
+  onToggleTextExpanded?: (messageId: string) => void;
   /** Timeline chrome: first unread row (Discord-style emphasis). */
   unreadBoundary?: boolean;
   /** Brief flash after jumping here from a reply quote. */
@@ -1353,17 +1360,17 @@ function MxidMentionPill({
     sub: linkedSub ?? canonicalSub ?? undefined,
   });
 
-  const agentMentionLabel = useAgentMentionLabel();
+  const t = useTranslations('HumanChatPanel');
   const displayLabel = useMemo(() => {
     if (isHyphaBotMatrixIdentity(fullMxid, syncLabel)) {
-      const label = agentMentionLabel.trim();
-      return label.startsWith('@') ? label : `@${label}`;
+      // Picker and chip stay "AI Agents". Specialist names are reply attribution.
+      return botMentionChipText(t('agentMentionLabel'));
     }
     const fromPerson = person ? formatPersonDisplayName(person) : '';
     const visible = visibleMatrixMemberName(fullMxid, fromPerson, syncLabel);
     if (!visible) return '';
     return visible.startsWith('@') ? visible : `@${visible}`;
-  }, [agentMentionLabel, person, syncLabel, fullMxid]);
+  }, [person, syncLabel, fullMxid, t]);
 
   const loading =
     needsProfile &&
@@ -1645,6 +1652,8 @@ export function HumanChatPanelMessageBubble({
   onDeleteMessage,
   onReact,
   onCancelSendPending,
+  textExpanded: textExpandedFromParent,
+  onToggleTextExpanded,
   unreadBoundary = false,
   jumpFlash = false,
   receiptStatus = null,
@@ -1675,7 +1684,13 @@ export function HumanChatPanelMessageBubble({
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
   const textBodyRef = useRef<HTMLDivElement>(null);
-  const [textExpanded, setTextExpanded] = useState(false);
+  const messageIdRef = useRef(message.id);
+  messageIdRef.current = message.id;
+  const [localExpandedId, setLocalExpandedId] = useState<string | null>(null);
+  const textExpanded =
+    onToggleTextExpanded != null
+      ? Boolean(textExpandedFromParent)
+      : localExpandedId === message.id;
   const [textCanExpand, setTextCanExpand] = useState(false);
 
   /**
@@ -1973,10 +1988,6 @@ export function HumanChatPanelMessageBubble({
     hasInlineMedia ? 'mt-0.5' : 'mt-0',
     !textExpanded && 'line-clamp-10',
   );
-
-  useEffect(() => {
-    setTextExpanded(false);
-  }, [message.id, textContent, richTextHtml]);
 
   useLayoutEffect(() => {
     const el = textBodyRef.current;
@@ -2278,6 +2289,7 @@ export function HumanChatPanelMessageBubble({
               <div
                 ref={textBodyRef}
                 data-testid="chat-message-body"
+                data-message-id={message.id}
                 className={textBodyClassName}
               >
                 <ChatMessageRichText
@@ -2315,6 +2327,7 @@ export function HumanChatPanelMessageBubble({
               <div
                 ref={textBodyRef}
                 data-testid="chat-message-body"
+                data-message-id={message.id}
                 className={textBodyClassName}
               >
                 {renderTextWithMentions(
@@ -2328,8 +2341,18 @@ export function HumanChatPanelMessageBubble({
           {textContent && textCanExpand && jumboLayout.mode !== 'jumbo' ? (
             <button
               type="button"
+              data-message-id={message.id}
               className="mt-0.5 w-fit text-xs font-medium text-accent-11 underline-offset-2 hover:underline"
-              onClick={() => setTextExpanded((v) => !v)}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const id = messageIdRef.current;
+                if (onToggleTextExpanded) {
+                  onToggleTextExpanded(id);
+                  return;
+                }
+                setLocalExpandedId((current) => (current === id ? null : id));
+              }}
             >
               {textExpanded ? t('messageShowLess') : t('messageReadMore')}
             </button>

@@ -27,6 +27,14 @@ export function matrixAgentSkills(
   ];
 }
 
+/** The single AI Agents picker row, not a person and not a section specialist. */
+export function isAgentMentionPick(member: {
+  rowKey?: string;
+  agentIcon?: unknown;
+}): boolean {
+  return member.rowKey === 'agent' || member.agentIcon != null;
+}
+
 /** Keep one AI Agents row at the top of the @ picker. Skills are chosen after it. */
 export function withMatrixAgentMention(
   candidates: ChatMentionCandidate[],
