@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { Button, Checkbox } from '@hypha-platform/ui';
 import { AUTH_SERVER_API_BASE_PATH } from '@hypha-platform/auth-server/client';
-import { setPopupClient } from '@web/components/popup-route-gate';
 
 type Scope = { scope: string; title: string; detail: string };
 
@@ -23,11 +22,6 @@ export function ConsentForm({
   );
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState('');
-
-  React.useEffect(() => {
-    setPopupClient({ name: client.name, logoUrl: null });
-    return () => setPopupClient(null);
-  }, [client.name]);
 
   const toggle = (scope: string, on: boolean) =>
     setGranted((prev) => {

@@ -3,7 +3,7 @@ import {
   blockUnlessAuthServerHost,
   guardResource,
 } from '@hypha-platform/auth-server/server';
-import { getAuthServerConfig } from '../../../as/_lib/server';
+import { getAuthServerConfig } from '../../../(as)/as/_lib/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

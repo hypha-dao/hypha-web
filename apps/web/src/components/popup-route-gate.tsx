@@ -9,7 +9,7 @@ import { Logo } from '@hypha-platform/ui';
  * page, #2515) show a minimal Hypha header instead of the app chrome, so
  * people can tell this is Hypha and not the site they came from.
  */
-const POPUP_ROUTE = /^\/(?:[a-z]{2}\/approve\/[^/]+|as\/(?:login|consent))\/?$/;
+const POPUP_ROUTE = /^\/[a-z]{2}\/approve\/[^/]+\/?$/;
 
 /**
  * The application asking for the action, set by the approval page once it has
