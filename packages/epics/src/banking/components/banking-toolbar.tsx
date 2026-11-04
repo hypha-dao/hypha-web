@@ -7,7 +7,7 @@ import type { BankCustomerPublicStatus } from '../hooks/types';
 
 type BankingToolbarProps = {
   spaceSlug: string;
-  status: BankCustomerPublicStatus | null | undefined;
+  providers: BankCustomerPublicStatus[];
   isLoading: boolean;
   isRefreshing: boolean;
   canManage: boolean;
@@ -19,7 +19,7 @@ type BankingToolbarProps = {
 
 export const BankingToolbar: FC<BankingToolbarProps> = ({
   spaceSlug,
-  status,
+  providers,
   isLoading,
   isRefreshing,
   canManage,
@@ -32,7 +32,7 @@ export const BankingToolbar: FC<BankingToolbarProps> = ({
     <div className="flex min-h-9 w-full items-center justify-end gap-2 p-0">
       <BankingAdvancedDialog
         spaceSlug={spaceSlug}
-        status={status}
+        providers={providers}
         isLoading={isLoading}
         isRefreshing={isRefreshing}
         canManage={canManage}

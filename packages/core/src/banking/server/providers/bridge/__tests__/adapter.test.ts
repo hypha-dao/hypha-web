@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('server-only', () => ({}));
+
 import { createBridgeKycProvider } from '../adapter';
 
 const bridgeCreateKycLink = vi.fn();
@@ -7,6 +9,7 @@ const bridgeCreateVirtualAccount = vi.fn();
 const bridgeCreateTransfer = vi.fn();
 const bridgeCreateExternalAccount = vi.fn();
 const bridgeCreateLiquidationAddress = vi.fn();
+const bridgeGetKycLink = vi.fn();
 
 vi.mock('../../../../../common/server/bridge-client', () => ({
   bridgeCreateKycLink: (...args: unknown[]) => bridgeCreateKycLink(...args),
@@ -17,6 +20,7 @@ vi.mock('../../../../../common/server/bridge-client', () => ({
     bridgeCreateExternalAccount(...args),
   bridgeCreateLiquidationAddress: (...args: unknown[]) =>
     bridgeCreateLiquidationAddress(...args),
+  bridgeGetKycLink: (...args: unknown[]) => bridgeGetKycLink(...args),
 }));
 
 describe('createBridgeKycProvider', () => {

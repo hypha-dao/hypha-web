@@ -20,8 +20,9 @@ import {
   hasAddAccountRailAvailable,
   hasApprovedBankCurrencies,
   isBankVerificationInProgress,
+  resolveOnboardingCurrencyProviders,
 } from '../banking-ui';
-import type { BankCurrencyCode } from '../bank-currency-display';
+import type { BankOnboardingCurrencyCode } from '../bank-currency-display';
 import type { BankPayoutAccountPublic } from '../hooks/types';
 import { AddBankCurrencyDialog } from './add-bank-currency-dialog';
 import { AddPayoutAccountDialog } from './add-payout-account-dialog';
@@ -31,9 +32,10 @@ import { BankingInitialSetup } from './banking-initial-setup';
 import { BankingPageSkeleton } from './banking-page-skeleton';
 import { BankingProviderStatusPanel } from './banking-provider-status-panel';
 import { PendingEmailConfirmationCard } from './pending-email-confirmation-card';
+import { ProviderOnboardingDialog } from './provider-onboarding-dialog';
 import { CreateTransferDialog } from './create-transfer-dialog';
 import { PayoutAccountDetailDialog } from './payout-account-detail-dialog';
-import { openBankVerificationFlowLink } from '../open-bank-verification-tos';
+import { openBankVerificationFlowLinks } from '../open-bank-verification-tos';
 
 type ProfileBankingSectionProps = {
   personSlug: string;
@@ -63,14 +65,20 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
 
   const {
     status,
+    providers,
     isError: isStatusError,
     isLoading: isStatusLoading,
     isRefreshing: isStatusRefreshing,
     refresh,
+    refreshProviders,
   } = useBankCustomerStatus({ basePath });
 
-  const hasCustomer = status != null;
-  const showBankingListings = hasCustomer && hasApprovedBankCurrencies(status);
+  const hasCustomer = providers.length > 0;
+  const showBankingListings =
+    status != null && hasApprovedBankCurrencies(status);
+  const pendingConfirmationEntry = providers.find(
+    (entry) => entry.pendingEmailConfirmation,
+  );
   const canManage = isAuthenticated && isMyProfile;
 
   const {
@@ -137,7 +145,7 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
     useState(false);
 
   const needsProviderStatusRefresh =
-    hasCustomer && status != null && !status.approvalRegistered;
+    hasCustomer && providers.some((entry) => !entry.approvalRegistered);
 
   const refreshBankingState = useCallback(async () => {
     const updated = await refresh();
@@ -217,19 +225,68 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
     async (input: {
       legalName: string;
       contactEmail: string;
-      currencies: BankCurrencyCode[];
+      currencies: BankOnboardingCurrencyCode[];
+      onboardingFields: Record<string, string>;
     }) => {
       clearOnboardingError();
       await requestOnboarding({
         legalName: input.legalName,
         contactEmail: input.contactEmail,
         requestedRails: input.currencies,
+        onboardingFields: input.onboardingFields,
       });
       setShowEmailConfirmationResend(false);
-      const updated = await refresh();
-      openBankVerificationFlowLink(updated ?? undefined);
+      const updated = await refreshProviders();
+      // Onboarding is one-provider-per-call (D2/D3 — mixed rails are rejected server-side), so
+      // this always resolves to exactly the provider just submitted.
+      const [submittedProvider] = resolveOnboardingCurrencyProviders(
+        input.currencies,
+      );
+      if (submittedProvider) {
+        openBankVerificationFlowLinks(updated, submittedProvider);
+      }
     },
-    [clearOnboardingError, refresh, requestOnboarding],
+    [clearOnboardingError, refreshProviders, requestOnboarding],
+  );
+
+  /** Currency the owner asked to add from the status panel (a provider they aren't onboarded with yet). */
+  const [providerOnboardingCurrencies, setProviderOnboardingCurrencies] =
+    useState<BankOnboardingCurrencyCode[]>([]);
+
+  const handleRequestCurrencyOnboarding = useCallback(
+    (currencies: BankOnboardingCurrencyCode[]) => {
+      clearOnboardingError();
+      setGearOpen(false);
+      setProviderOnboardingCurrencies(currencies);
+    },
+    [clearOnboardingError],
+  );
+
+  // Same submit path as the first-time form; only closes the dialog once it succeeds.
+  const handleProviderOnboardingSubmit = useCallback(
+    async (input: Parameters<typeof handleInitialSetupSubmit>[0]) => {
+      await handleInitialSetupSubmit(input);
+      setProviderOnboardingCurrencies([]);
+    },
+    [handleInitialSetupSubmit],
+  );
+
+  const providerOnboardingDialog = (
+    <ProviderOnboardingDialog
+      open={providerOnboardingCurrencies.length > 0}
+      onOpenChange={(open) => {
+        if (!open) {
+          setProviderOnboardingCurrencies([]);
+        }
+      }}
+      currencies={providerOnboardingCurrencies}
+      initialLegalName={fallbackLegalName}
+      initialContactEmail={fallbackContactEmail}
+      ownerContext="person"
+      isSubmitting={isOnboarding}
+      error={onboardingError}
+      onSubmit={handleProviderOnboardingSubmit}
+    />
   );
 
   if (isStatusLoading) {
@@ -248,7 +305,7 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
 
   if (
     !hasCustomer ||
-    (status?.pendingEmailConfirmation && showEmailConfirmationResend)
+    (pendingConfirmationEntry && showEmailConfirmationResend)
   ) {
     if (!canManage) {
       return (
@@ -265,12 +322,19 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
         isSubmitting={isOnboarding}
         error={onboardingError}
         ownerContext="person"
+        initialCurrencies={
+          pendingConfirmationEntry?.pendingEmailConfirmation?.requestedRails as
+            | BankOnboardingCurrencyCode[]
+            | undefined
+        }
         onSubmit={handleInitialSetupSubmit}
       />
     );
   }
 
-  if (status?.pendingEmailConfirmation) {
+  // Only take over the full view for a pending confirmation when there's no other usable
+  // provider yet — see banking-section.tsx for the matching space-side comment.
+  if (pendingConfirmationEntry && !showBankingListings) {
     return (
       <PendingEmailConfirmationCard
         onResend={
@@ -286,17 +350,21 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
     }
 
     return (
-      <BankingProviderStatusPanel
-        basePath={basePath}
-        status={status}
-        isLoading={false}
-        isRefreshing={isStatusRefreshing}
-        canManage={canManage}
-        blockerMessage={blockerMessage}
-        onRefreshStatus={refreshBankingState}
-        showPageHeader
-        ownerContext="person"
-      />
+      <>
+        <BankingProviderStatusPanel
+          basePath={basePath}
+          providers={providers}
+          isLoading={false}
+          isRefreshing={isStatusRefreshing}
+          canManage={canManage}
+          blockerMessage={blockerMessage}
+          onRefreshStatus={refreshBankingState}
+          onRequestCurrencyOnboarding={handleRequestCurrencyOnboarding}
+          showPageHeader
+          ownerContext="person"
+        />
+        {providerOnboardingDialog}
+      </>
     );
   }
 
@@ -313,7 +381,7 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
             <BankingAdvancedDialog
               basePath={basePath}
               ownerContext="person"
-              status={status}
+              providers={providers}
               isLoading={false}
               isRefreshing={false}
               canManage={canManage}
@@ -321,6 +389,7 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
               open={gearOpen}
               onOpenChange={handleGearOpenChange}
               onRefreshStatus={refreshBankingState}
+              onRequestCurrencyOnboarding={handleRequestCurrencyOnboarding}
             />
           ) : undefined
         }
@@ -431,6 +500,8 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
           if (!open) setDetailAccount(null);
         }}
       />
+
+      {providerOnboardingDialog}
     </div>
   );
 };
