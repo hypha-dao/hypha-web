@@ -33,7 +33,7 @@ import { ConnectedGlobalCallDock } from '@web/components/connected-global-call-d
 import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { fileRouter } from '@hypha-platform/core/server';
 import { TooltipProvider } from '@hypha-platform/ui';
-import { ROOT_URL } from './constants';
+import { ROOT_URL } from '../constants';
 import {
   getEnableAiChat,
   getEnableSpaceMemory,

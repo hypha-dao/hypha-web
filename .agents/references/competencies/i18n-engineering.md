@@ -58,10 +58,10 @@ ICU message format for dynamic values: `"trialBannerTitle": "Only {daysLeft} day
 
 #### Route Structure
 
-All locale-aware routes live under `app/[lang]/`:
+All locale-aware routes live under `app/(main)/[lang]/` (`(main)` is a route group, not part of the URL):
 
 ```
-app/[lang]/
+app/(main)/[lang]/
   network/              — Explore all spaces
   my-spaces/            — Authenticated user's spaces
   profile/              — Person profiles

@@ -67,7 +67,7 @@ Hard-won discoveries. Read before making changes.
 | `packages/i18n/src/messages/en.json` | English translations |
 | `packages/i18n/src/messages/de.json` | German translations |
 | `apps/web/src/middleware.ts` | i18n middleware + CSP header composition |
-| `apps/web/src/app/layout.tsx` | `NextIntlClientProvider`, `getLocale()`, `getMessages()` |
+| `apps/web/src/app/(main)/layout.tsx` | `NextIntlClientProvider`, `getLocale()`, `getMessages()` |
 
 ---
 
