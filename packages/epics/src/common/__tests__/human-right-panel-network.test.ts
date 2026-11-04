@@ -96,5 +96,10 @@ describe('network room join guard', () => {
     expect(source).toContain(
       '<AgentMentionLabelProvider value={agentMentionLabel}>',
     );
+    const pickerAt = source.indexOf('return withMatrixAgentMention(');
+    expect(pickerAt).toBeGreaterThan(-1);
+    expect(source.slice(pickerAt, pickerAt + 220)).toContain(
+      "roster,\n      t('agentMentionLabel'),",
+    );
   });
 });

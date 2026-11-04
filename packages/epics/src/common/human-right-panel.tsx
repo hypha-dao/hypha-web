@@ -3069,14 +3069,15 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               resolvedTheme === 'dark' ? 'dark' : 'light',
             ),
           };
+    // One "AI Agents" row, as in Signals. A Context room still answers as its
+    // section specialist; that name is the reply label, not a tag target.
     return withMatrixAgentMention(
       roster,
-      agentMentionLabel,
+      t('agentMentionLabel'),
       contextSectionAgent?.skills ?? matrixAgentSkills(t),
       agentIcon,
     );
   }, [
-    agentMentionLabel,
     coherenceChannel,
     contextSectionAgent,
     currentUserId,

@@ -206,7 +206,10 @@ function plainFromPanelMessage(message: PanelMessage): string {
 }
 
 export type MatrixDiscussionAgent = {
-  /** Name members @mention; also the label of the agent's replies. */
+  /**
+   * Label of this room's agent replies. The @ picker always offers "AI Agents",
+   * the same row as Signals and other chats.
+   */
   label: string;
   skills: readonly MatrixAgentSkill[];
 };
@@ -816,13 +819,17 @@ export function MatrixDiscussionThread({
       space,
       resolvedTheme === 'dark' ? 'dark' : 'light',
     );
-    return withMatrixAgentMention(roster, agentLabel, agent.skills, {
-      kind: 'space',
-      logoUrl,
-    });
+    return withMatrixAgentMention(
+      roster,
+      tChat('agentMentionLabel'),
+      agent.skills,
+      {
+        kind: 'space',
+        logoUrl,
+      },
+    );
   }, [
     agent.skills,
-    agentLabel,
     client,
     currentUserId,
     mentionMembershipEpoch,

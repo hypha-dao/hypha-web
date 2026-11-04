@@ -81,7 +81,10 @@ export const SPACE_CONTEXT_SECTION_ORDER: Record<
 
 export type SpaceContextSpecialist = {
   agentKey: string;
-  /** Name members @mention in the section discussion. Not translated. */
+  /**
+   * Name the section agent speaks as. The @ picker says "AI Agents".
+   * Not translated.
+   */
   agentName: string;
   role: string;
   focus: string;
