@@ -76,6 +76,22 @@ export function negotiateLocale(
 }
 
 /**
+ * Locale for a request that is not served (the white-label 404 page): the
+ * locale segment after the slug when present, else the browser language.
+ */
+export function localeForPath(path: string, options: ResolveOptions): string {
+  const segments = splitPath(path);
+  const candidate = segments?.[2];
+  if (candidate !== undefined && options.locales.includes(candidate)) {
+    return candidate;
+  }
+  return (
+    negotiateLocale(options.acceptLanguage, options.locales) ??
+    options.defaultLocale
+  );
+}
+
+/**
  * Pure decision for one request. `host` is accepted for the A1 delivery (host
  * identifies the client) and is unused in the iframe delivery: the path alone
  * identifies the Space. Nothing the visitor can forge is trusted: the slug is
@@ -126,10 +142,12 @@ export function resolve(
   const clientIds: string[] = [];
   const origins = new Set<string>();
   for (const client of config.clients) {
-    const space = client.spaces.find((s) => s.slug === slug);
-    if (!space) continue;
+    const matches = client.spaces.filter((s) => s.slug === slug);
+    if (matches.length === 0) continue;
     clientIds.push(client.id);
-    for (const origin of space.framingOrigins) origins.add(origin);
+    for (const space of matches) {
+      for (const origin of space.framingOrigins) origins.add(origin);
+    }
   }
   if (clientIds.length === 0) {
     return { kind: 'not-found', reason: 'unapproved-space' };

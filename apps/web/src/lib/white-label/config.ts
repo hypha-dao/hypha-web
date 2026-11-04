@@ -23,7 +23,8 @@ export function isValidSlug(value: unknown): value is string {
 }
 
 /**
- * Normalises one framing origin, or returns null. Accepts `https://host[:port]`
+ * Validates one framing origin and returns it in canonical form, or null.
+ * The host is case-insensitive; other spellings must already be canonical. Accepts `https://host[:port]`
  * and `http://` only for localhost. No wildcards, paths, queries, credentials
  * or characters that could alter the CSP value.
  */
@@ -39,7 +40,9 @@ export function normaliseFramingOrigin(value: unknown): string | null {
   }
   if (url.username || url.password) return null;
   if (url.pathname !== '/' || url.search || url.hash) return null;
-  if (raw.replace(/\/$/, '') !== url.origin) return null;
+  // Canonical spelling only (the parser would also accept odd forms such as
+  // `https:host` or an explicit default port); case is ignored.
+  if (raw.replace(/\/$/, '').toLowerCase() !== url.origin) return null;
   if (url.protocol === 'https:') return url.origin;
   if (url.protocol === 'http:' && LOCAL_HOSTS.has(url.hostname)) {
     return url.origin;

@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { SpaceTabAccessWrapper } from '@hypha-platform/epics';
 
 import { TreasuryTabs } from '@web/app/(main)/[lang]/dho/[id]/_components/treasury-tabs';
@@ -9,9 +10,10 @@ import {
 export default async function WhiteLabelTreasuryPage(
   props: WhiteLabelPageProps,
 ) {
-  const { slug, lang } = await props.params;
+  const { id: slug, lang } = await props.params;
   const space = await getWhiteLabelSpace(slug);
-  const web3SpaceId = space.web3SpaceId as number;
+  const web3SpaceId = space.web3SpaceId;
+  if (web3SpaceId == null) notFound();
 
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId} spaceSlug={slug}>

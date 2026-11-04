@@ -18,7 +18,7 @@ type PageProps = WhiteLabelPageProps & {
 };
 
 export default async function WhiteLabelCoherencePage(props: PageProps) {
-  const { slug, lang } = await props.params;
+  const { id: slug, lang } = await props.params;
   const { order: orderRaw } = await props.searchParams;
   if (!(await getEnableCoherence())) notFound();
   const humanChatEnabled = await getEnableHumanChat();

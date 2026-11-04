@@ -9,6 +9,7 @@ import {
   WL_SPACE_HEADER,
   embedFraming,
   getWhiteLabelConfig,
+  localeForPath,
   resolve,
   stripWhiteLabelHeaders,
   type FramingPolicy,
@@ -183,15 +184,16 @@ function applyFramingHeaders(
 
 export function middleware(request: NextRequest) {
   // White label: the resolver decides, this function only applies it.
+  const whiteLabelOptions = {
+    locales: routing.locales,
+    defaultLocale: routing.defaultLocale,
+    acceptLanguage: request.headers.get('accept-language'),
+  };
   const decision = resolve(
     request.headers.get('host'),
     request.nextUrl.pathname,
     getWhiteLabelConfig(),
-    {
-      locales: routing.locales,
-      defaultLocale: routing.defaultLocale,
-      acceptLanguage: request.headers.get('accept-language'),
-    },
+    whiteLabelOptions,
   );
 
   if (decision.kind === 'rewrite') {
@@ -212,6 +214,10 @@ export function middleware(request: NextRequest) {
     // Unmatched internal path plus a marker: global-not-found renders the bare shell.
     const headers = stripWhiteLabelHeaders(request.headers);
     headers.set(WL_NOT_FOUND_HEADER, '1');
+    headers.set(
+      INTL_LOCALE_HEADER,
+      localeForPath(request.nextUrl.pathname, whiteLabelOptions),
+    );
     const url = request.nextUrl.clone();
     url.pathname = INTERNAL_NOT_FOUND_PATH;
     url.search = '';

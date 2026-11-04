@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { MembersSection, SpaceTabAccessWrapper } from '@hypha-platform/epics';
 
@@ -11,15 +12,14 @@ import {
 export default async function WhiteLabelMembersPage(
   props: WhiteLabelPageProps,
 ) {
-  const { slug, lang } = await props.params;
+  const { id: slug, lang } = await props.params;
   const tCommon = await getTranslations('Common');
   const space = await getWhiteLabelSpace(slug);
+  const web3SpaceId = space.web3SpaceId;
+  if (web3SpaceId == null) notFound();
 
   return (
-    <SpaceTabAccessWrapper
-      spaceId={space.web3SpaceId as number}
-      spaceSlug={slug}
-    >
+    <SpaceTabAccessWrapper spaceId={web3SpaceId} spaceSlug={slug}>
       <div className="flex flex-col gap-4 py-4">
         <TabScreenTitle
           title={tCommon('Members')}

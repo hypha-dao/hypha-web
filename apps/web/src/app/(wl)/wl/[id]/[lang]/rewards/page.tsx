@@ -11,7 +11,7 @@ import {
 export default async function WhiteLabelRewardsPage(
   props: WhiteLabelPageProps,
 ) {
-  const { slug, lang } = await props.params;
+  const { id: slug, lang } = await props.params;
   const space = await getWhiteLabelSpace(slug);
   const web3SpaceId = space.web3SpaceId;
   if (web3SpaceId == null) notFound();

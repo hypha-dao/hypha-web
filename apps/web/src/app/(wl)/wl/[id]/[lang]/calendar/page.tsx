@@ -9,7 +9,7 @@ import {
 export default async function WhiteLabelCalendarPage(
   props: WhiteLabelPageProps,
 ) {
-  const { slug, lang } = await props.params;
+  const { id: slug, lang } = await props.params;
   const space = await getWhiteLabelSpace(slug);
 
   return (

@@ -16,7 +16,7 @@ import {
 export default async function WhiteLabelAgreementsPage(
   props: WhiteLabelPageProps,
 ) {
-  const { slug, lang } = await props.params;
+  const { id: slug, lang } = await props.params;
   const tCommon = await getTranslations('Common');
   const space = await getWhiteLabelSpace(slug);
   const web3SpaceId = space.web3SpaceId;

@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import {
+  SPACE_DASHBOARD_BOARD_PARAM,
+  SPACE_DASHBOARD_BOARD_VALUE,
   SPACE_SECTION_NAV_ICONS,
   useSpaceEnergy,
   type SpaceSectionNavKey,
@@ -60,6 +62,12 @@ export function WhiteLabelSectionNav({
     memoryEnabled,
   ]);
 
+  // Energy communities open Overview on the energy dashboard; this flag keeps
+  // the Space dashboard reachable, as in the main app's menu.
+  const overviewSearch = energy?.enabled
+    ? `?${SPACE_DASHBOARD_BOARD_PARAM}=${SPACE_DASHBOARD_BOARD_VALUE}`
+    : '';
+
   const label = (key: SpaceSectionNavKey): string => {
     switch (key) {
       case 'overview':
@@ -109,7 +117,11 @@ export function WhiteLabelSectionNav({
           return (
             <li key={key}>
               <Link
-                href={sectionHref(ctx, key)}
+                href={sectionHref(
+                  ctx,
+                  key,
+                  key === 'overview' ? overviewSearch : '',
+                )}
                 scroll={false}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(

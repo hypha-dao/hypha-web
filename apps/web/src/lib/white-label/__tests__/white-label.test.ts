@@ -4,6 +4,7 @@ import {
   buildFrameAncestors,
   classifyLink,
   embedFraming,
+  localeForPath,
   negotiateLocale,
   normaliseFramingOrigin,
   parseWhiteLabelConfig,
@@ -361,6 +362,7 @@ describe('header stripping and framing policy', () => {
       accept: 'text/html',
       'X-Hypha-WL-Space': 'forged',
       'x-hypha-wl-mode': 'forged',
+      'x-hypha-wl-not-found': 'forged',
     });
     const stripped = stripWhiteLabelHeaders(incoming);
     for (const name of WL_REQUEST_HEADERS) {
@@ -478,5 +480,57 @@ describe('locale negotiation (no locale in the path)', () => {
       locale: 'de',
       pathname: '/wl/space-one/de/members',
     });
+  });
+});
+
+describe('review follow-ups', () => {
+  it('a link to another Space embed opens outside the frame', () => {
+    const ctx = { mode: 'embed', spaceSlug: 'space-one', lang: 'en' } as const;
+    expect(
+      classifyLink('/embed/space-one/en/members', ctx, 'https://app.example'),
+    ).toEqual({
+      kind: 'internal',
+      href: '/embed/space-one/en/members',
+    });
+    expect(
+      classifyLink('/embed/other-space/en/members', ctx, 'https://app.example')
+        ?.kind,
+    ).toBe('external');
+  });
+
+  it('merges origins from repeated records of one Space in one client', () => {
+    const config: WhiteLabelConfig = {
+      clients: [
+        {
+          id: 'client-a',
+          spaces: [
+            { slug: 'space-one', framingOrigins: ['https://a.example'] },
+            { slug: 'space-one', framingOrigins: ['https://b.example'] },
+          ],
+        },
+      ],
+    };
+    const decision = resolve('h', '/embed/space-one', config, OPTIONS);
+    expect(decision).toMatchObject({
+      kind: 'rewrite',
+      clientIds: ['client-a'],
+      framingOrigins: ['https://a.example', 'https://b.example'],
+    });
+  });
+
+  it('accepts a differently cased host, rejects other odd spellings', () => {
+    expect(normaliseFramingOrigin('https://Partner.Example')).toBe(
+      'https://partner.example',
+    );
+    expect(normaliseFramingOrigin('https://partner.example:443')).toBeNull();
+    expect(normaliseFramingOrigin('https:partner.example')).toBeNull();
+    expect(normaliseFramingOrigin('https://partner.example/a/..')).toBeNull();
+  });
+
+  it('picks the locale of an unserved /embed path', () => {
+    const options = { ...OPTIONS, acceptLanguage: 'de' };
+    expect(localeForPath('/embed/unknown/pt/overview', options)).toBe('pt');
+    expect(localeForPath('/embed/unknown/overview', options)).toBe('de');
+    expect(localeForPath('/embed/unknown', { ...OPTIONS })).toBe('en');
   });
 });

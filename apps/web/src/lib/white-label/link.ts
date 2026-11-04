@@ -50,8 +50,9 @@ export function classifyLink(
   if (url.origin !== appOrigin) return { kind: 'external', href: url.href };
 
   const parts = url.pathname.split('/').filter(Boolean);
-  // Already a white-label URL.
-  if (parts[0] === EMBED_PREFIX) {
+  // Already a white-label URL of this Space. Another Space's /embed URL would
+  // keep this document's frame-ancestors, so it opens in a new tab instead.
+  if (parts[0] === EMBED_PREFIX && parts[1] === ctx.spaceSlug) {
     return { kind: 'internal', href: url.pathname + url.search };
   }
   // Main-app Space URL: /<lang>/dho/<slug>/<section>

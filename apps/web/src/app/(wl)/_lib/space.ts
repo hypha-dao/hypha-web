@@ -11,5 +11,5 @@ export const getWhiteLabelSpace = cache(async (slug: string) => {
 });
 
 export type WhiteLabelPageProps = {
-  params: Promise<{ slug: string; lang: string }>;
+  params: Promise<{ id: string; lang: string }>;
 };

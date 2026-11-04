@@ -55,9 +55,9 @@ export default async function WhiteLabelSpaceLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ slug: string; lang: string }>;
+  params: Promise<{ id: string; lang: string }>;
 }) {
-  const { slug, lang } = await params;
+  const { id: slug, lang } = await params;
   const requestHeaders = await headers();
   // The URL must name the Space middleware resolved, and a locale we serve.
   if (

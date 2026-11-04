@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { BankingSection, SpaceTabAccessWrapper } from '@hypha-platform/epics';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 
@@ -9,12 +10,13 @@ import {
 export default async function WhiteLabelBankingPage(
   props: WhiteLabelPageProps,
 ) {
-  const { slug } = await props.params;
+  const { id: slug } = await props.params;
   const space = await getWhiteLabelSpace(slug);
   const web3SpaceId =
     space.web3SpaceId != null && canConvertToBigInt(space.web3SpaceId)
       ? Number(space.web3SpaceId)
       : undefined;
+  if (web3SpaceId === undefined) notFound();
 
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId} spaceSlug={slug}>

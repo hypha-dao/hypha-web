@@ -12,7 +12,7 @@ type PageProps = WhiteLabelPageProps & {
 };
 
 export default async function WhiteLabelOverviewPage(props: PageProps) {
-  const { slug } = await props.params;
+  const { id: slug } = await props.params;
   const { board } = await props.searchParams;
 
   return (
