@@ -659,6 +659,13 @@
       "when": 1784000000024,
       "tag": "0093_integration_client_logo",
       "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1784000000025,
+      "tag": "0094_auth_server",
+      "breakpoints": true
     }
   ]
 }
