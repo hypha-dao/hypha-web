@@ -71,6 +71,15 @@ After the block.`}
     expect(html).toMatch(/<\/pre><p[^>]*>After the block\.<\/p>/);
   });
 
+  it('does not close a longer fence with a shorter one', () => {
+    const html = renderToStaticMarkup(
+      <MemoryProse source={'````\nkeep\n```\nstill inside\n````\nAfter.'} />,
+    );
+    expect(html.match(/<pre/g)).toHaveLength(1);
+    expect(html).toContain('keep\n```\nstill inside');
+    expect(html).toContain('After.');
+  });
+
   it('caps blockquote nesting and renders deeper levels flat', () => {
     const html = renderToStaticMarkup(
       <MemoryProse source={`${'>'.repeat(40)} deep thought`} />,

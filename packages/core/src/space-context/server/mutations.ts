@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm';
 import {
   documents,
   people,
@@ -7,6 +7,7 @@ import {
   type SpaceContextSection,
 } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../common/server/types';
+import { isUniqueViolation } from '../../common/server/unique-violation';
 import { findSpaceBySlug } from '../../space/server/queries';
 import {
   SPACE_CONTEXT_CUSTOM_KEY_PREFIX,
@@ -202,8 +203,16 @@ export async function suggestSpaceContextSection(
         updatedByPersonId: input.personId ?? row.updatedByPersonId,
         updatedAt: new Date(),
       })
-      .where(eq(spaceContextSections.id, row.id))
+      .where(
+        and(
+          eq(spaceContextSections.id, row.id),
+          isNotNull(spaceContextSections.removedAt),
+          isNull(spaceContextSections.pendingChange),
+          ne(spaceContextSections.status, 'proposed'),
+        ),
+      )
       .returning();
+    if (!updated) return { ok: false, error: 'not_allowed' };
     return toWriteResult(updated, db);
   }
 
@@ -220,19 +229,26 @@ export async function suggestSpaceContextSection(
   }
 
   const markdown = input.markdown?.trim() ?? '';
-  const [created] = await db
-    .insert(spaceContextSections)
-    .values({
-      spaceId: space.id,
-      sectionKey: newCustomSectionKey(),
-      title,
-      markdown,
-      status: markdown ? 'draft' : 'not_started',
-      pendingChange: 'add',
-      updatedByPersonId: input.personId ?? null,
-    })
-    .returning();
-  return toWriteResult(created, db);
+  try {
+    const [created] = await db
+      .insert(spaceContextSections)
+      .values({
+        spaceId: space.id,
+        sectionKey: newCustomSectionKey(),
+        title,
+        markdown,
+        status: markdown ? 'draft' : 'not_started',
+        pendingChange: 'add',
+        updatedByPersonId: input.personId ?? null,
+      })
+      .returning();
+    return toWriteResult(created, db);
+  } catch (error) {
+    if (isUniqueViolation(error, 'space_context_sections_space_title_unique')) {
+      return { ok: false, error: 'duplicate_title' };
+    }
+    throw error;
+  }
 }
 
 /** Suggest removing a section from the official Context, or withdraw that suggestion. */
@@ -265,8 +281,19 @@ export async function setSpaceContextSectionRemovalSuggested(
       updatedByPersonId: personId ?? row.updatedByPersonId,
       updatedAt: new Date(),
     })
-    .where(eq(spaceContextSections.id, row.id))
+    .where(
+      and(
+        eq(spaceContextSections.id, row.id),
+        ne(spaceContextSections.status, 'proposed'),
+        isNull(spaceContextSections.removedAt),
+        or(
+          isNull(spaceContextSections.pendingChange),
+          ne(spaceContextSections.pendingChange, 'add'),
+        ),
+      ),
+    )
     .returning();
+  if (!updated) return { ok: false, error: 'on_voting' };
   return toWriteResult(updated, db);
 }
 
@@ -289,15 +316,31 @@ export async function discardSpaceContextSectionSuggestion(
   if (row.status === 'proposed') return { ok: false, error: 'on_voting' };
 
   if (row.removedAt == null && row.ratifiedDocumentId == null) {
-    await db
+    const deleted = await db
       .delete(spaceContextSections)
-      .where(eq(spaceContextSections.id, row.id));
+      .where(
+        and(
+          eq(spaceContextSections.id, row.id),
+          eq(spaceContextSections.pendingChange, 'add'),
+          ne(spaceContextSections.status, 'proposed'),
+        ),
+      )
+      .returning();
+    if (deleted.length === 0) return { ok: false, error: 'on_voting' };
     return { ok: true };
   }
-  await db
+  const [updated] = await db
     .update(spaceContextSections)
     .set({ pendingChange: null, updatedAt: new Date() })
-    .where(eq(spaceContextSections.id, row.id));
+    .where(
+      and(
+        eq(spaceContextSections.id, row.id),
+        eq(spaceContextSections.pendingChange, 'add'),
+        ne(spaceContextSections.status, 'proposed'),
+      ),
+    )
+    .returning();
+  if (!updated) return { ok: false, error: 'on_voting' };
   return { ok: true };
 }
 
@@ -491,37 +534,49 @@ export async function ratifySpaceContextSectionsByDocumentId(
     .map((row) => row.id);
   const now = new Date();
 
-  if (ratifyIds.length > 0) {
-    await db
-      .update(spaceContextSections)
-      .set({
-        status: 'ratified',
-        ratifiedDocumentId: document?.id ?? null,
-        ratifiedAt: now,
-        ratifiedMarkdown: sql`${spaceContextSections.markdown}`,
-        proposalDocumentId: null,
-        pendingChange: null,
-        removedAt: null,
-        updatedAt: now,
-      })
-      .where(inArray(spaceContextSections.id, ratifyIds));
-  }
+  const apply = async (tx: DbConfig['db']) => {
+    if (ratifyIds.length > 0) {
+      await tx
+        .update(spaceContextSections)
+        .set({
+          status: 'ratified',
+          ratifiedDocumentId: document?.id ?? null,
+          ratifiedAt: now,
+          ratifiedMarkdown: sql`${spaceContextSections.markdown}`,
+          proposalDocumentId: null,
+          pendingChange: null,
+          removedAt: null,
+          updatedAt: now,
+        })
+        .where(inArray(spaceContextSections.id, ratifyIds));
+    }
 
-  if (removalIds.length > 0) {
-    await db
-      .update(spaceContextSections)
-      .set({
-        removedAt: now,
-        pendingChange: null,
-        status: sql`case
+    if (removalIds.length > 0) {
+      await tx
+        .update(spaceContextSections)
+        .set({
+          removedAt: now,
+          pendingChange: null,
+          status: sql`case
           when ${spaceContextSections.ratifiedDocumentId} is not null then 'ratified'
           when trim(coalesce(${spaceContextSections.markdown}, '')) = '' then 'not_started'
           else 'draft'
         end`,
-        proposalDocumentId: null,
-        updatedAt: now,
-      })
-      .where(inArray(spaceContextSections.id, removalIds));
+          proposalDocumentId: null,
+          updatedAt: now,
+        })
+        .where(inArray(spaceContextSections.id, removalIds));
+    }
+  };
+
+  // neon-http has no transaction; the serverless pool used in the app does.
+  const transactional = db as DbConfig['db'] & {
+    transaction?: (fn: (tx: DbConfig['db']) => Promise<void>) => Promise<void>;
+  };
+  if (typeof transactional.transaction === 'function') {
+    await transactional.transaction(apply);
+  } else {
+    await apply(db);
   }
 
   return ids.length;

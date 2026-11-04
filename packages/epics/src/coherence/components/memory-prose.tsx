@@ -188,10 +188,8 @@ function closesFence(line: string, open: string): boolean {
 }
 
 function fence(line: string): string | null {
-  const trimmed = line.trimStart();
-  if (trimmed.startsWith('```')) return '```';
-  if (trimmed.startsWith('~~~')) return '~~~';
-  return null;
+  const match = /^(`{3,}|~{3,})/.exec(line.trim());
+  return match?.[1] ?? null;
 }
 
 function isRule(line: string): boolean {

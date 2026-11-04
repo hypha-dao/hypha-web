@@ -1,5 +1,6 @@
 import {
   isBuiltinSpaceContextSectionKey,
+  isSpaceContextSectionKey,
   SPACE_CONTEXT_SECTION_KEYS,
   SPACE_CONTEXT_SECTION_TITLE_MAX,
   type SpaceContextPendingChange,
@@ -34,6 +35,11 @@ export function stripMarkdownToPlain(source: string): string {
 const ADD_SECTION_PREFIX = 'Add section: ';
 const REMOVE_SECTION_PREFIX = 'Remove section: ';
 
+/** Hidden key so resubmit can restore member-added sections, not only headings. */
+function sectionKeyMarker(key: SpaceContextSectionKey): string {
+  return `<!-- hypha-context-section:${key} -->`;
+}
+
 export function buildProposalMarkdown(
   sections: Array<{
     key: SpaceContextSectionKey;
@@ -44,15 +50,16 @@ export function buildProposalMarkdown(
 ): string {
   return sections
     .map((section) => {
+      const marker = sectionKeyMarker(section.key);
       if (section.change === 'remove') {
-        return `## ${REMOVE_SECTION_PREFIX}${section.title}\n\n_When this proposal passes, ${section.title} is removed from the Space Context._`;
+        return `${marker}\n## ${REMOVE_SECTION_PREFIX}${section.title}\n\n_When this proposal passes, ${section.title} is removed from the Space Context._`;
       }
       const body = section.markdown.trim() || '_No draft yet._';
       const heading =
         section.change === 'add'
           ? `${ADD_SECTION_PREFIX}${section.title}`
           : section.title;
-      return `## ${heading}\n\n${body}`;
+      return `${marker}\n## ${heading}\n\n${body}`;
     })
     .join('\n\n');
 }
@@ -150,8 +157,35 @@ export function sectionKeysFromProposalMarkdown(
   ]);
   const found: SpaceContextSectionKey[] = [];
   const seen = new Set<SpaceContextSectionKey>();
+  let openFence: string | null = null;
+  const push = (key: SpaceContextSectionKey | undefined) => {
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    found.push(key);
+  };
   for (const line of markdown.replace(/\r\n/g, '\n').split('\n')) {
-    const match = line.match(/^##\s+(.+)$/);
+    const trimmed = line.trim();
+    const fence = /^(?<marker>`{3,}|~{3,})/.exec(trimmed)?.groups?.marker;
+    if (fence) {
+      if (!openFence) openFence = fence;
+      else if (
+        fence[0] === openFence[0] &&
+        fence.length >= openFence.length &&
+        trimmed === fence
+      ) {
+        openFence = null;
+      }
+      continue;
+    }
+    if (openFence) continue;
+    const embedded = /<!--\s*hypha-context-section:([a-z0-9_-]+)\s*-->/i.exec(
+      trimmed,
+    );
+    if (embedded?.[1] && isSpaceContextSectionKey(embedded[1])) {
+      push(embedded[1]);
+      continue;
+    }
+    const match = trimmed.match(/^##\s+(.+)$/);
     if (!match?.[1]) continue;
     const heading = match[1]
       .trim()
@@ -159,10 +193,7 @@ export function sectionKeysFromProposalMarkdown(
         new RegExp(`^(${ADD_SECTION_PREFIX}|${REMOVE_SECTION_PREFIX})`),
         '',
       );
-    const key = titles.get(heading.toLowerCase());
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    found.push(key);
+    push(titles.get(heading.toLowerCase()));
   }
   return found;
 }

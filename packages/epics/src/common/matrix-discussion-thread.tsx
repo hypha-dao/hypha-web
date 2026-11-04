@@ -369,9 +369,10 @@ export function MatrixDiscussionThread({
         .filter((id): id is number => Number.isFinite(id) && id > 0),
     [spaceMembers],
   );
-  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
-    personIds: rosterPersonIds,
-  });
+  const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
+    useMatrixUserIdsByPersonIds({
+      personIds: rosterPersonIds,
+    });
   const memberMatrixIds = React.useMemo(() => {
     const ids = new Set<string>();
     for (const matrixUserId of Object.values(personIdToMatrixUserId)) {
@@ -823,12 +824,12 @@ export function MatrixDiscussionThread({
   ]);
 
   React.useEffect(() => {
-    if (!roomId || memberMatrixIds.length === 0) return;
+    if (!roomId || memberMatrixIds.length === 0 || matrixIdsLoading) return;
     const key = `${roomId}:${memberMatrixIds.join(',')}`;
     if (invitedMembersKeyRef.current === key) return;
     invitedMembersKeyRef.current = key;
-    void ensureRoomMembers(roomId, memberMatrixIds);
-  }, [ensureRoomMembers, roomId, memberMatrixIds]);
+    void ensureRoomMembers(roomId, memberMatrixIds, { pruneAbsent: true });
+  }, [ensureRoomMembers, matrixIdsLoading, memberMatrixIds, roomId]);
 
   const mentionLabelByUserId = React.useMemo(
     () =>
@@ -1033,6 +1034,17 @@ export function MatrixDiscussionThread({
         if (mentionUserIds.length > 0) {
           void ensureRoomMembers(targetRoom, mentionUserIds);
         }
+        if (persistedRoomRef.current !== targetRoom) {
+          try {
+            const kept = await persistRoomId(targetRoom);
+            if (kept) persistedRoomRef.current = kept;
+          } catch (error) {
+            console.warn(
+              `[${logLabelRef.current}] failed to store the room before the agent`,
+              error,
+            );
+          }
+        }
         await inviteMatrixAgentIfNeeded(client, targetRoom, mentionUserIds);
         requestMatrixAgentReply({
           authToken,
@@ -1064,6 +1076,7 @@ export function MatrixDiscussionThread({
     ensureRoom,
     input,
     mentionSanitizedLabelToUserId,
+    persistRoomId,
     refreshRoomMessages,
     replyDraft,
     roomId,

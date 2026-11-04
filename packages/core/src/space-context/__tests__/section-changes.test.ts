@@ -88,6 +88,10 @@ describe('agent intent', () => {
     expect(detectSpaceContextAgentIntent('Pode salvar como rascunho')).toBe(
       'save_draft',
     );
+    expect(detectSpaceContextAgentIntent("Don't save this")).toBe('answer');
+    expect(detectSpaceContextAgentIntent('Please do not store that')).toBe(
+      'answer',
+    );
   });
 
   it('recognises a request to make a proposal', () => {
@@ -132,6 +136,26 @@ describe('agent intent', () => {
     });
     expect(prompt).toContain(
       'https://app.test/dho/hypha/context/create?sections=mission',
+    );
+  });
+
+  it('does not call a restored section official before its vote', () => {
+    const prompt = buildSpaceContextAgentPrompt({
+      sectionKey: 'mission',
+      spaceTitle: 'Hypha',
+      spaceSlug: 'hypha',
+      draftMarkdown: 'Working text.',
+      ratifiedMarkdown: officialSectionMarkdown({
+        pendingChange: 'add',
+        ratifiedMarkdown: 'Old official mission.',
+      }),
+      status: 'draft',
+      pendingChange: 'add',
+      specialistMemory: '',
+    });
+    expect(prompt).not.toContain('Old official mission.');
+    expect(prompt).toContain(
+      'joins the official Context only when a proposal passes',
     );
   });
 });
@@ -227,7 +251,10 @@ describe('added and removed sections', () => {
     expect(markdown).toContain('## Add section: Onboarding');
     expect(markdown).toContain('How newcomers start.');
     expect(markdown).toContain('## Remove section: Tools we use');
-    expect(sectionKeysFromProposalMarkdown(markdown)).toEqual(['tools']);
+    expect(sectionKeysFromProposalMarkdown(markdown)).toEqual([
+      'custom-a1b2c3d4e5f6',
+      'tools',
+    ]);
   });
 
   it('marks a section removed when its removal proposal passes', async () => {

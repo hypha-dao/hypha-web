@@ -170,6 +170,19 @@ export function CreateContextRatifyForm({
     );
   }, [overview, preselected, selectable]);
 
+  React.useEffect(() => {
+    if (!initializedRef.current || !overview) return;
+    const proposable = new Set(
+      overview.sections
+        .filter(isProposableSection)
+        .map((section) => section.sectionKey),
+    );
+    setSelected((current) => {
+      const next = current.filter((key) => proposable.has(key));
+      return next.length === current.length ? current : next;
+    });
+  }, [overview]);
+
   const form = useForm<FormValues>({
     resolver,
     defaultValues: {
@@ -301,8 +314,13 @@ export function CreateContextRatifyForm({
     taskState.UPLOAD_FILES.status,
   ]);
 
+  const selectionBlocked = selected.some((key) => {
+    const section = overview?.sections.find((item) => item.sectionKey === key);
+    return !section || !isProposableSection(section);
+  });
+
   const handleCreate = async (data: FormValues) => {
-    if (selected.length === 0) return;
+    if (selected.length === 0 || selectionBlocked) return;
     submittedSectionKeysRef.current = [...selected];
     await createAgreement({
       ...data,
@@ -469,7 +487,10 @@ export function CreateContextRatifyForm({
                   {t('proposeForm.cancel')}
                 </Link>
               </Button>
-              <Button type="submit" disabled={selected.length === 0}>
+              <Button
+                type="submit"
+                disabled={selected.length === 0 || selectionBlocked}
+              >
                 {tAgreementFlow('buttons.publish')}
               </Button>
             </div>

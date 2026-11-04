@@ -7,7 +7,7 @@ import {
   uniqueIndex,
   index,
 } from 'drizzle-orm/pg-core';
-import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { commonDateFields } from './shared';
 import { spaces } from './space';
 import { people } from './people';
@@ -61,6 +61,9 @@ export const spaceContextSections = pgTable(
       table.spaceId,
       table.sectionKey,
     ),
+    uniqueIndex('space_context_sections_space_title_unique')
+      .on(table.spaceId, sql`lower(${table.title})`)
+      .where(sql`${table.title} is not null`),
     index('space_context_sections_space_id_idx').on(table.spaceId),
     index('space_context_sections_proposal_document_id_idx').on(
       table.proposalDocumentId,

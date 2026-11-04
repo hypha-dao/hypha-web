@@ -119,10 +119,13 @@ async function authHeaders(
 }
 
 export function useSpaceContext(spaceSlug: string | undefined) {
-  const { getAccessToken } = useAuthentication();
+  const { getAccessToken, user, isLoading: authLoading } = useAuthentication();
+  const viewerKey = authLoading ? null : user?.id ?? 'anonymous';
 
   const { data, error, isLoading, isValidating, mutate } = useSWR(
-    spaceSlug ? [SPACE_CONTEXT_SWR_KEY, spaceSlug, 'overview'] : null,
+    spaceSlug && viewerKey
+      ? [SPACE_CONTEXT_SWR_KEY, spaceSlug, 'overview', viewerKey]
+      : null,
     async ([, slug]) => {
       const headers = await authHeaders(getAccessToken);
       const response = await fetch(`/api/v1/spaces/${slug}/context`, {
@@ -157,11 +160,12 @@ export function useSpaceContextSection(
   spaceSlug: string | undefined,
   sectionKey: SpaceContextSectionKey | null,
 ) {
-  const { getAccessToken } = useAuthentication();
+  const { getAccessToken, user, isLoading: authLoading } = useAuthentication();
+  const viewerKey = authLoading ? null : user?.id ?? 'anonymous';
 
   const { data, error, isLoading, mutate } = useSWR(
-    spaceSlug && sectionKey
-      ? [SPACE_CONTEXT_SWR_KEY, spaceSlug, sectionKey]
+    spaceSlug && sectionKey && viewerKey
+      ? [SPACE_CONTEXT_SWR_KEY, spaceSlug, sectionKey, viewerKey]
       : null,
     async ([, slug, key]) => {
       const headers = await authHeaders(getAccessToken);

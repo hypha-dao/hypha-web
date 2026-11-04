@@ -63,6 +63,17 @@ const SAVE_PATTERNS = words([
   'зачувај|зачувајте|зачувај го|како нацрт',
 ]);
 
+/** A refusal, checked before the save verbs so "don't save" is not a save. */
+const NEGATED_SAVE_PATTERNS = words([
+  `(?:don't|dont|do not|never)\\s+(?:save|store)`,
+  `not\\s+save`,
+  `(?:não|nao)\\s+(?:salvar|salve|salva|guardar|guarde)`,
+  `nicht\\s+(?:speichern|speichere|speichert)`,
+  `niet\\s+(?:opslaan|bewaren|bewaar)`,
+  `ikke\\s+lagre`,
+  `не\\s+зачувај`,
+]);
+
 const URL_RE = /\b(?:https?:\/\/|www\.)\S+/gi;
 const MXID_RE = /@[\w.=\-/]+:[\w.-]+/g;
 
@@ -72,6 +83,9 @@ export function detectSpaceContextAgentIntent(
 ): SpaceContextAgentIntent {
   const text = message.replace(URL_RE, ' ').replace(MXID_RE, ' ');
   if (PROPOSE_PATTERNS.some((pattern) => pattern.test(text))) return 'propose';
+  if (NEGATED_SAVE_PATTERNS.some((pattern) => pattern.test(text))) {
+    return 'answer';
+  }
   if (SAVE_PATTERNS.some((pattern) => pattern.test(text))) return 'save_draft';
   return 'answer';
 }

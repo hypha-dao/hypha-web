@@ -10,6 +10,7 @@ import {
   extractSharedSourceUrls,
   findSpaceBySlug,
   getSpaceContextSection,
+  officialSectionMarkdown,
   saveSpaceContextSectionDraft,
   specialistForSectionKey,
   type SpaceContextSectionKey,
@@ -36,11 +37,13 @@ function createSaveSectionDraftTool({
   spaceSlug,
   sectionKey,
   onSaved,
+  onRejected,
 }: {
   authToken: string;
   spaceSlug: string;
   sectionKey: SpaceContextSectionKey;
   onSaved: () => void;
+  onRejected: () => void;
 }) {
   return tool({
     description:
@@ -53,12 +56,16 @@ function createSaveSectionDraftTool({
         spaceSlug,
         authToken,
       });
-      if (!auth.authorized) return { ok: false, error: auth.message };
+      if (!auth.authorized) {
+        onRejected();
+        return { ok: false, error: auth.message };
+      }
       const result = await saveSpaceContextSectionDraft(
         { spaceSlug, sectionKey, markdown, personId: auth.person.id },
         { db },
       );
       if (!result.ok) {
+        onRejected();
         return {
           ok: false,
           error:
@@ -152,6 +159,7 @@ export async function writeSpaceContextAgentReply({
     .filter((line) => line.sender !== agentUserId)
     .map((line) => line.body);
   let draftSaved = false;
+  let saveFailed = false;
   const tools: ToolSet = {
     read_space_context_source: createReadSpaceContextSourceTool(
       authToken,
@@ -167,6 +175,10 @@ export async function writeSpaceContextAgentReply({
       sectionKey,
       onSaved: () => {
         draftSaved = true;
+        saveFailed = false;
+      },
+      onRejected: () => {
+        saveFailed = true;
       },
     });
   }
@@ -177,7 +189,7 @@ export async function writeSpaceContextAgentReply({
     spaceTitle: space.title?.trim() || spaceSlug,
     spaceSlug,
     draftMarkdown: detail.section.markdown,
-    ratifiedMarkdown: detail.section.ratifiedMarkdown,
+    ratifiedMarkdown: officialSectionMarkdown(detail.section),
     status: detail.section.status,
     pendingChange: detail.section.pendingChange,
     specialistMemory: detail.specialistMemory?.memoryMarkdown ?? '',
@@ -201,6 +213,16 @@ export async function writeSpaceContextAgentReply({
     proposeUrl && !text.includes(proposeUrl)
       ? `${text}\n\n${proposeUrl}`
       : text;
+  const withoutProposeLink = (text: string) => {
+    if (!proposeUrl || !text.includes(proposeUrl)) return text;
+    return text
+      .split(proposeUrl)
+      .join('')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  };
+  const finishReply = (text: string) =>
+    saveFailed ? withoutProposeLink(text) : withProposeLink(text);
 
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), CONTEXT_AGENT_WRITE_MS);
@@ -214,10 +236,11 @@ export async function writeSpaceContextAgentReply({
       abortSignal: abort.signal,
     });
     const text = result.text.trim().slice(0, CONTEXT_AGENT_REPLY_MAX);
-    if (text) return withProposeLink(text);
-    return draftSaved ? withProposeLink(savedLine) : null;
+    if (text) return finishReply(text);
+    if (saveFailed || !draftSaved) return null;
+    return withProposeLink(savedLine);
   } catch (error) {
-    if (!draftSaved) throw error;
+    if (saveFailed || !draftSaved) throw error;
     return withProposeLink(savedLine);
   } finally {
     clearTimeout(timer);

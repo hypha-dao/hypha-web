@@ -202,6 +202,11 @@ describe('space context markdown', () => {
       'mission',
       'vision',
     ]);
+    expect(
+      sectionKeysFromProposalMarkdown(
+        '```\n## Mission\nstill an example\n```\n\n## Vision\n\nA future.',
+      ),
+    ).toEqual(['vision']);
   });
 
   it('reads proposals written before Objectives became Short-term goals', () => {

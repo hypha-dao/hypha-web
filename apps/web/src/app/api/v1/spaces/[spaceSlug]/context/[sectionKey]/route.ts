@@ -75,6 +75,12 @@ export async function PATCH(
     }
 
     const { chatRoomId, markdown, pendingChange } = parsed.data;
+    if (pendingChange !== undefined && markdown != null) {
+      return NextResponse.json(
+        { error: 'Send a removal suggestion and a draft as separate requests' },
+        { status: 400 },
+      );
+    }
     if (chatRoomId) {
       const stored = await setSpaceContextSectionChatRoom(
         { spaceSlug, sectionKey, chatRoomId },
