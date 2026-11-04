@@ -7,24 +7,6 @@ import { routing } from '../../packages/i18n/src/routing';
 const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
 const LOCALES = routing.locales;
 
-/**
- * Non-api paths excluded by the middleware matcher (src/middleware.ts). Keep in
- * step with that matcher: everything it matches gets `X-Frame-Options` there.
- */
-const MIDDLEWARE_SKIPPED_PAGE_SOURCES = [
-  '/signin',
-  '/placeholder/:path*',
-  '/icon/:path*',
-  '/brand/:path*',
-  '/onesignal/:path*',
-  '/.well-known/:path*',
-  '/geo/:path*',
-  '/_next/static/:path*',
-  '/_next/image',
-  '/favicon.ico',
-  '/_matrix/:path*',
-];
-
 const withNextIntl = createNextIntlPlugin('../../packages/i18n/src/request.ts');
 
 const nextConfig: NextConfig = {
@@ -72,18 +54,8 @@ const nextConfig: NextConfig = {
   },
   headers: async () => {
     return [
-      // `X-Frame-Options` is set per response in middleware (white-label
-      // `/embed` must not carry it). Paths the middleware matcher skips keep the
-      // static rule so their framing policy is unchanged.
-      ...MIDDLEWARE_SKIPPED_PAGE_SOURCES.map((source) => ({
-        source,
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-        ],
-      })),
+      // `X-Frame-Options` / `frame-ancestors` are set per response in
+      // src/middleware.ts (white-label `/embed` must not carry `DENY`).
       {
         source: '/onesignal/:path*',
         headers: [

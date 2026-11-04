@@ -7,9 +7,7 @@ import { getEnableSpaceMemory } from '@hypha-platform/feature-flags';
 
 import type { WhiteLabelPageProps } from '../../../../_lib/space';
 
-export default async function WhiteLabelMemoryPage(
-  props: WhiteLabelPageProps,
-) {
+export default async function WhiteLabelMemoryPage(props: WhiteLabelPageProps) {
   const { slug } = await props.params;
   if (!(await getEnableSpaceMemory())) notFound();
 

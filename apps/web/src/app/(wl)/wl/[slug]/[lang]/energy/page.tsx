@@ -8,9 +8,7 @@ import {
   type WhiteLabelPageProps,
 } from '../../../../_lib/space';
 
-export default async function WhiteLabelEnergyPage(
-  props: WhiteLabelPageProps,
-) {
+export default async function WhiteLabelEnergyPage(props: WhiteLabelPageProps) {
   const { slug } = await props.params;
   const space = await getWhiteLabelSpace(slug);
 
