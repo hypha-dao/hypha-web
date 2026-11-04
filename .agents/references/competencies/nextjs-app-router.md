@@ -11,13 +11,13 @@
 #### Route Structure
 
 ```
-app/[lang]/
+app/(main)/[lang]/
   network/           — Explore all spaces
   my-spaces/         — Authenticated user's spaces
   profile/[personSlug]/ — Person profiles
   dho/[id]/          — Space detail with parallel routes (@aside, @tab)
 app/api/v1/          — REST endpoints for client-side data fetching
-app/(mobile)/signin/ — Mobile sign-in flow
+app/(main)/(mobile)/signin/ — Mobile sign-in flow
 ```
 
 #### Key Patterns

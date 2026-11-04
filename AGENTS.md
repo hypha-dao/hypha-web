@@ -151,7 +151,7 @@ Never reverse this direction. Circular deps are a build failure.
 
 ### Next.js App Router Layout (`apps/web`)
 
-- All routes live under `app/[lang]/` — `[lang]` is the i18n locale prefix (en/pt/es/fr/de, always-on).
+- All routes live under `app/(main)/[lang]/` (`(main)` is a route group and does not appear in URLs) — `[lang]` is the i18n locale prefix (en/pt/es/fr/de, always-on).
 - Space detail page uses **parallel routes**: `@aside/` (slide-in panel for proposals, member profiles, notifications) and `@tab/` (main content tabs: overview, agreements, members, treasury, coherence).
 - REST API handlers at `app/api/v1/` (spaces, people, tokens, transfers, documents, events).
 - Webhook handlers at `app/api/webhooks/` (Alchemy blockchain events for space/proposal lifecycle).
