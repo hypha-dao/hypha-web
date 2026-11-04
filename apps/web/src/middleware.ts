@@ -1,6 +1,21 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { middleware as i18nMiddleware } from '@hypha-platform/i18n';
+import { middleware as i18nMiddleware, routing } from '@hypha-platform/i18n';
 import { matrixTurnConnectSourcesFromEnv } from './lib/matrix-connect-src';
+import {
+  DENY_FRAMING,
+  INTERNAL_NOT_FOUND_PATH,
+  WL_MODE_HEADER,
+  WL_NOT_FOUND_HEADER,
+  WL_SPACE_HEADER,
+  embedFraming,
+  getWhiteLabelConfig,
+  resolve,
+  stripWhiteLabelHeaders,
+  type FramingPolicy,
+} from './lib/white-label';
+
+/** Header next-intl reads to pick the request locale. */
+const INTL_LOCALE_HEADER = 'X-NEXT-INTL-LOCALE';
 
 const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
 const CONNECT_SOURCES =
@@ -48,11 +63,22 @@ function matrixHomeserverImgSrc(): string {
   }
 }
 
-function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
+function applyCsp(
+  response: NextResponse,
+  request: NextRequest,
+  framing: FramingPolicy = DENY_FRAMING,
+): NextResponse {
   if (
     process.env.NODE_ENV === 'development' &&
     process.env.ENABLE_LOCALHOST_CSP !== 'true'
   ) {
+    // Local dev has no CSP, but a framed response still carries its allowlist.
+    if (framing.frameAncestors !== DENY_FRAMING.frameAncestors) {
+      response.headers.set(
+        'Content-Security-Policy',
+        `frame-ancestors ${framing.frameAncestors};`,
+      );
+    }
     return response;
   }
 
@@ -120,7 +146,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       `object-src 'self' blob: ${UPLOADTHING_FILE_HOSTS}`,
       "base-uri 'self'",
       "form-action 'self' https://auth.privy.io https://privy.hypha.earth https://accounts.google.com",
-      "frame-ancestors 'none'",
+      `frame-ancestors ${framing.frameAncestors}`,
       `child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org ${SIGNAL_VIDEO_FRAME_HOSTS} ${UPLOADTHING_FILE_HOSTS}`,
       `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live https://docs.google.com https://drive.google.com ${SIGNAL_VIDEO_FRAME_HOSTS} ${UPLOADTHING_FILE_HOSTS}`,
       `connect-src 'self' ${connectSrc}`,
@@ -138,14 +164,70 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   return response;
 }
 
+/**
+ * Framing is set per response (it used to be a static rule in next.config):
+ * the main app, unknown hosts and the internal tree get `DENY`; `/embed` gets
+ * none and relies on CSP `frame-ancestors` for its Space's origins.
+ */
+function applyFramingHeaders(
+  response: NextResponse,
+  framing: FramingPolicy,
+): NextResponse {
+  if (framing.xFrameOptions) {
+    response.headers.set('X-Frame-Options', framing.xFrameOptions);
+  } else {
+    response.headers.delete('X-Frame-Options');
+  }
+  return response;
+}
+
 export function middleware(request: NextRequest) {
+  // White label: the resolver decides, this function only applies it.
+  const decision = resolve(
+    request.headers.get('host'),
+    request.nextUrl.pathname,
+    getWhiteLabelConfig(),
+    {
+      locales: routing.locales,
+      defaultLocale: routing.defaultLocale,
+      acceptLanguage: request.headers.get('accept-language'),
+    },
+  );
+
+  if (decision.kind === 'rewrite') {
+    const headers = stripWhiteLabelHeaders(request.headers);
+    headers.set(WL_SPACE_HEADER, decision.spaceSlug);
+    headers.set(WL_MODE_HEADER, 'embed');
+    headers.set(INTL_LOCALE_HEADER, decision.locale);
+    const url = request.nextUrl.clone();
+    url.pathname = decision.pathname;
+    const framing = embedFraming(decision.framingOrigins);
+    const rewrite = NextResponse.rewrite(url, { request: { headers } });
+    // The locale may come from Accept-Language: caches must not share it.
+    rewrite.headers.append('Vary', 'Accept-Language');
+    return applyFramingHeaders(applyCsp(rewrite, request, framing), framing);
+  }
+
+  if (decision.kind === 'not-found') {
+    // Unmatched internal path plus a marker: global-not-found renders the bare shell.
+    const headers = stripWhiteLabelHeaders(request.headers);
+    headers.set(WL_NOT_FOUND_HEADER, '1');
+    const url = request.nextUrl.clone();
+    url.pathname = INTERNAL_NOT_FOUND_PATH;
+    url.search = '';
+    return applyFramingHeaders(
+      applyCsp(NextResponse.rewrite(url, { request: { headers } }), request),
+      DENY_FRAMING,
+    );
+  }
+
   const response = i18nMiddleware(request);
 
   if (response.status === 301 || response.status === 302) {
-    return response;
+    return applyFramingHeaders(response, DENY_FRAMING);
   }
 
-  return applyCsp(response, request);
+  return applyFramingHeaders(applyCsp(response, request), DENY_FRAMING);
 }
 
 export const config = {
