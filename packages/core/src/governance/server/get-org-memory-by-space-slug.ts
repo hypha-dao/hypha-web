@@ -41,6 +41,7 @@ import {
   type SpaceMemoryBranchCounts,
 } from '../../org-memory/space-memory-branches';
 import { collapseDuplicateDiscussionSummaries } from '../../org-memory/collapse-discussion-summaries';
+import { callTranscriptPreview } from '../../org-memory/call-transcript-preview';
 import {
   buildSpaceMemoryCategoryMarkdownPack,
   type SpaceMemoryCategoryIndexItem,
@@ -1210,7 +1211,7 @@ export async function getOrgMemoryBySpaceSlug(
   }
   const transcriptSummaryBySession = new Map<string, string>();
   for (const t of callArtifacts.transcripts) {
-    const summary = t.summary?.trim() || t.text.slice(0, 240).trim();
+    const summary = callTranscriptPreview(t);
     if (summary) transcriptSummaryBySession.set(t.callSessionId, summary);
   }
 
@@ -1254,7 +1255,7 @@ export async function getOrgMemoryBySpaceSlug(
   );
   const transcriptAssets: OrgMemoryAsset[] = callArtifacts.transcripts.map(
     (t) => {
-      const excerpt = t.summary?.trim() || t.text.slice(0, 240).trim();
+      const excerpt = callTranscriptPreview(t);
       const matrixRoomId = readCallArtifactMatrixRoomId(t.metadata);
       const signalTitle = readCallArtifactSignalTitle(t.metadata);
       const roomTitle =
