@@ -497,7 +497,7 @@
     "filterInsight": "Inzicht",
     "filterAction": "Bewijs van actie",
     "filterImpact": "Impactbewijs",
-    "filterBug": "Bug",
+    "filterBug": "Issue",
     "byLine": "{name} · {space}",
     "fieldEmpty": "Nog niets gedeeld met het netwerk.",
     "storiesEmpty": "Nog geen verhalen gedeeld met het netwerk.",
@@ -4513,7 +4513,7 @@
       "Impact": "Impactbewijs",
       "Trend": "Trend",
       "Proposal": "Voorstel",
-      "Bug": "Bug"
+      "Bug": "Issue"
     },
     "typeDescriptions": {
       "Need": "Iemand vraagt om een hand.",

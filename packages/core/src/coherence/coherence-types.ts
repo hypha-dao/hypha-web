@@ -101,8 +101,9 @@ export const COHERENCE_TYPE_OPTIONS: {
   {
     icon: 'Bug',
     colorVariant: 'error',
+    // Stored value stays `Bug` so existing rows still load. The label is Issue.
     type: 'Bug',
-    title: 'Bug',
+    title: 'Issue',
     description: 'Something is broken',
   },
   {

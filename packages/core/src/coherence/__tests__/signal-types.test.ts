@@ -34,6 +34,11 @@ describe('signal types', () => {
       title: 'Impact Evidence',
       description: 'Stories and real-world outcomes',
     });
+    const bug = COHERENCE_TYPE_OPTIONS.find((option) => option.type === 'Bug');
+    expect(bug).toMatchObject({
+      title: 'Issue',
+      description: 'Something is broken',
+    });
   });
 
   it('does not fold impact evidence into proof of action', () => {

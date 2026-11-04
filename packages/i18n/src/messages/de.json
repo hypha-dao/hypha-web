@@ -497,7 +497,7 @@
     "filterInsight": "Einsicht",
     "filterAction": "Handlungsnachweis",
     "filterImpact": "Wirkungsbelege",
-    "filterBug": "Bug",
+    "filterBug": "Issue",
     "byLine": "{name} · {space}",
     "fieldEmpty": "Noch nichts mit dem Netzwerk geteilt.",
     "storiesEmpty": "Noch keine Geschichten mit dem Netzwerk geteilt.",
@@ -4407,7 +4407,7 @@
       "Impact": "Wirkungsbelege",
       "Trend": "Trend",
       "Proposal": "Vorschlag",
-      "Bug": "Bug"
+      "Bug": "Issue"
     },
     "typeDescriptions": {
       "Need": "Jemand bittet um eine Hand.",

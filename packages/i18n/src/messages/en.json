@@ -357,7 +357,7 @@
     "filterInsight": "Insight",
     "filterAction": "Proof of Action",
     "filterImpact": "Impact Evidence",
-    "filterBug": "Bug",
+    "filterBug": "Issue",
     "filterResource": "Resource",
     "reciprocalTitle": "Reciprocal Exchange",
     "shareExchangeTitle": "Share a {type}",
@@ -4543,7 +4543,7 @@
       "Impact": "Impact Evidence",
       "Trend": "Trend",
       "Proposal": "Proposal",
-      "Bug": "Bug"
+      "Bug": "Issue"
     },
     "typeDescriptions": {
       "Need": "Someone is asking for a hand.",

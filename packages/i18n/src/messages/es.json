@@ -497,7 +497,7 @@
     "filterInsight": "Percepción",
     "filterAction": "Prueba de acción",
     "filterImpact": "Evidencia de impacto",
-    "filterBug": "Bug",
+    "filterBug": "Issue",
     "byLine": "{name} · {space}",
     "fieldEmpty": "Aún no hay nada compartido con la red.",
     "storiesEmpty": "Aún no hay historias compartidas con la red.",
@@ -3849,7 +3849,7 @@
       "Impact": "Evidencia de impacto",
       "Trend": "Tendencia",
       "Proposal": "Propuesta",
-      "Bug": "Bug"
+      "Bug": "Issue"
     },
     "typeDescriptions": {
       "Need": "Alguien pide una mano.",

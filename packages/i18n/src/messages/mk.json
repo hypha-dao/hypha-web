@@ -497,7 +497,7 @@
     "filterInsight": "Увид",
     "filterAction": "Доказ за дејство",
     "filterImpact": "Доказ за влијание",
-    "filterBug": "Bug",
+    "filterBug": "Issue",
     "byLine": "{name} · {space}",
     "fieldEmpty": "Сè уште ништо не е споделено со мрежата.",
     "storiesEmpty": "Сè уште нема приказни споделени со мрежата.",
@@ -4494,7 +4494,7 @@
       "Impact": "Доказ за влијание",
       "Trend": "Тренд",
       "Proposal": "Предлог",
-      "Bug": "Bug"
+      "Bug": "Issue"
     },
     "typeDescriptions": {
       "Need": "Некој бара помош.",

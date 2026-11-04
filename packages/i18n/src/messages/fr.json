@@ -497,7 +497,7 @@
     "filterInsight": "Aperçu",
     "filterAction": "Preuve d'action",
     "filterImpact": "Preuve d'impact",
-    "filterBug": "Bug",
+    "filterBug": "Issue",
     "byLine": "{name} · {space}",
     "fieldEmpty": "Rien n'est encore partagé avec le réseau.",
     "storiesEmpty": "Aucune histoire n'est encore partagée avec le réseau.",
@@ -3833,7 +3833,7 @@
       "Impact": "Preuve d'impact",
       "Trend": "Tendance",
       "Proposal": "Proposition",
-      "Bug": "Bug"
+      "Bug": "Issue"
     },
     "typeDescriptions": {
       "Need": "Quelqu’un demande un coup de main.",
