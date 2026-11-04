@@ -24,7 +24,7 @@ import { Camera, RefreshCw, Video } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useForm, useFormState, useWatch } from 'react-hook-form';
-import type { Control, UseFormReturn } from 'react-hook-form';
+import type { Control } from 'react-hook-form';
 import { z } from 'zod';
 import {
   HYPHA_ROOM_TYPES,
@@ -85,8 +85,6 @@ import {
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
 } from '../constants';
 import { updateSignalDescriptionCopyInRoom } from '../utils/signal-chat-description';
-import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
-import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
 import {
   signalVotingSpaceId,
   useSignalVotingMode,
@@ -110,7 +108,6 @@ export interface CreateSignalFormProps {
   closeUrl?: string;
   backUrl?: string;
   mode?: 'create' | 'edit';
-  signalId?: number;
   signalSlug?: string;
   signalRoomId?: string | null;
   initialValues?: Partial<FormValues>;
@@ -153,41 +150,6 @@ function SignalFormRootError({ control }: { control: Control<FormValues> }) {
     <p role="alert" className="w-full text-left text-sm text-destructive">
       {errors.root.message}
     </p>
-  );
-}
-
-function SignalLinkedCalendarFromForm({
-  form,
-  spaceSlug,
-  signalId,
-  lang,
-  initialTitle,
-}: {
-  form: UseFormReturn<FormValues>;
-  spaceSlug: string;
-  signalId: number;
-  lang: string;
-  initialTitle?: string;
-}) {
-  const watchedTitle = useWatch({ control: form.control, name: 'title' });
-  const watchedDueAt = useWatch({ control: form.control, name: 'dueAt' });
-  const scheduleFromSignalPath = React.useMemo(() => {
-    const paramsQuery = buildScheduleFromSignalSearchParams({
-      coherenceId: signalId,
-      title: watchedTitle?.trim() || initialTitle?.trim() || 'Signal call',
-      dueAt: watchedDueAt,
-    });
-    return `/${lang}/dho/${spaceSlug}/calendar/new-scheduled-item?${paramsQuery.toString()}`;
-  }, [initialTitle, lang, signalId, spaceSlug, watchedDueAt, watchedTitle]);
-
-  return (
-    <SignalLinkedCalendarEvents
-      spaceSlug={spaceSlug}
-      coherenceId={signalId}
-      lang={lang}
-      calendarPath={`/${lang}/dho/${spaceSlug}/calendar`}
-      scheduleFromSignalPath={scheduleFromSignalPath}
-    />
   );
 }
 
@@ -252,15 +214,13 @@ export const CreateSignalForm = ({
   closeUrl,
   backUrl,
   mode = 'create',
-  signalId,
   signalSlug,
   signalRoomId,
   initialValues,
   useMembers,
 }: CreateSignalFormProps) => {
-  const params = useParams<{ id?: string; lang?: string }>();
+  const params = useParams<{ id?: string }>();
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
-  const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const t = useTranslations('CoherenceTab');
   const locale = useLocale();
   const { workflow } = useSignalWorkflow(spaceSlug);
@@ -1382,16 +1342,6 @@ export const CreateSignalForm = ({
                 </p>
               </section>
             ) : null}
-            {mode === 'edit' && signalId && spaceSlug ? (
-              <SignalLinkedCalendarFromForm
-                form={form}
-                spaceSlug={spaceSlug}
-                signalId={signalId}
-                lang={lang}
-                initialTitle={initialValues?.title}
-              />
-            ) : null}
-
             <section className="flex flex-col gap-6 border-t border-border pt-8">
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-foreground">
