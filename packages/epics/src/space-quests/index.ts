@@ -1,11 +1,11 @@
 export { SpaceQuestsSection } from './components/space-quests-section';
 export { SpaceQuestCreateDraft } from './components/space-quest-create-draft';
+export { SpaceQuestDetail } from './components/space-quest-detail';
 export {
-  SpaceQuestDetail,
   SPACE_QUEST_DETAIL_TABS,
   isSpaceQuestDetailTab,
   type SpaceQuestDetailTab,
-} from './components/space-quest-detail';
+} from './space-quest-tabs';
 export {
   useSpaceQuests,
   useSpaceQuestDetail,

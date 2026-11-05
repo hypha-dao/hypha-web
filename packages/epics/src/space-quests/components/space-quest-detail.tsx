@@ -58,24 +58,7 @@ import {
   formatRelativeTimeShort,
   healthBadgeMeta,
 } from './space-quests-section';
-
-export const SPACE_QUEST_DETAIL_TABS = [
-  'overview',
-  'updates',
-  'members',
-  'settings',
-] as const;
-
-export type SpaceQuestDetailTab = (typeof SPACE_QUEST_DETAIL_TABS)[number];
-
-export function isSpaceQuestDetailTab(
-  value: unknown,
-): value is SpaceQuestDetailTab {
-  return (
-    typeof value === 'string' &&
-    (SPACE_QUEST_DETAIL_TABS as readonly string[]).includes(value)
-  );
-}
+import type { SpaceQuestDetailTab } from '../space-quest-tabs';
 
 type QuestPatch = z.infer<typeof schemaPatchSpaceQuest>;
 
