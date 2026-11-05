@@ -80,6 +80,7 @@ export type CoherenceOpenedChannel =
   | 'ecosystem'
   | 'network'
   | 'signal'
+  | 'quest'
   | 'proposal'
   | 'context';
 

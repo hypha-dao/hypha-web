@@ -12,6 +12,7 @@ import {
   coherences,
   documents,
   spaceContextSections,
+  spaceQuests,
   spaces,
 } from '@hypha-platform/storage-postgres';
 
@@ -66,16 +67,29 @@ export type MessageInboxContextSectionLabel = {
   rootTitle: string;
 };
 
+/** Quest channel opened when the Quest proposal passed. */
+export type MessageInboxQuestLabel = {
+  roomId: string;
+  title: string;
+  slug: string;
+  spaceSlug: string;
+  spaceTitle: string;
+  rootSlug: string;
+  rootTitle: string;
+};
+
 export type MessageInboxContext = {
   spaces: MessageInboxSpaceLabel[];
   signals: MessageInboxSignalLabel[];
   proposals: MessageInboxProposalLabel[];
   contexts: MessageInboxContextSectionLabel[];
+  quests: MessageInboxQuestLabel[];
 };
 
 const SIGNAL_LABEL_LIMIT = 400;
 const PROPOSAL_LABEL_LIMIT = 400;
 const CONTEXT_LABEL_LIMIT = 400;
+const QUEST_LABEL_LIMIT = 400;
 /** Every signal that emails or pushes this member. Do not drop one of these. */
 const NOTIFIED_SIGNAL_LIMIT = 1000;
 const MEMBER_SPACES_TIMEOUT_MS = 8_000;
@@ -428,6 +442,49 @@ export async function getMessageInboxContext(
     ];
   });
 
+  const questRows =
+    spaceIds.length === 0
+      ? []
+      : await db
+          .select({
+            chatRoomId: spaceQuests.chatRoomId,
+            name: spaceQuests.name,
+            slug: spaceQuests.slug,
+            spaceId: spaceQuests.spaceId,
+          })
+          .from(spaceQuests)
+          .where(
+            and(
+              isNotNull(spaceQuests.chatRoomId),
+              inArray(spaceQuests.spaceId, spaceIds),
+            ),
+          )
+          .orderBy(desc(spaceQuests.updatedAt))
+          .limit(QUEST_LABEL_LIMIT);
+
+  const seenQuestRooms = new Set<string>();
+  const quests = questRows.flatMap((row) => {
+    const roomId = row.chatRoomId?.trim();
+    const slug = row.slug?.trim();
+    const title = row.name?.trim();
+    const space = byId.get(row.spaceId);
+    if (!roomId || !slug || !title || !space || seenQuestRooms.has(roomId)) {
+      return [];
+    }
+    seenQuestRooms.add(roomId);
+    return [
+      {
+        roomId,
+        title,
+        slug,
+        spaceSlug: space.slug,
+        spaceTitle: space.title,
+        rootSlug: space.rootSlug,
+        rootTitle: space.rootTitle,
+      },
+    ];
+  });
+
   const signals = [...signalRows.values()].flatMap((row) => {
     const roomId = row.roomId?.trim();
     const slug = row.slug?.trim();
@@ -449,5 +506,5 @@ export async function getMessageInboxContext(
     ];
   });
 
-  return { spaces: memberSpaces, signals, proposals, contexts };
+  return { spaces: memberSpaces, signals, proposals, contexts, quests };
 }

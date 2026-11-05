@@ -6551,6 +6551,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     if (coherenceChannel === 'proposal') return t('tabChatProposal');
     if (coherenceChannel === 'context') return t('tabChatContext');
     if (coherenceChannel === 'signal') return t('tabChatSignal');
+    if (coherenceChannel === 'quest') return t('tabChatQuest');
     if (
       coherenceChannel === 'space-public' ||
       coherencePublic ||
@@ -6614,6 +6615,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               ? t('spaceRoomTitle')
               : coherenceChannel === 'signal'
               ? tConnections('inbox.tagSignal')
+              : coherenceChannel === 'quest'
+              ? tConnections('inbox.tagQuest')
               : coherenceChannel === 'proposal'
               ? tConnections('inbox.tagProposal')
               : coherenceChannel === 'context'
@@ -6669,6 +6672,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               coherenceChannel === 'space-public' ||
               coherenceChannel === 'ecosystem' ||
               coherenceChannel === 'signal' ||
+              coherenceChannel === 'quest' ||
               coherenceChannel === 'proposal' ||
               coherenceChannel === 'context' ? (
               <HeaderSpaceLogoMark

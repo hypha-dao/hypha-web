@@ -63,6 +63,7 @@ import {
   ChevronLeft,
   Circle,
   FileText,
+  Flag,
   Globe,
   Globe2,
   Radio,
@@ -3576,6 +3577,7 @@ const CHANNEL_MARK_ICONS: Partial<Record<InboxChannelKind, typeof Circle>> = {
   space: Circle,
   'space-public': Globe,
   signal: Radio,
+  quest: Flag,
   proposal: FileText,
   context: BookOpen,
   ecosystem: Target,
@@ -3607,6 +3609,8 @@ function channelTagKey(kind: InboxChannelKind) {
       return 'inbox.tagSpacePublic';
     case 'signal':
       return 'inbox.tagSignal';
+    case 'quest':
+      return 'inbox.tagQuest';
     case 'proposal':
       return 'inbox.tagProposal';
     case 'context':
