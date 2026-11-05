@@ -5,6 +5,7 @@ import {
   QUEST_MILESTONE_STATUSES,
   bulletsToMarkdownList,
   splitMarkdownLinesToBullets,
+  type Person,
   type QuestDeliverableRecord,
   type QuestMilestoneStatus,
   type QuestReward,
@@ -19,7 +20,82 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { Plus, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
+import { PersonAvatar } from '../../people/components/person-avatar';
+import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
+
+function keepMemberSelectPopoverOpen(event: {
+  target: EventTarget | null;
+  preventDefault: () => void;
+}) {
+  const target = event.target as HTMLElement | null;
+  if (target?.closest('[data-pipeline-select-content="true"]')) {
+    event.preventDefault();
+  }
+}
+
+function buildMemberPersonCatalog(
+  spaceMembers: readonly Person[],
+  extraNames: readonly (string | null | undefined)[],
+): Person[] {
+  const byId = new Map<number, Person>();
+  const knownNames = new Set<string>();
+
+  for (const person of spaceMembers) {
+    if (!person || typeof person.id !== 'number') continue;
+    const label = personRosterDisplayLabel(person, '').trim();
+    if (!label) continue;
+    byId.set(person.id, person);
+    knownNames.add(label.toLowerCase());
+  }
+
+  let syntheticId = -1;
+  for (const raw of extraNames) {
+    const clean = raw?.replace(/\s*\(you\)\s*/i, '').trim() ?? '';
+    if (!clean || knownNames.has(clean.toLowerCase())) continue;
+    knownNames.add(clean.toLowerCase());
+    byId.set(syntheticId, {
+      id: syntheticId,
+      name: clean,
+      surname: '',
+    } as Person);
+    syntheticId -= 1;
+  }
+
+  return [...byId.values()].sort((a, b) =>
+    personRosterDisplayLabel(a, '').localeCompare(
+      personRosterDisplayLabel(b, ''),
+      undefined,
+      { sensitivity: 'base' },
+    ),
+  );
+}
+
+function findPersonInCatalog(
+  catalog: readonly Person[],
+  query: { id?: string | number | null; name?: string | null },
+): Person | null {
+  if (query.id != null && query.id !== '') {
+    const numeric = Number(query.id);
+    if (Number.isFinite(numeric)) {
+      const byId = catalog.find((p) => p.id === numeric);
+      if (byId) return byId;
+    }
+  }
+  const clean = query.name
+    ?.replace(/\s*\(you\)\s*/i, '')
+    .trim()
+    .toLowerCase();
+  if (!clean) return null;
+  return (
+    catalog.find(
+      (p) =>
+        personRosterDisplayLabel(p, '').trim().toLowerCase() === clean ||
+        (p.nickname && p.nickname.trim().toLowerCase() === clean),
+    ) ?? null
+  );
+}
 
 export type EditableQuestMilestone = {
   id?: number;
@@ -348,22 +424,40 @@ export function EditQuestLeadModal({
   open,
   onOpenChange,
   leadName,
-  spaceMemberNames,
+  leadPersonId,
+  spaceMembers = [],
+  spaceMemberNames = [],
   onSave,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   leadName: string;
-  spaceMemberNames: string[];
-  onSave: (nextLeadName: string) => void;
+  leadPersonId?: number | null;
+  spaceMembers?: Person[];
+  spaceMemberNames?: string[];
+  onSave: (nextLeadName: string, nextLeadPersonId?: number | null) => void;
 }) {
-  const [selected, setSelected] = useState(leadName);
-  useEffect(() => {
-    if (open) setSelected(leadName);
-  }, [leadName, open]);
+  const catalog = useMemo(
+    () =>
+      buildMemberPersonCatalog(spaceMembers, [leadName, ...spaceMemberNames]),
+    [leadName, spaceMemberNames, spaceMembers],
+  );
 
-  const candidates = Array.from(
-    new Set([leadName, ...spaceMemberNames].filter(Boolean)),
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const match = findPersonInCatalog(catalog, {
+      id: leadPersonId,
+      name: leadName,
+    });
+    setSelectedId(
+      match ? String(match.id) : catalog[0] ? String(catalog[0].id) : null,
+    );
+  }, [catalog, leadName, leadPersonId, open]);
+
+  const selectedPerson = useMemo(
+    () => findPersonInCatalog(catalog, { id: selectedId, name: leadName }),
+    [catalog, leadName, selectedId],
   );
 
   return (
@@ -371,28 +465,38 @@ export function EditQuestLeadModal({
       <DialogContent
         hideCloseButton
         className="max-w-[520px] rounded-none border border-border bg-background p-6"
+        onPointerDownOutside={keepMemberSelectPopoverOpen}
+        onInteractOutside={keepMemberSelectPopoverOpen}
+        onFocusOutside={keepMemberSelectPopoverOpen}
       >
         <div className="space-y-4">
           <ModalHeader title="Edit lead" onClose={() => onOpenChange(false)} />
           <div className="space-y-1.5">
             <label className={LABEL_CLASS}>LEAD</label>
-            <select
-              value={selected}
-              onChange={(e) => setSelected(e.target.value)}
-              className="h-11 w-full border border-border bg-background-2 px-3 text-sm font-medium text-foreground"
-            >
-              {candidates.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
+            <SpaceMemberSelect
+              members={catalog}
+              value={selectedId}
+              onChange={(next) => setSelectedId(next)}
+              allowUnassigned={false}
+              popoverModal
+              placeholder="Select a space member…"
+              searchPlaceholder="Search members…"
+              emptyListMessage="No space members found."
+              unknownLabel="Space Member"
+              className="h-11 bg-background-2"
+            />
           </div>
           <ModalFooter
+            disabled={!selectedPerson}
             onCancel={() => onOpenChange(false)}
             onSave={() => {
-              if (!selected.trim()) return;
-              onSave(selected.trim());
+              if (!selectedPerson) return;
+              const label = personRosterDisplayLabel(
+                selectedPerson,
+                'Space Member',
+              ).trim();
+              if (!label) return;
+              onSave(label, selectedPerson.id > 0 ? selectedPerson.id : null);
               onOpenChange(false);
             }}
           />
@@ -576,14 +680,16 @@ export function EditQuestMilestonesModal({
   open,
   onOpenChange,
   milestones,
-  spaceMemberNames,
+  spaceMembers = [],
+  spaceMemberNames = [],
   showStatusSelect = false,
   onSave,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   milestones: EditableQuestMilestone[];
-  spaceMemberNames: string[];
+  spaceMembers?: Person[];
+  spaceMemberNames?: string[];
   showStatusSelect?: boolean;
   onSave: (next: EditableQuestMilestone[]) => void;
 }) {
@@ -601,12 +707,20 @@ export function EditQuestMilestonesModal({
     }
   }, [milestones, open]);
 
-  const ownerCandidates = Array.from(
-    new Set([
-      ...spaceMemberNames,
-      ...rows.map((r) => r.ownerName).filter((v): v is string => Boolean(v)),
-    ]),
+  const ownerCatalog = useMemo(
+    () =>
+      buildMemberPersonCatalog(spaceMembers, [
+        ...spaceMemberNames,
+        ...rows.map((r) => r.ownerName),
+      ]),
+    [rows, spaceMemberNames, spaceMembers],
   );
+  const defaultOwner = ownerCatalog[0] ?? null;
+  const defaultOwnerName = defaultOwner
+    ? personRosterDisplayLabel(defaultOwner, '').trim() || null
+    : null;
+  const defaultOwnerId =
+    defaultOwner && defaultOwner.id > 0 ? defaultOwner.id : null;
 
   const insertAt = (index: number) => {
     setRows((current) => {
@@ -615,7 +729,8 @@ export function EditQuestMilestonesModal({
         name: '',
         description: '',
         dueDate: '',
-        ownerName: ownerCandidates[0] ?? null,
+        ownerPersonId: defaultOwnerId,
+        ownerName: defaultOwnerName,
         status: 'not_started',
         insertedNew: true,
       });
@@ -632,6 +747,9 @@ export function EditQuestMilestonesModal({
       <DialogContent
         hideCloseButton
         className="max-h-[92vh] max-w-[560px] overflow-y-auto rounded-none border border-border bg-background p-6"
+        onPointerDownOutside={keepMemberSelectPopoverOpen}
+        onInteractOutside={keepMemberSelectPopoverOpen}
+        onFocusOutside={keepMemberSelectPopoverOpen}
       >
         <div className="space-y-4">
           <ModalHeader
@@ -728,25 +846,42 @@ export function EditQuestMilestonesModal({
                     <div className="flex flex-col gap-2.5 sm:flex-row">
                       <div className="flex-1 space-y-1">
                         <label className={LABEL_CLASS}>OWNER</label>
-                        <select
-                          value={item.ownerName ?? ''}
-                          onChange={(e) => {
+                        <SpaceMemberSelect
+                          members={ownerCatalog}
+                          value={(() => {
+                            const matched = findPersonInCatalog(ownerCatalog, {
+                              id: item.ownerPersonId,
+                              name: item.ownerName,
+                            });
+                            return matched ? String(matched.id) : null;
+                          })()}
+                          onChange={(nextValue) => {
+                            const matched = findPersonInCatalog(ownerCatalog, {
+                              id: nextValue,
+                            });
                             const next = [...rows];
                             next[idx] = {
                               ...item,
-                              ownerName: e.target.value || null,
+                              ownerPersonId:
+                                matched && matched.id > 0 ? matched.id : null,
+                              ownerName: matched
+                                ? personRosterDisplayLabel(
+                                    matched,
+                                    'Space Member',
+                                  ).trim() || null
+                                : null,
                             };
                             setRows(next);
                           }}
-                          className="h-10 w-full border border-border bg-background-2 px-3 text-xs text-foreground"
-                        >
-                          <option value="">Unassigned</option>
-                          {ownerCandidates.map((owner) => (
-                            <option key={owner} value={owner}>
-                              {owner}
-                            </option>
-                          ))}
-                        </select>
+                          allowUnassigned
+                          unassignedLabel="Unassigned"
+                          popoverModal
+                          placeholder="Unassigned"
+                          searchPlaceholder="Search members…"
+                          emptyListMessage="No space members found."
+                          unknownLabel="Space Member"
+                          className="h-10 bg-background-2"
+                        />
                       </div>
                       {showStatusSelect ? (
                         <div className="w-full space-y-1 sm:w-[150px]">
@@ -807,7 +942,8 @@ export function EditQuestMilestonesModal({
                   name: '',
                   description: '',
                   dueDate: '',
-                  ownerName: ownerCandidates[0] ?? null,
+                  ownerPersonId: defaultOwnerId,
+                  ownerName: defaultOwnerName,
                   status: 'not_started',
                   insertedNew: true,
                 },
@@ -849,50 +985,79 @@ export function EditQuestMembersModal({
   open,
   onOpenChange,
   members,
-  spaceMemberNames,
+  spaceMembers = [],
+  spaceMemberNames = [],
   onSave,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   members: EditableQuestMember[];
-  spaceMemberNames: string[];
+  spaceMembers?: Person[];
+  spaceMemberNames?: string[];
   onSave: (next: EditableQuestMember[]) => void;
 }) {
   const [rows, setRows] = useState<EditableQuestMember[]>([]);
-  const [newPersonName, setNewPersonName] = useState('');
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [newRoleLabel, setNewRoleLabel] = useState('Member');
   const [newBullets, setNewBullets] = useState<string[]>(['']);
+
+  const memberCatalog = useMemo(
+    () =>
+      buildMemberPersonCatalog(spaceMembers, [
+        ...spaceMemberNames,
+        ...members.map((m) => m.memberName),
+      ]),
+    [members, spaceMemberNames, spaceMembers],
+  );
 
   useEffect(() => {
     if (open) {
       setRows(
-        members.map((m) => ({
-          ...m,
-          responsibilities:
-            m.responsibilities.length > 0 ? [...m.responsibilities] : [''],
-        })),
+        members.map((m) => {
+          const matched = findPersonInCatalog(memberCatalog, {
+            id: m.personId,
+            name: m.memberName,
+          });
+          return {
+            ...m,
+            personId:
+              m.personId ?? (matched && matched.id > 0 ? matched.id : null),
+            memberAvatarUrl: m.memberAvatarUrl ?? matched?.avatarUrl ?? null,
+            responsibilities:
+              m.responsibilities.length > 0 ? [...m.responsibilities] : [''],
+          };
+        }),
       );
-      setNewPersonName('');
+      setSelectedPersonId(null);
       setNewRoleLabel('Member');
       setNewBullets(['']);
     }
-  }, [members, open]);
+  }, [memberCatalog, members, open]);
 
-  const candidateNames = Array.from(new Set(spaceMemberNames));
+  const selectedPerson = useMemo(
+    () => findPersonInCatalog(memberCatalog, { id: selectedPersonId }),
+    [memberCatalog, selectedPersonId],
+  );
 
   const handleAddMemberToQuest = () => {
-    const cleanName = newPersonName.trim();
+    if (!selectedPerson) return;
+    const cleanName = personRosterDisplayLabel(
+      selectedPerson,
+      'Space Member',
+    ).trim();
     if (!cleanName) return;
     const bullets = newBullets.map((b) => b.trim()).filter(Boolean);
     setRows([
       ...rows,
       {
+        personId: selectedPerson.id > 0 ? selectedPerson.id : null,
         memberName: cleanName,
+        memberAvatarUrl: selectedPerson.avatarUrl ?? null,
         roleLabel: newRoleLabel.trim() || 'Member',
         responsibilities: bullets.length > 0 ? bullets : ['Core contributor'],
       },
     ]);
-    setNewPersonName('');
+    setSelectedPersonId(null);
     setNewBullets(['']);
   };
 
@@ -901,6 +1066,9 @@ export function EditQuestMembersModal({
       <DialogContent
         hideCloseButton
         className="max-h-[92vh] max-w-[560px] overflow-y-auto rounded-none border border-border bg-background p-6"
+        onPointerDownOutside={keepMemberSelectPopoverOpen}
+        onInteractOutside={keepMemberSelectPopoverOpen}
+        onFocusOutside={keepMemberSelectPopoverOpen}
       >
         <div className="space-y-4">
           <ModalHeader
@@ -911,18 +1079,23 @@ export function EditQuestMembersModal({
 
           <div className="space-y-2.5">
             {rows.map((member, mIdx) => {
-              const initial = (
-                member.memberName.trim()[0] ?? 'M'
-              ).toUpperCase();
               return (
                 <div
                   key={mIdx}
                   className="space-y-2 border border-border bg-background p-3"
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className="grid size-7 shrink-0 place-items-center bg-foreground text-[11px] font-bold text-background">
-                      {initial}
-                    </span>
+                    <PersonAvatar
+                      size="sm"
+                      shape="circle"
+                      avatarSrc={member.memberAvatarUrl ?? undefined}
+                      userName={member.memberName}
+                      personId={
+                        member.personId && member.personId > 0
+                          ? member.personId
+                          : undefined
+                      }
+                    />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[13px] font-semibold text-foreground">
                         {member.memberName}
@@ -1012,18 +1185,18 @@ export function EditQuestMembersModal({
             <p className={LABEL_CLASS}>ADD MEMBER</p>
             <div className="space-y-1">
               <label className={LABEL_CLASS}>PERSON</label>
-              <Input
-                list="quest-space-member-options"
-                value={newPersonName}
-                onChange={(e) => setNewPersonName(e.target.value)}
+              <SpaceMemberSelect
+                members={memberCatalog}
+                value={selectedPersonId}
+                onChange={(next) => setSelectedPersonId(next)}
+                allowUnassigned={false}
+                popoverModal
                 placeholder="Choose or search a space member…"
-                className="h-9 rounded-none bg-background"
+                searchPlaceholder="Search members…"
+                emptyListMessage="No space members found."
+                unknownLabel="Space Member"
+                className="h-9 bg-background"
               />
-              <datalist id="quest-space-member-options">
-                {candidateNames.map((n) => (
-                  <option key={n} value={n} />
-                ))}
-              </datalist>
             </div>
             <div className="space-y-1">
               <label className={LABEL_CLASS}>RESPONSIBILITY</label>
@@ -1056,7 +1229,7 @@ export function EditQuestMembersModal({
             <Button
               type="button"
               onClick={handleAddMemberToQuest}
-              disabled={!newPersonName.trim()}
+              disabled={!selectedPerson}
               className="h-9 rounded-none bg-foreground px-3.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-background"
             >
               ADD TO QUEST
@@ -1126,7 +1299,6 @@ export function EditQuestDeliverablesModal({
         <div className="space-y-4">
           <ModalHeader
             title="Edit deliverables"
-            subtitle="Any member can edit. Changes also apply from Steward chat."
             onClose={() => onOpenChange(false)}
           />
 

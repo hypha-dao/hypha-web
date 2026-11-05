@@ -200,6 +200,7 @@ import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
 import { SignalIndicativeAmounts } from '../coherence/components/signal-indicative-amounts';
 import { SpaceContextSidePanel } from '../space-context/components/space-context-chat-panel';
 import { useSpaceContextSectionAgent } from '../space-context/hooks/use-space-context-section-agent';
+import { SpaceQuestSidePanel } from '../space-quests/components/space-quest-chat-panel';
 import { AgentMentionLabelProvider } from './human-chat-panel/agent-mention-label-context';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
@@ -1198,19 +1199,36 @@ type HumanRightPanelProps = {
   useMembers: UseMembers;
 };
 
-/** Right panel host: a Space Context section when one is selected, else chat. */
+/** Right panel host: a Space Context section or Quest draft when selected, else chat. */
 export function HumanRightPanel(props: HumanRightPanelProps) {
   const pathname = usePathname() ?? '';
-  const { spaceContextSection, closeSpaceContextSection } = useHumanChatPanel();
+  const {
+    spaceContextSection,
+    closeSpaceContextSection,
+    spaceQuestDraft,
+    closeHumanChatPanel,
+  } = useHumanChatPanel();
   const routeSpaceSlug = getDhoSpaceSlugFromPathname(pathname) || '';
   const section =
     spaceContextSection?.spaceSlug === routeSpaceSlug
       ? spaceContextSection
       : null;
+  const questDraft =
+    spaceQuestDraft?.spaceSlug === routeSpaceSlug ? spaceQuestDraft : null;
 
   useEffect(() => {
     if (spaceContextSection && !section) closeSpaceContextSection();
   }, [closeSpaceContextSection, section, spaceContextSection]);
+
+  if (questDraft) {
+    return (
+      <SpaceQuestSidePanel
+        session={questDraft}
+        useMembers={props.useMembers}
+        onClose={closeHumanChatPanel}
+      />
+    );
+  }
 
   if (section) {
     return (
@@ -1342,7 +1360,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   });
   const { person: me } = useMe();
   const signalCreatorLookupSlug =
-    mode === 'coherence' ? coherenceSlug?.trim() || '' : '';
+    mode === 'coherence' && (!coherenceChannel || coherenceChannel === 'signal')
+      ? coherenceSlug?.trim() || ''
+      : '';
   const { data: openSignalForCreator } = useSWR(
     signalCreatorLookupSlug
       ? [signalCreatorLookupSlug, 'signal-creator-attribution']
@@ -2910,7 +2930,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     [],
   );
 
-  const isSignalThread = mode === 'coherence' && Boolean(coherenceSlug?.trim());
+  const isSignalThread =
+    mode === 'coherence' &&
+    Boolean(coherenceSlug?.trim()) &&
+    (!coherenceChannel || coherenceChannel === 'signal');
   const hasSignalTeamPolicy =
     isSignalThread &&
     (signalTeamMemberIds.length > 0 || !signalTeamRosterResolved);
@@ -4641,38 +4664,89 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             setIsJoining(false);
             return;
           }
-          console.log(
-            '[HumanRightPanel] Creating Matrix room for coherence:',
-            coherenceSlug,
-          );
-          // No `grantCreatorPl100` here deliberately: this is a lazy-creation fallback for a
-          // signal that predates having a room, reachable by any space member who happens to
-          // open it first — not necessarily the signal's actual creator (#2428 review). The
-          // primary creation path (`create-signal-form.tsx`) grants PL100 correctly, since it
-          // only runs for the person actually submitting the create form.
-          const { roomId: newRoomId } = await promiseWithTimeout(
-            getOrCreateCoherenceRoom(
-              coherenceSlug,
-              coherenceTitle || 'Conversation',
-            ),
-            COHERENCE_ROOM_JOIN_TIMEOUT_MS,
-            'Coherence room create timed out',
-          );
-          if (cancelled) return;
-          targetRoomId = newRoomId;
-
-          try {
-            await updateCoherenceBySlug({
-              slug: coherenceSlug,
-              roomId: newRoomId,
-            });
-            // Update context so subsequent opens don't re-create
-            openCoherenceChat(newRoomId, coherenceTitle || '', coherenceSlug);
-          } catch (err) {
-            console.warn(
-              '[HumanRightPanel] Failed to persist roomId to coherence:',
-              err,
+          if (coherenceChannel === 'quest') {
+            if (!spaceSlug) {
+              setIsJoining(false);
+              return;
+            }
+            const created = await promiseWithTimeout(
+              matrixRef.current.createRoom(coherenceTitle || coherenceSlug, {
+                grantCreatorPl100: true,
+                roomType: HYPHA_ROOM_TYPES.quest,
+              }),
+              COHERENCE_ROOM_JOIN_TIMEOUT_MS,
+              'Quest room create timed out',
             );
+            const joinedId = await promiseWithTimeout(
+              matrixRef.current.joinRoom(created.roomId),
+              COHERENCE_ROOM_JOIN_TIMEOUT_MS,
+              'Quest room join timed out',
+            );
+            if (cancelled) return;
+            targetRoomId = joinedId;
+            try {
+              const token = authTokenRef.current;
+              await fetch(
+                `/api/v1/spaces/${encodeURIComponent(
+                  spaceSlug,
+                )}/quests/${encodeURIComponent(coherenceSlug)}`,
+                {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                  },
+                  body: JSON.stringify({ chatRoomId: joinedId }),
+                },
+              );
+              openCoherenceChat(
+                joinedId,
+                coherenceTitle || '',
+                coherenceSlug,
+                coherenceDescription,
+                spaceSlug,
+                { channel: 'quest' },
+              );
+            } catch (err) {
+              console.warn(
+                '[HumanRightPanel] Failed to persist roomId to quest:',
+                err,
+              );
+            }
+          } else {
+            console.log(
+              '[HumanRightPanel] Creating Matrix room for coherence:',
+              coherenceSlug,
+            );
+            // No `grantCreatorPl100` here deliberately: this is a lazy-creation fallback for a
+            // signal that predates having a room, reachable by any space member who happens to
+            // open it first — not necessarily the signal's actual creator (#2428 review). The
+            // primary creation path (`create-signal-form.tsx`) grants PL100 correctly, since it
+            // only runs for the person actually submitting the create form.
+            const { roomId: newRoomId } = await promiseWithTimeout(
+              getOrCreateCoherenceRoom(
+                coherenceSlug,
+                coherenceTitle || 'Conversation',
+              ),
+              COHERENCE_ROOM_JOIN_TIMEOUT_MS,
+              'Coherence room create timed out',
+            );
+            if (cancelled) return;
+            targetRoomId = newRoomId;
+
+            try {
+              await updateCoherenceBySlug({
+                slug: coherenceSlug,
+                roomId: newRoomId,
+              });
+              // Update context so subsequent opens don't re-create
+              openCoherenceChat(newRoomId, coherenceTitle || '', coherenceSlug);
+            } catch (err) {
+              console.warn(
+                '[HumanRightPanel] Failed to persist roomId to coherence:',
+                err,
+              );
+            }
           }
         } else {
           targetRoomId = await promiseWithTimeout(
@@ -4686,7 +4760,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         openingTimelineRoomIdRef.current = targetRoomId;
         roomIdRef.current = targetRoomId;
         setRoomId(targetRoomId);
-        if (coherenceSlug?.trim()) {
+        if (
+          coherenceSlug?.trim() &&
+          (!coherenceChannel || coherenceChannel === 'signal')
+        ) {
           rememberSignalThreadRooms([targetRoomId], { quiet: true });
         }
 
@@ -4699,7 +4776,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           if (
             cancelled ||
             openingTimelineRoomIdRef.current !== targetRoomId ||
-            openingSpaceSlug
+            openingSpaceSlug ||
+            (coherenceChannel && coherenceChannel !== 'signal')
           ) {
             return;
           }
@@ -4987,6 +5065,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
   useEffect(() => {
     if (mode !== 'coherence') return;
+    if (coherenceChannel && coherenceChannel !== 'signal') return;
     if (!isMatrixAvailable || !coherenceSlug || !roomId || isJoining) return;
     // Avoid clobbering persisted counts with transient empty timeline snapshots.
     if (!hasLoadedCoherenceMessagesRef.current && messages.length === 0) return;
@@ -6409,6 +6488,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             ? { kind: 'public', spaceSlug }
             : coherencePublic
             ? { kind: 'public', spaceSlug }
+            : coherenceChannel === 'quest'
+            ? {
+                kind: 'quest',
+                spaceSlug,
+                questSlug: coherenceSlug,
+                questTitle: coherenceTitle,
+              }
             : mode === 'coherence' && coherenceSlug?.trim()
             ? {
                 kind: 'signal',

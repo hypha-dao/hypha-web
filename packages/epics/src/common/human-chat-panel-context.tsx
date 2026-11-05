@@ -98,6 +98,27 @@ export type SpaceContextPanelSection = {
   sectionKey: SpaceContextSectionKey;
 };
 
+export type SpaceQuestDraftChatMessage = {
+  id: string;
+  role: 'user' | 'member';
+  text: string;
+  timestamp: Date;
+  senderName?: string;
+  avatarUrl?: string;
+  agentSpecialistId?: string;
+};
+
+/** Quest draft chat shown in the right panel while creating a quest. */
+export type SpaceQuestDraftPanelSession = {
+  spaceSlug: string;
+  questTitle: string;
+  messages: SpaceQuestDraftChatMessage[];
+  input: string;
+  onInputChange: (next: string) => void;
+  onSend: () => void;
+  isAgentTyping?: boolean;
+};
+
 export type HumanChatPanelContextValue = {
   open: boolean;
   toggle: () => void;
@@ -144,6 +165,8 @@ export type HumanChatPanelContextValue = {
   /** Opens the right panel on a Space Context section (detail + discussion). */
   openSpaceContextSection: (section: SpaceContextPanelSection) => void;
   closeSpaceContextSection: () => void;
+  spaceQuestDraft: SpaceQuestDraftPanelSession | null;
+  setSpaceQuestDraft: (session: SpaceQuestDraftPanelSession | null) => void;
 };
 
 const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
@@ -172,6 +195,8 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   spaceContextSection: null,
   openSpaceContextSection: () => {},
   closeSpaceContextSection: () => {},
+  spaceQuestDraft: null,
+  setSpaceQuestDraft: () => {},
 });
 
 /**
@@ -213,6 +238,8 @@ export function HumanChatPanelProvider({
   const [panelAvailable, setPanelAvailable] = useState(false);
   const [spaceContextSection, setSpaceContextSection] =
     useState<SpaceContextPanelSection | null>(null);
+  const [spaceQuestDraft, setSpaceQuestDraft] =
+    useState<SpaceQuestDraftPanelSession | null>(null);
 
   useEffect(() => {
     if (!open) setSpaceContextSection(null);
@@ -350,6 +377,8 @@ export function HumanChatPanelProvider({
         spaceContextSection,
         openSpaceContextSection,
         closeSpaceContextSection,
+        spaceQuestDraft,
+        setSpaceQuestDraft,
       }}
     >
       {children}

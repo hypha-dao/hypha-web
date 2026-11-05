@@ -1,15 +1,19 @@
 'use client';
 
 import { useAuthentication } from '@hypha-platform/authentication';
-import type {
-  QuestRecord,
-  SpaceQuestsOverview,
-  schemaCreateSpaceQuest,
-  schemaPatchSpaceQuest,
-  schemaPostQuestUpdate,
+import {
+  useMe,
+  type Person,
+  type QuestRecord,
+  type SpaceQuestsOverview,
+  type schemaCreateSpaceQuest,
+  type schemaPatchSpaceQuest,
+  type schemaPostQuestUpdate,
 } from '@hypha-platform/core/client';
+import { useMemo } from 'react';
 import useSWR, { mutate } from 'swr';
 import type { z } from 'zod';
+import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 
 export const SPACE_QUESTS_SWR_KEY = 'space-quests' as const;
 
@@ -113,11 +117,18 @@ export function useSpaceQuestDetail(
   };
 }
 
-export type QuestSpaceMember = { personId: number; name: string };
+export type QuestSpaceMember = {
+  person: Person;
+  personId: number;
+  name: string;
+  avatarUrl: string | null;
+  nickname: string | null;
+};
 
-/** Space roster for quest pickers, read through the access-checked members API. */
+/** Full space member roster for quest pickers, read across all pages of the access-checked members API. */
 export function useQuestSpaceMembers(spaceSlug: string | undefined) {
   const { getAccessToken, user, isLoading: authLoading } = useAuthentication();
+  const { person: me } = useMe();
   const viewerKey = authLoading ? null : user?.id ?? 'anonymous';
 
   const { data } = useSWR(
@@ -126,39 +137,127 @@ export function useQuestSpaceMembers(spaceSlug: string | undefined) {
       : null,
     async ([, slug]) => {
       const headers = await authHeaders(getAccessToken);
-      const response = await fetch(
-        `/api/v1/spaces/${slug}/members?page=1&pageSize=200`,
-        { headers },
-      );
-      if (!response.ok) return [];
-      const body = (await response.json()) as {
-        persons?: {
-          data?: Array<{ id: number; name?: string; surname?: string }>;
+      const people: Person[] = [];
+      const pageSize = 100;
+      const maxPages = 20;
+
+      for (let page = 1; page <= maxPages; page += 1) {
+        const response = await fetch(
+          `/api/v1/spaces/${encodeURIComponent(
+            slug,
+          )}/members?page=${page}&pageSize=${pageSize}`,
+          { headers },
+        );
+        if (!response.ok) break;
+        const body = (await response.json()) as {
+          persons?: {
+            data?: Person[];
+            pagination?: {
+              hasNextPage?: boolean;
+              totalPages?: number;
+              pageCount?: number;
+            };
+          };
         };
-      };
-      const seen = new Set<string>();
-      return (body.persons?.data ?? []).flatMap((person) => {
-        const name = [person.name, person.surname]
-          .filter(Boolean)
-          .join(' ')
-          .trim();
-        if (!name || seen.has(name)) return [];
-        seen.add(name);
-        return [{ personId: person.id, name }];
-      });
+        const batch = body.persons?.data ?? [];
+        people.push(...batch);
+        const pagination = body.persons?.pagination;
+        if (batch.length < pageSize) break;
+        if (pagination?.hasNextPage === false) break;
+        const totalPages = pagination?.totalPages ?? pagination?.pageCount;
+        if (totalPages != null && page >= totalPages) break;
+      }
+
+      const byId = new Map<number, QuestSpaceMember>();
+      for (const person of people) {
+        if (!person || typeof person.id !== 'number' || person.id <= 0) {
+          continue;
+        }
+        const name = personRosterDisplayLabel(person, '').trim();
+        if (!name) continue;
+        byId.set(person.id, {
+          person,
+          personId: person.id,
+          name,
+          avatarUrl: person.avatarUrl ?? null,
+          nickname: person.nickname ?? null,
+        });
+      }
+
+      return [...byId.values()].sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+      );
     },
     { revalidateOnFocus: false },
   );
 
-  return data ?? [];
+  return useMemo(() => {
+    const base = data ?? [];
+    if (!me || typeof me.id !== 'number' || me.id <= 0) return base;
+    if (base.some((m) => m.personId === me.id)) return base;
+    const meName = personRosterDisplayLabel(me, '').trim();
+    if (!meName) return base;
+    return [
+      {
+        person: me,
+        personId: me.id,
+        name: meName,
+        avatarUrl: me.avatarUrl ?? null,
+        nickname: me.nickname ?? null,
+      },
+      ...base,
+    ];
+  }, [data, me]);
+}
+
+export function findQuestSpaceMember(
+  members: readonly QuestSpaceMember[],
+  query: { personId?: number | null; name?: string | null },
+): QuestSpaceMember | null {
+  if (query.personId != null && query.personId > 0) {
+    const byId = members.find((m) => m.personId === query.personId);
+    if (byId) return byId;
+  }
+  const clean = query.name
+    ?.replace(/\s*\(you\)\s*/i, '')
+    .trim()
+    .toLowerCase();
+  if (!clean) return null;
+  return (
+    members.find(
+      (m) =>
+        m.name.toLowerCase() === clean ||
+        (m.nickname && m.nickname.trim().toLowerCase() === clean),
+    ) ?? null
+  );
 }
 
 export function findQuestSpaceMemberId(
   members: readonly QuestSpaceMember[],
   name: string,
 ): number | null {
-  const clean = name.trim().toLowerCase();
-  return members.find((m) => m.name.toLowerCase() === clean)?.personId ?? null;
+  return findQuestSpaceMember(members, { name })?.personId ?? null;
+}
+
+export function toQuestSpaceMemberPersons(
+  members: readonly QuestSpaceMember[],
+  extraNames: readonly (string | null | undefined)[] = [],
+): Person[] {
+  const list = members.map((m) => m.person);
+  const knownNames = new Set(members.map((m) => m.name.trim().toLowerCase()));
+  let syntheticId = -1;
+  for (const raw of extraNames) {
+    const clean = raw?.replace(/\s*\(you\)\s*/i, '').trim() ?? '';
+    if (!clean || knownNames.has(clean.toLowerCase())) continue;
+    knownNames.add(clean.toLowerCase());
+    list.push({
+      id: syntheticId,
+      name: clean,
+      surname: '',
+    } as Person);
+    syntheticId -= 1;
+  }
+  return list;
 }
 
 export class SpaceQuestRequestError extends Error {

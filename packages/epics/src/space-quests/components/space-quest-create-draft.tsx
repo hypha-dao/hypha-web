@@ -7,6 +7,8 @@ import {
   QUEST_STEWARD_STEPS,
   buildQuestProposalDescription,
   bulletsToMarkdownList,
+  selectSpecialistForQuestion,
+  specialistById,
   splitMarkdownLinesToBullets,
   useCreateAgreementOrchestrator,
   useJwt,
@@ -24,18 +26,25 @@ import {
   Input,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { AtSign, Paperclip, Plus, Send, Smile } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useConfig } from 'wagmi';
+import { recordMobilizedAiAgentsForQuestion } from '../../common/ai-agent-competencies';
+import {
+  useAiPanel,
+  useHumanChatPanel,
+  type SpaceQuestDraftChatMessage,
+} from '../../common/human-chat-panel-context';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import {
   createSpaceQuestRequest,
   deleteSpaceQuestRequest,
+  findQuestSpaceMember,
   findQuestSpaceMemberId,
   patchSpaceQuestRequest,
+  toQuestSpaceMemberPersons,
   useQuestSpaceMembers,
 } from '../hooks/use-space-quests';
 import {
@@ -51,23 +60,19 @@ import {
   type EditableQuestMember,
   type EditableQuestMilestone,
 } from './quest-section-edit-modals';
-
-type StewardChatMessage = {
-  id: string;
-  sender: 'steward' | 'user';
-  senderName: string;
-  time: string;
-  text: string;
-};
+import { SpaceQuestChatPanel } from './space-quest-chat-panel';
 
 const LABEL_CLASS =
   'text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11';
 
-function formatNowTime(): string {
-  return new Date().toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+function stripAgentMentionPrefix(text: string, agentLabel: string): string {
+  const escaped = agentLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text
+    .replace(
+      new RegExp(`^@(?:${escaped}|AI[\\s_-]*Agents)\\b[,:\\s]*`, 'i'),
+      '',
+    )
+    .trim();
 }
 
 function stewardQuestionForStep(step: QuestStewardStep): string {
@@ -101,20 +106,29 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   );
   const locale = useLocale();
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tChat = useTranslations('HumanChatPanel');
+  const tCoherence = useTranslations('CoherenceTab');
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const { getAccessToken } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug);
   const config = useConfig();
+  const { closeAiPanel } = useAiPanel();
+  const {
+    open: rightPanelOpen,
+    panelAvailable,
+    openHumanChatPanel,
+    setSpaceQuestDraft,
+  } = useHumanChatPanel();
 
   const viewerDisplayName = useMemo(() => {
     const full = [person?.name, person?.surname]
       .filter(Boolean)
       .join(' ')
       .trim();
-    return full || 'You';
-  }, [person?.name, person?.surname]);
+    return full || person?.nickname?.trim() || 'You';
+  }, [person?.name, person?.nickname, person?.surname]);
 
   const [name, setName] = useState('');
   const [goal, setGoal] = useState('');
@@ -126,20 +140,40 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const [rewards, setRewards] = useState<QuestReward[]>([]);
   const [milestones, setMilestones] = useState<EditableQuestMilestone[]>([]);
   const [leadName, setLeadName] = useState(`${viewerDisplayName} (you)`);
+  const [selectedLeadPersonId, setSelectedLeadPersonId] = useState<
+    number | null
+  >(null);
   const [members, setMembers] = useState<EditableQuestMember[]>([]);
   const [targetDate, setTargetDate] = useState<string | null>(null);
 
-  // Steward guided flow state (Goal first, one section per turn, no Priority)
+  const spaceMemberPersons = useMemo(
+    () =>
+      toQuestSpaceMemberPersons(spaceMembers, [
+        leadName,
+        ...members.map((m) => m.memberName),
+        ...milestones.map((m) => m.ownerName),
+      ]),
+    [leadName, members, milestones, spaceMembers],
+  );
+
+  const defaultSpecialist = specialistById('operations');
+  const defaultSpecialistRole = defaultSpecialist
+    ? tCoherence(defaultSpecialist.roleKey)
+    : tChat('agentMentionLabel');
+
+  // Guided flow state (Goal first, one section per turn, no Priority)
   const [stewardStepIndex, setStewardStepIndex] = useState<number>(0);
   const [activeSection, setActiveSection] = useState<QuestStewardStep>('goal');
-  const [chatTab, setChatTab] = useState<'chat' | 'mentions'>('chat');
   const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<StewardChatMessage[]>([
+  const [chatMessages, setChatMessages] = useState<
+    SpaceQuestDraftChatMessage[]
+  >(() => [
     {
       id: 'm1',
-      sender: 'steward',
-      senderName: 'Quest Steward',
-      time: formatNowTime(),
+      role: 'member',
+      agentSpecialistId: 'operations',
+      senderName: defaultSpecialistRole,
+      timestamp: new Date(),
       text: 'Hey, what is the goal of the quest you want to create?',
     },
   ]);
@@ -169,10 +203,15 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       config,
     });
 
-  const handleSendStewardMessage = () => {
-    const trimmed = chatInput.trim();
-    if (!trimmed) return;
+  const handleSendStewardMessage = useCallback(() => {
+    const rawTrimmed = chatInput.trim();
+    if (!rawTrimmed) return;
     setChatInput('');
+
+    const trimmed =
+      stripAgentMentionPrefix(rawTrimmed, tChat('agentMentionLabel')) ||
+      rawTrimmed;
+    recordMobilizedAiAgentsForQuestion(spaceSlug, trimmed);
 
     const currentStep = QUEST_STEWARD_STEPS[stewardStepIndex] ?? 'goal';
     const nextStepIndex = Math.min(
@@ -212,15 +251,25 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
           name: trimmed.slice(0, 60),
           dueDate: 'TBD',
           description: trimmed,
+          ownerPersonId: person?.id ?? null,
           ownerName: viewerDisplayName,
           status: 'not_started',
         },
       ]);
     } else if (currentStep === 'members') {
+      const rawName = (trimmed.split(':')[0] ?? trimmed)
+        .replace(/^@/, '')
+        .replace(/_/g, ' ')
+        .trim();
+      const matchedMember = findQuestSpaceMember(spaceMembers, {
+        name: rawName,
+      });
       setMembers((prev) => [
         ...prev,
         {
-          memberName: trimmed.split(':')[0]?.trim() || trimmed.slice(0, 32),
+          personId: matchedMember?.personId ?? null,
+          memberName: matchedMember?.name || rawName || trimmed.slice(0, 32),
+          memberAvatarUrl: matchedMember?.avatarUrl ?? null,
           roleLabel: 'Member',
           responsibilities: [
             trimmed.split(':')[1]?.trim() || 'Core outcome delivery',
@@ -228,7 +277,10 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         },
       ]);
     } else if (currentStep === 'lead') {
-      setLeadName(trimmed);
+      const rawLead = trimmed.replace(/^@/, '').replace(/_/g, ' ').trim();
+      const matchedLead = findQuestSpaceMember(spaceMembers, { name: rawLead });
+      setLeadName(matchedLead?.name || rawLead);
+      setSelectedLeadPersonId(matchedLead?.personId ?? null);
     } else if (currentStep === 'targetDate') {
       setTargetDate(trimmed);
     } else if (currentStep === 'rewards') {
@@ -243,6 +295,13 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       setName(trimmed);
     }
 
+    const specialist =
+      selectSpecialistForQuestion(trimmed) ?? specialistById('operations');
+    const specialistId = specialist?.id ?? 'operations';
+    const specialistRole = specialist
+      ? tCoherence(specialist.roleKey)
+      : defaultSpecialistRole;
+
     const reply =
       stewardStepIndex < QUEST_STEWARD_STEPS.length - 1
         ? stewardQuestionForStep(nextStep)
@@ -250,24 +309,72 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
 
     setStewardStepIndex(nextStepIndex);
     setActiveSection(nextStep);
+    const now = new Date();
     setChatMessages((prev) => [
       ...prev,
       {
-        id: `u-${Date.now()}`,
-        sender: 'user',
+        id: `u-${now.getTime()}`,
+        role: 'user',
         senderName: viewerDisplayName,
-        time: formatNowTime(),
-        text: trimmed,
+        avatarUrl: person?.avatarUrl ?? undefined,
+        timestamp: now,
+        text: rawTrimmed,
       },
       {
-        id: `s-${Date.now() + 1}`,
-        sender: 'steward',
-        senderName: 'Quest Steward',
-        time: formatNowTime(),
+        id: `s-${now.getTime() + 1}`,
+        role: 'member',
+        agentSpecialistId: specialistId,
+        senderName: specialistRole,
+        timestamp: new Date(now.getTime() + 1),
         text: reply,
       },
     ]);
-  };
+  }, [
+    chatInput,
+    defaultSpecialistRole,
+    person?.avatarUrl,
+    person?.id,
+    scopeOut,
+    spaceMembers,
+    spaceSlug,
+    stewardStepIndex,
+    tChat,
+    tCoherence,
+    viewerDisplayName,
+  ]);
+
+  const handleSendRef = useRef(handleSendStewardMessage);
+  handleSendRef.current = handleSendStewardMessage;
+  const triggerSend = useCallback(() => {
+    handleSendRef.current();
+  }, []);
+
+  const draftChatSession = useMemo(
+    () => ({
+      spaceSlug,
+      questTitle: name.trim() || 'New quest',
+      messages: chatMessages,
+      input: chatInput,
+      onInputChange: setChatInput,
+      onSend: triggerSend,
+    }),
+    [chatInput, chatMessages, name, spaceSlug, triggerSend],
+  );
+
+  // Open the shared right side panel on mount and host the Quest chat there.
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1200) {
+      closeAiPanel();
+    }
+    openHumanChatPanel();
+    return () => {
+      setSpaceQuestDraft(null);
+    };
+  }, [closeAiPanel, openHumanChatPanel, setSpaceQuestDraft]);
+
+  useEffect(() => {
+    setSpaceQuestDraft(draftChatSession);
+  }, [draftChatSession, setSpaceQuestDraft]);
 
   /**
    * Hard Rule #1:
@@ -283,9 +390,10 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       const cleanLeadName =
         leadName.replace(/\s*\(you\)\s*/i, '').trim() || viewerDisplayName;
       const leadPersonId =
-        cleanLeadName === viewerDisplayName
+        selectedLeadPersonId ??
+        (cleanLeadName === viewerDisplayName
           ? person?.id ?? null
-          : findQuestSpaceMemberId(spaceMembers, cleanLeadName);
+          : findQuestSpaceMemberId(spaceMembers, cleanLeadName));
       const draftPayload: QuestDraftInput = {
         name: name.trim() || 'Untitled quest',
         goal: goal.trim(),
@@ -514,11 +622,31 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                   Fills in live as you chat · click any section to edit
                 </p>
               </div>
-              <div className="h-1.5 w-[140px] overflow-hidden bg-neutral-4">
-                <div
-                  className="h-full bg-foreground transition-[width]"
-                  style={{ width: `${draftCompletionPercent}%` }}
-                />
+              <div className="flex items-center gap-3">
+                {panelAvailable && !rightPanelOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        typeof window !== 'undefined' &&
+                        window.innerWidth < 1200
+                      ) {
+                        closeAiPanel();
+                      }
+                      openHumanChatPanel();
+                    }}
+                    className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
+                  >
+                    Open discussion
+                    <span aria-hidden>→</span>
+                  </button>
+                ) : null}
+                <div className="h-1.5 w-[140px] overflow-hidden bg-neutral-4">
+                  <div
+                    className="h-full bg-foreground transition-[width]"
+                    style={{ width: `${draftCompletionPercent}%` }}
+                  />
+                </div>
               </div>
             </div>
 
@@ -574,7 +702,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                   <p className="text-[13px] text-foreground">
                     {goal || (
                       <span className="text-neutral-11">
-                        Not set yet — answer Steward or click to edit
+                        Not set yet — reply in chat or click to edit
                       </span>
                     )}
                   </p>
@@ -602,7 +730,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                   <div className="space-y-0.5 text-[13px] text-foreground">
                     {scopeIn.length === 0 && scopeOut.length === 0 ? (
                       <span className="text-neutral-11">
-                        Not set yet — answer Steward or click to edit
+                        Not set yet — reply in chat or click to edit
                       </span>
                     ) : (
                       <>
@@ -635,7 +763,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                   <div className="space-y-0.5 text-[13px] text-foreground">
                     {successBullets.length === 0 ? (
                       <span className="text-neutral-11">
-                        Not set yet — answer Steward or click to edit
+                        Not set yet — reply in chat or click to edit
                       </span>
                     ) : null}
                     {successBullets.map((item, idx) => (
@@ -753,7 +881,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                     {milestones.length === 0 ? (
                       <p className="text-[13px]">
                         <span className="text-neutral-11">
-                          Not set yet — answer Steward or click to edit
+                          Not set yet — reply in chat or click to edit
                         </span>
                       </p>
                     ) : null}
@@ -828,7 +956,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                     {members.length === 0 ? (
                       <p className="text-[13px]">
                         <span className="text-neutral-11">
-                          Not set yet — answer Steward or click to edit
+                          Not set yet — reply in chat or click to edit
                         </span>
                       </p>
                     ) : null}
@@ -888,94 +1016,9 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             </div>
           </div>
 
-          {/* Right Panel: Guided Quest Steward Chat (Figma node 21:2) */}
-          <aside className="flex h-[680px] w-full flex-col border border-border bg-background xl:sticky xl:top-4 xl:w-[400px] xl:shrink-0">
-            <div className="flex items-center gap-5 border-b border-border px-5">
-              <button
-                type="button"
-                onClick={() => setChatTab('chat')}
-                className={cn(
-                  'border-b-2 py-3 text-xs font-semibold transition-colors',
-                  chatTab === 'chat'
-                    ? 'border-[#6b4fd8] text-[#6b4fd8]'
-                    : 'border-transparent text-neutral-11',
-                )}
-              >
-                Chat
-              </button>
-              <button
-                type="button"
-                onClick={() => setChatTab('mentions')}
-                className={cn(
-                  'border-b-2 py-3 text-xs font-medium transition-colors',
-                  chatTab === 'mentions'
-                    ? 'border-[#6b4fd8] text-[#6b4fd8]'
-                    : 'border-transparent text-neutral-11',
-                )}
-              >
-                Mentions
-              </button>
-            </div>
-
-            <div className="narrow-scrollbar flex-1 space-y-4 overflow-y-auto p-5">
-              {chatMessages.map((msg) => (
-                <div key={msg.id} className="flex items-start gap-2.5">
-                  {msg.sender === 'steward' ? (
-                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#ece8fb] text-[10px] font-bold text-[#6b4fd8]">
-                      ✦
-                    </span>
-                  ) : (
-                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#d9d3f3] text-[10px] font-bold text-foreground">
-                      {(msg.senderName[0] ?? 'U').toUpperCase()}
-                    </span>
-                  )}
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="font-semibold text-foreground">
-                        {msg.senderName}
-                      </span>
-                      <span className="text-[11px] text-neutral-11">
-                        {msg.time}
-                      </span>
-                    </div>
-                    <p className="text-[13px] leading-relaxed text-foreground">
-                      {msg.text}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t border-border p-3.5">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSendStewardMessage();
-                }}
-                className="flex h-10 items-center gap-2 border border-border bg-background px-3"
-              >
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Type a message…"
-                  data-testid="steward-chat-input"
-                  className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-neutral-11"
-                />
-                <Plus className="size-3.5 shrink-0 text-neutral-11" />
-                <Smile className="size-3.5 shrink-0 text-neutral-11" />
-                <AtSign className="size-3.5 shrink-0 text-neutral-11" />
-                <Paperclip className="size-3.5 shrink-0 text-neutral-11" />
-                <button
-                  type="submit"
-                  aria-label="Send message"
-                  className="text-neutral-11 hover:text-foreground"
-                >
-                  <Send className="size-3.5" />
-                </button>
-              </form>
-            </div>
-          </aside>
+          {!panelAvailable ? (
+            <SpaceQuestChatPanel session={draftChatSession} />
+          ) : null}
         </div>
 
         {/* Confirm Dialog ("Are you sure?" — Figma node 93:2) */}
@@ -1060,6 +1103,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
           open={editingModal === 'milestones'}
           onOpenChange={(open) => !open && setEditingModal(null)}
           milestones={milestones}
+          spaceMembers={spaceMemberPersons}
           spaceMemberNames={spaceMemberNames}
           onSave={setMilestones}
         />
@@ -1067,13 +1111,19 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
           open={editingModal === 'lead'}
           onOpenChange={(open) => !open && setEditingModal(null)}
           leadName={leadName}
+          leadPersonId={selectedLeadPersonId ?? person?.id ?? null}
+          spaceMembers={spaceMemberPersons}
           spaceMemberNames={spaceMemberNames}
-          onSave={setLeadName}
+          onSave={(nextLeadName, nextLeadPersonId) => {
+            setLeadName(nextLeadName);
+            setSelectedLeadPersonId(nextLeadPersonId ?? null);
+          }}
         />
         <EditQuestMembersModal
           open={editingModal === 'members'}
           onOpenChange={(open) => !open && setEditingModal(null)}
           members={members}
+          spaceMembers={spaceMemberPersons}
           spaceMemberNames={spaceMemberNames}
           onSave={setMembers}
         />

@@ -41,9 +41,14 @@ import {
   findQuestSpaceMemberId,
   patchSpaceQuestRequest,
   postSpaceQuestUpdateRequest,
+  toQuestSpaceMemberPersons,
   useQuestSpaceMembers,
   useSpaceQuestDetail,
 } from '../hooks/use-space-quests';
+import {
+  useAiPanel,
+  useHumanChatPanel,
+} from '../../common/human-chat-panel-context';
 import {
   EditQuestDeliverablesModal,
   EditQuestGoalModal,
@@ -697,7 +702,8 @@ function OverviewTab({
             )}
             {canEdit ? (
               <p className="mt-3 text-[11px] text-neutral-11">
-                Any member can edit · click the section, or ask Steward in chat
+                Any member can edit · click the section, or mention AI Agents in
+                chat
               </p>
             ) : null}
           </section>
@@ -1079,8 +1085,8 @@ function SettingsTab({
         <p className={LABEL_CLASS}>UPDATES &amp; NOTIFICATIONS</p>
         <div className="divide-y divide-border">
           <SettingsRow
-            label="Steward health summaries"
-            value="Steward refreshes the health summary from member updates"
+            label="AI health summaries"
+            value="AI Agents refresh the health summary from member updates"
             action={quest.stewardHealthSummaries ? 'ON' : 'OFF'}
             disabled={leadOnly}
             onAction={() =>
@@ -1158,6 +1164,8 @@ export function SpaceQuestDetail({
   const router = useRouter();
   const { person } = useMe();
   const { getAccessToken } = useAuthentication();
+  const { closeAiPanel } = useAiPanel();
+  const { openCoherenceChat } = useHumanChatPanel();
   const { quest, isLoading, error, refresh } = useSpaceQuestDetail(
     spaceSlug,
     questSlug,
@@ -1228,6 +1236,24 @@ export function SpaceQuestDetail({
       quest.leadName,
     ]),
   ).filter(Boolean);
+  const spaceMemberPersons = toQuestSpaceMemberPersons(
+    spaceMembers,
+    memberOptions,
+  );
+
+  const openQuestChat = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1200) {
+      closeAiPanel();
+    }
+    openCoherenceChat(
+      quest.chatRoomId ?? null,
+      quest.name,
+      quest.slug,
+      quest.goal,
+      spaceSlug,
+      { channel: 'quest' },
+    );
+  };
 
   const savePatch = async (patch: QuestPatch) => {
     setSaving(true);
@@ -1333,31 +1359,45 @@ export function SpaceQuestDetail({
       </Link>
 
       <header className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-display text-[22px] font-semibold text-foreground">
-            {quest.name}
-          </h1>
-          {canEdit ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="font-display text-[22px] font-semibold text-foreground">
+              {quest.name}
+            </h1>
+            {canEdit ? (
+              <button
+                type="button"
+                onClick={() => setEditingModal('name')}
+                className="text-neutral-11 hover:text-foreground"
+                aria-label="Edit quest name"
+              >
+                <Pencil className="size-3.5" />
+              </button>
+            ) : null}
+            <span className="bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
+              {statusLabel(quest.status)}
+            </span>
+            {quest.status !== 'proposed' ? (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
+                <span
+                  className={cn('size-2 rounded-full', health.dotClass)}
+                  aria-hidden
+                />
+                <span className={health.textClass}>{health.label}</span>
+              </span>
+            ) : null}
+          </div>
+          {quest.status !== 'proposed' &&
+          (quest.chatRoomId || canMemberEditQuest(viewer, quest)) ? (
             <button
               type="button"
-              onClick={() => setEditingModal('name')}
-              className="text-neutral-11 hover:text-foreground"
-              aria-label="Edit quest name"
+              onClick={openQuestChat}
+              data-testid="open-quest-chat-button"
+              className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
             >
-              <Pencil className="size-3.5" />
+              Open discussion
+              <span aria-hidden>→</span>
             </button>
-          ) : null}
-          <span className="bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
-            {statusLabel(quest.status)}
-          </span>
-          {quest.status !== 'proposed' ? (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
-              <span
-                className={cn('size-2 rounded-full', health.dotClass)}
-                aria-hidden
-              />
-              <span className={health.textClass}>{health.label}</span>
-            </span>
           ) : null}
         </div>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-11">
@@ -1515,6 +1555,7 @@ export function SpaceQuestDetail({
           ownerName: m.ownerName,
           status: m.status,
         }))}
+        spaceMembers={spaceMemberPersons}
         spaceMemberNames={memberOptions}
         showStatusSelect
         onSave={(next) =>
@@ -1524,7 +1565,11 @@ export function SpaceQuestDetail({
               name: m.name.trim() || 'Untitled milestone',
               description: m.description,
               dueDate: m.dueDate,
-              ownerPersonId: m.ownerPersonId ?? null,
+              ownerPersonId:
+                m.ownerPersonId ??
+                (m.ownerName
+                  ? findQuestSpaceMemberId(spaceMembers, m.ownerName)
+                  : null),
               ownerName: m.ownerName,
               status: m.status,
             })),
@@ -1542,6 +1587,7 @@ export function SpaceQuestDetail({
           roleLabel: m.roleLabel,
           responsibilities: m.responsibilities,
         }))}
+        spaceMembers={spaceMemberPersons}
         spaceMemberNames={memberOptions}
         onSave={(next) =>
           void savePatch({
@@ -1581,13 +1627,17 @@ export function SpaceQuestDetail({
         open={editingModal === 'lead'}
         onOpenChange={closeModal}
         leadName={quest.leadName}
+        leadPersonId={quest.leadPersonId}
+        spaceMembers={spaceMemberPersons}
         spaceMemberNames={memberOptions}
-        onSave={(leadName) => {
+        onSave={(leadName, leadPersonId) => {
           const match = quest.members.find((m) => m.memberName === leadName);
           void savePatch({
             leadName,
             leadPersonId:
-              match?.personId ?? findQuestSpaceMemberId(spaceMembers, leadName),
+              leadPersonId ??
+              match?.personId ??
+              findQuestSpaceMemberId(spaceMembers, leadName),
           });
         }}
       />

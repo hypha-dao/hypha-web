@@ -933,7 +933,7 @@ export async function activateSpaceQuestByDocumentId(
       await db.insert(spaceQuestUpdates).values({
         questId: row.id,
         authorPersonId: row.leadPersonId ?? null,
-        authorName: row.leadName || 'Quest Steward',
+        authorName: row.leadName || 'Operations Lead',
         kind: 'post',
         viaAgent: false,
         text: 'Quest proposal accepted — Quest is now Active.',
