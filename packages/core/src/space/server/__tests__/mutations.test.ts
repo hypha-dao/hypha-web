@@ -357,6 +357,100 @@ describe('space mutations web3SpaceId uniqueness', () => {
     ).rejects.toBeInstanceOf(Web3SpaceIdConflictError);
   });
 
+  it('maps a unique violation to the stored web3SpaceId when an update omits the field', async () => {
+    const { updateSpaceById, updateSpaceBySlug, updateSpaceConfigurationById } =
+      await loadMutations();
+    const baseDb = createInMemorySpaceDb([
+      {
+        id: 853,
+        title: 'Probe',
+        slug: 'zz-w3-probe-1220',
+        web3SpaceId: 240,
+      },
+    ]);
+    const uniqueViolation = Object.assign(
+      new Error('duplicate key value violates unique constraint'),
+      {
+        code: '23505',
+        constraint: SPACES_WEB3_SPACE_ID_UNIQUE_INDEX,
+      },
+    );
+    const db = {
+      ...baseDb,
+      update: () => ({
+        set: () => ({
+          where: () => ({
+            returning: async () => {
+              throw uniqueViolation;
+            },
+          }),
+        }),
+      }),
+      transaction: async <T>(fn: (tx: typeof db) => Promise<T>) => fn(db),
+    };
+
+    await expect(
+      updateSpaceBySlug(
+        { slug: 'zz-w3-probe-1220', title: 'Renamed probe' },
+        { db: db as never },
+      ),
+    ).rejects.toMatchObject({ web3SpaceId: 240, status: 409 });
+
+    await expect(
+      updateSpaceById({ id: 853, slug: 'renamed-probe' }, { db: db as never }),
+    ).rejects.toMatchObject({ web3SpaceId: 240, status: 409 });
+
+    await expect(
+      updateSpaceConfigurationById(
+        { id: 853, slug: 'renamed-probe' },
+        { db: db as never },
+      ),
+    ).rejects.toMatchObject({ web3SpaceId: 240, status: 409 });
+  });
+
+  it('keeps an explicit null web3SpaceId as an unbind when a unique violation fires', async () => {
+    const { updateSpaceById, updateSpaceBySlug } = await loadMutations();
+    const baseDb = createInMemorySpaceDb([
+      {
+        id: 853,
+        title: 'Probe',
+        slug: 'zz-w3-probe-1220',
+        web3SpaceId: 240,
+      },
+    ]);
+    const uniqueViolation = Object.assign(
+      new Error('duplicate key value violates unique constraint'),
+      {
+        code: '23505',
+        constraint: SPACES_WEB3_SPACE_ID_UNIQUE_INDEX,
+      },
+    );
+    const db = {
+      ...baseDb,
+      update: () => ({
+        set: () => ({
+          where: () => ({
+            returning: async () => {
+              throw uniqueViolation;
+            },
+          }),
+        }),
+      }),
+      transaction: async <T>(fn: (tx: typeof db) => Promise<T>) => fn(db),
+    };
+
+    await expect(
+      updateSpaceBySlug(
+        { slug: 'zz-w3-probe-1220', web3SpaceId: null },
+        { db: db as never },
+      ),
+    ).rejects.toBe(uniqueViolation);
+
+    await expect(
+      updateSpaceById({ id: 853, web3SpaceId: null }, { db: db as never }),
+    ).rejects.toBe(uniqueViolation);
+  });
+
   it('rejects updateSpaceBySlug, updateSpaceById, and updateSpaceConfigurationById when setting a taken web3SpaceId', async () => {
     const { updateSpaceById, updateSpaceBySlug, updateSpaceConfigurationById } =
       await loadMutations();

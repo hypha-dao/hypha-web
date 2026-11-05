@@ -44,7 +44,10 @@ export async function POST(request: Request) {
     return NextResponse.json(space);
   } catch (error) {
     if (isWeb3SpaceIdConflictError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 409 });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: 409 },
+      );
     }
     console.error('Failed to create space:', error);
     return NextResponse.json(

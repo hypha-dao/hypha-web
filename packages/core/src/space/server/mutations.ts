@@ -173,6 +173,16 @@ export const updateSpaceBySlug = async (
   const { capitals, rest: spaceFields } = takeExchangeCapitals(rest);
   await assertWeb3SpaceIdAvailable(db, spaceFields.web3SpaceId, { slug });
 
+  const [currentSpace] = await db
+    .select({ web3SpaceId: spaces.web3SpaceId })
+    .from(spaces)
+    .where(eq(spaces.slug, slug))
+    .limit(1);
+  const effectiveWeb3SpaceId =
+    spaceFields.web3SpaceId === undefined
+      ? currentSpace?.web3SpaceId
+      : spaceFields.web3SpaceId;
+
   let updatedSpace: typeof spaces.$inferSelect | undefined;
   try {
     [updatedSpace] = await db
@@ -181,7 +191,7 @@ export const updateSpaceBySlug = async (
       .where(eq(spaces.slug, slug))
       .returning();
   } catch (error) {
-    rethrowIfWeb3SpaceIdUniqueViolation(error, spaceFields.web3SpaceId);
+    rethrowIfWeb3SpaceIdUniqueViolation(error, effectiveWeb3SpaceId);
   }
 
   if (!updatedSpace) {
@@ -227,7 +237,12 @@ export const updateSpaceById = async (
         .where(eq(spaces.id, id))
         .returning();
     } catch (error) {
-      rethrowIfWeb3SpaceIdUniqueViolation(error, spaceFields.web3SpaceId);
+      rethrowIfWeb3SpaceIdUniqueViolation(
+        error,
+        spaceFields.web3SpaceId === undefined
+          ? originalSpace.web3SpaceId
+          : spaceFields.web3SpaceId,
+      );
     }
 
     if (!updatedSpace) {
@@ -335,7 +350,12 @@ export const updateSpaceConfigurationById = async (
         .where(eq(spaces.id, id))
         .returning();
     } catch (error) {
-      rethrowIfWeb3SpaceIdUniqueViolation(error, normalizedRest.web3SpaceId);
+      rethrowIfWeb3SpaceIdUniqueViolation(
+        error,
+        normalizedRest.web3SpaceId !== undefined
+          ? normalizedRest.web3SpaceId
+          : originalSpace.web3SpaceId,
+      );
     }
 
     if (!updatedSpace) {

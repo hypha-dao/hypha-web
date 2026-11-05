@@ -67,7 +67,10 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json(updatedSpace);
   } catch (error) {
     if (isWeb3SpaceIdConflictError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 409 });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: 409 },
+      );
     }
     console.error('Failed to update space configuration:', error);
     const message =
