@@ -1,5 +1,8 @@
 import { schemaUpdateSpace } from '@hypha-platform/core/client';
-import { updateSpaceBySlug } from '@hypha-platform/core/server';
+import {
+  isWeb3SpaceIdConflictError,
+  updateSpaceBySlug,
+} from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { NextResponse } from 'next/server';
 
@@ -40,6 +43,9 @@ export async function POST(
 
     return NextResponse.json(space);
   } catch (error) {
+    if (isWeb3SpaceIdConflictError(error)) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     console.error('Failed to update space:', error);
     return NextResponse.json(
       { error: 'Failed to update space' },

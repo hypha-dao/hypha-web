@@ -60,6 +60,8 @@ export interface CreateSpaceInput {
   leadImage?: string;
   slug?: string;
   parentId?: number | null;
+  web3SpaceId?: number | null;
+  address?: string;
   links?: string[];
   categories?: Category[];
   flags?: SpaceFlags[];
@@ -83,7 +85,7 @@ export interface UpdateSpaceInput {
   leadImage?: string | null;
   slug?: string;
   parentId?: number | null;
-  web3SpaceId?: number;
+  web3SpaceId?: number | null;
   address?: string;
   latitude?: number | null;
   longitude?: number | null;

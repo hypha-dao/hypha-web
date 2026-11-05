@@ -5,12 +5,60 @@ import {
   buildLocatedAtPatch,
   normalizeSpaceLocationFields,
 } from '../../geo/location';
+import { isUniqueViolation } from '../../common/server/unique-violation';
 import { CreateSpaceInput, UpdateSpaceInput } from '../types';
-import { eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import { DatabaseInstance } from '@hypha-platform/core/server';
 import { spaces } from '@hypha-platform/storage-postgres';
 import { parseCapitalKeys } from '../../network/capitals';
 import { writeSpaceCapitals } from '../../network/exchange-capitals';
+import {
+  SPACES_WEB3_SPACE_ID_UNIQUE_INDEX,
+  Web3SpaceIdConflictError,
+} from './web3-space-id-conflict';
+
+type Web3SpaceIdLookupExecutor = Pick<DatabaseInstance, 'select'>;
+
+async function assertWeb3SpaceIdAvailable(
+  db: Web3SpaceIdLookupExecutor,
+  web3SpaceId: number | null | undefined,
+  exclude?: { id?: number; slug?: string },
+): Promise<void> {
+  if (web3SpaceId == null) {
+    return;
+  }
+
+  const conditions = [eq(spaces.web3SpaceId, web3SpaceId)];
+  if (exclude?.id != null) {
+    conditions.push(ne(spaces.id, exclude.id));
+  }
+  if (exclude?.slug != null) {
+    conditions.push(ne(spaces.slug, exclude.slug));
+  }
+
+  const [existing] = await db
+    .select({ id: spaces.id })
+    .from(spaces)
+    .where(conditions.length === 1 ? conditions[0] : and(...conditions))
+    .limit(1);
+
+  if (existing) {
+    throw new Web3SpaceIdConflictError(web3SpaceId);
+  }
+}
+
+function rethrowIfWeb3SpaceIdUniqueViolation(
+  error: unknown,
+  web3SpaceId: number | null | undefined,
+): never {
+  if (
+    web3SpaceId != null &&
+    isUniqueViolation(error, SPACES_WEB3_SPACE_ID_UNIQUE_INDEX)
+  ) {
+    throw new Web3SpaceIdConflictError(web3SpaceId);
+  }
+  throw error;
+}
 
 function takeExchangeCapitals<
   T extends { exchangeCapitals?: { seeks: string[]; offers: string[] } },
@@ -51,16 +99,23 @@ export const createSpace = async (
     longitude: normalizedLocation.longitude,
   });
 
-  const [newSpace] = await db
-    .insert(spaces)
-    .values({
-      title,
-      slug,
-      ...spaceFields,
-      ...normalizedLocation,
-      ...locatedAtPatch,
-    })
-    .returning();
+  await assertWeb3SpaceIdAvailable(db, spaceFields.web3SpaceId);
+
+  let newSpace: typeof spaces.$inferSelect | undefined;
+  try {
+    [newSpace] = await db
+      .insert(spaces)
+      .values({
+        title,
+        slug,
+        ...spaceFields,
+        ...normalizedLocation,
+        ...locatedAtPatch,
+      })
+      .returning();
+  } catch (error) {
+    rethrowIfWeb3SpaceIdUniqueViolation(error, spaceFields.web3SpaceId);
+  }
 
   if (!newSpace) {
     throw new Error('Failed to create space');
@@ -116,11 +171,18 @@ export const updateSpaceBySlug = async (
   { db }: { db: DatabaseInstance },
 ) => {
   const { capitals, rest: spaceFields } = takeExchangeCapitals(rest);
-  const [updatedSpace] = await db
-    .update(spaces)
-    .set(applyLocationFieldsIfPresent(spaceFields))
-    .where(eq(spaces.slug, slug))
-    .returning();
+  await assertWeb3SpaceIdAvailable(db, spaceFields.web3SpaceId, { slug });
+
+  let updatedSpace: typeof spaces.$inferSelect | undefined;
+  try {
+    [updatedSpace] = await db
+      .update(spaces)
+      .set(applyLocationFieldsIfPresent(spaceFields))
+      .where(eq(spaces.slug, slug))
+      .returning();
+  } catch (error) {
+    rethrowIfWeb3SpaceIdUniqueViolation(error, spaceFields.web3SpaceId);
+  }
 
   if (!updatedSpace) {
     throw new Error('Failed to update space');
@@ -150,11 +212,23 @@ export const updateSpaceById = async (
       throw new Error('Failed to update space: not found');
     }
 
-    const [updatedSpace] = await tx
-      .update(spaces)
-      .set(applyLocationFieldsIfPresent(spaceFields))
-      .where(eq(spaces.id, id))
-      .returning();
+    if (
+      spaceFields.web3SpaceId != null &&
+      spaceFields.web3SpaceId !== originalSpace.web3SpaceId
+    ) {
+      await assertWeb3SpaceIdAvailable(tx, spaceFields.web3SpaceId, { id });
+    }
+
+    let updatedSpace: typeof spaces.$inferSelect | undefined;
+    try {
+      [updatedSpace] = await tx
+        .update(spaces)
+        .set(applyLocationFieldsIfPresent(spaceFields))
+        .where(eq(spaces.id, id))
+        .returning();
+    } catch (error) {
+      rethrowIfWeb3SpaceIdUniqueViolation(error, spaceFields.web3SpaceId);
+    }
 
     if (!updatedSpace) {
       throw new Error('Failed to update space');
@@ -195,6 +269,13 @@ export const updateSpaceConfigurationById = async (
     const normalizedRest = willBeArchived
       ? { ...spaceFields, parentId: null }
       : spaceFields;
+
+    if (
+      normalizedRest.web3SpaceId != null &&
+      normalizedRest.web3SpaceId !== originalSpace.web3SpaceId
+    ) {
+      await assertWeb3SpaceIdAvailable(tx, normalizedRest.web3SpaceId, { id });
+    }
 
     if (!wasArchived && willBeArchived) {
       const reparentTo = originalSpace.parentId ?? null;
@@ -246,11 +327,16 @@ export const updateSpaceConfigurationById = async (
         .where(eq(spaces.id, nextParentId));
     }
 
-    const [updatedSpace] = await tx
-      .update(spaces)
-      .set(applyLocationFieldsIfPresent(normalizedRest))
-      .where(eq(spaces.id, id))
-      .returning();
+    let updatedSpace: typeof spaces.$inferSelect | undefined;
+    try {
+      [updatedSpace] = await tx
+        .update(spaces)
+        .set(applyLocationFieldsIfPresent(normalizedRest))
+        .where(eq(spaces.id, id))
+        .returning();
+    } catch (error) {
+      rethrowIfWeb3SpaceIdUniqueViolation(error, normalizedRest.web3SpaceId);
+    }
 
     if (!updatedSpace) {
       throw new Error('Failed to update space');
