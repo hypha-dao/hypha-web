@@ -512,6 +512,29 @@ describe('space mutations web3SpaceId uniqueness', () => {
     expect(db.rows.find((r) => r.id === 200)?.web3SpaceId).toBeNull();
   });
 
+  it('allows updateSpaceBySlug to keep the probe web3SpaceId shared with hypha', async () => {
+    const { updateSpaceBySlug } = await loadMutations();
+    const db = createInMemorySpaceDb([
+      { id: 94, title: 'Hypha', slug: 'hypha', web3SpaceId: 240 },
+      {
+        id: 853,
+        title: 'Probe',
+        slug: 'zz-w3-probe-1220',
+        web3SpaceId: 240,
+      },
+    ]);
+
+    const updated = await updateSpaceBySlug(
+      { slug: 'zz-w3-probe-1220', title: 'Probe renamed', web3SpaceId: 240 },
+      { db: db as never },
+    );
+
+    expect(updated.slug).toBe('zz-w3-probe-1220');
+    expect(updated.title).toBe('Probe renamed');
+    expect(updated.web3SpaceId).toBe(240);
+    expect(db.rows.find((row) => row.id === 94)?.web3SpaceId).toBe(240);
+  });
+
   it('allows updating a space when keeping its own web3SpaceId or assigning a free one', async () => {
     const { updateSpaceById, updateSpaceConfigurationById } =
       await loadMutations();

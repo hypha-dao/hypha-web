@@ -171,13 +171,19 @@ export const updateSpaceBySlug = async (
   { db }: { db: DatabaseInstance },
 ) => {
   const { capitals, rest: spaceFields } = takeExchangeCapitals(rest);
-  await assertWeb3SpaceIdAvailable(db, spaceFields.web3SpaceId, { slug });
-
   const [currentSpace] = await db
     .select({ web3SpaceId: spaces.web3SpaceId })
     .from(spaces)
     .where(eq(spaces.slug, slug))
     .limit(1);
+
+  if (
+    spaceFields.web3SpaceId != null &&
+    spaceFields.web3SpaceId !== currentSpace?.web3SpaceId
+  ) {
+    await assertWeb3SpaceIdAvailable(db, spaceFields.web3SpaceId, { slug });
+  }
+
   const effectiveWeb3SpaceId =
     spaceFields.web3SpaceId !== undefined
       ? spaceFields.web3SpaceId
