@@ -46,6 +46,7 @@ function buildMemberPersonCatalog(
     if (!person || typeof person.id !== 'number') continue;
     const label = personRosterDisplayLabel(person, '').trim();
     if (!label) continue;
+    if (byId.has(person.id) || knownNames.has(label.toLowerCase())) continue;
     byId.set(person.id, person);
     knownNames.add(label.toLowerCase());
   }
@@ -63,13 +64,7 @@ function buildMemberPersonCatalog(
     syntheticId -= 1;
   }
 
-  return [...byId.values()].sort((a, b) =>
-    personRosterDisplayLabel(a, '').localeCompare(
-      personRosterDisplayLabel(b, ''),
-      undefined,
-      { sensitivity: 'base' },
-    ),
-  );
+  return [...byId.values()];
 }
 
 function findPersonInCatalog(

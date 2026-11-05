@@ -125,7 +125,34 @@ export type QuestSpaceMember = {
   nickname: string | null;
 };
 
-/** Full space member roster for quest pickers, read across all pages of the access-checked members API. */
+function isCleanMemberDisplayName(name: string): boolean {
+  if (!name || name.length > 60) return false;
+  if (/https?:\/\/|www\.|\.blogspot\.|\.com\b/i.test(name)) return false;
+  return true;
+}
+
+function toQuestSpaceMemberEntry(person: Person): QuestSpaceMember | null {
+  if (!person || typeof person.id !== 'number' || person.id <= 0) {
+    return null;
+  }
+  const name = personRosterDisplayLabel(person, '').trim();
+  if (!isCleanMemberDisplayName(name)) return null;
+  return {
+    person,
+    personId: person.id,
+    name,
+    avatarUrl: person.avatarUrl ?? null,
+    nickname: person.nickname ?? null,
+  };
+}
+
+/**
+ * Full member roster for quest pickers: loads all pages of the space's
+ * `/api/v1/spaces/[spaceSlug]/members` first, then supplements with the
+ * member directory (`/api/v1/people/me/intelligence` + `/api/v1/transfer-recipients`,
+ * matching Agreements member pickers) so sandbox spaces with few on-chain
+ * members still offer the full roster with space members prioritized at the top.
+ */
 export function useQuestSpaceMembers(spaceSlug: string | undefined) {
   const { getAccessToken, user, isLoading: authLoading } = useAuthentication();
   const { person: me } = useMe();
@@ -137,58 +164,102 @@ export function useQuestSpaceMembers(spaceSlug: string | undefined) {
       : null,
     async ([, slug]) => {
       const headers = await authHeaders(getAccessToken);
-      const people: Person[] = [];
-      const pageSize = 100;
-      const maxPages = 20;
+      const hasAuth = 'Authorization' in (headers as Record<string, string>);
 
-      for (let page = 1; page <= maxPages; page += 1) {
-        const response = await fetch(
-          `/api/v1/spaces/${encodeURIComponent(
-            slug,
-          )}/members?page=${page}&pageSize=${pageSize}`,
-          { headers },
-        );
-        if (!response.ok) {
-          throw new Error(`Failed to load space members (${response.status})`);
-        }
-        const body = (await response.json()) as {
-          persons?: {
-            data?: Person[];
-            pagination?: {
-              hasNextPage?: boolean;
-              totalPages?: number;
-              pageCount?: number;
+      const spacePeoplePromise = (async () => {
+        const people: Person[] = [];
+        const pageSize = 100;
+        const maxPages = 20;
+
+        for (let page = 1; page <= maxPages; page += 1) {
+          const response = await fetch(
+            `/api/v1/spaces/${encodeURIComponent(
+              slug,
+            )}/members?page=${page}&pageSize=${pageSize}`,
+            { headers },
+          );
+          if (!response.ok) {
+            throw new Error(
+              `Failed to load space members (${response.status})`,
+            );
+          }
+          const body = (await response.json()) as {
+            persons?: {
+              data?: Person[];
+              pagination?: {
+                hasNextPage?: boolean;
+                totalPages?: number;
+                pageCount?: number;
+              };
             };
           };
-        };
-        const batch = body.persons?.data ?? [];
-        people.push(...batch);
-        const pagination = body.persons?.pagination;
-        if (batch.length < pageSize) break;
-        if (pagination?.hasNextPage === false) break;
-        const totalPages = pagination?.totalPages ?? pagination?.pageCount;
-        if (totalPages != null && page >= totalPages) break;
-      }
-
-      const byId = new Map<number, QuestSpaceMember>();
-      for (const person of people) {
-        if (!person || typeof person.id !== 'number' || person.id <= 0) {
-          continue;
+          const batch = body.persons?.data ?? [];
+          people.push(...batch);
+          const pagination = body.persons?.pagination;
+          if (batch.length < pageSize) break;
+          if (pagination?.hasNextPage === false) break;
+          const totalPages = pagination?.totalPages ?? pagination?.pageCount;
+          if (totalPages != null && page >= totalPages) break;
         }
-        const name = personRosterDisplayLabel(person, '').trim();
-        if (!name) continue;
-        byId.set(person.id, {
-          person,
-          personId: person.id,
-          name,
-          avatarUrl: person.avatarUrl ?? null,
-          nickname: person.nickname ?? null,
-        });
-      }
+        return people;
+      })();
 
-      return [...byId.values()].sort((a, b) =>
-        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
-      );
+      const intelligencePeoplePromise = hasAuth
+        ? fetch('/api/v1/people/me/intelligence?connections=60&scope=shell', {
+            headers,
+          })
+            .then(async (res) => {
+              if (!res.ok) return [] as Person[];
+              const body = (await res.json()) as {
+                person?: Person | null;
+                connections?: Person[];
+              };
+              return [
+                ...(body.person ? [body.person] : []),
+                ...(body.connections ?? []),
+              ];
+            })
+            .catch(() => [] as Person[])
+        : Promise.resolve([] as Person[]);
+
+      const directoryPeoplePromise = fetch('/api/v1/transfer-recipients')
+        .then(async (res) => {
+          if (!res.ok) return [] as Person[];
+          const body = (await res.json()) as { people?: Person[] };
+          return body.people ?? [];
+        })
+        .catch(() => [] as Person[]);
+
+      const [spacePeople, intelligencePeople, directoryPeople] =
+        await Promise.all([
+          spacePeoplePromise,
+          intelligencePeoplePromise,
+          directoryPeoplePromise,
+        ]);
+
+      const seenIds = new Set<number>();
+      const seenNames = new Set<string>();
+      const collectGroup = (list: Person[]): QuestSpaceMember[] => {
+        const group: QuestSpaceMember[] = [];
+        for (const person of list) {
+          const entry = toQuestSpaceMemberEntry(person);
+          if (!entry) continue;
+          const nameKey = entry.name.toLowerCase();
+          if (seenIds.has(entry.personId) || seenNames.has(nameKey)) continue;
+          seenIds.add(entry.personId);
+          seenNames.add(nameKey);
+          group.push(entry);
+        }
+        return group.sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+        );
+      };
+
+      const primarySpaceGroup = collectGroup(spacePeople);
+      const connectedGroup = collectGroup(intelligencePeople);
+      const directoryGroup = collectGroup(directoryPeople);
+
+      return [...primarySpaceGroup, ...connectedGroup, ...directoryGroup];
     },
     { revalidateOnFocus: false },
   );

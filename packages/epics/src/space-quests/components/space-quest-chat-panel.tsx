@@ -7,14 +7,18 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { SidebarContent, SidebarHeader } from '@hypha-platform/ui';
+import { Search, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useCallback, useMemo, useState } from 'react';
 import {
+  getAgentAvatarInitials,
+  tagGroupAccentClass,
+} from '../../common/ai-agent-competencies';
+import {
   HumanChatPanelChatBar,
   HumanChatPanelErrorBoundary,
   HumanChatPanelHeader,
-  HumanChatPanelMembers,
   HumanChatPanelMessages,
   HumanChatPanelTabs,
   type ChatDraftAttachment,
@@ -25,18 +29,42 @@ import { AgentMentionLabelProvider } from '../../common/human-chat-panel/agent-m
 import { HumanChatPanelTypingIndicator } from '../../common/human-chat-panel/human-chat-panel-typing-indicator';
 import {
   matrixAgentSkills,
+  matrixAgentUserId,
   withMatrixAgentMention,
 } from '../../common/human-chat-panel/matrix-agent-mention';
 import { messagesChannelGlyph } from '../../common/human-chat-panel/messages-channel-glyph';
 import type { SpaceQuestDraftPanelSession } from '../../common/human-chat-panel-context';
+import { PersonAvatar } from '../../people/components/person-avatar';
 import type { UseMembers } from '../../spaces/hooks/types';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { useQuestSpaceMembers } from '../hooks/use-space-quests';
 
+const FALLBACK_AGENT_MXID = '@hypha_bot_preview:matrix.hypha.earth';
+
+const QUICK_DRAFT_PROMPTS = [
+  {
+    id: 'draft-all',
+    label: 'Draft sections from goal',
+    prompt:
+      '@AI Agents Draft the Scope, Success Criteria, and Milestones sections from our goal.',
+  },
+  {
+    id: 'suggest-scope',
+    label: 'Suggest scope & criteria',
+    prompt:
+      '@AI Agents Suggest concrete In Scope, Out of Scope, and Success Criteria bullets for this quest.',
+  },
+  {
+    id: 'suggest-milestones',
+    label: 'Suggest milestones',
+    prompt:
+      '@AI Agents Propose 3 concrete milestones with target dates and descriptions for this quest.',
+  },
+] as const;
+
 function SpaceQuestChatBody({
   session,
   activeTab,
-  useMembers,
 }: {
   session: SpaceQuestDraftPanelSession;
   activeTab: ChatPanelTab;
@@ -51,17 +79,23 @@ function SpaceQuestChatBody({
   const [draftAttachments, setDraftAttachments] = useState<
     ChatDraftAttachment[]
   >([]);
+  const [memberQuery, setMemberQuery] = useState('');
 
+  const agentLabel = tChat('agentMentionLabel');
+  const botMxid = matrixAgentUserId() ?? FALLBACK_AGENT_MXID;
   const currentUserAvatarUrl = me?.avatarUrl?.trim() || undefined;
   const calledIds = useMemo(
     () => calledSpecialistIds(session.messages),
     [session.messages],
   );
-
-  const defaultSpecialist = specialistById('operations');
-  const defaultSpecialistRole = defaultSpecialist
-    ? tCoherence(defaultSpecialist.roleKey)
-    : tChat('agentMentionLabel');
+  const calledSpecialists = useMemo(
+    () =>
+      calledIds.flatMap((id) => {
+        const sp = specialistById(id);
+        return sp ? [sp] : [];
+      }),
+    [calledIds],
+  );
 
   const panelMessages = useMemo(
     () =>
@@ -69,14 +103,17 @@ function SpaceQuestChatBody({
         id: msg.id,
         role: msg.role,
         parts: [{ type: 'text' as const, text: msg.text }],
-        ...(msg.senderName ? { senderName: msg.senderName } : {}),
-        ...(msg.avatarUrl ? { avatarUrl: msg.avatarUrl } : {}),
-        ...(msg.agentSpecialistId
-          ? { agentSpecialistId: msg.agentSpecialistId }
+        senderName:
+          msg.role === 'member'
+            ? msg.senderName?.trim() || agentLabel
+            : msg.senderName,
+        ...(msg.role === 'member'
+          ? { senderMatrixId: msg.senderMatrixId ?? botMxid }
           : {}),
+        ...(msg.avatarUrl ? { avatarUrl: msg.avatarUrl } : {}),
         timestamp: msg.timestamp,
       })),
-    [session.messages],
+    [agentLabel, botMxid, session.messages],
   );
 
   const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
@@ -91,16 +128,32 @@ function SpaceQuestChatBody({
       space,
       resolvedTheme === 'dark' ? 'dark' : 'light',
     );
-    return withMatrixAgentMention(
-      roster,
-      tChat('agentMentionLabel'),
-      matrixAgentSkills(tChat),
+    const skills = [
+      ...matrixAgentSkills(tChat),
       {
-        kind: 'space',
-        logoUrl,
+        id: 'quest-draft-all',
+        prompt:
+          'Draft the Scope, Success Criteria, and Milestones sections from our goal.',
       },
-    );
-  }, [me?.id, resolvedTheme, space, spaceMembers, tChat]);
+    ];
+    const withAgent = withMatrixAgentMention(roster, agentLabel, skills, {
+      kind: 'space',
+      logoUrl,
+    });
+    if (withAgent.some((c) => c.rowKey === 'agent')) {
+      return withAgent;
+    }
+    return [
+      {
+        userId: botMxid,
+        displayLabel: agentLabel,
+        rowKey: 'agent',
+        skills,
+        agentIcon: { kind: 'space', logoUrl },
+      },
+      ...roster,
+    ];
+  }, [agentLabel, botMxid, me?.id, resolvedTheme, space, spaceMembers, tChat]);
 
   const getMentionComposerLabel = useCallback(
     (member: ChatMentionCandidate, resolvedComposerLabel?: string) =>
@@ -108,20 +161,110 @@ function SpaceQuestChatBody({
     [],
   );
 
-  if (activeTab === 'members' && useMembers) {
+  const visibleMembers = useMemo(() => {
+    const q = memberQuery.trim().toLowerCase();
+    if (!q) return spaceMembers;
+    return spaceMembers.filter(
+      (m) =>
+        m.name.toLowerCase().includes(q) ||
+        (m.nickname && m.nickname.toLowerCase().includes(q)),
+    );
+  }, [memberQuery, spaceMembers]);
+
+  const showAgentInMembers = useMemo(() => {
+    const q = memberQuery.trim().toLowerCase();
+    if (!q) return true;
+    return agentLabel.toLowerCase().includes(q);
+  }, [agentLabel, memberQuery]);
+
+  if (activeTab === 'members') {
+    const totalCount = spaceMembers.length + 1 + calledSpecialists.length;
     return (
       <div
-        className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        className="narrow-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-3"
         role="tabpanel"
         id="chat-tabpanel-members"
         aria-labelledby="chat-tab-members"
+        data-testid="chat-panel-members"
       >
-        <HumanChatPanelMembers
-          useMembers={useMembers}
-          spaceSlug={session.spaceSlug}
-          roomScoped={false}
-          calledSpecialistIds={calledIds}
-        />
+        <div className="px-1 pb-2 text-xs font-medium text-muted-foreground">
+          {tChat('membersCount', { count: totalCount, online: 1 })}
+        </div>
+        <label className="relative mb-2 min-w-0">
+          <span className="sr-only">{tChat('membersSearch')}</span>
+          <Search
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
+            strokeWidth={1.5}
+            aria-hidden
+          />
+          <input
+            value={memberQuery}
+            onChange={(event) => setMemberQuery(event.target.value)}
+            placeholder={tChat('membersSearch')}
+            data-testid="chat-panel-members-search"
+            className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+          />
+        </label>
+
+        {showAgentInMembers ? (
+          <div
+            className="flex items-center gap-3 rounded-none px-2 py-1.5"
+            data-testid="chat-panel-member-item"
+          >
+            <div
+              className={`flex h-8 w-8 shrink-0 items-center justify-center text-[11px] font-semibold ${tagGroupAccentClass(
+                'operations',
+              )}`}
+              aria-hidden
+            >
+              {getAgentAvatarInitials(agentLabel)}
+            </div>
+            <span className="truncate text-sm font-medium text-foreground">
+              {agentLabel}
+            </span>
+          </div>
+        ) : null}
+
+        {calledSpecialists.map((specialist) => {
+          const role = tCoherence(specialist.roleKey);
+          return (
+            <div
+              key={specialist.id}
+              className="flex items-center gap-3 rounded-none px-2 py-1.5"
+              data-testid="chat-panel-member-item"
+            >
+              <div
+                className={`flex h-8 w-8 shrink-0 items-center justify-center text-[11px] font-semibold ${tagGroupAccentClass(
+                  specialist.id,
+                )}`}
+                aria-hidden
+              >
+                {getAgentAvatarInitials(role)}
+              </div>
+              <span className="truncate text-sm text-foreground">{role}</span>
+            </div>
+          );
+        })}
+
+        {visibleMembers.map((member) => (
+          <div
+            key={member.personId}
+            className="flex items-center gap-3 rounded-none px-2 py-1.5 transition-colors hover:bg-foreground/[0.04]"
+            data-testid="chat-panel-member-item"
+          >
+            <PersonAvatar
+              avatarSrc={member.avatarUrl ?? undefined}
+              userName={member.name}
+              size="md"
+              className="rounded-full"
+              personId={member.personId}
+            />
+            <span className="truncate text-sm text-foreground">
+              {member.name}
+              {me?.id && member.personId === me.id ? ` (${tChat('you')})` : ''}
+            </span>
+          </div>
+        ))}
       </div>
     );
   }
@@ -141,11 +284,48 @@ function SpaceQuestChatBody({
           />
         </HumanChatPanelErrorBoundary>
       </div>
+
+      {/* Shared platform agent chip + one-click section fill helpers */}
+      <div
+        className="flex flex-wrap items-center gap-1.5 border-t border-border/60 px-3 py-2"
+        data-testid="quest-chat-agent-assist-bar"
+      >
+        <button
+          type="button"
+          data-testid="quest-chat-agent-chip"
+          onClick={() => {
+            const prefix = `@${agentLabel} `;
+            if (!session.input.startsWith(prefix)) {
+              session.onInputChange(`${prefix}${session.input}`);
+            }
+          }}
+          className="inline-flex items-center gap-1 border border-foreground/50 bg-background px-2 py-0.5 text-[11px] font-semibold text-foreground transition-colors hover:bg-neutral-3"
+        >
+          <Sparkles className="size-3" aria-hidden />
+          <span>@{agentLabel}</span>
+        </button>
+        {QUICK_DRAFT_PROMPTS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            disabled={session.isAgentTyping}
+            onClick={() => {
+              if (session.onQuickPrompt) {
+                session.onQuickPrompt(item.prompt);
+              } else {
+                session.onInputChange(item.prompt);
+              }
+            }}
+            className="inline-flex items-center border border-border bg-background-2 px-2 py-0.5 text-[11px] text-neutral-11 transition-colors hover:border-foreground/40 hover:text-foreground disabled:opacity-50"
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
       <HumanChatPanelTypingIndicator
         peers={
-          session.isAgentTyping
-            ? [{ userId: 'agent', name: defaultSpecialistRole }]
-            : []
+          session.isAgentTyping ? [{ userId: botMxid, name: agentLabel }] : []
         }
       />
       <HumanChatPanelErrorBoundary key="quest-draft-composer">
@@ -177,8 +357,14 @@ export function SpaceQuestSidePanel({
 }) {
   const tChat = useTranslations('HumanChatPanel');
   const tConnections = useTranslations('Connections');
+  const { resolvedTheme } = useTheme();
+  const { space } = useSpaceBySlug(session.spaceSlug);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
   const title = session.questTitle.trim() || 'New quest';
+  const spaceLogoUrl = resolveSpaceDisplayLogoUrl(
+    space,
+    resolvedTheme === 'dark' ? 'dark' : 'light',
+  );
 
   return (
     <AgentMentionLabelProvider value={tChat('agentMentionLabel')}>
@@ -186,6 +372,16 @@ export function SpaceQuestSidePanel({
         <HumanChatPanelHeader
           title={title}
           onBack={onClose}
+          titleStart={
+            spaceLogoUrl ? (
+              <img
+                src={spaceLogoUrl}
+                alt=""
+                aria-hidden
+                className="h-full w-full rounded-full object-cover"
+              />
+            ) : undefined
+          }
           channelIcon={messagesChannelGlyph('quest') ?? undefined}
           channelIconLabel={tConnections('inbox.tagQuest')}
         />

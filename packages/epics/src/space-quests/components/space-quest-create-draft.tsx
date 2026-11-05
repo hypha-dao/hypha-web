@@ -6,7 +6,6 @@ import {
   QUEST_DOCUMENT_LABEL,
   QUEST_STEWARD_STEPS,
   buildQuestProposalDescription,
-  bulletsToMarkdownList,
   selectSpecialistForQuestion,
   specialistById,
   splitMarkdownLinesToBullets,
@@ -41,12 +40,19 @@ import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-back
 import {
   createSpaceQuestRequest,
   deleteSpaceQuestRequest,
-  findQuestSpaceMember,
   findQuestSpaceMemberId,
   patchSpaceQuestRequest,
   toQuestSpaceMemberPersons,
   useQuestSpaceMembers,
 } from '../hooks/use-space-quests';
+import {
+  applyPatchToQuestDraftState,
+  buildLocalQuestDraftPatch,
+  findNextUnfilledQuestStep,
+  stewardQuestionForStep,
+  type QuestDraftPatchInput,
+  type QuestDraftStateSnapshot,
+} from '../utils/quest-draft-assistant';
 import {
   EditQuestGoalModal,
   EditQuestLeadModal,
@@ -75,29 +81,6 @@ function stripAgentMentionPrefix(text: string, agentLabel: string): string {
     .trim();
 }
 
-function stewardQuestionForStep(step: QuestStewardStep): string {
-  switch (step) {
-    case 'goal':
-      return 'Hey, what is the goal of the quest you want to create?';
-    case 'scope':
-      return "Got it, I've added that as the Goal. What's in scope, and what's explicitly out?";
-    case 'success':
-      return 'How will we know it succeeded?';
-    case 'milestones':
-      return "Let's break it into milestones — what are the key checkpoints, dates, and owners?";
-    case 'members':
-      return "Who's on the quest, and what is each person responsible for?";
-    case 'lead':
-      return 'Who should lead it?';
-    case 'targetDate':
-      return "What's the target date?";
-    case 'rewards':
-      return 'What reward tokens and amounts?';
-    case 'name':
-      return 'What should we call this quest?';
-  }
-}
-
 export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const spaceMembers = useQuestSpaceMembers(spaceSlug);
   const spaceMemberNames = useMemo(
@@ -107,7 +90,6 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const locale = useLocale();
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tChat = useTranslations('HumanChatPanel');
-  const tCoherence = useTranslations('CoherenceTab');
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
@@ -157,15 +139,13 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
     [leadName, members, milestones, spaceMembers],
   );
 
-  const defaultSpecialist = specialistById('operations');
-  const defaultSpecialistRole = defaultSpecialist
-    ? tCoherence(defaultSpecialist.roleKey)
-    : tChat('agentMentionLabel');
+  const agentLabel = tChat('agentMentionLabel');
 
   // Guided flow state (Goal first, one section per turn, no Priority)
   const [stewardStepIndex, setStewardStepIndex] = useState<number>(0);
   const [activeSection, setActiveSection] = useState<QuestStewardStep>('goal');
   const [chatInput, setChatInput] = useState('');
+  const [isAgentTyping, setIsAgentTyping] = useState(false);
   const [chatMessages, setChatMessages] = useState<
     SpaceQuestDraftChatMessage[]
   >(() => [
@@ -173,7 +153,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       id: 'm1',
       role: 'member',
       agentSpecialistId: 'operations',
-      senderName: defaultSpecialistRole,
+      senderName: agentLabel,
       timestamp: new Date(),
       text: 'Hey, what is the goal of the quest you want to create?',
     },
@@ -204,150 +184,241 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       config,
     });
 
-  const handleSendStewardMessage = useCallback(() => {
-    const rawTrimmed = chatInput.trim();
-    if (!rawTrimmed) return;
-    setChatInput('');
-
-    const trimmed =
-      stripAgentMentionPrefix(rawTrimmed, tChat('agentMentionLabel')) ||
-      rawTrimmed;
-    recordMobilizedAiAgentsForQuestion(spaceSlug, trimmed);
-
-    const currentStep = QUEST_STEWARD_STEPS[stewardStepIndex] ?? 'goal';
-    const nextStepIndex = Math.min(
-      QUEST_STEWARD_STEPS.length - 1,
-      stewardStepIndex + 1,
-    );
-    const nextStep = QUEST_STEWARD_STEPS[nextStepIndex] ?? 'name';
-
-    // Apply user message to the current section in the live draft
-    if (currentStep === 'goal') {
-      setGoal(trimmed);
-    } else if (currentStep === 'scope') {
-      const parts = trimmed.split(/out\s*:/i);
-      const inItems = splitMarkdownLinesToBullets(
-        (parts[0] ?? trimmed).replace(/^in\s*:/i, ''),
-      );
-      const outItems = parts[1]
-        ? splitMarkdownLinesToBullets(parts[1])
-        : scopeOut;
-      if (inItems.length > 0) {
-        setScopeIn(inItems);
-        setScopeInMarkdown(bulletsToMarkdownList(inItems));
+  const commitDraftSnapshot = useCallback(
+    (next: QuestDraftStateSnapshot) => {
+      setName(next.name);
+      setGoal(next.goal);
+      setScopeIn(next.scopeIn);
+      setScopeOut(next.scopeOut);
+      setScopeInMarkdown(next.scopeInMarkdown);
+      setScopeOutMarkdown(next.scopeOutMarkdown);
+      setSuccessCriteria(next.successCriteria);
+      setRewards(next.rewards);
+      setMilestones(next.milestones);
+      if (next.leadName !== leadName) {
+        setLeadNameOverride(next.leadName);
       }
-      if (outItems.length > 0) {
-        setScopeOut(outItems);
-        setScopeOutMarkdown(bulletsToMarkdownList(outItems));
+      setSelectedLeadPersonId(next.selectedLeadPersonId);
+      setMembers(next.members);
+      setTargetDate(next.targetDate);
+    },
+    [leadName],
+  );
+
+  const handleSendStewardMessage = useCallback(
+    async (overridePrompt?: string) => {
+      const rawTrimmed = (overridePrompt ?? chatInput).trim();
+      if (!rawTrimmed) return;
+      if (!overridePrompt) {
+        setChatInput('');
       }
-    } else if (currentStep === 'success') {
-      const bullets = splitMarkdownLinesToBullets(trimmed);
-      setSuccessCriteria(
-        bulletsToMarkdownList(bullets.length > 0 ? bullets : [trimmed]),
-      );
-    } else if (currentStep === 'milestones') {
-      setMilestones((prev) => [
-        ...prev,
-        {
-          name: trimmed.slice(0, 60),
-          dueDate: 'TBD',
-          description: trimmed,
-          ownerPersonId: person?.id ?? null,
-          ownerName: viewerDisplayName,
-          status: 'not_started',
-        },
-      ]);
-    } else if (currentStep === 'members') {
-      const rawName = (trimmed.split(':')[0] ?? trimmed)
-        .replace(/^@/, '')
-        .replace(/_/g, ' ')
-        .trim();
-      const matchedMember = findQuestSpaceMember(spaceMembers, {
-        name: rawName,
+
+      const trimmed =
+        stripAgentMentionPrefix(rawTrimmed, agentLabel) || rawTrimmed;
+      recordMobilizedAiAgentsForQuestion(spaceSlug, trimmed);
+
+      const currentStep = QUEST_STEWARD_STEPS[stewardStepIndex] ?? 'goal';
+      const currentSnapshot: QuestDraftStateSnapshot = {
+        name,
+        goal,
+        scopeIn,
+        scopeOut,
+        scopeInMarkdown,
+        scopeOutMarkdown,
+        successCriteria,
+        rewards,
+        milestones,
+        leadName,
+        selectedLeadPersonId,
+        members,
+        targetDate,
+      };
+
+      // 1. Apply local multi-section extraction / synthesis immediately so the draft form updates live
+      const localPatch = buildLocalQuestDraftPatch({
+        message: trimmed,
+        currentStep,
+        draft: currentSnapshot,
+        viewerDisplayName,
       });
-      setMembers((prev) => [
-        ...prev,
-        {
-          personId: matchedMember?.personId ?? null,
-          memberName: matchedMember?.name || rawName || trimmed.slice(0, 32),
-          memberAvatarUrl: matchedMember?.avatarUrl ?? null,
-          roleLabel: 'Member',
-          responsibilities: [
-            trimmed.split(':')[1]?.trim() || 'Core outcome delivery',
-          ],
-        },
-      ]);
-    } else if (currentStep === 'lead') {
-      const rawLead = trimmed.replace(/^@/, '').replace(/_/g, ' ').trim();
-      const matchedLead = findQuestSpaceMember(spaceMembers, { name: rawLead });
-      setLeadNameOverride(matchedLead?.name || rawLead);
-      setSelectedLeadPersonId(matchedLead?.personId ?? null);
-    } else if (currentStep === 'targetDate') {
-      setTargetDate(trimmed);
-    } else if (currentStep === 'rewards') {
-      const match = /(\d[\d,.]*)\s*([A-Za-z]+)/.exec(trimmed);
-      if (match && match[1] && match[2]) {
-        setRewards((prev) => [
-          ...prev,
-          { amount: match[1]!, token: match[2]!.toUpperCase() },
-        ]);
-      }
-    } else if (currentStep === 'name') {
-      setName(trimmed);
-    }
+      const { next: afterLocal, updatedLabels: localUpdated } =
+        applyPatchToQuestDraftState({
+          current: currentSnapshot,
+          patch: localPatch,
+          spaceMembers,
+          viewerDisplayName,
+        });
+      commitDraftSnapshot(afterLocal);
 
-    const specialist =
-      selectSpecialistForQuestion(trimmed) ?? specialistById('operations');
-    const specialistId = specialist?.id ?? 'operations';
-    const specialistRole = specialist
-      ? tCoherence(specialist.roleKey)
-      : defaultSpecialistRole;
+      const nextUnfilled = findNextUnfilledQuestStep(afterLocal, currentStep);
+      const nextStep: QuestStewardStep = nextUnfilled ?? 'name';
+      const nextStepIndex = Math.max(0, QUEST_STEWARD_STEPS.indexOf(nextStep));
+      setStewardStepIndex(nextStepIndex);
+      setActiveSection(nextStep);
 
-    const reply =
-      stewardStepIndex < QUEST_STEWARD_STEPS.length - 1
-        ? stewardQuestionForStep(nextStep)
+      const specialist =
+        selectSpecialistForQuestion(trimmed) ?? specialistById('operations');
+      const specialistId = specialist?.id ?? 'operations';
+
+      const fallbackReply = nextUnfilled
+        ? localUpdated.length > 1
+          ? `Updated ${localUpdated.join(
+              ', ',
+            )} in your quest draft. ${stewardQuestionForStep(nextUnfilled)}`
+          : stewardQuestionForStep(nextUnfilled)
         : "Your quest draft is ready. Click CREATE QUEST whenever you're ready to submit it as a proposal for voting.";
 
-    setStewardStepIndex(nextStepIndex);
-    setActiveSection(nextStep);
-    const now = new Date();
-    setChatMessages((prev) => [
-      ...prev,
-      {
-        id: `u-${now.getTime()}`,
-        role: 'user',
-        senderName: viewerDisplayName,
-        avatarUrl: person?.avatarUrl ?? undefined,
-        timestamp: now,
-        text: rawTrimmed,
-      },
-      {
-        id: `s-${now.getTime() + 1}`,
-        role: 'member',
-        agentSpecialistId: specialistId,
-        senderName: specialistRole,
-        timestamp: new Date(now.getTime() + 1),
-        text: reply,
-      },
-    ]);
-  }, [
-    chatInput,
-    defaultSpecialistRole,
-    person?.avatarUrl,
-    person?.id,
-    scopeOut,
-    spaceMembers,
-    spaceSlug,
-    stewardStepIndex,
-    tChat,
-    tCoherence,
-    viewerDisplayName,
-  ]);
+      const now = new Date();
+      const replyId = `s-${now.getTime() + 1}`;
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: `u-${now.getTime()}`,
+          role: 'user',
+          senderName: viewerDisplayName,
+          avatarUrl: person?.avatarUrl ?? undefined,
+          timestamp: now,
+          text: rawTrimmed,
+        },
+        {
+          id: replyId,
+          role: 'member',
+          agentSpecialistId: specialistId,
+          senderName: agentLabel,
+          timestamp: new Date(now.getTime() + 1),
+          text: fallbackReply,
+        },
+      ]);
+
+      // 2. Ask the shared platform agent on the server to refine/expand the draft sections
+      setIsAgentTyping(true);
+      try {
+        const token = await getAccessToken?.().catch(() => null);
+        if (!token) return;
+        const response = await fetch(
+          `/api/v1/spaces/${encodeURIComponent(spaceSlug)}/quests/draft-assist`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              message: trimmed,
+              currentStep,
+              spaceTitle: space?.title,
+              draft: {
+                name: afterLocal.name,
+                goal: afterLocal.goal,
+                scopeIn: afterLocal.scopeIn,
+                scopeOut: afterLocal.scopeOut,
+                successCriteria: afterLocal.successCriteria,
+                targetDate: afterLocal.targetDate,
+                leadName: afterLocal.leadName,
+                rewards: afterLocal.rewards,
+                milestones: afterLocal.milestones.map((m) => ({
+                  name: m.name,
+                  dueDate: m.dueDate,
+                  description: m.description,
+                  ownerName: m.ownerName,
+                })),
+                members: afterLocal.members.map((m) => ({
+                  memberName: m.memberName,
+                  roleLabel: m.roleLabel,
+                  responsibilities: m.responsibilities,
+                })),
+              },
+              spaceMembers: spaceMembers.slice(0, 60).map((m) => ({
+                personId: m.personId,
+                name: m.name,
+              })),
+              history: chatMessages.slice(-8).map((m) => ({
+                role: m.role === 'user' ? 'user' : 'assistant',
+                text: m.text,
+              })),
+            }),
+          },
+        );
+        if (!response.ok) return;
+        const data = (await response.json()) as {
+          ok?: boolean;
+          patch?: QuestDraftPatchInput | null;
+          reply?: string | null;
+          specialistId?: string;
+        };
+        if (data.patch && Object.keys(data.patch).length > 0) {
+          const { next: afterAi } = applyPatchToQuestDraftState({
+            current: afterLocal,
+            patch: data.patch,
+            spaceMembers,
+            viewerDisplayName,
+          });
+          commitDraftSnapshot(afterAi);
+          const aiNextUnfilled = findNextUnfilledQuestStep(
+            afterAi,
+            currentStep,
+          );
+          if (aiNextUnfilled) {
+            setStewardStepIndex(
+              Math.max(0, QUEST_STEWARD_STEPS.indexOf(aiNextUnfilled)),
+            );
+            setActiveSection(aiNextUnfilled);
+          }
+        }
+        if (data.reply?.trim()) {
+          setChatMessages((prev) =>
+            prev.map((m) =>
+              m.id === replyId
+                ? {
+                    ...m,
+                    text: data.reply!.trim(),
+                    agentSpecialistId: data.specialistId ?? m.agentSpecialistId,
+                  }
+                : m,
+            ),
+          );
+        }
+      } catch {
+        // Keep the immediate local draft update and reply when offline
+      } finally {
+        setIsAgentTyping(false);
+      }
+    },
+    [
+      agentLabel,
+      chatInput,
+      chatMessages,
+      commitDraftSnapshot,
+      getAccessToken,
+      goal,
+      leadName,
+      members,
+      milestones,
+      name,
+      person?.avatarUrl,
+      rewards,
+      scopeIn,
+      scopeInMarkdown,
+      scopeOut,
+      scopeOutMarkdown,
+      selectedLeadPersonId,
+      space?.title,
+      spaceMembers,
+      spaceSlug,
+      stewardStepIndex,
+      successCriteria,
+      targetDate,
+      viewerDisplayName,
+    ],
+  );
 
   const handleSendRef = useRef(handleSendStewardMessage);
   handleSendRef.current = handleSendStewardMessage;
   const triggerSend = useCallback(() => {
-    handleSendRef.current();
+    void handleSendRef.current();
+  }, []);
+  const triggerQuickPrompt = useCallback((prompt: string) => {
+    void handleSendRef.current(prompt);
   }, []);
 
   const draftChatSession = useMemo(
@@ -358,8 +429,18 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       input: chatInput,
       onInputChange: setChatInput,
       onSend: triggerSend,
+      onQuickPrompt: triggerQuickPrompt,
+      isAgentTyping,
     }),
-    [chatInput, chatMessages, name, spaceSlug, triggerSend],
+    [
+      chatInput,
+      chatMessages,
+      isAgentTyping,
+      name,
+      spaceSlug,
+      triggerQuickPrompt,
+      triggerSend,
+    ],
   );
 
   // Open the shared right side panel on mount and host the Quest chat there.

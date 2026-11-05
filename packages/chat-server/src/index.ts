@@ -76,3 +76,9 @@ export {
   PREPARE_GOVERNANCE_PROPOSAL_TYPES,
 } from './tools/proposal-catalog';
 export { replyToMatrixAgentMention } from './matrix-agent-reply';
+export {
+  assistSpaceQuestDraft,
+  questDraftAssistRequestSchema,
+  type QuestDraftAssistPatch,
+  type QuestDraftAssistRequest,
+} from './quest-draft-assist';

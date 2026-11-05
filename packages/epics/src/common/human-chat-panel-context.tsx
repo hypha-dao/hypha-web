@@ -104,6 +104,7 @@ export type SpaceQuestDraftChatMessage = {
   text: string;
   timestamp: Date;
   senderName?: string;
+  senderMatrixId?: string;
   avatarUrl?: string;
   agentSpecialistId?: string;
 };
@@ -116,6 +117,7 @@ export type SpaceQuestDraftPanelSession = {
   input: string;
   onInputChange: (next: string) => void;
   onSend: () => void;
+  onQuickPrompt?: (prompt: string) => void;
   isAgentTyping?: boolean;
 };
 
