@@ -7,6 +7,23 @@ import { routing } from '../../packages/i18n/src/routing';
 const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
 const LOCALES = routing.locales;
 
+/**
+ * Path prefixes the middleware matcher (src/middleware.ts) skips, except `api`.
+ * Keep in step with that matcher.
+ */
+const MIDDLEWARE_SKIPPED_PREFIXES = [
+  '_matrix',
+  'placeholder',
+  'icon',
+  'brand',
+  'onesignal',
+  '.well-known',
+  'geo',
+  '_next/static',
+  '_next/image',
+  'favicon.ico',
+].join('|');
+
 const withNextIntl = createNextIntlPlugin('../../packages/i18n/src/request.ts');
 
 const nextConfig: NextConfig = {
@@ -54,14 +71,13 @@ const nextConfig: NextConfig = {
   },
   headers: async () => {
     return [
+      // `X-Frame-Options` / `frame-ancestors` are set per response in
+      // src/middleware.ts (white-label `/embed` must not carry `DENY`). Paths
+      // the middleware matcher skips keep the static rule: with
+      // `globalNotFound` an unknown URL under them renders a framable HTML 404.
       {
-        source: '/:path((?!api).*)*',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-        ],
+        source: `/:path((?:${MIDDLEWARE_SKIPPED_PREFIXES}).*)`,
+        headers: [{ key: 'X-Frame-Options', value: 'DENY' }],
       },
       {
         source: '/onesignal/:path*',
