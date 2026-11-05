@@ -266,7 +266,10 @@ export function assembleQuestRecord(
     proposalWeb3Id: extras.proposalWeb3Id ?? null,
     proposalStatus: extras.proposalStatus ?? null,
     acceptedAt: toIso(row.acceptedAt),
-    chatRoomId: row.chatRoomId ?? null,
+    chatRoomId:
+      row.chatRoomId && !row.chatRoomId.startsWith('provisioning:')
+        ? row.chatRoomId
+        : null,
     health,
     stewardHealthSummaries: row.stewardHealthSummaries ?? true,
     memberUpdateAlerts: row.memberUpdateAlerts ?? true,

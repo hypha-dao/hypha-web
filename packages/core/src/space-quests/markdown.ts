@@ -226,51 +226,20 @@ export function canMemberEditQuest(
   viewer: { id?: number | null; name?: string | null } | null | undefined,
   quest: Pick<QuestRecord, 'leadPersonId' | 'leadName' | 'members' | 'status'>,
 ): boolean {
-  if (!viewer) return false;
+  if (!viewer || viewer.id == null) return false;
   if (quest.status === 'archived') return false;
-  if (viewer.id != null && quest.leadPersonId != null) {
-    if (viewer.id === quest.leadPersonId) return true;
-  }
-  if (
-    viewer.id != null &&
-    quest.members.some((m) => m.personId != null && m.personId === viewer.id)
-  ) {
+  if (quest.leadPersonId != null && viewer.id === quest.leadPersonId) {
     return true;
   }
-  // Names only identify entries that were saved without a person id.
-  const viewerName = viewer.name?.trim().toLowerCase();
-  if (viewerName) {
-    if (
-      quest.leadPersonId == null &&
-      stripViewerYouMarker(quest.leadName).trim().toLowerCase() === viewerName
-    ) {
-      return true;
-    }
-    if (
-      quest.members.some(
-        (m) =>
-          m.personId == null &&
-          stripViewerYouMarker(m.memberName).trim().toLowerCase() ===
-            viewerName,
-      )
-    ) {
-      return true;
-    }
-  }
-  return false;
+  return quest.members.some(
+    (m) => m.personId != null && m.personId === viewer.id,
+  );
 }
 
 export function isViewerQuestLead(
   viewer: { id?: number | null; name?: string | null } | null | undefined,
   quest: Pick<QuestRecord, 'leadPersonId' | 'leadName'>,
 ): boolean {
-  if (!viewer) return false;
-  if (quest.leadPersonId != null) {
-    return viewer.id != null && viewer.id === quest.leadPersonId;
-  }
-  const viewerName = viewer.name?.trim().toLowerCase();
-  if (!viewerName) return false;
-  return (
-    stripViewerYouMarker(quest.leadName).trim().toLowerCase() === viewerName
-  );
+  if (!viewer || viewer.id == null || quest.leadPersonId == null) return false;
+  return viewer.id === quest.leadPersonId;
 }

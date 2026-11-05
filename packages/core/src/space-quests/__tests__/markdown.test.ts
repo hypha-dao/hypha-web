@@ -125,36 +125,30 @@ describe('quest permissions', () => {
     expect(isViewerQuestLead({ id: 9 }, quest)).toBe(false);
   });
 
-  it('matches names that still carry the viewer you-marker', () => {
-    const marked = {
+  it('requires a verified person id and never authorizes by display name', () => {
+    const unresolved = {
       ...quest,
       leadPersonId: null,
-      leadName: `Vlad K.${' '.repeat(40)}(you)`,
+      leadName: 'Vlad K.',
       members: [
         {
           ...quest.members[0]!,
           personId: null,
-          memberName: 'Maria S. (YOU)',
+          memberName: 'Maria S.',
         },
       ],
     };
-    expect(canMemberEditQuest({ name: 'Vlad K.' }, marked)).toBe(true);
-    expect(canMemberEditQuest({ name: 'Maria S.' }, marked)).toBe(true);
-    expect(
-      isViewerQuestLead({ name: 'Vlad K.' }, { ...marked, leadPersonId: null }),
-    ).toBe(true);
-    expect(canMemberEditQuest({ name: 'Someone Else' }, marked)).toBe(false);
-  });
-
-  it('does not match names by prefix or against entries with a person id', () => {
-    const named = {
-      ...quest,
-      leadPersonId: null,
-      leadName: 'Alexander Smith',
-      members: [],
-    };
-    expect(canMemberEditQuest({ id: 42, name: 'Al' }, named)).toBe(false);
-    expect(isViewerQuestLead({ id: 42, name: 'Al' }, named)).toBe(false);
+    expect(canMemberEditQuest({ id: 42, name: 'Vlad K.' }, unresolved)).toBe(
+      false,
+    );
+    expect(canMemberEditQuest({ id: 42, name: 'Maria S.' }, unresolved)).toBe(
+      false,
+    );
+    expect(isViewerQuestLead({ id: 42, name: 'Vlad K.' }, unresolved)).toBe(
+      false,
+    );
+    expect(canMemberEditQuest({ name: 'Vlad K.' }, unresolved)).toBe(false);
+    expect(isViewerQuestLead({ name: 'Vlad K.' }, unresolved)).toBe(false);
     expect(canMemberEditQuest({ id: 42, name: 'Vlad K.' }, quest)).toBe(false);
     expect(canMemberEditQuest({ id: 42, name: 'Maria S.' }, quest)).toBe(false);
     expect(isViewerQuestLead({ id: 42, name: 'Vlad K.' }, quest)).toBe(false);

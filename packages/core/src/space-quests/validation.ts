@@ -71,7 +71,6 @@ export const schemaPatchSpaceQuest = z.object({
   leadName: z.string().trim().max(120).optional(),
   status: z.enum(QUEST_STATUSES).optional(),
   proposalDocumentId: z.number().int().positive().nullable().optional(),
-  chatRoomId: z.string().trim().min(1).max(200).optional(),
   stewardHealthSummaries: z.boolean().optional(),
   memberUpdateAlerts: z.boolean().optional(),
   healthState: z.enum(QUEST_HEALTH_STATES).optional(),

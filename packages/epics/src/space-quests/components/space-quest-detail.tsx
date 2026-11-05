@@ -1387,8 +1387,7 @@ export function SpaceQuestDetail({
               </span>
             ) : null}
           </div>
-          {quest.status !== 'proposed' &&
-          (quest.chatRoomId || canMemberEditQuest(viewer, quest)) ? (
+          {quest.status !== 'proposed' && quest.chatRoomId ? (
             <button
               type="button"
               onClick={openQuestChat}

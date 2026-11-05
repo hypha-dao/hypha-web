@@ -439,7 +439,10 @@ export function EditQuestLeadModal({
 }) {
   const catalog = useMemo(
     () =>
-      buildMemberPersonCatalog(spaceMembers, [leadName, ...spaceMemberNames]),
+      buildMemberPersonCatalog(spaceMembers, [
+        leadName,
+        ...spaceMemberNames,
+      ]).filter((p) => p.id > 0),
     [leadName, spaceMemberNames, spaceMembers],
   );
 

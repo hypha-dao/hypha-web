@@ -148,7 +148,9 @@ export function useQuestSpaceMembers(spaceSlug: string | undefined) {
           )}/members?page=${page}&pageSize=${pageSize}`,
           { headers },
         );
-        if (!response.ok) break;
+        if (!response.ok) {
+          throw new Error(`Failed to load space members (${response.status})`);
+        }
         const body = (await response.json()) as {
           persons?: {
             data?: Person[];

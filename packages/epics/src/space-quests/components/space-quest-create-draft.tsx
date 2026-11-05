@@ -444,6 +444,20 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         return;
       }
 
+      if (!(jwt && space?.id && person?.id)) {
+        setSubmitError(
+          'Your session or space data is not ready. Wait a moment and try again.',
+        );
+        return;
+      }
+
+      if (!draftPayload.leadPersonId) {
+        setSubmitError(
+          'Select a space member as the Quest Lead before creating the proposal.',
+        );
+        return;
+      }
+
       // 1. Create the Quest row in `proposed` status (not Active yet)
       const createdQuest = await createSpaceQuestRequest({
         spaceSlug,
@@ -457,7 +471,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
           successCriteria: draftPayload.successCriteria,
           rewards: draftPayload.rewards,
           targetDate: draftPayload.targetDate,
-          leadPersonId: draftPayload.leadPersonId ?? null,
+          leadPersonId: draftPayload.leadPersonId,
           leadName: draftPayload.leadName,
           status: 'proposed',
           milestones: draftPayload.milestones.map((m) => ({
@@ -478,52 +492,57 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       });
       const createdQuestSlug = createdQuest.slug;
 
-      // 2. Submit as an Agreements proposal with label="Quest" when wallet/auth is ready
+      // 2. Submit as an Agreements proposal with label="Quest"
       const description = buildQuestProposalDescription(
         draftPayload,
         createdQuestSlug,
       );
 
-      if (jwt && space?.id && person?.id) {
-        let createdAgreement: Awaited<ReturnType<typeof createAgreement>>;
-        try {
-          createdAgreement = await createAgreement({
-            title: draftPayload.name.slice(0, 50),
-            description,
-            label: QUEST_DOCUMENT_LABEL,
-            creatorId: person.id,
-            spaceId: space.id,
-            ...(typeof space.web3SpaceId === 'number'
-              ? { web3SpaceId: space.web3SpaceId }
-              : {}),
-          });
-        } catch (agreementErr) {
-          // A proposed quest without a proposal can never be activated.
-          await deleteSpaceQuestRequest({
-            spaceSlug,
-            questSlug: createdQuestSlug,
-            getAccessToken,
-          }).catch(() => undefined);
-          throw agreementErr;
-        }
+      let createdAgreement: Awaited<ReturnType<typeof createAgreement>>;
+      try {
+        createdAgreement = await createAgreement({
+          title: draftPayload.name.slice(0, 50),
+          description,
+          label: QUEST_DOCUMENT_LABEL,
+          creatorId: person.id,
+          spaceId: space.id,
+          ...(typeof space.web3SpaceId === 'number'
+            ? { web3SpaceId: space.web3SpaceId }
+            : {}),
+        });
+      } catch (agreementErr) {
+        // A proposed quest without a proposal can never be activated.
+        await deleteSpaceQuestRequest({
+          spaceSlug,
+          questSlug: createdQuestSlug,
+          getAccessToken,
+        }).catch(() => undefined);
+        throw agreementErr;
+      }
 
-        if (createdAgreement?.id) {
-          await patchSpaceQuestRequest({
-            spaceSlug,
-            questSlug: createdQuestSlug,
-            patch: { proposalDocumentId: createdAgreement.id },
-            getAccessToken,
-          }).catch(() => undefined);
-        }
+      if (!createdAgreement?.id) {
+        await deleteSpaceQuestRequest({
+          spaceSlug,
+          questSlug: createdQuestSlug,
+          getAccessToken,
+        }).catch(() => undefined);
+        throw new Error('Failed to create quest proposal.');
+      }
 
-        if (createdAgreement?.slug) {
-          router.push(
-            `/${locale}/dho/${spaceSlug}/agreements/proposal/${encodeURIComponent(
-              createdAgreement.slug,
-            )}`,
-          );
-          return;
-        }
+      await patchSpaceQuestRequest({
+        spaceSlug,
+        questSlug: createdQuestSlug,
+        patch: { proposalDocumentId: createdAgreement.id },
+        getAccessToken,
+      });
+
+      if (createdAgreement.slug) {
+        router.push(
+          `/${locale}/dho/${spaceSlug}/agreements/proposal/${encodeURIComponent(
+            createdAgreement.slug,
+          )}`,
+        );
+        return;
       }
 
       router.push(

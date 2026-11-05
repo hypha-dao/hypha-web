@@ -140,6 +140,17 @@ async function reconcileQuestChannelMembers({
   }
 }
 
+const QUEST_ROOM_CLAIM_PREFIX = 'provisioning:';
+const QUEST_ROOM_CLAIM_TTL_MS = 60_000;
+
+function isExpiredQuestRoomClaim(value: string | null | undefined): boolean {
+  if (!value || !value.startsWith(QUEST_ROOM_CLAIM_PREFIX)) return false;
+  const parts = value.split(':');
+  const ts = Number(parts[1]);
+  if (!Number.isFinite(ts)) return true;
+  return Date.now() - ts > QUEST_ROOM_CLAIM_TTL_MS;
+}
+
 /**
  * Provision a Matrix quest channel (`kind: quest`) when a Quest proposal is accepted.
  * Only Quest members (lead + members) are invited/notified on creation; the room
@@ -147,6 +158,7 @@ async function reconcileQuestChannelMembers({
  */
 async function provisionQuestChannelOnAccept({
   questId,
+  currentChatRoomId,
   questName,
   leadPersonId,
   leadName,
@@ -155,6 +167,7 @@ async function provisionQuestChannelOnAccept({
   db,
 }: {
   questId: number;
+  currentChatRoomId?: string | null;
   questName: string;
   leadPersonId: number | null;
   leadName: string;
@@ -165,6 +178,27 @@ async function provisionQuestChannelOnAccept({
   const homeserver = getMatrixHomeserverUrl();
   const botToken = getMatrixBotAsToken();
   if (!homeserver || !botToken) return null;
+
+  if (currentChatRoomId && !isExpiredQuestRoomClaim(currentChatRoomId)) {
+    return null;
+  }
+
+  const claimToken = `${QUEST_ROOM_CLAIM_PREFIX}${Date.now()}:${Math.random()
+    .toString(36)
+    .slice(2, 10)}`;
+  const claimed = await db
+    .update(spaceQuests)
+    .set({ chatRoomId: claimToken })
+    .where(
+      and(
+        eq(spaceQuests.id, questId),
+        currentChatRoomId
+          ? eq(spaceQuests.chatRoomId, currentChatRoomId)
+          : isNull(spaceQuests.chatRoomId),
+      ),
+    )
+    .returning();
+  if (claimed.length === 0) return null;
 
   try {
     const roomId = await matrixCreateRoom(
@@ -207,10 +241,28 @@ async function provisionQuestChannelOnAccept({
     await db
       .update(spaceQuests)
       .set({ chatRoomId: roomId })
-      .where(and(eq(spaceQuests.id, questId), isNull(spaceQuests.chatRoomId)));
+      .where(
+        and(
+          eq(spaceQuests.id, questId),
+          eq(spaceQuests.chatRoomId, claimToken),
+        ),
+      );
 
     return roomId;
   } catch (error) {
+    try {
+      await db
+        .update(spaceQuests)
+        .set({ chatRoomId: null })
+        .where(
+          and(
+            eq(spaceQuests.id, questId),
+            eq(spaceQuests.chatRoomId, claimToken),
+          ),
+        );
+    } catch {
+      // Best-effort release; TTL expires stale claims otherwise.
+    }
     console.warn(
       '[space-quests] Matrix quest channel provisioning skipped:',
       error instanceof Error ? error.message : error,
@@ -258,6 +310,9 @@ export async function createSpaceQuest(
   const leadName = input.leadName?.trim() || actorName;
   const leadPersonId =
     input.leadPersonId ?? (leadName === actorName ? actor?.id ?? null : null);
+  if (leadPersonId == null) {
+    return { ok: false, error: 'invalid_input' };
+  }
 
   const [created] = await db
     .insert(spaceQuests)
@@ -374,26 +429,6 @@ export async function updateSpaceQuest(
 ): Promise<SpaceQuestWriteResult> {
   const current = await getSpaceQuestBySlug({ spaceSlug, questSlug }, { db });
   if (!current) return { ok: false, error: 'not_found' };
-
-  // Store room id without logging an edit event
-  if (patch.chatRoomId && Object.keys(patch).every((k) => k === 'chatRoomId')) {
-    if (!canMemberEditQuest(actor, current)) {
-      return { ok: false, error: 'forbidden' };
-    }
-    await db
-      .update(spaceQuests)
-      .set({ chatRoomId: patch.chatRoomId })
-      .where(
-        and(eq(spaceQuests.id, current.id), isNull(spaceQuests.chatRoomId)),
-      );
-    const refreshed = await getSpaceQuestBySlug(
-      { spaceSlug, questSlug },
-      { db },
-    );
-    return refreshed
-      ? { ok: true, quest: refreshed }
-      : { ok: false, error: 'not_found' };
-  }
 
   // Link proposalDocumentId right after CREATE QUEST submits the proposal
   if (
@@ -602,25 +637,32 @@ export async function updateSpaceQuest(
     });
   }
 
-  if (
+  const leadNameChanged =
     patch.leadName !== undefined &&
-    patch.leadName.trim() !== current.leadName.trim()
+    patch.leadName.trim() !== current.leadName.trim();
+  if (
+    patch.leadPersonId === null ||
+    (leadNameChanged && patch.leadPersonId == null)
   ) {
-    updateFields.leadName = patch.leadName.trim();
+    return { ok: false, error: 'invalid_input' };
+  }
+
+  if (leadNameChanged) {
+    updateFields.leadName = patch.leadName!.trim();
     editEvents.push({
-      text: `Transferred Quest Lead to ${patch.leadName.trim()}.`,
+      text: `Transferred Quest Lead to ${patch.leadName!.trim()}.`,
       change: {
         entity: 'quest',
         field: 'lead',
         action: 'updated',
         before: current.leadName,
-        after: patch.leadName.trim(),
+        after: patch.leadName!.trim(),
       },
     });
   }
 
   if (
-    patch.leadPersonId !== undefined &&
+    patch.leadPersonId != null &&
     patch.leadPersonId !== current.leadPersonId
   ) {
     updateFields.leadPersonId = patch.leadPersonId;
@@ -874,7 +916,11 @@ export async function deleteSpaceQuest(
   const current = await getSpaceQuestBySlug({ spaceSlug, questSlug }, { db });
   if (!current) return { ok: false, error: 'not_found' };
 
-  if (!isViewerQuestLead(actor, current)) {
+  const isCreator = actor.id != null && current.creatorPersonId === actor.id;
+  if (
+    !isViewerQuestLead(actor, current) &&
+    !(current.status === 'proposed' && isCreator)
+  ) {
     return { ok: false, error: 'lead_only' };
   }
 
@@ -943,13 +989,17 @@ export async function activateSpaceQuestByDocumentId(
       activatedCount += 1;
     }
 
-    if (row.status !== 'archived' && !row.chatRoomId) {
+    if (
+      row.status !== 'archived' &&
+      (!row.chatRoomId || isExpiredQuestRoomClaim(row.chatRoomId))
+    ) {
       const members = await db
         .select()
         .from(spaceQuestMembers)
         .where(eq(spaceQuestMembers.questId, row.id));
-      await provisionQuestChannelOnAccept({
+      const roomId = await provisionQuestChannelOnAccept({
         questId: row.id,
+        currentChatRoomId: row.chatRoomId,
         questName: row.name,
         leadPersonId: row.leadPersonId ?? null,
         leadName: row.leadName || 'Lead',
@@ -959,6 +1009,9 @@ export async function activateSpaceQuestByDocumentId(
         memberNames: members.map((m) => m.memberName),
         db,
       });
+      if (roomId && row.status !== 'proposed') {
+        activatedCount += 1;
+      }
     }
   }
 

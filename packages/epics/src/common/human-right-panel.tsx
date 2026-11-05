@@ -4659,94 +4659,47 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           }
         } else if (!targetRoomId) {
           // If no room exists yet, only create one when we can link it back
-          if (!coherenceSlug || blockSpaceChatForMembership) {
-            // Cannot persist without a slug — skip room creation
+          if (
+            !coherenceSlug ||
+            blockSpaceChatForMembership ||
+            coherenceChannel === 'quest'
+          ) {
+            // Cannot persist without a slug — skip room creation (quest rooms are server-provisioned)
             setIsJoining(false);
             return;
           }
-          if (coherenceChannel === 'quest') {
-            if (!spaceSlug) {
-              setIsJoining(false);
-              return;
-            }
-            const created = await promiseWithTimeout(
-              matrixRef.current.createRoom(coherenceTitle || coherenceSlug, {
-                grantCreatorPl100: true,
-                roomType: HYPHA_ROOM_TYPES.quest,
-              }),
-              COHERENCE_ROOM_JOIN_TIMEOUT_MS,
-              'Quest room create timed out',
-            );
-            const joinedId = await promiseWithTimeout(
-              matrixRef.current.joinRoom(created.roomId),
-              COHERENCE_ROOM_JOIN_TIMEOUT_MS,
-              'Quest room join timed out',
-            );
-            if (cancelled) return;
-            targetRoomId = joinedId;
-            try {
-              const token = authTokenRef.current;
-              await fetch(
-                `/api/v1/spaces/${encodeURIComponent(
-                  spaceSlug,
-                )}/quests/${encodeURIComponent(coherenceSlug)}`,
-                {
-                  method: 'PATCH',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                  },
-                  body: JSON.stringify({ chatRoomId: joinedId }),
-                },
-              );
-              openCoherenceChat(
-                joinedId,
-                coherenceTitle || '',
-                coherenceSlug,
-                coherenceDescription,
-                spaceSlug,
-                { channel: 'quest' },
-              );
-            } catch (err) {
-              console.warn(
-                '[HumanRightPanel] Failed to persist roomId to quest:',
-                err,
-              );
-            }
-          } else {
-            console.log(
-              '[HumanRightPanel] Creating Matrix room for coherence:',
+          console.log(
+            '[HumanRightPanel] Creating Matrix room for coherence:',
+            coherenceSlug,
+          );
+          // No `grantCreatorPl100` here deliberately: this is a lazy-creation fallback for a
+          // signal that predates having a room, reachable by any space member who happens to
+          // open it first — not necessarily the signal's actual creator (#2428 review). The
+          // primary creation path (`create-signal-form.tsx`) grants PL100 correctly, since it
+          // only runs for the person actually submitting the create form.
+          const { roomId: newRoomId } = await promiseWithTimeout(
+            getOrCreateCoherenceRoom(
               coherenceSlug,
-            );
-            // No `grantCreatorPl100` here deliberately: this is a lazy-creation fallback for a
-            // signal that predates having a room, reachable by any space member who happens to
-            // open it first — not necessarily the signal's actual creator (#2428 review). The
-            // primary creation path (`create-signal-form.tsx`) grants PL100 correctly, since it
-            // only runs for the person actually submitting the create form.
-            const { roomId: newRoomId } = await promiseWithTimeout(
-              getOrCreateCoherenceRoom(
-                coherenceSlug,
-                coherenceTitle || 'Conversation',
-              ),
-              COHERENCE_ROOM_JOIN_TIMEOUT_MS,
-              'Coherence room create timed out',
-            );
-            if (cancelled) return;
-            targetRoomId = newRoomId;
+              coherenceTitle || 'Conversation',
+            ),
+            COHERENCE_ROOM_JOIN_TIMEOUT_MS,
+            'Coherence room create timed out',
+          );
+          if (cancelled) return;
+          targetRoomId = newRoomId;
 
-            try {
-              await updateCoherenceBySlug({
-                slug: coherenceSlug,
-                roomId: newRoomId,
-              });
-              // Update context so subsequent opens don't re-create
-              openCoherenceChat(newRoomId, coherenceTitle || '', coherenceSlug);
-            } catch (err) {
-              console.warn(
-                '[HumanRightPanel] Failed to persist roomId to coherence:',
-                err,
-              );
-            }
+          try {
+            await updateCoherenceBySlug({
+              slug: coherenceSlug,
+              roomId: newRoomId,
+            });
+            // Update context so subsequent opens don't re-create
+            openCoherenceChat(newRoomId, coherenceTitle || '', coherenceSlug);
+          } catch (err) {
+            console.warn(
+              '[HumanRightPanel] Failed to persist roomId to coherence:',
+              err,
+            );
           }
         } else {
           targetRoomId = await promiseWithTimeout(

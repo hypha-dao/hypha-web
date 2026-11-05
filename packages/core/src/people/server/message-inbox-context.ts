@@ -468,7 +468,14 @@ export async function getMessageInboxContext(
     const slug = row.slug?.trim();
     const title = row.name?.trim();
     const space = byId.get(row.spaceId);
-    if (!roomId || !slug || !title || !space || seenQuestRooms.has(roomId)) {
+    if (
+      !roomId ||
+      roomId.startsWith('provisioning:') ||
+      !slug ||
+      !title ||
+      !space ||
+      seenQuestRooms.has(roomId)
+    ) {
       return [];
     }
     seenQuestRooms.add(roomId);
