@@ -53,7 +53,7 @@ function computeDaysToTarget(
   const parsed = new Date(withYear);
   if (Number.isNaN(parsed.getTime())) return null;
   const diff = parsed.getTime() - Date.now();
-  return Math.max(0, Math.round(diff / (1000 * 60 * 60 * 24)));
+  return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 
 function mapMilestoneRow(row: SpaceQuestMilestone): QuestMilestoneRecord {

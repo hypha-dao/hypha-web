@@ -23,10 +23,24 @@ export async function syncSpaceQuestProposalStatuses(
   const overview = await listSpaceQuests({ spaceSlug }, { db });
   if (!overview) return null;
 
+  // Activation commits before the Matrix room exists; retry rooms that failed.
+  const missingRoom = overview.quests.flatMap((q) =>
+    q.status === 'active' && q.proposalDocumentId != null && !q.chatRoomId
+      ? [q.proposalDocumentId]
+      : [],
+  );
+  for (const documentId of missingRoom) {
+    await activateSpaceQuestByDocumentId({ documentId }, { db });
+  }
+
   const proposed = overview.quests.filter(
     (q) => q.status === 'proposed' && q.proposalDocumentId != null,
   );
-  if (proposed.length === 0) return overview;
+  if (proposed.length === 0) {
+    return missingRoom.length > 0
+      ? listSpaceQuests({ spaceSlug }, { db })
+      : overview;
+  }
 
   const documentIds = [
     ...new Set(
@@ -48,7 +62,7 @@ export async function syncSpaceQuestProposalStatuses(
         })
       : null;
 
-  let changed = false;
+  let changed = missingRoom.length > 0;
   for (const doc of docs) {
     const withStatus = attachProposalStatusToDocument(
       doc as Document,

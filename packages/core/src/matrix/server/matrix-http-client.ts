@@ -134,6 +134,26 @@ export async function matrixInviteUser(
   await readMatrixJson<Record<string, never>>(res);
 }
 
+export async function matrixKickUser(
+  roomId: string,
+  userId: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<void> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/kick`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user_id: userId }),
+    },
+  );
+  await readMatrixJson<Record<string, never>>(res);
+}
+
 export async function matrixJoinRoom(
   roomIdOrAlias: string,
   accessToken: string,

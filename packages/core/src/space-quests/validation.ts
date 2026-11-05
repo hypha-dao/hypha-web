@@ -51,8 +51,8 @@ export const schemaCreateSpaceQuest = z.object({
   targetDate: z.string().trim().max(64).nullable().optional(),
   leadPersonId: z.number().int().positive().nullable().optional(),
   leadName: z.string().trim().max(120).default(''),
-  proposalDocumentId: z.number().int().positive().nullable().optional(),
-  status: z.enum(QUEST_STATUSES).optional().default('proposed'),
+  // Quests only become active when their Agreements proposal passes.
+  status: z.literal('proposed').optional().default('proposed'),
   milestones: z.array(schemaQuestMilestoneInput).max(30).default([]),
   members: z.array(schemaQuestMemberInput).max(50).default([]),
 });

@@ -30,6 +30,10 @@ const WRITE_ERRORS: Record<
     message:
       'Cannot delete a Quest that has ratified agreements depending on it.',
   },
+  not_active: {
+    status: 409,
+    message: 'This Quest is not active yet.',
+  },
   invalid_input: {
     status: 400,
     message: 'Invalid Quest data.',

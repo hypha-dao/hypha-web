@@ -17,9 +17,11 @@ import {
   getMatrixHomeserverUrl,
   matrixCreateRoom,
   matrixInviteUser,
+  matrixKickUser,
   matrixSendTextMessage,
 } from '../../matrix/server/matrix-http-client';
 import { HYPHA_ROOM_TYPES } from '../../matrix/room-types';
+import { QUEST_DOCUMENT_LABEL } from '../constants';
 import {
   bulletsToMarkdownList,
   canMemberEditQuest,
@@ -42,6 +44,7 @@ export type SpaceQuestWriteError =
   | 'lead_only'
   | 'archived'
   | 'delete_blocked_ratified'
+  | 'not_active'
   | 'invalid_input';
 
 export type SpaceQuestWriteResult =
@@ -66,6 +69,75 @@ async function resolveUniqueQuestSlug(
     if (!taken.has(candidate)) return candidate;
   }
   return `${base}-${Date.now().toString(36).slice(-4)}`;
+}
+
+async function matrixUserIdsForPeople(
+  personIds: Array<number | null | undefined>,
+  db: DbConfig['db'],
+): Promise<Set<string>> {
+  const ids = [
+    ...new Set(
+      personIds.filter((id): id is number => typeof id === 'number' && id > 0),
+    ),
+  ];
+  if (ids.length === 0) return new Set();
+  const personRows = await db
+    .select({ sub: people.sub })
+    .from(people)
+    .where(inArray(people.id, ids));
+  const subs = personRows
+    .map((p) => p.sub?.trim())
+    .filter((s): s is string => Boolean(s));
+  if (subs.length === 0) return new Set();
+  const links = await db
+    .select({ matrixUserId: matrixUserLinks.matrixUserId })
+    .from(matrixUserLinks)
+    .where(inArray(matrixUserLinks.privyUserId, subs));
+  return new Set(
+    links
+      .map((link) => link.matrixUserId?.trim())
+      .filter((mxid): mxid is string => Boolean(mxid)),
+  );
+}
+
+/** Invite added and remove dropped Quest people from the Quest channel. */
+async function reconcileQuestChannelMembers({
+  roomId,
+  beforePersonIds,
+  afterPersonIds,
+  db,
+}: {
+  roomId: string;
+  beforePersonIds: Array<number | null | undefined>;
+  afterPersonIds: Array<number | null | undefined>;
+  db: DbConfig['db'];
+}): Promise<void> {
+  const homeserver = getMatrixHomeserverUrl();
+  const botToken = getMatrixBotAsToken();
+  if (!homeserver || !botToken) return;
+  try {
+    const [before, after] = await Promise.all([
+      matrixUserIdsForPeople(beforePersonIds, db),
+      matrixUserIdsForPeople(afterPersonIds, db),
+    ]);
+    for (const mxid of after) {
+      if (before.has(mxid)) continue;
+      await matrixInviteUser(roomId, mxid, botToken, homeserver).catch(
+        () => undefined,
+      );
+    }
+    for (const mxid of before) {
+      if (after.has(mxid)) continue;
+      await matrixKickUser(roomId, mxid, botToken, homeserver).catch(
+        () => undefined,
+      );
+    }
+  } catch (error) {
+    console.warn(
+      '[space-quests] Matrix quest channel membership sync skipped:',
+      error instanceof Error ? error.message : error,
+    );
+  }
 }
 
 /**
@@ -103,35 +175,14 @@ async function provisionQuestChannelOnAccept({
     );
 
     // Notify ONLY Quest members (Lead + QuestMembers) by inviting only their Matrix accounts
-    const targetPersonIds = [
-      ...new Set(
-        [leadPersonId, ...memberPersonIds].filter(
-          (id): id is number => typeof id === 'number' && id > 0,
-        ),
-      ),
-    ];
-
-    if (targetPersonIds.length > 0) {
-      const personRows = await db
-        .select({ id: people.id, sub: people.sub })
-        .from(people)
-        .where(inArray(people.id, targetPersonIds));
-      const subs = personRows
-        .map((p) => p.sub?.trim())
-        .filter((s): s is string => Boolean(s));
-      if (subs.length > 0) {
-        const links = await db
-          .select({ matrixUserId: matrixUserLinks.matrixUserId })
-          .from(matrixUserLinks)
-          .where(inArray(matrixUserLinks.privyUserId, subs));
-        for (const link of links) {
-          const mxid = link.matrixUserId?.trim();
-          if (!mxid) continue;
-          await matrixInviteUser(roomId, mxid, botToken, homeserver).catch(
-            () => undefined,
-          );
-        }
-      }
+    const mxids = await matrixUserIdsForPeople(
+      [leadPersonId, ...memberPersonIds],
+      db,
+    );
+    for (const mxid of mxids) {
+      await matrixInviteUser(roomId, mxid, botToken, homeserver).catch(
+        () => undefined,
+      );
     }
 
     const acceptedDate = new Date().toLocaleDateString('en-US', {
@@ -205,7 +256,8 @@ export async function createSpaceQuest(
 
   const actorName = actor?.name?.trim() || 'Space Member';
   const leadName = input.leadName?.trim() || actorName;
-  const leadPersonId = input.leadPersonId ?? actor?.id ?? null;
+  const leadPersonId =
+    input.leadPersonId ?? (leadName === actorName ? actor?.id ?? null : null);
 
   const [created] = await db
     .insert(spaceQuests)
@@ -222,18 +274,15 @@ export async function createSpaceQuest(
       rewards: input.rewards.filter(
         (r) => r.amount.trim().length > 0 && r.token.trim().length > 0,
       ),
-      status: input.status ?? 'proposed',
+      status: 'proposed',
       targetDate: input.targetDate?.trim() || null,
       leadPersonId,
       leadName,
       creatorPersonId: actor?.id ?? null,
-      proposalDocumentId: input.proposalDocumentId ?? null,
+      proposalDocumentId: null,
       healthState: 'on_track',
       healthMarker: 82,
-      healthSummary:
-        input.status === 'active'
-          ? 'Quest is active. Post updates as milestones progress.'
-          : 'Quest proposal submitted for voting.',
+      healthSummary: 'Quest proposal submitted for voting.',
       healthUpdatedAt: new Date(),
     })
     .returning();
@@ -328,6 +377,9 @@ export async function updateSpaceQuest(
 
   // Store room id without logging an edit event
   if (patch.chatRoomId && Object.keys(patch).every((k) => k === 'chatRoomId')) {
+    if (!canMemberEditQuest(actor, current)) {
+      return { ok: false, error: 'forbidden' };
+    }
     await db
       .update(spaceQuests)
       .set({ chatRoomId: patch.chatRoomId })
@@ -348,13 +400,48 @@ export async function updateSpaceQuest(
     patch.proposalDocumentId != null &&
     Object.keys(patch).every((k) => k === 'proposalDocumentId')
   ) {
+    const isCreator = actor.id != null && current.creatorPersonId === actor.id;
+    if (!isCreator && !isViewerQuestLead(actor, current)) {
+      return { ok: false, error: 'lead_only' };
+    }
+    if (current.status !== 'proposed' || current.proposalDocumentId != null) {
+      return { ok: false, error: 'invalid_input' };
+    }
+    const [doc] = await db
+      .select({
+        spaceId: documents.spaceId,
+        label: documents.label,
+        creatorId: documents.creatorId,
+      })
+      .from(documents)
+      .where(eq(documents.id, patch.proposalDocumentId))
+      .limit(1);
+    const [linked] = await db
+      .select({ id: spaceQuests.id })
+      .from(spaceQuests)
+      .where(eq(spaceQuests.proposalDocumentId, patch.proposalDocumentId))
+      .limit(1);
+    if (
+      !doc ||
+      doc.spaceId !== current.spaceId ||
+      doc.label !== QUEST_DOCUMENT_LABEL ||
+      doc.creatorId !== actor.id ||
+      linked
+    ) {
+      return { ok: false, error: 'invalid_input' };
+    }
     await db
       .update(spaceQuests)
       .set({
         proposalDocumentId: patch.proposalDocumentId,
         updatedAt: new Date(),
       })
-      .where(eq(spaceQuests.id, current.id));
+      .where(
+        and(
+          eq(spaceQuests.id, current.id),
+          isNull(spaceQuests.proposalDocumentId),
+        ),
+      );
     const refreshed = await getSpaceQuestBySlug(
       { spaceSlug, questSlug },
       { db },
@@ -364,8 +451,15 @@ export async function updateSpaceQuest(
       : { ok: false, error: 'not_found' };
   }
 
-  if (current.status === 'archived' && patch.status === undefined) {
+  if (
+    current.status === 'archived' &&
+    (patch.status === undefined || patch.status === current.status)
+  ) {
     return { ok: false, error: 'archived' };
+  }
+  // Voters approve the proposed terms; edits and activation wait for the vote.
+  if (current.status === 'proposed') {
+    return { ok: false, error: 'not_active' };
   }
 
   // Permission enforcement (SPEC §5):
@@ -381,7 +475,7 @@ export async function updateSpaceQuest(
     (patch.leadPersonId !== undefined &&
       patch.leadPersonId !== current.leadPersonId);
 
-  if (isLeadOnlyChange && !isLead && !isMember) {
+  if (isLeadOnlyChange && !isLead) {
     return { ok: false, error: 'lead_only' };
   }
   if (!isMember && !isLead) {
@@ -513,9 +607,6 @@ export async function updateSpaceQuest(
     patch.leadName.trim() !== current.leadName.trim()
   ) {
     updateFields.leadName = patch.leadName.trim();
-    if (patch.leadPersonId !== undefined) {
-      updateFields.leadPersonId = patch.leadPersonId;
-    }
     editEvents.push({
       text: `Transferred Quest Lead to ${patch.leadName.trim()}.`,
       change: {
@@ -526,6 +617,13 @@ export async function updateSpaceQuest(
         after: patch.leadName.trim(),
       },
     });
+  }
+
+  if (
+    patch.leadPersonId !== undefined &&
+    patch.leadPersonId !== current.leadPersonId
+  ) {
+    updateFields.leadPersonId = patch.leadPersonId;
   }
 
   if (patch.status !== undefined && patch.status !== current.status) {
@@ -660,7 +758,7 @@ export async function updateSpaceQuest(
   }
 
   // Every post-pass edit writes an edit_event to Updates (who changed what)
-  if (editEvents.length > 0 && current.status !== 'proposed') {
+  if (editEvents.length > 0) {
     await db.insert(spaceQuestUpdates).values(
       editEvents.map((ev) => ({
         questId: current.id,
@@ -676,6 +774,24 @@ export async function updateSpaceQuest(
         change: ev.change,
       })),
     );
+  }
+
+  const leadChanged = updateFields.leadPersonId !== undefined;
+  if (current.chatRoomId && (patch.members !== undefined || leadChanged)) {
+    await reconcileQuestChannelMembers({
+      roomId: current.chatRoomId,
+      beforePersonIds: [
+        current.leadPersonId,
+        ...current.members.map((m) => m.personId),
+      ],
+      afterPersonIds: [
+        leadChanged
+          ? (updateFields.leadPersonId as number | null)
+          : current.leadPersonId,
+        ...(patch.members ?? current.members).map((m) => m.personId),
+      ],
+      db,
+    });
   }
 
   const updated = await getSpaceQuestBySlug({ spaceSlug, questSlug }, { db });
@@ -706,6 +822,9 @@ export async function postSpaceQuestUpdate(
   if (!current) return { ok: false, error: 'not_found' };
   if (current.status === 'archived') {
     return { ok: false, error: 'archived' };
+  }
+  if (current.status !== 'active' && current.status !== 'paused') {
+    return { ok: false, error: 'not_active' };
   }
   if (!canMemberEditQuest(actor, current)) {
     return { ok: false, error: 'forbidden' };
@@ -755,10 +874,7 @@ export async function deleteSpaceQuest(
   const current = await getSpaceQuestBySlug({ spaceSlug, questSlug }, { db });
   if (!current) return { ok: false, error: 'not_found' };
 
-  if (
-    !isViewerQuestLead(actor, current) &&
-    !canMemberEditQuest(actor, current)
-  ) {
+  if (!isViewerQuestLead(actor, current)) {
     return { ok: false, error: 'lead_only' };
   }
 
@@ -827,7 +943,7 @@ export async function activateSpaceQuestByDocumentId(
       activatedCount += 1;
     }
 
-    if (!row.chatRoomId) {
+    if (row.status !== 'archived' && !row.chatRoomId) {
       const members = await db
         .select()
         .from(spaceQuestMembers)

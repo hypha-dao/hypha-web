@@ -237,20 +237,22 @@ export function canMemberEditQuest(
   ) {
     return true;
   }
+  // Names only identify entries that were saved without a person id.
   const viewerName = viewer.name?.trim().toLowerCase();
   if (viewerName) {
-    const leadClean = stripViewerYouMarker(quest.leadName).trim().toLowerCase();
     if (
-      leadClean &&
-      (viewerName === leadClean || leadClean.startsWith(viewerName))
+      quest.leadPersonId == null &&
+      stripViewerYouMarker(quest.leadName).trim().toLowerCase() === viewerName
     ) {
       return true;
     }
     if (
-      quest.members.some((m) => {
-        const clean = stripViewerYouMarker(m.memberName).trim().toLowerCase();
-        return clean === viewerName || clean.startsWith(viewerName);
-      })
+      quest.members.some(
+        (m) =>
+          m.personId == null &&
+          stripViewerYouMarker(m.memberName).trim().toLowerCase() ===
+            viewerName,
+      )
     ) {
       return true;
     }
@@ -263,13 +265,12 @@ export function isViewerQuestLead(
   quest: Pick<QuestRecord, 'leadPersonId' | 'leadName'>,
 ): boolean {
   if (!viewer) return false;
-  if (viewer.id != null && quest.leadPersonId != null) {
-    return viewer.id === quest.leadPersonId;
+  if (quest.leadPersonId != null) {
+    return viewer.id != null && viewer.id === quest.leadPersonId;
   }
   const viewerName = viewer.name?.trim().toLowerCase();
   if (!viewerName) return false;
-  const leadClean = stripViewerYouMarker(quest.leadName).trim().toLowerCase();
-  return Boolean(
-    leadClean && (viewerName === leadClean || leadClean.startsWith(viewerName)),
+  return (
+    stripViewerYouMarker(quest.leadName).trim().toLowerCase() === viewerName
   );
 }

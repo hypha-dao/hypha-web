@@ -145,4 +145,18 @@ describe('quest permissions', () => {
     ).toBe(true);
     expect(canMemberEditQuest({ name: 'Someone Else' }, marked)).toBe(false);
   });
+
+  it('does not match names by prefix or against entries with a person id', () => {
+    const named = {
+      ...quest,
+      leadPersonId: null,
+      leadName: 'Alexander Smith',
+      members: [],
+    };
+    expect(canMemberEditQuest({ id: 42, name: 'Al' }, named)).toBe(false);
+    expect(isViewerQuestLead({ id: 42, name: 'Al' }, named)).toBe(false);
+    expect(canMemberEditQuest({ id: 42, name: 'Vlad K.' }, quest)).toBe(false);
+    expect(canMemberEditQuest({ id: 42, name: 'Maria S.' }, quest)).toBe(false);
+    expect(isViewerQuestLead({ id: 42, name: 'Vlad K.' }, quest)).toBe(false);
+  });
 });
