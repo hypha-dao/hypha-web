@@ -18,6 +18,7 @@ import { useIsMobile, usePrefersCoarsePointer } from '@hypha-platform/ui';
 import { HumanChatPanelDateSeparator } from './human-chat-panel-date-separator';
 import { HumanChatPanelUnreadDivider } from './human-chat-panel-unread-divider';
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
+import { toggleExpandedMessageId } from './message-text-expanded';
 import { touchComposerFromViewportFlags } from './touch-composer-flags';
 import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
 import {
@@ -356,6 +357,14 @@ export function HumanChatPanelMessages({
   const [lockActionMessageId, setLockActionMessageId] = useState<string | null>(
     null,
   );
+  const [expandedMessageIds, setExpandedMessageIds] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
+  const toggleMessageExpanded = useCallback((messageId: string) => {
+    setExpandedMessageIds((current) =>
+      toggleExpandedMessageId(current, messageId),
+    );
+  }, []);
   const lockActionMessageIdRef = useRef<string | null>(null);
   lockActionMessageIdRef.current = lockActionMessageId;
   /** Pointer left row while hover picker was open (portal); hide bar when picker closes. */
@@ -854,6 +863,8 @@ export function HumanChatPanelMessages({
               <HumanChatPanelMessageBubble
                 key={row.key}
                 message={msg}
+                textExpanded={expandedMessageIds.has(msg.id)}
+                onToggleTextExpanded={toggleMessageExpanded}
                 roomId={roomId}
                 currentUserId={currentUserId}
                 currentUserAvatarUrl={currentUserAvatarUrl}

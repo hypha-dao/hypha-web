@@ -11,6 +11,7 @@ const VALID_DHO_TABS = new Set([
   'banking',
   'rewards',
   'memory',
+  'context',
 ]);
 
 type GetDhoSpaceContextPathParams = {

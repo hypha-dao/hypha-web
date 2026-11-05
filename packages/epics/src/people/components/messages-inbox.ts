@@ -12,6 +12,7 @@ export type InboxChannelKind =
   | 'space-public'
   | 'signal'
   | 'proposal'
+  | 'context'
   | 'ecosystem'
   | 'network';
 
@@ -22,6 +23,7 @@ export type InboxFilter =
   | 'rooms'
   | 'proposals'
   | 'signals'
+  | 'context'
   | 'ecosystem'
   | 'network';
 
@@ -32,6 +34,7 @@ export const INBOX_FILTERS: readonly InboxFilter[] = [
   'rooms',
   'proposals',
   'signals',
+  'context',
   'ecosystem',
   'network',
 ];
@@ -48,6 +51,7 @@ const ROOM_TYPE_KIND: Record<string, InboxChannelKind> = {
   'io.hypha.room.space-public': 'space-public',
   'io.hypha.room.signal': 'signal',
   'io.hypha.room.proposal': 'proposal',
+  'io.hypha.room.context': 'context',
   'io.hypha.room.ecosystem': 'ecosystem',
   'io.hypha.room.network': 'network',
 };
@@ -63,6 +67,8 @@ export type InboxPlace = {
   signalSlug: string | null;
   proposalTitle: string | null;
   proposalSlug: string | null;
+  contextSectionKey: string | null;
+  contextSectionTitle: string | null;
 };
 
 export type InboxSpaceLabel = {
@@ -100,10 +106,22 @@ export type InboxProposalLabel = {
   rootTitle: string;
 };
 
+/** Context section discussion room in a space the member belongs to. */
+export type InboxContextSectionLabel = {
+  roomId: string;
+  sectionKey: string;
+  title: string;
+  spaceSlug: string;
+  spaceTitle: string;
+  rootSlug: string;
+  rootTitle: string;
+};
+
 export type InboxContext = {
   spaces: readonly InboxSpaceLabel[];
   signals: readonly InboxSignalLabel[];
   proposals?: readonly InboxProposalLabel[];
+  contexts?: readonly InboxContextSectionLabel[];
 };
 
 export type JoinedChannelSnapshot = {
@@ -130,6 +148,7 @@ const EMPTY_CONTEXT: InboxContext = {
   spaces: [],
   signals: [],
   proposals: [],
+  contexts: [],
 };
 
 export function isInboxFilter(
@@ -155,6 +174,7 @@ export function isInboxChannelKind(
     kind === 'space-public' ||
     kind === 'signal' ||
     kind === 'proposal' ||
+    kind === 'context' ||
     kind === 'ecosystem' ||
     kind === 'network'
   );
@@ -231,6 +251,12 @@ export function channelIsRelevantToMember(
       (proposal) => proposal.roomId.trim() === roomId,
     );
   }
+  if (place.kind === 'context') {
+    const roomId = snapshot.roomId.trim();
+    return (context.contexts ?? []).some(
+      (section) => section.roomId.trim() === roomId,
+    );
+  }
   return false;
 }
 
@@ -245,12 +271,14 @@ export function rowMatchesInboxFilter(
       kind === 'space' ||
       kind === 'space-public' ||
       kind === 'signal' ||
-      kind === 'proposal'
+      kind === 'proposal' ||
+      kind === 'context'
     );
   }
   if (filter === 'rooms') return kind === 'space' || kind === 'space-public';
   if (filter === 'proposals') return kind === 'proposal';
   if (filter === 'signals') return kind === 'signal';
+  if (filter === 'context') return kind === 'context';
   if (filter === 'ecosystem') return kind === 'ecosystem';
   return kind === 'network';
 }
@@ -369,6 +397,15 @@ function proposalByRoomId(
   return proposals?.find((proposal) => proposal.roomId.trim() === id) ?? null;
 }
 
+function contextSectionByRoomId(
+  contexts: readonly InboxContextSectionLabel[] | undefined,
+  roomId: string,
+) {
+  const id = roomId.trim();
+  if (!id) return null;
+  return contexts?.find((section) => section.roomId.trim() === id) ?? null;
+}
+
 function clean(value: string | null | undefined): string | null {
   const text = value?.trim();
   return text || null;
@@ -398,6 +435,7 @@ export function inboxKindForJoinedRoom(input: {
   if (spaceByRoomId(context.spaces, input.roomId)) return 'space';
   if (signalByRoomId(context.signals, input.roomId)) return 'signal';
   if (proposalByRoomId(context.proposals, input.roomId)) return 'proposal';
+  if (contextSectionByRoomId(context.contexts, input.roomId)) return 'context';
   return null;
 }
 
@@ -415,36 +453,27 @@ export function resolveInboxPlace(
   const alias = placeFromAliases(snapshot.aliases);
   const signal = signalByRoomId(context.signals, snapshot.roomId);
   const proposal = proposalByRoomId(context.proposals, snapshot.roomId);
+  const section = contextSectionByRoomId(context.contexts, snapshot.roomId);
+  const owner = signal ?? proposal ?? section;
   const byRoom = spaceByRoomId(context.spaces, snapshot.roomId);
   const bySlug = spaceBySlug(
     context.spaces,
-    signal?.spaceSlug ??
-      proposal?.spaceSlug ??
+    owner?.spaceSlug ??
       (alias?.spaceSlug as string | undefined) ??
       (alias?.ecosystemSlug as string | undefined) ??
       null,
   );
   const space = byRoom ?? bySlug;
   const ecosystemSlug =
-    clean(signal?.rootSlug) ??
-    clean(proposal?.rootSlug) ??
+    clean(owner?.rootSlug) ??
     clean(space?.rootSlug) ??
     clean(alias?.ecosystemSlug as string | undefined);
   const ecosystemTitle =
-    clean(signal?.rootTitle) ??
-    clean(proposal?.rootTitle) ??
-    clean(space?.rootTitle) ??
-    null;
+    clean(owner?.rootTitle) ?? clean(space?.rootTitle) ?? null;
   return {
     kind,
-    spaceTitle:
-      clean(signal?.spaceTitle) ??
-      clean(proposal?.spaceTitle) ??
-      clean(space?.title),
-    spaceSlug:
-      clean(signal?.spaceSlug) ??
-      clean(proposal?.spaceSlug) ??
-      clean(space?.slug),
+    spaceTitle: clean(owner?.spaceTitle) ?? clean(space?.title),
+    spaceSlug: clean(owner?.spaceSlug) ?? clean(space?.slug),
     ecosystemTitle,
     ecosystemSlug,
     signalTitle: clean(signal?.title),
@@ -452,6 +481,8 @@ export function resolveInboxPlace(
     signalSlug: clean(signal?.slug),
     proposalTitle: clean(proposal?.title),
     proposalSlug: clean(proposal?.slug),
+    contextSectionKey: clean(section?.sectionKey),
+    contextSectionTitle: clean(section?.title),
   };
 }
 
@@ -473,7 +504,8 @@ export function inboxContextLine(
   if (
     place.kind === 'space' ||
     place.kind === 'space-public' ||
-    place.kind === 'proposal'
+    place.kind === 'proposal' ||
+    place.kind === 'context'
   ) {
     const parts = [space, root].filter((part): part is string => Boolean(part));
     return parts.length > 0 ? parts.join(' · ') : null;
@@ -489,6 +521,9 @@ export function channelDisplayName(
   if (place.kind === 'signal' && place.signalTitle) return place.signalTitle;
   if (place.kind === 'proposal' && place.proposalTitle) {
     return place.proposalTitle;
+  }
+  if (place.kind === 'context' && place.contextSectionTitle) {
+    return place.contextSectionTitle;
   }
   if (place.kind === 'network') {
     const named = snapshot.name.trim();
@@ -539,6 +574,13 @@ export function inboxContextHref(
       proposal,
     )}`;
   }
+  if (place.kind === 'context') {
+    if (!space) return null;
+    const section = place.contextSectionKey?.trim();
+    return section
+      ? `/${locale}/dho/${space}/context?section=${encodeURIComponent(section)}`
+      : `/${locale}/dho/${space}/context`;
+  }
   if (place.kind === 'space') {
     // Space dashboard with the member space room open.
     return space ? `/${locale}/dho/${space}/overview?spaceChat=space` : null;
@@ -565,6 +607,8 @@ export function directInboxPlace(kind: 'dm' | 'group'): InboxPlace {
     signalSlug: null,
     proposalTitle: null,
     proposalSlug: null,
+    contextSectionKey: null,
+    contextSectionTitle: null,
   };
 }
 
@@ -638,11 +682,12 @@ export function channelRowsFromSnapshots(
       continue;
     }
     // Assignees, the signal team, and people who were mentioned are notified
-    // even when nobody has written in the room lately. Proposal chats stay
-    // visible the same way once someone has written — empty rooms would flood
-    // the inbox. Other channels stay hidden until they have a message in the
-    // last three months.
-    if (place.kind === 'proposal') {
+    // even when nobody has written in the room lately. Proposal and Context
+    // section chats stay visible the same way once someone has written —
+    // opening a section creates its room before anyone speaks, and empty rooms
+    // would flood the inbox. Other channels stay hidden until they have a
+    // message in the last three months.
+    if (place.kind === 'proposal' || place.kind === 'context') {
       // Blank preview with unread still belongs in the inbox — the member has
       // something to open even when the last line has not loaded yet.
       if (!snapshot.preview.trim() && snapshot.unread <= 0) continue;
@@ -682,6 +727,7 @@ export function channelRowsFromSnapshots(
       place.signalSlug,
       place.proposalTitle,
       place.proposalSlug,
+      place.contextSectionTitle,
     ].filter((value): value is string => Boolean(value));
     const spaceSlug = place.spaceSlug?.trim().toLowerCase() ?? '';
     const ecosystemSlug = place.ecosystemSlug?.trim().toLowerCase() ?? '';

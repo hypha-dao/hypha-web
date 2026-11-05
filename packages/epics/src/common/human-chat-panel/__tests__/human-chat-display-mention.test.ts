@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  botMentionChipText,
   formatComposerMentionToken,
   replaceDisplayNameMentionsWithMxids,
   replaceMxidsWithComposerMentionTokens,
@@ -70,5 +71,13 @@ describe('replaceMxidsWithComposerMentionTokens', () => {
         ]),
       ),
     ).toBe(`Hi ${MXID} and ${other}`);
+  });
+});
+
+describe('botMentionChipText', () => {
+  it('keeps the generic AI Agents label on the mention chip', () => {
+    expect(botMentionChipText('AI Agents')).toBe('@AI Agents');
+    expect(botMentionChipText('@AI Agents')).toBe('@AI Agents');
+    expect(botMentionChipText('  ')).toBe('@AI Agents');
   });
 });

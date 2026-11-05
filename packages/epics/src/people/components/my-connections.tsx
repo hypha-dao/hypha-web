@@ -37,6 +37,7 @@ import {
   countCommaSeparatedNames,
   isArchivedGroupRoom,
   isGroupCreateContent,
+  isSpaceContextSectionKey,
   peopleConversationKindForListing,
   readCreateContent,
   resolveConversationCacheEntry,
@@ -58,6 +59,7 @@ import { Badge, Button, Image } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
   ArrowUpRight,
+  BookOpen,
   ChevronLeft,
   Circle,
   FileText,
@@ -1546,6 +1548,7 @@ const INBOX_CHANNEL_TYPES = new Set<string>([
   HYPHA_ROOM_TYPES.spacePublic,
   HYPHA_ROOM_TYPES.signal,
   HYPHA_ROOM_TYPES.proposal,
+  HYPHA_ROOM_TYPES.context,
   HYPHA_ROOM_TYPES.ecosystem,
   HYPHA_ROOM_TYPES.network,
 ]);
@@ -1556,6 +1559,7 @@ const EMPTY_INBOX_CONTEXT: InboxContext = {
   spaces: [],
   signals: [],
   proposals: [],
+  contexts: [],
 };
 
 function roomAliases(room: Room): string[] {
@@ -2962,6 +2966,12 @@ export function MyConnections({
         {
           public: row.inbox.kind === 'space-public',
           channel: row.inbox.kind,
+          contextSectionKey:
+            row.inbox.kind === 'context' &&
+            row.inbox.contextSectionKey &&
+            isSpaceContextSectionKey(row.inbox.contextSectionKey)
+              ? row.inbox.contextSectionKey
+              : null,
         },
       );
       return;
@@ -3567,6 +3577,7 @@ const CHANNEL_MARK_ICONS: Partial<Record<InboxChannelKind, typeof Circle>> = {
   'space-public': Globe,
   signal: Radio,
   proposal: FileText,
+  context: BookOpen,
   ecosystem: Target,
   network: Globe2,
 };
@@ -3598,6 +3609,8 @@ function channelTagKey(kind: InboxChannelKind) {
       return 'inbox.tagSignal';
     case 'proposal':
       return 'inbox.tagProposal';
+    case 'context':
+      return 'inbox.tagContext';
     case 'ecosystem':
       return 'inbox.tagEcosystem';
     case 'network':

@@ -2,6 +2,7 @@
 
 import type { ElementType } from 'react';
 import {
+  BookOpen,
   Circle,
   FileText,
   Globe2,
@@ -18,7 +19,12 @@ import { INBOX_FILTERS, type InboxFilter } from './messages-inbox';
 
 type FilterCounts = Record<InboxFilter, { total: number; unread: number }>;
 
-const NESTED = new Set<InboxFilter>(['rooms', 'proposals', 'signals']);
+const NESTED = new Set<InboxFilter>([
+  'rooms',
+  'proposals',
+  'signals',
+  'context',
+]);
 
 /** Same marks the rest of the app already uses for these places. */
 const FILTER_ICONS: Record<InboxFilter, ElementType> = {
@@ -28,6 +34,7 @@ const FILTER_ICONS: Record<InboxFilter, ElementType> = {
   rooms: Circle,
   proposals: FileText,
   signals: Radio,
+  context: BookOpen,
   ecosystem: Target,
   network: Globe2,
 };

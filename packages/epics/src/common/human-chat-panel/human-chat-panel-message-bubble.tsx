@@ -44,9 +44,9 @@ import {
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
 import {
-  getAgentAvatarInitials,
-  tagGroupAccentClass,
-} from '../ai-agent-competencies';
+  AgentInitialsAvatar,
+  isAgentChatAuthor,
+} from './agent-initials-avatar';
 import { MemberHomeMark } from '../../people/components/member-home-mark';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
@@ -81,6 +81,8 @@ import {
   formatVoiceDurationLabel,
 } from './human-chat-panel-voice-audio-row';
 import { asTimelineDate } from './human-chat-timeline-order';
+import { useAgentMentionLabel } from './agent-mention-label-context';
+import { botMentionChipText } from './human-chat-display-mention';
 
 type Reaction = {
   emoji: string;
@@ -779,6 +781,12 @@ type HumanChatPanelMessageBubbleProps = {
   onReact?: (emoji: string) => void | Promise<void>;
   /** Cancel in-flight attachment send (pending row only). */
   onCancelSendPending?: () => void;
+  /**
+   * Body expand state for this message id. The parent list owns the set so a
+   * click cannot expand a different row.
+   */
+  textExpanded?: boolean;
+  onToggleTextExpanded?: (messageId: string) => void;
   /** Timeline chrome: first unread row (Discord-style emphasis). */
   unreadBoundary?: boolean;
   /** Brief flash after jumping here from a reply quote. */
@@ -1355,8 +1363,8 @@ function MxidMentionPill({
   const t = useTranslations('HumanChatPanel');
   const displayLabel = useMemo(() => {
     if (isHyphaBotMatrixIdentity(fullMxid, syncLabel)) {
-      const label = t('agentMentionLabel').trim();
-      return label.startsWith('@') ? label : `@${label}`;
+      // Picker and chip stay "AI Agents". Specialist names are reply attribution.
+      return botMentionChipText(t('agentMentionLabel'));
     }
     const fromPerson = person ? formatPersonDisplayName(person) : '';
     const visible = visibleMatrixMemberName(fullMxid, fromPerson, syncLabel);
@@ -1644,12 +1652,15 @@ export function HumanChatPanelMessageBubble({
   onDeleteMessage,
   onReact,
   onCancelSendPending,
+  textExpanded: textExpandedFromParent,
+  onToggleTextExpanded,
   unreadBoundary = false,
   jumpFlash = false,
   receiptStatus = null,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
   const tCoherence = useTranslations('CoherenceTab');
+  const agentMentionLabel = useAgentMentionLabel();
   const specialist = message.agentSpecialistId
     ? specialistById(message.agentSpecialistId)
     : null;
@@ -1673,7 +1684,13 @@ export function HumanChatPanelMessageBubble({
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
   const textBodyRef = useRef<HTMLDivElement>(null);
-  const [textExpanded, setTextExpanded] = useState(false);
+  const messageIdRef = useRef(message.id);
+  messageIdRef.current = message.id;
+  const [localExpandedId, setLocalExpandedId] = useState<string | null>(null);
+  const textExpanded =
+    onToggleTextExpanded != null
+      ? Boolean(textExpandedFromParent)
+      : localExpandedId === message.id;
   const [textCanExpand, setTextCanExpand] = useState(false);
 
   /**
@@ -1786,7 +1803,7 @@ export function HumanChatPanelMessageBubble({
 
   const resolvedSenderName = useMemo(() => {
     if (isHyphaBotMatrixIdentity(message.senderMatrixId, message.senderName)) {
-      return t('agentMentionLabel');
+      return agentMentionLabel;
     }
     if (message.role === 'user') {
       return message.senderName ?? t('you');
@@ -1805,6 +1822,7 @@ export function HumanChatPanelMessageBubble({
         : fromPerson || rosterSenderLabel?.trim() || message.senderName?.trim();
     return visible || t('unknownMember');
   }, [
+    agentMentionLabel,
     message.role,
     message.senderMatrixId,
     message.senderName,
@@ -1816,7 +1834,7 @@ export function HumanChatPanelMessageBubble({
   const resolvedReplyAuthorLabel = useMemo(() => {
     if (!replyTo) return '';
     if (isHyphaBotMatrixIdentity(replyTo.sourceUserId, replyTo.authorLabel)) {
-      return t('agentMentionLabel');
+      return agentMentionLabel;
     }
     const fromPerson = replyPerson ? formatPersonDisplayName(replyPerson) : '';
     const visible =
@@ -1829,7 +1847,7 @@ export function HumanChatPanelMessageBubble({
           )
         : fromPerson || rosterReplyLabel?.trim() || replyTo.authorLabel?.trim();
     return visible || t('unknownMember');
-  }, [replyPerson, replyTo, rosterReplyLabel, t]);
+  }, [agentMentionLabel, replyPerson, replyTo, rosterReplyLabel, t]);
 
   const senderHasVisibleLabel = useMemo(() => {
     if (message.role !== 'member' || !message.senderMatrixId) return true;
@@ -1884,17 +1902,32 @@ export function HumanChatPanelMessageBubble({
 
   const senderName = specialistName ?? resolvedSenderName;
   const replyAuthorLabelForUi = replyTo ? resolvedReplyAuthorLabel : '';
+  const senderIsAgent =
+    message.id !== 'welcome' &&
+    isAgentChatAuthor({
+      agentSpecialistId: message.agentSpecialistId,
+      matrixUserId: message.senderMatrixId,
+      label: message.senderName,
+    });
+  const replyAuthorIsAgent = Boolean(
+    replyTo &&
+      isAgentChatAuthor({
+        matrixUserId: replyTo.sourceUserId,
+        label: replyTo.authorLabel,
+      }),
+  );
   const mainAvatarSrc =
     message.role === 'user'
       ? currentUserAvatarUrl?.trim() || message.avatarUrl
       : senderPerson?.avatarUrl?.trim() || message.avatarUrl;
   const mainAvatarLoading =
-    senderProfileLoading ||
-    (message.role === 'member' &&
-      !mainAvatarSrc?.trim() &&
-      (isLoadingSenderLink ||
-        (Boolean(senderPrivySub ?? senderCanonicalSub) &&
-          isLoadingSenderPerson)));
+    !senderIsAgent &&
+    (senderProfileLoading ||
+      (message.role === 'member' &&
+        !mainAvatarSrc?.trim() &&
+        (isLoadingSenderLink ||
+          (Boolean(senderPrivySub ?? senderCanonicalSub) &&
+            isLoadingSenderPerson))));
   const replyHeaderAvatarResolved =
     replyTo &&
     currentUserId &&
@@ -1903,11 +1936,13 @@ export function HumanChatPanelMessageBubble({
       ? currentUserAvatarUrl ?? replyTo.authorAvatarUrl
       : replyPerson?.avatarUrl ?? replyTo?.authorAvatarUrl;
   const replyAvatarLoading =
-    replyProfileLoading ||
-    (Boolean(replyTo) &&
-      !replyHeaderAvatarResolved?.trim() &&
-      (isLoadingReplyLink ||
-        (Boolean(replyPrivySub ?? replyCanonicalSub) && isLoadingReplyPerson)));
+    !replyAuthorIsAgent &&
+    (replyProfileLoading ||
+      (Boolean(replyTo) &&
+        !replyHeaderAvatarResolved?.trim() &&
+        (isLoadingReplyLink ||
+          (Boolean(replyPrivySub ?? replyCanonicalSub) &&
+            isLoadingReplyPerson))));
   const safeTimestamp = asTimelineDate(message.timestamp);
   const timestamp = safeTimestamp
     ? formatTimestamp(safeTimestamp, t)
@@ -1971,10 +2006,6 @@ export function HumanChatPanelMessageBubble({
     !textExpanded && 'line-clamp-10',
   );
 
-  useEffect(() => {
-    setTextExpanded(false);
-  }, [message.id, textContent, richTextHtml]);
-
   useLayoutEffect(() => {
     const el = textBodyRef.current;
     if (!el || !textContent.trim()) {
@@ -2014,15 +2045,19 @@ export function HumanChatPanelMessageBubble({
   const replyContextBody = replyTo ? (
     <>
       <div ref={replyAvatarMeasureRef} className="shrink-0">
-        <PersonAvatar
-          size="sm"
-          className="rounded-full"
-          avatarSrc={replyHeaderAvatarResolved}
-          userName={replyAuthorLabelForUi}
-          isLoading={replyAvatarLoading}
-          personId={replyPerson?.id}
-          matrixUserId={replyTo.sourceUserId}
-        />
+        {replyAuthorIsAgent ? (
+          <AgentInitialsAvatar name={replyAuthorLabelForUi} size="sm" />
+        ) : (
+          <PersonAvatar
+            size="sm"
+            className="rounded-full"
+            avatarSrc={replyHeaderAvatarResolved}
+            userName={replyAuthorLabelForUi}
+            isLoading={replyAvatarLoading}
+            personId={replyPerson?.id}
+            matrixUserId={replyTo.sourceUserId}
+          />
+        )}
       </div>
       <span className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
         <span className="shrink-0 font-semibold text-muted-foreground">
@@ -2117,15 +2152,8 @@ export function HumanChatPanelMessageBubble({
           <div ref={mainAvatarMeasureRef} className="relative">
             {message.id === 'welcome' ? (
               <MemberHomeMark className="h-10 w-10" />
-            ) : specialistName ? (
-              <div
-                className={`flex h-10 w-10 items-center justify-center text-xs font-semibold ${tagGroupAccentClass(
-                  specialist?.id ?? '',
-                )}`}
-                aria-hidden
-              >
-                {getAgentAvatarInitials(specialistName)}
-              </div>
+            ) : senderIsAgent ? (
+              <AgentInitialsAvatar name={senderName} />
             ) : (
               <PersonAvatar
                 size="chat"
@@ -2275,6 +2303,7 @@ export function HumanChatPanelMessageBubble({
               <div
                 ref={textBodyRef}
                 data-testid="chat-message-body"
+                data-message-id={message.id}
                 className={textBodyClassName}
               >
                 <ChatMessageRichText
@@ -2312,6 +2341,7 @@ export function HumanChatPanelMessageBubble({
               <div
                 ref={textBodyRef}
                 data-testid="chat-message-body"
+                data-message-id={message.id}
                 className={textBodyClassName}
               >
                 {renderTextWithMentions(
@@ -2325,8 +2355,18 @@ export function HumanChatPanelMessageBubble({
           {textContent && textCanExpand && jumboLayout.mode !== 'jumbo' ? (
             <button
               type="button"
+              data-message-id={message.id}
               className="mt-0.5 w-fit text-xs font-medium text-accent-11 underline-offset-2 hover:underline"
-              onClick={() => setTextExpanded((v) => !v)}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const id = messageIdRef.current;
+                if (onToggleTextExpanded) {
+                  onToggleTextExpanded(id);
+                  return;
+                }
+                setLocalExpandedId((current) => (current === id ? null : id));
+              }}
             >
               {textExpanded ? t('messageShowLess') : t('messageReadMore')}
             </button>

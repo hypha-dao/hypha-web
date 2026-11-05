@@ -1,0 +1,488 @@
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('server-only', () => ({}));
+
+import {
+  decodeSharedSourceBytes,
+  extractSharedSourceUrls,
+  filenameFromContentDisposition,
+  htmlToText,
+  isBlockedIpAddress,
+  isSharedSourceUrl,
+  parseSharedSourceUrl,
+} from '../server/shared-source';
+import {
+  readSpaceContextSharedSource,
+  type SharedSourceFetchOnce,
+} from '../server/read-shared-source';
+import {
+  parseMatrixContentUri,
+  readSpaceContextMatrixFile,
+} from '../server/read-matrix-shared-file';
+
+const encode = (value: string) => new TextEncoder().encode(value);
+
+/** One-page PDF with a single line of Helvetica text. */
+function buildPdf(text: string, { xrefShift = 0 } = {}): Uint8Array {
+  const stream = `BT /F1 18 Tf 72 720 Td (${text}) Tj ET`;
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ];
+  let body = '%PDF-1.4\n';
+  const offsets: number[] = [];
+  objects.forEach((object, index) => {
+    offsets.push(body.length + xrefShift);
+    body += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
+  const xrefAt = body.length;
+  body += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (const offset of offsets) {
+    body += `${String(offset).padStart(10, '0')} 00000 n \n`;
+  }
+  body += `trailer\n<< /Size ${
+    objects.length + 1
+  } /Root 1 0 R >>\nstartxref\n${xrefAt}\n%%EOF\n`;
+  return encode(body);
+}
+const mockFetchOnce = (
+  impl: SharedSourceFetchOnce = async () => ({
+    ok: false,
+    error: 'unexpected fetch',
+    code: 'fetch_failed',
+  }),
+) =>
+  vi.fn<Parameters<SharedSourceFetchOnce>, ReturnType<SharedSourceFetchOnce>>(
+    impl,
+  );
+
+describe('isBlockedIpAddress', () => {
+  it.each([
+    '127.0.0.1',
+    '10.1.2.3',
+    '172.16.0.1',
+    '172.31.255.255',
+    '192.168.1.1',
+    '169.254.169.254',
+    '100.64.0.1',
+    '0.0.0.0',
+    '224.0.0.1',
+    '::1',
+    '::',
+    'fe80::1',
+    'fd00::1',
+    'fc00::1',
+    'ff02::1',
+    '::ffff:127.0.0.1',
+    '::ffff:7f00:1',
+    '::ffff:10.0.0.1',
+    '64:ff9b::a00:1',
+    '2001:db8::1',
+    '2002:a00:1::1',
+    'not-an-ip',
+  ])('blocks %s', (address) => {
+    expect(isBlockedIpAddress(address)).toBe(true);
+  });
+
+  it.each([
+    '8.8.8.8',
+    '1.1.1.1',
+    '172.32.0.1',
+    '2606:4700:4700::1111',
+    '::ffff:8.8.8.8',
+  ])('allows %s', (address) => {
+    expect(isBlockedIpAddress(address)).toBe(false);
+  });
+});
+
+describe('parseSharedSourceUrl', () => {
+  it('accepts public https links', () => {
+    const parsed = parseSharedSourceUrl('https://hypha.earth/about');
+    expect(parsed.ok).toBe(true);
+  });
+
+  it.each([
+    ['http://hypha.earth', 'invalid_url'],
+    ['ftp://hypha.earth/file', 'invalid_url'],
+    ['https://user:pass@hypha.earth', 'invalid_url'],
+    ['not a url', 'invalid_url'],
+    ['https://localhost/', 'blocked_url'],
+    ['https://app.localhost/', 'blocked_url'],
+    ['https://printer.local/', 'blocked_url'],
+    ['https://metadata/', 'blocked_url'],
+    ['https://127.0.0.1/', 'blocked_url'],
+    ['https://2130706433/', 'blocked_url'],
+    ['https://0x7f000001/', 'blocked_url'],
+    ['https://[::1]/', 'blocked_url'],
+    ['https://169.254.169.254/latest/meta-data', 'blocked_url'],
+    ['https://hypha.earth:8443/', 'blocked_url'],
+  ])('rejects %s', (raw, code) => {
+    const parsed = parseSharedSourceUrl(raw);
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) expect(parsed.code).toBe(code);
+  });
+});
+
+describe('extractSharedSourceUrls', () => {
+  it('finds pasted links and Markdown document links', () => {
+    const urls = extractSharedSourceUrls([
+      'Read https://example.org/mission. Thanks!',
+      'Shared document: [plan.pdf](https://abc.ufs.sh/f/key123)',
+      'See https://en.wikipedia.org/wiki/Commons_(economics) too',
+      'Ignore http://example.org/plain',
+    ]);
+    expect(urls).toEqual([
+      'https://example.org/mission',
+      'https://abc.ufs.sh/f/key123',
+      'https://en.wikipedia.org/wiki/Commons_(economics)',
+    ]);
+  });
+
+  it('finds files attached in the room', () => {
+    const urls = extractSharedSourceUrls([
+      'Draft from this\nAttached file: plan.pdf (mxc://matrix.hypha.earth/AbC123)',
+    ]);
+    expect(urls).toEqual(['mxc://matrix.hypha.earth/AbC123']);
+    expect(isSharedSourceUrl('mxc://matrix.hypha.earth/AbC123', urls)).toBe(
+      true,
+    );
+    expect(isSharedSourceUrl('mxc://matrix.hypha.earth/Other', urls)).toBe(
+      false,
+    );
+  });
+
+  it('matches shared URLs ignoring fragments and trailing slash normalization', () => {
+    const shared = extractSharedSourceUrls(['https://example.org']);
+    expect(isSharedSourceUrl('https://example.org/#top', shared)).toBe(true);
+    expect(isSharedSourceUrl('https://evil.example/?q=1', shared)).toBe(false);
+  });
+});
+
+describe('htmlToText', () => {
+  it('keeps readable text and structure, drops scripts and chrome', () => {
+    const { title, text } = htmlToText(`<!doctype html>
+<html><head><title>Our Mission &amp; Vision</title>
+<style>body{color:red}</style><script>alert("x")</script></head>
+<body><nav><a href="/">Home</a></nav>
+<h1>Mission</h1><p>Restore&nbsp;land &mdash; together.</p>
+<ul><li>Soil</li><li>Water</li></ul><!-- hidden -->
+<footer>Copyright</footer></body></html>`);
+    expect(title).toBe('Our Mission & Vision');
+    expect(text).toBe(
+      '# Mission\n\nRestore land — together.\n\n- Soil\n- Water',
+    );
+  });
+
+  it('stays linear on hostile markup', () => {
+    const hostile = '<script'.repeat(50_000) + '<'.repeat(200_000);
+    const started = Date.now();
+    htmlToText(hostile);
+    expect(Date.now() - started).toBeLessThan(2000);
+  });
+
+  it('does not reassemble tags from nested fragments', () => {
+    const { text } = htmlToText('<p>a <scr<b>ipt>alert(1)</p>');
+    expect(text).not.toContain('<');
+    expect(text).toContain('alert(1)');
+  });
+
+  it('keeps escaped angle brackets as visible text', () => {
+    const { title, text } = htmlToText(
+      '<title>a &lt; b</title><p>1 &lt; 2 &gt; 0</p><p>&#60;tag&#62; &amp;lt;once&amp;gt;</p>',
+    );
+    expect(title).toBe('a < b');
+    expect(text).toBe('1 < 2 > 0\n\n<tag> &lt;once&gt;');
+  });
+
+  it('strips raw markup before decoding entities', () => {
+    const { text } = htmlToText(
+      '<p>&lt;b&gt;shown&lt;/b&gt; <scr<b>ipt>x <i>raw</i></p>',
+    );
+    expect(text).toBe('<b>shown</b> script>x raw');
+  });
+});
+
+describe('decodeSharedSourceBytes', () => {
+  it('returns Markdown and plain text as text', async () => {
+    const result = await decodeSharedSourceBytes({
+      bytes: encode('# Plan\n\nShip it.'),
+      contentType: 'application/octet-stream',
+      filename: 'plan.md',
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      mode: 'text',
+      mime: 'text/plain',
+      text: '# Plan\n\nShip it.',
+    });
+  });
+
+  it('sniffs untyped UTF-8 as text', async () => {
+    const result = await decodeSharedSourceBytes({
+      bytes: encode('notes without a name'),
+      contentType: null,
+      filename: 'key123',
+    });
+    expect(result).toMatchObject({ ok: true, mode: 'text' });
+  });
+
+  it('keeps images binary for multimodal models', async () => {
+    const result = await decodeSharedSourceBytes({
+      bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
+      contentType: 'image/png',
+      filename: 'logo.png',
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      mode: 'binary',
+      data_base64: 'iVBORw==',
+    });
+  });
+
+  it('rejects unsupported binaries', async () => {
+    const result = await decodeSharedSourceBytes({
+      bytes: new Uint8Array([0, 1, 2, 3]),
+      contentType: 'application/zip',
+      filename: 'archive.zip',
+    });
+    expect(result).toMatchObject({ ok: false, code: 'unsupported_type' });
+  });
+
+  it('extracts the text of a PDF', async () => {
+    const result = await decodeSharedSourceBytes({
+      bytes: buildPdf('Mission: shared tools for community-run groups.'),
+      contentType: 'application/pdf',
+      filename: 'mission-notes.pdf',
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      mode: 'text',
+      mime: 'application/pdf',
+      filename: 'mission-notes.pdf',
+    });
+    expect(result.ok && result.text).toContain(
+      'Mission: shared tools for community-run groups.',
+    );
+  });
+
+  it('extracts a small PDF whose cross-reference offsets are wrong', async () => {
+    const result = await decodeSharedSourceBytes({
+      bytes: buildPdf('Notes from a hand-made file.', { xrefShift: 3 }),
+      contentType: null,
+      filename: 'notes.pdf',
+    });
+    expect(result).toMatchObject({ ok: true, mode: 'text' });
+    expect(result.ok && result.text).toContain('Notes from a hand-made file.');
+  }, 15_000);
+
+  it('reports a file that only claims to be a PDF', async () => {
+    const result = await decodeSharedSourceBytes({
+      bytes: encode('%PDF-1.4 not really'),
+      contentType: 'application/pdf',
+      filename: 'broken.pdf',
+    });
+    expect(result).toMatchObject({ ok: false, code: 'decode_failed' });
+  }, 15_000);
+});
+
+describe('filenameFromContentDisposition', () => {
+  it('reads plain and RFC 5987 filenames', () => {
+    expect(
+      filenameFromContentDisposition('attachment; filename="notes.md"'),
+    ).toBe('notes.md');
+    expect(
+      filenameFromContentDisposition(
+        "attachment; filename*=UTF-8''pl%C3%A1n.pdf",
+      ),
+    ).toBe('plán.pdf');
+  });
+});
+
+describe('readSpaceContextSharedSource', () => {
+  const html = (body: string) => ({
+    kind: 'body' as const,
+    bytes: encode(body),
+    headers: { 'content-type': 'text/html; charset=utf-8' },
+  });
+
+  it('reads a shared HTML page as text', async () => {
+    const fetchOnce = mockFetchOnce(async () =>
+      html('<title>About</title><p>We grow food.</p>'),
+    );
+    const result = await readSpaceContextSharedSource(
+      {
+        url: 'https://example.org/about',
+        sharedUrls: ['https://example.org/about'],
+      },
+      { fetchOnce },
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      mode: 'text',
+      title: 'About',
+      text: 'We grow food.',
+      final_url: 'https://example.org/about',
+    });
+  });
+
+  it('refuses links nobody shared', async () => {
+    const fetchOnce = mockFetchOnce();
+    const result = await readSpaceContextSharedSource(
+      { url: 'https://evil.example/', sharedUrls: ['https://example.org/'] },
+      { fetchOnce },
+    );
+    expect(result).toMatchObject({ ok: false, code: 'not_shared' });
+    expect(fetchOnce).not.toHaveBeenCalled();
+  });
+
+  it('re-validates redirects and blocks internal targets', async () => {
+    const fetchOnce = mockFetchOnce(async () => ({
+      kind: 'redirect' as const,
+      location: 'https://169.254.169.254/latest/meta-data',
+    }));
+    const result = await readSpaceContextSharedSource(
+      { url: 'https://example.org/go' },
+      { fetchOnce },
+    );
+    expect(result).toMatchObject({ ok: false, code: 'blocked_url' });
+    expect(fetchOnce).toHaveBeenCalledTimes(1);
+  });
+
+  it('follows a bounded number of public redirects', async () => {
+    const fetchOnce = mockFetchOnce(async () => ({
+      kind: 'redirect' as const,
+      location: '/again',
+    }));
+    const result = await readSpaceContextSharedSource(
+      { url: 'https://example.org/loop' },
+      { fetchOnce },
+    );
+    expect(result).toMatchObject({ ok: false, code: 'fetch_failed' });
+    expect(fetchOnce).toHaveBeenCalledTimes(4);
+  });
+
+  it('caps max bytes at the org-memory limit', async () => {
+    const fetchOnce = mockFetchOnce(async () => html('<p>x</p>'));
+    await readSpaceContextSharedSource(
+      { url: 'https://example.org/', maxBytes: 50 * 1024 * 1024 },
+      { fetchOnce },
+    );
+    expect(fetchOnce.mock.calls[0]?.[1]).toBe(4 * 1024 * 1024);
+  });
+});
+
+describe('readSpaceContextMatrixFile', () => {
+  const mxcUrl = 'mxc://matrix.hypha.earth/AbC123';
+  const base = {
+    mxcUrl,
+    filename: 'plan.md',
+    sharedUrls: [mxcUrl],
+    homeserver: 'https://matrix.hypha.earth/',
+    accessToken: 'bot-token',
+  };
+
+  it('parses Matrix content URIs', () => {
+    expect(parseMatrixContentUri(mxcUrl)).toEqual({
+      serverName: 'matrix.hypha.earth',
+      mediaId: 'AbC123',
+    });
+    expect(parseMatrixContentUri('mxc://matrix.hypha.earth/../x')).toBeNull();
+    expect(parseMatrixContentUri('https://matrix.hypha.earth/x')).toBeNull();
+  });
+
+  it('reads an attached file through the homeserver with the bot token', async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response('# Mission\n\nWe grow commons.', {
+          headers: { 'content-type': 'text/markdown' },
+        }),
+    );
+    const result = await readSpaceContextMatrixFile(base, {
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      mode: 'text',
+      filename: 'plan.md',
+      url: mxcUrl,
+    });
+    expect(result.ok && result.text).toContain('We grow commons.');
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
+    expect(url).toBe(
+      'https://matrix.hypha.earth/_matrix/client/v1/media/download/matrix.hypha.earth/AbC123',
+    );
+    expect(init.headers).toEqual({ Authorization: 'Bearer bot-token' });
+  });
+
+  it('reads the text of an attached PDF', async () => {
+    const pdf = buildPdf('Aura reads the Mission notes.');
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(pdf, {
+          headers: {
+            'content-type': 'application/pdf',
+            'content-length': String(pdf.byteLength),
+          },
+        }),
+    );
+    const result = await readSpaceContextMatrixFile(
+      { ...base, filename: 'mission-notes.pdf' },
+      { fetch: fetchMock as unknown as typeof fetch },
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      mode: 'text',
+      mime: 'application/pdf',
+      filename: 'mission-notes.pdf',
+    });
+    expect(result.ok && result.text).toContain('Aura reads the Mission notes.');
+  }, 15_000);
+
+  it('falls back to the legacy media path on older homeservers', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('', { status: 404 }))
+      .mockResolvedValueOnce(
+        new Response('plain text', {
+          headers: { 'content-type': 'text/plain' },
+        }),
+      );
+    const result = await readSpaceContextMatrixFile(base, {
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    expect(result.ok).toBe(true);
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'https://matrix.hypha.earth/_matrix/media/v3/download/matrix.hypha.earth/AbC123',
+    );
+  });
+
+  it('refuses files that were not attached in the room', async () => {
+    const fetchMock = vi.fn();
+    const result = await readSpaceContextMatrixFile(
+      { ...base, sharedUrls: [] },
+      { fetch: fetchMock as unknown as typeof fetch },
+    );
+    expect(result).toMatchObject({ ok: false, code: 'not_shared' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('stops reading files over the size limit', async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response('x'.repeat(4096), {
+          headers: { 'content-type': 'text/plain' },
+        }),
+    );
+    const result = await readSpaceContextMatrixFile(
+      { ...base, maxBytes: 1024 },
+      { fetch: fetchMock as unknown as typeof fetch },
+    );
+    expect(result).toMatchObject({ ok: false, code: 'too_large' });
+  });
+});

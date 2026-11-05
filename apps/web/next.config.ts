@@ -33,7 +33,9 @@ const nextConfig: NextConfig = {
   // Voice and video call (WebRTC): getUserMedia is not gated by CSP here; if a
   // strict Content-Security-Policy is added, allow TURN/STUN (connect-src) and
   // any recording/CDN origins. See docs/requirements/voice-video-call-phase-0-runbook.md
-  serverExternalPackages: ['matrix-js-sdk'],
+  // pdf-parse loads its bundled pdf.js by a computed path, which a server chunk
+  // cannot resolve; it must stay a direct dependency of apps/web to be external.
+  serverExternalPackages: ['matrix-js-sdk', 'pdf-parse'],
   // Unmatched URLs have no root layout once the app lives in the (main) route
   // group; render app/global-not-found.tsx for them instead.
   experimental: {

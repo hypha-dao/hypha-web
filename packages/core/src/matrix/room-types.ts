@@ -13,6 +13,8 @@ export const HYPHA_ROOM_TYPES = {
   signal: 'io.hypha.room.signal',
   /** Discussion room of one proposal (`documents.chat_room_id`). */
   proposal: 'io.hypha.room.proposal',
+  /** Discussion room of one Space Context section (`space_context_sections.chat_room_id`). */
+  context: 'io.hypha.room.context',
   /** Members-only room of a space (`spaces.chat_room_id`). */
   space: 'io.hypha.room.space',
   /** Public room of a space (`hypha-public-<slug>`). */

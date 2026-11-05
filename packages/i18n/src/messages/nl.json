@@ -667,7 +667,8 @@
     "durationDays": "{count, plural, one {# dag} other {# dagen}}",
     "spaceBannerRevealMeta": "Details",
     "moreNav": "Meer",
-    "bankingTab": "Bankieren"
+    "bankingTab": "Bankieren",
+    "context": "Context"
   },
   "ModalAside": {
     "spaceSettings": "Ruimte-instellingen",
@@ -769,6 +770,8 @@
       "proposalsBody": "Gesprekken over voorstellen waar je over kunt stemmen",
       "signalsTitle": "Signalen",
       "signalsBody": "Behoeften, middelen, kansen, risico's, spanningen, inzichten, acties en impact",
+      "contextTitle": "Context",
+      "contextBody": "Gesprekken over Context-secties in je spaces",
       "ecosystemTitle": "Ecosystemen",
       "ecosystemBody": "Samenwerking tussen spaces en gedeelde gesprekken",
       "networkTitle": "Netwerk",
@@ -779,6 +782,7 @@
       "tagSpacePublic": "Openbaar space-kanaal",
       "tagProposal": "Voorstel",
       "tagSignal": "Space-signalen",
+      "tagContext": "Space-context",
       "tagEcosystem": "Ecosysteemkanaal",
       "tagNetwork": "Netwerkkanaal",
       "filterLabel": "Berichtfilters",
@@ -2651,7 +2655,8 @@
       "registerEnergySource": "Registreer energiebron",
       "addEnergyMember": "Energielid toevoegen",
       "changeEnergyOptimization": "Verander energieoptimalisatie",
-      "whitelistEnergySettlement": "Energieafwikkeling op de witte lijst"
+      "whitelistEnergySettlement": "Energieafwikkeling op de witte lijst",
+      "spaceContext": "Space-context"
     },
     "documentBadges": {
       "invite": "Uitnodiging",
@@ -3874,6 +3879,7 @@
     "tabChatSpace": "Space-kanaal",
     "tabChatPublic": "Openbaar space-kanaal",
     "tabChatProposal": "Voorstel",
+    "tabChatContext": "Context",
     "tabChatSignal": "Signaal",
     "tabChatEcosystem": "Ecosysteemkanaal",
     "tabChatNetwork": "Netwerkkanaal",
@@ -5619,5 +5625,135 @@
     "proposal": "Voorstel",
     "agreement": "Overeenkomst",
     "backHome": "Terug naar start"
+  },
+  "SpaceContext": {
+    "title": "Context",
+    "subtitle": "Eén gedeelde bron van waarheid voor deze space. Leden bespreken elke sectie samen, noemen de agent wanneer ze hulp willen en bekrachtigen haar daarna via een overeenkomst.",
+    "progress": "{ratified} van {total} bekrachtigd",
+    "propose": "Voorstellen ter bekrachtiging",
+    "filters": {
+      "all": "Alle",
+      "ratified": "Bekrachtigd",
+      "proposed": "In stemming",
+      "drafts": "Concepten"
+    },
+    "status": {
+      "ratified": "Bekrachtigd",
+      "onVoting": "In stemming",
+      "draft": "Concept",
+      "notStarted": "Niet gestart"
+    },
+    "card": {
+      "emptyBody": "No draft yet.",
+      "proposalFallback": "Proposal",
+      "viewProposal": "View proposal",
+      "openDiscussion": "Discussie openen",
+      "contributors": "{count, plural, one {# bijdrager} other {# bijdragers}}",
+      "edited": "bewerkt {when}",
+      "votingClosed": "stemming gesloten",
+      "daysLeft": "nog {count, plural, one {# dag} other {# dagen}}",
+      "hoursLeft": "nog {count, plural, one {# uur} other {# uur}}",
+      "read": "{section} lezen"
+    },
+    "empty": {
+      "title": "Nog geen context",
+      "description": "Bepaal wie deze space is — missie, visie, strategie en meer. Open een sectie om die met leden te bespreken, noem de agent wanneer je een concept wilt en bekrachtig haar met een voorstel wanneer ze klaar is.",
+      "startMission": "Begin met Missie",
+      "filter": "No sections in this filter."
+    },
+    "chat": {
+      "title": "Sectiediscussie",
+      "empty": "Start een gesprek om aan een concept voor {section} te werken.",
+      "close": "Discussie sluiten",
+      "loadError": "Could not load this section chat.",
+      "connecting": "Verbinden met de discussie…",
+      "unavailable": "De discussie is nu niet beschikbaar. Probeer het later opnieuw.",
+      "signInHint": "Log in om deze sectie met leden te bespreken.",
+      "membersOnly": "Alleen leden van de space kunnen aan deze discussie deelnemen.",
+      "roomTitle": "{section} · Context — {space}",
+      "draftLabel": "Gedeeld concept",
+      "showDraft": "Concept tonen",
+      "draftPlaceholder": "Plak of schrijf hier {section}…",
+      "draftUpdated": "Een lid of de agent heeft een nieuwer concept opgeslagen.",
+      "loadLatest": "Nieuwste laden",
+      "saveDraft": "Save draft",
+      "saving": "Opslaan…",
+      "propose": "Propose to ratify",
+      "skills": {
+        "review": "Is dit een goede {section}? Wat ontbreekt of is vaag?",
+        "refine": "Verbeter het gedeelde concept met wat we hierboven bespraken.",
+        "draft": "Maak van deze discussie een concept voor {section} en sla het op.",
+        "fromSource": "Lees de gedeelde link of het document en schrijf {section} op basis daarvan."
+      },
+      "draftLockedHint": "Deze sectie is in stemming. Het concept kan na de stemming veranderen."
+    },
+    "draft": {
+      "label": "Nieuwste concept",
+      "edit": "Concept bewerken",
+      "cancel": "Annuleren"
+    },
+    "proposeForm": {
+      "header": "Create a proposal",
+      "title": "Ratify context: {sections}",
+      "titleShort": "Ratify context sections",
+      "sections": "Sections to ratify",
+      "alreadyVoting": "Al in stemming (Overeenkomst #{agreement})",
+      "noDraft": "No draft yet",
+      "proposalType": "Type voorstel",
+      "proposalTypeValue": "Contextsectie(s) bekrachtigen",
+      "contentPrefilled": "vooraf ingevuld uit concepten",
+      "ratifiedAmend": "Bekrachtigd #{agreement} — conceptwijziging",
+      "draftVersion": "Concept v{version}",
+      "onPassNote": "Bij aanname worden de gekozen concepten de bekrachtigde tekst, en voorgestelde toevoegingen of verwijderingen worden doorgevoerd.",
+      "cancel": "Annuleren",
+      "addSection": "Voegt een nieuwe sectie toe",
+      "removeSection": "Verwijdert deze sectie",
+      "ratifiedUnchanged": "Bekrachtigd #{agreement} — geen conceptwijzigingen"
+    },
+    "error": {
+      "load": "Could not load Space Context.",
+      "retry": "Try again",
+      "save": "Dit concept kon niet worden opgeslagen.",
+      "link": "Dit voorstel kon niet aan de Context-secties worden gekoppeld.",
+      "change": "Deze sectie kon niet worden bijgewerkt. Probeer het opnieuw.",
+      "onVoting": "Deze sectie is in stemming. Ze kan na de stemming veranderen."
+    },
+    "success": {
+      "saved": "Concept opgeslagen.",
+      "suggested": "Sectie voorgesteld. Ze komt in de Context zodra een voorstel om haar toe te voegen wordt aangenomen.",
+      "removalSuggested": "Verwijdering voorgesteld. Neem haar op in een voorstel om haar door te voeren.",
+      "removalWithdrawn": "Verwijderingsvoorstel ingetrokken.",
+      "additionWithdrawn": "Voorstel ingetrokken."
+    },
+    "change": {
+      "add": "Voorgestelde sectie",
+      "remove": "Verwijdering voorgesteld"
+    },
+    "notice": {
+      "addition": "Voorgestelde sectie. Ze komt pas in de Context als een voorstel om haar toe te voegen wordt aangenomen.",
+      "removal": "Verwijdering voorgesteld. De sectie blijft tot een voorstel om haar te verwijderen wordt aangenomen."
+    },
+    "reader": {
+      "suggestRemoval": "Verwijderen voorstellen",
+      "cancelRemoval": "Verwijderingsvoorstel intrekken",
+      "withdrawAddition": "Voorstel intrekken"
+    },
+    "addSection": {
+      "open": "Sectie toevoegen",
+      "title": "Nieuwe sectie voorstellen",
+      "description": "Elk lid kan een sectie voorstellen. Ze blijft een concept tot een voorstel om haar toe te voegen wordt aangenomen.",
+      "nameLabel": "Naam van de sectie",
+      "namePlaceholder": "bijv. Onboarding",
+      "draftLabel": "Eerste concept (optioneel)",
+      "draftPlaceholder": "Wat moet er in deze sectie staan?",
+      "cancel": "Annuleren",
+      "submit": "Sectie voorstellen",
+      "submitting": "Bezig met voorstellen…",
+      "duplicate": "Er bestaat al een sectie met deze naam.",
+      "titleRequired": "Geef de sectie een naam.",
+      "failed": "De sectie kon niet worden voorgesteld. Probeer het opnieuw.",
+      "restoreLabel": "Verwijderde secties",
+      "restore": "Herstellen voorstellen"
+    }
   }
 }

@@ -667,7 +667,8 @@
     "durationDays": "{count, plural, one {# Tag} other {# Tage}}",
     "spaceBannerRevealMeta": "Details",
     "moreNav": "Mehr",
-    "bankingTab": "Banking"
+    "bankingTab": "Banking",
+    "context": "Kontext"
   },
   "ModalAside": {
     "spaceSettings": "Space-Einstellungen",
@@ -769,6 +770,8 @@
       "proposalsBody": "Gespräche zu Vorschlägen, über die du abstimmen kannst",
       "signalsTitle": "Signale",
       "signalsBody": "Bedürfnisse, Ressourcen, Chancen, Risiken, Spannungen, Einsichten, Handlungen und Wirkung",
+      "contextTitle": "Kontext",
+      "contextBody": "Diskussionen zu Kontext-Abschnitten in deinen Spaces",
       "ecosystemTitle": "Ökosysteme",
       "ecosystemBody": "Zusammenarbeit über Spaces hinweg und geteilte Gespräche",
       "networkTitle": "Netzwerk",
@@ -779,6 +782,7 @@
       "tagSpacePublic": "Öffentlicher Space-Kanal",
       "tagProposal": "Vorschlag",
       "tagSignal": "Space-Signale",
+      "tagContext": "Space-Kontext",
       "tagEcosystem": "Ökosystem-Kanal",
       "tagNetwork": "Netzwerk-Kanal",
       "filterLabel": "Nachrichtenfilter",
@@ -2652,7 +2656,8 @@
       "registerEnergySource": "Energiequelle registrieren",
       "addEnergyMember": "Energiemitglied hinzufügen",
       "changeEnergyOptimization": "Energieoptimierung ändern",
-      "whitelistEnergySettlement": "Energieabrechnung whitelisten"
+      "whitelistEnergySettlement": "Energieabrechnung whitelisten",
+      "spaceContext": "Kontext des Spaces"
     },
     "documentBadges": {
       "invite": "Einladung",
@@ -3871,6 +3876,7 @@
     "tabChatSpace": "Space-Kanal",
     "tabChatPublic": "Öffentlicher Space-Kanal",
     "tabChatProposal": "Vorschlag",
+    "tabChatContext": "Kontext",
     "tabChatSignal": "Signal",
     "tabChatEcosystem": "Ökosystem-Kanal",
     "tabChatNetwork": "Netzwerk-Kanal",
@@ -5613,5 +5619,135 @@
     "proposal": "Vorschlag",
     "agreement": "Vereinbarung",
     "backHome": "Zurück nach Hause"
+  },
+  "SpaceContext": {
+    "title": "Kontext",
+    "subtitle": "Eine gemeinsame Wahrheitsquelle für diesen Space. Mitglieder besprechen jeden Abschnitt gemeinsam, erwähnen dessen Agenten, wenn sie Hilfe möchten, und ratifizieren ihn dann über eine Vereinbarung.",
+    "progress": "{ratified} von {total} ratifiziert",
+    "propose": "Zur Ratifizierung vorschlagen",
+    "filters": {
+      "all": "Alle",
+      "ratified": "Ratifiziert",
+      "proposed": "In Abstimmung",
+      "drafts": "Entwürfe"
+    },
+    "status": {
+      "ratified": "Ratifiziert",
+      "onVoting": "In Abstimmung",
+      "draft": "Entwurf",
+      "notStarted": "Nicht gestartet"
+    },
+    "card": {
+      "emptyBody": "Noch kein Entwurf.",
+      "proposalFallback": "Vorschlag",
+      "viewProposal": "Vorschlag ansehen",
+      "openDiscussion": "Diskussion öffnen",
+      "contributors": "{count, plural, one {# Mitwirkende Person} other {# Mitwirkende}}",
+      "edited": "bearbeitet {when}",
+      "votingClosed": "Abstimmung beendet",
+      "daysLeft": "noch {count, plural, one {# Tag} other {# Tage}}",
+      "hoursLeft": "noch {count, plural, one {# Stunde} other {# Stunden}}",
+      "read": "{section} lesen"
+    },
+    "empty": {
+      "title": "Noch kein Kontext",
+      "description": "Lege fest, wer dieser Space ist — Mission, Vision, Strategie und mehr. Öffne einen Abschnitt, um ihn mit Mitgliedern zu besprechen, erwähne seinen Agenten, wenn du einen Entwurf möchtest, und ratifiziere ihn per Vorschlag, wenn er fertig ist.",
+      "startMission": "Mit der Mission starten",
+      "filter": "Keine Abschnitte in diesem Filter."
+    },
+    "chat": {
+      "title": "Abschnittsdiskussion",
+      "empty": "Starte ein Gespräch, um an einem Entwurf für {section} zu arbeiten.",
+      "close": "Diskussion schließen",
+      "loadError": "Dieser Abschnittschat konnte nicht geladen werden.",
+      "connecting": "Verbindung zur Diskussion wird hergestellt…",
+      "unavailable": "Die Diskussion ist gerade nicht verfügbar. Versuche es später erneut.",
+      "signInHint": "Melde dich an, um diesen Abschnitt mit Mitgliedern zu besprechen.",
+      "membersOnly": "Nur Mitglieder des Space können an dieser Diskussion teilnehmen.",
+      "roomTitle": "{section} · Kontext — {space}",
+      "draftLabel": "Gemeinsamer Entwurf",
+      "showDraft": "Entwurf anzeigen",
+      "draftPlaceholder": "{section} hier einfügen oder schreiben…",
+      "draftUpdated": "Ein Mitglied oder der Agent hat einen neueren Entwurf gespeichert.",
+      "loadLatest": "Neuesten laden",
+      "saveDraft": "Entwurf speichern",
+      "saving": "Speichere…",
+      "propose": "Zur Ratifizierung vorschlagen",
+      "skills": {
+        "review": "Ist das eine gute {section}? Was fehlt oder ist vage?",
+        "refine": "Überarbeite den gemeinsamen Entwurf anhand unserer Diskussion oben.",
+        "draft": "Mach aus dieser Diskussion einen Entwurf für {section} und speichere ihn.",
+        "fromSource": "Lies den geteilten Link oder das Dokument und entwirf daraus {section}."
+      },
+      "draftLockedHint": "Dieser Abschnitt ist in Abstimmung. Der Entwurf kann nach der Abstimmung geändert werden."
+    },
+    "draft": {
+      "label": "Neuester Entwurf",
+      "edit": "Entwurf bearbeiten",
+      "cancel": "Abbrechen"
+    },
+    "proposeForm": {
+      "header": "Vorschlag erstellen",
+      "title": "Kontext ratifizieren: {sections}",
+      "titleShort": "Kontext-Abschnitte ratifizieren",
+      "sections": "Zu ratifizierende Abschnitte",
+      "alreadyVoting": "Bereits in Abstimmung (Vereinbarung #{agreement})",
+      "noDraft": "Noch kein Entwurf",
+      "proposalType": "Vorschlagstyp",
+      "proposalTypeValue": "Kontextabschnitt(e) ratifizieren",
+      "contentPrefilled": "aus Entwürfen vorausgefüllt",
+      "ratifiedAmend": "Ratifiziert #{agreement} — Änderungsentwurf",
+      "draftVersion": "Entwurf v{version}",
+      "onPassNote": "Bei Annahme werden die ausgewählten Entwürfe zum ratifizierten Text, und vorgeschlagene Ergänzungen oder Entfernungen werden übernommen.",
+      "cancel": "Abbrechen",
+      "addSection": "Fügt einen neuen Abschnitt hinzu",
+      "removeSection": "Entfernt diesen Abschnitt",
+      "ratifiedUnchanged": "Ratifiziert #{agreement} — keine Entwurfsänderungen"
+    },
+    "error": {
+      "load": "Space Context konnte nicht geladen werden.",
+      "retry": "Erneut versuchen",
+      "save": "Dieser Entwurf konnte nicht gespeichert werden.",
+      "link": "Dieser Vorschlag konnte den Context-Abschnitten nicht zugeordnet werden.",
+      "change": "Dieser Abschnitt konnte nicht aktualisiert werden. Versuche es erneut.",
+      "onVoting": "Dieser Abschnitt ist in Abstimmung. Er kann nach der Abstimmung geändert werden."
+    },
+    "success": {
+      "saved": "Entwurf gespeichert.",
+      "suggested": "Abschnitt vorgeschlagen. Er kommt in den Kontext, sobald ein Vorschlag zum Hinzufügen angenommen wird.",
+      "removalSuggested": "Entfernung vorgeschlagen. Nimm sie in einen Vorschlag auf, um sie umzusetzen.",
+      "removalWithdrawn": "Entfernungsvorschlag zurückgezogen.",
+      "additionWithdrawn": "Vorschlag zurückgezogen."
+    },
+    "change": {
+      "add": "Vorgeschlagener Abschnitt",
+      "remove": "Entfernung vorgeschlagen"
+    },
+    "notice": {
+      "addition": "Vorgeschlagener Abschnitt. Er kommt erst in den Kontext, wenn ein Vorschlag zum Hinzufügen angenommen wird.",
+      "removal": "Entfernung vorgeschlagen. Der Abschnitt bleibt, bis ein Vorschlag zum Entfernen angenommen wird."
+    },
+    "reader": {
+      "suggestRemoval": "Entfernen vorschlagen",
+      "cancelRemoval": "Entfernungsvorschlag zurückziehen",
+      "withdrawAddition": "Vorschlag zurückziehen"
+    },
+    "addSection": {
+      "open": "Abschnitt hinzufügen",
+      "title": "Neuen Abschnitt vorschlagen",
+      "description": "Jedes Mitglied kann einen Abschnitt vorschlagen. Er bleibt ein Entwurf, bis ein Vorschlag zum Hinzufügen angenommen wird.",
+      "nameLabel": "Name des Abschnitts",
+      "namePlaceholder": "z. B. Onboarding",
+      "draftLabel": "Erster Entwurf (optional)",
+      "draftPlaceholder": "Was soll in diesem Abschnitt stehen?",
+      "cancel": "Abbrechen",
+      "submit": "Abschnitt vorschlagen",
+      "submitting": "Wird vorgeschlagen…",
+      "duplicate": "Ein Abschnitt mit diesem Namen existiert bereits.",
+      "titleRequired": "Gib dem Abschnitt einen Namen.",
+      "failed": "Der Abschnitt konnte nicht vorgeschlagen werden. Versuche es erneut.",
+      "restoreLabel": "Entfernte Abschnitte",
+      "restore": "Wiederherstellen vorschlagen"
+    }
   }
 }

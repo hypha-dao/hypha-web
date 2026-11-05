@@ -667,7 +667,8 @@
     "durationDays": "{count, plural, one {# dia} other {# dias}}",
     "spaceBannerRevealMeta": "Detalhes",
     "moreNav": "Mais",
-    "bankingTab": "Banca"
+    "bankingTab": "Banca",
+    "context": "Contexto"
   },
   "ModalAside": {
     "spaceSettings": "Definições do espaço",
@@ -1300,7 +1301,8 @@
       "registerEnergySource": "Registrar fonte de energia",
       "addEnergyMember": "Adicionar membro de energia",
       "changeEnergyOptimization": "Alterar otimização de energia",
-      "whitelistEnergySettlement": "Whitelist de liquidação de energia"
+      "whitelistEnergySettlement": "Whitelist de liquidação de energia",
+      "spaceContext": "Contexto do espaço"
     },
     "documentBadges": {
       "invite": "Convite",
@@ -1547,6 +1549,8 @@
       "proposalsBody": "Conversas sobre propostas em que podes votar",
       "signalsTitle": "Sinais",
       "signalsBody": "Necessidades, recursos, oportunidades, riscos, tensões, ideias, ações e impacto",
+      "contextTitle": "Contexto",
+      "contextBody": "Conversas sobre secções do Contexto dos teus espaços",
       "ecosystemTitle": "Ecossistemas",
       "ecosystemBody": "Colaboração entre espaços e conversas partilhadas",
       "networkTitle": "Rede",
@@ -1557,6 +1561,7 @@
       "tagSpacePublic": "Canal público do espaço",
       "tagProposal": "Proposta",
       "tagSignal": "Sinais do espaço",
+      "tagContext": "Contexto do espaço",
       "tagEcosystem": "Canal do ecossistema",
       "tagNetwork": "Canal da rede",
       "filterLabel": "Filtros de mensagens",
@@ -3299,6 +3304,7 @@
     "tabChatSpace": "Canal do espaço",
     "tabChatPublic": "Canal público do espaço",
     "tabChatProposal": "Proposta",
+    "tabChatContext": "Contexto",
     "tabChatSignal": "Sinal",
     "tabChatEcosystem": "Canal do ecossistema",
     "tabChatNetwork": "Canal da rede",
@@ -5611,5 +5617,135 @@
     "proposal": "Proposta",
     "agreement": "Acordo",
     "backHome": "Voltar ao início"
+  },
+  "SpaceContext": {
+    "title": "Contexto",
+    "subtitle": "Uma fonte de verdade partilhada para este espaço. Os membros discutem cada secção em conjunto, mencionam o seu agente quando querem ajuda e depois ratificam-na através de um acordo.",
+    "progress": "{ratified} de {total} ratificadas",
+    "propose": "Propor para ratificar",
+    "filters": {
+      "all": "Todas",
+      "ratified": "Ratificadas",
+      "proposed": "Em votação",
+      "drafts": "Rascunhos"
+    },
+    "status": {
+      "ratified": "Ratificada",
+      "onVoting": "Em votação",
+      "draft": "Rascunho",
+      "notStarted": "Não iniciada"
+    },
+    "card": {
+      "emptyBody": "No draft yet.",
+      "proposalFallback": "Proposal",
+      "viewProposal": "View proposal",
+      "openDiscussion": "Abrir discussão",
+      "contributors": "{count, plural, one {# colaborador} other {# colaboradores}}",
+      "edited": "editada {when}",
+      "votingClosed": "votação encerrada",
+      "daysLeft": "{count, plural, one {falta # dia} other {faltam # dias}}",
+      "hoursLeft": "{count, plural, one {falta # hora} other {faltam # horas}}",
+      "read": "Ler {section}"
+    },
+    "empty": {
+      "title": "Ainda sem contexto",
+      "description": "Defina quem é este espaço — missão, visão, estratégia e mais. Abra uma secção para a discutir com os membros, mencione o seu agente quando quiser um rascunho e ratifique-a com uma proposta quando estiver pronta.",
+      "startMission": "Começar pela Missão",
+      "filter": "No sections in this filter."
+    },
+    "chat": {
+      "title": "Discussão da secção",
+      "empty": "Começa uma conversa para trabalhar num rascunho de {section}.",
+      "close": "Fechar discussão",
+      "loadError": "Could not load this section chat.",
+      "connecting": "A ligar à discussão…",
+      "unavailable": "A discussão não está disponível agora. Tente mais tarde.",
+      "signInHint": "Inicie sessão para discutir esta secção com os membros.",
+      "membersOnly": "Apenas membros do espaço podem participar nesta discussão.",
+      "roomTitle": "{section} · Contexto — {space}",
+      "draftLabel": "Rascunho partilhado",
+      "showDraft": "Ver rascunho",
+      "draftPlaceholder": "Cole ou escreva {section} aqui…",
+      "draftUpdated": "Um membro ou o agente guardou um rascunho mais recente.",
+      "loadLatest": "Carregar o mais recente",
+      "saveDraft": "Save draft",
+      "saving": "Salvando…",
+      "propose": "Propose to ratify",
+      "skills": {
+        "review": "Esta é uma boa {section}? O que falta ou é vago?",
+        "refine": "Melhora o rascunho partilhado com o que discutimos acima.",
+        "draft": "Transforma esta discussão num rascunho de {section} e guarda-o.",
+        "fromSource": "Lê a ligação ou o documento partilhado e redige {section} a partir dele."
+      },
+      "draftLockedHint": "Esta seção está em votação. O rascunho pode mudar depois da votação."
+    },
+    "draft": {
+      "label": "Rascunho mais recente",
+      "edit": "Editar rascunho",
+      "cancel": "Cancelar"
+    },
+    "proposeForm": {
+      "header": "Criar uma proposta",
+      "title": "Ratificar contexto: {sections}",
+      "titleShort": "Ratificar seções de contexto",
+      "sections": "Sections to ratify",
+      "alreadyVoting": "Já em votação (Acordo #{agreement})",
+      "noDraft": "No draft yet",
+      "proposalType": "Tipo de proposta",
+      "proposalTypeValue": "Ratificar seção(ões) de contexto",
+      "contentPrefilled": "preenchido a partir dos rascunhos",
+      "ratifiedAmend": "Ratificada #{agreement} — emenda em rascunho",
+      "draftVersion": "Rascunho v{version}",
+      "onPassNote": "Se aprovada, os rascunhos selecionados passam a ser o texto ratificado, e as adições ou remoções sugeridas são aplicadas.",
+      "cancel": "Cancelar",
+      "addSection": "Adiciona uma nova seção",
+      "removeSection": "Remove esta seção",
+      "ratifiedUnchanged": "Ratificada #{agreement} — sem alterações de rascunho"
+    },
+    "error": {
+      "load": "Could not load Space Context.",
+      "retry": "Try again",
+      "save": "Não foi possível salvar este rascunho.",
+      "link": "Não foi possível vincular esta proposta às seções de Context.",
+      "change": "Não foi possível atualizar esta seção. Tente novamente.",
+      "onVoting": "Esta seção está em votação. Pode mudar depois da votação."
+    },
+    "success": {
+      "saved": "Rascunho salvo.",
+      "suggested": "Seção sugerida. Entra no Contexto quando uma proposta que a adiciona for aprovada.",
+      "removalSuggested": "Remoção sugerida. Inclua-a numa proposta para aplicá-la.",
+      "removalWithdrawn": "Sugestão de remoção retirada.",
+      "additionWithdrawn": "Sugestão retirada."
+    },
+    "change": {
+      "add": "Seção sugerida",
+      "remove": "Remoção sugerida"
+    },
+    "notice": {
+      "addition": "Seção sugerida. Entra no Contexto só quando uma proposta que a adiciona for aprovada.",
+      "removal": "Remoção sugerida. A seção fica até ser aprovada uma proposta que a remove."
+    },
+    "reader": {
+      "suggestRemoval": "Sugerir remoção",
+      "cancelRemoval": "Retirar a sugestão de remoção",
+      "withdrawAddition": "Retirar a sugestão"
+    },
+    "addSection": {
+      "open": "Adicionar seção",
+      "title": "Sugerir uma nova seção",
+      "description": "Qualquer membro pode sugerir uma seção. Ela fica como rascunho até ser aprovada uma proposta que a adiciona.",
+      "nameLabel": "Nome da seção",
+      "namePlaceholder": "ex.: Integração",
+      "draftLabel": "Primeiro rascunho (opcional)",
+      "draftPlaceholder": "O que esta seção deve dizer?",
+      "cancel": "Cancelar",
+      "submit": "Sugerir seção",
+      "submitting": "Sugerindo…",
+      "duplicate": "Já existe uma seção com este nome.",
+      "titleRequired": "Dê um nome à seção.",
+      "failed": "Não foi possível sugerir a seção. Tente novamente.",
+      "restoreLabel": "Seções removidas",
+      "restore": "Sugerir restauração"
+    }
   }
 }

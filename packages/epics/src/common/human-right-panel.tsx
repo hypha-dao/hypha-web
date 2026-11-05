@@ -74,11 +74,13 @@ import {
   applySignalCreatorToChatAuthor,
   isSignalDescriptionAnchorMessage,
   usePersonById,
+  headingForSectionKey,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
   isChatPanelVideoFile,
 } from './human-chat-panel/chat-panel-media-types';
+import { matrixMemberAvatarSquare } from './human-chat-panel/matrix-member-avatar';
 import { UseMembers } from '../spaces';
 import { useSpaceMembersAndDelegates } from '../spaces/hooks/use-space-members-and-delegates';
 import {
@@ -196,6 +198,9 @@ import {
 import { SignalTurnIntoProposalButton } from '../coherence/components/signal-turn-into-proposal-button';
 import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
 import { SignalIndicativeAmounts } from '../coherence/components/signal-indicative-amounts';
+import { SpaceContextSidePanel } from '../space-context/components/space-context-chat-panel';
+import { useSpaceContextSectionAgent } from '../space-context/hooks/use-space-context-section-agent';
+import { AgentMentionLabelProvider } from './human-chat-panel/agent-mention-label-context';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
   dmOtherHumanMembers,
@@ -884,27 +889,6 @@ function clearStoredRoomId(spaceSlug: string): void {
 }
 
 /**
- * Matrix member avatar → HTTP thumbnail for `<img>`.
- * Same sources as the Messages list: room member MXC, then the global user
- * store (group headers often miss room-member avatars while `getUser` has them).
- */
-function matrixMemberAvatarSquare(
-  client: MatrixClient | null | undefined,
-  roomId: string | null | undefined,
-  userId: string | undefined,
-  px: number,
-): string | undefined {
-  if (!client || !userId) return undefined;
-  const room = roomId ? client.getRoom(roomId) : null;
-  const member = room?.getMember(userId);
-  const mxc =
-    member?.getMxcAvatarUrl() || client.getUser(userId)?.avatarUrl || undefined;
-  if (!mxc || !String(mxc).startsWith('mxc://')) return undefined;
-  // Match Messages `avatarHttp` — that URL shape already loads in the inbox.
-  return client.mxcUrlToHttp(mxc, px, px, 'crop') ?? undefined;
-}
-
-/**
  * Header space mark. Never paint `DEFAULT_SPACE_AVATAR_IMAGE` (legacy Hypha
  * glyph) while the space query is still in flight — that was the one-frame
  * flash when opening signal / proposal / room chats from Messages.
@@ -958,6 +942,9 @@ function toUIMessage(
 ): UIMessage {
   const resolveAvatarForUser = (userId: string | undefined) => {
     if (!userId) return undefined;
+    // Agent replies use a square initials tile in the bubble. Do not attach
+    // the bot's profile photo or a space logo as if it were a person.
+    if (isHyphaBotMatrixIdentity(userId)) return undefined;
     return (
       resolveMemberAvatar?.(userId) ??
       matrixMemberAvatarSquare(
@@ -1211,7 +1198,33 @@ type HumanRightPanelProps = {
   useMembers: UseMembers;
 };
 
-export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
+/** Right panel host: a Space Context section when one is selected, else chat. */
+export function HumanRightPanel(props: HumanRightPanelProps) {
+  const pathname = usePathname() ?? '';
+  const { spaceContextSection, closeSpaceContextSection } = useHumanChatPanel();
+  const routeSpaceSlug = getDhoSpaceSlugFromPathname(pathname) || '';
+  const section =
+    spaceContextSection?.spaceSlug === routeSpaceSlug
+      ? spaceContextSection
+      : null;
+
+  useEffect(() => {
+    if (spaceContextSection && !section) closeSpaceContextSection();
+  }, [closeSpaceContextSection, section, spaceContextSection]);
+
+  if (section) {
+    return (
+      <SpaceContextSidePanel
+        spaceSlug={section.spaceSlug}
+        sectionKey={section.sectionKey}
+        onClose={closeSpaceContextSection}
+      />
+    );
+  }
+  return <HumanChatRightPanel {...props} />;
+}
+
+function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const t = useTranslations('HumanChatPanel');
   const tCommon = useTranslations('Common');
   const tSpaces = useTranslations('Spaces');
@@ -1264,6 +1277,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherencePublic,
     coherencePeerPerson,
     coherenceChannel,
+    coherenceContextSectionKey,
     open,
     closeCoherenceChat,
     openCoherenceChat,
@@ -1271,6 +1285,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     closeHumanChatPanel,
     setUnreadMentionCount,
   } = useHumanChatPanel();
+  // A Context section room opened from Messages is answered by that section's
+  // agent, the same one its Context tab discussion uses.
+  const contextSectionKey =
+    mode === 'coherence' && coherenceChannel === 'context'
+      ? coherenceContextSectionKey
+      : null;
+  const contextSectionAgent = useSpaceContextSectionAgent(
+    contextSectionKey,
+    coherenceTitle?.trim() ||
+      (contextSectionKey ? headingForSectionKey(contextSectionKey) : ''),
+  );
+  const agentMentionLabel =
+    contextSectionAgent?.label ?? t('agentMentionLabel');
   // Person-to-person rooms (PM / group) have a title and no signal slug — never
   // inherit a space from the route or a leftover home slug. Map public chat
   // also opens with an empty signal slug; it is not a DM and must still load
@@ -2627,7 +2654,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     (userId: string | undefined) => {
       if (!userId) return t('unknownMember');
       if (isHyphaBotMatrixIdentity(userId)) {
-        return t('agentMentionLabel');
+        return agentMentionLabel;
       }
       if (currentUserId && userId === currentUserId) {
         const full = [me?.name, me?.surname].filter(Boolean).join(' ').trim();
@@ -2686,6 +2713,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       );
     },
     [
+      agentMentionLabel,
       client,
       currentUserId,
       directoryLabelByMxid,
@@ -3024,14 +3052,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               resolvedTheme === 'dark' ? 'dark' : 'light',
             ),
           };
+    // One "AI Agents" row, as in Signals. A Context room still answers as its
+    // section specialist; that name is the reply label, not a tag target.
     return withMatrixAgentMention(
       roster,
       t('agentMentionLabel'),
-      matrixAgentSkills(t),
+      contextSectionAgent?.skills ?? matrixAgentSkills(t),
       agentIcon,
     );
   }, [
     coherenceChannel,
+    contextSectionAgent,
     currentUserId,
     isDirectConversation,
     isNetworkSpaceChat,
@@ -6064,7 +6095,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         target.role === 'user'
           ? t('you')
           : isHyphaBotMatrixIdentity(target.senderMatrixId, target.senderName)
-          ? t('agentMentionLabel')
+          ? agentMentionLabel
           : target.role === 'member' && target.senderMatrixId
           ? resolveMemberLabel(target.senderMatrixId)
           : target.senderName ?? t('unknownMember');
@@ -6086,7 +6117,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           : {}),
       });
     },
-    [mentionLabelByUserId, messages, resolveMemberLabel, t],
+    [agentMentionLabel, mentionLabelByUserId, messages, resolveMemberLabel, t],
   );
 
   const handleEditMessage = useCallback(
@@ -6364,6 +6395,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           mentionUserIds,
           context: isDirectConversation
             ? { kind: 'dm' }
+            : contextSectionKey
+            ? {
+                kind: 'space_context',
+                spaceSlug,
+                sectionKey: contextSectionKey,
+              }
             : isNetworkSpaceChat || coherenceChannel === 'network'
             ? { kind: 'network' }
             : mode === 'space' && spaceRoom === 'ecosystem'
@@ -6479,6 +6516,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isDirectConversation,
     isNetworkSpaceChat,
     coherenceChannel,
+    contextSectionKey,
     spaceSlug,
     mode,
     spaceRoom,
@@ -6511,6 +6549,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       return t('tabChatEcosystem');
     }
     if (coherenceChannel === 'proposal') return t('tabChatProposal');
+    if (coherenceChannel === 'context') return t('tabChatContext');
     if (coherenceChannel === 'signal') return t('tabChatSignal');
     if (
       coherenceChannel === 'space-public' ||
@@ -6548,7 +6587,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   ]);
 
   return (
-    <>
+    <AgentMentionLabelProvider value={agentMentionLabel}>
       {screenshareTabAudioPromptDialog}
       <SidebarHeader className="gap-0 bg-page-background p-0 dark:bg-background-2">
         <HumanChatPanelHeader
@@ -6577,6 +6616,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               ? tConnections('inbox.tagSignal')
               : coherenceChannel === 'proposal'
               ? tConnections('inbox.tagProposal')
+              : coherenceChannel === 'context'
+              ? tConnections('inbox.tagContext')
               : undefined
           }
           titleStart={
@@ -6628,7 +6669,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               coherenceChannel === 'space-public' ||
               coherenceChannel === 'ecosystem' ||
               coherenceChannel === 'signal' ||
-              coherenceChannel === 'proposal' ? (
+              coherenceChannel === 'proposal' ||
+              coherenceChannel === 'context' ? (
               <HeaderSpaceLogoMark
                 loading={isSpaceLoading}
                 logoUrl={resolveSpaceDisplayLogoUrl(
@@ -7510,6 +7552,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             </div>
           </SidebarFooter>
         )}
-    </>
+    </AgentMentionLabelProvider>
   );
 }

@@ -1,6 +1,7 @@
 import {
   Alchemy,
   linkDeployedTokenForProposal,
+  ratifySpaceContextSectionsByDocumentId,
 } from '@hypha-platform/core/server';
 import { daoProposalsImplementationAbi } from '@hypha-platform/core/generated';
 import { db } from '@hypha-platform/storage-postgres';
@@ -78,6 +79,29 @@ export const POST = proposalExecutedSigningKey
           .forEach(({ reason }) =>
             console.error(
               'Failed to link deployed token for proposal:',
+              reason,
+            ),
+          );
+
+        const contextUpdates = events.map(async (event) => {
+          const proposalId = toSafeProposalId(event.args.proposalId);
+          if (proposalId === undefined) return;
+          const updated = await ratifySpaceContextSectionsByDocumentId(
+            { web3ProposalId: proposalId },
+            { db },
+          );
+          if (updated > 0) {
+            console.info(
+              `Ratified ${updated} Space Context section(s) for proposal ${proposalId}.`,
+            );
+          }
+        });
+
+        (await Promise.allSettled(contextUpdates))
+          .filter((res) => res.status === 'rejected')
+          .forEach(({ reason }) =>
+            console.error(
+              'Failed to ratify Space Context sections for proposal:',
               reason,
             ),
           );

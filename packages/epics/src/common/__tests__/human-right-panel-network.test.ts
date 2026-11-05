@@ -81,4 +81,25 @@ describe('network room join guard', () => {
     expect(source).toContain('!isNetworkSpaceChat');
     expect(source).toContain('Leaving Network clears that join sentinel');
   });
+
+  it('answers a Context room opened from Messages with its section agent', () => {
+    expect(source).toContain("coherenceChannel === 'context'");
+    expect(source).toContain('useSpaceContextSectionAgent(');
+    expect(source).toContain(
+      "contextSectionAgent?.label ?? t('agentMentionLabel')",
+    );
+    expect(source).toContain(
+      'contextSectionAgent?.skills ?? matrixAgentSkills(t)',
+    );
+    expect(source).toContain("kind: 'space_context'");
+    expect(source).toContain('sectionKey: contextSectionKey');
+    expect(source).toContain(
+      '<AgentMentionLabelProvider value={agentMentionLabel}>',
+    );
+    const pickerAt = source.indexOf('return withMatrixAgentMention(');
+    expect(pickerAt).toBeGreaterThan(-1);
+    expect(source.slice(pickerAt, pickerAt + 220)).toContain(
+      "roster,\n      t('agentMentionLabel'),",
+    );
+  });
 });
