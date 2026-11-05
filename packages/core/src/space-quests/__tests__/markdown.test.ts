@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   buildQuestProposalDescription,
   canMemberEditQuest,
+  embeddedQuestProposalMatchesQuest,
   isViewerQuestLead,
   parseQuestProposalFromDescription,
   slugifyQuestName,
   stripQuestProposalMarker,
   stripViewerYouMarker,
+  type EmbeddedQuestProposalPayload,
 } from '../markdown';
 import type { QuestDraftInput } from '../types';
 
@@ -66,6 +68,77 @@ describe('quest proposal description', () => {
   it('ignores descriptions without a quest marker', () => {
     expect(parseQuestProposalFromDescription('Plain proposal')).toBeNull();
     expect(parseQuestProposalFromDescription(null)).toBeNull();
+  });
+
+  it('matches a proposal only when every term matches the quest', () => {
+    const slug = 'onboarding-matcher';
+    const description = buildQuestProposalDescription(draft, slug);
+    const parsed = parseQuestProposalFromDescription(description);
+    const quest = {
+      slug,
+      name: draft.name.trim(),
+      goal: draft.goal.trim(),
+      scopeIn: draft.scopeIn,
+      scopeOut: draft.scopeOut,
+      scopeInMarkdown: '',
+      scopeOutMarkdown: '',
+      successCriteria: draft.successCriteria.trim(),
+      rewards: draft.rewards.filter(
+        (reward) => reward.amount.trim() && reward.token.trim(),
+      ),
+      targetDate: draft.targetDate,
+      leadName: draft.leadName.trim(),
+      milestones: draft.milestones.map((milestone, index) => ({
+        order: index + 1,
+        name: milestone.name.trim(),
+        description: milestone.description.trim(),
+        dueDate: milestone.dueDate?.trim() || null,
+        ownerName: milestone.ownerName?.trim() || null,
+      })),
+      members: draft.members.map((member, index) => ({
+        order: index + 1,
+        memberName: member.memberName.trim(),
+        roleLabel: member.roleLabel ?? null,
+        responsibilities: member.responsibilities
+          .map((item) => item.trim())
+          .filter(Boolean),
+      })),
+    };
+
+    expect(parsed && embeddedQuestProposalMatchesQuest(parsed, quest)).toBe(
+      true,
+    );
+    expect(
+      parsed &&
+        embeddedQuestProposalMatchesQuest(parsed, {
+          ...quest,
+          goal: 'A different goal',
+        }),
+    ).toBe(false);
+    expect(
+      parsed &&
+        embeddedQuestProposalMatchesQuest(parsed, {
+          ...quest,
+          slug: 'same-terms-other-slug',
+        }),
+    ).toBe(false);
+    expect(
+      parsed &&
+        embeddedQuestProposalMatchesQuest(
+          {
+            ...(parsed as EmbeddedQuestProposalPayload),
+            questSlug: slug,
+            goal: 'Changed after the quest was saved',
+          },
+          quest,
+        ),
+    ).toBe(false);
+    expect(
+      embeddedQuestProposalMatchesQuest(
+        { name: draft.name } as EmbeddedQuestProposalPayload,
+        quest,
+      ),
+    ).toBe(false);
   });
 
   it('slugifies quest names', () => {

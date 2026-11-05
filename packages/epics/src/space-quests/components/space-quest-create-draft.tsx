@@ -65,6 +65,59 @@ import { SpaceQuestChatPanel } from './space-quest-chat-panel';
 const LABEL_CLASS =
   'text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11';
 
+type PendingProposalLink = {
+  questSlug: string;
+  agreementId: number;
+  agreementSlug: string | null;
+  proposalTitle: string;
+};
+
+function proposalPageHref(
+  locale: string,
+  spaceSlug: string,
+  agreementSlug: string,
+) {
+  return `/${locale}/dho/${spaceSlug}/agreements/proposal/${encodeURIComponent(
+    agreementSlug,
+  )}`;
+}
+
+function questPageHref(locale: string, spaceSlug: string, questSlug: string) {
+  return `/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(questSlug)}`;
+}
+
+async function waitForProposalOnVoting(
+  read: () => {
+    slug?: string | null;
+    web3ProposalId?: number | null;
+    linkStatus?: string;
+    linkMessage?: string;
+  },
+  agreementSlug: string,
+) {
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    const current = read();
+    const slugMatches = !current.slug || current.slug === agreementSlug;
+    if (
+      slugMatches &&
+      typeof current.web3ProposalId === 'number' &&
+      current.web3ProposalId > 0
+    ) {
+      return;
+    }
+    if (current.linkStatus === 'error') {
+      throw new Error(
+        current.linkMessage || 'The proposal was not linked on-chain.',
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error(
+    'The proposal is not on voting yet. Submit again to retry the link.',
+  );
+}
+
 function stripAgentMentionPrefix(text: string, agentLabel: string): string {
   const escaped = agentLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return text
@@ -171,17 +224,29 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [pendingProposalLink, setPendingProposalLink] = useState<{
-    questSlug: string;
-    agreementId: number;
-    agreementSlug: string | null;
+  const [proposalLinkError, setProposalLinkError] = useState<{
+    proposalTitle: string;
+    href: string | null;
+    detail: string;
   } | null>(null);
+  const [pendingProposalLink, setPendingProposalLink] =
+    useState<PendingProposalLink | null>(null);
 
-  const { createAgreement, isPending, progress, currentAction } =
-    useCreateAgreementOrchestrator({
-      authToken: jwt,
-      config,
-    });
+  const {
+    createAgreement,
+    agreement,
+    taskState,
+    isPending,
+    progress,
+    currentAction,
+  } = useCreateAgreementOrchestrator({
+    authToken: jwt,
+    config,
+  });
+  const agreementRef = useRef(agreement);
+  agreementRef.current = agreement;
+  const taskStateRef = useRef(taskState);
+  taskStateRef.current = taskState;
 
   const commitDraftSnapshot = useCallback(
     (next: QuestDraftStateSnapshot) => {
@@ -497,9 +562,53 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const handleConfirmCreateProposal = async () => {
     setSubmitting(true);
     setSubmitError(null);
+    setProposalLinkError(null);
     setConfirmOpen(false);
 
+    const readProposalLink = () => {
+      const current = agreementRef.current;
+      const linkTask = taskStateRef.current.LINK_WEB2_AND_WEB3_AGREEMENT;
+      return {
+        slug: current?.slug,
+        web3ProposalId:
+          current && 'web3ProposalId' in current
+            ? current.web3ProposalId
+            : undefined,
+        linkStatus: linkTask.status,
+        linkMessage: linkTask.message,
+      };
+    };
+
+    const finishLinked = (target: PendingProposalLink) => {
+      setPendingProposalLink(null);
+      setProposalLinkError(null);
+      router.push(
+        target.agreementSlug
+          ? proposalPageHref(locale, spaceSlug, target.agreementSlug)
+          : questPageHref(locale, spaceSlug, target.questSlug),
+      );
+    };
+
+    let linkTarget: PendingProposalLink | null = pendingProposalLink;
+
     try {
+      if (linkTarget) {
+        if (linkTarget.agreementSlug) {
+          await waitForProposalOnVoting(
+            readProposalLink,
+            linkTarget.agreementSlug,
+          );
+        }
+        await patchSpaceQuestRequest({
+          spaceSlug,
+          questSlug: linkTarget.questSlug,
+          patch: { proposalDocumentId: linkTarget.agreementId },
+          getAccessToken,
+        });
+        finishLinked(linkTarget);
+        return;
+      }
+
       const cleanLeadName =
         leadName.replace(/\s*\(you\)\s*/i, '').trim() || viewerDisplayName;
       const leadPersonId =
@@ -567,30 +676,6 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       if (!draftPayload.leadPersonId) {
         setSubmitError(
           'Select a space member as the Quest Lead before creating the proposal.',
-        );
-        return;
-      }
-
-      if (pendingProposalLink) {
-        await patchSpaceQuestRequest({
-          spaceSlug,
-          questSlug: pendingProposalLink.questSlug,
-          patch: { proposalDocumentId: pendingProposalLink.agreementId },
-          getAccessToken,
-        });
-        setPendingProposalLink(null);
-        if (pendingProposalLink.agreementSlug) {
-          router.push(
-            `/${locale}/dho/${spaceSlug}/agreements/proposal/${encodeURIComponent(
-              pendingProposalLink.agreementSlug,
-            )}`,
-          );
-          return;
-        }
-        router.push(
-          `/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
-            pendingProposalLink.questSlug,
-          )}`,
         );
         return;
       }
@@ -666,38 +751,44 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         throw new Error('Failed to create quest proposal.');
       }
 
-      setPendingProposalLink({
+      linkTarget = {
         questSlug: createdQuestSlug,
         agreementId: createdAgreement.id,
         agreementSlug: createdAgreement.slug ?? null,
-      });
+        proposalTitle: draftPayload.name,
+      };
+      setPendingProposalLink(linkTarget);
 
+      if (linkTarget.agreementSlug) {
+        await waitForProposalOnVoting(
+          readProposalLink,
+          linkTarget.agreementSlug,
+        );
+      }
       await patchSpaceQuestRequest({
         spaceSlug,
         questSlug: createdQuestSlug,
         patch: { proposalDocumentId: createdAgreement.id },
         getAccessToken,
       });
-      setPendingProposalLink(null);
-
-      if (createdAgreement.slug) {
-        router.push(
-          `/${locale}/dho/${spaceSlug}/agreements/proposal/${encodeURIComponent(
-            createdAgreement.slug,
-          )}`,
-        );
-        return;
-      }
-
-      router.push(
-        `/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
-          createdQuestSlug,
-        )}`,
-      );
+      finishLinked(linkTarget);
     } catch (err) {
-      setSubmitError(
-        err instanceof Error ? err.message : 'Failed to create quest proposal.',
-      );
+      if (linkTarget) {
+        setProposalLinkError({
+          proposalTitle: linkTarget.proposalTitle,
+          href: linkTarget.agreementSlug
+            ? proposalPageHref(locale, spaceSlug, linkTarget.agreementSlug)
+            : null,
+          detail:
+            err instanceof Error ? err.message : 'Linking the proposal failed.',
+        });
+      } else {
+        setSubmitError(
+          err instanceof Error
+            ? err.message
+            : 'Failed to create quest proposal.',
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -759,7 +850,10 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                 </Button>
                 <Button
                   type="button"
-                  disabled={submitting || !name.trim() || !goal.trim()}
+                  disabled={
+                    submitting ||
+                    (!pendingProposalLink && (!name.trim() || !goal.trim()))
+                  }
                   onClick={() => setConfirmOpen(true)}
                   data-testid="create-quest-button"
                   className="h-9 rounded-none bg-foreground px-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-background hover:bg-foreground/90"
@@ -769,6 +863,25 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
               </div>
             </div>
 
+            {proposalLinkError ? (
+              <div className="border border-error-6 bg-background-2 px-4 py-3 text-xs text-error-11">
+                Could not link this quest to the proposal{' '}
+                {proposalLinkError.href ? (
+                  <Link
+                    href={proposalLinkError.href}
+                    className="font-semibold underline"
+                  >
+                    {proposalLinkError.proposalTitle}
+                  </Link>
+                ) : (
+                  <span className="font-semibold">
+                    {proposalLinkError.proposalTitle}
+                  </span>
+                )}
+                . {proposalLinkError.detail} That proposal already exists, so
+                submitting again only retries the link.
+              </div>
+            ) : null}
             {submitError ? (
               <div className="border border-error-6 bg-background-2 px-4 py-3 text-xs text-error-11">
                 {submitError}

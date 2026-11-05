@@ -176,6 +176,145 @@ export function buildQuestProposalDescription(
   return `${summary.slice(0, maxSummary)}\n\n${marker}`;
 }
 
+function canonicalQuestProposalPayload(payload: EmbeddedQuestProposalPayload) {
+  return {
+    questSlug: payload.questSlug,
+    name: payload.name,
+    goal: payload.goal,
+    scopeIn: payload.scopeIn,
+    scopeOut: payload.scopeOut,
+    successCriteria: payload.successCriteria,
+    rewards: payload.rewards,
+    targetDate: payload.targetDate,
+    leadName: payload.leadName,
+    milestones: payload.milestones.map((milestone) => ({
+      order: milestone.order,
+      name: milestone.name,
+      description: milestone.description,
+      dueDate: milestone.dueDate,
+      ownerName: milestone.ownerName,
+    })),
+    members: payload.members.map((member) => ({
+      memberName: member.memberName,
+      roleLabel: member.roleLabel ?? null,
+      isLead: member.isLead === true,
+      responsibilities: member.responsibilities,
+    })),
+  };
+}
+
+function isCompleteQuestProposalPayload(
+  payload: EmbeddedQuestProposalPayload,
+): payload is EmbeddedQuestProposalPayload & { questSlug: string } {
+  return (
+    typeof payload.questSlug === 'string' &&
+    payload.questSlug.length > 0 &&
+    typeof payload.name === 'string' &&
+    typeof payload.goal === 'string' &&
+    Array.isArray(payload.scopeIn) &&
+    payload.scopeIn.every((item) => typeof item === 'string') &&
+    Array.isArray(payload.scopeOut) &&
+    payload.scopeOut.every((item) => typeof item === 'string') &&
+    typeof payload.successCriteria === 'string' &&
+    Array.isArray(payload.rewards) &&
+    payload.rewards.every(
+      (reward) =>
+        typeof reward?.amount === 'string' && typeof reward?.token === 'string',
+    ) &&
+    (payload.targetDate === null || typeof payload.targetDate === 'string') &&
+    typeof payload.leadName === 'string' &&
+    Array.isArray(payload.milestones) &&
+    payload.milestones.every(
+      (milestone) =>
+        typeof milestone?.order === 'number' &&
+        typeof milestone?.name === 'string' &&
+        typeof milestone?.description === 'string' &&
+        (milestone.dueDate === null || typeof milestone.dueDate === 'string') &&
+        (milestone.ownerName === null ||
+          typeof milestone.ownerName === 'string'),
+    ) &&
+    Array.isArray(payload.members) &&
+    payload.members.every(
+      (member) =>
+        typeof member?.memberName === 'string' &&
+        Array.isArray(member.responsibilities) &&
+        member.responsibilities.every((item) => typeof item === 'string'),
+    )
+  );
+}
+
+/**
+ * True when the embedded proposal is the quest voters are being asked to
+ * approve: same slug and the same terms, not a reused slug with other content.
+ */
+export function embeddedQuestProposalMatchesQuest(
+  payload: EmbeddedQuestProposalPayload,
+  quest: Pick<
+    QuestRecord,
+    | 'slug'
+    | 'name'
+    | 'goal'
+    | 'scopeIn'
+    | 'scopeOut'
+    | 'scopeInMarkdown'
+    | 'scopeOutMarkdown'
+    | 'successCriteria'
+    | 'rewards'
+    | 'targetDate'
+    | 'leadName'
+  > & {
+    milestones: Array<{
+      order: number;
+      name: string;
+      description: string;
+      dueDate: string | null;
+      ownerName: string | null;
+    }>;
+    members: Array<{
+      order: number;
+      memberName: string;
+      roleLabel?: string | null;
+      responsibilities: string[];
+    }>;
+  },
+): boolean {
+  if (!isCompleteQuestProposalPayload(payload)) return false;
+  const expected = buildEmbeddedQuestProposalPayload(
+    {
+      name: quest.name,
+      goal: quest.goal,
+      scopeIn: quest.scopeIn,
+      scopeOut: quest.scopeOut,
+      scopeInMarkdown: quest.scopeInMarkdown,
+      scopeOutMarkdown: quest.scopeOutMarkdown,
+      successCriteria: quest.successCriteria,
+      rewards: quest.rewards,
+      targetDate: quest.targetDate,
+      leadName: quest.leadName,
+      milestones: [...quest.milestones]
+        .sort((a, b) => a.order - b.order)
+        .map((milestone) => ({
+          name: milestone.name,
+          description: milestone.description,
+          dueDate: milestone.dueDate,
+          ownerName: milestone.ownerName,
+        })),
+      members: [...quest.members]
+        .sort((a, b) => a.order - b.order)
+        .map((member) => ({
+          memberName: member.memberName,
+          roleLabel: member.roleLabel,
+          responsibilities: member.responsibilities,
+        })),
+    },
+    quest.slug,
+  );
+  return (
+    JSON.stringify(canonicalQuestProposalPayload(payload)) ===
+    JSON.stringify(canonicalQuestProposalPayload(expected))
+  );
+}
+
 export function parseQuestProposalFromDescription(
   description: string | null | undefined,
 ): EmbeddedQuestProposalPayload | null {

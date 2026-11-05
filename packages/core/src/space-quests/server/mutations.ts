@@ -11,6 +11,11 @@ import {
   type QuestUpdateChangePayload,
 } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../common/server/types';
+import {
+  attachProposalStatusToDocument,
+  fetchProposalOutcomeSetsForSpace,
+} from '../../governance/server/resolve-document-proposal-status';
+import type { Document } from '../../governance/types';
 import { findSpaceBySlug } from '../../space/server/queries';
 import {
   getMatrixBotAsToken,
@@ -25,7 +30,9 @@ import { QUEST_DOCUMENT_LABEL } from '../constants';
 import {
   bulletsToMarkdownList,
   canMemberEditQuest,
+  embeddedQuestProposalMatchesQuest,
   isViewerQuestLead,
+  parseQuestProposalFromDescription,
   slugifyQuestName,
   splitMarkdownLinesToBullets,
 } from '../markdown';
@@ -445,15 +452,16 @@ export async function updateSpaceQuest(
     if (!isCreator && !isViewerQuestLead(actor, current)) {
       return { ok: false, error: 'lead_only' };
     }
-    if (current.status !== 'proposed' || current.proposalDocumentId != null) {
+    if (current.status !== 'proposed') {
       return { ok: false, error: 'invalid_input' };
     }
+    if (current.proposalDocumentId != null) {
+      return current.proposalDocumentId === patch.proposalDocumentId
+        ? { ok: true, quest: current }
+        : { ok: false, error: 'invalid_input' };
+    }
     const [doc] = await db
-      .select({
-        spaceId: documents.spaceId,
-        label: documents.label,
-        creatorId: documents.creatorId,
-      })
+      .select()
       .from(documents)
       .where(eq(documents.id, patch.proposalDocumentId))
       .limit(1);
@@ -468,6 +476,25 @@ export async function updateSpaceQuest(
       doc.label !== QUEST_DOCUMENT_LABEL ||
       doc.creatorId !== actor.id ||
       linked
+    ) {
+      return { ok: false, error: 'invalid_input' };
+    }
+    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+    const outcomes =
+      space?.web3SpaceId != null
+        ? await fetchProposalOutcomeSetsForSpace(space.web3SpaceId, {
+            blockTag: 'latest',
+          })
+        : null;
+    const withStatus = attachProposalStatusToDocument(
+      doc as Document,
+      outcomes,
+    );
+    const parsed = parseQuestProposalFromDescription(doc.description);
+    if (
+      withStatus.status !== 'onVoting' ||
+      !parsed ||
+      !embeddedQuestProposalMatchesQuest(parsed, current)
     ) {
       return { ok: false, error: 'invalid_input' };
     }
