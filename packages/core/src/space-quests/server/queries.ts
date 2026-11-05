@@ -23,7 +23,11 @@ import {
   type QuestStatus,
   type QuestUpdateKind,
 } from '../constants';
-import { bulletsToMarkdownList, stripViewerYouMarker } from '../markdown';
+import {
+  bulletsToMarkdownList,
+  stripViewerYouMarker,
+  withoutPlaceholderLeadDuplicates,
+} from '../markdown';
 import type {
   QuestDeliverableRecord,
   QuestHealthSummary,
@@ -214,9 +218,11 @@ export function assembleQuestRecord(
   const milestones = [...extras.milestones]
     .sort((a, b) => a.order - b.order || a.id - b.id)
     .map(mapMilestoneRow);
-  const members = [...extras.members]
-    .sort((a, b) => a.order - b.order || a.id - b.id)
-    .map((m) => mapMemberRow(m, row.leadPersonId ?? null, leadName));
+  const members = withoutPlaceholderLeadDuplicates(
+    [...extras.members]
+      .sort((a, b) => a.order - b.order || a.id - b.id)
+      .map((m) => mapMemberRow(m, row.leadPersonId ?? null, leadName)),
+  );
   const deliverables = [...extras.deliverables]
     .sort((a, b) => a.order - b.order || a.id - b.id)
     .map(mapDeliverableRow);

@@ -114,15 +114,32 @@ export function stripViewerYouMarker(value: string): string {
   return value.slice(0, start) + value.slice(end);
 }
 
+const PLACEHOLDER_LEAD_RESPONSIBILITY_SET = new Set<string>(
+  PLACEHOLDER_LEAD_RESPONSIBILITIES,
+);
+
+/**
+ * True when every duty is one of the invented Lead placeholders
+ * ("Overall delivery", "Unblock reviews"), including a subset of them.
+ * An empty list is a real assignment with no duties yet.
+ */
 export function isPlaceholderLeadResponsibilityList(
   items: readonly string[] | null | undefined,
 ): boolean {
   const cleaned = (items ?? []).map((item) => item.trim()).filter(Boolean);
   return (
-    cleaned.length === PLACEHOLDER_LEAD_RESPONSIBILITIES.length &&
-    cleaned.every(
-      (item, index) => item === PLACEHOLDER_LEAD_RESPONSIBILITIES[index],
-    )
+    cleaned.length > 0 &&
+    cleaned.every((item) => PLACEHOLDER_LEAD_RESPONSIBILITY_SET.has(item))
+  );
+}
+
+function isSyntheticPlaceholderLead(member: {
+  roleLabel?: string | null;
+  responsibilities?: readonly string[] | null;
+}): boolean {
+  return (
+    member.roleLabel?.trim().toLowerCase() === 'lead' &&
+    isPlaceholderLeadResponsibilityList(member.responsibilities)
   );
 }
 
@@ -145,9 +162,10 @@ function sameQuestMemberIdentity(
 }
 
 /**
- * Drop the auto-inserted Lead row whose only duties are the placeholder
- * bullets when that person already has a real assignment. A lone placeholder
- * Lead stays, without those invented duties.
+ * Drop a synthetic Lead row whose only duties are the placeholder bullets
+ * (or a subset of them) when that person already has a real assignment.
+ * If that synthetic Lead is the only row, keep the person and clear the
+ * invented duties. Safe to run on stored quests and on new drafts.
  */
 export function withoutPlaceholderLeadDuplicates<
   T extends {
@@ -157,18 +175,24 @@ export function withoutPlaceholderLeadDuplicates<
     responsibilities?: readonly string[] | null;
   },
 >(members: readonly T[]): T[] {
-  const isPlaceholder = (member: T) =>
-    isPlaceholderLeadResponsibilityList(member.responsibilities);
+  const synthetic = members.map((member) => isSyntheticPlaceholderLead(member));
+  const keptLoneLead = new Set<string>();
 
   return members.flatMap((member, index) => {
-    if (!isPlaceholder(member)) return [member];
+    if (!synthetic[index]) return [member];
     const hasRealAssignment = members.some(
       (other, otherIndex) =>
         otherIndex !== index &&
-        !isPlaceholder(other) &&
+        !synthetic[otherIndex] &&
         sameQuestMemberIdentity(member, other),
     );
     if (hasRealAssignment) return [];
+    const personKey =
+      member.personId != null && member.personId > 0
+        ? `id:${member.personId}`
+        : `name:${member.memberName.trim().toLowerCase()}`;
+    if (keptLoneLead.has(personKey)) return [];
+    keptLoneLead.add(personKey);
     return [{ ...member, responsibilities: [] as string[] } as T];
   });
 }
@@ -264,7 +288,7 @@ export function buildEmbeddedQuestProposalPayload(
       dueDate: m.dueDate?.trim() || null,
       ownerName: m.ownerName?.trim() || null,
     })),
-    members: (draft.members ?? []).map((m) => ({
+    members: withoutPlaceholderLeadDuplicates(draft.members ?? []).map((m) => ({
       memberName: m.memberName.trim(),
       roleLabel: m.roleLabel?.trim() || null,
       isLead:

@@ -4,6 +4,7 @@ import {
   parseQuestProposalFromDescription,
   slugifyQuestName,
   splitMarkdownLinesToBullets,
+  withoutPlaceholderLeadDuplicates,
   type EmbeddedQuestProposalPayload,
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
@@ -124,6 +125,10 @@ export function ProposalQuestData({
 
   const [expandedMemberIdx, setExpandedMemberIdx] = useState<number | null>(0);
   const successLines = splitMarkdownLinesToBullets(payload.successCriteria);
+  const members = useMemo(
+    () => withoutPlaceholderLeadDuplicates(payload.members),
+    [payload.members],
+  );
 
   return (
     <div
@@ -228,7 +233,7 @@ export function ProposalQuestData({
       <section className="space-y-1.5 border border-border bg-background-2 p-3">
         <p className={SECTION_LABEL_CLASS}>MEMBERS</p>
         <div className="divide-y divide-border/70 pt-1">
-          {payload.members.map((member, idx) => {
+          {members.map((member, idx) => {
             const expanded = expandedMemberIdx === idx;
             const initial = (member.memberName.trim()[0] ?? 'M').toUpperCase();
             const count = member.responsibilities.length;

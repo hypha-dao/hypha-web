@@ -171,8 +171,11 @@ describe('quest proposal description', () => {
       {
         personId: 7,
         memberName: 'Vlad Hramtsov',
-        roleLabel: 'QA owner',
-        responsibilities: ['Check the roster', 'Check the reward'],
+        roleLabel: 'Lead / QA runner',
+        responsibilities: [
+          'Run the create flow for tip 397c602e9 and own the numbered evidence set (E1-E9)',
+          'Own the final PASS/FAIL checklist and the go/no-go call for this tip',
+        ],
       },
       {
         personId: 8,
@@ -182,8 +185,30 @@ describe('quest proposal description', () => {
       },
     ]);
     expect(members.map((member) => member.roleLabel)).toEqual([
-      'QA owner',
+      'Lead / QA runner',
       'Writer',
+    ]);
+  });
+
+  it('drops a lead row whose duties are only a subset of the placeholders', () => {
+    const members = withoutPlaceholderLeadDuplicates([
+      {
+        memberName: 'Vlad Hramtsov',
+        roleLabel: 'Lead',
+        responsibilities: ['Overall delivery'],
+      },
+      {
+        memberName: 'Vlad Hramtsov',
+        roleLabel: 'Lead / QA runner',
+        responsibilities: ['Check the roster'],
+      },
+    ]);
+    expect(members).toEqual([
+      {
+        memberName: 'Vlad Hramtsov',
+        roleLabel: 'Lead / QA runner',
+        responsibilities: ['Check the roster'],
+      },
     ]);
   });
 
