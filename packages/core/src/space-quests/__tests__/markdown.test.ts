@@ -6,6 +6,7 @@ import {
   parseQuestProposalFromDescription,
   slugifyQuestName,
   stripQuestProposalMarker,
+  stripViewerYouMarker,
 } from '../markdown';
 import type { QuestDraftInput } from '../types';
 
@@ -72,6 +73,19 @@ describe('quest proposal description', () => {
       'space-context-mvp',
     );
     expect(slugifyQuestName('***')).toBe('quest');
+    expect(slugifyQuestName('Hello---World')).toBe('hello-world');
+    expect(
+      slugifyQuestName(`${'-'.repeat(400)}Space Context${'-'.repeat(400)}`),
+    ).toBe('space-context');
+    expect(slugifyQuestName(`${'a'.repeat(80)}`)).toBe('a'.repeat(44));
+  });
+
+  it('strips a viewer you-marker without a backtracking regex', () => {
+    expect(stripViewerYouMarker('Vlad K. (you)')).toBe('Vlad K.');
+    expect(stripViewerYouMarker(`Vlad K.${' '.repeat(80)}(YOU)`)).toBe(
+      'Vlad K.',
+    );
+    expect(stripViewerYouMarker('Maria S.')).toBe('Maria S.');
   });
 });
 
@@ -109,5 +123,26 @@ describe('quest permissions', () => {
   it('only treats the lead as lead', () => {
     expect(isViewerQuestLead({ id: 7 }, quest)).toBe(true);
     expect(isViewerQuestLead({ id: 9 }, quest)).toBe(false);
+  });
+
+  it('matches names that still carry the viewer you-marker', () => {
+    const marked = {
+      ...quest,
+      leadPersonId: null,
+      leadName: `Vlad K.${' '.repeat(40)}(you)`,
+      members: [
+        {
+          ...quest.members[0]!,
+          personId: null,
+          memberName: 'Maria S. (YOU)',
+        },
+      ],
+    };
+    expect(canMemberEditQuest({ name: 'Vlad K.' }, marked)).toBe(true);
+    expect(canMemberEditQuest({ name: 'Maria S.' }, marked)).toBe(true);
+    expect(
+      isViewerQuestLead({ name: 'Vlad K.' }, { ...marked, leadPersonId: null }),
+    ).toBe(true);
+    expect(canMemberEditQuest({ name: 'Someone Else' }, marked)).toBe(false);
   });
 });

@@ -23,7 +23,7 @@ import {
   type QuestStatus,
   type QuestUpdateKind,
 } from '../constants';
-import { bulletsToMarkdownList } from '../markdown';
+import { bulletsToMarkdownList, stripViewerYouMarker } from '../markdown';
 import type {
   QuestDeliverableRecord,
   QuestHealthSummary,
@@ -75,14 +75,8 @@ function mapMemberRow(
   leadPersonId: number | null,
   leadName: string,
 ): QuestMemberRecord {
-  const cleanLead = leadName
-    .replace(/\s*\(you\)\s*/i, '')
-    .trim()
-    .toLowerCase();
-  const cleanMember = row.memberName
-    .replace(/\s*\(you\)\s*/i, '')
-    .trim()
-    .toLowerCase();
+  const cleanLead = stripViewerYouMarker(leadName).trim().toLowerCase();
+  const cleanMember = stripViewerYouMarker(row.memberName).trim().toLowerCase();
   const isLead =
     (leadPersonId != null && row.personId === leadPersonId) ||
     row.roleLabel?.toLowerCase() === 'lead' ||

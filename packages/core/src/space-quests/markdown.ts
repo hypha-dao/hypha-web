@@ -46,14 +46,65 @@ export function bulletsToMarkdownList(items: readonly string[]): string {
   return cleaned.map((item) => `- ${item}`).join('\n');
 }
 
+function isQuestSlugChar(char: string): boolean {
+  return (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9');
+}
+
+/**
+ * Lowercase hyphen slug. A character scan — quantified dash regexes on
+ * caller-controlled names are polynomial ReDoS for CodeQL.
+ */
 export function slugifyQuestName(name: string): string {
-  const base = name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 44);
-  return base || 'quest';
+  let body = '';
+  let pendingSeparator = false;
+  for (const char of name.trim().toLowerCase()) {
+    if (isQuestSlugChar(char)) {
+      if (pendingSeparator && body.length > 0) body += '-';
+      pendingSeparator = false;
+      body += char;
+    } else {
+      pendingSeparator = true;
+    }
+  }
+  return body.slice(0, 44) || 'quest';
+}
+
+function isMarkerWhitespace(char: string): boolean {
+  switch (char) {
+    case ' ':
+    case '\f':
+    case '\n':
+    case '\r':
+    case '\t':
+    case '\v':
+    case '\u00a0':
+    case '\u1680':
+    case '\u2028':
+    case '\u2029':
+    case '\u202f':
+    case '\u205f':
+    case '\u3000':
+    case '\ufeff':
+      return true;
+    default: {
+      const code = char.codePointAt(0) ?? 0;
+      return code >= 0x2000 && code <= 0x200a;
+    }
+  }
+}
+
+/**
+ * Drop the first "(you)" viewer marker and the whitespace touching it.
+ * Linear scan — `\s*(you)\s*` is polynomial ReDoS on long space runs.
+ */
+export function stripViewerYouMarker(value: string): string {
+  const index = value.toLowerCase().indexOf('(you)');
+  if (index === -1) return value;
+  let start = index;
+  while (start > 0 && isMarkerWhitespace(value[start - 1] ?? '')) start -= 1;
+  let end = index + '(you)'.length;
+  while (end < value.length && isMarkerWhitespace(value[end] ?? '')) end += 1;
+  return value.slice(0, start) + value.slice(end);
 }
 
 export function buildEmbeddedQuestProposalPayload(
@@ -93,12 +144,11 @@ export function buildEmbeddedQuestProposalPayload(
       roleLabel: m.roleLabel?.trim() || null,
       isLead:
         m.roleLabel?.toLowerCase() === 'lead' ||
-        m.memberName.toLowerCase().startsWith(
-          draft.leadName
-            .replace(/\s*\(you\)\s*/i, '')
-            .trim()
-            .toLowerCase(),
-        ),
+        m.memberName
+          .toLowerCase()
+          .startsWith(
+            stripViewerYouMarker(draft.leadName).trim().toLowerCase(),
+          ),
       responsibilities: (m.responsibilities ?? [])
         .map((r) => r.trim())
         .filter(Boolean),
@@ -189,10 +239,7 @@ export function canMemberEditQuest(
   }
   const viewerName = viewer.name?.trim().toLowerCase();
   if (viewerName) {
-    const leadClean = quest.leadName
-      .replace(/\s*\(you\)\s*/i, '')
-      .trim()
-      .toLowerCase();
+    const leadClean = stripViewerYouMarker(quest.leadName).trim().toLowerCase();
     if (
       leadClean &&
       (viewerName === leadClean || leadClean.startsWith(viewerName))
@@ -201,10 +248,7 @@ export function canMemberEditQuest(
     }
     if (
       quest.members.some((m) => {
-        const clean = m.memberName
-          .replace(/\s*\(you\)\s*/i, '')
-          .trim()
-          .toLowerCase();
+        const clean = stripViewerYouMarker(m.memberName).trim().toLowerCase();
         return clean === viewerName || clean.startsWith(viewerName);
       })
     ) {
@@ -224,10 +268,7 @@ export function isViewerQuestLead(
   }
   const viewerName = viewer.name?.trim().toLowerCase();
   if (!viewerName) return false;
-  const leadClean = quest.leadName
-    .replace(/\s*\(you\)\s*/i, '')
-    .trim()
-    .toLowerCase();
+  const leadClean = stripViewerYouMarker(quest.leadName).trim().toLowerCase();
   return Boolean(
     leadClean && (viewerName === leadClean || leadClean.startsWith(viewerName)),
   );
