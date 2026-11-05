@@ -3,6 +3,7 @@ import { getActiveTabFromPath } from './get-active-tab-from-path';
 export type SpaceSectionNavKey =
   | 'overview'
   | 'agreements'
+  | 'quests'
   | 'members'
   | 'treasury'
   | 'calendar'
@@ -25,6 +26,7 @@ export const SPACE_SECTION_NAV_GROUP: Record<
   coherence: 'primary',
   members: 'primary',
   agreements: 'primary',
+  quests: 'primary',
   treasury: 'primary',
   memory: 'primary',
   context: 'primary',
@@ -87,7 +89,7 @@ function navItem(
  * Flag/space gates omit items; destinations stay route-compatible.
  *
  * An energy community keeps Overview first. Energy sits directly under it.
- * Menu: Overview · Energy (when on) · Signals · Deals (when on) · Agreements · Members · Treasury · Space memory · Context
+ * Menu: Overview · Energy (when on) · Signals · Deals (when on) · Agreements · Quests · Members · Treasury · Space memory · Context
  * Calendar, rewards, and ecosystem stay on the space dashboard.
  */
 export function buildSpaceSectionNavItems({
@@ -131,6 +133,7 @@ export function buildSpaceSectionNavItems({
 
   items.push(
     navItem('agreements', lang, spaceSlug, isActive('agreements')),
+    navItem('quests', lang, spaceSlug, isActive('quests')),
     navItem('members', lang, spaceSlug, isActive('members')),
     navItem('treasury', lang, spaceSlug, isActive('treasury')),
   );
@@ -148,7 +151,7 @@ export function buildSpaceSectionNavItems({
  * Partition space section nav for the main tab strip.
  *
  * Primary tabs stay fixed from {@link SPACE_SECTION_NAV_GROUP}:
- * Overview, Energy, Signals, Agreements, Members, Treasury, Space memory, and Context.
+ * Overview, Energy, Signals, Agreements, Quests, Members, Treasury, Space memory, and Context.
  */
 export function partitionSpaceSectionNavForTabs(items: SpaceSectionNavItem[]): {
   primary: SpaceSectionNavItem[];

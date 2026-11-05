@@ -16,6 +16,7 @@ const menuKeys = [
   'overview',
   'coherence',
   'agreements',
+  'quests',
   'members',
   'treasury',
 ] as const;
@@ -63,6 +64,7 @@ describe('buildSpaceSectionNavItems', () => {
       'coherence',
       'pipeline',
       'agreements',
+      'quests',
       'members',
       'treasury',
       'memory',
@@ -83,6 +85,7 @@ describe('buildSpaceSectionNavItems', () => {
       'coherence',
       'pipeline',
       'agreements',
+      'quests',
       'members',
       'treasury',
       'memory',
