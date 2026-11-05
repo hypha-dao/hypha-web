@@ -607,6 +607,7 @@
     "Treasury": "Trésorerie",
     "Energy": "Énergie",
     "Agreements": "Accords",
+    "quests": "Quêtes",
     "Spaces": "Espaces",
     "loadMore": "Charger plus",
     "noMore": "Plus aucun",
@@ -770,6 +771,8 @@
       "proposalsBody": "Conversations sur les propositions auxquelles tu peux voter",
       "signalsTitle": "Signaux",
       "signalsBody": "Besoins, ressources, opportunités, risques, tensions, idées, actions et impact",
+      "questsTitle": "Quêtes",
+      "questsBody": "Canaux de quête ouverts lorsqu’une proposition de quête est adoptée",
       "contextTitle": "Contexte",
       "contextBody": "Discussions sur les sections du Contexte de tes espaces",
       "ecosystemTitle": "Écosystèmes",
@@ -782,6 +785,7 @@
       "tagSpacePublic": "Canal public de l'espace",
       "tagProposal": "Proposition",
       "tagSignal": "Signaux de l'espace",
+      "tagQuest": "Quête",
       "tagContext": "Contexte de l'espace",
       "tagEcosystem": "Canal de l'écosystème",
       "tagNetwork": "Canal du réseau",
@@ -2085,7 +2089,8 @@
       "addEnergyMember": "Ajouter un membre énergie",
       "changeEnergyOptimization": "Modifier l'optimisation énergétique",
       "whitelistEnergySettlement": "Liste blanche de règlement énergétique",
-      "spaceContext": "Contexte de l'espace"
+      "spaceContext": "Contexte de l'espace",
+      "quest": "Quête"
     },
     "documentBadges": {
       "invite": "Invitation",
@@ -3306,6 +3311,7 @@
     "tabChatProposal": "Proposition",
     "tabChatContext": "Contexte",
     "tabChatSignal": "Signal",
+    "tabChatQuest": "Quête",
     "tabChatEcosystem": "Canal de l'écosystème",
     "tabChatNetwork": "Canal du réseau",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# mention non lue} other {# mentions non lues}}",
@@ -5744,6 +5750,23 @@
       "failed": "Impossible de suggérer la section. Réessayez.",
       "restoreLabel": "Sections supprimées",
       "restore": "Suggérer la restauration"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Quêtes",
+    "subtitle": "Travail ciblé et limité dans le temps, avec un objectif clair, des membres et des jalons",
+    "newQuest": "NOUVELLE QUÊTE",
+    "searchPlaceholder": "Rechercher des quêtes",
+    "empty": "Aucune quête pour le moment.",
+    "filters": {
+      "active": "Actives",
+      "proposed": "Proposées",
+      "paused": "En pause",
+      "completed": "Terminées"
+    },
+    "error": {
+      "load": "Impossible de charger les quêtes.",
+      "retry": "Réessayer"
     }
   }
 }

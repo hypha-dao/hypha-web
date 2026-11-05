@@ -607,6 +607,7 @@
     "Treasury": "Schatzkammer",
     "Energy": "Energie",
     "Agreements": "Vereinbarungen",
+    "quests": "Quests",
     "Spaces": "Spaces",
     "loadMore": "Mehr laden",
     "noMore": "Keine weiteren",
@@ -770,6 +771,8 @@
       "proposalsBody": "Gespräche zu Vorschlägen, über die du abstimmen kannst",
       "signalsTitle": "Signale",
       "signalsBody": "Bedürfnisse, Ressourcen, Chancen, Risiken, Spannungen, Einsichten, Handlungen und Wirkung",
+      "questsTitle": "Quests",
+      "questsBody": "Quest-Kanäle, die sich öffnen, wenn ein Quest-Vorschlag angenommen wird",
       "contextTitle": "Kontext",
       "contextBody": "Diskussionen zu Kontext-Abschnitten in deinen Spaces",
       "ecosystemTitle": "Ökosysteme",
@@ -782,6 +785,7 @@
       "tagSpacePublic": "Öffentlicher Space-Kanal",
       "tagProposal": "Vorschlag",
       "tagSignal": "Space-Signale",
+      "tagQuest": "Quest",
       "tagContext": "Space-Kontext",
       "tagEcosystem": "Ökosystem-Kanal",
       "tagNetwork": "Netzwerk-Kanal",
@@ -2657,7 +2661,8 @@
       "addEnergyMember": "Energiemitglied hinzufügen",
       "changeEnergyOptimization": "Energieoptimierung ändern",
       "whitelistEnergySettlement": "Energieabrechnung whitelisten",
-      "spaceContext": "Kontext des Spaces"
+      "spaceContext": "Kontext des Spaces",
+      "quest": "Quest"
     },
     "documentBadges": {
       "invite": "Einladung",
@@ -3878,6 +3883,7 @@
     "tabChatProposal": "Vorschlag",
     "tabChatContext": "Kontext",
     "tabChatSignal": "Signal",
+    "tabChatQuest": "Quest",
     "tabChatEcosystem": "Ökosystem-Kanal",
     "tabChatNetwork": "Netzwerk-Kanal",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# ungelesene Erwähnung} other {# ungelesene Erwähnungen}}",
@@ -5748,6 +5754,23 @@
       "failed": "Der Abschnitt konnte nicht vorgeschlagen werden. Versuche es erneut.",
       "restoreLabel": "Entfernte Abschnitte",
       "restore": "Wiederherstellen vorschlagen"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Quests",
+    "subtitle": "Fokussierte, befristete Arbeit mit klarem Ziel, Mitgliedern und Meilensteinen",
+    "newQuest": "NEUE QUEST",
+    "searchPlaceholder": "Quests suchen",
+    "empty": "Noch keine Quests.",
+    "filters": {
+      "active": "Aktiv",
+      "proposed": "Vorgeschlagen",
+      "paused": "Pausiert",
+      "completed": "Abgeschlossen"
+    },
+    "error": {
+      "load": "Quests konnten nicht geladen werden.",
+      "retry": "Erneut versuchen"
     }
   }
 }

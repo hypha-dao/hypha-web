@@ -7,6 +7,7 @@
     "Treasury": "Treasury",
     "Energy": "Energy",
     "Agreements": "Agreements",
+    "quests": "Quests",
     "Spaces": "Spaces",
     "loadMore": "Load more",
     "noMore": "No more",
@@ -170,6 +171,8 @@
       "proposalsBody": "Conversations on proposals you can vote on",
       "signalsTitle": "Signals",
       "signalsBody": "Needs, resources, opportunities, risks, tensions, insights, actions and impact",
+      "questsTitle": "Quests",
+      "questsBody": "Quest channels that open when a quest proposal passes",
       "contextTitle": "Context",
       "contextBody": "Discussions on Context sections in your spaces",
       "ecosystemTitle": "Ecosystems",
@@ -182,6 +185,7 @@
       "tagSpacePublic": "Public Space Channel",
       "tagProposal": "Proposal",
       "tagSignal": "Space Signals",
+      "tagQuest": "Quest",
       "tagContext": "Space Context",
       "tagEcosystem": "Ecosystem Channel",
       "tagNetwork": "Network Channel",
@@ -2684,7 +2688,8 @@
       "addEnergyMember": "Add Energy Member",
       "changeEnergyOptimization": "Change Energy Optimization",
       "whitelistEnergySettlement": "Whitelist Energy Settlement",
-      "spaceContext": "Space Context"
+      "spaceContext": "Space Context",
+      "quest": "Quest"
     },
     "documentBadges": {
       "invite": "Invite",
@@ -3909,6 +3914,7 @@
     "tabChatProposal": "Proposal",
     "tabChatContext": "Context",
     "tabChatSignal": "Signal",
+    "tabChatQuest": "Quest",
     "tabChatEcosystem": "Ecosystem Channel",
     "tabChatNetwork": "Network Channel",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# unread mention} other {# unread mentions}}",
@@ -5770,6 +5776,23 @@
       "failed": "Could not suggest the section. Try again.",
       "restoreLabel": "Removed sections",
       "restore": "Suggest restoring"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Quests",
+    "subtitle": "Focused, time-bound work with a clear goal, members and milestones",
+    "newQuest": "NEW QUEST",
+    "searchPlaceholder": "Search quests",
+    "empty": "No quests here yet.",
+    "filters": {
+      "active": "Active",
+      "proposed": "Proposed",
+      "paused": "Paused",
+      "completed": "Completed"
+    },
+    "error": {
+      "load": "Quests could not be loaded.",
+      "retry": "Retry"
     }
   }
 }

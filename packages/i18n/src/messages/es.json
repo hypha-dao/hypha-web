@@ -612,6 +612,7 @@
     "Treasury": "Tesorería",
     "Energy": "Energía",
     "Agreements": "Acuerdos",
+    "quests": "Misiones",
     "Spaces": "Espacios",
     "loadMore": "Cargar más",
     "noMore": "No más",
@@ -1302,7 +1303,8 @@
       "addEnergyMember": "Añadir miembro de energía",
       "changeEnergyOptimization": "Cambiar optimización energética",
       "whitelistEnergySettlement": "Lista blanca de liquidación energética",
-      "spaceContext": "Contexto del espacio"
+      "spaceContext": "Contexto del espacio",
+      "quest": "Misión"
     },
     "documentBadges": {
       "invite": "Invitación",
@@ -1549,6 +1551,8 @@
       "proposalsBody": "Conversaciones sobre propuestas en las que puedes votar",
       "signalsTitle": "Señales",
       "signalsBody": "Necesidades, recursos, oportunidades, riesgos, tensiones, ideas, acciones e impacto",
+      "questsTitle": "Misiones",
+      "questsBody": "Canales de misión que se abren cuando se aprueba una propuesta de misión",
       "contextTitle": "Contexto",
       "contextBody": "Conversaciones sobre secciones del Contexto de tus espacios",
       "ecosystemTitle": "Ecosistemas",
@@ -1561,6 +1565,7 @@
       "tagSpacePublic": "Canal público del espacio",
       "tagProposal": "Propuesta",
       "tagSignal": "Señales del espacio",
+      "tagQuest": "Misión",
       "tagContext": "Contexto del espacio",
       "tagEcosystem": "Canal del ecosistema",
       "tagNetwork": "Canal de la red",
@@ -3320,6 +3325,7 @@
     "tabChatProposal": "Propuesta",
     "tabChatContext": "Contexto",
     "tabChatSignal": "Señal",
+    "tabChatQuest": "Misión",
     "tabChatEcosystem": "Canal del ecosistema",
     "tabChatNetwork": "Canal de la red",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# mención sin leer} other {# menciones sin leer}}",
@@ -5762,6 +5768,23 @@
       "failed": "No se pudo sugerir la sección. Inténtalo de nuevo.",
       "restoreLabel": "Secciones eliminadas",
       "restore": "Sugerir restaurar"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Misiones",
+    "subtitle": "Trabajo enfocado y con plazo, con un objetivo claro, miembros e hitos",
+    "newQuest": "NUEVA MISIÓN",
+    "searchPlaceholder": "Buscar misiones",
+    "empty": "Todavía no hay misiones.",
+    "filters": {
+      "active": "Activas",
+      "proposed": "Propuestas",
+      "paused": "En pausa",
+      "completed": "Completadas"
+    },
+    "error": {
+      "load": "No se pudieron cargar las misiones.",
+      "retry": "Reintentar"
     }
   }
 }

@@ -607,6 +607,7 @@
     "Treasury": "Kasse",
     "Energy": "Energi",
     "Agreements": "Avtaler",
+    "quests": "Oppdrag",
     "Spaces": "Rom",
     "loadMore": "Last inn flere",
     "noMore": "Ingen flere",
@@ -769,6 +770,8 @@
       "proposalsBody": "Samtaler om forslag du kan stemme over",
       "signalsTitle": "Signaler",
       "signalsBody": "Behov, ressurser, muligheter, risiko, spenninger, innsikt, handlinger og virkning",
+      "questsTitle": "Oppdrag",
+      "questsBody": "Oppdragskanaler som åpnes når et oppdragsforslag vedtas",
       "contextTitle": "Kontekst",
       "contextBody": "Samtaler om Kontekst-seksjoner i områdene dine",
       "ecosystemTitle": "Økosystemer",
@@ -781,6 +784,7 @@
       "tagSpacePublic": "Offentlig områdekanal",
       "tagProposal": "Forslag",
       "tagSignal": "Områdesignaler",
+      "tagQuest": "Oppdrag",
       "tagContext": "Områdekontekst",
       "tagEcosystem": "Økosystemkanal",
       "tagNetwork": "Nettverkskanal",
@@ -2655,7 +2659,8 @@
       "addEnergyMember": "Legg til energimedlem",
       "changeEnergyOptimization": "Endre energioptimalisering",
       "whitelistEnergySettlement": "Hvitelist energioppgjør",
-      "spaceContext": "Space-kontekst"
+      "spaceContext": "Space-kontekst",
+      "quest": "Oppdrag"
     },
     "documentBadges": {
       "invite": "Invitasjon",
@@ -3880,6 +3885,7 @@
     "tabChatProposal": "Forslag",
     "tabChatContext": "Kontekst",
     "tabChatSignal": "Signal",
+    "tabChatQuest": "Oppdrag",
     "tabChatEcosystem": "Økosystemkanal",
     "tabChatNetwork": "Nettverkskanal",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# ulest omtale} other {# uleste omtaler}}",
@@ -5753,6 +5759,23 @@
       "failed": "Kunne ikke foreslå seksjonen. Prøv igjen.",
       "restoreLabel": "Fjernede seksjoner",
       "restore": "Foreslå gjenoppretting"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Oppdrag",
+    "subtitle": "Fokusert, tidsavgrenset arbeid med tydelig mål, medlemmer og milepæler",
+    "newQuest": "NYTT OPPDRAG",
+    "searchPlaceholder": "Søk i oppdrag",
+    "empty": "Ingen oppdrag ennå.",
+    "filters": {
+      "active": "Aktive",
+      "proposed": "Foreslått",
+      "paused": "Pauset",
+      "completed": "Fullført"
+    },
+    "error": {
+      "load": "Kunne ikke laste oppdrag.",
+      "retry": "Prøv igjen"
     }
   }
 }

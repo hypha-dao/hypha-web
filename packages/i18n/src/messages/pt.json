@@ -612,6 +612,7 @@
     "Treasury": "Tesouraria",
     "Energy": "Energia",
     "Agreements": "Acordos",
+    "quests": "Missões",
     "Spaces": "Espaços",
     "loadMore": "Carregar mais",
     "noMore": "Não mais",
@@ -1302,7 +1303,8 @@
       "addEnergyMember": "Adicionar membro de energia",
       "changeEnergyOptimization": "Alterar otimização de energia",
       "whitelistEnergySettlement": "Whitelist de liquidação de energia",
-      "spaceContext": "Contexto do espaço"
+      "spaceContext": "Contexto do espaço",
+      "quest": "Missão"
     },
     "documentBadges": {
       "invite": "Convite",
@@ -1549,6 +1551,8 @@
       "proposalsBody": "Conversas sobre propostas em que podes votar",
       "signalsTitle": "Sinais",
       "signalsBody": "Necessidades, recursos, oportunidades, riscos, tensões, ideias, ações e impacto",
+      "questsTitle": "Missões",
+      "questsBody": "Canais de missão abertos quando uma proposta de missão é aprovada",
       "contextTitle": "Contexto",
       "contextBody": "Conversas sobre secções do Contexto dos teus espaços",
       "ecosystemTitle": "Ecossistemas",
@@ -1561,6 +1565,7 @@
       "tagSpacePublic": "Canal público do espaço",
       "tagProposal": "Proposta",
       "tagSignal": "Sinais do espaço",
+      "tagQuest": "Missão",
       "tagContext": "Contexto do espaço",
       "tagEcosystem": "Canal do ecossistema",
       "tagNetwork": "Canal da rede",
@@ -3306,6 +3311,7 @@
     "tabChatProposal": "Proposta",
     "tabChatContext": "Contexto",
     "tabChatSignal": "Sinal",
+    "tabChatQuest": "Missão",
     "tabChatEcosystem": "Canal do ecossistema",
     "tabChatNetwork": "Canal da rede",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# menção não lida} other {# menções não lidas}}",
@@ -5746,6 +5752,23 @@
       "failed": "Não foi possível sugerir a seção. Tente novamente.",
       "restoreLabel": "Seções removidas",
       "restore": "Sugerir restauração"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Missões",
+    "subtitle": "Trabalho focado e com prazo, com objetivo claro, membros e marcos",
+    "newQuest": "NOVA MISSÃO",
+    "searchPlaceholder": "Pesquisar missões",
+    "empty": "Ainda não há missões.",
+    "filters": {
+      "active": "Ativas",
+      "proposed": "Propostas",
+      "paused": "Pausadas",
+      "completed": "Concluídas"
+    },
+    "error": {
+      "load": "Não foi possível carregar as missões.",
+      "retry": "Tentar novamente"
     }
   }
 }

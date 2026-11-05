@@ -607,6 +607,7 @@
     "Treasury": "Treasury",
     "Energy": "Energie",
     "Agreements": "Overeenkomsten",
+    "quests": "Quests",
     "Spaces": "Ruimtes",
     "loadMore": "Meer laden",
     "noMore": "Geen meer",
@@ -770,6 +771,8 @@
       "proposalsBody": "Gesprekken over voorstellen waar je over kunt stemmen",
       "signalsTitle": "Signalen",
       "signalsBody": "Behoeften, middelen, kansen, risico's, spanningen, inzichten, acties en impact",
+      "questsTitle": "Quests",
+      "questsBody": "Questkanalen die openen wanneer een questvoorstel wordt aangenomen",
       "contextTitle": "Context",
       "contextBody": "Gesprekken over Context-secties in je spaces",
       "ecosystemTitle": "Ecosystemen",
@@ -782,6 +785,7 @@
       "tagSpacePublic": "Openbaar space-kanaal",
       "tagProposal": "Voorstel",
       "tagSignal": "Space-signalen",
+      "tagQuest": "Quest",
       "tagContext": "Space-context",
       "tagEcosystem": "Ecosysteemkanaal",
       "tagNetwork": "Netwerkkanaal",
@@ -2656,7 +2660,8 @@
       "addEnergyMember": "Energielid toevoegen",
       "changeEnergyOptimization": "Verander energieoptimalisatie",
       "whitelistEnergySettlement": "Energieafwikkeling op de witte lijst",
-      "spaceContext": "Space-context"
+      "spaceContext": "Space-context",
+      "quest": "Quest"
     },
     "documentBadges": {
       "invite": "Uitnodiging",
@@ -3881,6 +3886,7 @@
     "tabChatProposal": "Voorstel",
     "tabChatContext": "Context",
     "tabChatSignal": "Signaal",
+    "tabChatQuest": "Quest",
     "tabChatEcosystem": "Ecosysteemkanaal",
     "tabChatNetwork": "Netwerkkanaal",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# ongelezen vermelding} other {# ongelezen vermeldingen}}",
@@ -5754,6 +5760,23 @@
       "failed": "De sectie kon niet worden voorgesteld. Probeer het opnieuw.",
       "restoreLabel": "Verwijderde secties",
       "restore": "Herstellen voorstellen"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Quests",
+    "subtitle": "Gericht, tijdgebonden werk met een duidelijk doel, leden en mijlpalen",
+    "newQuest": "NIEUWE QUEST",
+    "searchPlaceholder": "Quests zoeken",
+    "empty": "Nog geen quests.",
+    "filters": {
+      "active": "Actief",
+      "proposed": "Voorgesteld",
+      "paused": "Gepauzeerd",
+      "completed": "Voltooid"
+    },
+    "error": {
+      "load": "Quests konden niet worden geladen.",
+      "retry": "Opnieuw proberen"
     }
   }
 }
