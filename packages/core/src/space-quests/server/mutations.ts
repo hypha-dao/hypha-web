@@ -36,7 +36,7 @@ import type {
   schemaPostQuestUpdate,
 } from '../validation';
 import type { z } from 'zod';
-import { getSpaceQuestBySlug, listSpaceQuests } from './queries';
+import { getSpaceQuestBySlug } from './queries';
 
 export type SpaceQuestWriteError =
   | 'not_found'
@@ -297,8 +297,6 @@ export async function createSpaceQuest(
 ): Promise<SpaceQuestWriteResult> {
   const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
   if (!space) return { ok: false, error: 'not_found' };
-
-  await listSpaceQuests({ spaceSlug }, { db });
 
   const slug = await resolveUniqueQuestSlug(space.id, input.name, db);
   const scopeIn =

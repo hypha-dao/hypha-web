@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useSpaceQuests } from '../hooks/use-space-quests';
+import { QuestRewardTokenCard } from './quest-reward-tokens';
 
 const SECTION_LABEL_CLASS =
   'text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-11';
@@ -170,23 +171,19 @@ export function ProposalQuestData({
         )}
       </section>
 
-      {/* QUEST REWARD (Node 91:36 — read-only multi-token rows, no treasury meta) */}
-      <section className="space-y-1.5 border border-border bg-background-2 p-3">
+      {/* QUEST REWARD (Node 91:36 — read-only multi-token rows with token logo, no treasury meta) */}
+      <section className="space-y-2 border border-border bg-background-2 p-3">
         <p className={SECTION_LABEL_CLASS}>QUEST REWARD</p>
         {payload.rewards.length === 0 ? (
           <p className="text-xs text-neutral-11">No token reward specified</p>
         ) : (
-          <div className="space-y-1">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {payload.rewards.map((reward, idx) => (
-              <div
-                key={idx}
-                className="flex items-center gap-2.5 py-1 text-foreground"
-              >
-                <span className="font-mono text-[13px] font-medium">
-                  {reward.amount}
-                </span>
-                <span className="text-xs font-semibold">{reward.token}</span>
-              </div>
+              <QuestRewardTokenCard
+                key={`${reward.token}-${idx}`}
+                reward={reward}
+                compact
+              />
             ))}
           </div>
         )}

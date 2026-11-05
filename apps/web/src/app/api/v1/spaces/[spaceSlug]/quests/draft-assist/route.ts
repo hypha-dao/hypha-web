@@ -34,6 +34,7 @@ export async function POST(
   const result = await assistSpaceQuestDraft({
     spaceSlug,
     input: parsed.data,
+    actor: auth.actor,
   });
   return NextResponse.json(result);
 }

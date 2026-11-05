@@ -34,7 +34,14 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { useMemo, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import type { z } from 'zod';
 import {
   deleteSpaceQuestRequest,
@@ -48,7 +55,9 @@ import {
 import {
   useAiPanel,
   useHumanChatPanel,
+  type SpaceQuestDraftChatMessage,
 } from '../../common/human-chat-panel-context';
+import { recordMobilizedAiAgentsForQuestion } from '../../common/ai-agent-competencies';
 import {
   EditQuestDeliverablesModal,
   EditQuestGoalModal,
@@ -62,10 +71,16 @@ import {
   EditQuestTargetDateModal,
 } from './quest-section-edit-modals';
 import {
+  QuestRewardTokenCard,
+  useQuestRewardTokenCatalog,
+} from './quest-reward-tokens';
+import type { ExtendedToken } from '../../treasury/hooks/use-tokens';
+import {
   formatRelativeTimeShort,
   healthBadgeMeta,
 } from './space-quests-section';
 import type { SpaceQuestDetailTab } from '../space-quest-tabs';
+import type { QuestDraftPatchInput } from '../utils/quest-draft-assistant';
 
 type QuestPatch = z.infer<typeof schemaPatchSpaceQuest>;
 
@@ -88,7 +103,7 @@ type EditingModal =
 const LABEL_CLASS =
   'text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11';
 
-const CARD_CLASS = 'border border-border bg-background p-4';
+const CARD_CLASS = 'border border-border bg-background p-5';
 
 function statusLabel(status: QuestStatus): string {
   switch (status) {
@@ -208,11 +223,16 @@ function QuestRichText({
       .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
       .trim();
   return (
-    <div className={cn('space-y-1 text-[13px] text-foreground', className)}>
+    <div
+      className={cn(
+        'space-y-1.5 text-[14px] leading-relaxed text-foreground',
+        className,
+      )}
+    >
       {lines.map((line, idx) =>
         /^\s*(?:[-*•]|\d+\.)\s+/.test(line) ? (
-          <p key={idx} className="flex gap-1.5">
-            <span className="text-neutral-11">•</span>
+          <p key={idx} className="flex gap-2">
+            <span className="font-semibold text-neutral-11">•</span>
             <span>{clean(line)}</span>
           </p>
         ) : (
@@ -234,10 +254,10 @@ function BulletList({
     return <p className="text-[13px] text-neutral-11">{empty}</p>;
   }
   return (
-    <div className="space-y-1 text-[13px] text-foreground">
+    <div className="space-y-1.5 text-[13.5px] leading-relaxed text-foreground">
       {items.map((item, idx) => (
-        <p key={idx} className="flex gap-1.5">
-          <span className="text-neutral-11">•</span>
+        <p key={idx} className="flex gap-2">
+          <span className="font-semibold text-neutral-11">•</span>
           <span>{item}</span>
         </p>
       ))}
@@ -247,18 +267,33 @@ function BulletList({
 
 function SectionHeader({
   title,
+  variant = 'card',
   onEdit,
   editLabel = 'Edit',
   right,
 }: {
   title: string;
+  variant?: 'card' | 'subsection';
   onEdit?: () => void;
   editLabel?: string;
   right?: ReactNode;
 }) {
   return (
-    <div className="mb-3 flex items-center justify-between gap-3">
-      <span className={LABEL_CLASS}>{title}</span>
+    <div
+      className={cn(
+        'flex items-center justify-between gap-3',
+        variant === 'card' ? 'mb-3.5' : 'mb-2',
+      )}
+    >
+      {variant === 'card' ? (
+        <h2 className="font-display text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+          {title}
+        </h2>
+      ) : (
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.08em] text-foreground/85">
+          {title}
+        </h3>
+      )}
       <div className="flex items-center gap-3">
         {right}
         {onEdit ? (
@@ -425,10 +460,12 @@ function EditHealthDialog({
 function OverviewTab({
   quest,
   canEdit,
+  spaceTokens,
   openModal,
 }: {
   quest: QuestRecord;
   canEdit: boolean;
+  spaceTokens: readonly ExtendedToken[];
   openModal: (modal: EditingModal) => void;
 }) {
   const [expandedMilestone, setExpandedMilestone] = useState<number | null>(
@@ -447,18 +484,30 @@ function OverviewTab({
   const showDeliverables = quest.status !== 'proposed';
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="min-w-0 space-y-4">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="min-w-0 space-y-5">
         <section className={CARD_CLASS} data-testid="quest-overview-scope">
-          <SectionHeader title="SCOPE" />
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <SectionHeader title="GOAL" onEdit={edit('goal')} />
-              <QuestRichText markdown={quest.goal} />
+          <SectionHeader title="Scope &amp; Goal" />
+          <div className="space-y-5">
+            <div className="space-y-2 border-b border-border/70 pb-4">
+              <SectionHeader
+                title="Goal"
+                variant="subsection"
+                onEdit={edit('goal')}
+              />
+              <QuestRichText
+                markdown={quest.goal}
+                className="text-[15px] font-medium leading-relaxed text-foreground"
+              />
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <SectionHeader title="IN SCOPE" onEdit={edit('scope')} />
+
+            <div className="grid grid-cols-1 gap-4 border-b border-border/70 pb-4 sm:grid-cols-2">
+              <div className="space-y-2 border border-border/60 bg-background-2/40 p-3.5">
+                <SectionHeader
+                  title="In Scope"
+                  variant="subsection"
+                  onEdit={edit('scope')}
+                />
                 <BulletList
                   items={
                     quest.scopeIn.length > 0
@@ -467,8 +516,8 @@ function OverviewTab({
                   }
                 />
               </div>
-              <div className="space-y-1.5">
-                <SectionHeader title="OUT OF SCOPE" />
+              <div className="space-y-2 border border-border/60 bg-background-2/40 p-3.5">
+                <SectionHeader title="Out of Scope" variant="subsection" />
                 <BulletList
                   items={
                     quest.scopeOut.length > 0
@@ -478,39 +527,42 @@ function OverviewTab({
                 />
               </div>
             </div>
-            <div className="space-y-1.5">
+
+            <div className="space-y-2">
               <SectionHeader
-                title="SUCCESS CRITERIA"
+                title="Success Criteria"
+                variant="subsection"
                 onEdit={edit('success')}
               />
-              <QuestRichText markdown={quest.successCriteria} />
+              <QuestRichText
+                markdown={quest.successCriteria}
+                className="font-medium"
+              />
             </div>
           </div>
         </section>
 
         <section className={CARD_CLASS} data-testid="quest-overview-reward">
-          <SectionHeader title="QUEST REWARD" onEdit={edit('rewards')} />
+          <SectionHeader title="Quest Reward" onEdit={edit('rewards')} />
           {quest.rewards.length === 0 ? (
             <p className="text-[13px] text-neutral-11">
               No token reward specified
             </p>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {quest.rewards.map((reward, idx) => (
-                <span
+                <QuestRewardTokenCard
                   key={`${reward.token}-${idx}`}
-                  className="inline-flex items-center gap-1.5 bg-neutral-3 px-2.5 py-1 text-[13px] text-foreground"
-                >
-                  <span className="font-mono font-medium">{reward.amount}</span>
-                  <span className="text-xs font-semibold">{reward.token}</span>
-                </span>
+                  reward={reward}
+                  spaceTokens={spaceTokens}
+                />
               ))}
             </div>
           )}
         </section>
 
         <section className={CARD_CLASS} data-testid="quest-overview-milestones">
-          <SectionHeader title="MILESTONES" onEdit={edit('milestones')} />
+          <SectionHeader title="Milestones" onEdit={edit('milestones')} />
           {quest.milestones.length === 0 ? (
             <p className="text-[13px] text-neutral-11">No milestones yet</p>
           ) : (
@@ -577,7 +629,7 @@ function OverviewTab({
 
         <section className={CARD_CLASS} data-testid="quest-overview-health">
           <SectionHeader
-            title="QUEST HEALTH"
+            title="Quest Health"
             onEdit={edit('health')}
             right={
               <span className="text-[11px] text-neutral-11">
@@ -605,7 +657,7 @@ function OverviewTab({
                 : ''}
             </p>
             {quest.health.summary ? (
-              <p className="text-[13px] text-foreground">
+              <p className="text-[13.5px] leading-relaxed text-foreground">
                 {quest.health.summary}
               </p>
             ) : null}
@@ -613,9 +665,9 @@ function OverviewTab({
         </section>
       </div>
 
-      <div className="min-w-0 space-y-4">
+      <div className="min-w-0 space-y-5">
         <section className={CARD_CLASS} data-testid="quest-overview-members">
-          <SectionHeader title="MEMBERS" onEdit={edit('members')} />
+          <SectionHeader title="Members" onEdit={edit('members')} />
           {quest.members.length === 0 ? (
             <p className="text-[13px] text-neutral-11">No members yet</p>
           ) : (
@@ -671,7 +723,7 @@ function OverviewTab({
             className={CARD_CLASS}
             data-testid="quest-overview-deliverables"
           >
-            <SectionHeader title="DELIVERABLES" onEdit={edit('deliverables')} />
+            <SectionHeader title="Deliverables" onEdit={edit('deliverables')} />
             {quest.deliverables.length === 0 ? (
               <p className="text-[13px] text-neutral-11">No deliverables yet</p>
             ) : (
@@ -1165,16 +1217,33 @@ export function SpaceQuestDetail({
   const { person } = useMe();
   const { getAccessToken } = useAuthentication();
   const { closeAiPanel } = useAiPanel();
-  const { openCoherenceChat } = useHumanChatPanel();
+  const { openCoherenceChat, openHumanChatPanel, setSpaceQuestDraft } =
+    useHumanChatPanel();
   const { quest, isLoading, error, refresh } = useSpaceQuestDetail(
     spaceSlug,
     questSlug,
   );
   const spaceMembers = useQuestSpaceMembers(spaceSlug);
+  const { spaceTokens } = useQuestRewardTokenCatalog(spaceSlug);
   const [editingModal, setEditingModal] = useState<EditingModal>(null);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [nextStatus, setNextStatus] = useState<QuestStatus>('active');
+  const [detailChatOpen, setDetailChatOpen] = useState(false);
+  const [detailChatInput, setDetailChatInput] = useState('');
+  const [detailChatTyping, setDetailChatTyping] = useState(false);
+  const [detailChatMessages, setDetailChatMessages] = useState<
+    SpaceQuestDraftChatMessage[]
+  >(() => [
+    {
+      id: 'detail-m1',
+      role: 'member',
+      agentSpecialistId: 'operations',
+      senderName: 'AI Agents',
+      timestamp: new Date(),
+      text: 'Ask me to refine the Goal, Scope, Success Criteria, Milestones, Deliverables, or Quest Reward for this quest.',
+    },
+  ]);
 
   const viewer = useMemo(
     () =>
@@ -1191,6 +1260,44 @@ export function SpaceQuestDetail({
     questSlug,
   )}`;
   const listHref = `/${locale}/dho/${spaceSlug}/quests`;
+
+  const sendDetailRef = useRef<(overridePrompt?: string) => void>(() => {});
+  const triggerDetailSend = useCallback(() => {
+    sendDetailRef.current();
+  }, []);
+  const triggerDetailQuickPrompt = useCallback((prompt: string) => {
+    sendDetailRef.current(prompt);
+  }, []);
+
+  useEffect(() => {
+    if (!detailChatOpen || !quest) return;
+    setSpaceQuestDraft({
+      spaceSlug,
+      questTitle: quest.name,
+      messages: detailChatMessages,
+      input: detailChatInput,
+      onInputChange: setDetailChatInput,
+      onSend: triggerDetailSend,
+      onQuickPrompt: triggerDetailQuickPrompt,
+      isAgentTyping: detailChatTyping,
+    });
+  }, [
+    detailChatInput,
+    detailChatMessages,
+    detailChatOpen,
+    detailChatTyping,
+    quest,
+    setSpaceQuestDraft,
+    spaceSlug,
+    triggerDetailQuickPrompt,
+    triggerDetailSend,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      setSpaceQuestDraft(null);
+    };
+  }, [setSpaceQuestDraft]);
 
   if (isLoading) {
     return (
@@ -1245,14 +1352,141 @@ export function SpaceQuestDetail({
     if (typeof window !== 'undefined' && window.innerWidth < 1200) {
       closeAiPanel();
     }
-    openCoherenceChat(
-      quest.chatRoomId ?? null,
-      quest.name,
-      quest.slug,
-      quest.goal,
-      spaceSlug,
-      { channel: 'quest' },
-    );
+    if (quest.chatRoomId) {
+      setDetailChatOpen(false);
+      setSpaceQuestDraft(null);
+      openCoherenceChat(
+        quest.chatRoomId,
+        quest.name,
+        quest.slug,
+        quest.goal,
+        spaceSlug,
+        { channel: 'quest' },
+      );
+      return;
+    }
+    setDetailChatOpen(true);
+    openHumanChatPanel();
+  };
+
+  const handleSendDetailChatMessage = async (overridePrompt?: string) => {
+    const rawTrimmed = (overridePrompt ?? detailChatInput).trim();
+    if (!rawTrimmed) return;
+    if (!overridePrompt) setDetailChatInput('');
+
+    const trimmed =
+      rawTrimmed.replace(/^@AI\s+Agents\b[,:\s]*/i, '').trim() || rawTrimmed;
+    recordMobilizedAiAgentsForQuestion(spaceSlug, trimmed);
+
+    const viewerName = viewer?.name?.trim() || 'Member';
+    const now = new Date();
+    setDetailChatMessages((prev) => [
+      ...prev,
+      {
+        id: `du-${now.getTime()}`,
+        role: 'user',
+        senderName: viewerName,
+        avatarUrl: person?.avatarUrl ?? undefined,
+        timestamp: now,
+        text: rawTrimmed,
+      },
+    ]);
+
+    setDetailChatTyping(true);
+    try {
+      const token = await getAccessToken?.().catch(() => null);
+      if (!token) return;
+      const response = await fetch(
+        `/api/v1/spaces/${encodeURIComponent(spaceSlug)}/quests/draft-assist`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            message: trimmed,
+            questSlug: quest.slug,
+            spaceTitle: quest.spaceTitle,
+            spaceMembers: spaceMembers.slice(0, 60).map((m) => ({
+              personId: m.personId,
+              name: m.name,
+            })),
+            history: detailChatMessages.slice(-8).map((m) => ({
+              role: m.role === 'user' ? 'user' : 'assistant',
+              text: m.text,
+            })),
+          }),
+        },
+      );
+      if (response.ok) {
+        const data = (await response.json()) as {
+          ok?: boolean;
+          patch?: QuestDraftPatchInput | null;
+          updatedQuest?: QuestRecord | null;
+          reply?: string | null;
+          specialistId?: string;
+        };
+        if (data.updatedQuest) {
+          await refresh(data.updatedQuest, { revalidate: false });
+        } else if (data.patch && canEdit) {
+          const patchToSave: QuestPatch = {
+            ...(data.patch.name ? { name: data.patch.name } : {}),
+            ...(data.patch.goal ? { goal: data.patch.goal } : {}),
+            ...(data.patch.scopeIn ? { scopeIn: data.patch.scopeIn } : {}),
+            ...(data.patch.scopeOut ? { scopeOut: data.patch.scopeOut } : {}),
+            ...(data.patch.successCriteriaBullets
+              ? {
+                  successCriteria: data.patch.successCriteriaBullets
+                    .map((b) => `- ${b}`)
+                    .join('\n'),
+                }
+              : {}),
+            ...(data.patch.targetDate !== undefined
+              ? { targetDate: data.patch.targetDate }
+              : {}),
+            ...(data.patch.rewards ? { rewards: data.patch.rewards } : {}),
+          };
+          if (Object.keys(patchToSave).length > 0) {
+            await savePatch(patchToSave);
+          }
+        }
+        const replyText =
+          data.reply?.trim() ||
+          (data.updatedQuest || data.patch
+            ? 'Updated the quest sections on screen.'
+            : 'Let me know which section of this quest you want to refine.');
+        setDetailChatMessages((prev) => [
+          ...prev,
+          {
+            id: `ds-${Date.now()}`,
+            role: 'member',
+            agentSpecialistId: data.specialistId ?? 'operations',
+            senderName: 'AI Agents',
+            timestamp: new Date(),
+            text: replyText,
+          },
+        ]);
+      }
+    } catch {
+      setDetailChatMessages((prev) => [
+        ...prev,
+        {
+          id: `ds-${Date.now()}`,
+          role: 'member',
+          agentSpecialistId: 'operations',
+          senderName: 'AI Agents',
+          timestamp: new Date(),
+          text: 'Could not reach the assistant right now. Try again or click any section to edit directly.',
+        },
+      ]);
+    } finally {
+      setDetailChatTyping(false);
+    }
+  };
+
+  sendDetailRef.current = (overridePrompt?: string) => {
+    void handleSendDetailChatMessage(overridePrompt);
   };
 
   const savePatch = async (patch: QuestPatch) => {
@@ -1387,7 +1621,7 @@ export function SpaceQuestDetail({
               </span>
             ) : null}
           </div>
-          {quest.status !== 'proposed' && quest.chatRoomId ? (
+          {quest.status !== 'proposed' && (quest.chatRoomId || canEdit) ? (
             <button
               type="button"
               onClick={openQuestChat}
@@ -1476,6 +1710,7 @@ export function SpaceQuestDetail({
         <OverviewTab
           quest={quest}
           canEdit={canEdit}
+          spaceTokens={spaceTokens}
           openModal={setEditingModal}
         />
       ) : null}
@@ -1540,6 +1775,7 @@ export function SpaceQuestDetail({
         open={editingModal === 'rewards'}
         onOpenChange={closeModal}
         rewards={quest.rewards}
+        spaceSlug={spaceSlug}
         onSave={(rewards) => void savePatch({ rewards })}
       />
       <EditQuestMilestonesModal

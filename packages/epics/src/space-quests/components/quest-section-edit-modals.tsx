@@ -24,6 +24,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
+import { QuestRewardRowsEditor } from './quest-reward-tokens';
 
 function keepMemberSelectPopoverOpen(event: {
   target: EventTarget | null;
@@ -560,26 +561,27 @@ export function EditQuestRewardsModal({
   open,
   onOpenChange,
   rewards,
+  spaceSlug,
   tokenSymbols = QUEST_DEFAULT_REWARD_TOKENS,
   onSave,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   rewards: QuestReward[];
+  spaceSlug?: string;
   tokenSymbols?: readonly string[];
   onSave: (next: QuestReward[]) => void;
 }) {
   const [rows, setRows] = useState<QuestReward[]>(rewards);
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
-    if (open) {
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (open && !wasOpen) {
       setRows(rewards.length > 0 ? rewards : [{ amount: '', token: 'USDC' }]);
     }
   }, [open, rewards]);
-
-  const options = Array.from(
-    new Set([...tokenSymbols, ...QUEST_DEFAULT_REWARD_TOKENS]),
-  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -594,64 +596,12 @@ export function EditQuestRewardsModal({
           />
           <div className="space-y-2.5">
             <label className={LABEL_CLASS}>QUEST REWARD</label>
-            {rows.map((row, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <Input
-                  value={row.amount}
-                  onChange={(e) => {
-                    const next = [...rows];
-                    next[idx] = { ...row, amount: e.target.value };
-                    setRows(next);
-                  }}
-                  placeholder="0"
-                  className="h-9 w-44 rounded-none bg-background-2 font-mono text-sm"
-                />
-                <select
-                  value={row.token}
-                  onChange={(e) => {
-                    const next = [...rows];
-                    next[idx] = { ...row, token: e.target.value };
-                    setRows(next);
-                  }}
-                  className="h-9 w-32 border border-border bg-background-2 px-2.5 text-xs font-semibold text-foreground"
-                >
-                  {options.map((tok) => (
-                    <option key={tok} value={tok}>
-                      {tok}
-                    </option>
-                  ))}
-                </select>
-                <div className="flex-1" />
-                <button
-                  type="button"
-                  onClick={() =>
-                    setRows(rows.filter((_, itemIdx) => itemIdx !== idx))
-                  }
-                  className="text-neutral-11 hover:text-foreground"
-                  aria-label="Remove token row"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={() =>
-                setRows([
-                  ...rows,
-                  {
-                    amount: '',
-                    token:
-                      options.find(
-                        (tok) => !rows.some((r) => r.token === tok),
-                      ) ?? 'USDC',
-                  },
-                ])
-              }
-              className="inline-flex h-9 items-center border border-border bg-background px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground hover:bg-neutral-3"
-            >
-              + ADD TOKEN
-            </button>
+            <QuestRewardRowsEditor
+              rows={rows}
+              onChange={setRows}
+              spaceSlug={spaceSlug}
+              tokenSymbols={tokenSymbols}
+            />
           </div>
           <ModalFooter
             onCancel={() => onOpenChange(false)}

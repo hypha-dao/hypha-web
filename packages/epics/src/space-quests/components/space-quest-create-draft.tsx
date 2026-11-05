@@ -2,7 +2,6 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
-  QUEST_DEFAULT_REWARD_TOKENS,
   QUEST_DOCUMENT_LABEL,
   QUEST_STEWARD_STEPS,
   buildQuestProposalDescription,
@@ -17,13 +16,7 @@ import {
   type QuestReward,
   type QuestStewardStep,
 } from '@hypha-platform/core/client';
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  Input,
-} from '@hypha-platform/ui';
+import { Button, Dialog, DialogContent, DialogTitle } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -66,6 +59,7 @@ import {
   type EditableQuestMember,
   type EditableQuestMilestone,
 } from './quest-section-edit-modals';
+import { QuestRewardRowsEditor } from './quest-reward-tokens';
 import { SpaceQuestChatPanel } from './space-quest-chat-panel';
 
 const LABEL_CLASS =
@@ -239,42 +233,11 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         targetDate,
       };
 
-      // 1. Apply local multi-section extraction / synthesis immediately so the draft form updates live
-      const localPatch = buildLocalQuestDraftPatch({
-        message: trimmed,
-        currentStep,
-        draft: currentSnapshot,
-        viewerDisplayName,
-      });
-      const { next: afterLocal, updatedLabels: localUpdated } =
-        applyPatchToQuestDraftState({
-          current: currentSnapshot,
-          patch: localPatch,
-          spaceMembers,
-          viewerDisplayName,
-        });
-      commitDraftSnapshot(afterLocal);
-
-      const nextUnfilled = findNextUnfilledQuestStep(afterLocal, currentStep);
-      const nextStep: QuestStewardStep = nextUnfilled ?? 'name';
-      const nextStepIndex = Math.max(0, QUEST_STEWARD_STEPS.indexOf(nextStep));
-      setStewardStepIndex(nextStepIndex);
-      setActiveSection(nextStep);
-
       const specialist =
         selectSpecialistForQuestion(trimmed) ?? specialistById('operations');
       const specialistId = specialist?.id ?? 'operations';
 
-      const fallbackReply = nextUnfilled
-        ? localUpdated.length > 1
-          ? `Updated ${localUpdated.join(
-              ', ',
-            )} in your quest draft. ${stewardQuestionForStep(nextUnfilled)}`
-          : stewardQuestionForStep(nextUnfilled)
-        : "Your quest draft is ready. Click CREATE QUEST whenever you're ready to submit it as a proposal for voting.";
-
       const now = new Date();
-      const replyId = `s-${now.getTime() + 1}`;
       setChatMessages((prev) => [
         ...prev,
         {
@@ -285,108 +248,171 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
           timestamp: now,
           text: rawTrimmed,
         },
-        {
-          id: replyId,
-          role: 'member',
-          agentSpecialistId: specialistId,
-          senderName: agentLabel,
-          timestamp: new Date(now.getTime() + 1),
-          text: fallbackReply,
-        },
       ]);
 
-      // 2. Ask the shared platform agent on the server to refine/expand the draft sections
       setIsAgentTyping(true);
+      let llmHandled = false;
       try {
         const token = await getAccessToken?.().catch(() => null);
-        if (!token) return;
-        const response = await fetch(
-          `/api/v1/spaces/${encodeURIComponent(spaceSlug)}/quests/draft-assist`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              message: trimmed,
-              currentStep,
-              spaceTitle: space?.title,
-              draft: {
-                name: afterLocal.name,
-                goal: afterLocal.goal,
-                scopeIn: afterLocal.scopeIn,
-                scopeOut: afterLocal.scopeOut,
-                successCriteria: afterLocal.successCriteria,
-                targetDate: afterLocal.targetDate,
-                leadName: afterLocal.leadName,
-                rewards: afterLocal.rewards,
-                milestones: afterLocal.milestones.map((m) => ({
-                  name: m.name,
-                  dueDate: m.dueDate,
-                  description: m.description,
-                  ownerName: m.ownerName,
-                })),
-                members: afterLocal.members.map((m) => ({
-                  memberName: m.memberName,
-                  roleLabel: m.roleLabel,
-                  responsibilities: m.responsibilities,
-                })),
+        if (token) {
+          const response = await fetch(
+            `/api/v1/spaces/${encodeURIComponent(
+              spaceSlug,
+            )}/quests/draft-assist`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
               },
-              spaceMembers: spaceMembers.slice(0, 60).map((m) => ({
-                personId: m.personId,
-                name: m.name,
-              })),
-              history: chatMessages.slice(-8).map((m) => ({
-                role: m.role === 'user' ? 'user' : 'assistant',
-                text: m.text,
-              })),
-            }),
-          },
-        );
-        if (!response.ok) return;
-        const data = (await response.json()) as {
-          ok?: boolean;
-          patch?: QuestDraftPatchInput | null;
-          reply?: string | null;
-          specialistId?: string;
-        };
-        if (data.patch && Object.keys(data.patch).length > 0) {
-          const { next: afterAi } = applyPatchToQuestDraftState({
-            current: afterLocal,
-            patch: data.patch,
+              body: JSON.stringify({
+                message: trimmed,
+                currentStep,
+                spaceTitle: space?.title,
+                draft: {
+                  name: currentSnapshot.name,
+                  goal: currentSnapshot.goal,
+                  scopeIn: currentSnapshot.scopeIn,
+                  scopeOut: currentSnapshot.scopeOut,
+                  successCriteria: currentSnapshot.successCriteria,
+                  targetDate: currentSnapshot.targetDate,
+                  leadName: currentSnapshot.leadName,
+                  rewards: currentSnapshot.rewards,
+                  milestones: currentSnapshot.milestones.map((m) => ({
+                    name: m.name,
+                    dueDate: m.dueDate,
+                    description: m.description,
+                    ownerName: m.ownerName,
+                  })),
+                  members: currentSnapshot.members.map((m) => ({
+                    memberName: m.memberName,
+                    roleLabel: m.roleLabel,
+                    responsibilities: m.responsibilities,
+                  })),
+                },
+                spaceMembers: spaceMembers.slice(0, 60).map((m) => ({
+                  personId: m.personId,
+                  name: m.name,
+                })),
+                history: chatMessages.slice(-8).map((m) => ({
+                  role: m.role === 'user' ? 'user' : 'assistant',
+                  text: m.text,
+                })),
+              }),
+            },
+          );
+          if (response.ok) {
+            const data = (await response.json()) as {
+              ok?: boolean;
+              patch?: QuestDraftPatchInput | null;
+              reply?: string | null;
+              specialistId?: string;
+            };
+            const hasAiPatch = Boolean(
+              data.patch && Object.keys(data.patch).length > 0,
+            );
+            if (hasAiPatch || data.reply?.trim()) {
+              llmHandled = true;
+              const localFallbackPatch = buildLocalQuestDraftPatch({
+                message: trimmed,
+                currentStep,
+                draft: currentSnapshot,
+                viewerDisplayName,
+              });
+              const effectivePatch: QuestDraftPatchInput = hasAiPatch
+                ? data.patch!
+                : localFallbackPatch;
+              const { next: afterAi, updatedLabels } =
+                applyPatchToQuestDraftState({
+                  current: currentSnapshot,
+                  patch: effectivePatch,
+                  spaceMembers,
+                  viewerDisplayName,
+                });
+              commitDraftSnapshot(afterAi);
+
+              const aiNextUnfilled = findNextUnfilledQuestStep(
+                afterAi,
+                currentStep,
+              );
+              const nextStep: QuestStewardStep = aiNextUnfilled ?? 'name';
+              setStewardStepIndex(
+                Math.max(0, QUEST_STEWARD_STEPS.indexOf(nextStep)),
+              );
+              setActiveSection(nextStep);
+
+              const replyText =
+                data.reply?.trim() ||
+                (aiNextUnfilled
+                  ? updatedLabels.length > 0
+                    ? `Updated ${updatedLabels.join(
+                        ', ',
+                      )} in your quest draft. ${stewardQuestionForStep(
+                        aiNextUnfilled,
+                      )}`
+                    : stewardQuestionForStep(aiNextUnfilled)
+                  : "Your quest draft is ready. Click CREATE QUEST whenever you're ready to submit it as a proposal for voting.");
+
+              setChatMessages((prev) => [
+                ...prev,
+                {
+                  id: `s-${Date.now()}`,
+                  role: 'member',
+                  agentSpecialistId: data.specialistId ?? specialistId,
+                  senderName: agentLabel,
+                  timestamp: new Date(),
+                  text: replyText,
+                },
+              ]);
+            }
+          }
+        }
+      } catch {
+        // Fall through to deterministic local draft assistant when offline
+      } finally {
+        setIsAgentTyping(false);
+      }
+
+      if (!llmHandled) {
+        const localPatch = buildLocalQuestDraftPatch({
+          message: trimmed,
+          currentStep,
+          draft: currentSnapshot,
+          viewerDisplayName,
+        });
+        const { next: afterLocal, updatedLabels: localUpdated } =
+          applyPatchToQuestDraftState({
+            current: currentSnapshot,
+            patch: localPatch,
             spaceMembers,
             viewerDisplayName,
           });
-          commitDraftSnapshot(afterAi);
-          const aiNextUnfilled = findNextUnfilledQuestStep(
-            afterAi,
-            currentStep,
-          );
-          if (aiNextUnfilled) {
-            setStewardStepIndex(
-              Math.max(0, QUEST_STEWARD_STEPS.indexOf(aiNextUnfilled)),
-            );
-            setActiveSection(aiNextUnfilled);
-          }
-        }
-        if (data.reply?.trim()) {
-          setChatMessages((prev) =>
-            prev.map((m) =>
-              m.id === replyId
-                ? {
-                    ...m,
-                    text: data.reply!.trim(),
-                    agentSpecialistId: data.specialistId ?? m.agentSpecialistId,
-                  }
-                : m,
-            ),
-          );
-        }
-      } catch {
-        // Keep the immediate local draft update and reply when offline
-      } finally {
-        setIsAgentTyping(false);
+        commitDraftSnapshot(afterLocal);
+
+        const nextUnfilled = findNextUnfilledQuestStep(afterLocal, currentStep);
+        const nextStep: QuestStewardStep = nextUnfilled ?? 'name';
+        setStewardStepIndex(Math.max(0, QUEST_STEWARD_STEPS.indexOf(nextStep)));
+        setActiveSection(nextStep);
+
+        const fallbackReply = nextUnfilled
+          ? localUpdated.length > 1
+            ? `Updated ${localUpdated.join(
+                ', ',
+              )} in your quest draft. ${stewardQuestionForStep(nextUnfilled)}`
+            : stewardQuestionForStep(nextUnfilled)
+          : "Your quest draft is ready. Click CREATE QUEST whenever you're ready to submit it as a proposal for voting.";
+
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: `s-${Date.now()}`,
+            role: 'member',
+            agentSpecialistId: specialistId,
+            senderName: agentLabel,
+            timestamp: new Date(),
+            text: fallbackReply,
+          },
+        ]);
       }
     },
     [
@@ -913,7 +939,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                 <div
                   data-testid="draft-section-rewards"
                   className={cn(
-                    'flex w-full flex-col items-start gap-2 border p-3.5 transition-colors',
+                    'flex w-full flex-col items-start gap-2.5 border p-3.5 transition-colors',
                     activeSection === 'rewards'
                       ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
                       : 'border-border bg-background',
@@ -931,68 +957,12 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                     </button>
                   </div>
 
-                  <div className="w-full space-y-2">
-                    {rewards.map((row, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <Input
-                          value={row.amount}
-                          onChange={(e) => {
-                            const next = [...rewards];
-                            next[idx] = { ...row, amount: e.target.value };
-                            setRewards(next);
-                          }}
-                          placeholder="0"
-                          className="h-9 w-[180px] rounded-none bg-background-2 font-mono text-[13px]"
-                        />
-                        <select
-                          value={row.token}
-                          onChange={(e) => {
-                            const next = [...rewards];
-                            next[idx] = { ...row, token: e.target.value };
-                            setRewards(next);
-                          }}
-                          className="h-9 w-[120px] border border-border bg-background-2 px-2.5 text-xs font-semibold text-foreground"
-                        >
-                          {QUEST_DEFAULT_REWARD_TOKENS.map((tok) => (
-                            <option key={tok} value={tok}>
-                              {tok}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="flex-1" />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setRewards(rewards.filter((_, i) => i !== idx))
-                          }
-                          className="text-sm text-neutral-11 hover:text-foreground"
-                          aria-label={`Remove ${row.token}`}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setRewards([
-                        ...rewards,
-                        {
-                          amount: '',
-                          token:
-                            QUEST_DEFAULT_REWARD_TOKENS.find(
-                              (t) => !rewards.some((r) => r.token === t),
-                            ) ?? 'HYPHA',
-                        },
-                      ])
-                    }
-                    data-testid="add-reward-token-button"
-                    className="inline-flex h-8 items-center border border-border bg-background px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-foreground hover:bg-neutral-3"
-                  >
-                    + ADD TOKEN
-                  </button>
+                  <QuestRewardRowsEditor
+                    rows={rewards}
+                    onChange={setRewards}
+                    spaceSlug={spaceSlug}
+                    addTestId="add-reward-token-button"
+                  />
                 </div>
 
                 {/* MILESTONES */}
@@ -1234,6 +1204,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
           open={editingModal === 'rewards'}
           onOpenChange={(open) => !open && setEditingModal(null)}
           rewards={rewards}
+          spaceSlug={spaceSlug}
           onSave={setRewards}
         />
         <EditQuestMilestonesModal
