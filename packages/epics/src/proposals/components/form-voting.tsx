@@ -673,10 +673,17 @@ export const FormVoting = ({
           onResubmit={handleResubmit}
           isWithdrawing={isWithdrawing}
           hideResubmit={
-            getCreateRouteSegmentForProposalLabel(label) === 'issue-new-token'
+            getCreateRouteSegmentForProposalLabel(label) ===
+              'issue-new-token' || label === 'Quest'
           }
         />
       )}
+      {label === 'Quest' &&
+      !isVoteFinalized(executed, expired, proposalStatus) ? (
+        <p className="text-[10px] text-neutral-11">
+          Passing activates this Quest.
+        </p>
+      ) : null}
     </div>
   );
 };
