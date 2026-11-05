@@ -357,19 +357,14 @@ describe('space mutations web3SpaceId uniqueness', () => {
     ).rejects.toBeInstanceOf(Web3SpaceIdConflictError);
   });
 
-  it('maps a unique violation to the stored web3SpaceId when an update omits the field', async () => {
-    const { updateSpaceById, updateSpaceBySlug, updateSpaceConfigurationById } =
-      await loadMutations();
-    const baseDb = createInMemorySpaceDb([
-      {
-        id: 853,
-        title: 'Probe',
-        slug: 'zz-w3-probe-1220',
-        web3SpaceId: 240,
-      },
-    ]);
+  function dbThatViolatesWeb3SpaceIdUniqueIndex(
+    rows: Parameters<typeof createInMemorySpaceDb>[0],
+  ) {
+    const baseDb = createInMemorySpaceDb(rows);
     const uniqueViolation = Object.assign(
-      new Error('duplicate key value violates unique constraint'),
+      new Error(
+        'duplicate key value violates unique constraint "spaces_web3_space_id_unique"',
+      ),
       {
         code: '23505',
         constraint: SPACES_WEB3_SPACE_ID_UNIQUE_INDEX,
@@ -388,24 +383,61 @@ describe('space mutations web3SpaceId uniqueness', () => {
       }),
       transaction: async <T>(fn: (tx: typeof db) => Promise<T>) => fn(db),
     };
+    return db;
+  }
+
+  it('updateSpaceBySlug maps a spaces_web3_space_id_unique violation to Web3SpaceIdConflictError when web3SpaceId is omitted', async () => {
+    const { updateSpaceBySlug } = await loadMutations();
+    const db = dbThatViolatesWeb3SpaceIdUniqueIndex([
+      {
+        id: 853,
+        title: 'Probe',
+        slug: 'zz-w3-probe-1220',
+        web3SpaceId: 240,
+      },
+    ]);
 
     await expect(
       updateSpaceBySlug(
         { slug: 'zz-w3-probe-1220', title: 'Renamed probe' },
         { db: db as never },
       ),
-    ).rejects.toMatchObject({ web3SpaceId: 240, status: 409 });
+    ).rejects.toBeInstanceOf(Web3SpaceIdConflictError);
+  });
+
+  it('updateSpaceById maps a spaces_web3_space_id_unique violation to Web3SpaceIdConflictError when web3SpaceId is omitted', async () => {
+    const { updateSpaceById } = await loadMutations();
+    const db = dbThatViolatesWeb3SpaceIdUniqueIndex([
+      {
+        id: 853,
+        title: 'Probe',
+        slug: 'zz-w3-probe-1220',
+        web3SpaceId: 240,
+      },
+    ]);
 
     await expect(
       updateSpaceById({ id: 853, slug: 'renamed-probe' }, { db: db as never }),
-    ).rejects.toMatchObject({ web3SpaceId: 240, status: 409 });
+    ).rejects.toBeInstanceOf(Web3SpaceIdConflictError);
+  });
+
+  it('updateSpaceConfigurationById maps a spaces_web3_space_id_unique violation to Web3SpaceIdConflictError when web3SpaceId is omitted', async () => {
+    const { updateSpaceConfigurationById } = await loadMutations();
+    const db = dbThatViolatesWeb3SpaceIdUniqueIndex([
+      {
+        id: 853,
+        title: 'Probe',
+        slug: 'zz-w3-probe-1220',
+        web3SpaceId: 240,
+      },
+    ]);
 
     await expect(
       updateSpaceConfigurationById(
         { id: 853, slug: 'renamed-probe' },
         { db: db as never },
       ),
-    ).rejects.toMatchObject({ web3SpaceId: 240, status: 409 });
+    ).rejects.toBeInstanceOf(Web3SpaceIdConflictError);
   });
 
   it('keeps an explicit null web3SpaceId as an unbind when a unique violation fires', async () => {

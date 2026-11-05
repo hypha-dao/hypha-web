@@ -179,9 +179,9 @@ export const updateSpaceBySlug = async (
     .where(eq(spaces.slug, slug))
     .limit(1);
   const effectiveWeb3SpaceId =
-    spaceFields.web3SpaceId === undefined
-      ? currentSpace?.web3SpaceId
-      : spaceFields.web3SpaceId;
+    spaceFields.web3SpaceId !== undefined
+      ? spaceFields.web3SpaceId
+      : currentSpace?.web3SpaceId;
 
   let updatedSpace: typeof spaces.$inferSelect | undefined;
   try {
@@ -239,9 +239,9 @@ export const updateSpaceById = async (
     } catch (error) {
       rethrowIfWeb3SpaceIdUniqueViolation(
         error,
-        spaceFields.web3SpaceId === undefined
-          ? originalSpace.web3SpaceId
-          : spaceFields.web3SpaceId,
+        spaceFields.web3SpaceId !== undefined
+          ? spaceFields.web3SpaceId
+          : originalSpace.web3SpaceId,
       );
     }
 
