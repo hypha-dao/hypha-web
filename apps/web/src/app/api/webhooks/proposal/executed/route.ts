@@ -1,5 +1,6 @@
 import {
   Alchemy,
+  activateSpaceQuestByDocumentId,
   linkDeployedTokenForProposal,
   ratifySpaceContextSectionsByDocumentId,
 } from '@hypha-platform/core/server';
@@ -104,6 +105,26 @@ export const POST = proposalExecutedSigningKey
               'Failed to ratify Space Context sections for proposal:',
               reason,
             ),
+          );
+
+        const questUpdates = events.map(async (event) => {
+          const proposalId = toSafeProposalId(event.args.proposalId);
+          if (proposalId === undefined) return;
+          const activated = await activateSpaceQuestByDocumentId(
+            { web3ProposalId: proposalId },
+            { db },
+          );
+          if (activated > 0) {
+            console.info(
+              `Activated ${activated} Quest(s) for proposal ${proposalId}.`,
+            );
+          }
+        });
+
+        (await Promise.allSettled(questUpdates))
+          .filter((res) => res.status === 'rejected')
+          .forEach(({ reason }) =>
+            console.error('Failed to activate Quest for proposal:', reason),
           );
       },
     )

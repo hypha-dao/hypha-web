@@ -14,6 +14,7 @@ export * from './schedule';
 export * from './pipeline/client';
 export * from './pipeline';
 export * from './space-context';
+export * from './space-quests';
 export * from './geo';
 export * from './geo/client';
 export * from './org-memory';
