@@ -3578,7 +3578,8 @@
       "toVote": "{duration} за гласање",
       "youVoted": "Гласаше {vote}",
       "voteValueYes": "за",
-      "voteValueNo": "против"
+      "voteValueNo": "против",
+      "questActivationNote": "Со усвојување се активира оваа мисија."
     },
     "withdrawResubmit": {
       "title": "Да го повлечеш твојот предлог или да го уредиш и поднесеш повторно?",

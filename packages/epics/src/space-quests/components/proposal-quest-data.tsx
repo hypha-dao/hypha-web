@@ -39,12 +39,10 @@ function buildFallbackPayloadFromTitleAndText(
 export function ProposalQuestOverviewLink({
   spaceSlug,
   documentId,
-  title,
   content,
 }: {
   spaceSlug: string;
   documentId?: number;
-  title?: string;
   content?: string;
 }) {
   const locale = useLocale();
@@ -60,27 +58,20 @@ export function ProposalQuestOverviewLink({
       const byDoc = quests.find((q) => q.proposalDocumentId === documentId);
       if (byDoc) return byDoc;
     }
+    // The embedded slug only counts while that quest is not linked elsewhere.
     if (parsed?.questSlug) {
-      const bySlug = quests.find((q) => q.slug === parsed.questSlug);
+      const bySlug = quests.find(
+        (q) => q.slug === parsed.questSlug && q.proposalDocumentId == null,
+      );
       if (bySlug) return bySlug;
     }
-    if (title) {
-      const cleanTitle = title.trim().toLowerCase();
-      const byName = quests.find(
-        (q) => q.name.trim().toLowerCase() === cleanTitle,
-      );
-      if (byName) return byName;
-    }
     return null;
-  }, [documentId, overview?.quests, parsed?.questSlug, title]);
+  }, [documentId, overview?.quests, parsed?.questSlug]);
 
-  const targetSlug =
-    matchedQuest?.slug ??
-    parsed?.questSlug ??
-    slugifyQuestName(title || 'quest');
+  if (!matchedQuest) return null;
 
   const overviewHref = `/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
-    targetSlug,
+    matchedQuest.slug,
   )}`;
 
   return (
@@ -112,62 +103,23 @@ export function ProposalQuestOverviewLink({
  * Hard Rule #5: No Why propose; no Proposal details footer; structured body is full content.
  */
 export function ProposalQuestData({
-  spaceSlug,
-  documentId,
   title,
   content,
 }: {
-  spaceSlug: string;
-  documentId?: number;
   title?: string;
   content?: string;
 }) {
-  const { overview } = useSpaceQuests(spaceSlug);
   const parsed = useMemo(
     () => parseQuestProposalFromDescription(content),
     [content],
   );
 
-  const payload = useMemo((): EmbeddedQuestProposalPayload => {
-    if (parsed) return parsed;
-    const quests = overview?.quests ?? [];
-    const matched =
-      (documentId != null
-        ? quests.find((q) => q.proposalDocumentId === documentId)
-        : undefined) ??
-      (title
-        ? quests.find(
-            (q) => q.name.trim().toLowerCase() === title.trim().toLowerCase(),
-          )
-        : undefined);
-    if (matched) {
-      return {
-        questSlug: matched.slug,
-        name: matched.name,
-        goal: matched.goal,
-        scopeIn: matched.scopeIn,
-        scopeOut: matched.scopeOut,
-        successCriteria: matched.successCriteria,
-        rewards: matched.rewards,
-        targetDate: matched.targetDate,
-        leadName: matched.leadName,
-        milestones: matched.milestones.map((m) => ({
-          order: m.order,
-          name: m.name,
-          description: m.description,
-          dueDate: m.dueDate,
-          ownerName: m.ownerName,
-        })),
-        members: matched.members.map((m) => ({
-          memberName: m.memberName,
-          roleLabel: m.roleLabel,
-          isLead: m.isLead,
-          responsibilities: m.responsibilities,
-        })),
-      };
-    }
-    return buildFallbackPayloadFromTitleAndText(title, content);
-  }, [content, documentId, overview?.quests, parsed, title]);
+  // Voters see the submitted document only, never the live quest record.
+  const payload = useMemo(
+    (): EmbeddedQuestProposalPayload =>
+      parsed ?? buildFallbackPayloadFromTitleAndText(title, content),
+    [content, parsed, title],
+  );
 
   const [expandedMemberIdx, setExpandedMemberIdx] = useState<number | null>(0);
   const successLines = splitMarkdownLinesToBullets(payload.successCriteria);

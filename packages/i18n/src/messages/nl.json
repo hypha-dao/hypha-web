@@ -3598,7 +3598,8 @@
       "toVote": "{duration} om te stemmen",
       "youVoted": "Je hebt op {vote} gestemd",
       "voteValueYes": "Ja",
-      "voteValueNo": "Nee"
+      "voteValueNo": "Nee",
+      "questActivationNote": "Bij goedkeuring wordt deze Quest geactiveerd."
     },
     "withdrawResubmit": {
       "title": "Uw voorstel intrekken of bewerken en opnieuw indienen?",

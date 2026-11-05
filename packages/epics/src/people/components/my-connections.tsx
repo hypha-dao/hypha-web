@@ -1550,6 +1550,7 @@ const INBOX_CHANNEL_TYPES = new Set<string>([
   HYPHA_ROOM_TYPES.signal,
   HYPHA_ROOM_TYPES.proposal,
   HYPHA_ROOM_TYPES.context,
+  HYPHA_ROOM_TYPES.quest,
   HYPHA_ROOM_TYPES.ecosystem,
   HYPHA_ROOM_TYPES.network,
 ]);

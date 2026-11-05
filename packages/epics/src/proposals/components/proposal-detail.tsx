@@ -1289,7 +1289,6 @@ export const ProposalDetail = ({
         <ProposalQuestOverviewLink
           spaceSlug={spaceSlug}
           documentId={documentId}
-          title={title}
           content={content}
         />
       ) : null}
@@ -1320,12 +1319,7 @@ export const ProposalDetail = ({
         web3SpaceId={proposalDetails?.spaceId}
       />
       {isQuestProposal ? (
-        <ProposalQuestData
-          spaceSlug={spaceSlug}
-          documentId={documentId}
-          title={title}
-          content={content}
-        />
+        <ProposalQuestData title={title} content={content} />
       ) : (
         <>
           {descriptionMarkdown}

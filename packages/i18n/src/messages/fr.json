@@ -3024,7 +3024,8 @@
       "toVote": "{duration} pour voter",
       "youVoted": "Vous avez voté {vote}",
       "voteValueYes": "Oui",
-      "voteValueNo": "Non"
+      "voteValueNo": "Non",
+      "questActivationNote": "Son adoption active cette quête."
     },
     "withdrawResubmit": {
       "title": "Retirer votre proposition ou la modifier et la soumettre à nouveau ?",

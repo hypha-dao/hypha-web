@@ -33,7 +33,10 @@ import { useConfig } from 'wagmi';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import {
   createSpaceQuestRequest,
+  deleteSpaceQuestRequest,
+  findQuestSpaceMemberId,
   patchSpaceQuestRequest,
+  useQuestSpaceMembers,
 } from '../hooks/use-space-quests';
 import {
   EditQuestGoalModal,
@@ -90,13 +93,12 @@ function stewardQuestionForStep(step: QuestStewardStep): string {
   }
 }
 
-export function SpaceQuestCreateDraft({
-  spaceSlug,
-  spaceMemberNames = [],
-}: {
-  spaceSlug: string;
-  spaceMemberNames?: string[];
-}) {
+export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
+  const spaceMembers = useQuestSpaceMembers(spaceSlug);
+  const spaceMemberNames = useMemo(
+    () => spaceMembers.map((m) => m.name),
+    [spaceMembers],
+  );
   const locale = useLocale();
   const tAgreementFlow = useTranslations('AgreementFlow');
   const router = useRouter();
@@ -278,6 +280,12 @@ export function SpaceQuestCreateDraft({
     setConfirmOpen(false);
 
     try {
+      const cleanLeadName =
+        leadName.replace(/\s*\(you\)\s*/i, '').trim() || viewerDisplayName;
+      const leadPersonId =
+        cleanLeadName === viewerDisplayName
+          ? person?.id ?? null
+          : findQuestSpaceMemberId(spaceMembers, cleanLeadName);
       const draftPayload: QuestDraftInput = {
         name: name.trim() || 'Untitled quest',
         goal: goal.trim(),
@@ -290,9 +298,8 @@ export function SpaceQuestCreateDraft({
           (r) => r.amount.trim().length > 0 && r.token.trim().length > 0,
         ),
         targetDate,
-        leadPersonId: person?.id ?? null,
-        leadName:
-          leadName.replace(/\s*\(you\)\s*/i, '').trim() || viewerDisplayName,
+        leadPersonId,
+        leadName: cleanLeadName,
         milestones: milestones.map((m) => ({
           name: m.name,
           description: m.description,
@@ -302,15 +309,14 @@ export function SpaceQuestCreateDraft({
         })),
         members: [
           {
-            personId: person?.id ?? null,
-            memberName:
-              leadName.replace(/\s*\(you\)\s*/i, '').trim() ||
-              viewerDisplayName,
+            personId: leadPersonId,
+            memberName: cleanLeadName,
             roleLabel: 'Lead',
             responsibilities: ['Overall delivery', 'Unblock reviews'],
           },
           ...members.map((m) => ({
-            personId: m.personId ?? null,
+            personId:
+              m.personId ?? findQuestSpaceMemberId(spaceMembers, m.memberName),
             memberName: m.memberName,
             roleLabel: m.roleLabel ?? 'Member',
             responsibilities: m.responsibilities,
@@ -318,44 +324,51 @@ export function SpaceQuestCreateDraft({
         ],
       };
 
-      // 1. Create the Quest row in `proposed` status (not Active yet)
-      let createdQuestSlug: string | undefined;
-      try {
-        const createdQuest = await createSpaceQuestRequest({
-          spaceSlug,
-          body: {
-            name: draftPayload.name,
-            goal: draftPayload.goal,
-            scopeIn: draftPayload.scopeIn,
-            scopeOut: draftPayload.scopeOut,
-            scopeInMarkdown: draftPayload.scopeInMarkdown,
-            scopeOutMarkdown: draftPayload.scopeOutMarkdown,
-            successCriteria: draftPayload.successCriteria,
-            rewards: draftPayload.rewards,
-            targetDate: draftPayload.targetDate,
-            leadPersonId: draftPayload.leadPersonId ?? null,
-            leadName: draftPayload.leadName,
-            status: 'proposed',
-            milestones: draftPayload.milestones.map((m) => ({
-              name: m.name,
-              description: m.description,
-              dueDate: m.dueDate,
-              ownerName: m.ownerName,
-              status: m.status ?? 'not_started',
-            })),
-            members: draftPayload.members.map((m) => ({
-              personId: m.personId ?? null,
-              memberName: m.memberName,
-              roleLabel: m.roleLabel ?? 'Member',
-              responsibilities: m.responsibilities,
-            })),
-          },
-          getAccessToken,
-        });
-        createdQuestSlug = createdQuest.slug;
-      } catch {
-        // Fallback if unauthenticated in preview mode
+      // The quest slug is unknown until create; reserve room for the longest one.
+      const descriptionLimit = 4000;
+      if (
+        buildQuestProposalDescription(draftPayload, 'q'.repeat(52)).length >
+        descriptionLimit
+      ) {
+        setSubmitError(
+          'This quest is too long to submit as a proposal. Shorten the goal, scope, milestones or members and try again.',
+        );
+        return;
       }
+
+      // 1. Create the Quest row in `proposed` status (not Active yet)
+      const createdQuest = await createSpaceQuestRequest({
+        spaceSlug,
+        body: {
+          name: draftPayload.name,
+          goal: draftPayload.goal,
+          scopeIn: draftPayload.scopeIn,
+          scopeOut: draftPayload.scopeOut,
+          scopeInMarkdown: draftPayload.scopeInMarkdown,
+          scopeOutMarkdown: draftPayload.scopeOutMarkdown,
+          successCriteria: draftPayload.successCriteria,
+          rewards: draftPayload.rewards,
+          targetDate: draftPayload.targetDate,
+          leadPersonId: draftPayload.leadPersonId ?? null,
+          leadName: draftPayload.leadName,
+          status: 'proposed',
+          milestones: draftPayload.milestones.map((m) => ({
+            name: m.name,
+            description: m.description,
+            dueDate: m.dueDate,
+            ownerName: m.ownerName,
+            status: m.status ?? 'not_started',
+          })),
+          members: draftPayload.members.map((m) => ({
+            personId: m.personId ?? null,
+            memberName: m.memberName,
+            roleLabel: m.roleLabel ?? 'Member',
+            responsibilities: m.responsibilities,
+          })),
+        },
+        getAccessToken,
+      });
+      const createdQuestSlug = createdQuest.slug;
 
       // 2. Submit as an Agreements proposal with label="Quest" when wallet/auth is ready
       const description = buildQuestProposalDescription(
@@ -364,8 +377,9 @@ export function SpaceQuestCreateDraft({
       );
 
       if (jwt && space?.id && person?.id) {
+        let createdAgreement: Awaited<ReturnType<typeof createAgreement>>;
         try {
-          const createdAgreement = await createAgreement({
+          createdAgreement = await createAgreement({
             title: draftPayload.name.slice(0, 50),
             description,
             label: QUEST_DOCUMENT_LABEL,
@@ -375,39 +389,40 @@ export function SpaceQuestCreateDraft({
               ? { web3SpaceId: space.web3SpaceId }
               : {}),
           });
+        } catch (agreementErr) {
+          // A proposed quest without a proposal can never be activated.
+          await deleteSpaceQuestRequest({
+            spaceSlug,
+            questSlug: createdQuestSlug,
+            getAccessToken,
+          }).catch(() => undefined);
+          throw agreementErr;
+        }
 
-          if (createdAgreement?.id && createdQuestSlug) {
-            await patchSpaceQuestRequest({
-              spaceSlug,
-              questSlug: createdQuestSlug,
-              patch: { proposalDocumentId: createdAgreement.id },
-              getAccessToken,
-            }).catch(() => undefined);
-          }
+        if (createdAgreement?.id) {
+          await patchSpaceQuestRequest({
+            spaceSlug,
+            questSlug: createdQuestSlug,
+            patch: { proposalDocumentId: createdAgreement.id },
+            getAccessToken,
+          }).catch(() => undefined);
+        }
 
-          if (createdAgreement?.slug) {
-            router.push(
-              `/${locale}/dho/${spaceSlug}/agreements/proposal/${encodeURIComponent(
-                createdAgreement.slug,
-              )}`,
-            );
-            return;
-          }
-        } catch (chainErr) {
-          console.warn('[QuestCreate] On-chain proposal fallback:', chainErr);
+        if (createdAgreement?.slug) {
+          router.push(
+            `/${locale}/dho/${spaceSlug}/agreements/proposal/${encodeURIComponent(
+              createdAgreement.slug,
+            )}`,
+          );
+          return;
         }
       }
 
-      // Navigate to the Quest proposal preview / overview if chain wallet wasn't connected
-      if (createdQuestSlug) {
-        router.push(
-          `/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
-            createdQuestSlug,
-          )}`,
-        );
-      } else {
-        router.push(`/${locale}/dho/${spaceSlug}/quests`);
-      }
+      router.push(
+        `/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
+          createdQuestSlug,
+        )}`,
+      );
     } catch (err) {
       setSubmitError(
         err instanceof Error ? err.message : 'Failed to create quest proposal.',

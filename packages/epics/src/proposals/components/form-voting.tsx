@@ -681,7 +681,7 @@ export const FormVoting = ({
       {label === 'Quest' &&
       !isVoteFinalized(executed, expired, proposalStatus) ? (
         <p className="text-[10px] text-neutral-11">
-          Passing activates this Quest.
+          {tProposalDetails('voting.questActivationNote')}
         </p>
       ) : null}
     </div>

@@ -3596,7 +3596,8 @@
       "toVote": "{duration} zum Abstimmen",
       "youVoted": "Du hast {vote} abgestimmt",
       "voteValueYes": "Ja",
-      "voteValueNo": "Nein"
+      "voteValueNo": "Nein",
+      "questActivationNote": "Wird der Vorschlag angenommen, wird diese Quest aktiviert."
     },
     "withdrawResubmit": {
       "title": "Vorschlag zurückziehen oder bearbeiten und erneut einreichen?",

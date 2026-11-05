@@ -5,7 +5,6 @@ import {
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { notFound } from 'next/navigation';
-import { getSpaceMemberNames } from '../../_space-member-names';
 
 type PageProps = {
   params: Promise<{
@@ -21,7 +20,6 @@ export default async function QuestTabPage(props: PageProps) {
   if (!isSpaceQuestDetailTab(questTab)) {
     return notFound();
   }
-  const spaceMemberNames = await getSpaceMemberNames(id);
 
   return (
     <SpaceTabAccessWrapper spaceSlug={id}>
@@ -30,7 +28,6 @@ export default async function QuestTabPage(props: PageProps) {
           spaceSlug={id}
           questSlug={decodeURIComponent(questSlug)}
           tab={questTab}
-          spaceMemberNames={spaceMemberNames}
         />
       </div>
     </SpaceTabAccessWrapper>

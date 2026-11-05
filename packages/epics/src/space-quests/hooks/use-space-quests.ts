@@ -113,6 +113,54 @@ export function useSpaceQuestDetail(
   };
 }
 
+export type QuestSpaceMember = { personId: number; name: string };
+
+/** Space roster for quest pickers, read through the access-checked members API. */
+export function useQuestSpaceMembers(spaceSlug: string | undefined) {
+  const { getAccessToken, user, isLoading: authLoading } = useAuthentication();
+  const viewerKey = authLoading ? null : user?.id ?? 'anonymous';
+
+  const { data } = useSWR(
+    spaceSlug && viewerKey
+      ? [SPACE_QUESTS_SWR_KEY, spaceSlug, 'members', viewerKey]
+      : null,
+    async ([, slug]) => {
+      const headers = await authHeaders(getAccessToken);
+      const response = await fetch(
+        `/api/v1/spaces/${slug}/members?page=1&pageSize=200`,
+        { headers },
+      );
+      if (!response.ok) return [];
+      const body = (await response.json()) as {
+        persons?: {
+          data?: Array<{ id: number; name?: string; surname?: string }>;
+        };
+      };
+      const seen = new Set<string>();
+      return (body.persons?.data ?? []).flatMap((person) => {
+        const name = [person.name, person.surname]
+          .filter(Boolean)
+          .join(' ')
+          .trim();
+        if (!name || seen.has(name)) return [];
+        seen.add(name);
+        return [{ personId: person.id, name }];
+      });
+    },
+    { revalidateOnFocus: false },
+  );
+
+  return data ?? [];
+}
+
+export function findQuestSpaceMemberId(
+  members: readonly QuestSpaceMember[],
+  name: string,
+): number | null {
+  const clean = name.trim().toLowerCase();
+  return members.find((m) => m.name.toLowerCase() === clean)?.personId ?? null;
+}
+
 export class SpaceQuestRequestError extends Error {
   constructor(
     message: string,

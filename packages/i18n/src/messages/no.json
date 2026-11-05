@@ -3597,7 +3597,8 @@
       "toVote": "{duration} til å stemme",
       "youVoted": "Du stemte {vote}",
       "voteValueYes": "ja",
-      "voteValueNo": "nei"
+      "voteValueNo": "nei",
+      "questActivationNote": "Ved godkjenning aktiveres dette oppdraget."
     },
     "withdrawResubmit": {
       "title": "Vil du trekke tilbake forslaget ditt, eller redigere og sende inn på nytt?",

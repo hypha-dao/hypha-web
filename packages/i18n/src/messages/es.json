@@ -3038,7 +3038,8 @@
       "toVote": "{duration} para votar",
       "youVoted": "Votaste {vote}",
       "voteValueYes": "Sí",
-      "voteValueNo": "No"
+      "voteValueNo": "No",
+      "questActivationNote": "Si se aprueba, esta misión se activa."
     },
     "withdrawResubmit": {
       "title": "¿Retirar tu propuesta o editarla y enviarla de nuevo?",

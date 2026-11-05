@@ -3626,7 +3626,8 @@
       "toVote": "{duration} to Vote",
       "youVoted": "You voted {vote}",
       "voteValueYes": "yes",
-      "voteValueNo": "no"
+      "voteValueNo": "no",
+      "questActivationNote": "Passing activates this Quest."
     },
     "withdrawResubmit": {
       "title": "Withdraw your proposal or edit and submit again?",

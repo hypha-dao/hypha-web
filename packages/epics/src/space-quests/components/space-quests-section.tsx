@@ -338,19 +338,21 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
           </p>
         </div>
 
-        <Button
-          asChild
-          className="h-9 shrink-0 rounded-none bg-foreground px-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-background hover:bg-foreground/90"
-          data-testid="new-quest-button"
-        >
-          <Link href={newQuestHref}>
-            <span className="hidden items-center gap-1.5 sm:inline-flex">
-              <Sparkles className="size-3.5" aria-hidden />
-              {t('newQuest')}
-            </span>
-            <span className="sm:hidden">+ NEW</span>
-          </Link>
-        </Button>
+        {canMutate ? (
+          <Button
+            asChild
+            className="h-9 shrink-0 rounded-none bg-foreground px-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-background hover:bg-foreground/90"
+            data-testid="new-quest-button"
+          >
+            <Link href={newQuestHref}>
+              <span className="hidden items-center gap-1.5 sm:inline-flex">
+                <Sparkles className="size-3.5" aria-hidden />
+                {t('newQuest')}
+              </span>
+              <span className="sm:hidden">+ NEW</span>
+            </Link>
+          </Button>
+        ) : null}
       </header>
 
       {/* Search bar */}

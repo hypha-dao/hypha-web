@@ -878,7 +878,7 @@ export function EditQuestMembersModal({
     }
   }, [members, open]);
 
-  const candidateNames = Array.from(new Set([...spaceMemberNames, 'Ben O.']));
+  const candidateNames = Array.from(new Set(spaceMemberNames));
 
   const handleAddMemberToQuest = () => {
     const cleanName = newPersonName.trim();

@@ -38,8 +38,10 @@ import { useMemo, useState, type ReactNode } from 'react';
 import type { z } from 'zod';
 import {
   deleteSpaceQuestRequest,
+  findQuestSpaceMemberId,
   patchSpaceQuestRequest,
   postSpaceQuestUpdateRequest,
+  useQuestSpaceMembers,
   useSpaceQuestDetail,
 } from '../hooks/use-space-quests';
 import {
@@ -592,7 +594,9 @@ function OverviewTab({
               {quest.health.updatesThisWeek === 1 ? 'update' : 'updates'} this
               week
               {quest.health.daysToTarget != null
-                ? ` · ${quest.health.daysToTarget} days to target`
+                ? quest.health.daysToTarget < 0
+                  ? ` · ${-quest.health.daysToTarget} days past target`
+                  : ` · ${quest.health.daysToTarget} days to target`
                 : ''}
             </p>
             {quest.health.summary ? (
@@ -715,7 +719,7 @@ function UpdatesTab({
     text: string;
     milestoneOrder: number | null;
     linkUrl: string;
-  }) => Promise<void>;
+  }) => Promise<boolean>;
   posting: boolean;
 }) {
   const [authorFilter, setAuthorFilter] = useState<string | null>(null);
@@ -750,11 +754,12 @@ function UpdatesTab({
 
   const submit = async () => {
     if (!text.trim()) return;
-    await onPost({
+    const posted = await onPost({
       text: text.trim(),
       milestoneOrder,
       linkUrl: linkUrl.trim(),
     });
+    if (!posted) return;
     setText('');
     setLinkUrl('');
     setMilestoneOrder(null);
@@ -1144,12 +1149,10 @@ export function SpaceQuestDetail({
   spaceSlug,
   questSlug,
   tab = 'overview',
-  spaceMemberNames = [],
 }: {
   spaceSlug: string;
   questSlug: string;
   tab?: SpaceQuestDetailTab;
-  spaceMemberNames?: string[];
 }) {
   const locale = useLocale();
   const router = useRouter();
@@ -1159,6 +1162,7 @@ export function SpaceQuestDetail({
     spaceSlug,
     questSlug,
   );
+  const spaceMembers = useQuestSpaceMembers(spaceSlug);
   const [editingModal, setEditingModal] = useState<EditingModal>(null);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -1219,7 +1223,7 @@ export function SpaceQuestDetail({
   const health = healthBadgeMeta(quest.health.state);
   const memberOptions = Array.from(
     new Set([
-      ...spaceMemberNames,
+      ...spaceMembers.map((m) => m.name),
       ...quest.members.map((m) => m.memberName),
       quest.leadName,
     ]),
@@ -1277,10 +1281,12 @@ export function SpaceQuestDetail({
         getAccessToken,
       });
       await refresh(updated, { revalidate: false });
+      return true;
     } catch (err) {
       setActionError(
         err instanceof Error ? err.message : 'Failed to post update',
       );
+      return false;
     } finally {
       setSaving(false);
     }
@@ -1541,7 +1547,9 @@ export function SpaceQuestDetail({
           void savePatch({
             members: next.map((m) => ({
               id: m.id,
-              personId: m.personId ?? null,
+              personId:
+                m.personId ??
+                findQuestSpaceMemberId(spaceMembers, m.memberName),
               memberName: m.memberName,
               memberAvatarUrl: m.memberAvatarUrl ?? null,
               roleLabel: m.roleLabel ?? null,
@@ -1578,7 +1586,8 @@ export function SpaceQuestDetail({
           const match = quest.members.find((m) => m.memberName === leadName);
           void savePatch({
             leadName,
-            leadPersonId: match?.personId ?? null,
+            leadPersonId:
+              match?.personId ?? findQuestSpaceMemberId(spaceMembers, leadName),
           });
         }}
       />
