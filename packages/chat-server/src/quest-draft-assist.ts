@@ -271,7 +271,8 @@ What you know about good Quest definitions (same rigor as Hypha Space Context sp
 - **Milestones**: 2–4 ordered checkpoints (M1, M2, M3…). Each milestone needs a specific \`name\`, a concrete \`dueDate\` (when dates are not named by the member, propose dates leading up to the current quarter end ${quarterEndIso}), a clear \`description\` of what ships, and an \`ownerName\` (use a real name from the space member roster when known; never invent fake placeholder names).
 - **Members & Lead**: Match member names from the space roster (${
     memberNamesPreview || 'none listed'
-  }) and give each member 1–3 concrete outcome-oriented \`responsibilities\`.
+  }) and give each member 1–3 concrete outcome-oriented \`responsibilities\`. Do not add a second Lead row, and do not invent duties such as "Overall delivery" or "Unblock reviews".
+- **Length**: The published proposal, including every section, must stay under 4000 characters. Keep bullets short. Prefer 3 milestones and at most 2 responsibilities per member when drafting a full quest.
 - **Quest Reward (rewards)**: Array of \`{ amount, token }\` (e.g. \`[{ amount: "2,500", token: "USDC" }, { amount: "0.4", token: "ETH" }]\`).
 ${
   sandbox

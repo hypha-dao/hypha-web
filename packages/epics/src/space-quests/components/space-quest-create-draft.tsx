@@ -3,9 +3,12 @@
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   QUEST_DOCUMENT_LABEL,
+  QUEST_PROPOSAL_DESCRIPTION_LIMIT,
   QUEST_STEWARD_STEPS,
   buildQuestProposalDescription,
+  questRecordToProposalDraft,
   selectSpecialistForQuestion,
+  withoutPlaceholderLeadDuplicates,
   specialistById,
   splitMarkdownLinesToBullets,
   useCreateAgreementOrchestrator,
@@ -86,36 +89,30 @@ function questPageHref(locale: string, spaceSlug: string, questSlug: string) {
   return `/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(questSlug)}`;
 }
 
-async function waitForProposalOnVoting(
-  read: () => {
-    slug?: string | null;
-    web3ProposalId?: number | null;
-    linkStatus?: string;
-    linkMessage?: string;
-  },
-  agreementSlug: string,
-) {
-  const deadline = Date.now() + 30_000;
-  while (Date.now() < deadline) {
-    const current = read();
-    const slugMatches = !current.slug || current.slug === agreementSlug;
-    if (
-      slugMatches &&
-      typeof current.web3ProposalId === 'number' &&
-      current.web3ProposalId > 0
-    ) {
-      return;
-    }
-    if (current.linkStatus === 'error') {
-      throw new Error(
-        current.linkMessage || 'The proposal was not linked on-chain.',
-      );
-    }
-    await new Promise((resolve) => setTimeout(resolve, 250));
+function chainProposalId(current: {
+  proposalId?: bigint | number | string | null;
+  web3ProposalId?: number | null;
+}): number | null {
+  const raw = current.proposalId;
+  if (typeof raw === 'bigint') {
+    if (raw <= 0n || raw > BigInt(Number.MAX_SAFE_INTEGER)) return null;
+    return Number(raw);
   }
-  throw new Error(
-    'The proposal is not on voting yet. Submit again to retry the link.',
-  );
+  if (typeof raw === 'number' && Number.isSafeInteger(raw) && raw > 0) {
+    return raw;
+  }
+  if (typeof raw === 'string' && /^[1-9]\d*$/.test(raw)) {
+    const parsed = Number(raw);
+    if (Number.isSafeInteger(parsed)) return parsed;
+  }
+  if (
+    typeof current.web3ProposalId === 'number' &&
+    Number.isSafeInteger(current.web3ProposalId) &&
+    current.web3ProposalId > 0
+  ) {
+    return current.web3ProposalId;
+  }
+  return null;
 }
 
 function stripAgentMentionPrefix(text: string, agentLabel: string): string {
@@ -227,6 +224,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const [proposalLinkError, setProposalLinkError] = useState<{
     proposalTitle: string;
     href: string | null;
+    questHref: string;
     detail: string;
   } | null>(null);
   const [pendingProposalLink, setPendingProposalLink] =
@@ -234,8 +232,8 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
 
   const {
     createAgreement,
+    updateAgreementBySlug,
     agreement,
-    taskState,
     isPending,
     progress,
     currentAction,
@@ -245,8 +243,6 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   });
   const agreementRef = useRef(agreement);
   agreementRef.current = agreement;
-  const taskStateRef = useRef(taskState);
-  taskStateRef.current = taskState;
 
   const commitDraftSnapshot = useCallback(
     (next: QuestDraftStateSnapshot) => {
@@ -566,17 +562,42 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
     setConfirmOpen(false);
 
     const readProposalLink = () => {
-      const current = agreementRef.current;
-      const linkTask = taskStateRef.current.LINK_WEB2_AND_WEB3_AGREEMENT;
+      const current = agreementRef.current as {
+        slug?: string | null;
+        proposalId?: bigint | number | string | null;
+        web3ProposalId?: number | null;
+      } | null;
       return {
         slug: current?.slug,
-        web3ProposalId:
-          current && 'web3ProposalId' in current
-            ? current.web3ProposalId
-            : undefined,
-        linkStatus: linkTask.status,
-        linkMessage: linkTask.message,
+        proposalId: current?.proposalId,
+        web3ProposalId: current?.web3ProposalId,
       };
+    };
+
+    const persistProposalOnChain = async (agreementSlug: string) => {
+      const deadline = Date.now() + 30_000;
+      let proposalId: number | null = null;
+      while (Date.now() < deadline) {
+        const current = readProposalLink();
+        const slugMatches = !current.slug || current.slug === agreementSlug;
+        if (slugMatches) {
+          proposalId = chainProposalId(current);
+          if (proposalId) break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      if (!proposalId) {
+        throw new Error(
+          'The proposal is not on voting yet. Submit again to retry the link.',
+        );
+      }
+      // Write the chain id onto the proposal before the quest link check.
+      // The orchestrator update can fail its client return while the quest
+      // link still needs web3ProposalId stored on the document.
+      await updateAgreementBySlug({
+        slug: agreementSlug,
+        web3ProposalId: proposalId,
+      });
     };
 
     const finishLinked = (target: PendingProposalLink) => {
@@ -589,23 +610,36 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       );
     };
 
+    const linkCreatedQuest = async (target: PendingProposalLink) => {
+      let persistError: unknown = null;
+      if (target.agreementSlug) {
+        try {
+          await persistProposalOnChain(target.agreementSlug);
+        } catch (error) {
+          // The chain id may already be stored if the action wrote the row
+          // and then failed while returning it. The quest link reads that row.
+          persistError = error;
+        }
+      }
+      try {
+        await patchSpaceQuestRequest({
+          spaceSlug,
+          questSlug: target.questSlug,
+          patch: { proposalDocumentId: target.agreementId },
+          getAccessToken,
+        });
+      } catch (patchError) {
+        if (persistError) throw persistError;
+        throw patchError;
+      }
+      finishLinked(target);
+    };
+
     let linkTarget: PendingProposalLink | null = pendingProposalLink;
 
     try {
       if (linkTarget) {
-        if (linkTarget.agreementSlug) {
-          await waitForProposalOnVoting(
-            readProposalLink,
-            linkTarget.agreementSlug,
-          );
-        }
-        await patchSpaceQuestRequest({
-          spaceSlug,
-          questSlug: linkTarget.questSlug,
-          patch: { proposalDocumentId: linkTarget.agreementId },
-          getAccessToken,
-        });
-        finishLinked(linkTarget);
+        await linkCreatedQuest(linkTarget);
         return;
       }
 
@@ -637,7 +671,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
           ownerName: m.ownerName,
           status: m.status,
         })),
-        members: [
+        members: withoutPlaceholderLeadDuplicates([
           {
             personId: leadPersonId,
             memberName: cleanLeadName,
@@ -651,17 +685,17 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             roleLabel: m.roleLabel ?? 'Member',
             responsibilities: m.responsibilities,
           })),
-        ],
+        ]),
       };
 
       // The quest slug is unknown until create; reserve room for the longest one.
-      const descriptionLimit = 4000;
-      if (
-        buildQuestProposalDescription(draftPayload, 'q'.repeat(52)).length >
-        descriptionLimit
-      ) {
+      const descriptionLength = buildQuestProposalDescription(
+        draftPayload,
+        'q'.repeat(52),
+      ).length;
+      if (descriptionLength > QUEST_PROPOSAL_DESCRIPTION_LIMIT) {
         setSubmitError(
-          'This quest is too long to submit as a proposal. Shorten the goal, scope, milestones or members and try again.',
+          `This quest is ${descriptionLength.toLocaleString()} characters. Proposals can be at most ${QUEST_PROPOSAL_DESCRIPTION_LIMIT.toLocaleString()}. Shorten the goal, scope, milestones or members and try again.`,
         );
         return;
       }
@@ -714,11 +748,23 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       });
       const createdQuestSlug = createdQuest.slug;
 
-      // 2. Submit as an Agreements proposal with label="Quest"
+      // Describe the saved quest, not the pre-save draft, so the link check
+      // compares the proposal payload to the same terms that were stored.
       const description = buildQuestProposalDescription(
-        draftPayload,
+        questRecordToProposalDraft(createdQuest),
         createdQuestSlug,
       );
+      if (description.length > QUEST_PROPOSAL_DESCRIPTION_LIMIT) {
+        await deleteSpaceQuestRequest({
+          spaceSlug,
+          questSlug: createdQuestSlug,
+          getAccessToken,
+        }).catch(() => undefined);
+        setSubmitError(
+          `This quest is ${description.length.toLocaleString()} characters. Proposals can be at most ${QUEST_PROPOSAL_DESCRIPTION_LIMIT.toLocaleString()}. Shorten the goal, scope, milestones or members and try again.`,
+        );
+        return;
+      }
 
       let createdAgreement: Awaited<ReturnType<typeof createAgreement>>;
       try {
@@ -759,28 +805,21 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       };
       setPendingProposalLink(linkTarget);
 
-      if (linkTarget.agreementSlug) {
-        await waitForProposalOnVoting(
-          readProposalLink,
-          linkTarget.agreementSlug,
-        );
-      }
-      await patchSpaceQuestRequest({
-        spaceSlug,
-        questSlug: createdQuestSlug,
-        patch: { proposalDocumentId: createdAgreement.id },
-        getAccessToken,
-      });
-      finishLinked(linkTarget);
+      await linkCreatedQuest(linkTarget);
     } catch (err) {
       if (linkTarget) {
+        const raw = err instanceof Error ? err.message : '';
+        const detail =
+          !raw || raw.includes('Server Components') || raw.length > 240
+            ? 'Linking did not finish. Open the quest or the proposal, or submit again to retry only the link.'
+            : raw;
         setProposalLinkError({
           proposalTitle: linkTarget.proposalTitle,
           href: linkTarget.agreementSlug
             ? proposalPageHref(locale, spaceSlug, linkTarget.agreementSlug)
             : null,
-          detail:
-            err instanceof Error ? err.message : 'Linking the proposal failed.',
+          questHref: questPageHref(locale, spaceSlug, linkTarget.questSlug),
+          detail,
         });
       } else {
         setSubmitError(
@@ -793,6 +832,82 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       setSubmitting(false);
     }
   };
+
+  const proposalCharacterCount = useMemo(() => {
+    const cleanLeadName =
+      leadName.replace(/\s*\(you\)\s*/i, '').trim() || viewerDisplayName;
+    const leadPersonId =
+      selectedLeadPersonId ??
+      (cleanLeadName === viewerDisplayName
+        ? person?.id ?? null
+        : findQuestSpaceMemberId(spaceMembers, cleanLeadName));
+    try {
+      return buildQuestProposalDescription(
+        {
+          name: name.trim() || 'Untitled quest',
+          goal: goal.trim(),
+          scopeIn,
+          scopeOut,
+          scopeInMarkdown,
+          scopeOutMarkdown,
+          successCriteria,
+          rewards: rewards.filter(
+            (reward) =>
+              reward.amount.trim().length > 0 && reward.token.trim().length > 0,
+          ),
+          targetDate,
+          leadPersonId,
+          leadName: cleanLeadName,
+          milestones: milestones.map((milestone) => ({
+            name: milestone.name,
+            description: milestone.description ?? '',
+            dueDate: milestone.dueDate,
+            ownerName: milestone.ownerName,
+          })),
+          members: withoutPlaceholderLeadDuplicates([
+            {
+              personId: leadPersonId,
+              memberName: cleanLeadName,
+              roleLabel: 'Lead',
+              responsibilities: ['Overall delivery', 'Unblock reviews'],
+            },
+            ...members.map((member) => ({
+              personId:
+                member.personId ??
+                findQuestSpaceMemberId(spaceMembers, member.memberName),
+              memberName: member.memberName,
+              roleLabel: member.roleLabel ?? 'Member',
+              responsibilities: member.responsibilities,
+            })),
+          ]),
+        },
+        'q'.repeat(52),
+      ).length;
+    } catch {
+      return QUEST_PROPOSAL_DESCRIPTION_LIMIT + 1;
+    }
+  }, [
+    goal,
+    leadName,
+    members,
+    milestones,
+    name,
+    person?.id,
+    rewards,
+    scopeIn,
+    scopeInMarkdown,
+    scopeOut,
+    scopeOutMarkdown,
+    selectedLeadPersonId,
+    spaceMembers,
+    successCriteria,
+    targetDate,
+    viewerDisplayName,
+  ]);
+  const proposalOverLimit =
+    proposalCharacterCount > QUEST_PROPOSAL_DESCRIPTION_LIMIT;
+  const proposalCharactersLeft =
+    QUEST_PROPOSAL_DESCRIPTION_LIMIT - proposalCharacterCount;
 
   const questsListHref = `/${locale}/dho/${spaceSlug}/quests`;
   const successBullets = splitMarkdownLinesToBullets(successCriteria);
@@ -852,7 +967,8 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                   type="button"
                   disabled={
                     submitting ||
-                    (!pendingProposalLink && (!name.trim() || !goal.trim()))
+                    (!pendingProposalLink &&
+                      (!name.trim() || !goal.trim() || proposalOverLimit))
                   }
                   onClick={() => setConfirmOpen(true)}
                   data-testid="create-quest-button"
@@ -865,21 +981,35 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
 
             {proposalLinkError ? (
               <div className="border border-error-6 bg-background-2 px-4 py-3 text-xs text-error-11">
-                Could not link this quest to the proposal{' '}
+                The quest was created.{' '}
+                <Link
+                  href={proposalLinkError.questHref}
+                  className="font-semibold underline"
+                >
+                  Open quest
+                </Link>
+                .{' '}
                 {proposalLinkError.href ? (
                   <Link
                     href={proposalLinkError.href}
                     className="font-semibold underline"
                   >
-                    {proposalLinkError.proposalTitle}
+                    Open proposal {proposalLinkError.proposalTitle}
                   </Link>
                 ) : (
                   <span className="font-semibold">
-                    {proposalLinkError.proposalTitle}
+                    Proposal {proposalLinkError.proposalTitle}
                   </span>
                 )}
-                . {proposalLinkError.detail} That proposal already exists, so
-                submitting again only retries the link.
+                . {proposalLinkError.detail} Submitting again only retries the
+                link.
+              </div>
+            ) : null}
+            {proposalOverLimit && !pendingProposalLink ? (
+              <div className="border border-error-6 bg-background-2 px-4 py-3 text-xs text-error-11">
+                Proposal text is {proposalCharacterCount.toLocaleString()} /{' '}
+                {QUEST_PROPOSAL_DESCRIPTION_LIMIT.toLocaleString()} characters.
+                Shorten the goal, scope, milestones or members before creating.
               </div>
             ) : null}
             {submitError ? (
@@ -896,6 +1026,20 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                 </h2>
                 <p className="text-xs text-neutral-11">
                   Fills in live as you chat · click any section to edit
+                </p>
+                <p
+                  className={cn(
+                    'text-xs',
+                    proposalOverLimit ? 'text-error-11' : 'text-neutral-11',
+                  )}
+                >
+                  Proposal limit {proposalCharacterCount.toLocaleString()} /{' '}
+                  {QUEST_PROPOSAL_DESCRIPTION_LIMIT.toLocaleString()}
+                  {proposalOverLimit
+                    ? ` · ${Math.abs(
+                        proposalCharactersLeft,
+                      ).toLocaleString()} over`
+                    : ` · ${proposalCharactersLeft.toLocaleString()} remaining`}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -1254,7 +1398,9 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
               <p className="text-[13px] leading-relaxed text-neutral-11">
                 Creating this quest submits it as a proposal to Hypha for voting
                 right away. Name, goal, scope, success, milestones, members and
-                Quest Reward will be published as shown.
+                Quest Reward will be published as shown. Proposal text{' '}
+                {proposalCharacterCount.toLocaleString()} /{' '}
+                {QUEST_PROPOSAL_DESCRIPTION_LIMIT.toLocaleString()} characters.
               </p>
               <div className="flex items-center justify-end gap-2 pt-1">
                 <Button
@@ -1269,6 +1415,10 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                 </Button>
                 <Button
                   type="button"
+                  disabled={
+                    !pendingProposalLink &&
+                    (proposalOverLimit || !name.trim() || !goal.trim())
+                  }
                   onClick={() => void handleConfirmCreateProposal()}
                   data-testid="confirm-create-proposal-button"
                   className="h-10 rounded-none bg-foreground px-4 text-[11px] font-semibold uppercase tracking-[0.1em] text-background hover:bg-foreground/90"

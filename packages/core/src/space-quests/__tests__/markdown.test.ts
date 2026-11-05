@@ -5,9 +5,11 @@ import {
   embeddedQuestProposalMatchesQuest,
   isViewerQuestLead,
   parseQuestProposalFromDescription,
+  questRecordToProposalDraft,
   slugifyQuestName,
   stripQuestProposalMarker,
   stripViewerYouMarker,
+  withoutPlaceholderLeadDuplicates,
   type EmbeddedQuestProposalPayload,
 } from '../markdown';
 import type { QuestDraftInput } from '../types';
@@ -139,6 +141,92 @@ describe('quest proposal description', () => {
         quest,
       ),
     ).toBe(false);
+  });
+
+  it('keeps a lone placeholder lead and drops the invented duties', () => {
+    const members = withoutPlaceholderLeadDuplicates([
+      {
+        memberName: 'Vlad Hramtsov',
+        roleLabel: 'Lead',
+        responsibilities: ['Overall delivery', 'Unblock reviews'],
+      },
+    ]);
+    expect(members).toEqual([
+      {
+        memberName: 'Vlad Hramtsov',
+        roleLabel: 'Lead',
+        responsibilities: [],
+      },
+    ]);
+  });
+
+  it('drops a placeholder lead when that person already has a real assignment', () => {
+    const members = withoutPlaceholderLeadDuplicates([
+      {
+        personId: 7,
+        memberName: 'Vlad Hramtsov',
+        roleLabel: 'Lead',
+        responsibilities: ['Overall delivery', 'Unblock reviews'],
+      },
+      {
+        personId: 7,
+        memberName: 'Vlad Hramtsov',
+        roleLabel: 'QA owner',
+        responsibilities: ['Check the roster', 'Check the reward'],
+      },
+      {
+        personId: 8,
+        memberName: 'Grok Test',
+        roleLabel: 'Writer',
+        responsibilities: ['Write the notes'],
+      },
+    ]);
+    expect(members.map((member) => member.roleLabel)).toEqual([
+      'QA owner',
+      'Writer',
+    ]);
+  });
+
+  it('matches a proposal built from the saved quest', () => {
+    const slug = 'onboarding-matcher';
+    const quest = {
+      slug,
+      name: draft.name.trim(),
+      goal: draft.goal.trim(),
+      scopeIn: draft.scopeIn,
+      scopeOut: draft.scopeOut,
+      scopeInMarkdown: '',
+      scopeOutMarkdown: '',
+      successCriteria: draft.successCriteria.trim(),
+      rewards: draft.rewards.filter(
+        (reward) => reward.amount.trim() && reward.token.trim(),
+      ),
+      targetDate: draft.targetDate,
+      leadName: draft.leadName.trim(),
+      milestones: draft.milestones.map((milestone, index) => ({
+        order: index + 1,
+        name: milestone.name.trim(),
+        description: milestone.description.trim(),
+        dueDate: milestone.dueDate?.trim() || null,
+        ownerName: milestone.ownerName?.trim() || null,
+      })),
+      members: draft.members.map((member, index) => ({
+        order: index + 1,
+        memberName: member.memberName.trim(),
+        roleLabel: member.roleLabel ?? null,
+        responsibilities: member.responsibilities
+          .map((item) => item.trim())
+          .filter(Boolean),
+      })),
+    };
+    const description = buildQuestProposalDescription(
+      questRecordToProposalDraft(quest),
+      slug,
+    );
+    const parsed = parseQuestProposalFromDescription(description);
+    expect(parsed && embeddedQuestProposalMatchesQuest(parsed, quest)).toBe(
+      true,
+    );
   });
 
   it('slugifies quest names', () => {

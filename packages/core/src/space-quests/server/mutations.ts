@@ -35,6 +35,7 @@ import {
   parseQuestProposalFromDescription,
   slugifyQuestName,
   splitMarkdownLinesToBullets,
+  withoutPlaceholderLeadDuplicates,
 } from '../markdown';
 import type { QuestRecord } from '../types';
 import type {
@@ -372,7 +373,7 @@ export async function createSpaceQuest(
     );
   }
 
-  const membersToInsert =
+  const membersToInsert = withoutPlaceholderLeadDuplicates(
     input.members.length > 0
       ? input.members
       : [
@@ -381,9 +382,10 @@ export async function createSpaceQuest(
             memberName: leadName,
             memberAvatarUrl: actor?.avatarUrl ?? null,
             roleLabel: 'Lead',
-            responsibilities: ['Overall delivery', 'Unblock reviews'],
+            responsibilities: [],
           },
-        ];
+        ],
+  );
 
   await db.insert(spaceQuestMembers).values(
     membersToInsert.map((m, idx) => ({

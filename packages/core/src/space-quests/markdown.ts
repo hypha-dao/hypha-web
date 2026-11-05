@@ -2,6 +2,13 @@ import type { QuestDraftInput, QuestRecord } from './types';
 
 export const QUEST_PROPOSAL_MARKER_START = '<!-- hypha-quest-proposal:start';
 export const QUEST_PROPOSAL_MARKER_END = 'hypha-quest-proposal:end -->';
+/** Agreements stores `documents.description` with a 4000 character cap. */
+export const QUEST_PROPOSAL_DESCRIPTION_LIMIT = 4000;
+
+const PLACEHOLDER_LEAD_RESPONSIBILITIES = [
+  'Overall delivery',
+  'Unblock reviews',
+] as const;
 
 export type EmbeddedQuestProposalPayload = {
   questSlug?: string;
@@ -105,6 +112,124 @@ export function stripViewerYouMarker(value: string): string {
   let end = index + '(you)'.length;
   while (end < value.length && isMarkerWhitespace(value[end] ?? '')) end += 1;
   return value.slice(0, start) + value.slice(end);
+}
+
+export function isPlaceholderLeadResponsibilityList(
+  items: readonly string[] | null | undefined,
+): boolean {
+  const cleaned = (items ?? []).map((item) => item.trim()).filter(Boolean);
+  return (
+    cleaned.length === PLACEHOLDER_LEAD_RESPONSIBILITIES.length &&
+    cleaned.every(
+      (item, index) => item === PLACEHOLDER_LEAD_RESPONSIBILITIES[index],
+    )
+  );
+}
+
+function sameQuestMemberIdentity(
+  left: { personId?: number | null; memberName: string },
+  right: { personId?: number | null; memberName: string },
+): boolean {
+  if (
+    left.personId != null &&
+    left.personId > 0 &&
+    right.personId != null &&
+    right.personId > 0 &&
+    left.personId === right.personId
+  ) {
+    return true;
+  }
+  const leftName = left.memberName.trim().toLowerCase();
+  const rightName = right.memberName.trim().toLowerCase();
+  return leftName.length > 0 && leftName === rightName;
+}
+
+/**
+ * Drop the auto-inserted Lead row whose only duties are the placeholder
+ * bullets when that person already has a real assignment. A lone placeholder
+ * Lead stays, without those invented duties.
+ */
+export function withoutPlaceholderLeadDuplicates<
+  T extends {
+    personId?: number | null;
+    memberName: string;
+    roleLabel?: string | null;
+    responsibilities?: readonly string[] | null;
+  },
+>(members: readonly T[]): T[] {
+  const isPlaceholder = (member: T) =>
+    isPlaceholderLeadResponsibilityList(member.responsibilities);
+
+  return members.flatMap((member, index) => {
+    if (!isPlaceholder(member)) return [member];
+    const hasRealAssignment = members.some(
+      (other, otherIndex) =>
+        otherIndex !== index &&
+        !isPlaceholder(other) &&
+        sameQuestMemberIdentity(member, other),
+    );
+    if (hasRealAssignment) return [];
+    return [{ ...member, responsibilities: [] as string[] } as T];
+  });
+}
+
+export function questRecordToProposalDraft(
+  quest: Pick<
+    QuestRecord,
+    | 'name'
+    | 'goal'
+    | 'scopeIn'
+    | 'scopeOut'
+    | 'scopeInMarkdown'
+    | 'scopeOutMarkdown'
+    | 'successCriteria'
+    | 'rewards'
+    | 'targetDate'
+    | 'leadName'
+  > & {
+    milestones: Array<{
+      order: number;
+      name: string;
+      description: string;
+      dueDate: string | null;
+      ownerName: string | null;
+    }>;
+    members: Array<{
+      order: number;
+      personId?: number | null;
+      memberName: string;
+      roleLabel?: string | null;
+      responsibilities: string[];
+    }>;
+  },
+): QuestDraftInput {
+  return {
+    name: quest.name,
+    goal: quest.goal,
+    scopeIn: quest.scopeIn,
+    scopeOut: quest.scopeOut,
+    scopeInMarkdown: quest.scopeInMarkdown,
+    scopeOutMarkdown: quest.scopeOutMarkdown,
+    successCriteria: quest.successCriteria,
+    rewards: quest.rewards,
+    targetDate: quest.targetDate,
+    leadName: quest.leadName,
+    milestones: [...quest.milestones]
+      .sort((a, b) => a.order - b.order)
+      .map((milestone) => ({
+        name: milestone.name,
+        description: milestone.description,
+        dueDate: milestone.dueDate,
+        ownerName: milestone.ownerName,
+      })),
+    members: withoutPlaceholderLeadDuplicates(
+      [...quest.members].sort((a, b) => a.order - b.order),
+    ).map((member) => ({
+      memberName: member.memberName,
+      roleLabel: member.roleLabel,
+      responsibilities: [...(member.responsibilities ?? [])],
+    })),
+  };
 }
 
 export function buildEmbeddedQuestProposalPayload(
@@ -280,33 +405,7 @@ export function embeddedQuestProposalMatchesQuest(
 ): boolean {
   if (!isCompleteQuestProposalPayload(payload)) return false;
   const expected = buildEmbeddedQuestProposalPayload(
-    {
-      name: quest.name,
-      goal: quest.goal,
-      scopeIn: quest.scopeIn,
-      scopeOut: quest.scopeOut,
-      scopeInMarkdown: quest.scopeInMarkdown,
-      scopeOutMarkdown: quest.scopeOutMarkdown,
-      successCriteria: quest.successCriteria,
-      rewards: quest.rewards,
-      targetDate: quest.targetDate,
-      leadName: quest.leadName,
-      milestones: [...quest.milestones]
-        .sort((a, b) => a.order - b.order)
-        .map((milestone) => ({
-          name: milestone.name,
-          description: milestone.description,
-          dueDate: milestone.dueDate,
-          ownerName: milestone.ownerName,
-        })),
-      members: [...quest.members]
-        .sort((a, b) => a.order - b.order)
-        .map((member) => ({
-          memberName: member.memberName,
-          roleLabel: member.roleLabel,
-          responsibilities: member.responsibilities,
-        })),
-    },
+    questRecordToProposalDraft(quest),
     quest.slug,
   );
   return (
