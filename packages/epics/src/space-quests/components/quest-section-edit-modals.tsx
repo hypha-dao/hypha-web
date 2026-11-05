@@ -136,11 +136,7 @@ export function EditQuestNameModal({
         className="max-w-[520px] rounded-none border border-border bg-background p-6"
       >
         <div className="space-y-4">
-          <ModalHeader
-            title="Edit name"
-            subtitle="Opened by clicking the Name section of the draft."
-            onClose={() => onOpenChange(false)}
-          />
+          <ModalHeader title="Edit name" onClose={() => onOpenChange(false)} />
           <div className="space-y-1.5">
             <label className={LABEL_CLASS}>NAME</label>
             <Input
@@ -188,11 +184,7 @@ export function EditQuestGoalModal({
         className="max-w-[520px] rounded-none border border-border bg-background p-6"
       >
         <div className="space-y-4">
-          <ModalHeader
-            title="Edit goal"
-            subtitle="Same RichTextEditor as proposal create (packages/ui)."
-            onClose={() => onOpenChange(false)}
-          />
+          <ModalHeader title="Edit goal" onClose={() => onOpenChange(false)} />
           <div className="space-y-1.5">
             <label className={LABEL_CLASS}>GOAL</label>
             <div className="border border-border bg-background">
@@ -260,11 +252,7 @@ export function EditQuestScopeModal({
         className="max-h-[90vh] max-w-[520px] overflow-y-auto rounded-none border border-border bg-background p-6"
       >
         <div className="space-y-4">
-          <ModalHeader
-            title="Edit scope"
-            subtitle="In / Out of scope use the same RichTextEditor as proposals."
-            onClose={() => onOpenChange(false)}
-          />
+          <ModalHeader title="Edit scope" onClose={() => onOpenChange(false)} />
           <div className="space-y-1.5">
             <label className={LABEL_CLASS}>IN SCOPE</label>
             <div className="border border-border bg-background">
@@ -330,7 +318,6 @@ export function EditQuestSuccessModal({
         <div className="space-y-4">
           <ModalHeader
             title="Edit success criteria"
-            subtitle="Bullets and formatting via RichTextEditor (proposal create)."
             onClose={() => onOpenChange(false)}
           />
           <div className="space-y-1.5">
@@ -386,11 +373,7 @@ export function EditQuestLeadModal({
         className="max-w-[520px] rounded-none border border-border bg-background p-6"
       >
         <div className="space-y-4">
-          <ModalHeader
-            title="Edit lead"
-            subtitle="Opened by clicking the Lead section of the draft."
-            onClose={() => onOpenChange(false)}
-          />
+          <ModalHeader title="Edit lead" onClose={() => onOpenChange(false)} />
           <div className="space-y-1.5">
             <label className={LABEL_CLASS}>LEAD</label>
             <select
@@ -444,7 +427,6 @@ export function EditQuestTargetDateModal({
         <div className="space-y-4">
           <ModalHeader
             title="Edit target date"
-            subtitle="Opened by clicking the Target date section of the draft."
             onClose={() => onOpenChange(false)}
           />
           <div className="space-y-1.5">
@@ -503,7 +485,6 @@ export function EditQuestRewardsModal({
         <div className="space-y-4">
           <ModalHeader
             title="Edit quest reward"
-            subtitle="Multi-token amount and token selection."
             onClose={() => onOpenChange(false)}
           />
           <div className="space-y-2.5">
@@ -655,7 +636,7 @@ export function EditQuestMilestonesModal({
         <div className="space-y-4">
           <ModalHeader
             title="Edit milestones"
-            subtitle="Opened by clicking the Milestones section of the draft. Each milestone has a name, owner, and a rich description. Hover between two milestones to insert one there — order (M1, M2, M3…) renumbers automatically."
+            subtitle="Hover between two milestones to insert one. They renumber automatically."
             onClose={() => onOpenChange(false)}
           />
 
