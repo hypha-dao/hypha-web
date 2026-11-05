@@ -208,6 +208,24 @@ async function provisionQuestChannelOnAccept({
       HYPHA_ROOM_TYPES.quest,
     );
 
+    const stored = await db
+      .update(spaceQuests)
+      .set({ chatRoomId: roomId })
+      .where(
+        and(
+          eq(spaceQuests.id, questId),
+          eq(spaceQuests.chatRoomId, claimToken),
+        ),
+      )
+      .returning();
+    if (stored.length === 0) {
+      console.warn(
+        '[space-quests] Quest room claim was lost; orphaned room:',
+        roomId,
+      );
+      return null;
+    }
+
     // Notify ONLY Quest members (Lead + QuestMembers) by inviting only their Matrix accounts
     const mxids = await matrixUserIdsForPeople(
       [leadPersonId, ...memberPersonIds],
@@ -237,16 +255,6 @@ async function provisionQuestChannelOnAccept({
       botToken,
       homeserver,
     ).catch(() => undefined);
-
-    await db
-      .update(spaceQuests)
-      .set({ chatRoomId: roomId })
-      .where(
-        and(
-          eq(spaceQuests.id, questId),
-          eq(spaceQuests.chatRoomId, claimToken),
-        ),
-      );
 
     return roomId;
   } catch (error) {

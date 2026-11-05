@@ -177,6 +177,11 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [pendingProposalLink, setPendingProposalLink] = useState<{
+    questSlug: string;
+    agreementId: number;
+    agreementSlug: string | null;
+  } | null>(null);
 
   const { createAgreement, isPending, progress, currentAction } =
     useCreateAgreementOrchestrator({
@@ -540,6 +545,30 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         return;
       }
 
+      if (pendingProposalLink) {
+        await patchSpaceQuestRequest({
+          spaceSlug,
+          questSlug: pendingProposalLink.questSlug,
+          patch: { proposalDocumentId: pendingProposalLink.agreementId },
+          getAccessToken,
+        });
+        setPendingProposalLink(null);
+        if (pendingProposalLink.agreementSlug) {
+          router.push(
+            `/${locale}/dho/${spaceSlug}/agreements/proposal/${encodeURIComponent(
+              pendingProposalLink.agreementSlug,
+            )}`,
+          );
+          return;
+        }
+        router.push(
+          `/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
+            pendingProposalLink.questSlug,
+          )}`,
+        );
+        return;
+      }
+
       // 1. Create the Quest row in `proposed` status (not Active yet)
       const createdQuest = await createSpaceQuestRequest({
         spaceSlug,
@@ -611,12 +640,19 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         throw new Error('Failed to create quest proposal.');
       }
 
+      setPendingProposalLink({
+        questSlug: createdQuestSlug,
+        agreementId: createdAgreement.id,
+        agreementSlug: createdAgreement.slug ?? null,
+      });
+
       await patchSpaceQuestRequest({
         spaceSlug,
         questSlug: createdQuestSlug,
         patch: { proposalDocumentId: createdAgreement.id },
         getAccessToken,
       });
+      setPendingProposalLink(null);
 
       if (createdAgreement.slug) {
         router.push(
