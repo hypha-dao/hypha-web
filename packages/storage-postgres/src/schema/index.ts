@@ -47,6 +47,13 @@ import {
   spaceContextSectionMessages,
   spaceContextSections,
 } from './space-context';
+import {
+  spaceQuests,
+  spaceQuestMilestones,
+  spaceQuestMembers,
+  spaceQuestDeliverables,
+  spaceQuestUpdates,
+} from './space-quests';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -78,6 +85,7 @@ export * from './integration-grant';
 export * from './notification-processed-events';
 export * from './space-member-invite';
 export * from './space-context';
+export * from './space-quests';
 
 export const schema = {
   documents,
@@ -121,4 +129,9 @@ export const schema = {
   spaceContextSections,
   spaceContextSectionMessages,
   spaceContextAgentMemories,
+  spaceQuests,
+  spaceQuestMilestones,
+  spaceQuestMembers,
+  spaceQuestDeliverables,
+  spaceQuestUpdates,
 };
