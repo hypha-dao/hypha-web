@@ -20,7 +20,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { Plus, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
@@ -447,8 +447,11 @@ export function EditQuestLeadModal({
   );
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const wasOpenRef = useRef(false);
   useEffect(() => {
-    if (!open) return;
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (!open || wasOpen) return;
     const match = findPersonInCatalog(catalog, {
       id: leadPersonId,
       name: leadName,
@@ -697,9 +700,12 @@ export function EditQuestMilestonesModal({
   onSave: (next: EditableQuestMilestone[]) => void;
 }) {
   const [rows, setRows] = useState<EditableQuestMilestone[]>([]);
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
-    if (open) {
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (open && !wasOpen) {
       setRows(
         milestones.map((m, i) => ({
           ...m,
@@ -718,12 +724,8 @@ export function EditQuestMilestonesModal({
       ]),
     [rows, spaceMemberNames, spaceMembers],
   );
-  const defaultOwner = ownerCatalog[0] ?? null;
-  const defaultOwnerName = defaultOwner
-    ? personRosterDisplayLabel(defaultOwner, '').trim() || null
-    : null;
-  const defaultOwnerId =
-    defaultOwner && defaultOwner.id > 0 ? defaultOwner.id : null;
+  const defaultOwnerName: string | null = null;
+  const defaultOwnerId: number | null = null;
 
   const insertAt = (index: number) => {
     setRows((current) => {
@@ -1003,6 +1005,7 @@ export function EditQuestMembersModal({
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [newRoleLabel, setNewRoleLabel] = useState('Member');
   const [newBullets, setNewBullets] = useState<string[]>(['']);
+  const wasOpenRef = useRef(false);
 
   const memberCatalog = useMemo(
     () =>
@@ -1014,7 +1017,9 @@ export function EditQuestMembersModal({
   );
 
   useEffect(() => {
-    if (open) {
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (open && !wasOpen) {
       setRows(
         members.map((m) => {
           const matched = findPersonInCatalog(memberCatalog, {

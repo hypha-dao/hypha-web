@@ -139,7 +139,8 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const [successCriteria, setSuccessCriteria] = useState('');
   const [rewards, setRewards] = useState<QuestReward[]>([]);
   const [milestones, setMilestones] = useState<EditableQuestMilestone[]>([]);
-  const [leadName, setLeadName] = useState(`${viewerDisplayName} (you)`);
+  const [leadNameOverride, setLeadNameOverride] = useState<string | null>(null);
+  const leadName = leadNameOverride ?? `${viewerDisplayName} (you)`;
   const [selectedLeadPersonId, setSelectedLeadPersonId] = useState<
     number | null
   >(null);
@@ -279,7 +280,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
     } else if (currentStep === 'lead') {
       const rawLead = trimmed.replace(/^@/, '').replace(/_/g, ' ').trim();
       const matchedLead = findQuestSpaceMember(spaceMembers, { name: rawLead });
-      setLeadName(matchedLead?.name || rawLead);
+      setLeadNameOverride(matchedLead?.name || rawLead);
       setSelectedLeadPersonId(matchedLead?.personId ?? null);
     } else if (currentStep === 'targetDate') {
       setTargetDate(trimmed);
@@ -1134,7 +1135,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
           spaceMembers={spaceMemberPersons}
           spaceMemberNames={spaceMemberNames}
           onSave={(nextLeadName, nextLeadPersonId) => {
-            setLeadName(nextLeadName);
+            setLeadNameOverride(nextLeadName);
             setSelectedLeadPersonId(nextLeadPersonId ?? null);
           }}
         />
