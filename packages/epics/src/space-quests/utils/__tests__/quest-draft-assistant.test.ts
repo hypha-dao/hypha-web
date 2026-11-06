@@ -378,6 +378,52 @@ describe('quest-draft-assistant', () => {
     expect(reply).not.toMatch(/in the Scope/i);
   });
 
+  it('proposes explicit in/out scope as scope after milestones, and waits for yes', () => {
+    const message =
+      'In scope: Run three sandbox onboarding checks and record pass/fail for each. Out of scope: Fixing onboarding; contacting real people; payments or on-chain actions.';
+    const target = resolveQuestDraftTarget(message, 'members');
+    expect(target).toEqual({ step: 'scope', bulk: false });
+    const patch = buildLocalQuestDraftPatch({
+      message,
+      currentStep: target.step,
+      draft: emptyDraft,
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(patch.members).toBeUndefined();
+    expect(patch.scopeIn).toEqual([
+      'Run three sandbox onboarding checks and record pass/fail for each.',
+    ]);
+    expect(patch.scopeOut).toEqual([
+      'Fixing onboarding',
+      'contacting real people',
+      'payments or on-chain actions.',
+    ]);
+    expect(patch.scopeIn?.join('\n')).not.toMatch(/contacting real people/i);
+    expect(patch.scopeIn?.join('\n')).not.toMatch(/core outcome delivery/i);
+    expect(
+      decideNewQuestDraftTurn({
+        message,
+        currentStep: 'members',
+        targetStep: target.step,
+        bulk: target.bulk,
+        pending: null,
+      }),
+    ).toEqual({ kind: 'propose', step: 'scope' });
+    const reply = replyWithSectionApprovalAsk(null, target.step, patch);
+    expect(reply).toContain('Do you want that to be in the Scope?');
+    expect(reply).not.toMatch(/in the Members/i);
+    expect(reply).not.toMatch(/core outcome delivery/i);
+    expect(
+      decideNewQuestDraftTurn({
+        message: 'Yes, put that in the Scope.',
+        currentStep: 'members',
+        targetStep: 'members',
+        bulk: false,
+        pending: { step: 'scope', patch },
+      }),
+    ).toEqual({ kind: 'apply', step: 'scope', patch });
+  });
+
   it('does not turn a milestone count instruction into a row or a title', () => {
     const message =
       'Exactly 3 milestones: M1 titled Run check one, due 20 November 2026; M2 titled Run check two, due 25 November 2026; M3 titled Run check three, due 30 November 2026. Owner Vlad Hramtsov for all three.';

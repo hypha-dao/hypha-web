@@ -143,6 +143,41 @@ describe('resolveQuestDraftTarget', () => {
     });
   });
 
+  it('routes an explicit in/out scope payload to scope after the tracker moved to members', () => {
+    const message =
+      'In scope: Run three sandbox onboarding checks and record pass/fail for each. Out of scope: Fixing onboarding; contacting real people; payments or on-chain actions.';
+    expect(resolveQuestDraftTarget(message, 'members')).toEqual({
+      step: 'scope',
+      bulk: false,
+    });
+    expect(resolveQuestDraftTarget(message, 'lead')).toEqual({
+      step: 'scope',
+      bulk: false,
+    });
+  });
+
+  it('routes other labeled sections off the current walk step', () => {
+    expect(
+      resolveQuestDraftTarget(
+        'Success criteria: each check has a recorded pass or fail.',
+        'members',
+      ),
+    ).toEqual({ step: 'success', bulk: false });
+    expect(resolveQuestDraftTarget('Lead: Vlad Hramtsov', 'members')).toEqual({
+      step: 'lead',
+      bulk: false,
+    });
+    expect(resolveQuestDraftTarget('Reward: 2,500 USDC', 'milestones')).toEqual(
+      { step: 'rewards', bulk: false },
+    );
+    expect(
+      resolveQuestDraftTarget(
+        'Vlad Hramtsov: run the sandbox checks',
+        'members',
+      ),
+    ).toEqual({ step: 'members', bulk: false });
+  });
+
   it('lets a named section win over milestone-shaped lines', () => {
     expect(
       resolveQuestDraftTarget(

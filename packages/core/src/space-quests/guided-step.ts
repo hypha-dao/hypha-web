@@ -94,6 +94,69 @@ function explicitSectionName(text: string): string | undefined {
   );
 }
 
+/**
+ * A field label, not a passing mention: "In scope:", "Success criteria:", "Lead:".
+ * The earliest label wins when a message names more than one section.
+ */
+const LABELED_SECTION_PATTERNS: ReadonlyArray<{
+  pattern: RegExp;
+  step: QuestStewardStep;
+}> = [
+  {
+    pattern:
+      /\b(?:in[-\s]+scope|out[-\s]+of[-\s]+scope|scope[-\s]+in|scope[-\s]+out)\s*:/i,
+    step: 'scope',
+  },
+  {
+    pattern: /(?:^|[\n.;])\s*in\s*:\s*\S[\s\S]*?(?:^|[\n.;])\s*out\s*:/i,
+    step: 'scope',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*success(?:\s+criteria)?\s*:/i,
+    step: 'success',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*milestones?\s*:/i,
+    step: 'milestones',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*members?\s*:/i,
+    step: 'members',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*lead\s*:/i,
+    step: 'lead',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*target(?:\s+date)?\s*:/i,
+    step: 'targetDate',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*(?:quest\s+)?rewards?\s*:/i,
+    step: 'rewards',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*goal\s*:/i,
+    step: 'goal',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*(?:quest\s+name|quest\s+title|name|title)\s*:/i,
+    step: 'name',
+  },
+];
+
+function labeledSectionStep(text: string): QuestStewardStep | null {
+  let best: { index: number; step: QuestStewardStep } | null = null;
+  for (const { pattern, step } of LABELED_SECTION_PATTERNS) {
+    const match = pattern.exec(text);
+    if (match == null) continue;
+    if (!best || match.index < best.index) {
+      best = { index: match.index, step };
+    }
+  }
+  return best?.step ?? null;
+}
+
 function lineHasCalendarDate(line: string): boolean {
   return new RegExp(
     `\\b\\d{1,2}\\s*(?:${MILESTONE_MONTH})\\s*\\d{4}\\b|\\b(?:${MILESTONE_MONTH})\\s*\\d{1,2},?\\s*\\d{4}\\b|\\b\\d{4}-\\d{2}-\\d{2}\\b`,
@@ -124,8 +187,8 @@ function messageTargetsMilestones(text: string): boolean {
 
 /**
  * The section a new-quest message may write.
- * A named section wins over the tracker, which may already have moved on.
- * Milestone-shaped content wins over the next empty section.
+ * A named section or a labeled payload wins over the tracker, which may
+ * already have moved on. Milestone-shaped content does too.
  * A bulk "draft everything" request writes no section.
  */
 export function resolveQuestDraftTarget(
@@ -138,6 +201,8 @@ export function resolveQuestDraftTarget(
   const named = explicitSectionName(text);
   const namedStep = named ? stepFromSectionName(named) : null;
   if (namedStep) return { step: namedStep, bulk: false };
+  const labeled = labeledSectionStep(text);
+  if (labeled) return { step: labeled, bulk: false };
   if (messageTargetsMilestones(text)) {
     return { step: 'milestones', bulk: false };
   }
