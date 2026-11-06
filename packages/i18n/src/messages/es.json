@@ -4354,6 +4354,7 @@
     "upvoteMembersOnly": "Solo los miembros y delegados de este espacio pueden votar señales.",
     "upvoteCheckingMembership": "Comprobando tu membresía en este espacio…",
     "upvoteFailed": "No se pudo actualizar tu voto. Inténtalo de nuevo.",
+    "upvoteArchived": "Esta señal está archivada y ya no se puede votar.",
     "sharedWithNetwork": "Compartido con la red",
     "upvoted": "Votado",
     "voted": "Votado",

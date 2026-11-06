@@ -4912,6 +4912,7 @@
     "upvoteMembersOnly": "Nur Mitglieder und Delegierte dieses Space können Signale upvoten.",
     "upvoteCheckingMembership": "Deine Mitgliedschaft in diesem Space wird geprüft…",
     "upvoteFailed": "Deine Stimme konnte nicht aktualisiert werden. Bitte erneut versuchen.",
+    "upvoteArchived": "Dieses Signal ist archiviert und kann nicht mehr unterstützt werden.",
     "sharedWithNetwork": "Mit dem Netzwerk geteilt",
     "upvoted": "Hochgestimmt",
     "voted": "Abgestimmt",

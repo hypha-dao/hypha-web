@@ -139,6 +139,8 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
                 e.preventDefault();
               }}
               onKeyDown={(e) => {
+                const native = e.nativeEvent;
+                if (native.isComposing || native.keyCode === 229) return;
                 if (e.key === 'Enter') {
                   sendMessage();
                 }

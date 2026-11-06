@@ -34,7 +34,7 @@ import {
   attachCoherenceCapitals,
   writeCoherenceCapitals,
 } from '../../network/capital-columns';
-import { omitCreatorId } from '../signal-creator';
+import { pickCoherenceUpdateFields } from '../coherence-update-fields';
 import { signalSlugMatchesSpaceSlug } from '../signal-slug';
 
 export async function assertCanEditCoherence(
@@ -219,9 +219,13 @@ export const updateCoherenceBySlug = async (
       `Multiple coherences found for slug="${slug}", expected exactly one`,
     );
   }
+  const fields = pickCoherenceUpdateFields(rest);
+  if (Object.keys(fields).length === 0) {
+    throw new Error(`No coherence fields to update for slug="${slug}"`);
+  }
   const [updatedCoherence] = await db
     .update(coherences)
-    .set({ ...omitCreatorId(rest) })
+    .set(fields)
     .where(eq(coherences.id, existing[0]!.id))
     .returning();
 

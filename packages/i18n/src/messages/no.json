@@ -4917,6 +4917,7 @@
     "upvoteMembersOnly": "Bare medlemmer og delegater i dette rommet kan stemme opp signaler.",
     "upvoteCheckingMembership": "Sjekker medlemskapet ditt i dette rommet…",
     "upvoteFailed": "Kunne ikke oppdatere upvoten din. Prøv igjen.",
+    "upvoteArchived": "Dette signalet er arkivert og kan ikke lenger stemmes opp.",
     "sharedWithNetwork": "Delt med nettverket",
     "upvoted": "Stemt opp",
     "voted": "Stemt",

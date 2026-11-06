@@ -24,6 +24,7 @@ import { formatVotingPowerCompact } from '../utils/format-voting-power';
 import type { SignalVotingModeStatus } from '../hooks/use-signal-voting-mode';
 
 const MEMBERSHIP_ERROR_PATTERN = /space member or delegate/i;
+const ARCHIVED_VOTE_ERROR_PATTERN = /archived signal/i;
 
 const EMPTY_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
@@ -74,6 +75,8 @@ type SignalUpvoteButtonProps = {
   isMembershipPending?: boolean;
   refresh?: () => Promise<unknown>;
   disabled?: boolean;
+  /** Archived signals stay visible, but voting is closed. */
+  archived?: boolean;
   /** `feed` stacks the count over the label; `page` sits beside the title. */
   variant?: 'feed' | 'page';
   className?: string;
@@ -93,6 +96,7 @@ export function SignalUpvoteButton({
   isMembershipPending = false,
   refresh,
   disabled = false,
+  archived = false,
   variant = 'feed',
   className,
 }: SignalUpvoteButtonProps) {
@@ -128,12 +132,16 @@ export function SignalUpvoteButton({
   const showVotingUnavailable =
     !isVotingModeResolved && votingModeStatus === 'unavailable';
   const canOpen =
-    isVotingModeResolved || showVotingModeError || showVotingUnavailable;
+    archived ||
+    isVotingModeResolved ||
+    showVotingModeError ||
+    showVotingUnavailable;
   const isBlockedNonMember =
     Boolean(jwt) && (isNonMember || rejectedAsNonMember);
   const canVote =
     Boolean(slug?.trim()) &&
     Boolean(jwt) &&
+    !archived &&
     !disabled &&
     !isBlockedNonMember &&
     !isMembershipPending &&
@@ -176,6 +184,13 @@ export function SignalUpvoteButton({
           MEMBERSHIP_ERROR_PATTERN.test(err.message)
         ) {
           setRejectedAsNonMember(true);
+          return;
+        }
+        if (
+          err instanceof Error &&
+          ARCHIVED_VOTE_ERROR_PATTERN.test(err.message)
+        ) {
+          setError(t('upvoteArchived'));
           return;
         }
         setError(t('upvoteFailed'));
@@ -281,7 +296,11 @@ export function SignalUpvoteButton({
           data-space-accent-scope
           onClick={stopPropagation}
         >
-          {showVotingModeError ? (
+          {archived ? (
+            <p className="p-3 text-1 leading-relaxed text-muted-foreground">
+              {t('upvoteArchived')}
+            </p>
+          ) : showVotingModeError ? (
             <div className="flex flex-col gap-3 p-3">
               <p
                 role="alert"

@@ -3862,6 +3862,7 @@
       "medium": "Monitorar e agir em breve",
       "low": "Informativo, sem pressa"
     },
+    "savingSignal": "A guardar sinal",
     "editSignalMissingSlug": "O identificador do sinal está em falta. Feche e volte a abrir o formulário de edição.",
     "editSignalSaveFailed": "Não foi possível guardar as alterações do sinal. Tente novamente.",
     "signalEdit": "Editar",
@@ -4338,6 +4339,7 @@
     "upvoteMembersOnly": "Somente membros e delegados deste espaço podem votar em sinais.",
     "upvoteCheckingMembership": "Verificando sua participação neste espaço…",
     "upvoteFailed": "Não foi possível atualizar o seu voto. Tente novamente.",
+    "upvoteArchived": "Este sinal está arquivado e já não pode ser votado.",
     "sharedWithNetwork": "Partilhado com a rede",
     "upvoted": "Votado",
     "voted": "Votado",

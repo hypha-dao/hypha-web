@@ -107,6 +107,7 @@ export function SignalFeedRow({
         isNonMember={isNonMember}
         isMembershipPending={isMembershipPending}
         refresh={refresh}
+        archived={signal.archived}
         className="relative z-10"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">

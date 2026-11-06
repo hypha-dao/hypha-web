@@ -3860,6 +3860,7 @@
       "medium": "Surveiller et agir bientôt",
       "low": "Informatif, pas urgent"
     },
+    "savingSignal": "Enregistrement du signal",
     "editSignalMissingSlug": "L'identifiant du signal est manquant. Fermez puis rouvrez le formulaire d'édition.",
     "editSignalSaveFailed": "Impossible d'enregistrer les modifications du signal. Veuillez réessayer.",
     "signalEdit": "Modifier",
@@ -4336,6 +4337,7 @@
     "upvoteMembersOnly": "Seuls les membres et délégués de cet espace peuvent voter pour les signaux.",
     "upvoteCheckingMembership": "Vérification de votre adhésion à cet espace…",
     "upvoteFailed": "Impossible de mettre à jour votre vote. Réessayez.",
+    "upvoteArchived": "Ce signal est archivé et ne peut plus recevoir de vote.",
     "sharedWithNetwork": "Partagé avec le réseau",
     "upvoted": "Voté",
     "voted": "Voté",

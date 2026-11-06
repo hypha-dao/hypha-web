@@ -4918,6 +4918,7 @@
     "upvoteMembersOnly": "Alleen leden en gedelegeerden van deze space kunnen signalen upvoten.",
     "upvoteCheckingMembership": "Je lidmaatschap van deze space wordt gecontroleerd…",
     "upvoteFailed": "Kan uw upvote niet bijwerken. Probeer het opnieuw.",
+    "upvoteArchived": "Dit signaal is gearchiveerd en kan niet meer worden gestemd.",
     "sharedWithNetwork": "Gedeeld met het netwerk",
     "upvoted": "Gestemd",
     "voted": "Gestemd",

@@ -4948,6 +4948,7 @@
     "upvoteMembersOnly": "Only members and delegates of this space can upvote signals.",
     "upvoteCheckingMembership": "Checking your membership in this space…",
     "upvoteFailed": "Could not update your upvote. Try again.",
+    "upvoteArchived": "This signal is archived and can no longer be upvoted.",
     "sharedWithNetwork": "Shared with the network",
     "upvoted": "Upvoted",
     "voted": "Voted",
