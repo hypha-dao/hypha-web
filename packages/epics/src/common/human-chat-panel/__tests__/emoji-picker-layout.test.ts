@@ -28,9 +28,14 @@ describe('emoji picker layout', () => {
     expect(overflow).toContain('onWheel={(event) => event.stopPropagation()}');
     expect(overflow).toContain('onEscapeKeyDown={(event) => {');
     expect(overflow).toContain('event.stopPropagation()');
-    expect(overflow).not.toMatch(
-      /onEscapeKeyDown=\{\(event\) => \{[\s\S]*event\.preventDefault\(\)/,
-    );
+    // Reaction-picker Escape must stopPropagation only — not preventDefault —
+    // so the parent overflow menu can still close. Scope to that handler body.
+    const reactionEscape = overflow.match(
+      /onEscapeKeyDown=\{\(event\) => \{[^}]*\}/,
+    )?.[0];
+    expect(reactionEscape).toBeTruthy();
+    expect(reactionEscape).toContain('event.stopPropagation()');
+    expect(reactionEscape).not.toContain('event.preventDefault()');
     const chatBar = read('human-chat-panel-chat-bar.tsx');
     expect(chatBar).toContain(
       "e.key === 'Escape' && closeComposerOverlayFromEscape(e)",
@@ -61,7 +66,9 @@ describe('emoji picker layout', () => {
     expect(surface).toContain("if (event.key === 'Escape') return;");
     expect(surface).toContain('event.stopPropagation()');
     const picker = read('human-chat-panel-emoji-picker.tsx');
-    expect(picker).toContain('container={');
+    // Portal to document.body — do not set `container` to the transform-animated
+    // sidebar (Floating UI update loops wiped the chat panel).
+    expect(picker).not.toContain('container={');
     expect(picker).toContain('z-[100]');
     expect(picker).toContain('onPointerDownOutside');
     expect(picker).toContain('onInteractOutside');

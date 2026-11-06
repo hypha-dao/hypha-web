@@ -2483,7 +2483,14 @@ export function HumanChatPanelChatBar({
           <div className="flex w-full min-w-0 flex-nowrap items-center gap-2 overflow-visible">
             {canAttachDrafts ? (
               <DropdownMenu
-                modal={isMobile}
+                /**
+                 * Never modal inside the chat Sheet/Sidebar — a nested modal
+                 * focus trap has wiped the panel (same class of bug as the
+                 * nested message-overflow Sheet). Outside clicks still close
+                 * the menu; Sheet dismiss stays on `isEmojiMartEvent` / Escape
+                 * guards elsewhere.
+                 */
+                modal={false}
                 open={attachMenuOpen}
                 onOpenChange={(open) => {
                   if (!canAttachDrafts) return;
