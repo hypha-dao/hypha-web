@@ -1055,7 +1055,7 @@ export function MemberHomeSendTokensWidget({
                   : t('sendTokensNoOne')}
               </p>
             ) : (
-              <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 md:grid-cols-4">
+              <ul className="mt-3 grid grid-cols-4 gap-x-2 gap-y-3 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-5 md:grid-cols-4">
                 {previewTargets.map((item) => {
                   const active = item.id === target?.id;
                   const person =
