@@ -307,10 +307,12 @@ export default async function RootLayout({
                                 Sticky menu bar — clamped to center column by SidebarInset.
                                 Safe-area lives on MenuTop itself so `--menu-top-height`
                                 includes the notch/status-bar inset and overlays stay aligned.
-                                `-mb-px` + matching shadow seal the 1px Safari/iOS gap where
-                                scrolling content (or rubber-band) shows through under the bar.
+                                `-mb-px` lets the next sibling overlap 1px under the bar so
+                                Safari/iOS cannot flash a gap on rubber-band. Do not seal with
+                                an opaque page-background box-shadow — on Home that 1px strip
+                                reads as a hairline between MenuTop and the hero texture.
                               */}
-                              <div className="sticky top-0 z-40 -mb-px shrink-0 bg-page-background shadow-[0_1px_0_0_var(--page-background)]">
+                              <div className="sticky top-0 z-40 -mb-px shrink-0 bg-page-background">
                                 <ConnectedMenuTop
                                   aiChatEnabled={aiChatEnabled}
                                   logoHref={ROOT_URL}
