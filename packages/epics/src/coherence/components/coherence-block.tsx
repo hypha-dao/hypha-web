@@ -8,6 +8,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import {
   DEFAULT_SIGNAL_SORT,
   DEFAULT_SIGNAL_TIME_FRAME,
+  filterSignalsByTitle,
   parseSignalSort,
   parseSignalTimeFrame,
   rankSignals,
@@ -30,10 +31,13 @@ import {
 } from '../hooks/use-signal-voting-mode';
 import { SignalFeedFilters } from './signal-feed-filters';
 import { SignalFeedRow } from './signal-feed-row';
+import { useDebouncedFeedTitle } from '../lib/use-debounced-feed-title';
 import type { UseMembers } from '../../spaces/hooks/types';
 
 export const SIGNAL_SORT_QUERY_KEY = 'sort';
 export const SIGNAL_TIME_FRAME_QUERY_KEY = 't';
+/** Title-only feed search. Distinct from the board's `title` query. */
+export const SIGNAL_TITLE_QUERY_KEY = 'q';
 /** Earlier `?top=7d|30d|all` links still open on the matching time frame. */
 const LEGACY_TOP_WINDOW_QUERY_KEY = 'top';
 const ARCHIVED_QUERY_KEY = 'archived';
@@ -127,6 +131,15 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
       ),
     [replaceQuery],
   );
+  const titleQuery = searchParams.get(SIGNAL_TITLE_QUERY_KEY) ?? '';
+  const handleTitleCommit = React.useCallback(
+    (next: string) => replaceQuery(SIGNAL_TITLE_QUERY_KEY, next, ''),
+    [replaceQuery],
+  );
+  const { titleInput, onTitleChange } = useDebouncedFeedTitle({
+    committed: titleQuery,
+    onCommit: handleTitleCommit,
+  });
   const {
     coherences: signals,
     isLoading: isSignalsLoading,
@@ -150,10 +163,13 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
     }
   }, [refresh]);
 
-  const ranked = React.useMemo(
-    () => rankSignals(signals ?? [], { sort, timeFrame }),
-    [signals, sort, timeFrame],
-  );
+  const ranked = React.useMemo(() => {
+    // `useFindCoherences` already concatenates every page. Filter titles on
+    // that full list, then rank, so sort and time frame apply to matches
+    // past the first page. The API `search` param also matches descriptions.
+    const matched = filterSignalsByTitle(signals ?? [], titleQuery);
+    return rankSignals(matched, { sort, timeFrame });
+  }, [signals, sort, timeFrame, titleQuery]);
   const activity = useSignalRoomActivity(ranked);
   const hasSignals = Boolean(signals?.length);
   const hasCurrentQuerySignals = hasSignals && !isPreviousSignals;
@@ -167,9 +183,9 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="craft-page-title text-6 font-medium">
           {t('signals')}
-          {typeof signals?.length === 'number' && !loadFailed ? (
+          {typeof signals?.length === 'number' && !loadFailed && !isLoading ? (
             <span className="ml-2 text-4 font-normal text-muted-foreground">
-              | {format.number(signals.length)}
+              | {format.number(ranked.length)}
             </span>
           ) : null}
         </h1>
@@ -193,6 +209,8 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
         timeFrame={timeFrame}
         onSortChange={handleSortChange}
         onTimeFrameChange={handleTimeFrameChange}
+        titleQuery={titleInput}
+        onTitleQueryChange={onTitleChange}
       />
 
       {isLoading ? (
@@ -226,7 +244,9 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
         </div>
       ) : ranked.length === 0 ? (
         <p className="craft-card px-4 py-8 text-center text-1 text-muted-foreground">
-          {t('listIsEmpty')}
+          {titleQuery.trim() && hasSignals
+            ? t('signalTitleNoResults')
+            : t('listIsEmpty')}
         </p>
       ) : (
         <div className="flex flex-col gap-2">
@@ -243,6 +263,8 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
                 isMembershipPending={isMembershipPending}
                 activity={signal.roomId ? activity[signal.roomId] : undefined}
                 refresh={refresh}
+                sort={sort}
+                timeFrame={timeFrame}
               />
             ) : null,
           )}

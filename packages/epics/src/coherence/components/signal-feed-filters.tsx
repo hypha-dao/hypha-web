@@ -17,6 +17,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
+  Input,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
@@ -122,6 +123,8 @@ export type SignalFeedFiltersProps = {
   timeFrame: SignalTimeFrame;
   onSortChange: (sort: SignalSort) => void;
   onTimeFrameChange: (timeFrame: SignalTimeFrame) => void;
+  titleQuery: string;
+  onTitleQueryChange: (titleQuery: string) => void;
   className?: string;
 };
 
@@ -133,6 +136,8 @@ export function SignalFeedFilters({
   timeFrame,
   onSortChange,
   onTimeFrameChange,
+  titleQuery,
+  onTitleQueryChange,
   className,
 }: SignalFeedFiltersProps) {
   const t = useTranslations('CoherenceTab');
@@ -156,6 +161,16 @@ export function SignalFeedFilters({
 
   return (
     <div className={cn('flex flex-wrap items-center gap-2', className)}>
+      <Input
+        type="search"
+        value={titleQuery}
+        placeholder={t('searchSignals')}
+        aria-label={t('searchSignals')}
+        data-testid="signal-title-search"
+        onChange={(event) => onTitleQueryChange(event.target.value)}
+        rootClassName="min-h-10 w-full min-w-0 flex-1 basis-full sm:basis-56 sm:max-w-sm"
+        className="h-10 min-h-10 text-left placeholder:text-left"
+      />
       <FilterPill
         label={t(SORT_LABEL_KEY[sort])}
         heading={t('signalSortBy')}

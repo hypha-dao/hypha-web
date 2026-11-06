@@ -4,9 +4,12 @@ import React from 'react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { Triangle } from 'lucide-react';
 import {
+  signalUpvoteCellMeasure,
   useCoherenceUpvoteMutations,
   useJwt,
   type CoherenceUpvoteSummary,
+  type SignalSort,
+  type SignalTimeFrame,
   type SignalVotingMode,
 } from '@hypha-platform/core/client';
 import {
@@ -21,10 +24,12 @@ import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { formatVotingPowerCompact } from '../utils/format-voting-power';
+import { isArchivedSignalVoteError } from '../lib/signal-upvote-errors';
 import type { SignalVotingModeStatus } from '../hooks/use-signal-voting-mode';
 
 const MEMBERSHIP_ERROR_PATTERN = /space member or delegate/i;
-const ARCHIVED_VOTE_ERROR_PATTERN = /archived signal/i;
+
+export { isArchivedSignalVoteError };
 
 const EMPTY_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
@@ -77,8 +82,13 @@ type SignalUpvoteButtonProps = {
   disabled?: boolean;
   /** Archived signals stay visible, but voting is closed. */
   archived?: boolean;
-  /** `feed` stacks the count over the label; `page` sits beside the title. */
+  /**
+   * Kept so list and detail share one control. Layout does not change with it.
+   * `top-power` shows total voting power; every other sort shows the voter count.
+   */
   variant?: 'feed' | 'page';
+  sort?: SignalSort;
+  timeFrame?: SignalTimeFrame;
   className?: string;
 };
 
@@ -98,6 +108,8 @@ export function SignalUpvoteButton({
   disabled = false,
   archived = false,
   variant = 'feed',
+  sort = 'top-voters',
+  timeFrame = 'week',
   className,
 }: SignalUpvoteButtonProps) {
   const t = useTranslations('SignalCard');
@@ -186,10 +198,7 @@ export function SignalUpvoteButton({
           setRejectedAsNonMember(true);
           return;
         }
-        if (
-          err instanceof Error &&
-          ARCHIVED_VOTE_ERROR_PATTERN.test(err.message)
-        ) {
+        if (isArchivedSignalVoteError(err)) {
           setError(t('upvoteArchived'));
           return;
         }
@@ -215,14 +224,22 @@ export function SignalUpvoteButton({
     [],
   );
 
-  const cellLabel =
-    variant === 'page'
-      ? hasVoted
-        ? t('upvoted')
-        : t('upvote')
-      : hasVoted
-      ? t('voted')
-      : t('upvote');
+  const cellMeasure = signalUpvoteCellMeasure({
+    sort,
+    timeFrame,
+    upvotes: upvotes ?? null,
+  });
+  const figureLabel =
+    cellMeasure.kind === 'loading'
+      ? '…'
+      : cellMeasure.kind === 'count'
+      ? format.number(cellMeasure.count)
+      : formatVotingPowerCompact(
+          cellMeasure.raw,
+          cellMeasure.tokenDecimals,
+          locale,
+        );
+  const cellLabel = hasVoted ? t('upvoted') : t('upvote');
 
   return (
     <div
@@ -246,13 +263,14 @@ export function SignalUpvoteButton({
             type="button"
             aria-haspopup="dialog"
             aria-pressed={hasVoted}
-            aria-label={`${t('upvote')} · ${summary.upvoteCount}`}
+            aria-label={`${t('upvote')} · ${figureLabel}`}
             aria-busy={!canOpen}
             disabled={!canOpen}
             data-testid="signal-upvote-cell"
+            data-upvote-variant={variant}
+            data-upvote-measure={cellMeasure.kind}
             className={cn(
-              'flex flex-col items-center justify-center border tabular-nums transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-              variant === 'feed' ? 'h-14 w-12 gap-0.5' : 'h-12 min-w-16 px-3',
+              'flex h-14 w-12 flex-col items-center justify-center gap-0.5 border tabular-nums transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
               hasVoted
                 ? 'border-accent-9 bg-accent-9 text-accent-contrast hover:bg-accent-10'
                 : 'border-border bg-background-2 text-foreground hover:border-foreground/40',
@@ -260,27 +278,18 @@ export function SignalUpvoteButton({
               !canOpen && 'cursor-progress',
             )}
           >
-            {variant === 'feed' ? (
-              <>
-                <SignalUpvoteTriangle
-                  className={hasVoted ? undefined : 'text-muted-foreground'}
-                />
-                <span className="text-base font-semibold leading-none">
-                  {format.number(summary.upvoteCount)}
-                </span>
-              </>
-            ) : (
-              <span className="flex items-center gap-1.5 text-base font-semibold leading-none">
-                <SignalUpvoteTriangle
-                  className={hasVoted ? undefined : 'text-muted-foreground'}
-                />
-                {format.number(summary.upvoteCount)}
-              </span>
-            )}
+            <SignalUpvoteTriangle
+              className={hasVoted ? undefined : 'text-muted-foreground'}
+            />
+            <span
+              className="text-base font-semibold leading-none"
+              data-testid="signal-upvote-figure"
+            >
+              {figureLabel}
+            </span>
             <span
               className={cn(
                 'text-[9px] leading-none',
-                variant === 'page' && 'mt-1',
                 hasVoted ? 'opacity-90' : 'text-muted-foreground',
               )}
             >

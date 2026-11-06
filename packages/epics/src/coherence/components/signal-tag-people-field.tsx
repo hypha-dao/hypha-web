@@ -155,16 +155,15 @@ export function SignalTagPeopleField({
           })}
         </ul>
       ) : null}
-      <div className="relative w-full">
-        <AtSign
-          className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
-          aria-hidden
-        />
+      <div className="relative w-full text-left">
         <Input
           value={query}
           disabled={disabled}
           placeholder={t('signalFormTagPeoplePlaceholder')}
-          className="rounded-none pl-8 text-left"
+          aria-label={t('signalFormTagPeoplePlaceholder')}
+          autoComplete="off"
+          leftIcon={<AtSign className="h-3.5 w-3.5 shrink-0" aria-hidden />}
+          className="text-left placeholder:text-left"
           role="combobox"
           aria-expanded={showList}
           aria-controls={listboxId}

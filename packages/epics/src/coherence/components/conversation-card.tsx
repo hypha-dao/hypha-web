@@ -19,6 +19,7 @@ import {
   useMatrix,
   usePersonById,
 } from '@hypha-platform/core/client';
+import { shouldSubmitComposerOnEnter } from '../lib/composer-enter';
 
 type ConversationCardProps = {
   isLoading: boolean;
@@ -140,10 +141,16 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
               }}
               onKeyDown={(e) => {
                 const native = e.nativeEvent;
-                if (native.isComposing || native.keyCode === 229) return;
-                if (e.key === 'Enter') {
-                  sendMessage();
+                if (
+                  !shouldSubmitComposerOnEnter({
+                    key: e.key,
+                    isComposing: native.isComposing,
+                    keyCode: native.keyCode,
+                  })
+                ) {
+                  return;
                 }
+                sendMessage();
               }}
               onChange={(e) => setMessage(e.target.value)}
             />

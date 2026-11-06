@@ -4300,6 +4300,7 @@
     "loadingSignals": "Laster signaler...",
     "signInToSee": "Logg inn for å se signaler, romminne og samtaler",
     "searchSignals": "Søk i signaler...",
+    "signalTitleNoResults": "Ingen signaler samsvarer med den tittelen.",
     "newSignal": "Nytt signal",
     "backToCoherence": "Tilbake til signaler",
     "all": "Alle",

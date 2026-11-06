@@ -4,7 +4,12 @@ import React from 'react';
 import Link from 'next/link';
 import { Clock, MessageSquare } from 'lucide-react';
 import { useFormatter, useNow, useTranslations } from 'next-intl';
-import type { Coherence, SignalVotingMode } from '@hypha-platform/core/client';
+import type {
+  Coherence,
+  SignalSort,
+  SignalTimeFrame,
+  SignalVotingMode,
+} from '@hypha-platform/core/client';
 import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { SignalTypeBadge } from './signal-type-badge';
 import { SignalUpvoteButton } from './signal-upvote-button';
@@ -53,6 +58,8 @@ type SignalFeedRowProps = {
   isMembershipPending?: boolean;
   activity?: SignalRoomActivity;
   refresh?: () => Promise<unknown>;
+  sort: SignalSort;
+  timeFrame: SignalTimeFrame;
 };
 
 export function SignalFeedRow({
@@ -65,6 +72,8 @@ export function SignalFeedRow({
   isMembershipPending,
   activity,
   refresh,
+  sort,
+  timeFrame,
 }: SignalFeedRowProps) {
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
@@ -108,6 +117,8 @@ export function SignalFeedRow({
         isMembershipPending={isMembershipPending}
         refresh={refresh}
         archived={signal.archived}
+        sort={sort}
+        timeFrame={timeFrame}
         className="relative z-10"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">

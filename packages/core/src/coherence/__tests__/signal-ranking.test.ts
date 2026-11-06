@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SIGNAL_SORT,
   SIGNAL_SORTS,
+  filterSignalsByTitle,
   parseSignalSort,
   parseSignalTimeFrame,
   rankSignals,
+  signalMatchesTitle,
+  signalUpvoteCellMeasure,
   signalVotersInTimeFrame,
   signalVotingPowerInTimeFrame,
   type SignalSort,
@@ -141,5 +144,152 @@ describe('rankSignals', () => {
       'crowd',
       'week',
     ]);
+  });
+});
+
+describe('signalUpvoteCellMeasure', () => {
+  it('keeps the voter count for new and top-voters, including zero', () => {
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'new',
+        timeFrame: 'week',
+        upvotes: crowd.upvotes,
+      }),
+    ).toEqual({ kind: 'count', count: 4 });
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-voters',
+        timeFrame: 'week',
+        upvotes: crowd.upvotes,
+      }),
+    ).toEqual({ kind: 'count', count: 4 });
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-voters',
+        timeFrame: 'all',
+        upvotes: null,
+      }),
+    ).toEqual({ kind: 'count', count: 0 });
+  });
+
+  it('shows the time-frame total voting power, not the voter count or the viewer vote', () => {
+    const withMine = {
+      ...crowd.upvotes,
+      myUpvote: { votingPower: '999', maxVotingPower: '999' },
+    };
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-power',
+        timeFrame: 'month',
+        upvotes: withMine,
+      }),
+    ).toEqual({ kind: 'power', raw: '20', tokenDecimals: 0 });
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-power',
+        timeFrame: 'all',
+        upvotes: old.upvotes,
+      }),
+    ).toEqual({ kind: 'power', raw: '50', tokenDecimals: 0 });
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-power',
+        timeFrame: 'week',
+        upvotes: crowd.upvotes,
+      }),
+    ).toEqual({ kind: 'power', raw: '0', tokenDecimals: 0 });
+  });
+
+  it('treats a missing summary as loading only for top by voting power', () => {
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-power',
+        timeFrame: 'all',
+        upvotes: undefined,
+      }),
+    ).toEqual({ kind: 'loading' });
+  });
+});
+
+describe('filterSignalsByTitle', () => {
+  const page1 = [
+    { id: 'alpha', title: 'Alpha garden', createdAt: new Date('2026-01-01') },
+    { id: 'budget', title: 'Budget', createdAt: new Date('2026-02-01') },
+  ];
+  const page2 = [
+    {
+      id: 'path',
+      title: 'Garden path',
+      createdAt: new Date('2026-10-01'),
+      description: 'unrelated',
+    },
+    {
+      id: 'body',
+      title: 'Soil notes',
+      createdAt: new Date('2026-11-01'),
+      description: 'mentions a garden only in the body',
+    },
+  ];
+
+  it('matches titles case-insensitively and ignores description-only hits', () => {
+    expect(signalMatchesTitle('Garden path', '  GARDEN ')).toBe(true);
+    expect(signalMatchesTitle('Soil notes', 'garden')).toBe(false);
+    expect(signalMatchesTitle(null, '   ')).toBe(true);
+    const loadedPage = filterSignalsByTitle(page1, 'path');
+    const fullList = filterSignalsByTitle([...page1, ...page2], 'path');
+    expect(loadedPage).toEqual([]);
+    expect(fullList.map((signal) => signal.id)).toEqual(['path']);
+  });
+
+  it('filters the concatenated pages, then ranking still applies', () => {
+    const quiet = {
+      id: 'quiet-garden',
+      title: 'Quiet garden',
+      createdAt: new Date('2026-03-01'),
+      upvotes: upvotes(
+        { power: '1', voters: 1 },
+        { week: { power: '1', voters: 1 } },
+      ),
+    };
+    const loud = {
+      id: 'loud-garden',
+      title: 'Loud garden',
+      createdAt: new Date('2026-04-01'),
+      upvotes: upvotes(
+        { power: '9', voters: 1 },
+        { week: { power: '9', voters: 1 } },
+      ),
+    };
+    const other = {
+      id: 'other',
+      title: 'Treasury',
+      createdAt: new Date('2026-05-01'),
+      upvotes: upvotes(
+        { power: '100', voters: 9 },
+        { week: { power: '100', voters: 9 } },
+      ),
+    };
+    const visible = filterSignalsByTitle(
+      [...page1, quiet, ...page2, other, loud],
+      'garden',
+    );
+    expect(visible.map((signal) => signal.id)).toEqual([
+      'alpha',
+      'quiet-garden',
+      'path',
+      'loud-garden',
+    ]);
+    expect(
+      rankSignals(visible, { sort: 'top-power', timeFrame: 'week' }).map(
+        (signal) => signal.id,
+      ),
+    ).toEqual(['loud-garden', 'quiet-garden', 'path', 'alpha']);
+  });
+
+  it('returns a copy of every signal when the query is blank', () => {
+    const signals = [...page1, ...page2];
+    const copy = filterSignalsByTitle(signals, '   ');
+    expect(copy).toEqual(signals);
+    expect(copy).not.toBe(signals);
   });
 });

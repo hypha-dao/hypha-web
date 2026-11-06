@@ -1231,7 +1231,7 @@ export const CreateSignalForm = ({
                 </div>
               ) : null}
             </section>
-            <section className="flex flex-col gap-6 border-t border-border pt-8">
+            <section className="flex flex-col gap-6 border-t border-border pb-8 pt-8">
               <FormField
                 control={form.control}
                 name="type"

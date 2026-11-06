@@ -230,6 +230,15 @@ import {
   shouldRefusePersonPanelCall,
 } from './human-chat-panel/person-panel-call';
 import {
+  assertSignalCallRoom,
+  planSignalThreadCall,
+  runSignalThreadCallPlan,
+  showSignalCallToolbar,
+  signalCallChromeAllowed,
+  SignalThreadCallAborted,
+  takeCoherenceRoomCreate,
+} from './human-chat-panel/signal-thread-call';
+import {
   asTimelineDate,
   sortMessagesChronologically,
   upsertTimelineMessages,
@@ -1122,6 +1131,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     !coherencePublic &&
     !coherenceSlug?.trim() &&
     !coherenceChannel;
+  const signalCallThread = isSignalThreadJoin({
+    coherenceSlug,
+    spaceSlug: coherenceSpaceSlug,
+    isPublic: coherencePublic,
+  });
   const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
   const onNetworkPage = isNetworkPath(pathname);
   // Shared network room lives only on `/{lang}/network` in space mode.
@@ -1388,26 +1402,16 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const createdRoomBySlugRef = useRef(new Map<string, string>());
 
   const getOrCreateCoherenceRoom = useCallback(
-    (slug: string, title: string) => {
-      const created = createdRoomBySlugRef.current.get(slug);
-      if (created) return Promise.resolve({ roomId: created });
-      const inFlight = createRoomInFlightRef.current.get(slug);
-      if (inFlight) return inFlight;
-      const pending = matrixRef.current
-        .createRoom(title, { roomType: HYPHA_ROOM_TYPES.signal })
-        .then((result) => {
-          createdRoomBySlugRef.current.set(slug, result.roomId);
-          return result;
-        });
-      createRoomInFlightRef.current.set(slug, pending);
-      const clearInFlight = () => {
-        if (createRoomInFlightRef.current.get(slug) === pending) {
-          createRoomInFlightRef.current.delete(slug);
-        }
-      };
-      pending.then(clearInFlight, clearInFlight);
-      return pending;
-    },
+    (slug: string, title: string) =>
+      takeCoherenceRoomCreate(
+        createdRoomBySlugRef.current,
+        createRoomInFlightRef.current,
+        slug,
+        () =>
+          matrixRef.current.createRoom(title, {
+            roomType: HYPHA_ROOM_TYPES.signal,
+          }),
+      ),
     [],
   );
 
@@ -1609,10 +1613,16 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
    */
   const callUiEnabled = useMemo(
     () =>
-      isMatrixAvailable &&
-      isMatrixAuthenticated &&
-      (isSpaceMember || isDirectConversation) &&
-      (Boolean(roomId) || isStartConversation),
+      signalCallChromeAllowed({
+        isMatrixAvailable,
+        isMatrixAuthenticated,
+        isSpaceMember,
+        isDirectConversation,
+        roomId,
+        isStartConversation,
+        isSignalCallThread: signalCallThread,
+        blockSpaceChatForMembership,
+      }),
     [
       roomId,
       isMatrixAvailable,
@@ -1620,6 +1630,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       isSpaceMember,
       isDirectConversation,
       isStartConversation,
+      signalCallThread,
+      blockSpaceChatForMembership,
     ],
   );
 
@@ -1947,6 +1959,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const peerMatrixIdsLoadingRef = useRef(peerMatrixIdsLoading);
   peerMatrixIdsLoadingRef.current = peerMatrixIdsLoading;
   const personPanelCallEnsureGenerationRef = useRef(0);
+  const signalThreadCallGenerationRef = useRef(0);
+  const coherenceSlugRef = useRef(coherenceSlug);
+  coherenceSlugRef.current = coherenceSlug;
   const personPanelCallSelectionRef = useRef(
     personPanelCallSelectionOf({
       personId: peerPersonId,
@@ -2139,13 +2154,127 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     ],
   );
 
+  const startSignalThreadCall = useCallback(
+    (kind: 'audio' | 'video') => {
+      if (blockSpaceChatForMembership) return;
+      const slug = coherenceSlug?.trim() || '';
+      const spaceRoomId =
+        space?.chatRoomId?.trim() ||
+        (coherenceSpaceSlug?.trim()
+          ? getStoredRoomId(coherenceSpaceSlug.trim())
+          : null);
+      const coherenceId = coherenceRoomId?.trim() || '';
+      const plan = planSignalThreadCall({
+        isSignalThread: signalCallThread,
+        signalSlug: slug,
+        coherenceRoomId,
+        coherenceRoomType: coherenceId
+          ? matrixClientRef.current?.getRoom(coherenceId)?.getType() ?? null
+          : null,
+        ownedRoomType: HYPHA_ROOM_TYPES.signal,
+        spaceRoomId,
+        directRoomId: null,
+      });
+      if (plan.action === 'refuse') return;
+      const generation = ++signalThreadCallGenerationRef.current;
+      const startedSlug = slug;
+      const isCurrent = () =>
+        signalThreadCallGenerationRef.current === generation &&
+        (coherenceSlugRef.current?.trim() || '') === startedSlug;
+      void runSignalThreadCallPlan({
+        plan,
+        currentRoomId: roomId,
+        isCurrent,
+        ensureRoom: async () => {
+          if (!isCurrent()) throw new SignalThreadCallAborted();
+          if (blockSpaceChatForMembership) {
+            throw new Error('Signal call requires space membership');
+          }
+          const created = await getOrCreateCoherenceRoom(
+            startedSlug,
+            coherenceTitle?.trim() || 'Conversation',
+          );
+          if (!isCurrent()) throw new SignalThreadCallAborted();
+          const otherSignalRoomIds = [...createdRoomBySlugRef.current.entries()]
+            .filter(([key]) => key !== startedSlug)
+            .map(([, createdRoomId]) => createdRoomId);
+          const room = assertSignalCallRoom({
+            roomId: created.roomId,
+            spaceRoomId,
+            directRoomId: null,
+            otherSignalRoomIds,
+          });
+          const createdType =
+            matrixClientRef.current?.getRoom(room)?.getType() ?? null;
+          if (createdType && createdType !== HYPHA_ROOM_TYPES.signal) {
+            throw new Error('Signal call room has the wrong type');
+          }
+          await updateCoherenceBySlugRef.current({
+            slug: startedSlug,
+            roomId: room,
+          });
+          if (!isCurrent()) throw new SignalThreadCallAborted();
+          openCoherenceChat(
+            room,
+            coherenceTitle || '',
+            startedSlug,
+            coherenceDescription,
+            coherenceSpaceSlug,
+          );
+          roomIdRef.current = room;
+          setRoomId(room);
+          return room;
+        },
+        joinRoom: async (target) => {
+          const joined = await matrixRef.current.joinRoom(target);
+          if (!isCurrent()) throw new SignalThreadCallAborted();
+          const id = (joined || target).trim();
+          roomIdRef.current = id;
+          setRoomId(id);
+        },
+        onStart: (target) => {
+          if (!isCurrent()) return;
+          launchPersonPanelCall(kind, target);
+        },
+      }).catch((error) => {
+        if (error instanceof SignalThreadCallAborted) return;
+        if (!isCurrent()) return;
+        console.warn('[HumanRightPanel] Signal call did not start:', error);
+        setError(t('failedToJoinRoom'));
+      });
+    },
+    [
+      blockSpaceChatForMembership,
+      coherenceDescription,
+      coherenceRoomId,
+      coherenceSlug,
+      coherenceSpaceSlug,
+      coherenceTitle,
+      getOrCreateCoherenceRoom,
+      launchPersonPanelCall,
+      openCoherenceChat,
+      roomId,
+      signalCallThread,
+      space?.chatRoomId,
+      t,
+    ],
+  );
+
   const handleCallAudio = useCallback(() => {
+    if (signalCallThread) {
+      startSignalThreadCall('audio');
+      return;
+    }
     startPersonPanelCall('audio');
-  }, [startPersonPanelCall]);
+  }, [signalCallThread, startPersonPanelCall, startSignalThreadCall]);
 
   const handleCallVideo = useCallback(() => {
+    if (signalCallThread) {
+      startSignalThreadCall('video');
+      return;
+    }
     startPersonPanelCall('video');
-  }, [startPersonPanelCall]);
+  }, [signalCallThread, startPersonPanelCall, startSignalThreadCall]);
 
   /**
    * "Join this room's call instead" — for the case where the room being viewed has its own
@@ -5780,8 +5909,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     roomId ? client?.getRoom(roomId)?.getType() : null,
   );
 
-  /** Signal discussions are text threads (Chat | Mentions) — no call toolbar. */
-  const showSidebarCallToolbar = showSidebarCallChrome && !isSignalThread;
+  const showSidebarCallToolbar = showSignalCallToolbar({
+    showSidebarCallChrome,
+    isSignalThread,
+    isSignalCallThread: signalCallThread,
+  });
 
   /** Right-panel chat tab only — personalized by channel kind. */
   const chatTabLabel = useMemo(() => {

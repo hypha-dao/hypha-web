@@ -1,15 +1,19 @@
 import {
   ArrowUpRight,
+  BookOpen,
   Bug,
+  FileText,
   Flame,
   Layers,
   Lightbulb,
   Megaphone,
   Receipt,
+  TrendingUp,
   TriangleAlert,
   type LucideIcon,
 } from 'lucide-react';
 
+/** Icons already named on `COHERENCE_TYPE_OPTIONS`. No extra types. */
 const SIGNAL_TYPE_ICONS: Record<string, LucideIcon> = {
   Need: Megaphone,
   Resource: Layers,
@@ -18,7 +22,10 @@ const SIGNAL_TYPE_ICONS: Record<string, LucideIcon> = {
   Tension: Flame,
   Risk: TriangleAlert,
   Action: Receipt,
+  Impact: BookOpen,
   Bug,
+  Trend: TrendingUp,
+  Proposal: FileText,
 };
 
 /** Lucide icon for a signal type, shared by filters, chips, and cards. */

@@ -4299,6 +4299,7 @@
     "loadingSignals": "Signale werden geladen...",
     "signInToSee": "Bitte melden Sie sich an, um Signale, Space Memory und Gespräche zu sehen",
     "searchSignals": "Signale suchen...",
+    "signalTitleNoResults": "Keine Signale passen zu diesem Titel.",
     "newSignal": "Neues Signal",
     "backToCoherence": "Zurück zur Kohärenz",
     "all": "Alle",

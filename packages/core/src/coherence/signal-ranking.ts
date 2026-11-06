@@ -90,6 +90,59 @@ export function signalVotersInTimeFrame(
   return upvotes.recentUpvotes?.[timeFrame]?.voters ?? 0;
 }
 
+export type SignalUpvoteCellMeasure =
+  | { kind: 'count'; count: number }
+  | { kind: 'power'; raw: string; tokenDecimals: number }
+  | { kind: 'loading' };
+
+/**
+ * Feed cell figure. Ordinary sorts keep the voter count. Top by voting power
+ * shows the time-frame total (all-time `totalVotingPower` when the frame is
+ * `all`), never the viewer's own vote. One summary, one token.
+ */
+export function signalUpvoteCellMeasure({
+  sort,
+  timeFrame,
+  upvotes,
+}: {
+  sort: SignalSort;
+  timeFrame: SignalTimeFrame;
+  upvotes?: CoherenceUpvoteSummary | null;
+}): SignalUpvoteCellMeasure {
+  if (sort !== 'top-power') {
+    return { kind: 'count', count: upvotes?.upvoteCount ?? 0 };
+  }
+  if (upvotes == null) return { kind: 'loading' };
+  return {
+    kind: 'power',
+    raw: signalVotingPowerInTimeFrame(upvotes, timeFrame).toString(),
+    tokenDecimals: upvotes.tokenDecimals,
+  };
+}
+
+/** Case-insensitive title match. Blank query matches every signal. */
+export function signalMatchesTitle(
+  title: string | null | undefined,
+  query: string,
+): boolean {
+  const needle = query.trim().toLocaleLowerCase();
+  if (!needle) return true;
+  return (title ?? '').toLocaleLowerCase().includes(needle);
+}
+
+/**
+ * Title filter over an already-complete list. Callers that page the API must
+ * concatenate every page before filtering so a match past page one is kept.
+ */
+export function filterSignalsByTitle<T extends { title?: string | null }>(
+  signals: readonly T[],
+  query: string,
+): T[] {
+  const needle = query.trim();
+  if (!needle) return [...signals];
+  return signals.filter((signal) => signalMatchesTitle(signal.title, needle));
+}
+
 function createdAtMs(signal: Pick<Coherence, 'createdAt'>): number {
   const ms = new Date(signal.createdAt).getTime();
   return Number.isNaN(ms) ? 0 : ms;

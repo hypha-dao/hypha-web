@@ -3741,6 +3741,7 @@
     "loadingSignals": "Cargando señales...",
     "signInToSee": "Por favor, inicie sesión para ver señales, la memoria del espacio y conversaciones",
     "searchSignals": "Buscar señales...",
+    "signalTitleNoResults": "Ninguna señal coincide con ese título.",
     "newSignal": "Nueva señal",
     "backToCoherence": "Volver a Coherencia",
     "all": "Todos",

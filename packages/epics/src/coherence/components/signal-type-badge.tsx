@@ -2,11 +2,12 @@
 
 import {
   canonicalSignalType,
-  COHERENCE_SIGNAL_TYPES,
+  COHERENCE_TYPES,
   COHERENCE_TYPE_OPTIONS,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
+import { SignalTypeIcon } from './signal-type-icon';
 
 const TYPE_TONE_CLASS = {
   success: 'text-success-11',
@@ -34,7 +35,7 @@ export function SignalTypeBadge({
   const value = canonicalSignalType(type);
   if (!value) return null;
 
-  if (!(COHERENCE_SIGNAL_TYPES as readonly string[]).includes(value)) {
+  if (!(COHERENCE_TYPES as readonly string[]).includes(value)) {
     return null;
   }
   const option = COHERENCE_TYPE_OPTIONS.find((item) => item.type === value);
@@ -49,12 +50,13 @@ export function SignalTypeBadge({
     return (
       <span
         className={cn(
-          'inline-flex w-fit items-center px-2 py-1 text-[10px] font-semibold uppercase leading-none tracking-[0.08em]',
+          'inline-flex w-fit items-center gap-1.5 px-2 py-1 text-[10px] font-semibold uppercase leading-none tracking-[0.08em]',
           'bg-[color-mix(in_oklab,currentColor_10%,transparent)]',
           tone,
           className,
         )}
       >
+        <SignalTypeIcon type={value} className="size-3 shrink-0" />
         {label}
       </span>
     );
@@ -63,13 +65,13 @@ export function SignalTypeBadge({
   return (
     <span
       className={cn(
-        'inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase leading-4 tracking-[0.06em]',
+        'inline-flex w-fit shrink-0 items-center gap-1.5 border px-2 py-0.5 text-[10px] font-medium uppercase leading-4 tracking-[0.06em]',
         'border-[color-mix(in_oklab,currentColor_45%,transparent)]',
         tone,
         className,
       )}
     >
-      <span className="size-1.5 shrink-0 rounded-full bg-current" aria-hidden />
+      <SignalTypeIcon type={value} className="size-3 shrink-0" />
       {label}
     </span>
   );

@@ -4301,6 +4301,7 @@
     "loadingSignals": "Signalen laden...",
     "signInToSee": "Meld u aan om signalen, ruimtegeheugen en gesprekken te bekijken",
     "searchSignals": "Zoek signalen...",
+    "signalTitleNoResults": "Geen signalen komen overeen met die titel.",
     "newSignal": "Nieuw signaal",
     "backToCoherence": "Terug naar Signalen",
     "all": "Alle",

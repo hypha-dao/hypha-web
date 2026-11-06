@@ -4331,6 +4331,7 @@
     "loadingSignals": "Loading signals...",
     "signInToSee": "Please, sign in to see signals, space memory, and conversations",
     "searchSignals": "Search signals...",
+    "signalTitleNoResults": "No signals match that title.",
     "newSignal": "New Signal",
     "backToCoherence": "Back to Signals",
     "all": "All",

@@ -3725,6 +3725,7 @@
     "loadingSignals": "Chargement des signaux...",
     "signInToSee": "Veuillez vous connecter pour voir les signaux, la mémoire de l'espace et les conversations",
     "searchSignals": "Rechercher des signaux...",
+    "signalTitleNoResults": "Aucun signal ne correspond à ce titre.",
     "newSignal": "Nouveau signal",
     "backToCoherence": "Retour aux Signaux",
     "all": "Tous",
