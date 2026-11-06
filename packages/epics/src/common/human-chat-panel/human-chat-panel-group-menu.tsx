@@ -20,10 +20,15 @@ import {
   GROUP_ROOM_NAME_MAX,
   MEMBER_CONNECTION_MAX,
   isArchivedGroupRoom,
+  isHyphaBotMatrixIdentity,
+  looksLikeTechnicalMatrixDisplayName,
+  matrixMemberDisplayLabel,
   normalizeGroupRoomName,
+  uniqueCanonicalPrivySubsFromMxids,
   useJwt,
   useMatrix,
   useMatrixUserIdsByPersonIds,
+  usePeopleBySubs,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import {
@@ -175,45 +180,98 @@ export function HumanChatPanelGroupMenu({
       personIds: [
         ...directory.map((person) => person.id),
         ...(searchHits ?? []).map((person) => person.id),
+        ...(directoryHome?.person.id != null ? [directoryHome.person.id] : []),
       ],
     });
-  const roomMemberIds = useMemo(() => {
+  const roomMembers = useMemo(() => {
     const current = client?.getRoom(roomId);
     const ids = new Set<string>();
+    const joined: { userId: string; label: string | null }[] = [];
     for (const member of current?.getMembers() ?? []) {
       if (member.membership !== 'join' && member.membership !== 'invite') {
         continue;
       }
-      const id = member.userId?.trim().toLowerCase();
-      if (id) ids.add(id);
+      const userId = member.userId?.trim();
+      if (!userId) continue;
+      ids.add(userId.toLowerCase());
+      if (isHyphaBotMatrixIdentity(userId)) continue;
+      const raw = matrixMemberDisplayLabel(member, userId);
+      joined.push({
+        userId,
+        label: looksLikeTechnicalMatrixDisplayName(raw, userId) ? null : raw,
+      });
     }
-    return ids;
-  }, [addOpen, archiveCheck, client, roomId]);
-  const addablePeople = useMemo(
-    () =>
-      addablePeopleForGroup(
-        directory,
-        debouncedAddQuery ? searchHits : null,
-        personIdToMatrixUserId,
-        roomMemberIds,
-        addQuery,
-      ),
-    [
-      addQuery,
-      debouncedAddQuery,
+    const self = selfId?.trim();
+    if (self) ids.add(self.toLowerCase());
+    return { ids, joined };
+  }, [addOpen, archiveCheck, client, roomId, selfId]);
+  const roomMemberIds = roomMembers.ids;
+  const memberSubs = useMemo(
+    () => uniqueCanonicalPrivySubsFromMxids([...roomMemberIds]),
+    [roomMemberIds],
+  );
+  const { peopleBySub, isLoading: memberProfilesLoading } = usePeopleBySubs({
+    subs: addOpen ? memberSubs : [],
+  });
+  const memberProfilesPending = addOpen && memberProfilesLoading;
+  const addablePeople = useMemo(() => {
+    const caller = directoryHome?.person;
+    const occupants = [
+      ...roomMembers.joined.map((member) => ({
+        matrixUserId: member.userId,
+        label: member.label,
+      })),
+      ...[...peopleBySub.values()].map((person) => ({
+        personId: person.id,
+        slug: person.slug,
+        label:
+          [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+          person.nickname,
+      })),
+      ...(caller
+        ? [
+            {
+              personId: caller.id,
+              slug: caller.slug,
+              address: caller.address,
+              label:
+                [caller.name, caller.surname]
+                  .filter(Boolean)
+                  .join(' ')
+                  .trim() || caller.nickname,
+            },
+          ]
+        : []),
+    ];
+    return addablePeopleForGroup(
       directory,
+      debouncedAddQuery ? searchHits : null,
       personIdToMatrixUserId,
       roomMemberIds,
-      searchHits,
-    ],
-  );
+      addQuery,
+      occupants,
+    );
+  }, [
+    addQuery,
+    debouncedAddQuery,
+    directory,
+    directoryHome?.person,
+    peopleBySub,
+    personIdToMatrixUserId,
+    roomMemberIds,
+    roomMembers.joined,
+    searchHits,
+  ]);
   const listStatus = addPeopleCandidateStatus({
     query: addQuery,
     debouncedQuery: debouncedAddQuery,
-    directoryLoaded: directoryHome != null,
-    directoryFailed,
-    searching,
-    matchCount: addablePeople.length,
+    // Member profiles supply the person id and name used to hide people who
+    // are already in the room. Showing the list before that arrives flashes
+    // those members as add candidates.
+    directoryLoaded: directoryHome != null && !memberProfilesPending,
+    directoryFailed: directoryFailed && !memberProfilesPending,
+    searching: searching || memberProfilesPending,
+    matchCount: memberProfilesPending ? 0 : addablePeople.length,
   });
   const selectedMissingMatrixId = [...selected].some(
     (id) => !personIdToMatrixUserId[id]?.trim(),

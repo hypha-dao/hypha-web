@@ -1295,6 +1295,7 @@ describe('message directory search', () => {
     surname: 'Risteski',
     nickname: null,
     avatarUrl: null,
+    address: null as string | null,
   };
 
   it('keeps a network person the shared-space page does not include', () => {
@@ -1320,6 +1321,144 @@ describe('message directory search', () => {
         new Set(['@dimche:matrix']),
         'Dimche',
       ),
+    ).toEqual([]);
+  });
+
+  it('hides every directory row for someone already in the room', () => {
+    const alex = {
+      id: 4,
+      slug: 'alex-prate',
+      name: 'Alex',
+      surname: 'Prate',
+      nickname: null,
+      avatarUrl: null,
+      address: '0xALEX',
+    };
+    const alexAgain = {
+      id: 40,
+      slug: 'alex-prate-2',
+      name: 'Alex',
+      surname: 'Prate',
+      nickname: null,
+      avatarUrl: 'https://example/alex.png',
+      address: '0xOTHER',
+    };
+    const alexBySlug = {
+      id: 41,
+      slug: 'alex-prate',
+      name: 'A.',
+      surname: 'P.',
+      nickname: null,
+      avatarUrl: null,
+      address: null,
+    };
+    const vlad = {
+      id: 7,
+      slug: 'vlad-other',
+      name: 'Vlad',
+      surname: 'Hramtsov',
+      nickname: null,
+      avatarUrl: null,
+      address: '0xOTHER',
+    };
+    const ronnie = {
+      id: 8,
+      slug: 'ronnie-xerxes-potel',
+      name: 'Ronnie Xerxes',
+      surname: 'Potel',
+      nickname: null,
+      avatarUrl: null,
+      address: '0xRONNIE',
+    };
+    const previewAlex = {
+      id: 42,
+      slug: 'alex-preview',
+      name: 'Preview',
+      surname: 'Alex',
+      nickname: null,
+      avatarUrl: null,
+      address: null as string | null,
+    };
+    const occupants = [
+      {
+        personId: 1,
+        slug: 'vlad-hramtsov',
+        address: '0xVLAD',
+        label: 'Vlad Hramtsov',
+        matrixUserId: '@prod_privy_did_privy_vlad:matrix',
+      },
+      {
+        personId: 4,
+        slug: 'alex-prate',
+        address: '0xALEX',
+        label: 'Alex Prate',
+        matrixUserId: '@prod_privy_did_privy_alex123:matrix',
+      },
+      { personId: 5, slug: 'xerxes', label: 'Xerxes Potel' },
+    ];
+
+    expect(
+      addablePeopleForGroup(
+        [alex, alexAgain, alexBySlug, vlad, ronnie, kate],
+        [dimche, previewAlex],
+        { 42: '@prev_privy_did_privy_alex123:matrix' },
+        new Set(['@prod_privy_did_privy_alex123:matrix']),
+        '',
+        occupants,
+      ).map((person) => person.id),
+    ).toEqual([8, 2]);
+    expect(
+      addablePeopleForGroup(
+        [],
+        [dimche, { ...dimche, id: 90, slug: 'dimche-risteski-2' }],
+        {},
+        new Set(['@prod_privy_did_privy_alex123:matrix']),
+        'Dimche',
+        occupants,
+      ).map((person) => person.id),
+    ).toEqual([9, 90]);
+  });
+
+  it('treats preview and prod Matrix ids for one Privy account as the same member', () => {
+    const previewAlex = {
+      id: 42,
+      slug: 'alex-preview',
+      name: 'Preview',
+      surname: 'Alex',
+      nickname: null,
+      avatarUrl: null,
+      address: null as string | null,
+    };
+    expect(
+      addablePeopleForGroup(
+        [previewAlex],
+        [],
+        { 42: '@prev_privy_did_privy_alex123:matrix' },
+        new Set(['@prod_privy_did_privy_alex123:matrix']),
+        '',
+      ),
+    ).toEqual([]);
+  });
+
+  it('keeps the current member out even when their directory row has another id', () => {
+    const duplicate = {
+      id: 70,
+      slug: 'vlad-hramtsov',
+      name: 'Someone',
+      surname: 'Else',
+      nickname: null,
+      avatarUrl: null,
+      address: '0xVLAD',
+    };
+    expect(
+      addablePeopleForGroup([duplicate], [], {}, new Set<string>(), '', [
+        {
+          personId: 1,
+          slug: 'vlad-hramtsov',
+          address: '0xVlad',
+          label: 'Vlad Hramtsov',
+        },
+      ]),
     ).toEqual([]);
   });
 

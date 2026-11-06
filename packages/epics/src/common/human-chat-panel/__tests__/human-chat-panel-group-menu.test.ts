@@ -164,6 +164,7 @@ describe('add people directory', () => {
     expect(source).toContain("'add-people-directory'");
     expect(source).not.toContain("'add-people', debouncedAddQuery");
     expect(source).toContain('addPeopleCandidateStatus');
+    expect(source).toContain('usePeopleBySubs');
   });
 });
 
