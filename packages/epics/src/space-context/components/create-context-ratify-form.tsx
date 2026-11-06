@@ -13,7 +13,13 @@ import {
   useJwt,
   useCreateAgreementOrchestrator,
 } from '@hypha-platform/core/client';
-import { Button, Checkbox, Form, RequirementMark } from '@hypha-platform/ui';
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Form,
+  RequirementMark,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -34,8 +40,7 @@ import { SpaceContextStatusChip } from './space-context-status-chip';
 import { agreementNumber } from './agreement-number';
 import { useAuthentication } from '@hypha-platform/authentication';
 
-const FIELD_LABEL_CLASS =
-  'text-[9px] font-semibold uppercase tracking-[0.11em] text-neutral-11';
+const FIELD_LABEL_CLASS = 'text-sm font-medium text-foreground';
 
 const formSchema = schemaCreateAgreementForm.extend(createAgreementFiles);
 type FormValues = z.infer<typeof formSchema>;
@@ -384,15 +389,15 @@ export function CreateContextRatifyForm({
                   <p className={FIELD_LABEL_CLASS}>
                     {t('proposeForm.proposalType')}
                   </p>
-                  <span className="inline-flex border border-foreground bg-background-2 px-2.5 py-1.5 text-1 font-semibold text-foreground">
+                  <Badge variant="outline" colorVariant="neutral">
                     {t('proposeForm.proposalTypeValue')}
-                  </span>
+                  </Badge>
                 </div>
                 <fieldset className="space-y-3.5">
                   <legend className={cn(FIELD_LABEL_CLASS, 'mb-3.5')}>
                     {t('proposeForm.sections')} <RequirementMark />
                   </legend>
-                  <div className="divide-y divide-border/70 border border-border/70 bg-background-2">
+                  <div className="craft-card divide-y divide-border/70">
                     {(overview?.sections ?? []).map((section) => {
                       const disabled = !isProposableSection(section);
                       const selectionLocked = typeof agreement?.id === 'number';
@@ -425,10 +430,10 @@ export function CreateContextRatifyForm({
                             }}
                           />
                           <span className="flex min-w-0 flex-1 items-baseline gap-3">
-                            <span className="shrink-0 text-[13px] font-semibold text-foreground">
+                            <span className="shrink-0 text-2 font-medium text-foreground">
                               {section.title}
                             </span>
-                            <span className="min-w-0 truncate text-[11px] text-neutral-11">
+                            <span className="craft-meta min-w-0 truncate">
                               {sectionMeta(section, t)}
                             </span>
                           </span>
@@ -443,7 +448,7 @@ export function CreateContextRatifyForm({
           />
 
           {error ? (
-            <div className="border border-error-6 bg-background-2 px-4 py-6">
+            <div className="craft-card px-4 py-6">
               <p className="text-2 text-error-11">{t('error.load')}</p>
               <Button
                 type="button"
@@ -458,7 +463,7 @@ export function CreateContextRatifyForm({
           ) : null}
 
           {linkError && typeof retryDocumentId === 'number' ? (
-            <div className="border border-error-6 bg-background-2 px-4 py-6">
+            <div className="craft-card px-4 py-6">
               <p className="text-2 text-error-11">{t('error.link')}</p>
               <Button
                 type="button"
@@ -478,9 +483,7 @@ export function CreateContextRatifyForm({
           ) : null}
 
           <div className="flex flex-col gap-3 border-t border-border/70 pt-3.5 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[11px] text-neutral-11">
-              {t('proposeForm.onPassNote')}
-            </p>
+            <p className="craft-meta">{t('proposeForm.onPassNote')}</p>
             <div className="flex shrink-0 justify-end gap-2">
               <Button asChild variant="outline" colorVariant="neutral">
                 <Link href={closeUrl || successfulUrl} scroll={false}>
