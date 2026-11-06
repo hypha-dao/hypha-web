@@ -93,12 +93,13 @@ describe('findSpaceByWeb3Id', () => {
 
   it('deprioritises space id 853 after its slug changes', async () => {
     const renamedProbe = { ...probe, slug: 'renamed-probe' };
+    const nonProbe = { ...hypha, id: 900 };
     const space = await findSpaceByWeb3Id(
       { id: 240 },
-      { db: dbReturning([renamedProbe, hypha]) as never },
+      { db: dbReturning([renamedProbe, nonProbe]) as never },
     );
 
-    expect(space?.id).toBe(94);
+    expect(space?.id).toBe(900);
     expect(space?.slug).toBe('hypha');
   });
 
