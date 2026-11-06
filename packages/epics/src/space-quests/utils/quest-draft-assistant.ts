@@ -1,6 +1,7 @@
 import {
   QUEST_STEWARD_STEPS,
   bulletsToMarkdownList,
+  isBulkQuestDraftRequest,
   limitQuestPatchToStep,
   splitMarkdownLinesToBullets,
   stripViewerYouMarker,
@@ -141,20 +142,7 @@ function extractRewardsFromText(text: string): QuestReward[] {
 
 /** Asks to invent several sections at once. The coach answers the active section only. */
 function isBulkSectionDraftRequest(text: string): boolean {
-  const lower = text.toLowerCase();
-  const asksToDraft =
-    /\b(draft|suggest|propose|auto[- ]?fill|fill (?:in|out)|generate)\b/.test(
-      lower,
-    );
-  if (!asksToDraft) return false;
-  if (/\b(sections|everything|all of it|the rest)\b/.test(lower)) return true;
-  const mentionsScope = /\bscope\b/.test(lower);
-  const mentionsSuccess = /\b(success|criteria)\b/.test(lower);
-  const mentionsMilestones = /\bmilestones?\b/.test(lower);
-  return (
-    [mentionsScope, mentionsSuccess, mentionsMilestones].filter(Boolean)
-      .length >= 2
-  );
+  return isBulkQuestDraftRequest(text);
 }
 
 function stepFieldsAlreadyCaptured(

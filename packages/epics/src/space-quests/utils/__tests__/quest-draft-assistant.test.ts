@@ -95,4 +95,18 @@ describe('quest-draft-assistant', () => {
     expect(onScope.goal).toBeUndefined();
     expect(onScope.rewards).toBeUndefined();
   });
+
+  it('does not fill scope from "draft everything"', () => {
+    const withGoal: QuestDraftStateSnapshot = {
+      ...emptyDraft,
+      goal: 'Validate the sandbox onboarding checklist.',
+    };
+    const patch = buildLocalQuestDraftPatch({
+      message: 'Please draft everything for me.',
+      currentStep: 'scope',
+      draft: withGoal,
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(patch).toEqual({});
+  });
 });

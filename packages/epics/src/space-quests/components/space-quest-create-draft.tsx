@@ -8,6 +8,7 @@ import {
   QUEST_STEWARD_STEPS,
   buildQuestProposalDescription,
   limitQuestPatchToStep,
+  resolveQuestDraftTarget,
   questRecordToProposalDraft,
   withoutPlaceholderLeadDuplicates,
   splitMarkdownLinesToBullets,
@@ -124,6 +125,10 @@ function stripAgentMentionPrefix(text: string): string {
 
 const QUEST_READY_REPLY =
   "Your quest draft is ready. Click CREATE QUEST whenever you're ready to submit it as a proposal for voting.";
+
+function bulkCoachReply(step: QuestStewardStep): string {
+  return `We'll take one section at a time. ${stewardQuestionForStep(step)}`;
+}
 
 function questHelperFallbackReply({
   currentStep,
@@ -295,6 +300,8 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       const trimmed = stripAgentMentionPrefix(rawTrimmed) || rawTrimmed;
 
       const currentStep = QUEST_STEWARD_STEPS[stewardStepIndex] ?? 'goal';
+      const draftTarget = resolveQuestDraftTarget(trimmed, currentStep);
+      const stepToWrite = draftTarget.step;
       const currentSnapshot: QuestDraftStateSnapshot = {
         name,
         goal,
@@ -387,13 +394,11 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             );
             if (hasAiPatch || data.reply?.trim()) {
               llmHandled = true;
-              const sourcePatch: QuestDraftPatchInput = hasAiPatch
-                ? data.patch!
-                : {};
-              const effectivePatch = limitQuestPatchToStep(
-                sourcePatch,
-                currentStep,
-              );
+              const sourcePatch: QuestDraftPatchInput =
+                draftTarget.bulk || !hasAiPatch ? {} : data.patch!;
+              const effectivePatch = draftTarget.bulk
+                ? {}
+                : limitQuestPatchToStep(sourcePatch, stepToWrite);
               const keptKeys = new Set(Object.keys(effectivePatch));
               const droppedOtherSections = Object.keys(sourcePatch).some(
                 (key) => {
@@ -414,8 +419,8 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
 
               const advance = nextQuestStepAfterUpdate({
                 draft: afterAi,
-                currentStep,
-                updatedLabels,
+                currentStep: draftTarget.bulk ? currentStep : stepToWrite,
+                updatedLabels: draftTarget.bulk ? [] : updatedLabels,
               });
               setStewardStepIndex(
                 Math.max(0, QUEST_STEWARD_STEPS.indexOf(advance.step)),
@@ -423,12 +428,14 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
               setActiveSection(advance.step);
 
               const fallbackReply = questHelperFallbackReply({
-                currentStep,
+                currentStep: draftTarget.bulk ? currentStep : stepToWrite,
                 nextStep: advance.step,
                 complete: advance.complete,
-                updatedLabels,
+                updatedLabels: draftTarget.bulk ? [] : updatedLabels,
               });
-              const replyText = droppedOtherSections
+              const replyText = draftTarget.bulk
+                ? bulkCoachReply(currentStep)
+                : droppedOtherSections
                 ? fallbackReply
                 : data.reply?.trim() || fallbackReply;
 
@@ -452,15 +459,17 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       }
 
       if (!llmHandled) {
-        const localPatch = limitQuestPatchToStep(
-          buildLocalQuestDraftPatch({
-            message: trimmed,
-            currentStep,
-            draft: currentSnapshot,
-            viewerDisplayName,
-          }),
-          currentStep,
-        );
+        const localPatch = draftTarget.bulk
+          ? {}
+          : limitQuestPatchToStep(
+              buildLocalQuestDraftPatch({
+                message: trimmed,
+                currentStep: stepToWrite,
+                draft: currentSnapshot,
+                viewerDisplayName,
+              }),
+              stepToWrite,
+            );
         const { next: afterLocal, updatedLabels: localUpdated } =
           applyPatchToQuestDraftState({
             current: currentSnapshot,
@@ -472,8 +481,8 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
 
         const advance = nextQuestStepAfterUpdate({
           draft: afterLocal,
-          currentStep,
-          updatedLabels: localUpdated,
+          currentStep: draftTarget.bulk ? currentStep : stepToWrite,
+          updatedLabels: draftTarget.bulk ? [] : localUpdated,
         });
         setStewardStepIndex(
           Math.max(0, QUEST_STEWARD_STEPS.indexOf(advance.step)),
@@ -487,12 +496,14 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             role: 'member',
             senderName: QUEST_HELPER_NAME,
             timestamp: new Date(),
-            text: questHelperFallbackReply({
-              currentStep,
-              nextStep: advance.step,
-              complete: advance.complete,
-              updatedLabels: localUpdated,
-            }),
+            text: draftTarget.bulk
+              ? bulkCoachReply(currentStep)
+              : questHelperFallbackReply({
+                  currentStep: stepToWrite,
+                  nextStep: advance.step,
+                  complete: advance.complete,
+                  updatedLabels: localUpdated,
+                }),
           },
         ]);
       }
