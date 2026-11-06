@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
 import { useDebounce } from 'use-debounce';
@@ -50,7 +50,9 @@ import {
 } from '@hypha-platform/ui';
 
 import {
+  addPeopleCandidateStatus,
   addablePeopleForGroup,
+  fetchMessageDirectorySearch,
   isRememberedGroupChatRoom as isLocalGroupCreator,
   rememberGroupChatMembers,
 } from '../../people/components/member-connections';
@@ -83,6 +85,7 @@ export function HumanChatPanelGroupMenu({
   onUnarchived?: () => void;
 }) {
   const t = useTranslations('HumanChatPanel');
+  const tConnections = useTranslations('Connections');
   const { jwt } = useJwt();
   const { client, ensureRoomMembers } = useMatrix();
   const selfId = client?.getUserId() ?? null;
@@ -107,34 +110,73 @@ export function HumanChatPanelGroupMenu({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [debouncedAddQuery] = useDebounce(addQuery.trim(), 200);
 
-  const { data: home } = useSWR<MemberIntelligence | null>(
+  // Shared-space page stays up while a search is in flight. Typing used to
+  // replace this request, so a search ran against an empty directory.
+  const {
+    data: directoryHome,
+    error: directoryError,
+    isLoading: directoryLoading,
+    isValidating: directoryValidating,
+  } = useSWR<MemberIntelligence>(
     addOpen && jwt
-      ? ['/api/v1/people/me/intelligence', jwt, 'add-people', debouncedAddQuery]
+      ? ['/api/v1/people/me/intelligence', jwt, 'add-people-directory']
       : null,
-    async ([url, token, , q]: [string, string, string, string]) => {
-      const params = new URLSearchParams();
-      if (q) params.set('q', q);
-      else params.set('connections', String(MEMBER_CONNECTION_MAX));
-      const response = await fetch(`${url}?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) return null;
+    async ([url, token]: [string, string]) => {
+      const response = await fetch(
+        `${url}?connections=${MEMBER_CONNECTION_MAX}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!response.ok) throw new Error('directory');
       return (await response.json()) as MemberIntelligence;
     },
+    { shouldRetryOnError: false, revalidateOnFocus: false },
   );
-  const connections = home?.connections ?? [];
-  const directoryRef = useRef<ConnectionPerson[]>([]);
-  if (!debouncedAddQuery && connections.length > 0) {
-    directoryRef.current = connections;
-  }
-  const directory =
-    directoryRef.current.length > 0 ? directoryRef.current : connections;
-  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
-    personIds: [
-      ...directory.map((person) => person.id),
-      ...connections.map((person) => person.id),
-    ],
-  });
+  const [searchHits, setSearchHits] = useState<ConnectionPerson[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  useEffect(() => {
+    const term = debouncedAddQuery.trim();
+    if (!addOpen || !jwt || !term) {
+      setSearchHits(null);
+      setSearching(false);
+      return;
+    }
+    const controller = new AbortController();
+    setSearching(true);
+    void (async () => {
+      try {
+        const people = await fetchMessageDirectorySearch(term, {
+          headers: { Authorization: `Bearer ${jwt}` },
+          signal: controller.signal,
+        });
+        if (!controller.signal.aborted) setSearchHits(people);
+      } catch (searchError) {
+        if (
+          searchError instanceof DOMException &&
+          searchError.name === 'AbortError'
+        ) {
+          return;
+        }
+        if (!controller.signal.aborted) setSearchHits([]);
+      } finally {
+        if (!controller.signal.aborted) setSearching(false);
+      }
+    })();
+    return () => controller.abort();
+  }, [addOpen, debouncedAddQuery, jwt]);
+  const directory = directoryHome?.connections ?? [];
+  const directoryPending =
+    directoryLoading || (directoryValidating && directoryHome == null);
+  const directoryFailed =
+    Boolean(addOpen && jwt) &&
+    !directoryPending &&
+    (directoryError != null || directoryHome == null);
+  const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
+    useMatrixUserIdsByPersonIds({
+      personIds: [
+        ...directory.map((person) => person.id),
+        ...(searchHits ?? []).map((person) => person.id),
+      ],
+    });
   const roomMemberIds = useMemo(() => {
     const current = client?.getRoom(roomId);
     const ids = new Set<string>();
@@ -151,19 +193,30 @@ export function HumanChatPanelGroupMenu({
     () =>
       addablePeopleForGroup(
         directory,
-        debouncedAddQuery ? connections : null,
+        debouncedAddQuery ? searchHits : null,
         personIdToMatrixUserId,
         roomMemberIds,
         addQuery,
       ),
     [
       addQuery,
-      connections,
       debouncedAddQuery,
       directory,
       personIdToMatrixUserId,
       roomMemberIds,
+      searchHits,
     ],
+  );
+  const listStatus = addPeopleCandidateStatus({
+    query: addQuery,
+    debouncedQuery: debouncedAddQuery,
+    directoryLoaded: directoryHome != null,
+    directoryFailed,
+    searching,
+    matchCount: addablePeople.length,
+  });
+  const selectedMissingMatrixId = [...selected].some(
+    (id) => !personIdToMatrixUserId[id]?.trim(),
   );
 
   if (!room || !isPeopleGroupChatRoom(room)) return null;
@@ -276,7 +329,10 @@ export function HumanChatPanelGroupMenu({
       const mxid = personIdToMatrixUserId[id]?.trim();
       return mxid ? [mxid] : [];
     });
-    if (memberIds.length === 0) return;
+    if (memberIds.length === 0 || memberIds.length !== selected.size) {
+      setError(t('addPeopleFailed'));
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -406,10 +462,14 @@ export function HumanChatPanelGroupMenu({
             placeholder={t('addPeopleSearch')}
           />
           <div className="max-h-72 overflow-y-auto border border-border">
-            {addablePeople.length === 0 ? (
+            {listStatus !== 'results' ? (
               <p className="p-3 text-sm text-muted-foreground">
-                {addQuery.trim()
+                {listStatus === 'loading'
+                  ? tConnections('loading')
+                  : listStatus === 'no-matches'
                   ? t('addPeopleNoMatches')
+                  : listStatus === 'load-failed'
+                  ? t('addPeopleLoadFailed')
                   : t('addPeopleEmpty')}
               </p>
             ) : (
@@ -466,7 +526,11 @@ export function HumanChatPanelGroupMenu({
             </Button>
             <Button
               type="button"
-              disabled={busy || selected.size === 0}
+              disabled={
+                busy ||
+                selected.size === 0 ||
+                (matrixIdsLoading && selectedMissingMatrixId)
+              }
               onClick={() => void confirmAddPeople()}
             >
               {t('addPeopleConfirm')}

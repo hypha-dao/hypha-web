@@ -4306,6 +4306,7 @@
     "addPeopleConfirm": "Add",
     "addPeopleCancel": "Cancel",
     "addPeopleFailed": "Could not add people to this group. Try again.",
+    "addPeopleLoadFailed": "Could not load people to add. Try again.",
     "addPeopleEmpty": "Everyone you can add is already here.",
     "addPeopleNoMatches": "No people match that search.",
     "addPeopleSearch": "Search people",

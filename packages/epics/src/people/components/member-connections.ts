@@ -421,6 +421,117 @@ export function mergeDirectoryPeople<T extends { id: number }>(
   return [...byId.values()];
 }
 
+/** A human returned by `/api/v1/people/search` — not limited to shared spaces. */
+export type DirectorySearchHit = {
+  id: number;
+  slug?: string | null;
+  name?: string | null;
+  surname?: string | null;
+  nickname?: string | null;
+  avatarUrl?: string | null;
+};
+
+export type DirectoryPerson = {
+  id: number;
+  slug: string | null;
+  name: string | null;
+  surname: string | null;
+  nickname: string | null;
+  avatarUrl: string | null;
+  sharedSpaceCount: number;
+};
+
+/**
+ * Shared-space matches plus network directory hits, same union Messages search
+ * shows. A later hit with the same id replaces the earlier one.
+ */
+export function directoryPeopleFromSearch(
+  sharedSpaceHits: readonly DirectoryPerson[] | null | undefined,
+  networkHits: readonly DirectorySearchHit[] | null | undefined,
+): DirectoryPerson[] {
+  const network: DirectoryPerson[] = [];
+  for (const person of networkHits ?? []) {
+    if (!person.id || person.id <= 0) continue;
+    network.push({
+      id: person.id,
+      slug: person.slug ?? null,
+      name: person.name ?? null,
+      surname: person.surname ?? null,
+      nickname: person.nickname ?? null,
+      avatarUrl: person.avatarUrl ?? null,
+      sharedSpaceCount: 0,
+    });
+  }
+  return mergeDirectoryPeople(sharedSpaceHits, network);
+}
+
+/**
+ * Messages directory search. Shared-space intelligence can time out or miss
+ * someone who is not on the caller's chain roster; network people search is
+ * the directory that still finds them. Callers invite only people who resolve
+ * to a Matrix id, and skip anyone already in the room.
+ */
+export async function fetchMessageDirectorySearch(
+  term: string,
+  init: { headers: HeadersInit; signal?: AbortSignal },
+): Promise<DirectoryPerson[]> {
+  const trimmed = term.trim();
+  if (!trimmed) return [];
+  const [connectionResponse, networkResponse] = await Promise.all([
+    fetch(
+      `/api/v1/people/me/intelligence?q=${encodeURIComponent(trimmed)}`,
+      init,
+    ),
+    trimmed.length >= 2
+      ? fetch(`/api/v1/people/search?q=${encodeURIComponent(trimmed)}`, init)
+      : Promise.resolve(null),
+  ]);
+  let shared: DirectoryPerson[] = [];
+  if (connectionResponse.ok) {
+    const body = (await connectionResponse.json()) as {
+      connections?: DirectoryPerson[];
+    };
+    shared = body.connections ?? [];
+  }
+  let network: DirectorySearchHit[] = [];
+  if (networkResponse?.ok) {
+    const body = (await networkResponse.json()) as {
+      people?: DirectorySearchHit[];
+    };
+    network = body.people ?? [];
+  }
+  return directoryPeopleFromSearch(shared, network);
+}
+
+/**
+ * What the add-people list should say. An in-flight directory or search is not
+ * "everyone is already here" and not "no matches".
+ */
+export function addPeopleCandidateStatus({
+  query,
+  debouncedQuery,
+  directoryLoaded,
+  directoryFailed,
+  searching,
+  matchCount,
+}: {
+  query: string;
+  debouncedQuery: string;
+  directoryLoaded: boolean;
+  directoryFailed: boolean;
+  searching: boolean;
+  matchCount: number;
+}): 'results' | 'loading' | 'empty' | 'no-matches' | 'load-failed' {
+  if (matchCount > 0) return 'results';
+  const typed = query.trim();
+  const pending = typed !== debouncedQuery.trim();
+  if (typed && (searching || pending)) return 'loading';
+  if (!typed && !directoryLoaded && !directoryFailed) return 'loading';
+  if (typed) return 'no-matches';
+  if (directoryFailed) return 'load-failed';
+  return 'empty';
+}
+
 const PREVIEW_LENGTH = 48;
 
 function truncateMessagePreview(text: string) {
@@ -1477,8 +1588,10 @@ export function peopleMatchingSearch<
 }
 
 /**
- * Add-people candidates: name/username search, excluding only people whose
- * Matrix id is already joined or invited. A missing mxid is not "already here".
+ * Add-people candidates: the loaded shared-space page plus directory search
+ * hits (shared-space query and network people search), excluding only people
+ * whose Matrix id is already joined or invited. A missing mxid is not
+ * "already here".
  */
 export function addablePeopleForGroup<
   T extends {

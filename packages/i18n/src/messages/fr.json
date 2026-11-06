@@ -3700,6 +3700,7 @@
     "addPeopleConfirm": "Ajouter",
     "addPeopleCancel": "Annuler",
     "addPeopleFailed": "Impossible d’ajouter des personnes à ce groupe. Réessayez.",
+    "addPeopleLoadFailed": "Impossible de charger les personnes. Réessayez.",
     "addPeopleEmpty": "Toutes les personnes que tu peux ajouter sont déjà ici.",
     "addPeopleNoMatches": "Personne ne correspond à cette recherche.",
     "addPeopleSearch": "Rechercher des personnes",

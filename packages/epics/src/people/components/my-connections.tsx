@@ -117,6 +117,7 @@ import {
   applyResolvedPeerTitles,
   conversationPeerSubs,
   mergeDirectoryPeople,
+  fetchMessageDirectorySearch,
   personRowsFromDmRooms,
   nextSelectedMembers,
   resolvedMatrixIdsForGroup,
@@ -2160,53 +2161,11 @@ export function MyConnections({
       setSearching(true);
       void (async () => {
         try {
-          const headers = { Authorization: `Bearer ${jwt}` };
-          const [connectionResponse, networkResponse] = await Promise.all([
-            fetch(
-              `/api/v1/people/me/intelligence?q=${encodeURIComponent(term)}`,
-              { headers, signal: controller.signal },
-            ),
-            term.length >= 2
-              ? fetch(`/api/v1/people/search?q=${encodeURIComponent(term)}`, {
-                  headers,
-                  signal: controller.signal,
-                })
-              : Promise.resolve(null),
-          ]);
-          if (controller.signal.aborted) return;
-          const connections: ConnectionPerson[] = [];
-          if (connectionResponse.ok) {
-            const body =
-              (await connectionResponse.json()) as MemberIntelligence;
-            connections.push(...(body.connections ?? []));
-          }
-          if (networkResponse?.ok) {
-            const body = (await networkResponse.json()) as {
-              people?: Array<{
-                id: number;
-                slug: string | null;
-                name: string | null;
-                surname: string | null;
-                nickname: string | null;
-                avatarUrl: string | null;
-              }>;
-            };
-            for (const person of body.people ?? []) {
-              if (!person.id || person.id <= 0) continue;
-              connections.push({
-                id: person.id,
-                slug: person.slug,
-                name: person.name,
-                surname: person.surname,
-                nickname: person.nickname,
-                avatarUrl: person.avatarUrl,
-                sharedSpaceCount: 0,
-              });
-            }
-          }
-          if (!controller.signal.aborted) {
-            setSearchDirectory(mergeDirectoryPeople(connections));
-          }
+          const people = await fetchMessageDirectorySearch(term, {
+            headers: { Authorization: `Bearer ${jwt}` },
+            signal: controller.signal,
+          });
+          if (!controller.signal.aborted) setSearchDirectory(people);
         } catch (error) {
           if (error instanceof DOMException && error.name === 'AbortError') {
             return;

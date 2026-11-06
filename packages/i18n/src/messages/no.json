@@ -4275,6 +4275,7 @@
     "addPeopleConfirm": "Legg til",
     "addPeopleCancel": "Avbryt",
     "addPeopleFailed": "Kunne ikke legge til personer i denne gruppen. Prøv igjen.",
+    "addPeopleLoadFailed": "Kunne ikke laste inn personer. Prøv igjen.",
     "addPeopleEmpty": "Alle du kan legge til er allerede her.",
     "addPeopleNoMatches": "Ingen personer matcher det søket.",
     "addPeopleSearch": "Søk etter personer",

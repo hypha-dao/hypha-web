@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 import { HYPHA_ROOM_TYPES } from '../../../../../core/src/matrix/room-types';
@@ -148,6 +150,20 @@ describe('isPeopleGroupChatRoom', () => {
         },
       }),
     ).toBe(true);
+  });
+});
+
+describe('add people directory', () => {
+  const source = readFileSync(
+    resolve(__dirname, '../human-chat-panel-group-menu.tsx'),
+    'utf8',
+  );
+
+  it('keeps the shared-space page and searches the message directory', () => {
+    expect(source).toContain('fetchMessageDirectorySearch');
+    expect(source).toContain("'add-people-directory'");
+    expect(source).not.toContain("'add-people', debouncedAddQuery");
+    expect(source).toContain('addPeopleCandidateStatus');
   });
 });
 

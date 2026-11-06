@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { HYPHA_ROOM_TYPES } from '../../../../../core/src/matrix/room-types';
 
@@ -26,6 +26,9 @@ import {
   resolvedMatrixIdsForGroup,
   personRowsFromDmRooms,
   applyResolvedPeerTitles,
+  addPeopleCandidateStatus,
+  directoryPeopleFromSearch,
+  fetchMessageDirectorySearch,
   mergeDirectoryPeople,
   resolvePeerRowTitle,
   conversationDisplayName,
@@ -1272,6 +1275,166 @@ describe('conversationsMatchingSearch', () => {
     };
     expect(conversationMatchesSearch(bob, 'Bob')).toBe(true);
     expect(conversationsMatchingSearch([bob], 'Bob')).toHaveLength(1);
+  });
+});
+
+describe('message directory search', () => {
+  const kate = {
+    id: 2,
+    slug: 'kate-bennett',
+    name: 'Kate',
+    surname: 'Bennett',
+    nickname: 'kate',
+    avatarUrl: null,
+    sharedSpaceCount: 3,
+  };
+  const dimche = {
+    id: 9,
+    slug: 'dimche-risteski',
+    name: 'Dimche',
+    surname: 'Risteski',
+    nickname: null,
+    avatarUrl: null,
+  };
+
+  it('keeps a network person the shared-space page does not include', () => {
+    const hits = directoryPeopleFromSearch([kate], [dimche]);
+    expect(hits.map((person) => person.id)).toEqual([2, 9]);
+    expect(
+      addablePeopleForGroup(
+        [kate],
+        hits,
+        {},
+        new Set(['@kate:matrix']),
+        'Dimche',
+      ).map((person) => person.id),
+    ).toEqual([9]);
+  });
+
+  it('drops a network person who is already in the group', () => {
+    expect(
+      addablePeopleForGroup(
+        [],
+        directoryPeopleFromSearch([], [dimche]),
+        { 9: '@dimche:matrix' },
+        new Set(['@dimche:matrix']),
+        'Dimche',
+      ),
+    ).toEqual([]);
+  });
+
+  it('still returns network hits when the shared-space search fails', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (String(url).includes('/people/search')) {
+        return {
+          ok: true,
+          json: async () => ({ people: [dimche] }),
+        };
+      }
+      return { ok: false, json: async () => ({}) };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      await expect(
+        fetchMessageDirectorySearch('Dimche', { headers: {} }),
+      ).resolves.toEqual([
+        {
+          id: 9,
+          slug: 'dimche-risteski',
+          name: 'Dimche',
+          surname: 'Risteski',
+          nickname: null,
+          avatarUrl: null,
+          sharedSpaceCount: 0,
+        },
+      ]);
+      expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
+        '/api/v1/people/me/intelligence?q=Dimche',
+      );
+      expect(String(fetchMock.mock.calls[1]?.[0])).toContain(
+        '/api/v1/people/search?q=Dimche',
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('addPeopleCandidateStatus', () => {
+  it('does not call an in-flight directory empty', () => {
+    expect(
+      addPeopleCandidateStatus({
+        query: '',
+        debouncedQuery: '',
+        directoryLoaded: false,
+        directoryFailed: false,
+        searching: false,
+        matchCount: 0,
+      }),
+    ).toBe('loading');
+    expect(
+      addPeopleCandidateStatus({
+        query: '',
+        debouncedQuery: '',
+        directoryLoaded: true,
+        directoryFailed: false,
+        searching: false,
+        matchCount: 0,
+      }),
+    ).toBe('empty');
+    expect(
+      addPeopleCandidateStatus({
+        query: '',
+        debouncedQuery: '',
+        directoryLoaded: false,
+        directoryFailed: true,
+        searching: false,
+        matchCount: 0,
+      }),
+    ).toBe('load-failed');
+  });
+
+  it('waits for a search before saying nobody matches', () => {
+    expect(
+      addPeopleCandidateStatus({
+        query: 'Dimche',
+        debouncedQuery: '',
+        directoryLoaded: true,
+        directoryFailed: false,
+        searching: false,
+        matchCount: 0,
+      }),
+    ).toBe('loading');
+    expect(
+      addPeopleCandidateStatus({
+        query: 'Dimche',
+        debouncedQuery: 'Dimche',
+        directoryLoaded: true,
+        directoryFailed: false,
+        searching: true,
+        matchCount: 0,
+      }),
+    ).toBe('loading');
+    expect(
+      addPeopleCandidateStatus({
+        query: 'Dimche',
+        debouncedQuery: 'Dimche',
+        directoryLoaded: false,
+        directoryFailed: true,
+        searching: false,
+        matchCount: 0,
+      }),
+    ).toBe('no-matches');
+    expect(
+      addPeopleCandidateStatus({
+        query: 'Dimche',
+        debouncedQuery: 'Dimche',
+        directoryLoaded: false,
+        directoryFailed: true,
+        searching: false,
+        matchCount: 1,
+      }),
+    ).toBe('results');
   });
 });
 
