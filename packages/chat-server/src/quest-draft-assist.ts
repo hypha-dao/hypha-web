@@ -369,6 +369,7 @@ ${untrusted(
 ${sharedContext}
 - Section order, one at a time: goal, scope, success criteria, milestones, members, lead, target date, rewards, name.
 - ${questHelperSectionBrief(currentStep)}
+${untrusted('space roster', memberNamesPreview, '(none listed)')}
 - The published proposal, including every section, must stay under 4000 characters. Keep this section's copy short.
 ${
   sandbox

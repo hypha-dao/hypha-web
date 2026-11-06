@@ -747,26 +747,36 @@ export async function updateSpaceQuest(
     updateFields.healthUpdatedAt = now;
   }
 
-  if (patch.milestones !== undefined) {
-    const ownedMilestones = await db
-      .select({ id: spaceQuestMilestones.id })
-      .from(spaceQuestMilestones)
-      .where(eq(spaceQuestMilestones.questId, current.id));
-    if (hasInvalidIds(patch.milestones, ownedMilestones)) {
-      return { ok: false, error: 'invalid_input' };
-    }
-  }
-  if (patch.members !== undefined) {
-    const ownedMembers = await db
-      .select({ id: spaceQuestMembers.id })
-      .from(spaceQuestMembers)
-      .where(eq(spaceQuestMembers.questId, current.id));
-    if (hasInvalidIds(patch.members, ownedMembers)) {
-      return { ok: false, error: 'invalid_input' };
-    }
-  }
-
+  let writeError: SpaceQuestWriteError | null = null;
   await db.transaction(async (tx) => {
+    await tx
+      .select({ id: spaceQuests.id })
+      .from(spaceQuests)
+      .where(eq(spaceQuests.id, current.id))
+      .limit(1)
+      .for('update');
+
+    if (patch.milestones !== undefined) {
+      const ownedMilestones = await tx
+        .select({ id: spaceQuestMilestones.id })
+        .from(spaceQuestMilestones)
+        .where(eq(spaceQuestMilestones.questId, current.id));
+      if (hasInvalidIds(patch.milestones, ownedMilestones)) {
+        writeError = 'invalid_input';
+        return;
+      }
+    }
+    if (patch.members !== undefined) {
+      const ownedMembers = await tx
+        .select({ id: spaceQuestMembers.id })
+        .from(spaceQuestMembers)
+        .where(eq(spaceQuestMembers.questId, current.id));
+      if (hasInvalidIds(patch.members, ownedMembers)) {
+        writeError = 'invalid_input';
+        return;
+      }
+    }
+
     await tx
       .update(spaceQuests)
       .set(updateFields)
@@ -883,6 +893,10 @@ export async function updateSpaceQuest(
       );
     }
   });
+
+  if (writeError) {
+    return { ok: false, error: writeError };
+  }
 
   const leadChanged = updateFields.leadPersonId !== undefined;
   if (current.chatRoomId && (patch.members !== undefined || leadChanged)) {

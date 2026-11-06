@@ -389,12 +389,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
               llmHandled = true;
               const sourcePatch: QuestDraftPatchInput = hasAiPatch
                 ? data.patch!
-                : buildLocalQuestDraftPatch({
-                    message: trimmed,
-                    currentStep,
-                    draft: currentSnapshot,
-                    viewerDisplayName,
-                  });
+                : {};
               const effectivePatch = limitQuestPatchToStep(
                 sourcePatch,
                 currentStep,

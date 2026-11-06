@@ -73,7 +73,7 @@ export function stewardQuestionForStep(step: QuestStewardStep): string {
     case 'goal':
       return 'Hey, what is the goal of the quest you want to create?';
     case 'scope':
-      return "Got it, I've updated the Goal. What's in scope, and what's explicitly out of scope?";
+      return "What's in scope, and what's explicitly out of scope?";
     case 'success':
       return 'How will we know this quest succeeded? Share the key measurable outcomes.';
     case 'milestones':
