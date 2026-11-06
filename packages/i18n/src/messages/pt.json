@@ -3702,6 +3702,7 @@
     "addPeopleConfirm": "Adicionar",
     "addPeopleCancel": "Cancelar",
     "addPeopleFailed": "Não foi possível adicionar pessoas a este grupo. Tenta novamente.",
+    "addPeopleMissingMatrix": "{names} não podem ser adicionados. Remove-os e tenta novamente.",
     "addPeopleLoadFailed": "Não foi possível carregar as pessoas. Tenta novamente.",
     "addPeopleEmpty": "Todas as pessoas que podes adicionar já estão aqui.",
     "addPeopleNoMatches": "Ninguém corresponde a essa pesquisa.",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
 import { useDebounce } from 'use-debounce';
@@ -59,7 +59,9 @@ import {
   addablePeopleForGroup,
   fetchMessageDirectorySearch,
   isRememberedGroupChatRoom as isLocalGroupCreator,
+  personIdsForMatrixLookup,
   rememberGroupChatMembers,
+  selectedPeopleMissingMatrixId,
 } from '../../people/components/member-connections';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { openDialogAfterMenu } from './open-dialog-after-menu';
@@ -137,11 +139,14 @@ export function HumanChatPanelGroupMenu({
     { shouldRetryOnError: false, revalidateOnFocus: false },
   );
   const [searchHits, setSearchHits] = useState<ConnectionPerson[] | null>(null);
+  const [searchFailed, setSearchFailed] = useState(false);
   const [searching, setSearching] = useState(false);
+  const selectedLabels = useRef(new Map<number, string>());
   useEffect(() => {
     const term = debouncedAddQuery.trim();
     if (!addOpen || !jwt || !term) {
       setSearchHits(null);
+      setSearchFailed(false);
       setSearching(false);
       return;
     }
@@ -149,11 +154,14 @@ export function HumanChatPanelGroupMenu({
     setSearching(true);
     void (async () => {
       try {
-        const people = await fetchMessageDirectorySearch(term, {
+        const result = await fetchMessageDirectorySearch(term, {
           headers: { Authorization: `Bearer ${jwt}` },
           signal: controller.signal,
         });
-        if (!controller.signal.aborted) setSearchHits(people);
+        if (!controller.signal.aborted) {
+          setSearchHits(result.people);
+          setSearchFailed(result.failed);
+        }
       } catch (searchError) {
         if (
           searchError instanceof DOMException &&
@@ -161,7 +169,10 @@ export function HumanChatPanelGroupMenu({
         ) {
           return;
         }
-        if (!controller.signal.aborted) setSearchHits([]);
+        if (!controller.signal.aborted) {
+          setSearchHits([]);
+          setSearchFailed(true);
+        }
       } finally {
         if (!controller.signal.aborted) setSearching(false);
       }
@@ -177,11 +188,12 @@ export function HumanChatPanelGroupMenu({
     (directoryError != null || directoryHome == null);
   const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
     useMatrixUserIdsByPersonIds({
-      personIds: [
-        ...directory.map((person) => person.id),
-        ...(searchHits ?? []).map((person) => person.id),
-        ...(directoryHome?.person.id != null ? [directoryHome.person.id] : []),
-      ],
+      personIds: personIdsForMatrixLookup([
+        directory.map((person) => person.id),
+        (searchHits ?? []).map((person) => person.id),
+        [...selected],
+        directoryHome?.person.id != null ? [directoryHome.person.id] : [],
+      ]),
     });
   const roomMembers = useMemo(() => {
     const current = client?.getRoom(roomId);
@@ -271,6 +283,7 @@ export function HumanChatPanelGroupMenu({
     directoryLoaded: directoryHome != null && !memberProfilesPending,
     directoryFailed: directoryFailed && !memberProfilesPending,
     searching: searching || memberProfilesPending,
+    searchFailed,
     matchCount: memberProfilesPending ? 0 : addablePeople.length,
   });
   const selectedMissingMatrixId = [...selected].some(
@@ -296,6 +309,7 @@ export function HumanChatPanelGroupMenu({
 
   function openAddPeople() {
     setSelected(new Set());
+    selectedLabels.current.clear();
     setAddQuery('');
     setError(null);
     openDialogAfterMenu(() => setAddOpen(true));
@@ -387,8 +401,19 @@ export function HumanChatPanelGroupMenu({
       const mxid = personIdToMatrixUserId[id]?.trim();
       return mxid ? [mxid] : [];
     });
-    if (memberIds.length === 0 || memberIds.length !== selected.size) {
-      setError(t('addPeopleFailed'));
+    if (memberIds.length !== selected.size) {
+      const labels: Record<number, string> = {};
+      for (const [id, label] of selectedLabels.current) labels[id] = label;
+      const names = selectedPeopleMissingMatrixId(
+        [...selected],
+        personIdToMatrixUserId,
+        labels,
+      );
+      setError(
+        names.length > 0
+          ? t('addPeopleMissingMatrix', { names: names.join(', ') })
+          : t('addPeopleFailed'),
+      );
       return;
     }
     setBusy(true);
@@ -543,8 +568,14 @@ export function HumanChatPanelGroupMenu({
                     onClick={() => {
                       setSelected((current) => {
                         const next = new Set(current);
-                        if (next.has(person.id)) next.delete(person.id);
-                        else next.add(person.id);
+                        if (next.has(person.id)) {
+                          next.delete(person.id);
+                          selectedLabels.current.delete(person.id);
+                        } else {
+                          next.add(person.id);
+                          if (label)
+                            selectedLabels.current.set(person.id, label);
+                        }
                         return next;
                       });
                     }}

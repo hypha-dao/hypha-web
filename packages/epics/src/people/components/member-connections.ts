@@ -439,30 +439,64 @@ export type DirectoryPerson = {
   nickname: string | null;
   avatarUrl: string | null;
   sharedSpaceCount: number;
+  /** Wallet from the shared-space roster, when this id is on it. */
+  address?: string | null;
 };
 
 /**
  * Shared-space matches plus network directory hits, same union Messages search
- * shows. A later hit with the same id replaces the earlier one.
+ * shows. A network hit with the same id keeps that person's shared-space wallet
+ * and space count. Network name fields win when they are present.
  */
 export function directoryPeopleFromSearch(
   sharedSpaceHits: readonly DirectoryPerson[] | null | undefined,
   networkHits: readonly DirectorySearchHit[] | null | undefined,
 ): DirectoryPerson[] {
+  const sharedById = new Map(
+    (sharedSpaceHits ?? []).map((person) => [person.id, person]),
+  );
   const network: DirectoryPerson[] = [];
   for (const person of networkHits ?? []) {
     if (!person.id || person.id <= 0) continue;
+    const shared = sharedById.get(person.id);
     network.push({
       id: person.id,
-      slug: person.slug ?? null,
-      name: person.name ?? null,
-      surname: person.surname ?? null,
-      nickname: person.nickname ?? null,
-      avatarUrl: person.avatarUrl ?? null,
-      sharedSpaceCount: 0,
+      slug: person.slug ?? shared?.slug ?? null,
+      name: person.name ?? shared?.name ?? null,
+      surname: person.surname ?? shared?.surname ?? null,
+      nickname: person.nickname ?? shared?.nickname ?? null,
+      avatarUrl: person.avatarUrl ?? shared?.avatarUrl ?? null,
+      sharedSpaceCount: shared?.sharedSpaceCount ?? 0,
+      address: shared?.address ?? null,
     });
   }
   return mergeDirectoryPeople(sharedSpaceHits, network);
+}
+
+export type MessageDirectorySearchResult = {
+  people: DirectoryPerson[];
+  /** Every endpoint that ran failed. One success is not a failure. */
+  failed: boolean;
+};
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
+}
+
+/** One search request. A failure here does not throw away the other request. */
+async function directorySearchSide<T>(
+  request: Promise<Response | null>,
+  read: (response: Response) => Promise<T[]>,
+): Promise<{ hits: T[]; failed: boolean }> {
+  try {
+    const response = await request;
+    if (!response) return { hits: [], failed: false };
+    if (!response.ok) return { hits: [], failed: true };
+    return { hits: await read(response), failed: false };
+  } catch (error) {
+    if (isAbortError(error)) throw error;
+    return { hits: [], failed: true };
+  }
 }
 
 /**
@@ -474,33 +508,67 @@ export function directoryPeopleFromSearch(
 export async function fetchMessageDirectorySearch(
   term: string,
   init: { headers: HeadersInit; signal?: AbortSignal },
-): Promise<DirectoryPerson[]> {
+): Promise<MessageDirectorySearchResult> {
   const trimmed = term.trim();
-  if (!trimmed) return [];
-  const [connectionResponse, networkResponse] = await Promise.all([
-    fetch(
-      `/api/v1/people/me/intelligence?q=${encodeURIComponent(trimmed)}`,
-      init,
+  if (!trimmed) return { people: [], failed: false };
+  const ranNetwork = trimmed.length >= 2;
+  const [sharedSide, networkSide] = await Promise.all([
+    directorySearchSide(
+      fetch(
+        `/api/v1/people/me/intelligence?q=${encodeURIComponent(trimmed)}`,
+        init,
+      ),
+      async (response) => {
+        const body = (await response.json()) as {
+          connections?: DirectoryPerson[];
+        };
+        return body.connections ?? [];
+      },
     ),
-    trimmed.length >= 2
-      ? fetch(`/api/v1/people/search?q=${encodeURIComponent(trimmed)}`, init)
-      : Promise.resolve(null),
+    directorySearchSide(
+      ranNetwork
+        ? fetch(`/api/v1/people/search?q=${encodeURIComponent(trimmed)}`, init)
+        : Promise.resolve(null),
+      async (response) => {
+        const body = (await response.json()) as {
+          people?: DirectorySearchHit[];
+        };
+        return body.people ?? [];
+      },
+    ),
   ]);
-  let shared: DirectoryPerson[] = [];
-  if (connectionResponse.ok) {
-    const body = (await connectionResponse.json()) as {
-      connections?: DirectoryPerson[];
-    };
-    shared = body.connections ?? [];
+  return {
+    people: directoryPeopleFromSearch(sharedSide.hits, networkSide.hits),
+    failed: sharedSide.failed && (!ranNetwork || networkSide.failed),
+  };
+}
+
+/** Person ids whose Matrix ids the add dialog still needs, including picks. */
+export function personIdsForMatrixLookup(
+  groups: ReadonlyArray<readonly number[] | null | undefined>,
+): number[] {
+  const ids = new Set<number>();
+  for (const group of groups) {
+    for (const id of group ?? []) {
+      if (Number.isFinite(id) && id > 0) ids.add(id);
+    }
   }
-  let network: DirectorySearchHit[] = [];
-  if (networkResponse?.ok) {
-    const body = (await networkResponse.json()) as {
-      people?: DirectorySearchHit[];
-    };
-    network = body.people ?? [];
+  return [...ids];
+}
+
+/** Labels for selected people who still have no Matrix id. */
+export function selectedPeopleMissingMatrixId(
+  selectedIds: readonly number[],
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+  labels: Readonly<Record<number, string | undefined>>,
+): string[] {
+  const names: string[] = [];
+  for (const id of selectedIds) {
+    if (personIdToMatrixUserId[id]?.trim()) continue;
+    const label = labels[id]?.trim();
+    if (label) names.push(label);
   }
-  return directoryPeopleFromSearch(shared, network);
+  return names;
 }
 
 /**
@@ -514,6 +582,7 @@ export function addPeopleCandidateStatus({
   directoryFailed,
   searching,
   matchCount,
+  searchFailed = false,
 }: {
   query: string;
   debouncedQuery: string;
@@ -521,12 +590,15 @@ export function addPeopleCandidateStatus({
   directoryFailed: boolean;
   searching: boolean;
   matchCount: number;
+  /** Both directory-search endpoints failed. */
+  searchFailed?: boolean;
 }): 'results' | 'loading' | 'empty' | 'no-matches' | 'load-failed' {
   if (matchCount > 0) return 'results';
   const typed = query.trim();
   const pending = typed !== debouncedQuery.trim();
   if (typed && (searching || pending)) return 'loading';
-  if (!typed && !directoryLoaded && !directoryFailed) return 'loading';
+  if (!directoryLoaded && !directoryFailed) return 'loading';
+  if (typed && searchFailed) return 'load-failed';
   if (typed) return 'no-matches';
   if (directoryFailed) return 'load-failed';
   return 'empty';

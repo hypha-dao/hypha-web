@@ -29,6 +29,8 @@ import {
   addPeopleCandidateStatus,
   directoryPeopleFromSearch,
   fetchMessageDirectorySearch,
+  personIdsForMatrixLookup,
+  selectedPeopleMissingMatrixId,
   mergeDirectoryPeople,
   resolvePeerRowTitle,
   conversationDisplayName,
@@ -1303,7 +1305,7 @@ describe('message directory search', () => {
     expect(hits.map((person) => person.id)).toEqual([2, 9]);
     expect(
       addablePeopleForGroup(
-        [kate],
+        hits.filter((person) => person.id === kate.id),
         hits,
         {},
         new Set(['@kate:matrix']),
@@ -1476,17 +1478,21 @@ describe('message directory search', () => {
     try {
       await expect(
         fetchMessageDirectorySearch('Dimche', { headers: {} }),
-      ).resolves.toEqual([
-        {
-          id: 9,
-          slug: 'dimche-risteski',
-          name: 'Dimche',
-          surname: 'Risteski',
-          nickname: null,
-          avatarUrl: null,
-          sharedSpaceCount: 0,
-        },
-      ]);
+      ).resolves.toEqual({
+        failed: false,
+        people: [
+          {
+            id: 9,
+            slug: 'dimche-risteski',
+            name: 'Dimche',
+            surname: 'Risteski',
+            nickname: null,
+            avatarUrl: null,
+            address: null,
+            sharedSpaceCount: 0,
+          },
+        ],
+      });
       expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
         '/api/v1/people/me/intelligence?q=Dimche',
       );
@@ -1496,6 +1502,118 @@ describe('message directory search', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it('keeps the network hit when the shared-space body cannot be read', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (String(url).includes('/people/search')) {
+          return {
+            ok: true,
+            json: async () => ({ people: [dimche] }),
+          };
+        }
+        return {
+          ok: true,
+          json: async () => {
+            throw new SyntaxError('bad json');
+          },
+        };
+      }),
+    );
+    try {
+      const parsed = await fetchMessageDirectorySearch('Dimche', {
+        headers: {},
+      });
+      expect(parsed.failed).toBe(false);
+      expect(parsed.people.map((person) => person.id)).toEqual([9]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('keeps the shared-space hit when network search rejects', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (String(url).includes('/people/search')) {
+          throw new Error('offline');
+        }
+        return {
+          ok: true,
+          json: async () => ({ connections: [kate] }),
+        };
+      }),
+    );
+    try {
+      const parsed = await fetchMessageDirectorySearch('Kate', { headers: {} });
+      expect(parsed.failed).toBe(false);
+      expect(parsed.people.map((person) => person.id)).toEqual([2]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('reports failure only when every search endpoint fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, json: async () => ({}) })),
+    );
+    try {
+      await expect(
+        fetchMessageDirectorySearch('Dimche', { headers: {} }),
+      ).resolves.toEqual({ people: [], failed: true });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          throw new DOMException('aborted', 'AbortError');
+        }),
+      );
+      await expect(
+        fetchMessageDirectorySearch('Dimche', { headers: {} }),
+      ).rejects.toMatchObject({ name: 'AbortError' });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('keeps the shared-space wallet when the same person is also a network hit', () => {
+    const shared = { ...kate, address: '0xKATE' };
+    const [row] = directoryPeopleFromSearch(
+      [shared],
+      [
+        {
+          id: kate.id,
+          name: 'Katherine',
+          surname: null,
+          nickname: null,
+          slug: null,
+          avatarUrl: null,
+        },
+      ],
+    );
+    expect(row).toMatchObject({
+      id: 2,
+      name: 'Katherine',
+      surname: 'Bennett',
+      slug: 'kate-bennett',
+      address: '0xKATE',
+      sharedSpaceCount: 3,
+    });
+  });
+
+  it('still looks up Matrix ids for people selected before the search was cleared', () => {
+    expect(personIdsForMatrixLookup([[1, 4], [], [9], [2]])).toEqual([
+      1, 4, 9, 2,
+    ]);
+    expect(
+      selectedPeopleMissingMatrixId(
+        [9, 4],
+        { 4: '@alex:matrix' },
+        { 9: 'Dimche Risteski', 4: 'Alex Prate' },
+      ),
+    ).toEqual(['Dimche Risteski']);
   });
 });
 
@@ -1554,6 +1672,27 @@ describe('addPeopleCandidateStatus', () => {
         matchCount: 0,
       }),
     ).toBe('loading');
+    expect(
+      addPeopleCandidateStatus({
+        query: 'Dimche',
+        debouncedQuery: 'Dimche',
+        directoryLoaded: false,
+        directoryFailed: false,
+        searching: false,
+        matchCount: 0,
+      }),
+    ).toBe('loading');
+    expect(
+      addPeopleCandidateStatus({
+        query: 'Dimche',
+        debouncedQuery: 'Dimche',
+        directoryLoaded: true,
+        directoryFailed: false,
+        searching: false,
+        matchCount: 0,
+        searchFailed: true,
+      }),
+    ).toBe('load-failed');
     expect(
       addPeopleCandidateStatus({
         query: 'Dimche',

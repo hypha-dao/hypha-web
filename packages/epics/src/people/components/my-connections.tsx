@@ -2161,11 +2161,11 @@ export function MyConnections({
       setSearching(true);
       void (async () => {
         try {
-          const people = await fetchMessageDirectorySearch(term, {
+          const result = await fetchMessageDirectorySearch(term, {
             headers: { Authorization: `Bearer ${jwt}` },
             signal: controller.signal,
           });
-          if (!controller.signal.aborted) setSearchDirectory(people);
+          if (!controller.signal.aborted) setSearchDirectory(result.people);
         } catch (error) {
           if (error instanceof DOMException && error.name === 'AbortError') {
             return;

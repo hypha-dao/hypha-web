@@ -4257,6 +4257,7 @@
     "addPeopleConfirm": "Додај",
     "addPeopleCancel": "Откажи",
     "addPeopleFailed": "Не можеа да се додадат луѓе во групата. Обиди се повторно.",
+    "addPeopleMissingMatrix": "{names} не може да се додадат. Отстрани ги и обиди се повторно.",
     "addPeopleLoadFailed": "Не можеа да се вчитаат луѓето. Обиди се повторно.",
     "addPeopleEmpty": "Сите што можеш да ги додадеш веќе се тука.",
     "addPeopleNoMatches": "Нема луѓе што одговараат на тоа пребарување.",
