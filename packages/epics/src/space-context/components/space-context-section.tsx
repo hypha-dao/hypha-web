@@ -188,7 +188,6 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
               <h1 className="craft-page-title text-6 font-medium">
                 {t('title')}
               </h1>
-              <p className="craft-meta mt-1 max-w-2xl">{t('subtitle')}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3 sm:justify-end">
               <div className="flex flex-col items-start gap-1.5 sm:items-end">

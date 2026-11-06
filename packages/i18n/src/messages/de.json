@@ -5622,7 +5622,6 @@
   },
   "SpaceContext": {
     "title": "Kontext",
-    "subtitle": "Eine gemeinsame Wahrheitsquelle für diesen Space. Mitglieder besprechen jeden Abschnitt gemeinsam, erwähnen dessen Agenten, wenn sie Hilfe möchten, und ratifizieren ihn dann über eine Vereinbarung.",
     "progress": "{ratified} von {total} ratifiziert",
     "propose": "Zur Ratifizierung vorschlagen",
     "filters": {

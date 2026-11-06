@@ -5644,7 +5644,6 @@
   },
   "SpaceContext": {
     "title": "Context",
-    "subtitle": "One shared source of truth for this space. Members discuss each section together, mention its agent when they want help, then ratify it through an agreement.",
     "progress": "{ratified} of {total} ratified",
     "propose": "Propose to ratify",
     "filters": {

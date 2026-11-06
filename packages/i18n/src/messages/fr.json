@@ -5618,7 +5618,6 @@
   },
   "SpaceContext": {
     "title": "Contexte",
-    "subtitle": "Une source de vérité partagée pour cet espace. Les membres discutent chaque section ensemble, mentionnent son agent quand ils veulent de l’aide, puis la ratifient par un accord.",
     "progress": "{ratified} sur {total} ratifiées",
     "propose": "Proposer à la ratification",
     "filters": {
