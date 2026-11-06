@@ -2241,11 +2241,18 @@ export function MyConnections({
 
   useEffect(() => {
     if (!client) {
-      setRows([]);
-      setChannels([]);
       setSynced(false);
       setInitialSyncComplete(false);
-      setListSettled(false);
+      /**
+       * Brief client null (token recycle / tab wake) must not wipe a painted
+       * PEOPLE AROUND list — that re-shows the skeleton for the whole cold
+       * sync. Only clear once Matrix is fully unavailable and not connecting.
+       */
+      if (!isConnecting && !isMatrixAvailable) {
+        setRows([]);
+        setChannels([]);
+        setListSettled(false);
+      }
       return;
     }
     return attachConversationList(client, () => {
@@ -2269,7 +2276,7 @@ export function MyConnections({
         setInitialSyncComplete(true);
       }
     });
-  }, [client]);
+  }, [client, isConnecting, isMatrixAvailable]);
 
   useEffect(() => {
     if (!client) return;
@@ -2393,10 +2400,18 @@ export function MyConnections({
     peopleBySubLoading ||
     (!jwt && pendingSubs.size > 0) ||
     (peerSubs.length > 0 && !jwt && peopleBySub.size === 0);
+  /**
+   * Include joined DM room ids even before members classify into rows — that
+   * is the common Syncing gap (`no-other-members`) that otherwise keeps the
+   * PEOPLE AROUND skeleton up for the whole cold catch-up.
+   */
+  const hasDirectRoomsPendingMembers =
+    Boolean(client) && recentDirectRoomIds(client!).length > 0;
   const hasMatrixConversations =
     rows.some((row) => row.kind === 'person' || row.kind === 'group') ||
     channels.length > 0 ||
-    pendingGroups.length > 0;
+    pendingGroups.length > 0 ||
+    hasDirectRoomsPendingMembers;
   const dataReady = messagesPeopleListReady({
     isMatrixAvailable,
     isConnecting,

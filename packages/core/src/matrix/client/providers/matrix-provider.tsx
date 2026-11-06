@@ -707,6 +707,18 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       try {
         setClientInitFailed(false);
         const { accessToken, userId, homeserverUrl, deviceId } = matrixToken;
+        /**
+         * Persist the Matrix store across reloads so Messages / chat can paint
+         * from the last sync instead of a full cold /sync every visit.
+         */
+        const indexedDbStore =
+          typeof globalThis.indexedDB !== 'undefined'
+            ? new MatrixSdk.IndexedDBStore({
+                indexedDB: globalThis.indexedDB,
+                localStorage: globalThis.localStorage,
+                dbName: `hypha-matrix-${userId}`,
+              })
+            : undefined;
         // Voice and video (group calls): keep VoIP enabled; TURN/ICE for WebRTC. See
         // docs/requirements/voice-video-call-implementation-spec.md §2.1
         const matrixClient = MatrixSdk.createClient({
@@ -714,6 +726,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           accessToken,
           userId,
           deviceId,
+          ...(indexedDbStore ? { store: indexedDbStore } : {}),
           refreshToken: HYPHA_MATRIX_REFRESH_TOKEN,
           tokenRefreshFunction: async () => {
             const refreshed = await fetchHyphaMatrixAccessToken(() =>
@@ -735,7 +748,18 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           iceCandidatePoolSize: matrixWebRtcIceCandidatePoolSizeFromEnv(),
         });
 
-        await matrixClient.startClient();
+        if (indexedDbStore) {
+          try {
+            await indexedDbStore.startup();
+          } catch (error) {
+            console.warn(
+              '[MatrixProvider] IndexedDB store startup failed; continuing with memory sync:',
+              error,
+            );
+          }
+        }
+
+        await matrixClient.startClient({ initialSyncLimit: 10 });
         startedClient = matrixClient;
 
         /** Warm TURN credentials before the first call join (reduces ICE stall). */
@@ -837,7 +861,16 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     if (!existingClient) {
       return;
     }
+    const store = existingClient.store;
     existingClient.stopClient();
+    if (
+      store &&
+      typeof (store as { destroy?: () => Promise<void> }).destroy === 'function'
+    ) {
+      void (store as { destroy: () => Promise<void> })
+        .destroy()
+        .catch(() => undefined);
+    }
     registeredRoomListenersRef.current = [];
     setRegisteredRoomListeners([]);
     clientRef.current = null;

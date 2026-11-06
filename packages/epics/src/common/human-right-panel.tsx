@@ -480,6 +480,10 @@ const SESSION_ROOM_TO_COHERENCE_SPACE_PREFIX = 'hypha-room-to-coherence-space-';
 const COHERENCE_ROOM_REVERSE_PREFIX = 'hypha-room-id-to-coherence-';
 const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
 const CHAT_HISTORY_MAX_ITEMS = 250;
+/** First open / wake history pull — larger than the older-scroll page size. */
+const CHAT_HISTORY_FIRST_PAGE_SIZE = 80;
+/** In-memory timeline across room switches within the same tab session. */
+const timelineMemoryCache = new Map<string, UIMessage[]>();
 const CHAT_COMPOSER_DRAFT_PREFIX = 'hypha-chat-composer-draft-v1-';
 const CHAT_COMPOSER_DRAFT_MAX = 8000;
 const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
@@ -669,6 +673,8 @@ function deriveSignalTeamStateFromEvents(
 }
 
 function readPersistedChatHistory(roomId: string): UIMessage[] {
+  const memory = timelineMemoryCache.get(roomId);
+  if (memory && memory.length > 0) return memory;
   if (typeof window === 'undefined') return [];
   try {
     const raw = window.sessionStorage.getItem(
@@ -690,6 +696,9 @@ function writePersistedChatHistory(
   roomId: string,
   messages: UIMessage[],
 ): void {
+  if (messages.length > 0) {
+    timelineMemoryCache.set(roomId, messages.slice(-CHAT_HISTORY_MAX_ITEMS));
+  }
   if (typeof window === 'undefined') return;
   try {
     if (messages.length === 0) {
@@ -1989,6 +1998,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     isAuthLoading ||
     isLoadingJwt ||
     (isAuthenticated && !isMatrixAvailable && isConnecting);
+  /**
+   * Tab wake / token recycle: keep the last timeline on screen instead of
+   * wiping to HumanChatPanelLoader when we already have messages for this room.
+   */
+  const keepTimelineDuringSessionRestore =
+    sessionRestoring && messages.length > 0;
   const showAuthedUi = !isAuthLoading && isAuthenticated;
   const showAuthPrompt = !sessionRestoring && !isAuthenticated;
   const showPanelInteractionPrompt =
@@ -3330,7 +3345,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         try {
           const historyResult = await matrixRef.current.loadRoomHistory(
             targetRoomId,
-            { pageSize: 30, maxBatches: 1 },
+            { pageSize: CHAT_HISTORY_FIRST_PAGE_SIZE, maxBatches: 1 },
           );
           if (isCancelled()) return;
           setHasMoreOlderMessages(historyResult.hasMoreOlder);
@@ -3352,7 +3367,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         try {
           const historyResult = await matrixRef.current.loadRoomHistory(
             targetRoomId,
-            { pageSize: 30, maxBatches: 1 },
+            { pageSize: CHAT_HISTORY_FIRST_PAGE_SIZE, maxBatches: 1 },
           );
           hasMoreOlder = historyResult.hasMoreOlder;
           paint();
@@ -7275,7 +7290,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         data-hypha-chat-panel=""
         data-hypha-room-id={roomId?.trim() || undefined}
       >
-        {sessionRestoring ? (
+        {sessionRestoring && !keepTimelineDuringSessionRestore ? (
           <HumanChatPanelLoader />
         ) : showAuthPrompt ? (
           <div className="flex flex-1 items-center justify-center px-6">
@@ -7625,7 +7640,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                     {t('publicRoomTitle')} — {t('publicWelcome')}
                   </p>
                 ) : null}
-                {isJoining ? (
+                {isJoining && messages.length === 0 ? (
                   <HumanChatPanelLoader showPreview />
                 ) : (
                   <HumanChatPanelErrorBoundary key={roomId ?? 'messages'}>
@@ -7772,8 +7787,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 border-t border-border/70 bg-page-background p-0 dark:bg-background-2">
             <div>
-              <HumanChatPanelTypingIndicator peers={typingPeers} />
               <HumanChatPanelErrorBoundary key={roomId ?? 'composer'}>
+                <HumanChatPanelTypingIndicator peers={typingPeers} />
                 <HumanChatPanelChatBar
                   value={input}
                   onChange={handleComposerChange}
