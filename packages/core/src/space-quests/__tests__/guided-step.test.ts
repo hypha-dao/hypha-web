@@ -110,5 +110,45 @@ describe('resolveQuestDraftTarget', () => {
         'goal',
       ),
     ).toEqual({ step: 'goal', bulk: false });
+    expect(
+      resolveQuestDraftTarget(
+        'Validate sandbox onboarding with three documented checks by 30 November 2026',
+        'goal',
+      ),
+    ).toEqual({ step: 'goal', bulk: false });
+  });
+
+  it('routes an explicit milestones list to milestones after the tracker moved to scope', () => {
+    const message =
+      'Exactly 3 milestones: M1 titled Run check one, due 20 November 2026; M2 titled Run check two, due 25 November 2026; M3 titled Run check three, due 30 November 2026. Owner Vlad Hramtsov for all. Please propose these as Milestones in chat first.';
+    expect(resolveQuestDraftTarget(message, 'scope')).toEqual({
+      step: 'milestones',
+      bulk: false,
+    });
+    expect(resolveQuestDraftTarget(message, 'goal')).toEqual({
+      step: 'milestones',
+      bulk: false,
+    });
+  });
+
+  it('routes dash-separated milestone lines to milestones from scope', () => {
+    const message = [
+      'Run check one - 20 November 2026 - Vlad Hramtsov',
+      'Run check two - 25 November 2026 - Vlad Hramtsov',
+      'Run check three - 30 November 2026 - Vlad Hramtsov',
+    ].join('\n');
+    expect(resolveQuestDraftTarget(message, 'scope')).toEqual({
+      step: 'milestones',
+      bulk: false,
+    });
+  });
+
+  it('lets a named section win over milestone-shaped lines', () => {
+    expect(
+      resolveQuestDraftTarget(
+        'Focus only on Success Criteria. M1 titled Run check one, due 20 November 2026; M2 titled Run check two, due 25 November 2026.',
+        'scope',
+      ),
+    ).toEqual({ step: 'success', bulk: false });
   });
 });

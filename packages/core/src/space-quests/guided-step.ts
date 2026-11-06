@@ -27,6 +27,17 @@ const SECTION_NAV = new RegExp(
   'i',
 );
 
+/** "Please propose these as Milestones" — the section is named, not implied. */
+const ADDRESSED_SECTION = new RegExp(
+  `\\b(?:as|into)\\s+(?:the\\s+)?${SECTION_NAME}\\b`,
+  'i',
+);
+
+const MILESTONE_COUNT = 'one|two|three|four|five|six|seven|eight|nine|ten|\\d+';
+
+const MILESTONE_MONTH =
+  'January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec';
+
 function stepFromSectionName(raw: string): QuestStewardStep | null {
   const name = raw.toLowerCase().replace(/\s+/g, ' ').trim();
   if (name.includes('scope')) return 'scope';
@@ -74,9 +85,47 @@ export function isBulkQuestDraftRequest(text: string): boolean {
   return mentionsSeveralSections(lower);
 }
 
+function explicitSectionName(text: string): string | undefined {
+  return (
+    NAMED_SECTION.exec(text)?.[1] ??
+    SECTION_LABEL.exec(text)?.[1] ??
+    SECTION_NAV.exec(text)?.[1] ??
+    ADDRESSED_SECTION.exec(text)?.[1]
+  );
+}
+
+function lineHasCalendarDate(line: string): boolean {
+  return new RegExp(
+    `\\b\\d{1,2}\\s*(?:${MILESTONE_MONTH})\\s*\\d{4}\\b|\\b(?:${MILESTONE_MONTH})\\s*\\d{1,2},?\\s*\\d{4}\\b|\\b\\d{4}-\\d{2}-\\d{2}\\b`,
+    'i',
+  ).test(line);
+}
+
+/**
+ * A milestone list, not a passing mention of the word.
+ * "Exactly 3 milestones: M1 …", two M-labels, or dash lines of title - date - owner.
+ */
+function messageTargetsMilestones(text: string): boolean {
+  if ((text.match(/\bM\d+\b/gi) ?? []).length >= 2) return true;
+  if (
+    new RegExp(
+      `\\b(?:exactly|only|just)\\s+(?:${MILESTONE_COUNT})\\s+milestones?\\b|\\b(?:${MILESTONE_COUNT})\\s+milestones?\\s*:|^\\s*milestones?\\s*:`,
+      'im',
+    ).test(text)
+  ) {
+    return true;
+  }
+  const datedDashLines = text
+    .split(/\n+|;\s*/)
+    .map((line) => line.trim())
+    .filter((line) => /\s[-–—]\s/.test(line) && lineHasCalendarDate(line));
+  return datedDashLines.length >= 2;
+}
+
 /**
  * The section a new-quest message may write.
  * A named section wins over the tracker, which may already have moved on.
+ * Milestone-shaped content wins over the next empty section.
  * A bulk "draft everything" request writes no section.
  */
 export function resolveQuestDraftTarget(
@@ -86,12 +135,13 @@ export function resolveQuestDraftTarget(
   const text = message.trim();
   if (!text) return { step: currentStep, bulk: false };
   if (isBulkQuestDraftRequest(text)) return { step: currentStep, bulk: true };
-  const named =
-    NAMED_SECTION.exec(text)?.[1] ??
-    SECTION_LABEL.exec(text)?.[1] ??
-    SECTION_NAV.exec(text)?.[1];
-  const step = named ? stepFromSectionName(named) : null;
-  return { step: step ?? currentStep, bulk: false };
+  const named = explicitSectionName(text);
+  const namedStep = named ? stepFromSectionName(named) : null;
+  if (namedStep) return { step: namedStep, bulk: false };
+  if (messageTargetsMilestones(text)) {
+    return { step: 'milestones', bulk: false };
+  }
+  return { step: currentStep, bulk: false };
 }
 
 const QUEST_STEP_PATCH_KEYS: Record<QuestStewardStep, readonly string[]> = {

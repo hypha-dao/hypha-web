@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { resolveQuestDraftTarget } from '@hypha-platform/core/client';
 import {
   applyPatchToQuestDraftState,
   buildLocalQuestDraftPatch,
@@ -100,6 +101,29 @@ describe('quest-draft-assistant', () => {
     expect(onScope.scopeOut).toEqual(['Cross-space search']);
     expect(onScope.goal).toBeUndefined();
     expect(onScope.rewards).toBeUndefined();
+
+    const withOutLabel = [
+      'In: Run three sandbox onboarding checks and record pass/fail for each',
+      'Out of scope:',
+      '- Fixing the onboarding flow',
+      '- Contacting real people',
+      '- Payments or on-chain actions',
+    ].join('\n');
+    const separated = buildLocalQuestDraftPatch({
+      message: withOutLabel,
+      currentStep: 'scope',
+      draft: { ...emptyDraft, goal: 'Ship Context v2' },
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(separated.scopeIn).toEqual([
+      'Run three sandbox onboarding checks and record pass/fail for each',
+    ]);
+    expect(separated.scopeOut).toEqual([
+      'Fixing the onboarding flow',
+      'Contacting real people',
+      'Payments or on-chain actions',
+    ]);
+    expect(separated.scopeIn?.join('\n')).not.toMatch(/fixing the onboarding/i);
   });
 
   it('does not fill scope from "draft everything"', () => {
@@ -312,6 +336,46 @@ describe('quest-draft-assistant', () => {
     });
     expect(undated.milestones?.[0]?.dueDate).toBeUndefined();
     expect(undated.milestones?.[0]?.name).toBe('Ship the onboarding checklist');
+  });
+
+  it('proposes an explicit milestones list as milestones after the goal step', () => {
+    const message =
+      'Exactly 3 milestones: M1 titled Run check one, due 20 November 2026; M2 titled Run check two, due 25 November 2026; M3 titled Run check three, due 30 November 2026. Owner Vlad Hramtsov for all. Please propose these as Milestones in chat first.';
+    const target = resolveQuestDraftTarget(message, 'scope');
+    expect(target).toEqual({ step: 'milestones', bulk: false });
+    const patch = buildLocalQuestDraftPatch({
+      message,
+      currentStep: target.step,
+      draft: {
+        ...emptyDraft,
+        goal: 'Validate sandbox onboarding with three documented checks by 30 November 2026.',
+      },
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(patch.scopeIn).toBeUndefined();
+    expect(patch.scopeOut).toBeUndefined();
+    expect(patch.milestones?.map((milestone) => milestone.name)).toEqual([
+      'Run check one',
+      'Run check two',
+      'Run check three',
+    ]);
+    expect(
+      decideNewQuestDraftTurn({
+        message,
+        currentStep: 'scope',
+        targetStep: target.step,
+        bulk: target.bulk,
+        pending: {
+          step: 'goal',
+          patch: {
+            goal: 'Validate sandbox onboarding with three documented checks by 30 November 2026.',
+          },
+        },
+      }).kind,
+    ).toBe('propose');
+    const reply = replyWithSectionApprovalAsk(null, target.step, patch);
+    expect(reply).toContain('Do you want that to be in the Milestones?');
+    expect(reply).not.toMatch(/in the Scope/i);
   });
 
   it('does not turn a milestone count instruction into a row or a title', () => {

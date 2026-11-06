@@ -425,6 +425,13 @@ export function replyWithSectionApprovalAsk(
   return `${preview}\n\n${question}`;
 }
 
+/** "Out of scope:" stays out of the in-scope list, including on the next line. */
+const OUT_OF_SCOPE_LABEL = /\b(?:out\s+of\s+scope|scope\s+out|out)\s*:/i;
+
+function textBeforeOutOfScope(text: string): string {
+  return text.split(OUT_OF_SCOPE_LABEL)[0]?.trim() ?? text.trim();
+}
+
 /**
  * Extract the active section from a user message.
  * A goal answer does not also invent scope, milestones, rewards, or a name.
@@ -469,7 +476,10 @@ export function buildLocalQuestDraftPatch({
   );
 
   if (goalMatch?.[1]) patch.goal = goalMatch[1].trim();
-  if (inScopeMatch?.[1]) patch.scopeIn = splitListItems(inScopeMatch[1]);
+  if (inScopeMatch?.[1]) {
+    const inText = textBeforeOutOfScope(inScopeMatch[1]);
+    if (inText) patch.scopeIn = splitListItems(inText);
+  }
   if (outScopeMatch?.[1]) patch.scopeOut = splitListItems(outScopeMatch[1]);
   if (successMatch?.[1]) {
     patch.successCriteriaBullets = splitListItems(successMatch[1]);
