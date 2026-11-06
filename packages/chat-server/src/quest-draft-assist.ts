@@ -11,6 +11,7 @@ import {
   selectSpecialistForQuestion,
   spaceContextQuarterEndIso,
   specialistById,
+  stripViewerYouMarker,
   withoutPlaceholderLeadDuplicates,
   type QuestRecord,
   type QuestStewardStep,
@@ -401,9 +402,8 @@ ${untrusted(
     ) {
       const resolveMemberId = (rawName: string | undefined | null) => {
         const clean = rawName
-          ?.replace(/\s*\(you\)\s*/i, '')
-          .trim()
-          .toLowerCase();
+          ? stripViewerYouMarker(rawName).trim().toLowerCase()
+          : '';
         if (!clean) return null;
         const fromQuest = existingQuest.members.find(
           (member) =>

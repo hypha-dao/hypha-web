@@ -2,6 +2,7 @@ import {
   QUEST_STEWARD_STEPS,
   bulletsToMarkdownList,
   splitMarkdownLinesToBullets,
+  stripViewerYouMarker,
   type QuestReward,
   type QuestStewardStep,
 } from '@hypha-platform/core/client';
@@ -16,9 +17,8 @@ function matchQuestMemberByName(
   rawName: string | null | undefined,
 ): QuestSpaceMember | null {
   const clean = rawName
-    ?.replace(/\s*\(you\)\s*/i, '')
-    .trim()
-    .toLowerCase();
+    ? stripViewerYouMarker(rawName).trim().toLowerCase()
+    : '';
   if (!clean) return null;
   return (
     members.find(
@@ -492,7 +492,7 @@ export function applyPatchToQuestDraftState({
   }
 
   if (patch.leadName?.trim()) {
-    const rawLead = patch.leadName.replace(/\s*\(you\)\s*/i, '').trim();
+    const rawLead = stripViewerYouMarker(patch.leadName).trim();
     const matchedLead = matchQuestMemberByName(spaceMembers, rawLead);
     next.leadName = matchedLead?.name || rawLead;
     next.selectedLeadPersonId = matchedLead?.personId ?? null;

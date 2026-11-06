@@ -5,6 +5,7 @@ import {
   QUEST_MILESTONE_STATUSES,
   bulletsToMarkdownList,
   splitMarkdownLinesToBullets,
+  stripViewerYouMarker,
   type Person,
   type QuestDeliverableRecord,
   type QuestMilestoneStatus,
@@ -47,14 +48,18 @@ function buildMemberPersonCatalog(
     if (!person || typeof person.id !== 'number') continue;
     const label = personRosterDisplayLabel(person, '').trim();
     if (!label) continue;
-    if (byId.has(person.id) || knownNames.has(label.toLowerCase())) continue;
+    if (
+      byId.has(person.id) ||
+      (person.id <= 0 && knownNames.has(label.toLowerCase()))
+    )
+      continue;
     byId.set(person.id, person);
     knownNames.add(label.toLowerCase());
   }
 
   let syntheticId = -1;
   for (const raw of extraNames) {
-    const clean = raw?.replace(/\s*\(you\)\s*/i, '').trim() ?? '';
+    const clean = raw ? stripViewerYouMarker(raw).trim() : '';
     if (!clean || knownNames.has(clean.toLowerCase())) continue;
     knownNames.add(clean.toLowerCase());
     byId.set(syntheticId, {
@@ -80,9 +85,8 @@ function findPersonInCatalog(
     }
   }
   const clean = query.name
-    ?.replace(/\s*\(you\)\s*/i, '')
-    .trim()
-    .toLowerCase();
+    ? stripViewerYouMarker(query.name).trim().toLowerCase()
+    : '';
   if (!clean) return null;
   return (
     catalog.find(

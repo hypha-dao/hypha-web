@@ -106,7 +106,7 @@ function isMarkerWhitespace(char: string): boolean {
  * Linear scan — `\s*(you)\s*` is polynomial ReDoS on long space runs.
  */
 export function stripViewerYouMarker(value: string): string {
-  const index = value.toLowerCase().indexOf('(you)');
+  const index = value.search(/\(you\)/i);
   if (index === -1) return value;
   let start = index;
   while (start > 0 && isMarkerWhitespace(value[start - 1] ?? '')) start -= 1;

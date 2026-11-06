@@ -379,6 +379,7 @@ describe('quest proposal description', () => {
       'Vlad K.',
     );
     expect(stripViewerYouMarker('Maria S.')).toBe('Maria S.');
+    expect(stripViewerYouMarker('İ (you)')).toBe('İ');
   });
 });
 

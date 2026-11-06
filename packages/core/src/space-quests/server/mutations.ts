@@ -424,6 +424,14 @@ export async function createSpaceQuest(
   return quest ? { ok: true, quest } : { ok: false, error: 'not_found' };
 }
 
+function hasInvalidIds(
+  rows: { id?: number }[],
+  owned: { id: number }[],
+): boolean {
+  const available = new Set(owned.map((row) => row.id));
+  return rows.some(({ id }) => id !== undefined && !available.delete(id));
+}
+
 export async function updateSpaceQuest(
   {
     spaceSlug,
@@ -739,121 +747,142 @@ export async function updateSpaceQuest(
     updateFields.healthUpdatedAt = now;
   }
 
-  await db
-    .update(spaceQuests)
-    .set(updateFields)
-    .where(eq(spaceQuests.id, current.id));
-
   if (patch.milestones !== undefined) {
-    await db
-      .delete(spaceQuestMilestones)
+    const ownedMilestones = await db
+      .select({ id: spaceQuestMilestones.id })
+      .from(spaceQuestMilestones)
       .where(eq(spaceQuestMilestones.questId, current.id));
-    if (patch.milestones.length > 0) {
-      await db.insert(spaceQuestMilestones).values(
-        patch.milestones.map((m, idx) => ({
-          ...(typeof m.id === 'number' ? { id: m.id } : {}),
-          questId: current.id,
-          order: idx + 1,
-          name: m.name.trim(),
-          description: m.description ?? '',
-          dueDate: m.dueDate?.trim() || null,
-          ownerPersonId: m.ownerPersonId ?? null,
-          ownerName: m.ownerName?.trim() || null,
-          status: m.status ?? 'not_started',
-        })),
-      );
+    if (hasInvalidIds(patch.milestones, ownedMilestones)) {
+      return { ok: false, error: 'invalid_input' };
     }
-    editEvents.push({
-      text: `Updated Milestones (${patch.milestones.length} milestone${
-        patch.milestones.length === 1 ? '' : 's'
-      }).`,
-      change: {
-        entity: 'milestone',
-        field: 'milestones',
-        action: 'updated',
-      },
-    });
   }
-
   if (patch.members !== undefined) {
-    await db
-      .delete(spaceQuestMembers)
+    const ownedMembers = await db
+      .select({ id: spaceQuestMembers.id })
+      .from(spaceQuestMembers)
       .where(eq(spaceQuestMembers.questId, current.id));
-    if (patch.members.length > 0) {
-      await db.insert(spaceQuestMembers).values(
-        patch.members.map((m, idx) => ({
-          ...(typeof m.id === 'number' ? { id: m.id } : {}),
+    if (hasInvalidIds(patch.members, ownedMembers)) {
+      return { ok: false, error: 'invalid_input' };
+    }
+  }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(spaceQuests)
+      .set(updateFields)
+      .where(eq(spaceQuests.id, current.id));
+
+    if (patch.milestones !== undefined) {
+      await tx
+        .delete(spaceQuestMilestones)
+        .where(eq(spaceQuestMilestones.questId, current.id));
+      if (patch.milestones.length > 0) {
+        await tx.insert(spaceQuestMilestones).values(
+          patch.milestones.map((m, idx) => ({
+            ...(typeof m.id === 'number' ? { id: m.id } : {}),
+            questId: current.id,
+            order: idx + 1,
+            name: m.name.trim(),
+            description: m.description ?? '',
+            dueDate: m.dueDate?.trim() || null,
+            ownerPersonId: m.ownerPersonId ?? null,
+            ownerName: m.ownerName?.trim() || null,
+            status: m.status ?? 'not_started',
+          })),
+        );
+      }
+      editEvents.push({
+        text: `Updated Milestones (${patch.milestones.length} milestone${
+          patch.milestones.length === 1 ? '' : 's'
+        }).`,
+        change: {
+          entity: 'milestone',
+          field: 'milestones',
+          action: 'updated',
+        },
+      });
+    }
+
+    if (patch.members !== undefined) {
+      await tx
+        .delete(spaceQuestMembers)
+        .where(eq(spaceQuestMembers.questId, current.id));
+      if (patch.members.length > 0) {
+        await tx.insert(spaceQuestMembers).values(
+          patch.members.map((m, idx) => ({
+            ...(typeof m.id === 'number' ? { id: m.id } : {}),
+            questId: current.id,
+            personId: m.personId ?? null,
+            memberName: m.memberName.trim(),
+            memberAvatarUrl: m.memberAvatarUrl ?? null,
+            roleLabel: m.roleLabel?.trim() || null,
+            responsibilities: (m.responsibilities ?? [])
+              .map((r) => r.trim())
+              .filter(Boolean),
+            order: idx + 1,
+          })),
+        );
+      }
+      editEvents.push({
+        text: `Updated Members (${patch.members.length} member${
+          patch.members.length === 1 ? '' : 's'
+        }).`,
+        change: {
+          entity: 'member',
+          field: 'members',
+          action: 'updated',
+        },
+      });
+    }
+
+    if (patch.deliverables !== undefined) {
+      await tx
+        .delete(spaceQuestDeliverables)
+        .where(eq(spaceQuestDeliverables.questId, current.id));
+      if (patch.deliverables.length > 0) {
+        await tx.insert(spaceQuestDeliverables).values(
+          patch.deliverables.map((dItem, idx) => ({
+            questId: current.id,
+            order: idx + 1,
+            name: dItem.name.trim(),
+            url: dItem.url?.trim() || null,
+            note: dItem.note?.trim() || null,
+            updatedByPersonId: actor.id ?? null,
+            updatedByName: actorName,
+          })),
+        );
+      }
+      editEvents.push({
+        text: `Updated Deliverables (${patch.deliverables.length} item${
+          patch.deliverables.length === 1 ? '' : 's'
+        }).`,
+        change: {
+          entity: 'deliverable',
+          field: 'deliverables',
+          action: 'updated',
+        },
+      });
+    }
+
+    // Every post-pass edit writes an edit_event to Updates (who changed what)
+    if (editEvents.length > 0) {
+      await tx.insert(spaceQuestUpdates).values(
+        editEvents.map((ev) => ({
           questId: current.id,
-          personId: m.personId ?? null,
-          memberName: m.memberName.trim(),
-          memberAvatarUrl: m.memberAvatarUrl ?? null,
-          roleLabel: m.roleLabel?.trim() || null,
-          responsibilities: (m.responsibilities ?? [])
-            .map((r) => r.trim())
-            .filter(Boolean),
-          order: idx + 1,
+          authorPersonId: actor.id ?? null,
+          authorName: actorName,
+          authorAvatarUrl: actor.avatarUrl ?? null,
+          kind: 'edit_event',
+          viaAgent: false,
+          milestoneOrder: null,
+          milestoneLabel: null,
+          text: ev.text,
+          links: [],
+          change: ev.change,
         })),
       );
     }
-    editEvents.push({
-      text: `Updated Members (${patch.members.length} member${
-        patch.members.length === 1 ? '' : 's'
-      }).`,
-      change: {
-        entity: 'member',
-        field: 'members',
-        action: 'updated',
-      },
-    });
-  }
-
-  if (patch.deliverables !== undefined) {
-    await db
-      .delete(spaceQuestDeliverables)
-      .where(eq(spaceQuestDeliverables.questId, current.id));
-    if (patch.deliverables.length > 0) {
-      await db.insert(spaceQuestDeliverables).values(
-        patch.deliverables.map((dItem, idx) => ({
-          questId: current.id,
-          order: idx + 1,
-          name: dItem.name.trim(),
-          url: dItem.url?.trim() || null,
-          note: dItem.note?.trim() || null,
-          updatedByPersonId: actor.id ?? null,
-          updatedByName: actorName,
-        })),
-      );
-    }
-    editEvents.push({
-      text: `Updated Deliverables (${patch.deliverables.length} item${
-        patch.deliverables.length === 1 ? '' : 's'
-      }).`,
-      change: {
-        entity: 'deliverable',
-        field: 'deliverables',
-        action: 'updated',
-      },
-    });
-  }
-
-  // Every post-pass edit writes an edit_event to Updates (who changed what)
-  if (editEvents.length > 0) {
-    await db.insert(spaceQuestUpdates).values(
-      editEvents.map((ev) => ({
-        questId: current.id,
-        authorPersonId: actor.id ?? null,
-        authorName: actorName,
-        authorAvatarUrl: actor.avatarUrl ?? null,
-        kind: 'edit_event',
-        viaAgent: false,
-        milestoneOrder: null,
-        milestoneLabel: null,
-        text: ev.text,
-        links: [],
-        change: ev.change,
-      })),
-    );
-  }
+  });
 
   const leadChanged = updateFields.leadPersonId !== undefined;
   if (current.chatRoomId && (patch.members !== undefined || leadChanged)) {
