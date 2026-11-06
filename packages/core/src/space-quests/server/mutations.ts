@@ -751,6 +751,7 @@ export async function updateSpaceQuest(
     if (patch.milestones.length > 0) {
       await db.insert(spaceQuestMilestones).values(
         patch.milestones.map((m, idx) => ({
+          ...(typeof m.id === 'number' ? { id: m.id } : {}),
           questId: current.id,
           order: idx + 1,
           name: m.name.trim(),
@@ -781,6 +782,7 @@ export async function updateSpaceQuest(
     if (patch.members.length > 0) {
       await db.insert(spaceQuestMembers).values(
         patch.members.map((m, idx) => ({
+          ...(typeof m.id === 'number' ? { id: m.id } : {}),
           questId: current.id,
           personId: m.personId ?? null,
           memberName: m.memberName.trim(),

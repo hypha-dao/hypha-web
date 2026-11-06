@@ -193,15 +193,12 @@ export function useQuestSpaceMembers(spaceSlug: string | undefined) {
       }
 
       const seenIds = new Set<number>();
-      const seenNames = new Set<string>();
       const roster: QuestSpaceMember[] = [];
       for (const person of people) {
         const entry = toQuestSpaceMemberEntry(person);
         if (!entry) continue;
-        const nameKey = entry.name.toLowerCase();
-        if (seenIds.has(entry.personId) || seenNames.has(nameKey)) continue;
+        if (seenIds.has(entry.personId)) continue;
         seenIds.add(entry.personId);
-        seenNames.add(nameKey);
         roster.push(entry);
       }
       return roster.sort((a, b) =>

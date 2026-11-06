@@ -6,18 +6,23 @@ import {
   QUEST_STEWARD_STEPS,
   escapeUntrustedDataBoundary,
   isSandboxOrThrowawaySpace,
+  mergeRefinedQuestMembers,
+  mergeRefinedQuestMilestones,
   selectSpecialistForQuestion,
   spaceContextQuarterEndIso,
   specialistById,
+  withoutPlaceholderLeadDuplicates,
   type QuestRecord,
   type QuestStewardStep,
 } from '@hypha-platform/core/client';
 import {
+  computeSpaceMemberEntries,
   findSpaceBySlug,
   getSpaceQuestBySlug,
   listSpaceContextSections,
   officialSectionMarkdown,
   updateSpaceQuest,
+  type SpaceQuestWriteError,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { getHyphaChatModel } from './stream-chat';
@@ -154,6 +159,22 @@ export type QuestDraftAssistRequest = z.infer<
 const QUEST_DRAFT_MS = 28_000;
 const QUEST_DRAFT_MAX_STEPS = 4;
 
+function questWriteFailureReply(error: SpaceQuestWriteError): string {
+  switch (error) {
+    case 'not_active':
+      return 'This quest is not active, so those changes were not saved.';
+    case 'forbidden':
+    case 'lead_only':
+      return 'You do not have permission to save those changes.';
+    case 'archived':
+      return 'This quest is archived, so those changes were not saved.';
+    case 'not_found':
+      return 'This quest could not be found, so those changes were not saved.';
+    default:
+      return 'Those changes could not be saved.';
+  }
+}
+
 function untrusted(label: string, value: string, empty = '(empty)'): string {
   const body = escapeUntrustedDataBoundary(value).trim() || empty;
   return `----- BEGIN UNTRUSTED DATA (${label}) -----\n${body}\n----- END UNTRUSTED DATA -----`;
@@ -177,6 +198,7 @@ export async function assistSpaceQuestDraft({
   updatedQuest: QuestRecord | null;
   reply: string | null;
   specialistId: string;
+  writeError?: SpaceQuestWriteError | null;
 }> {
   const {
     message,
@@ -201,13 +223,19 @@ export async function assistSpaceQuestDraft({
     };
   }
 
-  const [space, contextOverview, existingQuest] = await Promise.all([
-    findSpaceBySlug({ slug: spaceSlug }, { db }).catch(() => null),
-    listSpaceContextSections({ spaceSlug }, { db }).catch(() => null),
-    questSlug
-      ? getSpaceQuestBySlug({ spaceSlug, questSlug }, { db }).catch(() => null)
-      : Promise.resolve(null),
-  ]);
+  const [space, contextOverview, existingQuest, rosterEntries] =
+    await Promise.all([
+      findSpaceBySlug({ slug: spaceSlug }, { db }).catch(() => null),
+      listSpaceContextSections({ spaceSlug }, { db }).catch(() => null),
+      questSlug
+        ? getSpaceQuestBySlug({ spaceSlug, questSlug }, { db }).catch(
+            () => null,
+          )
+        : Promise.resolve(null),
+      computeSpaceMemberEntries(spaceSlug, { db })
+        .then((result) => (result.found ? result.entries : []))
+        .catch(() => []),
+    ]);
 
   const contextDigest = (contextOverview?.sections ?? [])
     .flatMap((section) => {
@@ -372,8 +400,30 @@ ${untrusted(
       (existingQuest.status === 'active' || existingQuest.status === 'paused')
     ) {
       const resolveMemberId = (rawName: string | undefined | null) => {
-        const clean = rawName?.trim().toLowerCase();
+        const clean = rawName
+          ?.replace(/\s*\(you\)\s*/i, '')
+          .trim()
+          .toLowerCase();
         if (!clean) return null;
+        const fromQuest = existingQuest.members.find(
+          (member) =>
+            member.memberName.trim().toLowerCase() === clean &&
+            member.personId != null &&
+            member.personId > 0,
+        );
+        if (fromQuest?.personId) return fromQuest.personId;
+        for (const entry of rosterEntries) {
+          if (entry.member_kind !== 'person') continue;
+          const full = [entry.person.name, entry.person.surname]
+            .filter(Boolean)
+            .join(' ')
+            .trim()
+            .toLowerCase();
+          const nickname = entry.person.nickname?.trim().toLowerCase() ?? '';
+          if (full === clean || (nickname.length > 0 && nickname === clean)) {
+            return entry.person.id;
+          }
+        }
         return (
           spaceMembers.find((m) => m.name.trim().toLowerCase() === clean)
             ?.personId ?? null
@@ -417,24 +467,22 @@ ${untrusted(
               : {}),
             ...(collectedPatch.milestones
               ? {
-                  milestones: collectedPatch.milestones.map((m) => ({
-                    name: m.name,
-                    description: m.description ?? '',
-                    dueDate: m.dueDate ?? null,
-                    ownerPersonId: resolveMemberId(m.ownerName),
-                    ownerName: m.ownerName ?? null,
-                    status: 'not_started' as const,
-                  })),
+                  milestones: mergeRefinedQuestMilestones(
+                    existingQuest.milestones,
+                    collectedPatch.milestones,
+                    resolveMemberId,
+                  ),
                 }
               : {}),
             ...(collectedPatch.members
               ? {
-                  members: collectedPatch.members.map((m) => ({
-                    personId: resolveMemberId(m.memberName),
-                    memberName: m.memberName,
-                    roleLabel: m.roleLabel ?? 'Member',
-                    responsibilities: m.responsibilities ?? [],
-                  })),
+                  members: withoutPlaceholderLeadDuplicates(
+                    mergeRefinedQuestMembers(
+                      existingQuest.members,
+                      collectedPatch.members,
+                      resolveMemberId,
+                    ),
+                  ),
                 }
               : {}),
             ...(collectedPatch.deliverables
@@ -452,6 +500,15 @@ ${untrusted(
       );
       if (writeResult.ok) {
         updatedQuest = writeResult.quest;
+      } else {
+        return {
+          ok: true,
+          patch: null,
+          updatedQuest: null,
+          reply: questWriteFailureReply(writeResult.error),
+          writeError: writeResult.error,
+          specialistId: specialist?.id ?? 'operations',
+        };
       }
     }
 

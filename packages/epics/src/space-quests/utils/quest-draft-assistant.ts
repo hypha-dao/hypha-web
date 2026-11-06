@@ -4,7 +4,7 @@ import {
   splitMarkdownLinesToBullets,
   type QuestReward,
   type QuestStewardStep,
-} from '../../../../core/src/space-quests';
+} from '@hypha-platform/core/client';
 import type {
   EditableQuestMember,
   EditableQuestMilestone,

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { asc, desc, eq, inArray } from 'drizzle-orm';
 import {
   documents,
   people,
@@ -7,6 +7,7 @@ import {
   spaceQuestMilestones,
   spaceQuests,
   spaceQuestUpdates,
+  spaces,
   type SpaceQuest,
   type SpaceQuestDeliverable,
   type SpaceQuestMember,
@@ -290,33 +291,12 @@ export function assembleQuestRecord(
   };
 }
 
-const LEGACY_SEEDED_QUEST_SLUGS = [
-  'space-context-mvp',
-  'agent-gateway',
-  'onboarding-matcher',
-  'treasury-reporting',
-  'website-refresh',
-  'q3-governance-audit',
-] as const;
-
 export async function listSpaceQuests(
   { spaceSlug }: { spaceSlug: string },
   { db }: DbConfig,
 ): Promise<SpaceQuestsOverview | null> {
   const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
   if (!space) return null;
-
-  // Purge any previously seeded placeholder quests from earlier preview runs
-  await db
-    .delete(spaceQuests)
-    .where(
-      and(
-        eq(spaceQuests.spaceId, space.id),
-        isNull(spaceQuests.creatorPersonId),
-        isNull(spaceQuests.proposalDocumentId),
-        inArray(spaceQuests.slug, [...LEGACY_SEEDED_QUEST_SLUGS]),
-      ),
-    );
 
   const rows = await db
     .select({
@@ -444,10 +424,10 @@ export async function findSpaceQuestByProposalDocumentId(
   if (!row) return null;
 
   const [spaceRow] = await db
-    .select({ slug: documents.slug })
-    .from(documents)
-    .where(eq(documents.id, documentId))
+    .select({ slug: spaces.slug })
+    .from(spaces)
+    .where(eq(spaces.id, row.spaceId))
     .limit(1);
-  void spaceRow;
-  return { spaceSlug: '', questSlug: row.questSlug };
+  if (!spaceRow?.slug) return null;
+  return { spaceSlug: spaceRow.slug, questSlug: row.questSlug };
 }

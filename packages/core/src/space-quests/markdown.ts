@@ -1,3 +1,4 @@
+import { isQuestMilestoneStatus, type QuestMilestoneStatus } from './constants';
 import type { QuestDraftInput, QuestRecord } from './types';
 
 export const QUEST_PROPOSAL_MARKER_START = '<!-- hypha-quest-proposal:start';
@@ -143,19 +144,20 @@ function isSyntheticPlaceholderLead(member: {
   );
 }
 
+function positivePersonId(personId: number | null | undefined): number | null {
+  return personId != null && personId > 0 ? personId : null;
+}
+
 function sameQuestMemberIdentity(
   left: { personId?: number | null; memberName: string },
   right: { personId?: number | null; memberName: string },
 ): boolean {
-  if (
-    left.personId != null &&
-    left.personId > 0 &&
-    right.personId != null &&
-    right.personId > 0 &&
-    left.personId === right.personId
-  ) {
-    return true;
-  }
+  const leftId = positivePersonId(left.personId);
+  const rightId = positivePersonId(right.personId);
+  // Two known people are the same only when their ids match. A shared
+  // display name must not collapse them, or a placeholder Lead can be
+  // dropped against a different person.
+  if (leftId != null && rightId != null) return leftId === rightId;
   const leftName = left.memberName.trim().toLowerCase();
   const rightName = right.memberName.trim().toLowerCase();
   return leftName.length > 0 && leftName === rightName;
@@ -195,6 +197,164 @@ export function withoutPlaceholderLeadDuplicates<
     keptLoneLead.add(personKey);
     return [{ ...member, responsibilities: [] as string[] } as T];
   });
+}
+
+export type RefinedQuestMilestone = {
+  id?: number;
+  name: string;
+  description: string;
+  dueDate: string | null;
+  ownerName: string | null;
+  ownerPersonId: number | null;
+  status: QuestMilestoneStatus;
+};
+
+export type RefinedQuestMember = {
+  id?: number;
+  personId: number | null;
+  memberName: string;
+  memberAvatarUrl: string | null;
+  roleLabel: string;
+  responsibilities: string[];
+};
+
+/**
+ * Overlay an assistant milestone list onto the saved milestones.
+ * Matched rows keep id, status, and owner person when the owner name
+ * did not change. Unmentioned saved milestones stay, so a partial
+ * refine does not reset progress.
+ */
+export function mergeRefinedQuestMilestones(
+  existing: readonly {
+    id?: number;
+    name: string;
+    description?: string | null;
+    dueDate?: string | null;
+    ownerName?: string | null;
+    ownerPersonId?: number | null;
+    status?: string | null;
+  }[],
+  incoming: readonly {
+    name: string;
+    description?: string | null;
+    dueDate?: string | null;
+    ownerName?: string | null;
+  }[],
+  resolveOwnerId: (name: string | null | undefined) => number | null,
+): RefinedQuestMilestone[] {
+  const used = new Set<number>();
+  const overlay = (
+    current: (typeof existing)[number] | undefined,
+    next: (typeof incoming)[number] | undefined,
+  ): RefinedQuestMilestone => {
+    const name = (next?.name ?? current?.name ?? '').trim();
+    const description = (
+      next?.description ??
+      current?.description ??
+      ''
+    ).trim();
+    const dueDate =
+      next && next.dueDate !== undefined
+        ? next.dueDate?.trim() || null
+        : current?.dueDate?.trim() || null;
+    const ownerName =
+      next && next.ownerName !== undefined
+        ? next.ownerName?.trim() || null
+        : current?.ownerName?.trim() || null;
+    const ownerChanged =
+      next != null &&
+      next.ownerName !== undefined &&
+      (next.ownerName?.trim().toLowerCase() ?? '') !==
+        (current?.ownerName?.trim().toLowerCase() ?? '');
+    const ownerPersonId = ownerChanged
+      ? resolveOwnerId(ownerName)
+      : current?.ownerPersonId ?? resolveOwnerId(ownerName);
+    const rawStatus = current?.status;
+    return {
+      ...(typeof current?.id === 'number' ? { id: current.id } : {}),
+      name,
+      description,
+      dueDate,
+      ownerName,
+      ownerPersonId: ownerPersonId ?? null,
+      status: isQuestMilestoneStatus(rawStatus) ? rawStatus : 'not_started',
+    };
+  };
+
+  const merged = existing.map((current) => {
+    const index = incoming.findIndex(
+      (item, itemIndex) =>
+        !used.has(itemIndex) &&
+        item.name.trim().toLowerCase() === current.name.trim().toLowerCase(),
+    );
+    if (index === -1) return overlay(current, undefined);
+    used.add(index);
+    return overlay(current, incoming[index]);
+  });
+  incoming.forEach((item, index) => {
+    if (!used.has(index)) merged.push(overlay(undefined, item));
+  });
+  return merged.filter((item) => item.name.length > 0);
+}
+
+/**
+ * Overlay an assistant member list onto the saved roster. Existing
+ * person ids and roles survive a refine, and members the assistant
+ * did not mention stay so the quest room is not kicked.
+ */
+export function mergeRefinedQuestMembers(
+  existing: readonly {
+    id?: number;
+    personId?: number | null;
+    memberName: string;
+    memberAvatarUrl?: string | null;
+    roleLabel?: string | null;
+    responsibilities?: readonly string[] | null;
+  }[],
+  incoming: readonly {
+    memberName: string;
+    roleLabel?: string | null;
+    responsibilities?: readonly string[] | null;
+  }[],
+  resolvePersonId: (name: string | null | undefined) => number | null,
+): RefinedQuestMember[] {
+  const used = new Set<number>();
+  const merged = existing.map((current) => {
+    const index = incoming.findIndex(
+      (item, itemIndex) =>
+        !used.has(itemIndex) &&
+        item.memberName.trim().toLowerCase() ===
+          current.memberName.trim().toLowerCase(),
+    );
+    const next = index === -1 ? undefined : incoming[index];
+    if (index !== -1) used.add(index);
+    const personId =
+      current.personId != null && current.personId > 0
+        ? current.personId
+        : resolvePersonId(next?.memberName ?? current.memberName);
+    return {
+      ...(typeof current.id === 'number' ? { id: current.id } : {}),
+      personId: personId ?? null,
+      memberName: (next?.memberName ?? current.memberName).trim(),
+      memberAvatarUrl: current.memberAvatarUrl ?? null,
+      roleLabel:
+        next?.roleLabel?.trim() || current.roleLabel?.trim() || 'Member',
+      responsibilities: next?.responsibilities
+        ? [...next.responsibilities]
+        : [...(current.responsibilities ?? [])],
+    };
+  });
+  incoming.forEach((item, index) => {
+    if (used.has(index)) return;
+    merged.push({
+      personId: resolvePersonId(item.memberName),
+      memberName: item.memberName.trim(),
+      memberAvatarUrl: null,
+      roleLabel: item.roleLabel?.trim() || 'Member',
+      responsibilities: [...(item.responsibilities ?? [])],
+    });
+  });
+  return merged.filter((item) => item.memberName.length > 0);
 }
 
 export function questRecordToProposalDraft(

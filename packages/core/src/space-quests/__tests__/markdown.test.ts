@@ -4,6 +4,8 @@ import {
   canMemberEditQuest,
   embeddedQuestProposalMatchesQuest,
   isViewerQuestLead,
+  mergeRefinedQuestMembers,
+  mergeRefinedQuestMilestones,
   parseQuestProposalFromDescription,
   questRecordToProposalDraft,
   slugifyQuestName,
@@ -188,6 +190,111 @@ describe('quest proposal description', () => {
       'Lead / QA runner',
       'Writer',
     ]);
+  });
+
+  it('does not collapse two people who share a display name', () => {
+    const members = withoutPlaceholderLeadDuplicates([
+      {
+        personId: 7,
+        memberName: 'Alex',
+        roleLabel: 'Lead',
+        responsibilities: ['Overall delivery', 'Unblock reviews'],
+      },
+      {
+        personId: 8,
+        memberName: 'Alex',
+        roleLabel: 'Writer',
+        responsibilities: ['Write the notes'],
+      },
+    ]);
+    expect(members.map((member) => member.personId)).toEqual([7, 8]);
+    expect(members[0]?.responsibilities).toEqual([]);
+    expect(members[1]?.responsibilities).toEqual(['Write the notes']);
+  });
+
+  it('uses the display name when a row has no person id', () => {
+    const members = withoutPlaceholderLeadDuplicates([
+      {
+        memberName: 'Alex',
+        roleLabel: 'Lead',
+        responsibilities: ['Overall delivery'],
+      },
+      {
+        personId: 8,
+        memberName: 'Alex',
+        roleLabel: 'Writer',
+        responsibilities: ['Write the notes'],
+      },
+    ]);
+    expect(members.map((member) => member.roleLabel)).toEqual(['Writer']);
+  });
+
+  it('keeps milestone progress and member ids when a refine matches by name', () => {
+    const milestones = mergeRefinedQuestMilestones(
+      [
+        {
+          id: 4,
+          name: 'Inspect lists',
+          description: 'Capture the roster',
+          dueDate: '2026-11-06',
+          ownerName: 'Vlad Hramtsov',
+          ownerPersonId: 7,
+          status: 'in_progress',
+        },
+      ],
+      [
+        {
+          name: 'Inspect lists',
+          description: 'Capture the roster again',
+          ownerName: 'Vlad Hramtsov',
+        },
+      ],
+      () => 99,
+    );
+    expect(milestones).toEqual([
+      {
+        id: 4,
+        name: 'Inspect lists',
+        description: 'Capture the roster again',
+        dueDate: '2026-11-06',
+        ownerName: 'Vlad Hramtsov',
+        ownerPersonId: 7,
+        status: 'in_progress',
+      },
+    ]);
+
+    const members = mergeRefinedQuestMembers(
+      [
+        {
+          id: 3,
+          personId: 7,
+          memberName: 'Vlad Hramtsov',
+          roleLabel: 'Lead / QA runner',
+          responsibilities: ['Own the checklist'],
+        },
+        {
+          id: 9,
+          personId: 8,
+          memberName: 'Grok Test',
+          roleLabel: 'Writer',
+          responsibilities: ['Write the notes'],
+        },
+      ],
+      [
+        {
+          memberName: 'Vlad Hramtsov',
+          responsibilities: ['Own the checklist', 'Flag mismatches'],
+        },
+      ],
+      (name) => (name === 'New Person' ? 11 : null),
+    );
+    expect(members.map((member) => member.personId)).toEqual([7, 8]);
+    expect(members[0]).toMatchObject({
+      id: 3,
+      roleLabel: 'Lead / QA runner',
+      responsibilities: ['Own the checklist', 'Flag mismatches'],
+    });
+    expect(members[1]?.id).toBe(9);
   });
 
   it('drops a lead row whose duties are only a subset of the placeholders', () => {

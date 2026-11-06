@@ -687,6 +687,13 @@
       "when": 1784000000028,
       "tag": "0097_space_quests",
       "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1784000000029,
+      "tag": "0098_purge_legacy_seeded_quests",
+      "breakpoints": true
     }
   ]
 }

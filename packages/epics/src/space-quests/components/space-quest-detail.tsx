@@ -1392,10 +1392,29 @@ export function SpaceQuestDetail({
       },
     ]);
 
+    const appendAssistantReply = (text: string) => {
+      setDetailChatMessages((prev) => [
+        ...prev,
+        {
+          id: `ds-${Date.now()}`,
+          role: 'member',
+          agentSpecialistId: 'operations',
+          senderName: 'AI Agents',
+          timestamp: new Date(),
+          text,
+        },
+      ]);
+    };
+
     setDetailChatTyping(true);
     try {
       const token = await getAccessToken?.().catch(() => null);
-      if (!token) return;
+      if (!token) {
+        appendAssistantReply(
+          'Could not reach the assistant right now. Try again or click any section to edit directly.',
+        );
+        return;
+      }
       const response = await fetch(
         `/api/v1/spaces/${encodeURIComponent(spaceSlug)}/quests/draft-assist`,
         {
@@ -1419,67 +1438,66 @@ export function SpaceQuestDetail({
           }),
         },
       );
-      if (response.ok) {
-        const data = (await response.json()) as {
-          ok?: boolean;
-          patch?: QuestDraftPatchInput | null;
-          updatedQuest?: QuestRecord | null;
-          reply?: string | null;
-          specialistId?: string;
-        };
-        if (data.updatedQuest) {
-          await refresh(data.updatedQuest, { revalidate: false });
-        } else if (data.patch && canEdit) {
-          const patchToSave: QuestPatch = {
-            ...(data.patch.name ? { name: data.patch.name } : {}),
-            ...(data.patch.goal ? { goal: data.patch.goal } : {}),
-            ...(data.patch.scopeIn ? { scopeIn: data.patch.scopeIn } : {}),
-            ...(data.patch.scopeOut ? { scopeOut: data.patch.scopeOut } : {}),
-            ...(data.patch.successCriteriaBullets
-              ? {
-                  successCriteria: data.patch.successCriteriaBullets
-                    .map((b) => `- ${b}`)
-                    .join('\n'),
-                }
-              : {}),
-            ...(data.patch.targetDate !== undefined
-              ? { targetDate: data.patch.targetDate }
-              : {}),
-            ...(data.patch.rewards ? { rewards: data.patch.rewards } : {}),
-          };
-          if (Object.keys(patchToSave).length > 0) {
-            await savePatch(patchToSave);
-          }
-        }
-        const replyText =
-          data.reply?.trim() ||
-          (data.updatedQuest || data.patch
-            ? 'Updated the quest sections on screen.'
-            : 'Let me know which section of this quest you want to refine.');
-        setDetailChatMessages((prev) => [
-          ...prev,
-          {
-            id: `ds-${Date.now()}`,
-            role: 'member',
-            agentSpecialistId: data.specialistId ?? 'operations',
-            senderName: 'AI Agents',
-            timestamp: new Date(),
-            text: replyText,
-          },
-        ]);
+      if (!response.ok) {
+        appendAssistantReply(
+          'Could not reach the assistant right now. Try again or click any section to edit directly.',
+        );
+        return;
       }
-    } catch {
+      const data = (await response.json()) as {
+        ok?: boolean;
+        patch?: QuestDraftPatchInput | null;
+        updatedQuest?: QuestRecord | null;
+        reply?: string | null;
+        specialistId?: string;
+        writeError?: string | null;
+      };
+      let saved = false;
+      if (data.updatedQuest) {
+        await refresh(data.updatedQuest, { revalidate: false });
+        saved = true;
+      } else if (data.patch && canEdit && !data.writeError) {
+        const patchToSave: QuestPatch = {
+          ...(data.patch.name ? { name: data.patch.name } : {}),
+          ...(data.patch.goal ? { goal: data.patch.goal } : {}),
+          ...(data.patch.scopeIn ? { scopeIn: data.patch.scopeIn } : {}),
+          ...(data.patch.scopeOut ? { scopeOut: data.patch.scopeOut } : {}),
+          ...(data.patch.successCriteriaBullets
+            ? {
+                successCriteria: data.patch.successCriteriaBullets
+                  .map((b) => `- ${b}`)
+                  .join('\n'),
+              }
+            : {}),
+          ...(data.patch.targetDate !== undefined
+            ? { targetDate: data.patch.targetDate }
+            : {}),
+          ...(data.patch.rewards ? { rewards: data.patch.rewards } : {}),
+        };
+        if (Object.keys(patchToSave).length > 0) {
+          saved = await savePatch(patchToSave);
+        }
+      }
+      const replyText =
+        data.reply?.trim() ||
+        (saved
+          ? 'Updated the quest sections on screen.'
+          : 'Let me know which section of this quest you want to refine.');
       setDetailChatMessages((prev) => [
         ...prev,
         {
           id: `ds-${Date.now()}`,
           role: 'member',
-          agentSpecialistId: 'operations',
+          agentSpecialistId: data.specialistId ?? 'operations',
           senderName: 'AI Agents',
           timestamp: new Date(),
-          text: 'Could not reach the assistant right now. Try again or click any section to edit directly.',
+          text: replyText,
         },
       ]);
+    } catch {
+      appendAssistantReply(
+        'Could not reach the assistant right now. Try again or click any section to edit directly.',
+      );
     } finally {
       setDetailChatTyping(false);
     }
@@ -1489,7 +1507,7 @@ export function SpaceQuestDetail({
     void handleSendDetailChatMessage(overridePrompt);
   };
 
-  const savePatch = async (patch: QuestPatch) => {
+  const savePatch = async (patch: QuestPatch): Promise<boolean> => {
     setSaving(true);
     setActionError(null);
     try {
@@ -1500,10 +1518,12 @@ export function SpaceQuestDetail({
         getAccessToken,
       });
       await refresh(updated, { revalidate: false });
+      return true;
     } catch (err) {
       setActionError(
         err instanceof Error ? err.message : 'Failed to update quest',
       );
+      return false;
     } finally {
       setSaving(false);
     }
