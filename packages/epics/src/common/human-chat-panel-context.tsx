@@ -119,6 +119,11 @@ export type SpaceQuestDraftPanelSession = {
   onSend: () => void;
   onQuickPrompt?: (prompt: string) => void;
   isAgentTyping?: boolean;
+  /**
+   * New-quest chat is a 1:1 with Quest Helper.
+   * Detail refine leaves this unset and stays the AI Agents room.
+   */
+  coach?: 'quest-helper';
 };
 
 export type HumanChatPanelContextValue = {

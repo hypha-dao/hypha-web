@@ -49,7 +49,10 @@ export const QUEST_DEFAULT_REWARD_TOKENS = [
   'EURC',
 ] as const;
 
-/** Guided Quest Steward section order (Vlad: Goal first, one section per turn, no Priority). */
+/** Dedicated coach in the new-quest chat. Not the shared “AI Agents” room. */
+export const QUEST_HELPER_NAME = 'Quest Helper';
+
+/** Guided Quest Steward section order (Goal first, one section per turn, no Priority). */
 export const QUEST_STEWARD_STEPS = [
   'goal',
   'scope',

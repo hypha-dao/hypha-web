@@ -3,13 +3,13 @@
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   QUEST_DOCUMENT_LABEL,
+  QUEST_HELPER_NAME,
   QUEST_PROPOSAL_DESCRIPTION_LIMIT,
   QUEST_STEWARD_STEPS,
   buildQuestProposalDescription,
+  limitQuestPatchToStep,
   questRecordToProposalDraft,
-  selectSpecialistForQuestion,
   withoutPlaceholderLeadDuplicates,
-  specialistById,
   splitMarkdownLinesToBullets,
   useCreateAgreementOrchestrator,
   useJwt,
@@ -26,7 +26,6 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useConfig } from 'wagmi';
-import { recordMobilizedAiAgentsForQuestion } from '../../common/ai-agent-competencies';
 import {
   useAiPanel,
   useHumanChatPanel,
@@ -44,7 +43,8 @@ import {
 import {
   applyPatchToQuestDraftState,
   buildLocalQuestDraftPatch,
-  findNextUnfilledQuestStep,
+  nextQuestStepAfterUpdate,
+  questStepSectionLabel,
   stewardQuestionForStep,
   type QuestDraftPatchInput,
   type QuestDraftStateSnapshot,
@@ -115,14 +115,37 @@ function chainProposalId(current: {
   return null;
 }
 
-function stripAgentMentionPrefix(text: string, agentLabel: string): string {
-  const escaped = agentLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function stripAgentMentionPrefix(text: string): string {
+  const helper = QUEST_HELPER_NAME.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return text
-    .replace(
-      new RegExp(`^@(?:${escaped}|AI[\\s_-]*Agents)\\b[,:\\s]*`, 'i'),
-      '',
-    )
+    .replace(new RegExp(`^@(?:${helper}|AI[\\s_-]*Agents)\\b[,:\\s]*`, 'i'), '')
     .trim();
+}
+
+const QUEST_READY_REPLY =
+  "Your quest draft is ready. Click CREATE QUEST whenever you're ready to submit it as a proposal for voting.";
+
+function questHelperFallbackReply({
+  currentStep,
+  nextStep,
+  complete,
+  updatedLabels,
+}: {
+  currentStep: QuestStewardStep;
+  nextStep: QuestStewardStep;
+  complete: boolean;
+  updatedLabels: readonly string[];
+}): string {
+  if (complete) return QUEST_READY_REPLY;
+  if (
+    nextStep === currentStep ||
+    !updatedLabels.includes(questStepSectionLabel(currentStep))
+  ) {
+    return stewardQuestionForStep(currentStep);
+  }
+  return `Updated ${questStepSectionLabel(
+    currentStep,
+  )}. ${stewardQuestionForStep(nextStep)}`;
 }
 
 export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
@@ -133,7 +156,6 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   );
   const locale = useLocale();
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const tChat = useTranslations('HumanChatPanel');
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
@@ -183,8 +205,6 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
     [leadName, members, milestones, spaceMembers],
   );
 
-  const agentLabel = tChat('agentMentionLabel');
-
   // Guided flow state (Goal first, one section per turn, no Priority)
   const [stewardStepIndex, setStewardStepIndex] = useState<number>(0);
   const [activeSection, setActiveSection] = useState<QuestStewardStep>('goal');
@@ -196,8 +216,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
     {
       id: 'm1',
       role: 'member',
-      agentSpecialistId: 'operations',
-      senderName: agentLabel,
+      senderName: QUEST_HELPER_NAME,
       timestamp: new Date(),
       text: 'Hey, what is the goal of the quest you want to create?',
     },
@@ -273,9 +292,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         setChatInput('');
       }
 
-      const trimmed =
-        stripAgentMentionPrefix(rawTrimmed, agentLabel) || rawTrimmed;
-      recordMobilizedAiAgentsForQuestion(spaceSlug, trimmed);
+      const trimmed = stripAgentMentionPrefix(rawTrimmed) || rawTrimmed;
 
       const currentStep = QUEST_STEWARD_STEPS[stewardStepIndex] ?? 'goal';
       const currentSnapshot: QuestDraftStateSnapshot = {
@@ -293,10 +310,6 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         members,
         targetDate,
       };
-
-      const specialist =
-        selectSpecialistForQuestion(trimmed) ?? specialistById('operations');
-      const specialistId = specialist?.id ?? 'operations';
 
       const now = new Date();
       setChatMessages((prev) => [
@@ -374,15 +387,27 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             );
             if (hasAiPatch || data.reply?.trim()) {
               llmHandled = true;
-              const localFallbackPatch = buildLocalQuestDraftPatch({
-                message: trimmed,
-                currentStep,
-                draft: currentSnapshot,
-                viewerDisplayName,
-              });
-              const effectivePatch: QuestDraftPatchInput = hasAiPatch
+              const sourcePatch: QuestDraftPatchInput = hasAiPatch
                 ? data.patch!
-                : localFallbackPatch;
+                : buildLocalQuestDraftPatch({
+                    message: trimmed,
+                    currentStep,
+                    draft: currentSnapshot,
+                    viewerDisplayName,
+                  });
+              const effectivePatch = limitQuestPatchToStep(
+                sourcePatch,
+                currentStep,
+              );
+              const keptKeys = new Set(Object.keys(effectivePatch));
+              const droppedOtherSections = Object.keys(sourcePatch).some(
+                (key) => {
+                  const value = sourcePatch[key as keyof QuestDraftPatchInput];
+                  if (value == null || value === '') return false;
+                  if (Array.isArray(value) && value.length === 0) return false;
+                  return !keptKeys.has(key);
+                },
+              );
               const { next: afterAi, updatedLabels } =
                 applyPatchToQuestDraftState({
                   current: currentSnapshot,
@@ -392,35 +417,32 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                 });
               commitDraftSnapshot(afterAi);
 
-              const aiNextUnfilled = findNextUnfilledQuestStep(
-                afterAi,
+              const advance = nextQuestStepAfterUpdate({
+                draft: afterAi,
                 currentStep,
-              );
-              const nextStep: QuestStewardStep = aiNextUnfilled ?? 'name';
+                updatedLabels,
+              });
               setStewardStepIndex(
-                Math.max(0, QUEST_STEWARD_STEPS.indexOf(nextStep)),
+                Math.max(0, QUEST_STEWARD_STEPS.indexOf(advance.step)),
               );
-              setActiveSection(nextStep);
+              setActiveSection(advance.step);
 
-              const replyText =
-                data.reply?.trim() ||
-                (aiNextUnfilled
-                  ? updatedLabels.length > 0
-                    ? `Updated ${updatedLabels.join(
-                        ', ',
-                      )} in your quest draft. ${stewardQuestionForStep(
-                        aiNextUnfilled,
-                      )}`
-                    : stewardQuestionForStep(aiNextUnfilled)
-                  : "Your quest draft is ready. Click CREATE QUEST whenever you're ready to submit it as a proposal for voting.");
+              const fallbackReply = questHelperFallbackReply({
+                currentStep,
+                nextStep: advance.step,
+                complete: advance.complete,
+                updatedLabels,
+              });
+              const replyText = droppedOtherSections
+                ? fallbackReply
+                : data.reply?.trim() || fallbackReply;
 
               setChatMessages((prev) => [
                 ...prev,
                 {
                   id: `s-${Date.now()}`,
                   role: 'member',
-                  agentSpecialistId: data.specialistId ?? specialistId,
-                  senderName: agentLabel,
+                  senderName: QUEST_HELPER_NAME,
                   timestamp: new Date(),
                   text: replyText,
                 },
@@ -435,12 +457,15 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       }
 
       if (!llmHandled) {
-        const localPatch = buildLocalQuestDraftPatch({
-          message: trimmed,
+        const localPatch = limitQuestPatchToStep(
+          buildLocalQuestDraftPatch({
+            message: trimmed,
+            currentStep,
+            draft: currentSnapshot,
+            viewerDisplayName,
+          }),
           currentStep,
-          draft: currentSnapshot,
-          viewerDisplayName,
-        });
+        );
         const { next: afterLocal, updatedLabels: localUpdated } =
           applyPatchToQuestDraftState({
             current: currentSnapshot,
@@ -450,34 +475,34 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
           });
         commitDraftSnapshot(afterLocal);
 
-        const nextUnfilled = findNextUnfilledQuestStep(afterLocal, currentStep);
-        const nextStep: QuestStewardStep = nextUnfilled ?? 'name';
-        setStewardStepIndex(Math.max(0, QUEST_STEWARD_STEPS.indexOf(nextStep)));
-        setActiveSection(nextStep);
-
-        const fallbackReply = nextUnfilled
-          ? localUpdated.length > 1
-            ? `Updated ${localUpdated.join(
-                ', ',
-              )} in your quest draft. ${stewardQuestionForStep(nextUnfilled)}`
-            : stewardQuestionForStep(nextUnfilled)
-          : "Your quest draft is ready. Click CREATE QUEST whenever you're ready to submit it as a proposal for voting.";
+        const advance = nextQuestStepAfterUpdate({
+          draft: afterLocal,
+          currentStep,
+          updatedLabels: localUpdated,
+        });
+        setStewardStepIndex(
+          Math.max(0, QUEST_STEWARD_STEPS.indexOf(advance.step)),
+        );
+        setActiveSection(advance.step);
 
         setChatMessages((prev) => [
           ...prev,
           {
             id: `s-${Date.now()}`,
             role: 'member',
-            agentSpecialistId: specialistId,
-            senderName: agentLabel,
+            senderName: QUEST_HELPER_NAME,
             timestamp: new Date(),
-            text: fallbackReply,
+            text: questHelperFallbackReply({
+              currentStep,
+              nextStep: advance.step,
+              complete: advance.complete,
+              updatedLabels: localUpdated,
+            }),
           },
         ]);
       }
     },
     [
-      agentLabel,
       chatInput,
       chatMessages,
       commitDraftSnapshot,
@@ -509,9 +534,6 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const triggerSend = useCallback(() => {
     void handleSendRef.current();
   }, []);
-  const triggerQuickPrompt = useCallback((prompt: string) => {
-    void handleSendRef.current(prompt);
-  }, []);
 
   const draftChatSession = useMemo(
     () => ({
@@ -521,18 +543,10 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       input: chatInput,
       onInputChange: setChatInput,
       onSend: triggerSend,
-      onQuickPrompt: triggerQuickPrompt,
       isAgentTyping,
+      coach: 'quest-helper' as const,
     }),
-    [
-      chatInput,
-      chatMessages,
-      isAgentTyping,
-      name,
-      spaceSlug,
-      triggerQuickPrompt,
-      triggerSend,
-    ],
+    [chatInput, chatMessages, isAgentTyping, name, spaceSlug, triggerSend],
   );
 
   // Open the shared right side panel on mount and host the Quest chat there.

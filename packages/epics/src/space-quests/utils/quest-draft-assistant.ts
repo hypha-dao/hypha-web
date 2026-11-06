@@ -1,6 +1,7 @@
 import {
   QUEST_STEWARD_STEPS,
   bulletsToMarkdownList,
+  limitQuestPatchToStep,
   splitMarkdownLinesToBullets,
   stripViewerYouMarker,
   type QuestReward,
@@ -90,20 +91,6 @@ export function stewardQuestionForStep(step: QuestStewardStep): string {
   }
 }
 
-function deriveConciseQuestName(goalText: string): string {
-  const cleaned = goalText
-    .replace(
-      /^(we want to|let'?s|the goal is to|goal\s*:|create a quest to|build a|create a|launch a)\s+/i,
-      '',
-    )
-    .replace(/[.!?].*$/, '')
-    .trim();
-  const words = cleaned.split(/\s+/).filter(Boolean).slice(0, 6);
-  if (words.length === 0) return 'New Space Quest';
-  const phrase = words.join(' ').replace(/[,:;]+$/, '');
-  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
-}
-
 function formatFutureDateLabel(daysFromNow: number): string {
   const target = new Date(Date.now() + daysFromNow * 86_400_000);
   return target.toLocaleDateString('en-US', {
@@ -152,111 +139,73 @@ function extractRewardsFromText(text: string): QuestReward[] {
   }));
 }
 
-function isAutoDraftRequest(text: string): boolean {
+/** Asks to invent several sections at once. The coach answers the active section only. */
+function isBulkSectionDraftRequest(text: string): boolean {
   const lower = text.toLowerCase();
+  const asksToDraft =
+    /\b(draft|suggest|propose|auto[- ]?fill|fill (?:in|out)|generate)\b/.test(
+      lower,
+    );
+  if (!asksToDraft) return false;
+  if (/\b(sections|everything|all of it|the rest)\b/.test(lower)) return true;
+  const mentionsScope = /\bscope\b/.test(lower);
+  const mentionsSuccess = /\b(success|criteria)\b/.test(lower);
+  const mentionsMilestones = /\bmilestones?\b/.test(lower);
   return (
-    /\b(draft|suggest|propose|auto[- ]?fill|fill (in|out)|generate|help me fill|write the)\b/.test(
-      lower,
-    ) &&
-    /\b(section|sections|scope|success|criteria|milestone|milestones|quest|all|everything|rest)\b/.test(
-      lower,
-    )
+    [mentionsScope, mentionsSuccess, mentionsMilestones].filter(Boolean)
+      .length >= 2
   );
 }
 
-export function synthesizeDraftPatchFromGoal({
-  goalText,
-  viewerDisplayName,
-  requestText,
-}: {
-  goalText: string;
-  viewerDisplayName: string;
-  requestText: string;
-}): QuestDraftPatchInput {
-  const baseGoal =
-    goalText.trim() ||
-    requestText
-      .replace(
-        /^(draft|suggest|propose|fill in|fill out|generate)\s+(all\s+)?(the\s+)?(quest\s+)?(sections|scope|success criteria|milestones)\s*(for|from)?\s*:?\s*/i,
-        '',
-      )
-      .trim() ||
-    'Deliver a measurable improvement for the space with clear milestones and ownership.';
-
-  const lowerReq = requestText.toLowerCase();
-  const wantsOnlyScope =
-    lowerReq.includes('scope') &&
-    !lowerReq.includes('milestone') &&
-    !lowerReq.includes('all') &&
-    !lowerReq.includes('sections');
-  const wantsOnlyMilestones =
-    lowerReq.includes('milestone') &&
-    !lowerReq.includes('scope') &&
-    !lowerReq.includes('all') &&
-    !lowerReq.includes('sections');
-
-  const patch: QuestDraftPatchInput = {};
-  if (!goalText.trim()) {
-    patch.goal = baseGoal;
+function stepFieldsAlreadyCaptured(
+  patch: QuestDraftPatchInput,
+  step: QuestStewardStep,
+): boolean {
+  switch (step) {
+    case 'goal':
+      return Boolean(patch.goal?.trim());
+    case 'scope':
+      return Boolean(patch.scopeIn?.length || patch.scopeOut?.length);
+    case 'success':
+      return Boolean(patch.successCriteriaBullets?.length);
+    case 'milestones':
+      return Boolean(patch.milestones?.length);
+    case 'members':
+      return Boolean(patch.members?.length);
+    case 'lead':
+      return Boolean(patch.leadName?.trim());
+    case 'targetDate':
+      return Boolean(patch.targetDate?.trim());
+    case 'rewards':
+      return Boolean(patch.rewards?.length);
+    case 'name':
+      return Boolean(patch.name?.trim());
   }
+}
 
-  const conciseName = deriveConciseQuestName(baseGoal);
+const QUEST_STEP_LABEL: Record<QuestStewardStep, string> = {
+  goal: 'Goal',
+  scope: 'Scope',
+  success: 'Success criteria',
+  milestones: 'Milestones',
+  members: 'Members',
+  lead: 'Lead',
+  targetDate: 'Target date',
+  rewards: 'Quest Reward',
+  name: 'Name',
+};
 
-  if (!wantsOnlyMilestones) {
-    patch.scopeIn = [
-      `Core implementation and delivery for: ${conciseName}`,
-      'Review and validation with space members',
-      'Documentation and handoff artifacts in the quest overview',
-    ];
-    patch.scopeOut = [
-      'Unrelated governance or tokenomics changes outside this quest',
-      'Follow-up phase expansions before Milestone 1 is verified',
-    ];
-    patch.successCriteriaBullets = [
-      `${conciseName} is delivered and verified against all in-scope items`,
-      'All milestones are completed on schedule with clear deliverables linked',
-      'Space members ratify and adopt the outcome without blocking issues',
-    ];
-  }
-
-  if (!wantsOnlyScope) {
-    patch.milestones = [
-      {
-        name: 'Scope alignment & initial build',
-        dueDate: formatFutureDateLabel(7),
-        description: `Finalize implementation details for ${conciseName} and ship the first working version.`,
-        ownerName: viewerDisplayName,
-      },
-      {
-        name: 'Member review & QA verification',
-        dueDate: formatFutureDateLabel(14),
-        description:
-          'Validate the deliverables with space members and resolve feedback.',
-        ownerName: viewerDisplayName,
-      },
-      {
-        name: 'Final rollout & completion report',
-        dueDate: formatFutureDateLabel(21),
-        description:
-          'Publish final deliverables and post the completion update to the quest feed.',
-        ownerName: viewerDisplayName,
-      },
-    ];
-    patch.targetDate = formatFutureDateLabel(21);
-  }
-
-  patch.name = conciseName;
-  return patch;
+export function questStepSectionLabel(step: QuestStewardStep): string {
+  return QUEST_STEP_LABEL[step];
 }
 
 /**
- * Extract structured fields from a user message, supporting both single-step
- * answers and multi-section natural language inputs.
+ * Extract the active section from a user message.
+ * A goal answer does not also invent scope, milestones, rewards, or a name.
  */
 export function buildLocalQuestDraftPatch({
   message,
   currentStep,
-  draft,
   viewerDisplayName,
 }: {
   message: string;
@@ -266,14 +215,7 @@ export function buildLocalQuestDraftPatch({
 }): QuestDraftPatchInput {
   const trimmed = message.trim();
   if (!trimmed) return {};
-
-  if (isAutoDraftRequest(trimmed)) {
-    return synthesizeDraftPatchFromGoal({
-      goalText: draft.goal,
-      viewerDisplayName,
-      requestText: trimmed,
-    });
-  }
+  if (isBulkSectionDraftRequest(trimmed)) return {};
 
   const patch: QuestDraftPatchInput = {};
 
@@ -317,93 +259,83 @@ export function buildLocalQuestDraftPatch({
     patch.rewards = extractedRewards;
   }
 
-  // If explicit labels already captured multiple fields, return them
-  if (Object.keys(patch).length >= 2) {
-    if (patch.goal && !draft.name.trim() && !patch.name) {
-      patch.name = deriveConciseQuestName(patch.goal);
-    }
-    return patch;
-  }
-
-  // Step-specific handling for the active guided step
-  if (currentStep === 'goal') {
-    patch.goal = trimmed;
-    if (!draft.name.trim()) {
-      patch.name = deriveConciseQuestName(trimmed);
-    }
-  } else if (currentStep === 'scope') {
-    const parts = trimmed.split(/\bout(?:\s+of\s+scope)?\s*:/i);
-    const inItems = splitListItems(
-      (parts[0] ?? trimmed).replace(/^(?:in(?:\s+scope)?)\s*:/i, ''),
-    );
-    const outItems = parts[1] ? splitListItems(parts[1]) : [];
-    if (inItems.length > 0) patch.scopeIn = inItems;
-    if (outItems.length > 0) patch.scopeOut = outItems;
-  } else if (currentStep === 'success') {
-    const bullets = splitListItems(trimmed);
-    patch.successCriteriaBullets = bullets.length > 0 ? bullets : [trimmed];
-  } else if (currentStep === 'milestones') {
-    const segments = trimmed
-      .split(/\n|;|\b(?=M\d+\b)/i)
-      .map((s) => s.replace(/^(?:M\d+|[-*•]|\d+\.)\s*[:·-]?\s*/i, '').trim())
-      .filter(Boolean);
-    const items = segments.length > 0 ? segments : [trimmed];
-    patch.milestones = items.map((seg, idx) => {
-      const dateMatch =
-        /\b(?:by|due|on)\s+([A-Z][a-z]{2,8}\s+\d{1,2}(?:,\s*\d{4})?|\d{4}-\d{2}-\d{2})\b/i.exec(
-          seg,
-        );
-      const cleanSeg = dateMatch ? seg.replace(dateMatch[0], '').trim() : seg;
-      const parts = cleanSeg.split(/\s+[—–-]\s+|\s*:\s*/);
-      const mName = (parts[0] || cleanSeg).slice(0, 80).trim();
-      const mDesc = parts.slice(1).join(' — ').trim() || cleanSeg;
-      return {
-        name: mName || `Milestone ${idx + 1}`,
-        dueDate: dateMatch?.[1] ?? formatFutureDateLabel((idx + 1) * 7),
-        description: mDesc,
-        ownerName: viewerDisplayName,
-      };
-    });
-  } else if (currentStep === 'members') {
-    const entries = trimmed
-      .split(/\n|;/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    patch.members = entries.map((entry) => {
-      const [rawPerson, ...rest] = entry.split(':');
-      const memberName =
-        rawPerson?.replace(/^@/, '').replace(/_/g, ' ').trim() ||
-        entry.slice(0, 32);
-      const respText = rest.join(':').trim();
-      const responsibilities = respText
-        ? splitListItems(respText)
-        : ['Core outcome delivery'];
-      return {
-        memberName,
-        roleLabel: 'Member',
-        responsibilities,
-      };
-    });
-  } else if (currentStep === 'lead') {
-    patch.leadName = trimmed.replace(/^@/, '').replace(/_/g, ' ').trim();
-  } else if (currentStep === 'targetDate') {
-    patch.targetDate = trimmed;
-  } else if (currentStep === 'rewards') {
-    if (extractedRewards.length > 0) {
-      patch.rewards = extractedRewards;
-    } else {
-      const numMatch = /(\d[\d,.]*)/.exec(trimmed);
-      if (numMatch?.[1]) {
-        patch.rewards = [
-          { amount: numMatch[1].replace(/,/g, ''), token: 'USDC' },
-        ];
+  if (!stepFieldsAlreadyCaptured(patch, currentStep)) {
+    if (currentStep === 'goal') {
+      patch.goal = trimmed;
+    } else if (currentStep === 'scope') {
+      const parts = trimmed.split(/\bout(?:\s+of\s+scope)?\s*:/i);
+      const inItems = splitListItems(
+        (parts[0] ?? trimmed).replace(/^(?:in(?:\s+scope)?)\s*:/i, ''),
+      );
+      const outItems = parts[1] ? splitListItems(parts[1]) : [];
+      if (inItems.length > 0) patch.scopeIn = inItems;
+      if (outItems.length > 0) patch.scopeOut = outItems;
+    } else if (currentStep === 'success') {
+      const bullets = splitListItems(trimmed);
+      patch.successCriteriaBullets = bullets.length > 0 ? bullets : [trimmed];
+    } else if (currentStep === 'milestones') {
+      const segments = trimmed
+        .split(/\n|;|\b(?=M\d+\b)/i)
+        .map((s) => s.replace(/^(?:M\d+|[-*•]|\d+\.)\s*[:·-]?\s*/i, '').trim())
+        .filter(Boolean);
+      const items = segments.length > 0 ? segments : [trimmed];
+      patch.milestones = items.map((seg, idx) => {
+        const dateMatch =
+          /\b(?:by|due|on)\s+([A-Z][a-z]{2,8}\s+\d{1,2}(?:,\s*\d{4})?|\d{4}-\d{2}-\d{2})\b/i.exec(
+            seg,
+          );
+        const cleanSeg = dateMatch ? seg.replace(dateMatch[0], '').trim() : seg;
+        const parts = cleanSeg.split(/\s+[—–-]\s+|\s*:\s*/);
+        const mName = (parts[0] || cleanSeg).slice(0, 80).trim();
+        const mDesc = parts.slice(1).join(' — ').trim() || cleanSeg;
+        return {
+          name: mName || `Milestone ${idx + 1}`,
+          dueDate: dateMatch?.[1] ?? formatFutureDateLabel((idx + 1) * 7),
+          description: mDesc,
+          ownerName: viewerDisplayName,
+        };
+      });
+    } else if (currentStep === 'members') {
+      const entries = trimmed
+        .split(/\n|;/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      patch.members = entries.map((entry) => {
+        const [rawPerson, ...rest] = entry.split(':');
+        const memberName =
+          rawPerson?.replace(/^@/, '').replace(/_/g, ' ').trim() ||
+          entry.slice(0, 32);
+        const respText = rest.join(':').trim();
+        const responsibilities = respText
+          ? splitListItems(respText)
+          : ['Core outcome delivery'];
+        return {
+          memberName,
+          roleLabel: 'Member',
+          responsibilities,
+        };
+      });
+    } else if (currentStep === 'lead') {
+      patch.leadName = trimmed.replace(/^@/, '').replace(/_/g, ' ').trim();
+    } else if (currentStep === 'targetDate') {
+      patch.targetDate = trimmed;
+    } else if (currentStep === 'rewards') {
+      if (extractedRewards.length > 0) {
+        patch.rewards = extractedRewards;
+      } else {
+        const numMatch = /(\d[\d,.]*)/.exec(trimmed);
+        if (numMatch?.[1]) {
+          patch.rewards = [
+            { amount: numMatch[1].replace(/,/g, ''), token: 'USDC' },
+          ];
+        }
       }
+    } else if (currentStep === 'name') {
+      patch.name = trimmed.replace(/^["']|["']$/g, '').trim();
     }
-  } else if (currentStep === 'name') {
-    patch.name = trimmed.replace(/^["']|["']$/g, '').trim();
   }
 
-  return patch;
+  return limitQuestPatchToStep(patch, currentStep);
 }
 
 export function applyPatchToQuestDraftState({
@@ -569,4 +501,22 @@ export function findNextUnfilledQuestStep(
     if (!isFilled(candidate)) return candidate;
   }
   return null;
+}
+
+/** Stay on the current section until that section itself was written. */
+export function nextQuestStepAfterUpdate({
+  draft,
+  currentStep,
+  updatedLabels,
+}: {
+  draft: QuestDraftStateSnapshot;
+  currentStep: QuestStewardStep;
+  updatedLabels: readonly string[];
+}): { step: QuestStewardStep; complete: boolean } {
+  if (!updatedLabels.includes(QUEST_STEP_LABEL[currentStep])) {
+    return { step: currentStep, complete: false };
+  }
+  const next = findNextUnfilledQuestStep(draft, currentStep);
+  if (!next) return { step: currentStep, complete: true };
+  return { step: next, complete: false };
 }

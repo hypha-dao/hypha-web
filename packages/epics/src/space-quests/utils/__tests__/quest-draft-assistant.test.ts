@@ -23,20 +23,30 @@ const emptyDraft: QuestDraftStateSnapshot = {
 };
 
 describe('quest-draft-assistant', () => {
-  it('fills goal and derives an initial quest name on step 0', () => {
+  it('records only the goal when the member states a goal', () => {
     const patch = buildLocalQuestDraftPatch({
       message: 'We want to build an onboarding matcher for new joiners.',
       currentStep: 'goal',
       draft: emptyDraft,
       viewerDisplayName: 'Vlad Hramtsov',
     });
-    expect(patch.goal).toBe(
-      'We want to build an onboarding matcher for new joiners.',
-    );
-    expect(patch.name).toBe('Build an onboarding matcher for new');
+    expect(patch).toEqual({
+      goal: 'We want to build an onboarding matcher for new joiners.',
+    });
+    const { next, updatedLabels } = applyPatchToQuestDraftState({
+      current: emptyDraft,
+      patch,
+      spaceMembers: [],
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(updatedLabels).toEqual(['Goal']);
+    expect(next.name).toBe('');
+    expect(next.scopeIn).toEqual([]);
+    expect(next.milestones).toEqual([]);
+    expect(findNextUnfilledQuestStep(next, 'goal')).toBe('scope');
   });
 
-  it('synthesizes scope, success criteria, milestones, and target date on auto-draft requests', () => {
+  it('does not invent other sections from a bulk draft request', () => {
     const withGoal: QuestDraftStateSnapshot = {
       ...emptyDraft,
       goal: 'Validate quest creation and member pickers in the sandbox space.',
@@ -48,37 +58,41 @@ describe('quest-draft-assistant', () => {
       draft: withGoal,
       viewerDisplayName: 'Vlad Hramtsov',
     });
+    expect(patch).toEqual({});
     const { next, updatedLabels } = applyPatchToQuestDraftState({
       current: withGoal,
       patch,
       spaceMembers: [],
       viewerDisplayName: 'Vlad Hramtsov',
     });
-    expect(next.scopeIn.length).toBeGreaterThan(0);
-    expect(next.scopeOut.length).toBeGreaterThan(0);
-    expect(next.successCriteria).toContain('- ');
-    expect(next.milestones.length).toBe(3);
-    expect(next.targetDate).toBeTruthy();
-    expect(updatedLabels).toEqual(
-      expect.arrayContaining(['Scope', 'Success criteria', 'Milestones']),
-    );
-    expect(findNextUnfilledQuestStep(next, 'scope')).toBe('members');
+    expect(updatedLabels).toEqual([]);
+    expect(next.scopeIn).toEqual([]);
+    expect(next.successCriteria).toBe('');
+    expect(next.milestones).toEqual([]);
+    expect(next.targetDate).toBeNull();
+    expect(findNextUnfilledQuestStep(next, 'goal')).toBe('scope');
   });
 
-  it('extracts multiple rewards and labeled sections from a single prompt', () => {
-    const patch = buildLocalQuestDraftPatch({
-      message:
-        'Goal: Ship Context v2\nIn: Markdown editor; Agent prompts\nOut: Cross-space search\nReward: 2,500 USDC + 0.4 ETH',
+  it('keeps a labeled brief on the active section', () => {
+    const message =
+      'Goal: Ship Context v2\nIn: Markdown editor; Agent prompts\nOut: Cross-space search\nReward: 2,500 USDC + 0.4 ETH';
+    const onGoal = buildLocalQuestDraftPatch({
+      message,
       currentStep: 'goal',
       draft: emptyDraft,
       viewerDisplayName: 'Vlad Hramtsov',
     });
-    expect(patch.goal).toBe('Ship Context v2');
-    expect(patch.scopeIn).toEqual(['Markdown editor', 'Agent prompts']);
-    expect(patch.scopeOut).toEqual(['Cross-space search']);
-    expect(patch.rewards).toEqual([
-      { amount: '2500', token: 'USDC' },
-      { amount: '0.4', token: 'ETH' },
-    ]);
+    expect(onGoal).toEqual({ goal: 'Ship Context v2' });
+
+    const onScope = buildLocalQuestDraftPatch({
+      message,
+      currentStep: 'scope',
+      draft: { ...emptyDraft, goal: 'Ship Context v2' },
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(onScope.scopeIn).toEqual(['Markdown editor', 'Agent prompts']);
+    expect(onScope.scopeOut).toEqual(['Cross-space search']);
+    expect(onScope.goal).toBeUndefined();
+    expect(onScope.rewards).toBeUndefined();
   });
 });

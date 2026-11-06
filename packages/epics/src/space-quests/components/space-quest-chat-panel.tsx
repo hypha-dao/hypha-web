@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  QUEST_HELPER_NAME,
   calledSpecialistIds,
   specialistById,
   useMe,
@@ -81,7 +82,10 @@ function SpaceQuestChatBody({
   >([]);
   const [memberQuery, setMemberQuery] = useState('');
 
-  const agentLabel = tChat('agentMentionLabel');
+  const isQuestHelper = session.coach === 'quest-helper';
+  const agentLabel = isQuestHelper
+    ? QUEST_HELPER_NAME
+    : tChat('agentMentionLabel');
   const botMxid = matrixAgentUserId() ?? FALLBACK_AGENT_MXID;
   const currentUserAvatarUrl = me?.avatarUrl?.trim() || undefined;
   const calledIds = useMemo(
@@ -128,6 +132,7 @@ function SpaceQuestChatBody({
       space,
       resolvedTheme === 'dark' ? 'dark' : 'light',
     );
+    if (isQuestHelper) return roster;
     const skills = [
       ...matrixAgentSkills(tChat),
       {
@@ -153,7 +158,16 @@ function SpaceQuestChatBody({
       },
       ...roster,
     ];
-  }, [agentLabel, botMxid, me?.id, resolvedTheme, space, spaceMembers, tChat]);
+  }, [
+    agentLabel,
+    botMxid,
+    isQuestHelper,
+    me?.id,
+    resolvedTheme,
+    space,
+    spaceMembers,
+    tChat,
+  ]);
 
   const getMentionComposerLabel = useCallback(
     (member: ChatMentionCandidate, resolvedComposerLabel?: string) =>
@@ -178,7 +192,8 @@ function SpaceQuestChatBody({
   }, [agentLabel, memberQuery]);
 
   if (activeTab === 'members') {
-    const totalCount = spaceMembers.length + 1 + calledSpecialists.length;
+    const totalCount =
+      spaceMembers.length + 1 + (isQuestHelper ? 0 : calledSpecialists.length);
     return (
       <div
         className="narrow-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-3"
@@ -225,26 +240,30 @@ function SpaceQuestChatBody({
           </div>
         ) : null}
 
-        {calledSpecialists.map((specialist) => {
-          const role = tCoherence(specialist.roleKey);
-          return (
-            <div
-              key={specialist.id}
-              className="flex items-center gap-3 rounded-none px-2 py-1.5"
-              data-testid="chat-panel-member-item"
-            >
-              <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center text-[11px] font-semibold ${tagGroupAccentClass(
-                  specialist.id,
-                )}`}
-                aria-hidden
-              >
-                {getAgentAvatarInitials(role)}
-              </div>
-              <span className="truncate text-sm text-foreground">{role}</span>
-            </div>
-          );
-        })}
+        {!isQuestHelper
+          ? calledSpecialists.map((specialist) => {
+              const role = tCoherence(specialist.roleKey);
+              return (
+                <div
+                  key={specialist.id}
+                  className="flex items-center gap-3 rounded-none px-2 py-1.5"
+                  data-testid="chat-panel-member-item"
+                >
+                  <div
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center text-[11px] font-semibold ${tagGroupAccentClass(
+                      specialist.id,
+                    )}`}
+                    aria-hidden
+                  >
+                    {getAgentAvatarInitials(role)}
+                  </div>
+                  <span className="truncate text-sm text-foreground">
+                    {role}
+                  </span>
+                </div>
+              );
+            })
+          : null}
 
         {visibleMembers.map((member) => (
           <div
@@ -285,43 +304,44 @@ function SpaceQuestChatBody({
         </HumanChatPanelErrorBoundary>
       </div>
 
-      {/* Shared platform agent chip + one-click section fill helpers */}
-      <div
-        className="flex flex-wrap items-center gap-1.5 border-t border-border/60 px-3 py-2"
-        data-testid="quest-chat-agent-assist-bar"
-      >
-        <button
-          type="button"
-          data-testid="quest-chat-agent-chip"
-          onClick={() => {
-            const prefix = `@${agentLabel} `;
-            if (!session.input.startsWith(prefix)) {
-              session.onInputChange(`${prefix}${session.input}`);
-            }
-          }}
-          className="inline-flex items-center gap-1 border border-foreground/50 bg-background px-2 py-0.5 text-[11px] font-semibold text-foreground transition-colors hover:bg-neutral-3"
+      {isQuestHelper ? null : (
+        <div
+          className="flex flex-wrap items-center gap-1.5 border-t border-border/60 px-3 py-2"
+          data-testid="quest-chat-agent-assist-bar"
         >
-          <Sparkles className="size-3" aria-hidden />
-          <span>@{agentLabel}</span>
-        </button>
-        {QUICK_DRAFT_PROMPTS.map((item) => (
           <button
-            key={item.id}
             type="button"
-            disabled={session.isAgentTyping}
+            data-testid="quest-chat-agent-chip"
             onClick={() => {
-              if (session.onQuickPrompt) {
-                session.onQuickPrompt(item.prompt);
-              } else {
-                session.onInputChange(item.prompt);
+              const prefix = `@${agentLabel} `;
+              if (!session.input.startsWith(prefix)) {
+                session.onInputChange(`${prefix}${session.input}`);
               }
             }}
-            className="inline-flex items-center border border-border bg-background-2 px-2 py-0.5 text-[11px] text-neutral-11 transition-colors hover:border-foreground/40 hover:text-foreground disabled:opacity-50"
+            className="inline-flex items-center gap-1 border border-foreground/50 bg-background px-2 py-0.5 text-[11px] font-semibold text-foreground transition-colors hover:bg-neutral-3"
           >
-            {item.label}
+            <Sparkles className="size-3" aria-hidden />
+            <span>@{agentLabel}</span>
           </button>
-        ))}
-      </div>
+          {QUICK_DRAFT_PROMPTS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              disabled={session.isAgentTyping}
+              onClick={() => {
+                if (session.onQuickPrompt) {
+                  session.onQuickPrompt(item.prompt);
+                } else {
+                  session.onInputChange(item.prompt);
+                }
+              }}
+              className="inline-flex items-center border border-border bg-background-2 px-2 py-0.5 text-[11px] text-neutral-11 transition-colors hover:border-foreground/40 hover:text-foreground disabled:opacity-50"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <HumanChatPanelTypingIndicator
         peers={
@@ -367,7 +387,13 @@ export function SpaceQuestSidePanel({
   );
 
   return (
-    <AgentMentionLabelProvider value={tChat('agentMentionLabel')}>
+    <AgentMentionLabelProvider
+      value={
+        session.coach === 'quest-helper'
+          ? QUEST_HELPER_NAME
+          : tChat('agentMentionLabel')
+      }
+    >
       <SidebarHeader className="gap-0 bg-page-background p-0 dark:bg-background-2">
         <HumanChatPanelHeader
           title={title}
@@ -417,7 +443,13 @@ export function SpaceQuestChatPanel({
   const title = session.questTitle.trim() || 'New quest';
 
   return (
-    <AgentMentionLabelProvider value={tChat('agentMentionLabel')}>
+    <AgentMentionLabelProvider
+      value={
+        session.coach === 'quest-helper'
+          ? QUEST_HELPER_NAME
+          : tChat('agentMentionLabel')
+      }
+    >
       <aside
         className="flex h-[680px] w-full flex-col border border-border/70 bg-page-background dark:bg-background-2 xl:sticky xl:top-4 xl:w-[20rem] xl:shrink-0"
         data-hypha-chat-panel=""
