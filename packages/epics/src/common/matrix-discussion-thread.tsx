@@ -1108,6 +1108,9 @@ export function MatrixDiscussionThread({
           currentUserAvatarUrl={currentUserAvatarUrl}
           welcomeText={welcomeText}
           welcomeSenderName={welcomeSenderName}
+          welcomeMark={
+            roomType === HYPHA_ROOM_TYPES.context ? 'context' : undefined
+          }
           onReply={handleReplyToMessage}
           onJumpToOriginalMessage={(eventId) => {
             const id = eventId.trim();

@@ -202,6 +202,8 @@ type HumanChatPanelMessagesProps = {
   /** Replaces the default space welcome. Space chat leaves both unset. */
   welcomeText?: string;
   welcomeSenderName?: string;
+  /** Context section chats use the book mark. Other welcomes keep the mycelium. */
+  welcomeMark?: 'context';
   onReply?: (messageId: string) => void;
   /** Jump the timeline to the quoted original when a reply header is clicked. */
   onJumpToOriginalMessage?: (eventId: string) => void;
@@ -260,6 +262,7 @@ export function HumanChatPanelMessages({
   currentUserAvatarUrl,
   welcomeText,
   welcomeSenderName,
+  welcomeMark,
   onReply,
   onJumpToOriginalMessage,
   onEditMessage,
@@ -863,6 +866,7 @@ export function HumanChatPanelMessages({
               <HumanChatPanelMessageBubble
                 key={row.key}
                 message={msg}
+                welcomeMark={msg.id === 'welcome' ? welcomeMark : undefined}
                 textExpanded={expandedMessageIds.has(msg.id)}
                 onToggleTextExpanded={toggleMessageExpanded}
                 roomId={roomId}
