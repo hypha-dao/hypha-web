@@ -549,11 +549,17 @@ export function buildLocalQuestDraftPatch({
 const MONTH_NAME =
   'January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec';
 
+const MILESTONE_COUNT_WORD =
+  'one|two|three|four|five|six|seven|eight|nine|ten|\\d+';
+
+/** "Owner Ada Lovelace for all three." The count word is not part of a title. */
+const SHARED_OWNER_SOURCE = `\\bowners?\\s*:?\\s*(.+?)\\s+for all(?:\\s+(?:${MILESTONE_COUNT_WORD}|of them|milestones?))*\\b[.!?]?`;
+
 function extractRequestedDueDate(
   text: string,
 ): { raw: string; label: string } | null {
   const dayFirst = new RegExp(
-    `\\b((?:due|by|on)\\s+)?(\\d{1,2})\\s+(${MONTH_NAME})\\s+(\\d{4})\\b`,
+    `\\b((?:due|by|on)\\s*)?(\\d{1,2})\\s*(${MONTH_NAME})\\s*(\\d{4})\\b`,
     'i',
   ).exec(text);
   if (dayFirst?.[2] && dayFirst[3] && dayFirst[4]) {
@@ -563,7 +569,7 @@ function extractRequestedDueDate(
     };
   }
   const monthFirst = new RegExp(
-    `\\b((?:due|by|on)\\s+)?(${MONTH_NAME})\\s+(\\d{1,2}),?\\s+(\\d{4})\\b`,
+    `\\b((?:due|by|on)\\s*)?(${MONTH_NAME})\\s*(\\d{1,2}),?\\s*(\\d{4})\\b`,
     'i',
   ).exec(text);
   if (monthFirst?.[2] && monthFirst[3] && monthFirst[4]) {
@@ -572,9 +578,176 @@ function extractRequestedDueDate(
       label: `${monthFirst[3]} ${monthFirst[2]} ${monthFirst[4]}`,
     };
   }
-  const iso = /\b((?:due|by|on)\s+)?(\d{4}-\d{2}-\d{2})\b/i.exec(text);
+  const iso = /\b((?:due|by|on)\s*)?(\d{4}-\d{2}-\d{2})\b/i.exec(text);
   if (iso?.[2]) return { raw: iso[0], label: iso[2] };
   return null;
+}
+
+function isDateOnly(text: string): boolean {
+  const due = extractRequestedDueDate(text);
+  if (!due) return false;
+  const rest = text
+    .replace(due.raw, ' ')
+    .replace(/\b(?:due|by|on)\b/gi, ' ')
+    .replace(/[,;.\s]+/g, ' ')
+    .trim();
+  return rest.length === 0;
+}
+
+/** "Exactly 3 milestones:" is an instruction, not a checkpoint. */
+function isMilestoneInstruction(text: string): boolean {
+  const normalized = text
+    .replace(/[:.\s]+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!normalized) return true;
+  if (/^milestones?$/i.test(normalized)) return true;
+  return new RegExp(
+    `^(?:please\\s+)?(?:(?:exactly|only|just|add|create|propose|include|draft|write|make|give me|i want|i need)\\s+)*(?:exactly\\s+)?(?:${MILESTONE_COUNT_WORD})\\s+milestones?$`,
+    'i',
+  ).test(normalized);
+}
+
+function cleanOwnerName(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const name = raw
+    .replace(
+      new RegExp(
+        `\\s+for all(?:\\s+(?:${MILESTONE_COUNT_WORD}|of them|milestones?))*\\b[.!?]?`,
+        'i',
+      ),
+      '',
+    )
+    .replace(/^(?:owner|owned by)\s*[:,-]?\s+/i, '')
+    .replace(/^by\s+/i, '')
+    .replace(/[.!?,;:]+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!name || isDateOnly(name) || isMilestoneInstruction(name)) {
+    return undefined;
+  }
+  if (
+    new RegExp(
+      `^(?:for all|all|milestones?|${MILESTONE_COUNT_WORD})$`,
+      'i',
+    ).test(name)
+  ) {
+    return undefined;
+  }
+  return name;
+}
+
+function cleanMilestoneTitle(raw: string): string {
+  let name = raw.replace(/\s+/g, ' ').trim();
+  for (let pass = 0; pass < 2; pass += 1) {
+    name = name
+      .replace(/^(?:titled|called|named)\s*[:,-]?\s+/i, '')
+      .replace(/^\s*milestones?\s*[:.-]\s*/i, '')
+      .trim();
+  }
+  return name
+    .replace(/\s*[,;.]+\s*(?=[,;.])/g, ' ')
+    .replace(/[,;.\s]+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function stripDanglingOwner(name: string, owner?: string): string {
+  let next = name;
+  if (owner) {
+    const escaped = owner.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    next = next.replace(
+      new RegExp(`(?:\\s*[-–—]\\s*)+${escaped}\\s*$`, 'i'),
+      '',
+    );
+  }
+  return next.replace(/(?:\s*[-–—]\s*)+$/g, '').trim();
+}
+
+function finishMilestoneTitle(raw: string, owner?: string): string {
+  const stripped = stripQuestMetaInstructions(raw).replace(
+    new RegExp(SHARED_OWNER_SOURCE, 'gi'),
+    ' ',
+  );
+  return cleanMilestoneTitle(
+    stripDanglingOwner(cleanMilestoneTitle(stripped), owner),
+  );
+}
+
+function takeSharedOwner(text: string): { text: string; owner?: string } {
+  const match = new RegExp(SHARED_OWNER_SOURCE, 'i').exec(text);
+  const owner = cleanOwnerName(match?.[1]);
+  const without = text
+    .replace(new RegExp(SHARED_OWNER_SOURCE, 'gi'), ' ')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
+  return { text: without, owner };
+}
+
+function stripLeadingMilestonePreamble(text: string): string {
+  return text
+    .replace(
+      new RegExp(
+        `^(?:please\\s+)?(?:(?:exactly|only|just|add|create|propose|include|draft|write|make)\\s+)+(?:exactly\\s+)?(?:${MILESTONE_COUNT_WORD})\\s+milestones?\\s*:\\s*`,
+        'i',
+      ),
+      '',
+    )
+    .replace(/^\s*milestones?\s*:\s*/i, '')
+    .trim();
+}
+
+function splitMilestoneRequestRows(text: string): string[] {
+  const prepared = stripLeadingMilestonePreamble(text);
+  const chunks = prepared
+    .split(/\n+|;\s*/)
+    .map((row) => row.trim())
+    .filter((row) => row && !isMilestoneInstruction(row));
+  const joined = chunks.join('\n');
+  const rows = /\bM\d+\b/i.test(joined)
+    ? joined
+        .split(/\s*(?=\bM\d+\b)/i)
+        .map((row) => row.trim())
+        .filter(Boolean)
+    : chunks;
+  return rows.filter((row) => !isMilestoneInstruction(row));
+}
+
+/** "Title - 20 November 2026 - Ada Lovelace". A dash inside a title is left alone. */
+function parseDashMilestone(body: string): {
+  title: string;
+  dueDate?: string;
+  owner?: string;
+} | null {
+  const parts = body
+    .split(/\s+[-–—]\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length < 2) return null;
+  const dateIndex = parts.findIndex((part) => isDateOnly(part));
+  if (dateIndex <= 0) return null;
+  const title = cleanMilestoneTitle(parts.slice(0, dateIndex).join(' - '));
+  if (!title || isMilestoneInstruction(title)) return null;
+  const due = extractRequestedDueDate(parts[dateIndex] ?? '');
+  const owner = cleanOwnerName(parts.slice(dateIndex + 1).join(' '));
+  return {
+    title,
+    ...(due ? { dueDate: due.label } : {}),
+    ...(owner ? { owner } : {}),
+  };
+}
+
+/** Residue of removing a date from "title - date - owner". */
+function peelBrokenDashOwner(body: string): { body: string; owner?: string } {
+  const broken = /^(.*?)\s+[-–—](?:\s+[-–—])+\s+(.+)$/.exec(body);
+  if (!broken?.[1] || !broken[2]) return { body };
+  const owner = cleanOwnerName(broken[2]);
+  if (!owner) return { body };
+  return {
+    body: broken[1].replace(/(?:\s*[-–—]\s*)+$/g, '').trim(),
+    owner,
+  };
 }
 
 /** Only the milestones the member named. No header row and no invented dates. */
@@ -582,54 +755,54 @@ function parseRequestedMilestones(
   text: string,
   viewerDisplayName: string,
 ): NonNullable<QuestDraftPatchInput['milestones']> {
-  const sharedOwner =
-    /\bowner\s+(.+?)\s+for all\b/i.exec(text)?.[1]?.trim() || undefined;
-  const withoutOwner = text
-    .replace(/\bowner\s+.+?\s+for all\b[.!?]?/gi, ' ')
-    .replace(/^\s*milestones?\s*:\s*/i, '')
-    .trim();
-  let rows = withoutOwner
-    .split(/\n+|;\s*/)
-    .map((row) => row.trim())
-    .filter((row) => row && !/^milestones?\s*:?\s*$/i.test(row));
-  if (/\bM\d+\b/i.test(rows.join('\n'))) {
-    rows = rows
-      .join('\n')
-      .split(/\s*(?=\bM\d+\b)/i)
-      .map((row) => row.trim())
-      .filter((row) => row && !/^milestones?\s*:?\s*$/i.test(row));
-  }
-  return rows
+  const shared = takeSharedOwner(text);
+  return splitMilestoneRequestRows(shared.text)
     .map((row) => {
       let body = stripQuestMetaInstructions(row)
         .replace(/^(?:M\d+|[-*•]|\d+\.)\s*[:.)-]?\s*/i, '')
-        .replace(/\bowner\s+.+?\s+for all\b[.!?]?\s*/gi, ' ')
+        .replace(new RegExp(SHARED_OWNER_SOURCE, 'gi'), ' ')
         .replace(/\s+/g, ' ')
         .trim();
-      let owner = sharedOwner;
+      body = cleanMilestoneTitle(body);
+      if (!body || isMilestoneInstruction(body)) return null;
+
+      const dashed = parseDashMilestone(body);
+      if (dashed) {
+        const ownerName = dashed.owner || shared.owner || viewerDisplayName;
+        const name = finishMilestoneTitle(dashed.title, ownerName);
+        if (!name || isMilestoneInstruction(name)) return null;
+        return {
+          name,
+          ...(dashed.dueDate ? { dueDate: dashed.dueDate } : {}),
+          description: name,
+          ownerName,
+        };
+      }
+
+      let owner = shared.owner;
       const ownerOnRow = /(?:^|[,;]\s*)owner\s+([^,;.]+)$/i.exec(body);
       if (ownerOnRow?.[1] && !/\bfor all\b/i.test(ownerOnRow[1])) {
-        owner = ownerOnRow[1].trim();
-        body = body
-          .slice(0, ownerOnRow.index)
-          .replace(/[,;]\s*$/, '')
-          .trim();
+        owner = cleanOwnerName(ownerOnRow[1]) ?? owner;
+        body = cleanMilestoneTitle(
+          body.slice(0, ownerOnRow.index).replace(/[,;]\s*$/, ''),
+        );
       }
       const due = extractRequestedDueDate(body);
       if (due) {
-        body = body
-          .replace(due.raw, '')
-          .replace(/\b(?:due|by|on)\s*$/i, '')
-          .replace(/[,;.\s]+$/g, '')
-          .trim();
+        body = cleanMilestoneTitle(
+          body.replace(due.raw, ' ').replace(/\b(?:due|by|on)\s*$/i, ' '),
+        );
       }
-      const name = body.replace(/^milestones?\s*[:.-]\s*/i, '').trim();
-      if (!name || /^milestones?$/i.test(name)) return null;
+      const peeled = peelBrokenDashOwner(body);
+      if (peeled.owner) owner = peeled.owner;
+      const ownerName = owner || viewerDisplayName;
+      const name = finishMilestoneTitle(peeled.body, ownerName);
+      if (!name || isMilestoneInstruction(name)) return null;
       return {
         name,
         ...(due ? { dueDate: due.label } : {}),
         description: name,
-        ownerName: owner || viewerDisplayName,
+        ownerName,
       };
     })
     .filter((row): row is NonNullable<typeof row> => row !== null)
@@ -673,15 +846,15 @@ export function sanitizeQuestDraftPatch(
   if (patch.milestones && patch.milestones.length > 0) {
     const milestones = patch.milestones
       .map((milestone) => {
-        const milestoneName = cleanOptionalText(milestone.name)?.replace(
-          /\bowner\s+.+?\s+for all\b[.!?]?/gi,
-          '',
+        const ownerName = cleanOwnerName(
+          cleanOptionalText(milestone.ownerName),
         );
-        const name = milestoneName?.replace(/\s+/g, ' ').trim();
-        if (!name || /^milestones?$/i.test(name)) return null;
-        const description = cleanOptionalText(milestone.description);
-        const ownerName = cleanOptionalText(milestone.ownerName);
         const dueDate = milestone.dueDate?.trim();
+        const name = finishMilestoneTitle(milestone.name ?? '', ownerName);
+        if (!name || isMilestoneInstruction(name)) return null;
+        const description = milestone.description
+          ? finishMilestoneTitle(milestone.description, ownerName)
+          : undefined;
         return {
           name,
           ...(dueDate ? { dueDate } : {}),

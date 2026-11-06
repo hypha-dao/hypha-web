@@ -4,6 +4,7 @@ import {
   buildLocalQuestDraftPatch,
   decideNewQuestDraftTurn,
   findNextUnfilledQuestStep,
+  formatPendingQuestPatch,
   isQuestSectionApproval,
   isQuestSectionCoachingOpener,
   replyWithSectionApprovalAsk,
@@ -311,5 +312,164 @@ describe('quest-draft-assistant', () => {
     });
     expect(undated.milestones?.[0]?.dueDate).toBeUndefined();
     expect(undated.milestones?.[0]?.name).toBe('Ship the onboarding checklist');
+  });
+
+  it('does not turn a milestone count instruction into a row or a title', () => {
+    const message =
+      'Exactly 3 milestones: M1 titled Run check one, due 20 November 2026; M2 titled Run check two, due 25 November 2026; M3 titled Run check three, due 30 November 2026. Owner Vlad Hramtsov for all three.';
+    const patch = buildLocalQuestDraftPatch({
+      message,
+      currentStep: 'milestones',
+      draft: emptyDraft,
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(patch.milestones).toEqual([
+      {
+        name: 'Run check one',
+        dueDate: '20 November 2026',
+        description: 'Run check one',
+        ownerName: 'Vlad Hramtsov',
+      },
+      {
+        name: 'Run check two',
+        dueDate: '25 November 2026',
+        description: 'Run check two',
+        ownerName: 'Vlad Hramtsov',
+      },
+      {
+        name: 'Run check three',
+        dueDate: '30 November 2026',
+        description: 'Run check three',
+        ownerName: 'Vlad Hramtsov',
+      },
+    ]);
+    expect(
+      decideNewQuestDraftTurn({
+        message,
+        currentStep: 'milestones',
+        targetStep: 'milestones',
+        bulk: false,
+        pending: null,
+      }).kind,
+    ).toBe('propose');
+    const preview = formatPendingQuestPatch(patch);
+    expect(preview).not.toMatch(/exactly 3 milestones/i);
+    expect(preview).not.toMatch(/titled/i);
+    expect(preview).not.toMatch(/three,/i);
+    const reply = replyWithSectionApprovalAsk(null, 'milestones', patch);
+    expect(reply).toContain(preview);
+    expect(reply).toContain('Do you want that to be in the Milestones?');
+
+    const compact = buildLocalQuestDraftPatch({
+      message:
+        'Exactly 3 milestones: M1 titled Run check one, due20November2026; M2 titled Run check two, due25November2026; M3 titled Run check three, due30November2026. Owner Vlad Hramtsov for all three.',
+      currentStep: 'milestones',
+      draft: emptyDraft,
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(compact.milestones?.map((milestone) => milestone.name)).toEqual([
+      'Run check one',
+      'Run check two',
+      'Run check three',
+    ]);
+    expect(compact.milestones?.map((milestone) => milestone.dueDate)).toEqual([
+      '20 November 2026',
+      '25 November 2026',
+      '30 November 2026',
+    ]);
+  });
+
+  it('splits dash-separated milestone lines into title, date, and owner', () => {
+    const message = [
+      'Run check one - 20 November 2026 - Vlad Hramtsov',
+      'Run check two - 25 November 2026 - Vlad Hramtsov',
+      'Run check three - 30 November 2026 - Vlad Hramtsov',
+    ].join('\n');
+    const patch = buildLocalQuestDraftPatch({
+      message,
+      currentStep: 'milestones',
+      draft: emptyDraft,
+      viewerDisplayName: 'Ada Lovelace',
+    });
+    expect(patch.milestones).toEqual([
+      {
+        name: 'Run check one',
+        dueDate: '20 November 2026',
+        description: 'Run check one',
+        ownerName: 'Vlad Hramtsov',
+      },
+      {
+        name: 'Run check two',
+        dueDate: '25 November 2026',
+        description: 'Run check two',
+        ownerName: 'Vlad Hramtsov',
+      },
+      {
+        name: 'Run check three',
+        dueDate: '30 November 2026',
+        description: 'Run check three',
+        ownerName: 'Vlad Hramtsov',
+      },
+    ]);
+    const preview = formatPendingQuestPatch(patch);
+    expect(preview).not.toMatch(/Run check one\s+-/);
+    expect(preview).toContain(
+      'M1 · Run check one (20 November 2026 · Vlad Hramtsov)',
+    );
+    expect(
+      decideNewQuestDraftTurn({
+        message,
+        currentStep: 'milestones',
+        targetStep: 'milestones',
+        bulk: false,
+        pending: null,
+      }).kind,
+    ).toBe('propose');
+    expect(
+      decideNewQuestDraftTurn({
+        message: 'Yes, put that in the Milestones.',
+        currentStep: 'milestones',
+        targetStep: 'milestones',
+        bulk: false,
+        pending: { step: 'milestones', patch },
+      }).kind,
+    ).toBe('apply');
+
+    const { next } = applyPatchToQuestDraftState({
+      current: emptyDraft,
+      patch,
+      spaceMembers: [],
+      viewerDisplayName: 'Ada Lovelace',
+    });
+    expect(next.milestones.map((milestone) => milestone.name)).toEqual([
+      'Run check one',
+      'Run check two',
+      'Run check three',
+    ]);
+    expect(next.milestones.map((milestone) => milestone.ownerName)).toEqual([
+      'Vlad Hramtsov',
+      'Vlad Hramtsov',
+      'Vlad Hramtsov',
+    ]);
+
+    const hyphenated = buildLocalQuestDraftPatch({
+      message: 'Ship the on-chain checklist',
+      currentStep: 'milestones',
+      draft: emptyDraft,
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(hyphenated.milestones?.[0]?.name).toBe(
+      'Ship the on-chain checklist',
+    );
+    const titledDash = buildLocalQuestDraftPatch({
+      message: 'Run check one - record the pass or fail',
+      currentStep: 'milestones',
+      draft: emptyDraft,
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(titledDash.milestones?.[0]?.name).toBe(
+      'Run check one - record the pass or fail',
+    );
+    expect(titledDash.milestones?.[0]?.dueDate).toBeUndefined();
   });
 });
