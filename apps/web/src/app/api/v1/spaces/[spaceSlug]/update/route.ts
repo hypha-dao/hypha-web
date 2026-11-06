@@ -1,10 +1,13 @@
 import { schemaUpdateSpace } from '@hypha-platform/core/client';
 import {
+  authorizeSpacePanelInteraction,
+  findSpaceBySlug,
   isWeb3SpaceIdConflictError,
   updateSpaceBySlug,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { NextResponse } from 'next/server';
+import { parseBearerToken } from '@web/utils/parse-bearer-token';
 
 export async function POST(
   request: Request,
@@ -12,7 +15,7 @@ export async function POST(
 ) {
   try {
     const { spaceSlug } = await params;
-    const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
+    const authToken = parseBearerToken(request.headers.get('Authorization'));
     if (!authToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -33,7 +36,23 @@ export async function POST(
 
     const validatedData = validationResult.data;
 
-    const space = await updateSpaceBySlug(
+    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+    if (!space) {
+      return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+    }
+
+    const interactionAuth = await authorizeSpacePanelInteraction({
+      spaceSlug: space.slug,
+      authToken,
+    });
+    if (!interactionAuth.authorized) {
+      return NextResponse.json(
+        { error: interactionAuth.message },
+        { status: 403 },
+      );
+    }
+
+    const updatedSpace = await updateSpaceBySlug(
       {
         ...validatedData,
         slug: spaceSlug,
@@ -41,7 +60,7 @@ export async function POST(
       { db },
     );
 
-    return NextResponse.json(space);
+    return NextResponse.json(updatedSpace);
   } catch (error) {
     if (isWeb3SpaceIdConflictError(error)) {
       return NextResponse.json(

@@ -68,9 +68,7 @@ export const spaces = pgTable(
   (table) => [
     uniqueIndex('spaces_web3_space_id_unique')
       .on(table.web3SpaceId)
-      .where(
-        sql`${table.web3SpaceId} is not null and ${table.slug} <> 'zz-w3-probe-1220'`,
-      ),
+      .where(sql`${table.web3SpaceId} is not null and ${table.id} <> 853`),
     index('search_index_spaces').using(
       'gin',
       sql`(
