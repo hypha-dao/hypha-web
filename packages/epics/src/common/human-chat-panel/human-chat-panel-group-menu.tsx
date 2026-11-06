@@ -96,7 +96,6 @@ export function HumanChatPanelGroupMenu({
 }) {
   const t = useTranslations('HumanChatPanel');
   const tConnections = useTranslations('Connections');
-  const isMobile = useIsMobile();
   const { jwt } = useJwt();
   const { client, ensureRoomMembers } = useMatrix();
   const selfId = client?.getUserId() ?? null;

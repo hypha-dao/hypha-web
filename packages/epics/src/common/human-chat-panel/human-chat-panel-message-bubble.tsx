@@ -2051,7 +2051,7 @@ export function HumanChatPanelMessageBubble({
     textContent.split('\n').length > 10 || textContent.length > 500;
 
   useEffect(() => {
-    setTextExpanded(false);
+    setLocalExpandedId(null);
     setTextCanExpand(Boolean(textContent.trim()) && textLooksLong);
   }, [message.id, textContent, richTextHtml, textLooksLong]);
 
