@@ -1,7 +1,7 @@
 import { schemaUpdateSpace } from '@hypha-platform/core/client';
 import {
   authorizeSpacePanelInteraction,
-  findSpaceBySlug,
+  checkSpaceSlugExists,
   isWeb3SpaceIdConflictError,
   updateSpaceBySlug,
 } from '@hypha-platform/core/server';
@@ -36,13 +36,13 @@ export async function POST(
 
     const validatedData = validationResult.data;
 
-    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-    if (!space) {
+    const { exists } = await checkSpaceSlugExists({ slug: spaceSlug }, { db });
+    if (!exists) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
     const interactionAuth = await authorizeSpacePanelInteraction({
-      spaceSlug: space.slug,
+      spaceSlug,
       authToken,
     });
     if (!interactionAuth.authorized) {

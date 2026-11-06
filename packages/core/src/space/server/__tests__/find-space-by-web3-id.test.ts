@@ -90,4 +90,26 @@ describe('findSpaceByWeb3Id', () => {
     expect(space?.id).toBe(853);
     expect(space?.slug).toBe('zz-w3-probe-1220');
   });
+
+  it('deprioritises space id 853 after its slug changes', async () => {
+    const renamedProbe = { ...probe, slug: 'renamed-probe' };
+    const space = await findSpaceByWeb3Id(
+      { id: 240 },
+      { db: dbReturning([renamedProbe, hypha]) as never },
+    );
+
+    expect(space?.id).toBe(94);
+    expect(space?.slug).toBe('hypha');
+  });
+
+  it('does not treat the former probe slug as the probe', async () => {
+    const formerSlug = { ...hypha, id: 12, slug: 'zz-w3-probe-1220' };
+    const space = await findSpaceByWeb3Id(
+      { id: 240 },
+      { db: dbReturning([hypha, formerSlug]) as never },
+    );
+
+    expect(space?.id).toBe(12);
+    expect(space?.slug).toBe('zz-w3-probe-1220');
+  });
 });

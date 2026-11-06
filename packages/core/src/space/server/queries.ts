@@ -114,16 +114,16 @@ export const findSpaceByAddress = async (
 
 /**
  * Web2 row that still shares hypha's on-chain id until ops unbinds it.
- * The unique index excludes this slug so the migration can apply.
+ * The unique index excludes this id so the migration can apply after a slug change.
  */
-const WEB3_SPACE_ID_PROBE_SLUG = 'zz-w3-probe-1220';
+const WEB3_SPACE_ID_PROBE_ID = 853;
 
-function pickSpaceRowForWeb3Id<T extends { id: number; slug: string }>(
+function pickSpaceRowForWeb3Id<T extends { id: number }>(
   rows: readonly T[],
 ): T | undefined {
   return [...rows].sort((left, right) => {
-    const leftIsProbe = left.slug === WEB3_SPACE_ID_PROBE_SLUG ? 1 : 0;
-    const rightIsProbe = right.slug === WEB3_SPACE_ID_PROBE_SLUG ? 1 : 0;
+    const leftIsProbe = left.id === WEB3_SPACE_ID_PROBE_ID ? 1 : 0;
+    const rightIsProbe = right.id === WEB3_SPACE_ID_PROBE_ID ? 1 : 0;
     if (leftIsProbe !== rightIsProbe) return leftIsProbe - rightIsProbe;
     return left.id - right.id;
   })[0];
