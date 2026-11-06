@@ -484,7 +484,7 @@ export function EditQuestLeadModal({
               value={selectedId}
               onChange={(next) => setSelectedId(next)}
               allowUnassigned={false}
-              popoverModal
+              popoverModal={false}
               placeholder="Select a space member…"
               searchPlaceholder="Search members…"
               emptyListMessage="No space members found."
@@ -829,7 +829,7 @@ export function EditQuestMilestonesModal({
                           }}
                           allowUnassigned
                           unassignedLabel="Unassigned"
-                          popoverModal
+                          popoverModal={false}
                           placeholder="Unassigned"
                           searchPlaceholder="Search members…"
                           emptyListMessage="No space members found."
@@ -1147,7 +1147,7 @@ export function EditQuestMembersModal({
                 value={selectedPersonId}
                 onChange={(next) => setSelectedPersonId(next)}
                 allowUnassigned={false}
-                popoverModal
+                popoverModal={false}
                 placeholder="Choose or search a space member…"
                 searchPlaceholder="Search members…"
                 emptyListMessage="No space members found."
