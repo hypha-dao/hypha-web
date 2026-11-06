@@ -95,6 +95,14 @@ describe('resolveQuestDraftTarget', () => {
     });
   });
 
+  it('routes "now let\'s define the scope" to scope without writing it', () => {
+    const target = resolveQuestDraftTarget(
+      "Now let's define the scope",
+      'goal',
+    );
+    expect(target).toEqual({ step: 'scope', bulk: false });
+  });
+
   it('leaves an ordinary goal answer on the goal step', () => {
     expect(
       resolveQuestDraftTarget(

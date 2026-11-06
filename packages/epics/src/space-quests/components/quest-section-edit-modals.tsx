@@ -13,9 +13,11 @@ import {
 } from '@hypha-platform/core/client';
 import {
   Button,
+  Combobox,
   Dialog,
   DialogContent,
   DialogTitle,
+  Image,
   Input,
   RichTextEditor,
 } from '@hypha-platform/ui';
@@ -24,17 +26,136 @@ import { Plus, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
 import { QuestRewardRowsEditor } from './quest-reward-tokens';
+
+const UNASSIGNED_MEMBER = '__unassigned__';
 
 function keepMemberSelectPopoverOpen(event: {
   target: EventTarget | null;
   preventDefault: () => void;
 }) {
   const target = event.target as HTMLElement | null;
-  if (target?.closest('[data-pipeline-select-content="true"]')) {
+  if (
+    target?.closest('[data-pipeline-select-content="true"]') ||
+    target?.closest('[data-hypha-combobox-content]')
+  ) {
     event.preventDefault();
   }
+}
+
+function MemberOptionFace({
+  label,
+  avatarUrl,
+}: {
+  label: string;
+  avatarUrl?: string | null;
+}) {
+  if (avatarUrl) {
+    return (
+      <Image
+        src={avatarUrl}
+        alt=""
+        width={24}
+        height={24}
+        className="size-6 shrink-0 rounded-full object-cover"
+      />
+    );
+  }
+  return (
+    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-neutral-4 text-[11px] font-semibold text-neutral-11">
+      {label.trim().charAt(0).toUpperCase() || '?'}
+    </span>
+  );
+}
+
+function QuestRosterCombobox({
+  members,
+  value,
+  onChange,
+  placeholder,
+  allowUnassigned = false,
+}: {
+  members: readonly Person[];
+  value: string | null;
+  onChange: (person: Person | null) => void;
+  placeholder: string;
+  allowUnassigned?: boolean;
+}) {
+  const roster = members.filter((person) => person.id > 0);
+  const options = [
+    ...(allowUnassigned
+      ? [
+          {
+            value: UNASSIGNED_MEMBER,
+            label: 'Unassigned',
+            searchText: 'unassigned',
+            avatarUrl: null as string | null,
+          },
+        ]
+      : []),
+    ...roster.map((person) => {
+      const label = personRosterDisplayLabel(person, 'Space member');
+      return {
+        value: String(person.id),
+        label,
+        searchText: [label, person.nickname, person.email]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase(),
+        avatarUrl: person.avatarUrl ?? null,
+      };
+    }),
+  ];
+
+  return (
+    <Combobox
+      options={options}
+      initialValue={value ?? (allowUnassigned ? UNASSIGNED_MEMBER : '')}
+      placeholder={placeholder}
+      searchPlaceholder="Search members…"
+      emptyListMessage="No space members found."
+      allowEmptyChoice={false}
+      popoverModal={false}
+      className="h-10 w-full justify-between rounded-none md:w-full"
+      onChange={(next) => {
+        if (!next || next === UNASSIGNED_MEMBER) {
+          onChange(null);
+          return;
+        }
+        onChange(roster.find((person) => String(person.id) === next) ?? null);
+      }}
+      renderOption={(option) => (
+        <>
+          {option.value === UNASSIGNED_MEMBER ? (
+            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-neutral-4 text-[11px] text-neutral-11">
+              —
+            </span>
+          ) : (
+            <MemberOptionFace
+              label={option.label}
+              avatarUrl={option.avatarUrl}
+            />
+          )}
+          <span className="truncate">{option.label}</span>
+        </>
+      )}
+      renderValue={(option) =>
+        option ? (
+          <span className="flex min-w-0 items-center gap-2">
+            {option.value === UNASSIGNED_MEMBER ? null : (
+              <MemberOptionFace
+                label={option.label}
+                avatarUrl={option.avatarUrl}
+              />
+            )}
+            <span className="truncate">{option.label}</span>
+          </span>
+        ) : (
+          <span className="truncate text-neutral-11">{placeholder}</span>
+        )
+      }
+    />
+  );
 }
 
 function buildMemberPersonCatalog(
@@ -479,17 +600,11 @@ export function EditQuestLeadModal({
           <ModalHeader title="Edit lead" onClose={() => onOpenChange(false)} />
           <div className="space-y-1.5">
             <label className={LABEL_CLASS}>LEAD</label>
-            <SpaceMemberSelect
+            <QuestRosterCombobox
               members={catalog}
               value={selectedId}
-              onChange={(next) => setSelectedId(next)}
-              allowUnassigned={false}
-              popoverModal={false}
               placeholder="Select a space member…"
-              searchPlaceholder="Search members…"
-              emptyListMessage="No space members found."
-              unknownLabel="Space Member"
-              className="h-11 bg-background-2"
+              onChange={(next) => setSelectedId(next ? String(next.id) : null)}
             />
           </div>
           <ModalFooter
@@ -800,41 +915,34 @@ export function EditQuestMilestonesModal({
                     <div className="flex flex-col gap-2.5 sm:flex-row">
                       <div className="flex-1 space-y-1">
                         <label className={LABEL_CLASS}>OWNER</label>
-                        <SpaceMemberSelect
+                        <QuestRosterCombobox
                           members={ownerCatalog}
+                          allowUnassigned
                           value={(() => {
                             const matched = findPersonInCatalog(ownerCatalog, {
                               id: item.ownerPersonId,
                               name: item.ownerName,
                             });
-                            return matched ? String(matched.id) : null;
+                            return matched && matched.id > 0
+                              ? String(matched.id)
+                              : UNASSIGNED_MEMBER;
                           })()}
-                          onChange={(nextValue) => {
-                            const matched = findPersonInCatalog(ownerCatalog, {
-                              id: nextValue,
-                            });
-                            const next = [...rows];
-                            next[idx] = {
+                          placeholder="Unassigned"
+                          onChange={(next) => {
+                            const rowsNext = [...rows];
+                            rowsNext[idx] = {
                               ...item,
                               ownerPersonId:
-                                matched && matched.id > 0 ? matched.id : null,
-                              ownerName: matched
+                                next && next.id > 0 ? next.id : null,
+                              ownerName: next
                                 ? personRosterDisplayLabel(
-                                    matched,
+                                    next,
                                     'Space Member',
                                   ).trim() || null
                                 : null,
                             };
-                            setRows(next);
+                            setRows(rowsNext);
                           }}
-                          allowUnassigned
-                          unassignedLabel="Unassigned"
-                          popoverModal={false}
-                          placeholder="Unassigned"
-                          searchPlaceholder="Search members…"
-                          emptyListMessage="No space members found."
-                          unknownLabel="Space Member"
-                          className="h-10 bg-background-2"
                         />
                       </div>
                       {showStatusSelect ? (
@@ -1142,17 +1250,13 @@ export function EditQuestMembersModal({
             <p className={LABEL_CLASS}>ADD MEMBER</p>
             <div className="space-y-1">
               <label className={LABEL_CLASS}>PERSON</label>
-              <SpaceMemberSelect
+              <QuestRosterCombobox
                 members={memberCatalog}
                 value={selectedPersonId}
-                onChange={(next) => setSelectedPersonId(next)}
-                allowUnassigned={false}
-                popoverModal={false}
                 placeholder="Choose or search a space member…"
-                searchPlaceholder="Search members…"
-                emptyListMessage="No space members found."
-                unknownLabel="Space Member"
-                className="h-9 bg-background"
+                onChange={(next) =>
+                  setSelectedPersonId(next ? String(next.id) : null)
+                }
               />
             </div>
             <div className="space-y-1">

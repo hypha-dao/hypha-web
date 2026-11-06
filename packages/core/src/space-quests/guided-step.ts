@@ -21,6 +21,12 @@ const SECTION_LABEL = new RegExp(
   'i',
 );
 
+/** "Now let's define the scope" — name the section without writing it. */
+const SECTION_NAV = new RegExp(
+  `\\b(?:define|talk about|work on|move on to|start on|cover|about)\\s+(?:the\\s+)?${SECTION_NAME}\\b|\\bwhat(?: is|['\\u2019]s)\\b[\\s\\S]{0,40}\\b${SECTION_NAME}\\b`,
+  'i',
+);
+
 function stepFromSectionName(raw: string): QuestStewardStep | null {
   const name = raw.toLowerCase().replace(/\s+/g, ' ').trim();
   if (name.includes('scope')) return 'scope';
@@ -80,7 +86,10 @@ export function resolveQuestDraftTarget(
   const text = message.trim();
   if (!text) return { step: currentStep, bulk: false };
   if (isBulkQuestDraftRequest(text)) return { step: currentStep, bulk: true };
-  const named = NAMED_SECTION.exec(text)?.[1] ?? SECTION_LABEL.exec(text)?.[1];
+  const named =
+    NAMED_SECTION.exec(text)?.[1] ??
+    SECTION_LABEL.exec(text)?.[1] ??
+    SECTION_NAV.exec(text)?.[1];
   const step = named ? stepFromSectionName(named) : null;
   return { step: step ?? currentStep, bulk: false };
 }

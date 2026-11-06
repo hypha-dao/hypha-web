@@ -187,6 +187,212 @@ export function questStepSectionLabel(step: QuestStewardStep): string {
   return QUEST_STEP_LABEL[step];
 }
 
+const SECTION_APPROVAL =
+  /^(yes|yeah|yep|yup|ok|okay|sure|approved|i approve|include that|include it|put that in(?: the)?(?: [\w\s]{0,32})?|put it in(?: the)?(?: [\w\s]{0,32})?|use that|use it|looks good|go ahead|add it|apply it|that(?:'s| is) good|perfect|do it|sounds good)[.!]?(?:\s+please)?$/i;
+
+const SECTION_REWRITE =
+  /\b(improve|evaluate|rewrite|reword|tighten|revise|suggest(?:\s+\w+){0,3}\s+(?:wording|copy|text)|make (?:this|it|that) (?:sharper|clearer|shorter|better))\b/i;
+
+const SECTION_OPENER =
+  /\b(?:let'?s|let us|now)\b.{0,48}\b(?:define|talk about|work on|move on|start|cover)\b|\b(?:define|talk about|work on|move on to|start on|cover)\s+(?:the\s+)?(success\s+criteria|in[-\s]?scope|out[-\s]of[-\s]?scope|milestones?|members?|target\s+date|quest\s+rewards?|rewards?|quest\s+name|scope|success|lead|goal|name|title)\b|\b(what is|what['\u2019]s|how (?:do|should) (?:i|we)|help me (?:think|understand)|explain)\b/i;
+
+/** "yes", "include that", "put that in Scope", "I approve". Not a long answer that happens to start with yes. */
+export function isQuestSectionApproval(message: string): boolean {
+  const text = message.trim();
+  if (!text || text.length > 96) return false;
+  if (/\b(but|except|instead|rather|change|don't|do not)\b/i.test(text)) {
+    return false;
+  }
+  if (SECTION_REWRITE.test(text)) return false;
+  return SECTION_APPROVAL.test(text);
+}
+
+export function isQuestSectionRewriteRequest(message: string): boolean {
+  return SECTION_REWRITE.test(message);
+}
+
+/** Opening a section to think it through. Not a request to paste wording. */
+export function isQuestSectionCoachingOpener(message: string): boolean {
+  const text = message.trim();
+  if (!text || text.length > 220) return false;
+  if (isQuestSectionApproval(text) || isQuestSectionRewriteRequest(text)) {
+    return false;
+  }
+  if (isBulkQuestDraftRequest(text)) return false;
+  if (/:\s*\S/.test(text) && text.length > 48) return false;
+  return SECTION_OPENER.test(text);
+}
+
+export function messageSuppliesSectionContent(message: string): boolean {
+  const text = message.trim();
+  if (!text) return false;
+  if (isBulkQuestDraftRequest(text)) return false;
+  if (isQuestSectionApproval(text)) return false;
+  if (isQuestSectionCoachingOpener(text)) return false;
+  if (isQuestSectionRewriteRequest(text) && text.length < 100) return false;
+  return true;
+}
+
+export function questSectionApprovalQuestion(step: QuestStewardStep): string {
+  return `Do you want that to be in the ${QUEST_STEP_LABEL[step]}?`;
+}
+
+/** Teach the section. No wording to paste. */
+export function questSectionCoachReply(step: QuestStewardStep): string {
+  switch (step) {
+    case 'goal':
+      return 'The goal is why this quest exists now: who it is for, and the concrete change it delivers. A vague verb like "improve" or "explore" needs a deliverable or a check you can point at. Who benefits, and what will be different when this quest is done?';
+    case 'scope':
+      return 'Scope is the boundary of the quest, not a restatement of the goal. In-scope is the work this quest will actually ship. Out-of-scope is the nearby work you are leaving out, so voters know where it stops. What is the one thing this quest must deliver, and what should stay out?';
+    case 'success':
+      return 'Success criteria are how you will know the quest worked, not a list of tasks. A good check is something a reviewer can verify: a number, a recorded pass, or a shipped artifact. What would you look at to say this is done?';
+    case 'milestones':
+      return 'Milestones are ordered checkpoints on the way to that outcome. Each one needs an owner and a date, and each should make the next step possible. What is the first checkpoint, and who owns it?';
+    case 'members':
+      return 'Members are people from this space who own an outcome, not a job title. Each person should have one or two responsibilities you could check. Who needs to be on this quest, and what do they own?';
+    case 'lead':
+      return 'The lead is the one space member accountable for the quest as a whole. Who should carry that?';
+    case 'targetDate':
+      return 'The target date is when the outcome should be real, not when the first milestone lands. What date should voters hold the quest to?';
+    case 'rewards':
+      return 'Quest Reward is the token amount the space is agreeing to pay for this outcome, such as 2,500 USDC. What amount and token should be in the proposal?';
+    case 'name':
+      return 'The name is the short title voters will see on the proposal, usually two to six words. What should this quest be called?';
+  }
+}
+
+export type PendingQuestSectionProposal = {
+  step: QuestStewardStep;
+  patch: QuestDraftPatchInput;
+};
+
+export type NewQuestDraftTurn =
+  | { kind: 'bulk'; step: QuestStewardStep }
+  | { kind: 'coach'; step: QuestStewardStep }
+  | {
+      kind: 'apply';
+      step: QuestStewardStep;
+      patch: QuestDraftPatchInput;
+    }
+  | { kind: 'propose'; step: QuestStewardStep };
+
+function sectionNamedInApproval(message: string): QuestStewardStep | null {
+  const named =
+    /\b(?:in|into|for|to)\s+(?:the\s+)?(success\s+criteria|milestones?|members?|target\s+date|rewards?|scope|success|lead|goal|name|title)\b/i.exec(
+      message,
+    );
+  if (!named?.[1]) return null;
+  const raw = named[1].toLowerCase();
+  if (raw.includes('scope')) return 'scope';
+  if (raw.includes('success')) return 'success';
+  if (raw.includes('milestone')) return 'milestones';
+  if (raw.includes('member')) return 'members';
+  if (raw.includes('target')) return 'targetDate';
+  if (raw.includes('reward')) return 'rewards';
+  if (raw.includes('name') || raw.includes('title')) return 'name';
+  if (raw === 'lead') return 'lead';
+  if (raw.includes('goal')) return 'goal';
+  return null;
+}
+
+/**
+ * New-quest chat never writes a section until the member approves.
+ * Opening a section only coaches. A proposal stays in chat until yes.
+ */
+export function decideNewQuestDraftTurn({
+  message,
+  currentStep,
+  targetStep,
+  bulk,
+  pending,
+}: {
+  message: string;
+  currentStep: QuestStewardStep;
+  targetStep: QuestStewardStep;
+  bulk: boolean;
+  pending: PendingQuestSectionProposal | null;
+}): NewQuestDraftTurn {
+  if (bulk) return { kind: 'bulk', step: currentStep };
+  if (isQuestSectionApproval(message)) {
+    const named = sectionNamedInApproval(message);
+    const pendingPatch = pending?.patch ?? {};
+    const hasPending = Object.keys(pendingPatch).length > 0;
+    if (pending && hasPending && (!named || named === pending.step)) {
+      return { kind: 'apply', step: pending.step, patch: pending.patch };
+    }
+    return { kind: 'coach', step: named ?? targetStep };
+  }
+  if (isQuestSectionCoachingOpener(message)) {
+    return { kind: 'coach', step: targetStep };
+  }
+  return { kind: 'propose', step: targetStep };
+}
+
+export function formatPendingQuestPatch(patch: QuestDraftPatchInput): string {
+  const lines: string[] = [];
+  if (patch.name?.trim()) lines.push(patch.name.trim());
+  if (patch.goal?.trim()) lines.push(patch.goal.trim());
+  if (patch.scopeIn && patch.scopeIn.length > 0) {
+    lines.push(`In:\n${bulletsToMarkdownList(patch.scopeIn)}`);
+  }
+  if (patch.scopeOut && patch.scopeOut.length > 0) {
+    lines.push(`Out:\n${bulletsToMarkdownList(patch.scopeOut)}`);
+  }
+  if (patch.successCriteriaBullets && patch.successCriteriaBullets.length > 0) {
+    lines.push(bulletsToMarkdownList(patch.successCriteriaBullets));
+  }
+  if (patch.milestones && patch.milestones.length > 0) {
+    lines.push(
+      patch.milestones
+        .map((milestone, index) => {
+          const when = milestone.dueDate?.trim();
+          const owner = milestone.ownerName?.trim();
+          const detail = [when, owner].filter(Boolean).join(' · ');
+          return `M${index + 1} · ${milestone.name.trim()}${
+            detail ? ` (${detail})` : ''
+          }`;
+        })
+        .join('\n'),
+    );
+  }
+  if (patch.members && patch.members.length > 0) {
+    lines.push(
+      patch.members
+        .map((member) => {
+          const duties = (member.responsibilities ?? []).filter(Boolean);
+          return duties.length > 0
+            ? `${member.memberName}: ${duties.join('; ')}`
+            : member.memberName;
+        })
+        .join('\n'),
+    );
+  }
+  if (patch.leadName?.trim()) lines.push(patch.leadName.trim());
+  if (patch.targetDate?.trim()) lines.push(patch.targetDate.trim());
+  if (patch.rewards && patch.rewards.length > 0) {
+    lines.push(
+      patch.rewards
+        .map((reward) => `${reward.amount} ${reward.token}`)
+        .join(', '),
+    );
+  }
+  return lines.join('\n\n');
+}
+
+export function replyWithSectionApprovalAsk(
+  reply: string | null | undefined,
+  step: QuestStewardStep,
+  patch: QuestDraftPatchInput,
+): string {
+  const question = questSectionApprovalQuestion(step);
+  const model = reply?.trim() ?? '';
+  if (/do you want that to be in the/i.test(model)) return model;
+  const preview = formatPendingQuestPatch(patch).trim();
+  if (model) return `${model}\n\n${question}`;
+  if (preview) return `${preview}\n\n${question}`;
+  return question;
+}
+
 /**
  * Extract the active section from a user message.
  * A goal answer does not also invent scope, milestones, rewards, or a name.

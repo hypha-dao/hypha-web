@@ -7,9 +7,11 @@ import {
   QUEST_PROPOSAL_DESCRIPTION_LIMIT,
   QUEST_STEWARD_STEPS,
   buildQuestProposalDescription,
+  bulletsToMarkdownList,
   limitQuestPatchToStep,
   resolveQuestDraftTarget,
   questRecordToProposalDraft,
+  stripViewerYouMarker,
   withoutPlaceholderLeadDuplicates,
   splitMarkdownLinesToBullets,
   useCreateAgreementOrchestrator,
@@ -32,10 +34,13 @@ import {
   useHumanChatPanel,
   type SpaceQuestDraftChatMessage,
 } from '../../common/human-chat-panel-context';
+import { PersonAvatar } from '../../people/components/person-avatar';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
+import { QuestSectionMarkdown } from './quest-section-markdown';
 import {
   createSpaceQuestRequest,
   deleteSpaceQuestRequest,
+  findQuestSpaceMember,
   findQuestSpaceMemberId,
   patchSpaceQuestRequest,
   toQuestSpaceMemberPersons,
@@ -44,9 +49,15 @@ import {
 import {
   applyPatchToQuestDraftState,
   buildLocalQuestDraftPatch,
+  decideNewQuestDraftTurn,
+  isQuestSectionRewriteRequest,
+  messageSuppliesSectionContent,
   nextQuestStepAfterUpdate,
+  questSectionCoachReply,
   questStepSectionLabel,
+  replyWithSectionApprovalAsk,
   stewardQuestionForStep,
+  type PendingQuestSectionProposal,
   type QuestDraftPatchInput,
   type QuestDraftStateSnapshot,
 } from '../utils/quest-draft-assistant';
@@ -128,29 +139,6 @@ const QUEST_READY_REPLY =
 
 function bulkCoachReply(step: QuestStewardStep): string {
   return `We'll take one section at a time. ${stewardQuestionForStep(step)}`;
-}
-
-function questHelperFallbackReply({
-  currentStep,
-  nextStep,
-  complete,
-  updatedLabels,
-}: {
-  currentStep: QuestStewardStep;
-  nextStep: QuestStewardStep;
-  complete: boolean;
-  updatedLabels: readonly string[];
-}): string {
-  if (complete) return QUEST_READY_REPLY;
-  if (
-    nextStep === currentStep ||
-    !updatedLabels.includes(questStepSectionLabel(currentStep))
-  ) {
-    return stewardQuestionForStep(currentStep);
-  }
-  return `Updated ${questStepSectionLabel(
-    currentStep,
-  )}. ${stewardQuestionForStep(nextStep)}`;
 }
 
 export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
@@ -253,6 +241,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   } | null>(null);
   const [pendingProposalLink, setPendingProposalLink] =
     useState<PendingProposalLink | null>(null);
+  const pendingProposalRef = useRef<PendingQuestSectionProposal | null>(null);
 
   const {
     createAgreement,
@@ -331,6 +320,71 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         },
       ]);
 
+      const turn = decideNewQuestDraftTurn({
+        message: trimmed,
+        currentStep,
+        targetStep: stepToWrite,
+        bulk: draftTarget.bulk,
+        pending: pendingProposalRef.current,
+      });
+
+      const pushHelper = (text: string) => {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: `s-${Date.now()}`,
+            role: 'member' as const,
+            senderName: QUEST_HELPER_NAME,
+            timestamp: new Date(),
+            text,
+          },
+        ]);
+      };
+      const focusStep = (step: QuestStewardStep) => {
+        setStewardStepIndex(Math.max(0, QUEST_STEWARD_STEPS.indexOf(step)));
+        setActiveSection(step);
+      };
+
+      if (turn.kind === 'bulk') {
+        pendingProposalRef.current = null;
+        focusStep(currentStep);
+        pushHelper(bulkCoachReply(currentStep));
+        return;
+      }
+
+      if (turn.kind === 'coach') {
+        pendingProposalRef.current = null;
+        focusStep(turn.step);
+        pushHelper(questSectionCoachReply(turn.step));
+        return;
+      }
+
+      if (turn.kind === 'apply') {
+        const limited = limitQuestPatchToStep(turn.patch, turn.step);
+        const { next, updatedLabels } = applyPatchToQuestDraftState({
+          current: currentSnapshot,
+          patch: limited,
+          spaceMembers,
+          viewerDisplayName,
+        });
+        commitDraftSnapshot(next);
+        pendingProposalRef.current = null;
+        const advance = nextQuestStepAfterUpdate({
+          draft: next,
+          currentStep: turn.step,
+          updatedLabels,
+        });
+        focusStep(advance.step);
+        pushHelper(
+          advance.complete
+            ? QUEST_READY_REPLY
+            : `Added that to the ${questStepSectionLabel(
+                turn.step,
+              )}. ${stewardQuestionForStep(advance.step)}`,
+        );
+        return;
+      }
+
       setIsAgentTyping(true);
       let llmHandled = false;
       try {
@@ -348,7 +402,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
               },
               body: JSON.stringify({
                 message: trimmed,
-                currentStep,
+                currentStep: stepToWrite,
                 spaceTitle: space?.title,
                 draft: {
                   name: currentSnapshot.name,
@@ -394,61 +448,48 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             );
             if (hasAiPatch || data.reply?.trim()) {
               llmHandled = true;
-              const sourcePatch: QuestDraftPatchInput =
-                draftTarget.bulk || !hasAiPatch ? {} : data.patch!;
-              const effectivePatch = draftTarget.bulk
-                ? {}
-                : limitQuestPatchToStep(sourcePatch, stepToWrite);
-              const keptKeys = new Set(Object.keys(effectivePatch));
-              const droppedOtherSections = Object.keys(sourcePatch).some(
-                (key) => {
-                  const value = sourcePatch[key as keyof QuestDraftPatchInput];
-                  if (value == null || value === '') return false;
-                  if (Array.isArray(value) && value.length === 0) return false;
-                  return !keptKeys.has(key);
-                },
+              const rewrite = isQuestSectionRewriteRequest(trimmed);
+              const modelPatch = limitQuestPatchToStep(
+                hasAiPatch ? data.patch! : {},
+                stepToWrite,
               );
-              const { next: afterAi, updatedLabels } =
-                applyPatchToQuestDraftState({
-                  current: currentSnapshot,
+              const localPatch = messageSuppliesSectionContent(trimmed)
+                ? limitQuestPatchToStep(
+                    buildLocalQuestDraftPatch({
+                      message: trimmed,
+                      currentStep: stepToWrite,
+                      draft: currentSnapshot,
+                      viewerDisplayName,
+                    }),
+                    stepToWrite,
+                  )
+                : {};
+              const effectivePatch =
+                rewrite && Object.keys(modelPatch).length > 0
+                  ? modelPatch
+                  : Object.keys(localPatch).length > 0
+                  ? localPatch
+                  : modelPatch;
+              const hasProposal = Object.keys(effectivePatch).length > 0;
+              if (hasProposal) {
+                pendingProposalRef.current = {
+                  step: stepToWrite,
                   patch: effectivePatch,
-                  spaceMembers,
-                  viewerDisplayName,
-                });
-              commitDraftSnapshot(afterAi);
-
-              const advance = nextQuestStepAfterUpdate({
-                draft: afterAi,
-                currentStep: draftTarget.bulk ? currentStep : stepToWrite,
-                updatedLabels: draftTarget.bulk ? [] : updatedLabels,
-              });
-              setStewardStepIndex(
-                Math.max(0, QUEST_STEWARD_STEPS.indexOf(advance.step)),
-              );
-              setActiveSection(advance.step);
-
-              const fallbackReply = questHelperFallbackReply({
-                currentStep: draftTarget.bulk ? currentStep : stepToWrite,
-                nextStep: advance.step,
-                complete: advance.complete,
-                updatedLabels: draftTarget.bulk ? [] : updatedLabels,
-              });
-              const replyText = draftTarget.bulk
-                ? bulkCoachReply(currentStep)
-                : droppedOtherSections
-                ? fallbackReply
-                : data.reply?.trim() || fallbackReply;
-
-              setChatMessages((prev) => [
-                ...prev,
-                {
-                  id: `s-${Date.now()}`,
-                  role: 'member',
-                  senderName: QUEST_HELPER_NAME,
-                  timestamp: new Date(),
-                  text: replyText,
-                },
-              ]);
+                };
+                focusStep(stepToWrite);
+                pushHelper(
+                  replyWithSectionApprovalAsk(
+                    rewrite ? data.reply : null,
+                    stepToWrite,
+                    effectivePatch,
+                  ),
+                );
+              } else {
+                focusStep(stepToWrite);
+                pushHelper(
+                  data.reply?.trim() || questSectionCoachReply(stepToWrite),
+                );
+              }
             }
           }
         }
@@ -459,9 +500,8 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       }
 
       if (!llmHandled) {
-        const localPatch = draftTarget.bulk
-          ? {}
-          : limitQuestPatchToStep(
+        const localPatch = messageSuppliesSectionContent(trimmed)
+          ? limitQuestPatchToStep(
               buildLocalQuestDraftPatch({
                 message: trimmed,
                 currentStep: stepToWrite,
@@ -469,43 +509,21 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                 viewerDisplayName,
               }),
               stepToWrite,
-            );
-        const { next: afterLocal, updatedLabels: localUpdated } =
-          applyPatchToQuestDraftState({
-            current: currentSnapshot,
+            )
+          : {};
+        if (Object.keys(localPatch).length > 0) {
+          pendingProposalRef.current = {
+            step: stepToWrite,
             patch: localPatch,
-            spaceMembers,
-            viewerDisplayName,
-          });
-        commitDraftSnapshot(afterLocal);
-
-        const advance = nextQuestStepAfterUpdate({
-          draft: afterLocal,
-          currentStep: draftTarget.bulk ? currentStep : stepToWrite,
-          updatedLabels: draftTarget.bulk ? [] : localUpdated,
-        });
-        setStewardStepIndex(
-          Math.max(0, QUEST_STEWARD_STEPS.indexOf(advance.step)),
-        );
-        setActiveSection(advance.step);
-
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            id: `s-${Date.now()}`,
-            role: 'member',
-            senderName: QUEST_HELPER_NAME,
-            timestamp: new Date(),
-            text: draftTarget.bulk
-              ? bulkCoachReply(currentStep)
-              : questHelperFallbackReply({
-                  currentStep: stepToWrite,
-                  nextStep: advance.step,
-                  complete: advance.complete,
-                  updatedLabels: localUpdated,
-                }),
-          },
-        ]);
+          };
+          focusStep(stepToWrite);
+          pushHelper(
+            replyWithSectionApprovalAsk(null, stepToWrite, localPatch),
+          );
+        } else {
+          focusStep(stepToWrite);
+          pushHelper(questSectionCoachReply(stepToWrite));
+        }
       }
     },
     [
@@ -929,7 +947,22 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
 
   const questsListHref = `/${locale}/dho/${spaceSlug}/quests`;
   const successBullets = splitMarkdownLinesToBullets(successCriteria);
-  const leadInitial = (leadName.trim()[0] ?? 'Q').toUpperCase();
+  const scopeInPreview =
+    scopeInMarkdown.trim() || bulletsToMarkdownList(scopeIn);
+  const scopeOutPreview =
+    scopeOutMarkdown.trim() || bulletsToMarkdownList(scopeOut);
+  const cleanLead = stripViewerYouMarker(leadName).trim();
+  const leadMember = findQuestSpaceMember(spaceMembers, {
+    personId: selectedLeadPersonId ?? person?.id,
+    name: cleanLead,
+  });
+  const viewerIsLead =
+    cleanLead.length > 0 &&
+    cleanLead.toLowerCase() === viewerDisplayName.trim().toLowerCase();
+  const leadAvatarUrl =
+    leadMember?.avatarUrl ?? (viewerIsLead ? person?.avatarUrl ?? null : null);
+  const leadPersonId =
+    leadMember?.personId ?? (viewerIsLead ? person?.id : null);
   const draftCompletionPercent = Math.max(
     4,
     Math.round(
@@ -1104,9 +1137,16 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                 </button>
 
                 {/* GOAL */}
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => {
+                    setActiveSection('goal');
+                    setEditingModal('goal');
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
                     setActiveSection('goal');
                     setEditingModal('goal');
                   }}
@@ -1122,19 +1162,20 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                     <span className={LABEL_CLASS}>GOAL</span>
                     <span className="text-xs text-neutral-11">✎</span>
                   </div>
-                  <p className="text-[13px] text-foreground">
-                    {goal || (
-                      <span className="text-neutral-11">
-                        Not set yet — reply in chat or click to edit
-                      </span>
-                    )}
-                  </p>
-                </button>
+                  <QuestSectionMarkdown markdown={goal} />
+                </div>
 
                 {/* SCOPE */}
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => {
+                    setActiveSection('scope');
+                    setEditingModal('scope');
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
                     setActiveSection('scope');
                     setEditingModal('scope');
                   }}
@@ -1150,24 +1191,51 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                     <span className={LABEL_CLASS}>SCOPE</span>
                     <span className="text-xs text-neutral-11">✎</span>
                   </div>
-                  <div className="space-y-0.5 text-[13px] text-foreground">
-                    {scopeIn.length === 0 && scopeOut.length === 0 ? (
+                  <div className="w-full space-y-2 text-[13px] text-foreground">
+                    {!scopeInPreview && !scopeOutPreview ? (
                       <span className="text-neutral-11">
                         Not set yet — reply in chat or click to edit
                       </span>
                     ) : (
                       <>
-                        <p>In: {scopeIn.join(', ') || '—'}</p>
-                        <p>Out: {scopeOut.join(', ') || '—'}</p>
+                        {scopeInPreview ? (
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11">
+                              In
+                            </p>
+                            <QuestSectionMarkdown
+                              markdown={scopeInPreview}
+                              empty=""
+                            />
+                          </div>
+                        ) : null}
+                        {scopeOutPreview ? (
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11">
+                              Out
+                            </p>
+                            <QuestSectionMarkdown
+                              markdown={scopeOutPreview}
+                              empty=""
+                            />
+                          </div>
+                        ) : null}
                       </>
                     )}
                   </div>
-                </button>
+                </div>
 
                 {/* SUCCESS CRITERIA */}
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => {
+                    setActiveSection('success');
+                    setEditingModal('success');
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
                     setActiveSection('success');
                     setEditingModal('success');
                   }}
@@ -1183,17 +1251,8 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                     <span className={LABEL_CLASS}>SUCCESS CRITERIA</span>
                     <span className="text-xs text-neutral-11">✎</span>
                   </div>
-                  <div className="space-y-0.5 text-[13px] text-foreground">
-                    {successBullets.length === 0 ? (
-                      <span className="text-neutral-11">
-                        Not set yet — reply in chat or click to edit
-                      </span>
-                    ) : null}
-                    {successBullets.map((item, idx) => (
-                      <p key={idx}>• {item}</p>
-                    ))}
-                  </div>
-                </button>
+                  <QuestSectionMarkdown markdown={successCriteria} />
+                </div>
 
                 {/* QUEST REWARD (Node 91:2 — inline editable multi-token amount + select + ADD TOKEN) */}
                 <div
@@ -1226,9 +1285,16 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                 </div>
 
                 {/* MILESTONES */}
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => {
+                    setActiveSection('milestones');
+                    setEditingModal('milestones');
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
                     setActiveSection('milestones');
                     setEditingModal('milestones');
                   }}
@@ -1263,9 +1329,10 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                           </span>
                         </div>
                         {m.description ? (
-                          <p className="text-xs text-neutral-11">
-                            {m.description}
-                          </p>
+                          <QuestSectionMarkdown
+                            markdown={m.description}
+                            empty=""
+                          />
                         ) : null}
                         {m.ownerName ? (
                           <p className="text-[11px] text-neutral-11">
@@ -1275,7 +1342,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                       </div>
                     ))}
                   </div>
-                </button>
+                </div>
               </div>
 
               {/* Right column: Lead, Members (with RESPONSIBILITY bullets), Target Date */}
@@ -1295,9 +1362,14 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                     <span className="text-xs text-neutral-11">✎</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="grid size-5.5 place-items-center rounded-full bg-foreground text-[9px] font-bold text-background">
-                      {leadInitial}
-                    </span>
+                    <PersonAvatar
+                      size="sm"
+                      shape="circle"
+                      showPresence={false}
+                      avatarSrc={leadAvatarUrl ?? undefined}
+                      userName={cleanLead || leadName}
+                      personId={leadPersonId ?? undefined}
+                    />
                     <span className="text-[13px] font-semibold text-foreground">
                       {leadName}
                     </span>
@@ -1328,17 +1400,36 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                       </p>
                     ) : null}
                     {members.map((m, idx) => {
-                      const initial = (
-                        m.memberName.trim()[0] ?? 'M'
-                      ).toUpperCase();
+                      const rosterMember = findQuestSpaceMember(spaceMembers, {
+                        personId: m.personId,
+                        name: m.memberName,
+                      });
+                      const memberAvatar =
+                        m.memberAvatarUrl ??
+                        rosterMember?.avatarUrl ??
+                        (stripViewerYouMarker(m.memberName)
+                          .trim()
+                          .toLowerCase() ===
+                        viewerDisplayName.trim().toLowerCase()
+                          ? person?.avatarUrl
+                          : null);
                       return (
                         <div
                           key={idx}
                           className="flex items-start gap-2 py-2.5 first:pt-1 last:pb-0"
                         >
-                          <span className="grid size-5.5 shrink-0 place-items-center bg-foreground text-[9px] font-bold text-background">
-                            {initial}
-                          </span>
+                          <PersonAvatar
+                            size="sm"
+                            shape="circle"
+                            showPresence={false}
+                            avatarSrc={memberAvatar ?? undefined}
+                            userName={m.memberName}
+                            personId={
+                              m.personId && m.personId > 0
+                                ? m.personId
+                                : rosterMember?.personId
+                            }
+                          />
                           <div className="min-w-0 flex-1 space-y-1">
                             <p className="text-[13px] font-semibold text-foreground">
                               {m.memberName}

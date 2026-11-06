@@ -5,7 +5,7 @@ import {
   QUEST_HEALTH_STATES,
   canMemberEditQuest,
   isViewerQuestLead,
-  splitMarkdownLinesToBullets,
+  bulletsToMarkdownList,
   useMe,
   type QuestHealthState,
   type QuestMilestoneStatus,
@@ -23,6 +23,8 @@ import {
   Skeleton,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { PersonAvatar } from '../../people/components/person-avatar';
+import { QuestSectionMarkdown } from './quest-section-markdown';
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -45,6 +47,7 @@ import {
 import type { z } from 'zod';
 import {
   deleteSpaceQuestRequest,
+  findQuestSpaceMember,
   findQuestSpaceMemberId,
   patchSpaceQuestRequest,
   postSpaceQuestUpdateRequest,
@@ -209,36 +212,9 @@ function QuestRichText({
   empty?: string;
   className?: string;
 }) {
-  const lines = (markdown ?? '').split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length === 0) {
-    return <p className="text-[13px] text-neutral-11">{empty}</p>;
-  }
-  const clean = (line: string) =>
-    line
-      .replace(/^\s*(?:[-*•]|\d+\.)\s+/, '')
-      .replace(/^#+\s+/, '')
-      .replace(/\*\*(.+?)\*\*/g, '$1')
-      .replace(/__(.+?)__/g, '$1')
-      .replace(/(^|[^*])\*(?!\s)(.+?)\*/g, '$1$2')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      .trim();
   return (
-    <div
-      className={cn(
-        'space-y-1.5 text-[14px] leading-relaxed text-foreground',
-        className,
-      )}
-    >
-      {lines.map((line, idx) =>
-        /^\s*(?:[-*•]|\d+\.)\s+/.test(line) ? (
-          <p key={idx} className="flex gap-2">
-            <span className="font-semibold text-neutral-11">•</span>
-            <span>{clean(line)}</span>
-          </p>
-        ) : (
-          <p key={idx}>{clean(line)}</p>
-        ),
-      )}
+    <div className={className}>
+      <QuestSectionMarkdown markdown={markdown} empty={empty} />
     </div>
   );
 }
@@ -508,22 +484,22 @@ function OverviewTab({
                   variant="subsection"
                   onEdit={edit('scope')}
                 />
-                <BulletList
-                  items={
-                    quest.scopeIn.length > 0
-                      ? quest.scopeIn
-                      : splitMarkdownLinesToBullets(quest.scopeInMarkdown)
+                <QuestSectionMarkdown
+                  markdown={
+                    quest.scopeInMarkdown?.trim() ||
+                    bulletsToMarkdownList(quest.scopeIn)
                   }
+                  empty="—"
                 />
               </div>
               <div className="space-y-2 border border-border/60 bg-background-2/40 p-3.5">
                 <SectionHeader title="Out of Scope" variant="subsection" />
-                <BulletList
-                  items={
-                    quest.scopeOut.length > 0
-                      ? quest.scopeOut
-                      : splitMarkdownLinesToBullets(quest.scopeOutMarkdown)
+                <QuestSectionMarkdown
+                  markdown={
+                    quest.scopeOutMarkdown?.trim() ||
+                    bulletsToMarkdownList(quest.scopeOut)
                   }
+                  empty="—"
                 />
               </div>
             </div>
@@ -1653,11 +1629,35 @@ export function SpaceQuestDetail({
             </button>
           ) : null}
         </div>
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-11">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-11">
           <span className="inline-flex items-center gap-1.5">
-            <span className="grid size-5 place-items-center rounded-full bg-foreground text-[9px] font-bold text-background">
-              {initialOf(quest.leadName)}
-            </span>
+            <PersonAvatar
+              size="sm"
+              shape="circle"
+              showPresence={false}
+              avatarSrc={
+                quest.members.find((member) => member.isLead)
+                  ?.memberAvatarUrl ??
+                findQuestSpaceMember(spaceMembers, { name: quest.leadName })
+                  ?.avatarUrl ??
+                (viewer?.name &&
+                quest.leadName.trim().toLowerCase() ===
+                  viewer.name.trim().toLowerCase()
+                  ? person?.avatarUrl ?? undefined
+                  : undefined)
+              }
+              userName={quest.leadName || 'Lead'}
+              personId={
+                quest.members.find((member) => member.isLead)?.personId ??
+                findQuestSpaceMember(spaceMembers, { name: quest.leadName })
+                  ?.personId ??
+                (viewer?.name &&
+                quest.leadName.trim().toLowerCase() ===
+                  viewer.name.trim().toLowerCase()
+                  ? person?.id
+                  : undefined)
+              }
+            />
             <span className="font-medium text-foreground">
               {quest.leadName || '—'}
             </span>
@@ -1665,7 +1665,7 @@ export function SpaceQuestDetail({
           </span>
           <span>Target {quest.targetDate || '—'}</span>
           <span>{progressLabel(quest)}</span>
-        </p>
+        </div>
       </header>
 
       {quest.status === 'proposed' ? (
