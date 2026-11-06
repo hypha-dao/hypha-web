@@ -560,7 +560,11 @@ function classifyConversationRoom(
   const last = lastRoomMessage(room, base.selfId);
   // Always walk real incoming messages. The SDK notification total still
   // counts hidden call/signal notices, which inflated the Messages badge.
-  const unread = countIncomingUnreadMessages(room, base.selfId, isHyphaBot);
+  // Archived rooms stay out of badges — mark-as-read often never runs there
+  // (NEW divider jumps away from bottom; composer locked), so unread stuck.
+  const unread = base.archived
+    ? 0
+    : countIncomingUnreadMessages(room, base.selfId, isHyphaBot);
   const searchMembers =
     kind === 'group'
       ? base.others.map((member) => ({
@@ -894,6 +898,8 @@ function roomStamp(room: Room, selfId: string | null) {
     room.getJoinedMemberCount?.() ?? 0,
     room.getMembers?.().length ?? 0,
     isArchivedGroupRoom(room) ? '1' : '0',
+    // Bust cache so archived rows rebuild with unread forced to 0.
+    'unreadPolicy:archived0',
     room.name || '',
     isRememberedGroupChatRoom(room.roomId) ? '1' : '0',
     isRememberedBoundChatRoom(room.roomId) ? '1' : '0',
@@ -1951,6 +1957,8 @@ export function MyConnections({
   const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
   const [synced, setSynced] = useState(false);
   const [initialSyncComplete, setInitialSyncComplete] = useState(false);
+  /** One-shot warm paint from the live Matrix client (avoids remount skeleton). */
+  const matrixWarmStartedRef = useRef(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedById, setSelectedById] = useState<
     Map<number, ConnectionMemberRow>
@@ -2239,6 +2247,31 @@ export function MyConnections({
     wantsFullDirectory,
   ]);
 
+  useLayoutEffect(() => {
+    if (!client || matrixWarmStartedRef.current) return;
+    matrixWarmStartedRef.current = true;
+    const nextRows = conversationRowsSnapshot(client);
+    const nextChannels = joinedChannelSnapshots(client);
+    const state = client.getSyncState();
+    const nextSynced =
+      state === SyncState.Prepared || state === SyncState.Syncing;
+    const nextInitial =
+      state === SyncState.Prepared ||
+      (typeof client.isInitialSyncComplete === 'function' &&
+        client.isInitialSyncComplete());
+    const hasConversations =
+      nextRows.some((row) => row.kind === 'person' || row.kind === 'group') ||
+      nextChannels.length > 0 ||
+      recentDirectRoomIds(client).length > 0;
+    setRows(nextRows);
+    setChannels(nextChannels);
+    if (nextSynced) setSynced(true);
+    if (nextInitial) setInitialSyncComplete(true);
+    if (nextSynced && (nextInitial || hasConversations)) {
+      setListSettled(true);
+    }
+  }, [client]);
+
   useEffect(() => {
     if (!client) {
       setSynced(false);
@@ -2252,6 +2285,7 @@ export function MyConnections({
         setRows([]);
         setChannels([]);
         setListSettled(false);
+        matrixWarmStartedRef.current = false;
       }
       return;
     }
