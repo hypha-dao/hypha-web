@@ -10,6 +10,7 @@ import {
   type CoherenceUpvoteSummary,
   type SignalSort,
   type SignalTimeFrame,
+  type SignalUpvoteSummaryState,
   type SignalVotingMode,
 } from '@hypha-platform/core/client';
 import {
@@ -89,6 +90,11 @@ type SignalUpvoteButtonProps = {
   variant?: 'feed' | 'page';
   sort?: SignalSort;
   timeFrame?: SignalTimeFrame;
+  /**
+   * `ready` is a settled list, including a cached one. A missing summary is
+   * then zero. `loading` keeps the ellipsis. `error` must not display as zero.
+   */
+  summaryState?: SignalUpvoteSummaryState;
   className?: string;
 };
 
@@ -110,6 +116,7 @@ export function SignalUpvoteButton({
   variant = 'feed',
   sort = 'top-voters',
   timeFrame = 'week',
+  summaryState = 'ready',
   className,
 }: SignalUpvoteButtonProps) {
   const t = useTranslations('SignalCard');
@@ -227,11 +234,14 @@ export function SignalUpvoteButton({
   const cellMeasure = signalUpvoteCellMeasure({
     sort,
     timeFrame,
-    upvotes: upvotes ?? null,
+    upvotes: localSummary ?? upvotes ?? null,
+    summaryState,
   });
   const figureLabel =
     cellMeasure.kind === 'loading'
       ? '…'
+      : cellMeasure.kind === 'error'
+      ? '—'
       : cellMeasure.kind === 'count'
       ? format.number(cellMeasure.count)
       : formatVotingPowerCompact(

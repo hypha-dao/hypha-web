@@ -76,7 +76,7 @@ import { mutate } from 'swr';
 import { useParams, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { CoherenceTypeButton } from './coherence-type-button';
+import { SignalTypePickerGrid, SignalTypeSection } from './signal-type-section';
 import { ButtonClose } from '../../common/button-close';
 import { ButtonBack } from '../../common/button-back';
 import { CardButtonColorVariant } from '../../common/card-button';
@@ -1231,7 +1231,7 @@ export const CreateSignalForm = ({
                 </div>
               ) : null}
             </section>
-            <section className="flex flex-col gap-6 border-t border-border pb-8 pt-8">
+            <SignalTypeSection>
               <FormField
                 control={form.control}
                 name="type"
@@ -1242,34 +1242,22 @@ export const CreateSignalForm = ({
                         {t('type')} <RequirementMark />
                       </FormLabel>
                       <FormControl>
-                        <span className="grid w-full grid-cols-2 gap-2">
-                          {typeOptions.map((option) => (
-                            <CoherenceTypeButton
-                              key={`type-option-${option.type}`}
-                              icon={option.icon}
-                              title={option.title}
-                              description={option.description}
-                              colorVariant={option.colorVariant}
-                              selected={field.value === option.type}
-                              onClick={() => {
-                                form.setValue(
-                                  'type',
-                                  option.type as FormValues['type'],
-                                  {
-                                    shouldDirty: true,
-                                  },
-                                );
-                              }}
-                            />
-                          ))}
-                        </span>
+                        <SignalTypePickerGrid
+                          options={typeOptions}
+                          selected={field.value}
+                          onSelect={(type) => {
+                            form.setValue('type', type as FormValues['type'], {
+                              shouldDirty: true,
+                            });
+                          }}
+                        />
                       </FormControl>
                     </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </section>
+            </SignalTypeSection>
             {mode === 'create' && votingModeStatus === 'error' ? (
               <section className="flex flex-col gap-3 border-t border-border pt-8">
                 <Label className="text-foreground">

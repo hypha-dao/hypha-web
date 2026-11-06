@@ -7,29 +7,12 @@ import {
 import { and, eq, inArray } from 'drizzle-orm';
 import { DbConfig } from '../../server';
 import {
-  SIGNAL_RECENT_WINDOWS,
-  SIGNAL_RECENT_WINDOW_MS,
-} from '../signal-ranking';
-import type {
-  CoherenceUpvoteSummary,
-  CoherenceUpvoter,
-  SignalRecentWindow,
-  SignalWindowUpvotes,
-} from '../types';
+  aggregateCoherenceUpvoteSummaries,
+  emptyCoherenceUpvoteSummary,
+} from '../coherence-upvote-summary';
+import type { CoherenceUpvoteSummary } from '../types';
 
-const MAX_VOTERS_PER_SUMMARY = 12;
-
-function emptyRecentTotals(): Record<
-  SignalRecentWindow,
-  { votingPower: bigint; voters: number }
-> {
-  return Object.fromEntries(
-    SIGNAL_RECENT_WINDOWS.map((window) => [
-      window,
-      { votingPower: 0n, voters: 0 },
-    ]),
-  ) as Record<SignalRecentWindow, { votingPower: bigint; voters: number }>;
-}
+export { emptyCoherenceUpvoteSummary };
 
 export const EMPTY_COHERENCE_UPVOTE_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
@@ -87,75 +70,11 @@ export const findCoherenceUpvoteSummaries = async (
     .innerJoin(people, eq(coherenceUpvotes.personId, people.id))
     .where(inArray(coherenceUpvotes.coherenceId, coherenceIds));
 
-  const summaries: Record<number, CoherenceUpvoteSummary> = {};
-  const totals = new Map<number, bigint>();
-  const recent = new Map<
-    number,
-    Record<SignalRecentWindow, { votingPower: bigint; voters: number }>
-  >();
-  const now = Date.now();
-
-  for (const row of rows) {
-    const summary = (summaries[row.coherenceId] ??= {
-      ...EMPTY_COHERENCE_UPVOTE_SUMMARY,
-      voters: [],
-    });
-    let power: bigint;
-    try {
-      power = BigInt(row.votingPower);
-    } catch {
-      power = 0n;
-    }
-    totals.set(row.coherenceId, (totals.get(row.coherenceId) ?? 0n) + power);
-    const castAt = new Date(row.createdAt).getTime();
-    let windows = recent.get(row.coherenceId);
-    if (!windows) {
-      windows = emptyRecentTotals();
-      recent.set(row.coherenceId, windows);
-    }
-    for (const window of SIGNAL_RECENT_WINDOWS) {
-      if (castAt < now - SIGNAL_RECENT_WINDOW_MS[window]) continue;
-      windows[window].votingPower += power;
-      windows[window].voters += 1;
-    }
-    summary.upvoteCount += 1;
-    summary.tokenDecimals = Math.max(summary.tokenDecimals, row.tokenDecimals);
-    const voter: CoherenceUpvoter = {
-      personId: row.personId,
-      name: [row.name, row.surname].filter(Boolean).join(' ').trim() || null,
-      avatarUrl: row.avatarUrl,
-      votingPower: power.toString(),
-    };
-    summary.voters.push(voter);
-    if (viewerPersonId != null && row.personId === viewerPersonId) {
-      summary.myUpvote = {
-        votingPower: row.votingPower,
-        maxVotingPower: row.maxVotingPower,
-      };
-    }
-  }
-
-  for (const [coherenceId, summary] of Object.entries(summaries)) {
-    const id = Number(coherenceId);
-    summary.totalVotingPower = (totals.get(id) ?? 0n).toString();
-    const windows = recent.get(id) ?? emptyRecentTotals();
-    summary.recentUpvotes = Object.fromEntries(
-      SIGNAL_RECENT_WINDOWS.map((window) => [
-        window,
-        {
-          votingPower: windows[window].votingPower.toString(),
-          voters: windows[window].voters,
-        },
-      ]),
-    ) as Record<SignalRecentWindow, SignalWindowUpvotes>;
-    summary.voters.sort((a, b) => {
-      const diff = BigInt(b.votingPower) - BigInt(a.votingPower);
-      return diff > 0n ? 1 : diff < 0n ? -1 : 0;
-    });
-    summary.voters = summary.voters.slice(0, MAX_VOTERS_PER_SUMMARY);
-  }
-
-  return summaries;
+  return aggregateCoherenceUpvoteSummaries({
+    coherenceIds,
+    rows,
+    viewerPersonId,
+  });
 };
 
 export const upsertCoherenceUpvote = async (

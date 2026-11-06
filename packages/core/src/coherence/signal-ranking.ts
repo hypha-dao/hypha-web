@@ -93,7 +93,35 @@ export function signalVotersInTimeFrame(
 export type SignalUpvoteCellMeasure =
   | { kind: 'count'; count: number }
   | { kind: 'power'; raw: string; tokenDecimals: number }
-  | { kind: 'loading' };
+  | { kind: 'loading' }
+  | { kind: 'error' };
+
+/**
+ * Whether the list payload's upvote field is still in flight, came back from
+ * a successful fetch, or failed. A settled payload can omit the summary when
+ * nobody has voted (older cached lists). That is a zero, not a pending request.
+ */
+export type SignalUpvoteSummaryState = 'loading' | 'ready' | 'error';
+
+/**
+ * Cached and fresh lists that already have rows are settled, even while a
+ * newer request is loading or has failed. Only a request with no payload yet
+ * is pending, and a failure with no payload must not be shown as zero.
+ */
+export function signalListUpvoteSummaryState({
+  hasSettledList,
+  isLoading,
+  hasError,
+}: {
+  hasSettledList: boolean;
+  isLoading: boolean;
+  hasError: boolean;
+}): SignalUpvoteSummaryState {
+  if (hasSettledList) return 'ready';
+  if (hasError) return 'error';
+  if (isLoading) return 'loading';
+  return 'ready';
+}
 
 /**
  * Feed cell figure. Ordinary sorts keep the voter count. Top by voting power
@@ -104,20 +132,26 @@ export function signalUpvoteCellMeasure({
   sort,
   timeFrame,
   upvotes,
+  summaryState = 'ready',
 }: {
   sort: SignalSort;
   timeFrame: SignalTimeFrame;
   upvotes?: CoherenceUpvoteSummary | null;
+  summaryState?: SignalUpvoteSummaryState;
 }): SignalUpvoteCellMeasure {
   if (sort !== 'top-power') {
     return { kind: 'count', count: upvotes?.upvoteCount ?? 0 };
   }
-  if (upvotes == null) return { kind: 'loading' };
-  return {
-    kind: 'power',
-    raw: signalVotingPowerInTimeFrame(upvotes, timeFrame).toString(),
-    tokenDecimals: upvotes.tokenDecimals,
-  };
+  if (upvotes != null) {
+    return {
+      kind: 'power',
+      raw: signalVotingPowerInTimeFrame(upvotes, timeFrame).toString(),
+      tokenDecimals: upvotes.tokenDecimals,
+    };
+  }
+  if (summaryState === 'loading') return { kind: 'loading' };
+  if (summaryState === 'error') return { kind: 'error' };
+  return { kind: 'power', raw: '0', tokenDecimals: 0 };
 }
 
 /** Case-insensitive title match. Blank query matches every signal. */

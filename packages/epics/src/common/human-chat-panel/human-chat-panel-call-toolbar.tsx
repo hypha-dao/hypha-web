@@ -4,6 +4,10 @@ import { Phone, Video } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import type { SpaceGroupCallState } from '@hypha-platform/core/client';
+import {
+  callToolbarButtonMessageKeys,
+  type CallToolbarLabelScope,
+} from './call-toolbar-labels';
 
 type HumanChatPanelCallToolbarProps = {
   callState: SpaceGroupCallState;
@@ -11,6 +15,11 @@ type HumanChatPanelCallToolbarProps = {
   disabled: boolean;
   /** True when the room GroupCall has participants and local user is not in the session. */
   roomCallInProgressToJoin?: boolean;
+  /**
+   * Signal threads name the call as a signal. Space, DM, and group chats keep
+   * the shared room labels.
+   */
+  labelScope?: CallToolbarLabelScope;
   onAudio: () => void;
   onVideo: () => void;
 };
@@ -25,10 +34,15 @@ export function HumanChatPanelCallToolbar({
   callKind,
   disabled,
   roomCallInProgressToJoin = false,
+  labelScope = 'room',
   onAudio,
   onVideo,
 }: HumanChatPanelCallToolbarProps) {
   const t = useTranslations('HumanChatPanel');
+  const labels = callToolbarButtonMessageKeys(
+    labelScope,
+    roomCallInProgressToJoin,
+  );
 
   const busy =
     callState === 'initializing' ||
@@ -70,12 +84,8 @@ export function HumanChatPanelCallToolbar({
           !audioIsActive && 'text-muted-foreground',
           audioIsActive && activeCallChip,
         )}
-        title={
-          roomCallInProgressToJoin ? t('callJoinWithAudio') : t('callAudio')
-        }
-        aria-label={
-          roomCallInProgressToJoin ? t('callJoinWithAudio') : t('callAudio')
-        }
+        title={t(labels.audio)}
+        aria-label={t(labels.audio)}
         aria-pressed={audioIsActive}
         aria-busy={busy}
       >
@@ -95,12 +105,8 @@ export function HumanChatPanelCallToolbar({
           !videoIsActive && 'text-muted-foreground',
           videoIsActive && activeCallChip,
         )}
-        title={
-          roomCallInProgressToJoin ? t('callJoinWithVideo') : t('callVideo')
-        }
-        aria-label={
-          roomCallInProgressToJoin ? t('callJoinWithVideo') : t('callVideo')
-        }
+        title={t(labels.video)}
+        aria-label={t(labels.video)}
         aria-pressed={videoIsActive}
         aria-busy={busy}
       >

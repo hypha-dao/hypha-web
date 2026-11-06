@@ -3,7 +3,7 @@ import { after } from 'next/server';
 import type { DbConfig } from '../../server';
 import type { CoherenceUpvoteSummary } from '../types';
 import {
-  EMPTY_COHERENCE_UPVOTE_SUMMARY,
+  emptyCoherenceUpvoteSummary,
   findCoherenceUpvoteSummaries,
   removeCoherenceUpvote,
   upsertCoherenceUpvote,
@@ -60,7 +60,7 @@ export async function getCoherenceUpvoteSummary(
     { coherenceIds: [coherenceId], viewerPersonId },
     { db },
   );
-  return summaries[coherenceId] ?? EMPTY_COHERENCE_UPVOTE_SUMMARY;
+  return summaries[coherenceId] ?? emptyCoherenceUpvoteSummary();
 }
 
 /**

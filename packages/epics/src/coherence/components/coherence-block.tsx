@@ -12,6 +12,7 @@ import {
   parseSignalSort,
   parseSignalTimeFrame,
   rankSignals,
+  signalListUpvoteSummaryState,
   useFindCoherences,
   useSpaceBySlug,
   type SignalSort,
@@ -171,6 +172,11 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
     return rankSignals(matched, { sort, timeFrame });
   }, [signals, sort, timeFrame, titleQuery]);
   const activity = useSignalRoomActivity(ranked);
+  const upvoteSummaryState = signalListUpvoteSummaryState({
+    hasSettledList: Boolean(signals),
+    isLoading: isSignalsLoading,
+    hasError: signalsError != null,
+  });
   const hasSignals = Boolean(signals?.length);
   const hasCurrentQuerySignals = hasSignals && !isPreviousSignals;
   const isLoading = isSpaceLoading || (isSignalsLoading && !hasSignals);
@@ -265,6 +271,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
                 refresh={refresh}
                 sort={sort}
                 timeFrame={timeFrame}
+                summaryState={upvoteSummaryState}
               />
             ) : null,
           )}

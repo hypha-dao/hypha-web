@@ -6,6 +6,8 @@ import {
   parseSignalSort,
   parseSignalTimeFrame,
   rankSignals,
+  SIGNAL_TIME_FRAMES,
+  signalListUpvoteSummaryState,
   signalMatchesTitle,
   signalUpvoteCellMeasure,
   signalVotersInTimeFrame,
@@ -200,14 +202,121 @@ describe('signalUpvoteCellMeasure', () => {
     ).toEqual({ kind: 'power', raw: '0', tokenDecimals: 0 });
   });
 
-  it('treats a missing summary as loading only for top by voting power', () => {
+  it('shows a settled missing summary as zero voting power for every time frame', () => {
+    for (const timeFrame of SIGNAL_TIME_FRAMES) {
+      expect(
+        signalUpvoteCellMeasure({
+          sort: 'top-power',
+          timeFrame,
+          upvotes: undefined,
+        }),
+      ).toEqual({ kind: 'power', raw: '0', tokenDecimals: 0 });
+      expect(
+        signalUpvoteCellMeasure({
+          sort: 'top-power',
+          timeFrame,
+          upvotes: null,
+          summaryState: 'ready',
+        }),
+      ).toEqual({ kind: 'power', raw: '0', tokenDecimals: 0 });
+    }
+  });
+
+  it('keeps the ellipsis only while a missing summary is still loading', () => {
+    for (const timeFrame of SIGNAL_TIME_FRAMES) {
+      expect(
+        signalUpvoteCellMeasure({
+          sort: 'top-power',
+          timeFrame,
+          upvotes: undefined,
+          summaryState: 'loading',
+        }),
+      ).toEqual({ kind: 'loading' });
+    }
+  });
+
+  it('does not turn a failed missing summary into zero', () => {
+    for (const timeFrame of SIGNAL_TIME_FRAMES) {
+      const measure = signalUpvoteCellMeasure({
+        sort: 'top-power',
+        timeFrame,
+        upvotes: null,
+        summaryState: 'error',
+      });
+      expect(measure).toEqual({ kind: 'error' });
+      expect(measure).not.toEqual(
+        expect.objectContaining({ kind: 'power', raw: '0' }),
+      );
+    }
+  });
+
+  it('keeps a cached summary while a later refresh is loading or has failed', () => {
     expect(
       signalUpvoteCellMeasure({
         sort: 'top-power',
         timeFrame: 'all',
-        upvotes: undefined,
+        upvotes: old.upvotes,
+        summaryState: 'loading',
       }),
-    ).toEqual({ kind: 'loading' });
+    ).toEqual({ kind: 'power', raw: '50', tokenDecimals: 0 });
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-power',
+        timeFrame: 'month',
+        upvotes: crowd.upvotes,
+        summaryState: 'error',
+      }),
+    ).toEqual({ kind: 'power', raw: '20', tokenDecimals: 0 });
+  });
+});
+
+describe('signalListUpvoteSummaryState', () => {
+  it('treats a visible list as settled during refresh and revalidate errors', () => {
+    expect(
+      signalListUpvoteSummaryState({
+        hasSettledList: true,
+        isLoading: true,
+        hasError: false,
+      }),
+    ).toBe('ready');
+    expect(
+      signalListUpvoteSummaryState({
+        hasSettledList: true,
+        isLoading: false,
+        hasError: true,
+      }),
+    ).toBe('ready');
+  });
+
+  it('keeps a payload-less failure distinct from zero and from the first load', () => {
+    expect(
+      signalListUpvoteSummaryState({
+        hasSettledList: false,
+        isLoading: true,
+        hasError: true,
+      }),
+    ).toBe('error');
+    expect(
+      signalListUpvoteSummaryState({
+        hasSettledList: false,
+        isLoading: false,
+        hasError: true,
+      }),
+    ).toBe('error');
+    expect(
+      signalListUpvoteSummaryState({
+        hasSettledList: false,
+        isLoading: true,
+        hasError: false,
+      }),
+    ).toBe('loading');
+    expect(
+      signalListUpvoteSummaryState({
+        hasSettledList: false,
+        isLoading: false,
+        hasError: false,
+      }),
+    ).toBe('ready');
   });
 });
 

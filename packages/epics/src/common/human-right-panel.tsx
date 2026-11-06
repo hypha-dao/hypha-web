@@ -6156,6 +6156,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                         callKind={spaceCallKind}
                         disabled={!callUiEnabled}
                         roomCallInProgressToJoin={spaceCallToolbarJoinHint}
+                        labelScope={signalCallThread ? 'signal' : 'room'}
                         onAudio={() => {
                           handleCallAudio();
                         }}

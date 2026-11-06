@@ -19,6 +19,13 @@ vi.mock('../server/coherence-upvotes', () => ({
     voters: [],
     myUpvote: null,
   },
+  emptyCoherenceUpvoteSummary: () => ({
+    totalVotingPower: '0',
+    upvoteCount: 0,
+    tokenDecimals: 0,
+    voters: [],
+    myUpvote: null,
+  }),
   findCoherenceUpvoteSummaries: vi.fn().mockResolvedValue({}),
   removeCoherenceUpvote: vi.fn(),
   upsertCoherenceUpvote: vi.fn(),

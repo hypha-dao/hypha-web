@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Download } from 'lucide-react';
 import { useFormatter, useNow, useTranslations } from 'next-intl';
 import {
+  signalListUpvoteSummaryState,
   type Coherence,
   useCoherenceMutationsWeb2Rsc,
   useFindCoherences,
@@ -546,6 +547,11 @@ export function SignalPage({
                 refresh={refresh}
                 archived={signal.archived}
                 variant="page"
+                summaryState={signalListUpvoteSummaryState({
+                  hasSettledList: Boolean(coherences),
+                  isLoading: isSignalsLoading,
+                  hasError: signalsError != null,
+                })}
               />
               <h1 className="craft-page-title min-w-0 text-6 leading-tight">
                 {signal.title}
