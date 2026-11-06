@@ -34,7 +34,7 @@ import {
   PostNotifyProposalCreatedInput,
 } from '@hypha-platform/core/client';
 import { useParams, usePathname, useRouter } from 'next/navigation';
-import { getDurationParts } from '@hypha-platform/ui-utils';
+import { cn, getDurationParts } from '@hypha-platform/ui-utils';
 
 import { useTheme } from 'next-themes';
 import { Locale } from '@hypha-platform/i18n';
@@ -42,7 +42,7 @@ import { ButtonBack, ButtonClose } from '../../common';
 import { useProposalNotifications } from '../../governance/hooks';
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { RotateCcw } from 'lucide-react';
+import { Camera, RotateCcw, Video } from 'lucide-react';
 import {
   RESUBMIT_FORM_DATA_KEY,
   RESUBMIT_PROPOSAL_DATA_KEY,
@@ -50,6 +50,22 @@ import {
   isLegacyGenericResubmitSegment,
 } from '../../utils/resubmit-proposal-template';
 import { revalidateSpaceMemoryOrg } from '../../coherence/hooks/use-space-memory-org';
+import {
+  asMediaItems,
+  SIGNAL_DOCUMENT_LIMIT,
+  SIGNAL_IMAGE_ACCEPT,
+  SIGNAL_IMAGE_LIMIT,
+  SIGNAL_MEDIA_MAX_BYTES,
+  type SignalMediaItem,
+} from '../../coherence/utils/signal-media';
+import { isImageAttachment } from '../../coherence/utils/signal-video';
+
+const MEMORY_DOCUMENT_ACCEPT = 'application/pdf,.pdf';
+const MEMORY_ATTACHMENT_LIMIT = Math.min(
+  SIGNAL_IMAGE_LIMIT,
+  SIGNAL_DOCUMENT_LIMIT,
+  5,
+);
 
 /** Session payload for `RESUBMIT_FORM_DATA_KEY` (lead image / attachments bridge). */
 export type ResubmitFormData = {
@@ -182,6 +198,42 @@ export function CreateAgreementBaseFields({
   const [existingAttachments, setExistingAttachments] = React.useState<
     (string | { name: string; url: string })[]
   >([]);
+  const [mediaKind, setMediaKind] = React.useState<'images' | 'video' | null>(
+    null,
+  );
+  const [imageFiles, setImageFiles] = React.useState<File[]>([]);
+  const [documentFiles, setDocumentFiles] = React.useState<File[]>([]);
+  const [keptImages, setKeptImages] = React.useState<SignalMediaItem[]>([]);
+  const [keptDocuments, setKeptDocuments] = React.useState<SignalMediaItem[]>(
+    [],
+  );
+
+  React.useEffect(() => {
+    if (mode !== 'memory') return;
+    const images = asMediaItems(existingAttachments).filter((item) =>
+      isImageAttachment(item.url, item.name),
+    );
+    const documents = asMediaItems(existingAttachments).filter(
+      (item) => !isImageAttachment(item.url, item.name),
+    );
+    setKeptImages(images);
+    setKeptDocuments(documents);
+    if (images.length > 0) setMediaKind((prev) => prev ?? 'images');
+  }, [existingAttachments, mode]);
+
+  React.useEffect(() => {
+    if (mode !== 'memory') return;
+    const merged = [
+      ...keptImages,
+      ...imageFiles,
+      ...keptDocuments,
+      ...documentFiles,
+    ].slice(0, MEMORY_ATTACHMENT_LIMIT);
+    form.setValue('attachments', merged.length > 0 ? merged : undefined, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [documentFiles, form, imageFiles, keptDocuments, keptImages, mode]);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -233,6 +285,12 @@ export function CreateAgreementBaseFields({
   const hasAppliedSpaceBannerDefaultRef = React.useRef(false);
 
   React.useEffect(() => {
+    // Space Memory stores real images in attachments (Signals pattern) — do not
+    // auto-copy the space hero into leadImage.
+    if (mode === 'memory') {
+      return;
+    }
+
     if (hideLeadImage || resubmitFormData?.leadImage?.trim()) {
       return;
     }
@@ -266,7 +324,7 @@ export function CreateAgreementBaseFields({
 
     form.setValue('leadImage', bannerUrl, { shouldValidate: true });
     hasAppliedSpaceBannerDefaultRef.current = true;
-  }, [hideLeadImage, space?.leadImage, resubmitFormData, form]);
+  }, [hideLeadImage, space?.leadImage, resubmitFormData, form, mode]);
 
   const spaceIdBigInt =
     typeof space?.web3SpaceId === 'number'
@@ -607,62 +665,142 @@ export function CreateAgreementBaseFields({
         ) : null}
         <section className="min-w-0 max-w-full overflow-hidden rounded-none border border-border/70 bg-background-2 p-4 lg:p-6">
           {mode === 'memory' ? (
-            <FormField
-              control={form.control}
-              name="attachments"
-              render={({ field }) => {
-                const fieldValue = field.value || [];
-                const newFiles = Array.isArray(fieldValue)
-                  ? fieldValue.filter((item) => item instanceof File)
-                  : [];
-                const mergedAttachments: AttachmentListItem[] = [
-                  ...existingAttachments,
-                  ...newFiles,
-                ];
-
-                return (
-                  <FormItem className="mb-6 min-w-0 max-w-full">
-                    <FormLabel className="mb-2 block gap-1 text-sm font-medium text-foreground">
-                      {tCoherence('newMemoryUploadDocumentsTitle')}{' '}
-                      <RequirementMark />
-                    </FormLabel>
-                    <FormControl>
-                      <AddAttachment
-                        label={attachmentLabel}
-                        onChange={(files) => {
-                          field.onChange(files);
-                          form.setValue(
-                            'attachments',
-                            [...existingAttachments, ...files],
-                            { shouldValidate: true, shouldDirty: true },
-                          );
-                        }}
-                        onExistingAttachmentsChange={(updated) => {
-                          setExistingAttachments(updated);
-                          form.setValue(
-                            'attachments',
-                            [...updated, ...newFiles],
-                            { shouldValidate: true, shouldDirty: true },
-                          );
-                        }}
-                        value={
-                          mergedAttachments.length > 0
-                            ? mergedAttachments
-                            : undefined
-                        }
-                        defaultAttachments={
-                          existingAttachments.length > 0
-                            ? existingAttachments
-                            : undefined
-                        }
-                      />
-                    </FormControl>
-                    <FormDescription />
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
+            <div className="mb-6 flex flex-col gap-6">
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-foreground">
+                  {tCoherence('signalFormMedia')} <RequirementMark />
+                </p>
+                <div
+                  role="group"
+                  aria-label={tCoherence('signalFormMedia')}
+                  className="flex gap-2"
+                >
+                  {(
+                    [
+                      {
+                        kind: 'images' as const,
+                        label: tCoherence('signalFormImage'),
+                        Icon: Camera,
+                      },
+                      {
+                        kind: 'video' as const,
+                        label: tCoherence('signalFormMediaVideo'),
+                        Icon: Video,
+                      },
+                    ] as const
+                  ).map(({ kind, label, Icon }) => {
+                    const selected = mediaKind === kind;
+                    return (
+                      <button
+                        key={kind}
+                        type="button"
+                        aria-pressed={selected}
+                        disabled={isLoading}
+                        onClick={() => setMediaKind(kind)}
+                        style={{ width: 112, height: 112 }}
+                        className={cn(
+                          'flex flex-col items-center justify-center gap-2 border px-2',
+                          selected
+                            ? 'border-foreground bg-foreground text-background'
+                            : 'border-border bg-background text-foreground hover:bg-neutral-2',
+                        )}
+                      >
+                        <Icon
+                          className="size-5"
+                          strokeWidth={1.5}
+                          aria-hidden
+                        />
+                        <span className="text-center text-1 leading-tight">
+                          {label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {mediaKind === 'images' ? (
+                <div className="flex flex-col gap-2">
+                  <AddAttachment
+                    accept={SIGNAL_IMAGE_ACCEPT}
+                    maxFiles={Math.max(
+                      0,
+                      MEMORY_ATTACHMENT_LIMIT -
+                        keptImages.length -
+                        keptDocuments.length -
+                        documentFiles.length,
+                    )}
+                    maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+                    label={tCoherence('signalFormImageHint')}
+                    value={[...keptImages, ...imageFiles]}
+                    defaultAttachments={keptImages}
+                    onChange={setImageFiles}
+                    onExistingAttachmentsChange={(updated) =>
+                      setKeptImages(asMediaItems(updated))
+                    }
+                  />
+                </div>
+              ) : null}
+              {mediaKind === 'video' ? (
+                <FormField
+                  control={form.control}
+                  name="videoUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground">
+                        {tCoherence('signalFormVideo')}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="url"
+                          disabled={isLoading}
+                          placeholder="https://"
+                          value={
+                            typeof field.value === 'string' ? field.value : ''
+                          }
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {tCoherence('signalFormVideoHint')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : null}
+              <div className="flex min-w-0 max-w-full flex-col gap-2">
+                <p className="text-sm font-medium text-foreground">
+                  {tCoherence('signalFormAttachments')}
+                </p>
+                <AddAttachment
+                  accept={MEMORY_DOCUMENT_ACCEPT}
+                  maxFiles={Math.max(
+                    0,
+                    MEMORY_ATTACHMENT_LIMIT -
+                      keptImages.length -
+                      keptDocuments.length -
+                      imageFiles.length,
+                  )}
+                  maxBytes={SIGNAL_MEDIA_MAX_BYTES}
+                  label={
+                    tCoherence.has('newMemoryDocumentHint')
+                      ? tCoherence('newMemoryDocumentHint')
+                      : attachmentLabel
+                  }
+                  value={[...keptDocuments, ...documentFiles]}
+                  defaultAttachments={keptDocuments}
+                  onChange={setDocumentFiles}
+                  onExistingAttachmentsChange={(updated) =>
+                    setKeptDocuments(asMediaItems(updated))
+                  }
+                />
+                <FormField
+                  control={form.control}
+                  name="attachments"
+                  render={() => <FormMessage />}
+                />
+              </div>
+            </div>
           ) : null}
           <FormField
             control={form.control}

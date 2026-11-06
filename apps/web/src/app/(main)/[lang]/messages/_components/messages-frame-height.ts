@@ -28,6 +28,11 @@ export function messagesVisibleViewportHeight(input: {
  * Cap for the conversation list so it scrolls inside its frame while the
  * page still moves. Use a viewport budget — never frameTop from a scrolled
  * page, or the list grows without bound as you scroll.
+ *
+ * Do not subtract the visible site footer here. Shrinking the list when the
+ * footer peeks shortens the page, which peeks more footer, which shrinks the
+ * list again — a feedback loop that leaves a permanent white dead zone under
+ * the inbox and lifts the chat rail off the viewport bottom.
  */
 export function messagesListFrameHeight(input: {
   viewportBottom: number;

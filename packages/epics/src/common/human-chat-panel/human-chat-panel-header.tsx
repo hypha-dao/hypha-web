@@ -98,8 +98,15 @@ type HumanChatPanelHeaderProps = {
   channelIcon?: RoomChoiceIcon;
   /** Aria + tooltip for `channelIcon` (defaults to the title). */
   channelIconLabel?: string;
-  /** Extra header actions (group rename/archive). Same 36px control row. */
+  /** Extra header actions. Same 36px control row (left cluster). */
   trailingEnd?: ReactNode;
+  /**
+   * When set, the title + avatar cluster becomes a control (e.g. open group
+   * details). Prefer this over a left-chrome `⋯` for group management.
+   */
+  onTitleActivate?: () => void;
+  /** Accessible name for the title control when `onTitleActivate` is set. */
+  titleActivateLabel?: string;
   /** Two rooms that sit side by side, such as a space and its ecosystem. */
   roomChoice?: {
     value: string;
@@ -121,6 +128,8 @@ export function HumanChatPanelHeader({
   channelIcon,
   channelIconLabel,
   trailingEnd,
+  onTitleActivate,
+  titleActivateLabel,
   roomChoice,
 }: HumanChatPanelHeaderProps) {
   const { setOpen, setOpenMobile } = useSidebar();
@@ -131,9 +140,10 @@ export function HumanChatPanelHeader({
   const glyphLabel = channelIconLabel?.trim() || iconTitle?.trim() || undefined;
   const displayTitle = (title ?? iconTitle)?.trim() || t('title');
   const displayDescription = description;
+  const titleActivateAria = titleActivateLabel?.trim() || t('groupDetailsAria');
 
   return (
-    <div className="flex h-[var(--menu-top-height,70px)] min-w-0 items-center gap-2 border-b border-border/70 bg-page-background px-3 dark:bg-background-2">
+    <div className="flex h-[var(--menu-top-height,70px)] min-w-0 items-center gap-2 border-b border-border/70 bg-page-background px-3 dark:bg-background-2 select-none [-webkit-touch-callout:none]">
       <div className="flex shrink-0 items-center gap-0.5">
         {onBack ? (
           <button
@@ -259,33 +269,83 @@ export function HumanChatPanelHeader({
           </>
         ) : displayTitle || titleStart || ChannelGlyph ? (
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
-            {titleStart ? (
-              <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden">
-                {titleStart}
+            {onTitleActivate ? (
+              // Use a div control — a native <button> cannot wrap the avatar
+              // cluster / title stack (div/p), and React 19 DOM repair of that
+              // invalid nesting can throw and trip HumanChatPanelErrorBoundary.
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={onTitleActivate}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onTitleActivate();
+                  }
+                }}
+                aria-label={titleActivateAria}
+                title={titleActivateAria}
+                className={cn(
+                  'flex min-w-0 max-w-full cursor-pointer items-center justify-end gap-2 rounded-none px-1 py-0.5',
+                  'text-right transition-colors hover:bg-foreground/[0.04]',
+                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                )}
+              >
+                {titleStart ? (
+                  <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden">
+                    {titleStart}
+                  </div>
+                ) : null}
+                {displayTitle ? (
+                  <div className="flex min-w-0 flex-col items-end justify-center gap-0 overflow-hidden">
+                    <span
+                      className="w-full truncate text-right text-sm leading-5 font-medium text-foreground"
+                      title={displayTitle}
+                    >
+                      {displayTitle}
+                    </span>
+                    {displayDescription ? (
+                      <p
+                        className="w-full truncate text-right text-[10px] leading-3 text-muted-foreground"
+                        title={displayDescription}
+                      >
+                        {displayDescription}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
-            ) : null}
-            {displayTitle ? (
-              <div className="flex min-w-0 flex-col items-end justify-center gap-0 overflow-hidden">
-                <span
-                  className="w-full truncate text-right text-sm leading-5 font-medium text-foreground"
-                  title={displayTitle}
-                >
-                  {displayTitle}
-                </span>
-                {displayDescription ? (
-                  <p
-                    className="w-full truncate text-right text-[10px] leading-3 text-muted-foreground"
-                    title={displayDescription}
-                  >
+            ) : (
+              <>
+                {titleStart ? (
+                  <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden">
+                    {titleStart}
+                  </div>
+                ) : null}
+                {displayTitle ? (
+                  <div className="flex min-w-0 flex-col items-end justify-center gap-0 overflow-hidden">
+                    <span
+                      className="w-full truncate text-right text-sm leading-5 font-medium text-foreground"
+                      title={displayTitle}
+                    >
+                      {displayTitle}
+                    </span>
+                    {displayDescription ? (
+                      <p
+                        className="w-full truncate text-right text-[10px] leading-3 text-muted-foreground"
+                        title={displayDescription}
+                      >
+                        {displayDescription}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : displayDescription ? (
+                  <p className="min-w-0 truncate text-right text-[10px] leading-3 text-muted-foreground">
                     {displayDescription}
                   </p>
                 ) : null}
-              </div>
-            ) : displayDescription ? (
-              <p className="min-w-0 truncate text-right text-[10px] leading-3 text-muted-foreground">
-                {displayDescription}
-              </p>
-            ) : null}
+              </>
+            )}
             {ChannelGlyph ? (
               <TooltipProvider delayDuration={200}>
                 <Tooltip>

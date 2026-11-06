@@ -3306,6 +3306,7 @@
     "connectionRetryingLabel": "Reintentando…",
     "connectionLostRetry": "Reintentar",
     "chatThreadCrashedDescription": "Esta vista del chat se detuvo. Inténtalo de nuevo.",
+    "messageRowCrashed": "No se pudo mostrar este mensaje.",
     "openPanel": "Abrir panel de chat",
     "openPanelWithUnreadMentions": "Abrir panel de chat (menciones sin leer)",
     "hidePanel": "Ocultar panel de chat",
@@ -3328,6 +3329,11 @@
     "tabMentions": "Menciones",
     "tabMentionsWithMentionCount": "{tabLabel}, {count, plural, one {# mención sin leer} other {# menciones sin leer}}",
     "membersCount": "{count, plural, one {# miembro} other {# miembros}} · {online} en línea",
+    "roomOnlineCount": "{count, plural, one {# en línea} other {# en línea}}",
+    "viewMembersAria": "Ver miembros",
+    "memberOnline": "En línea",
+    "groupDetailsAria": "Detalles del grupo",
+    "groupDetailsDescription": "Renombra el grupo, añade personas o archívalo.",
     "you": "Tú",
     "reactButton": "Reaccionar",
     "addReactionButton": "Añadir reacción",
@@ -3831,7 +3837,7 @@
     "spaceMemoryOutline": "Índice",
     "newMemoryUploadDocumentsTitle": "Subir documentos",
     "newMemoryUploadingFiles": "Subiendo recuerdos del espacio...",
-    "newMemoryAttachmentsRequired": "Sube al menos un documento para este recuerdo.",
+    "newMemoryAttachmentsRequired": "Añade al menos una imagen, un enlace de vídeo o un documento para este recuerdo.",
     "newMemory": "Nueva memoria",
     "spaceMemoryEmptyTab": "No se encontraron elementos en esta vista.",
     "spaceMemoryAiChatEmpty": "Las memorias del chat con IA aún no están disponibles.",
@@ -4215,7 +4221,8 @@
     "spaceMemoryConversationsBody": "Resúmenes escritos de conversaciones.",
     "spaceMemoryCallsBody": "Grabaciones y transcripciones de llamadas.",
     "spaceMemoryAiDiscussionsBody": "Memorias del chat con IA.",
-    "spaceMemoryFilesBody": "Cargas y archivos adjuntos."
+    "spaceMemoryFilesBody": "Cargas y archivos adjuntos.",
+    "newMemoryDocumentHint": "PDF — máx. 16 MB"
   },
   "GlobalCallDock": {
     "callTitle": "Llamada - {count, plural, one {# miembro} other {# miembros}}",

@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Search } from 'lucide-react';
-import { Skeleton } from '@hypha-platform/ui';
+import { Search, UserPlus } from 'lucide-react';
+import { Button, Skeleton } from '@hypha-platform/ui';
 import {
   looksLikeTechnicalMatrixDisplayName,
   matrixUserIdToCanonicalPrivySub,
@@ -53,6 +53,8 @@ type HumanChatPanelMembersProps = {
   currentUserMatrixId?: string | null;
   /** Specialists already called in this room, first call first. */
   calledSpecialistIds?: readonly string[];
+  /** People-group chats: primary Add people entry (replaces header `⋯`). */
+  onAddPeople?: () => void;
 };
 
 export function HumanChatPanelMembers({
@@ -64,6 +66,7 @@ export function HumanChatPanelMembers({
   inOurCallSession = false,
   currentUserMatrixId,
   calledSpecialistIds: calledIds = [],
+  onAddPeople,
 }: HumanChatPanelMembersProps) {
   const t = useTranslations('HumanChatPanel');
   const tCoherence = useTranslations('CoherenceTab');
@@ -263,11 +266,26 @@ export function HumanChatPanelMembers({
           </p>
         </div>
       )}
-      <div className="px-1 pb-2 text-xs font-medium text-muted-foreground">
-        {t('membersCount', {
-          count: totalCount,
-          online: onlineCount,
-        })}
+      <div className="flex items-start justify-between gap-2 px-1 pb-2">
+        <div className="min-w-0 text-xs font-medium text-muted-foreground">
+          {t('membersCount', {
+            count: totalCount,
+            online: onlineCount,
+          })}
+        </div>
+        {onAddPeople ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            colorVariant="neutral"
+            className="h-8 shrink-0 gap-1.5 px-2.5 text-xs"
+            onClick={onAddPeople}
+          >
+            <UserPlus className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+            {t('addPeople')}
+          </Button>
+        ) : null}
       </div>
       <label className="relative mb-2 min-w-0">
         <span className="sr-only">{t('membersSearch')}</span>
@@ -346,13 +364,21 @@ export function HumanChatPanelMembers({
                       size="md"
                       className="rounded-full"
                       matrixUserId={member.userId}
+                      presence={member.online ? 'active' : 'offline'}
                     />
-                    <span className="truncate text-sm text-foreground">
-                      {label}
-                      {currentUserMatrixId &&
-                      member.userId === currentUserMatrixId
-                        ? ` (${t('you')})`
-                        : ''}
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-sm text-foreground">
+                        {label}
+                        {currentUserMatrixId &&
+                        member.userId === currentUserMatrixId
+                          ? ` (${t('you')})`
+                          : ''}
+                      </span>
+                      {member.online ? (
+                        <span className="truncate text-[11px] leading-3 text-emerald-700 dark:text-emerald-400">
+                          {t('memberOnline')}
+                        </span>
+                      ) : null}
                     </span>
                   </>
                 )}

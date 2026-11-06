@@ -57,8 +57,8 @@ export const useMembersSection = ({
 
   const loadMore = React.useCallback(() => {
     if (!pagination?.hasNextPage) return;
-    setPages(pages + 1);
-  }, [pages, pagination?.hasNextPage, setPages]);
+    setPages((prev) => prev + 1);
+  }, [pagination?.hasNextPage]);
 
   return {
     isLoading,

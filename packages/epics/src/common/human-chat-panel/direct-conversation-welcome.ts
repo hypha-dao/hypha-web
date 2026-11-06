@@ -26,7 +26,7 @@ export function directConversationWelcomeName({
 /**
  * Start-a-conversation copy is only for a room-less direct shell. After a
  * DM is bound, the empty timeline must not still say "Start a conversation".
- * Space chats with a welcome partner keep welcomeWith.
+ * Space channels leave welcomeText unset and use the generic space welcome.
  */
 export function directConversationEmptyWelcomeKey(input: {
   isDirectConversation: boolean;

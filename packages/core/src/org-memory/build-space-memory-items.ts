@@ -283,6 +283,23 @@ export function buildSpaceMemoryItemsFromDocuments(
       });
     });
 
+    // Same as Signals: optional video link on the document (YouTube / Vimeo / file).
+    const videoUrl = doc.videoUrl?.trim();
+    if (videoUrl) {
+      const safeVideo = normalizeHttpUrl(videoUrl);
+      if (safeVideo) {
+        items.push({
+          id: `${doc.id}:video`,
+          name: docTitle || 'Video',
+          url: safeVideo,
+          kind: 'video',
+          source: uploadSource,
+          uploadedAt: activityIso,
+          context: { ...baseContext },
+        });
+      }
+    }
+
     // Proposal/document leadImage is a decorative header banner (often auto-copied
     // from the space hero). Real uploads live in `attachments` — omit leadImage
     // from Space Memory / org_memory_assets.

@@ -453,18 +453,30 @@ export function useMainColumnScrollY(): number {
 
 /** Ref-count: freeze main-column scroll while e.g. proposal overlay scrolls its own panel (avoid double rails). */
 let overlayScrollLockDepth = 0;
-let lockedInsetEl: HTMLElement | null = null;
-let lockedInsetPrevOverflow = '';
+/**
+ * When this lock owns the freeze (no space-nav freeze already active), clear it
+ * on pop. Never clear a freeze we did not take.
+ */
+let overlayOwnsScrollFreeze = false;
 
+/**
+ * Freeze the main column while a modal overlay is open so only the overlay
+ * scrollbar is active.
+ *
+ * Prefer scroll freeze over `overflow: hidden`. MenuTop is `sticky` inside
+ * `PanelScrollInset` — hiding overflow unsticks it and the bar disappears
+ * above the fold (Notification Centre / proposal overlays on iOS).
+ */
 export function pushMainColumnOverlayScrollLock(): void {
   if (typeof document === 'undefined') return;
   overlayScrollLockDepth += 1;
   if (overlayScrollLockDepth !== 1) return;
-  const el = scrollRoot;
-  if (!el) return;
-  lockedInsetEl = el;
-  lockedInsetPrevOverflow = el.style.overflow;
-  el.style.overflow = 'hidden';
+  if (frozenScrollTop != null) {
+    overlayOwnsScrollFreeze = false;
+    return;
+  }
+  overlayOwnsScrollFreeze = true;
+  freezeMainColumnScrollAt(getMainColumnScrollY());
 }
 
 export function popMainColumnOverlayScrollLock(): void {
@@ -472,9 +484,7 @@ export function popMainColumnOverlayScrollLock(): void {
   if (overlayScrollLockDepth === 0) return;
   overlayScrollLockDepth -= 1;
   if (overlayScrollLockDepth !== 0) return;
-  const el = lockedInsetEl;
-  lockedInsetEl = null;
-  if (!el) return;
-  el.style.overflow = lockedInsetPrevOverflow;
-  lockedInsetPrevOverflow = '';
+  if (!overlayOwnsScrollFreeze) return;
+  overlayOwnsScrollFreeze = false;
+  clearMainColumnScrollFreeze();
 }

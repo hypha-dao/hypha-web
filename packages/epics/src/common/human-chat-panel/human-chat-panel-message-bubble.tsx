@@ -1668,7 +1668,14 @@ export function HumanChatPanelMessageBubble({
   const specialist = message.agentSpecialistId
     ? specialistById(message.agentSpecialistId)
     : null;
-  const specialistName = specialist ? tCoherence(specialist.roleKey) : null;
+  let specialistName: string | null = null;
+  if (specialist) {
+    try {
+      specialistName = tCoherence(specialist.roleKey);
+    } catch {
+      specialistName = null;
+    }
+  }
   const format = useFormatter();
   const { client } = useMatrix();
   const bodyResolveMx = useMemo(
@@ -1680,9 +1687,14 @@ export function HumanChatPanelMessageBubble({
   );
   const roomMemberUserIds = useMemo(() => {
     const room = client?.getRoom(roomId ?? undefined);
-    return (room?.getMembers() ?? [])
-      .map((member) => member.userId?.trim())
-      .filter((id): id is string => Boolean(id));
+    if (!room) return [];
+    try {
+      return (room.getMembers?.() ?? [])
+        .map((member) => member.userId?.trim())
+        .filter((id): id is string => Boolean(id));
+    } catch {
+      return [];
+    }
   }, [client, roomId]);
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
@@ -1705,21 +1717,29 @@ export function HumanChatPanelMessageBubble({
   const mediaDownloadUrl = useMemo(() => {
     const mxc = message.media?.mxcUrl;
     if (!mxc || !client) return null;
-    return client.mxcUrlToHttp(
-      mxc,
-      undefined,
-      undefined,
-      undefined,
-      true,
-      false,
-      false,
-    );
+    try {
+      return client.mxcUrlToHttp(
+        mxc,
+        undefined,
+        undefined,
+        undefined,
+        true,
+        false,
+        false,
+      );
+    } catch {
+      return null;
+    }
   }, [client, message.media?.mxcUrl]);
 
   const mediaPreviewUrl = useMemo(() => {
     const mxc = message.media?.mxcUrl;
     if (!mxc || !client) return null;
-    return client.mxcUrlToHttp(mxc, 800, 600, 'scale', true, false, false);
+    try {
+      return client.mxcUrlToHttp(mxc, 800, 600, 'scale', true, false, false);
+    } catch {
+      return null;
+    }
   }, [client, message.media?.mxcUrl]);
 
   // TODO: Handle non-text parts (file attachments, tool results, etc.)
@@ -1729,23 +1749,34 @@ export function HumanChatPanelMessageBubble({
     ) ?? [];
   const textContent = textParts.map((p) => p.text).join('');
   const replyTo = message.replyTo;
-  const jumboLayout = textContent
-    ? getEmojiOnlyJumboLayout(textContent, Boolean(replyTo))
-    : { mode: 'normal' as const };
+  let jumboLayout: ReturnType<typeof getEmojiOnlyJumboLayout> = {
+    mode: 'normal',
+  };
+  if (textContent) {
+    try {
+      jumboLayout = getEmojiOnlyJumboLayout(textContent, Boolean(replyTo));
+    } catch {
+      jumboLayout = { mode: 'normal' };
+    }
+  }
 
   /** Prefer Matrix formatted_body; otherwise derive HTML from Discord-like markup in body. */
   const richTextHtml = useMemo(() => {
-    if (message.formattedContentHtml?.trim()) {
-      return message.formattedContentHtml;
-    }
-    if (!textContent.trim() || jumboLayout.mode === 'jumbo') {
+    try {
+      if (message.formattedContentHtml?.trim()) {
+        return message.formattedContentHtml;
+      }
+      if (!textContent.trim() || jumboLayout.mode === 'jumbo') {
+        return null;
+      }
+      if (!chatMarkupLooksFormatted(textContent)) {
+        return null;
+      }
+      const html = chatMarkupToHtml(textContent);
+      return html || null;
+    } catch {
       return null;
     }
-    if (!chatMarkupLooksFormatted(textContent)) {
-      return null;
-    }
-    const html = chatMarkupToHtml(textContent);
-    return html || null;
   }, [message.formattedContentHtml, textContent, jumboLayout.mode]);
 
   const rosterSenderLabel =
@@ -2003,12 +2034,26 @@ export function HumanChatPanelMessageBubble({
   const hasInlineMedia =
     Boolean(message.media) ||
     Boolean(message.mediaSlots && message.mediaSlots.length > 0);
+  /*
+   * Prefer max-height over `-webkit-line-clamp`. On iOS WebKit, `line-clamp`
+   * + `whitespace-pre-wrap` often makes scrollHeight === clientHeight, so the
+   * Read more control never appears even though the body looks truncated.
+   */
   const textBodyClassName = cn(
     /* Shared with the AI panel: 13px, a little tighter than body text. */
     'text-[13px] leading-[1.35] whitespace-pre-wrap break-words text-foreground',
+    /* Touch: native iOS selection must not win over the long-press action sheet. */
+    isTouchComposer && 'select-none [-webkit-touch-callout:none]',
     hasInlineMedia ? 'mt-0.5' : 'mt-0',
-    !textExpanded && 'line-clamp-10',
+    !textExpanded && 'max-h-[calc(1.35em*10)] overflow-hidden',
   );
+  const textLooksLong =
+    textContent.split('\n').length > 10 || textContent.length > 500;
+
+  useEffect(() => {
+    setLocalExpandedId(null);
+    setTextCanExpand(Boolean(textContent.trim()) && textLooksLong);
+  }, [message.id, textContent, richTextHtml, textLooksLong]);
 
   useLayoutEffect(() => {
     const el = textBodyRef.current;
@@ -2018,13 +2063,14 @@ export function HumanChatPanelMessageBubble({
     }
     if (textExpanded) return;
     const measure = () => {
-      setTextCanExpand(el.scrollHeight > el.clientHeight + 1);
+      const overflows = el.scrollHeight > el.clientHeight + 1;
+      setTextCanExpand(overflows || textLooksLong);
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [textContent, textExpanded, richTextHtml, hasInlineMedia]);
+  }, [textContent, textExpanded, richTextHtml, hasInlineMedia, textLooksLong]);
 
   const replyExcerpt =
     replyTo && replyTo.excerpt != null && replyTo.excerpt !== '' ? (

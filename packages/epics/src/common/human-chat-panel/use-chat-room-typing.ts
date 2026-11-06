@@ -9,6 +9,10 @@ import {
   type MatrixEvent,
   type RoomMember,
 } from 'matrix-js-sdk';
+import {
+  looksLikeTechnicalMatrixDisplayName,
+  visibleMatrixMemberName,
+} from './matrix-room-member-display';
 
 const TYPING_TIMEOUT_MS = 30_000;
 /** Re-assert typing before the server expires it. */
@@ -21,11 +25,51 @@ export type ChatTypingPeer = {
   name: string;
 };
 
+function isUnresolvedTypingLabel(
+  label: string | undefined | null,
+  unknownMemberLabel: string,
+): boolean {
+  const trimmed = label?.trim() ?? '';
+  if (!trimmed) return true;
+  const unknown = unknownMemberLabel.trim();
+  if (!unknown) return false;
+  return (
+    trimmed.localeCompare(unknown, undefined, { sensitivity: 'accent' }) === 0
+  );
+}
+
+/**
+ * Prefer Hypha/app resolveName, but never treat the Unknown fallback as final
+ * when Matrix still has a visible member name (or a later roster resolve).
+ */
+export function resolveTypingPeerName(
+  userId: string,
+  resolveName: (userId: string) => string,
+  unknownMemberLabel: string,
+  member?: RoomMember | null,
+): string {
+  const resolved = resolveName(userId)?.trim() ?? '';
+  if (!isUnresolvedTypingLabel(resolved, unknownMemberLabel)) {
+    return resolved;
+  }
+
+  const memberName = member?.name?.trim() || member?.rawDisplayName?.trim();
+  if (memberName && !looksLikeTechnicalMatrixDisplayName(memberName, userId)) {
+    return memberName;
+  }
+
+  const visible = visibleMatrixMemberName(userId, memberName).trim();
+  if (visible) return visible;
+
+  return unknownMemberLabel.trim() || resolved;
+}
+
 export function typingPeersFromUserIds(
   client: MatrixClient,
   roomId: string,
   userIds: readonly string[],
   resolveName: (userId: string) => string,
+  unknownMemberLabel: string,
 ): ChatTypingPeer[] {
   const selfId = client.getUserId()?.trim() ?? '';
   const room = client.getRoom(roomId);
@@ -36,7 +80,12 @@ export function typingPeersFromUserIds(
     const member = room?.getMember(userId);
     peers.push({
       userId,
-      name: resolveName(userId) || member?.name || userId,
+      name: resolveTypingPeerName(
+        userId,
+        resolveName,
+        unknownMemberLabel,
+        member,
+      ),
     });
   }
   peers.sort((a, b) => a.name.localeCompare(b.name));
@@ -47,6 +96,7 @@ function typingPeersFromRoom(
   client: MatrixClient,
   roomId: string,
   resolveName: (userId: string) => string,
+  unknownMemberLabel: string,
 ): ChatTypingPeer[] {
   const selfId = client.getUserId()?.trim() ?? '';
   const room = client.getRoom(roomId);
@@ -58,7 +108,12 @@ function typingPeersFromRoom(
     if (!userId || userId === selfId) continue;
     peers.push({
       userId,
-      name: resolveName(userId) || member.name || userId,
+      name: resolveTypingPeerName(
+        userId,
+        resolveName,
+        unknownMemberLabel,
+        member,
+      ),
     });
   }
   peers.sort((a, b) => a.name.localeCompare(b.name));
@@ -83,10 +138,13 @@ export function useChatRoomTyping({
   client,
   roomId,
   resolveName,
+  unknownMemberLabel,
 }: {
   client: MatrixClient | null;
   roomId: string | null;
   resolveName: (userId: string) => string;
+  /** i18n "Unknown" — treated as unresolved so Matrix/roster can still win. */
+  unknownMemberLabel: string;
 }): {
   typingPeers: ChatTypingPeer[];
   setComposerTyping: (isTyping: boolean) => void;
@@ -96,6 +154,8 @@ export function useChatRoomTyping({
   roomIdRef.current = roomId;
   const resolveNameRef = useRef(resolveName);
   resolveNameRef.current = resolveName;
+  const unknownMemberLabelRef = useRef(unknownMemberLabel);
+  unknownMemberLabelRef.current = unknownMemberLabel;
   const localTypingRef = useRef(false);
   const refreshTimerRef = useRef(0);
   const idleTimerRef = useRef(0);
@@ -106,7 +166,12 @@ export function useChatRoomTyping({
       return;
     }
     setTypingPeers(
-      typingPeersFromRoom(client, roomIdRef.current, resolveNameRef.current),
+      typingPeersFromRoom(
+        client,
+        roomIdRef.current,
+        resolveNameRef.current,
+        unknownMemberLabelRef.current,
+      ),
     );
   }, [client]);
 
@@ -122,6 +187,7 @@ export function useChatRoomTyping({
           roomIdRef.current,
           userIds,
           resolveNameRef.current,
+          unknownMemberLabelRef.current,
         ),
       );
     },
@@ -222,6 +288,12 @@ export function useChatRoomTyping({
       client.removeListener(ClientEvent.Event, onClientEvent);
     };
   }, [applyTypingUserIds, client, roomId, refreshPeers]);
+
+  // When roster/profile maps catch up, re-label whoever is already typing.
+  useEffect(() => {
+    if (!client || !roomId) return;
+    refreshPeers();
+  }, [client, refreshPeers, resolveName, roomId, unknownMemberLabel]);
 
   // Stop typing when leaving the room / unmounting.
   useEffect(() => {

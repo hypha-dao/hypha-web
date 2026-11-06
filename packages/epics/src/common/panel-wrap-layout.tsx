@@ -479,7 +479,9 @@ export function PanelWrapLayout({
 
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {
-      return MOBILE_PANEL_BREAKPOINT_PX;
+      // Mobile-first SSR: `width < 768` must be true so sticky chrome / insets
+      // do not briefly assume a 72px desktop icon rail (floating white card).
+      return MOBILE_PANEL_BREAKPOINT_PX - 1;
     }
     return window.innerWidth;
   });

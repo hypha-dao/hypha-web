@@ -42,8 +42,15 @@ export function HumanChatPanelEmojiPicker({
 
   useEffect(() => {
     if (!open) return;
+    /**
+     * Prefer the chat panel body — never `[data-sidebar="sidebar"]`.
+     * That node is transform-animated (desktop track / mobile Sheet). Using it
+     * as Floating UI `collisionBoundary` + portal `container` caused a position
+     * update loop (~1000 console errors) that tripped the panel error boundary
+     * when opening composer emoji.
+     */
     const node = triggerWrapRef.current?.closest(
-      '[data-hypha-chat-panel], [data-testid="e2e-emoji-chat"], [data-sidebar="sidebar"]',
+      '[data-hypha-chat-panel], [data-testid="e2e-emoji-chat"]',
     );
     setBoundary(node ?? null);
   }, [open]);
@@ -75,7 +82,11 @@ export function HumanChatPanelEmojiPicker({
         sideOffset={8}
         collisionPadding={12}
         collisionBoundary={boundary ?? undefined}
-        container={boundary instanceof HTMLElement ? boundary : undefined}
+        /**
+         * Always portal to `document.body`. Portaling into the sidebar/Sheet
+         * broke iOS less than it hurt: body + Sheet `isEmojiMartEvent` guards
+         * keep taps on emoji-mart, without the Floating UI loop above.
+         */
         data-testid="hypha-emoji-picker-panel"
         className="pointer-events-auto z-[100] w-[min(22rem,var(--radix-popover-content-available-width),calc(100vw-2rem))] max-w-[min(22rem,var(--radix-popover-content-available-width),calc(100vw-2rem))] overflow-x-hidden overflow-hidden border-border p-0 shadow-lg"
         aria-label={ariaLabel}

@@ -8,13 +8,13 @@ const source = readFileSync(
 );
 
 describe('network room join guard', () => {
-  it('only ensures the network room on /{lang}/network', () => {
-    expect(source).toContain('isNetworkPath(pathname)');
+  it('ensures the network room on member shell + Network paths', () => {
+    expect(source).toContain('isNetworkAiPath(pathname)');
     expect(source).toContain('ensureNetworkRoom');
     const ensureAt = source.indexOf('await ensureNetworkRoom()');
     expect(ensureAt).toBeGreaterThan(-1);
     const guardAt = source.lastIndexOf(
-      'if (!isNetworkPath(pathname)) return;',
+      'if (!isNetworkAiPath(pathname)) return;',
       ensureAt,
     );
     expect(guardAt).toBeGreaterThan(-1);
@@ -23,9 +23,9 @@ describe('network room join guard', () => {
 
   it('does not inherit a DHO space slug while on Network in space mode', () => {
     expect(source).toContain('routeSpaceSlugFromLocation');
-    expect(source).toContain("onNetworkPage && mode === 'space'");
+    expect(source).toContain("isNetworkAiPath(pathname) && mode === 'space'");
     expect(source).toContain(
-      'Entering Network clears leftover DHO / coherence space chrome',
+      'Entering a network-default shell page clears leftover DHO / coherence',
     );
   });
 
@@ -74,12 +74,12 @@ describe('network room join guard', () => {
     );
   });
 
-  it('treats Home / Messages space mode without a slug as not the network room', () => {
+  it('treats Home / Messages space mode as the network room (chat icon default)', () => {
     expect(source).toContain(
-      "const isNetworkSpaceChat = onNetworkPage && mode === 'space'",
+      "const isNetworkSpaceChat = isNetworkAiPath(pathname) && mode === 'space'",
     );
     expect(source).toContain('!isNetworkSpaceChat');
-    expect(source).toContain('Leaving Network clears that join sentinel');
+    expect(source).toContain('Leaving those pages (e.g. into a DHO)');
   });
 
   it('answers a Context room opened from Messages with its section agent', () => {

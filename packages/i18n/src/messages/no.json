@@ -3865,6 +3865,7 @@
     "connectionRetryingLabel": "Prøver igjen…",
     "connectionLostRetry": "Prøv igjen",
     "chatThreadCrashedDescription": "Denne chatvisningen krasjet. Prøv igjen.",
+    "messageRowCrashed": "Kunne ikke vise denne meldingen.",
     "openPanel": "Åpne chatpanelet",
     "openPanelWithUnreadMentions": "Åpne chatpanelet (uleste omtaler)",
     "hidePanel": "Skjul chatpanelet",
@@ -3888,6 +3889,11 @@
     "tabMentions": "Omtaler",
     "tabMentionsWithMentionCount": "{tabLabel}, {count, plural, one {# ulest omtale} other {# uleste omtaler}}",
     "membersCount": "{count, plural, one {# medlem} other {# medlemmer}} · {online} pålogget",
+    "roomOnlineCount": "{count, plural, one {# pålogget} other {# pålogget}}",
+    "viewMembersAria": "Vis medlemmer",
+    "memberOnline": "Pålogget",
+    "groupDetailsAria": "Gruppedetaljer",
+    "groupDetailsDescription": "Gi gruppen nytt navn, legg til personer eller arkiver den.",
     "you": "Du",
     "reactButton": "Reager",
     "addReactionButton": "Legg til reaksjon",
@@ -4390,7 +4396,7 @@
     "spaceMemoryOutline": "Oversikt",
     "newMemoryUploadDocumentsTitle": "Last opp dokumenter",
     "newMemoryUploadingFiles": "Laster opp romminner...",
-    "newMemoryAttachmentsRequired": "Last opp minst ett dokument for dette minnet.",
+    "newMemoryAttachmentsRequired": "Legg til minst ett bilde, videolink eller dokument for dette minnet.",
     "newMemory": "Nytt minne",
     "tagGroup": {
       "purpose": "Formål og strategi",
@@ -4774,7 +4780,8 @@
     "spaceMemoryConversationsBody": "Skrevne samtalesammendrag.",
     "spaceMemoryCallsBody": "Samtaleopptak og transkripsjoner.",
     "spaceMemoryAiDiscussionsBody": "Minner fra AI-chat.",
-    "spaceMemoryFilesBody": "Opplastinger og vedlegg."
+    "spaceMemoryFilesBody": "Opplastinger og vedlegg.",
+    "newMemoryDocumentHint": "PDF — maks. 16 MB"
   },
   "GlobalCallDock": {
     "callTitle": "Samtale - {count, plural, one {# medlem} other {# medlemmer}}",

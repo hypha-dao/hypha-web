@@ -89,3 +89,58 @@ export function HumanChatPanelErrorBoundary({
     </HumanChatPanelErrorBoundaryInner>
   );
 }
+
+type HumanChatPanelMessageErrorBoundaryProps = {
+  children: ReactNode;
+  /** Quiet fallback so one bad row does not wipe the whole timeline. */
+  fallbackLabel: string;
+};
+
+class HumanChatPanelMessageErrorBoundaryInner extends Component<
+  HumanChatPanelMessageErrorBoundaryProps,
+  ChatPanelErrorBoundaryState
+> {
+  state: ChatPanelErrorBoundaryState = idleChatPanelErrorBoundaryState();
+
+  static getDerivedStateFromError(): Pick<
+    ChatPanelErrorBoundaryState,
+    'hasError'
+  > {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(
+      '[HumanChatPanel] Message row crashed',
+      error,
+      info.componentStack,
+    );
+  }
+
+  render() {
+    if (!this.state.hasError) {
+      return this.props.children;
+    }
+    return (
+      <div
+        role="alert"
+        className="px-4 py-2 text-xs text-muted-foreground"
+        data-testid="chat-message-row-crashed"
+      >
+        {this.props.fallbackLabel}
+      </div>
+    );
+  }
+}
+
+/** Isolates a single timeline row so one throw cannot trip the messages EB. */
+export function HumanChatPanelMessageErrorBoundary({
+  children,
+  fallbackLabel,
+}: HumanChatPanelMessageErrorBoundaryProps) {
+  return (
+    <HumanChatPanelMessageErrorBoundaryInner fallbackLabel={fallbackLabel}>
+      {children}
+    </HumanChatPanelMessageErrorBoundaryInner>
+  );
+}

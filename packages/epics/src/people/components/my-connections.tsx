@@ -560,7 +560,11 @@ function classifyConversationRoom(
   const last = lastRoomMessage(room, base.selfId);
   // Always walk real incoming messages. The SDK notification total still
   // counts hidden call/signal notices, which inflated the Messages badge.
-  const unread = countIncomingUnreadMessages(room, base.selfId, isHyphaBot);
+  // Archived rooms stay out of badges — mark-as-read often never runs there
+  // (NEW divider jumps away from bottom; composer locked), so unread stuck.
+  const unread = base.archived
+    ? 0
+    : countIncomingUnreadMessages(room, base.selfId, isHyphaBot);
   const searchMembers =
     kind === 'group'
       ? base.others.map((member) => ({
@@ -894,6 +898,8 @@ function roomStamp(room: Room, selfId: string | null) {
     room.getJoinedMemberCount?.() ?? 0,
     room.getMembers?.().length ?? 0,
     isArchivedGroupRoom(room) ? '1' : '0',
+    // Bust cache so archived rows rebuild with unread forced to 0.
+    'unreadPolicy:archived0',
     room.name || '',
     isRememberedGroupChatRoom(room.roomId) ? '1' : '0',
     isRememberedBoundChatRoom(room.roomId) ? '1' : '0',
@@ -1951,6 +1957,8 @@ export function MyConnections({
   const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
   const [synced, setSynced] = useState(false);
   const [initialSyncComplete, setInitialSyncComplete] = useState(false);
+  /** One-shot warm paint from the live Matrix client (avoids remount skeleton). */
+  const matrixWarmStartedRef = useRef(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedById, setSelectedById] = useState<
     Map<number, ConnectionMemberRow>
@@ -2239,13 +2247,46 @@ export function MyConnections({
     wantsFullDirectory,
   ]);
 
+  useLayoutEffect(() => {
+    if (!client || matrixWarmStartedRef.current) return;
+    matrixWarmStartedRef.current = true;
+    const nextRows = conversationRowsSnapshot(client);
+    const nextChannels = joinedChannelSnapshots(client);
+    const state = client.getSyncState();
+    const nextSynced =
+      state === SyncState.Prepared || state === SyncState.Syncing;
+    const nextInitial =
+      state === SyncState.Prepared ||
+      (typeof client.isInitialSyncComplete === 'function' &&
+        client.isInitialSyncComplete());
+    const hasConversations =
+      nextRows.some((row) => row.kind === 'person' || row.kind === 'group') ||
+      nextChannels.length > 0 ||
+      recentDirectRoomIds(client).length > 0;
+    setRows(nextRows);
+    setChannels(nextChannels);
+    if (nextSynced) setSynced(true);
+    if (nextInitial) setInitialSyncComplete(true);
+    if (nextSynced && (nextInitial || hasConversations)) {
+      setListSettled(true);
+    }
+  }, [client]);
+
   useEffect(() => {
     if (!client) {
-      setRows([]);
-      setChannels([]);
       setSynced(false);
       setInitialSyncComplete(false);
-      setListSettled(false);
+      /**
+       * Brief client null (token recycle / tab wake) must not wipe a painted
+       * PEOPLE AROUND list — that re-shows the skeleton for the whole cold
+       * sync. Only clear once Matrix is fully unavailable and not connecting.
+       */
+      if (!isConnecting && !isMatrixAvailable) {
+        setRows([]);
+        setChannels([]);
+        setListSettled(false);
+        matrixWarmStartedRef.current = false;
+      }
       return;
     }
     return attachConversationList(client, () => {
@@ -2269,7 +2310,7 @@ export function MyConnections({
         setInitialSyncComplete(true);
       }
     });
-  }, [client]);
+  }, [client, isConnecting, isMatrixAvailable]);
 
   useEffect(() => {
     if (!client) return;
@@ -2386,11 +2427,25 @@ export function MyConnections({
 
   // Keep pending titles visible while peer profiles load — do not tie this to
   // listSettled, or an early PEOPLE AROUND paint drops everyone as titlePending.
-  const titlesLoading = peopleBySubLoading || (peerSubs.length > 0 && !jwt);
+  // After tab wake Privy can briefly drop `jwt`; keep painted titles if every
+  // peer is already resolved, but stay pending while any sub is still waiting
+  // (a partial cache must not hide the rest of the inbox).
+  const titlesLoading =
+    peopleBySubLoading ||
+    (!jwt && pendingSubs.size > 0) ||
+    (peerSubs.length > 0 && !jwt && peopleBySub.size === 0);
+  /**
+   * Include joined DM room ids even before members classify into rows — that
+   * is the common Syncing gap (`no-other-members`) that otherwise keeps the
+   * PEOPLE AROUND skeleton up for the whole cold catch-up.
+   */
+  const hasDirectRoomsPendingMembers =
+    Boolean(client) && recentDirectRoomIds(client!).length > 0;
   const hasMatrixConversations =
     rows.some((row) => row.kind === 'person' || row.kind === 'group') ||
     channels.length > 0 ||
-    pendingGroups.length > 0;
+    pendingGroups.length > 0 ||
+    hasDirectRoomsPendingMembers;
   const dataReady = messagesPeopleListReady({
     isMatrixAvailable,
     isConnecting,
@@ -3165,8 +3220,9 @@ export function MyConnections({
               className={cn(
                 // Same sticky edge as the conversation list. Page scroll and
                 // the list's own scroll are unchanged. The unread counts stay
-                // in view instead of leaving with the page.
-                'narrow-scrollbar w-full shrink-0 lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:w-80 lg:self-start lg:min-h-0 lg:bg-page-background',
+                // in view instead of leaving with the page. Clip paint so a
+                // sticky reflow cannot leave glyphs in the gap above the card.
+                'narrow-scrollbar w-full shrink-0 overflow-x-hidden lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:w-80 lg:self-start lg:min-h-0 lg:overflow-y-hidden lg:bg-page-background',
                 picking || inboxChannelOpen
                   ? 'hidden lg:block'
                   : 'lg:flex-none',

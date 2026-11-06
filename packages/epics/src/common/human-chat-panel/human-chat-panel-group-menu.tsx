@@ -4,13 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
 import { useDebounce } from 'use-debounce';
-import {
-  Archive,
-  ArchiveRestore,
-  MoreHorizontal,
-  Pencil,
-  UserPlus,
-} from 'lucide-react';
+import { Archive, ArchiveRestore, Pencil, UserPlus } from 'lucide-react';
 import {
   archiveGroupRoomAction,
   renameGroupRoomAction,
@@ -46,13 +40,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
   Input,
   Label,
 } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 
 import {
   addPeopleCandidateStatus,
@@ -78,18 +69,30 @@ export {
 
 type ConnectionPerson = MemberIntelligence['connections'][number];
 
+/**
+ * Group management without a left-chrome `⋯` trigger.
+ * Open details from the header title; open Add people from Members (or details).
+ */
 export function HumanChatPanelGroupMenu({
   roomId,
   title,
   onRenamed,
   onArchived,
   onUnarchived,
+  detailsOpen = false,
+  onDetailsOpenChange,
+  addPeopleOpen,
+  onAddPeopleOpenChange,
 }: {
   roomId: string;
   title: string;
   onRenamed: (name: string) => void;
   onArchived?: () => void;
   onUnarchived?: () => void;
+  detailsOpen?: boolean;
+  onDetailsOpenChange?: (open: boolean) => void;
+  addPeopleOpen?: boolean;
+  onAddPeopleOpenChange?: (open: boolean) => void;
 }) {
   const t = useTranslations('HumanChatPanel');
   const tConnections = useTranslations('Connections');
@@ -109,13 +112,20 @@ export function HumanChatPanelGroupMenu({
   const [renameOpen, setRenameOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [unarchiveOpen, setUnarchiveOpen] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
+  const [internalAddOpen, setInternalAddOpen] = useState(false);
+  const addOpen = addPeopleOpen ?? internalAddOpen;
+  const setAddOpen = onAddPeopleOpenChange ?? setInternalAddOpen;
+
   const [name, setName] = useState(title);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [addQuery, setAddQuery] = useState('');
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [debouncedAddQuery] = useDebounce(addQuery.trim(), 200);
+
+  useEffect(() => {
+    if (detailsOpen) setArchiveCheck((value) => value + 1);
+  }, [detailsOpen]);
 
   // Shared-space page stays up while a search is in flight. Typing used to
   // replace this request, so a search ran against an empty directory.
@@ -301,9 +311,14 @@ export function HumanChatPanelGroupMenu({
     );
   }
 
+  function closeDetails() {
+    onDetailsOpenChange?.(false);
+  }
+
   function openRename() {
     setName(title);
     setError(null);
+    closeDetails();
     openDialogAfterMenu(() => setRenameOpen(true));
   }
 
@@ -312,6 +327,7 @@ export function HumanChatPanelGroupMenu({
     selectedLabels.current.clear();
     setAddQuery('');
     setError(null);
+    closeDetails();
     openDialogAfterMenu(() => setAddOpen(true));
   }
 
@@ -430,59 +446,101 @@ export function HumanChatPanelGroupMenu({
     }
   }
 
+  const detailsActions = (
+    <div className="flex flex-col gap-0.5 p-2">
+      <button
+        type="button"
+        className={cn(
+          'flex w-full items-center gap-3 rounded-none px-3 py-2.5 text-left text-sm text-foreground',
+          'hover:bg-foreground/[0.04]',
+        )}
+        onClick={openRename}
+      >
+        <Pencil
+          className="h-4 w-4 shrink-0 text-muted-foreground"
+          aria-hidden
+        />
+        {t('renameGroup')}
+      </button>
+      {archived ? null : (
+        <button
+          type="button"
+          className={cn(
+            'flex w-full items-center gap-3 rounded-none px-3 py-2.5 text-left text-sm text-foreground',
+            'hover:bg-foreground/[0.04]',
+          )}
+          onClick={openAddPeople}
+        >
+          <UserPlus
+            className="h-4 w-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
+          {t('addPeople')}
+        </button>
+      )}
+      {canArchive && !archived ? (
+        <button
+          type="button"
+          className={cn(
+            'flex w-full items-center gap-3 rounded-none px-3 py-2.5 text-left text-sm text-foreground',
+            'hover:bg-foreground/[0.04]',
+          )}
+          onClick={() => {
+            setError(null);
+            closeDetails();
+            openDialogAfterMenu(() => setArchiveOpen(true));
+          }}
+        >
+          <Archive
+            className="h-4 w-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
+          {t('archiveGroup')}
+        </button>
+      ) : null}
+      {canArchive && archived ? (
+        <button
+          type="button"
+          className={cn(
+            'flex w-full items-center gap-3 rounded-none px-3 py-2.5 text-left text-sm text-foreground',
+            'hover:bg-foreground/[0.04]',
+          )}
+          onClick={() => {
+            setError(null);
+            closeDetails();
+            openDialogAfterMenu(() => setUnarchiveOpen(true));
+          }}
+        >
+          <ArchiveRestore
+            className="h-4 w-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
+          {t('unarchiveGroup')}
+        </button>
+      ) : null}
+    </div>
+  );
+
   return (
     <>
-      <DropdownMenu
-        modal={false}
-        onOpenChange={(open) => {
-          if (open) setArchiveCheck((value) => value + 1);
-        }}
+      {/*
+        Always Dialog — never Sheet. Chat already lives in a mobile Sheet; a
+        nested Sheet focus trap has crashed the whole HumanChatPanel boundary.
+      */}
+      <Dialog
+        open={detailsOpen}
+        onOpenChange={(open) => onDetailsOpenChange?.(open)}
       >
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="flex h-[36px] w-[36px] items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
-            aria-label={t('groupChatMenu')}
-            title={t('groupChatMenu')}
-          >
-            <MoreHorizontal className="craft-icon" aria-hidden />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onSelect={openRename}>
-            <Pencil aria-hidden />
-            {t('renameGroup')}
-          </DropdownMenuItem>
-          {archived ? null : (
-            <DropdownMenuItem onSelect={openAddPeople}>
-              <UserPlus aria-hidden />
-              {t('addPeople')}
-            </DropdownMenuItem>
-          )}
-          {canArchive && !archived ? (
-            <DropdownMenuItem
-              onSelect={() => {
-                setError(null);
-                openDialogAfterMenu(() => setArchiveOpen(true));
-              }}
-            >
-              <Archive aria-hidden />
-              {t('archiveGroup')}
-            </DropdownMenuItem>
-          ) : null}
-          {canArchive && archived ? (
-            <DropdownMenuItem
-              onSelect={() => {
-                setError(null);
-                openDialogAfterMenu(() => setUnarchiveOpen(true));
-              }}
-            >
-              <ArchiveRestore aria-hidden />
-              {t('unarchiveGroup')}
-            </DropdownMenuItem>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        <DialogContent className="max-w-sm gap-0 p-0">
+          <DialogHeader className="border-b border-border/70 px-4 py-3 text-left">
+            <DialogTitle className="truncate text-base">{title}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {t('groupDetailsDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          {detailsActions}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
         <DialogContent>
@@ -533,7 +591,17 @@ export function HumanChatPanelGroupMenu({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog
+        open={addOpen}
+        onOpenChange={(open) => {
+          setAddOpen(open);
+          if (!open) {
+            setSelected(new Set());
+            setAddQuery('');
+            setError(null);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('addPeopleTitle')}</DialogTitle>

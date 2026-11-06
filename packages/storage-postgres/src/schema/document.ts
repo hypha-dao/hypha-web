@@ -34,6 +34,8 @@ export const documents = pgTable(
     state: documentStateEnum('state').default('proposal'),
     slug: varchar('slug', { length: 255 }),
     leadImage: text('lead_image'),
+    /** YouTube / Vimeo / direct video link — same pattern as coherences.video_url. */
+    videoUrl: text('video_url'),
     attachments: jsonb('attachments')
       .$type<(string | Attachment)[]>()
       .default([]),

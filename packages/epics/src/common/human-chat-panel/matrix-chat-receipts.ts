@@ -112,8 +112,12 @@ export function messageIsReadByPeer(
   if (!readUpTo) return false;
   if (readUpTo === event) return true;
   if (typeof room.compareEventOrdering !== 'function') return false;
-  const cmp = room.compareEventOrdering(readUpTo, event);
-  return cmp != null && cmp >= 0;
+  try {
+    const cmp = room.compareEventOrdering(readUpTo, event);
+    return cmp != null && cmp >= 0;
+  } catch {
+    return false;
+  }
 }
 
 export type OwnMessageReceiptStatus = 'pending' | 'sent' | 'read';

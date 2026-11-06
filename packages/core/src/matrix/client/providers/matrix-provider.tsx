@@ -707,6 +707,18 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       try {
         setClientInitFailed(false);
         const { accessToken, userId, homeserverUrl, deviceId } = matrixToken;
+        /**
+         * Persist the Matrix store across reloads so Messages / chat can paint
+         * from the last sync instead of a full cold /sync every visit.
+         */
+        const indexedDbStore =
+          typeof globalThis.indexedDB !== 'undefined'
+            ? new MatrixSdk.IndexedDBStore({
+                indexedDB: globalThis.indexedDB,
+                localStorage: globalThis.localStorage,
+                dbName: `hypha-matrix-${userId}`,
+              })
+            : undefined;
         // Voice and video (group calls): keep VoIP enabled; TURN/ICE for WebRTC. See
         // docs/requirements/voice-video-call-implementation-spec.md §2.1
         const matrixClient = MatrixSdk.createClient({
@@ -714,6 +726,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           accessToken,
           userId,
           deviceId,
+          ...(indexedDbStore ? { store: indexedDbStore } : {}),
           refreshToken: HYPHA_MATRIX_REFRESH_TOKEN,
           tokenRefreshFunction: async () => {
             const refreshed = await fetchHyphaMatrixAccessToken(() =>
@@ -735,7 +748,18 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           iceCandidatePoolSize: matrixWebRtcIceCandidatePoolSizeFromEnv(),
         });
 
-        await matrixClient.startClient();
+        if (indexedDbStore) {
+          try {
+            await indexedDbStore.startup();
+          } catch (error) {
+            console.warn(
+              '[MatrixProvider] IndexedDB store startup failed; continuing with memory sync:',
+              error,
+            );
+          }
+        }
+
+        await matrixClient.startClient({ initialSyncLimit: 10 });
         startedClient = matrixClient;
 
         /** Warm TURN credentials before the first call join (reduces ICE stall). */
@@ -782,6 +806,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [],
   );
 
+  const pendingSyncRestartAfterCallRef = React.useRef(false);
+
   const recoverMatrixSync = React.useCallback(async (): Promise<boolean> => {
     const existingClient = clientRef.current;
     if (!existingClient) return false;
@@ -797,8 +823,17 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           syncState === MatrixSdk.SyncState.Error ||
           syncState === MatrixSdk.SyncState.Stopped
         ) {
-          existingClient.stopClient();
-          await existingClient.startClient();
+          // stopClient() ends MatrixRTC / group-call membership. During a live
+          // call only nudge sync (same as in-call token refresh); restart after
+          // the call ends.
+          if (isGroupCallSessionActive()) {
+            pendingSyncRestartAfterCallRef.current = true;
+            retryMatrixClientSync(existingClient);
+          } else {
+            pendingSyncRestartAfterCallRef.current = false;
+            existingClient.stopClient();
+            await existingClient.startClient();
+          }
         } else {
           retryMatrixClientSync(existingClient);
         }
@@ -826,7 +861,16 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     if (!existingClient) {
       return;
     }
+    const store = existingClient.store;
     existingClient.stopClient();
+    if (
+      store &&
+      typeof (store as { destroy?: () => Promise<void> }).destroy === 'function'
+    ) {
+      void (store as { destroy: () => Promise<void> })
+        .destroy()
+        .catch(() => undefined);
+    }
     registeredRoomListenersRef.current = [];
     setRegisteredRoomListeners([]);
     clientRef.current = null;
@@ -997,13 +1041,20 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
   React.useEffect(() => {
     return subscribeGroupCallSessionActive(() => {
-      if (!pendingClientRecycleRef.current || isGroupCallSessionActive()) {
+      if (isGroupCallSessionActive()) {
+        return;
+      }
+      if (pendingSyncRestartAfterCallRef.current) {
+        pendingSyncRestartAfterCallRef.current = false;
+        void recoverMatrixSync();
+      }
+      if (!pendingClientRecycleRef.current) {
         return;
       }
       pendingClientRecycleRef.current = false;
       recycleMatrixClient();
     });
-  }, [recycleMatrixClient]);
+  }, [recoverMatrixSync, recycleMatrixClient]);
 
   React.useEffect(() => {
     clientRef.current = client;
@@ -1096,8 +1147,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     if (!client) return;
 
     const retryIfNeeded = () => {
-      if (connectionStatus !== 'disconnected') return;
-      void recoverMatrixSync();
+      if (connectionStatus === 'disconnected') {
+        void recoverMatrixSync();
+        return;
+      }
+      // After long inactivity the client can still report "connected" while
+      // sync is Error/Stopped — nudge it without a full reconnect flash.
+      const syncState = client.getSyncState();
+      if (
+        syncState === MatrixSdk.SyncState.Error ||
+        syncState === MatrixSdk.SyncState.Stopped
+      ) {
+        void recoverMatrixSync();
+      }
     };
 
     const handleVisibilityChange = () => {
@@ -2284,11 +2346,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         void ensureRoomCallPowerLevels(client, resolvedId).catch((error) => {
           console.warn('Cannot ensure Matrix call power levels:', error);
         });
-        // The store can lag the join by a moment. Don't hold the thread open
-        // for the old 10s poll, and don't report that lag as a failed join.
-        for (let i = 0; i < 20; i++) {
+        // The store can lag the join by a moment. Wait a few seconds (not the
+        // old 10s poll). Callers must not treat remaining lag as a failed join.
+        for (let i = 0; i < 40; i++) {
           if (client.getRoom(resolvedId)) return resolvedId;
-          await new Promise((r) => setTimeout(r, 50));
+          await new Promise((r) => setTimeout(r, 75));
         }
         return alreadyJoinedRoomId(client, resolvedId) ?? resolvedId;
       } catch (error) {
