@@ -8,19 +8,18 @@ import {
   type SpaceContextSectionKey,
 } from '@hypha-platform/core/client';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
-import { Button, Skeleton } from '@hypha-platform/ui';
-import { cn } from '@hypha-platform/ui-utils';
+import {
+  Button,
+  ScrollableTabsList,
+  Skeleton,
+  Tabs,
+  TabsContent,
+  TabsTrigger,
+} from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { useSpaceContext } from '../hooks/use-space-context';
@@ -58,25 +57,6 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
   const { canMutate } = useCanMutateInSpace({ spaceSlug, space });
   const { overview, error, isLoading, refresh } = useSpaceContext(spaceSlug);
   const [filter, setFilter] = useState<SpaceContextFilter>('all');
-  const filterTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
-
-  const handleFilterKeyDown = (event: KeyboardEvent, index: number) => {
-    let next: number | null = null;
-    if (event.key === 'ArrowRight') {
-      next = (index + 1) % FILTERS.length;
-    } else if (event.key === 'ArrowLeft') {
-      next = (index - 1 + FILTERS.length) % FILTERS.length;
-    } else if (event.key === 'Home') {
-      next = 0;
-    } else if (event.key === 'End') {
-      next = FILTERS.length - 1;
-    }
-    const nextFilter = next == null ? undefined : FILTERS[next];
-    if (next == null || !nextFilter) return;
-    event.preventDefault();
-    setFilter(nextFilter);
-    filterTabRefs.current[next]?.focus();
-  };
   const {
     panelAvailable,
     spaceContextSection,
@@ -152,15 +132,12 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
       section.sectionKey === 'mission' &&
       officialSectionMarkdown(section) != null,
   );
-  const visible = useMemo(
-    () =>
-      sections.filter(
-        (section) =>
-          sectionMatchesFilter(section, filter) &&
-          !(featured && section.sectionKey === 'mission' && filter === 'all'),
-      ),
-    [featured, filter, sections],
-  );
+  const sectionsForFilter = (item: SpaceContextFilter) =>
+    sections.filter(
+      (section) =>
+        sectionMatchesFilter(section, item) &&
+        !(featured && section.sectionKey === 'mission' && item === 'all'),
+    );
 
   const readingSection =
     sections.find((section) => section.sectionKey === readingKey) ?? null;
@@ -187,7 +164,7 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
 
   if (error || !overview) {
     return (
-      <div className="border border-error-6 bg-background-2 px-4 py-6">
+      <div className="craft-card px-4 py-6">
         <p className="text-2 text-error-11">{t('error.load')}</p>
         <Button
           type="button"
@@ -204,18 +181,17 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
 
   return (
     <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
-      <div className="min-w-0 flex-1 space-y-6">
-        <header className="craft-page-header space-y-3">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="craft-page-title">{t('title')}</h1>
-              <p className="mt-1 max-w-2xl text-2 text-neutral-11">
-                {t('subtitle')}
-              </p>
+      <div className="craft-page-canvas flex min-w-0 flex-1 flex-col gap-4">
+        <header className="craft-page-header">
+          <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="craft-page-title text-6 font-medium">
+                {t('title')}
+              </h1>
             </div>
-            <div className="flex flex-wrap items-center gap-4 sm:justify-end">
+            <div className="flex flex-wrap items-center gap-3 sm:justify-end">
               <div className="flex flex-col items-start gap-1.5 sm:items-end">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground">
                   {t('progress', {
                     ratified: overview.ratifiedCount,
                     total: overview.totalCount,
@@ -246,7 +222,7 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
                   className="gap-1.5"
                   onClick={() => setAddOpen(true)}
                 >
-                  <Plus className="size-4" strokeWidth={1.25} aria-hidden />
+                  <Plus className="craft-icon" strokeWidth={1.25} aria-hidden />
                   {t('addSection.open')}
                 </Button>
               ) : null}
@@ -262,73 +238,66 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
           ) : null}
         </header>
 
-        <div className="h-px w-full bg-foreground" aria-hidden />
-
-        <div
-          role="tablist"
-          aria-label={t('title')}
-          className="-mt-2 flex flex-wrap gap-5"
+        <Tabs
+          value={filter}
+          onValueChange={(value) => {
+            if ((FILTERS as readonly string[]).includes(value)) {
+              setFilter(value as SpaceContextFilter);
+            }
+          }}
+          className="flex w-full flex-col gap-4"
         >
-          {FILTERS.map((item, index) => (
-            <button
-              key={item}
-              ref={(node) => {
-                filterTabRefs.current[index] = node;
-              }}
-              type="button"
-              role="tab"
-              aria-selected={filter === item}
-              tabIndex={filter === item ? 0 : -1}
-              className={cn(
-                'border-b-[1.5px] pb-1 text-[10px] uppercase tracking-[0.1em] transition-colors',
-                filter === item
-                  ? 'border-foreground font-bold text-foreground'
-                  : 'border-transparent font-medium text-neutral-11 hover:text-foreground',
-              )}
-              onClick={() => setFilter(item)}
-              onKeyDown={(event) => handleFilterKeyDown(event, index)}
-            >
-              {t(`filters.${item}`)}
-            </button>
-          ))}
-        </div>
-
-        {allEmpty && filter === 'all' ? (
-          <SpaceContextEmpty
-            canMutate={canMutate}
-            onStartMission={() => showSection('mission')}
-          />
-        ) : null}
-
-        {featured && filter === 'all' ? (
-          <SpaceContextCard
-            section={featured}
-            spaceSlug={spaceSlug}
-            featured
-            selected={openSection === featured.sectionKey}
-            onOpen={showSection}
-            onRead={setReadingKey}
-            onShowDraft={setDraftKey}
-          />
-        ) : null}
-
-        {visible.length === 0 && !allEmpty ? (
-          <p className="text-2 text-neutral-11">{t('empty.filter')}</p>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {visible.map((section) => (
-              <SpaceContextCard
-                key={section.sectionKey}
-                section={section}
-                spaceSlug={spaceSlug}
-                selected={openSection === section.sectionKey}
-                onOpen={showSection}
-                onRead={setReadingKey}
-                onShowDraft={setDraftKey}
-              />
+          <ScrollableTabsList triggerVariant="switch" aria-label={t('title')}>
+            {FILTERS.map((item) => (
+              <TabsTrigger key={item} value={item} variant="switch">
+                {t(`filters.${item}`)}
+              </TabsTrigger>
             ))}
-          </div>
-        )}
+          </ScrollableTabsList>
+          {FILTERS.map((item) => {
+            const visible = sectionsForFilter(item);
+            return (
+              <TabsContent key={item} value={item} className="mt-0 space-y-4">
+                {allEmpty && item === 'all' ? (
+                  <SpaceContextEmpty
+                    canMutate={canMutate}
+                    onStartMission={() => showSection('mission')}
+                  />
+                ) : null}
+
+                {featured && item === 'all' ? (
+                  <SpaceContextCard
+                    section={featured}
+                    spaceSlug={spaceSlug}
+                    featured
+                    selected={openSection === featured.sectionKey}
+                    onOpen={showSection}
+                    onRead={setReadingKey}
+                    onShowDraft={setDraftKey}
+                  />
+                ) : null}
+
+                {visible.length === 0 && !allEmpty ? (
+                  <p className="craft-meta">{t('empty.filter')}</p>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {visible.map((section) => (
+                      <SpaceContextCard
+                        key={section.sectionKey}
+                        section={section}
+                        spaceSlug={spaceSlug}
+                        selected={openSection === section.sectionKey}
+                        onOpen={showSection}
+                        onRead={setReadingKey}
+                        onShowDraft={setDraftKey}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            );
+          })}
+        </Tabs>
       </div>
 
       <SpaceContextReadDialog

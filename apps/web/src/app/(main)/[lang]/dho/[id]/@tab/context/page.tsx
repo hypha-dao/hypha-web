@@ -13,7 +13,7 @@ export default async function ContextPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceSlug={id}>
-      <div className="w-full min-w-0 py-4">
+      <div className="craft-page-canvas flex w-full min-w-0 flex-col gap-4 py-4">
         <SpaceContextSection spaceSlug={id} />
       </div>
     </SpaceTabAccessWrapper>

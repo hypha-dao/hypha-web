@@ -5627,7 +5627,6 @@
   },
   "SpaceContext": {
     "title": "Kontekst",
-    "subtitle": "Én felles sannhetskilde for denne spacen. Medlemmene diskuterer hver seksjon sammen, nevner agenten når de vil ha hjelp, og ratifiserer den deretter gjennom en avtale.",
     "progress": "{ratified} av {total} ratifisert",
     "propose": "Foreslå for ratifisering",
     "filters": {

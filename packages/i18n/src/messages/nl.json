@@ -5628,7 +5628,6 @@
   },
   "SpaceContext": {
     "title": "Context",
-    "subtitle": "Eén gedeelde bron van waarheid voor deze space. Leden bespreken elke sectie samen, noemen de agent wanneer ze hulp willen en bekrachtigen haar daarna via een overeenkomst.",
     "progress": "{ratified} van {total} bekrachtigd",
     "propose": "Voorstellen ter bekrachtiging",
     "filters": {

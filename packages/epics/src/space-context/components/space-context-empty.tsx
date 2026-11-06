@@ -14,13 +14,15 @@ export function SpaceContextEmpty({
   const t = useTranslations('SpaceContext');
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 border border-dashed border-border/70 bg-background-2 px-6 py-16 text-center">
-      <div className="craft-empty-mark flex size-12 items-center justify-center border border-border/70">
-        <BookOpen className="size-5" strokeWidth={1.25} aria-hidden />
+    <div className="craft-card flex flex-col items-center justify-center gap-4 px-6 py-16 text-center">
+      <div className="craft-icon-box">
+        <BookOpen className="craft-icon" strokeWidth={1.25} aria-hidden />
       </div>
       <div className="max-w-md space-y-2">
-        <h2 className="craft-page-title text-4">{t('empty.title')}</h2>
-        <p className="text-2 text-neutral-11">{t('empty.description')}</p>
+        <h2 className="craft-page-title text-4 font-medium">
+          {t('empty.title')}
+        </h2>
+        <p className="craft-meta">{t('empty.description')}</p>
       </div>
       {canMutate ? (
         <div className="flex flex-wrap items-center justify-center gap-2">

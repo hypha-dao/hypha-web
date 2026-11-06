@@ -103,7 +103,7 @@ export function SpaceContextReadDialog({
       {section ? (
         <DialogContent className={`${DIALOG_WIDTH} gap-5`}>
           <DialogHeader className="pr-8 text-left">
-            <DialogTitle className="text-5 font-semibold">
+            <DialogTitle className="text-4 font-medium leading-snug tracking-[-0.03em] [font-family:var(--font-family-heading)]">
               {section.title}
             </DialogTitle>
             <DialogDescription className="sr-only">
@@ -116,7 +116,7 @@ export function SpaceContextReadDialog({
               className="text-2 leading-relaxed text-foreground"
             />
           ) : (
-            <p className="text-2 text-neutral-11">{t('card.emptyBody')}</p>
+            <p className="craft-meta">{t('card.emptyBody')}</p>
           )}
           {actionError ? (
             <p className="text-2 text-error-11" role="alert">
@@ -239,10 +239,10 @@ export function SpaceContextDraftDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`${DIALOG_WIDTH} gap-5`}>
         <DialogHeader className="pr-8 text-left">
-          <DialogDescription className="text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-11">
+          <DialogDescription className="craft-meta">
             {t('draft.label')}
           </DialogDescription>
-          <DialogTitle className="text-5 font-semibold">
+          <DialogTitle className="text-4 font-medium leading-snug tracking-[-0.03em] [font-family:var(--font-family-heading)]">
             {sectionTitle}
           </DialogTitle>
         </DialogHeader>
@@ -260,13 +260,12 @@ export function SpaceContextDraftDialog({
               aria-label={t('draft.label')}
             />
             {remoteChanged ? (
-              <div className="flex flex-wrap items-center justify-between gap-2 text-1 text-neutral-11">
-                <span>{t('chat.draftUpdated')}</span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="craft-meta">{t('chat.draftUpdated')}</span>
                 <Button
                   type="button"
                   variant="outline"
                   colorVariant="neutral"
-                  className="h-7 px-2"
                   onClick={loadLatest}
                 >
                   {t('chat.loadLatest')}
@@ -280,11 +279,11 @@ export function SpaceContextDraftDialog({
             className="text-2 leading-relaxed text-foreground"
           />
         ) : (
-          <p className="text-2 text-neutral-11">{t('card.emptyBody')}</p>
+          <p className="craft-meta">{t('card.emptyBody')}</p>
         )}
 
         {onVoting ? (
-          <p className="text-1 text-neutral-11">{t('chat.draftLockedHint')}</p>
+          <p className="craft-meta">{t('chat.draftLockedHint')}</p>
         ) : null}
         {saveError ? (
           <p className="text-2 text-error-11" role="alert">

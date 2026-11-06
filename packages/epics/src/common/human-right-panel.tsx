@@ -3043,7 +3043,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       : rawMentionCandidates;
     const networkRoom = isNetworkSpaceChat || coherenceChannel === 'network';
     const agentIcon: ChatMentionAgentIcon =
-      networkRoom || isDirectConversation || !spaceSlug?.trim()
+      coherenceChannel === 'context'
+        ? { kind: 'context' }
+        : networkRoom || isDirectConversation || !spaceSlug?.trim()
         ? { kind: 'network' }
         : {
             kind: 'space',

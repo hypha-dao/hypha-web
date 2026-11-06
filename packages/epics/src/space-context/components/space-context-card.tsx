@@ -74,7 +74,7 @@ export function SpaceContextCard({
   const draftHidden =
     !unofficial && section.hasDraftChanges && !!section.markdown.trim();
   const linkClassName =
-    'inline-flex shrink-0 items-center gap-1 text-1 font-bold text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+    'inline-flex shrink-0 items-center gap-1 text-2 font-medium text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
   const bodyRef = useRef<HTMLDivElement>(null);
   const [bodyOverflows, setBodyOverflows] = useState(false);
@@ -105,20 +105,15 @@ export function SpaceContextCard({
     <Card
       onClick={readFromSurface}
       className={cn(
-        'relative flex h-full cursor-pointer flex-col transition-colors hover:border-neutral-11',
-        featured ? 'gap-2.5 px-6 pb-[18px] pt-5' : 'min-h-[210px] gap-3.5 p-6',
+        'craft-card-interactive relative flex h-full cursor-pointer flex-col gap-3 p-3.5',
+        !featured && 'min-h-[210px]',
         selected && 'border-foreground',
         (unofficial || section.pendingChange) && 'border-dashed',
       )}
     >
       <div className="flex items-start gap-3">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-          <CardTitle
-            className={cn(
-              'font-semibold',
-              featured ? 'text-5' : 'flex-1 text-[17px]',
-            )}
-          >
+          <CardTitle className="min-w-0 flex-1 font-medium">
             <button
               type="button"
               className="text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -139,9 +134,7 @@ export function SpaceContextCard({
       </div>
       <div className="flex-1">
         {empty ? (
-          <p className="text-[13px] leading-snug text-neutral-11">
-            {t('card.emptyBody')}
-          </p>
+          <p className="craft-meta">{t('card.emptyBody')}</p>
         ) : (
           <div
             ref={bodyRef}
@@ -155,21 +148,20 @@ export function SpaceContextCard({
             {lead ? (
               <p
                 className={cn(
+                  'text-2 leading-relaxed',
                   unofficial ? 'text-neutral-11' : 'text-foreground',
-                  featured
-                    ? 'max-w-3xl text-4 leading-snug'
-                    : 'text-[13px] leading-snug',
+                  featured && 'max-w-3xl',
                 )}
               >
                 <InlineText source={lead} />
               </p>
             ) : null}
             {rest ? (
-              <div className="border-t border-border/60 pt-3.5">
+              <div className="border-t border-border/70 pt-3.5">
                 <MemoryProse
                   source={rest}
                   className={cn(
-                    'text-[13px] leading-relaxed',
+                    'text-2 leading-relaxed',
                     unofficial ? 'text-neutral-11' : 'text-foreground',
                   )}
                 />
@@ -184,17 +176,10 @@ export function SpaceContextCard({
           </div>
         )}
       </div>
-      {notice ? (
-        <p className="text-[11px] font-medium text-neutral-11">{notice}</p>
-      ) : null}
-      <div
-        className={cn(
-          'space-y-2',
-          !featured && 'border-t border-border/60 pt-2.5',
-        )}
-      >
+      {notice ? <p className="craft-meta">{notice}</p> : null}
+      <div className="space-y-2 border-t border-border/70 pt-2.5">
         <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0 truncate text-[11px] text-neutral-11">
+          <div className="craft-meta min-w-0 truncate">
             {section.status === 'proposed' ? (
               <ProposedFooterMeta section={section} spaceSlug={spaceSlug} />
             ) : section.status === 'draft' ? (
