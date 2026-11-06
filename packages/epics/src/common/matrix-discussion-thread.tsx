@@ -14,6 +14,7 @@ import {
 } from 'matrix-js-sdk';
 import {
   firstLineForReplyPreview,
+  HYPHA_ROOM_TYPES,
   Message,
   stripMatrixReplyFallback,
   useJwt,
@@ -805,10 +806,12 @@ export function MatrixDiscussionThread({
       roster,
       tChat('agentMentionLabel'),
       agent.skills,
-      {
-        kind: 'space',
-        logoUrl,
-      },
+      roomType === HYPHA_ROOM_TYPES.context
+        ? { kind: 'context' }
+        : {
+            kind: 'space',
+            logoUrl,
+          },
     );
   }, [
     agent.skills,
@@ -818,6 +821,7 @@ export function MatrixDiscussionThread({
     personIdToMatrixUserId,
     resolvedTheme,
     roomId,
+    roomType,
     space,
     spaceMembers,
     tChat,

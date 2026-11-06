@@ -13,6 +13,7 @@ import {
   ScrollableTabsList,
   Skeleton,
   Tabs,
+  TabsContent,
   TabsTrigger,
 } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
@@ -131,15 +132,12 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
       section.sectionKey === 'mission' &&
       officialSectionMarkdown(section) != null,
   );
-  const visible = useMemo(
-    () =>
-      sections.filter(
-        (section) =>
-          sectionMatchesFilter(section, filter) &&
-          !(featured && section.sectionKey === 'mission' && filter === 'all'),
-      ),
-    [featured, filter, sections],
-  );
+  const sectionsForFilter = (item: SpaceContextFilter) =>
+    sections.filter(
+      (section) =>
+        sectionMatchesFilter(section, item) &&
+        !(featured && section.sectionKey === 'mission' && item === 'all'),
+    );
 
   const readingSection =
     sections.find((section) => section.sectionKey === readingKey) ?? null;
@@ -248,52 +246,59 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
               setFilter(value as SpaceContextFilter);
             }
           }}
+          className="flex w-full flex-col gap-4"
         >
-          <ScrollableTabsList triggerVariant="switch">
+          <ScrollableTabsList triggerVariant="switch" aria-label={t('title')}>
             {FILTERS.map((item) => (
               <TabsTrigger key={item} value={item} variant="switch">
                 {t(`filters.${item}`)}
               </TabsTrigger>
             ))}
           </ScrollableTabsList>
+          {FILTERS.map((item) => {
+            const visible = sectionsForFilter(item);
+            return (
+              <TabsContent key={item} value={item} className="mt-0 space-y-4">
+                {allEmpty && item === 'all' ? (
+                  <SpaceContextEmpty
+                    canMutate={canMutate}
+                    onStartMission={() => showSection('mission')}
+                  />
+                ) : null}
+
+                {featured && item === 'all' ? (
+                  <SpaceContextCard
+                    section={featured}
+                    spaceSlug={spaceSlug}
+                    featured
+                    selected={openSection === featured.sectionKey}
+                    onOpen={showSection}
+                    onRead={setReadingKey}
+                    onShowDraft={setDraftKey}
+                  />
+                ) : null}
+
+                {visible.length === 0 && !allEmpty ? (
+                  <p className="craft-meta">{t('empty.filter')}</p>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {visible.map((section) => (
+                      <SpaceContextCard
+                        key={section.sectionKey}
+                        section={section}
+                        spaceSlug={spaceSlug}
+                        selected={openSection === section.sectionKey}
+                        onOpen={showSection}
+                        onRead={setReadingKey}
+                        onShowDraft={setDraftKey}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            );
+          })}
         </Tabs>
-
-        {allEmpty && filter === 'all' ? (
-          <SpaceContextEmpty
-            canMutate={canMutate}
-            onStartMission={() => showSection('mission')}
-          />
-        ) : null}
-
-        {featured && filter === 'all' ? (
-          <SpaceContextCard
-            section={featured}
-            spaceSlug={spaceSlug}
-            featured
-            selected={openSection === featured.sectionKey}
-            onOpen={showSection}
-            onRead={setReadingKey}
-            onShowDraft={setDraftKey}
-          />
-        ) : null}
-
-        {visible.length === 0 && !allEmpty ? (
-          <p className="craft-meta">{t('empty.filter')}</p>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {visible.map((section) => (
-              <SpaceContextCard
-                key={section.sectionKey}
-                section={section}
-                spaceSlug={spaceSlug}
-                selected={openSection === section.sectionKey}
-                onOpen={showSection}
-                onRead={setReadingKey}
-                onShowDraft={setDraftKey}
-              />
-            ))}
-          </div>
-        )}
       </div>
 
       <SpaceContextReadDialog
