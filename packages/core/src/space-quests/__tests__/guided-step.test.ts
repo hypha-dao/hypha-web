@@ -103,6 +103,15 @@ describe('resolveQuestDraftTarget', () => {
     expect(target).toEqual({ step: 'scope', bulk: false });
   });
 
+  it('keeps "a quest about rewards" on the goal step', () => {
+    expect(
+      resolveQuestDraftTarget(
+        'A quest about rewards for new contributors',
+        'goal',
+      ),
+    ).toEqual({ step: 'goal', bulk: false });
+  });
+
   it('leaves an ordinary goal answer on the goal step', () => {
     expect(
       resolveQuestDraftTarget(

@@ -490,6 +490,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                   ),
                 );
               } else {
+                pendingProposalRef.current = null;
                 focusStep(stepToWrite);
                 pushHelper(
                   data.reply?.trim() || questSectionCoachReply(stepToWrite),
@@ -528,6 +529,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             replyWithSectionApprovalAsk(null, stepToWrite, localPatch),
           );
         } else {
+          pendingProposalRef.current = null;
           focusStep(stepToWrite);
           pushHelper(questSectionCoachReply(stepToWrite));
         }

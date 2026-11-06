@@ -662,16 +662,35 @@ function cleanMilestoneTitle(raw: string): string {
     .trim();
 }
 
-function stripDanglingOwner(name: string, owner?: string): string {
-  let next = name;
-  if (owner) {
-    const escaped = owner.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    next = next.replace(
-      new RegExp(`(?:\\s*[-–—]\\s*)+${escaped}\\s*$`, 'i'),
-      '',
-    );
+function isDashSeparatorChar(char: string): boolean {
+  return (
+    char === '-' || char === '\u2013' || char === '\u2014' || char.trim() === ''
+  );
+}
+
+function containsDash(value: string): boolean {
+  for (const char of value) {
+    if (char === '-' || char === '\u2013' || char === '\u2014') return true;
   }
-  return next.replace(/(?:\s*[-–—]\s*)+$/g, '').trim();
+  return false;
+}
+
+/** Trailing " - " groups. A character scan — `(?:\s*[-–—]\s*)+` is polynomial ReDoS. */
+function trimTrailingDashSeparators(value: string): string {
+  let end = value.length;
+  while (end > 0 && isDashSeparatorChar(value[end - 1] ?? '')) end -= 1;
+  return value.slice(0, end);
+}
+
+function stripDanglingOwner(name: string, owner?: string): string {
+  let next = name.trimEnd();
+  const ownerName = owner?.trim();
+  if (ownerName && next.toLowerCase().endsWith(ownerName.toLowerCase())) {
+    const prefix = next.slice(0, next.length - ownerName.length);
+    const trimmed = trimTrailingDashSeparators(prefix);
+    if (containsDash(prefix.slice(trimmed.length))) next = trimmed;
+  }
+  return trimTrailingDashSeparators(next).trim();
 }
 
 function finishMilestoneTitle(raw: string, owner?: string): string {
@@ -755,7 +774,7 @@ function peelBrokenDashOwner(body: string): { body: string; owner?: string } {
   const owner = cleanOwnerName(broken[2]);
   if (!owner) return { body };
   return {
-    body: broken[1].replace(/(?:\s*[-–—]\s*)+$/g, '').trim(),
+    body: trimTrailingDashSeparators(broken[1]).trim(),
     owner,
   };
 }

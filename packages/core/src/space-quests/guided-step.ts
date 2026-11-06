@@ -23,7 +23,7 @@ const SECTION_LABEL = new RegExp(
 
 /** "Now let's define the scope" — name the section without writing it. */
 const SECTION_NAV = new RegExp(
-  `\\b(?:define|talk about|work on|move on to|start on|cover|about)\\s+(?:the\\s+)?${SECTION_NAME}\\b|\\bwhat(?: is|['\\u2019]s)\\b[\\s\\S]{0,40}\\b${SECTION_NAME}\\b`,
+  `\\b(?:define|talk about|work on|move on to|start on|cover)\\s+(?:the\\s+)?${SECTION_NAME}\\b|\\bwhat(?: is|['\\u2019]s)\\b[\\s\\S]{0,40}\\b${SECTION_NAME}\\b`,
   'i',
 );
 
