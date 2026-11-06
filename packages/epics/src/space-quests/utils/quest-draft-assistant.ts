@@ -92,15 +92,6 @@ export function stewardQuestionForStep(step: QuestStewardStep): string {
   }
 }
 
-function formatFutureDateLabel(daysFromNow: number): string {
-  const target = new Date(Date.now() + daysFromNow * 86_400_000);
-  return target.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
 function splitListItems(raw: string): string[] {
   const fromLines = splitMarkdownLinesToBullets(raw);
   if (fromLines.length > 1) return fromLines;
@@ -187,8 +178,14 @@ export function questStepSectionLabel(step: QuestStewardStep): string {
   return QUEST_STEP_LABEL[step];
 }
 
-const SECTION_APPROVAL =
-  /^(yes|yeah|yep|yup|ok|okay|sure|approved|i approve|include that|include it|put that in(?: the)?(?: [\w\s]{0,32})?|put it in(?: the)?(?: [\w\s]{0,32})?|use that|use it|looks good|go ahead|add it|apply it|that(?:'s| is) good|perfect|do it|sounds good)[.!]?(?:\s+please)?$/i;
+const APPROVAL_SECTION =
+  '(?:success\\s+criteria|milestones?|members?|target\\s+date|quest\\s+rewards?|rewards?|scope|success|lead|goal|name|title)';
+
+const APPROVAL_PHRASE = `(?:yes|yeah|yep|yup|ok|okay|sure|approved|i approve|include that|include it|put that in(?: the)?(?:\\s+${APPROVAL_SECTION})?|put it in(?: the)?(?:\\s+${APPROVAL_SECTION})?|use that|use it|looks good|go ahead|add it|apply it|that(?:'s| is) good|perfect|do it|sounds good)`;
+
+/** Tester lines that must never be proposed or written into a section. */
+const QUEST_META_INSTRUCTION =
+  /(?:^|[\s.])please\s+(?:write|propose|rewrite|include|put|draft|use)\b(?:(?![.!\n]).){0,240}?\bin chat first\b[^.!\n]*[.!?]?/gi;
 
 const SECTION_REWRITE =
   /\b(improve|evaluate|rewrite|reword|tighten|revise|suggest(?:\s+\w+){0,3}\s+(?:wording|copy|text)|make (?:this|it|that) (?:sharper|clearer|shorter|better))\b/i;
@@ -196,15 +193,47 @@ const SECTION_REWRITE =
 const SECTION_OPENER =
   /\b(?:let'?s|let us|now)\b.{0,48}\b(?:define|talk about|work on|move on|start|cover)\b|\b(?:define|talk about|work on|move on to|start on|cover)\s+(?:the\s+)?(success\s+criteria|in[-\s]?scope|out[-\s]of[-\s]?scope|milestones?|members?|target\s+date|quest\s+rewards?|rewards?|quest\s+name|scope|success|lead|goal|name|title)\b|\b(what is|what['\u2019]s|how (?:do|should) (?:i|we)|help me (?:think|understand)|explain)\b/i;
 
-/** "yes", "include that", "put that in Scope", "I approve". Not a long answer that happens to start with yes. */
+function approvalRemainder(rest: string): boolean {
+  const text = rest
+    .trim()
+    .replace(/[.!]+$/g, '')
+    .trim();
+  if (!text) return true;
+  return new RegExp(`^(?:please|${APPROVAL_PHRASE})$`, 'i').test(text);
+}
+
+/**
+ * "yes", "yes please", "Yes, put that in the Goal.", "include that", "I approve".
+ * A longer answer that only starts with yes is still content.
+ */
 export function isQuestSectionApproval(message: string): boolean {
-  const text = message.trim();
-  if (!text || text.length > 96) return false;
+  const text = message
+    .trim()
+    .replace(/[.!]+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text || text.length > 120) return false;
   if (/\b(but|except|instead|rather|change|don't|do not)\b/i.test(text)) {
     return false;
   }
   if (SECTION_REWRITE.test(text)) return false;
-  return SECTION_APPROVAL.test(text);
+  const match = new RegExp(
+    `^(${APPROVAL_PHRASE})(?:\\s*,)?(?:\\s+please)?(?:\\s*,\\s*|\\s+)?(.*)$`,
+    'i',
+  ).exec(text);
+  if (!match) return false;
+  return approvalRemainder(match[2] ?? '');
+}
+
+/** Drop "Please write these as Success Criteria, proposing in chat first." */
+export function stripQuestMetaInstructions(text: string): string {
+  const without = text.replace(QUEST_META_INSTRUCTION, ' ');
+  return without
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/\s+([.!,])/g, '$1')
+    .trim();
 }
 
 export function isQuestSectionRewriteRequest(message: string): boolean {
@@ -385,12 +414,15 @@ export function replyWithSectionApprovalAsk(
   patch: QuestDraftPatchInput,
 ): string {
   const question = questSectionApprovalQuestion(step);
-  const model = reply?.trim() ?? '';
-  if (/do you want that to be in the/i.test(model)) return model;
   const preview = formatPendingQuestPatch(patch).trim();
-  if (model) return `${model}\n\n${question}`;
-  if (preview) return `${preview}\n\n${question}`;
-  return question;
+  const model = reply?.trim() ?? '';
+  if (!preview) {
+    if (model && /do you want that to be in the/i.test(model)) return model;
+    return [model, question].filter(Boolean).join('\n\n');
+  }
+  const snippet = preview.slice(0, Math.min(40, preview.length));
+  if (snippet.length > 0 && model.includes(snippet)) return model;
+  return `${preview}\n\n${question}`;
 }
 
 /**
@@ -407,9 +439,10 @@ export function buildLocalQuestDraftPatch({
   draft: QuestDraftStateSnapshot;
   viewerDisplayName: string;
 }): QuestDraftPatchInput {
-  const trimmed = message.trim();
+  const raw = message.trim();
+  if (!raw || isBulkSectionDraftRequest(raw)) return {};
+  const trimmed = stripQuestMetaInstructions(raw);
   if (!trimmed) return {};
-  if (isBulkSectionDraftRequest(trimmed)) return {};
 
   const patch: QuestDraftPatchInput = {};
 
@@ -468,27 +501,8 @@ export function buildLocalQuestDraftPatch({
       const bullets = splitListItems(trimmed);
       patch.successCriteriaBullets = bullets.length > 0 ? bullets : [trimmed];
     } else if (currentStep === 'milestones') {
-      const segments = trimmed
-        .split(/\n|;|\b(?=M\d+\b)/i)
-        .map((s) => s.replace(/^(?:M\d+|[-*•]|\d+\.)\s*[:·-]?\s*/i, '').trim())
-        .filter(Boolean);
-      const items = segments.length > 0 ? segments : [trimmed];
-      patch.milestones = items.map((seg, idx) => {
-        const dateMatch =
-          /\b(?:by|due|on)\s+([A-Z][a-z]{2,8}\s+\d{1,2}(?:,\s*\d{4})?|\d{4}-\d{2}-\d{2})\b/i.exec(
-            seg,
-          );
-        const cleanSeg = dateMatch ? seg.replace(dateMatch[0], '').trim() : seg;
-        const parts = cleanSeg.split(/\s+[—–-]\s+|\s*:\s*/);
-        const mName = (parts[0] || cleanSeg).slice(0, 80).trim();
-        const mDesc = parts.slice(1).join(' — ').trim() || cleanSeg;
-        return {
-          name: mName || `Milestone ${idx + 1}`,
-          dueDate: dateMatch?.[1] ?? formatFutureDateLabel((idx + 1) * 7),
-          description: mDesc,
-          ownerName: viewerDisplayName,
-        };
-      });
+      const milestones = parseRequestedMilestones(trimmed, viewerDisplayName);
+      if (milestones.length > 0) patch.milestones = milestones;
     } else if (currentStep === 'members') {
       const entries = trimmed
         .split(/\n|;/)
@@ -529,7 +543,172 @@ export function buildLocalQuestDraftPatch({
     }
   }
 
-  return limitQuestPatchToStep(patch, currentStep);
+  return sanitizeQuestDraftPatch(limitQuestPatchToStep(patch, currentStep));
+}
+
+const MONTH_NAME =
+  'January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec';
+
+function extractRequestedDueDate(
+  text: string,
+): { raw: string; label: string } | null {
+  const dayFirst = new RegExp(
+    `\\b((?:due|by|on)\\s+)?(\\d{1,2})\\s+(${MONTH_NAME})\\s+(\\d{4})\\b`,
+    'i',
+  ).exec(text);
+  if (dayFirst?.[2] && dayFirst[3] && dayFirst[4]) {
+    return {
+      raw: dayFirst[0],
+      label: `${dayFirst[2]} ${dayFirst[3]} ${dayFirst[4]}`,
+    };
+  }
+  const monthFirst = new RegExp(
+    `\\b((?:due|by|on)\\s+)?(${MONTH_NAME})\\s+(\\d{1,2}),?\\s+(\\d{4})\\b`,
+    'i',
+  ).exec(text);
+  if (monthFirst?.[2] && monthFirst[3] && monthFirst[4]) {
+    return {
+      raw: monthFirst[0],
+      label: `${monthFirst[3]} ${monthFirst[2]} ${monthFirst[4]}`,
+    };
+  }
+  const iso = /\b((?:due|by|on)\s+)?(\d{4}-\d{2}-\d{2})\b/i.exec(text);
+  if (iso?.[2]) return { raw: iso[0], label: iso[2] };
+  return null;
+}
+
+/** Only the milestones the member named. No header row and no invented dates. */
+function parseRequestedMilestones(
+  text: string,
+  viewerDisplayName: string,
+): NonNullable<QuestDraftPatchInput['milestones']> {
+  const sharedOwner =
+    /\bowner\s+(.+?)\s+for all\b/i.exec(text)?.[1]?.trim() || undefined;
+  const withoutOwner = text
+    .replace(/\bowner\s+.+?\s+for all\b[.!?]?/gi, ' ')
+    .replace(/^\s*milestones?\s*:\s*/i, '')
+    .trim();
+  let rows = withoutOwner
+    .split(/\n+|;\s*/)
+    .map((row) => row.trim())
+    .filter((row) => row && !/^milestones?\s*:?\s*$/i.test(row));
+  if (/\bM\d+\b/i.test(rows.join('\n'))) {
+    rows = rows
+      .join('\n')
+      .split(/\s*(?=\bM\d+\b)/i)
+      .map((row) => row.trim())
+      .filter((row) => row && !/^milestones?\s*:?\s*$/i.test(row));
+  }
+  return rows
+    .map((row) => {
+      let body = stripQuestMetaInstructions(row)
+        .replace(/^(?:M\d+|[-*•]|\d+\.)\s*[:.)-]?\s*/i, '')
+        .replace(/\bowner\s+.+?\s+for all\b[.!?]?\s*/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      let owner = sharedOwner;
+      const ownerOnRow = /(?:^|[,;]\s*)owner\s+([^,;.]+)$/i.exec(body);
+      if (ownerOnRow?.[1] && !/\bfor all\b/i.test(ownerOnRow[1])) {
+        owner = ownerOnRow[1].trim();
+        body = body
+          .slice(0, ownerOnRow.index)
+          .replace(/[,;]\s*$/, '')
+          .trim();
+      }
+      const due = extractRequestedDueDate(body);
+      if (due) {
+        body = body
+          .replace(due.raw, '')
+          .replace(/\b(?:due|by|on)\s*$/i, '')
+          .replace(/[,;.\s]+$/g, '')
+          .trim();
+      }
+      const name = body.replace(/^milestones?\s*[:.-]\s*/i, '').trim();
+      if (!name || /^milestones?$/i.test(name)) return null;
+      return {
+        name,
+        ...(due ? { dueDate: due.label } : {}),
+        description: name,
+        ownerName: owner || viewerDisplayName,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => row !== null)
+    .slice(0, 6);
+}
+
+function cleanTextList(values: string[] | undefined): string[] | undefined {
+  if (!values) return undefined;
+  const cleaned = values
+    .map((value) => stripQuestMetaInstructions(value).trim())
+    .filter(Boolean);
+  return cleaned.length > 0 ? cleaned : undefined;
+}
+
+function cleanOptionalText(value: string | undefined): string | undefined {
+  const cleaned = value ? stripQuestMetaInstructions(value).trim() : '';
+  return cleaned || undefined;
+}
+
+/** Meta instructions never land in a proposal or a form field. */
+export function sanitizeQuestDraftPatch(
+  patch: QuestDraftPatchInput,
+): QuestDraftPatchInput {
+  const next: QuestDraftPatchInput = {};
+  const goal = cleanOptionalText(patch.goal);
+  if (goal) next.goal = goal;
+  const name = cleanOptionalText(patch.name);
+  if (name) next.name = name;
+  const leadName = cleanOptionalText(patch.leadName);
+  if (leadName) next.leadName = leadName;
+  const targetDate = cleanOptionalText(patch.targetDate);
+  if (targetDate) next.targetDate = targetDate;
+  const scopeIn = cleanTextList(patch.scopeIn);
+  if (scopeIn) next.scopeIn = scopeIn;
+  const scopeOut = cleanTextList(patch.scopeOut);
+  if (scopeOut) next.scopeOut = scopeOut;
+  const successCriteriaBullets = cleanTextList(patch.successCriteriaBullets);
+  if (successCriteriaBullets) {
+    next.successCriteriaBullets = successCriteriaBullets;
+  }
+  if (patch.milestones && patch.milestones.length > 0) {
+    const milestones = patch.milestones
+      .map((milestone) => {
+        const milestoneName = cleanOptionalText(milestone.name)?.replace(
+          /\bowner\s+.+?\s+for all\b[.!?]?/gi,
+          '',
+        );
+        const name = milestoneName?.replace(/\s+/g, ' ').trim();
+        if (!name || /^milestones?$/i.test(name)) return null;
+        const description = cleanOptionalText(milestone.description);
+        const ownerName = cleanOptionalText(milestone.ownerName);
+        const dueDate = milestone.dueDate?.trim();
+        return {
+          name,
+          ...(dueDate ? { dueDate } : {}),
+          ...(description ? { description } : {}),
+          ...(ownerName ? { ownerName } : {}),
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null);
+    if (milestones.length > 0) next.milestones = milestones;
+  }
+  if (patch.members && patch.members.length > 0) {
+    const members = patch.members
+      .map((member) => {
+        const memberName = cleanOptionalText(member.memberName);
+        if (!memberName) return null;
+        const responsibilities = cleanTextList(member.responsibilities);
+        return {
+          memberName,
+          ...(member.roleLabel ? { roleLabel: member.roleLabel } : {}),
+          ...(responsibilities ? { responsibilities } : {}),
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null);
+    if (members.length > 0) next.members = members;
+  }
+  if (patch.rewards && patch.rewards.length > 0) next.rewards = patch.rewards;
+  return next;
 }
 
 export function applyPatchToQuestDraftState({
@@ -546,36 +725,37 @@ export function applyPatchToQuestDraftState({
   next: QuestDraftStateSnapshot;
   updatedLabels: string[];
 } {
+  const clean = sanitizeQuestDraftPatch(patch);
   const next: QuestDraftStateSnapshot = { ...current };
   const updatedLabels: string[] = [];
 
-  if (patch.goal?.trim()) {
-    next.goal = patch.goal.trim();
+  if (clean.goal?.trim()) {
+    next.goal = clean.goal.trim();
     updatedLabels.push('Goal');
   }
 
   if (
-    (patch.scopeIn && patch.scopeIn.length > 0) ||
-    (patch.scopeOut && patch.scopeOut.length > 0)
+    (clean.scopeIn && clean.scopeIn.length > 0) ||
+    (clean.scopeOut && clean.scopeOut.length > 0)
   ) {
-    if (patch.scopeIn && patch.scopeIn.length > 0) {
-      next.scopeIn = patch.scopeIn;
-      next.scopeInMarkdown = bulletsToMarkdownList(patch.scopeIn);
+    if (clean.scopeIn && clean.scopeIn.length > 0) {
+      next.scopeIn = clean.scopeIn;
+      next.scopeInMarkdown = bulletsToMarkdownList(clean.scopeIn);
     }
-    if (patch.scopeOut && patch.scopeOut.length > 0) {
-      next.scopeOut = patch.scopeOut;
-      next.scopeOutMarkdown = bulletsToMarkdownList(patch.scopeOut);
+    if (clean.scopeOut && clean.scopeOut.length > 0) {
+      next.scopeOut = clean.scopeOut;
+      next.scopeOutMarkdown = bulletsToMarkdownList(clean.scopeOut);
     }
     updatedLabels.push('Scope');
   }
 
-  if (patch.successCriteriaBullets && patch.successCriteriaBullets.length > 0) {
-    next.successCriteria = bulletsToMarkdownList(patch.successCriteriaBullets);
+  if (clean.successCriteriaBullets && clean.successCriteriaBullets.length > 0) {
+    next.successCriteria = bulletsToMarkdownList(clean.successCriteriaBullets);
     updatedLabels.push('Success criteria');
   }
 
-  if (patch.milestones && patch.milestones.length > 0) {
-    next.milestones = patch.milestones.map((m) => {
+  if (clean.milestones && clean.milestones.length > 0) {
+    next.milestones = clean.milestones.map((m) => {
       const matchedOwner = m.ownerName
         ? matchQuestMemberByName(spaceMembers, m.ownerName)
         : null;
@@ -592,8 +772,8 @@ export function applyPatchToQuestDraftState({
     updatedLabels.push('Milestones');
   }
 
-  if (patch.members && patch.members.length > 0) {
-    const mapped = patch.members.map((m): EditableQuestMember => {
+  if (clean.members && clean.members.length > 0) {
+    const mapped = clean.members.map((m): EditableQuestMember => {
       const matched = matchQuestMemberByName(spaceMembers, m.memberName);
       return {
         personId: matched?.personId ?? null,
@@ -617,27 +797,27 @@ export function applyPatchToQuestDraftState({
     updatedLabels.push('Members');
   }
 
-  if (patch.leadName?.trim()) {
-    const rawLead = stripViewerYouMarker(patch.leadName).trim();
+  if (clean.leadName?.trim()) {
+    const rawLead = stripViewerYouMarker(clean.leadName).trim();
     const matchedLead = matchQuestMemberByName(spaceMembers, rawLead);
     next.leadName = matchedLead?.name || rawLead;
     next.selectedLeadPersonId = matchedLead?.personId ?? null;
     updatedLabels.push('Lead');
   }
 
-  if (patch.targetDate?.trim()) {
-    next.targetDate = patch.targetDate.trim();
+  if (clean.targetDate?.trim()) {
+    next.targetDate = clean.targetDate.trim();
     updatedLabels.push('Target date');
   }
 
-  if (patch.rewards && patch.rewards.length > 0) {
+  if (clean.rewards && clean.rewards.length > 0) {
     const byToken = new Map<string, QuestReward>();
     for (const existing of next.rewards) {
       if (existing.amount.trim() && existing.token.trim()) {
         byToken.set(existing.token.toUpperCase(), existing);
       }
     }
-    for (const item of patch.rewards) {
+    for (const item of clean.rewards) {
       if (item.amount.trim() && item.token.trim()) {
         byToken.set(item.token.toUpperCase(), {
           amount: item.amount.trim(),
@@ -649,8 +829,8 @@ export function applyPatchToQuestDraftState({
     updatedLabels.push('Quest Reward');
   }
 
-  if (patch.name?.trim()) {
-    next.name = patch.name.trim();
+  if (clean.name?.trim()) {
+    next.name = clean.name.trim();
     updatedLabels.push('Name');
   }
 

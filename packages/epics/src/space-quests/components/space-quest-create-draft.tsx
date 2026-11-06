@@ -56,6 +56,7 @@ import {
   questSectionCoachReply,
   questStepSectionLabel,
   replyWithSectionApprovalAsk,
+  sanitizeQuestDraftPatch,
   stewardQuestionForStep,
   type PendingQuestSectionProposal,
   type QuestDraftPatchInput,
@@ -449,19 +450,23 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             if (hasAiPatch || data.reply?.trim()) {
               llmHandled = true;
               const rewrite = isQuestSectionRewriteRequest(trimmed);
-              const modelPatch = limitQuestPatchToStep(
-                hasAiPatch ? data.patch! : {},
-                stepToWrite,
+              const modelPatch = sanitizeQuestDraftPatch(
+                limitQuestPatchToStep(
+                  hasAiPatch ? data.patch! : {},
+                  stepToWrite,
+                ),
               );
               const localPatch = messageSuppliesSectionContent(trimmed)
-                ? limitQuestPatchToStep(
-                    buildLocalQuestDraftPatch({
-                      message: trimmed,
-                      currentStep: stepToWrite,
-                      draft: currentSnapshot,
-                      viewerDisplayName,
-                    }),
-                    stepToWrite,
+                ? sanitizeQuestDraftPatch(
+                    limitQuestPatchToStep(
+                      buildLocalQuestDraftPatch({
+                        message: trimmed,
+                        currentStep: stepToWrite,
+                        draft: currentSnapshot,
+                        viewerDisplayName,
+                      }),
+                      stepToWrite,
+                    ),
                   )
                 : {};
               const effectivePatch =
@@ -501,14 +506,16 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
 
       if (!llmHandled) {
         const localPatch = messageSuppliesSectionContent(trimmed)
-          ? limitQuestPatchToStep(
-              buildLocalQuestDraftPatch({
-                message: trimmed,
-                currentStep: stepToWrite,
-                draft: currentSnapshot,
-                viewerDisplayName,
-              }),
-              stepToWrite,
+          ? sanitizeQuestDraftPatch(
+              limitQuestPatchToStep(
+                buildLocalQuestDraftPatch({
+                  message: trimmed,
+                  currentStep: stepToWrite,
+                  draft: currentSnapshot,
+                  viewerDisplayName,
+                }),
+                stepToWrite,
+              ),
             )
           : {};
         if (Object.keys(localPatch).length > 0) {

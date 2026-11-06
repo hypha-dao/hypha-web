@@ -6,6 +6,8 @@ import {
   findNextUnfilledQuestStep,
   isQuestSectionApproval,
   isQuestSectionCoachingOpener,
+  replyWithSectionApprovalAsk,
+  stripQuestMetaInstructions,
   type QuestDraftStateSnapshot,
 } from '../quest-draft-assistant';
 
@@ -160,5 +162,154 @@ describe('quest-draft-assistant', () => {
       step: 'scope',
       patch: { scopeIn: ['Sandbox checklist'], scopeOut: ['Voting'] },
     });
+  });
+
+  it('accepts a verbose yes as approval of the pending section', () => {
+    const pending = {
+      step: 'goal' as const,
+      patch: {
+        goal: 'Validate sandbox onboarding with three documented checks by 30 November 2026.',
+      },
+    };
+    for (const message of [
+      'Yes, put that in the Goal.',
+      'yes please',
+      'I approve',
+      'include that',
+      'put that in the Goal',
+    ]) {
+      expect(isQuestSectionApproval(message)).toBe(true);
+      expect(
+        decideNewQuestDraftTurn({
+          message,
+          currentStep: 'goal',
+          targetStep: 'goal',
+          bulk: false,
+          pending,
+        }),
+      ).toEqual({ kind: 'apply', step: 'goal', patch: pending.patch });
+    }
+
+    expect(
+      decideNewQuestDraftTurn({
+        message: 'yes',
+        currentStep: 'goal',
+        targetStep: 'goal',
+        bulk: false,
+        pending: null,
+      }).kind,
+    ).not.toBe('apply');
+    expect(
+      decideNewQuestDraftTurn({
+        message: 'Yes, put that in the Goal.',
+        currentStep: 'goal',
+        targetStep: 'goal',
+        bulk: false,
+        pending: null,
+      }).kind,
+    ).not.toBe('apply');
+  });
+
+  it('quotes the proposed wording in the confirm message', () => {
+    const patch = {
+      scopeIn: ['Sandbox-only, with throwaway test accounts'],
+      scopeOut: ['Payments and on-chain actions'],
+    };
+    const reply = replyWithSectionApprovalAsk(
+      'Waiting on your yes before anything is applied to the form. Do you want that to be in the Scope?',
+      'scope',
+      patch,
+    );
+    expect(reply).toContain('Sandbox-only, with throwaway test accounts');
+    expect(reply).toContain('Payments and on-chain actions');
+    expect(reply).toContain('Do you want that to be in the Scope?');
+    expect(reply).not.toContain('Waiting on your yes');
+  });
+
+  it('strips tester instructions from success criteria before they are written', () => {
+    const message = [
+      '- all three checks are run with throwaway accounts',
+      '- each check has a recorded pass or fail',
+      '- a short findings note is posted by 30 November 2026. Please write these as Success Criteria, proposing in chat first.',
+    ].join('\n');
+    expect(stripQuestMetaInstructions(message)).not.toMatch(
+      /proposing in chat/i,
+    );
+    expect(
+      stripQuestMetaInstructions('Please review the checklist by Friday.'),
+    ).toBe('Please review the checklist by Friday.');
+
+    const patch = buildLocalQuestDraftPatch({
+      message,
+      currentStep: 'success',
+      draft: emptyDraft,
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(patch.successCriteriaBullets).toEqual([
+      'all three checks are run with throwaway accounts',
+      'each check has a recorded pass or fail',
+      'a short findings note is posted by 30 November 2026.',
+    ]);
+    const { next } = applyPatchToQuestDraftState({
+      current: emptyDraft,
+      patch: {
+        successCriteriaBullets: [
+          'a short findings note is posted by 30 November 2026. Please write these as Success Criteria, proposing in chat first.',
+        ],
+      },
+      spaceMembers: [],
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(next.successCriteria).not.toMatch(/please write these/i);
+    expect(next.successCriteria).toContain('30 November 2026');
+  });
+
+  it('proposes only the milestones the member named', () => {
+    const message =
+      'Milestones: M1 Run check one, due 20 November 2026. M2 Run check two, due 25 November 2026. M3 Run check three and post findings note, due 30 November 2026. Owner Vlad for all. Please propose these as Milestones in chat first.';
+    const patch = buildLocalQuestDraftPatch({
+      message,
+      currentStep: 'milestones',
+      draft: emptyDraft,
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(patch.milestones).toEqual([
+      {
+        name: 'Run check one',
+        dueDate: '20 November 2026',
+        description: 'Run check one',
+        ownerName: 'Vlad',
+      },
+      {
+        name: 'Run check two',
+        dueDate: '25 November 2026',
+        description: 'Run check two',
+        ownerName: 'Vlad',
+      },
+      {
+        name: 'Run check three and post findings note',
+        dueDate: '30 November 2026',
+        description: 'Run check three and post findings note',
+        ownerName: 'Vlad',
+      },
+    ]);
+    expect(
+      decideNewQuestDraftTurn({
+        message,
+        currentStep: 'milestones',
+        targetStep: 'milestones',
+        bulk: false,
+        pending: null,
+      }).kind,
+    ).toBe('propose');
+
+    const undated = buildLocalQuestDraftPatch({
+      message: 'Ship the onboarding checklist',
+      currentStep: 'milestones',
+      draft: emptyDraft,
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(undated.milestones?.[0]?.dueDate).toBeUndefined();
+    expect(undated.milestones?.[0]?.name).toBe('Ship the onboarding checklist');
   });
 });
