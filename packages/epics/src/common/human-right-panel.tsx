@@ -165,7 +165,7 @@ import {
   getDhoSpaceSlugFromPathname,
   routeSpaceSlugFromLocation,
 } from './get-dho-space-slug-from-pathname';
-import { isNetworkPath } from './use-is-space-context';
+import { isNetworkAiPath, isNetworkPath } from './use-is-space-context';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { getDhoPathOverview, getSignalPath } from './get-path-function';
 import {
@@ -480,8 +480,15 @@ const SESSION_ROOM_TO_COHERENCE_SPACE_PREFIX = 'hypha-room-to-coherence-space-';
 const COHERENCE_ROOM_REVERSE_PREFIX = 'hypha-room-id-to-coherence-';
 const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
 const CHAT_HISTORY_MAX_ITEMS = 250;
-/** First open / wake history pull — larger than the older-scroll page size. */
-const CHAT_HISTORY_FIRST_PAGE_SIZE = 80;
+/**
+ * Visible first-paint window when the live timeline is still empty.
+ * Historical scrollback is deferred to upward scroll / "Load older".
+ */
+const CHAT_HISTORY_VISIBLE_PAGE_SIZE = 25;
+/** One Matrix scrollback page per auto/manual older-load. */
+const CHAT_HISTORY_OLDER_PAGE_SIZE = 30;
+/** Brief sync catch-up only — never hold the joining loader for a long poll. */
+const CHAT_HISTORY_EMPTY_WAIT_MS = 1500;
 /** In-memory timeline across room switches within the same tab session. */
 const timelineMemoryCache = new Map<string, UIMessage[]>();
 const CHAT_COMPOSER_DRAFT_PREFIX = 'hypha-chat-composer-draft-v1-';
@@ -1372,12 +1379,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     !coherenceChannel;
   const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
   const onNetworkPage = isNetworkPath(pathname);
-  // Shared network room lives only on `/{lang}/network` in space mode.
-  // Home / Messages / wallet also have mode `space` and no slug — do not treat
-  // those as the network room (that caused hangs before the path guard, and
-  // empty Network chrome after it).
-  const isNetworkSpaceChat = onNetworkPage && mode === 'space';
-  // Network page space-mode is only the shared network room — never inherit a
+  // Shared network room for Network itself and the member shell pages where the
+  // chat icon means that room (Home / Messages / wallet / my-spaces). DHO space
+  // routes keep their own space chat. Coherence/DM opens still use mode
+  // `coherence` and do not hit this path.
+  const isNetworkSpaceChat = isNetworkAiPath(pathname) && mode === 'space';
+  // Network space-mode is only the shared network room — never inherit a
   // leftover DHO slug (route or coherence) or space/ecosystem tabs appear with
   // that space's timeline under the Network chrome.
   const spaceSlug = isDirectConversation
@@ -3319,8 +3326,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   }, []);
 
   /**
-   * Paint whatever timeline we already have, then fill history without leaving
-   * the "start a conversation" welcome up while /sync or scrollback is still due.
+   * Paint the live /sync window immediately. Do not prefetch historical
+   * scrollback on open — older pages load when the top sentinel intersects
+   * (or the member taps "Load older"). One small pull only if the live
+   * timeline is still empty after join/sync lag.
    */
   const revealRoomTimeline = useCallback(
     async (targetRoomId: string, isCancelled: () => boolean) => {
@@ -3341,33 +3350,46 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
       paint();
       if (messageCount() > 0) {
-        if (!isCancelled()) setIsJoining(false);
-        try {
-          const historyResult = await matrixRef.current.loadRoomHistory(
-            targetRoomId,
-            { pageSize: CHAT_HISTORY_FIRST_PAGE_SIZE, maxBatches: 1 },
-          );
-          if (isCancelled()) return;
-          setHasMoreOlderMessages(historyResult.hasMoreOlder);
-          paint();
-        } catch (error) {
-          if (!isCancelled()) {
-            console.warn(
-              '[HumanRightPanel] Background chat history load failed:',
-              error,
-            );
-          }
+        if (!isCancelled()) {
+          setIsJoining(false);
+          // Assume more history until an older-load page proves otherwise.
+          setHasMoreOlderMessages(true);
         }
         return;
       }
 
-      const deadline = Date.now() + 8000;
       let hasMoreOlder = true;
-      while (!isCancelled() && Date.now() < deadline) {
+      try {
+        const historyResult = await matrixRef.current.loadRoomHistory(
+          targetRoomId,
+          { pageSize: CHAT_HISTORY_VISIBLE_PAGE_SIZE, maxBatches: 1 },
+        );
+        if (isCancelled()) return;
+        hasMoreOlder = historyResult.hasMoreOlder;
+        paint();
+        if (messageCount() > 0) {
+          setHasMoreOlderMessages(hasMoreOlder);
+          setIsJoining(false);
+          return;
+        }
+      } catch (error) {
+        if (!isCancelled()) {
+          console.warn(
+            '[HumanRightPanel] Visible chat history pull failed:',
+            error,
+          );
+        }
+      }
+
+      const deadline = Date.now() + CHAT_HISTORY_EMPTY_WAIT_MS;
+      while (!isCancelled() && Date.now() < deadline && messageCount() === 0) {
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
+        paint();
+        if (messageCount() > 0) break;
         try {
           const historyResult = await matrixRef.current.loadRoomHistory(
             targetRoomId,
-            { pageSize: CHAT_HISTORY_FIRST_PAGE_SIZE, maxBatches: 1 },
+            { pageSize: CHAT_HISTORY_VISIBLE_PAGE_SIZE, maxBatches: 1 },
           );
           hasMoreOlder = historyResult.hasMoreOlder;
           paint();
@@ -3376,7 +3398,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           if (messageCount() > 0) break;
           console.warn('[HumanRightPanel] Waiting for chat history:', error);
         }
-        await new Promise((resolve) => window.setTimeout(resolve, 300));
       }
       if (isCancelled()) return;
       setHasMoreOlderMessages(hasMoreOlder);
@@ -3395,7 +3416,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       try {
         const result = await matrixRef.current.loadRoomHistory(targetRoomId, {
           force: true,
-          maxBatches: 5,
+          pageSize: CHAT_HISTORY_OLDER_PAGE_SIZE,
+          maxBatches: 1,
         });
         syncRoomMessages(targetRoomId);
         setHasMoreOlderMessages(result.hasMoreOlder);
@@ -4122,17 +4144,18 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     resetChatStateOnAuthDrop();
   }, [routeSpaceSlug, exitCoherenceChat, resetChatStateOnAuthDrop]);
 
-  // Entering Network clears leftover DHO / coherence space chrome so the
-  // shared room can join. Leaving Network clears that join sentinel so Home
-  // does not keep Network chrome / an empty composer with no join.
-  const wasNetworkPathRef = useRef(onNetworkPage);
+  // Entering a network-default shell page clears leftover DHO / coherence
+  // chrome so the shared room can join. Leaving those pages (e.g. into a DHO)
+  // clears the join sentinel so space chat can take over.
+  const onNetworkDefaultPath = isNetworkAiPath(pathname);
+  const wasNetworkDefaultPathRef = useRef(onNetworkDefaultPath);
   useEffect(() => {
-    const wasNetwork = wasNetworkPathRef.current;
-    wasNetworkPathRef.current = onNetworkPage;
-    if (wasNetwork === onNetworkPage) return;
+    const wasNetworkDefault = wasNetworkDefaultPathRef.current;
+    wasNetworkDefaultPathRef.current = onNetworkDefaultPath;
+    if (wasNetworkDefault === onNetworkDefaultPath) return;
     if (isDirectConversation) return;
 
-    if (!onNetworkPage) {
+    if (!onNetworkDefaultPath) {
       if (joinedRef.current === NETWORK_JOINED_SENTINEL) {
         joinEpochRef.current += 1;
         const previousRoomId = roomIdRef.current?.trim();
@@ -4175,7 +4198,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     setError(null);
     setIsJoining(false);
   }, [
-    onNetworkPage,
+    onNetworkDefaultPath,
     isDirectConversation,
     mode,
     coherenceChannel,
@@ -4456,14 +4479,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     revealRoomTimeline,
   ]);
 
-  // The network page has one room. An ecosystem is a root space, so that
-  // room sits beside the space chat, not beside the network.
-  // Only join on `/{lang}/network` — default panel mode is `space`, and Home /
-  // Messages / wallet have no space slug, so without this guard every member
-  // page would call ensureNetworkRoom (400s + long poll → tab hang).
+  // Member shell pages + Network share one room. An ecosystem is a root space,
+  // so that room sits beside the space chat, not beside the network. Only join
+  // when this path's chat icon means the network room (`isNetworkAiPath`) —
+  // DHO routes keep their own space join, and the panel is unmounted on Home /
+  // Messages when closed so we do not poll ensureNetworkRoom in the background.
   useEffect(() => {
     if (mode !== 'space') return;
-    if (!isNetworkPath(pathname)) return;
+    if (!isNetworkAiPath(pathname)) return;
     if (spaceSlug?.trim()) return;
     if (!isMatrixAvailable || !isMatrixAuthenticated) return;
     if (joinedRef.current === NETWORK_JOINED_SENTINEL) return;
@@ -5442,19 +5465,21 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [client, currentUserId]);
 
   const unreadChatState = useMemo(() => {
-    if (!client || !roomId || !currentUserId) {
-      return {
-        firstUnreadMessageId: null as string | null,
-        unreadNotificationCount: 0,
-        unreadCountIsCapped: false,
-        unreadMentionCount: 0,
-        mentionCountIsCapped: false,
-      };
-    }
+    const empty = {
+      firstUnreadMessageId: null as string | null,
+      unreadNotificationCount: 0,
+      unreadCountIsCapped: false,
+      unreadMentionCount: 0,
+      mentionCountIsCapped: false,
+    };
+    if (!client || !roomId || !currentUserId) return empty;
+    // Archived groups cannot send; unread chrome + badge stuck forever if we
+    // keep showing NEW / MARK AS READ after the open scroll jumps off bottom.
+    if (archivedGroup) return empty;
     const room = client.getRoom(roomId);
     /** `mergedMessages.length` omitted — it changed on every timeline row and re-ran a full timeline scan per sync batch. */
     return computeHumanChatUnreadState(room ?? undefined, currentUserId);
-  }, [client, roomId, currentUserId, unreadBump]);
+  }, [archivedGroup, client, roomId, currentUserId, unreadBump]);
 
   const dmPeerUserId = useMemo(() => {
     if (!isDirectConversation || !currentUserId) {
@@ -5836,6 +5861,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       client.removeListener(MatrixEventEvent.Decrypted, onDecrypted);
     };
   }, [client, markRoomTimelineRead, open, roomId]);
+
+  // Archived rooms skip the bottom-view auto-read path (open jumps to NEW).
+  // Clear receipts once so badges cannot stick while send is locked.
+  useEffect(() => {
+    if (!open || !roomId || !archivedGroup) return;
+    void markRoomTimelineRead(roomId);
+  }, [archivedGroup, markRoomTimelineRead, open, roomId]);
 
   const handleMarkAsReadFromBanner = useCallback(() => {
     void markChatTimelineRead();
