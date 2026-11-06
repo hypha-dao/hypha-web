@@ -715,7 +715,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       ).length;
       if (descriptionLength > QUEST_PROPOSAL_DESCRIPTION_LIMIT) {
         setSubmitError(
-          `This quest is ${descriptionLength.toLocaleString()} characters. Proposals can be at most ${QUEST_PROPOSAL_DESCRIPTION_LIMIT.toLocaleString()}. Shorten the goal, scope, milestones or members and try again.`,
+          'This quest is too long to publish as a proposal. Shorten the goal, scope, milestones or members and try again.',
         );
         return;
       }
@@ -781,7 +781,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
           getAccessToken,
         }).catch(() => undefined);
         setSubmitError(
-          `This quest is ${description.length.toLocaleString()} characters. Proposals can be at most ${QUEST_PROPOSAL_DESCRIPTION_LIMIT.toLocaleString()}. Shorten the goal, scope, milestones or members and try again.`,
+          'This quest is too long to publish as a proposal. Shorten the goal, scope, milestones or members and try again.',
         );
         return;
       }
@@ -926,8 +926,6 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   ]);
   const proposalOverLimit =
     proposalCharacterCount > QUEST_PROPOSAL_DESCRIPTION_LIMIT;
-  const proposalCharactersLeft =
-    QUEST_PROPOSAL_DESCRIPTION_LIMIT - proposalCharacterCount;
 
   const questsListHref = `/${locale}/dho/${spaceSlug}/quests`;
   const successBullets = splitMarkdownLinesToBullets(successCriteria);
@@ -1027,9 +1025,8 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             ) : null}
             {proposalOverLimit && !pendingProposalLink ? (
               <div className="border border-error-6 bg-background-2 px-4 py-3 text-xs text-error-11">
-                Proposal text is {proposalCharacterCount.toLocaleString()} /{' '}
-                {QUEST_PROPOSAL_DESCRIPTION_LIMIT.toLocaleString()} characters.
-                Shorten the goal, scope, milestones or members before creating.
+                This quest is too long to publish as a proposal. Shorten the
+                goal, scope, milestones or members before creating.
               </div>
             ) : null}
             {submitError ? (
@@ -1046,20 +1043,6 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                 </h2>
                 <p className="text-xs text-neutral-11">
                   Fills in live as you chat · click any section to edit
-                </p>
-                <p
-                  className={cn(
-                    'text-xs',
-                    proposalOverLimit ? 'text-error-11' : 'text-neutral-11',
-                  )}
-                >
-                  Proposal limit {proposalCharacterCount.toLocaleString()} /{' '}
-                  {QUEST_PROPOSAL_DESCRIPTION_LIMIT.toLocaleString()}
-                  {proposalOverLimit
-                    ? ` · ${Math.abs(
-                        proposalCharactersLeft,
-                      ).toLocaleString()} over`
-                    : ` · ${proposalCharactersLeft.toLocaleString()} remaining`}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -1418,9 +1401,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
               <p className="text-[13px] leading-relaxed text-neutral-11">
                 Creating this quest submits it as a proposal to Hypha for voting
                 right away. Name, goal, scope, success, milestones, members and
-                Quest Reward will be published as shown. Proposal text{' '}
-                {proposalCharacterCount.toLocaleString()} /{' '}
-                {QUEST_PROPOSAL_DESCRIPTION_LIMIT.toLocaleString()} characters.
+                Quest Reward will be published as shown.
               </p>
               <div className="flex items-center justify-end gap-2 pt-1">
                 <Button
