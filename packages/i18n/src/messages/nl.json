@@ -4276,6 +4276,8 @@
     "addPeopleConfirm": "Toevoegen",
     "addPeopleCancel": "Annuleren",
     "addPeopleFailed": "Kon geen mensen aan deze groep toevoegen. Probeer het opnieuw.",
+    "addPeopleMissingMatrix": "{names} kunnen niet worden toegevoegd. Verwijder ze en probeer het opnieuw.",
+    "addPeopleLoadFailed": "Kon geen mensen laden. Probeer het opnieuw.",
     "addPeopleEmpty": "Iedereen die je kunt toevoegen is hier al.",
     "addPeopleNoMatches": "Niemand komt overeen met die zoekopdracht.",
     "addPeopleSearch": "Mensen zoeken",
