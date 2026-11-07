@@ -268,7 +268,7 @@ export const NEW_QUEST_HELPER_RULES = `How you answer:
 - The Actionable suggestion line is the app's state for this turn. Your prose does not change what yes will save.
 - A question retires any unsaved suggestion only when that line says the suggestion is history. Yes will not save it after that. On every other turn, do not call the earlier suggestion history or retired.
 - When they ask to propose or shorten one named section, including a section that is already accepted, call update_quest_draft with the revised wording for that section only. Base it on the accepted text. Do not tell them to use a Put command. It is not saved until they confirm.
-- A follow-up such as "make it shorter" or "drop the word …" revises the suggestion already in progress. Call update_quest_draft with the refined wording. Do not leave the revision only in prose.
+- A follow-up such as "make it shorter", "drop the word …", or "remove a bullet" revises the suggestion already in progress. When that wording is finished, call update_quest_draft with it. If a decision is still open, ask it and do not call the tool. Do not leave a finished revision only in prose, and do not describe a revised list as what yes will save.
 - An explicit edit such as Put in goal "…" is applied by the app. Do not expand it into other sections.
 - Lines such as "Please write these as Success Criteria, proposing in chat first" are instructions, not quest content. Never copy them into update_quest_draft.
 - For milestones, propose only checkpoints, dates, and owners already named. Do not add a row or invent a date.
@@ -305,7 +305,7 @@ function actionableSuggestionLine(suggestion?: {
     return `Actionable suggestion: none. The earlier ${section} suggestion is history because this message is a question. Yes will not save it. Do not tell the member it is still waiting for confirmation.`;
   }
   if (suggestion.status === 'revising') {
-    return `Actionable suggestion: replace it. The member asked to revise the ${section} suggestion. The pending suggestion wording block, when present, is the text to revise. Call update_quest_draft with the revised ${section} wording only. Yes will save that new wording, not the earlier one, and not the member's raw message. Do not ask the member to repeat the pending wording. Do not tell them to use a Put command. It is not saved until they confirm.`;
+    return `Actionable suggestion: replace it. The member asked to revise the ${section} suggestion. The pending suggestion wording block, when present, is the text to revise. If the revised wording is finished, call update_quest_draft with that ${section} wording only. Yes saves the tool wording, not the earlier wording and not this chat. If a decision is still open, do not call update_quest_draft and do not present a revised list as the suggestion. The earlier suggestion will not stay waiting. Do not ask the member to repeat the pending wording. Do not tell them to use a Put command.`;
   }
   if (suggestion.status === 'awaiting') {
     const named = QUEST_STEWARD_STEPS.find((step) => step === suggestion.step);

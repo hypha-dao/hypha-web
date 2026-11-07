@@ -110,6 +110,8 @@ describe('quest helper prompt', () => {
     expect(revising).toContain(
       'Do not ask the member to repeat the pending wording',
     );
+    expect(revising).toContain('The earlier suggestion will not stay waiting');
+    expect(NEW_QUEST_HELPER_RULES).toContain('remove a bullet');
     expect(revising).toContain('Do not tell them to use a Put command');
     expect(revising).not.toMatch(/suggestion is history because/i);
     expect(

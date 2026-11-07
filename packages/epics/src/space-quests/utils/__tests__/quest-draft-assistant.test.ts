@@ -3328,9 +3328,15 @@ describe('quest draft review corrections', () => {
   });
 
   it('replaces a pending scope when the member removes a bullet', () => {
+    const original = [
+      'verify proposal display',
+      'verify milestone editing',
+      'verify reward display',
+    ];
+    const revised = ['verify milestone editing', 'verify reward display'];
     const pending: PendingQuestSectionProposal = {
       step: 'scope',
-      patch: { scopeIn: ['keep the checklist', 'remove this bullet'] },
+      patch: { scopeIn: original, scopeOut: ['production rollout'] },
     };
     const removed = send(
       'Please remove the first bullet',
@@ -3339,14 +3345,118 @@ describe('quest draft review corrections', () => {
       'scope',
       {
         reply: 'Removed the first bullet. Not saved yet.',
-        patch: { scopeIn: ['remove this bullet'] },
+        patch: {
+          scopeIn: revised,
+          scopeOut: ['production rollout'],
+          goal: 'should not stick',
+        },
       },
     );
     expect(removed.wrote).toBe(false);
-    expect(removed.pending?.patch.scopeIn).toEqual(['remove this bullet']);
-    const saved = send('yes', emptyDraft, removed.pending, 'scope', null);
+    expect(removed.pending?.step).toBe('scope');
+    expect(removed.pending?.patch.scopeIn).toEqual(revised);
+    expect(removed.pending?.patch.scopeOut).toEqual(['production rollout']);
+    expect(removed.pending?.patch.goal).toBeUndefined();
+    expect(removed.draft.scopeIn).toEqual([]);
+    const saved = send('yes', emptyDraft, removed.pending, 'scope', {
+      reply: 'Saved the original list.',
+      patch: { scopeIn: original },
+    });
     expect(saved.wrote).toBe(true);
-    expect(saved.draft.scopeIn).toEqual(['remove this bullet']);
+    expect(saved.draft.scopeIn).toEqual(revised);
+    expect(saved.draft.scopeOut).toEqual(['production rollout']);
+    expect(saved.draft.goal).toBe('');
+  });
+
+  it('retires the original scope when a bullet removal has no confirmable patch', () => {
+    const original = [
+      'verify proposal display',
+      'verify milestone editing',
+      'verify reward display',
+    ];
+    const pending: PendingQuestSectionProposal = {
+      step: 'scope',
+      patch: { scopeIn: original, scopeOut: ['production rollout'] },
+    };
+    const liveReply = [
+      'Revised suggestion — "verify proposal display" dropped.',
+      'In:',
+      '• verify milestone editing',
+      '• verify reward display',
+      'Out:',
+      '• production rollout',
+      'Still open: does "verify reward display" mean only checking the reward renders, or also issuing the reward?',
+    ].join('\n');
+    expect(
+      questDraftSuggestionStatus('Please remove the first bullet', pending),
+    ).toEqual({ status: 'revising', step: 'scope' });
+
+    const retired = send(
+      'Please remove the first bullet',
+      emptyDraft,
+      pending,
+      'scope',
+      { reply: liveReply, patch: null },
+    );
+    expect(retired.wrote).toBe(false);
+    expect(retired.pending).toBeNull();
+    expect(retired.draft.scopeIn).toEqual([]);
+    expect(retired.draft.scopeOut).toEqual([]);
+    expect(retired.reply).toMatch(/Still open: does "verify reward display"/);
+    expect(retired.reply).toMatch(
+      /did not capture a replacement Scope suggestion/i,
+    );
+    expect(retired.reply).toMatch(/no longer waiting on a yes/i);
+    expect(retired.reply).not.toMatch(/still waiting on a yes/i);
+    expect(retired.reply).not.toMatch(/Yes applies that Scope suggestion/i);
+
+    const yes = send('yes', emptyDraft, retired.pending, 'success', {
+      reply: 'Added the original three bullets.',
+      patch: { scopeIn: original, scopeOut: ['production rollout'] },
+    });
+    expect(yes.wrote).toBe(false);
+    expect(yes.pending).toBeNull();
+    expect(yes.draft.scopeIn).toEqual([]);
+    expect(yes.draft.scopeOut).toEqual([]);
+    expect(yes.reply).toMatch(/Nothing is waiting on a yes/i);
+
+    const questioned = send(
+      'Please remove the first bullet',
+      emptyDraft,
+      pending,
+      'scope',
+      {
+        reply: liveReply,
+        patch: {
+          scopeIn: ['verify milestone editing', 'verify reward display'],
+          scopeOut: ['production rollout'],
+        },
+      },
+    );
+    expect(questioned.wrote).toBe(false);
+    expect(questioned.pending).toBeNull();
+    expect(questioned.draft.scopeIn).toEqual([]);
+    expect(questioned.reply).not.toMatch(/still waiting on a yes/i);
+
+    const invalid = send(
+      'Please remove the first bullet',
+      emptyDraft,
+      pending,
+      'scope',
+      { reply: 'I rewrote the goal instead.', patch: { goal: 'A new goal' } },
+    );
+    expect(invalid.pending).toBeNull();
+    expect(invalid.wrote).toBe(false);
+    expect(invalid.draft.goal).toBe('');
+    expect(invalid.draft.scopeIn).toEqual([]);
+
+    const kept = send('Add lead scoring', emptyDraft, pending, 'scope', {
+      reply: 'Lead scoring belongs in a later conversation.',
+      patch: null,
+    });
+    expect(kept.pending).toEqual(pending);
+    expect(kept.draft.scopeIn).toEqual([]);
+    expect(kept.reply).toContain(questPendingYesNotice('scope'));
   });
 
   it('caps assist history at the schema limits', () => {

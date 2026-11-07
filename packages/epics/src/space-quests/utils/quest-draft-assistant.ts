@@ -1546,7 +1546,10 @@ function modelGuidanceWithholdsFiling(
   if (
     questions.some(
       (question) =>
-        MISSING_DECISION.test(question) || UNRESOLVED_CHOICE.test(question),
+        MISSING_DECISION.test(question) ||
+        UNRESOLVED_CHOICE.test(question) ||
+        /\bstill open\b/i.test(question) ||
+        /\bdoes\b[\s\S]{0,180}\bmean\b/i.test(question),
     )
   ) {
     return true;
@@ -1632,8 +1635,32 @@ function memberMessageReplacesPending(
   return questWordingRevisionStep(message, step) === step;
 }
 
-function revisionDeclinesCurrent(message: string): boolean {
-  return /^(?:no|nope|nah)\b/i.test(message.trim());
+/**
+ * The member asked to change the suggestion that is waiting, and this turn
+ * has no confirmable replacement. Yes must not save the superseded wording,
+ * and the chat text is not a substitute for it.
+ */
+function replyAfterUnconfirmedRevision(
+  reply: string,
+  step: QuestStewardStep,
+): string {
+  const section = questStepSectionLabel(step);
+  const source = withoutExactNotice(reply, questPendingYesNotice(step));
+  const stripped = replyAfterRetiredSuggestion(source, false);
+  const body = stripped
+    .split(/\n+|(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .filter(
+      (part) =>
+        part.length > 0 &&
+        !/\b(?:nothing is waiting on a yes|no longer waiting|still waiting on a yes|yes applies that)\b/i.test(
+          part,
+        ),
+    )
+    .join('\n\n')
+    .trim();
+  const explanation = `I did not capture a replacement ${section} suggestion. The earlier ${section} suggestion is no longer waiting on a yes, and yes will not save this chat.`;
+  return body ? `${body}\n\n${explanation}` : explanation;
 }
 
 function replyForPendingSuggestion(
@@ -1896,15 +1923,18 @@ export function runNewQuestDraftTurn({
     );
   }
 
-  // Chat only. An older patch stays actionable. The reply always ends with
-  // the app's notice for that section. The model's sentences do not decide it.
-  // A "no, make it shorter" that brought no new tool patch retires the old
-  // one, so yes cannot save the wording they just declined.
+  // Chat only. An older patch stays actionable when this message is not a
+  // revision of it. A revision with no confirmable tool patch, or one whose
+  // reply still needs a decision, retires that patch. Prose is not a replacement.
   const modelReply =
     conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY;
   const revising = questWordingRevisionStep(text, pendingStep);
-  if (revising && pendingStep && revisionDeclinesCurrent(text)) {
-    return stay(replyAfterRetiredSuggestion(modelReply, true), revising, null);
+  if (revising && pendingStep && revising === pendingStep) {
+    return stay(
+      replyAfterUnconfirmedRevision(modelReply, revising),
+      revising,
+      null,
+    );
   }
   const actionable = Object.keys(pending?.patch ?? {}).length > 0;
   return stay(
