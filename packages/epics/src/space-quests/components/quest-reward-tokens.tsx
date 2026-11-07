@@ -156,18 +156,21 @@ export function QuestRewardTokenCard({
   reward,
   spaceTokens = [],
   compact = false,
+  className,
 }: {
   reward: QuestReward;
   spaceTokens?: readonly ExtendedToken[];
   compact?: boolean;
+  className?: string;
 }) {
   const meta = resolveQuestRewardTokenMeta(reward.token, spaceTokens);
 
   return (
     <div
       className={cn(
-        'flex min-w-0 items-center gap-3 border border-border bg-background-2/60 transition-colors',
-        compact ? 'px-3 py-2.5' : 'p-3.5',
+        'flex min-w-0 gap-3 border border-border bg-background-2/60 transition-colors',
+        compact ? 'items-start px-3 py-2.5' : 'items-center p-3.5',
+        className,
       )}
     >
       <Image
@@ -187,12 +190,12 @@ export function QuestRewardTokenCard({
             compact ? 'text-[14px]' : 'text-3',
           )}
         >
-          <span>{reward.amount}</span>
+          <span className="break-words">{reward.amount}</span>
           <span className="text-xs font-medium text-neutral-11">
             {meta.symbol}
           </span>
         </p>
-        <p className="truncate text-[11px] text-neutral-11">
+        <p className="break-words text-[11px] leading-snug text-neutral-11">
           {meta.name}
           {meta.spaceTitle ? ` · ${meta.spaceTitle}` : ''}
         </p>

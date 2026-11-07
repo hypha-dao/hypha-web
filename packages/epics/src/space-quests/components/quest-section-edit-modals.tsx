@@ -125,7 +125,7 @@ function QuestRosterCombobox({
       emptyListMessage="No space members found."
       allowEmptyChoice={false}
       popoverModal={false}
-      className="h-10 w-full justify-between rounded-none md:w-full"
+      className="h-10 w-full justify-between rounded-none px-3 text-left font-normal normal-case tracking-normal md:w-full"
       onChange={(next) => {
         if (!next || next === UNASSIGNED_MEMBER) {
           onChange(null);
@@ -150,17 +150,19 @@ function QuestRosterCombobox({
       )}
       renderValue={(option) =>
         option ? (
-          <span className="flex min-w-0 items-center gap-2">
+          <span className="flex min-w-0 flex-1 items-center justify-start gap-2 text-left">
             {option.value === UNASSIGNED_MEMBER ? null : (
               <MemberOptionFace
                 label={option.label}
                 avatarUrl={option.avatarUrl}
               />
             )}
-            <span className="truncate">{option.label}</span>
+            <span className="truncate text-left">{option.label}</span>
           </span>
         ) : (
-          <span className="truncate text-neutral-11">{placeholder}</span>
+          <span className="truncate text-left text-neutral-11">
+            {placeholder}
+          </span>
         )
       }
     />
@@ -861,11 +863,6 @@ export function EditQuestMilestonesModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <QuestEditDialogFrame
         title="Edit milestones"
-        subtitle={
-          chrome.showInsertHint
-            ? 'Hover between two milestones to insert one. They renumber automatically.'
-            : undefined
-        }
         onClose={() => onOpenChange(false)}
         onCancel={() => onOpenChange(false)}
         onPointerDownOutside={keepMemberSelectPopoverOpen}
@@ -887,44 +884,26 @@ export function EditQuestMilestonesModal({
         <div className="space-y-3">
           {rows.map((item, idx) => {
             const order = idx + 1;
-            const renumberedLabel = item.insertedNew
-              ? `M${order} · NEW — inserted after M${Math.max(1, order - 1)}`
-              : item.wasOrder && item.wasOrder !== order
-              ? `M${order} · was M${item.wasOrder} — renumbered automatically`
-              : `M${order}`;
+            const renumberedLabel = `M${order}`;
 
             return (
               <div key={idx} className="space-y-3">
                 {idx > 0 ? (
                   <div className="flex items-center gap-2 py-1">
-                    <div className="h-px flex-1 border-t border-dashed border-[#3d3d8f]/50" />
+                    <div className="h-px flex-1 border-t border-dashed border-border" />
                     <button
                       type="button"
                       onClick={() => insertAt(idx)}
                       data-testid={`insert-milestone-before-${order}`}
-                      className={cn(
-                        'rounded-full border border-dashed border-[#3d3d8f] px-3 py-1 text-[11px] font-semibold transition-colors',
-                        item.insertedNew
-                          ? 'border-solid bg-[#3d3d8f] text-white'
-                          : 'bg-background text-[#3d3d8f] hover:bg-[#3d3d8f]/10',
-                      )}
+                      className="border border-border bg-background px-3 py-1 text-[11px] font-semibold text-foreground hover:bg-neutral-3"
                     >
-                      {item.insertedNew
-                        ? 'Inserted here'
-                        : '+ Add milestone here'}
+                      Add milestone here
                     </button>
-                    <div className="h-px flex-1 border-t border-dashed border-[#3d3d8f]/50" />
+                    <div className="h-px flex-1 border-t border-dashed border-border" />
                   </div>
                 ) : null}
 
-                <div
-                  className={cn(
-                    'space-y-2.5 p-3',
-                    item.insertedNew
-                      ? 'rounded-[10px] border-[1.5px] border-[#3d3d8f] bg-[#f3f3fa] dark:bg-accent-2'
-                      : 'border border-border bg-background',
-                  )}
-                >
+                <div className="space-y-2.5 border border-border bg-background p-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-semibold text-neutral-11">
                       {renumberedLabel}
@@ -970,7 +949,10 @@ export function EditQuestMilestonesModal({
                   </div>
 
                   <div className="flex flex-col gap-2.5 sm:flex-row">
-                    <div className="flex-1 space-y-1">
+                    <div
+                      className="min-w-0 flex-1 space-y-1"
+                      data-testid={`quest-milestone-owner-${order}`}
+                    >
                       <label className={LABEL_CLASS}>OWNER</label>
                       <QuestRosterCombobox
                         members={ownerCatalog}
@@ -1034,6 +1016,7 @@ export function EditQuestMilestonesModal({
                     <label className={LABEL_CLASS}>DESCRIPTION</label>
                     <div className={EDITOR_FRAME}>
                       <RichTextEditor
+                        compactToolbar
                         markdown={item.description}
                         onChange={(md) => {
                           const next = [...rows];
@@ -1068,9 +1051,9 @@ export function EditQuestMilestonesModal({
             ])
           }
           data-testid="add-milestone-at-end"
-          className="text-xs font-semibold text-[#3d3d8f] hover:underline"
+          className="text-xs font-semibold text-foreground hover:underline"
         >
-          + {chrome.addLabel}
+          {chrome.addLabel}
         </button>
       </QuestEditDialogFrame>
     </Dialog>
@@ -1099,7 +1082,7 @@ export function EditQuestMembersModal({
 }) {
   const [rows, setRows] = useState<EditableQuestMember[]>([]);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
-  const [newRoleLabel, setNewRoleLabel] = useState('Member');
+  const [newRoleLabel, setNewRoleLabel] = useState('');
   const [newBullets, setNewBullets] = useState<string[]>(['']);
   const wasOpenRef = useRef(false);
 
@@ -1133,7 +1116,7 @@ export function EditQuestMembersModal({
         }),
       );
       setSelectedPersonId(null);
-      setNewRoleLabel('Member');
+      setNewRoleLabel('');
       setNewBullets(['']);
     }
   }, [memberCatalog, members, open]);
@@ -1157,18 +1140,19 @@ export function EditQuestMembersModal({
         personId: selectedPerson.id > 0 ? selectedPerson.id : null,
         memberName: cleanName,
         memberAvatarUrl: selectedPerson.avatarUrl ?? null,
-        roleLabel: newRoleLabel.trim() || 'Member',
+        roleLabel: newRoleLabel.trim().slice(0, 80) || null,
         responsibilities: bullets.length > 0 ? bullets : ['Core contributor'],
       },
     ]);
     setSelectedPersonId(null);
+    setNewRoleLabel('');
     setNewBullets(['']);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <QuestEditDialogFrame
-        title="Edit members"
+        title="Edit participants"
         subtitle="Who is on this quest, and what concrete outcomes each person owns (one bullet per outcome)."
         onClose={() => onOpenChange(false)}
         onCancel={() => onOpenChange(false)}
@@ -1180,6 +1164,7 @@ export function EditQuestMembersModal({
             .map((m) => ({
               ...m,
               memberName: m.memberName.trim(),
+              roleLabel: m.roleLabel?.trim().slice(0, 80) || null,
               responsibilities: m.responsibilities
                 .map((r) => r.trim())
                 .filter(Boolean),
@@ -1212,9 +1197,6 @@ export function EditQuestMembersModal({
                     <p className="truncate text-[13px] font-semibold text-foreground">
                       {member.memberName}
                     </p>
-                    <p className="text-[11px] text-neutral-11">
-                      {member.roleLabel || 'Member'}
-                    </p>
                   </div>
                   <button
                     type="button"
@@ -1226,6 +1208,28 @@ export function EditQuestMembersModal({
                   >
                     ✕
                   </button>
+                </div>
+
+                <div className="space-y-1">
+                  <label
+                    className={LABEL_CLASS}
+                    htmlFor={`quest-participant-role-${mIdx}`}
+                  >
+                    ROLE
+                  </label>
+                  <Input
+                    id={`quest-participant-role-${mIdx}`}
+                    value={member.roleLabel ?? ''}
+                    maxLength={80}
+                    onChange={(e) => {
+                      const next = [...rows];
+                      next[mIdx] = { ...member, roleLabel: e.target.value };
+                      setRows(next);
+                    }}
+                    placeholder="Optional"
+                    className="h-10 rounded-none bg-background"
+                    data-testid={`quest-participant-role-${mIdx}`}
+                  />
                 </div>
 
                 <div className="space-y-1.5">
@@ -1304,6 +1308,20 @@ export function EditQuestMembersModal({
               onChange={(next) =>
                 setSelectedPersonId(next ? String(next.id) : null)
               }
+            />
+          </div>
+          <div className="space-y-1">
+            <label className={LABEL_CLASS} htmlFor="quest-new-participant-role">
+              ROLE
+            </label>
+            <Input
+              id="quest-new-participant-role"
+              value={newRoleLabel}
+              maxLength={80}
+              onChange={(e) => setNewRoleLabel(e.target.value)}
+              placeholder="Optional"
+              className="h-10 rounded-none bg-background"
+              data-testid="quest-new-participant-role"
             />
           </div>
           <div className="space-y-1">

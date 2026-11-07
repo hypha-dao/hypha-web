@@ -12,7 +12,7 @@ import {
 } from '@hypha-platform/core/client';
 import { Button, Input, Skeleton } from '@hypha-platform/ui';
 import { cn, stripMarkdown } from '@hypha-platform/ui-utils';
-import { Search, Sparkles } from 'lucide-react';
+import { Search } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -125,11 +125,22 @@ function milestoneProgressMeta(quest: QuestRecord): {
   };
 }
 
-function formatTargetLabel(targetDate: string | null, locale: string): string {
-  if (!targetDate || !targetDate.trim()) return 'Target —';
-  const formatted = formatQuestCalendarDate(targetDate, locale);
-  return formatted ? `Target ${formatted}` : 'Target —';
+export function questCardTargetLabel(
+  targetDate: string | null | undefined,
+  locale: string,
+): string | null {
+  const raw = targetDate?.trim() ?? '';
+  if (!raw) return null;
+  const formatted = formatQuestCalendarDate(raw, locale).trim();
+  return formatted ? `Target ${formatted}` : null;
 }
+
+/** Same title treatment as space tab `TabScreenTitle` (`craft-page-title text-6 font-medium`). */
+export const QUEST_LIST_TITLE_CLASS =
+  'craft-page-title min-w-0 text-6 font-medium';
+
+export const QUEST_LIST_GRID_CLASS =
+  'grid min-w-0 grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3 [grid-auto-rows:1fr]';
 
 function cardHealth(quest: QuestRecord): {
   dotClass: string;
@@ -176,20 +187,21 @@ export function QuestCard({
 }) {
   const health = cardHealth(quest);
   const progress = milestoneProgressMeta(quest);
-  const leadInitial = (quest.leadName.trim()[0] ?? 'Q').toUpperCase();
+  const leadName = quest.leadName.trim();
+  const leadInitial = leadName[0]?.toUpperCase() ?? '';
   const goalPlain = stripMarkdown(quest.goal || '', {
     orderedListMarkers: false,
     unorderedListMarkers: false,
-  });
+  }).trim();
+  const targetLabel = questCardTargetLabel(quest.targetDate, locale);
 
   return (
     <Link
       href={href}
       data-testid={`quest-card-${quest.slug}`}
-      className="group flex flex-col gap-2.5 border border-border bg-background p-4 transition-colors hover:border-foreground/40"
+      className="craft-card-interactive group flex h-full min-w-0 w-full max-w-full flex-col gap-2.5 p-3.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
     >
-      {/* Desktop top row: status badge + health dot */}
-      <div className="hidden items-center justify-between gap-2 sm:flex">
+      <div className="flex items-center justify-between gap-2">
         <span
           className={cn(
             'inline-flex items-center px-2 py-0.5 text-[11px] font-semibold',
@@ -198,7 +210,7 @@ export function QuestCard({
         >
           {statusLabel(quest.status)}
         </span>
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
+        <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold">
           <span
             className={cn('size-2 shrink-0 rounded-full', health.dotClass)}
             aria-hidden
@@ -207,43 +219,37 @@ export function QuestCard({
         </span>
       </div>
 
-      {/* Mobile top row (07a): Title + Health dot */}
-      <div className="flex items-center justify-between gap-2 sm:hidden">
-        <h2 className="truncate font-display text-[15px] font-bold text-foreground">
-          {quest.name}
-        </h2>
-        <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-semibold">
-          <span
-            className={cn('size-2 shrink-0 rounded-full', health.dotClass)}
-            aria-hidden
-          />
-          <span className={health.textClass}>{health.label}</span>
-        </span>
-      </div>
-
-      {/* Desktop Title & Goal */}
-      <h2 className="hidden truncate font-display text-[18px] font-semibold text-foreground sm:block">
+      <h2 className="break-words font-display text-4 font-medium tracking-tight text-foreground [overflow-wrap:anywhere]">
         {quest.name}
       </h2>
-      <p className="hidden line-clamp-1 text-[13px] text-neutral-11 sm:block">
-        {goalPlain}
-      </p>
+      {goalPlain ? (
+        <p className="line-clamp-2 break-words text-[13px] text-neutral-11 [overflow-wrap:anywhere]">
+          {goalPlain}
+        </p>
+      ) : null}
 
-      {/* Lead + Target date */}
-      <div className="flex items-center gap-3 text-xs">
-        <span className="hidden items-center gap-1.5 sm:inline-flex">
-          <span className="grid size-5 shrink-0 place-items-center rounded-full bg-foreground text-[9px] font-bold text-background">
-            {leadInitial}
-          </span>
-          <span className="font-medium text-foreground">{quest.leadName}</span>
-        </span>
-        <span className="text-neutral-11 sm:hidden">
-          {quest.leadName} · {formatTargetLabel(quest.targetDate, locale)}
-        </span>
-        <span className="hidden font-medium text-neutral-11 sm:inline">
-          {formatTargetLabel(quest.targetDate, locale)}
-        </span>
-      </div>
+      {leadName || targetLabel ? (
+        <div className="flex min-w-0 flex-col gap-0.5 text-xs">
+          {leadName ? (
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <span className="grid size-5 shrink-0 place-items-center rounded-full bg-foreground text-[9px] font-bold text-background">
+                {leadInitial}
+              </span>
+              <span className="break-words font-medium text-foreground [overflow-wrap:anywhere]">
+                {leadName}
+              </span>
+            </span>
+          ) : null}
+          {targetLabel ? (
+            <span
+              className="break-words font-medium text-neutral-11 [overflow-wrap:anywhere]"
+              data-testid={`quest-card-target-${quest.slug}`}
+            >
+              {targetLabel}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* Progress bar + Mx of N */}
       <div className="flex items-center gap-2.5">
@@ -259,8 +265,8 @@ export function QuestCard({
       </div>
 
       {/* Latest update line (desktop 01-quests-list) */}
-      <div className="hidden border-t border-border pt-2.5 sm:block">
-        <p className="truncate text-xs text-neutral-11">
+      <div className="mt-auto border-t border-border pt-2.5">
+        <p className="line-clamp-2 break-words text-xs text-neutral-11 [overflow-wrap:anywhere]">
           {latestCardUpdateLine(quest)}
         </p>
       </div>
@@ -347,34 +353,20 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
 
   return (
     <div className="space-y-4">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-baseline gap-2">
-            <h1 className="font-display text-[22px] font-semibold text-foreground">
-              {t('title')}
-            </h1>
-            <span className="hidden text-sm text-neutral-11 sm:inline">
-              | {counts.total}
-            </span>
-          </div>
-          <p className="mt-0.5 hidden text-sm text-neutral-11 sm:block">
-            {t('subtitle')}
-          </p>
-        </div>
-
+      <header className="flex w-full flex-wrap items-center justify-between gap-3">
+        <h1 className={QUEST_LIST_TITLE_CLASS}>
+          {t('title')}
+          <span className="ml-2 text-4 font-normal text-muted-foreground">
+            | {new Intl.NumberFormat(locale).format(counts.total)}
+          </span>
+        </h1>
         {canMutate ? (
           <Button
             asChild
-            className="shrink-0 bg-foreground text-background hover:bg-foreground/90"
+            className="ml-auto shrink-0 bg-foreground text-background hover:bg-foreground/90"
             data-testid="new-quest-button"
           >
-            <Link href={newQuestHref}>
-              <span className="hidden items-center gap-1.5 sm:inline-flex">
-                <Sparkles className="size-3.5" aria-hidden />
-                {t('newQuest')}
-              </span>
-              <span className="sm:hidden">+ NEW</span>
-            </Link>
+            <Link href={newQuestHref}>{t('newQuest')}</Link>
           </Button>
         ) : null}
       </header>
@@ -426,8 +418,11 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
 
       {/* Grid of Quest cards (no Kanban board) */}
       {filtered.length === 0 ? (
-        <div className="border border-dashed border-border bg-background-2 px-6 py-10 text-center">
-          <p className="text-sm text-neutral-11">{t('empty')}</p>
+        <div
+          className="border border-dashed border-border bg-background-2 px-6 py-10 text-center"
+          data-testid="quest-list-empty"
+        >
+          <p className="text-sm text-neutral-11">{t('subtitle')}</p>
           {canMutate ? (
             <Button asChild variant="outline" className="mt-3 rounded-none">
               <Link href={newQuestHref}>{t('newQuest')}</Link>
@@ -435,7 +430,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
           ) : null}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className={QUEST_LIST_GRID_CLASS}>
           {filtered.map((quest) => (
             <QuestCard
               key={quest.slug}

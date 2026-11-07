@@ -5782,9 +5782,8 @@
   "SpaceQuests": {
     "title": "Quests",
     "subtitle": "Focused, time-bound work with a clear goal, members and milestones",
-    "newQuest": "NEW QUEST",
+    "newQuest": "New Quest",
     "searchPlaceholder": "Search quests",
-    "empty": "No quests here yet.",
     "filters": {
       "active": "Active",
       "proposed": "Proposed",

@@ -10,7 +10,6 @@ import {
   formatQuestCalendarDate,
   isViewerQuestLead,
   questHealthDisplay,
-  questHtmlHasVisibleText,
   questOverviewVisibility,
   bulletsToMarkdownList,
   useMe,
@@ -31,16 +30,18 @@ import {
   Skeleton,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { PersonAvatar } from '../../people/components/person-avatar';
 import { QuestSectionMarkdown } from './quest-section-markdown';
 import {
-  ArrowLeft,
-  ArrowUpRight,
-  ChevronDown,
-  ChevronUp,
-  Pencil,
-  Send,
-} from 'lucide-react';
+  QuestDetailSubheading,
+  QuestMilestonesCard,
+  QuestParticipantsCard,
+  QuestRewardStrip,
+  QuestTargetDateCard,
+  questDetailProgressLabel,
+  questParticipantRoleText,
+  resolveQuestLeadIdentity,
+} from './quest-detail-presentation';
+import { ArrowLeft, ArrowUpRight, Pencil, Send } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
@@ -81,10 +82,7 @@ import {
   EditQuestSuccessModal,
   EditQuestTargetDateModal,
 } from './quest-section-edit-modals';
-import {
-  QuestRewardTokenCard,
-  useQuestRewardTokenCatalog,
-} from './quest-reward-tokens';
+import { useQuestRewardTokenCatalog } from './quest-reward-tokens';
 import type { ExtendedToken } from '../../treasury/hooks/use-tokens';
 import {
   formatRelativeTimeShort,
@@ -132,29 +130,6 @@ function statusLabel(status: QuestStatus): string {
   }
 }
 
-function milestoneStatusMeta(status: QuestMilestoneStatus): {
-  label: string;
-  className: string;
-} {
-  switch (status) {
-    case 'done':
-      return {
-        label: 'Done',
-        className: 'bg-[#e3f4ea] text-[#2e9e5b] dark:bg-success-3',
-      };
-    case 'in_progress':
-      return {
-        label: 'In progress',
-        className: 'bg-[#edebff] text-[#4b4bff] dark:bg-accent-3',
-      };
-    default:
-      return {
-        label: 'Not started',
-        className: 'bg-neutral-3 text-neutral-11',
-      };
-  }
-}
-
 function healthStateLabel(state: QuestHealthState): string {
   return healthBadgeMeta(state).label;
 }
@@ -168,20 +143,6 @@ function defaultMarkerForState(state: QuestHealthState): number {
     default:
       return 80;
   }
-}
-
-function progressLabel(quest: QuestRecord): string {
-  const total = quest.milestones.length;
-  if (total === 0) return 'No milestones yet';
-  const done = quest.milestones.filter((m) => m.status === 'done').length;
-  if (quest.status === 'completed' || done === total) {
-    return `Milestone ${total} of ${total}`;
-  }
-  const inProgress = quest.milestones.findIndex(
-    (m) => m.status === 'in_progress',
-  );
-  const current = inProgress >= 0 ? inProgress + 1 : Math.min(total, done + 1);
-  return `Milestone ${current} of ${total}`;
 }
 
 function initialOf(name: string | null | undefined): string {
@@ -477,15 +438,6 @@ function OverviewTab({
   spaceTokens: readonly ExtendedToken[];
   openModal: (modal: EditingModal) => void;
 }) {
-  const [expandedMilestone, setExpandedMilestone] = useState<number | null>(
-    () => {
-      const current = quest.milestones.find((m) => m.status === 'in_progress');
-      return current?.id ?? null;
-    },
-  );
-  const [expandedMember, setExpandedMember] = useState<number | null>(
-    quest.members[0]?.id ?? null,
-  );
   const locale = useLocale();
   const visibility = questOverviewVisibility(quest);
   const health = healthPresentation(quest);
@@ -570,90 +522,19 @@ function OverviewTab({
         {visibility.showRewards ? (
           <section className={CARD_CLASS} data-testid="quest-overview-reward">
             <SectionHeader title="Quest Reward" onEdit={edit('rewards')} />
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {quest.rewards.map((reward, idx) => (
-                <QuestRewardTokenCard
-                  key={`${reward.token}-${idx}`}
-                  reward={reward}
-                  spaceTokens={spaceTokens}
-                />
-              ))}
-            </div>
+            <QuestRewardStrip
+              rewards={quest.rewards}
+              spaceTokens={spaceTokens}
+            />
           </section>
         ) : null}
 
         {visibility.showMilestones ? (
-          <section
-            className={CARD_CLASS}
-            data-testid="quest-overview-milestones"
-          >
-            <SectionHeader title="Milestones" onEdit={edit('milestones')} />
-            <>
-              <div className="divide-y divide-border">
-                {quest.milestones.map((milestone) => {
-                  const meta = milestoneStatusMeta(milestone.status);
-                  const expanded = expandedMilestone === milestone.id;
-                  return (
-                    <div key={milestone.id} className="py-2.5 first:pt-0">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedMilestone(expanded ? null : milestone.id)
-                        }
-                        className="flex w-full items-center gap-3 text-left"
-                        aria-expanded={expanded}
-                      >
-                        <span className="w-7 shrink-0 text-xs font-semibold text-neutral-11">
-                          M{milestone.order}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] font-semibold text-foreground">
-                            {milestone.name}
-                          </span>
-                          <span className="block text-[11px] text-neutral-11">
-                            {[
-                              milestone.ownerName,
-                              formatQuestCalendarDate(
-                                milestone.dueDate,
-                                locale,
-                              ),
-                            ]
-                              .filter(Boolean)
-                              .join(' · ') || '—'}
-                          </span>
-                        </span>
-                        <span
-                          className={cn(
-                            'shrink-0 px-2 py-0.5 text-[11px] font-semibold',
-                            meta.className,
-                          )}
-                        >
-                          {meta.label}
-                        </span>
-                        {expanded ? (
-                          <ChevronUp className="size-3.5 shrink-0 text-neutral-11" />
-                        ) : (
-                          <ChevronDown className="size-3.5 shrink-0 text-neutral-11" />
-                        )}
-                      </button>
-                      {expanded &&
-                      questHtmlHasVisibleText(milestone.description) ? (
-                        <div className="mt-2 pl-10">
-                          <QuestRichText
-                            markdown={milestone.description}
-                            empty=""
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="mt-3 text-[11px] text-neutral-11">
-                Click a milestone to expand its description.
-              </p>
-            </>
-          </section>
+          <QuestMilestonesCard
+            milestones={quest.milestones}
+            locale={locale}
+            onEdit={edit('milestones')}
+          />
         ) : null}
 
         <section className={CARD_CLASS} data-testid="quest-overview-health">
@@ -702,53 +583,17 @@ function OverviewTab({
 
       <div className="min-w-0 space-y-5">
         {visibility.showMembers ? (
-          <section className={CARD_CLASS} data-testid="quest-overview-members">
-            <SectionHeader title="Members" onEdit={edit('members')} />
-            <div className="divide-y divide-border">
-              {quest.members.map((member) => {
-                const expanded = expandedMember === member.id;
-                const count = member.responsibilities.length;
-                const role =
-                  member.roleLabel || (member.isLead ? 'Lead' : 'Member');
-                return (
-                  <div key={member.id} className="py-2.5 first:pt-0">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedMember(expanded ? null : member.id)
-                      }
-                      className="flex w-full items-center gap-2.5 text-left"
-                      aria-expanded={expanded}
-                    >
-                      <span className="grid size-6 shrink-0 place-items-center bg-foreground text-[10px] font-bold text-background">
-                        {initialOf(member.memberName)}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13px] font-semibold text-foreground">
-                          {member.memberName}
-                        </span>
-                        <span className="block text-[11px] text-neutral-11">
-                          {role} · {count}{' '}
-                          {count === 1 ? 'responsibility' : 'responsibilities'}
-                        </span>
-                      </span>
-                      {expanded ? (
-                        <ChevronUp className="size-3.5 text-neutral-11" />
-                      ) : (
-                        <ChevronDown className="size-3.5 text-neutral-11" />
-                      )}
-                    </button>
-                    {expanded && count > 0 ? (
-                      <div className="mt-2 space-y-1 pl-8">
-                        <p className={LABEL_CLASS}>RESPONSIBILITY</p>
-                        <BulletList items={member.responsibilities} />
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+          <QuestParticipantsCard
+            members={quest.members}
+            onEdit={edit('members')}
+          />
+        ) : null}
+
+        {visibility.showTargetDate ? (
+          <QuestTargetDateCard
+            label={formatQuestCalendarDate(quest.targetDate, locale)}
+            onEdit={edit('targetDate')}
+          />
         ) : null}
 
         {visibility.showDeliverables ? (
@@ -1046,9 +891,11 @@ function MembersTab({
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-[13px] font-semibold text-foreground">
                   {member.memberName}
-                  <span className="ml-2 text-[11px] font-normal text-neutral-11">
-                    {member.roleLabel || (member.isLead ? 'Lead' : 'Member')}
-                  </span>
+                  {questParticipantRoleText(member) ? (
+                    <span className="ml-2 text-[11px] font-normal text-neutral-11">
+                      {questParticipantRoleText(member)}
+                    </span>
+                  ) : null}
                 </p>
                 <p className={LABEL_CLASS}>RESPONSIBILITY</p>
                 <BulletList items={member.responsibilities} />
@@ -1820,74 +1667,31 @@ export function SpaceQuestDetail({
             </button>
           ) : null}
         </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-11">
-          <span className="inline-flex items-center gap-1.5">
-            <PersonAvatar
-              size="sm"
-              shape="circle"
-              showPresence={false}
-              avatarSrc={
-                quest.members.find((member) => member.isLead)
-                  ?.memberAvatarUrl ??
-                findQuestSpaceMember(spaceMembers, { name: quest.leadName })
-                  ?.avatarUrl ??
-                (viewer?.name &&
-                quest.leadName.trim().toLowerCase() ===
-                  viewer.name.trim().toLowerCase()
-                  ? person?.avatarUrl ?? undefined
-                  : undefined)
-              }
-              userName={quest.leadName || 'Lead'}
-              personId={
-                quest.members.find((member) => member.isLead)?.personId ??
-                findQuestSpaceMember(spaceMembers, { name: quest.leadName })
-                  ?.personId ??
-                (viewer?.name &&
-                quest.leadName.trim().toLowerCase() ===
-                  viewer.name.trim().toLowerCase()
-                  ? person?.id
-                  : undefined)
-              }
-            />
-            <span className="font-medium text-foreground">
-              {quest.leadName || '—'}
-            </span>
-            Lead
-          </span>
-          <span>
-            Target{' '}
-            {quest.targetDate
-              ? formatQuestCalendarDate(quest.targetDate, locale)
-              : '—'}
-          </span>
-          <span>{progressLabel(quest)}</span>
-        </div>
+        <QuestDetailSubheading
+          lead={resolveQuestLeadIdentity({
+            leadName: quest.leadName,
+            avatarSrc:
+              quest.members.find((member) => member.isLead)?.memberAvatarUrl ??
+              findQuestSpaceMember(spaceMembers, { name: quest.leadName })
+                ?.avatarUrl ??
+              (viewer?.name &&
+              quest.leadName.trim().toLowerCase() ===
+                viewer.name.trim().toLowerCase()
+                ? person?.avatarUrl ?? undefined
+                : undefined),
+            personId:
+              quest.members.find((member) => member.isLead)?.personId ??
+              findQuestSpaceMember(spaceMembers, { name: quest.leadName })
+                ?.personId ??
+              (viewer?.name &&
+              quest.leadName.trim().toLowerCase() ===
+                viewer.name.trim().toLowerCase()
+                ? person?.id
+                : undefined),
+          })}
+          progress={questDetailProgressLabel(quest)}
+        />
       </header>
-
-      {quest.status === 'proposed' ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 border border-[#4b4bff]/40 bg-[#f6f5ff] px-4 py-3 dark:bg-accent-2">
-          <p className="text-[13px] text-foreground">
-            On voting — this quest becomes Active and opens a quest channel when
-            the proposal passes.
-          </p>
-          {quest.proposalSlug ? (
-            <Button
-              asChild
-              variant="outline"
-              colorVariant="neutral"
-              className="rounded-none"
-            >
-              <Link
-                href={`/${locale}/dho/${spaceSlug}/agreements/proposal/${encodeURIComponent(
-                  quest.proposalSlug,
-                )}`}
-              >
-                VIEW PROPOSAL
-              </Link>
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
 
       <nav
         className="flex gap-1 overflow-x-auto border-b border-border"

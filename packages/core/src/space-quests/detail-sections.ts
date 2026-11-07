@@ -66,6 +66,7 @@ export type QuestOverviewVisibility = {
   showMembers: boolean;
   showDeliverables: boolean;
   showHealth: boolean;
+  showTargetDate: boolean;
 };
 
 /**
@@ -84,6 +85,7 @@ export function questOverviewVisibility(quest: {
   milestones?: readonly unknown[] | null;
   members?: readonly unknown[] | null;
   deliverables?: readonly unknown[] | null;
+  targetDate?: string | null;
 }): QuestOverviewVisibility {
   const showGoal = hasText(quest.goal);
   const showScopeIn = hasItems(quest.scopeIn) || hasText(quest.scopeInMarkdown);
@@ -102,6 +104,7 @@ export function questOverviewVisibility(quest: {
     showDeliverables:
       quest.status !== 'proposed' && (quest.deliverables?.length ?? 0) > 0,
     showHealth: true,
+    showTargetDate: hasText(quest.targetDate),
   };
 }
 

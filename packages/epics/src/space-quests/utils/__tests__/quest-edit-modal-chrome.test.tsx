@@ -72,7 +72,13 @@ describe('EditQuestMilestonesModal chrome', () => {
       />,
     );
     expect(html).toContain('Add milestone at end');
-    expect(html).toContain('Hover between two milestones');
+    expect(html).toContain('Add milestone here');
+    expect(html).not.toContain('Hover between two milestones');
+    expect(html).not.toContain('inserted after');
+    expect(html).not.toContain('#3d3d8f');
+    expect(html).not.toContain('#f3f3fa');
     expect(html).toContain('2026-11-20');
+    expect(html).toContain('px-3 text-left');
+    expect(html).toContain('>Unassigned<');
   });
 });

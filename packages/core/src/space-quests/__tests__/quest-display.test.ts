@@ -154,6 +154,7 @@ describe('questOverviewVisibility', () => {
       showMembers: false,
       showDeliverables: false,
       showHealth: true,
+      showTargetDate: false,
     });
   });
 
@@ -186,6 +187,13 @@ describe('questOverviewVisibility', () => {
         status: 'active',
         deliverables: [{ name: 'Notes' }],
       }).showDeliverables,
+    ).toBe(true);
+    expect(
+      questOverviewVisibility({ ...empty, targetDate: '   ' }).showTargetDate,
+    ).toBe(false);
+    expect(
+      questOverviewVisibility({ ...empty, targetDate: '2026-11-20' })
+        .showTargetDate,
     ).toBe(true);
   });
 
