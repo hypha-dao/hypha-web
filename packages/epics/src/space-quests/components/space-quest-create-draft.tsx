@@ -35,6 +35,7 @@ import {
 } from '../../common/human-chat-panel-context';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
+import { QuestDraftParticipantsCard } from './quest-detail-presentation';
 import { QuestSectionMarkdown } from './quest-section-markdown';
 import {
   createSpaceQuestRequest,
@@ -1266,7 +1267,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                 </div>
               </div>
 
-              {/* Right column: Lead, Members (with RESPONSIBILITY bullets), Target Date */}
+              {/* Right column: Lead, Participants, Target Date */}
               <div className="space-y-2.5">
                 {/* LEAD */}
                 <button
@@ -1298,80 +1299,37 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                   </div>
                 </button>
 
-                {/* MEMBERS */}
-                <button
-                  type="button"
-                  onClick={() => {
+                <QuestDraftParticipantsCard
+                  members={members.map((m) => {
+                    const rosterMember = findQuestSpaceMember(spaceMembers, {
+                      personId: m.personId,
+                      name: m.memberName,
+                    });
+                    const memberAvatar =
+                      m.memberAvatarUrl ??
+                      rosterMember?.avatarUrl ??
+                      (stripViewerYouMarker(m.memberName)
+                        .trim()
+                        .toLowerCase() ===
+                      viewerDisplayName.trim().toLowerCase()
+                        ? person?.avatarUrl
+                        : null);
+                    return {
+                      memberName: m.memberName,
+                      roleLabel: m.roleLabel,
+                      responsibilities: m.responsibilities,
+                      avatarSrc: memberAvatar ?? undefined,
+                      personId:
+                        m.personId && m.personId > 0
+                          ? m.personId
+                          : rosterMember?.personId,
+                    };
+                  })}
+                  onEdit={() => {
                     setActiveSection('members');
                     setEditingModal('members');
                   }}
-                  data-testid="draft-section-members"
-                  className="flex w-full flex-col items-start gap-2 border border-border bg-background p-3.5 text-left hover:border-foreground/40"
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className={LABEL_CLASS}>MEMBERS</span>
-                    <span className="text-xs text-neutral-11">✎</span>
-                  </div>
-                  <div className="w-full divide-y divide-border/70">
-                    {members.length === 0 ? (
-                      <p className="text-[13px]">
-                        <span className="text-neutral-11">
-                          Not set yet — reply in chat or click to edit
-                        </span>
-                      </p>
-                    ) : null}
-                    {members.map((m, idx) => {
-                      const rosterMember = findQuestSpaceMember(spaceMembers, {
-                        personId: m.personId,
-                        name: m.memberName,
-                      });
-                      const memberAvatar =
-                        m.memberAvatarUrl ??
-                        rosterMember?.avatarUrl ??
-                        (stripViewerYouMarker(m.memberName)
-                          .trim()
-                          .toLowerCase() ===
-                        viewerDisplayName.trim().toLowerCase()
-                          ? person?.avatarUrl
-                          : null);
-                      return (
-                        <div
-                          key={idx}
-                          className="flex items-start gap-2 py-2.5 first:pt-1 last:pb-0"
-                        >
-                          <PersonAvatar
-                            size="sm"
-                            shape="circle"
-                            showPresence={false}
-                            avatarSrc={memberAvatar ?? undefined}
-                            userName={m.memberName}
-                            personId={
-                              m.personId && m.personId > 0
-                                ? m.personId
-                                : rosterMember?.personId
-                            }
-                          />
-                          <div className="min-w-0 flex-1 space-y-1">
-                            <p className="text-[13px] font-semibold text-foreground">
-                              {m.memberName}
-                            </p>
-                            <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-neutral-11">
-                              RESPONSIBILITY
-                            </p>
-                            <div className="space-y-0.5 text-xs text-foreground">
-                              {m.responsibilities.map((r, rIdx) => (
-                                <p key={rIdx} className="flex gap-1.5">
-                                  <span className="text-neutral-11">•</span>
-                                  <span>{r}</span>
-                                </p>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </button>
+                />
 
                 {/* TARGET DATE (NO Priority section below this!) */}
                 <button

@@ -298,6 +298,97 @@ export type QuestParticipantCardModel = {
   responsibilities: readonly string[];
 };
 
+export type QuestDraftParticipantView = {
+  memberName: string;
+  roleLabel?: string | null;
+  isLead?: boolean;
+  responsibilities: readonly string[];
+  avatarSrc?: string;
+  personId?: number;
+};
+
+/**
+ * Unsaved create-draft participants summary. Shows the same stored role as
+ * the persisted Participants card, including the lead fallback, and keeps
+ * responsibility bullets. A blank role stays blank.
+ */
+export function QuestDraftParticipantsCard({
+  members,
+  onEdit,
+}: {
+  members: readonly QuestDraftParticipantView[];
+  onEdit: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onEdit}
+      data-testid="draft-section-members"
+      className="flex w-full flex-col items-start gap-2 border border-border bg-background p-3.5 text-left hover:border-foreground/40"
+    >
+      <div className="flex w-full items-center justify-between">
+        <span className="text-[10px] font-bold tracking-[0.01em] text-neutral-11">
+          Participants
+        </span>
+        <span className="text-xs text-neutral-11">✎</span>
+      </div>
+      <div className="w-full divide-y divide-border/70">
+        {members.length === 0 ? (
+          <p className="text-[13px]">
+            <span className="text-neutral-11">
+              Not set yet — reply in chat or click to edit
+            </span>
+          </p>
+        ) : null}
+        {members.map((member, index) => {
+          const role = questParticipantRoleText(member);
+          return (
+            <div
+              key={`${member.memberName}-${index}`}
+              className="flex items-start gap-2 py-2.5 first:pt-1 last:pb-0"
+            >
+              <PersonAvatar
+                size="sm"
+                shape="circle"
+                showPresence={false}
+                avatarSrc={member.avatarSrc}
+                userName={member.memberName}
+                personId={member.personId}
+              />
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="break-words text-[13px] font-semibold text-foreground">
+                  {member.memberName}
+                </p>
+                {role ? (
+                  <p
+                    className="break-words text-[11px] text-neutral-11"
+                    data-testid={`draft-participant-role-${index}`}
+                  >
+                    {role}
+                  </p>
+                ) : null}
+                <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-neutral-11">
+                  RESPONSIBILITY
+                </p>
+                <div className="space-y-0.5 text-xs text-foreground">
+                  {member.responsibilities.map((item, itemIndex) => (
+                    <p key={itemIndex} className="flex gap-1.5">
+                      <span className="text-neutral-11">•</span>
+                      <span className="break-words [overflow-wrap:anywhere]">
+                        {item}
+                      </span>
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </button>
+  );
+}
+
 export function QuestParticipantsCard({
   members,
   onEdit,

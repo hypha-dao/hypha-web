@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   cleanup,
   fireEvent,
@@ -13,6 +13,7 @@ import type { QuestRecord } from '@hypha-platform/core/client';
 import { COMPACT_EDITOR_TOOLBAR_BUTTON_CLASS } from '@hypha-platform/ui';
 import {
   QuestDetailSubheading,
+  QuestDraftParticipantsCard,
   QuestMilestonesCard,
   QuestParticipantsCard,
   QuestRewardStrip,
@@ -25,6 +26,7 @@ import {
 import {
   EditQuestMembersModal,
   EditQuestMilestonesModal,
+  type EditableQuestMember,
 } from '../quest-section-edit-modals';
 import {
   QUEST_LIST_GRID_CLASS,
@@ -333,6 +335,77 @@ describe('participant role editor', () => {
     expect(screen.getByText('Writer')).toBeTruthy();
     expect(screen.getByText('Lead')).toBeTruthy();
     expect(screen.queryByText('Member')).toBeNull();
+  });
+
+  it('shows an accepted local role on the draft overview and keeps it when reopened', () => {
+    const initial: EditableQuestMember[] = [
+      {
+        personId: 9,
+        memberName: 'QA Tester',
+        roleLabel: null,
+        responsibilities: ['Run the checklist', 'Record the result'],
+      },
+    ];
+
+    function LocalDraftParticipants() {
+      const [members, setMembers] = useState(initial);
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <QuestDraftParticipantsCard
+            members={members.map((member) => ({
+              memberName: member.memberName,
+              roleLabel: member.roleLabel,
+              responsibilities: member.responsibilities,
+              personId: member.personId ?? undefined,
+            }))}
+            onEdit={() => setOpen(true)}
+          />
+          <EditQuestMembersModal
+            open={open}
+            onOpenChange={setOpen}
+            members={members}
+            onSave={setMembers}
+          />
+        </>
+      );
+    }
+
+    render(<LocalDraftParticipants />);
+
+    const overview = screen.getByTestId('draft-section-members');
+    expect(within(overview).getByText('Participants')).toBeTruthy();
+    expect(within(overview).queryByText('MEMBERS')).toBeNull();
+    expect(within(overview).getByText('QA Tester')).toBeTruthy();
+    expect(within(overview).getByText('Run the checklist')).toBeTruthy();
+    expect(within(overview).getByText('Record the result')).toBeTruthy();
+    expect(within(overview).queryByText('QA runner')).toBeNull();
+    expect(within(overview).queryByText('Member')).toBeNull();
+
+    fireEvent.click(overview);
+    const role = screen.getByTestId(
+      'quest-participant-role-0',
+    ) as HTMLInputElement;
+    expect(role.value).toBe('');
+    fireEvent.change(role, { target: { value: 'QA runner' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    const updated = screen.getByTestId('draft-section-members');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(
+      within(updated).getByTestId('draft-participant-role-0').textContent,
+    ).toBe('QA runner');
+    expect(within(updated).getByText('QA Tester')).toBeTruthy();
+    expect(within(updated).getByText('Run the checklist')).toBeTruthy();
+    expect(within(updated).getByText('Record the result')).toBeTruthy();
+
+    fireEvent.click(updated);
+    const reopened = screen.getByTestId(
+      'quest-participant-role-0',
+    ) as HTMLInputElement;
+    expect(reopened.value).toBe('QA runner');
+    expect(screen.getByDisplayValue('Run the checklist')).toBeTruthy();
+    expect(screen.getByDisplayValue('Record the result')).toBeTruthy();
   });
 });
 
