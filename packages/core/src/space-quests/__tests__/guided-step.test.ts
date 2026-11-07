@@ -6,6 +6,7 @@ import {
   questDraftCoachedStep,
   questExistingTurnMayPersist,
   questPendingYesNotice,
+  questWordingRevisionStep,
   resolveQuestDraftTarget,
   scopeBoundaryLists,
 } from '../guided-step';
@@ -579,5 +580,43 @@ describe('resolveQuestDraftTarget', () => {
         'scope',
       ),
     ).toEqual({ step: 'success', bulk: false });
+  });
+
+  it('treats a later section after a commanded value as several', () => {
+    const later = 'Put in scope "Sandbox checklist". Draft the milestones.';
+    expect(isBulkQuestDraftRequest(later)).toBe(true);
+    expect(resolveQuestDraftTarget(later, 'scope')).toEqual({
+      step: 'scope',
+      bulk: true,
+    });
+    expect(isBulkQuestDraftRequest('Draft the goal and the scope')).toBe(true);
+    expect(
+      isBulkQuestDraftRequest(
+        'Set the goal to "Rewrite scope and rewards documentation"',
+      ),
+    ).toBe(false);
+    expect(
+      resolveQuestDraftTarget(
+        'Set the goal to "Rewrite scope and rewards documentation"',
+        'scope',
+      ),
+    ).toEqual({ step: 'goal', bulk: false });
+  });
+
+  it('does not treat a dropped word as the section being revised', () => {
+    expect(questWordingRevisionStep('drop the word lead', 'goal')).toBe('goal');
+    expect(
+      questWordingRevisionStep('drop the word lead from the goal', 'scope'),
+    ).toBe('goal');
+    expect(isBulkQuestDraftRequest('drop the word lead from the goal')).toBe(
+      false,
+    );
+    expect(questWordingRevisionStep('revise the lead', 'goal')).toBe('lead');
+    expect(questWordingRevisionStep('drop the word sandbox', 'goal')).toBe(
+      'goal',
+    );
+    expect(
+      questWordingRevisionStep('Please remove the first bullet', 'scope'),
+    ).toBe('scope');
   });
 });

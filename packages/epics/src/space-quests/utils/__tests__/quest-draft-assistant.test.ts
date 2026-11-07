@@ -13,6 +13,7 @@ import {
   findNextUnfilledQuestStep,
   formatPendingQuestPatch,
   isQuestSectionApproval,
+  questAssistHistoryEntries,
   isQuestSectionCoachingOpener,
   QUEST_HELPER_OFFLINE_REPLY,
   questDraftSuggestionStatus,
@@ -2510,7 +2511,8 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(contradicted?.draft.scopeOut).toEqual([]);
     expect(contradicted?.draft.goal).toBe('');
     expect(contradicted?.draft.leadName).toBe(emptyDraft.leadName);
-    expect(contradicted?.reply).toContain(historyReply);
+    expect(contradicted?.reply).not.toMatch(/stays history/i);
+    expect(contradicted?.reply).not.toContain(historyReply);
     expectNoticeOnce(contradicted?.reply, questPendingYesNotice('scope'));
     expect(contradicted?.reply).toMatch(
       /Yes applies that Scope suggestion and nothing else/,
@@ -3112,5 +3114,251 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(savedSuccess?.draft.successCriteria).toContain(successBullets[1]);
     expect(savedSuccess?.draft.goal).toBe(accepted);
     expect(savedSuccess?.draft.scopeIn).toEqual([]);
+  });
+});
+
+describe('quest draft review corrections', () => {
+  const send = (
+    message: string,
+    draft: QuestDraftStateSnapshot,
+    pending: PendingQuestSectionProposal | null,
+    currentStep: QuestStewardStep,
+    model: QuestDraftModelTurn | null,
+  ) =>
+    runNewQuestDraftTurn({
+      message,
+      currentStep,
+      draft,
+      pending,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      model,
+    });
+
+  it('writes an explicit name when the value looks like yes or a question', () => {
+    const pending: PendingQuestSectionProposal = {
+      step: 'goal',
+      patch: { goal: 'Ship the checklist' },
+    };
+    const yesName = send('Set the name to "Yes"', emptyDraft, pending, 'goal', {
+      reply: 'Nothing is waiting on a yes.',
+      patch: { name: 'ignored' },
+    });
+    expect(yesName.wrote).toBe(true);
+    expect(yesName.draft.name).toBe('Yes');
+    expect(yesName.pending).toBeNull();
+    expect(yesName.draft.goal).toBe('');
+    expect(yesName.reply).not.toMatch(/Nothing is waiting on a yes/i);
+
+    const questionName = send(
+      'Set the name to "Can new members onboard?"',
+      emptyDraft,
+      pending,
+      'goal',
+      null,
+    );
+    expect(questionName.wrote).toBe(true);
+    expect(questionName.draft.name).toBe('Can new members onboard?');
+    expect(questionName.reply).not.toMatch(/Nothing is waiting on a yes/i);
+
+    const confirmed = send('yes', emptyDraft, pending, 'goal', null);
+    expect(confirmed.wrote).toBe(true);
+    expect(confirmed.draft.goal).toBe('Ship the checklist');
+    expect(confirmed.draft.name).toBe('');
+  });
+
+  it('keeps a quoted goal command to one section', () => {
+    const quoted = send(
+      'Set the goal to "Rewrite scope and rewards documentation"',
+      emptyDraft,
+      null,
+      'scope',
+      {
+        reply: 'I wrote the scope and the rewards too.',
+        patch: {
+          goal: 'should not replace the command',
+          scopeIn: ['should not stick'],
+          rewards: [{ amount: '1', token: 'USDC' }],
+        },
+      },
+    );
+    expect(quoted.wrote).toBe(true);
+    expect(quoted.draft.goal).toBe('Rewrite scope and rewards documentation');
+    expect(quoted.draft.scopeIn).toEqual([]);
+    expect(quoted.draft.rewards).toEqual([]);
+    expect(quoted.reply).not.toMatch(/one section at a time/i);
+  });
+
+  it('refuses a second section after a commanded value', () => {
+    const later = send(
+      'Put in scope "Sandbox checklist". Draft the milestones.',
+      emptyDraft,
+      null,
+      'scope',
+      {
+        patch: {
+          scopeIn: ['Sandbox checklist'],
+          milestones: [{ name: 'M1' }],
+        },
+      },
+    );
+    expect(later.wrote).toBe(false);
+    expect(later.draft.scopeIn).toEqual([]);
+    expect(later.draft.milestones).toEqual([]);
+    expect(later.reply).toMatch(/one section at a time/i);
+
+    const goalAndScope = send(
+      'Draft the goal and the scope',
+      emptyDraft,
+      null,
+      'goal',
+      { patch: { goal: 'Ship it', scopeIn: ['checklist'] } },
+    );
+    expect(goalAndScope.wrote).toBe(false);
+    expect(goalAndScope.draft.goal).toBe('');
+    expect(goalAndScope.reply).toMatch(/one section at a time/i);
+  });
+
+  it('files a goal revision that mentions testing', () => {
+    const pending: PendingQuestSectionProposal = {
+      step: 'goal',
+      patch: { goal: 'Ship the sandbox checklist' },
+    };
+    const revised = send(
+      'make it shorter and keep testing in the wording',
+      { ...emptyDraft, goal: 'Keep the accepted goal' },
+      pending,
+      'scope',
+      {
+        reply: 'Suggested a shorter goal.',
+        patch: {
+          goal: 'Record a pass or fail for each sandbox check.',
+          scopeIn: ['should not stick'],
+        },
+      },
+    );
+    expect(revised.wrote).toBe(false);
+    expect(revised.pending?.step).toBe('goal');
+    expect(revised.pending?.patch.goal).toBe(
+      'Record a pass or fail for each sandbox check.',
+    );
+    expect(revised.pending?.patch.scopeIn).toBeUndefined();
+    expect(revised.draft.goal).toBe('Keep the accepted goal');
+
+    const vague = send(
+      'the goal is to test quest creation',
+      emptyDraft,
+      null,
+      'goal',
+      {
+        reply: 'That names an activity.',
+        patch: { goal: 'test quest creation' },
+      },
+    );
+    expect(vague.wrote).toBe(false);
+    expect(vague.pending).toBeNull();
+    expect(vague.draft.goal).toBe('');
+
+    const droppedLead = send(
+      'drop the word lead',
+      { ...emptyDraft, goal: 'Accepted goal' },
+      pending,
+      'scope',
+      {
+        reply: 'Dropped that word.',
+        patch: { goal: 'Ships the checklist', leadName: 'Ada' },
+      },
+    );
+    expect(droppedLead.wrote).toBe(false);
+    expect(droppedLead.pending?.step).toBe('goal');
+    expect(droppedLead.pending?.patch.goal).toBe('Ships the checklist');
+    expect(droppedLead.pending?.patch.leadName).toBeUndefined();
+    expect(droppedLead.draft.leadName).toBe(emptyDraft.leadName);
+    expect(droppedLead.draft.goal).toBe('Accepted goal');
+  });
+
+  it('withholds an unresolved choice and keeps a finished approval question', () => {
+    const choice = send('Draft the scope', emptyDraft, null, 'scope', {
+      reply: 'Should this cover new members or existing members?',
+      patch: { scopeIn: ['new members'] },
+    });
+    expect(choice.pending).toBeNull();
+    expect(choice.wrote).toBe(false);
+    expect(choice.draft.scopeIn).toEqual([]);
+
+    const who = send('Please propose a goal', emptyDraft, null, 'goal', {
+      reply: 'Who is this for?',
+      patch: { goal: 'Sandbox members' },
+    });
+    expect(who.pending).toBeNull();
+    expect(who.draft.goal).toBe('');
+
+    const finished = send(
+      'Please propose a goal for my confirmation',
+      emptyDraft,
+      null,
+      'goal',
+      {
+        reply:
+          'Who benefits is the sandbox member. Do you want that to be in the Goal?',
+        patch: { goal: 'Sandbox members can finish onboarding without help.' },
+      },
+    );
+    expect(finished.pending?.step).toBe('goal');
+    expect(finished.pending?.patch.goal).toBe(
+      'Sandbox members can finish onboarding without help.',
+    );
+    expect(finished.draft.goal).toBe('');
+  });
+
+  it('drops a false nothing-waiting claim while scope is still pending', () => {
+    const pending: PendingQuestSectionProposal = {
+      step: 'scope',
+      patch: { scopeIn: ['checklist'], scopeOut: ['rollout'] },
+    };
+    const nothing = send('Add lead scoring', emptyDraft, pending, 'scope', {
+      reply: 'Nothing is waiting on a yes.',
+      patch: { scopeIn: ['Add lead scoring'] },
+    });
+    expect(nothing.pending).toEqual(pending);
+    expect(nothing.wrote).toBe(false);
+    expect(nothing.reply).not.toMatch(/Nothing is waiting on a yes/i);
+    expect(nothing.reply).toContain(questPendingYesNotice('scope'));
+    expect(nothing.draft.scopeIn).toEqual([]);
+  });
+
+  it('replaces a pending scope when the member removes a bullet', () => {
+    const pending: PendingQuestSectionProposal = {
+      step: 'scope',
+      patch: { scopeIn: ['keep the checklist', 'remove this bullet'] },
+    };
+    const removed = send(
+      'Please remove the first bullet',
+      emptyDraft,
+      pending,
+      'scope',
+      {
+        reply: 'Removed the first bullet. Not saved yet.',
+        patch: { scopeIn: ['remove this bullet'] },
+      },
+    );
+    expect(removed.wrote).toBe(false);
+    expect(removed.pending?.patch.scopeIn).toEqual(['remove this bullet']);
+    const saved = send('yes', emptyDraft, removed.pending, 'scope', null);
+    expect(saved.wrote).toBe(true);
+    expect(saved.draft.scopeIn).toEqual(['remove this bullet']);
+  });
+
+  it('caps assist history at the schema limits', () => {
+    const history = Array.from({ length: 25 }, (_, index) => ({
+      role: index % 2 === 0 ? 'user' : 'assistant',
+      text: `turn ${index} ${'g'.repeat(2100)}`,
+    }));
+    const entries = questAssistHistoryEntries(history);
+    expect(entries).toHaveLength(20);
+    expect(entries[0]?.text.startsWith('turn 5 ')).toBe(true);
+    expect(entries[0]?.role).toBe('assistant');
+    expect(entries.every((entry) => entry.text.length === 2000)).toBe(true);
+    expect(entries.at(-1)?.role).toBe('user');
   });
 });

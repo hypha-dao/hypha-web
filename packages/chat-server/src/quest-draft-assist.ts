@@ -171,6 +171,7 @@ export const questDraftAssistRequestSchema = z.object({
     .object({
       status: z.enum(['none', 'awaiting', 'retired', 'revising']),
       step: z.enum(QUEST_STEWARD_STEPS).optional(),
+      wording: z.string().max(2000).optional(),
     })
     .optional(),
 });
@@ -296,6 +297,7 @@ export function questAssistCoachedTarget(
 function actionableSuggestionLine(suggestion?: {
   status: 'none' | 'awaiting' | 'retired' | 'revising';
   step?: string;
+  wording?: string;
 }): string | null {
   if (!suggestion) return null;
   const section = suggestion.step ?? 'the current section';
@@ -303,7 +305,7 @@ function actionableSuggestionLine(suggestion?: {
     return `Actionable suggestion: none. The earlier ${section} suggestion is history because this message is a question. Yes will not save it. Do not tell the member it is still waiting for confirmation.`;
   }
   if (suggestion.status === 'revising') {
-    return `Actionable suggestion: replace it. The member asked to revise the ${section} suggestion. Call update_quest_draft with the revised ${section} wording only. Yes will save that new wording, not the earlier one, and not the member's raw message. Do not tell them to use a Put command. It is not saved until they confirm.`;
+    return `Actionable suggestion: replace it. The member asked to revise the ${section} suggestion. The pending suggestion wording block, when present, is the text to revise. Call update_quest_draft with the revised ${section} wording only. Yes will save that new wording, not the earlier one, and not the member's raw message. Do not ask the member to repeat the pending wording. Do not tell them to use a Put command. It is not saved until they confirm.`;
   }
   if (suggestion.status === 'awaiting') {
     const named = QUEST_STEWARD_STEPS.find((step) => step === suggestion.step);
@@ -329,10 +331,15 @@ export function buildQuestHelperTurnPrompt({
   suggestion?: {
     status: 'none' | 'awaiting' | 'retired' | 'revising';
     step?: string;
+    wording?: string;
   };
 }): string {
+  const pendingWording = suggestion?.wording?.trim() ?? '';
   return [
     actionableSuggestionLine(suggestion),
+    pendingWording
+      ? untrusted('pending suggestion wording', pendingWording)
+      : null,
     untrusted('current quest state JSON', snapshotJson),
     historyLines ? untrusted('recent conversation', historyLines) : null,
     `Current guided section focus: ${currentStep}`,

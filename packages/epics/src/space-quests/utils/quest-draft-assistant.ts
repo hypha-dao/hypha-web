@@ -522,6 +522,22 @@ export function decideNewQuestDraftTurn({
   return { kind: 'propose', step: targetStep };
 }
 
+const QUEST_ASSIST_HISTORY_LIMIT = 20;
+const QUEST_ASSIST_HISTORY_TEXT_MAX = 2000;
+
+/**
+ * History the draft-assist schema accepts. A longer helper reply would
+ * otherwise fail the next turn and look like the assistant is offline.
+ */
+export function questAssistHistoryEntries(
+  history: readonly { role: string; text: string }[],
+): { role: 'user' | 'assistant'; text: string }[] {
+  return history.slice(-QUEST_ASSIST_HISTORY_LIMIT).map((entry) => ({
+    role: entry.role === 'user' ? 'user' : 'assistant',
+    text: entry.text.slice(0, QUEST_ASSIST_HISTORY_TEXT_MAX),
+  }));
+}
+
 export function formatPendingQuestPatch(patch: QuestDraftPatchInput): string {
   const lines: string[] = [];
   if (patch.name?.trim()) lines.push(patch.name.trim());
@@ -617,10 +633,12 @@ export function buildLocalQuestDraftPatch({
 }): QuestDraftPatchInput {
   const raw = message.trim();
   if (!raw || (!commandPayload && isBulkSectionDraftRequest(raw))) return {};
+  // The quoted value of "Set the name to \"Yes\"" is the field, not a yes.
   if (
-    isQuestDraftQuestion(raw) ||
-    isQuestSectionRejection(raw) ||
-    isQuestSectionApproval(raw)
+    !commandPayload &&
+    (isQuestDraftQuestion(raw) ||
+      isQuestSectionRejection(raw) ||
+      isQuestSectionApproval(raw))
   ) {
     return {};
   }
@@ -1500,6 +1518,22 @@ const MISSING_DECISION =
  * or sending the sentence to another section, must not also become pending
  * content. A finished tool suggestion can still mention an optional revision.
  */
+/** The sentence that asks, not the finished statement before it. */
+function questionSentence(chunk: string): string {
+  const sentences = chunk
+    .split(/(?<=[.!])\s+/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  return sentences.find((part) => part.includes('?')) ?? chunk.trim();
+}
+
+/**
+ * "Should this cover new members or existing members?" is still a choice.
+ * A later "or" inside a completeness check is not, and neither is a bare or.
+ */
+const UNRESOLVED_CHOICE =
+  /^(?:should|do you|would you|could you|shall)\b[\s\S]{0,180}\bor\b/i;
+
 function modelGuidanceWithholdsFiling(
   reply: string,
   step: QuestStewardStep,
@@ -1507,9 +1541,14 @@ function modelGuidanceWithholdsFiling(
   const label = sectionLabelSource(step);
   const questions = reply
     .split(/(?<=\?)\s+/)
-    .map((part) => part.trim())
+    .map((part) => questionSentence(part))
     .filter((part) => part.includes('?'));
-  if (questions.some((question) => MISSING_DECISION.test(question))) {
+  if (
+    questions.some(
+      (question) =>
+        MISSING_DECISION.test(question) || UNRESOLVED_CHOICE.test(question),
+    )
+  ) {
     return true;
   }
   const withoutFilingAsk = reply
@@ -1571,7 +1610,9 @@ export function decideQuestDraftSuggestion({
   if (labeled || (!clarifying && Object.keys(memberPatch).length > 0)) {
     return { intent: 'propose', patch: memberPatch };
   }
-  const modelPatch = withoutVagueGoal(limitedModelPatch(model, step));
+  const modelPatch = questWordingRevisionStep(message, step)
+    ? limitedModelPatch(model, step)
+    : withoutVagueGoal(limitedModelPatch(model, step));
   if (!clarifying && Object.keys(modelPatch).length > 0) {
     return { intent: 'propose', patch: modelPatch };
   }
@@ -1720,18 +1761,8 @@ export function runNewQuestDraftTurn({
     );
   }
 
-  if (isQuestSectionApproval(text)) {
-    const named = sectionNamedInApproval(text);
-    const pendingPatch = pending?.patch ?? {};
-    const hasPending = Object.keys(pendingPatch).length > 0;
-    if (pending && hasPending && (!named || named === pending.step)) {
-      return finishApply(pending.step, pending.patch);
-    }
-    return stay(
-      `Nothing is waiting on a yes. ${stewardQuestionForStep(currentStep)}`,
-    );
-  }
-
+  // An explicit command writes immediately. "yes" is not a command, so a
+  // confirmation still applies the suggestion that is already waiting.
   const command = explicitQuestSectionCommand(text);
   if (command) {
     const extracted = buildLocalQuestDraftPatch({
@@ -1742,6 +1773,18 @@ export function runNewQuestDraftTurn({
       commandPayload: true,
     });
     return finishApply(command.step, extracted);
+  }
+
+  if (isQuestSectionApproval(text)) {
+    const named = sectionNamedInApproval(text);
+    const pendingPatch = pending?.patch ?? {};
+    const hasPending = Object.keys(pendingPatch).length > 0;
+    if (pending && hasPending && (!named || named === pending.step)) {
+      return finishApply(pending.step, pending.patch);
+    }
+    return stay(
+      `Nothing is waiting on a yes. ${stewardQuestionForStep(currentStep)}`,
+    );
   }
 
   if (isQuestSectionRejection(text)) {
@@ -1796,7 +1839,11 @@ export function runNewQuestDraftTurn({
     );
   }
 
-  if (target.step === 'goal' && isVagueQuestGoal(goalStatement(text))) {
+  if (
+    target.step === 'goal' &&
+    !questWordingRevisionStep(text, pendingStep) &&
+    isVagueQuestGoal(goalStatement(text))
+  ) {
     const reply = conversationalModelReply(model, text);
     return stay(
       replyAfterRetiredSuggestion(reply ?? QUEST_HELPER_OFFLINE_REPLY, false),
@@ -1883,6 +1930,9 @@ function withoutExactNotice(reply: string, notice: string): string {
  * The older patch stays. Every chat-only reply ends with that section's
  * notice, once. Model sentences do not decide whether yes still applies.
  */
+const CONFLICTING_PENDING_CLAIM =
+  /\b(?:nothing is waiting on a yes|no longer waiting|(?:suggestion|wording|it) is history|stays history|is history until|(?:has been|been|is|was) retired)\b/i;
+
 function replyWhileOlderPending(
   reply: string,
   pending: PendingQuestSectionProposal,
@@ -1890,21 +1940,25 @@ function replyWhileOlderPending(
   const notice = questPendingYesNotice(pending.step);
   const source = withoutExactNotice(reply, notice);
   const filtered = replyAfterRetiredSuggestion(source, false);
+  const parts = filtered
+    .split(/\n+|(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  const withoutClaims = parts.filter(
+    (part) => !CONFLICTING_PENDING_CLAIM.test(part),
+  );
+  const unbacked = filtered !== source;
+  const kept = unbacked
+    ? withoutClaims.filter(
+        (part) =>
+          !/\btreat (?:those|these|this|that) words?\b/i.test(part) &&
+          !/\bas a suggestion\b/i.test(part),
+      )
+    : withoutClaims;
   const cleaned =
-    filtered === source
-      ? source.trim()
-      : filtered
-          .split(/\n+|(?<=[.!?])\s+/)
-          .map((part) => part.trim())
-          .filter(
-            (part) =>
-              part.length > 0 &&
-              !/\bnothing is waiting on a yes\b/i.test(part) &&
-              !/\btreat (?:those|these|this|that) words?\b/i.test(part) &&
-              !/\bas a suggestion\b/i.test(part),
-          )
-          .join('\n\n')
-          .trim();
+    !unbacked && kept.length === parts.length
+      ? filtered.trim()
+      : kept.join('\n\n').trim();
   const body = withoutExactNotice(cleaned, notice);
   return body ? `${body}\n\n${notice}` : notice;
 }

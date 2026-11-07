@@ -242,6 +242,9 @@ function bulkFromDraftSignals(text: string): boolean {
   // "milestone editing", are not a request to draft another section.
   // A preamble that names several sections stays a bulk request.
   if (scopeBoundaryLists(text)) return false;
+  // "Draft the goal and the scope" names Goal. A sentence that merely
+  // contains the noun "draft" and the word "goal" does not.
+  if (draftRequestNamesGoalAndAnother(text)) return true;
   // One labeled payload is that section, unless a preamble already named
   // several sections. Words inside the payload ("milestone editing" on an
   // in-scope line) are not a second section.
@@ -250,6 +253,14 @@ function bulkFromDraftSignals(text: string): boolean {
     return false;
   }
   return mentionsSeveralSections(lower);
+}
+
+function draftRequestNamesGoalAndAnother(text: string): boolean {
+  if (!/\bgoals?\b/i.test(text)) return false;
+  if (!sectionsMentioned(text).some((step) => step !== 'goal')) return false;
+  return /\b(?:draft|suggest|propose|generate|write|fill(?:\s+in|\s+out)?)\s+(?:the\s+)?(?:goals?|scopes?|success(?:\s+criteria)?|milestones?|members?|rewards?)\b/i.test(
+    text,
+  );
 }
 
 function hasDraftVerb(text: string): boolean {
@@ -278,10 +289,26 @@ function namedProposalContentSpan(
   return { start, end };
 }
 
+/** Words outside a quoted command. The value itself is not a second request. */
+function textOutsideCommandedPayload(text: string): string {
+  const payload = commandedPayloadSpan(text);
+  if (!payload) return text;
+  return `${text.slice(0, payload.start)} ${text.slice(payload.end)}`.trim();
+}
+
 function suffixDraftsAnotherSection(suffix: string): boolean {
   const text = suffix.trim();
   if (!text || !hasDraftVerb(text)) return false;
   return sectionsMentioned(text).length > 0 || mentionsSeveralSections(text);
+}
+
+/** A later "Draft the milestones" is a second section, not part of the quote. */
+function suffixDraftsDifferentSection(
+  suffix: string,
+  commanded: QuestStewardStep | null,
+): boolean {
+  if (!suffixDraftsAnotherSection(suffix) || !commanded) return false;
+  return sectionsMentioned(suffix).some((step) => step !== commanded);
 }
 
 /** "Draft everything" or "draft the scope, success criteria, and milestones". */
@@ -290,9 +317,13 @@ export function isBulkQuestDraftRequest(text: string): boolean {
   if (payload && payload.end > payload.start) {
     // Judge the words before and after the value on their own. Joining them
     // back together would hide a later sentence inside the same command.
+    // A later sentence that drafts a different section is still several.
+    const commandedName = COMMANDED_SECTION.exec(text)?.[1];
+    const commanded = commandedName ? stepFromSectionName(commandedName) : null;
     return (
       isBulkQuestDraftRequest(text.slice(0, payload.start)) ||
-      isBulkQuestDraftRequest(text.slice(payload.end))
+      isBulkQuestDraftRequest(text.slice(payload.end)) ||
+      suffixDraftsDifferentSection(text.slice(payload.end), commanded)
     );
   }
   const proposal = namedProposalContentSpan(text);
@@ -576,10 +607,40 @@ function asksToReviseWording(text: string): boolean {
     /\bshorter\s+version\b/i.test(text) ||
     /\bmake\s+(?:it|this|that|the\s+[a-z]+)\s+shorter\b/i.test(text) ||
     /\b(?:drop|remove|cut)\s+the\s+word\b/i.test(text) ||
+    /\b(?:remove|drop|cut)\s+(?:the\s+)?(?:first\s+|last\s+|that\s+|this\s+)?(?:bullet|line|item)\b/i.test(
+      text,
+    ) ||
     /\b(?:propose|suggest)\b[\s\S]{0,80}\b(?:shorter|revised|rewritten|reworded|wording|version)\b/i.test(
       text,
     )
   );
+}
+
+function droppedWord(text: string): string | null {
+  return (
+    /\b(?:drop|remove|cut)\s+the\s+word\s+([a-z][a-z-]*)\b/i
+      .exec(text)?.[1]
+      ?.toLowerCase() ?? null
+  );
+}
+
+function sectionIsDroppedWord(
+  step: QuestStewardStep,
+  word: string | null,
+): boolean {
+  if (!word) return false;
+  if (step === 'lead') return word === 'lead';
+  if (step === 'goal') return word === 'goal';
+  if (step === 'scope') return word === 'scope';
+  if (step === 'name') return word === 'name' || word === 'title';
+  if (step === 'members') return word === 'member' || word === 'members';
+  if (step === 'milestones') {
+    return word === 'milestone' || word === 'milestones';
+  }
+  if (step === 'rewards') return word === 'reward' || word === 'rewards';
+  if (step === 'success') return word === 'success' || word === 'criteria';
+  if (step === 'targetDate') return word === 'date';
+  return false;
 }
 
 function sectionsMentioned(text: string): QuestStewardStep[] {
@@ -603,17 +664,26 @@ export function questWordingRevisionStep(
   message: string,
   pendingStep: QuestStewardStep | null,
 ): QuestStewardStep | null {
-  const text = message.trim();
+  const text = textOutsideCommandedPayload(message.trim());
   if (!text || !asksToReviseWording(text)) return null;
-  const named = sectionsMentioned(text);
+  const ignored = droppedWord(text);
+  const named = sectionsMentioned(text).filter(
+    (step) => !sectionIsDroppedWord(step, ignored),
+  );
   if (named.length > 1) return null;
   if (named.length === 1) return named[0] ?? null;
   return pendingStep;
 }
 
 export function questRevisionNamesSeveralSections(message: string): boolean {
-  const text = message.trim();
-  return asksToReviseWording(text) && sectionsMentioned(text).length > 1;
+  const text = textOutsideCommandedPayload(message.trim());
+  if (!asksToReviseWording(text)) return false;
+  const ignored = droppedWord(text);
+  return (
+    sectionsMentioned(text).filter(
+      (step) => !sectionIsDroppedWord(step, ignored),
+    ).length > 1
+  );
 }
 
 /**

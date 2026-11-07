@@ -47,6 +47,8 @@ import {
   useQuestSpaceMembers,
 } from '../hooks/use-space-quests';
 import {
+  formatPendingQuestPatch,
+  questAssistHistoryEntries,
   questDraftSuggestionStatus,
   questDraftTurnUsesModel,
   questHelperTurnMessage,
@@ -419,14 +421,23 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                       personId: m.personId,
                       name: m.name,
                     })),
-                    history: history.map((entry) => ({
-                      role: entry.role === 'user' ? 'user' : 'assistant',
-                      text: entry.text,
-                    })),
-                    pendingSuggestion: {
-                      status: suggestion.status,
-                      ...(suggestion.step ? { step: suggestion.step } : {}),
-                    },
+                    history: questAssistHistoryEntries(history),
+                    pendingSuggestion: (() => {
+                      const wording =
+                        pendingNow &&
+                        (suggestion.status === 'awaiting' ||
+                          suggestion.status === 'revising')
+                          ? formatPendingQuestPatch(pendingNow.patch).slice(
+                              0,
+                              2000,
+                            )
+                          : '';
+                      return {
+                        status: suggestion.status,
+                        ...(suggestion.step ? { step: suggestion.step } : {}),
+                        ...(wording ? { wording } : {}),
+                      };
+                    })(),
                   }),
                 },
               );

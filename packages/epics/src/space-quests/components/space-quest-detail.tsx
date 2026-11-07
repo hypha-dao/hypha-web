@@ -91,6 +91,7 @@ import {
 import type { SpaceQuestDetailTab } from '../space-quest-tabs';
 import {
   QUEST_HELPER_OFFLINE_REPLY,
+  questAssistHistoryEntries,
   type QuestDraftPatchInput,
 } from '../utils/quest-draft-assistant';
 
@@ -1450,10 +1451,7 @@ export function SpaceQuestDetail({
               personId: m.personId,
               name: m.name,
             })),
-            history: detailChatMessages.slice(-8).map((m) => ({
-              role: m.role === 'user' ? 'user' : 'assistant',
-              text: m.text,
-            })),
+            history: questAssistHistoryEntries(detailChatMessages.slice(-8)),
           }),
         },
       );

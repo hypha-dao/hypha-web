@@ -94,10 +94,21 @@ describe('quest helper prompt', () => {
       historyLines: 'Quest Helper: earlier goal wording',
       currentStep: 'scope',
       message: 'no, make it shorter still and drop the word sandbox',
-      suggestion: { status: 'revising', step: 'goal' },
+      suggestion: {
+        status: 'revising',
+        step: 'goal',
+        wording: 'Ship a shorter sandbox checklist for new members.',
+      },
     });
     expect(revising.startsWith('Actionable suggestion: replace it.')).toBe(
       true,
+    );
+    expect(revising).toContain('pending suggestion wording');
+    expect(revising).toContain(
+      'Ship a shorter sandbox checklist for new members.',
+    );
+    expect(revising).toContain(
+      'Do not ask the member to repeat the pending wording',
     );
     expect(revising).toContain('Do not tell them to use a Put command');
     expect(revising).not.toMatch(/suggestion is history because/i);
