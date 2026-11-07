@@ -9,6 +9,8 @@ import {
   limitQuestPatchToStep,
   resolveQuestDraftTarget,
   isSandboxOrThrowawaySpace,
+  isViewerQuestLead,
+  mergeRefinedQuestDeliverables,
   mergeRefinedQuestMembers,
   mergeRefinedQuestMilestones,
   selectSpecialistForQuestion,
@@ -533,6 +535,19 @@ ${untrusted(
         return null;
       };
 
+      const nextLeadPersonId = collectedPatch.leadName
+        ? resolveMemberId(collectedPatch.leadName)
+        : null;
+      const leadPatch =
+        collectedPatch.leadName &&
+        isViewerQuestLead(actor, existingQuest) &&
+        nextLeadPersonId != null
+          ? {
+              leadName: collectedPatch.leadName,
+              leadPersonId: nextLeadPersonId,
+            }
+          : {};
+
       const writeResult = await updateSpaceQuest(
         {
           spaceSlug,
@@ -560,14 +575,7 @@ ${untrusted(
             ...(collectedPatch.rewards
               ? { rewards: collectedPatch.rewards }
               : {}),
-            ...(collectedPatch.leadName
-              ? {
-                  leadName: collectedPatch.leadName,
-                  ...(resolveMemberId(collectedPatch.leadName)
-                    ? { leadPersonId: resolveMemberId(collectedPatch.leadName) }
-                    : {}),
-                }
-              : {}),
+            ...leadPatch,
             ...(collectedPatch.milestones
               ? {
                   milestones: mergeRefinedQuestMilestones(
@@ -590,11 +598,10 @@ ${untrusted(
               : {}),
             ...(collectedPatch.deliverables
               ? {
-                  deliverables: collectedPatch.deliverables.map((d) => ({
-                    name: d.name,
-                    url: d.url ?? null,
-                    note: d.note ?? null,
-                  })),
+                  deliverables: mergeRefinedQuestDeliverables(
+                    existingQuest.deliverables,
+                    collectedPatch.deliverables,
+                  ),
                 }
               : {}),
           },

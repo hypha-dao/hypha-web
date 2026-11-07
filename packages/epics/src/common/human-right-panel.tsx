@@ -2051,9 +2051,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       lang: getLocaleFromPath(pathname),
       spaceSlug: slug,
       roomId: rid,
-      signalSlug: mode === 'coherence' ? coherenceSlug?.trim() || null : null,
+      signalSlug:
+        mode === 'coherence' &&
+        (!coherenceChannel || coherenceChannel === 'signal')
+          ? coherenceSlug?.trim() || null
+          : null,
     };
-  }, [spaceSlug, roomId, pathname, mode, coherenceSlug]);
+  }, [spaceSlug, roomId, pathname, mode, coherenceSlug, coherenceChannel]);
 
   const { joinAlertSoundEnabled, setJoinAlertSoundEnabled } = useCallJoinChime({
     callUiEnabled,
@@ -2140,10 +2144,15 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'connecting';
 
   const resolveCallLaunchContext = useCallback(() => {
+    const isSignalChannel =
+      mode === 'coherence' &&
+      (!coherenceChannel || coherenceChannel === 'signal');
     return mode === 'coherence' && coherenceTitle?.trim()
       ? {
           signalTitle: coherenceTitle.trim(),
-          signalSlug: coherenceSlug?.trim() || undefined,
+          signalSlug: isSignalChannel
+            ? coherenceSlug?.trim() || undefined
+            : undefined,
           roomTitle: coherenceTitle.trim(),
         }
       : (() => {
@@ -2154,7 +2163,15 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           );
           return roomTitle ? { roomTitle } : undefined;
         })();
-  }, [client, coherenceSlug, coherenceTitle, mode, roomId, space?.title]);
+  }, [
+    client,
+    coherenceChannel,
+    coherenceSlug,
+    coherenceTitle,
+    mode,
+    roomId,
+    space?.title,
+  ]);
 
   const peerPersonId =
     isDirectConversation &&

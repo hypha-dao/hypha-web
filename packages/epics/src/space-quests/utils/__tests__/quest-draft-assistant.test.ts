@@ -593,4 +593,24 @@ describe('quest-draft-assistant', () => {
     );
     expect(titledDash.milestones?.[0]?.dueDate).toBeUndefined();
   });
+
+  it('does not invent member responsibilities', () => {
+    const patch = buildLocalQuestDraftPatch({
+      message: 'Ada Lovelace',
+      currentStep: 'members',
+      draft: emptyDraft,
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(patch.members?.[0]?.memberName).toBe('Ada Lovelace');
+    expect(patch.members?.[0]?.responsibilities ?? []).toEqual([]);
+    const { next } = applyPatchToQuestDraftState({
+      current: emptyDraft,
+      patch: {
+        members: [{ memberName: 'Ada Lovelace', responsibilities: [] }],
+      },
+      spaceMembers: [],
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(next.members[0]?.responsibilities).toEqual([]);
+  });
 });

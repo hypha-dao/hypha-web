@@ -434,9 +434,12 @@ export function EditQuestScopeModal({
   const [outMd, setOutMd] = useState(
     scopeOutMarkdown?.trim() || bulletsToMarkdownList(scopeOut),
   );
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
-    if (open) {
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (open && !wasOpen) {
       setInMd(scopeInMarkdown?.trim() || bulletsToMarkdownList(scopeIn));
       setOutMd(scopeOutMarkdown?.trim() || bulletsToMarkdownList(scopeOut));
     }
@@ -1333,9 +1336,12 @@ export function EditQuestDeliverablesModal({
   onSave: (next: EditableQuestDeliverable[]) => void;
 }) {
   const [rows, setRows] = useState<EditableQuestDeliverable[]>([]);
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
-    if (open) {
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (open && !wasOpen) {
       setRows(
         deliverables.length > 0
           ? deliverables.map((d) => ({

@@ -524,9 +524,7 @@ export function buildLocalQuestDraftPatch({
           rawPerson?.replace(/^@/, '').replace(/_/g, ' ').trim() ||
           entry.slice(0, 32);
         const respText = rest.join(':').trim();
-        const responsibilities = respText
-          ? splitListItems(respText)
-          : ['Core outcome delivery'];
+        const responsibilities = respText ? splitListItems(respText) : [];
         return {
           memberName,
           roleLabel: 'Member',
@@ -982,10 +980,7 @@ export function applyPatchToQuestDraftState({
         memberName: matched?.name || m.memberName.trim(),
         memberAvatarUrl: matched?.avatarUrl ?? null,
         roleLabel: m.roleLabel?.trim() || 'Member',
-        responsibilities:
-          m.responsibilities && m.responsibilities.length > 0
-            ? m.responsibilities
-            : ['Core outcome delivery'],
+        responsibilities: m.responsibilities ?? [],
       };
     });
     const byName = new Map<string, EditableQuestMember>();

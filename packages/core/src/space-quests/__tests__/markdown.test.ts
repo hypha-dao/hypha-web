@@ -3,7 +3,9 @@ import {
   buildQuestProposalDescription,
   canMemberEditQuest,
   embeddedQuestProposalMatchesQuest,
+  buildEmbeddedQuestProposalPayload,
   isViewerQuestLead,
+  mergeRefinedQuestDeliverables,
   mergeRefinedQuestMembers,
   mergeRefinedQuestMilestones,
   parseQuestProposalFromDescription,
@@ -342,6 +344,97 @@ describe('quest proposal description', () => {
       'Researcher',
       'Member',
     ]);
+  });
+
+  it('keeps omitted deliverables and updates matching names', () => {
+    const deliverables = mergeRefinedQuestDeliverables(
+      [
+        {
+          id: 2,
+          name: 'Spec note',
+          url: 'https://example.com/spec',
+          note: 'v1',
+        },
+        {
+          id: 3,
+          name: 'Checklist',
+          url: null,
+          note: 'Keep this row',
+        },
+      ],
+      [
+        {
+          name: 'spec note',
+          url: 'https://example.com/spec-v2',
+          note: 'v2',
+        },
+        {
+          name: 'Preview',
+          url: 'https://example.com/preview',
+        },
+      ],
+    );
+    expect(deliverables).toEqual([
+      {
+        id: 2,
+        name: 'spec note',
+        url: 'https://example.com/spec-v2',
+        note: 'v2',
+      },
+      {
+        id: 3,
+        name: 'Checklist',
+        url: null,
+        note: 'Keep this row',
+      },
+      {
+        name: 'Preview',
+        url: 'https://example.com/preview',
+        note: null,
+      },
+    ]);
+  });
+
+  it('marks lead only by role or exact cleaned name', () => {
+    const withLead = buildEmbeddedQuestProposalPayload({
+      ...draft,
+      leadName: 'Vlad K. (you)',
+      members: [
+        {
+          memberName: 'Vlad K.',
+          roleLabel: 'Member',
+          responsibilities: ['Own the checklist'],
+        },
+        {
+          memberName: 'Vlad',
+          roleLabel: 'Member',
+          responsibilities: ['Help'],
+        },
+        {
+          memberName: 'Maria S.',
+          roleLabel: 'lead',
+          responsibilities: ['Survey UX'],
+        },
+      ],
+    });
+    expect(withLead.members.map((member) => member.isLead)).toEqual([
+      true,
+      false,
+      true,
+    ]);
+
+    const emptyLead = buildEmbeddedQuestProposalPayload({
+      ...draft,
+      leadName: '   ',
+      members: [
+        {
+          memberName: 'Maria S.',
+          roleLabel: 'Member',
+          responsibilities: ['Survey UX'],
+        },
+      ],
+    });
+    expect(emptyLead.members[0]?.isLead).toBe(false);
   });
 
   it('drops a lead row whose duties are only a subset of the placeholders', () => {

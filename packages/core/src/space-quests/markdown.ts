@@ -357,6 +357,69 @@ export function mergeRefinedQuestMembers(
   return merged.filter((item) => item.memberName.length > 0);
 }
 
+export type RefinedQuestDeliverable = {
+  id?: number;
+  name: string;
+  url: string | null;
+  note: string | null;
+};
+
+/**
+ * Overlay an assistant deliverable list onto the saved rows.
+ * Matched by case-insensitive name. Unmentioned saved deliverables
+ * stay, so a partial refine does not drop work.
+ */
+export function mergeRefinedQuestDeliverables(
+  existing: readonly {
+    id?: number;
+    name: string;
+    url?: string | null;
+    note?: string | null;
+  }[],
+  incoming: readonly {
+    name: string;
+    url?: string | null;
+    note?: string | null;
+  }[],
+): RefinedQuestDeliverable[] {
+  const used = new Set<number>();
+  const overlay = (
+    current: (typeof existing)[number] | undefined,
+    next: (typeof incoming)[number] | undefined,
+  ): RefinedQuestDeliverable => {
+    const name = (next?.name ?? current?.name ?? '').trim();
+    const url =
+      next && next.url !== undefined
+        ? next.url?.trim() || null
+        : current?.url?.trim() || null;
+    const note =
+      next && next.note !== undefined
+        ? next.note?.trim() || null
+        : current?.note?.trim() || null;
+    return {
+      ...(typeof current?.id === 'number' ? { id: current.id } : {}),
+      name,
+      url,
+      note,
+    };
+  };
+
+  const merged = existing.map((current) => {
+    const index = incoming.findIndex(
+      (item, itemIndex) =>
+        !used.has(itemIndex) &&
+        item.name.trim().toLowerCase() === current.name.trim().toLowerCase(),
+    );
+    if (index === -1) return overlay(current, undefined);
+    used.add(index);
+    return overlay(current, incoming[index]);
+  });
+  incoming.forEach((item, index) => {
+    if (!used.has(index)) merged.push(overlay(undefined, item));
+  });
+  return merged.filter((item) => item.name.length > 0);
+}
+
 export function questRecordToProposalDraft(
   quest: Pick<
     QuestRecord,
@@ -428,6 +491,7 @@ export function buildEmbeddedQuestProposalPayload(
     draft.scopeOut.length > 0
       ? draft.scopeOut
       : splitMarkdownLinesToBullets(draft.scopeOutMarkdown ?? '');
+  const cleanLead = stripViewerYouMarker(draft.leadName).trim().toLowerCase();
 
   return {
     ...(questSlug ? { questSlug } : {}),
@@ -453,11 +517,11 @@ export function buildEmbeddedQuestProposalPayload(
       roleLabel: m.roleLabel?.trim() || null,
       isLead:
         m.roleLabel?.toLowerCase() === 'lead' ||
-        m.memberName
-          .toLowerCase()
-          .startsWith(
-            stripViewerYouMarker(draft.leadName).trim().toLowerCase(),
-          ),
+        Boolean(
+          cleanLead &&
+            stripViewerYouMarker(m.memberName).trim().toLowerCase() ===
+              cleanLead,
+        ),
       responsibilities: (m.responsibilities ?? [])
         .map((r) => r.trim())
         .filter(Boolean),

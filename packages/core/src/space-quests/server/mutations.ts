@@ -1152,7 +1152,7 @@ export async function activateSpaceQuestByDocumentId(
 
   for (const row of matching) {
     if (row.status === 'proposed') {
-      await db
+      const updated = await db
         .update(spaceQuests)
         .set({
           status: 'active',
@@ -1160,19 +1160,24 @@ export async function activateSpaceQuestByDocumentId(
           updatedAt: now,
           healthUpdatedAt: now,
         })
-        .where(eq(spaceQuests.id, row.id));
+        .where(
+          and(eq(spaceQuests.id, row.id), eq(spaceQuests.status, 'proposed')),
+        )
+        .returning({ id: spaceQuests.id });
 
-      await db.insert(spaceQuestUpdates).values({
-        questId: row.id,
-        authorPersonId: row.leadPersonId ?? null,
-        authorName: row.leadName || 'Operations Lead',
-        kind: 'post',
-        viaAgent: false,
-        text: 'Quest proposal accepted — Quest is now Active.',
-        links: [],
-      });
+      if (updated.length > 0) {
+        await db.insert(spaceQuestUpdates).values({
+          questId: row.id,
+          authorPersonId: row.leadPersonId ?? null,
+          authorName: row.leadName || 'Operations Lead',
+          kind: 'post',
+          viaAgent: false,
+          text: 'Quest proposal accepted — Quest is now Active.',
+          links: [],
+        });
 
-      activatedCount += 1;
+        activatedCount += 1;
+      }
     }
 
     if (
