@@ -5309,12 +5309,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       !rid ||
       !slug ||
       mode !== 'coherence' ||
+      coherenceChannel === 'quest' ||
       typeof window === 'undefined'
     ) {
       return;
     }
     rememberRoomToCoherenceSession(rid, slug, coherenceTitle, pathSlug);
-  }, [roomId, coherenceSlug, coherenceTitle, mode, pathname]);
+  }, [roomId, coherenceSlug, coherenceTitle, coherenceChannel, mode, pathname]);
 
   /**
    * Global mention badge: avoid listening to `ClientEvent.Room` — it fires on almost every
@@ -5777,6 +5778,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     prevChatModeRef.current = mode;
 
     if (mode === 'coherence' && coherenceSlug?.trim()) {
+      if (coherenceChannel === 'quest') return;
       const slug = coherenceSlug.trim();
       const currentSpace = spaceSlug?.trim();
       if (coherenceRoomId?.trim() && currentSpace) {
@@ -5853,6 +5855,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       router.replace(href, { scroll: false });
     }
   }, [
+    coherenceChannel,
     coherenceRoomId,
     coherenceSlug,
     mode,

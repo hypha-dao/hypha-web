@@ -203,6 +203,7 @@ describe('quest-draft-assistant', () => {
       'yes please',
       'okay',
       'Okay',
+      'Okay, put that in the Goal',
       'I approve',
       'include that',
       'put that in the Goal',
@@ -237,6 +238,12 @@ describe('quest-draft-assistant', () => {
         pending: null,
       }).kind,
     ).not.toBe('apply');
+  });
+
+  it('treats okay as approval, not a leftover ay after matching ok', () => {
+    expect(isQuestSectionApproval('okay')).toBe(true);
+    expect(isQuestSectionApproval('ok')).toBe(true);
+    expect(isQuestSectionApproval('Okay, put that in the Goal')).toBe(true);
   });
 
   it('quotes the proposed wording in the confirm message', () => {

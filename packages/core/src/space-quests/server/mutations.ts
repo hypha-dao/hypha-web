@@ -606,7 +606,10 @@ export async function updateSpaceQuest(
   }
 
   const existingMemberPersonIds = new Set(
-    uniquePositiveIds(current.members.map((member) => member.personId)),
+    uniquePositiveIds([
+      current.leadPersonId,
+      ...current.members.map((member) => member.personId),
+    ]),
   );
   const rosterError = await assertPersonIdsAreSpaceMembers(
     spaceSlug,
