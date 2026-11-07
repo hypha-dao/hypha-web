@@ -110,8 +110,33 @@ describe('resolveQuestDraftTarget', () => {
         'scope',
       ),
     ).toEqual({ step: 'goal', bulk: false });
+    expect(
+      resolveQuestDraftTarget(
+        'Please set the scope to sandbox checklist',
+        'goal',
+      ),
+    ).toEqual({ step: 'scope', bulk: false });
+    expect(
+      resolveQuestDraftTarget(
+        'The draft is ready. Put in goal "Ship the matcher"',
+        'success',
+      ),
+    ).toEqual({ step: 'goal', bulk: false });
     expect(resolveQuestDraftTarget('put that in the Goal', 'scope')).toEqual({
       step: 'scope',
+      bulk: false,
+    });
+  });
+
+  it('keeps a verb inside ordinary prose on the current section', () => {
+    expect(
+      resolveQuestDraftTarget('Members use rewards within 7 days', 'success'),
+    ).toEqual({ step: 'success', bulk: false });
+    expect(
+      resolveQuestDraftTarget('Add lead scoring to the CRM', 'success'),
+    ).toEqual({ step: 'success', bulk: false });
+    expect(resolveQuestDraftTarget('improve the goal', 'scope')).toEqual({
+      step: 'goal',
       bulk: false,
     });
   });

@@ -241,8 +241,23 @@ const QUESTION_OPENING =
 const EXPLICIT_COMMAND =
   /^(?:please\s+)?(?:put|set|update|change|write|add|use)\b/i;
 
+/** "improve the goal" names a section. "improve onboarding" does not. */
+const REWRITE_NAMED_SECTION = new RegExp(
+  `\\b(?:improve|evaluate|rewrite|reword|tighten|revise)\\s+(?:the\\s+)?${APPROVAL_SECTION}\\b`,
+  'i',
+);
+
+/**
+ * The section token has to sit against the command delimiter. A later "to"
+ * in ordinary prose is not the payload.
+ */
 const COMMAND_SECTION = new RegExp(
-  `\\b(?:put|set|update|change|write|add|use)\\s+(?:in(?:to)?|on|for|as|to)?\\s*(?:the\\s+)?(${APPROVAL_SECTION})\\b`,
+  `\\b(?:put|set|update|change|write|add|use)\\s+(?:in(?:to)?|on|for|as|to)?\\s*(?:the\\s+)?(${APPROVAL_SECTION})\\b(?=\\s*(?:to\\b|:|["“]))`,
+  'i',
+);
+
+const BARE_SECTION_COMMAND = new RegExp(
+  `^(?:please\\s+)?(?:put|set|update|change|write|add|use)\\s+(?:in(?:to)?|on|for|as|to)?\\s*(?:the\\s+)?${APPROVAL_SECTION}\\s*[.!?]?$`,
   'i',
 );
 
@@ -295,14 +310,27 @@ function sectionFromCommandName(name: string): QuestStewardStep | null {
   return null;
 }
 
+function unwrapCommandValue(value: string): string {
+  let next = value.trim();
+  const wrapped = /^["“]([\s\S]*)["”]$/.exec(next);
+  if (wrapped?.[1]) next = wrapped[1].trim();
+  return next.replace(/[.!]+$/g, '').trim();
+}
+
 function commandContent(text: string, sectionEnd: number): string | null {
-  const quoted = /["“]([^"”]+)["”]/.exec(text);
-  if (quoted?.[1]?.trim()) return quoted[1].trim();
   const after = text.slice(sectionEnd);
-  const to = /\bto\b\s+(.+)$/is.exec(after);
-  if (to?.[1]?.trim()) return to[1].trim().replace(/[.!]+$/g, '');
-  const colon = /:\s*(.+)$/s.exec(after);
-  if (colon?.[1]?.trim()) return colon[1].trim();
+  const quoted = /^\s*["“]([^"”]+)["”]/.exec(after);
+  if (quoted?.[1]?.trim()) return quoted[1].trim();
+  const to = /^\s*to\b\s+(.+)$/is.exec(after);
+  if (to?.[1]?.trim()) {
+    const value = unwrapCommandValue(to[1]);
+    return value || null;
+  }
+  const colon = /^\s*:\s*(.+)$/s.exec(after);
+  if (colon?.[1]?.trim()) {
+    const value = unwrapCommandValue(colon[1]);
+    return value || null;
+  }
   return null;
 }
 
@@ -580,6 +608,7 @@ export function buildLocalQuestDraftPatch({
       limitQuestPatchToStep(extracted, command.step),
     );
   }
+  if (BARE_SECTION_COMMAND.test(raw)) return {};
   if (
     EXPLICIT_COMMAND.test(raw) &&
     COMMAND_SECTION.test(raw) &&
@@ -1350,7 +1379,12 @@ export function questDraftTurnUsesModel(message: string): boolean {
   if (isQuestDraftQuestion(text) || isQuestSectionCoachingOpener(text)) {
     return false;
   }
-  if (explicitQuestSectionCommand(text)) return false;
+  if (isQuestSectionRewriteRequest(text) && REWRITE_NAMED_SECTION.test(text)) {
+    return true;
+  }
+  if (explicitQuestSectionCommand(text) || BARE_SECTION_COMMAND.test(text)) {
+    return false;
+  }
   if (EXPLICIT_COMMAND.test(text) && COMMAND_SECTION.test(text)) return false;
   if (isVagueQuestGoal(goalStatement(text))) return false;
   return true;
@@ -1557,4 +1591,57 @@ export function runNewQuestDraftTurn({
     return stay(modelReply, target.step);
   }
   return stay(questSectionCoachReply(target.step), target.step);
+}
+
+export type CreateDraftTurnSnapshot = {
+  draft: QuestDraftStateSnapshot;
+  pending: PendingQuestSectionProposal | null;
+  currentStep: QuestStewardStep;
+};
+
+/**
+ * Run one create-screen turn. Model fetches re-read the draft and pending
+ * after they resolve, and a superseded send produces no result to commit.
+ */
+export async function settleCreateDraftTurn({
+  message,
+  history = [],
+  viewerDisplayName,
+  spaceMembers,
+  readState,
+  isCurrent,
+  loadModel,
+}: {
+  message: string;
+  history?: readonly QuestDraftTurnHistoryItem[];
+  viewerDisplayName: string;
+  spaceMembers: readonly QuestSpaceMember[];
+  readState: () => CreateDraftTurnSnapshot;
+  isCurrent: () => boolean;
+  loadModel: () => Promise<QuestDraftModelTurn | null>;
+}): Promise<NewQuestDraftTurnResult | null> {
+  const run = (model: QuestDraftModelTurn | null) => {
+    if (!isCurrent()) return null;
+    const latest = readState();
+    return runNewQuestDraftTurn({
+      message,
+      currentStep: latest.currentStep,
+      draft: latest.draft,
+      pending: latest.pending,
+      history,
+      viewerDisplayName,
+      spaceMembers,
+      model,
+    });
+  };
+
+  if (!questDraftTurnUsesModel(message)) return run(null);
+
+  let model: QuestDraftModelTurn | null = null;
+  try {
+    model = await loadModel();
+  } catch {
+    model = null;
+  }
+  return run(model);
 }

@@ -47,7 +47,7 @@ import {
 } from '../hooks/use-space-quests';
 import {
   questDraftTurnUsesModel,
-  runNewQuestDraftTurn,
+  settleCreateDraftTurn,
   type PendingQuestSectionProposal,
   type QuestDraftModelTurn,
   type QuestDraftStateSnapshot,
@@ -226,6 +226,23 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const [pendingProposalLink, setPendingProposalLink] =
     useState<PendingProposalLink | null>(null);
   const pendingProposalRef = useRef<PendingQuestSectionProposal | null>(null);
+  const stewardStepIndexRef = useRef(0);
+  const turnGenerationRef = useRef(0);
+  const draftSnapshotRef = useRef<QuestDraftStateSnapshot>({
+    name: '',
+    goal: '',
+    scopeIn: [],
+    scopeOut: [],
+    scopeInMarkdown: '',
+    scopeOutMarkdown: '',
+    successCriteria: '',
+    rewards: [],
+    milestones: [],
+    leadName: '',
+    selectedLeadPersonId: null,
+    members: [],
+    targetDate: null,
+  });
 
   const {
     createAgreement,
@@ -240,9 +257,26 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   });
   const agreementRef = useRef(agreement);
   agreementRef.current = agreement;
+  draftSnapshotRef.current = {
+    name,
+    goal,
+    scopeIn,
+    scopeOut,
+    scopeInMarkdown,
+    scopeOutMarkdown,
+    successCriteria,
+    rewards,
+    milestones,
+    leadName,
+    selectedLeadPersonId,
+    members,
+    targetDate,
+  };
+  stewardStepIndexRef.current = stewardStepIndex;
 
   const commitDraftSnapshot = useCallback(
     (next: QuestDraftStateSnapshot) => {
+      draftSnapshotRef.current = next;
       setName(next.name);
       setGoal(next.goal);
       setScopeIn(next.scopeIn);
@@ -271,23 +305,12 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       }
 
       const trimmed = stripAgentMentionPrefix(rawTrimmed) || rawTrimmed;
-
-      const currentStep = QUEST_STEWARD_STEPS[stewardStepIndex] ?? 'goal';
-      const currentSnapshot: QuestDraftStateSnapshot = {
-        name,
-        goal,
-        scopeIn,
-        scopeOut,
-        scopeInMarkdown,
-        scopeOutMarkdown,
-        successCriteria,
-        rewards,
-        milestones,
-        leadName,
-        selectedLeadPersonId,
-        members,
-        targetDate,
-      };
+      const generation = ++turnGenerationRef.current;
+      const readTurnState = () => ({
+        draft: draftSnapshotRef.current,
+        pending: pendingProposalRef.current,
+        currentStep: QUEST_STEWARD_STEPS[stewardStepIndexRef.current] ?? 'goal',
+      });
 
       const now = new Date();
       setChatMessages((prev) => [
@@ -306,15 +329,6 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         role: entry.role === 'user' ? ('user' as const) : ('agent' as const),
         text: entry.text,
       }));
-      const turnInput = {
-        message: trimmed,
-        currentStep,
-        draft: currentSnapshot,
-        pending: pendingProposalRef.current,
-        history,
-        viewerDisplayName,
-        spaceMembers,
-      };
 
       const pushHelper = (text: string) => {
         setChatMessages((prev) => [
@@ -329,83 +343,101 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         ]);
       };
       const focusStep = (step: QuestStewardStep) => {
-        setStewardStepIndex(Math.max(0, QUEST_STEWARD_STEPS.indexOf(step)));
+        const index = Math.max(0, QUEST_STEWARD_STEPS.indexOf(step));
+        stewardStepIndexRef.current = index;
+        setStewardStepIndex(index);
         setActiveSection(step);
       };
-      const applyTurn = (result: ReturnType<typeof runNewQuestDraftTurn>) => {
+      const applyTurn = (
+        result: NonNullable<Awaited<ReturnType<typeof settleCreateDraftTurn>>>,
+      ) => {
+        if (turnGenerationRef.current !== generation) return;
         if (result.wrote) commitDraftSnapshot(result.draft);
         pendingProposalRef.current = result.pending;
         focusStep(result.focusStep);
         pushHelper(result.reply);
       };
 
-      if (!questDraftTurnUsesModel(trimmed)) {
-        applyTurn(runNewQuestDraftTurn({ ...turnInput, model: null }));
-        return;
-      }
-
-      setIsAgentTyping(true);
-      let model: QuestDraftModelTurn | null = null;
+      const usesModel = questDraftTurnUsesModel(trimmed);
+      if (usesModel) setIsAgentTyping(true);
       try {
-        const token = await getAccessToken?.().catch(() => null);
-        if (token) {
-          const response = await fetch(
-            `/api/v1/spaces/${encodeURIComponent(
-              spaceSlug,
-            )}/quests/draft-assist`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                message: trimmed,
-                currentStep,
-                spaceTitle: space?.title,
-                draft: {
-                  name: currentSnapshot.name,
-                  goal: currentSnapshot.goal,
-                  scopeIn: currentSnapshot.scopeIn,
-                  scopeOut: currentSnapshot.scopeOut,
-                  successCriteria: currentSnapshot.successCriteria,
-                  targetDate: currentSnapshot.targetDate,
-                  leadName: currentSnapshot.leadName,
-                  rewards: currentSnapshot.rewards,
-                  milestones: currentSnapshot.milestones.map((m) => ({
-                    name: m.name,
-                    dueDate: m.dueDate,
-                    description: m.description,
-                    ownerName: m.ownerName,
-                  })),
-                  members: currentSnapshot.members.map((m) => ({
-                    memberName: m.memberName,
-                    roleLabel: m.roleLabel,
-                    responsibilities: m.responsibilities,
-                  })),
+        const settled = await settleCreateDraftTurn({
+          message: trimmed,
+          history,
+          viewerDisplayName,
+          spaceMembers,
+          readState: readTurnState,
+          isCurrent: () => turnGenerationRef.current === generation,
+          loadModel: async () => {
+            const snapshot = draftSnapshotRef.current;
+            const currentStep =
+              QUEST_STEWARD_STEPS[stewardStepIndexRef.current] ?? 'goal';
+            try {
+              const token = await getAccessToken?.().catch(() => null);
+              if (!token || turnGenerationRef.current !== generation) {
+                return null;
+              }
+              const response = await fetch(
+                `/api/v1/spaces/${encodeURIComponent(
+                  spaceSlug,
+                )}/quests/draft-assist`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({
+                    message: trimmed,
+                    currentStep,
+                    spaceTitle: space?.title,
+                    draft: {
+                      name: snapshot.name,
+                      goal: snapshot.goal,
+                      scopeIn: snapshot.scopeIn,
+                      scopeOut: snapshot.scopeOut,
+                      successCriteria: snapshot.successCriteria,
+                      targetDate: snapshot.targetDate,
+                      leadName: snapshot.leadName,
+                      rewards: snapshot.rewards,
+                      milestones: snapshot.milestones.map((m) => ({
+                        name: m.name,
+                        dueDate: m.dueDate,
+                        description: m.description,
+                        ownerName: m.ownerName,
+                      })),
+                      members: snapshot.members.map((m) => ({
+                        memberName: m.memberName,
+                        roleLabel: m.roleLabel,
+                        responsibilities: m.responsibilities,
+                      })),
+                    },
+                    spaceMembers: spaceMembers.slice(0, 60).map((m) => ({
+                      personId: m.personId,
+                      name: m.name,
+                    })),
+                    history: history.map((entry) => ({
+                      role: entry.role === 'user' ? 'user' : 'assistant',
+                      text: entry.text,
+                    })),
+                  }),
                 },
-                spaceMembers: spaceMembers.slice(0, 60).map((m) => ({
-                  personId: m.personId,
-                  name: m.name,
-                })),
-                history: history.map((entry) => ({
-                  role: entry.role === 'user' ? 'user' : 'assistant',
-                  text: entry.text,
-                })),
-              }),
-            },
-          );
-          if (response.ok) {
-            model = (await response.json()) as QuestDraftModelTurn;
-          }
-        }
-      } catch {
-        model = null;
+              );
+              if (turnGenerationRef.current !== generation || !response.ok) {
+                return null;
+              }
+              return (await response.json()) as QuestDraftModelTurn;
+            } catch {
+              return null;
+            }
+          },
+        });
+        if (settled) applyTurn(settled);
       } finally {
-        setIsAgentTyping(false);
+        if (usesModel && turnGenerationRef.current === generation) {
+          setIsAgentTyping(false);
+        }
       }
-
-      applyTurn(runNewQuestDraftTurn({ ...turnInput, model }));
     },
     [
       chatInput,

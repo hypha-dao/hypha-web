@@ -7,6 +7,7 @@ import {
   applyPatchToQuestDraftState,
   buildLocalQuestDraftPatch,
   decideNewQuestDraftTurn,
+  explicitQuestSectionCommand,
   findNextUnfilledQuestStep,
   formatPendingQuestPatch,
   isQuestSectionApproval,
@@ -14,7 +15,9 @@ import {
   questDraftTurnUsesModel,
   replyWithSectionApprovalAsk,
   runNewQuestDraftTurn,
+  settleCreateDraftTurn,
   stripQuestMetaInstructions,
+  type CreateDraftTurnSnapshot,
   type PendingQuestSectionProposal,
   type QuestDraftModelTurn,
   type QuestDraftStateSnapshot,
@@ -1033,5 +1036,295 @@ describe('new quest helper transcript', () => {
         viewerDisplayName: 'Vlad Hramtsov',
       }),
     ).toEqual({});
+  });
+});
+
+describe('quest helper command and rewrite boundaries', () => {
+  const savedGoal = 'Match every new joiner to 3 spaces in their first day.';
+
+  function send(
+    message: string,
+    state: {
+      draft: QuestDraftStateSnapshot;
+      currentStep: QuestStewardStep;
+      pending: PendingQuestSectionProposal | null;
+    },
+    model: QuestDraftModelTurn | null = null,
+  ) {
+    return runNewQuestDraftTurn({
+      message,
+      currentStep: state.currentStep,
+      draft: state.draft,
+      pending: state.pending,
+      history: [],
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      model,
+    });
+  }
+
+  it('asks the model to improve a named section and keeps the accepted goal until yes', () => {
+    expect(questDraftTurnUsesModel('improve the goal')).toBe(true);
+    expect(questDraftTurnUsesModel('goal is to test quest')).toBe(false);
+    expect(questDraftTurnUsesModel('improve onboarding for new members')).toBe(
+      false,
+    );
+
+    const offline = send('improve the goal', {
+      draft: { ...emptyDraft, goal: savedGoal, scopeIn: ['saved scope'] },
+      currentStep: 'scope',
+      pending: null,
+    });
+    expect(offline.wrote).toBe(false);
+    expect(offline.draft.goal).toBe(savedGoal);
+    expect(offline.draft.scopeIn).toEqual(['saved scope']);
+    expect(offline.pending).toBeNull();
+    expect(offline.focusStep).toBe('goal');
+    expect(offline.reply).toMatch(/won't replace the Goal/i);
+
+    const suggested = send(
+      'improve the goal',
+      {
+        draft: { ...emptyDraft, goal: savedGoal, scopeIn: ['saved scope'] },
+        currentStep: 'scope',
+        pending: null,
+      },
+      {
+        patch: {
+          goal: 'Match every new joiner to 3 spaces before the first day ends.',
+          scopeIn: ['invented sandbox work'],
+        },
+        reply: 'Do you want that to be in the Goal?',
+      },
+    );
+    expect(suggested.wrote).toBe(false);
+    expect(suggested.draft.goal).toBe(savedGoal);
+    expect(suggested.draft.scopeIn).toEqual(['saved scope']);
+    expect(suggested.pending?.step).toBe('goal');
+    expect(suggested.pending?.patch.goal).toMatch(/before the first day ends/);
+    expect(suggested.pending?.patch.scopeIn).toBeUndefined();
+    expect(suggested.reply).toMatch(/Suggested refinement, not saved yet/i);
+
+    const accepted = send('yes', {
+      draft: suggested.draft,
+      currentStep: 'goal',
+      pending: suggested.pending,
+    });
+    expect(accepted.wrote).toBe(true);
+    expect(accepted.draft.goal).toMatch(/before the first day ends/);
+    expect(accepted.draft.scopeIn).toEqual(['saved scope']);
+  });
+
+  it('keeps quoted commands and does not treat a later to as the lead', () => {
+    expect(
+      explicitQuestSectionCommand(
+        'Put in goal "Testing out the quest feature"',
+      ),
+    ).toEqual({
+      step: 'goal',
+      content: 'Testing out the quest feature',
+    });
+    expect(
+      explicitQuestSectionCommand(
+        'Change the goal to "Verify the create draft shows the goal before scope"',
+      ),
+    ).toEqual({
+      step: 'goal',
+      content: 'Verify the create draft shows the goal before scope',
+    });
+    expect(
+      explicitQuestSectionCommand('Please set the scope to sandbox checklist.'),
+    ).toEqual({ step: 'scope', content: 'sandbox checklist' });
+    expect(
+      explicitQuestSectionCommand('Set the scope: sandbox checklist'),
+    ).toEqual({ step: 'scope', content: 'sandbox checklist' });
+    expect(
+      explicitQuestSectionCommand('Add lead scoring to the CRM'),
+    ).toBeNull();
+
+    const prose = send(
+      'Add lead scoring to the CRM',
+      {
+        draft: {
+          ...emptyDraft,
+          goal: savedGoal,
+          leadName: 'Ada Lovelace',
+        },
+        currentStep: 'success',
+        pending: null,
+      },
+      { patch: { leadName: 'the CRM', goal: 'replaced by the model' } },
+    );
+    expect(prose.wrote).toBe(false);
+    expect(prose.draft.goal).toBe(savedGoal);
+    expect(prose.draft.leadName).toBe('Ada Lovelace');
+    expect(prose.draft.rewards).toEqual([]);
+    expect(prose.pending?.step).toBe('success');
+    expect(prose.pending?.patch.leadName).toBeUndefined();
+    expect(prose.pending?.patch.successCriteriaBullets).toEqual([
+      'Add lead scoring to the CRM',
+    ]);
+
+    const coached = send('Members use rewards within 7 days', {
+      draft: { ...emptyDraft, goal: savedGoal },
+      currentStep: 'success',
+      pending: null,
+    });
+    expect(coached.wrote).toBe(false);
+    expect(coached.focusStep).toBe('success');
+    expect(coached.draft.goal).toBe(savedGoal);
+    expect(coached.draft.rewards).toEqual([]);
+    expect(coached.pending?.step).toBe('success');
+    expect(coached.pending?.patch.rewards).toBeUndefined();
+    expect(coached.pending?.patch.successCriteriaBullets).toEqual([
+      'Members use rewards within 7 days',
+    ]);
+  });
+});
+
+describe('create draft turn settles against the latest snapshot', () => {
+  const manualMilestone = {
+    name: 'Manual milestone',
+    description: 'Added in the modal',
+    dueDate: '20 November 2026',
+    ownerName: 'Ada Lovelace',
+    status: 'not_started' as const,
+  };
+
+  it('applies a deferred model turn onto edits made while the fetch was in flight', async () => {
+    let resolveModel: (value: QuestDraftModelTurn | null) => void = () => {};
+    const gate = new Promise<QuestDraftModelTurn | null>((resolve) => {
+      resolveModel = resolve;
+    });
+    let loaded = false;
+    const state: CreateDraftTurnSnapshot = {
+      draft: {
+        ...emptyDraft,
+        goal: 'Match every new joiner to 3 spaces in their first day.',
+        scopeIn: ['saved scope'],
+      },
+      pending: { step: 'scope', patch: { scopeIn: ['stale proposal'] } },
+      currentStep: 'scope',
+    };
+    const generation = 1;
+    const pendingResult = settleCreateDraftTurn({
+      message: 'improve the goal',
+      history: [],
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      readState: () => state,
+      isCurrent: () => generation === 1,
+      loadModel: () => {
+        loaded = true;
+        return gate;
+      },
+    });
+
+    state.draft = {
+      ...state.draft,
+      goal: 'Edited in the modal while the helper was thinking.',
+      milestones: [manualMilestone],
+    };
+    state.pending = {
+      step: 'success',
+      patch: { successCriteriaBullets: ['manual pending'] },
+    };
+    state.currentStep = 'success';
+    resolveModel({
+      patch: {
+        goal: 'Match every new joiner to 3 spaces before the first day ends.',
+        scopeIn: ['invented by the model'],
+        milestones: [{ name: 'Model milestone' }],
+      },
+      reply: 'Do you want that to be in the Goal?',
+    });
+
+    const result = await pendingResult;
+    expect(loaded).toBe(true);
+    expect(result).not.toBeNull();
+    expect(result?.wrote).toBe(false);
+    expect(result?.draft.goal).toBe(
+      'Edited in the modal while the helper was thinking.',
+    );
+    expect(result?.draft.scopeIn).toEqual(['saved scope']);
+    expect(result?.draft.milestones).toEqual([manualMilestone]);
+    expect(result?.pending?.step).toBe('goal');
+    expect(result?.pending?.patch.goal).toMatch(/before the first day ends/);
+    expect(result?.pending?.patch.scopeIn).toBeUndefined();
+    expect(result?.pending?.patch.milestones).toBeUndefined();
+    expect(result?.focusStep).toBe('goal');
+    expect(result?.reply).toMatch(/Suggested refinement, not saved yet/i);
+  });
+
+  it('drops a model turn that a later send superseded', async () => {
+    let resolveModel: (value: QuestDraftModelTurn | null) => void = () => {};
+    const gate = new Promise<QuestDraftModelTurn | null>((resolve) => {
+      resolveModel = resolve;
+    });
+    const state: CreateDraftTurnSnapshot = {
+      draft: {
+        ...emptyDraft,
+        goal: 'Match every new joiner to 3 spaces in their first day.',
+      },
+      pending: null,
+      currentStep: 'goal',
+    };
+    let generation = 1;
+    const pendingResult = settleCreateDraftTurn({
+      message: 'improve the goal',
+      history: [],
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      readState: () => state,
+      isCurrent: () => generation === 1,
+      loadModel: () => gate,
+    });
+
+    generation = 2;
+    state.draft = { ...state.draft, goal: 'Kept by the newer turn' };
+    state.pending = { step: 'goal', patch: { goal: 'newer pending' } };
+    resolveModel({
+      patch: { goal: 'stale model goal', scopeIn: ['stale scope'] },
+    });
+
+    expect(await pendingResult).toBeNull();
+    expect(state.draft.goal).toBe('Kept by the newer turn');
+    expect(state.pending?.patch.goal).toBe('newer pending');
+    expect(state.draft.scopeIn).toEqual([]);
+  });
+
+  it('writes an explicit command from the latest draft and does not fetch a model', async () => {
+    let loaded = false;
+    const state: CreateDraftTurnSnapshot = {
+      draft: {
+        ...emptyDraft,
+        scopeIn: ['keep me'],
+        milestones: [manualMilestone],
+        leadName: 'Ada Lovelace',
+      },
+      pending: { step: 'scope', patch: { scopeIn: ['not this'] } },
+      currentStep: 'scope',
+    };
+    const result = await settleCreateDraftTurn({
+      message: 'Put in goal "Testing out the quest feature"',
+      history: [],
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      readState: () => state,
+      isCurrent: () => true,
+      loadModel: async () => {
+        loaded = true;
+        return {
+          patch: { goal: 'Put in goal "Testing out the quest feature"' },
+        };
+      },
+    });
+    expect(loaded).toBe(false);
+    expect(result?.wrote).toBe(true);
+    expect(result?.draft.goal).toBe('Testing out the quest feature');
+    expect(result?.draft.scopeIn).toEqual(['keep me']);
+    expect(result?.draft.milestones).toEqual([manualMilestone]);
+    expect(result?.draft.leadName).toBe('Ada Lovelace');
+    expect(result?.pending).toBeNull();
   });
 });

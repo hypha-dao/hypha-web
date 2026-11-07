@@ -10,9 +10,9 @@ export type QuestDraftTarget = {
 const SECTION_NAME =
   '(success\\s+criteria|in[-\\s]?scope|out[-\\s]of[-\\s]?scope|milestones?|members?|target\\s+date|quest\\s+rewards?|rewards?|quest\\s+name|scope|success|lead|goal|name|title)';
 
-/** "Focus only on Scope", "help me with the Scope section", "tighten the in-scope". */
+/** "Focus only on Scope", "help me with the Scope section", "improve the goal". */
 const NAMED_SECTION = new RegExp(
-  `(?:focus(?:\\s+only)?\\s+on|only\\s+on|help(?:\\s+me)?\\s+with(?:\\s+the)?|tighten(?:\\s+the)?|just(?:\\s+the)?|(?:draft|fill|write|update|revise)\\s+(?:the\\s+)?)\\s*(?:the\\s+)?${SECTION_NAME}\\b`,
+  `(?:focus(?:\\s+only)?\\s+on|only\\s+on|help(?:\\s+me)?\\s+with(?:\\s+the)?|tighten(?:\\s+the)?|just(?:\\s+the)?|(?:draft|fill|write|update|revise)\\s+(?:the\\s+)?|(?:improve|rewrite|reword|evaluate)\\s+the\\s+)\\s*(?:the\\s+)?${SECTION_NAME}\\b`,
   'i',
 );
 
@@ -33,9 +33,13 @@ const ADDRESSED_SECTION = new RegExp(
   'i',
 );
 
-/** "Put in goal …", "Set the scope to …". Not "put that in the Goal". */
+/**
+ * A command that starts the message or a sentence, with an optional "please".
+ * The section has to be followed by to, a colon, or a quote. "Members use
+ * rewards within 7 days" is content, and "put that in the Goal" is approval.
+ */
 const COMMANDED_SECTION = new RegExp(
-  `\\b(?:put|set|update|change|write|add|use)\\s+(?:in(?:to)?|on|for|as|to)?\\s*(?:the\\s+)?${SECTION_NAME}\\b`,
+  `(?:^|[.!?]\\s+|\\n\\s*)(?:please\\s+)?(?:put|set|update|change|write|add|use)\\s+(?:in(?:to)?|on|for|as|to)?\\s*(?:the\\s+)?${SECTION_NAME}\\b(?=\\s*(?:to\\b|:|["“]))`,
   'i',
 );
 
