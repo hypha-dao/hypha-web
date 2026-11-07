@@ -577,9 +577,7 @@ export function EditQuestLeadModal({
       id: leadPersonId,
       name: leadName,
     });
-    setSelectedId(
-      match ? String(match.id) : catalog[0] ? String(catalog[0].id) : null,
-    );
+    setSelectedId(match ? String(match.id) : null);
   }, [catalog, leadName, leadPersonId, open]);
 
   const selectedPerson = useMemo(

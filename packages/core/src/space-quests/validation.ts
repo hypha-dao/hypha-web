@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   QUEST_HEALTH_STATES,
   QUEST_MILESTONE_STATUSES,
-  QUEST_STATUSES,
+  QUEST_PATCH_STATUSES,
 } from './constants';
 
 export const schemaQuestReward = z.object({
@@ -69,7 +69,7 @@ export const schemaPatchSpaceQuest = z.object({
   targetDate: z.string().trim().max(64).nullable().optional(),
   leadPersonId: z.number().int().positive().nullable().optional(),
   leadName: z.string().trim().max(120).optional(),
-  status: z.enum(QUEST_STATUSES).optional(),
+  status: z.enum(QUEST_PATCH_STATUSES).optional(),
   proposalDocumentId: z.number().int().positive().nullable().optional(),
   stewardHealthSummaries: z.boolean().optional(),
   memberUpdateAlerts: z.boolean().optional(),

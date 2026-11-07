@@ -694,6 +694,13 @@
       "when": 1784000000029,
       "tag": "0098_purge_legacy_seeded_quests",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1784000000030,
+      "tag": "0099_purge_legacy_seeded_quests_failsafe",
+      "breakpoints": true
     }
   ]
 }

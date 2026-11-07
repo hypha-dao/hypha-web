@@ -101,6 +101,7 @@ type EditingModal =
   | 'health'
   | 'status'
   | 'delete'
+  | 'archive'
   | null;
 
 const LABEL_CLASS =
@@ -1158,7 +1159,7 @@ function SettingsTab({
             value="Hide from the list; content becomes read-only"
             action="ARCHIVE"
             disabled={leadOnly || quest.status === 'archived'}
-            onAction={() => onPatch({ status: 'archived' })}
+            onAction={() => openModal('archive')}
             tone="danger"
           />
           <SettingsRow
@@ -1952,6 +1953,41 @@ export function SpaceQuestDetail({
               }}
             >
               SAVE
+            </Button>
+          </div>
+        </div>
+      </SimpleDialog>
+
+      <SimpleDialog
+        open={editingModal === 'archive'}
+        onOpenChange={closeModal}
+        title="Archive this quest?"
+      >
+        <div className="space-y-4">
+          <p className="text-[13px] text-neutral-11">
+            Hide {quest.name} from the list. Content becomes read-only.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              className="rounded-none"
+              onClick={() => setEditingModal(null)}
+            >
+              CANCEL
+            </Button>
+            <Button
+              type="button"
+              colorVariant="error"
+              className="rounded-none"
+              disabled={saving}
+              onClick={() => {
+                setEditingModal(null);
+                void savePatch({ status: 'archived' });
+              }}
+            >
+              ARCHIVE QUEST
             </Button>
           </div>
         </div>

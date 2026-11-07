@@ -164,6 +164,8 @@ describe('quest-draft-assistant', () => {
     expect(proposed.kind).toBe('propose');
 
     expect(isQuestSectionApproval('yes')).toBe(true);
+    expect(isQuestSectionApproval('okay')).toBe(true);
+    expect(isQuestSectionApproval('Okay')).toBe(true);
     expect(isQuestSectionApproval('put that in Scope')).toBe(true);
     expect(
       isQuestSectionApproval(
@@ -199,6 +201,8 @@ describe('quest-draft-assistant', () => {
     for (const message of [
       'Yes, put that in the Goal.',
       'yes please',
+      'okay',
+      'Okay',
       'I approve',
       'include that',
       'put that in the Goal',

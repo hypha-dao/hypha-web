@@ -8,6 +8,16 @@ export const QUEST_STATUSES = [
 
 export type QuestStatus = (typeof QUEST_STATUSES)[number];
 
+/** Patchable statuses. Create is the only path to `proposed`. */
+export const QUEST_PATCH_STATUSES = [
+  'active',
+  'paused',
+  'completed',
+  'archived',
+] as const;
+
+export type QuestPatchStatus = (typeof QUEST_PATCH_STATUSES)[number];
+
 /** List view status filter chips (no Board, no Priority, no All/Health/Lead/Mine). */
 export const QUEST_LIST_FILTERS = [
   'active',

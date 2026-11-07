@@ -181,7 +181,7 @@ export function questStepSectionLabel(step: QuestStewardStep): string {
 const APPROVAL_SECTION =
   '(?:success\\s+criteria|milestones?|members?|target\\s+date|quest\\s+rewards?|rewards?|scope|success|lead|goal|name|title)';
 
-const APPROVAL_PHRASE = `(?:yes|yeah|yep|yup|ok|okay|sure|approved|i approve|include that|include it|put that in(?: the)?(?:\\s+${APPROVAL_SECTION})?|put it in(?: the)?(?:\\s+${APPROVAL_SECTION})?|use that|use it|looks good|go ahead|add it|apply it|that(?:'s| is) good|perfect|do it|sounds good)`;
+const APPROVAL_PHRASE = `(?:yeah|yep|yup|okay|yes|ok|sure|approved|i approve|include that|include it|put that in(?: the)?(?:\\s+${APPROVAL_SECTION})?|put it in(?: the)?(?:\\s+${APPROVAL_SECTION})?|use that|use it|looks good|go ahead|add it|apply it|that(?:'s| is) good|perfect|do it|sounds good)`;
 
 /** Tester lines that must never be proposed or written into a section. */
 const QUEST_META_INSTRUCTION =

@@ -16,6 +16,7 @@ import {
   fetchProposalOutcomeSetsForSpace,
 } from '../../governance/server/resolve-document-proposal-status';
 import type { Document } from '../../governance/types';
+import { computeSpaceMemberEntries } from '../../space/server/get-space-members-roster';
 import { findSpaceBySlug } from '../../space/server/queries';
 import {
   getMatrixBotAsToken,
@@ -26,7 +27,7 @@ import {
   matrixSendTextMessage,
 } from '../../matrix/server/matrix-http-client';
 import { HYPHA_ROOM_TYPES } from '../../matrix/room-types';
-import { QUEST_DOCUMENT_LABEL } from '../constants';
+import { QUEST_DOCUMENT_LABEL, type QuestStatus } from '../constants';
 import {
   bulletsToMarkdownList,
   canMemberEditQuest,
@@ -328,6 +329,13 @@ export async function createSpaceQuest(
     return { ok: false, error: 'invalid_input' };
   }
 
+  const rosterError = await assertPersonIdsAreSpaceMembers(
+    spaceSlug,
+    [leadPersonId, ...input.members.map((member) => member.personId)],
+    db,
+  );
+  if (rosterError) return { ok: false, error: rosterError };
+
   const [created] = await db
     .insert(spaceQuests)
     .values({
@@ -430,6 +438,39 @@ function hasInvalidIds(
 ): boolean {
   const available = new Set(owned.map((row) => row.id));
   return rows.some(({ id }) => id !== undefined && !available.delete(id));
+}
+
+function uniquePositiveIds(
+  personIds: Array<number | null | undefined>,
+): number[] {
+  return [
+    ...new Set(
+      personIds.filter((id): id is number => typeof id === 'number' && id > 0),
+    ),
+  ];
+}
+
+/**
+ * Members-tab roster check: only on-chain space members may be stored as
+ * lead/member person IDs (and later invited to the Quest Matrix room).
+ */
+async function assertPersonIdsAreSpaceMembers(
+  spaceSlug: string,
+  personIds: Array<number | null | undefined>,
+  db: DbConfig['db'],
+): Promise<SpaceQuestWriteError | null> {
+  const ids = uniquePositiveIds(personIds);
+  if (ids.length === 0) return null;
+
+  const computed = await computeSpaceMemberEntries(spaceSlug, { db });
+  if (!computed.found) return 'not_found';
+
+  const memberIds = new Set(
+    computed.entries
+      .filter((entry) => entry.member_kind === 'person')
+      .map((entry) => entry.person.id),
+  );
+  return ids.some((id) => !memberIds.has(id)) ? 'invalid_input' : null;
 }
 
 export async function updateSpaceQuest(
@@ -535,6 +576,10 @@ export async function updateSpaceQuest(
   ) {
     return { ok: false, error: 'archived' };
   }
+  // Create is the only path to proposed; never demote an accepted quest.
+  if ((patch.status as QuestStatus | undefined) === 'proposed') {
+    return { ok: false, error: 'invalid_input' };
+  }
   // Voters approve the proposed terms; edits and activation wait for the vote.
   if (current.status === 'proposed') {
     return { ok: false, error: 'not_active' };
@@ -559,6 +604,28 @@ export async function updateSpaceQuest(
   if (!isMember && !isLead) {
     return { ok: false, error: 'forbidden' };
   }
+
+  const existingMemberPersonIds = new Set(
+    uniquePositiveIds(current.members.map((member) => member.personId)),
+  );
+  const rosterError = await assertPersonIdsAreSpaceMembers(
+    spaceSlug,
+    [
+      patch.leadPersonId != null && patch.leadPersonId !== current.leadPersonId
+        ? patch.leadPersonId
+        : null,
+      ...(patch.members ?? [])
+        .map((member) => member.personId)
+        .filter(
+          (id): id is number =>
+            typeof id === 'number' &&
+            id > 0 &&
+            !existingMemberPersonIds.has(id),
+        ),
+    ],
+    db,
+  );
+  if (rosterError) return { ok: false, error: rosterError };
 
   const now = new Date();
   const actorName = actor.name?.trim() || current.leadName || 'Quest Member';
