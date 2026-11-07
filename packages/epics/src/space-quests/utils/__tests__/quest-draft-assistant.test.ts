@@ -45,19 +45,19 @@ const emptyDraft: QuestDraftStateSnapshot = {
 };
 
 describe('quest-draft-assistant', () => {
-  it('records only the goal when the member states a goal', () => {
+  it('does not treat a conversational goal sentence as a local patch', () => {
     const patch = buildLocalQuestDraftPatch({
       message: 'We want to build an onboarding matcher for new joiners.',
       currentStep: 'goal',
       draft: emptyDraft,
       viewerDisplayName: 'Vlad Hramtsov',
     });
-    expect(patch).toEqual({
-      goal: 'We want to build an onboarding matcher for new joiners.',
-    });
+    expect(patch).toEqual({});
     const { next, updatedLabels } = applyPatchToQuestDraftState({
       current: emptyDraft,
-      patch,
+      patch: {
+        goal: 'We want to build an onboarding matcher for new joiners.',
+      },
       spaceMembers: [],
       viewerDisplayName: 'Vlad Hramtsov',
     });
@@ -295,6 +295,7 @@ describe('quest-draft-assistant', () => {
       currentStep: 'success',
       draft: emptyDraft,
       viewerDisplayName: 'Vlad Hramtsov',
+      commandPayload: true,
     });
     expect(patch.successCriteriaBullets).toEqual([
       'all three checks are run with throwaway accounts',
@@ -321,6 +322,7 @@ describe('quest-draft-assistant', () => {
       currentStep: 'success',
       draft: emptyDraft,
       viewerDisplayName: 'Vlad Hramtsov',
+      commandPayload: true,
     });
     expect(patch.successCriteriaBullets).toEqual([
       '60% join a Space',
@@ -334,6 +336,7 @@ describe('quest-draft-assistant', () => {
       currentStep: 'success',
       draft: emptyDraft,
       viewerDisplayName: 'Vlad Hramtsov',
+      commandPayload: true,
     });
     expect(numeric.successCriteriaBullets).toEqual([
       '2.5 hours of review',
@@ -387,6 +390,7 @@ describe('quest-draft-assistant', () => {
       currentStep: 'milestones',
       draft: emptyDraft,
       viewerDisplayName: 'Vlad Hramtsov',
+      commandPayload: true,
     });
     expect(undated.milestones?.[0]?.dueDate).toBeUndefined();
     expect(undated.milestones?.[0]?.name).toBe('Ship the onboarding checklist');
@@ -405,6 +409,7 @@ describe('quest-draft-assistant', () => {
         goal: 'Validate sandbox onboarding with three documented checks by 30 November 2026.',
       },
       viewerDisplayName: 'Vlad Hramtsov',
+      commandPayload: true,
     });
     expect(patch.scopeIn).toBeUndefined();
     expect(patch.scopeOut).toBeUndefined();
@@ -486,6 +491,7 @@ describe('quest-draft-assistant', () => {
       currentStep: 'milestones',
       draft: emptyDraft,
       viewerDisplayName: 'Vlad Hramtsov',
+      commandPayload: true,
     });
     expect(patch.milestones).toEqual([
       {
@@ -530,6 +536,7 @@ describe('quest-draft-assistant', () => {
       currentStep: 'milestones',
       draft: emptyDraft,
       viewerDisplayName: 'Vlad Hramtsov',
+      commandPayload: true,
     });
     expect(compact.milestones?.map((milestone) => milestone.name)).toEqual([
       'Run check one',
@@ -554,6 +561,7 @@ describe('quest-draft-assistant', () => {
       currentStep: 'milestones',
       draft: emptyDraft,
       viewerDisplayName: 'Ada Lovelace',
+      commandPayload: true,
     });
     expect(patch.milestones).toEqual([
       {
@@ -621,6 +629,7 @@ describe('quest-draft-assistant', () => {
       currentStep: 'milestones',
       draft: emptyDraft,
       viewerDisplayName: 'Vlad Hramtsov',
+      commandPayload: true,
     });
     expect(hyphenated.milestones?.[0]?.name).toBe(
       'Ship the on-chain checklist',
@@ -630,6 +639,7 @@ describe('quest-draft-assistant', () => {
       currentStep: 'milestones',
       draft: emptyDraft,
       viewerDisplayName: 'Vlad Hramtsov',
+      commandPayload: true,
     });
     expect(titledDash.milestones?.[0]?.name).toBe(
       'Run check one - record the pass or fail',
@@ -643,6 +653,7 @@ describe('quest-draft-assistant', () => {
       currentStep: 'members',
       draft: emptyDraft,
       viewerDisplayName: 'Vlad Hramtsov',
+      commandPayload: true,
     });
     expect(patch.members?.[0]?.memberName).toBe('Ada Lovelace');
     expect(patch.members?.[0]?.responsibilities ?? []).toEqual([]);
@@ -941,11 +952,19 @@ describe('new quest helper transcript', () => {
   it('fills goal, scope, success criteria, and a milestone with one confirmation each', () => {
     const goal = 'Match every new joiner to 3 spaces in their first day.';
     expect(questDraftTurnUsesModel(goal)).toBe(true);
-    const proposedGoal = send(goal, {
-      draft: emptyDraft,
-      currentStep: 'goal',
-      pending: null,
-    });
+    const proposedGoal = send(
+      goal,
+      {
+        draft: emptyDraft,
+        currentStep: 'goal',
+        pending: null,
+      },
+      {
+        reply:
+          'That outcome is a suggestion and is not saved until you confirm.',
+        patch: { goal, scopeIn: ['not this section'] },
+      },
+    );
     expect(proposedGoal.wrote).toBe(false);
     expect(proposedGoal.pending?.patch.goal).toBe(goal);
     expect(proposedGoal.reply).toMatch(/Do you want that to be in the Goal/i);
@@ -990,11 +1009,18 @@ describe('new quest helper transcript', () => {
     );
 
     const success = '60% of new members join a suggested space within 7 days';
-    const proposedSuccess = send(success, {
-      draft: acceptedScope.draft,
-      currentStep: 'success',
-      pending: null,
-    });
+    const proposedSuccess = send(
+      success,
+      {
+        draft: acceptedScope.draft,
+        currentStep: 'success',
+        pending: null,
+      },
+      {
+        reply: 'One check, not saved until you confirm.',
+        patch: { successCriteriaBullets: [success], rewards: [] },
+      },
+    );
     expect(proposedSuccess.wrote).toBe(false);
     expect(proposedSuccess.pending?.patch.successCriteriaBullets).toEqual([
       success,
@@ -1015,11 +1041,28 @@ describe('new quest helper transcript', () => {
     );
 
     const milestone = 'Run check one - 20 November 2026 - Ada Lovelace';
-    const proposedMilestone = send(milestone, {
-      draft: acceptedSuccess.draft,
-      currentStep: 'milestones',
-      pending: null,
-    });
+    const proposedMilestone = send(
+      milestone,
+      {
+        draft: acceptedSuccess.draft,
+        currentStep: 'milestones',
+        pending: null,
+      },
+      {
+        reply: 'One checkpoint, not saved until you confirm.',
+        patch: {
+          milestones: [
+            {
+              name: 'Run check one',
+              dueDate: '20 November 2026',
+              description: 'Run check one',
+              ownerName: 'Ada Lovelace',
+            },
+          ],
+          goal: 'replaced',
+        },
+      },
+    );
     expect(proposedMilestone.wrote).toBe(false);
     expect(proposedMilestone.pending?.patch.milestones?.[0]?.name).toBe(
       'Run check one',
@@ -1296,11 +1339,9 @@ describe('quest helper command and rewrite boundaries', () => {
     expect(prose.draft.goal).toBe(savedGoal);
     expect(prose.draft.leadName).toBe('Ada Lovelace');
     expect(prose.draft.rewards).toEqual([]);
-    expect(prose.pending?.step).toBe('success');
-    expect(prose.pending?.patch.leadName).toBeUndefined();
-    expect(prose.pending?.patch.successCriteriaBullets).toEqual([
-      'Add lead scoring to the CRM',
-    ]);
+    expect(prose.pending).toBeNull();
+    expect(prose.reply).not.toMatch(/Not saved yet/i);
+    expect(prose.reply).not.toContain('Add lead scoring to the CRM');
 
     const coached = send('Members use rewards within 7 days', {
       draft: { ...emptyDraft, goal: savedGoal },
@@ -1311,11 +1352,9 @@ describe('quest helper command and rewrite boundaries', () => {
     expect(coached.focusStep).toBe('success');
     expect(coached.draft.goal).toBe(savedGoal);
     expect(coached.draft.rewards).toEqual([]);
-    expect(coached.pending?.step).toBe('success');
-    expect(coached.pending?.patch.rewards).toBeUndefined();
-    expect(coached.pending?.patch.successCriteriaBullets).toEqual([
-      'Members use rewards within 7 days',
-    ]);
+    expect(coached.pending).toBeNull();
+    expect(coached.reply).not.toMatch(/Not saved yet/i);
+    expect(coached.reply).not.toContain('Members use rewards within 7 days');
   });
 });
 
@@ -1508,12 +1547,26 @@ describe('create draft turn settles against the latest snapshot', () => {
 
     const concrete =
       'Members can tell a new quest draft kept the goal they confirmed.';
+    const polished =
+      'Members can tell that a new quest draft kept the goal they confirmed.';
+    const unspoken = await settle(concrete, {
+      reply: 'That names a check a reviewer can see.',
+      patch: null,
+    });
+    expect(unspoken?.wrote).toBe(false);
+    expect(unspoken?.pending).toBeNull();
+    expect(unspoken?.draft.goal).toBe('');
+    expect(unspoken?.reply).not.toMatch(/Not saved yet/i);
+    expect(unspoken?.reply).not.toContain(concrete);
+
     const proposed = await settle(concrete, {
       reply: 'That names a check a reviewer can see.',
-      patch: { goal: 'Invented: 80% of members finish in 2 days' },
+      patch: { goal: polished },
     });
     expect(proposed?.wrote).toBe(false);
-    expect(proposed?.pending?.patch.goal).toBe(concrete);
+    expect(proposed?.pending?.patch.goal).toBe(polished);
+    expect(proposed?.reply).toContain(polished);
+    expect(proposed?.reply).not.toContain(concrete);
     expect(proposed?.reply).toMatch(/reviewer can see/);
     expect(proposed?.reply).toMatch(/Not saved yet/);
     expect(proposed?.draft.goal).toBe('');
@@ -1522,7 +1575,7 @@ describe('create draft turn settles against the latest snapshot', () => {
     const accepted = await settle('yes', null);
     expect(calls).not.toContain('yes');
     expect(accepted?.wrote).toBe(true);
-    expect(accepted?.draft.goal).toBe(concrete);
+    expect(accepted?.draft.goal).toBe(polished);
     state.draft = accepted?.draft ?? state.draft;
     state.pending = null;
     state.currentStep = accepted?.focusStep ?? 'goal';
@@ -1537,7 +1590,7 @@ describe('create draft turn settles against the latest snapshot', () => {
     });
     expect(assessment?.wrote).toBe(false);
     expect(assessment?.pending).toBeNull();
-    expect(assessment?.draft.goal).toBe(concrete);
+    expect(assessment?.draft.goal).toBe(polished);
     expect(assessment?.draft.scopeIn).toEqual([]);
     expect(assessment?.reply).toMatch(/does not name a number/);
 
@@ -1549,7 +1602,7 @@ describe('create draft turn settles against the latest snapshot', () => {
       },
     });
     expect(refine?.wrote).toBe(false);
-    expect(refine?.draft.goal).toBe(concrete);
+    expect(refine?.draft.goal).toBe(polished);
     expect(refine?.pending?.step).toBe('goal');
     expect(refine?.pending?.patch.scopeIn).toBeUndefined();
     expect(refine?.pending?.patch.goal).toMatch(/confirmed goal stayed/);
@@ -1558,7 +1611,7 @@ describe('create draft turn settles against the latest snapshot', () => {
     const rejected = await settle('no', null);
     expect(calls).not.toContain('no');
     expect(rejected?.pending).toBeNull();
-    expect(rejected?.draft.goal).toBe(concrete);
+    expect(rejected?.draft.goal).toBe(polished);
     state.pending = null;
 
     const cross = await settle('what reward should we pay?', {
@@ -1571,7 +1624,7 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(cross?.wrote).toBe(false);
     expect(cross?.pending).toBeNull();
     expect(cross?.draft.rewards).toEqual([]);
-    expect(cross?.draft.goal).toBe(concrete);
+    expect(cross?.draft.goal).toBe(polished);
     expect(cross?.reply).toMatch(/nothing here names an amount/i);
 
     const failed = await settleCreateDraftTurn({
@@ -1588,7 +1641,7 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(failed?.reply).toBe(QUEST_HELPER_OFFLINE_REPLY);
     expect(failed?.wrote).toBe(false);
     expect(failed?.pending).toBeNull();
-    expect(failed?.draft.goal).toBe(concrete);
+    expect(failed?.draft.goal).toBe(polished);
   });
 
   it('does not file a sentence the model is still clarifying', async () => {
@@ -1660,10 +1713,11 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(rewards?.reply).not.toMatch(/Not saved yet/i);
 
     const concrete = 'Ship the sandbox checklist to every new member.';
+    const polishedScope = 'Publish the sandbox checklist for every new member.';
     const proposed = await settle(concrete, {
       reply: 'That is one deliverable voters can point at.',
       patch: {
-        scopeIn: ['invented scope'],
+        scopeIn: [polishedScope],
         leadName: 'checklist',
         rewards: [{ amount: '1', token: 'USDC' }],
       },
@@ -1672,10 +1726,12 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(proposed?.draft.scopeIn).toEqual(keptScope);
     expect(proposed?.draft.leadName).toBe('Ada Lovelace');
     expect(proposed?.pending?.step).toBe('scope');
-    expect(proposed?.pending?.patch.scopeIn?.[0]).toMatch(/sandbox checklist/);
-    expect(proposed?.pending?.patch.scopeIn).not.toContain('invented scope');
+    expect(proposed?.pending?.patch.scopeIn).toEqual([polishedScope]);
+    expect(proposed?.pending?.patch.scopeIn).not.toContain(concrete);
     expect(proposed?.pending?.patch.leadName).toBeUndefined();
     expect(proposed?.pending?.patch.rewards).toBeUndefined();
+    expect(proposed?.reply).toContain(polishedScope);
+    expect(proposed?.reply).not.toContain(concrete);
     expect(proposed?.reply).toMatch(/voters can point at/);
     expect(proposed?.reply).toMatch(/Not saved yet/);
 
@@ -1899,8 +1955,10 @@ describe('create draft turn settles against the latest snapshot', () => {
     });
     expect(approved?.wrote).toBe(false);
     expect(approved?.pending?.step).toBe('scope');
-    expect(approved?.pending?.patch.scopeIn).toEqual([checklist]);
+    expect(approved?.pending?.patch.scopeIn).toEqual(['invented scope']);
     expect(approved?.pending?.patch.leadName).toBeUndefined();
+    expect(approved?.reply).toContain('invented scope');
+    expect(approved?.reply).not.toContain(checklist);
     expect(approved?.reply).toMatch(/one deliverable/);
     expect(approved?.reply).toMatch(/Not saved yet/);
     expect(approved?.reply).toMatch(/Do you want that to be in the Scope\?/);
@@ -2528,5 +2586,232 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(yesAfterQuestion?.draft.goal).toBe('');
     expect(yesAfterQuestion?.draft.scopeIn).toEqual([]);
     expect(yesAfterQuestion?.reply).toMatch(/Nothing is waiting on a yes/i);
+  });
+
+  it('saves the structured model proposal instead of the raw acceptance', async () => {
+    const rawAcceptance =
+      'yes that a quest published end-to-end in this space with a named lead and a reward';
+    const polishedGoal =
+      'Publish one quest end-to-end in this sandbox space — with a named lead and a reward attached — so we can confirm the quest creation flow works from goal through publication.';
+    const scopeIn = ['Sandbox editor', 'Proposal page'];
+    const scopeOut = ['Production rollout'];
+    const success = [
+      'The published quest can be opened',
+      'It has a lead and a reward',
+    ];
+    const revisedGoal =
+      'Publish one quest end-to-end in this sandbox space, with a named lead and a reward, so the creation flow can be checked.';
+    const state: CreateDraftTurnSnapshot = {
+      draft: { ...emptyDraft, goal: '', scopeIn: [], scopeOut: [] },
+      pending: null,
+      currentStep: 'goal',
+    };
+    const calls: string[] = [];
+    const settle = (message: string, model: QuestDraftModelTurn | null) =>
+      settleCreateDraftTurn({
+        message,
+        history: [],
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: [],
+        readState: () => state,
+        isCurrent: () => true,
+        loadModel: async () => {
+          calls.push(message);
+          return model;
+        },
+      });
+
+    const coached = await settle('goal is to test quest creation', {
+      reply:
+        '"Test quest creation" names an activity, not an outcome — a reviewer can\'t check whether it happened. Who is this for (just you, or someone new to the sandbox), and what should be true when it\'s done — e.g. a quest published end-to-end in this space with a named lead and a reward?',
+      patch: {
+        goal: 'goal is to test quest creation',
+        rewards: [{ amount: '1', token: 'USDC' }],
+      },
+    });
+    expect(coached?.wrote).toBe(false);
+    expect(coached?.pending).toBeNull();
+    expect(coached?.draft.goal).toBe('');
+    expect(coached?.reply).toMatch(/who is this for/i);
+    expect(coached?.reply).not.toMatch(/Not saved yet/i);
+
+    const proposed = await settle(rawAcceptance, {
+      reply: [
+        "That's your outcome, written as one suggestion — it is not saved until you confirm it:",
+        polishedGoal,
+        'A reviewer can check it: the quest exists, has a lead, and has a reward.',
+        'If you\'d rather it be "just you" or "someone new to the sandbox" as the beneficiary, say so and I\'ll tighten it.',
+        "Otherwise, confirm and we'll move to Scope.",
+      ].join('\n'),
+      patch: {
+        goal: polishedGoal,
+        scopeIn: ['should not stick'],
+        rewards: [{ amount: '9', token: 'USDC' }],
+      },
+    });
+    expect(proposed?.wrote).toBe(false);
+    expect(proposed?.pending?.step).toBe('goal');
+    expect(proposed?.pending?.patch.goal).toBe(polishedGoal);
+    expect(proposed?.pending?.patch.scopeIn).toBeUndefined();
+    expect(proposed?.pending?.patch.rewards).toBeUndefined();
+    expect(proposed?.draft.goal).toBe('');
+    expect(proposed?.reply).toContain(polishedGoal);
+    expect(proposed?.reply).toMatch(/Not saved yet/);
+    expect(proposed?.reply).toMatch(/Do you want that to be in the Goal/);
+    expect(proposed?.reply).not.toContain(rawAcceptance);
+
+    state.pending = proposed?.pending ?? null;
+    const savedGoal = await settle('yes', {
+      reply: 'Saved the raw sentence.',
+      patch: { goal: rawAcceptance },
+    });
+    expect(calls).not.toContain('yes');
+    expect(savedGoal?.wrote).toBe(true);
+    expect(savedGoal?.pending).toBeNull();
+    expect(savedGoal?.draft.goal).toBe(polishedGoal);
+    expect(savedGoal?.draft.goal).not.toContain('yes that');
+
+    state.draft = savedGoal?.draft ?? state.draft;
+    state.pending = null;
+    state.currentStep = 'scope';
+    const scope = await settle(
+      'cover the sandbox editor and the proposal page, and leave production out',
+      {
+        reply:
+          'That boundary is one suggestion and is not saved until you confirm.',
+        patch: {
+          scopeIn,
+          scopeOut,
+          goal: 'replaced goal',
+        },
+      },
+    );
+    expect(scope?.wrote).toBe(false);
+    expect(scope?.pending?.step).toBe('scope');
+    expect(scope?.pending?.patch.scopeIn).toEqual(scopeIn);
+    expect(scope?.pending?.patch.scopeOut).toEqual(scopeOut);
+    expect(scope?.pending?.patch.goal).toBeUndefined();
+    expect(scope?.draft.goal).toBe(polishedGoal);
+    expect(scope?.draft.scopeIn).toEqual([]);
+    expect(scope?.reply).toContain('Sandbox editor');
+    expect(scope?.reply).toContain('Production rollout');
+    expect(scope?.reply).not.toContain('leave production out');
+
+    state.pending = scope?.pending ?? null;
+    const savedScope = await settle('yes', null);
+    expect(savedScope?.wrote).toBe(true);
+    expect(savedScope?.draft.scopeIn).toEqual(scopeIn);
+    expect(savedScope?.draft.scopeOut).toEqual(scopeOut);
+    expect(savedScope?.draft.goal).toBe(polishedGoal);
+
+    state.draft = savedScope?.draft ?? state.draft;
+    state.pending = null;
+    state.currentStep = 'success';
+    const criteria = await settle('a reviewer can open the published quest', {
+      reply:
+        'These checks are a suggestion and are not saved until you confirm.',
+      patch: {
+        successCriteriaBullets: success,
+        goal: 'replaced again',
+      },
+    });
+    expect(criteria?.pending?.step).toBe('success');
+    expect(criteria?.pending?.patch.successCriteriaBullets).toEqual(success);
+    expect(criteria?.pending?.patch.goal).toBeUndefined();
+    expect(criteria?.reply).toContain('The published quest can be opened');
+    expect(criteria?.reply).not.toContain(
+      'a reviewer can open the published quest',
+    );
+    state.pending = criteria?.pending ?? null;
+    const savedSuccess = await settle('yes', null);
+    expect(savedSuccess?.draft.successCriteria).toContain(
+      'The published quest can be opened',
+    );
+    expect(savedSuccess?.draft.goal).toBe(polishedGoal);
+
+    state.draft = savedSuccess?.draft ?? state.draft;
+    state.pending = null;
+    const question = await settle('what reward should we pay?', {
+      reply: 'Rewards are a later section. Nothing here names an amount.',
+      patch: { rewards: [{ amount: '2500', token: 'USDC' }] },
+    });
+    expect(question?.pending).toBeNull();
+    expect(question?.draft.rewards).toEqual([]);
+    expect(question?.reply).not.toMatch(/Not saved yet/i);
+
+    const clarified = await settle('Add lead scoring', {
+      reply:
+        'Do you mean the Lead role, or the work of adding lead scoring? What outcome should voters be able to check?',
+      patch: { scopeIn: ['Add lead scoring'], leadName: 'scoring' },
+    });
+    expect(clarified?.pending).toBeNull();
+    expect(clarified?.draft.scopeIn).toEqual(scopeIn);
+    expect(clarified?.reply).not.toMatch(/Not saved yet/i);
+
+    state.currentStep = 'goal';
+    const replacement = await settle('make the goal shorter', {
+      reply: 'A shorter suggestion, still not saved until you confirm.',
+      patch: { goal: revisedGoal },
+    });
+    expect(replacement?.pending?.patch.goal).toBe(revisedGoal);
+    expect(replacement?.draft.goal).toBe(polishedGoal);
+    state.pending = replacement?.pending ?? null;
+    const rejected = await settle('no', null);
+    expect(calls).not.toContain('no');
+    expect(rejected?.pending).toBeNull();
+    expect(rejected?.draft.goal).toBe(polishedGoal);
+
+    state.pending = null;
+    const again = await settle('use the shorter goal', {
+      reply:
+        'The shorter line is a suggestion and is not saved until you confirm.',
+      patch: { goal: revisedGoal, scopeIn: ['nope'] },
+    });
+    expect(again?.pending?.patch.goal).toBe(revisedGoal);
+    expect(again?.pending?.patch.scopeIn).toBeUndefined();
+    state.pending = again?.pending ?? null;
+    const savedRevision = await settle('yes', null);
+    expect(savedRevision?.draft.goal).toBe(revisedGoal);
+    expect(savedRevision?.draft.scopeIn).toEqual(scopeIn);
+
+    state.draft = savedRevision?.draft ?? state.draft;
+    state.pending = {
+      step: 'scope',
+      patch: { scopeIn: ['older scope'], scopeOut: ['older out'] },
+    };
+    state.currentStep = 'scope';
+    const retired = await settle('what should the goal be?', {
+      reply: 'The earlier in/out wording stays history until we settle this.',
+      patch: { goal: 'what should the goal be?', scopeIn: ['replaced scope'] },
+    });
+    expect(retired?.pending).toBeNull();
+    expect(retired?.draft.scopeIn).toEqual(scopeIn);
+    expect(retired?.reply).not.toMatch(/still waiting on a yes/i);
+    state.pending = null;
+    const yesAfter = await settle('yes', {
+      reply: 'Saved it.',
+      patch: { scopeIn: ['replaced scope'] },
+    });
+    expect(yesAfter?.wrote).toBe(false);
+    expect(yesAfter?.draft.scopeIn).toEqual(scopeIn);
+    expect(yesAfter?.reply).toMatch(/Nothing is waiting on a yes/i);
+
+    state.pending = null;
+    const failed = await settleCreateDraftTurn({
+      message: 'describe the sandbox outcome again',
+      history: [],
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      readState: () => state,
+      isCurrent: () => true,
+      loadModel: async () => {
+        throw new Error('offline');
+      },
+    });
+    expect(failed?.reply).toBe(QUEST_HELPER_OFFLINE_REPLY);
+    expect(failed?.wrote).toBe(false);
+    expect(failed?.pending).toBeNull();
+    expect(failed?.draft.goal).toBe(revisedGoal);
+    expect(failed?.draft.scopeIn).toEqual(scopeIn);
   });
 });

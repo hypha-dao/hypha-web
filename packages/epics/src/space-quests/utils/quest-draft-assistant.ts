@@ -623,6 +623,7 @@ export function buildLocalQuestDraftPatch({
       currentStep: command.step,
       draft,
       viewerDisplayName,
+      commandPayload: true,
     });
     return sanitizeQuestDraftPatch(
       limitQuestPatchToStep(extracted, command.step),
@@ -693,7 +694,14 @@ export function buildLocalQuestDraftPatch({
     patch.rewards = extractedRewards;
   }
 
-  if (!stepFieldsAlreadyCaptured(patch, currentStep)) {
+  // Conversational prose is not a section value. An explicit command, or a
+  // message that labels this section, stores that payload. A model tool
+  // patch is the suggestion for everything else.
+  const labeledStep = labeledQuestDraftSection(trimmed);
+  if (
+    (commandPayload || labeledStep === currentStep) &&
+    !stepFieldsAlreadyCaptured(patch, currentStep)
+  ) {
     if (currentStep === 'goal') {
       patch.goal = trimmed;
     } else if (currentStep === 'scope') {
@@ -1474,29 +1482,15 @@ function sectionLabelSource(step: QuestStewardStep): string {
 }
 
 /**
- * A question that asks the member to approve a suggestion already in hand.
- * It is not a request for a missing fact.
+ * A question that still needs a fact or a choice. An optional aside does not.
  */
 const MISSING_DECISION =
-  /\b(?:do you mean|which|what|who|how|when|where|why|whether|\bor\b)\b/i;
-
-function questionAsksForApproval(
-  question: string,
-  step: QuestStewardStep,
-): boolean {
-  if (!question.includes('?') || MISSING_DECISION.test(question)) return false;
-  const label = sectionLabelSource(step);
-  return (
-    /\b(?:do you want|should I|shall I|can I|may I|confirm|sound right|look right|good to (?:add|use|file)|put (?:that|this|it) in|add (?:that|this|it) to)\b/i.test(
-      question,
-    ) || new RegExp(`\\b(?:${label})\\b`, 'i').test(question)
-  );
-}
+  /\b(?:do you mean|which|what|who|how|when|where|why|whether)\b/i;
 
 /**
  * Guidance is not a field value. A reply still asking for a missing decision,
  * or sending the sentence to another section, must not also become pending
- * content. An approval question on a finished suggestion does not withhold it.
+ * content. A finished tool suggestion can still mention an optional revision.
  */
 function modelGuidanceWithholdsFiling(
   reply: string,
@@ -1507,7 +1501,7 @@ function modelGuidanceWithholdsFiling(
     .split(/(?<=\?)\s+/)
     .map((part) => part.trim())
     .filter((part) => part.includes('?'));
-  if (questions.some((question) => !questionAsksForApproval(question, step))) {
+  if (questions.some((question) => MISSING_DECISION.test(question))) {
     return true;
   }
   const withoutFilingAsk = reply
@@ -1539,9 +1533,9 @@ function modelGuidanceWithholdsFiling(
 }
 
 /**
- * What this turn may offer. A labeled payload is the member's proposal.
- * A model tool patch is a proposal only when the reply is not still asking
- * for a decision. Prose on its own is never a proposal.
+ * What this turn may offer. An explicit labeled payload is the member's
+ * proposal. Otherwise the model tool patch is the only confirmable text.
+ * Prose on its own, and the raw message, are never a proposal.
  */
 export type QuestDraftSuggestionDecision = {
   intent: 'clarify' | 'propose';
@@ -1789,13 +1783,6 @@ export function runNewQuestDraftTurn({
 
   if (target.step === 'goal' && isVagueQuestGoal(goalStatement(text))) {
     const reply = conversationalModelReply(model, text);
-    const suggested = withoutVagueGoal(limitedModelPatch(model, 'goal'));
-    if (reply && Object.keys(suggested).length > 0) {
-      return stay(`Suggested refinement, not saved yet:\n${reply}`, 'goal', {
-        step: 'goal',
-        patch: suggested,
-      });
-    }
     return stay(
       replyAfterRetiredSuggestion(reply ?? QUEST_HELPER_OFFLINE_REPLY, false),
       'goal',
