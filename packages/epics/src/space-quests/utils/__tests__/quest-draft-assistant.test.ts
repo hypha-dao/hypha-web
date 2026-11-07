@@ -312,6 +312,20 @@ describe('quest-draft-assistant', () => {
       'ship the matcher',
       'document the flow',
     ]);
+
+    const numeric = buildLocalQuestDraftPatch({
+      message:
+        '2.5 hours of review; 60% stay enrolled; 10) file the note; • 60% published',
+      currentStep: 'success',
+      draft: emptyDraft,
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(numeric.successCriteriaBullets).toEqual([
+      '2.5 hours of review',
+      '60% stay enrolled',
+      'file the note',
+      '60% published',
+    ]);
   });
 
   it('proposes only the milestones the member named', () => {

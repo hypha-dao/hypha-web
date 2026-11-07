@@ -32,10 +32,23 @@ export const schemaQuestMemberInput = z.object({
     .default([]),
 });
 
+/** Blank is allowed. Any other value must be an http(s) URL. */
+export function isAllowedQuestDeliverableUrl(value: string): boolean {
+  return value.length === 0 || /^https?:\/\//i.test(value);
+}
+
+const questDeliverableUrl = z
+  .string()
+  .trim()
+  .max(1000)
+  .refine(isAllowedQuestDeliverableUrl, {
+    message: 'Only http/https URLs are allowed.',
+  });
+
 export const schemaQuestDeliverableInput = z.object({
   id: z.number().int().positive().optional(),
   name: z.string().trim().min(1).max(200),
-  url: z.string().trim().max(1000).nullable().optional(),
+  url: questDeliverableUrl.nullable().optional(),
   note: z.string().trim().max(1000).nullable().optional(),
 });
 

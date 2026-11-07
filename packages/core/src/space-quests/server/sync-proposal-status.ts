@@ -1,6 +1,6 @@
 import { inArray } from 'drizzle-orm';
 import { documents } from '@hypha-platform/storage-postgres';
-import type { DbConfig } from '../../common/server/types';
+import type { TransactionalDatabase } from '../../common/server/types';
 import { findSpaceBySlug } from '../../space/server/queries';
 import {
   attachProposalStatusToDocument,
@@ -18,7 +18,7 @@ import { activateSpaceQuestByDocumentId } from './mutations';
  */
 export async function syncSpaceQuestProposalStatuses(
   { spaceSlug }: { spaceSlug: string },
-  { db }: DbConfig,
+  { db }: { db: TransactionalDatabase },
 ): Promise<SpaceQuestsOverview | null> {
   const overview = await listSpaceQuests({ spaceSlug }, { db });
   if (!overview) return null;

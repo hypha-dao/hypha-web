@@ -11,7 +11,10 @@ import {
   spaceQuestUpdates,
   type QuestUpdateChangePayload,
 } from '@hypha-platform/storage-postgres';
-import type { DbConfig } from '../../common/server/types';
+import type {
+  DbConfig,
+  TransactionalDatabase,
+} from '../../common/server/types';
 import {
   attachProposalStatusToDocument,
   fetchProposalOutcomeSetsForSpace,
@@ -1129,7 +1132,7 @@ export async function activateSpaceQuestByDocumentId(
     documentId,
     web3ProposalId,
   }: { documentId?: number; web3ProposalId?: number },
-  { db }: DbConfig,
+  { db }: { db: TransactionalDatabase },
 ): Promise<number> {
   let targetDocId = documentId;
   if (targetDocId == null && web3ProposalId != null) {

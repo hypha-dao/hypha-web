@@ -8,6 +8,7 @@ import {
   escapeUntrustedDataBoundary,
   limitQuestPatchToStep,
   resolveQuestDraftTarget,
+  isAllowedQuestDeliverableUrl,
   isSandboxOrThrowawaySpace,
   isViewerQuestLead,
   mergeRefinedQuestDeliverables,
@@ -34,7 +35,7 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { getHyphaChatModel } from './stream-chat';
 
-const draftPatchSchema = z.object({
+export const draftPatchSchema = z.object({
   name: z.string().trim().max(160).optional(),
   goal: z.string().trim().max(4000).optional(),
   scopeIn: z.array(z.string().trim().min(1).max(400)).max(25).optional(),
@@ -86,12 +87,9 @@ const draftPatchSchema = z.object({
           .string()
           .trim()
           .max(1000)
-          .refine(
-            (value) => value.length === 0 || /^https?:\/\//i.test(value),
-            {
-              message: 'Only http/https URLs are allowed.',
-            },
-          )
+          .refine(isAllowedQuestDeliverableUrl, {
+            message: 'Only http/https URLs are allowed.',
+          })
           .optional(),
         note: z.string().trim().max(1000).optional(),
       }),
