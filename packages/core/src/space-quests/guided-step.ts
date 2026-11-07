@@ -8,11 +8,17 @@ export type QuestDraftTarget = {
 };
 
 const SECTION_NAME =
-  '(success\\s+criteria|in[-\\s]?scope|out[-\\s]of[-\\s]?scope|milestones?|members?|target\\s+date|quest\\s+rewards?|rewards?|quest\\s+name|scope|success|lead|goal|name|title)';
+  '(success\\s+criteria|in[-\\s]?scope|out[-\\s]of[-\\s]?scope|milestones?|members?|target\\s+date|quest\\s+rewards?|rewards?|quest\\s+name|scope|success(?!\\s+[A-Za-z])|lead|goal|name|title)';
 
-/** "Focus only on Scope", "help me with the Scope section", "improve the goal". */
+/**
+ * A section address, not a sentence that happens to use a section word.
+ * "Focus only on Scope" and "update the members" name the field.
+ * "We update members every week" and "Write success stories" do not:
+ * the write/update verbs have to take "the" field, and bare "success"
+ * cannot swallow a following word such as "stories".
+ */
 const NAMED_SECTION = new RegExp(
-  `(?:focus(?:\\s+only)?\\s+on|only\\s+on|help(?:\\s+me)?\\s+with(?:\\s+the)?|tighten(?:\\s+the)?|just(?:\\s+the)?|(?:draft|fill|write|update|revise)\\s+(?:the\\s+)?|(?:improve|rewrite|reword|evaluate)\\s+the\\s+)\\s*(?:the\\s+)?${SECTION_NAME}\\b`,
+  `(?:focus(?:\\s+only)?\\s+on|only\\s+on|help(?:\\s+me)?\\s+with(?:\\s+the)?|tighten(?:\\s+the)?|just(?:\\s+the)?|(?:draft|fill|write|update|revise)\\s+the\\s+|(?:improve|rewrite|reword|evaluate)\\s+the\\s+)\\s*(?:the\\s+)?${SECTION_NAME}\\b`,
   'i',
 );
 

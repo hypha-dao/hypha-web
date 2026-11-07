@@ -53,6 +53,10 @@ import {
   type QuestDraftStateSnapshot,
 } from '../utils/quest-draft-assistant';
 import {
+  questHelperTypingAfterTurn,
+  questHelperTypingForTurn,
+} from '../utils/quest-helper-typing';
+import {
   EditQuestGoalModal,
   EditQuestLeadModal,
   EditQuestMembersModal,
@@ -359,7 +363,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       };
 
       const usesModel = questDraftTurnUsesModel(trimmed);
-      if (usesModel) setIsAgentTyping(true);
+      setIsAgentTyping(questHelperTypingForTurn(usesModel));
       try {
         const settled = await settleCreateDraftTurn({
           message: trimmed,
@@ -434,9 +438,11 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         });
         if (settled) applyTurn(settled);
       } finally {
-        if (usesModel && turnGenerationRef.current === generation) {
-          setIsAgentTyping(false);
-        }
+        const typing = questHelperTypingAfterTurn(
+          generation,
+          turnGenerationRef.current,
+        );
+        if (typing === false) setIsAgentTyping(false);
       }
     },
     [

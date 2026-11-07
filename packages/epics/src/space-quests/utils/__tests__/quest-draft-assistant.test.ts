@@ -1063,6 +1063,37 @@ describe('quest helper command and rewrite boundaries', () => {
     });
   }
 
+  it('keeps ordinary member and success wording in the current section', () => {
+    const state = {
+      draft: { ...emptyDraft, goal: savedGoal },
+      currentStep: 'goal' as const,
+      pending: null,
+    };
+    for (const message of [
+      'We update members on progress every week',
+      'Write success stories for new joiners',
+    ]) {
+      const turn = send(message, state, {
+        reply: 'Noted.',
+        patch: {
+          members: [
+            { memberName: 'Ada Lovelace', responsibilities: ['Updates'] },
+          ],
+          successCriteriaBullets: ['Stories published'],
+        },
+      });
+      expect(turn.focusStep).toBe('goal');
+      expect(turn.pending?.step ?? 'goal').toBe('goal');
+      expect(turn.draft.members).toEqual([]);
+      expect(turn.draft.successCriteria).toBe('');
+      expect(turn.wrote).toBe(false);
+    }
+    expect(send('Update the members', state, null).focusStep).not.toBe('goal');
+    expect(send('Write the success criteria', state, null).focusStep).toBe(
+      'success',
+    );
+  });
+
   it('asks the model to improve a named section and keeps the accepted goal until yes', () => {
     expect(questDraftTurnUsesModel('improve the goal')).toBe(true);
     expect(questDraftTurnUsesModel('goal is to test quest')).toBe(false);

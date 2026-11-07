@@ -139,6 +139,26 @@ describe('resolveQuestDraftTarget', () => {
       step: 'goal',
       bulk: false,
     });
+    expect(
+      resolveQuestDraftTarget(
+        'We update members on progress every week',
+        'goal',
+      ),
+    ).toEqual({ step: 'goal', bulk: false });
+    expect(
+      resolveQuestDraftTarget('Write success stories for new joiners', 'goal'),
+    ).toEqual({ step: 'goal', bulk: false });
+    expect(resolveQuestDraftTarget('Update the members', 'goal')).toEqual({
+      step: 'members',
+      bulk: false,
+    });
+    expect(
+      resolveQuestDraftTarget('Write the success criteria', 'goal'),
+    ).toEqual({ step: 'success', bulk: false });
+    expect(resolveQuestDraftTarget('Revise the goal', 'scope')).toEqual({
+      step: 'goal',
+      bulk: false,
+    });
   });
 
   it('keeps "a quest about rewards" on the goal step', () => {
