@@ -338,7 +338,7 @@ export function mergeRefinedQuestMembers(
       memberName: (next?.memberName ?? current.memberName).trim(),
       memberAvatarUrl: current.memberAvatarUrl ?? null,
       roleLabel:
-        next?.roleLabel?.trim() || current.roleLabel?.trim() || 'Member',
+        current.roleLabel?.trim() || next?.roleLabel?.trim() || 'Member',
       responsibilities: next?.responsibilities
         ? [...next.responsibilities]
         : [...(current.responsibilities ?? [])],

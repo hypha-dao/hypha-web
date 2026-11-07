@@ -530,10 +530,7 @@ ${untrusted(
             return entry.person.id;
           }
         }
-        return (
-          spaceMembers.find((m) => m.name.trim().toLowerCase() === clean)
-            ?.personId ?? null
-        );
+        return null;
       };
 
       const writeResult = await updateSpaceQuest(

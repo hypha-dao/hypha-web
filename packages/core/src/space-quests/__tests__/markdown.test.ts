@@ -297,6 +297,53 @@ describe('quest proposal description', () => {
     expect(members[1]?.id).toBe(9);
   });
 
+  it('keeps a saved role and still applies a model role to new members', () => {
+    const members = mergeRefinedQuestMembers(
+      [
+        {
+          id: 3,
+          personId: 7,
+          memberName: 'Vlad Hramtsov',
+          roleLabel: 'Lead / QA runner',
+          responsibilities: ['Own the checklist'],
+        },
+        {
+          id: 4,
+          personId: 8,
+          memberName: 'Open Role',
+          roleLabel: '   ',
+          responsibilities: [],
+        },
+      ],
+      [
+        {
+          memberName: 'Vlad Hramtsov',
+          roleLabel: 'Scribe',
+          responsibilities: ['Own the checklist'],
+        },
+        {
+          memberName: 'Open Role',
+          roleLabel: 'Reviewer',
+        },
+        {
+          memberName: 'Ada Lovelace',
+          roleLabel: 'Researcher',
+          responsibilities: ['Read the notes'],
+        },
+        {
+          memberName: 'No Role',
+        },
+      ],
+      () => null,
+    );
+    expect(members.map((member) => member.roleLabel)).toEqual([
+      'Lead / QA runner',
+      'Reviewer',
+      'Researcher',
+      'Member',
+    ]);
+  });
+
   it('drops a lead row whose duties are only a subset of the placeholders', () => {
     const members = withoutPlaceholderLeadDuplicates([
       {
