@@ -32,6 +32,7 @@ import {
 } from '../../matrix/server/matrix-http-client';
 import { HYPHA_ROOM_TYPES } from '../../matrix/room-types';
 import { QUEST_DOCUMENT_LABEL, type QuestStatus } from '../constants';
+import { NEW_QUEST_HEALTH_RECORD } from '../health-display';
 import {
   bulletsToMarkdownList,
   canMemberEditQuest,
@@ -368,9 +369,9 @@ export async function createSpaceQuest(
       leadName,
       creatorPersonId: actor?.id ?? null,
       proposalDocumentId: null,
-      healthState: 'on_track',
-      healthMarker: 82,
-      healthSummary: 'Quest proposal submitted for voting.',
+      healthState: NEW_QUEST_HEALTH_RECORD.healthState,
+      healthMarker: NEW_QUEST_HEALTH_RECORD.healthMarker,
+      healthSummary: NEW_QUEST_HEALTH_RECORD.healthSummary,
       healthUpdatedAt: new Date(),
     })
     .returning();

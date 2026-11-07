@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  formatQuestCalendarDate,
   parseQuestProposalFromDescription,
   slugifyQuestName,
   splitMarkdownLinesToBullets,
@@ -85,7 +86,7 @@ export function ProposalQuestOverviewLink({
         asChild
         variant="outline"
         colorVariant="neutral"
-        className="h-10 gap-2 rounded-none px-4 text-[11px] font-semibold uppercase tracking-[0.12em]"
+        className="gap-2 rounded-none"
       >
         <Link href={overviewHref}>
           <span>VIEW QUEST OVERVIEW</span>
@@ -123,65 +124,76 @@ export function ProposalQuestData({
     [content, parsed, title],
   );
 
+  const locale = useLocale();
   const [expandedMemberIdx, setExpandedMemberIdx] = useState<number | null>(0);
   const successLines = splitMarkdownLinesToBullets(payload.successCriteria);
   const members = useMemo(
     () => withoutPlaceholderLeadDuplicates(payload.members),
     [payload.members],
   );
+  const showGoal = payload.goal.trim().length > 0;
+  const showScope =
+    payload.scopeIn.some((item) => item.trim().length > 0) ||
+    payload.scopeOut.some((item) => item.trim().length > 0);
+  const showSuccess =
+    successLines.some((line) => line.trim().length > 0) ||
+    payload.successCriteria.trim().length > 0;
+  const showRewards = payload.rewards.length > 0;
+  const showMilestones = payload.milestones.length > 0;
+  const showMembers = members.length > 0;
 
   return (
     <div
       className="flex flex-col gap-3"
       data-testid="quest-proposal-structured-body"
     >
-      {/* GOAL */}
-      <section className="space-y-1.5 border border-border bg-background-2 p-3">
-        <p className={SECTION_LABEL_CLASS}>GOAL</p>
-        <p className="text-xs leading-relaxed text-foreground">
-          {payload.goal}
-        </p>
-      </section>
+      {showGoal ? (
+        <section className="space-y-1.5 border border-border bg-background-2 p-3">
+          <p className={SECTION_LABEL_CLASS}>GOAL</p>
+          <p className="text-xs leading-relaxed text-foreground">
+            {payload.goal}
+          </p>
+        </section>
+      ) : null}
 
-      {/* SCOPE (vertical bullets) */}
-      <section className="space-y-1.5 border border-border bg-background-2 p-3">
-        <p className={SECTION_LABEL_CLASS}>SCOPE</p>
-        <div className="space-y-1 text-xs text-foreground">
-          {payload.scopeIn.map((item, idx) => (
-            <p key={`in-${idx}`}>• {item}</p>
-          ))}
-          {payload.scopeOut.length > 0 ? (
-            <div className="pt-1 text-neutral-11">
-              {payload.scopeOut.map((item, idx) => (
-                <p key={`out-${idx}`}>• Out: {item}</p>
+      {showScope ? (
+        <section className="space-y-1.5 border border-border bg-background-2 p-3">
+          <p className={SECTION_LABEL_CLASS}>SCOPE</p>
+          <div className="space-y-1 text-xs text-foreground">
+            {payload.scopeIn.map((item, idx) => (
+              <p key={`in-${idx}`}>• {item}</p>
+            ))}
+            {payload.scopeOut.length > 0 ? (
+              <div className="pt-1 text-neutral-11">
+                {payload.scopeOut.map((item, idx) => (
+                  <p key={`out-${idx}`}>• Out: {item}</p>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {showSuccess ? (
+        <section className="space-y-1.5 border border-border bg-background-2 p-3">
+          <p className={SECTION_LABEL_CLASS}>SUCCESS</p>
+          {successLines.length > 1 ? (
+            <div className="space-y-1 text-xs text-foreground">
+              {successLines.map((line, idx) => (
+                <p key={idx}>• {line}</p>
               ))}
             </div>
-          ) : null}
-        </div>
-      </section>
+          ) : (
+            <p className="text-xs leading-relaxed text-foreground">
+              {payload.successCriteria}
+            </p>
+          )}
+        </section>
+      ) : null}
 
-      {/* SUCCESS */}
-      <section className="space-y-1.5 border border-border bg-background-2 p-3">
-        <p className={SECTION_LABEL_CLASS}>SUCCESS</p>
-        {successLines.length > 1 ? (
-          <div className="space-y-1 text-xs text-foreground">
-            {successLines.map((line, idx) => (
-              <p key={idx}>• {line}</p>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs leading-relaxed text-foreground">
-            {payload.successCriteria}
-          </p>
-        )}
-      </section>
-
-      {/* QUEST REWARD (Node 91:36 — read-only multi-token rows with token logo, no treasury meta) */}
-      <section className="space-y-2 border border-border bg-background-2 p-3">
-        <p className={SECTION_LABEL_CLASS}>QUEST REWARD</p>
-        {payload.rewards.length === 0 ? (
-          <p className="text-xs text-neutral-11">No token reward specified</p>
-        ) : (
+      {showRewards ? (
+        <section className="space-y-2 border border-border bg-background-2 p-3">
+          <p className={SECTION_LABEL_CLASS}>QUEST REWARD</p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {payload.rewards.map((reward, idx) => (
               <QuestRewardTokenCard
@@ -191,101 +203,107 @@ export function ProposalQuestData({
               />
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      ) : null}
 
-      {/* MILESTONES */}
-      <section className="space-y-1.5 border border-border bg-background-2 p-3">
-        <p className={SECTION_LABEL_CLASS}>MILESTONES</p>
-        <div className="divide-y divide-border/70">
-          {payload.milestones.map((m, idx) => {
-            const num = String(idx + 1).padStart(2, '0');
-            return (
-              <div
-                key={idx}
-                className="flex items-center gap-2.5 py-2 first:pt-1 last:pb-0"
-              >
-                <span className="text-[10px] font-medium text-neutral-11">
-                  {num}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-foreground">
-                    {m.name}
-                  </p>
-                  {m.ownerName ? (
-                    <p className="text-[10px] text-neutral-11">
-                      Owner · {m.ownerName}
-                    </p>
-                  ) : null}
-                </div>
-                {m.dueDate ? (
-                  <span className="shrink-0 text-[10px] text-neutral-11">
-                    {m.dueDate}
-                  </span>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* MEMBERS */}
-      <section className="space-y-1.5 border border-border bg-background-2 p-3">
-        <p className={SECTION_LABEL_CLASS}>MEMBERS</p>
-        <div className="divide-y divide-border/70 pt-1">
-          {members.map((member, idx) => {
-            const expanded = expandedMemberIdx === idx;
-            const initial = (member.memberName.trim()[0] ?? 'M').toUpperCase();
-            const count = member.responsibilities.length;
-            const roleText = [
-              member.roleLabel || (member.isLead ? 'Lead' : 'Member'),
-              `${count} ${count === 1 ? 'responsibility' : 'responsibilities'}`,
-            ].join(' · ');
-
-            return (
-              <div key={idx} className="py-2 first:pt-1">
-                <button
-                  type="button"
-                  onClick={() => setExpandedMemberIdx(expanded ? null : idx)}
-                  className="flex w-full items-center gap-2.5 text-left"
+      {showMilestones ? (
+        <section className="space-y-1.5 border border-border bg-background-2 p-3">
+          <p className={SECTION_LABEL_CLASS}>MILESTONES</p>
+          <div className="divide-y divide-border/70">
+            {payload.milestones.map((m, idx) => {
+              const num = String(idx + 1).padStart(2, '0');
+              return (
+                <div
+                  key={idx}
+                  className="flex items-center gap-2.5 py-2 first:pt-1 last:pb-0"
                 >
-                  <span className="grid size-6 shrink-0 place-items-center bg-foreground text-[10px] font-bold text-background">
-                    {initial}
+                  <span className="text-[10px] font-medium text-neutral-11">
+                    {num}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold text-foreground">
-                      {member.memberName}
+                    <p className="text-xs font-semibold text-foreground">
+                      {m.name}
                     </p>
-                    <p className="text-[10px] text-neutral-11">{roleText}</p>
-                  </div>
-                  {expanded ? (
-                    <ChevronUp className="size-3.5 text-neutral-11" />
-                  ) : (
-                    <ChevronDown className="size-3.5 text-neutral-11" />
-                  )}
-                </button>
-                {expanded && member.responsibilities.length > 0 ? (
-                  <div className="mt-2 space-y-1 pl-8">
-                    <p className={SECTION_LABEL_CLASS}>RESPONSIBILITY</p>
-                    {member.responsibilities.map((item, rIdx) => (
-                      <p
-                        key={rIdx}
-                        className="flex gap-1.5 text-xs text-foreground"
-                      >
-                        <span className="text-neutral-11">•</span>
-                        <span>{item}</span>
+                    {m.ownerName ? (
+                      <p className="text-[10px] text-neutral-11">
+                        Owner · {m.ownerName}
                       </p>
-                    ))}
+                    ) : null}
                   </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-        <p className="pt-1 text-[10px] text-neutral-11">
-          Expand a member to see responsibilities
-        </p>
-      </section>
+                  {m.dueDate ? (
+                    <span className="shrink-0 text-[10px] text-neutral-11">
+                      {formatQuestCalendarDate(m.dueDate, locale)}
+                    </span>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      {showMembers ? (
+        <section className="space-y-1.5 border border-border bg-background-2 p-3">
+          <p className={SECTION_LABEL_CLASS}>MEMBERS</p>
+          <div className="divide-y divide-border/70 pt-1">
+            {members.map((member, idx) => {
+              const expanded = expandedMemberIdx === idx;
+              const initial = (
+                member.memberName.trim()[0] ?? 'M'
+              ).toUpperCase();
+              const count = member.responsibilities.length;
+              const roleText = [
+                member.roleLabel || (member.isLead ? 'Lead' : 'Member'),
+                `${count} ${
+                  count === 1 ? 'responsibility' : 'responsibilities'
+                }`,
+              ].join(' · ');
+
+              return (
+                <div key={idx} className="py-2 first:pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedMemberIdx(expanded ? null : idx)}
+                    className="flex w-full items-center gap-2.5 text-left"
+                  >
+                    <span className="grid size-6 shrink-0 place-items-center bg-foreground text-[10px] font-bold text-background">
+                      {initial}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold text-foreground">
+                        {member.memberName}
+                      </p>
+                      <p className="text-[10px] text-neutral-11">{roleText}</p>
+                    </div>
+                    {expanded ? (
+                      <ChevronUp className="size-3.5 text-neutral-11" />
+                    ) : (
+                      <ChevronDown className="size-3.5 text-neutral-11" />
+                    )}
+                  </button>
+                  {expanded && member.responsibilities.length > 0 ? (
+                    <div className="mt-2 space-y-1 pl-8">
+                      <p className={SECTION_LABEL_CLASS}>RESPONSIBILITY</p>
+                      {member.responsibilities.map((item, rIdx) => (
+                        <p
+                          key={rIdx}
+                          className="flex gap-1.5 text-xs text-foreground"
+                        >
+                          <span className="text-neutral-11">•</span>
+                          <span>{item}</span>
+                        </p>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+          <p className="pt-1 text-[10px] text-neutral-11">
+            Expand a member to see responsibilities
+          </p>
+        </section>
+      ) : null}
     </div>
   );
 }

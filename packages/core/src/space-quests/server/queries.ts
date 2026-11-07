@@ -29,6 +29,7 @@ import {
   stripViewerYouMarker,
   withoutPlaceholderLeadDuplicates,
 } from '../markdown';
+import { parseQuestCalendarDate } from '../calendar-date';
 import type {
   QuestDeliverableRecord,
   QuestHealthSummary,
@@ -49,16 +50,12 @@ function toIso(value: Date | string | null | undefined): string | null {
 function computeDaysToTarget(
   targetDate: string | null | undefined,
 ): number | null {
-  if (!targetDate) return null;
-  const trimmed = targetDate.trim();
-  if (!trimmed || trimmed === '—') return null;
-  const withYear = /\b20\d{2}\b/.test(trimmed)
-    ? trimmed
-    : `${trimmed}, ${new Date().getFullYear()}`;
-  const parsed = new Date(withYear);
-  if (Number.isNaN(parsed.getTime())) return null;
-  const diff = parsed.getTime() - Date.now();
-  return Math.round(diff / (1000 * 60 * 60 * 24));
+  const parsed = parseQuestCalendarDate(targetDate);
+  if (!parsed) return null;
+  const target = Date.UTC(parsed.year, parsed.month - 1, parsed.day);
+  const now = new Date();
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((target - today) / 86_400_000);
 }
 
 function mapMilestoneRow(row: SpaceQuestMilestone): QuestMilestoneRecord {

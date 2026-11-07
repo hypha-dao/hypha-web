@@ -8,6 +8,7 @@ import {
   QUEST_STEWARD_STEPS,
   buildQuestProposalDescription,
   bulletsToMarkdownList,
+  formatQuestCalendarDate,
   questRecordToProposalDraft,
   stripViewerYouMarker,
   withoutPlaceholderLeadDuplicates,
@@ -890,7 +891,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                   asChild
                   variant="outline"
                   colorVariant="neutral"
-                  className="h-9 rounded-none px-3.5 text-[11px] font-semibold uppercase tracking-[0.06em]"
+                  className="rounded-none"
                 >
                   <Link href={questsListHref}>CANCEL</Link>
                 </Button>
@@ -903,7 +904,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                   }
                   onClick={() => setConfirmOpen(true)}
                   data-testid="create-quest-button"
-                  className="h-9 rounded-none bg-foreground px-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-background hover:bg-foreground/90"
+                  className="bg-foreground text-background hover:bg-foreground/90"
                 >
                   CREATE QUEST
                 </Button>
@@ -1205,7 +1206,9 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                             M{idx + 1} · {m.name}
                           </span>
                           <span className="text-xs text-neutral-11">
-                            {m.dueDate || '—'}
+                            {m.dueDate
+                              ? formatQuestCalendarDate(m.dueDate, locale)
+                              : '—'}
                           </span>
                         </div>
                         {m.description ? (
@@ -1347,7 +1350,9 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                     <span className="text-xs text-neutral-11">✎</span>
                   </div>
                   <p className="text-[13px] font-semibold text-foreground">
-                    {targetDate || '—'}
+                    {targetDate
+                      ? formatQuestCalendarDate(targetDate, locale)
+                      : '—'}
                   </p>
                 </button>
               </div>
@@ -1381,7 +1386,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                   colorVariant="neutral"
                   onClick={() => setConfirmOpen(false)}
                   data-testid="confirm-cancel-button"
-                  className="h-10 rounded-none px-4 text-[11px] font-semibold uppercase tracking-[0.1em]"
+                  className="rounded-none"
                 >
                   CANCEL
                 </Button>
@@ -1393,7 +1398,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                   }
                   onClick={() => void handleConfirmCreateProposal()}
                   data-testid="confirm-create-proposal-button"
-                  className="h-10 rounded-none bg-foreground px-4 text-[11px] font-semibold uppercase tracking-[0.1em] text-background hover:bg-foreground/90"
+                  className="bg-foreground text-background hover:bg-foreground/90"
                 >
                   YES, CREATE PROPOSAL
                 </Button>

@@ -2,6 +2,8 @@
 
 import {
   QUEST_LIST_FILTERS,
+  formatQuestCalendarDate,
+  questHealthDisplay,
   type QuestHealthState,
   type QuestListFilter,
   type QuestRecord,
@@ -97,6 +99,9 @@ function milestoneProgressMeta(quest: QuestRecord): {
   percent: number;
 } {
   const total = quest.milestones.length;
+  if (quest.status === 'proposed') {
+    return { label: total === 0 ? '—' : `M1 of ${total}`, percent: 0 };
+  }
   if (total === 0) {
     return { label: '—', percent: 2 };
   }
@@ -120,10 +125,27 @@ function milestoneProgressMeta(quest: QuestRecord): {
   };
 }
 
-function formatTargetShort(targetDate: string | null): string {
+function formatTargetLabel(targetDate: string | null, locale: string): string {
   if (!targetDate || !targetDate.trim()) return 'Target —';
-  const clean = targetDate.replace(/,\s*\d{4}$/, '').trim();
-  return `Target ${clean}`;
+  const formatted = formatQuestCalendarDate(targetDate, locale);
+  return formatted ? `Target ${formatted}` : 'Target —';
+}
+
+function cardHealth(quest: QuestRecord): {
+  dotClass: string;
+  textClass: string;
+  label: string;
+} {
+  const display = questHealthDisplay(quest);
+  if (display.notStarted) {
+    return {
+      dotClass: 'bg-neutral-9',
+      textClass: 'text-neutral-11',
+      label: display.label,
+    };
+  }
+  const meta = healthBadgeMeta(display.state ?? 'on_track');
+  return { ...meta, label: display.label };
 }
 
 function latestCardUpdateLine(quest: QuestRecord): string {
@@ -146,11 +168,13 @@ function latestCardUpdateLine(quest: QuestRecord): string {
 export function QuestCard({
   quest,
   href,
+  locale = 'en',
 }: {
   quest: QuestRecord;
   href: string;
+  locale?: string;
 }) {
-  const health = healthBadgeMeta(quest.health.state);
+  const health = cardHealth(quest);
   const progress = milestoneProgressMeta(quest);
   const leadInitial = (quest.leadName.trim()[0] ?? 'Q').toUpperCase();
   const goalPlain = stripMarkdown(quest.goal || '', {
@@ -214,10 +238,10 @@ export function QuestCard({
           <span className="font-medium text-foreground">{quest.leadName}</span>
         </span>
         <span className="text-neutral-11 sm:hidden">
-          {quest.leadName} · {formatTargetShort(quest.targetDate)}
+          {quest.leadName} · {formatTargetLabel(quest.targetDate, locale)}
         </span>
         <span className="hidden font-medium text-neutral-11 sm:inline">
-          {formatTargetShort(quest.targetDate)}
+          {formatTargetLabel(quest.targetDate, locale)}
         </span>
       </div>
 
@@ -341,7 +365,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
         {canMutate ? (
           <Button
             asChild
-            className="h-9 shrink-0 rounded-none bg-foreground px-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-background hover:bg-foreground/90"
+            className="shrink-0 bg-foreground text-background hover:bg-foreground/90"
             data-testid="new-quest-button"
           >
             <Link href={newQuestHref}>
@@ -364,7 +388,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
           placeholder={t('searchPlaceholder')}
           leftIcon={<Search className="size-3.5 text-neutral-11" />}
           rootClassName="w-full"
-          className="h-9 rounded-none"
+          className="rounded-none"
           data-testid="search-quests-input"
         />
       </div>
@@ -416,6 +440,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
             <QuestCard
               key={quest.slug}
               quest={quest}
+              locale={locale}
               href={`/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
                 quest.slug,
               )}`}

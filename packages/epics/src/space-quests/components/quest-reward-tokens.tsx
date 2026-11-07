@@ -353,7 +353,7 @@ export function QuestRewardRowsEditor({
             },
           ])
         }
-        className="h-9 gap-1.5 rounded-none border border-border bg-background px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground hover:bg-neutral-3"
+        className="gap-1.5 border border-border bg-background text-foreground hover:bg-neutral-3"
       >
         <Plus className="size-3.5" aria-hidden />
         ADD TOKEN

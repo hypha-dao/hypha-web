@@ -3,8 +3,14 @@
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   QUEST_HEALTH_STATES,
+  QUEST_MILESTONE_STATUSES,
+  buildMilestoneStatusPatch,
+  canChangeMilestoneStatus,
   canMemberEditQuest,
+  formatQuestCalendarDate,
   isViewerQuestLead,
+  questHealthDisplay,
+  questOverviewVisibility,
   bulletsToMarkdownList,
   useMe,
   type QuestHealthState,
@@ -289,14 +295,38 @@ function SectionHeader({
   );
 }
 
+function healthPresentation(quest: QuestRecord) {
+  const display = questHealthDisplay(quest);
+  if (display.notStarted) {
+    return {
+      ...display,
+      dotClass: 'bg-neutral-9',
+      textClass: 'text-neutral-11',
+    };
+  }
+  const meta = healthBadgeMeta(display.state ?? 'on_track');
+  return {
+    ...display,
+    dotClass: meta.dotClass,
+    textClass: meta.textClass,
+  };
+}
+
 function HealthScale({ marker }: { marker: number }) {
   const clamped = Math.min(100, Math.max(0, marker));
+  const atStart = clamped <= 0;
+  const atEnd = clamped >= 100;
   return (
     <div className="space-y-1.5">
       <div className="relative h-2 w-full bg-gradient-to-r from-[#d2463c] via-[#d99a1e] to-[#2e9e5b]">
         <span
-          className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background bg-foreground shadow"
-          style={{ left: `${clamped}%` }}
+          data-testid="quest-health-marker"
+          data-marker={clamped}
+          className={cn(
+            'absolute top-1/2 size-3.5 -translate-y-1/2 rounded-full border-2 border-background bg-foreground shadow',
+            atStart ? 'left-0' : atEnd ? 'right-0' : '-translate-x-1/2',
+          )}
+          style={atStart || atEnd ? undefined : { left: `${clamped}%` }}
           aria-hidden
         />
       </div>
@@ -455,78 +485,90 @@ function OverviewTab({
   const [expandedMember, setExpandedMember] = useState<number | null>(
     quest.members[0]?.id ?? null,
   );
-  const health = healthBadgeMeta(quest.health.state);
+  const locale = useLocale();
+  const visibility = questOverviewVisibility(quest);
+  const health = healthPresentation(quest);
   const healthUpdatedAt = quest.health.generatedAt ?? quest.health.lastUpdateAt;
   const edit = (modal: EditingModal) =>
     canEdit ? () => openModal(modal) : undefined;
-  const showDeliverables = quest.status !== 'proposed';
 
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0 space-y-5">
-        <section className={CARD_CLASS} data-testid="quest-overview-scope">
-          <SectionHeader title="Scope &amp; Goal" />
-          <div className="space-y-5">
-            <div className="space-y-2 border-b border-border/70 pb-4">
-              <SectionHeader
-                title="Goal"
-                variant="subsection"
-                onEdit={edit('goal')}
-              />
-              <QuestRichText
-                markdown={quest.goal}
-                className="text-[15px] font-medium leading-relaxed text-foreground"
-              />
-            </div>
+        {visibility.showScopeCard ? (
+          <section className={CARD_CLASS} data-testid="quest-overview-scope">
+            <SectionHeader title="Scope &amp; Goal" />
+            <div className="space-y-5">
+              {visibility.showGoal ? (
+                <div className="space-y-2 border-b border-border/70 pb-4">
+                  <SectionHeader
+                    title="Goal"
+                    variant="subsection"
+                    onEdit={edit('goal')}
+                  />
+                  <QuestRichText
+                    markdown={quest.goal}
+                    className="text-[15px] font-medium leading-relaxed text-foreground"
+                  />
+                </div>
+              ) : null}
 
-            <div className="grid grid-cols-1 gap-4 border-b border-border/70 pb-4 sm:grid-cols-2">
-              <div className="space-y-2 border border-border/60 bg-background-2/40 p-3.5">
-                <SectionHeader
-                  title="In Scope"
-                  variant="subsection"
-                  onEdit={edit('scope')}
-                />
-                <QuestSectionMarkdown
-                  markdown={
-                    quest.scopeInMarkdown?.trim() ||
-                    bulletsToMarkdownList(quest.scopeIn)
-                  }
-                  empty="—"
-                />
-              </div>
-              <div className="space-y-2 border border-border/60 bg-background-2/40 p-3.5">
-                <SectionHeader title="Out of Scope" variant="subsection" />
-                <QuestSectionMarkdown
-                  markdown={
-                    quest.scopeOutMarkdown?.trim() ||
-                    bulletsToMarkdownList(quest.scopeOut)
-                  }
-                  empty="—"
-                />
-              </div>
-            </div>
+              {visibility.showScopeIn || visibility.showScopeOut ? (
+                <div className="grid grid-cols-1 gap-4 border-b border-border/70 pb-4 sm:grid-cols-2">
+                  {visibility.showScopeIn ? (
+                    <div className="space-y-2 border border-border/60 bg-background-2/40 p-3.5">
+                      <SectionHeader
+                        title="In Scope"
+                        variant="subsection"
+                        onEdit={edit('scope')}
+                      />
+                      <QuestSectionMarkdown
+                        markdown={
+                          quest.scopeInMarkdown?.trim() ||
+                          bulletsToMarkdownList(quest.scopeIn)
+                        }
+                        empty=""
+                      />
+                    </div>
+                  ) : null}
+                  {visibility.showScopeOut ? (
+                    <div className="space-y-2 border border-border/60 bg-background-2/40 p-3.5">
+                      <SectionHeader
+                        title="Out of Scope"
+                        variant="subsection"
+                      />
+                      <QuestSectionMarkdown
+                        markdown={
+                          quest.scopeOutMarkdown?.trim() ||
+                          bulletsToMarkdownList(quest.scopeOut)
+                        }
+                        empty=""
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
 
-            <div className="space-y-2">
-              <SectionHeader
-                title="Success Criteria"
-                variant="subsection"
-                onEdit={edit('success')}
-              />
-              <QuestRichText
-                markdown={quest.successCriteria}
-                className="font-medium"
-              />
+              {visibility.showSuccess ? (
+                <div className="space-y-2">
+                  <SectionHeader
+                    title="Success Criteria"
+                    variant="subsection"
+                    onEdit={edit('success')}
+                  />
+                  <QuestRichText
+                    markdown={quest.successCriteria}
+                    className="font-medium"
+                  />
+                </div>
+              ) : null}
             </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
-        <section className={CARD_CLASS} data-testid="quest-overview-reward">
-          <SectionHeader title="Quest Reward" onEdit={edit('rewards')} />
-          {quest.rewards.length === 0 ? (
-            <p className="text-[13px] text-neutral-11">
-              No token reward specified
-            </p>
-          ) : (
+        {visibility.showRewards ? (
+          <section className={CARD_CLASS} data-testid="quest-overview-reward">
+            <SectionHeader title="Quest Reward" onEdit={edit('rewards')} />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {quest.rewards.map((reward, idx) => (
                 <QuestRewardTokenCard
@@ -536,14 +578,15 @@ function OverviewTab({
                 />
               ))}
             </div>
-          )}
-        </section>
+          </section>
+        ) : null}
 
-        <section className={CARD_CLASS} data-testid="quest-overview-milestones">
-          <SectionHeader title="Milestones" onEdit={edit('milestones')} />
-          {quest.milestones.length === 0 ? (
-            <p className="text-[13px] text-neutral-11">No milestones yet</p>
-          ) : (
+        {visibility.showMilestones ? (
+          <section
+            className={CARD_CLASS}
+            data-testid="quest-overview-milestones"
+          >
+            <SectionHeader title="Milestones" onEdit={edit('milestones')} />
             <>
               <div className="divide-y divide-border">
                 {quest.milestones.map((milestone) => {
@@ -567,7 +610,13 @@ function OverviewTab({
                             {milestone.name}
                           </span>
                           <span className="block text-[11px] text-neutral-11">
-                            {[milestone.ownerName, milestone.dueDate]
+                            {[
+                              milestone.ownerName,
+                              formatQuestCalendarDate(
+                                milestone.dueDate,
+                                locale,
+                              ),
+                            ]
                               .filter(Boolean)
                               .join(' · ') || '—'}
                           </span>
@@ -586,11 +635,12 @@ function OverviewTab({
                           <ChevronDown className="size-3.5 shrink-0 text-neutral-11" />
                         )}
                       </button>
-                      {expanded ? (
+                      {expanded &&
+                      milestone.description.replace(/<[^>]*>/g, '').trim() ? (
                         <div className="mt-2 pl-10">
                           <QuestRichText
                             markdown={milestone.description}
-                            empty="No description yet."
+                            empty=""
                           />
                         </div>
                       ) : null}
@@ -602,8 +652,8 @@ function OverviewTab({
                 Click a milestone to expand its description.
               </p>
             </>
-          )}
-        </section>
+          </section>
+        ) : null}
 
         <section className={CARD_CLASS} data-testid="quest-overview-health">
           <SectionHeader
@@ -616,14 +666,17 @@ function OverviewTab({
             }
           />
           <div className="space-y-3">
-            <p className="inline-flex items-center gap-1.5 text-[13px] font-semibold">
+            <p
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold"
+              data-testid="quest-health-label"
+            >
               <span
                 className={cn('size-2 rounded-full', health.dotClass)}
                 aria-hidden
               />
               <span className={health.textClass}>{health.label}</span>
             </p>
-            <HealthScale marker={quest.health.marker} />
+            <HealthScale marker={health.marker} />
             <p className="text-[11px] text-neutral-11">
               {quest.health.updatesThisWeek}{' '}
               {quest.health.updatesThisWeek === 1 ? 'update' : 'updates'} this
@@ -634,9 +687,12 @@ function OverviewTab({
                   : ` · ${quest.health.daysToTarget} days to target`
                 : ''}
             </p>
-            {quest.health.summary ? (
-              <p className="text-[13.5px] leading-relaxed text-foreground">
-                {quest.health.summary}
+            {health.summary ? (
+              <p
+                className="text-[13.5px] leading-relaxed text-foreground"
+                data-testid="quest-health-summary"
+              >
+                {health.summary}
               </p>
             ) : null}
           </div>
@@ -644,11 +700,9 @@ function OverviewTab({
       </div>
 
       <div className="min-w-0 space-y-5">
-        <section className={CARD_CLASS} data-testid="quest-overview-members">
-          <SectionHeader title="Members" onEdit={edit('members')} />
-          {quest.members.length === 0 ? (
-            <p className="text-[13px] text-neutral-11">No members yet</p>
-          ) : (
+        {visibility.showMembers ? (
+          <section className={CARD_CLASS} data-testid="quest-overview-members">
+            <SectionHeader title="Members" onEdit={edit('members')} />
             <div className="divide-y divide-border">
               {quest.members.map((member) => {
                 const expanded = expandedMember === member.id;
@@ -693,43 +747,39 @@ function OverviewTab({
                 );
               })}
             </div>
-          )}
-        </section>
+          </section>
+        ) : null}
 
-        {showDeliverables ? (
+        {visibility.showDeliverables ? (
           <section
             className={CARD_CLASS}
             data-testid="quest-overview-deliverables"
           >
             <SectionHeader title="Deliverables" onEdit={edit('deliverables')} />
-            {quest.deliverables.length === 0 ? (
-              <p className="text-[13px] text-neutral-11">No deliverables yet</p>
-            ) : (
-              <div className="divide-y divide-border">
-                {quest.deliverables.map((d) => (
-                  <div key={d.id} className="space-y-0.5 py-2 first:pt-0">
-                    {d.url ? (
-                      <a
-                        href={d.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[13px] font-semibold text-foreground hover:underline"
-                      >
-                        {d.name}
-                        <ArrowUpRight className="size-3" aria-hidden />
-                      </a>
-                    ) : (
-                      <p className="text-[13px] font-semibold text-foreground">
-                        {d.name}
-                      </p>
-                    )}
-                    {d.note ? (
-                      <p className="text-[11px] text-neutral-11">{d.note}</p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="divide-y divide-border">
+              {quest.deliverables.map((d) => (
+                <div key={d.id} className="space-y-0.5 py-2 first:pt-0">
+                  {d.url ? (
+                    <a
+                      href={d.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[13px] font-semibold text-foreground hover:underline"
+                    >
+                      {d.name}
+                      <ArrowUpRight className="size-3" aria-hidden />
+                    </a>
+                  ) : (
+                    <p className="text-[13px] font-semibold text-foreground">
+                      {d.name}
+                    </p>
+                  )}
+                  {d.note ? (
+                    <p className="text-[11px] text-neutral-11">{d.note}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
             {canEdit ? (
               <p className="mt-3 text-[11px] text-neutral-11">
                 Any member can edit · click the section, or mention AI Agents in
@@ -1037,7 +1087,7 @@ function SettingsRow({
         colorVariant={tone === 'danger' ? 'error' : 'neutral'}
         disabled={disabled}
         onClick={onAction}
-        className="h-8 shrink-0 rounded-none px-3 text-[11px] font-semibold uppercase tracking-[0.08em]"
+        className="shrink-0"
       >
         {action}
       </Button>
@@ -1045,21 +1095,36 @@ function SettingsRow({
   );
 }
 
+function milestoneStatusLabel(status: QuestMilestoneStatus): string {
+  if (status === 'done') return 'Done';
+  if (status === 'in_progress') return 'In progress';
+  return 'Not started';
+}
+
 function SettingsTab({
   quest,
   isLead,
   canEdit,
+  canChangeMilestones,
+  saving,
   openModal,
   onPatch,
 }: {
   quest: QuestRecord;
   isLead: boolean;
   canEdit: boolean;
+  canChangeMilestones: boolean;
+  saving: boolean;
   openModal: (modal: EditingModal) => void;
   onPatch: (patch: QuestPatch) => void;
 }) {
+  const locale = useLocale();
+  const visibility = questOverviewVisibility(quest);
   const leadOnly = !isLead;
   const isPaused = quest.status === 'paused';
+  const targetLabel = quest.targetDate
+    ? formatQuestCalendarDate(quest.targetDate, locale)
+    : '—';
   return (
     <div className="mx-auto w-full max-w-[760px] space-y-4">
       {!isLead ? (
@@ -1081,12 +1146,136 @@ function SettingsTab({
           />
           <SettingsRow
             label="Target date"
-            value={quest.targetDate || '—'}
+            value={targetLabel}
             action="EDIT"
             disabled={!canEdit}
             onAction={() => openModal('targetDate')}
           />
         </div>
+      </section>
+
+      <section className={CARD_CLASS} data-testid="quest-settings-content">
+        <p className={LABEL_CLASS}>QUEST CONTENT</p>
+        <div className="divide-y divide-border">
+          <SettingsRow
+            label="Goal"
+            action={visibility.showGoal ? 'EDIT' : 'ADD'}
+            disabled={!canEdit}
+            onAction={() => openModal('goal')}
+          />
+          <SettingsRow
+            label="Scope"
+            action={
+              visibility.showScopeIn || visibility.showScopeOut ? 'EDIT' : 'ADD'
+            }
+            disabled={!canEdit}
+            onAction={() => openModal('scope')}
+          />
+          <SettingsRow
+            label="Success criteria"
+            action={visibility.showSuccess ? 'EDIT' : 'ADD'}
+            disabled={!canEdit}
+            onAction={() => openModal('success')}
+          />
+          <SettingsRow
+            label="Quest reward"
+            action={visibility.showRewards ? 'EDIT' : 'ADD'}
+            disabled={!canEdit}
+            onAction={() => openModal('rewards')}
+          />
+          <SettingsRow
+            label="Deliverables"
+            value={
+              quest.status === 'proposed'
+                ? 'Available once the quest is active'
+                : `${quest.deliverables.length} ${
+                    quest.deliverables.length === 1
+                      ? 'deliverable'
+                      : 'deliverables'
+                  }`
+            }
+            action={visibility.showDeliverables ? 'EDIT' : 'ADD'}
+            disabled={!canEdit || quest.status === 'proposed'}
+            onAction={() => openModal('deliverables')}
+          />
+        </div>
+      </section>
+
+      <section className={CARD_CLASS} data-testid="quest-settings-milestones">
+        <div className="flex items-center justify-between gap-3">
+          <p className={LABEL_CLASS}>MILESTONES</p>
+          <Button
+            type="button"
+            variant="outline"
+            colorVariant="neutral"
+            disabled={!canEdit}
+            onClick={() => openModal('milestones')}
+          >
+            {quest.milestones.length === 0 ? 'Add' : 'Edit'}
+          </Button>
+        </div>
+        {quest.milestones.length === 0 ? (
+          <p
+            className="pt-3 text-[12px] text-neutral-11"
+            data-testid="settings-milestones-empty"
+          >
+            No milestones yet
+          </p>
+        ) : (
+          <div className="divide-y divide-border">
+            {quest.milestones.map((milestone) => (
+              <div
+                key={milestone.id}
+                className="flex items-center justify-between gap-3 py-2.5"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-semibold text-foreground">
+                    M{milestone.order} · {milestone.name}
+                  </p>
+                  <p className="text-[12px] text-neutral-11">
+                    {[
+                      milestone.ownerName,
+                      formatQuestCalendarDate(milestone.dueDate, locale),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || '—'}
+                  </p>
+                </div>
+                <select
+                  aria-label={`Status for ${milestone.name}`}
+                  data-testid={`milestone-status-${milestone.id}`}
+                  value={milestone.status}
+                  disabled={
+                    !canChangeMilestones || saving || milestone.id == null
+                  }
+                  onChange={(event) => {
+                    const status = event.target.value as QuestMilestoneStatus;
+                    if (
+                      !(QUEST_MILESTONE_STATUSES as readonly string[]).includes(
+                        status,
+                      )
+                    ) {
+                      return;
+                    }
+                    const patch = buildMilestoneStatusPatch(
+                      quest.milestones,
+                      milestone.id,
+                      status,
+                    );
+                    if (patch) onPatch(patch);
+                  }}
+                  className="h-10 min-h-10 shrink-0 border border-border bg-background px-2 text-[11px] font-semibold text-foreground disabled:opacity-50"
+                >
+                  {QUEST_MILESTONE_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {milestoneStatusLabel(status)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className={CARD_CLASS}>
@@ -1313,7 +1502,8 @@ export function SpaceQuestDetail({
   const editableStatus = quest.status === 'active' || quest.status === 'paused';
   const canEdit = editableStatus && canMemberEditQuest(viewer, quest);
   const isLead = editableStatus && isViewerQuestLead(viewer, quest);
-  const health = healthBadgeMeta(quest.health.state);
+  const canChangeMilestones = canChangeMilestoneStatus(viewer, quest);
+  const health = healthPresentation(quest);
   const memberOptions = Array.from(
     new Set([
       ...spaceMembers.map((m) => m.name),
@@ -1609,15 +1799,13 @@ export function SpaceQuestDetail({
             <span className="bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
               {statusLabel(quest.status)}
             </span>
-            {quest.status !== 'proposed' ? (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
-                <span
-                  className={cn('size-2 rounded-full', health.dotClass)}
-                  aria-hidden
-                />
-                <span className={health.textClass}>{health.label}</span>
-              </span>
-            ) : null}
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
+              <span
+                className={cn('size-2 rounded-full', health.dotClass)}
+                aria-hidden
+              />
+              <span className={health.textClass}>{health.label}</span>
+            </span>
           </div>
           {quest.status !== 'proposed' && (quest.chatRoomId || canEdit) ? (
             <button
@@ -1665,7 +1853,12 @@ export function SpaceQuestDetail({
             </span>
             Lead
           </span>
-          <span>Target {quest.targetDate || '—'}</span>
+          <span>
+            Target{' '}
+            {quest.targetDate
+              ? formatQuestCalendarDate(quest.targetDate, locale)
+              : '—'}
+          </span>
           <span>{progressLabel(quest)}</span>
         </div>
       </header>
@@ -1681,7 +1874,7 @@ export function SpaceQuestDetail({
               asChild
               variant="outline"
               colorVariant="neutral"
-              className="h-8 rounded-none px-3 text-[11px] font-semibold uppercase tracking-[0.08em]"
+              className="rounded-none"
             >
               <Link
                 href={`/${locale}/dho/${spaceSlug}/agreements/proposal/${encodeURIComponent(
@@ -1756,6 +1949,8 @@ export function SpaceQuestDetail({
           quest={quest}
           isLead={isLead}
           canEdit={canEdit}
+          canChangeMilestones={canChangeMilestones}
+          saving={saving}
           openModal={(modal) => {
             if (modal === 'status') {
               setNextStatus(quest.status === 'active' ? 'completed' : 'active');

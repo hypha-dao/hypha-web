@@ -7,6 +7,7 @@ import {
   splitMarkdownLinesToBullets,
   stripViewerYouMarker,
   type Person,
+  milestoneEditorChrome,
   type QuestDeliverableRecord,
   type QuestMilestoneStatus,
   type QuestReward,
@@ -23,7 +24,14 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { Plus, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from 'react';
 import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 import { shouldResetQuestModalDraft } from '../utils/modal-draft-reset';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -250,6 +258,17 @@ export type EditableQuestDeliverable = {
 const LABEL_CLASS =
   'text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11';
 
+/**
+ * Same shell as the signal description dialog: pinned header and footer,
+ * scrolling body, width capped to the viewport. `packages/ui` Button default
+ * is the 40px labeled control.
+ */
+const QUEST_EDIT_DIALOG_CLASS =
+  'flex min-h-0 flex-col gap-0 overflow-hidden p-0';
+
+const EDITOR_FRAME =
+  'min-w-0 max-w-full overflow-hidden border border-border bg-background [&_.ProseMirror]:max-w-full [&_.ProseMirror]:whitespace-pre-wrap [&_.ProseMirror]:[overflow-wrap:anywhere] [&_.tiptap]:max-w-full [&_.tiptap]:whitespace-pre-wrap [&_.tiptap]:[overflow-wrap:anywhere]';
+
 function ModalHeader({
   title,
   subtitle,
@@ -289,25 +308,85 @@ function ModalFooter({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-end gap-2 pt-2">
+    <div className="flex items-center justify-end gap-2">
       <Button
         type="button"
         variant="outline"
         colorVariant="neutral"
-        className="h-10 rounded-none px-4 text-[11px] font-semibold uppercase tracking-[0.1em]"
         onClick={onCancel}
       >
-        CANCEL
+        Cancel
       </Button>
       <Button
         type="button"
+        colorVariant="neutral"
         disabled={disabled}
-        className="h-10 rounded-none bg-foreground px-4 text-[11px] font-semibold uppercase tracking-[0.1em] text-background hover:bg-foreground/90"
+        className="bg-foreground text-background hover:bg-foreground/90"
         onClick={onSave}
       >
-        SAVE
+        Save
       </Button>
     </div>
+  );
+}
+
+function QuestEditDialogFrame({
+  title,
+  subtitle,
+  onClose,
+  onCancel,
+  onSave,
+  saveDisabled,
+  children,
+  className,
+  ...contentProps
+}: {
+  title: string;
+  subtitle?: string;
+  onClose: () => void;
+  onCancel: () => void;
+  onSave: () => void;
+  saveDisabled?: boolean;
+  children: ReactNode;
+  className?: string;
+} & Omit<
+  ComponentProps<typeof DialogContent>,
+  'children' | 'className' | 'title'
+>) {
+  return (
+    <DialogContent
+      hideCloseButton
+      data-quest-edit-dialog=""
+      className={cn(QUEST_EDIT_DIALOG_CLASS, className)}
+      {...contentProps}
+    >
+      <style>{`
+        [data-quest-edit-dialog] .ProseMirror,
+        [data-quest-edit-dialog] .tiptap {
+          max-width: 100%;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }
+      `}</style>
+      <div className="shrink-0 px-5 pb-3 pt-5">
+        <ModalHeader title={title} subtitle={subtitle} onClose={onClose} />
+      </div>
+      <div
+        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-5 py-3 [overflow-wrap:anywhere]"
+        data-testid="quest-edit-dialog-body"
+        style={{ overflowWrap: 'anywhere' }}
+      >
+        {children}
+      </div>
+      <div className="shrink-0 border-t border-border bg-background px-5 py-3">
+        <ModalFooter
+          onCancel={onCancel}
+          onSave={onSave}
+          disabled={saveDisabled}
+        />
+      </div>
+    </DialogContent>
   );
 }
 
@@ -329,32 +408,27 @@ export function EditQuestNameModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideCloseButton
-        className="max-w-[520px] rounded-none border border-border bg-background p-6"
+      <QuestEditDialogFrame
+        title="Edit name"
+        onClose={() => onOpenChange(false)}
+        onCancel={() => onOpenChange(false)}
+        saveDisabled={!draft.trim()}
+        onSave={() => {
+          if (!draft.trim()) return;
+          onSave(draft.trim());
+          onOpenChange(false);
+        }}
       >
-        <div className="space-y-4">
-          <ModalHeader title="Edit name" onClose={() => onOpenChange(false)} />
-          <div className="space-y-1.5">
-            <label className={LABEL_CLASS}>NAME</label>
-            <Input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="e.g. Onboarding matcher"
-              className="h-10 rounded-none bg-background-2"
-            />
-          </div>
-          <ModalFooter
-            onCancel={() => onOpenChange(false)}
-            onSave={() => {
-              if (!draft.trim()) return;
-              onSave(draft.trim());
-              onOpenChange(false);
-            }}
-            disabled={!draft.trim()}
+        <div className="space-y-1.5">
+          <label className={LABEL_CLASS}>NAME</label>
+          <Input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="e.g. Onboarding matcher"
+            className="h-10 rounded-none bg-background-2"
           />
         </div>
-      </DialogContent>
+      </QuestEditDialogFrame>
     </Dialog>
   );
 }
@@ -377,32 +451,27 @@ export function EditQuestGoalModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideCloseButton
-        className="max-w-[520px] rounded-none border border-border bg-background p-6"
+      <QuestEditDialogFrame
+        title="Edit goal"
+        onClose={() => onOpenChange(false)}
+        onCancel={() => onOpenChange(false)}
+        onSave={() => {
+          onSave(draft.trim());
+          onOpenChange(false);
+        }}
       >
-        <div className="space-y-4">
-          <ModalHeader title="Edit goal" onClose={() => onOpenChange(false)} />
-          <div className="space-y-1.5">
-            <label className={LABEL_CLASS}>GOAL</label>
-            <div className="border border-border bg-background">
-              <RichTextEditor
-                markdown={draft}
-                onChange={setDraft}
-                placeholder="Describe the quest goal…"
-                bordered={false}
-              />
-            </div>
+        <div className="space-y-1.5">
+          <label className={LABEL_CLASS}>GOAL</label>
+          <div className={EDITOR_FRAME}>
+            <RichTextEditor
+              markdown={draft}
+              onChange={setDraft}
+              placeholder="Describe the quest goal…"
+              bordered={false}
+            />
           </div>
-          <ModalFooter
-            onCancel={() => onOpenChange(false)}
-            onSave={() => {
-              onSave(draft.trim());
-              onOpenChange(false);
-            }}
-          />
         </div>
-      </DialogContent>
+      </QuestEditDialogFrame>
     </Dialog>
   );
 }
@@ -448,15 +517,24 @@ export function EditQuestScopeModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideCloseButton
-        className="max-h-[90vh] max-w-[520px] overflow-y-auto rounded-none border border-border bg-background p-6"
+      <QuestEditDialogFrame
+        title="Edit scope"
+        onClose={() => onOpenChange(false)}
+        onCancel={() => onOpenChange(false)}
+        onSave={() => {
+          onSave({
+            scopeIn: splitMarkdownLinesToBullets(inMd),
+            scopeOut: splitMarkdownLinesToBullets(outMd),
+            scopeInMarkdown: inMd.trim(),
+            scopeOutMarkdown: outMd.trim(),
+          });
+          onOpenChange(false);
+        }}
       >
         <div className="space-y-4">
-          <ModalHeader title="Edit scope" onClose={() => onOpenChange(false)} />
           <div className="space-y-1.5">
             <label className={LABEL_CLASS}>IN SCOPE</label>
-            <div className="border border-border bg-background">
+            <div className={EDITOR_FRAME}>
               <RichTextEditor
                 markdown={inMd}
                 onChange={setInMd}
@@ -467,7 +545,7 @@ export function EditQuestScopeModal({
           </div>
           <div className="space-y-1.5">
             <label className={LABEL_CLASS}>OUT OF SCOPE</label>
-            <div className="border border-border bg-background">
+            <div className={EDITOR_FRAME}>
               <RichTextEditor
                 markdown={outMd}
                 onChange={setOutMd}
@@ -476,20 +554,8 @@ export function EditQuestScopeModal({
               />
             </div>
           </div>
-          <ModalFooter
-            onCancel={() => onOpenChange(false)}
-            onSave={() => {
-              onSave({
-                scopeIn: splitMarkdownLinesToBullets(inMd),
-                scopeOut: splitMarkdownLinesToBullets(outMd),
-                scopeInMarkdown: inMd.trim(),
-                scopeOutMarkdown: outMd.trim(),
-              });
-              onOpenChange(false);
-            }}
-          />
         </div>
-      </DialogContent>
+      </QuestEditDialogFrame>
     </Dialog>
   );
 }
@@ -512,35 +578,27 @@ export function EditQuestSuccessModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideCloseButton
-        className="max-w-[520px] rounded-none border border-border bg-background p-6"
+      <QuestEditDialogFrame
+        title="Edit success criteria"
+        onClose={() => onOpenChange(false)}
+        onCancel={() => onOpenChange(false)}
+        onSave={() => {
+          onSave(draft.trim());
+          onOpenChange(false);
+        }}
       >
-        <div className="space-y-4">
-          <ModalHeader
-            title="Edit success criteria"
-            onClose={() => onOpenChange(false)}
-          />
-          <div className="space-y-1.5">
-            <label className={LABEL_CLASS}>SUCCESS CRITERIA</label>
-            <div className="border border-border bg-background">
-              <RichTextEditor
-                markdown={draft}
-                onChange={setDraft}
-                placeholder="• Measurable outcome…"
-                bordered={false}
-              />
-            </div>
+        <div className="space-y-1.5">
+          <label className={LABEL_CLASS}>SUCCESS CRITERIA</label>
+          <div className={EDITOR_FRAME}>
+            <RichTextEditor
+              markdown={draft}
+              onChange={setDraft}
+              placeholder="• Measurable outcome…"
+              bordered={false}
+            />
           </div>
-          <ModalFooter
-            onCancel={() => onOpenChange(false)}
-            onSave={() => {
-              onSave(draft.trim());
-              onOpenChange(false);
-            }}
-          />
         </div>
-      </DialogContent>
+      </QuestEditDialogFrame>
     </Dialog>
   );
 }
@@ -591,40 +649,35 @@ export function EditQuestLeadModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideCloseButton
-        className="max-w-[520px] rounded-none border border-border bg-background p-6"
+      <QuestEditDialogFrame
+        title="Edit lead"
+        onClose={() => onOpenChange(false)}
+        onCancel={() => onOpenChange(false)}
+        saveDisabled={!selectedPerson}
         onPointerDownOutside={keepMemberSelectPopoverOpen}
         onInteractOutside={keepMemberSelectPopoverOpen}
         onFocusOutside={keepMemberSelectPopoverOpen}
+        onSave={() => {
+          if (!selectedPerson) return;
+          const label = personRosterDisplayLabel(
+            selectedPerson,
+            'Space Member',
+          ).trim();
+          if (!label) return;
+          onSave(label, selectedPerson.id > 0 ? selectedPerson.id : null);
+          onOpenChange(false);
+        }}
       >
-        <div className="space-y-4">
-          <ModalHeader title="Edit lead" onClose={() => onOpenChange(false)} />
-          <div className="space-y-1.5">
-            <label className={LABEL_CLASS}>LEAD</label>
-            <QuestRosterCombobox
-              members={catalog}
-              value={selectedId}
-              placeholder="Select a space member…"
-              onChange={(next) => setSelectedId(next ? String(next.id) : null)}
-            />
-          </div>
-          <ModalFooter
-            disabled={!selectedPerson}
-            onCancel={() => onOpenChange(false)}
-            onSave={() => {
-              if (!selectedPerson) return;
-              const label = personRosterDisplayLabel(
-                selectedPerson,
-                'Space Member',
-              ).trim();
-              if (!label) return;
-              onSave(label, selectedPerson.id > 0 ? selectedPerson.id : null);
-              onOpenChange(false);
-            }}
+        <div className="space-y-1.5">
+          <label className={LABEL_CLASS}>LEAD</label>
+          <QuestRosterCombobox
+            members={catalog}
+            value={selectedId}
+            placeholder="Select a space member…"
+            onChange={(next) => setSelectedId(next ? String(next.id) : null)}
           />
         </div>
-      </DialogContent>
+      </QuestEditDialogFrame>
     </Dialog>
   );
 }
@@ -647,33 +700,25 @@ export function EditQuestTargetDateModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideCloseButton
-        className="max-w-[520px] rounded-none border border-border bg-background p-6"
+      <QuestEditDialogFrame
+        title="Edit target date"
+        onClose={() => onOpenChange(false)}
+        onCancel={() => onOpenChange(false)}
+        onSave={() => {
+          onSave(draft.trim() || null);
+          onOpenChange(false);
+        }}
       >
-        <div className="space-y-4">
-          <ModalHeader
-            title="Edit target date"
-            onClose={() => onOpenChange(false)}
-          />
-          <div className="space-y-1.5">
-            <label className={LABEL_CLASS}>TARGET DATE</label>
-            <Input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="e.g. Jan 15, 2027"
-              className="h-10 rounded-none bg-background-2"
-            />
-          </div>
-          <ModalFooter
-            onCancel={() => onOpenChange(false)}
-            onSave={() => {
-              onSave(draft.trim() || null);
-              onOpenChange(false);
-            }}
+        <div className="space-y-1.5">
+          <label className={LABEL_CLASS}>TARGET DATE</label>
+          <Input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="20 November 2026"
+            className="h-10 rounded-none bg-background-2"
           />
         </div>
-      </DialogContent>
+      </QuestEditDialogFrame>
     </Dialog>
   );
 }
@@ -706,38 +751,29 @@ export function EditQuestRewardsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideCloseButton
-        className="max-w-[520px] rounded-none border border-border bg-background p-6"
+      <QuestEditDialogFrame
+        title="Edit quest reward"
+        onClose={() => onOpenChange(false)}
+        onCancel={() => onOpenChange(false)}
+        onSave={() => {
+          onSave(
+            rows.filter(
+              (r) => r.amount.trim().length > 0 && r.token.trim().length > 0,
+            ),
+          );
+          onOpenChange(false);
+        }}
       >
-        <div className="space-y-4">
-          <ModalHeader
-            title="Edit quest reward"
-            onClose={() => onOpenChange(false)}
-          />
-          <div className="space-y-2.5">
-            <label className={LABEL_CLASS}>QUEST REWARD</label>
-            <QuestRewardRowsEditor
-              rows={rows}
-              onChange={setRows}
-              spaceSlug={spaceSlug}
-              tokenSymbols={tokenSymbols}
-            />
-          </div>
-          <ModalFooter
-            onCancel={() => onOpenChange(false)}
-            onSave={() => {
-              onSave(
-                rows.filter(
-                  (r) =>
-                    r.amount.trim().length > 0 && r.token.trim().length > 0,
-                ),
-              );
-              onOpenChange(false);
-            }}
+        <div className="space-y-2.5">
+          <label className={LABEL_CLASS}>QUEST REWARD</label>
+          <QuestRewardRowsEditor
+            rows={rows}
+            onChange={setRows}
+            spaceSlug={spaceSlug}
+            tokenSymbols={tokenSymbols}
           />
         </div>
-      </DialogContent>
+      </QuestEditDialogFrame>
     </Dialog>
   );
 }
@@ -765,7 +801,13 @@ export function EditQuestMilestonesModal({
   showStatusSelect?: boolean;
   onSave: (next: EditableQuestMilestone[]) => void;
 }) {
-  const [rows, setRows] = useState<EditableQuestMilestone[]>([]);
+  const [rows, setRows] = useState<EditableQuestMilestone[]>(() =>
+    milestones.map((milestone, index) => ({
+      ...milestone,
+      insertedNew: false,
+      wasOrder: index + 1,
+    })),
+  );
   const wasOpenRef = useRef(false);
 
   useEffect(() => {
@@ -813,229 +855,224 @@ export function EditQuestMilestonesModal({
     setRows((current) => current.filter((_, idx) => idx !== index));
   };
 
+  const chrome = milestoneEditorChrome(rows.length);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideCloseButton
-        className="max-h-[92vh] max-w-[560px] overflow-y-auto rounded-none border border-border bg-background p-6"
+      <QuestEditDialogFrame
+        title="Edit milestones"
+        subtitle={
+          chrome.showInsertHint
+            ? 'Hover between two milestones to insert one. They renumber automatically.'
+            : undefined
+        }
+        onClose={() => onOpenChange(false)}
+        onCancel={() => onOpenChange(false)}
         onPointerDownOutside={keepMemberSelectPopoverOpen}
         onInteractOutside={keepMemberSelectPopoverOpen}
         onFocusOutside={keepMemberSelectPopoverOpen}
+        onSave={() => {
+          const cleaned = rows
+            .map((r) => ({
+              ...r,
+              name: r.name.trim(),
+              dueDate: r.dueDate?.trim() || null,
+              ownerName: r.ownerName?.trim() || null,
+            }))
+            .filter((r) => r.name.length > 0);
+          onSave(cleaned);
+          onOpenChange(false);
+        }}
       >
-        <div className="space-y-4">
-          <ModalHeader
-            title="Edit milestones"
-            subtitle="Hover between two milestones to insert one. They renumber automatically."
-            onClose={() => onOpenChange(false)}
-          />
+        <div className="space-y-3">
+          {rows.map((item, idx) => {
+            const order = idx + 1;
+            const renumberedLabel = item.insertedNew
+              ? `M${order} · NEW — inserted after M${Math.max(1, order - 1)}`
+              : item.wasOrder && item.wasOrder !== order
+              ? `M${order} · was M${item.wasOrder} — renumbered automatically`
+              : `M${order}`;
 
-          <div className="space-y-3">
-            {rows.map((item, idx) => {
-              const order = idx + 1;
-              const renumberedLabel = item.insertedNew
-                ? `M${order} · NEW — inserted after M${Math.max(1, order - 1)}`
-                : item.wasOrder && item.wasOrder !== order
-                ? `M${order} · was M${item.wasOrder} — renumbered automatically`
-                : `M${order}`;
+            return (
+              <div key={idx} className="space-y-3">
+                {idx > 0 ? (
+                  <div className="flex items-center gap-2 py-1">
+                    <div className="h-px flex-1 border-t border-dashed border-[#3d3d8f]/50" />
+                    <button
+                      type="button"
+                      onClick={() => insertAt(idx)}
+                      data-testid={`insert-milestone-before-${order}`}
+                      className={cn(
+                        'rounded-full border border-dashed border-[#3d3d8f] px-3 py-1 text-[11px] font-semibold transition-colors',
+                        item.insertedNew
+                          ? 'border-solid bg-[#3d3d8f] text-white'
+                          : 'bg-background text-[#3d3d8f] hover:bg-[#3d3d8f]/10',
+                      )}
+                    >
+                      {item.insertedNew
+                        ? 'Inserted here'
+                        : '+ Add milestone here'}
+                    </button>
+                    <div className="h-px flex-1 border-t border-dashed border-[#3d3d8f]/50" />
+                  </div>
+                ) : null}
 
-              return (
-                <div key={idx} className="space-y-3">
-                  {idx > 0 ? (
-                    <div className="flex items-center gap-2 py-1">
-                      <div className="h-px flex-1 border-t border-dashed border-[#3d3d8f]/50" />
+                <div
+                  className={cn(
+                    'space-y-2.5 p-3',
+                    item.insertedNew
+                      ? 'rounded-[10px] border-[1.5px] border-[#3d3d8f] bg-[#f3f3fa] dark:bg-accent-2'
+                      : 'border border-border bg-background',
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-neutral-11">
+                      {renumberedLabel}
+                    </span>
+                    {rows.length > 1 ? (
                       <button
                         type="button"
-                        onClick={() => insertAt(idx)}
-                        data-testid={`insert-milestone-before-${order}`}
-                        className={cn(
-                          'rounded-full border border-dashed border-[#3d3d8f] px-3 py-1 text-[11px] font-semibold transition-colors',
-                          item.insertedNew
-                            ? 'border-solid bg-[#3d3d8f] text-white'
-                            : 'bg-background text-[#3d3d8f] hover:bg-[#3d3d8f]/10',
-                        )}
+                        onClick={() => removeAt(idx)}
+                        className="text-xs text-neutral-11 hover:text-foreground"
                       >
-                        {item.insertedNew
-                          ? 'Inserted here'
-                          : '+ Add milestone here'}
+                        Remove
                       </button>
-                      <div className="h-px flex-1 border-t border-dashed border-[#3d3d8f]/50" />
-                    </div>
-                  ) : null}
+                    ) : null}
+                  </div>
 
-                  <div
-                    className={cn(
-                      'space-y-2.5 p-3',
-                      item.insertedNew
-                        ? 'rounded-[10px] border-[1.5px] border-[#3d3d8f] bg-[#f3f3fa] dark:bg-accent-2'
-                        : 'border border-border bg-background',
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-neutral-11">
-                        {renumberedLabel}
-                      </span>
-                      {rows.length > 1 ? (
-                        <button
-                          type="button"
-                          onClick={() => removeAt(idx)}
-                          className="text-xs text-neutral-11 hover:text-foreground"
-                        >
-                          Remove
-                        </button>
-                      ) : null}
+                  <div className="flex flex-col gap-2.5 sm:flex-row">
+                    <div className="flex-1 space-y-1">
+                      <label className={LABEL_CLASS}>NAME</label>
+                      <Input
+                        value={item.name}
+                        onChange={(e) => {
+                          const next = [...rows];
+                          next[idx] = { ...item, name: e.target.value };
+                          setRows(next);
+                        }}
+                        placeholder="e.g. Draft review with stewards"
+                        className="h-10 rounded-none bg-background"
+                      />
                     </div>
+                    <div className="w-full space-y-1 sm:w-[140px]">
+                      <label className={LABEL_CLASS}>TARGET DATE</label>
+                      <Input
+                        value={item.dueDate ?? ''}
+                        onChange={(e) => {
+                          const next = [...rows];
+                          next[idx] = { ...item, dueDate: e.target.value };
+                          setRows(next);
+                        }}
+                        placeholder="Nov 13"
+                        className="h-10 rounded-none bg-background"
+                      />
+                    </div>
+                  </div>
 
-                    <div className="flex flex-col gap-2.5 sm:flex-row">
-                      <div className="flex-1 space-y-1">
-                        <label className={LABEL_CLASS}>NAME</label>
-                        <Input
-                          value={item.name}
+                  <div className="flex flex-col gap-2.5 sm:flex-row">
+                    <div className="flex-1 space-y-1">
+                      <label className={LABEL_CLASS}>OWNER</label>
+                      <QuestRosterCombobox
+                        members={ownerCatalog}
+                        allowUnassigned
+                        value={(() => {
+                          const matched = findPersonInCatalog(ownerCatalog, {
+                            id: item.ownerPersonId,
+                            name: item.ownerName,
+                          });
+                          return matched && matched.id > 0
+                            ? String(matched.id)
+                            : UNASSIGNED_MEMBER;
+                        })()}
+                        placeholder="Unassigned"
+                        onChange={(next) => {
+                          const rowsNext = [...rows];
+                          rowsNext[idx] = {
+                            ...item,
+                            ownerPersonId: next && next.id > 0 ? next.id : null,
+                            ownerName: next
+                              ? personRosterDisplayLabel(
+                                  next,
+                                  'Space Member',
+                                ).trim() || null
+                              : null,
+                          };
+                          setRows(rowsNext);
+                        }}
+                      />
+                    </div>
+                    {showStatusSelect ? (
+                      <div className="w-full space-y-1 sm:w-[150px]">
+                        <label className={LABEL_CLASS}>STATUS</label>
+                        <select
+                          value={item.status}
                           onChange={(e) => {
                             const next = [...rows];
-                            next[idx] = { ...item, name: e.target.value };
-                            setRows(next);
-                          }}
-                          placeholder="e.g. Draft review with stewards"
-                          className="h-10 rounded-none bg-background"
-                        />
-                      </div>
-                      <div className="w-full space-y-1 sm:w-[140px]">
-                        <label className={LABEL_CLASS}>TARGET DATE</label>
-                        <Input
-                          value={item.dueDate ?? ''}
-                          onChange={(e) => {
-                            const next = [...rows];
-                            next[idx] = { ...item, dueDate: e.target.value };
-                            setRows(next);
-                          }}
-                          placeholder="Nov 13"
-                          className="h-10 rounded-none bg-background"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2.5 sm:flex-row">
-                      <div className="flex-1 space-y-1">
-                        <label className={LABEL_CLASS}>OWNER</label>
-                        <QuestRosterCombobox
-                          members={ownerCatalog}
-                          allowUnassigned
-                          value={(() => {
-                            const matched = findPersonInCatalog(ownerCatalog, {
-                              id: item.ownerPersonId,
-                              name: item.ownerName,
-                            });
-                            return matched && matched.id > 0
-                              ? String(matched.id)
-                              : UNASSIGNED_MEMBER;
-                          })()}
-                          placeholder="Unassigned"
-                          onChange={(next) => {
-                            const rowsNext = [...rows];
-                            rowsNext[idx] = {
+                            next[idx] = {
                               ...item,
-                              ownerPersonId:
-                                next && next.id > 0 ? next.id : null,
-                              ownerName: next
-                                ? personRosterDisplayLabel(
-                                    next,
-                                    'Space Member',
-                                  ).trim() || null
-                                : null,
+                              status: e.target.value as QuestMilestoneStatus,
                             };
-                            setRows(rowsNext);
-                          }}
-                        />
-                      </div>
-                      {showStatusSelect ? (
-                        <div className="w-full space-y-1 sm:w-[150px]">
-                          <label className={LABEL_CLASS}>STATUS</label>
-                          <select
-                            value={item.status}
-                            onChange={(e) => {
-                              const next = [...rows];
-                              next[idx] = {
-                                ...item,
-                                status: e.target.value as QuestMilestoneStatus,
-                              };
-                              setRows(next);
-                            }}
-                            className="h-10 w-full border border-border bg-background-2 px-3 text-xs text-foreground"
-                          >
-                            {QUEST_MILESTONE_STATUSES.map((st) => (
-                              <option key={st} value={st}>
-                                {st === 'done'
-                                  ? 'Done'
-                                  : st === 'in_progress'
-                                  ? 'In progress'
-                                  : 'Not started'}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className={LABEL_CLASS}>DESCRIPTION</label>
-                      <div className="border border-border bg-background">
-                        <RichTextEditor
-                          markdown={item.description}
-                          onChange={(md) => {
-                            const next = [...rows];
-                            next[idx] = { ...item, description: md };
                             setRows(next);
                           }}
-                          placeholder="• Milestone deliverables and criteria…"
-                          bordered={false}
-                        />
+                          className="h-10 w-full border border-border bg-background-2 px-3 text-xs text-foreground"
+                        >
+                          {QUEST_MILESTONE_STATUSES.map((st) => (
+                            <option key={st} value={st}>
+                              {st === 'done'
+                                ? 'Done'
+                                : st === 'in_progress'
+                                ? 'In progress'
+                                : 'Not started'}
+                            </option>
+                          ))}
+                        </select>
                       </div>
+                    ) : null}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className={LABEL_CLASS}>DESCRIPTION</label>
+                    <div className={EDITOR_FRAME}>
+                      <RichTextEditor
+                        markdown={item.description}
+                        onChange={(md) => {
+                          const next = [...rows];
+                          next[idx] = { ...item, description: md };
+                          setRows(next);
+                        }}
+                        placeholder="• Milestone deliverables and criteria…"
+                        bordered={false}
+                      />
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          <button
-            type="button"
-            onClick={() =>
-              setRows([
-                ...rows,
-                {
-                  name: '',
-                  description: '',
-                  dueDate: '',
-                  ownerPersonId: defaultOwnerId,
-                  ownerName: defaultOwnerName,
-                  status: 'not_started',
-                  insertedNew: true,
-                },
-              ])
-            }
-            data-testid="add-milestone-at-end"
-            className="text-xs font-semibold text-[#3d3d8f] hover:underline"
-          >
-            + Add milestone at end
-          </button>
-
-          <ModalFooter
-            onCancel={() => onOpenChange(false)}
-            onSave={() => {
-              const cleaned = rows
-                .map((r) => ({
-                  ...r,
-                  name: r.name.trim(),
-                  dueDate: r.dueDate?.trim() || null,
-                  ownerName: r.ownerName?.trim() || null,
-                }))
-                .filter((r) => r.name.length > 0);
-              onSave(cleaned);
-              onOpenChange(false);
-            }}
-          />
+              </div>
+            );
+          })}
         </div>
-      </DialogContent>
+
+        <button
+          type="button"
+          onClick={() =>
+            setRows([
+              ...rows,
+              {
+                name: '',
+                description: '',
+                dueDate: '',
+                ownerPersonId: defaultOwnerId,
+                ownerName: defaultOwnerName,
+                status: 'not_started',
+                insertedNew: true,
+              },
+            ])
+          }
+          data-testid="add-milestone-at-end"
+          className="text-xs font-semibold text-[#3d3d8f] hover:underline"
+        >
+          + {chrome.addLabel}
+        </button>
+      </QuestEditDialogFrame>
     </Dialog>
   );
 }
@@ -1130,193 +1167,184 @@ export function EditQuestMembersModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideCloseButton
-        className="max-h-[92vh] max-w-[560px] overflow-y-auto rounded-none border border-border bg-background p-6"
+      <QuestEditDialogFrame
+        title="Edit members"
+        subtitle="Who is on this quest, and what concrete outcomes each person owns (one bullet per outcome)."
+        onClose={() => onOpenChange(false)}
+        onCancel={() => onOpenChange(false)}
         onPointerDownOutside={keepMemberSelectPopoverOpen}
         onInteractOutside={keepMemberSelectPopoverOpen}
         onFocusOutside={keepMemberSelectPopoverOpen}
+        onSave={() => {
+          const cleaned = rows
+            .map((m) => ({
+              ...m,
+              memberName: m.memberName.trim(),
+              responsibilities: m.responsibilities
+                .map((r) => r.trim())
+                .filter(Boolean),
+            }))
+            .filter((m) => m.memberName.length > 0);
+          onSave(cleaned);
+          onOpenChange(false);
+        }}
       >
-        <div className="space-y-4">
-          <ModalHeader
-            title="Edit members"
-            subtitle="Who is on this quest, and what concrete outcomes each person owns (one bullet per outcome)."
-            onClose={() => onOpenChange(false)}
-          />
-
-          <div className="space-y-2.5">
-            {rows.map((member, mIdx) => {
-              return (
-                <div
-                  key={mIdx}
-                  className="space-y-2 border border-border bg-background p-3"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <PersonAvatar
-                      size="sm"
-                      shape="circle"
-                      avatarSrc={member.memberAvatarUrl ?? undefined}
-                      userName={member.memberName}
-                      personId={
-                        member.personId && member.personId > 0
-                          ? member.personId
-                          : undefined
-                      }
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-semibold text-foreground">
-                        {member.memberName}
-                      </p>
-                      <p className="text-[11px] text-neutral-11">
-                        {member.roleLabel || 'Member'}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setRows(rows.filter((_, idx) => idx !== mIdx))
-                      }
-                      className="text-xs text-neutral-11 hover:text-foreground"
-                      aria-label={`Remove ${member.memberName}`}
-                    >
-                      ✕
-                    </button>
+        <div className="space-y-2.5">
+          {rows.map((member, mIdx) => {
+            return (
+              <div
+                key={mIdx}
+                className="space-y-2 border border-border bg-background p-3"
+              >
+                <div className="flex items-center gap-2.5">
+                  <PersonAvatar
+                    size="sm"
+                    shape="circle"
+                    avatarSrc={member.memberAvatarUrl ?? undefined}
+                    userName={member.memberName}
+                    personId={
+                      member.personId && member.personId > 0
+                        ? member.personId
+                        : undefined
+                    }
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-semibold text-foreground">
+                      {member.memberName}
+                    </p>
+                    <p className="text-[11px] text-neutral-11">
+                      {member.roleLabel || 'Member'}
+                    </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRows(rows.filter((_, idx) => idx !== mIdx))
+                    }
+                    className="text-xs text-neutral-11 hover:text-foreground"
+                    aria-label={`Remove ${member.memberName}`}
+                  >
+                    ✕
+                  </button>
+                </div>
 
-                  <div className="space-y-1.5">
-                    <label className={LABEL_CLASS}>RESPONSIBILITY</label>
-                    <div className="space-y-1.5 border border-border bg-background-2 p-2.5">
-                      {member.responsibilities.map((bullet, bIdx) => (
-                        <div key={bIdx} className="flex items-center gap-2">
-                          <span className="text-xs text-neutral-11">•</span>
-                          <input
-                            type="text"
-                            value={bullet}
-                            onChange={(e) => {
+                <div className="space-y-1.5">
+                  <label className={LABEL_CLASS}>RESPONSIBILITY</label>
+                  <div className="space-y-1.5 border border-border bg-background-2 p-2.5">
+                    {member.responsibilities.map((bullet, bIdx) => (
+                      <div key={bIdx} className="flex items-center gap-2">
+                        <span className="text-xs text-neutral-11">•</span>
+                        <input
+                          type="text"
+                          value={bullet}
+                          onChange={(e) => {
+                            const next = [...rows];
+                            const nextResp = [...member.responsibilities];
+                            nextResp[bIdx] = e.target.value;
+                            next[mIdx] = {
+                              ...member,
+                              responsibilities: nextResp,
+                            };
+                            setRows(next);
+                          }}
+                          placeholder="Concrete responsibility outcome…"
+                          className="flex-1 bg-transparent text-[13px] text-foreground outline-none"
+                        />
+                        {member.responsibilities.length > 1 ? (
+                          <button
+                            type="button"
+                            onClick={() => {
                               const next = [...rows];
-                              const nextResp = [...member.responsibilities];
-                              nextResp[bIdx] = e.target.value;
                               next[mIdx] = {
                                 ...member,
-                                responsibilities: nextResp,
+                                responsibilities:
+                                  member.responsibilities.filter(
+                                    (_, i) => i !== bIdx,
+                                  ),
                               };
                               setRows(next);
                             }}
-                            placeholder="Concrete responsibility outcome…"
-                            className="flex-1 bg-transparent text-[13px] text-foreground outline-none"
-                          />
-                          {member.responsibilities.length > 1 ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const next = [...rows];
-                                next[mIdx] = {
-                                  ...member,
-                                  responsibilities:
-                                    member.responsibilities.filter(
-                                      (_, i) => i !== bIdx,
-                                    ),
-                                };
-                                setRows(next);
-                              }}
-                              className="text-xs text-neutral-11 hover:text-foreground"
-                            >
-                              ×
-                            </button>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = [...rows];
-                        next[mIdx] = {
-                          ...member,
-                          responsibilities: [...member.responsibilities, ''],
-                        };
-                        setRows(next);
-                      }}
-                      className="text-xs font-semibold text-neutral-11 hover:text-foreground"
-                    >
-                      + Add bullet
-                    </button>
+                            className="text-xs text-neutral-11 hover:text-foreground"
+                          >
+                            ×
+                          </button>
+                        ) : null}
+                      </div>
+                    ))}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = [...rows];
+                      next[mIdx] = {
+                        ...member,
+                        responsibilities: [...member.responsibilities, ''],
+                      };
+                      setRows(next);
+                    }}
+                    className="text-xs font-semibold text-neutral-11 hover:text-foreground"
+                  >
+                    + Add bullet
+                  </button>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* ADD MEMBER card */}
-          <div className="space-y-2.5 border border-border bg-background-2 p-3">
-            <p className={LABEL_CLASS}>ADD MEMBER</p>
-            <div className="space-y-1">
-              <label className={LABEL_CLASS}>PERSON</label>
-              <QuestRosterCombobox
-                members={memberCatalog}
-                value={selectedPersonId}
-                placeholder="Choose or search a space member…"
-                onChange={(next) =>
-                  setSelectedPersonId(next ? String(next.id) : null)
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <label className={LABEL_CLASS}>RESPONSIBILITY</label>
-              <div className="space-y-1.5 border border-border bg-background p-2.5">
-                {newBullets.map((b, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <span className="text-xs text-neutral-11">•</span>
-                    <input
-                      type="text"
-                      value={b}
-                      onChange={(e) => {
-                        const next = [...newBullets];
-                        next[idx] = e.target.value;
-                        setNewBullets(next);
-                      }}
-                      placeholder="First concrete responsibility…"
-                      className="flex-1 bg-transparent text-[13px] text-foreground outline-none"
-                    />
-                  </div>
-                ))}
               </div>
-              <button
-                type="button"
-                onClick={() => setNewBullets([...newBullets, ''])}
-                className="text-xs font-medium text-neutral-11 hover:text-foreground"
-              >
-                + Add bullet
-              </button>
-            </div>
-            <Button
-              type="button"
-              onClick={handleAddMemberToQuest}
-              disabled={!selectedPerson}
-              className="h-9 rounded-none bg-foreground px-3.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-background"
-            >
-              ADD TO QUEST
-            </Button>
-          </div>
-
-          <ModalFooter
-            onCancel={() => onOpenChange(false)}
-            onSave={() => {
-              const cleaned = rows
-                .map((m) => ({
-                  ...m,
-                  memberName: m.memberName.trim(),
-                  responsibilities: m.responsibilities
-                    .map((r) => r.trim())
-                    .filter(Boolean),
-                }))
-                .filter((m) => m.memberName.length > 0);
-              onSave(cleaned);
-              onOpenChange(false);
-            }}
-          />
+            );
+          })}
         </div>
-      </DialogContent>
+
+        {/* ADD MEMBER card */}
+        <div className="space-y-2.5 border border-border bg-background-2 p-3">
+          <p className={LABEL_CLASS}>ADD MEMBER</p>
+          <div className="space-y-1">
+            <label className={LABEL_CLASS}>PERSON</label>
+            <QuestRosterCombobox
+              members={memberCatalog}
+              value={selectedPersonId}
+              placeholder="Choose or search a space member…"
+              onChange={(next) =>
+                setSelectedPersonId(next ? String(next.id) : null)
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <label className={LABEL_CLASS}>RESPONSIBILITY</label>
+            <div className="space-y-1.5 border border-border bg-background p-2.5">
+              {newBullets.map((b, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="text-xs text-neutral-11">•</span>
+                  <input
+                    type="text"
+                    value={b}
+                    onChange={(e) => {
+                      const next = [...newBullets];
+                      next[idx] = e.target.value;
+                      setNewBullets(next);
+                    }}
+                    placeholder="First concrete responsibility…"
+                    className="flex-1 bg-transparent text-[13px] text-foreground outline-none"
+                  />
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setNewBullets([...newBullets, ''])}
+              className="text-xs font-medium text-neutral-11 hover:text-foreground"
+            >
+              + Add bullet
+            </button>
+          </div>
+          <Button
+            type="button"
+            colorVariant="neutral"
+            onClick={handleAddMemberToQuest}
+            disabled={!selectedPerson}
+            className="bg-foreground text-background hover:bg-foreground/90"
+          >
+            Add to quest
+          </Button>
+        </div>
+      </QuestEditDialogFrame>
     </Dialog>
   );
 }
@@ -1358,107 +1386,97 @@ export function EditQuestDeliverablesModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideCloseButton
-        className="max-h-[92vh] max-w-[520px] overflow-y-auto rounded-none border border-border bg-background p-6"
+      <QuestEditDialogFrame
+        title="Edit deliverables"
+        onClose={() => onOpenChange(false)}
+        onCancel={() => onOpenChange(false)}
+        onSave={() => {
+          const cleaned = rows
+            .map((r) => ({
+              ...r,
+              name: r.name.trim(),
+              url: r.url.trim(),
+              note: r.note.trim(),
+            }))
+            .filter((r) => r.name.length > 0);
+          onSave(cleaned);
+          onOpenChange(false);
+        }}
       >
-        <div className="space-y-4">
-          <ModalHeader
-            title="Edit deliverables"
-            onClose={() => onOpenChange(false)}
-          />
-
-          <div className="space-y-3">
-            {rows.map((row, idx) => (
-              <div
-                key={idx}
-                className="space-y-2 border border-border bg-background-2 p-3"
-              >
-                <div className="flex items-center justify-between">
-                  <span className={LABEL_CLASS}>DELIVERABLE {idx + 1}</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setRows(rows.filter((_, itemIdx) => itemIdx !== idx))
-                    }
-                    className="text-[11px] font-semibold text-neutral-11 hover:text-foreground"
-                  >
-                    Remove
-                  </button>
-                </div>
-
-                <div className="space-y-1">
-                  <label className={LABEL_CLASS}>NAME</label>
-                  <Input
-                    value={row.name}
-                    onChange={(e) => {
-                      const next = [...rows];
-                      next[idx] = { ...row, name: e.target.value };
-                      setRows(next);
-                    }}
-                    placeholder="e.g. Space Context editor (8 sections)"
-                    className="h-9 rounded-none bg-background"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className={LABEL_CLASS}>LINK (OPTIONAL)</label>
-                  <Input
-                    value={row.url}
-                    onChange={(e) => {
-                      const next = [...rows];
-                      next[idx] = { ...row, url: e.target.value };
-                      setRows(next);
-                    }}
-                    placeholder="https://github.com/..."
-                    className="h-9 rounded-none bg-background"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className={LABEL_CLASS}>NOTE (OPTIONAL)</label>
-                  <Input
-                    value={row.note}
-                    onChange={(e) => {
-                      const next = [...rows];
-                      next[idx] = { ...row, note: e.target.value };
-                      setRows(next);
-                    }}
-                    placeholder="Short status or context note"
-                    className="h-9 rounded-none bg-background"
-                  />
-                </div>
+        <div className="space-y-3">
+          {rows.map((row, idx) => (
+            <div
+              key={idx}
+              className="space-y-2 border border-border bg-background-2 p-3"
+            >
+              <div className="flex items-center justify-between">
+                <span className={LABEL_CLASS}>DELIVERABLE {idx + 1}</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setRows(rows.filter((_, itemIdx) => itemIdx !== idx))
+                  }
+                  className="text-[11px] font-semibold text-neutral-11 hover:text-foreground"
+                >
+                  Remove
+                </button>
               </div>
-            ))}
-          </div>
 
-          <button
-            type="button"
-            onClick={() => setRows([...rows, { name: '', url: '', note: '' }])}
-            data-testid="add-deliverable-button"
-            className="flex w-full items-center justify-center gap-1.5 border border-dashed border-border py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-neutral-11 hover:border-foreground hover:text-foreground"
-          >
-            <Plus className="size-3.5" />
-            ADD DELIVERABLE
-          </button>
+              <div className="space-y-1">
+                <label className={LABEL_CLASS}>NAME</label>
+                <Input
+                  value={row.name}
+                  onChange={(e) => {
+                    const next = [...rows];
+                    next[idx] = { ...row, name: e.target.value };
+                    setRows(next);
+                  }}
+                  placeholder="e.g. Space Context editor (8 sections)"
+                  className="h-10 rounded-none bg-background"
+                />
+              </div>
 
-          <ModalFooter
-            onCancel={() => onOpenChange(false)}
-            onSave={() => {
-              const cleaned = rows
-                .map((r) => ({
-                  ...r,
-                  name: r.name.trim(),
-                  url: r.url.trim(),
-                  note: r.note.trim(),
-                }))
-                .filter((r) => r.name.length > 0);
-              onSave(cleaned);
-              onOpenChange(false);
-            }}
-          />
+              <div className="space-y-1">
+                <label className={LABEL_CLASS}>LINK (OPTIONAL)</label>
+                <Input
+                  value={row.url}
+                  onChange={(e) => {
+                    const next = [...rows];
+                    next[idx] = { ...row, url: e.target.value };
+                    setRows(next);
+                  }}
+                  placeholder="https://github.com/..."
+                  className="h-10 rounded-none bg-background"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className={LABEL_CLASS}>NOTE (OPTIONAL)</label>
+                <Input
+                  value={row.note}
+                  onChange={(e) => {
+                    const next = [...rows];
+                    next[idx] = { ...row, note: e.target.value };
+                    setRows(next);
+                  }}
+                  placeholder="Short status or context note"
+                  className="h-10 rounded-none bg-background"
+                />
+              </div>
+            </div>
+          ))}
         </div>
-      </DialogContent>
+
+        <button
+          type="button"
+          onClick={() => setRows([...rows, { name: '', url: '', note: '' }])}
+          data-testid="add-deliverable-button"
+          className="flex h-10 min-h-10 w-full items-center justify-center gap-1.5 border border-dashed border-border px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-11 hover:border-foreground hover:text-foreground"
+        >
+          <Plus className="size-3.5" />
+          Add deliverable
+        </button>
+      </QuestEditDialogFrame>
     </Dialog>
   );
 }
