@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
+import { questPendingYesNotice } from '@hypha-platform/core/client';
 import {
   EXISTING_QUEST_HELPER_RULES,
   NEW_QUEST_HELPER_RULES,
@@ -60,6 +61,27 @@ describe('quest helper prompt', () => {
     expect(retired).toContain('Do not tell the member it is still waiting');
     expect(retired.indexOf('Actionable suggestion:')).toBeLessThan(
       retired.indexOf('BEGIN UNTRUSTED DATA'),
+    );
+
+    const preserved = buildQuestHelperTurnPrompt({
+      snapshotJson: JSON.stringify({ goal: 'Keep the confirmed goal' }),
+      historyLines: 'Quest Helper: earlier scope wording',
+      currentStep: 'scope',
+      message: 'Add lead scoring',
+      suggestion: { status: 'awaiting', step: 'scope' },
+    });
+    const scopeNotice = questPendingYesNotice('scope');
+    expect(preserved.startsWith('Actionable suggestion: preserved.')).toBe(
+      true,
+    );
+    expect(preserved).toContain(scopeNotice);
+    expect(preserved).toContain('Do not contradict that sentence');
+    expect(preserved).toContain(
+      'Do not say the suggestion is history, retired, cleared, or no longer waiting.',
+    );
+    expect(preserved).not.toMatch(/suggestion is history because/i);
+    expect(preserved.indexOf('Actionable suggestion:')).toBeLessThan(
+      preserved.indexOf('BEGIN UNTRUSTED DATA'),
     );
   });
 

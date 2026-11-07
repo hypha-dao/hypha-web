@@ -17,6 +17,7 @@ import {
   mergeRefinedQuestMilestones,
   questRefineLeadFields,
   selectSpecialistForQuestion,
+  questPendingYesNotice,
   specialistById,
   stripViewerYouMarker,
   withoutPlaceholderLeadDuplicates,
@@ -262,7 +263,8 @@ export const NEW_QUEST_HELPER_RULES = `How you answer:
 - When you suggest concrete wording, call update_quest_draft with only this section and say in the reply that it is a suggestion and is not saved until they confirm. Do not say it was added. Say that only in a turn where you called update_quest_draft. The app asks them to confirm that suggestion.
 - Their own concrete sentence is theirs. You may comment on it. Do not replace it with invented metrics, people, or dates.
 - "yes" and "no" refer to a suggestion already in the chat. They are not new section content.
-- A question retires any unsaved suggestion. Yes will not save it after that. Answer the question, treat the earlier wording as history, and do not ask the member to confirm it.
+- The Actionable suggestion line is the app's state for this turn. Your prose does not change what yes will save.
+- A question retires any unsaved suggestion only when that line says the suggestion is history. Yes will not save it after that. On every other turn, do not call the earlier suggestion history or retired.
 - An explicit edit such as Put in goal "…" is applied by the app. Do not expand it into other sections.
 - Lines such as "Please write these as Success Criteria, proposing in chat first" are instructions, not quest content. Never copy them into update_quest_draft.
 - For milestones, propose only checkpoints, dates, and owners already named. Do not add a row or invent a date.
@@ -280,7 +282,11 @@ function actionableSuggestionLine(suggestion?: {
     return `Actionable suggestion: none. The earlier ${section} suggestion is history because this message is a question. Yes will not save it. Do not tell the member it is still waiting for confirmation.`;
   }
   if (suggestion.status === 'awaiting') {
-    return `Actionable suggestion: ${section} is waiting for yes. Only yes saves it. A question retires it before the reply is shown.`;
+    const named = QUEST_STEWARD_STEPS.find((step) => step === suggestion.step);
+    const notice = named
+      ? questPendingYesNotice(named)
+      : 'The earlier suggestion is still waiting on a yes. Yes applies that suggestion and nothing else.';
+    return `Actionable suggestion: preserved. ${notice} Do not contradict that sentence. Do not say the suggestion is history, retired, cleared, or no longer waiting.`;
   }
   return 'Actionable suggestion: none. Do not claim that a suggestion is waiting for confirmation.';
 }

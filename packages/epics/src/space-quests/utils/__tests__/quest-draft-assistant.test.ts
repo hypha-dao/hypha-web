@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   isBulkQuestDraftRequest,
+  questPendingYesNotice,
   resolveQuestDraftTarget,
   type QuestStewardStep,
 } from '@hypha-platform/core/client';
@@ -14,6 +15,7 @@ import {
   isQuestSectionApproval,
   isQuestSectionCoachingOpener,
   QUEST_HELPER_OFFLINE_REPLY,
+  questDraftSuggestionStatus,
   questDraftTurnUsesModel,
   questHelperTurnMessage,
   replyWithSectionApprovalAsk,
@@ -1690,7 +1692,9 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(duringPending?.pending).toEqual(waiting);
     expect(duringPending?.draft.goal).toBe(savedGoal);
     expect(duringPending?.draft.scopeIn).toEqual(keptScope);
-    expect(duringPending?.reply).toBe(clarification);
+    expect(duringPending?.reply).toBe(
+      `${clarification}\n\n${questPendingYesNotice('goal')}`,
+    );
 
     const question = await settle('what reward should we pay?', {
       reply: 'Rewards are a later section. Nothing here names an amount.',
@@ -2381,5 +2385,148 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(result.reply).not.toMatch(/not saved until you confirm/i);
     expect(result.reply).toMatch(/The Goal is still waiting on a yes/);
     expect(result.reply).not.toMatch(/Nothing is waiting on a yes/);
+  });
+
+  it('names the preserved scope when the model calls that suggestion history', async () => {
+    const historyReply =
+      'The earlier in/out wording stays history until we settle this.';
+    const clarification =
+      'Do you mean the Lead role, or the work of adding lead scoring?';
+    const scopePending: PendingQuestSectionProposal = {
+      step: 'scope',
+      patch: {
+        scopeIn: ['verify proposal display and milestone editing in sandbox'],
+        scopeOut: ['production rollout'],
+      },
+    };
+    const state: CreateDraftTurnSnapshot = {
+      draft: { ...emptyDraft, goal: '', scopeIn: [], scopeOut: [] },
+      pending: scopePending,
+      currentStep: 'scope',
+    };
+    const calls: string[] = [];
+    const settle = (message: string, model: QuestDraftModelTurn | null) =>
+      settleCreateDraftTurn({
+        message,
+        history: [],
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: [],
+        readState: () => state,
+        isCurrent: () => true,
+        loadModel: async () => {
+          calls.push(message);
+          return model;
+        },
+      });
+    const expectNoticeOnce = (reply: string | undefined, notice: string) => {
+      const parts = (reply ?? '').split(notice);
+      expect(parts).toHaveLength(2);
+      expect(parts[1]?.trim()).toBe('');
+    };
+
+    expect(
+      questDraftSuggestionStatus('Add lead scoring', scopePending),
+    ).toEqual({ status: 'awaiting', step: 'scope' });
+    expect(
+      questDraftSuggestionStatus('what should the goal be?', scopePending),
+    ).toEqual({ status: 'retired', step: 'scope' });
+    expect(questDraftSuggestionStatus('Add lead scoring', null)).toEqual({
+      status: 'none',
+    });
+
+    const contradicted = await settle('Add lead scoring', {
+      reply: historyReply,
+      patch: {
+        scopeIn: ['Add lead scoring'],
+        leadName: 'scoring',
+        goal: 'replaced',
+      },
+    });
+    expect(contradicted?.wrote).toBe(false);
+    expect(contradicted?.pending).toEqual(scopePending);
+    expect(contradicted?.draft.scopeIn).toEqual([]);
+    expect(contradicted?.draft.scopeOut).toEqual([]);
+    expect(contradicted?.draft.goal).toBe('');
+    expect(contradicted?.draft.leadName).toBe(emptyDraft.leadName);
+    expect(contradicted?.reply).toContain(historyReply);
+    expectNoticeOnce(contradicted?.reply, questPendingYesNotice('scope'));
+    expect(contradicted?.reply).toMatch(
+      /Yes applies that Scope suggestion and nothing else/,
+    );
+    expect(contradicted?.reply).not.toMatch(/Nothing is waiting on a yes/i);
+    expect(contradicted?.reply).not.toMatch(/Not saved yet/i);
+
+    state.pending = contradicted?.pending ?? null;
+    const yesScope = await settle('yes', {
+      reply: 'Saved the lead scoring.',
+      patch: {
+        scopeIn: ['Add lead scoring'],
+        leadName: 'scoring',
+        goal: 'replaced',
+      },
+    });
+    expect(calls).not.toContain('yes');
+    expect(yesScope?.wrote).toBe(true);
+    expect(yesScope?.pending).toBeNull();
+    expect(yesScope?.draft.scopeIn).toEqual([
+      'verify proposal display and milestone editing in sandbox',
+    ]);
+    expect(yesScope?.draft.scopeOut).toEqual(['production rollout']);
+    expect(yesScope?.draft.leadName).toBe(emptyDraft.leadName);
+    expect(yesScope?.draft.goal).toBe('');
+
+    state.draft = { ...emptyDraft, goal: '', scopeIn: [], scopeOut: [] };
+    state.pending = scopePending;
+    const plain = await settle('Add lead scoring', {
+      reply: clarification,
+      patch: { scopeIn: ['Add lead scoring'], leadName: 'scoring' },
+    });
+    expect(plain?.wrote).toBe(false);
+    expect(plain?.pending).toEqual(scopePending);
+    expect(plain?.draft.scopeIn).toEqual([]);
+    expect(plain?.reply).toContain(clarification);
+    expectNoticeOnce(plain?.reply, questPendingYesNotice('scope'));
+    expect(plain?.reply).not.toMatch(/Nothing is waiting on a yes/i);
+
+    state.pending = plain?.pending ?? null;
+    const echoed = await settle('Add lead scoring', {
+      reply: `${clarification}\n\n${questPendingYesNotice('scope')}`,
+      patch: { scopeIn: ['Add lead scoring'] },
+    });
+    expect(echoed?.pending).toEqual(scopePending);
+    expect(echoed?.reply).toContain(clarification);
+    expectNoticeOnce(echoed?.reply, questPendingYesNotice('scope'));
+
+    state.pending = scopePending;
+    state.draft = { ...emptyDraft, goal: '', scopeIn: [], scopeOut: [] };
+    const question = await settle('what should the goal be?', {
+      reply: historyReply,
+      patch: {
+        goal: 'what should the goal be?',
+        scopeIn: ['replaced scope'],
+      },
+    });
+    expect(question?.wrote).toBe(false);
+    expect(question?.pending).toBeNull();
+    expect(question?.draft.goal).toBe('');
+    expect(question?.draft.scopeIn).toEqual([]);
+    expect(question?.reply).toContain(historyReply);
+    expect(question?.reply).not.toMatch(/still waiting on a yes/i);
+    expect(question?.reply).not.toMatch(/Yes applies that Scope suggestion/i);
+
+    state.pending = null;
+    const yesAfterQuestion = await settle('yes', {
+      reply: 'Say yes to save the goal.',
+      patch: {
+        goal: 'what should the goal be?',
+        scopeIn: ['Add lead scoring'],
+      },
+    });
+    expect(calls).not.toContain('yes');
+    expect(yesAfterQuestion?.wrote).toBe(false);
+    expect(yesAfterQuestion?.pending).toBeNull();
+    expect(yesAfterQuestion?.draft.goal).toBe('');
+    expect(yesAfterQuestion?.draft.scopeIn).toEqual([]);
+    expect(yesAfterQuestion?.reply).toMatch(/Nothing is waiting on a yes/i);
   });
 });

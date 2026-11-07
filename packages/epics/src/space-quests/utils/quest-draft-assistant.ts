@@ -5,6 +5,7 @@ import {
   isBulkQuestDraftRequest,
   labeledQuestDraftSection,
   limitQuestPatchToStep,
+  questPendingYesNotice,
   resolveQuestDraftTarget,
   scopeBoundaryLists,
   splitMarkdownLinesToBullets,
@@ -274,6 +275,19 @@ export function isQuestSectionRejection(text: string): boolean {
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > 40) return false;
   return REJECTION_PHRASE.test(trimmed);
+}
+
+export function questDraftSuggestionStatus(
+  message: string,
+  pending: PendingQuestSectionProposal | null,
+): { status: 'none' | 'awaiting' | 'retired'; step?: QuestStewardStep } {
+  if (!pending || Object.keys(pending.patch).length === 0) {
+    return { status: 'none' };
+  }
+  if (isQuestDraftQuestion(message)) {
+    return { status: 'retired', step: pending.step };
+  }
+  return { status: 'awaiting', step: pending.step };
 }
 
 export function isQuestDraftQuestion(text: string): boolean {
@@ -1562,6 +1576,18 @@ export function decideQuestDraftSuggestion({
   return { intent: 'clarify', patch: {} };
 }
 
+/**
+ * A new suggestion may replace an older one only when the member's message
+ * itself names that section. The model reply does not.
+ */
+function memberMessageReplacesPending(
+  message: string,
+  step: QuestStewardStep,
+): boolean {
+  if (labeledQuestDraftSection(message) === step) return true;
+  return step === 'scope' && scopeBoundaryLists(message) != null;
+}
+
 function replyForPendingSuggestion(
   modelReply: string | null,
   step: QuestStewardStep,
@@ -1798,6 +1824,18 @@ export function runNewQuestDraftTurn({
     model,
   });
   if (decision.intent === 'propose') {
+    const older =
+      pending && Object.keys(pending.patch).length > 0 ? pending : null;
+    if (older && !memberMessageReplacesPending(text, target.step)) {
+      return stay(
+        replyWhileOlderPending(
+          conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY,
+          older,
+        ),
+        currentStep,
+        older,
+      );
+    }
     return stay(
       replyForPendingSuggestion(
         conversationalModelReply(model, text),
@@ -1809,9 +1847,8 @@ export function runNewQuestDraftTurn({
     );
   }
 
-  // Chat only. Keep an unrelated proposal. A confirm claim in this reply
-  // is about words this turn did not file. Yes still applies the earlier
-  // patch, so the reply names that section.
+  // Chat only. An older patch stays actionable. The reply always ends with
+  // the app's notice for that section. The model's sentences do not decide it.
   const modelReply =
     conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY;
   const actionable = Object.keys(pending?.patch ?? {}).length > 0;
@@ -1824,26 +1861,43 @@ export function runNewQuestDraftTurn({
   );
 }
 
+/** Drop copies of the app's own notice so a reply carries it once, at the end. */
+function withoutExactNotice(reply: string, notice: string): string {
+  return reply
+    .split(notice)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+    .join('\n\n')
+    .trim();
+}
+
+/**
+ * The older patch stays. Every chat-only reply ends with that section's
+ * notice, once. Model sentences do not decide whether yes still applies.
+ */
 function replyWhileOlderPending(
   reply: string,
   pending: PendingQuestSectionProposal,
 ): string {
-  const filtered = replyAfterRetiredSuggestion(reply, false);
-  if (filtered === reply) return reply;
-  const notice = `The ${questStepSectionLabel(
-    pending.step,
-  )} is still waiting on a yes.`;
-  const kept = filtered
-    .split(/\n+|(?<=[.!?])\s+/)
-    .map((part) => part.trim())
-    .filter(
-      (part) =>
-        part.length > 0 &&
-        !/\bnothing is waiting on a yes\b/i.test(part) &&
-        !/\btreat (?:those|these|this|that) words?\b/i.test(part) &&
-        !/\bas a suggestion\b/i.test(part),
-    );
-  const body = kept.join('\n\n').trim();
+  const notice = questPendingYesNotice(pending.step);
+  const source = withoutExactNotice(reply, notice);
+  const filtered = replyAfterRetiredSuggestion(source, false);
+  const cleaned =
+    filtered === source
+      ? source.trim()
+      : filtered
+          .split(/\n+|(?<=[.!?])\s+/)
+          .map((part) => part.trim())
+          .filter(
+            (part) =>
+              part.length > 0 &&
+              !/\bnothing is waiting on a yes\b/i.test(part) &&
+              !/\btreat (?:those|these|this|that) words?\b/i.test(part) &&
+              !/\bas a suggestion\b/i.test(part),
+          )
+          .join('\n\n')
+          .trim();
+  const body = withoutExactNotice(cleaned, notice);
   return body ? `${body}\n\n${notice}` : notice;
 }
 

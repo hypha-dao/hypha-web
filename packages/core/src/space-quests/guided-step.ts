@@ -1,5 +1,26 @@
 import type { QuestStewardStep } from './constants';
 
+const PENDING_SECTION_LABEL: Record<QuestStewardStep, string> = {
+  goal: 'Goal',
+  scope: 'Scope',
+  success: 'Success criteria',
+  milestones: 'Milestones',
+  members: 'Members',
+  lead: 'Lead',
+  targetDate: 'Target date',
+  rewards: 'Quest Reward',
+  name: 'Name',
+};
+
+/**
+ * The app owns this sentence. It is shown whenever an older suggestion
+ * stays actionable, whatever the model wrote.
+ */
+export function questPendingYesNotice(step: QuestStewardStep): string {
+  const section = PENDING_SECTION_LABEL[step];
+  return `The ${section} is still waiting on a yes. Yes applies that ${section} suggestion and nothing else.`;
+}
+
 export type QuestDraftTarget = {
   /** Section this message is allowed to write. */
   step: QuestStewardStep;

@@ -4,6 +4,7 @@ import {
   isBulkQuestDraftRequest,
   limitQuestPatchToStep,
   questExistingTurnMayPersist,
+  questPendingYesNotice,
   resolveQuestDraftTarget,
   scopeBoundaryLists,
 } from '../guided-step';
@@ -434,6 +435,15 @@ describe('resolveQuestDraftTarget', () => {
     expect(scopeBoundaryLists('within scope foo out of scope bar')).toBeNull();
     expect(scopeBoundaryLists('in scopes foo out of scope bar')).toBeNull();
     expect(Date.now() - started).toBeLessThan(250);
+  });
+
+  it('names the section a preserved suggestion still applies to', () => {
+    expect(questPendingYesNotice('scope')).toBe(
+      'The Scope is still waiting on a yes. Yes applies that Scope suggestion and nothing else.',
+    );
+    expect(questPendingYesNotice('goal')).toBe(
+      'The Goal is still waiting on a yes. Yes applies that Goal suggestion and nothing else.',
+    );
   });
 
   it('lets a named section win over milestone-shaped lines', () => {
