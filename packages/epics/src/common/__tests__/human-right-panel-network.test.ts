@@ -102,4 +102,14 @@ describe('network room join guard', () => {
       "roster,\n      t('agentMentionLabel'),",
     );
   });
+
+  it('does not put a signal join slug on quest channel call links', () => {
+    expect(source).toContain('const callJoinNotificationTarget = useMemo');
+    expect(source).toContain(
+      "mode === 'coherence' &&\n        (!coherenceChannel || coherenceChannel === 'signal')",
+    );
+    expect(source).toContain(
+      '[spaceSlug, roomId, pathname, mode, coherenceSlug, coherenceChannel]',
+    );
+  });
 });

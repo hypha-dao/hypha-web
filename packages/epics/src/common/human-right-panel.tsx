@@ -3004,7 +3004,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             spaceSlug: callSpaceSlug,
             roomId: stableRoomId,
             signalSlug:
-              mode === 'coherence' ? coherenceSlug?.trim() || null : null,
+              mode === 'coherence' &&
+              (!coherenceChannel || coherenceChannel === 'signal')
+                ? coherenceSlug?.trim() || null
+                : null,
           });
     const deepLink =
       typeof window !== 'undefined'
@@ -3041,6 +3044,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     authToken,
     callJoinNotificationTarget,
     callUiEnabled,
+    coherenceChannel,
     coherenceSlug,
     coherenceTitle,
     currentUserId,

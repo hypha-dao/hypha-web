@@ -1163,7 +1163,7 @@ export async function activateSpaceQuestByDocumentId(
         .where(
           and(eq(spaceQuests.id, row.id), eq(spaceQuests.status, 'proposed')),
         )
-        .returning({ id: spaceQuests.id });
+        .returning();
 
       if (updated.length > 0) {
         await db.insert(spaceQuestUpdates).values({
