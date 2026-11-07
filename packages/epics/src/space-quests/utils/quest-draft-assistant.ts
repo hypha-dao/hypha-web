@@ -1281,76 +1281,6 @@ export type NewQuestDraftTurnResult = {
   reply: string;
 };
 
-function sectionMentioned(text: string): QuestStewardStep | null {
-  const named = new RegExp(`\\b(${APPROVAL_SECTION})\\b`, 'i').exec(text);
-  return named?.[1] ? sectionFromCommandName(named[1]) : null;
-}
-
-function questionSubject(
-  message: string,
-  currentStep: QuestStewardStep,
-  pending: PendingQuestSectionProposal | null,
-  history: readonly QuestDraftTurnHistoryItem[],
-): QuestStewardStep {
-  const named = sectionMentioned(message);
-  if (named) return named;
-  if (/\b(?:that|this|it)\b/i.test(message)) {
-    for (let i = history.length - 1; i >= 0; i -= 1) {
-      const prior = history[i];
-      if (!prior || prior.role !== 'user') continue;
-      const command = explicitQuestSectionCommand(prior.text);
-      if (command) return command.step;
-      const priorStep = sectionMentioned(prior.text);
-      if (priorStep) return priorStep;
-    }
-    if (pending) return pending.step;
-  }
-  return currentStep;
-}
-
-function assessSavedSection(
-  step: QuestStewardStep,
-  draft: QuestDraftStateSnapshot,
-): string {
-  if (step === 'goal') {
-    const goal = draft.goal.trim();
-    if (!goal) {
-      return `The Goal is still empty. ${stewardQuestionForStep('goal')}`;
-    }
-    if (isVagueQuestGoal(goal)) return vagueGoalGuidance(goal);
-    return `The Goal is “${goal}”. It names what should be true, so it can stay as the Goal.`;
-  }
-  if (step === 'scope') {
-    if (draft.scopeIn.length === 0 && draft.scopeOut.length === 0) {
-      return `Scope is still empty. ${stewardQuestionForStep('scope')}`;
-    }
-    const inside = draft.scopeIn.join('; ') || 'nothing listed';
-    const outside = draft.scopeOut.join('; ') || 'nothing listed';
-    return `In scope: ${inside}. Out of scope: ${outside}.`;
-  }
-  if (step === 'success') {
-    const saved = draft.successCriteria.trim();
-    if (!saved) {
-      return `Success criteria are still empty. ${stewardQuestionForStep(
-        'success',
-      )}`;
-    }
-    return `Success criteria: ${saved}`;
-  }
-  if (step === 'milestones') {
-    if (draft.milestones.length === 0) {
-      return `Milestones are still empty. ${stewardQuestionForStep(
-        'milestones',
-      )}`;
-    }
-    return draft.milestones
-      .map((milestone) => milestone.name)
-      .filter(Boolean)
-      .join('; ');
-  }
-  return stewardQuestionForStep(step);
-}
-
 function limitedModelPatch(
   model: QuestDraftModelTurn | null,
   step: QuestStewardStep,
@@ -1367,8 +1297,17 @@ function withoutVagueGoal(patch: QuestDraftPatchInput): QuestDraftPatchInput {
 }
 
 /**
- * Deterministic intents never need the model. A wrong or missing model must
- * not be able to store a question or an instruction wrapper.
+ * Shown when a conversational turn needed the model and none answered.
+ * It does not invent a goal, a metric, or a next section.
+ */
+export const QUEST_HELPER_OFFLINE_REPLY =
+  "I can't reach the assistant right now, so I won't guess wording or fill a section. Your draft is unchanged. Try again, or give the exact line to put in a section.";
+
+/**
+ * Local safety turns never call the model: yes/no for the current proposal,
+ * and an explicit put/set/change with the words to store. Everything else —
+ * questions, vague ideas, follow-ups, and rewrites — is a model turn, the
+ * same way a Context section agent answers every mention.
  */
 export function questDraftTurnUsesModel(message: string): boolean {
   const text = message.trim();
@@ -1376,18 +1315,30 @@ export function questDraftTurnUsesModel(message: string): boolean {
   if (isQuestSectionApproval(text) || isQuestSectionRejection(text)) {
     return false;
   }
-  if (isQuestDraftQuestion(text) || isQuestSectionCoachingOpener(text)) {
-    return false;
-  }
-  if (isQuestSectionRewriteRequest(text) && REWRITE_NAMED_SECTION.test(text)) {
-    return true;
-  }
   if (explicitQuestSectionCommand(text) || BARE_SECTION_COMMAND.test(text)) {
     return false;
   }
   if (EXPLICIT_COMMAND.test(text) && COMMAND_SECTION.test(text)) return false;
-  if (isVagueQuestGoal(goalStatement(text))) return false;
   return true;
+}
+
+/**
+ * A model reply that is trying to file the member's question as a section
+ * is not guidance. The caller then says the assistant did not answer.
+ */
+function conversationalModelReply(
+  model: QuestDraftModelTurn | null,
+  userText: string,
+): string | null {
+  const reply = model?.reply?.trim() ?? '';
+  if (!reply || reply === userText.trim()) return null;
+  if (
+    isQuestDraftQuestion(userText) &&
+    /do you want that to be in the /i.test(reply)
+  ) {
+    return null;
+  }
+  return reply;
 }
 
 /**
@@ -1399,7 +1350,6 @@ export function runNewQuestDraftTurn({
   currentStep,
   draft,
   pending,
-  history = [],
   viewerDisplayName,
   spaceMembers,
   model,
@@ -1408,6 +1358,7 @@ export function runNewQuestDraftTurn({
   currentStep: QuestStewardStep;
   draft: QuestDraftStateSnapshot;
   pending: PendingQuestSectionProposal | null;
+  /** The model request carries this. Local turns do not answer from it. */
   history?: readonly QuestDraftTurnHistoryItem[];
   viewerDisplayName: string;
   spaceMembers: readonly QuestSpaceMember[];
@@ -1514,16 +1465,21 @@ export function runNewQuestDraftTurn({
   }
 
   if (isQuestDraftQuestion(text)) {
-    const subject = questionSubject(text, currentStep, pending, history);
-    return stay(assessSavedSection(subject, draft), currentStep);
+    return stay(
+      conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY,
+      currentStep,
+    );
   }
 
   if (isQuestSectionCoachingOpener(text)) {
-    return stay(questSectionCoachReply(target.step), target.step);
+    return stay(
+      conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY,
+      target.step,
+    );
   }
 
-  if (isQuestSectionRewriteRequest(text)) {
-    const suggested = limitedModelPatch(model, target.step);
+  if (isQuestSectionRewriteRequest(text) && REWRITE_NAMED_SECTION.test(text)) {
+    const suggested = withoutVagueGoal(limitedModelPatch(model, target.step));
     if (Object.keys(suggested).length > 0) {
       return stay(
         `Suggested refinement, not saved yet:\n${replyWithSectionApprovalAsk(
@@ -1536,9 +1492,10 @@ export function runNewQuestDraftTurn({
       );
     }
     return stay(
-      `I won't replace the ${questStepSectionLabel(
-        target.step,
-      )} until you approve a wording. What should change?`,
+      conversationalModelReply(model, text) ??
+        `I won't replace the ${questStepSectionLabel(
+          target.step,
+        )} until you approve a wording. What should change?`,
       target.step,
     );
   }
@@ -1547,7 +1504,15 @@ export function runNewQuestDraftTurn({
     (target.step === 'goal' || currentStep === 'goal') &&
     isVagueQuestGoal(goalStatement(text))
   ) {
-    return stay(vagueGoalGuidance(goalStatement(text)), 'goal');
+    const reply = conversationalModelReply(model, text);
+    const suggested = withoutVagueGoal(limitedModelPatch(model, 'goal'));
+    if (reply && Object.keys(suggested).length > 0) {
+      return stay(`Suggested refinement, not saved yet:\n${reply}`, 'goal', {
+        step: 'goal',
+        patch: suggested,
+      });
+    }
+    return stay(reply ?? QUEST_HELPER_OFFLINE_REPLY, 'goal');
   }
 
   const supplied = messageSuppliesSectionContent(text)
@@ -1566,8 +1531,10 @@ export function runNewQuestDraftTurn({
       )
     : {};
   if (Object.keys(supplied).length > 0) {
+    const modelReply = conversationalModelReply(model, text);
+    const ask = replyWithSectionApprovalAsk(null, target.step, supplied);
     return stay(
-      replyWithSectionApprovalAsk(null, target.step, supplied),
+      modelReply ? `${modelReply}\n\nNot saved yet.\n${ask}` : ask,
       target.step,
       { step: target.step, patch: supplied },
     );
@@ -1586,11 +1553,9 @@ export function runNewQuestDraftTurn({
     );
   }
 
-  const modelReply = model?.reply?.trim() ?? '';
-  if (modelReply && modelReply !== text) {
-    return stay(modelReply, target.step);
-  }
-  return stay(questSectionCoachReply(target.step), target.step);
+  const modelReply = conversationalModelReply(model, text);
+  if (modelReply) return stay(modelReply, target.step);
+  return stay(QUEST_HELPER_OFFLINE_REPLY, target.step);
 }
 
 export type CreateDraftTurnSnapshot = {

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { limitQuestPatchToStep, resolveQuestDraftTarget } from '../guided-step';
+import {
+  limitQuestPatchToStep,
+  questExistingTurnMayPersist,
+  resolveQuestDraftTarget,
+} from '../guided-step';
 
 describe('limitQuestPatchToStep', () => {
   it('keeps the goal and drops every other section', () => {
@@ -28,6 +32,36 @@ describe('limitQuestPatchToStep', () => {
         'scope',
       ),
     ).toEqual({ scopeIn: ['Editor'] });
+  });
+});
+
+describe('questExistingTurnMayPersist', () => {
+  it('saves an explicit edit and leaves questions in the chat', () => {
+    expect(
+      questExistingTurnMayPersist(
+        'Change the goal to "Verify the create draft shows the goal"',
+      ),
+    ).toBe(true);
+    expect(
+      questExistingTurnMayPersist('Please set the scope to sandbox checklist'),
+    ).toBe(true);
+    expect(
+      questExistingTurnMayPersist('do you think that is a good goal?'),
+    ).toBe(false);
+    expect(questExistingTurnMayPersist('how should we scope this?')).toBe(
+      false,
+    );
+    expect(questExistingTurnMayPersist('improve the goal')).toBe(false);
+    expect(
+      questExistingTurnMayPersist('We update members on progress every week'),
+    ).toBe(false);
+    expect(questExistingTurnMayPersist('Add lead scoring to the CRM')).toBe(
+      false,
+    );
+    expect(questExistingTurnMayPersist('Update the members')).toBe(false);
+    expect(
+      questExistingTurnMayPersist('Set the scope: sandbox checklist'),
+    ).toBe(true);
   });
 });
 

@@ -12,6 +12,7 @@ import {
   formatPendingQuestPatch,
   isQuestSectionApproval,
   isQuestSectionCoachingOpener,
+  QUEST_HELPER_OFFLINE_REPLY,
   questDraftTurnUsesModel,
   replyWithSectionApprovalAsk,
   runNewQuestDraftTurn,
@@ -685,25 +686,46 @@ describe('new quest helper transcript', () => {
   }
 
   it('follows the failed /quests/new transcript without storing the instruction or the question', () => {
-    expect(questDraftTurnUsesModel('goal is to test quest')).toBe(false);
+    expect(questDraftTurnUsesModel('goal is to test quest')).toBe(true);
     expect(
       questDraftTurnUsesModel('Put in goal "Testing out the quest feature"'),
     ).toBe(false);
     expect(
       questDraftTurnUsesModel('do you think that is well defined goal?'),
-    ).toBe(false);
+    ).toBe(true);
     expect(questDraftTurnUsesModel('yes')).toBe(false);
 
-    const opening = send('goal is to test quest', {
+    const offlineOpening = send('goal is to test quest', {
       draft: emptyDraft,
       currentStep: 'goal',
       pending: null,
     });
+    expect(offlineOpening.wrote).toBe(false);
+    expect(offlineOpening.draft.goal).toBe('');
+    expect(offlineOpening.pending).toBeNull();
+    expect(offlineOpening.reply).toBe(QUEST_HELPER_OFFLINE_REPLY);
+
+    const opening = send(
+      'goal is to test quest',
+      {
+        draft: emptyDraft,
+        currentStep: 'goal',
+        pending: null,
+      },
+      {
+        reply:
+          'That names an activity. Who is this for, and what should be true when the test passes?',
+        patch: {
+          goal: 'goal is to test quest',
+          rewards: [{ amount: '10', token: 'USDC' }],
+        },
+      },
+    );
     expect(opening.wrote).toBe(false);
     expect(opening.draft.goal).toBe('');
-    expect(opening.reply).toMatch(/activity/i);
-    expect(opening.reply).toMatch(/test outcome or success/i);
-    expect(opening.reply).toMatch(/what behavior do you want to verify/i);
+    expect(opening.draft.rewards).toEqual([]);
+    expect(opening.pending).toBeNull();
+    expect(opening.reply).toMatch(/who is this for/i);
     expect(opening.reply).not.toMatch(/Do you want that to be in the Goal/i);
 
     const commanded = send(
@@ -769,12 +791,43 @@ describe('new quest helper transcript', () => {
     expect(coaching.draft.scopeOut).toEqual([]);
     expect(coaching.pending).toBeNull();
     expect(coaching.focusStep).toBe('scope');
-    expect(coaching.reply).toMatch(/activity/i);
-    expect(coaching.reply).toMatch(/what behavior do you want to verify/i);
+    expect(coaching.reply).toBe(QUEST_HELPER_OFFLINE_REPLY);
     expect(coaching.reply).not.toMatch(/Do you want that to be in the Scope/i);
     expect(coaching.reply).not.toContain(
       'do you think that is well defined goal?',
     );
+
+    const assessed = send(
+      'do you think that is well defined goal?',
+      {
+        draft: commanded.draft,
+        currentStep: 'scope',
+        pending: {
+          step: 'scope',
+          patch: { scopeIn: ['a stale scope proposal'] },
+        },
+      },
+      {
+        reply:
+          'The accepted goal names the feature, but not who it is for or what done looks like.',
+        patch: {
+          scopeIn: ['do you think that is well defined goal?'],
+          goal: 'do you think that is well defined goal?',
+        },
+      },
+      [
+        {
+          role: 'user',
+          text: 'Put in goal "Testing out the quest feature"',
+        },
+      ],
+    );
+    expect(assessed.wrote).toBe(false);
+    expect(assessed.pending).toBeNull();
+    expect(assessed.draft.goal).toBe('Testing out the quest feature');
+    expect(assessed.draft.scopeIn).toEqual([]);
+    expect(assessed.focusStep).toBe('scope');
+    expect(assessed.reply).toMatch(/who it is for/i);
 
     const yesAfterQuestion = send('yes', {
       draft: coaching.draft,
@@ -1008,7 +1061,30 @@ describe('new quest helper transcript', () => {
     expect(coached.focusStep).toBe('scope');
     expect(coached.draft.scopeIn).toEqual([]);
     expect(coached.draft.goal).toMatch(/Match every new joiner/);
+    expect(coached.reply).toBe(QUEST_HELPER_OFFLINE_REPLY);
     expect(coached.reply).not.toMatch(/Do you want that to be in the Scope/i);
+
+    const guided = send(
+      "Now let's define the scope",
+      {
+        draft: {
+          ...emptyDraft,
+          goal: 'Match every new joiner to 3 spaces in their first day.',
+        },
+        currentStep: 'goal',
+        pending: null,
+      },
+      {
+        reply:
+          'Scope is the boundary. What is the one thing this quest must ship?',
+        patch: { scopeIn: ['invented sandbox work'] },
+      },
+    );
+    expect(guided.wrote).toBe(false);
+    expect(guided.pending).toBeNull();
+    expect(guided.focusStep).toBe('scope');
+    expect(guided.draft.scopeIn).toEqual([]);
+    expect(guided.reply).toMatch(/one thing this quest must ship/i);
   });
 
   it('extracts a quoted command in the local parser and drops questions', () => {
@@ -1096,10 +1172,36 @@ describe('quest helper command and rewrite boundaries', () => {
 
   it('asks the model to improve a named section and keeps the accepted goal until yes', () => {
     expect(questDraftTurnUsesModel('improve the goal')).toBe(true);
-    expect(questDraftTurnUsesModel('goal is to test quest')).toBe(false);
+    expect(questDraftTurnUsesModel('goal is to test quest')).toBe(true);
     expect(questDraftTurnUsesModel('improve onboarding for new members')).toBe(
-      false,
+      true,
     );
+
+    const idea = send(
+      'improve onboarding for new members',
+      {
+        draft: {
+          ...emptyDraft,
+          goal: savedGoal,
+          leadName: 'Ada Lovelace',
+        },
+        currentStep: 'goal',
+        pending: null,
+      },
+      {
+        reply: 'Onboarding is the activity. Who is it for, and what changes?',
+        patch: {
+          leadName: 'the CRM',
+          goal: 'improve onboarding for new members',
+        },
+      },
+    );
+    expect(idea.wrote).toBe(false);
+    expect(idea.draft.goal).toBe(savedGoal);
+    expect(idea.draft.leadName).toBe('Ada Lovelace');
+    expect(idea.pending).toBeNull();
+    expect(idea.focusStep).toBe('goal');
+    expect(idea.reply).toMatch(/who is it for/i);
 
     const offline = send('improve the goal', {
       draft: { ...emptyDraft, goal: savedGoal, scopeIn: ['saved scope'] },
@@ -1357,5 +1459,131 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(result?.draft.milestones).toEqual([manualMilestone]);
     expect(result?.draft.leadName).toBe('Ada Lovelace');
     expect(result?.pending).toBeNull();
+  });
+
+  it('follows a vague goal through assessment, confirmation, rejection, and an offline model', async () => {
+    const calls: string[] = [];
+    const state: CreateDraftTurnSnapshot = {
+      draft: { ...emptyDraft },
+      pending: null,
+      currentStep: 'goal',
+    };
+    const settle = (message: string, model: QuestDraftModelTurn | null) =>
+      settleCreateDraftTurn({
+        message,
+        history: [
+          {
+            role: 'user',
+            text: 'Put in goal "Testing out the quest feature"',
+          },
+        ],
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: [],
+        readState: () => state,
+        isCurrent: () => true,
+        loadModel: async () => {
+          calls.push(message);
+          return model;
+        },
+      });
+
+    const opening = await settle('goal is to test quest', {
+      reply:
+        'That is an activity. Who should be able to tell the quest worked?',
+      patch: {
+        goal: 'goal is to test quest',
+        rewards: [{ amount: '2500', token: 'USDC' }],
+      },
+    });
+    expect(calls).toEqual(['goal is to test quest']);
+    expect(opening?.wrote).toBe(false);
+    expect(opening?.draft.goal).toBe('');
+    expect(opening?.draft.rewards).toEqual([]);
+    expect(opening?.pending).toBeNull();
+    expect(opening?.reply).toMatch(/who should be able to tell/i);
+
+    const concrete =
+      'Members can tell a new quest draft kept the goal they confirmed.';
+    const proposed = await settle(concrete, {
+      reply: 'That names a check a reviewer can see.',
+      patch: { goal: 'Invented: 80% of members finish in 2 days' },
+    });
+    expect(proposed?.wrote).toBe(false);
+    expect(proposed?.pending?.patch.goal).toBe(concrete);
+    expect(proposed?.reply).toMatch(/reviewer can see/);
+    expect(proposed?.reply).toMatch(/Not saved yet/);
+    expect(proposed?.draft.goal).toBe('');
+
+    state.pending = proposed?.pending ?? null;
+    const accepted = await settle('yes', null);
+    expect(calls).not.toContain('yes');
+    expect(accepted?.wrote).toBe(true);
+    expect(accepted?.draft.goal).toBe(concrete);
+    state.draft = accepted?.draft ?? state.draft;
+    state.pending = null;
+    state.currentStep = accepted?.focusStep ?? 'goal';
+
+    const assessment = await settle('do you think that is well defined goal?', {
+      reply:
+        'It says who can tell and what they look at. It does not name a number.',
+      patch: {
+        goal: 'do you think that is well defined goal?',
+        scopeIn: ['nope'],
+      },
+    });
+    expect(assessment?.wrote).toBe(false);
+    expect(assessment?.pending).toBeNull();
+    expect(assessment?.draft.goal).toBe(concrete);
+    expect(assessment?.draft.scopeIn).toEqual([]);
+    expect(assessment?.reply).toMatch(/does not name a number/);
+
+    const refine = await settle('rewrite the goal', {
+      reply: 'A tighter line, still your facts.',
+      patch: {
+        goal: 'A member can tell the confirmed goal stayed on the draft.',
+        scopeIn: ['invented'],
+      },
+    });
+    expect(refine?.wrote).toBe(false);
+    expect(refine?.draft.goal).toBe(concrete);
+    expect(refine?.pending?.step).toBe('goal');
+    expect(refine?.pending?.patch.scopeIn).toBeUndefined();
+    expect(refine?.pending?.patch.goal).toMatch(/confirmed goal stayed/);
+
+    state.pending = refine?.pending ?? null;
+    const rejected = await settle('no', null);
+    expect(calls).not.toContain('no');
+    expect(rejected?.pending).toBeNull();
+    expect(rejected?.draft.goal).toBe(concrete);
+    state.pending = null;
+
+    const cross = await settle('what reward should we pay?', {
+      reply: 'Rewards are a later section. Nothing here names an amount.',
+      patch: {
+        rewards: [{ amount: '2500', token: 'USDC' }],
+        scopeIn: ['x'],
+      },
+    });
+    expect(cross?.wrote).toBe(false);
+    expect(cross?.pending).toBeNull();
+    expect(cross?.draft.rewards).toEqual([]);
+    expect(cross?.draft.goal).toBe(concrete);
+    expect(cross?.reply).toMatch(/nothing here names an amount/i);
+
+    const failed = await settleCreateDraftTurn({
+      message: 'how should we scope this?',
+      history: [],
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      readState: () => state,
+      isCurrent: () => true,
+      loadModel: async () => {
+        throw new Error('offline');
+      },
+    });
+    expect(failed?.reply).toBe(QUEST_HELPER_OFFLINE_REPLY);
+    expect(failed?.wrote).toBe(false);
+    expect(failed?.pending).toBeNull();
+    expect(failed?.draft.goal).toBe(concrete);
   });
 });

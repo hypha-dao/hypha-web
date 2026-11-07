@@ -239,6 +239,23 @@ const QUEST_STEP_PATCH_KEYS: Record<QuestStewardStep, readonly string[]> = {
 };
 
 /**
+ * An existing quest is saved only for an explicit edit: a command verb, a
+ * section, and the text to store (to, a colon, or a quote). A question, a
+ * request to improve, or a sentence that merely starts with "add" stays in
+ * the chat, the same way a Context section agent answers without calling
+ * save_section_draft.
+ */
+const QUEST_EDIT_QUESTION =
+  /^(?:do you|does |is |are |can you|could you|would you|what |how |why |should )/i;
+
+export function questExistingTurnMayPersist(message: string): boolean {
+  const text = message.trim();
+  if (!text || text.endsWith('?')) return false;
+  if (QUEST_EDIT_QUESTION.test(text)) return false;
+  return COMMANDED_SECTION.test(text);
+}
+
+/**
  * Keep only the fields for the section the Quest Helper is coaching.
  * A goal answer must not also write scope, milestones, or rewards.
  */

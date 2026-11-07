@@ -89,7 +89,10 @@ import {
   healthBadgeMeta,
 } from './space-quests-section';
 import type { SpaceQuestDetailTab } from '../space-quest-tabs';
-import type { QuestDraftPatchInput } from '../utils/quest-draft-assistant';
+import {
+  QUEST_HELPER_OFFLINE_REPLY,
+  type QuestDraftPatchInput,
+} from '../utils/quest-draft-assistant';
 
 type QuestPatch = z.infer<typeof schemaPatchSpaceQuest>;
 
@@ -1498,7 +1501,7 @@ export function SpaceQuestDetail({
         data.reply?.trim() ||
         (saved
           ? 'Updated the quest sections on screen.'
-          : 'Let me know which section of this quest you want to refine.');
+          : QUEST_HELPER_OFFLINE_REPLY);
       setDetailChatMessages((prev) => [
         ...prev,
         {
