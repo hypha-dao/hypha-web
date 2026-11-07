@@ -606,6 +606,7 @@
     "delegatedVotingMemberLabel": "Делегиран член за гласање",
     "Treasury": "Трезор",
     "Agreements": "Договори",
+    "quests": "Мисии",
     "Spaces": "Простори",
     "loadMore": "Вчитај повеќе",
     "noMore": "Нема повеќе",
@@ -770,6 +771,8 @@
       "proposalsBody": "Разговори за предлози за кои можеш да гласаш",
       "signalsTitle": "Сигнали",
       "signalsBody": "Потреби, ресурси, можности, ризици, тензии, увиди, акции и влијание",
+      "questsTitle": "Мисии",
+      "questsBody": "Канали за мисии што се отвораат кога ќе помине предлог за мисија",
       "contextTitle": "Контекст",
       "contextBody": "Разговори за делови од Контекстот на твоите простори",
       "ecosystemTitle": "Екосистеми",
@@ -782,6 +785,7 @@
       "tagSpacePublic": "Јавен канал на просторот",
       "tagProposal": "Предлог",
       "tagSignal": "Сигнали на просторот",
+      "tagQuest": "Мисија",
       "tagContext": "Контекст на просторот",
       "tagEcosystem": "Канал на екосистемот",
       "tagNetwork": "Канал на мрежата",
@@ -2636,7 +2640,8 @@
       "addEnergyMember": "Додај енергетски член",
       "changeEnergyOptimization": "Промени енергетска оптимизација",
       "whitelistEnergySettlement": "Whitelist на енергетско порамнување",
-      "spaceContext": "Контекст на просторот"
+      "spaceContext": "Контекст на просторот",
+      "quest": "Мисија"
     },
     "documentBadges": {
       "invite": "Покана",
@@ -3573,7 +3578,8 @@
       "toVote": "{duration} за гласање",
       "youVoted": "Гласаше {vote}",
       "voteValueYes": "за",
-      "voteValueNo": "против"
+      "voteValueNo": "против",
+      "questActivationNote": "Со усвојување се активира оваа мисија."
     },
     "withdrawResubmit": {
       "title": "Да го повлечеш твојот предлог или да го уредиш и поднесеш повторно?",
@@ -3861,6 +3867,7 @@
     "tabChatProposal": "Предлог",
     "tabChatContext": "Контекст",
     "tabChatSignal": "Сигнал",
+    "tabChatQuest": "Мисија",
     "tabChatEcosystem": "Канал на екосистемот",
     "tabChatNetwork": "Канал на мрежата",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# непрочитано спомнување} other {# непрочитани спомнувања}}",
@@ -5736,6 +5743,22 @@
       "failed": "Делот не може да се предложи. Обидете се повторно.",
       "restoreLabel": "Отстранети делови",
       "restore": "Предложи враќање"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Мисии",
+    "subtitle": "Фокусирана, временски ограничена работа со јасна цел, членови и пресвртници",
+    "newQuest": "НОВА МИСИЈА",
+    "searchPlaceholder": "Пребарај мисии",
+    "filters": {
+      "active": "Активни",
+      "proposed": "Предложени",
+      "paused": "Паузирани",
+      "completed": "Завршени"
+    },
+    "error": {
+      "load": "Мисиите не можеа да се вчитаат.",
+      "retry": "Обиди се повторно"
     }
   }
 }

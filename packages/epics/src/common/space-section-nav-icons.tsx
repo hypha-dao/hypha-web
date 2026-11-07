@@ -4,6 +4,7 @@ import type { ComponentType } from 'react';
 import {
   BookOpen,
   CalendarDays,
+  Flag,
   Coins,
   FileCheck2,
   HandCoins,
@@ -45,6 +46,7 @@ export const SPACE_SECTION_NAV_ICONS: Record<
 > = {
   overview: House,
   agreements: FileCheck2,
+  quests: Flag,
   members: UsersRound,
   treasury: Coins,
   calendar: CalendarDays,

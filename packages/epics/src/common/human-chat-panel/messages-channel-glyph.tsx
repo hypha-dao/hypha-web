@@ -3,6 +3,7 @@ import {
   BookOpen,
   Circle,
   FileText,
+  Flag,
   Globe,
   Globe2,
   Radio,
@@ -27,6 +28,7 @@ export const MESSAGES_CHANNEL_GLYPH: Record<
   'space-public': Globe,
   ecosystem: Target,
   signal: Radio,
+  quest: Flag,
   proposal: FileText,
   context: BookOpen,
 };

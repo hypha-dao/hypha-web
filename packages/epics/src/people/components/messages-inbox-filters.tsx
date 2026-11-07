@@ -5,6 +5,7 @@ import {
   BookOpen,
   Circle,
   FileText,
+  Flag,
   Globe2,
   LayoutGrid,
   MessageSquare,
@@ -23,6 +24,7 @@ const NESTED = new Set<InboxFilter>([
   'rooms',
   'proposals',
   'signals',
+  'quests',
   'context',
 ]);
 
@@ -34,6 +36,7 @@ const FILTER_ICONS: Record<InboxFilter, ElementType> = {
   rooms: Circle,
   proposals: FileText,
   signals: Radio,
+  quests: Flag,
   context: BookOpen,
   ecosystem: Target,
   network: Globe2,

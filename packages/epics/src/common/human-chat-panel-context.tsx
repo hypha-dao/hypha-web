@@ -80,6 +80,7 @@ export type CoherenceOpenedChannel =
   | 'ecosystem'
   | 'network'
   | 'signal'
+  | 'quest'
   | 'proposal'
   | 'context';
 
@@ -95,6 +96,34 @@ export type OpenCoherenceChatOptions = {
 export type SpaceContextPanelSection = {
   spaceSlug: string;
   sectionKey: SpaceContextSectionKey;
+};
+
+export type SpaceQuestDraftChatMessage = {
+  id: string;
+  role: 'user' | 'member';
+  text: string;
+  timestamp: Date;
+  senderName?: string;
+  senderMatrixId?: string;
+  avatarUrl?: string;
+  agentSpecialistId?: string;
+};
+
+/** Quest draft chat shown in the right panel while creating a quest. */
+export type SpaceQuestDraftPanelSession = {
+  spaceSlug: string;
+  questTitle: string;
+  messages: SpaceQuestDraftChatMessage[];
+  input: string;
+  onInputChange: (next: string) => void;
+  onSend: () => void;
+  onQuickPrompt?: (prompt: string) => void;
+  isAgentTyping?: boolean;
+  /**
+   * New-quest chat is a 1:1 with Quest Helper.
+   * Detail refine leaves this unset and stays the AI Agents room.
+   */
+  coach?: 'quest-helper';
 };
 
 export type HumanChatPanelContextValue = {
@@ -143,6 +172,8 @@ export type HumanChatPanelContextValue = {
   /** Opens the right panel on a Space Context section (detail + discussion). */
   openSpaceContextSection: (section: SpaceContextPanelSection) => void;
   closeSpaceContextSection: () => void;
+  spaceQuestDraft: SpaceQuestDraftPanelSession | null;
+  setSpaceQuestDraft: (session: SpaceQuestDraftPanelSession | null) => void;
 };
 
 const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
@@ -171,6 +202,8 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   spaceContextSection: null,
   openSpaceContextSection: () => {},
   closeSpaceContextSection: () => {},
+  spaceQuestDraft: null,
+  setSpaceQuestDraft: () => {},
 });
 
 /**
@@ -212,6 +245,8 @@ export function HumanChatPanelProvider({
   const [panelAvailable, setPanelAvailable] = useState(false);
   const [spaceContextSection, setSpaceContextSection] =
     useState<SpaceContextPanelSection | null>(null);
+  const [spaceQuestDraft, setSpaceQuestDraft] =
+    useState<SpaceQuestDraftPanelSession | null>(null);
 
   useEffect(() => {
     if (!open) setSpaceContextSection(null);
@@ -349,6 +384,8 @@ export function HumanChatPanelProvider({
         spaceContextSection,
         openSpaceContextSection,
         closeSpaceContextSection,
+        spaceQuestDraft,
+        setSpaceQuestDraft,
       }}
     >
       {children}

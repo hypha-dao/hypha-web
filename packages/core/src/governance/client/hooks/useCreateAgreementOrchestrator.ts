@@ -315,6 +315,7 @@ export const useCreateAgreementOrchestrator = ({
   return {
     reset,
     createAgreement,
+    updateAgreementBySlug: web2.updateAgreementBySlug,
     agreement: {
       ...web2.createdAgreement,
       ...web3.createdAgreement,
