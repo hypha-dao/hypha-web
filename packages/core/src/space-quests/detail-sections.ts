@@ -2,9 +2,44 @@ import type { QuestMilestoneStatus, QuestStatus } from './constants';
 import { canMemberEditQuest } from './markdown';
 import type { QuestRecord } from './types';
 
+/**
+ * Drop `<...>` spans in one forward pass. Equivalent to replacing
+ * `/<[^>]*>/g`, which is quadratic on a long run of `<`. This is a presence
+ * scan, not an HTML sanitizer: callers still render the original markup.
+ */
+function withoutAngleTagSpans(value: string): string {
+  let out = '';
+  let index = 0;
+  while (index < value.length) {
+    const open = value.indexOf('<', index);
+    if (open < 0) {
+      out += value.slice(index);
+      break;
+    }
+    out += value.slice(index, open);
+    const close = value.indexOf('>', open + 1);
+    if (close < 0) {
+      out += value.slice(open);
+      break;
+    }
+    out += ' ';
+    index = close + 1;
+  }
+  return out;
+}
+
+/**
+ * Whether tag-stripped rich text still has characters. Empty editor shells
+ * (`<p></p>`, `<p><br></p>`) do not. The result is not safe to inject as HTML.
+ */
+export function questHtmlHasVisibleText(
+  value: string | null | undefined,
+): boolean {
+  return withoutAngleTagSpans(value ?? '').trim().length > 0;
+}
+
 function hasText(value: string | null | undefined): boolean {
-  const plain = (value ?? '')
-    .replace(/<[^>]*>/g, ' ')
+  const plain = withoutAngleTagSpans(value ?? '')
     .replace(/&nbsp;|&#160;/gi, ' ')
     .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]*)]\([^)]*\)/g, ' $1 ')

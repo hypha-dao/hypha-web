@@ -5,6 +5,7 @@ import {
   buildMilestoneStatusPatch,
   canChangeMilestoneStatus,
   milestoneEditorChrome,
+  questHtmlHasVisibleText,
   questOverviewVisibility,
 } from '../detail-sections';
 import { NEW_QUEST_HEALTH_RECORD, questHealthDisplay } from '../health-display';
@@ -186,6 +187,67 @@ describe('questOverviewVisibility', () => {
         deliverables: [{ name: 'Notes' }],
       }).showDeliverables,
     ).toBe(true);
+  });
+
+  it('hides empty rich text and keeps malformed or real content', () => {
+    expect(questHtmlHasVisibleText(null)).toBe(false);
+    expect(questHtmlHasVisibleText(undefined)).toBe(false);
+    expect(questHtmlHasVisibleText('')).toBe(false);
+    expect(questHtmlHasVisibleText('   \n\t')).toBe(false);
+    expect(questHtmlHasVisibleText('<p></p>')).toBe(false);
+    expect(questHtmlHasVisibleText('<p><br></p>')).toBe(false);
+    expect(questHtmlHasVisibleText('<p><br/></p>')).toBe(false);
+    expect(questHtmlHasVisibleText('<>')).toBe(false);
+    expect(questHtmlHasVisibleText('<p>Ship the checklist</p>')).toBe(true);
+    expect(questHtmlHasVisibleText('<p>hello<br>there</p>')).toBe(true);
+    expect(questHtmlHasVisibleText('a < b')).toBe(true);
+    expect(questHtmlHasVisibleText('<p>text')).toBe(true);
+    expect(questHtmlHasVisibleText('<scr<script>ipt>alert(1)')).toBe(true);
+    expect(questHtmlHasVisibleText('<p>&nbsp;</p>')).toBe(true);
+    expect(
+      questHtmlHasVisibleText('![diagram](https://example.com/a.png)'),
+    ).toBe(true);
+
+    expect(
+      questOverviewVisibility({
+        ...empty,
+        goal: '<p></p>',
+        scopeInMarkdown: '<p><br></p>',
+        scopeOutMarkdown: '<p>&nbsp;</p>',
+        successCriteria: '<p>60% of new members join</p>',
+      }),
+    ).toMatchObject({
+      showGoal: false,
+      showScopeIn: false,
+      showScopeOut: false,
+      showSuccess: true,
+      showScopeCard: true,
+    });
+    expect(
+      questOverviewVisibility({
+        ...empty,
+        goal: '[the checklist](https://example.com/checks)',
+        successCriteria: 'https://example.com/result',
+      }),
+    ).toMatchObject({ showGoal: true, showSuccess: true });
+    expect(
+      questOverviewVisibility({
+        ...empty,
+        goal: '![diagram](https://example.com/a.png)',
+      }).showGoal,
+    ).toBe(false);
+
+    const hostile = '<'.repeat(100_000);
+    const started = Date.now();
+    expect(questHtmlHasVisibleText(hostile)).toBe(true);
+    expect(
+      questOverviewVisibility({
+        ...empty,
+        goal: hostile,
+        successCriteria: `<p>${'<'.repeat(20_000)}</p><p>kept</p>`,
+      }),
+    ).toMatchObject({ showGoal: true, showSuccess: true });
+    expect(Date.now() - started).toBeLessThan(200);
   });
 });
 

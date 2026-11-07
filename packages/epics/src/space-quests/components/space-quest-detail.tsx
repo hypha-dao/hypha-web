@@ -10,6 +10,7 @@ import {
   formatQuestCalendarDate,
   isViewerQuestLead,
   questHealthDisplay,
+  questHtmlHasVisibleText,
   questOverviewVisibility,
   bulletsToMarkdownList,
   useMe,
@@ -636,7 +637,7 @@ function OverviewTab({
                         )}
                       </button>
                       {expanded &&
-                      milestone.description.replace(/<[^>]*>/g, '').trim() ? (
+                      questHtmlHasVisibleText(milestone.description) ? (
                         <div className="mt-2 pl-10">
                           <QuestRichText
                             markdown={milestone.description}
