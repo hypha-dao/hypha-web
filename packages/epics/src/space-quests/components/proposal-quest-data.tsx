@@ -1,43 +1,16 @@
 'use client';
 
 import {
-  formatQuestCalendarDate,
   parseQuestProposalFromDescription,
-  slugifyQuestName,
-  splitMarkdownLinesToBullets,
-  withoutPlaceholderLeadDuplicates,
-  type EmbeddedQuestProposalPayload,
+  questHtmlHasVisibleText,
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
-import { ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useSpaceQuests } from '../hooks/use-space-quests';
-import { QuestRewardTokenCard } from './quest-reward-tokens';
-
-const SECTION_LABEL_CLASS =
-  'text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-11';
-
-function buildFallbackPayloadFromTitleAndText(
-  title: string | undefined,
-  content: string | undefined,
-): EmbeddedQuestProposalPayload {
-  const name = title?.trim() || 'Quest';
-  return {
-    questSlug: slugifyQuestName(name),
-    name,
-    goal: content?.trim() ?? '',
-    scopeIn: [],
-    scopeOut: [],
-    successCriteria: '',
-    rewards: [],
-    targetDate: null,
-    leadName: '',
-    milestones: [],
-    members: [],
-  };
-}
+import { QuestSectionMarkdown } from './quest-section-markdown';
 
 export function ProposalQuestOverviewLink({
   spaceSlug,
@@ -101,14 +74,17 @@ export function ProposalQuestOverviewLink({
 }
 
 /**
- * Structured Quest Proposal content (Figma node 62:2 — 06-quest-proposal-on-voting.png):
- * GOAL -> SCOPE -> SUCCESS -> QUEST REWARD -> MILESTONES -> MEMBERS (expandable).
- * Hard Rule #5: No Why propose; no Proposal details footer; structured body is full content.
+ * Quest body inside the shared proposal panel (`proposal-detail`).
+ * Other proposals show one prose description there. The stored quest
+ * description still holds the full payload for voting and sync; this
+ * view shows only the goal, using the same safe markdown renderer as
+ * the quest page. Scope, success, milestones, members, and rewards
+ * stay on that page, behind the overview link.
  */
 export function ProposalQuestData({
-  title,
   content,
 }: {
+  /** Proposal title. The panel header already shows it. */
   title?: string;
   content?: string;
 }) {
@@ -116,194 +92,18 @@ export function ProposalQuestData({
     () => parseQuestProposalFromDescription(content),
     [content],
   );
-
-  // Voters see the submitted document only, never the live quest record.
-  const payload = useMemo(
-    (): EmbeddedQuestProposalPayload =>
-      parsed ?? buildFallbackPayloadFromTitleAndText(title, content),
-    [content, parsed, title],
-  );
-
-  const locale = useLocale();
-  const [expandedMemberIdx, setExpandedMemberIdx] = useState<number | null>(0);
-  const successLines = splitMarkdownLinesToBullets(payload.successCriteria);
-  const members = useMemo(
-    () => withoutPlaceholderLeadDuplicates(payload.members),
-    [payload.members],
-  );
-  const showGoal = payload.goal.trim().length > 0;
-  const showScope =
-    payload.scopeIn.some((item) => item.trim().length > 0) ||
-    payload.scopeOut.some((item) => item.trim().length > 0);
-  const showSuccess =
-    successLines.some((line) => line.trim().length > 0) ||
-    payload.successCriteria.trim().length > 0;
-  const showRewards = payload.rewards.length > 0;
-  const showMilestones = payload.milestones.length > 0;
-  const showMembers = members.length > 0;
+  const goal = parsed?.goal ?? '';
+  if (!questHtmlHasVisibleText(goal)) return null;
 
   return (
-    <div
-      className="flex flex-col gap-3"
+    <section
+      className="flex min-w-0 flex-col gap-1"
       data-testid="quest-proposal-structured-body"
     >
-      {showGoal ? (
-        <section className="space-y-1.5 border border-border bg-background-2 p-3">
-          <p className={SECTION_LABEL_CLASS}>GOAL</p>
-          <p className="text-xs leading-relaxed text-foreground">
-            {payload.goal}
-          </p>
-        </section>
-      ) : null}
-
-      {showScope ? (
-        <section className="space-y-1.5 border border-border bg-background-2 p-3">
-          <p className={SECTION_LABEL_CLASS}>SCOPE</p>
-          <div className="space-y-1 text-xs text-foreground">
-            {payload.scopeIn.map((item, idx) => (
-              <p key={`in-${idx}`}>• {item}</p>
-            ))}
-            {payload.scopeOut.length > 0 ? (
-              <div className="pt-1 text-neutral-11">
-                {payload.scopeOut.map((item, idx) => (
-                  <p key={`out-${idx}`}>• Out: {item}</p>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
-
-      {showSuccess ? (
-        <section className="space-y-1.5 border border-border bg-background-2 p-3">
-          <p className={SECTION_LABEL_CLASS}>SUCCESS</p>
-          {successLines.length > 1 ? (
-            <div className="space-y-1 text-xs text-foreground">
-              {successLines.map((line, idx) => (
-                <p key={idx}>• {line}</p>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs leading-relaxed text-foreground">
-              {payload.successCriteria}
-            </p>
-          )}
-        </section>
-      ) : null}
-
-      {showRewards ? (
-        <section className="space-y-2 border border-border bg-background-2 p-3">
-          <p className={SECTION_LABEL_CLASS}>QUEST REWARD</p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {payload.rewards.map((reward, idx) => (
-              <QuestRewardTokenCard
-                key={`${reward.token}-${idx}`}
-                reward={reward}
-                compact
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {showMilestones ? (
-        <section className="space-y-1.5 border border-border bg-background-2 p-3">
-          <p className={SECTION_LABEL_CLASS}>MILESTONES</p>
-          <div className="divide-y divide-border/70">
-            {payload.milestones.map((m, idx) => {
-              const num = String(idx + 1).padStart(2, '0');
-              return (
-                <div
-                  key={idx}
-                  className="flex items-center gap-2.5 py-2 first:pt-1 last:pb-0"
-                >
-                  <span className="text-[10px] font-medium text-neutral-11">
-                    {num}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-foreground">
-                      {m.name}
-                    </p>
-                    {m.ownerName ? (
-                      <p className="text-[10px] text-neutral-11">
-                        Owner · {m.ownerName}
-                      </p>
-                    ) : null}
-                  </div>
-                  {m.dueDate ? (
-                    <span className="shrink-0 text-[10px] text-neutral-11">
-                      {formatQuestCalendarDate(m.dueDate, locale)}
-                    </span>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
-
-      {showMembers ? (
-        <section className="space-y-1.5 border border-border bg-background-2 p-3">
-          <p className={SECTION_LABEL_CLASS}>MEMBERS</p>
-          <div className="divide-y divide-border/70 pt-1">
-            {members.map((member, idx) => {
-              const expanded = expandedMemberIdx === idx;
-              const initial = (
-                member.memberName.trim()[0] ?? 'M'
-              ).toUpperCase();
-              const count = member.responsibilities.length;
-              const roleText = [
-                member.roleLabel || (member.isLead ? 'Lead' : 'Member'),
-                `${count} ${
-                  count === 1 ? 'responsibility' : 'responsibilities'
-                }`,
-              ].join(' · ');
-
-              return (
-                <div key={idx} className="py-2 first:pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setExpandedMemberIdx(expanded ? null : idx)}
-                    className="flex w-full items-center gap-2.5 text-left"
-                  >
-                    <span className="grid size-6 shrink-0 place-items-center bg-foreground text-[10px] font-bold text-background">
-                      {initial}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-semibold text-foreground">
-                        {member.memberName}
-                      </p>
-                      <p className="text-[10px] text-neutral-11">{roleText}</p>
-                    </div>
-                    {expanded ? (
-                      <ChevronUp className="size-3.5 text-neutral-11" />
-                    ) : (
-                      <ChevronDown className="size-3.5 text-neutral-11" />
-                    )}
-                  </button>
-                  {expanded && member.responsibilities.length > 0 ? (
-                    <div className="mt-2 space-y-1 pl-8">
-                      <p className={SECTION_LABEL_CLASS}>RESPONSIBILITY</p>
-                      {member.responsibilities.map((item, rIdx) => (
-                        <p
-                          key={rIdx}
-                          className="flex gap-1.5 text-xs text-foreground"
-                        >
-                          <span className="text-neutral-11">•</span>
-                          <span>{item}</span>
-                        </p>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-          <p className="pt-1 text-[10px] text-neutral-11">
-            Expand a member to see responsibilities
-          </p>
-        </section>
-      ) : null}
-    </div>
+      <h2 className="text-1 uppercase tracking-wide text-neutral-10">Goal</h2>
+      <div className="max-h-64 min-w-0 overflow-y-auto">
+        <QuestSectionMarkdown markdown={goal} empty="" />
+      </div>
+    </section>
   );
 }
