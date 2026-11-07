@@ -2160,4 +2160,30 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(vague.reply).toMatch(/who is this for/i);
     expect(vague.reply).not.toMatch(/Do you want that to be in the Scope/i);
   });
+
+  it('strips unbacked confirm claims while an older section is still pending', () => {
+    const pending = {
+      step: 'goal' as const,
+      patch: { goal: 'A reviewer can tell the confirmed goal stayed.' },
+    };
+    const result = runNewQuestDraftTurn({
+      message: 'Add lead scoring',
+      currentStep: 'scope',
+      draft: { ...emptyDraft, goal: 'saved' },
+      pending,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      model: {
+        reply:
+          'Do you mean the Lead role? That is not saved until you confirm it.',
+        patch: { leadName: 'scoring' },
+      },
+    });
+    expect(result.wrote).toBe(false);
+    expect(result.pending).toEqual(pending);
+    expect(result.reply).toMatch(/Do you mean the Lead role/);
+    expect(result.reply).not.toMatch(/not saved until you confirm/i);
+    expect(result.reply).toMatch(/The Goal is still waiting on a yes/);
+    expect(result.reply).not.toMatch(/Nothing is waiting on a yes/);
+  });
 });

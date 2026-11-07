@@ -68,9 +68,10 @@ describe('questExistingTurnMayPersist', () => {
     const quoted = 'Set the scope to "write all onboarding docs"';
     expect(questExistingTurnMayPersist(quoted)).toBe(true);
     expect(existingQuestEditSection(quoted)).toBe('scope');
+    expect(isBulkQuestDraftRequest(quoted)).toBe(false);
     expect(resolveQuestDraftTarget(quoted, 'goal')).toEqual({
-      step: 'goal',
-      bulk: true,
+      step: 'scope',
+      bulk: false,
     });
     expect(existingQuestEditSection('improve the goal')).toBeNull();
   });
@@ -309,6 +310,13 @@ describe('resolveQuestDraftTarget', () => {
         'goal',
       ),
     ).toEqual({ step: 'goal', bulk: true });
+    const colonSeveral =
+      'Draft the scope, success criteria, and milestones. In scope: verify proposal display and milestone editing in sandbox. Out of scope: production rollout.';
+    expect(isBulkQuestDraftRequest(colonSeveral)).toBe(true);
+    expect(resolveQuestDraftTarget(colonSeveral, 'scope')).toEqual({
+      step: 'scope',
+      bulk: true,
+    });
   });
 
   it('treats one unpunctuated scope boundary as scope and keeps a multi-section command bulk', () => {

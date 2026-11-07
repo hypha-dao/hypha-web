@@ -81,6 +81,9 @@ function mentionsSeveralSections(text: string): boolean {
 
 /** "Draft everything" or "draft the scope, success criteria, and milestones". */
 export function isBulkQuestDraftRequest(text: string): boolean {
+  // Quoted values in a commanded section ("write all onboarding docs")
+  // must not trip the bulk "write all" scan.
+  if (COMMANDED_SECTION.test(text.trim())) return false;
   const lower = text.toLowerCase();
   const asksToDraft =
     /\b(draft|suggest|propose|auto[- ]?fill|fill(?:\s+in|\s+out)?|generate|write)\b/.test(
@@ -102,9 +105,13 @@ export function isBulkQuestDraftRequest(text: string): boolean {
   // "milestone editing", are not a request to draft another section.
   // A preamble that names several sections stays a bulk request.
   if (scopeBoundaryLists(text)) return false;
-  // One labeled payload is that section. Words inside the payload
-  // ("milestone editing" on an in-scope line) are not a second section.
-  if (labeledSectionStep(text)) return false;
+  // One labeled payload is that section, unless a preamble already named
+  // several sections. Words inside the payload ("milestone editing" on an
+  // in-scope line) are not a second section.
+  const labeled = labeledSectionMatch(text);
+  if (labeled && !mentionsSeveralSections(text.slice(0, labeled.index))) {
+    return false;
+  }
   return mentionsSeveralSections(lower);
 }
 
@@ -326,7 +333,9 @@ export function labeledQuestDraftSection(
   return labeledSectionStep(text);
 }
 
-function labeledSectionStep(text: string): QuestStewardStep | null {
+function labeledSectionMatch(
+  text: string,
+): { index: number; step: QuestStewardStep } | null {
   let best: { index: number; step: QuestStewardStep } | null = null;
   for (const { pattern, step } of LABELED_SECTION_PATTERNS) {
     const match = pattern.exec(text);
@@ -335,7 +344,11 @@ function labeledSectionStep(text: string): QuestStewardStep | null {
       best = { index: match.index, step };
     }
   }
-  return best?.step ?? null;
+  return best;
+}
+
+function labeledSectionStep(text: string): QuestStewardStep | null {
+  return labeledSectionMatch(text)?.step ?? null;
 }
 
 function lineHasCalendarDate(line: string): boolean {

@@ -1806,15 +1806,22 @@ export function runNewQuestDraftTurn({
   }
 
   // Chat only. Keep an unrelated proposal, and do not describe a confirm
-  // that this turn did not create.
+  // that this turn did not create. Unbacked "awaiting confirmation" claims
+  // about new words still get filtered; yes would apply the pending section.
   const modelReply =
     conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY;
   const actionable = Object.keys(pending?.patch ?? {}).length > 0;
-  return stay(
-    actionable ? modelReply : replyAfterRetiredSuggestion(modelReply, false),
-    actionable ? currentStep : target.step,
-    pending,
-  );
+  const filtered = replyAfterRetiredSuggestion(modelReply, false);
+  const reply =
+    actionable && pending && filtered !== modelReply
+      ? filtered.replace(
+          /Nothing is waiting on a yes\.\s*$/,
+          `The ${questStepSectionLabel(
+            pending.step,
+          )} is still waiting on a yes.`,
+        )
+      : filtered;
+  return stay(reply, actionable ? currentStep : target.step, pending);
 }
 
 export type CreateDraftTurnSnapshot = {
