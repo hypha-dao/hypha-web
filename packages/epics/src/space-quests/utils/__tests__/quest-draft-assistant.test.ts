@@ -1748,4 +1748,73 @@ describe('create draft turn settles against the latest snapshot', () => {
       'what reward should we pay?',
     ]);
   });
+
+  it('does not invite yes after a question retires a pending suggestion', async () => {
+    const savedGoal = 'Match every new joiner to 3 spaces in their first day.';
+    const state: CreateDraftTurnSnapshot = {
+      draft: {
+        ...emptyDraft,
+        goal: savedGoal,
+        leadName: 'Ada Lovelace',
+        scopeIn: [],
+      },
+      pending: {
+        step: 'scope',
+        patch: {
+          scopeIn: ['Ship the sandbox checklist to every new member.'],
+        },
+      },
+      currentStep: 'scope',
+    };
+    const settle = (message: string, model: QuestDraftModelTurn | null) =>
+      settleCreateDraftTurn({
+        message,
+        history: [
+          {
+            role: 'agent',
+            text: 'Not saved yet.\nIn:\n• Ship the sandbox checklist to every new member.\n\nDo you want that to be in the Scope?',
+          },
+        ],
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: [],
+        readState: () => state,
+        isCurrent: () => true,
+        loadModel: async () => model,
+      });
+
+    const question = await settle('what reward should we pay?', {
+      reply:
+        "Rewards are a later section. Nothing here names an amount. A reviewer could confirm the outcome from the member list. The two lines above are still a suggestion and aren't saved until you confirm them.",
+      patch: {
+        scopeIn: ['what reward should we pay?'],
+        rewards: [{ amount: '2500', token: 'USDC' }],
+        goal: 'replaced',
+      },
+    });
+    expect(question?.wrote).toBe(false);
+    expect(question?.pending).toBeNull();
+    expect(question?.draft.goal).toBe(savedGoal);
+    expect(question?.draft.leadName).toBe('Ada Lovelace');
+    expect(question?.draft.scopeIn).toEqual([]);
+    expect(question?.draft.rewards).toEqual([]);
+    expect(question?.reply).toMatch(/Nothing here names an amount/);
+    expect(question?.reply).toMatch(/reviewer could confirm the outcome/);
+    expect(question?.reply).toMatch(/no longer waiting on a yes/i);
+    expect(question?.reply).not.toMatch(/until you confirm/i);
+    expect(question?.reply).not.toMatch(/still a suggestion/i);
+    expect(question?.reply).not.toMatch(/Not saved yet/i);
+
+    state.pending = question?.pending ?? null;
+    const yes = await settle('yes', {
+      reply:
+        'The two lines above are still a suggestion. Say yes to save them.',
+      patch: { scopeIn: ['Ship the sandbox checklist to every new member.'] },
+    });
+    expect(yes?.wrote).toBe(false);
+    expect(yes?.pending).toBeNull();
+    expect(yes?.draft.scopeIn).toEqual([]);
+    expect(yes?.draft.goal).toBe(savedGoal);
+    expect(yes?.reply).toMatch(/Nothing is waiting on a yes/i);
+    expect(yes?.reply).not.toMatch(/still a suggestion/i);
+  });
 });

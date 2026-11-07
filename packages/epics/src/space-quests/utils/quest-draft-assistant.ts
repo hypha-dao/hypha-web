@@ -1341,6 +1341,57 @@ function conversationalModelReply(
   return reply;
 }
 
+const PRIOR_SUGGESTION_OFFER =
+  /\b(?:still (?:a |an )?suggestion|suggestion (?:above|earlier)|lines above|earlier suggestion|previous suggestion|that suggestion|those lines)\b/i;
+
+const CONFIRM_TO_SAVE =
+  /\b(?:until you (?:confirm|say yes|approve)|say yes|confirm (?:them|it|that|those)|approve (?:them|it|that|those)|if you confirm)\b/i;
+
+/** A sentence that tells the member a prior suggestion is still saved by yes. */
+function sentenceOffersRetiredConfirmation(sentence: string): boolean {
+  return (
+    PRIOR_SUGGESTION_OFFER.test(sentence) && CONFIRM_TO_SAVE.test(sentence)
+  );
+}
+
+/**
+ * A question leaves no suggestion for yes to save. Keep the answer, and drop
+ * only a claim that confirmation of the retired suggestion would still work.
+ */
+function replyAfterRetiredSuggestion(
+  reply: string,
+  hadPending: boolean,
+): string {
+  const chunks = reply
+    .split(/\n+|(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  let changed = false;
+  const kept = chunks.flatMap((part) => {
+    if (!sentenceOffersRetiredConfirmation(part)) return [part];
+    changed = true;
+    PRIOR_SUGGESTION_OFFER.lastIndex = 0;
+    const offer = PRIOR_SUGGESTION_OFFER.exec(part);
+    const index = offer?.index ?? -1;
+    if (index > 24) {
+      const prefix = part
+        .slice(0, index)
+        .replace(/[\s,;:—-]+$/g, '')
+        .trim();
+      if (prefix.length > 12 && !sentenceOffersRetiredConfirmation(prefix)) {
+        return [prefix];
+      }
+    }
+    return [];
+  });
+  if (!changed) return reply;
+  const notice = hadPending
+    ? 'The earlier suggestion is no longer waiting on a yes.'
+    : 'Nothing is waiting on a yes.';
+  if (kept.length === 0) return notice;
+  return `${kept.join('\n\n')}\n\n${notice}`;
+}
+
 function sectionLabelSource(step: QuestStewardStep): string {
   switch (step) {
     case 'goal':
@@ -1529,8 +1580,11 @@ export function runNewQuestDraftTurn({
   if (isQuestDraftQuestion(text)) {
     // A question answers in chat. It does not file the question, and it
     // disarms the previous proposal so a later bare yes cannot apply it.
+    const hadPending = Object.keys(pending?.patch ?? {}).length > 0;
+    const modelReply =
+      conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY;
     return stay(
-      conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY,
+      replyAfterRetiredSuggestion(modelReply, hadPending),
       currentStep,
     );
   }

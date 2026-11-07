@@ -47,6 +47,7 @@ import {
   useQuestSpaceMembers,
 } from '../hooks/use-space-quests';
 import {
+  isQuestDraftQuestion,
   questDraftTurnUsesModel,
   settleCreateDraftTurn,
   type PendingQuestSectionProposal,
@@ -377,6 +378,16 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             const snapshot = draftSnapshotRef.current;
             const currentStep =
               QUEST_STEWARD_STEPS[stewardStepIndexRef.current] ?? 'goal';
+            const pendingNow = pendingProposalRef.current;
+            const pendingHasPatch =
+              Object.keys(pendingNow?.patch ?? {}).length > 0;
+            const suggestionStatus = isQuestDraftQuestion(trimmed)
+              ? pendingHasPatch
+                ? 'retired'
+                : 'none'
+              : pendingHasPatch
+              ? 'awaiting'
+              : 'none';
             try {
               const token = await getAccessToken?.().catch(() => null);
               if (!token || turnGenerationRef.current !== generation) {
@@ -425,6 +436,10 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                       role: entry.role === 'user' ? 'user' : 'assistant',
                       text: entry.text,
                     })),
+                    pendingSuggestion: {
+                      status: suggestionStatus,
+                      ...(pendingNow?.step ? { step: pendingNow.step } : {}),
+                    },
                   }),
                 },
               );

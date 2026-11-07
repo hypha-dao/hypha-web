@@ -13,6 +13,9 @@ describe('quest helper prompt', () => {
   it('sends the draft, history, and message as data, and does not auto-save a question', () => {
     expect(NEW_QUEST_HELPER_RULES).toMatch(/do not invent/i);
     expect(NEW_QUEST_HELPER_RULES).toMatch(/not saved until they confirm/i);
+    expect(NEW_QUEST_HELPER_RULES).toMatch(
+      /question retires any unsaved suggestion/i,
+    );
     expect(NEW_QUEST_HELPER_RULES).toMatch(/chat answer/i);
     expect(NEW_QUEST_HELPER_RULES).not.toMatch(/do not rewrite it/i);
     expect(EXISTING_QUEST_HELPER_RULES).not.toContain('THE AI DOES IT FOR ME');
@@ -39,6 +42,22 @@ describe('quest helper prompt', () => {
     expect(prompt).toContain('BEGIN UNTRUSTED DATA (member message)');
     expect(prompt).toContain('do you think that is well defined goal?');
     expect(prompt).toContain('END UNTRUSTED DATA');
+    expect(prompt).not.toContain('Actionable suggestion:');
+
+    const retired = buildQuestHelperTurnPrompt({
+      snapshotJson: JSON.stringify({ goal: 'Keep the confirmed goal' }),
+      historyLines:
+        'Quest Helper: Not saved yet. Do you want that to be in the Scope?',
+      currentStep: 'scope',
+      message: 'what reward should we pay?',
+      suggestion: { status: 'retired', step: 'scope' },
+    });
+    expect(retired.startsWith('Actionable suggestion: none.')).toBe(true);
+    expect(retired).toContain('Yes will not save it');
+    expect(retired).toContain('Do not tell the member it is still waiting');
+    expect(retired.indexOf('Actionable suggestion:')).toBeLessThan(
+      retired.indexOf('BEGIN UNTRUSTED DATA'),
+    );
   });
 
   it('does not call the model or write a quest when the API key is missing', async () => {
