@@ -1341,6 +1341,68 @@ function conversationalModelReply(
   return reply;
 }
 
+function sectionLabelSource(step: QuestStewardStep): string {
+  switch (step) {
+    case 'goal':
+      return 'goals?';
+    case 'scope':
+      return '(?:in[-\\s])?scope';
+    case 'success':
+      return 'success(?:\\s+criteria)?';
+    case 'milestones':
+      return 'milestones?';
+    case 'members':
+      return 'members?';
+    case 'lead':
+      return 'leads?';
+    case 'targetDate':
+      return 'target\\s+dates?';
+    case 'rewards':
+      return '(?:quest\\s+)?rewards?';
+    case 'name':
+      return '(?:quest\\s+)?(?:names?|titles?)';
+  }
+}
+
+/**
+ * Guidance is not a field value. A reply still asking for a missing decision,
+ * or sending the sentence to another section, must not also become pending
+ * content. A comment with no open question leaves the member's sentence pending.
+ */
+function modelGuidanceWithholdsFiling(
+  reply: string,
+  step: QuestStewardStep,
+): boolean {
+  const label = sectionLabelSource(step);
+  const withoutFilingAsk = reply
+    .replace(
+      new RegExp(`do you want that to be in(?:\\s+the)?\\s+${label}\\??`, 'ig'),
+      ' ',
+    )
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (/\?/.test(withoutFilingAsk)) return true;
+  if (
+    new RegExp(
+      `\\b(?:not|isn'?t|is not|aren'?t|are not|rather than|instead of|outside(?:\\s+of)?)\\s+(?:(?:an?|the|this)\\s+)?(?:[\\w-]+\\s+){0,4}${label}\\b`,
+      'i',
+    ).test(withoutFilingAsk) ||
+    /\bnot\s+(?:for\s+)?(?:this|the current)\s+section\b/i.test(
+      withoutFilingAsk,
+    )
+  ) {
+    return true;
+  }
+  const otherLabels = (Object.keys(QUEST_STEP_LABEL) as QuestStewardStep[])
+    .filter((other) => other !== step)
+    .map((other) => sectionLabelSource(other))
+    .join('|');
+  return new RegExp(
+    `\\b(?:belongs in|goes in|put (?:that|this|it) in)\\s+(?:the\\s+)?(?:${otherLabels})\\b`,
+    'i',
+  ).test(withoutFilingAsk);
+}
+
 /**
  * One send on the new-quest helper. The create screen calls this after an
  * optional model turn. Only `wrote` updates the draft.
@@ -1465,6 +1527,8 @@ export function runNewQuestDraftTurn({
   }
 
   if (isQuestDraftQuestion(text)) {
+    // A question answers in chat. It does not file the question, and it
+    // disarms the previous proposal so a later bare yes cannot apply it.
     return stay(
       conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY,
       currentStep,
@@ -1532,6 +1596,10 @@ export function runNewQuestDraftTurn({
     : {};
   if (Object.keys(supplied).length > 0) {
     const modelReply = conversationalModelReply(model, text);
+    if (modelReply && modelGuidanceWithholdsFiling(modelReply, target.step)) {
+      // Keep an unrelated proposal. Do not file this sentence over it.
+      return stay(modelReply, currentStep, pending);
+    }
     const ask = replyWithSectionApprovalAsk(null, target.step, supplied);
     return stay(
       modelReply ? `${modelReply}\n\nNot saved yet.\n${ask}` : ask,

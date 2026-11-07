@@ -1586,4 +1586,166 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(failed?.pending).toBeNull();
     expect(failed?.draft.goal).toBe(concrete);
   });
+
+  it('does not file a sentence the model is still clarifying', async () => {
+    const savedGoal = 'Match every new joiner to 3 spaces in their first day.';
+    const keptScope = ['keep the checklist'];
+    const clarification =
+      'Do you mean the Lead role, or the work of adding lead scoring? What outcome should voters be able to check?';
+    const state: CreateDraftTurnSnapshot = {
+      draft: {
+        ...emptyDraft,
+        goal: savedGoal,
+        leadName: 'Ada Lovelace',
+        scopeIn: keptScope,
+      },
+      pending: null,
+      currentStep: 'scope',
+    };
+    const calls: string[] = [];
+    const settle = (message: string, model: QuestDraftModelTurn | null) =>
+      settleCreateDraftTurn({
+        message,
+        history: [],
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: [],
+        readState: () => state,
+        isCurrent: () => true,
+        loadModel: async () => {
+          calls.push(message);
+          return model;
+        },
+      });
+
+    const malicious = {
+      leadName: 'scoring',
+      scopeIn: ['Add lead scoring'],
+      goal: 'replaced',
+      rewards: [{ amount: '7', token: 'USDC' }],
+    };
+    for (const patch of [malicious, {}]) {
+      const clarified = await settle('Add lead scoring', {
+        reply: clarification,
+        patch,
+      });
+      expect(clarified?.wrote).toBe(false);
+      expect(clarified?.pending).toBeNull();
+      expect(clarified?.draft.goal).toBe(savedGoal);
+      expect(clarified?.draft.leadName).toBe('Ada Lovelace');
+      expect(clarified?.draft.scopeIn).toEqual(keptScope);
+      expect(clarified?.draft.rewards).toEqual([]);
+      expect(clarified?.reply).toBe(clarification);
+      expect(clarified?.reply).not.toMatch(/Not saved yet/i);
+      expect(clarified?.reply).not.toMatch(/Do you want that to be in/i);
+    }
+
+    const rewards = await settle('Members use rewards within 7 days', {
+      reply: 'That names a Quest Reward, not Scope.',
+      patch: {
+        scopeIn: ['Members use rewards within 7 days'],
+        rewards: [{ amount: '7', token: 'DAYS' }],
+        leadName: 'Members',
+      },
+    });
+    expect(rewards?.wrote).toBe(false);
+    expect(rewards?.pending).toBeNull();
+    expect(rewards?.draft.scopeIn).toEqual(keptScope);
+    expect(rewards?.draft.rewards).toEqual([]);
+    expect(rewards?.draft.leadName).toBe('Ada Lovelace');
+    expect(rewards?.reply).toMatch(/Quest Reward, not Scope/);
+    expect(rewards?.reply).not.toMatch(/Not saved yet/i);
+
+    const concrete = 'Ship the sandbox checklist to every new member.';
+    const proposed = await settle(concrete, {
+      reply: 'That is one deliverable voters can point at.',
+      patch: {
+        scopeIn: ['invented scope'],
+        leadName: 'checklist',
+        rewards: [{ amount: '1', token: 'USDC' }],
+      },
+    });
+    expect(proposed?.wrote).toBe(false);
+    expect(proposed?.draft.scopeIn).toEqual(keptScope);
+    expect(proposed?.draft.leadName).toBe('Ada Lovelace');
+    expect(proposed?.pending?.step).toBe('scope');
+    expect(proposed?.pending?.patch.scopeIn?.[0]).toMatch(/sandbox checklist/);
+    expect(proposed?.pending?.patch.scopeIn).not.toContain('invented scope');
+    expect(proposed?.pending?.patch.leadName).toBeUndefined();
+    expect(proposed?.pending?.patch.rewards).toBeUndefined();
+    expect(proposed?.reply).toMatch(/voters can point at/);
+    expect(proposed?.reply).toMatch(/Not saved yet/);
+
+    const waiting = {
+      step: 'goal' as const,
+      patch: { goal: 'A reviewer can tell the confirmed goal stayed.' },
+    };
+    state.pending = waiting;
+    const duringPending = await settle('Add lead scoring', {
+      reply: clarification,
+      patch: malicious,
+    });
+    expect(duringPending?.wrote).toBe(false);
+    expect(duringPending?.pending).toEqual(waiting);
+    expect(duringPending?.draft.goal).toBe(savedGoal);
+    expect(duringPending?.draft.scopeIn).toEqual(keptScope);
+    expect(duringPending?.reply).toBe(clarification);
+
+    const question = await settle('what reward should we pay?', {
+      reply: 'Rewards are a later section. Nothing here names an amount.',
+      patch: {
+        rewards: [{ amount: '2500', token: 'USDC' }],
+        scopeIn: ['what reward should we pay?'],
+        goal: 'replaced',
+      },
+    });
+    expect(question?.wrote).toBe(false);
+    expect(question?.pending).toBeNull();
+    expect(question?.pending?.patch.scopeIn).toBeUndefined();
+    expect(question?.pending?.patch.rewards).toBeUndefined();
+    expect(question?.pending?.patch.goal).toBeUndefined();
+    expect(question?.draft.goal).toBe(savedGoal);
+    expect(question?.draft.scopeIn).toEqual(keptScope);
+    expect(question?.draft.rewards).toEqual([]);
+    expect(question?.reply).toMatch(/nothing here names an amount/i);
+    expect(question?.reply).not.toMatch(/Not saved yet/i);
+
+    state.pending = question?.pending ?? null;
+    const accepted = await settle('yes', null);
+    expect(calls).not.toContain('yes');
+    expect(accepted?.wrote).toBe(false);
+    expect(accepted?.draft.goal).toBe(savedGoal);
+    expect(accepted?.draft.scopeIn).toEqual(keptScope);
+    expect(accepted?.reply).toMatch(/Nothing is waiting on a yes/i);
+
+    state.draft = accepted?.draft ?? state.draft;
+    state.pending = { step: 'scope', patch: { scopeIn: ['not this'] } };
+    state.currentStep = 'scope';
+    let quotedLoaded = false;
+    const quoted = await settleCreateDraftTurn({
+      message: 'Put in scope "Add lead scoring"',
+      history: [],
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      readState: () => state,
+      isCurrent: () => true,
+      loadModel: async () => {
+        quotedLoaded = true;
+        return { patch: { leadName: 'scoring', scopeIn: ['invented'] } };
+      },
+    });
+    expect(quotedLoaded).toBe(false);
+    expect(quoted?.wrote).toBe(true);
+    expect(quoted?.pending).toBeNull();
+    expect(quoted?.draft.scopeIn).toEqual(['Add lead scoring']);
+    expect(quoted?.draft.leadName).toBe('Ada Lovelace');
+    expect(quoted?.draft.goal).toBe(savedGoal);
+    expect(calls).toEqual([
+      'Add lead scoring',
+      'Add lead scoring',
+      'Members use rewards within 7 days',
+      concrete,
+      'Add lead scoring',
+      'what reward should we pay?',
+    ]);
+  });
 });
