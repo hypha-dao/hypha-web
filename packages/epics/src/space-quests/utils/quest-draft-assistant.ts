@@ -5,8 +5,9 @@ import {
   isBulkQuestDraftRequest,
   labeledQuestDraftSection,
   limitQuestPatchToStep,
+  questDraftCoachedStep,
   questPendingYesNotice,
-  resolveQuestDraftTarget,
+  questWordingRevisionStep,
   scopeBoundaryLists,
   splitMarkdownLinesToBullets,
   stripViewerYouMarker,
@@ -280,13 +281,18 @@ export function isQuestSectionRejection(text: string): boolean {
 export function questDraftSuggestionStatus(
   message: string,
   pending: PendingQuestSectionProposal | null,
-): { status: 'none' | 'awaiting' | 'retired'; step?: QuestStewardStep } {
+): {
+  status: 'none' | 'awaiting' | 'retired' | 'revising';
+  step?: QuestStewardStep;
+} {
   if (!pending || Object.keys(pending.patch).length === 0) {
     return { status: 'none' };
   }
   if (isQuestDraftQuestion(message)) {
     return { status: 'retired', step: pending.step };
   }
+  const revision = questWordingRevisionStep(message, pending.step);
+  if (revision) return { status: 'revising', step: revision };
   return { status: 'awaiting', step: pending.step };
 }
 
@@ -416,6 +422,8 @@ export function messageSuppliesSectionContent(message: string): boolean {
   if (isQuestSectionApproval(text)) return false;
   if (isQuestSectionCoachingOpener(text)) return false;
   if (isQuestSectionRewriteRequest(text) && text.length < 100) return false;
+  // A request to propose a revision is not the wording to save.
+  if (questWordingRevisionStep(text, null)) return false;
   return true;
 }
 
@@ -1579,7 +1587,12 @@ function memberMessageReplacesPending(
   step: QuestStewardStep,
 ): boolean {
   if (labeledQuestDraftSection(message) === step) return true;
-  return step === 'scope' && scopeBoundaryLists(message) != null;
+  if (step === 'scope' && scopeBoundaryLists(message) != null) return true;
+  return questWordingRevisionStep(message, step) === step;
+}
+
+function revisionDeclinesCurrent(message: string): boolean {
+  return /^(?:no|nope|nah)\b/i.test(message.trim());
 }
 
 function replyForPendingSuggestion(
@@ -1634,7 +1647,9 @@ export function runNewQuestDraftTurn({
   model: QuestDraftModelTurn | null;
 }): NewQuestDraftTurnResult {
   const text = message.trim();
-  const target = resolveQuestDraftTarget(text, currentStep);
+  const pendingStep =
+    pending && Object.keys(pending.patch).length > 0 ? pending.step : null;
+  const target = questDraftCoachedStep(text, currentStep, pendingStep);
   const stay = (
     reply: string,
     step: QuestStewardStep = currentStep,
@@ -1836,8 +1851,14 @@ export function runNewQuestDraftTurn({
 
   // Chat only. An older patch stays actionable. The reply always ends with
   // the app's notice for that section. The model's sentences do not decide it.
+  // A "no, make it shorter" that brought no new tool patch retires the old
+  // one, so yes cannot save the wording they just declined.
   const modelReply =
     conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY;
+  const revising = questWordingRevisionStep(text, pendingStep);
+  if (revising && pendingStep && revisionDeclinesCurrent(text)) {
+    return stay(replyAfterRetiredSuggestion(modelReply, true), revising, null);
+  }
   const actionable = Object.keys(pending?.patch ?? {}).length > 0;
   return stay(
     actionable && pending

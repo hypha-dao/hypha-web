@@ -8,6 +8,7 @@ import {
   NEW_QUEST_HELPER_RULES,
   assistSpaceQuestDraft,
   buildQuestHelperTurnPrompt,
+  questAssistCoachedTarget,
 } from '../quest-draft-assist';
 
 describe('quest helper prompt', () => {
@@ -21,6 +22,10 @@ describe('quest helper prompt', () => {
       /question retires any unsaved suggestion/i,
     );
     expect(NEW_QUEST_HELPER_RULES).toMatch(/chat answer/i);
+    expect(NEW_QUEST_HELPER_RULES).toMatch(
+      /do not tell them to use a put command/i,
+    );
+    expect(NEW_QUEST_HELPER_RULES).toMatch(/do not leave it only in prose/i);
     expect(NEW_QUEST_HELPER_RULES).not.toMatch(/do not rewrite it/i);
     expect(EXISTING_QUEST_HELPER_RULES).not.toContain('THE AI DOES IT FOR ME');
     expect(EXISTING_QUEST_HELPER_RULES).toMatch(
@@ -83,6 +88,38 @@ describe('quest helper prompt', () => {
     expect(preserved.indexOf('Actionable suggestion:')).toBeLessThan(
       preserved.indexOf('BEGIN UNTRUSTED DATA'),
     );
+
+    const revising = buildQuestHelperTurnPrompt({
+      snapshotJson: JSON.stringify({ goal: 'Keep the confirmed goal' }),
+      historyLines: 'Quest Helper: earlier goal wording',
+      currentStep: 'scope',
+      message: 'no, make it shorter still and drop the word sandbox',
+      suggestion: { status: 'revising', step: 'goal' },
+    });
+    expect(revising.startsWith('Actionable suggestion: replace it.')).toBe(
+      true,
+    );
+    expect(revising).toContain('Do not tell them to use a Put command');
+    expect(revising).not.toMatch(/suggestion is history because/i);
+    expect(
+      questAssistCoachedTarget(
+        'Please propose a shorter version of the goal for my confirmation',
+        'scope',
+      ),
+    ).toEqual({ step: 'goal', bulk: false });
+    expect(
+      questAssistCoachedTarget(
+        'no, make it shorter still and drop the word sandbox',
+        'scope',
+        { status: 'revising', step: 'goal' },
+      ),
+    ).toEqual({ step: 'goal', bulk: false });
+    expect(
+      questAssistCoachedTarget(
+        'Please propose these success criteria for my confirmation: each in-scope check is recorded with an explicit pass or fail; the lead reviews the notes.',
+        'success',
+      ),
+    ).toEqual({ step: 'success', bulk: false });
   });
 
   it('does not call the model or write a quest when the API key is missing', async () => {

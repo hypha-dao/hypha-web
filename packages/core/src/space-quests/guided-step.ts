@@ -252,6 +252,38 @@ function bulkFromDraftSignals(text: string): boolean {
   return mentionsSeveralSections(lower);
 }
 
+function hasDraftVerb(text: string): boolean {
+  return /\b(?:draft|suggest|propose|auto[- ]?fill|fill(?:\s+in|\s+out)?|generate|write)\b/i.test(
+    text,
+  );
+}
+
+/**
+ * "Please propose these success criteria …: <criteria that mention in-scope>".
+ * The colon value is that one section. A preamble that already names several
+ * sections, or a later sentence that drafts another, stays a bulk request.
+ */
+function namedProposalContentSpan(
+  text: string,
+): { start: number; end: number } | null {
+  const colon = text.indexOf(':');
+  if (colon < 0) return null;
+  const prefix = text.slice(0, colon);
+  if (!hasDraftVerb(prefix) || mentionsSeveralSections(prefix)) return null;
+  if (sectionsMentioned(prefix).length !== 1) return null;
+  const start = skipWhitespace(text, colon + 1);
+  if (start >= text.length) return null;
+  const end = unquotedCommandEnd(text, start);
+  if (!text.slice(start, end).trim()) return null;
+  return { start, end };
+}
+
+function suffixDraftsAnotherSection(suffix: string): boolean {
+  const text = suffix.trim();
+  if (!text || !hasDraftVerb(text)) return false;
+  return sectionsMentioned(text).length > 0 || mentionsSeveralSections(text);
+}
+
 /** "Draft everything" or "draft the scope, success criteria, and milestones". */
 export function isBulkQuestDraftRequest(text: string): boolean {
   const payload = commandedPayloadSpan(text);
@@ -263,7 +295,15 @@ export function isBulkQuestDraftRequest(text: string): boolean {
       isBulkQuestDraftRequest(text.slice(payload.end))
     );
   }
-  return bulkFromDraftSignals(text);
+  const proposal = namedProposalContentSpan(text);
+  if (proposal) {
+    return (
+      isBulkQuestDraftRequest(text.slice(0, proposal.start)) ||
+      isBulkQuestDraftRequest(text.slice(proposal.end)) ||
+      suffixDraftsAnotherSection(text.slice(proposal.end))
+    );
+  }
+  return bulkFromDraftSignals(text) || questRevisionNamesSeveralSections(text);
 }
 
 /** JavaScript `\s`, matched per character so a long run cannot backtrack. */
@@ -530,6 +570,52 @@ function messageTargetsMilestones(text: string): boolean {
   return datedDashLines.length >= 2;
 }
 
+function asksToReviseWording(text: string): boolean {
+  return (
+    /\b(?:rewrite|reword|revise|rephrase|shorten|tighten)\b/i.test(text) ||
+    /\bshorter\s+version\b/i.test(text) ||
+    /\bmake\s+(?:it|this|that|the\s+[a-z]+)\s+shorter\b/i.test(text) ||
+    /\b(?:drop|remove|cut)\s+the\s+word\b/i.test(text) ||
+    /\b(?:propose|suggest)\b[\s\S]{0,80}\b(?:shorter|revised|rewritten|reworded|wording|version)\b/i.test(
+      text,
+    )
+  );
+}
+
+function sectionsMentioned(text: string): QuestStewardStep[] {
+  const found: QuestStewardStep[] = [];
+  const pattern = new RegExp(`\\b(${SECTION_NAME})\\b`, 'gi');
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) !== null) {
+    const step = stepFromSectionName(match[1] ?? '');
+    if (step && !found.includes(step)) found.push(step);
+    if (match[0].length === 0) break;
+  }
+  return found;
+}
+
+/**
+ * The one section a natural revision may propose. A named section wins.
+ * "Make it shorter" continues the suggestion already waiting. Several
+ * named sections are not one revision.
+ */
+export function questWordingRevisionStep(
+  message: string,
+  pendingStep: QuestStewardStep | null,
+): QuestStewardStep | null {
+  const text = message.trim();
+  if (!text || !asksToReviseWording(text)) return null;
+  const named = sectionsMentioned(text);
+  if (named.length > 1) return null;
+  if (named.length === 1) return named[0] ?? null;
+  return pendingStep;
+}
+
+export function questRevisionNamesSeveralSections(message: string): boolean {
+  const text = message.trim();
+  return asksToReviseWording(text) && sectionsMentioned(text).length > 1;
+}
+
 /**
  * The section a new-quest message may write.
  * A named section or a labeled payload wins over the tracker, which may
@@ -542,7 +628,20 @@ export function resolveQuestDraftTarget(
 ): QuestDraftTarget {
   const text = message.trim();
   if (!text) return { step: currentStep, bulk: false };
-  if (isBulkQuestDraftRequest(text)) return { step: currentStep, bulk: true };
+  if (
+    isBulkQuestDraftRequest(text) ||
+    questRevisionNamesSeveralSections(text)
+  ) {
+    return { step: currentStep, bulk: true };
+  }
+  const proposal = namedProposalContentSpan(text);
+  if (proposal) {
+    const named = sectionsMentioned(text.slice(0, proposal.start));
+    const step = named.length === 1 ? named[0] : null;
+    if (step) return { step, bulk: false };
+  }
+  const revised = questWordingRevisionStep(text, null);
+  if (revised) return { step: revised, bulk: false };
   if (scopeBoundaryLists(text)) return { step: 'scope', bulk: false };
   const named = explicitSectionName(text);
   const namedStep = named ? stepFromSectionName(named) : null;
@@ -553,6 +652,22 @@ export function resolveQuestDraftTarget(
     return { step: 'milestones', bulk: false };
   }
   return { step: currentStep, bulk: false };
+}
+
+/**
+ * Section the model may propose on this turn. A follow-up that revises the
+ * waiting suggestion stays on that section after the tracker has moved on.
+ */
+export function questDraftCoachedStep(
+  message: string,
+  currentStep: QuestStewardStep,
+  pendingStep: QuestStewardStep | null,
+): QuestDraftTarget {
+  const target = resolveQuestDraftTarget(message, currentStep);
+  if (target.bulk) return target;
+  const revision = questWordingRevisionStep(message, pendingStep);
+  if (revision) return { step: revision, bulk: false };
+  return target;
 }
 
 const QUEST_STEP_PATCH_KEYS: Record<QuestStewardStep, readonly string[]> = {

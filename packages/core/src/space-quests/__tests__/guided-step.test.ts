@@ -3,6 +3,7 @@ import {
   existingQuestEditSection,
   isBulkQuestDraftRequest,
   limitQuestPatchToStep,
+  questDraftCoachedStep,
   questExistingTurnMayPersist,
   questPendingYesNotice,
   resolveQuestDraftTarget,
@@ -224,6 +225,74 @@ describe('resolveQuestDraftTarget', () => {
       step: 'goal',
       bulk: false,
     });
+  });
+
+  it('revisits one named section and refuses a revision of several', () => {
+    const proposeGoal =
+      'Please propose a shorter version of the goal for my confirmation';
+    const shorterStill = 'no, make it shorter still and drop the word sandbox';
+    const both = 'Please propose shorter versions of the goal and the scope';
+    expect(resolveQuestDraftTarget(proposeGoal, 'scope')).toEqual({
+      step: 'goal',
+      bulk: false,
+    });
+    expect(isBulkQuestDraftRequest(proposeGoal)).toBe(false);
+    expect(questDraftCoachedStep(shorterStill, 'scope', 'goal')).toEqual({
+      step: 'goal',
+      bulk: false,
+    });
+    expect(questDraftCoachedStep(shorterStill, 'scope', null)).toEqual({
+      step: 'scope',
+      bulk: false,
+    });
+    expect(resolveQuestDraftTarget(both, 'scope')).toEqual({
+      step: 'scope',
+      bulk: true,
+    });
+    expect(isBulkQuestDraftRequest(both)).toBe(true);
+    expect(
+      resolveQuestDraftTarget(
+        'do you think the goal is well defined?',
+        'scope',
+      ),
+    ).toEqual({ step: 'scope', bulk: false });
+    expect(
+      resolveQuestDraftTarget('the goal is shorter than the scope', 'success'),
+    ).toEqual({ step: 'success', bulk: false });
+    expect(
+      resolveQuestDraftTarget('Add lead scoring to the CRM', 'success'),
+    ).toEqual({ step: 'success', bulk: false });
+    expect(
+      isBulkQuestDraftRequest(
+        'Draft the scope, success criteria, and milestones',
+      ),
+    ).toBe(true);
+    const successProposal =
+      'Please propose these success criteria for my confirmation: each in-scope check is recorded with an explicit pass or fail; the lead reviews the notes.';
+    expect(isBulkQuestDraftRequest(successProposal)).toBe(false);
+    expect(resolveQuestDraftTarget(successProposal, 'success')).toEqual({
+      step: 'success',
+      bulk: false,
+    });
+    expect(resolveQuestDraftTarget(successProposal, 'scope')).toEqual({
+      step: 'success',
+      bulk: false,
+    });
+    expect(
+      isBulkQuestDraftRequest(
+        'Fill out all sections. In scope: verify proposal display. Out of scope: production rollout.',
+      ),
+    ).toBe(true);
+    expect(
+      isBulkQuestDraftRequest(
+        'Please propose these success criteria for my confirmation: each in-scope check. Draft the milestones too.',
+      ),
+    ).toBe(true);
+    expect(
+      isBulkQuestDraftRequest(
+        'Success means every listed scope check is recorded with an explicit pass or fail, and the notes are reviewed by the lead.',
+      ),
+    ).toBe(false);
   });
 
   it('keeps "a quest about rewards" on the goal step', () => {

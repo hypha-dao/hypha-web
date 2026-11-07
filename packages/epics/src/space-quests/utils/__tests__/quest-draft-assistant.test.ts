@@ -2881,4 +2881,236 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(kept.reply).not.toMatch(/The Milestones is still/);
     expect(kept.pending?.step).toBe('milestones');
   });
+
+  it('proposes a revised goal and one success section without saving the raw message', async () => {
+    const accepted =
+      'Publish one quest end-to-end in this sandbox space — with a named lead and a reward attached — so we can confirm the quest creation flow works from goal through publication.';
+    const shorter =
+      'Publish one quest end-to-end in this sandbox space, with a named lead and a reward, so the creation flow can be checked.';
+    const refined =
+      'Prove a quest can be published end-to-end in this space, with a named lead and a reward.';
+    const proposeGoal =
+      'Please propose a shorter version of the goal for my confirmation';
+    const shorterStill = 'no, make it shorter still and drop the word sandbox';
+    const successRequest =
+      'Please propose these success criteria for my confirmation: each in-scope check is recorded with an explicit pass or fail; the lead reviews the notes.';
+    const successProse =
+      'Success means every listed scope check is recorded with an explicit pass or fail, and the notes are reviewed by the lead.';
+    const successBullets = [
+      'Every listed scope check has a recorded pass or fail',
+      'The lead reviews those notes',
+    ];
+    const state: CreateDraftTurnSnapshot = {
+      draft: { ...emptyDraft, goal: accepted },
+      pending: null,
+      currentStep: 'scope',
+    };
+    const calls: string[] = [];
+    const settle = (message: string, model: QuestDraftModelTurn | null) =>
+      settleCreateDraftTurn({
+        message,
+        history: [],
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: [],
+        readState: () => state,
+        isCurrent: () => true,
+        loadModel: async () => {
+          calls.push(message);
+          return model;
+        },
+      });
+
+    expect(
+      questDraftSuggestionStatus(proposeGoal, {
+        step: 'goal',
+        patch: { goal: accepted },
+      }),
+    ).toEqual({ status: 'revising', step: 'goal' });
+    expect(
+      questDraftSuggestionStatus(shorterStill, {
+        step: 'goal',
+        patch: { goal: shorter },
+      }),
+    ).toEqual({ status: 'revising', step: 'goal' });
+    expect(
+      questDraftSuggestionStatus('Add lead scoring', {
+        step: 'scope',
+        patch: { scopeIn: ['older scope'] },
+      }),
+    ).toEqual({ status: 'awaiting', step: 'scope' });
+
+    const refused = await settle(proposeGoal, {
+      reply: 'Use Put in goal "..." if you want a different goal.',
+      patch: null,
+    });
+    expect(refused?.wrote).toBe(false);
+    expect(refused?.pending).toBeNull();
+    expect(refused?.draft.goal).toBe(accepted);
+    expect(refused?.reply).not.toMatch(/Not saved yet/i);
+
+    const proposed = await settle(proposeGoal, {
+      reply:
+        'A shorter goal, for your confirmation. It is not saved until you confirm.',
+      patch: {
+        goal: shorter,
+        scopeIn: ['should not stick'],
+        rewards: [{ amount: '1', token: 'USDC' }],
+      },
+    });
+    expect(proposed?.wrote).toBe(false);
+    expect(proposed?.focusStep).toBe('goal');
+    expect(proposed?.pending?.step).toBe('goal');
+    expect(proposed?.pending?.patch.goal).toBe(shorter);
+    expect(proposed?.pending?.patch.scopeIn).toBeUndefined();
+    expect(proposed?.draft.goal).toBe(accepted);
+    expect(proposed?.reply).toContain(shorter);
+    expect(proposed?.reply).toMatch(/Not saved yet/);
+    expect(proposed?.reply).toMatch(/Do you want that to be in the Goal/);
+    expect(proposed?.reply).not.toContain(proposeGoal);
+    expect(proposed?.reply).not.toMatch(/Put in goal/i);
+
+    state.pending = proposed?.pending ?? null;
+    state.currentStep = 'scope';
+    const again = await settle(shorterStill, {
+      reply:
+        'Shorter still, and without sandbox. It is not saved until you confirm.',
+      patch: { goal: refined, scopeOut: ['nope'] },
+    });
+    expect(again?.wrote).toBe(false);
+    expect(again?.pending?.patch.goal).toBe(refined);
+    expect(again?.pending?.patch.scopeOut).toBeUndefined();
+    expect(again?.draft.goal).toBe(accepted);
+    expect(again?.reply).toContain(refined);
+    expect(again?.reply).not.toContain(shorterStill);
+
+    state.pending = again?.pending ?? null;
+    const saved = await settle('yes', {
+      reply: 'Saved the raw no.',
+      patch: { goal: shorterStill },
+    });
+    expect(calls).not.toContain('yes');
+    expect(saved?.wrote).toBe(true);
+    expect(saved?.pending).toBeNull();
+    expect(saved?.draft.goal).toBe(refined);
+
+    state.draft = { ...emptyDraft, goal: accepted };
+    state.pending = { step: 'goal', patch: { goal: shorter } };
+    state.currentStep = 'scope';
+    const proseOnly = await settle(shorterStill, {
+      reply: refined,
+      patch: null,
+    });
+    expect(proseOnly?.wrote).toBe(false);
+    expect(proseOnly?.pending).toBeNull();
+    expect(proseOnly?.draft.goal).toBe(accepted);
+    expect(proseOnly?.reply).not.toMatch(/Not saved yet/i);
+    state.pending = proseOnly?.pending ?? null;
+    const yesAfterProse = await settle('yes', {
+      reply: 'Saved the prose.',
+      patch: { goal: refined },
+    });
+    expect(yesAfterProse?.wrote).toBe(false);
+    expect(yesAfterProse?.draft.goal).toBe(accepted);
+    expect(yesAfterProse?.reply).toMatch(/Nothing is waiting on a yes/i);
+
+    state.pending = null;
+    const several = 'Please propose shorter versions of the goal and the scope';
+    expect(questDraftTurnUsesModel(several)).toBe(false);
+    const bulk = await settle(several, {
+      reply: 'Here are both.',
+      patch: { goal: 'x', scopeIn: ['y'] },
+    });
+    expect(calls).not.toContain(several);
+    expect(bulk?.wrote).toBe(false);
+    expect(bulk?.pending).toBeNull();
+    expect(bulk?.draft.goal).toBe(accepted);
+    expect(bulk?.reply).toMatch(/one section at a time/i);
+
+    const assessed = await settle('do you think the goal is well defined?', {
+      reply: 'The accepted goal names an outcome a reviewer can check.',
+      patch: { goal: 'do you think the goal is well defined?' },
+    });
+    expect(assessed?.pending).toBeNull();
+    expect(assessed?.draft.goal).toBe(accepted);
+    expect(assessed?.reply).toMatch(/reviewer can check/i);
+    expect(assessed?.reply).not.toMatch(/Not saved yet/i);
+
+    state.currentStep = 'success';
+    state.pending = null;
+    const chatOnly = await settle(successProse, {
+      reply: [
+        "Here's a success criteria suggestion based on what you gave.",
+        '- Each in-scope check (proposal display, milestone editing) is recorded with an explicit pass or fail',
+        '- The recorded notes are reviewed by the lead',
+        'Anything else a reviewer should be able to check, or is that the full set?',
+        'Not saved until you confirm.',
+      ].join('\n'),
+      patch: null,
+    });
+    expect(chatOnly?.wrote).toBe(false);
+    expect(chatOnly?.pending).toBeNull();
+    expect(chatOnly?.draft.successCriteria).toBe('');
+    expect(chatOnly?.draft.goal).toBe(accepted);
+    expect(chatOnly?.reply).toContain(
+      'Each in-scope check (proposal display, milestone editing)',
+    );
+    expect(chatOnly?.reply).toMatch(/Nothing is waiting on a yes/i);
+    expect(chatOnly?.reply).not.toMatch(/Not saved yet/i);
+    expect(chatOnly?.reply).not.toContain(successProse);
+
+    state.pending = null;
+    const filed = await settle(successProse, {
+      reply:
+        'These two checks are a suggestion. Anything else a reviewer should be able to check, or is that the full set? It is not saved until you confirm.',
+      patch: {
+        successCriteriaBullets: successBullets,
+        goal: successProse,
+        scopeIn: ['should not stick'],
+      },
+    });
+    expect(filed?.wrote).toBe(false);
+    expect(filed?.pending?.step).toBe('success');
+    expect(filed?.pending?.patch.successCriteriaBullets).toEqual(
+      successBullets,
+    );
+    expect(filed?.pending?.patch.goal).toBeUndefined();
+    expect(filed?.draft.successCriteria).toBe('');
+    expect(filed?.draft.goal).toBe(accepted);
+    expect(filed?.reply).toContain(successBullets[0]);
+    expect(filed?.reply).toMatch(/Not saved yet/);
+    expect(filed?.reply).not.toContain(successProse);
+    expect(filed?.reply).not.toMatch(/one section at a time/i);
+
+    state.pending = null;
+    const proposedSuccess = await settle(successRequest, {
+      reply:
+        'These checks are a suggestion and are not saved until you confirm.',
+      patch: {
+        successCriteriaBullets: successBullets,
+        goal: 'replaced',
+        scopeIn: ['in-scope check'],
+      },
+    });
+    expect(calls).toContain(successRequest);
+    expect(proposedSuccess?.wrote).toBe(false);
+    expect(proposedSuccess?.pending?.step).toBe('success');
+    expect(proposedSuccess?.pending?.patch.successCriteriaBullets).toEqual(
+      successBullets,
+    );
+    expect(proposedSuccess?.pending?.patch.scopeIn).toBeUndefined();
+    expect(proposedSuccess?.draft.successCriteria).toBe('');
+    expect(proposedSuccess?.draft.goal).toBe(accepted);
+    expect(proposedSuccess?.reply).toMatch(/Not saved yet/);
+    expect(proposedSuccess?.reply).not.toMatch(/one section at a time/i);
+    expect(proposedSuccess?.reply).not.toContain(successRequest);
+
+    state.pending = proposedSuccess?.pending ?? null;
+    const savedSuccess = await settle('yes', null);
+    expect(savedSuccess?.wrote).toBe(true);
+    expect(savedSuccess?.pending).toBeNull();
+    expect(savedSuccess?.draft.successCriteria).toContain(successBullets[0]);
+    expect(savedSuccess?.draft.successCriteria).toContain(successBullets[1]);
+    expect(savedSuccess?.draft.goal).toBe(accepted);
+    expect(savedSuccess?.draft.scopeIn).toEqual([]);
+  });
 });
