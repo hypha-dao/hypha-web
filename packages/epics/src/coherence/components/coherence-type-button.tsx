@@ -16,6 +16,7 @@ export const CoherenceTypeButton = ({
   selected,
   className,
   onClick,
+  ...rest
 }: CoherenceTypeButtonProps) => {
   const textColor = ((variant) => {
     switch (variant) {
@@ -45,6 +46,7 @@ export const CoherenceTypeButton = ({
       selected={selected}
       colorVariant={colorVariant}
       onClick={onClick}
+      {...rest}
     >
       <div className="flex w-full flex-row items-start gap-3">
         <div

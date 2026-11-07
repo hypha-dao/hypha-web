@@ -41,6 +41,7 @@ function typeLabel(
   if (type === 'Tension') return t('filterTension');
   if (type === 'Insight') return t('filterInsight');
   if (type === 'Action') return t('filterAction');
+  if (type === 'Bug') return t('filterBug');
   return t('filterImpact');
 }
 
@@ -208,7 +209,9 @@ export function NetworkFieldBoard({
     ? signals.filter(
         (signal) =>
           signal.spaceSlug === selected.spaceSlug &&
-          (signal.type === 'Impact' || signal.type === 'Insight'),
+          (signal.type === 'Action' ||
+            signal.type === 'Impact' ||
+            signal.type === 'Insight'),
       ).length
     : 0;
 

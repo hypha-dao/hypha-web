@@ -53,14 +53,7 @@ export function SignalGrid({
           />
         );
 
-        if (signal.archived || !onSignalClick) {
-          if (signal.archived) {
-            return (
-              <div key={signal.id} className={SIGNAL_GRID_CARD_WRAPPER_CLASS}>
-                {card}
-              </div>
-            );
-          }
+        if (!onSignalClick) {
           return (
             <Link
               key={signal.id}

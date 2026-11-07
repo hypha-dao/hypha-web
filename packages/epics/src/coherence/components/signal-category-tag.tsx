@@ -1,6 +1,9 @@
 'use client';
 
-import { COHERENCE_TYPE_OPTIONS } from '@hypha-platform/core/client';
+import {
+  canonicalSignalType,
+  COHERENCE_TYPE_OPTIONS,
+} from '@hypha-platform/core/client';
 import { DynamicIcon, type LucideReactIcon } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
@@ -28,7 +31,7 @@ export function SignalCategoryTag({
   withLabel = false,
 }: SignalCategoryTagProps) {
   const t = useTranslations('CoherenceTab');
-  const value = type?.trim() ?? '';
+  const value = canonicalSignalType(type);
   if (!value) return null;
 
   const option = COHERENCE_TYPE_OPTIONS.find((item) => item.type === value);

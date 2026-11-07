@@ -3549,6 +3549,7 @@ const SIGNAL_TYPE_KEYS = new Set([
   'Tension',
   'Risk',
   'Action',
+  'Bug',
   'Impact',
   'Trend',
   'Proposal',

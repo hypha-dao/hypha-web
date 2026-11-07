@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 
+import { canonicalSignalType } from '../coherence-types';
 import type { DatabaseInstance } from '../../common/server/types';
 import { COHERENCE_PRIORITIES } from '../coherence-priorities';
 import { parseCapitalKeys } from '../../network/capitals';
@@ -125,6 +126,7 @@ export async function listNetworkFieldSignals(
 ): Promise<NetworkFieldSignal[]> {
   const allowed = kinds.filter((kind) => isFieldKind(kind));
   if (allowed.length === 0) return [];
+  const stored = new Set<string>(allowed);
   const result = await db.execute(sql`
     select c.slug, c.title, c.description, c.type, c.lead_image, c.video_url,
            c.attachments, c.updated_at, c.priority, c.due_at, c.tags,
@@ -141,7 +143,7 @@ export async function listNetworkFieldSignals(
     left join people p on p.id = c.creator_id
     where c.shared_with_network = true
       and c.type in (${sql.join(
-        allowed.map((kind) => sql`${kind}`),
+        [...stored].map((kind) => sql`${kind}`),
         sql`, `,
       )})
       and coalesce(c.archived, false) = false
@@ -159,7 +161,10 @@ export async function listNetworkFieldSignals(
   for (const row of rowsOf(result)) {
     if (!row || typeof row !== 'object') continue;
     const record = row as Record<string, unknown>;
-    if (!isFieldKind(record.type)) continue;
+    const type = canonicalSignalType(
+      typeof record.type === 'string' ? record.type : '',
+    );
+    if (!isFieldKind(type)) continue;
     const slug = asText(record.slug);
     const spaceSlug = asText(record.space_slug);
     const spaceId = Number(record.space_id);
@@ -172,7 +177,7 @@ export async function listNetworkFieldSignals(
       slug,
       title: asText(record.title),
       description: asText(record.description),
-      type: record.type,
+      type,
       spaceSlug,
       spaceTitle: asText(record.space_title) || spaceSlug,
       place: asText(record.location_label),

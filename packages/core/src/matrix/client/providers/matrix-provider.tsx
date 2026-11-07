@@ -584,13 +584,15 @@ interface MatrixContextType {
   ) => Promise<{ roomId: string }>;
   /**
    * Join these people into an existing group room. Invite-only rooms stay
-   * invisible until the bot puppet-accepts each member.
+   * invisible until the bot puppet-accepts each member. Resolves to the IDs
+   * that could not be joined. An aborted `signal` stops before the next join
+   * with `SendMessageCancelledError`.
    */
   ensureRoomMembers: (
     roomId: string,
     matrixUserIds: readonly string[],
-    options?: { pruneAbsent?: boolean },
-  ) => Promise<void>;
+    options?: { pruneAbsent?: boolean; signal?: AbortSignal },
+  ) => Promise<string[]>;
   /** Join the single network-wide room, creating it on first use. */
   ensureNetworkRoom: () => Promise<{ roomId: string }>;
   /** Join this ecosystem’s shared room (not the root space member room). */
@@ -1228,11 +1230,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     async (
       roomId: string,
       matrixUserIds: readonly string[],
-      options?: { pruneAbsent?: boolean },
-    ) => {
-      if (!client) return;
+      options?: { pruneAbsent?: boolean; signal?: AbortSignal },
+    ): Promise<string[]> => {
+      if (!client) return [...matrixUserIds];
       const trimmedRoomId = roomId.trim();
-      if (!trimmedRoomId) return;
+      if (!trimmedRoomId) return [...matrixUserIds];
       const selfId = client.getUserId();
       const botId = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
       const room = client.getRoom(trimmedRoomId);
@@ -1278,13 +1280,17 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           ids.add(id);
         }
       }
+      const failed: string[] = [];
       for (const matrixUserId of ids) {
+        throwIfAborted(options?.signal);
         try {
-          await ensureMemberJoinedRoomAction({
+          const { joined } = await ensureMemberJoinedRoomAction({
             roomId: trimmedRoomId,
             matrixUserId,
           });
+          if (!joined) failed.push(matrixUserId);
         } catch (error) {
+          failed.push(matrixUserId);
           console.warn(
             '[Matrix] Failed to include a group member:',
             trimmedRoomId,
@@ -1292,6 +1298,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           );
         }
       }
+      return failed;
     },
     [client],
   );
@@ -2628,7 +2635,7 @@ const noopMatrixContext: MatrixContextType = {
   ensureDirectRoom: async () => {
     throw new Error('Matrix unavailable');
   },
-  ensureRoomMembers: async () => {},
+  ensureRoomMembers: async (_roomId, matrixUserIds) => [...matrixUserIds],
   ensureNetworkRoom: async () => {
     throw new Error('Matrix unavailable');
   },

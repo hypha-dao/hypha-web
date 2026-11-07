@@ -2,7 +2,6 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  ConfirmDialog,
   Button,
   Form,
   FormControl,
@@ -14,38 +13,26 @@ import {
   Input,
   Label,
   LucideReactIcon,
-  MultiSelect,
   RequirementMark,
   RichTextEditor,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Separator,
-  Skeleton,
   Slider,
-  Switch,
   AddAttachment,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { Camera, RefreshCw, Video } from 'lucide-react';
+import { RefreshCw, Video } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
-import { CapitalChoice } from '../../spaces/components/capital-choice';
 import { useForm, useFormState, useWatch } from 'react-hook-form';
-import type { Control, UseFormReturn } from 'react-hook-form';
+import type { Control } from 'react-hook-form';
 import { z } from 'zod';
 import {
   HYPHA_ROOM_TYPES,
-  COHERENCE_PRIORITY_OPTIONS,
   COHERENCE_SIGNAL_TYPES,
-  COHERENCE_TAGS,
   COHERENCE_TYPE_OPTIONS,
   CoherenceTag,
   CoherenceType,
   DEFAULT_SIGNAL_PROGRESS_STATUS,
-  Person,
   resolveDefaultBoard,
   schemaCreateCoherenceForm,
   schemaEditCoherenceForm,
@@ -53,8 +40,6 @@ import {
   type SignalFormValues,
   resolveSignalFormCreatorId,
   parseCapitalKeys,
-  type CapitalKey,
-  collectExistingTags,
   mergeTagInList,
   normalizeTagKey,
   personProfileHref,
@@ -62,17 +47,14 @@ import {
   useAttachmentUpload,
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
-  useFindCoherences,
   useCoherenceUpvoteMutations,
   useJwt,
   useMatrix,
   useMe,
   usePersonById,
+  useMySignalVotingPower,
   useSignalWorkflow,
   useSpaceBySlug,
-  matrixUserIdsForPersonIds,
-  publishSignalTeamNotice,
-  resolveMatrixUserIdsByPersonIds,
 } from '@hypha-platform/core/client';
 import React from 'react';
 import {
@@ -92,10 +74,9 @@ import {
 import { useScrollToErrors } from '../../hooks';
 import { mutate } from 'swr';
 import { useParams, useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { CoherenceTypeButton } from './coherence-type-button';
-import { CoherencePriorityButton } from './coherence-priority-button';
+import { SignalTypePickerGrid, SignalTypeSection } from './signal-type-section';
 import { ButtonClose } from '../../common/button-close';
 import { ButtonBack } from '../../common/button-back';
 import { CardButtonColorVariant } from '../../common/card-button';
@@ -103,19 +84,21 @@ import {
   SIGNAL_PROVISIONING_NOTICE_EVENT,
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
 } from '../constants';
-import { upsertSignalDescriptionInRoom } from '../utils/signal-chat-description';
-import { unmappedPersonIds } from '../utils/signal-team-access';
-import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
-import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
-import { toLocalDueDateInputValue } from '../utils/signal-due-date';
-import { useCanManageSignal } from '../hooks/use-can-manage-signal';
-import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
+import { updateSignalDescriptionCopyInRoom } from '../utils/signal-chat-description';
+import {
+  signalVotingSpaceId,
+  useSignalVotingMode,
+} from '../hooks/use-signal-voting-mode';
+import {
+  signalVideoLinkHost,
+  signalVideoLinkProblem,
+} from '../utils/signal-video';
+import { formatVotingPowerCompact } from '../utils/format-voting-power';
 import type { UseMembers } from '../../spaces/hooks/types';
 import { SignalTagMergeDialog } from './signal-tag-merge-dialog';
+import { SignalImagePicker } from './signal-image-picker';
+import { SignalTagPeopleField } from './signal-tag-people-field';
 import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
-import { TokenPayoutFieldArray } from '../../agreements';
-import { useTokens } from '../../treasury/hooks/use-tokens';
-import { stageSignalAsContributionProposal } from '../utils/signal-to-proposal';
 import { EXCHANGE_SIGNAL_CAPITALS_KEY } from '../../network-exchange/exchange-draft-keys';
 
 type FormValues = SignalFormValues;
@@ -126,11 +109,10 @@ export interface CreateSignalFormProps {
   closeUrl?: string;
   backUrl?: string;
   mode?: 'create' | 'edit';
-  signalId?: number;
   signalSlug?: string;
   signalRoomId?: string | null;
   initialValues?: Partial<FormValues>;
-  /** Supplies the space roster for the assignee picker. */
+  /** Supplies the space roster for the tag-people picker. */
   useMembers: UseMembers;
 }
 
@@ -170,48 +152,6 @@ function SignalFormRootError({ control }: { control: Control<FormValues> }) {
       {errors.root.message}
     </p>
   );
-}
-
-function SignalLinkedCalendarFromForm({
-  form,
-  spaceSlug,
-  signalId,
-  lang,
-  initialTitle,
-}: {
-  form: UseFormReturn<FormValues>;
-  spaceSlug: string;
-  signalId: number;
-  lang: string;
-  initialTitle?: string;
-}) {
-  const watchedTitle = useWatch({ control: form.control, name: 'title' });
-  const watchedDueAt = useWatch({ control: form.control, name: 'dueAt' });
-  const scheduleFromSignalPath = React.useMemo(() => {
-    const paramsQuery = buildScheduleFromSignalSearchParams({
-      coherenceId: signalId,
-      title: watchedTitle?.trim() || initialTitle?.trim() || 'Signal call',
-      dueAt: watchedDueAt,
-    });
-    return `/${lang}/dho/${spaceSlug}/calendar/new-scheduled-item?${paramsQuery.toString()}`;
-  }, [initialTitle, lang, signalId, spaceSlug, watchedDueAt, watchedTitle]);
-
-  return (
-    <SignalLinkedCalendarEvents
-      spaceSlug={spaceSlug}
-      coherenceId={signalId}
-      lang={lang}
-      calendarPath={`/${lang}/dho/${spaceSlug}/calendar`}
-      scheduleFromSignalPath={scheduleFromSignalPath}
-    />
-  );
-}
-
-function dueDateFromInputValue(value: string): Date | null {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const date = new Date(`${trimmed}T12:00:00`);
-  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function resolveMutationErrorMessage(error: unknown): string {
@@ -267,25 +207,26 @@ function scrollSignalField(form: HTMLFormElement | null, fieldPath: string) {
   target.scrollIntoView({ block: 'center' });
 }
 
+const CREATOR_VOTE_PRESETS = [25, 50, 75, 100] as const;
+
 export const CreateSignalForm = ({
   spaceId,
   successfulUrl,
   closeUrl,
   backUrl,
   mode = 'create',
-  signalId,
   signalSlug,
   signalRoomId,
   initialValues,
   useMembers,
 }: CreateSignalFormProps) => {
-  const params = useParams<{ id?: string; lang?: string }>();
+  const params = useParams<{ id?: string }>();
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
-  const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const t = useTranslations('CoherenceTab');
-  const tCapitals = useTranslations('NetworkExchange');
+  const locale = useLocale();
   const { workflow } = useSignalWorkflow(spaceSlug);
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tSignalCard = useTranslations('SignalCard');
   const translateEditor = React.useCallback(
     (
       key: string,
@@ -305,7 +246,6 @@ export const CreateSignalForm = ({
   const { jwt: authToken } = useJwt();
   const router = useRouter();
   const { space } = useSpaceBySlug(spaceSlug);
-  const { tokens, isLoading: isLoadingTokens } = useTokens({ spaceSlug });
   const { upload: uploadAttachment } = useAttachmentUpload({
     authorizationToken: authToken ?? undefined,
   });
@@ -318,14 +258,9 @@ export const CreateSignalForm = ({
   const [keptDocuments, setKeptDocuments] = React.useState<SignalMediaItem[]>(
     openingMedia.documents,
   );
-  const [mediaKind, setMediaKind] = React.useState<'images' | 'video' | null>(
-    () => {
-      if (openingMedia.images.length > 0) return 'images';
-      if (initialValues?.videoUrl?.trim()) return 'video';
-      return null;
-    },
+  const [showVideo, setShowVideo] = React.useState(() =>
+    Boolean(initialValues?.videoUrl?.trim()),
   );
-  const mediaChoiceTouched = React.useRef(false);
 
   const createMediaDraft = React.useRef<SignalMediaDraft | null>(null);
   const createMediaLoaded = React.useRef(false);
@@ -351,15 +286,6 @@ export const CreateSignalForm = ({
       ),
     );
   }, [initialValues, mode, signalSlug]);
-  const { persons: spaceMembers, isLoading: isLoadingSpaceMembers } =
-    useMembers({
-      spaceSlug,
-      paginationDisabled: true,
-    });
-  const canManageSignal = useCanManageSignal({
-    spaceSlug,
-    web3SpaceId: space?.web3SpaceId ?? undefined,
-  });
   const headerCreatorId = resolveSignalFormCreatorId({
     mode,
     storedCreatorId: initialValues?.creatorId,
@@ -374,8 +300,7 @@ export const CreateSignalForm = ({
     mode === 'edit' &&
     typeof initialValues?.creatorId === 'number' &&
     person?.id === initialValues.creatorId;
-  const isEditAuthorized =
-    mode !== 'edit' || canManageSignal || isSignalCreator;
+  const isEditAuthorized = mode !== 'edit' || isSignalCreator;
 
   const {
     createCoherence,
@@ -388,34 +313,52 @@ export const CreateSignalForm = ({
     isUpdatingCoherenceSignal,
     mergeCoherenceTags,
   } = useCoherenceMutationsWeb2Rsc(authToken);
-  const { coherences: spaceSignals } = useFindCoherences({
-    spaceSlug,
-    includeArchived: true,
-  });
-  const existingBoardTags = React.useMemo(
-    () =>
-      collectExistingTags((spaceSignals ?? []).map((signal) => signal.tags)),
-    [spaceSignals],
-  );
   const [mergeTagsOpen, setMergeTagsOpen] = React.useState(false);
   const { upvote: upvoteCoherence } = useCoherenceUpvoteMutations(authToken);
   // Creator's initial upvote share of their proposal voting power (max by default).
   const [creatorVotePercent, setCreatorVotePercent] = React.useState(100);
-  const [isTogglingArchiveState, setIsTogglingArchiveState] =
-    React.useState(false);
+  const [taggedMatrixUserIds, setTaggedMatrixUserIds] = React.useState<
+    string[]
+  >([]);
+  const {
+    votingMode,
+    status: votingModeStatus,
+    retry: retryVotingMode,
+  } = useSignalVotingMode(signalVotingSpaceId(space));
+  const { votingPower: myVotingPower } = useMySignalVotingPower({
+    spaceSlug: mode === 'create' ? spaceSlug : null,
+    authToken,
+  });
+  const creatorVoteReadout = React.useMemo(() => {
+    const percentLabel = `${creatorVotePercent}%`;
+    if (!myVotingPower) return percentLabel;
+    let max: bigint;
+    try {
+      max = BigInt(myVotingPower.votingPower);
+    } catch {
+      return percentLabel;
+    }
+    if (max <= 0n) return percentLabel;
+    const amount = (max * BigInt(creatorVotePercent)) / 100n;
+    return t('signalFormVotingPowerReadout', {
+      percent: creatorVotePercent,
+      amount: formatVotingPowerCompact(
+        amount.toString(),
+        myVotingPower.tokenDecimals,
+        locale,
+      ),
+      max: formatVotingPowerCompact(
+        myVotingPower.votingPower,
+        myVotingPower.tokenDecimals,
+        locale,
+      ),
+    });
+  }, [creatorVotePercent, locale, myVotingPower, t]);
   // Keeps the overlay up between a successful save and the route change, so the
   // filled-in form never reappears while navigation settles.
   const [isClosingAfterPublish, setIsClosingAfterPublish] =
     React.useState(false);
-  const [isSignalArchived, setIsSignalArchived] = React.useState(
-    initialValues?.archived ?? false,
-  );
-  React.useEffect(() => {
-    if (mode !== 'edit') return;
-    setIsSignalArchived(initialValues?.archived ?? false);
-  }, [initialValues?.archived, mode]);
   const {
-    client: matrixClient,
     isMatrixAvailable,
     createRoom,
     joinRoom,
@@ -423,25 +366,28 @@ export const CreateSignalForm = ({
     sendMessage,
     getRoomMessages,
     editRoomMessage,
+    ensureRoomMembers,
   } = useMatrix();
 
-  const upsertSignalDescriptionMessage = React.useCallback(
+  const updateSignalDescriptionCopy = React.useCallback(
     async ({
       roomId,
+      previousDescription,
       description,
     }: {
       roomId: string;
+      previousDescription?: string | null;
       description?: string | null;
     }) => {
       if (!isMatrixAvailable || !roomId?.trim()) return;
-      await upsertSignalDescriptionInRoom({
+      await updateSignalDescriptionCopyInRoom({
         roomId,
+        previousDescription,
         description,
         matrix: {
           joinRoom,
           loadRoomHistory,
           getRoomMessages,
-          sendMessage,
           editRoomMessage,
         },
       });
@@ -452,7 +398,6 @@ export const CreateSignalForm = ({
       isMatrixAvailable,
       joinRoom,
       loadRoomHistory,
-      sendMessage,
     ],
   );
 
@@ -461,18 +406,15 @@ export const CreateSignalForm = ({
     isPublishing ||
     isCreatingCoherence ||
     isUpdatingCoherenceSignal ||
-    isTogglingArchiveState ||
     isClosingAfterPublish;
   const progress = React.useMemo(() => {
     if (isClosingAfterPublish) return 100;
-    if (isTogglingArchiveState) return 50;
     if (mode === 'edit') return isUpdatingCoherenceSignal ? 50 : 0;
     return isCreatingCoherence ? 50 : createdCoherence ? 100 : 0;
   }, [
     createdCoherence,
     isClosingAfterPublish,
     isCreatingCoherence,
-    isTogglingArchiveState,
     isUpdatingCoherenceSignal,
     mode,
   ]);
@@ -488,6 +430,8 @@ export const CreateSignalForm = ({
           viewerId: person?.id,
         }) ?? 0,
       spaceId: initialValues?.spaceId ?? spaceId,
+      // Preserve the stored flag. The form no longer offers archive, and a
+      // save must not clear it.
       archived: initialValues?.archived ?? false,
       type:
         initialValues?.type &&
@@ -510,11 +454,7 @@ export const CreateSignalForm = ({
       board:
         initialValues?.board ??
         (workflow ? resolveDefaultBoard(workflow) : null),
-      // Creator default applies on create only — editing a legacy unassigned
-      // signal must not silently claim the editor as assignee.
-      assigneeIds:
-        initialValues?.assigneeIds ??
-        (mode === 'create' && person?.id ? [person.id] : []),
+      assigneeIds: initialValues?.assigneeIds ?? [],
       indicativePayouts:
         initialValues?.indicativePayouts &&
         initialValues.indicativePayouts.length > 0
@@ -567,14 +507,33 @@ export const CreateSignalForm = ({
     control: form.control,
     name: 'videoUrl',
   });
+  const videoLinkProblemMessage = React.useCallback(
+    (raw: string | null | undefined) => {
+      const problem = signalVideoLinkProblem(raw);
+      if (problem === 'blocked') {
+        return t('signalFormVideoBlocked', { host: signalVideoLinkHost(raw) });
+      }
+      if (problem === 'too-long') return t('signalFormVideoTooLong');
+      return problem === 'unsupported' ? t('signalFormVideoUnsupported') : null;
+    },
+    [t],
+  );
+  // Read after mount: `'self'` needs the page origin, which SSR does not have.
+  const [videoLinkWarning, setVideoLinkWarning] = React.useState<string | null>(
+    null,
+  );
   React.useEffect(() => {
-    if (mediaChoiceTouched.current) return;
-    if (keptImages.length > 0 || imageFiles.length > 0) {
-      setMediaKind('images');
-      return;
-    }
-    if (watchedVideoUrl?.trim()) setMediaKind('video');
-  }, [imageFiles.length, keptImages.length, watchedVideoUrl]);
+    setVideoLinkWarning(
+      showVideo ? videoLinkProblemMessage(watchedVideoUrl) : null,
+    );
+  }, [showVideo, videoLinkProblemMessage, watchedVideoUrl]);
+  React.useEffect(() => {
+    if (watchedVideoUrl?.trim()) setShowVideo(true);
+  }, [watchedVideoUrl]);
+  const toggleVideo = React.useCallback(() => {
+    if (showVideo) form.setValue('videoUrl', '', { shouldDirty: true });
+    setShowVideo((current) => !current);
+  }, [form, showVideo]);
 
   React.useEffect(() => {
     if (mode !== 'create' || typeof window === 'undefined') return;
@@ -604,172 +563,6 @@ export const CreateSignalForm = ({
     }));
   }, [t]);
 
-  const priorityOptions = React.useMemo(() => {
-    return COHERENCE_PRIORITY_OPTIONS.map(
-      ({ priority, icon, colorVariant }) => ({
-        icon: icon as LucideReactIcon,
-        title: t.has(`priorities.${priority}` as never)
-          ? t(`priorities.${priority}` as never)
-          : priority,
-        priority,
-        description: t.has(`priorityDescriptions.${priority}` as never)
-          ? t(`priorityDescriptions.${priority}` as never)
-          : '',
-        colorVariant: 'subtle' as CardButtonColorVariant,
-        iconColorVariant: colorVariant as CardButtonColorVariant,
-      }),
-    );
-  }, [t]);
-
-  const tagOptions = React.useMemo(() => {
-    type TagOptionRow = {
-      value: string;
-      label: string;
-      kind: 'option' | 'heading' | 'separator';
-    };
-
-    const labelFor = (tag: string) =>
-      t.has(`tagLabels.${tag}` as never) ? t(`tagLabels.${tag}` as never) : tag;
-    const categoryLabelFor = (key: string, fallback: string) =>
-      t.has(`tagCategories.${key}` as never)
-        ? t(`tagCategories.${key}` as never)
-        : fallback;
-
-    const tagsByCategory: Array<{ title: string; tags: readonly string[] }> = [
-      {
-        title: categoryLabelFor('purposeDirection', 'Purpose & Direction'),
-        tags: [
-          'Purpose',
-          'North Star',
-          'Vision',
-          'Strategy',
-          'Values',
-          'Principles',
-          'Milestones',
-          'Impact Goals',
-        ],
-      },
-      {
-        title: categoryLabelFor('broaderContext', 'Broader Context'),
-        tags: [
-          'Trend',
-          'Social Conditions',
-          'Planetary Boundaries',
-          'Policy',
-          'Regulation',
-          'Emergency Response',
-        ],
-      },
-      {
-        title: categoryLabelFor('peopleRoles', 'People & Roles'),
-        tags: [
-          'Project',
-          'Quest',
-          'Job',
-          'Skill',
-          'Advisory Support',
-          'Volunteering',
-        ],
-      },
-      {
-        title: categoryLabelFor('ecosystemMapping', 'Ecosystem Mapping'),
-        tags: [
-          'Serving Audience',
-          'Customers',
-          'Users',
-          'Communities',
-          'Beneficiaries',
-          'Partners',
-        ],
-      },
-      {
-        title: categoryLabelFor('operatingCoherence', 'Operating Coherence'),
-        tags: [
-          'Governance',
-          'Processes',
-          'Structure',
-          'Rhythms',
-          'Support Systems',
-        ],
-      },
-      {
-        title: categoryLabelFor('needsResources', 'Needs & Resources'),
-        tags: ['Needs', 'Resources', 'Fundraising', 'Matchmaking'],
-      },
-      {
-        title: categoryLabelFor('valueModel', 'Value & Model'),
-        tags: [
-          'Innovation',
-          'Products',
-          'Services',
-          'Product-Market Fit',
-          'Business Model',
-          'Data',
-          'Knowledge',
-          'Intellectual Property',
-        ],
-      },
-      {
-        title: categoryLabelFor('evidenceImpact', 'Evidence & Impact'),
-        tags: [
-          'Proof of Action',
-          'Proof of Impact',
-          'Learning',
-          'Feedback Loop',
-        ],
-      },
-    ];
-
-    const canonicalTags = new Set(COHERENCE_TAGS as readonly string[]);
-    const grouped = tagsByCategory.flatMap((category, categoryIndex) => {
-      const rows: TagOptionRow[] = [
-        {
-          value: `__heading__${categoryIndex}`,
-          label: category.title,
-          kind: 'heading' as const,
-        },
-        ...category.tags
-          .filter((tag) => canonicalTags.has(tag))
-          .map((tag) => ({
-            value: tag,
-            label: labelFor(tag),
-            kind: 'option' as const,
-          })),
-      ];
-      if (categoryIndex < tagsByCategory.length - 1) {
-        rows.push({
-          value: `__separator__${categoryIndex}`,
-          label: '',
-          kind: 'separator' as const,
-        });
-      }
-      return rows;
-    });
-
-    const usedOnBoard = existingBoardTags.filter(
-      (tag) => !canonicalTags.has(tag),
-    );
-    if (usedOnBoard.length === 0) return grouped;
-    return [
-      {
-        value: '__heading__board',
-        label: t('usedOnThisBoard'),
-        kind: 'heading' as const,
-      },
-      ...usedOnBoard.map((tag) => ({
-        value: tag,
-        label: tag,
-        kind: 'option' as const,
-      })),
-      {
-        value: '__separator__board',
-        label: '',
-        kind: 'separator' as const,
-      },
-      ...grouped,
-    ];
-  }, [existingBoardTags, t]);
-
   // `person` can resolve after mount, so the creator default has to be applied
   // once it lands rather than only through `defaultValues`. Never copy the
   // viewer onto creatorId in edit — that reattributes someone else's signal.
@@ -795,41 +588,9 @@ export const CreateSignalForm = ({
     }
   }, [spaceId, form]);
 
-  const selectedAssigneeIds = form.watch('assigneeIds') ?? [];
-  // Keeps the picker readable when the assignee is no longer on the roster
-  // (left the space, or is a delegate rather than a member).
-  const { person: selectedAssignee } = usePersonById({
-    id: selectedAssigneeIds[0] ?? undefined,
-  });
-  const assigneeOptions = React.useMemo(() => {
-    const byId = new Map<number, Person>();
-    for (const member of spaceMembers.data) {
-      byId.set(member.id, member);
-    }
-    for (const extra of [person, selectedAssignee]) {
-      if (extra?.id && !byId.has(extra.id)) byId.set(extra.id, extra);
-    }
-    // Anyone already assigned must stay selectable so saving cannot silently
-    // drop them, even when their profile is not on the roster.
-    for (const id of selectedAssigneeIds) {
-      if (!byId.has(id)) byId.set(id, { id } as Person);
-    }
-    return [...byId.values()].sort((a, b) =>
-      [a.name, a.surname]
-        .filter(Boolean)
-        .join(' ')
-        .localeCompare(
-          [b.name, b.surname].filter(Boolean).join(' '),
-          undefined,
-          {
-            sensitivity: 'base',
-          },
-        ),
-    );
-  }, [person, selectedAssignee, selectedAssigneeIds, spaceMembers.data]);
-
   const handleResetForm = React.useCallback(() => {
     form.reset(formDefaults);
+    setTaggedMatrixUserIds([]);
   }, [form, formDefaults]);
 
   const setSignalProvisioningNotice = React.useCallback(
@@ -925,6 +686,13 @@ export const CreateSignalForm = ({
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
       form.clearErrors('root');
+      const videoProblem = videoLinkProblemMessage(data.videoUrl);
+      if (videoProblem) {
+        form.setError('videoUrl', { type: 'manual', message: videoProblem });
+        form.setError('root', { type: 'manual', message: videoProblem });
+        scrollSignalField(formRef.current, 'videoUrl');
+        return;
+      }
       const storedCreatorId =
         typeof data.creatorId === 'number' && data.creatorId > 0
           ? data.creatorId
@@ -992,13 +760,13 @@ export const CreateSignalForm = ({
             type: 'manual',
             message: t.has('editSignalNoPermission')
               ? t('editSignalNoPermission')
-              : 'Only space members and delegates can edit this signal.',
+              : 'Only the signal creator can edit this signal.',
           });
           return;
         }
         setIsPublishing(true);
         try {
-          const media = await resolveSignalMedia(data.videoUrl ?? null);
+          const media = await resolveSignalMedia(parsed.videoUrl ?? null);
           const updatedSignal = await updateCoherenceSignalBySlug({
             slug: signalSlug,
             title: parsed.title,
@@ -1026,8 +794,9 @@ export const CreateSignalForm = ({
             void mutate([attributionSlug, 'signal-creator-attribution']);
           }
           if (updatedSignal?.roomId) {
-            void upsertSignalDescriptionMessage({
+            void updateSignalDescriptionCopy({
               roomId: updatedSignal.roomId,
+              previousDescription: initialValues?.description,
               description: parsed.description,
             }).catch((matrixSyncError) => {
               console.warn(
@@ -1047,6 +816,7 @@ export const CreateSignalForm = ({
             ) || rawMessage.toLowerCase().includes('digest');
           const isPermissionError =
             rawMessage.includes('can edit this coherence') ||
+            rawMessage.includes('Only the signal creator can') ||
             rawMessage.includes('must be a space member') ||
             rawMessage.includes('interact in this space') ||
             rawMessage.includes('Could not verify your identity');
@@ -1061,7 +831,7 @@ export const CreateSignalForm = ({
           const message = isPermissionError
             ? t.has('editSignalNoPermission')
               ? t('editSignalNoPermission')
-              : 'Only space members and delegates can edit this signal.'
+              : 'Only the signal creator can edit this signal.'
             : isAuthError
             ? t.has('editSignalMissingAuth')
               ? t('editSignalMissingAuth')
@@ -1082,55 +852,49 @@ export const CreateSignalForm = ({
       }
       setIsPublishing(true);
       try {
-        const media = await resolveSignalMedia(data.videoUrl ?? null);
+        const media = await resolveSignalMedia(parsed.videoUrl ?? null);
         const coherence = await createCoherence({ ...parsed, ...media });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
-        const teamPersonIds = [
-          ...new Set(
-            [
-              ...(parsed.assigneeIds ?? []),
-              ...(coherence.assigneeIds ?? []),
-              creatorId,
-            ].filter((id): id is number => typeof id === 'number' && id > 0),
-          ),
-        ];
-        const assigneePersonIds = [
-          ...new Set(
-            [
-              ...(parsed.assigneeIds ?? []),
-              ...(coherence.assigneeIds ?? []),
-            ].filter((id): id is number => typeof id === 'number' && id > 0),
-          ),
-        ];
-        // Resolve MXIDs before navigate so we use the same person→Matrix map
-        // Manage compares against — not client.getUserId(), which can differ.
-        const resolveTeamMatrixIds = resolveMatrixUserIdsByPersonIds({
-          personIds: teamPersonIds,
-          authToken,
-        }).catch((resolveError) => {
-          console.warn(
-            'Signal room created but failed to resolve team Matrix ids:',
-            resolveError,
-          );
-          return {} as Record<number, string>;
-        });
         // Close the panel as soon as the signal exists — everything below is
         // best-effort follow-up work that must not hold the form open.
         setIsClosingAfterPublish(true);
         router.push(successfulUrl);
-        if (coherenceSlug) {
-          // Best-effort creator upvote; ranking still works without it.
+        if (coherenceSlug && votingMode == null) {
+          // Without a resolved voting method the chosen share is unknown, so
+          // the creator upvotes from the signal page instead of at 100%.
+          if (votingModeStatus !== 'unavailable') {
+            setSignalProvisioningNotice(t('provisioning.creatorUpvoteFailed'));
+          }
+          if (spaceSlug) void revalidateCoherences(spaceSlug);
+        } else if (coherenceSlug) {
+          // The signal already exists, so the creator upvote runs after close:
+          // retry once, then tell the creator to upvote from the signal page.
           void (async () => {
-            try {
-              await upvoteCoherence({
-                slug: coherenceSlug,
-                votingPowerPercent: creatorVotePercent,
-              });
-            } catch (upvoteError) {
+            let upvoteError: unknown = null;
+            for (let attempt = 0; attempt < 2; attempt += 1) {
+              try {
+                await upvoteCoherence({
+                  slug: coherenceSlug,
+                  votingPowerPercent: creatorVotePercent,
+                });
+                upvoteError = null;
+                break;
+              } catch (error) {
+                upvoteError = error;
+                if (attempt === 0) {
+                  await new Promise((resolve) => setTimeout(resolve, 1500));
+                }
+              }
+            }
+            if (upvoteError) {
               console.warn(
                 'Signal created but creator upvote failed:',
                 upvoteError,
+              );
+              setSignalProvisioningNotice(
+                t('provisioning.creatorUpvoteFailed'),
+                upvoteError instanceof Error ? upvoteError.message : undefined,
               );
             }
             if (spaceSlug) {
@@ -1154,18 +918,6 @@ export const CreateSignalForm = ({
               });
               roomId = roomCreationResult.roomId;
               const canonicalRoomId = await joinRoom(roomId);
-              await loadRoomHistory(canonicalRoomId);
-              try {
-                await upsertSignalDescriptionMessage({
-                  roomId: canonicalRoomId,
-                  description: coherence.description,
-                });
-              } catch (messageSeedError) {
-                console.warn(
-                  'Signal room created but failed to seed description message:',
-                  messageSeedError,
-                );
-              }
 
               try {
                 await updateCoherenceBySlug({
@@ -1186,55 +938,39 @@ export const CreateSignalForm = ({
                   linkError,
                 );
               }
-
-              // Seed the Matrix signal-team roster from create-time assignees
-              // + creator using the same person→MXID map Manage reads.
-              // Later assignee edits do not rewrite that roster (team picker).
-              if (matrixClient) {
+              if (taggedMatrixUserIds.length > 0) {
+                // Tags are a normal chat @mention, so the existing mention
+                // notification and Messages inbox deliver them.
                 try {
-                  const personIdToMatrixUserId = await resolveTeamMatrixIds;
-                  const missingAssigneeIds = unmappedPersonIds(
-                    assigneePersonIds,
-                    personIdToMatrixUserId,
+                  const notJoined = new Set(
+                    await ensureRoomMembers(
+                      canonicalRoomId,
+                      taggedMatrixUserIds,
+                    ),
                   );
-                  if (missingAssigneeIds.length > 0) {
-                    console.warn(
-                      'Skipping signal team notice: assignee(s) missing Matrix ids',
-                      missingAssigneeIds,
-                    );
-                  } else {
-                    const teamIdsToSeed = matrixUserIdsForPersonIds(
-                      teamPersonIds,
-                      personIdToMatrixUserId,
-                    );
-                    const ownerMatrixUserId =
-                      (typeof creatorId === 'number'
-                        ? personIdToMatrixUserId[creatorId]?.trim()
-                        : undefined) ||
-                      matrixClient.getUserId?.()?.trim() ||
-                      null;
-                    const addedMemberMatrixUserIds = matrixUserIdsForPersonIds(
-                      assigneePersonIds,
-                      personIdToMatrixUserId,
-                    );
-                    if (teamIdsToSeed.length > 0 || ownerMatrixUserId) {
-                      await publishSignalTeamNotice({
-                        client: matrixClient,
-                        roomId: canonicalRoomId,
-                        coherenceSlug,
-                        memberMatrixUserIds: teamIdsToSeed,
-                        ownerMatrixUserId,
-                        actorMatrixUserId:
-                          matrixClient.getUserId?.()?.trim() ||
-                          ownerMatrixUserId,
-                        addedMemberMatrixUserIds,
-                      });
-                    }
+                  const joined = taggedMatrixUserIds.filter(
+                    (id) => !notJoined.has(id),
+                  );
+                  if (joined.length > 0) {
+                    await sendMessage({
+                      roomId: canonicalRoomId,
+                      message: joined.join(' '),
+                      mentionUserIds: joined,
+                    });
                   }
-                } catch (teamSeedError) {
+                  if (taggedMatrixUserIds.some((id) => notJoined.has(id))) {
+                    setSignalProvisioningNotice(
+                      t('provisioning.tagPeopleFailed'),
+                    );
+                  }
+                } catch (tagError) {
+                  setSignalProvisioningNotice(
+                    t('provisioning.tagPeopleFailed'),
+                    tagError instanceof Error ? tagError.message : undefined,
+                  );
                   console.warn(
-                    'Signal room created but failed to seed signal team:',
-                    teamSeedError,
+                    'Signal created but tagging people failed:',
+                    tagError,
                   );
                 }
               }
@@ -1277,15 +1013,19 @@ export const CreateSignalForm = ({
       createCoherence,
       createRoom,
       creatorVotePercent,
+      votingMode,
+      votingModeStatus,
+      ensureRoomMembers,
+      sendMessage,
+      taggedMatrixUserIds,
       upvoteCoherence,
       isEditAuthorized,
       joinRoom,
-      loadRoomHistory,
-      matrixClient,
       updateCoherenceBySlug,
       updateCoherenceSignalBySlug,
       isMatrixAvailable,
-      upsertSignalDescriptionMessage,
+      updateSignalDescriptionCopy,
+      initialValues?.description,
       mode,
       setSignalProvisioningNotice,
       signalSlug,
@@ -1298,21 +1038,9 @@ export const CreateSignalForm = ({
       person?.id,
       reportPublishFailure,
       spaceId,
+      videoLinkProblemMessage,
     ],
   );
-
-  const handleTurnIntoProposal = () => {
-    const values = form.getValues();
-    stageSignalAsContributionProposal({
-      title: values.title,
-      description: values.description,
-      payouts: values.indicativePayouts ?? [],
-    });
-    if (!lang || !spaceSlug) return;
-    router.push(
-      `/${lang}/dho/${spaceSlug}/agreements/create/propose-contribution`,
-    );
-  };
 
   const handleInvalid = (errors?: Record<string, unknown>) => {
     const issue = firstSignalFieldIssue(errors);
@@ -1337,17 +1065,7 @@ export const CreateSignalForm = ({
       progress={progress}
       isLoading={isMutating}
       fullHeight={true}
-      keepWindowOpenMessage={
-        isTogglingArchiveState
-          ? isSignalArchived
-            ? t.has('keepWindowOpenWhileUnarchiving')
-              ? t('keepWindowOpenWhileUnarchiving')
-              : 'Please keep this window open while unarchiving the signal.'
-            : t.has('keepWindowOpenWhileArchiving')
-            ? t('keepWindowOpenWhileArchiving')
-            : 'Please keep this window open while archiving the signal.'
-          : t('keepWindowOpenWhileCreating')
-      }
+      keepWindowOpenMessage={t('keepWindowOpenWhileCreating')}
       message={
         errorCreateCoherenceMutation ? (
           <div className="flex flex-col">
@@ -1356,15 +1074,7 @@ export const CreateSignalForm = ({
           </div>
         ) : (
           <div>
-            {isTogglingArchiveState
-              ? isSignalArchived
-                ? t.has('unarchivingSignal')
-                  ? t('unarchivingSignal')
-                  : 'Unarchiving signal'
-                : t.has('archivingSignal')
-                ? t('archivingSignal')
-                : 'Archiving signal'
-              : mode === 'edit'
+            {mode === 'edit'
               ? t.has('savingSignal')
                 ? t('savingSignal')
                 : 'Saving signal'
@@ -1407,17 +1117,24 @@ export const CreateSignalForm = ({
             </div>
 
             {/* Avatar + title — match {@link CreateAgreementBaseFields} proposal title row */}
-            <div className="flex flex-grow gap-3 px-4 pb-4 pt-5 lg:px-7">
-              <PersonAvatar
-                size="lg"
-                shape="circle"
-                isLoading={isMutating}
-                avatarSrc={headerPerson?.avatarUrl || ''}
-                userName={[headerPerson?.name, headerPerson?.surname]
-                  .filter(Boolean)
-                  .join(' ')}
-                personId={headerPerson?.id}
-              />
+            <div className="flex flex-grow items-start gap-3 px-4 pb-4 pt-5 lg:px-7">
+              <div className="flex w-20 shrink-0 flex-col items-center gap-1.5">
+                <PersonAvatar
+                  size="lg"
+                  shape="circle"
+                  isLoading={isMutating}
+                  avatarSrc={headerPerson?.avatarUrl || ''}
+                  userName={[headerPerson?.name, headerPerson?.surname]
+                    .filter(Boolean)
+                    .join(' ')}
+                  personId={headerPerson?.id}
+                />
+                <Text className="line-clamp-2 w-full text-center text-1 leading-tight text-neutral-11">
+                  {[headerPerson?.name, headerPerson?.surname]
+                    .filter(Boolean)
+                    .join(' ')}
+                </Text>
+              </div>
               <div className="flex w-full min-w-0 flex-col gap-1.5 sm:gap-2">
                 <FormField
                   control={form.control}
@@ -1440,9 +1157,6 @@ export const CreateSignalForm = ({
                     </FormItem>
                   )}
                 />
-                <Text className="text-1 text-neutral-11">
-                  {headerPerson?.name} {headerPerson?.surname}
-                </Text>
               </div>
             </div>
 
@@ -1451,130 +1165,6 @@ export const CreateSignalForm = ({
 
           <div className="flex min-h-0 flex-1 flex-col px-4 pt-5 lg:px-7">
             <section className="flex flex-col gap-6">
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem data-signal-field="type">
-                    <div className="flex w-full flex-col gap-3">
-                      <FormLabel className="text-foreground">
-                        {t('type')} <RequirementMark />
-                      </FormLabel>
-                      <FormControl>
-                        <span className="grid w-full grid-cols-2 gap-2">
-                          {typeOptions.map((option) => (
-                            <CoherenceTypeButton
-                              key={`type-option-${option.type}`}
-                              icon={option.icon}
-                              title={option.title}
-                              description={option.description}
-                              colorVariant={option.colorVariant}
-                              selected={field.value === option.type}
-                              onClick={() => {
-                                form.setValue(
-                                  'type',
-                                  option.type as FormValues['type'],
-                                  {
-                                    shouldDirty: true,
-                                  },
-                                );
-                              }}
-                            />
-                          ))}
-                        </span>
-                      </FormControl>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="sharedWithNetwork"
-                render={({ field }) => (
-                  <FormItem className="border-t border-border pt-6">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="min-w-0">
-                        <FormLabel className="text-sm font-medium text-foreground">
-                          {t('shareWithNetwork')}
-                        </FormLabel>
-                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                          {t('shareWithNetworkHint')}
-                        </p>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value === true}
-                          onCheckedChange={field.onChange}
-                          disabled={isMutating}
-                          aria-label={t('shareWithNetwork')}
-                        />
-                      </FormControl>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem
-                    className="border-t border-border pt-6"
-                    data-signal-field="priority"
-                  >
-                    <div className="flex w-full flex-col gap-3">
-                      <FormLabel className="text-foreground">
-                        {t('priority')} <RequirementMark />
-                      </FormLabel>
-                      <FormControl>
-                        <span className="flex w-full flex-row gap-2">
-                          {priorityOptions.map((option) => (
-                            <CoherencePriorityButton
-                              key={`priority-option-${option.priority}`}
-                              className="w-full"
-                              icon={option.icon}
-                              title={option.title}
-                              description={option.description}
-                              colorVariant={option.colorVariant}
-                              iconColorVariant={option.iconColorVariant}
-                              selected={field.value === option.priority}
-                              onClick={() => {
-                                form.setValue('priority', option.priority, {
-                                  shouldDirty: true,
-                                });
-                              }}
-                            />
-                          ))}
-                        </span>
-                      </FormControl>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="capitals"
-                render={({ field }) => (
-                  <FormItem className="border-t border-border pt-6">
-                    <FormLabel className="text-foreground">
-                      {tCapitals('formsOfCapital')}
-                    </FormLabel>
-                    <FormDescription>
-                      {tCapitals('capitalHintMany')}
-                    </FormDescription>
-                    <CapitalChoice
-                      mode="many"
-                      selected={parseCapitalKeys(field.value)}
-                      onChange={(next: CapitalKey[]) => field.onChange(next)}
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </section>
-            <section className="flex flex-col gap-6 border-t border-border pt-8">
               <FormField
                 control={form.control}
                 name="description"
@@ -1590,6 +1180,7 @@ export const CreateSignalForm = ({
                           <RichTextEditor
                             editorRef={null}
                             bordered={false}
+                            className="signal-description-editor"
                             markdown={descriptionValue}
                             translation={translateEditor}
                             placeholder={t('descriptionPlaceholder')}
@@ -1603,310 +1194,180 @@ export const CreateSignalForm = ({
                   );
                 }}
               />
+              {mode === 'create' && spaceSlug ? (
+                <div
+                  className="flex flex-col gap-2"
+                  data-signal-field="tagPeople"
+                >
+                  <span className="text-2 font-medium text-foreground">
+                    {t('signalFormTagPeople')}
+                  </span>
+                  <SignalTagPeopleField
+                    spaceSlug={spaceSlug}
+                    useMembers={useMembers}
+                    value={taggedMatrixUserIds}
+                    onChange={setTaggedMatrixUserIds}
+                    disabled={isPublishing}
+                  />
+                  <p className="text-1 text-muted-foreground">
+                    {t('signalFormTagPeopleHint')}
+                  </p>
+                </div>
+              ) : null}
+            </section>
+            <SignalTypeSection>
               <FormField
                 control={form.control}
-                name="tags"
+                name="type"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-foreground">
-                      {t('tags')}
-                    </FormLabel>
-                    <FormControl>
-                      <MultiSelect
-                        placeholder={t('selectOneOrMore')}
-                        searchPlaceholder={
-                          t.has('searchOrCreateTag')
-                            ? t('searchOrCreateTag')
-                            : 'Type to search or create a tag'
-                        }
-                        options={tagOptions}
-                        value={field.value}
-                        allowToggleAll={false}
-                        allowCreate={true}
-                        maxCount={2}
-                        uiStyle="tag-picker"
-                        labels={{
-                          more: (count) =>
-                            t.has('tagsMore' as never)
-                              ? `${t('tagsMore' as never)} ${count}`
-                              : `+ ${count} more`,
-                          noRecentTags: t.has('noRecentTags' as never)
-                            ? t('noRecentTags' as never)
-                            : 'No recent tags yet. Start typing to search tags.',
-                          noResults: t.has('noResults' as never)
-                            ? t('noResults' as never)
-                            : 'No results found.',
-                          mostUsed: t.has('mostUsedTagsHeading' as never)
-                            ? t('mostUsedTagsHeading' as never)
-                            : '--- Most used tags ---',
-                          create: (term) =>
-                            t.has('createTag' as never)
-                              ? `${t('createTag' as never)} "${term}"`
-                              : `Create "${term}"`,
-                          clear: t.has('clear' as never)
-                            ? t('clear' as never)
-                            : 'Clear',
-                          close: t.has('close' as never)
-                            ? t('close' as never)
-                            : 'Close',
-                        }}
-                        onValueChange={field.onChange}
-                      />
-                    </FormControl>
+                  <FormItem data-signal-field="type">
+                    <div className="flex w-full flex-col gap-3">
+                      <FormLabel className="text-foreground">
+                        {t('type')} <RequirementMark />
+                      </FormLabel>
+                      <FormControl>
+                        <SignalTypePickerGrid
+                          options={typeOptions}
+                          selected={field.value}
+                          onSelect={(type) => {
+                            form.setValue('type', type as FormValues['type'], {
+                              shouldDirty: true,
+                            });
+                          }}
+                        />
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </section>
-            <section className="flex flex-col gap-6 border-t border-border pt-8">
-              {mode === 'create' ? (
-                <div className="flex w-full flex-col gap-3">
-                  <Label className="text-foreground">
-                    {t('signalFormVotingPower')}
-                  </Label>
-                  <Slider
-                    min={1}
-                    max={100}
-                    step={1}
-                    value={[creatorVotePercent]}
-                    onValueChange={(value) =>
-                      setCreatorVotePercent(value[0] ?? 100)
-                    }
-                    displayValue
-                    disabled={isMutating}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    {t('signalFormVotingPowerHint')}
-                  </p>
+            </SignalTypeSection>
+            {mode === 'create' && votingModeStatus === 'error' ? (
+              <section className="flex flex-col gap-3 border-t border-border pt-8">
+                <Label className="text-foreground">
+                  {t('signalFormVoteWithPercent')}
+                </Label>
+                <div
+                  role="alert"
+                  className="flex flex-wrap items-center justify-between gap-3 border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
+                >
+                  <span>{tSignalCard('votingModeLoadFailed')}</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    colorVariant="neutral"
+                    size="sm"
+                    onClick={retryVotingMode}
+                  >
+                    {tSignalCard('votingModeRetry')}
+                  </Button>
                 </div>
-              ) : null}
-              <div className="grid gap-6 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="progressStatus"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        {t('signalFormStatus')}
-                      </FormLabel>
-                      <Select
-                        value={field.value ?? DEFAULT_SIGNAL_PROGRESS_STATUS}
-                        onValueChange={field.onChange}
-                        disabled={isMutating}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {(workflow?.statuses ?? []).map((status) => (
-                            <SelectItem key={status.slug} value={status.slug}>
-                              {status.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        {t('signalFormStatusHint')}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="board"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        {t('signalFormBoard')}
-                      </FormLabel>
-                      <Select
-                        value={
-                          field.value ??
-                          (workflow ? resolveDefaultBoard(workflow) : 'general')
-                        }
-                        onValueChange={field.onChange}
-                        disabled={isMutating}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {(workflow?.boards ?? [])
-                            .filter((board) => !board.archived)
-                            .map((board) => (
-                              <SelectItem key={board.slug} value={board.slug}>
-                                {board.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        {t('signalFormBoardHint')}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="assigneeIds"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        {t('signalFormAssignees')}
-                      </FormLabel>
-                      <FormControl>
-                        <SpaceMemberSelect
-                          mode="multi"
-                          members={assigneeOptions}
-                          value={(field.value ?? []).map(String)}
-                          onChange={(values) =>
-                            field.onChange(values.map(Number))
-                          }
-                          placeholder={
-                            isLoadingSpaceMembers
-                              ? t('signalFormAssigneeLoading')
-                              : t('signalFormAssigneeUnassigned')
-                          }
-                          searchPlaceholder={t('signalFormAssigneeSearch')}
-                          emptyListMessage={t('signalFormAssigneeEmpty')}
-                          unknownLabel={t('signalAssigneeUnknown')}
-                          disabled={isMutating}
-                          // The signal form lives inside an overlay dialog.
-                          popoverModal={false}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {t('signalFormAssigneeHint')}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="dueAt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        {t('signalFormDueDate')}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="date"
-                          disabled={isMutating}
-                          value={toLocalDueDateInputValue(field.value ?? null)}
-                          onChange={(event) =>
-                            field.onChange(
-                              dueDateFromInputValue(event.target.value),
-                            )
-                          }
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {t('signalFormDueDateHint')}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </section>
-            {mode === 'edit' && signalId && spaceSlug ? (
-              <SignalLinkedCalendarFromForm
-                form={form}
-                spaceSlug={spaceSlug}
-                signalId={signalId}
-                lang={lang}
-                initialTitle={initialValues?.title}
-              />
+              </section>
             ) : null}
-
+            {mode === 'create' && votingMode === 'token' ? (
+              <section className="flex flex-col gap-3 border-t border-border pt-8">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <Label className="text-foreground">
+                    {t('signalFormVoteWithPercent')}
+                  </Label>
+                  <span className="text-1 font-medium tabular-nums text-foreground">
+                    {creatorVoteReadout}
+                  </span>
+                </div>
+                <Slider
+                  min={1}
+                  max={100}
+                  step={1}
+                  value={[creatorVotePercent]}
+                  onValueChange={(value) =>
+                    setCreatorVotePercent(value[0] ?? 100)
+                  }
+                  disabled={isMutating}
+                  aria-label={t('signalFormVoteWithPercent')}
+                />
+                <div className="grid grid-cols-4 gap-2">
+                  {CREATOR_VOTE_PRESETS.map((preset) => {
+                    const selected = creatorVotePercent === preset;
+                    return (
+                      <Button
+                        key={preset}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        colorVariant="neutral"
+                        aria-pressed={selected}
+                        disabled={isMutating}
+                        onClick={() => setCreatorVotePercent(preset)}
+                        className={cn(
+                          'tabular-nums',
+                          selected &&
+                            'border-foreground bg-foreground text-background hover:border-foreground hover:bg-foreground hover:text-background',
+                        )}
+                      >
+                        {preset}%
+                      </Button>
+                    );
+                  })}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {t('signalFormVotingPowerHint')}
+                </p>
+              </section>
+            ) : null}
             <section className="flex flex-col gap-6 border-t border-border pt-8">
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-foreground">
                   {t('signalFormMedia')}
                 </p>
-                <div
-                  role="group"
-                  aria-label={t('signalFormMedia')}
-                  className="flex gap-2"
-                >
-                  {(
-                    [
-                      {
-                        kind: 'images' as const,
-                        label: t('signalFormImage'),
-                        Icon: Camera,
-                      },
-                      {
-                        kind: 'video' as const,
-                        label: t('signalFormMediaVideo'),
-                        Icon: Video,
-                      },
-                    ] as const
-                  ).map(({ kind, label, Icon }) => {
-                    const selected = mediaKind === kind;
-                    return (
-                      <button
-                        key={kind}
-                        type="button"
-                        aria-pressed={selected}
-                        disabled={isMutating}
-                        onClick={() => {
-                          mediaChoiceTouched.current = true;
-                          setMediaKind(kind);
-                        }}
-                        style={{ width: 112, height: 112 }}
-                        className={cn(
-                          'flex flex-col items-center justify-center gap-2 border px-2',
-                          selected
-                            ? 'border-foreground bg-foreground text-background'
-                            : 'border-border bg-background text-foreground hover:bg-neutral-2',
-                        )}
-                      >
-                        <Icon
-                          className="size-5"
-                          strokeWidth={1.5}
-                          aria-hidden
-                        />
-                        <span className="text-center text-1 leading-tight">
-                          {label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {mediaKind === 'images' ? (
-                <div className="flex flex-col gap-2">
-                  <AddAttachment
+                <div role="group" aria-label={t('signalFormMedia')}>
+                  <SignalImagePicker
+                    label={t('signalFormImage')}
+                    hint={t('signalFormImageHint')}
                     accept={SIGNAL_IMAGE_ACCEPT}
                     maxFiles={Math.max(
                       0,
                       SIGNAL_IMAGE_LIMIT - keptImages.length,
                     )}
                     maxBytes={SIGNAL_MEDIA_MAX_BYTES}
-                    label={t('signalFormImageHint')}
-                    value={[...keptImages, ...imageFiles]}
-                    defaultAttachments={keptImages}
-                    onChange={setImageFiles}
-                    onExistingAttachmentsChange={(updated) =>
+                    files={imageFiles}
+                    kept={keptImages}
+                    onFilesChange={setImageFiles}
+                    onKeptChange={(updated) =>
                       setKeptImages(asMediaItems(updated))
+                    }
+                    disabled={isMutating}
+                    beside={
+                      <button
+                        type="button"
+                        aria-pressed={showVideo}
+                        disabled={isMutating}
+                        onClick={toggleVideo}
+                        style={{ width: 112, height: 112 }}
+                        className={cn(
+                          'flex flex-col items-center justify-center gap-2 border px-2',
+                          showVideo
+                            ? 'border-foreground bg-foreground text-background'
+                            : 'border-border bg-background text-foreground hover:bg-neutral-2',
+                        )}
+                      >
+                        <Video
+                          className="size-5"
+                          strokeWidth={1.5}
+                          aria-hidden
+                        />
+                        <span className="text-center text-1 leading-tight">
+                          {t('signalFormMediaVideo')}
+                        </span>
+                      </button>
                     }
                   />
                 </div>
-              ) : null}
-              {mediaKind === 'video' ? (
+              </div>
+              {showVideo ? (
                 <FormField
                   control={form.control}
                   name="videoUrl"
-                  render={({ field }) => (
+                  render={({ field, fieldState }) => (
                     <FormItem data-signal-field="videoUrl">
                       <FormLabel className="text-foreground">
                         {t('signalFormVideo')}
@@ -1917,12 +1378,26 @@ export const CreateSignalForm = ({
                           disabled={isMutating}
                           placeholder="https://"
                           value={field.value ?? ''}
-                          onChange={field.onChange}
+                          onChange={(event) => {
+                            field.onChange(event);
+                            if (fieldState.error?.type === 'manual') {
+                              form.clearErrors('videoUrl');
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormDescription>
                         {t('signalFormVideoHint')}
                       </FormDescription>
+                      {videoLinkWarning && !fieldState.error ? (
+                        <p
+                          role="alert"
+                          className="text-sm text-destructive"
+                          data-testid="signal-video-link-warning"
+                        >
+                          {videoLinkWarning}
+                        </p>
+                      ) : null}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -1950,149 +1425,9 @@ export const CreateSignalForm = ({
               </div>
             </section>
 
-            <section
-              className="flex flex-col gap-6 border-t border-border pt-8"
-              data-signal-field="indicativePayouts"
-            >
-              <Skeleton loading={isLoadingTokens} width="100%" height={90}>
-                <TokenPayoutFieldArray
-                  tokens={tokens}
-                  name="indicativePayouts"
-                  label={t('indicativeTokens')}
-                  markRequired={false}
-                  isLoadingTokens={isLoadingTokens}
-                />
-              </Skeleton>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {t('indicativeTokensHint')}
-              </p>
-            </section>
-
             <div className="flex w-full flex-col items-end gap-3 pt-8">
               <SignalFormRootError control={form.control} />
               <div className="flex w-full justify-end gap-2">
-                {mode === 'edit' && signalSlug ? (
-                  <ConfirmDialog
-                    title={
-                      isSignalArchived
-                        ? t.has('unarchiveSignal')
-                          ? t('unarchiveSignal')
-                          : 'Unarchive signal'
-                        : t.has('archiveSignal')
-                        ? t('archiveSignal')
-                        : 'Archive signal'
-                    }
-                    description={
-                      isSignalArchived
-                        ? t.has('unarchiveSignalConfirm')
-                          ? t('unarchiveSignalConfirm')
-                          : 'Restore this signal to active views. Continue?'
-                        : t.has('archiveSignalConfirm')
-                        ? t('archiveSignalConfirm')
-                        : 'This hides the signal from active views. You can unarchive it later. Continue?'
-                    }
-                    customAcceptButtonText={
-                      isSignalArchived
-                        ? t.has('yesUnarchive')
-                          ? t('yesUnarchive')
-                          : 'Yes, unarchive'
-                        : t.has('yesArchive')
-                        ? t('yesArchive')
-                        : 'Yes, archive'
-                    }
-                    customRejectButtonText={t('noLeave')}
-                    onAcceptClicked={async () => {
-                      form.clearErrors('root');
-                      if (!authToken?.trim()) {
-                        form.setError('root', {
-                          type: 'manual',
-                          message: t.has('editSignalMissingAuth')
-                            ? t('editSignalMissingAuth')
-                            : isSignalArchived
-                            ? 'Your session expired. Please sign in again before unarchiving.'
-                            : 'Your session expired. Please sign in again before archiving.',
-                        });
-                        return;
-                      }
-                      if (!isEditAuthorized) {
-                        form.setError('root', {
-                          type: 'manual',
-                          message: t.has('editSignalNoPermission')
-                            ? t('editSignalNoPermission')
-                            : 'Only space members and delegates can edit this signal.',
-                        });
-                        return;
-                      }
-                      setIsTogglingArchiveState(true);
-                      const nextArchivedState = !isSignalArchived;
-                      try {
-                        await updateCoherenceBySlug({
-                          slug: signalSlug,
-                          archived: nextArchivedState,
-                        });
-                        if (spaceSlug) {
-                          await revalidateCoherences(spaceSlug);
-                        }
-                        if (nextArchivedState) {
-                          router.push(successfulUrl);
-                          return;
-                        }
-                        setIsSignalArchived(false);
-                        form.setValue('archived', false);
-                      } catch (error) {
-                        const message =
-                          error instanceof Error &&
-                          error.message.trim().length > 0
-                            ? error.message
-                            : isSignalArchived
-                            ? t.has('unarchiveFailed')
-                              ? t('unarchiveFailed')
-                              : 'Could not unarchive signal. Please try again.'
-                            : t.has('archiveFailed')
-                            ? t('archiveFailed')
-                            : 'Could not archive signal. Please try again.';
-                        form.setError('root', {
-                          type: 'manual',
-                          message,
-                        });
-                      } finally {
-                        setIsTogglingArchiveState(false);
-                      }
-                    }}
-                  >
-                    <Button
-                      type="button"
-                      variant="outline"
-                      colorVariant="neutral"
-                      disabled={
-                        isTogglingArchiveState ||
-                        isMutating ||
-                        !isEditAuthorized
-                      }
-                    >
-                      {isSignalArchived
-                        ? t.has('unarchiveAction')
-                          ? t('unarchiveAction')
-                          : t.has('unarchive')
-                          ? t('unarchive')
-                          : 'Unarchive'
-                        : t.has('archiveAction')
-                        ? t('archiveAction')
-                        : 'Archive'}
-                    </Button>
-                  </ConfirmDialog>
-                ) : null}
-                {mode === 'edit' ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    colorVariant="neutral"
-                    disabled={isMutating || !spaceSlug}
-                    onClick={handleTurnIntoProposal}
-                  >
-                    {t('turnIntoProposal')}
-                  </Button>
-                ) : null}
                 <Button
                   type="submit"
                   disabled={isMutating || !isEditAuthorized}

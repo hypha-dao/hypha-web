@@ -3,15 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { getSignalPath, getSpaceChatPath } from '../get-path-function';
 
 describe('getSignalPath', () => {
-  it('opens that signal on its space dashboard with chat', () => {
+  it('opens the signal page in its space', () => {
     expect(getSignalPath('en', 'noord', 'budget-q2')).toBe(
-      '/en/dho/noord/overview?signal=budget-q2',
+      '/en/dho/noord/coherence/signal/budget-q2',
     );
   });
 
   it('keeps the signal slug when it contains reserved characters', () => {
-    expect(getSignalPath('pt', 'hypha', 'a&b')).toBe(
-      '/pt/dho/hypha/overview?signal=a%26b',
+    expect(getSignalPath('pt', 'hypha', 'a&b/c')).toBe(
+      '/pt/dho/hypha/coherence/signal/a%26b%2Fc',
     );
   });
 });
