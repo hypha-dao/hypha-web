@@ -33,6 +33,12 @@ const ADDRESSED_SECTION = new RegExp(
   'i',
 );
 
+/** "Put in goal …", "Set the scope to …". Not "put that in the Goal". */
+const COMMANDED_SECTION = new RegExp(
+  `\\b(?:put|set|update|change|write|add|use)\\s+(?:in(?:to)?|on|for|as|to)?\\s*(?:the\\s+)?${SECTION_NAME}\\b`,
+  'i',
+);
+
 const MILESTONE_COUNT = 'one|two|three|four|five|six|seven|eight|nine|ten|\\d+';
 
 const MILESTONE_MONTH =
@@ -88,6 +94,7 @@ export function isBulkQuestDraftRequest(text: string): boolean {
 function explicitSectionName(text: string): string | undefined {
   return (
     NAMED_SECTION.exec(text)?.[1] ??
+    COMMANDED_SECTION.exec(text)?.[1] ??
     SECTION_LABEL.exec(text)?.[1] ??
     SECTION_NAV.exec(text)?.[1] ??
     ADDRESSED_SECTION.exec(text)?.[1]

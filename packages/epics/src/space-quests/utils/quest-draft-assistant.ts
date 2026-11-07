@@ -3,6 +3,7 @@ import {
   bulletsToMarkdownList,
   isBulkQuestDraftRequest,
   limitQuestPatchToStep,
+  resolveQuestDraftTarget,
   splitMarkdownLinesToBullets,
   stripViewerYouMarker,
   type QuestReward,
@@ -230,6 +231,112 @@ export function isQuestSectionApproval(message: string): boolean {
   return approvalRemainder(match[2] ?? '');
 }
 
+const REJECTION_PHRASE =
+  /^(?:no|nope|nah|don't|do not|not that|no thanks|no thank you|reject(?: that)?|skip that)(?:[.!])?$/i;
+
+/** A question or coaching request, including one that names a section mid-sentence. */
+const QUESTION_OPENING =
+  /^(?:do you|does this|does that|is this|is that|are we|can you|could you|would you|what do you|how well|should we|should i|why)\b/i;
+
+const EXPLICIT_COMMAND =
+  /^(?:please\s+)?(?:put|set|update|change|write|add|use)\b/i;
+
+const COMMAND_SECTION = new RegExp(
+  `\\b(?:put|set|update|change|write|add|use)\\s+(?:in(?:to)?|on|for|as|to)?\\s*(?:the\\s+)?(${APPROVAL_SECTION})\\b`,
+  'i',
+);
+
+const VAGUE_ACTIVITY =
+  /\b(?:test(?:ing)?(?:\s+out)?|try(?:ing)?|explor(?:e|ing)|check(?:ing)?|look(?:ing)?(?:\s+at)?|improv(?:e|ing)|experiment(?:ing)?|work(?:ing)?\s+on)\b/i;
+
+const GOAL_SUCCESS_SIGNAL =
+  /\d|\b(?:so that|so we|in order to|until|success|succeed|successful|recorded|verify that|passes|pass\/fail)\b/i;
+
+export function isQuestSectionRejection(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length > 40) return false;
+  return REJECTION_PHRASE.test(trimmed);
+}
+
+export function isQuestDraftQuestion(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || isQuestSectionApproval(trimmed)) return false;
+  if (trimmed.endsWith('?')) return true;
+  return QUESTION_OPENING.test(trimmed);
+}
+
+/**
+ * A short goal that names an activity and no outcome. Structural, so a new
+ * wording of the same shape is guided instead of stored as a finished goal.
+ */
+export function isVagueQuestGoal(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length > 140) return false;
+  if (GOAL_SUCCESS_SIGNAL.test(trimmed)) return false;
+  return VAGUE_ACTIVITY.test(trimmed);
+}
+
+export type ExplicitQuestCommand = {
+  step: QuestStewardStep;
+  content: string;
+};
+
+function sectionFromCommandName(name: string): QuestStewardStep | null {
+  const normalized = name.toLowerCase().replace(/\s+/g, ' ').trim();
+  if (/^goals?$/.test(normalized)) return 'goal';
+  if (/^scopes?$/.test(normalized)) return 'scope';
+  if (/^success(?: criteria)?$/.test(normalized)) return 'success';
+  if (/^milestones?$/.test(normalized)) return 'milestones';
+  if (/^leads?$/.test(normalized)) return 'lead';
+  if (/^members?$/.test(normalized)) return 'members';
+  if (/^(?:quest\s+)?rewards?$/.test(normalized)) return 'rewards';
+  if (/^target dates?$/.test(normalized)) return 'targetDate';
+  if (/^(?:quest\s+)?(?:names?|titles?)$/.test(normalized)) return 'name';
+  return null;
+}
+
+function commandContent(text: string, sectionEnd: number): string | null {
+  const quoted = /["“]([^"”]+)["”]/.exec(text);
+  if (quoted?.[1]?.trim()) return quoted[1].trim();
+  const after = text.slice(sectionEnd);
+  const to = /\bto\b\s+(.+)$/is.exec(after);
+  if (to?.[1]?.trim()) return to[1].trim().replace(/[.!]+$/g, '');
+  const colon = /:\s*(.+)$/s.exec(after);
+  if (colon?.[1]?.trim()) return colon[1].trim();
+  return null;
+}
+
+/** Imperative put/set/update with a section and real content. Not a confirmation. */
+export function explicitQuestSectionCommand(
+  text: string,
+): ExplicitQuestCommand | null {
+  const trimmed = text.trim();
+  if (!EXPLICIT_COMMAND.test(trimmed)) return null;
+  if (isQuestSectionApproval(trimmed)) return null;
+  const match = COMMAND_SECTION.exec(trimmed);
+  if (!match?.[1] || match.index === undefined) return null;
+  const step = sectionFromCommandName(match[1]);
+  if (!step) return null;
+  const content = commandContent(trimmed, match.index + match[0].length);
+  if (!content || /^(?:that|it|this)$/i.test(content)) return null;
+  return { step, content };
+}
+
+export function vagueGoalGuidance(goal: string): string {
+  const shown = goal.trim();
+  return `“${shown}” gives an activity, but it does not say what the test outcome or success means. What behavior do you want to verify?`;
+}
+
+/** Drop a leading "goal is" / "Goal:" so the activity itself can be judged. */
+export function goalStatement(text: string): string {
+  const stripped = text
+    .trim()
+    .replace(/^(?:the\s+)?goal\s*:\s*/i, '')
+    .replace(/^(?:the\s+)?goal\s+is\s+(?:to\s+)?/i, '')
+    .trim();
+  return stripped || text.trim();
+}
+
 /** Drop "Please write these as Success Criteria, proposing in chat first." */
 export function stripQuestMetaInstructions(text: string): string {
   const without = text.replace(QUEST_META_INSTRUCTION, ' ');
@@ -444,6 +551,7 @@ function textBeforeOutOfScope(text: string): string {
 export function buildLocalQuestDraftPatch({
   message,
   currentStep,
+  draft,
   viewerDisplayName,
 }: {
   message: string;
@@ -453,6 +561,32 @@ export function buildLocalQuestDraftPatch({
 }): QuestDraftPatchInput {
   const raw = message.trim();
   if (!raw || isBulkSectionDraftRequest(raw)) return {};
+  if (
+    isQuestDraftQuestion(raw) ||
+    isQuestSectionRejection(raw) ||
+    isQuestSectionApproval(raw)
+  ) {
+    return {};
+  }
+  const command = explicitQuestSectionCommand(raw);
+  if (command) {
+    const extracted = buildLocalQuestDraftPatch({
+      message: command.content,
+      currentStep: command.step,
+      draft,
+      viewerDisplayName,
+    });
+    return sanitizeQuestDraftPatch(
+      limitQuestPatchToStep(extracted, command.step),
+    );
+  }
+  if (
+    EXPLICIT_COMMAND.test(raw) &&
+    COMMAND_SECTION.test(raw) &&
+    !isQuestSectionApproval(raw)
+  ) {
+    return {};
+  }
   const trimmed = stripQuestMetaInstructions(raw);
   if (!trimmed) return {};
 
@@ -1095,4 +1229,332 @@ export function nextQuestStepAfterUpdate({
   const next = findNextUnfilledQuestStep(draft, currentStep);
   if (!next) return { step: currentStep, complete: true };
   return { step: next, complete: false };
+}
+
+export const QUEST_DRAFT_READY_REPLY =
+  "Your quest draft is ready. Click CREATE QUEST whenever you're ready to submit it as a proposal for voting.";
+
+export type QuestDraftTurnHistoryItem = {
+  role: 'user' | 'agent';
+  text: string;
+};
+
+export type QuestDraftModelTurn = {
+  patch?: QuestDraftPatchInput | null;
+  reply?: string | null;
+};
+
+export type NewQuestDraftTurnResult = {
+  draft: QuestDraftStateSnapshot;
+  wrote: boolean;
+  pending: PendingQuestSectionProposal | null;
+  focusStep: QuestStewardStep;
+  reply: string;
+};
+
+function sectionMentioned(text: string): QuestStewardStep | null {
+  const named = new RegExp(`\\b(${APPROVAL_SECTION})\\b`, 'i').exec(text);
+  return named?.[1] ? sectionFromCommandName(named[1]) : null;
+}
+
+function questionSubject(
+  message: string,
+  currentStep: QuestStewardStep,
+  pending: PendingQuestSectionProposal | null,
+  history: readonly QuestDraftTurnHistoryItem[],
+): QuestStewardStep {
+  const named = sectionMentioned(message);
+  if (named) return named;
+  if (/\b(?:that|this|it)\b/i.test(message)) {
+    for (let i = history.length - 1; i >= 0; i -= 1) {
+      const prior = history[i];
+      if (!prior || prior.role !== 'user') continue;
+      const command = explicitQuestSectionCommand(prior.text);
+      if (command) return command.step;
+      const priorStep = sectionMentioned(prior.text);
+      if (priorStep) return priorStep;
+    }
+    if (pending) return pending.step;
+  }
+  return currentStep;
+}
+
+function assessSavedSection(
+  step: QuestStewardStep,
+  draft: QuestDraftStateSnapshot,
+): string {
+  if (step === 'goal') {
+    const goal = draft.goal.trim();
+    if (!goal) {
+      return `The Goal is still empty. ${stewardQuestionForStep('goal')}`;
+    }
+    if (isVagueQuestGoal(goal)) return vagueGoalGuidance(goal);
+    return `The Goal is “${goal}”. It names what should be true, so it can stay as the Goal.`;
+  }
+  if (step === 'scope') {
+    if (draft.scopeIn.length === 0 && draft.scopeOut.length === 0) {
+      return `Scope is still empty. ${stewardQuestionForStep('scope')}`;
+    }
+    const inside = draft.scopeIn.join('; ') || 'nothing listed';
+    const outside = draft.scopeOut.join('; ') || 'nothing listed';
+    return `In scope: ${inside}. Out of scope: ${outside}.`;
+  }
+  if (step === 'success') {
+    const saved = draft.successCriteria.trim();
+    if (!saved) {
+      return `Success criteria are still empty. ${stewardQuestionForStep(
+        'success',
+      )}`;
+    }
+    return `Success criteria: ${saved}`;
+  }
+  if (step === 'milestones') {
+    if (draft.milestones.length === 0) {
+      return `Milestones are still empty. ${stewardQuestionForStep(
+        'milestones',
+      )}`;
+    }
+    return draft.milestones
+      .map((milestone) => milestone.name)
+      .filter(Boolean)
+      .join('; ');
+  }
+  return stewardQuestionForStep(step);
+}
+
+function limitedModelPatch(
+  model: QuestDraftModelTurn | null,
+  step: QuestStewardStep,
+): QuestDraftPatchInput {
+  if (!model?.patch || Object.keys(model.patch).length === 0) return {};
+  return sanitizeQuestDraftPatch(limitQuestPatchToStep(model.patch, step));
+}
+
+function withoutVagueGoal(patch: QuestDraftPatchInput): QuestDraftPatchInput {
+  if (!patch.goal || !isVagueQuestGoal(patch.goal)) return patch;
+  const rest = { ...patch };
+  delete rest.goal;
+  return rest;
+}
+
+/**
+ * Deterministic intents never need the model. A wrong or missing model must
+ * not be able to store a question or an instruction wrapper.
+ */
+export function questDraftTurnUsesModel(message: string): boolean {
+  const text = message.trim();
+  if (!text || isBulkSectionDraftRequest(text)) return false;
+  if (isQuestSectionApproval(text) || isQuestSectionRejection(text)) {
+    return false;
+  }
+  if (isQuestDraftQuestion(text) || isQuestSectionCoachingOpener(text)) {
+    return false;
+  }
+  if (explicitQuestSectionCommand(text)) return false;
+  if (EXPLICIT_COMMAND.test(text) && COMMAND_SECTION.test(text)) return false;
+  if (isVagueQuestGoal(goalStatement(text))) return false;
+  return true;
+}
+
+/**
+ * One send on the new-quest helper. The create screen calls this after an
+ * optional model turn. Only `wrote` updates the draft.
+ */
+export function runNewQuestDraftTurn({
+  message,
+  currentStep,
+  draft,
+  pending,
+  history = [],
+  viewerDisplayName,
+  spaceMembers,
+  model,
+}: {
+  message: string;
+  currentStep: QuestStewardStep;
+  draft: QuestDraftStateSnapshot;
+  pending: PendingQuestSectionProposal | null;
+  history?: readonly QuestDraftTurnHistoryItem[];
+  viewerDisplayName: string;
+  spaceMembers: readonly QuestSpaceMember[];
+  model: QuestDraftModelTurn | null;
+}): NewQuestDraftTurnResult {
+  const text = message.trim();
+  const target = resolveQuestDraftTarget(text, currentStep);
+  const stay = (
+    reply: string,
+    step: QuestStewardStep = currentStep,
+    nextPending: PendingQuestSectionProposal | null = null,
+  ): NewQuestDraftTurnResult => ({
+    draft,
+    wrote: false,
+    pending: nextPending,
+    focusStep: step,
+    reply,
+  });
+
+  const finishApply = (
+    step: QuestStewardStep,
+    patch: QuestDraftPatchInput,
+  ): NewQuestDraftTurnResult => {
+    const limited = sanitizeQuestDraftPatch(limitQuestPatchToStep(patch, step));
+    const { next, updatedLabels } = applyPatchToQuestDraftState({
+      current: draft,
+      patch: limited,
+      spaceMembers,
+      viewerDisplayName,
+    });
+    if (updatedLabels.length === 0) {
+      return {
+        draft,
+        wrote: false,
+        pending: null,
+        focusStep: currentStep,
+        reply: `Nothing is waiting on a yes. ${stewardQuestionForStep(
+          currentStep,
+        )}`,
+      };
+    }
+    if (step === 'goal' && isVagueQuestGoal(next.goal)) {
+      return {
+        draft: next,
+        wrote: true,
+        pending: null,
+        focusStep: 'goal',
+        reply: `Added that to the Goal.\n\n${vagueGoalGuidance(next.goal)}`,
+      };
+    }
+    const advance = nextQuestStepAfterUpdate({
+      draft: next,
+      currentStep: step,
+      updatedLabels,
+    });
+    const reply = advance.complete
+      ? QUEST_DRAFT_READY_REPLY
+      : `Added that to the ${questStepSectionLabel(
+          step,
+        )}. ${stewardQuestionForStep(advance.step)}`;
+    return {
+      draft: next,
+      wrote: true,
+      pending: null,
+      focusStep: advance.step,
+      reply,
+    };
+  };
+
+  if (!text || target.bulk || isBulkSectionDraftRequest(text)) {
+    return stay(
+      `We'll take one section at a time. ${stewardQuestionForStep(
+        currentStep,
+      )}`,
+    );
+  }
+
+  if (isQuestSectionApproval(text)) {
+    const named = sectionNamedInApproval(text);
+    const pendingPatch = pending?.patch ?? {};
+    const hasPending = Object.keys(pendingPatch).length > 0;
+    if (pending && hasPending && (!named || named === pending.step)) {
+      return finishApply(pending.step, pending.patch);
+    }
+    return stay(
+      `Nothing is waiting on a yes. ${stewardQuestionForStep(currentStep)}`,
+    );
+  }
+
+  const command = explicitQuestSectionCommand(text);
+  if (command) {
+    const extracted = buildLocalQuestDraftPatch({
+      message: command.content,
+      currentStep: command.step,
+      draft,
+      viewerDisplayName,
+    });
+    return finishApply(command.step, extracted);
+  }
+
+  if (isQuestSectionRejection(text)) {
+    const step = pending?.step ?? currentStep;
+    return stay(`Okay, I left that out. ${stewardQuestionForStep(step)}`, step);
+  }
+
+  if (isQuestDraftQuestion(text)) {
+    const subject = questionSubject(text, currentStep, pending, history);
+    return stay(assessSavedSection(subject, draft), currentStep);
+  }
+
+  if (isQuestSectionCoachingOpener(text)) {
+    return stay(questSectionCoachReply(target.step), target.step);
+  }
+
+  if (isQuestSectionRewriteRequest(text)) {
+    const suggested = limitedModelPatch(model, target.step);
+    if (Object.keys(suggested).length > 0) {
+      return stay(
+        `Suggested refinement, not saved yet:\n${replyWithSectionApprovalAsk(
+          null,
+          target.step,
+          suggested,
+        )}`,
+        target.step,
+        { step: target.step, patch: suggested },
+      );
+    }
+    return stay(
+      `I won't replace the ${questStepSectionLabel(
+        target.step,
+      )} until you approve a wording. What should change?`,
+      target.step,
+    );
+  }
+
+  if (
+    (target.step === 'goal' || currentStep === 'goal') &&
+    isVagueQuestGoal(goalStatement(text))
+  ) {
+    return stay(vagueGoalGuidance(goalStatement(text)), 'goal');
+  }
+
+  const supplied = messageSuppliesSectionContent(text)
+    ? withoutVagueGoal(
+        sanitizeQuestDraftPatch(
+          limitQuestPatchToStep(
+            buildLocalQuestDraftPatch({
+              message: text,
+              currentStep: target.step,
+              draft,
+              viewerDisplayName,
+            }),
+            target.step,
+          ),
+        ),
+      )
+    : {};
+  if (Object.keys(supplied).length > 0) {
+    return stay(
+      replyWithSectionApprovalAsk(null, target.step, supplied),
+      target.step,
+      { step: target.step, patch: supplied },
+    );
+  }
+
+  const suggested = limitedModelPatch(model, target.step);
+  if (Object.keys(suggested).length > 0) {
+    return stay(
+      `Suggested refinement, not saved yet:\n${replyWithSectionApprovalAsk(
+        null,
+        target.step,
+        suggested,
+      )}`,
+      target.step,
+      { step: target.step, patch: suggested },
+    );
+  }
+
+  const modelReply = model?.reply?.trim() ?? '';
+  if (modelReply && modelReply !== text) {
+    return stay(modelReply, target.step);
+  }
+  return stay(questSectionCoachReply(target.step), target.step);
 }

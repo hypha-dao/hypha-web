@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { resolveQuestDraftTarget } from '@hypha-platform/core/client';
+import {
+  resolveQuestDraftTarget,
+  type QuestStewardStep,
+} from '@hypha-platform/core/client';
 import {
   applyPatchToQuestDraftState,
   buildLocalQuestDraftPatch,
@@ -8,8 +11,12 @@ import {
   formatPendingQuestPatch,
   isQuestSectionApproval,
   isQuestSectionCoachingOpener,
+  questDraftTurnUsesModel,
   replyWithSectionApprovalAsk,
+  runNewQuestDraftTurn,
   stripQuestMetaInstructions,
+  type PendingQuestSectionProposal,
+  type QuestDraftModelTurn,
   type QuestDraftStateSnapshot,
 } from '../quest-draft-assistant';
 
@@ -640,5 +647,391 @@ describe('quest-draft-assistant', () => {
       viewerDisplayName: 'Vlad Hramtsov',
     });
     expect(next.members[0]?.responsibilities).toEqual([]);
+  });
+});
+
+describe('new quest helper transcript', () => {
+  const hostile: QuestDraftModelTurn = {
+    patch: {
+      goal: 'Put in goal "Testing out the quest feature"',
+      scopeIn: ['do you think that is well defined goal?'],
+    },
+    reply: 'Do you want that to be in the Scope?',
+  };
+
+  function send(
+    message: string,
+    state: {
+      draft: QuestDraftStateSnapshot;
+      currentStep: QuestStewardStep;
+      pending: PendingQuestSectionProposal | null;
+    },
+    model: QuestDraftModelTurn | null = null,
+    history: { role: 'user' | 'agent'; text: string }[] = [],
+  ) {
+    return runNewQuestDraftTurn({
+      message,
+      currentStep: state.currentStep,
+      draft: state.draft,
+      pending: state.pending,
+      history,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      model,
+    });
+  }
+
+  it('follows the failed /quests/new transcript without storing the instruction or the question', () => {
+    expect(questDraftTurnUsesModel('goal is to test quest')).toBe(false);
+    expect(
+      questDraftTurnUsesModel('Put in goal "Testing out the quest feature"'),
+    ).toBe(false);
+    expect(
+      questDraftTurnUsesModel('do you think that is well defined goal?'),
+    ).toBe(false);
+    expect(questDraftTurnUsesModel('yes')).toBe(false);
+
+    const opening = send('goal is to test quest', {
+      draft: emptyDraft,
+      currentStep: 'goal',
+      pending: null,
+    });
+    expect(opening.wrote).toBe(false);
+    expect(opening.draft.goal).toBe('');
+    expect(opening.reply).toMatch(/activity/i);
+    expect(opening.reply).toMatch(/test outcome or success/i);
+    expect(opening.reply).toMatch(/what behavior do you want to verify/i);
+    expect(opening.reply).not.toMatch(/Do you want that to be in the Goal/i);
+
+    const commanded = send(
+      'Put in goal "Testing out the quest feature"',
+      {
+        draft: opening.draft,
+        currentStep: 'goal',
+        pending: opening.pending,
+      },
+      hostile,
+    );
+    expect(commanded.wrote).toBe(true);
+    expect(commanded.draft.goal).toBe('Testing out the quest feature');
+    expect(commanded.draft.scopeIn).toEqual([]);
+    expect(commanded.draft.scopeOut).toEqual([]);
+    expect(commanded.draft.successCriteria).toBe('');
+    expect(commanded.draft.milestones).toEqual([]);
+    expect(commanded.draft.members).toEqual([]);
+    expect(commanded.draft.rewards).toEqual([]);
+    expect(commanded.draft.targetDate).toBeNull();
+    expect(commanded.pending).toBeNull();
+    expect(commanded.focusStep).toBe('goal');
+    expect(commanded.reply).toMatch(/Added that to the Goal/i);
+    expect(commanded.reply).toMatch(/activity/i);
+    expect(commanded.reply).toMatch(/test outcome or success/i);
+    expect(commanded.reply).toMatch(/what behavior do you want to verify/i);
+    expect(commanded.reply).not.toMatch(/Do you want that to be in the Goal/i);
+    expect(commanded.reply).not.toContain(
+      'Put in goal "Testing out the quest feature"',
+    );
+
+    const staleYes = send('yes', {
+      draft: commanded.draft,
+      currentStep: commanded.focusStep,
+      pending: commanded.pending,
+    });
+    expect(staleYes.wrote).toBe(false);
+    expect(staleYes.draft.goal).toBe('Testing out the quest feature');
+    expect(staleYes.draft.scopeIn).toEqual([]);
+    expect(staleYes.reply).toMatch(/Nothing is waiting on a yes/i);
+
+    const coaching = send(
+      'do you think that is well defined goal?',
+      {
+        draft: commanded.draft,
+        currentStep: 'scope',
+        pending: {
+          step: 'scope',
+          patch: { scopeIn: ['a stale scope proposal'] },
+        },
+      },
+      hostile,
+      [
+        {
+          role: 'user',
+          text: 'Put in goal "Testing out the quest feature"',
+        },
+      ],
+    );
+    expect(coaching.wrote).toBe(false);
+    expect(coaching.draft.goal).toBe('Testing out the quest feature');
+    expect(coaching.draft.scopeIn).toEqual([]);
+    expect(coaching.draft.scopeOut).toEqual([]);
+    expect(coaching.pending).toBeNull();
+    expect(coaching.focusStep).toBe('scope');
+    expect(coaching.reply).toMatch(/activity/i);
+    expect(coaching.reply).toMatch(/what behavior do you want to verify/i);
+    expect(coaching.reply).not.toMatch(/Do you want that to be in the Scope/i);
+    expect(coaching.reply).not.toContain(
+      'do you think that is well defined goal?',
+    );
+
+    const yesAfterQuestion = send('yes', {
+      draft: coaching.draft,
+      currentStep: 'scope',
+      pending: coaching.pending,
+    });
+    expect(yesAfterQuestion.wrote).toBe(false);
+    expect(yesAfterQuestion.draft.scopeIn).toEqual([]);
+    expect(yesAfterQuestion.draft.goal).toBe('Testing out the quest feature');
+  });
+
+  it('rejects a proposal, then applies a later explicit correction', () => {
+    const proposed = send('In: sandbox checklist. Out: real payments.', {
+      draft: {
+        ...emptyDraft,
+        goal: 'Match every new joiner to 3 spaces in their first day.',
+      },
+      currentStep: 'scope',
+      pending: null,
+    });
+    expect(proposed.wrote).toBe(false);
+    expect(proposed.pending?.step).toBe('scope');
+    expect(proposed.pending?.patch.scopeIn).toEqual(['sandbox checklist.']);
+    expect(proposed.draft.scopeIn).toEqual([]);
+
+    const rejected = send('no', {
+      draft: proposed.draft,
+      currentStep: 'scope',
+      pending: proposed.pending,
+    });
+    expect(rejected.wrote).toBe(false);
+    expect(rejected.pending).toBeNull();
+    expect(rejected.draft.scopeIn).toEqual([]);
+    expect(rejected.reply).toMatch(/left that out/i);
+
+    const corrected = send(
+      'Change the goal to "Verify the create draft shows the goal before scope"',
+      {
+        draft: rejected.draft,
+        currentStep: 'scope',
+        pending: null,
+      },
+      {
+        patch: {
+          goal: 'Change the goal to "Verify the create draft shows the goal before scope"',
+        },
+      },
+    );
+    expect(corrected.draft.goal).toBe(
+      'Verify the create draft shows the goal before scope',
+    );
+    expect(corrected.draft.scopeIn).toEqual([]);
+    expect(corrected.reply).not.toMatch(/Do you want that to be in the Goal/i);
+    expect(corrected.reply).not.toContain('Change the goal to');
+  });
+
+  it('keeps a model suggestion pending until the member accepts it', () => {
+    const saved = 'Match every new joiner to 3 spaces in their first day.';
+    const offline = send(
+      'rewrite the goal',
+      {
+        draft: { ...emptyDraft, goal: saved },
+        currentStep: 'goal',
+        pending: null,
+      },
+      null,
+    );
+    expect(offline.wrote).toBe(false);
+    expect(offline.pending).toBeNull();
+    expect(offline.draft.goal).toBe(saved);
+    expect(offline.reply).toMatch(/won't replace the Goal/i);
+
+    const suggested = send(
+      'rewrite the goal',
+      {
+        draft: { ...emptyDraft, goal: saved },
+        currentStep: 'goal',
+        pending: null,
+      },
+      {
+        patch: {
+          goal: 'Match every new joiner to 3 spaces before the end of their first day.',
+          scopeIn: ['invented sandbox work'],
+        },
+      },
+    );
+    expect(suggested.wrote).toBe(false);
+    expect(suggested.draft.goal).toBe(saved);
+    expect(suggested.draft.scopeIn).toEqual([]);
+    expect(suggested.pending?.step).toBe('goal');
+    expect(suggested.pending?.patch.goal).toMatch(/before the end/);
+    expect(suggested.pending?.patch.scopeIn).toBeUndefined();
+    expect(suggested.reply).toMatch(/Suggested refinement, not saved yet/i);
+
+    const accepted = send('yes', {
+      draft: suggested.draft,
+      currentStep: 'goal',
+      pending: suggested.pending,
+    });
+    expect(accepted.wrote).toBe(true);
+    expect(accepted.draft.goal).toBe(
+      'Match every new joiner to 3 spaces before the end of their first day.',
+    );
+    expect(accepted.reply).not.toMatch(/Do you want that to be in the Goal/i);
+  });
+
+  it('fills goal, scope, success criteria, and a milestone with one confirmation each', () => {
+    const goal = 'Match every new joiner to 3 spaces in their first day.';
+    expect(questDraftTurnUsesModel(goal)).toBe(true);
+    const proposedGoal = send(goal, {
+      draft: emptyDraft,
+      currentStep: 'goal',
+      pending: null,
+    });
+    expect(proposedGoal.wrote).toBe(false);
+    expect(proposedGoal.pending?.patch.goal).toBe(goal);
+    expect(proposedGoal.reply).toMatch(/Do you want that to be in the Goal/i);
+    expect(proposedGoal.reply).toContain(goal);
+
+    const acceptedGoal = send('yes', {
+      draft: proposedGoal.draft,
+      currentStep: 'goal',
+      pending: proposedGoal.pending,
+    });
+    expect(acceptedGoal.draft.goal).toBe(goal);
+    expect(acceptedGoal.focusStep).toBe('scope');
+    expect(acceptedGoal.reply).toMatch(/Added that to the Goal/i);
+    expect(acceptedGoal.reply).toMatch(/in scope/i);
+    expect(acceptedGoal.reply).not.toMatch(
+      /Do you want that to be in the Goal/i,
+    );
+
+    const scopeMessage = 'In: sandbox checklist. Out: real payments.';
+    const proposedScope = send(scopeMessage, {
+      draft: acceptedGoal.draft,
+      currentStep: acceptedGoal.focusStep,
+      pending: null,
+    });
+    expect(proposedScope.wrote).toBe(false);
+    expect(proposedScope.reply).toMatch(/Do you want that to be in the Scope/i);
+    expect(
+      proposedScope.reply.match(/Do you want that to be in the Scope/gi),
+    ).toHaveLength(1);
+
+    const acceptedScope = send('Yes, put that in the Scope.', {
+      draft: proposedScope.draft,
+      currentStep: 'scope',
+      pending: proposedScope.pending,
+    });
+    expect(acceptedScope.draft.scopeIn).toEqual(['sandbox checklist.']);
+    expect(acceptedScope.draft.scopeOut).toEqual(['real payments.']);
+    expect(acceptedScope.focusStep).toBe('success');
+    expect(acceptedScope.reply).toMatch(/Added that to the Scope/i);
+    expect(acceptedScope.reply).not.toMatch(
+      /Do you want that to be in the Scope/i,
+    );
+
+    const success = '60% of new members join a suggested space within 7 days';
+    const proposedSuccess = send(success, {
+      draft: acceptedScope.draft,
+      currentStep: 'success',
+      pending: null,
+    });
+    expect(proposedSuccess.wrote).toBe(false);
+    expect(proposedSuccess.pending?.patch.successCriteriaBullets).toEqual([
+      success,
+    ]);
+    expect(proposedSuccess.reply).toMatch(
+      /Do you want that to be in the Success criteria/i,
+    );
+
+    const acceptedSuccess = send('yes', {
+      draft: proposedSuccess.draft,
+      currentStep: 'success',
+      pending: proposedSuccess.pending,
+    });
+    expect(acceptedSuccess.draft.successCriteria).toContain('60%');
+    expect(acceptedSuccess.focusStep).toBe('milestones');
+    expect(acceptedSuccess.reply).not.toMatch(
+      /Do you want that to be in the Success criteria/i,
+    );
+
+    const milestone = 'Run check one - 20 November 2026 - Ada Lovelace';
+    const proposedMilestone = send(milestone, {
+      draft: acceptedSuccess.draft,
+      currentStep: 'milestones',
+      pending: null,
+    });
+    expect(proposedMilestone.wrote).toBe(false);
+    expect(proposedMilestone.pending?.patch.milestones?.[0]?.name).toBe(
+      'Run check one',
+    );
+    expect(proposedMilestone.pending?.patch.milestones?.[0]?.dueDate).toBe(
+      '20 November 2026',
+    );
+    expect(proposedMilestone.reply).toMatch(
+      /Do you want that to be in the Milestones/i,
+    );
+
+    const acceptedMilestone = send('yes please', {
+      draft: proposedMilestone.draft,
+      currentStep: 'milestones',
+      pending: proposedMilestone.pending,
+    });
+    expect(acceptedMilestone.draft.milestones[0]?.name).toBe('Run check one');
+    expect(acceptedMilestone.draft.milestones[0]?.dueDate).toBe(
+      '20 November 2026',
+    );
+    expect(acceptedMilestone.draft.milestones[0]?.ownerName).toBe(
+      'Ada Lovelace',
+    );
+    expect(acceptedMilestone.draft.members).toEqual([]);
+    expect(acceptedMilestone.draft.rewards).toEqual([]);
+    expect(acceptedMilestone.draft.targetDate).toBeNull();
+    expect(acceptedMilestone.reply).not.toMatch(
+      /Do you want that to be in the Milestones/i,
+    );
+  });
+
+  it('still coaches a section opener and does not write it', () => {
+    const coached = send("Now let's define the scope", {
+      draft: {
+        ...emptyDraft,
+        goal: 'Match every new joiner to 3 spaces in their first day.',
+      },
+      currentStep: 'goal',
+      pending: { step: 'goal', patch: { goal: 'a stale goal proposal' } },
+    });
+    expect(coached.wrote).toBe(false);
+    expect(coached.pending).toBeNull();
+    expect(coached.focusStep).toBe('scope');
+    expect(coached.draft.scopeIn).toEqual([]);
+    expect(coached.draft.goal).toMatch(/Match every new joiner/);
+    expect(coached.reply).not.toMatch(/Do you want that to be in the Scope/i);
+  });
+
+  it('extracts a quoted command in the local parser and drops questions', () => {
+    expect(
+      buildLocalQuestDraftPatch({
+        message: 'Put in goal "Testing out the quest feature"',
+        currentStep: 'scope',
+        draft: emptyDraft,
+        viewerDisplayName: 'Vlad Hramtsov',
+      }),
+    ).toEqual({ goal: 'Testing out the quest feature' });
+    expect(
+      buildLocalQuestDraftPatch({
+        message: 'do you think that is well defined goal?',
+        currentStep: 'scope',
+        draft: emptyDraft,
+        viewerDisplayName: 'Vlad Hramtsov',
+      }),
+    ).toEqual({});
+    expect(
+      buildLocalQuestDraftPatch({
+        message: 'yes',
+        currentStep: 'scope',
+        draft: emptyDraft,
+        viewerDisplayName: 'Vlad Hramtsov',
+      }),
+    ).toEqual({});
   });
 });

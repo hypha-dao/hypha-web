@@ -103,6 +103,19 @@ describe('resolveQuestDraftTarget', () => {
     expect(target).toEqual({ step: 'scope', bulk: false });
   });
 
+  it('routes an imperative section command to that section', () => {
+    expect(
+      resolveQuestDraftTarget(
+        'Put in goal "Testing out the quest feature"',
+        'scope',
+      ),
+    ).toEqual({ step: 'goal', bulk: false });
+    expect(resolveQuestDraftTarget('put that in the Goal', 'scope')).toEqual({
+      step: 'scope',
+      bulk: false,
+    });
+  });
+
   it('keeps "a quest about rewards" on the goal step', () => {
     expect(
       resolveQuestDraftTarget(

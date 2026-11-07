@@ -8,8 +8,6 @@ import {
   QUEST_STEWARD_STEPS,
   buildQuestProposalDescription,
   bulletsToMarkdownList,
-  limitQuestPatchToStep,
-  resolveQuestDraftTarget,
   questRecordToProposalDraft,
   stripViewerYouMarker,
   withoutPlaceholderLeadDuplicates,
@@ -47,19 +45,10 @@ import {
   useQuestSpaceMembers,
 } from '../hooks/use-space-quests';
 import {
-  applyPatchToQuestDraftState,
-  buildLocalQuestDraftPatch,
-  decideNewQuestDraftTurn,
-  isQuestSectionRewriteRequest,
-  messageSuppliesSectionContent,
-  nextQuestStepAfterUpdate,
-  questSectionCoachReply,
-  questStepSectionLabel,
-  replyWithSectionApprovalAsk,
-  sanitizeQuestDraftPatch,
-  stewardQuestionForStep,
+  questDraftTurnUsesModel,
+  runNewQuestDraftTurn,
   type PendingQuestSectionProposal,
-  type QuestDraftPatchInput,
+  type QuestDraftModelTurn,
   type QuestDraftStateSnapshot,
 } from '../utils/quest-draft-assistant';
 import {
@@ -133,13 +122,6 @@ function stripAgentMentionPrefix(text: string): string {
   return text
     .replace(new RegExp(`^@(?:${helper}|AI[\\s_-]*Agents)\\b[,:\\s]*`, 'i'), '')
     .trim();
-}
-
-const QUEST_READY_REPLY =
-  "Your quest draft is ready. Click CREATE QUEST whenever you're ready to submit it as a proposal for voting.";
-
-function bulkCoachReply(step: QuestStewardStep): string {
-  return `We'll take one section at a time. ${stewardQuestionForStep(step)}`;
 }
 
 export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
@@ -290,8 +272,6 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       const trimmed = stripAgentMentionPrefix(rawTrimmed) || rawTrimmed;
 
       const currentStep = QUEST_STEWARD_STEPS[stewardStepIndex] ?? 'goal';
-      const draftTarget = resolveQuestDraftTarget(trimmed, currentStep);
-      const stepToWrite = draftTarget.step;
       const currentSnapshot: QuestDraftStateSnapshot = {
         name,
         goal,
@@ -321,13 +301,19 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         },
       ]);
 
-      const turn = decideNewQuestDraftTurn({
+      const history = chatMessages.slice(-8).map((entry) => ({
+        role: entry.role === 'user' ? ('user' as const) : ('agent' as const),
+        text: entry.text,
+      }));
+      const turnInput = {
         message: trimmed,
         currentStep,
-        targetStep: stepToWrite,
-        bulk: draftTarget.bulk,
+        draft: currentSnapshot,
         pending: pendingProposalRef.current,
-      });
+        history,
+        viewerDisplayName,
+        spaceMembers,
+      };
 
       const pushHelper = (text: string) => {
         setChatMessages((prev) => [
@@ -345,49 +331,20 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         setStewardStepIndex(Math.max(0, QUEST_STEWARD_STEPS.indexOf(step)));
         setActiveSection(step);
       };
+      const applyTurn = (result: ReturnType<typeof runNewQuestDraftTurn>) => {
+        if (result.wrote) commitDraftSnapshot(result.draft);
+        pendingProposalRef.current = result.pending;
+        focusStep(result.focusStep);
+        pushHelper(result.reply);
+      };
 
-      if (turn.kind === 'bulk') {
-        pendingProposalRef.current = null;
-        focusStep(currentStep);
-        pushHelper(bulkCoachReply(currentStep));
-        return;
-      }
-
-      if (turn.kind === 'coach') {
-        pendingProposalRef.current = null;
-        focusStep(turn.step);
-        pushHelper(questSectionCoachReply(turn.step));
-        return;
-      }
-
-      if (turn.kind === 'apply') {
-        const limited = limitQuestPatchToStep(turn.patch, turn.step);
-        const { next, updatedLabels } = applyPatchToQuestDraftState({
-          current: currentSnapshot,
-          patch: limited,
-          spaceMembers,
-          viewerDisplayName,
-        });
-        commitDraftSnapshot(next);
-        pendingProposalRef.current = null;
-        const advance = nextQuestStepAfterUpdate({
-          draft: next,
-          currentStep: turn.step,
-          updatedLabels,
-        });
-        focusStep(advance.step);
-        pushHelper(
-          advance.complete
-            ? QUEST_READY_REPLY
-            : `Added that to the ${questStepSectionLabel(
-                turn.step,
-              )}. ${stewardQuestionForStep(advance.step)}`,
-        );
+      if (!questDraftTurnUsesModel(trimmed)) {
+        applyTurn(runNewQuestDraftTurn({ ...turnInput, model: null }));
         return;
       }
 
       setIsAgentTyping(true);
-      let llmHandled = false;
+      let model: QuestDraftModelTurn | null = null;
       try {
         const token = await getAccessToken?.().catch(() => null);
         if (token) {
@@ -403,7 +360,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
               },
               body: JSON.stringify({
                 message: trimmed,
-                currentStep: stepToWrite,
+                currentStep,
                 spaceTitle: space?.title,
                 draft: {
                   name: currentSnapshot.name,
@@ -430,110 +387,24 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                   personId: m.personId,
                   name: m.name,
                 })),
-                history: chatMessages.slice(-8).map((m) => ({
-                  role: m.role === 'user' ? 'user' : 'assistant',
-                  text: m.text,
+                history: history.map((entry) => ({
+                  role: entry.role === 'user' ? 'user' : 'assistant',
+                  text: entry.text,
                 })),
               }),
             },
           );
           if (response.ok) {
-            const data = (await response.json()) as {
-              ok?: boolean;
-              patch?: QuestDraftPatchInput | null;
-              reply?: string | null;
-              specialistId?: string;
-            };
-            const hasAiPatch = Boolean(
-              data.patch && Object.keys(data.patch).length > 0,
-            );
-            if (hasAiPatch || data.reply?.trim()) {
-              llmHandled = true;
-              const rewrite = isQuestSectionRewriteRequest(trimmed);
-              const modelPatch = sanitizeQuestDraftPatch(
-                limitQuestPatchToStep(
-                  hasAiPatch ? data.patch! : {},
-                  stepToWrite,
-                ),
-              );
-              const localPatch = messageSuppliesSectionContent(trimmed)
-                ? sanitizeQuestDraftPatch(
-                    limitQuestPatchToStep(
-                      buildLocalQuestDraftPatch({
-                        message: trimmed,
-                        currentStep: stepToWrite,
-                        draft: currentSnapshot,
-                        viewerDisplayName,
-                      }),
-                      stepToWrite,
-                    ),
-                  )
-                : {};
-              const effectivePatch =
-                rewrite && Object.keys(modelPatch).length > 0
-                  ? modelPatch
-                  : Object.keys(localPatch).length > 0
-                  ? localPatch
-                  : modelPatch;
-              const hasProposal = Object.keys(effectivePatch).length > 0;
-              if (hasProposal) {
-                pendingProposalRef.current = {
-                  step: stepToWrite,
-                  patch: effectivePatch,
-                };
-                focusStep(stepToWrite);
-                pushHelper(
-                  replyWithSectionApprovalAsk(
-                    rewrite ? data.reply : null,
-                    stepToWrite,
-                    effectivePatch,
-                  ),
-                );
-              } else {
-                pendingProposalRef.current = null;
-                focusStep(stepToWrite);
-                pushHelper(
-                  data.reply?.trim() || questSectionCoachReply(stepToWrite),
-                );
-              }
-            }
+            model = (await response.json()) as QuestDraftModelTurn;
           }
         }
       } catch {
-        // Fall through to deterministic local draft assistant when offline
+        model = null;
       } finally {
         setIsAgentTyping(false);
       }
 
-      if (!llmHandled) {
-        const localPatch = messageSuppliesSectionContent(trimmed)
-          ? sanitizeQuestDraftPatch(
-              limitQuestPatchToStep(
-                buildLocalQuestDraftPatch({
-                  message: trimmed,
-                  currentStep: stepToWrite,
-                  draft: currentSnapshot,
-                  viewerDisplayName,
-                }),
-                stepToWrite,
-              ),
-            )
-          : {};
-        if (Object.keys(localPatch).length > 0) {
-          pendingProposalRef.current = {
-            step: stepToWrite,
-            patch: localPatch,
-          };
-          focusStep(stepToWrite);
-          pushHelper(
-            replyWithSectionApprovalAsk(null, stepToWrite, localPatch),
-          );
-        } else {
-          pendingProposalRef.current = null;
-          focusStep(stepToWrite);
-          pushHelper(questSectionCoachReply(stepToWrite));
-        }
-      }
+      applyTurn(runNewQuestDraftTurn({ ...turnInput, model }));
     },
     [
       chatInput,
