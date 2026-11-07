@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
-import { Triangle } from 'lucide-react';
 import {
   signalUpvoteCellMeasure,
   useCoherenceUpvoteMutations,
@@ -24,7 +23,14 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
-import { formatVotingPowerCompact } from '../utils/format-voting-power';
+import {
+  formatVotingPowerCompact,
+  formatVotingPowerExact,
+} from '../utils/format-voting-power';
+import {
+  SignalUpvoteCellChrome,
+  SignalUpvoteTriangle,
+} from './signal-upvote-cell';
 import { isArchivedSignalVoteError } from '../lib/signal-upvote-errors';
 import type { SignalVotingModeStatus } from '../hooks/use-signal-voting-mode';
 
@@ -53,16 +59,10 @@ function myUpvotePercent(summary: CoherenceUpvoteSummary): number {
   }
 }
 
-export function SignalUpvoteTriangle({ className }: { className?: string }) {
-  return (
-    <Triangle
-      className={cn('size-2.5 shrink-0', className)}
-      fill="currentColor"
-      strokeWidth={0}
-      aria-hidden
-    />
-  );
-}
+export {
+  SignalUpvoteCellChrome,
+  SignalUpvoteTriangle,
+} from './signal-upvote-cell';
 
 type SignalUpvoteButtonProps = {
   slug?: string | null;
@@ -249,6 +249,16 @@ export function SignalUpvoteButton({
           cellMeasure.tokenDecimals,
           locale,
         );
+  const exactLabel =
+    cellMeasure.kind === 'power'
+      ? formatVotingPowerExact(
+          cellMeasure.raw,
+          cellMeasure.tokenDecimals,
+          locale,
+        )
+      : cellMeasure.kind === 'count'
+      ? format.number(cellMeasure.count)
+      : figureLabel;
   const cellLabel = hasVoted ? t('upvoted') : t('upvote');
 
   return (
@@ -269,43 +279,22 @@ export function SignalUpvoteButton({
         }}
       >
         <PopoverTrigger asChild>
-          <button
-            type="button"
+          <SignalUpvoteCellChrome
+            figure={figureLabel}
+            exactLabel={exactLabel}
+            label={cellLabel}
+            pressed={hasVoted}
             aria-haspopup="dialog"
-            aria-pressed={hasVoted}
-            aria-label={`${t('upvote')} · ${figureLabel}`}
+            aria-label={`${t('upvote')} · ${exactLabel}`}
             aria-busy={!canOpen}
             disabled={!canOpen}
-            data-testid="signal-upvote-cell"
             data-upvote-variant={variant}
             data-upvote-measure={cellMeasure.kind}
             className={cn(
-              'flex h-14 w-12 flex-col items-center justify-center gap-0.5 border tabular-nums transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-              hasVoted
-                ? 'border-accent-9 bg-accent-9 text-accent-contrast hover:bg-accent-10'
-                : 'border-border bg-background-2 text-foreground hover:border-foreground/40',
               (isMutating || !canOpen) && 'opacity-65',
               !canOpen && 'cursor-progress',
             )}
-          >
-            <SignalUpvoteTriangle
-              className={hasVoted ? undefined : 'text-muted-foreground'}
-            />
-            <span
-              className="text-base font-semibold leading-none"
-              data-testid="signal-upvote-figure"
-            >
-              {figureLabel}
-            </span>
-            <span
-              className={cn(
-                'text-[9px] leading-none',
-                hasVoted ? 'opacity-90' : 'text-muted-foreground',
-              )}
-            >
-              {cellLabel}
-            </span>
-          </button>
+          />
         </PopoverTrigger>
         <PopoverContent
           align="start"

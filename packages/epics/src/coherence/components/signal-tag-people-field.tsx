@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AtSign, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   useMatrix,
@@ -162,7 +162,6 @@ export function SignalTagPeopleField({
           placeholder={t('signalFormTagPeoplePlaceholder')}
           aria-label={t('signalFormTagPeoplePlaceholder')}
           autoComplete="off"
-          leftIcon={<AtSign className="h-3.5 w-3.5 shrink-0" aria-hidden />}
           className="text-left placeholder:text-left"
           role="combobox"
           aria-expanded={showList}

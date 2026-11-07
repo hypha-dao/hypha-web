@@ -10,6 +10,10 @@ const upvoteSource = readFileSync(
   resolve(__dirname, '../../components/signal-upvote-button.tsx'),
   'utf8',
 );
+const upvoteCellSource = readFileSync(
+  resolve(__dirname, '../../components/signal-upvote-cell.tsx'),
+  'utf8',
+);
 const feedRowSource = readFileSync(
   resolve(__dirname, '../../components/signal-feed-row.tsx'),
   'utf8',
@@ -59,7 +63,8 @@ describe('upvote cell shared by the list and the detail', () => {
     expect(feedRowSource).toContain('timeFrame={timeFrame}');
     expect(pageSource).not.toContain('sort={sort}');
     expect(upvoteSource).toContain('signalUpvoteCellMeasure');
-    expect(upvoteSource).toContain('data-testid="signal-upvote-figure"');
+    expect(upvoteSource).toContain('<SignalUpvoteCellChrome');
+    expect(upvoteCellSource).toContain('data-testid="signal-upvote-figure"');
     expect(upvoteSource).not.toContain("variant === 'feed'");
     expect(upvoteSource).not.toContain("variant === 'page'");
     expect(upvoteSource).toContain('isArchivedSignalVoteError');

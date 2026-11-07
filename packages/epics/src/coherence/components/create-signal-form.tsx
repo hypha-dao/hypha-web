@@ -20,7 +20,7 @@ import {
   AddAttachment,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { Camera, RefreshCw, Video } from 'lucide-react';
+import { RefreshCw, Video } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useForm, useFormState, useWatch } from 'react-hook-form';
@@ -96,6 +96,7 @@ import {
 import { formatVotingPowerCompact } from '../utils/format-voting-power';
 import type { UseMembers } from '../../spaces/hooks/types';
 import { SignalTagMergeDialog } from './signal-tag-merge-dialog';
+import { SignalImagePicker } from './signal-image-picker';
 import { SignalTagPeopleField } from './signal-tag-people-field';
 import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
 import { EXCHANGE_SIGNAL_CAPITALS_KEY } from '../../network-exchange/exchange-draft-keys';
@@ -256,9 +257,6 @@ export const CreateSignalForm = ({
   const [documentFiles, setDocumentFiles] = React.useState<File[]>([]);
   const [keptDocuments, setKeptDocuments] = React.useState<SignalMediaItem[]>(
     openingMedia.documents,
-  );
-  const [showImages, setShowImages] = React.useState(
-    () => openingMedia.images.length > 0,
   );
   const [showVideo, setShowVideo] = React.useState(() =>
     Boolean(initialValues?.videoUrl?.trim()),
@@ -530,26 +528,12 @@ export const CreateSignalForm = ({
     );
   }, [showVideo, videoLinkProblemMessage, watchedVideoUrl]);
   React.useEffect(() => {
-    if (keptImages.length > 0 || imageFiles.length > 0) setShowImages(true);
-  }, [imageFiles.length, keptImages.length]);
-  React.useEffect(() => {
     if (watchedVideoUrl?.trim()) setShowVideo(true);
   }, [watchedVideoUrl]);
-  const toggleMediaKind = React.useCallback(
-    (kind: 'images' | 'video') => {
-      if (kind === 'images') {
-        if (showImages) {
-          setImageFiles([]);
-          setKeptImages([]);
-        }
-        setShowImages(!showImages);
-        return;
-      }
-      if (showVideo) form.setValue('videoUrl', '', { shouldDirty: true });
-      setShowVideo(!showVideo);
-    },
-    [form, showImages, showVideo],
-  );
+  const toggleVideo = React.useCallback(() => {
+    if (showVideo) form.setValue('videoUrl', '', { shouldDirty: true });
+    setShowVideo((current) => !current);
+  }, [form, showVideo]);
 
   React.useEffect(() => {
     if (mode !== 'create' || typeof window === 'undefined') return;
@@ -1335,73 +1319,50 @@ export const CreateSignalForm = ({
                 <p className="text-sm font-medium text-foreground">
                   {t('signalFormMedia')}
                 </p>
-                <div
-                  role="group"
-                  aria-label={t('signalFormMedia')}
-                  className="flex gap-2"
-                >
-                  {(
-                    [
-                      {
-                        kind: 'images' as const,
-                        label: t('signalFormImage'),
-                        Icon: Camera,
-                      },
-                      {
-                        kind: 'video' as const,
-                        label: t('signalFormMediaVideo'),
-                        Icon: Video,
-                      },
-                    ] as const
-                  ).map(({ kind, label, Icon }) => {
-                    const selected = kind === 'images' ? showImages : showVideo;
-                    return (
-                      <button
-                        key={kind}
-                        type="button"
-                        aria-pressed={selected}
-                        disabled={isMutating}
-                        onClick={() => toggleMediaKind(kind)}
-                        style={{ width: 112, height: 112 }}
-                        className={cn(
-                          'flex flex-col items-center justify-center gap-2 border px-2',
-                          selected
-                            ? 'border-foreground bg-foreground text-background'
-                            : 'border-border bg-background text-foreground hover:bg-neutral-2',
-                        )}
-                      >
-                        <Icon
-                          className="size-5"
-                          strokeWidth={1.5}
-                          aria-hidden
-                        />
-                        <span className="text-center text-1 leading-tight">
-                          {label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {showImages ? (
-                <div className="flex flex-col gap-2">
-                  <AddAttachment
+                <div role="group" aria-label={t('signalFormMedia')}>
+                  <SignalImagePicker
+                    label={t('signalFormImage')}
+                    hint={t('signalFormImageHint')}
                     accept={SIGNAL_IMAGE_ACCEPT}
                     maxFiles={Math.max(
                       0,
                       SIGNAL_IMAGE_LIMIT - keptImages.length,
                     )}
                     maxBytes={SIGNAL_MEDIA_MAX_BYTES}
-                    label={t('signalFormImageHint')}
-                    value={[...keptImages, ...imageFiles]}
-                    defaultAttachments={keptImages}
-                    onChange={setImageFiles}
-                    onExistingAttachmentsChange={(updated) =>
+                    files={imageFiles}
+                    kept={keptImages}
+                    onFilesChange={setImageFiles}
+                    onKeptChange={(updated) =>
                       setKeptImages(asMediaItems(updated))
+                    }
+                    disabled={isMutating}
+                    beside={
+                      <button
+                        type="button"
+                        aria-pressed={showVideo}
+                        disabled={isMutating}
+                        onClick={toggleVideo}
+                        style={{ width: 112, height: 112 }}
+                        className={cn(
+                          'flex flex-col items-center justify-center gap-2 border px-2',
+                          showVideo
+                            ? 'border-foreground bg-foreground text-background'
+                            : 'border-border bg-background text-foreground hover:bg-neutral-2',
+                        )}
+                      >
+                        <Video
+                          className="size-5"
+                          strokeWidth={1.5}
+                          aria-hidden
+                        />
+                        <span className="text-center text-1 leading-tight">
+                          {t('signalFormMediaVideo')}
+                        </span>
+                      </button>
                     }
                   />
                 </div>
-              ) : null}
+              </div>
               {showVideo ? (
                 <FormField
                   control={form.control}
