@@ -584,14 +584,17 @@ export function buildLocalQuestDraftPatch({
   currentStep,
   draft,
   viewerDisplayName,
+  commandPayload = false,
 }: {
   message: string;
   currentStep: QuestStewardStep;
   draft: QuestDraftStateSnapshot;
   viewerDisplayName: string;
+  /** The member named one section and gave this text to store. */
+  commandPayload?: boolean;
 }): QuestDraftPatchInput {
   const raw = message.trim();
-  if (!raw || isBulkSectionDraftRequest(raw)) return {};
+  if (!raw || (!commandPayload && isBulkSectionDraftRequest(raw))) return {};
   if (
     isQuestDraftQuestion(raw) ||
     isQuestSectionRejection(raw) ||
@@ -1701,6 +1704,7 @@ export function runNewQuestDraftTurn({
       currentStep: command.step,
       draft,
       viewerDisplayName,
+      commandPayload: true,
     });
     return finishApply(command.step, extracted);
   }
@@ -1805,16 +1809,42 @@ export function runNewQuestDraftTurn({
     );
   }
 
-  // Chat only. Keep an unrelated proposal, and do not describe a confirm
-  // that this turn did not create.
+  // Chat only. Keep an unrelated proposal. A confirm claim in this reply
+  // is about words this turn did not file. Yes still applies the earlier
+  // patch, so the reply has to name that section.
   const modelReply =
     conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY;
   const actionable = Object.keys(pending?.patch ?? {}).length > 0;
   return stay(
-    actionable ? modelReply : replyAfterRetiredSuggestion(modelReply, false),
+    actionable && pending
+      ? replyWhileOlderPending(modelReply, pending)
+      : replyAfterRetiredSuggestion(modelReply, false),
     actionable ? currentStep : target.step,
     pending,
   );
+}
+
+function replyWhileOlderPending(
+  reply: string,
+  pending: PendingQuestSectionProposal,
+): string {
+  const filtered = replyAfterRetiredSuggestion(reply, false);
+  if (filtered === reply) return reply;
+  const notice = `Only the earlier ${questStepSectionLabel(
+    pending.step,
+  )} suggestion is waiting on a yes.`;
+  const kept = filtered
+    .split(/\n+|(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .filter(
+      (part) =>
+        part.length > 0 &&
+        !/\bnothing is waiting on a yes\b/i.test(part) &&
+        !/\btreat (?:those|these|this|that) words?\b/i.test(part) &&
+        !/\bas a suggestion\b/i.test(part),
+    );
+  const body = kept.join('\n\n').trim();
+  return body ? `${body}\n\n${notice}` : notice;
 }
 
 export type CreateDraftTurnSnapshot = {

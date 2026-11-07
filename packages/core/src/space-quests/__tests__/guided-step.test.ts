@@ -68,10 +68,29 @@ describe('questExistingTurnMayPersist', () => {
     const quoted = 'Set the scope to "write all onboarding docs"';
     expect(questExistingTurnMayPersist(quoted)).toBe(true);
     expect(existingQuestEditSection(quoted)).toBe('scope');
+    expect(isBulkQuestDraftRequest(quoted)).toBe(false);
     expect(resolveQuestDraftTarget(quoted, 'goal')).toEqual({
-      step: 'goal',
-      bulk: true,
+      step: 'scope',
+      bulk: false,
     });
+    expect(
+      resolveQuestDraftTarget(
+        'Put in goal "Generate onboarding sections per team"',
+        'scope',
+      ),
+    ).toEqual({ step: 'goal', bulk: false });
+    expect(
+      resolveQuestDraftTarget(
+        'Draft everything. Set the scope to "sandbox checklist"',
+        'goal',
+      ),
+    ).toEqual({ step: 'goal', bulk: true });
+    expect(
+      resolveQuestDraftTarget(
+        'Draft the scope, success criteria, and milestones. Set the scope to "write all onboarding docs"',
+        'scope',
+      ),
+    ).toEqual({ step: 'scope', bulk: true });
     expect(existingQuestEditSection('improve the goal')).toBeNull();
   });
 });
@@ -331,6 +350,25 @@ describe('resolveQuestDraftTarget', () => {
       step: 'scope',
       bulk: true,
     });
+    const colonSeveral =
+      'Draft the scope, success criteria, and milestones. In scope: verify proposal display and milestone editing in sandbox. Out of scope: production rollout.';
+    expect(scopeBoundaryLists(colonSeveral)).toBeNull();
+    expect(isBulkQuestDraftRequest(colonSeveral)).toBe(true);
+    expect(resolveQuestDraftTarget(colonSeveral, 'scope')).toEqual({
+      step: 'scope',
+      bulk: true,
+    });
+    expect(
+      isBulkQuestDraftRequest(
+        'In scope: verify proposal display and milestone editing in sandbox; out of scope: production rollout.',
+      ),
+    ).toBe(false);
+    expect(
+      resolveQuestDraftTarget(
+        'Success criteria: each check has a recorded pass or fail.',
+        'scope',
+      ),
+    ).toEqual({ step: 'success', bulk: false });
     expect(
       isBulkQuestDraftRequest(
         'Draft the scope, success criteria, and milestones.',

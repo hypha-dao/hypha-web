@@ -2160,4 +2160,202 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(vague.reply).toMatch(/who is this for/i);
     expect(vague.reply).not.toMatch(/Do you want that to be in the Scope/i);
   });
+
+  it('keeps a quoted section command, a colon bulk ask, and an older pending patch distinct', async () => {
+    const exact =
+      'Please propose these exact scope boundaries for my confirmation: in scope verify proposal display and milestone editing in sandbox; out of scope production rollout.';
+    const state: CreateDraftTurnSnapshot = {
+      draft: { ...emptyDraft, goal: '', scopeIn: [], scopeOut: [] },
+      pending: null,
+      currentStep: 'scope',
+    };
+    const calls: string[] = [];
+    const settle = (message: string, model: QuestDraftModelTurn | null) =>
+      settleCreateDraftTurn({
+        message: questHelperTurnMessage(message),
+        history: [],
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: [],
+        readState: () => state,
+        isCurrent: () => true,
+        loadModel: async () => {
+          calls.push(message);
+          return model;
+        },
+      });
+
+    const proposed = await settle(exact, {
+      reply:
+        "We'll take one section at a time. What's in scope, and what's explicitly out of scope?",
+      patch: {
+        goal: 'replaced',
+        milestones: [{ name: 'Edit milestones' }],
+        scopeIn: ['wrong'],
+      },
+    });
+    expect(calls).toEqual([exact]);
+    expect(proposed?.wrote).toBe(false);
+    expect(proposed?.pending?.step).toBe('scope');
+    expect(proposed?.pending?.patch.scopeIn).toEqual([
+      'verify proposal display and milestone editing in sandbox',
+    ]);
+    expect(proposed?.pending?.patch.scopeOut).toEqual(['production rollout']);
+    expect(proposed?.pending?.patch.goal).toBeUndefined();
+    expect(proposed?.draft.scopeIn).toEqual([]);
+    expect(proposed?.reply).toMatch(/Not saved yet/);
+    expect(proposed?.reply).toMatch(/Do you want that to be in the Scope\?/);
+
+    state.pending = proposed?.pending ?? null;
+    const saved = await settle('yes', {
+      reply: 'Saved lead scoring into the scope.',
+      patch: { scopeIn: ['Add lead scoring'], goal: 'replaced' },
+    });
+    expect(calls).toEqual([exact]);
+    expect(saved?.wrote).toBe(true);
+    expect(saved?.pending).toBeNull();
+    expect(saved?.draft.scopeIn).toEqual([
+      'verify proposal display and milestone editing in sandbox',
+    ]);
+    expect(saved?.draft.scopeOut).toEqual(['production rollout']);
+    expect(saved?.draft.goal).toBe('');
+    expect(saved?.reply).toMatch(/Added that to the Scope/);
+
+    state.draft = { ...emptyDraft, goal: '', scopeIn: [], scopeOut: [] };
+    state.pending = {
+      step: 'scope',
+      patch: {
+        scopeIn: ['verify proposal display and milestone editing in sandbox'],
+        scopeOut: ['production rollout'],
+      },
+    };
+    state.currentStep = 'scope';
+    const goalQuestion = await settle('what should the goal be?', {
+      reply:
+        "I'll treat that as the goal. It isn't saved until you confirm. Who is the goal for?",
+      patch: {
+        goal: 'what should the goal be?',
+        scopeIn: ['replaced scope'],
+      },
+    });
+    expect(goalQuestion?.wrote).toBe(false);
+    expect(goalQuestion?.pending).toBeNull();
+    expect(goalQuestion?.draft.goal).toBe('');
+    expect(goalQuestion?.draft.scopeIn).toEqual([]);
+    expect(goalQuestion?.reply).toMatch(/Who is the goal for/);
+    expect(goalQuestion?.reply).toMatch(/no longer waiting on a yes/i);
+    expect(goalQuestion?.reply).not.toMatch(/until you confirm/i);
+    expect(goalQuestion?.reply).not.toMatch(/Not saved yet/i);
+    state.pending = null;
+    const yesAfterQuestion = await settle('yes', {
+      reply: 'Say yes to save the goal.',
+      patch: { goal: 'what should the goal be?', scopeIn: ['replaced scope'] },
+    });
+    expect(yesAfterQuestion?.wrote).toBe(false);
+    expect(yesAfterQuestion?.pending).toBeNull();
+    expect(yesAfterQuestion?.draft.goal).toBe('');
+    expect(yesAfterQuestion?.draft.scopeIn).toEqual([]);
+    expect(yesAfterQuestion?.reply).toMatch(/Nothing is waiting on a yes/i);
+
+    state.pending = {
+      step: 'scope',
+      patch: {
+        scopeIn: ['verify proposal display and milestone editing in sandbox'],
+        scopeOut: ['production rollout'],
+      },
+    };
+    const clarified = await settle('Add lead scoring', {
+      reply:
+        "I'll treat those words as a suggestion. They aren't saved until you confirm. Do you mean the Lead role, or the work of adding lead scoring?",
+      patch: {
+        scopeIn: ['Add lead scoring'],
+        leadName: 'scoring',
+        goal: 'replaced',
+      },
+    });
+    expect(clarified?.wrote).toBe(false);
+    expect(clarified?.pending?.step).toBe('scope');
+    expect(clarified?.pending?.patch.scopeIn).toEqual([
+      'verify proposal display and milestone editing in sandbox',
+    ]);
+    expect(clarified?.pending?.patch.scopeOut).toEqual(['production rollout']);
+    expect(clarified?.pending?.patch.leadName).toBeUndefined();
+    expect(clarified?.draft.scopeIn).toEqual([]);
+    expect(clarified?.draft.goal).toBe('');
+    expect(clarified?.draft.leadName).toBe(emptyDraft.leadName);
+    expect(clarified?.reply).toMatch(/Do you mean the Lead role/);
+    expect(clarified?.reply).toMatch(
+      /Only the earlier Scope suggestion is waiting on a yes/,
+    );
+    expect(clarified?.reply).not.toMatch(/until you confirm/i);
+    expect(clarified?.reply).not.toMatch(/as a suggestion/i);
+    expect(clarified?.reply).not.toMatch(/Nothing is waiting on a yes/i);
+    expect(clarified?.reply).not.toMatch(/Not saved yet/i);
+    expect(clarified?.reply).not.toMatch(/Add lead scoring/);
+
+    state.pending = clarified?.pending ?? null;
+    const yesScope = await settle('yes', {
+      reply: 'Saved the lead scoring.',
+      patch: { scopeIn: ['Add lead scoring'], leadName: 'scoring' },
+    });
+    expect(yesScope?.wrote).toBe(true);
+    expect(yesScope?.pending).toBeNull();
+    expect(yesScope?.draft.scopeIn).toEqual([
+      'verify proposal display and milestone editing in sandbox',
+    ]);
+    expect(yesScope?.draft.scopeOut).toEqual(['production rollout']);
+    expect(yesScope?.draft.leadName).toBe(emptyDraft.leadName);
+    expect(yesScope?.draft.goal).toBe('');
+
+    state.draft = {
+      ...emptyDraft,
+      goal: 'Keep this goal',
+      scopeIn: [],
+      scopeOut: [],
+    };
+    state.pending = null;
+    state.currentStep = 'goal';
+    const quoted = await settle(
+      'Set the scope to "write all onboarding docs"',
+      {
+        reply: 'I drafted every section.',
+        patch: {
+          goal: 'replaced',
+          scopeIn: ['invented'],
+          milestones: [{ name: 'Write everything' }],
+        },
+      },
+    );
+    expect(calls).not.toContain('Set the scope to "write all onboarding docs"');
+    expect(quoted?.wrote).toBe(true);
+    expect(quoted?.pending).toBeNull();
+    expect(quoted?.draft.scopeIn).toEqual(['write all onboarding docs']);
+    expect(quoted?.draft.goal).toBe('Keep this goal');
+    expect(quoted?.draft.milestones).toEqual([]);
+    expect(quoted?.reply).toMatch(/Added that to the Scope/);
+
+    state.draft = quoted?.draft ?? state.draft;
+    state.pending = null;
+    state.currentStep = 'scope';
+    const colonBulk = await settle(
+      'Draft the scope, success criteria, and milestones. In scope: verify proposal display and milestone editing in sandbox. Out of scope: production rollout.',
+      {
+        reply: 'I drafted all three.',
+        patch: {
+          scopeIn: ['invented'],
+          successCriteriaBullets: ['a check'],
+          milestones: [{ name: 'M1' }],
+        },
+      },
+    );
+    expect(colonBulk?.wrote).toBe(false);
+    expect(colonBulk?.pending).toBeNull();
+    expect(colonBulk?.draft.scopeIn).toEqual(['write all onboarding docs']);
+    expect(colonBulk?.draft.goal).toBe('Keep this goal');
+    expect(colonBulk?.reply).toBe(
+      "We'll take one section at a time. What's in scope, and what's explicitly out of scope?",
+    );
+    expect(calls).not.toContain(
+      'Draft the scope, success criteria, and milestones. In scope: verify proposal display and milestone editing in sandbox. Out of scope: production rollout.',
+    );
+  });
 });

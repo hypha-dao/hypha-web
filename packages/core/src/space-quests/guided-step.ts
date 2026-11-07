@@ -79,8 +79,52 @@ function mentionsSeveralSections(text: string): boolean {
   return count >= 2;
 }
 
-/** "Draft everything" or "draft the scope, success criteria, and milestones". */
-export function isBulkQuestDraftRequest(text: string): boolean {
+/**
+ * The value of one explicit section command.
+ * "write all" or "sections" inside that value is content.
+ * Words outside it can still make the message a multi-section request.
+ */
+function commandedPayloadSpan(
+  text: string,
+): { start: number; end: number } | null {
+  const match = COMMANDED_SECTION.exec(text);
+  if (!match || match.index == null) return null;
+  let i = match.index + match[0].length;
+  while (isJsWhitespace(text[i])) i += 1;
+  const to =
+    text[i]?.toLowerCase() === 't' &&
+    text[i + 1]?.toLowerCase() === 'o' &&
+    !isAsciiWord(text[i + 2]);
+  if (to) {
+    i += 2;
+    while (isJsWhitespace(text[i])) i += 1;
+  }
+  const opener = text[i];
+  if (opener === '"' || opener === '“') {
+    const closer = opener === '“' ? '”' : '"';
+    const endQuote = text.indexOf(closer, i + 1);
+    if (endQuote < 0) return null;
+    if (!text.slice(i + 1, endQuote).trim()) return null;
+    return { start: i, end: endQuote + 1 };
+  }
+  if (text[i] === ':') {
+    i += 1;
+    while (isJsWhitespace(text[i])) i += 1;
+  }
+  if (i >= text.length) return null;
+  let end = text.length;
+  for (let j = i; j < text.length; j += 1) {
+    const ch = text[j];
+    if (ch === '.' || ch === '!' || ch === '?') {
+      end = j + 1;
+      break;
+    }
+  }
+  if (!text.slice(i, end).trim()) return null;
+  return { start: i, end };
+}
+
+function bulkFromDraftSignals(text: string): boolean {
   const lower = text.toLowerCase();
   const asksToDraft =
     /\b(draft|suggest|propose|auto[- ]?fill|fill(?:\s+in|\s+out)?|generate|write)\b/.test(
@@ -104,8 +148,26 @@ export function isBulkQuestDraftRequest(text: string): boolean {
   if (scopeBoundaryLists(text)) return false;
   // One labeled payload is that section. Words inside the payload
   // ("milestone editing" on an in-scope line) are not a second section.
-  if (labeledSectionStep(text)) return false;
+  // A preamble that already names several sections stays bulk, colons or not.
+  const labeled = labeledSectionMatch(text);
+  if (labeled && !mentionsSeveralSections(text.slice(0, labeled.index))) {
+    return false;
+  }
   return mentionsSeveralSections(lower);
+}
+
+/** "Draft everything" or "draft the scope, success criteria, and milestones". */
+export function isBulkQuestDraftRequest(text: string): boolean {
+  const payload = commandedPayloadSpan(text);
+  if (payload && payload.end > payload.start) {
+    const outside = `${text.slice(0, payload.start)} ${text.slice(
+      payload.end,
+    )}`;
+    if (outside.trim() === text.trim()) return bulkFromDraftSignals(text);
+    if (isBulkQuestDraftRequest(outside)) return true;
+    return false;
+  }
+  return bulkFromDraftSignals(text);
 }
 
 /** JavaScript `\s`, matched per character so a long run cannot backtrack. */
@@ -326,7 +388,9 @@ export function labeledQuestDraftSection(
   return labeledSectionStep(text);
 }
 
-function labeledSectionStep(text: string): QuestStewardStep | null {
+function labeledSectionMatch(
+  text: string,
+): { index: number; step: QuestStewardStep } | null {
   let best: { index: number; step: QuestStewardStep } | null = null;
   for (const { pattern, step } of LABELED_SECTION_PATTERNS) {
     const match = pattern.exec(text);
@@ -335,7 +399,11 @@ function labeledSectionStep(text: string): QuestStewardStep | null {
       best = { index: match.index, step };
     }
   }
-  return best?.step ?? null;
+  return best;
+}
+
+function labeledSectionStep(text: string): QuestStewardStep | null {
+  return labeledSectionMatch(text)?.step ?? null;
 }
 
 function lineHasCalendarDate(line: string): boolean {
