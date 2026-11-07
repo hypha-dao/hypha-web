@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { render, within } from '@testing-library/react';
@@ -20,6 +21,8 @@ import {
 } from '../../components/signal-type-section';
 
 const here = dirname(fileURLToPath(import.meta.url));
+/** Set to `1` to measure the rendered section and write screenshots. */
+const previewScreenshots = process.env.SIGNAL_PREVIEW_SCREENSHOTS === '1';
 const chromeCandidates = [
   '/usr/local/bin/google-chrome',
   '/usr/bin/google-chrome',
@@ -172,7 +175,7 @@ describe('signal type section', () => {
 
   const chrome = chromeCandidates.find((path) => existsSync(path));
 
-  it.skipIf(!chrome)(
+  it.skipIf(!previewScreenshots || !chrome)(
     'keeps the Issue card clear of the next rule at wide and narrow widths',
     async () => {
       const { chromium } = await import('@playwright/test');
@@ -183,7 +186,9 @@ describe('signal type section', () => {
         args: ['--no-sandbox', '--disable-dev-shm-usage'],
       });
       try {
-        const outDir = '/opt/cursor/artifacts';
+        const outDir =
+          process.env.SIGNAL_PREVIEW_ARTIFACTS_DIR?.trim() ||
+          join(tmpdir(), 'hypha-signal-preview');
         mkdirSync(outDir, { recursive: true });
         for (const [name, width] of [
           ['wide', 960],

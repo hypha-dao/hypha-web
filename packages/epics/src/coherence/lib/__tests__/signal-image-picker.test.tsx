@@ -45,6 +45,8 @@ describe('SignalImagePicker', () => {
     expect(inputs).toHaveLength(1);
     const input = inputs[0] as HTMLInputElement;
     expect(input.multiple).toBe(true);
+    expect(input.getAttribute('aria-hidden')).toBe('true');
+    expect(input.tabIndex).toBe(-1);
     expect(view.container.querySelector('[class~="sr-only"]')).toBeTruthy();
     expect(view.queryByRole('button', { name: /JPEG/ })).toBeNull();
 
@@ -117,6 +119,8 @@ describe('SignalImagePicker', () => {
     const input = view.container.querySelector(
       'input[type="file"]',
     ) as HTMLInputElement;
+    expect(input.getAttribute('aria-hidden')).toBe('true');
+    expect(input.tabIndex).toBe(-1);
     expect(view.container.querySelectorAll('input[type="file"]')).toHaveLength(
       1,
     );

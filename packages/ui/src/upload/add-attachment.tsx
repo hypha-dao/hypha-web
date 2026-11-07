@@ -181,11 +181,14 @@ export const AddAttachment = React.forwardRef<
     onExistingAttachmentsChange?.(updated);
   };
 
+  // The labeled button is the control. This input only receives the
+  // programmatic click, so it stays out of the accessibility tree.
   const fileInput = (
     <input
       ref={inputRef}
       type="file"
       className="sr-only"
+      aria-hidden="true"
       accept={accept}
       multiple
       tabIndex={-1}

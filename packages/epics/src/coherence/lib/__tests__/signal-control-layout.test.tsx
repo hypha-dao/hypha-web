@@ -3,10 +3,13 @@ import { execFileSync } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
+  mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cleanup, fireEvent, render } from '@testing-library/react';
@@ -61,6 +64,8 @@ vi.mock(
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '../../../../../../');
+/** Set to `1` to compile themed CSS and write screenshots. Chrome alone does not run it. */
+const previewScreenshots = process.env.SIGNAL_PREVIEW_SCREENSHOTS === '1';
 const chrome = [
   '/usr/local/bin/google-chrome',
   '/usr/bin/google-chrome',
@@ -229,31 +234,41 @@ describe('signal upvote cell and tag field', () => {
     expect(onChange).toHaveBeenCalledWith(['@ada:example']);
   });
 
-  const entryCss = join(
-    repoRoot,
-    'packages/ui-utils/src/.signal-preview-entry.css',
-  );
-
-  it.skipIf(!chrome)(
+  it.skipIf(!previewScreenshots || !chrome)(
     'fits upvote figures and starts the tag field at the normal inset',
     async () => {
-      const globalCss = readFileSync(
-        join(repoRoot, 'packages/ui-utils/src/global.css'),
-        'utf8',
-      );
-      const entry = globalCss.replace(
-        "@source '../../../**/*.{ts,tsx}';",
-        [
-          "@source '../../../packages/epics/src/coherence/components/signal-upvote-cell.tsx';",
-          "@source '../../../packages/epics/src/coherence/components/signal-tag-people-field.tsx';",
-          "@source '../../../packages/epics/src/coherence/utils/signal-upvote-figure.ts';",
-          "@source '../../../packages/ui/src/input.tsx';",
-          "@source '../../../packages/epics/src/coherence/lib/__tests__/signal-control-layout.test.tsx';",
-        ].join('\n'),
-      );
-      writeFileSync(entryCss, entry);
-      const outCss = '/tmp/hypha-signal-preview.out.css';
+      const uiUtilsSrc = join(repoRoot, 'packages/ui-utils/src');
+      const work = mkdtempSync(join(tmpdir(), 'hypha-signal-css-'));
+      let css = '';
       try {
+        symlinkSync(
+          join(repoRoot, 'packages/ui-utils/node_modules'),
+          join(work, 'node_modules'),
+          'dir',
+        );
+        const entry = readFileSync(join(uiUtilsSrc, 'global.css'), 'utf8')
+          .replace(
+            /@import '\.\/([^']+)';/g,
+            (_, relativePath: string) =>
+              `@import '${join(uiUtilsSrc, relativePath)}';`,
+          )
+          .replace(
+            "@source '../../../**/*.{ts,tsx}';",
+            [
+              'packages/epics/src/coherence/components/signal-upvote-cell.tsx',
+              'packages/epics/src/coherence/components/signal-tag-people-field.tsx',
+              'packages/epics/src/coherence/utils/signal-upvote-figure.ts',
+              'packages/ui/src/input.tsx',
+              'packages/epics/src/coherence/lib/__tests__/signal-control-layout.test.tsx',
+            ]
+              .map(
+                (relativePath) => `@source '${join(repoRoot, relativePath)}';`,
+              )
+              .join('\n'),
+          );
+        const entryCss = join(work, 'entry.css');
+        const outCss = join(work, 'out.css');
+        writeFileSync(entryCss, entry);
         execFileSync(
           'pnpm',
           [
@@ -262,16 +277,16 @@ describe('signal upvote cell and tag field', () => {
             'exec',
             'tailwindcss',
             '-i',
-            './src/.signal-preview-entry.css',
+            entryCss,
             '-o',
             outCss,
           ],
           { cwd: repoRoot, stdio: 'pipe' },
         );
+        css = readFileSync(outCss, 'utf8');
       } finally {
-        rmSync(entryCss, { force: true });
+        rmSync(work, { recursive: true, force: true });
       }
-      const css = readFileSync(outCss, 'utf8');
       const markup = renderToStaticMarkup(
         <div>
           <UpvoteBoard />
@@ -288,7 +303,9 @@ describe('signal upvote cell and tag field', () => {
         args: ['--no-sandbox', '--disable-dev-shm-usage'],
       });
       try {
-        const outDir = '/opt/cursor/artifacts';
+        const outDir =
+          process.env.SIGNAL_PREVIEW_ARTIFACTS_DIR?.trim() ||
+          join(tmpdir(), 'hypha-signal-preview');
         mkdirSync(outDir, { recursive: true });
         for (const [name, width] of [
           ['wide', 960],
