@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isBulkQuestDraftRequest,
   resolveQuestDraftTarget,
   type QuestStewardStep,
 } from '@hypha-platform/core/client';
@@ -14,6 +15,7 @@ import {
   isQuestSectionCoachingOpener,
   QUEST_HELPER_OFFLINE_REPLY,
   questDraftTurnUsesModel,
+  questHelperTurnMessage,
   replyWithSectionApprovalAsk,
   runNewQuestDraftTurn,
   settleCreateDraftTurn,
@@ -2015,5 +2017,147 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(bulk?.draft.scopeIn).toEqual([
       'verify proposal display and milestone editing in sandbox',
     ]);
+  });
+
+  it('files the unpunctuated request to propose scope boundaries', async () => {
+    const requested =
+      'Please propose these exact scope boundaries for my confirmation: in scope verify proposal display and milestone editing in sandbox; out of scope production rollout.';
+    const entered = questHelperTurnMessage(`  @Quest Helper ${requested}`);
+    expect(questHelperTurnMessage(requested)).toBe(requested);
+    expect(entered).toBe(requested);
+    expect(isBulkQuestDraftRequest(entered)).toBe(false);
+    expect(questDraftTurnUsesModel(entered)).toBe(true);
+    expect(resolveQuestDraftTarget(entered, 'scope')).toEqual({
+      step: 'scope',
+      bulk: false,
+    });
+
+    const state: CreateDraftTurnSnapshot = {
+      draft: { ...emptyDraft, scopeIn: [], scopeOut: [], milestones: [] },
+      pending: null,
+      currentStep: 'scope',
+    };
+    const calls: string[] = [];
+    const settle = (message: string, model: QuestDraftModelTurn | null) =>
+      settleCreateDraftTurn({
+        message: questHelperTurnMessage(message),
+        history: [],
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: [],
+        readState: () => state,
+        isCurrent: () => true,
+        loadModel: async () => {
+          calls.push(message);
+          return model;
+        },
+      });
+
+    const proposed = await settle(entered, {
+      reply:
+        "We'll take one section at a time. What's in scope, and what's explicitly out of scope?",
+      patch: {
+        goal: 'replaced',
+        milestones: [{ name: 'Edit milestones' }],
+        scopeIn: ['wrong'],
+        scopeOut: ['wrong'],
+      },
+    });
+    expect(calls).toEqual([entered]);
+    expect(proposed?.wrote).toBe(false);
+    expect(proposed?.focusStep).toBe('scope');
+    expect(proposed?.draft.scopeIn).toEqual([]);
+    expect(proposed?.draft.scopeOut).toEqual([]);
+    expect(proposed?.draft.goal).toBe('');
+    expect(proposed?.draft.milestones).toEqual([]);
+    expect(proposed?.pending?.step).toBe('scope');
+    expect(proposed?.pending?.patch.scopeIn).toEqual([
+      'verify proposal display and milestone editing in sandbox',
+    ]);
+    expect(proposed?.pending?.patch.scopeOut).toEqual(['production rollout']);
+    expect(proposed?.pending?.patch.goal).toBeUndefined();
+    expect(proposed?.pending?.patch.milestones).toBeUndefined();
+    expect(proposed?.reply).toMatch(/Not saved yet/);
+    expect(proposed?.reply).toMatch(/Do you want that to be in the Scope\?/);
+    expect(proposed?.reply).not.toMatch(/^We'll take one section at a time/);
+
+    const several =
+      'Draft the scope, success criteria, and milestones. in scope verify proposal display and milestone editing in sandbox; out of scope production rollout.';
+    const bulk = await settle(several, {
+      reply: 'I drafted all three.',
+      patch: {
+        scopeIn: ['invented'],
+        successCriteriaBullets: ['a check'],
+        milestones: [{ name: 'M1' }],
+      },
+    });
+    expect(calls).toEqual([entered]);
+    expect(questDraftTurnUsesModel(several)).toBe(false);
+    expect(bulk?.wrote).toBe(false);
+    expect(bulk?.pending).toBeNull();
+    expect(bulk?.draft).toEqual(state.draft);
+    expect(bulk?.reply).toBe(
+      "We'll take one section at a time. What's in scope, and what's explicitly out of scope?",
+    );
+
+    const clarified = await settle('Add lead scoring', {
+      reply:
+        'Do you mean the Lead role, or the work of adding lead scoring? What outcome should voters be able to check?',
+      patch: {
+        scopeIn: ['Add lead scoring'],
+        leadName: 'scoring',
+        goal: 'replaced',
+      },
+    });
+    expect(clarified?.wrote).toBe(false);
+    expect(clarified?.pending).toBeNull();
+    expect(clarified?.draft.scopeIn).toEqual([]);
+    expect(clarified?.draft.goal).toBe('');
+    expect(clarified?.reply).toMatch(/Do you mean the Lead role/);
+    expect(clarified?.reply).not.toMatch(/Not saved yet/i);
+    expect(clarified?.reply).not.toMatch(/Do you want that to be in/i);
+  });
+
+  it('routes a labeled scope line off a vague goal', () => {
+    const labeled = runNewQuestDraftTurn({
+      message: 'In scope: testing the checklist',
+      currentStep: 'goal',
+      draft: emptyDraft,
+      pending: null,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      model: {
+        reply:
+          '“testing the checklist” gives an activity, but it does not say what the test outcome means.',
+        patch: { goal: 'testing the checklist', scopeIn: ['invented'] },
+      },
+    });
+    expect(labeled.wrote).toBe(false);
+    expect(labeled.focusStep).toBe('scope');
+    expect(labeled.draft.goal).toBe('');
+    expect(labeled.draft.scopeIn).toEqual([]);
+    expect(labeled.pending?.step).toBe('scope');
+    expect(labeled.pending?.patch.goal).toBeUndefined();
+    expect(labeled.pending?.patch.scopeIn).toEqual(['testing the checklist']);
+    expect(labeled.reply).toMatch(/Not saved yet/);
+    expect(labeled.reply).toMatch(/Do you want that to be in the Scope/);
+
+    const vague = runNewQuestDraftTurn({
+      message: 'testing the checklist',
+      currentStep: 'goal',
+      draft: emptyDraft,
+      pending: null,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      model: {
+        reply: 'Who is this for, and what should be true when the test passes?',
+        patch: { goal: 'testing the checklist' },
+      },
+    });
+    expect(vague.focusStep).toBe('goal');
+    expect(vague.pending).toBeNull();
+    expect(vague.draft.goal).toBe('');
+    expect(vague.draft.scopeIn).toEqual([]);
+    expect(vague.reply).toMatch(/who is this for/i);
+    expect(vague.reply).not.toMatch(/Do you want that to be in the Scope/i);
   });
 });

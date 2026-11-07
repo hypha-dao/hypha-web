@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  existingQuestEditSection,
+  isBulkQuestDraftRequest,
   limitQuestPatchToStep,
   questExistingTurnMayPersist,
   resolveQuestDraftTarget,
+  scopeBoundaryLists,
 } from '../guided-step';
 
 describe('limitQuestPatchToStep', () => {
@@ -62,6 +65,14 @@ describe('questExistingTurnMayPersist', () => {
     expect(
       questExistingTurnMayPersist('Set the scope: sandbox checklist'),
     ).toBe(true);
+    const quoted = 'Set the scope to "write all onboarding docs"';
+    expect(questExistingTurnMayPersist(quoted)).toBe(true);
+    expect(existingQuestEditSection(quoted)).toBe('scope');
+    expect(resolveQuestDraftTarget(quoted, 'goal')).toEqual({
+      step: 'goal',
+      bulk: true,
+    });
+    expect(existingQuestEditSection('improve the goal')).toBeNull();
   });
 });
 
@@ -298,6 +309,33 @@ describe('resolveQuestDraftTarget', () => {
         'goal',
       ),
     ).toEqual({ step: 'goal', bulk: true });
+  });
+
+  it('treats one unpunctuated scope boundary as scope and keeps a multi-section command bulk', () => {
+    const requested =
+      'Please propose these exact scope boundaries for my confirmation: in scope verify proposal display and milestone editing in sandbox; out of scope production rollout.';
+    expect(scopeBoundaryLists(requested)).toEqual({
+      scopeIn: 'verify proposal display and milestone editing in sandbox',
+      scopeOut: 'production rollout',
+    });
+    expect(isBulkQuestDraftRequest(requested)).toBe(false);
+    expect(resolveQuestDraftTarget(requested, 'scope')).toEqual({
+      step: 'scope',
+      bulk: false,
+    });
+    const several =
+      'Draft the scope, success criteria, and milestones. in scope verify proposal display and milestone editing in sandbox; out of scope production rollout.';
+    expect(scopeBoundaryLists(several)).toBeNull();
+    expect(isBulkQuestDraftRequest(several)).toBe(true);
+    expect(resolveQuestDraftTarget(several, 'scope')).toEqual({
+      step: 'scope',
+      bulk: true,
+    });
+    expect(
+      isBulkQuestDraftRequest(
+        'Draft the scope, success criteria, and milestones.',
+      ),
+    ).toBe(true);
   });
 
   it('lets a named section win over milestone-shaped lines', () => {

@@ -98,10 +98,40 @@ export function isBulkQuestDraftRequest(text: string): boolean {
     return true;
   }
   if (/\bonly\b/.test(lower) || /\bfocus\b/.test(lower)) return false;
+  // One scope boundary is the Scope section. Words inside it, such as
+  // "milestone editing", are not a request to draft another section.
+  // A preamble that names several sections stays a bulk request.
+  if (scopeBoundaryLists(text)) return false;
   // One labeled payload is that section. Words inside the payload
   // ("milestone editing" on an in-scope line) are not a second section.
   if (labeledSectionStep(text)) return false;
   return mentionsSeveralSections(lower);
+}
+
+/**
+ * "in scope … out of scope …", with or without colons.
+ * Null when the words before that pair already name several sections.
+ */
+export function scopeBoundaryLists(
+  text: string,
+): { scopeIn: string; scopeOut: string } | null {
+  const match =
+    /\bin\s+scope\b\s*:?\s*([\s\S]*?)\s*(?:;\s*)?\bout\s+of\s+scope\b\s*:?\s*([\s\S]*)$/i.exec(
+      text,
+    );
+  if (!match || match.index == null) return null;
+  const preamble = text.slice(0, match.index);
+  if (mentionsSeveralSections(preamble)) return null;
+  const scopeIn = (match[1] ?? '')
+    .trim()
+    .replace(/[;\s]+$/g, '')
+    .trim();
+  const scopeOut = (match[2] ?? '')
+    .trim()
+    .replace(/[.!\s]+$/g, '')
+    .trim();
+  if (!scopeIn || !scopeOut) return null;
+  return { scopeIn, scopeOut };
 }
 
 function explicitSectionName(text: string): string | undefined {
@@ -225,6 +255,7 @@ export function resolveQuestDraftTarget(
   const text = message.trim();
   if (!text) return { step: currentStep, bulk: false };
   if (isBulkQuestDraftRequest(text)) return { step: currentStep, bulk: true };
+  if (scopeBoundaryLists(text)) return { step: 'scope', bulk: false };
   const named = explicitSectionName(text);
   const namedStep = named ? stepFromSectionName(named) : null;
   if (namedStep) return { step: namedStep, bulk: false };
@@ -263,6 +294,18 @@ export function questExistingTurnMayPersist(message: string): boolean {
   if (!text || text.endsWith('?')) return false;
   if (QUEST_EDIT_QUESTION.test(text)) return false;
   return COMMANDED_SECTION.test(text);
+}
+
+/**
+ * The one section an existing-quest command may save.
+ * The words inside the quoted text do not make it a bulk draft.
+ */
+export function existingQuestEditSection(
+  message: string,
+): QuestStewardStep | null {
+  if (!questExistingTurnMayPersist(message)) return null;
+  const named = COMMANDED_SECTION.exec(message.trim())?.[1];
+  return named ? stepFromSectionName(named) : null;
 }
 
 /**

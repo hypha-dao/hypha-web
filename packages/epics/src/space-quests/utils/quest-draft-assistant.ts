@@ -1,10 +1,12 @@
 import {
   QUEST_STEWARD_STEPS,
   bulletsToMarkdownList,
+  QUEST_HELPER_NAME,
   isBulkQuestDraftRequest,
   labeledQuestDraftSection,
   limitQuestPatchToStep,
   resolveQuestDraftTarget,
+  scopeBoundaryLists,
   splitMarkdownLinesToBullets,
   stripViewerYouMarker,
   type QuestReward,
@@ -650,6 +652,15 @@ export function buildLocalQuestDraftPatch({
     if (inText) patch.scopeIn = splitListItems(inText);
   }
   if (outScopeMatch?.[1]) patch.scopeOut = splitListItems(outScopeMatch[1]);
+  if (!patch.scopeIn?.length && !patch.scopeOut?.length) {
+    const boundary = scopeBoundaryLists(trimmed);
+    if (boundary) {
+      const scopeIn = splitListItems(boundary.scopeIn);
+      const scopeOut = splitListItems(boundary.scopeOut);
+      if (scopeIn.length > 0) patch.scopeIn = scopeIn;
+      if (scopeOut.length > 0) patch.scopeOut = scopeOut;
+    }
+  }
   if (successMatch?.[1]) {
     patch.successCriteriaBullets = splitListItems(successMatch[1]);
   }
@@ -1305,6 +1316,20 @@ export const QUEST_HELPER_OFFLINE_REPLY =
   "I can't reach the assistant right now, so I won't guess wording or fill a section. Your draft is unchanged. Try again, or give the exact line to put in a section.";
 
 /**
+ * The create screen trims the composer, then drops a leading @Quest Helper
+ * or @AI Agents mention. The rest of the turn sees that string only.
+ */
+export function questHelperTurnMessage(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return '';
+  const helper = QUEST_HELPER_NAME.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const withoutMention = trimmed
+    .replace(new RegExp(`^@(?:${helper}|AI[\\s_-]*Agents)\\b[,:\\s]*`, 'i'), '')
+    .trim();
+  return withoutMention || trimmed;
+}
+
+/**
  * Local safety turns never call the model: yes/no for the current proposal,
  * and an explicit put/set/change with the words to store. Everything else —
  * questions, vague ideas, follow-ups, and rewrites — is a model turn, the
@@ -1521,8 +1546,9 @@ export function decideQuestDraftSuggestion({
   const clarifying =
     reply.length > 0 && modelGuidanceWithholdsFiling(reply, step);
   const labeled =
-    labeledQuestDraftSection(message) === step &&
-    Object.keys(memberPatch).length > 0;
+    Object.keys(memberPatch).length > 0 &&
+    (labeledQuestDraftSection(message) === step ||
+      (step === 'scope' && scopeBoundaryLists(message) != null));
   if (labeled || (!clarifying && Object.keys(memberPatch).length > 0)) {
     return { intent: 'propose', patch: memberPatch };
   }
@@ -1731,10 +1757,7 @@ export function runNewQuestDraftTurn({
     );
   }
 
-  if (
-    (target.step === 'goal' || currentStep === 'goal') &&
-    isVagueQuestGoal(goalStatement(text))
-  ) {
+  if (target.step === 'goal' && isVagueQuestGoal(goalStatement(text))) {
     const reply = conversationalModelReply(model, text);
     const suggested = withoutVagueGoal(limitedModelPatch(model, 'goal'));
     if (reply && Object.keys(suggested).length > 0) {

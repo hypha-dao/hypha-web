@@ -6,8 +6,8 @@ import {
   QUEST_HELPER_NAME,
   QUEST_STEWARD_STEPS,
   escapeUntrustedDataBoundary,
+  existingQuestEditSection,
   limitQuestPatchToStep,
-  questExistingTurnMayPersist,
   resolveQuestDraftTarget,
   isAllowedQuestDeliverableUrl,
   isSandboxOrThrowawaySpace,
@@ -179,6 +179,29 @@ export type QuestDraftAssistRequest = z.infer<
 
 const QUEST_DRAFT_MS = 28_000;
 const QUEST_DRAFT_MAX_STEPS = 4;
+
+export const QUEST_EDIT_NOT_SAVED_REPLY =
+  'That edit was not saved. Name the section and the new text, for example: Set the goal to "…".';
+
+/**
+ * An existing quest saves only an explicit one-section command.
+ * A tool patch on any other turn, including a bulk reading of quoted
+ * text, is dropped so the reply cannot claim a save that did not happen.
+ */
+export function settleExistingQuestToolPatch({
+  message,
+  collected,
+}: {
+  message: string;
+  collected: QuestDraftAssistPatch;
+}): { patch: QuestDraftAssistPatch; droppedNonemptyPatch: boolean } {
+  const hadPatch = Object.keys(collected).length > 0;
+  const section = existingQuestEditSection(message);
+  if (!section) return { patch: {}, droppedNonemptyPatch: hadPatch };
+  const patch = { ...limitQuestPatchToStep(collected, section) };
+  const kept = Object.keys(patch).length > 0;
+  return { patch: kept ? patch : {}, droppedNonemptyPatch: hadPatch && !kept };
+}
 
 function questWriteFailureReply(error: SpaceQuestWriteError): string {
   switch (error) {
@@ -555,13 +578,21 @@ ${untrusted(
       collectedPatch = draftTarget.bulk
         ? {}
         : { ...limitQuestPatchToStep(collectedPatch, coachedStep) };
-    } else if (!questExistingTurnMayPersist(message)) {
-      collectedPatch = {};
     } else {
-      const edited = resolveQuestDraftTarget(message, currentStep);
-      collectedPatch = edited.bulk
-        ? {}
-        : { ...limitQuestPatchToStep(collectedPatch, edited.step) };
+      const settled = settleExistingQuestToolPatch({
+        message,
+        collected: collectedPatch,
+      });
+      collectedPatch = settled.patch;
+      if (settled.droppedNonemptyPatch) {
+        return {
+          ok: true,
+          patch: null,
+          updatedQuest: null,
+          reply: QUEST_EDIT_NOT_SAVED_REPLY,
+          specialistId: specialist?.id ?? 'operations',
+        };
+      }
     }
 
     const hasPatch = Object.keys(collectedPatch).length > 0;

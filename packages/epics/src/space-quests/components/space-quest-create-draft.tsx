@@ -49,11 +49,13 @@ import {
 import {
   isQuestDraftQuestion,
   questDraftTurnUsesModel,
+  questHelperTurnMessage,
   settleCreateDraftTurn,
   type PendingQuestSectionProposal,
   type QuestDraftModelTurn,
   type QuestDraftStateSnapshot,
 } from '../utils/quest-draft-assistant';
+import { draftParticipantRoleLabel } from '../utils/quest-draft-member-role';
 import {
   questHelperTypingAfterTurn,
   questHelperTypingForTurn,
@@ -122,13 +124,6 @@ function chainProposalId(current: {
     return current.web3ProposalId;
   }
   return null;
-}
-
-function stripAgentMentionPrefix(text: string): string {
-  const helper = QUEST_HELPER_NAME.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return text
-    .replace(new RegExp(`^@(?:${helper}|AI[\\s_-]*Agents)\\b[,:\\s]*`, 'i'), '')
-    .trim();
 }
 
 export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
@@ -310,7 +305,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         setChatInput('');
       }
 
-      const trimmed = stripAgentMentionPrefix(rawTrimmed) || rawTrimmed;
+      const trimmed = questHelperTurnMessage(rawTrimmed);
       const generation = ++turnGenerationRef.current;
       const readTurnState = () => ({
         draft: draftSnapshotRef.current,
@@ -655,7 +650,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             personId:
               m.personId ?? findQuestSpaceMemberId(spaceMembers, m.memberName),
             memberName: m.memberName,
-            roleLabel: m.roleLabel ?? 'Member',
+            roleLabel: draftParticipantRoleLabel(m.roleLabel),
             responsibilities: m.responsibilities,
           })),
         ]),
@@ -713,7 +708,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
           members: draftPayload.members.map((m) => ({
             personId: m.personId ?? null,
             memberName: m.memberName,
-            roleLabel: m.roleLabel ?? 'Member',
+            roleLabel: draftParticipantRoleLabel(m.roleLabel),
             responsibilities: m.responsibilities,
           })),
         },
@@ -849,7 +844,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                 member.personId ??
                 findQuestSpaceMemberId(spaceMembers, member.memberName),
               memberName: member.memberName,
-              roleLabel: member.roleLabel ?? 'Member',
+              roleLabel: draftParticipantRoleLabel(member.roleLabel),
               responsibilities: member.responsibilities,
             })),
           ]),
@@ -1331,7 +1326,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                         : null);
                     return {
                       memberName: m.memberName,
-                      roleLabel: m.roleLabel,
+                      roleLabel: draftParticipantRoleLabel(m.roleLabel),
                       responsibilities: m.responsibilities,
                       avatarSrc: memberAvatar ?? undefined,
                       personId:
