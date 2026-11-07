@@ -1811,7 +1811,7 @@ export function runNewQuestDraftTurn({
 
   // Chat only. Keep an unrelated proposal. A confirm claim in this reply
   // is about words this turn did not file. Yes still applies the earlier
-  // patch, so the reply has to name that section.
+  // patch, so the reply names that section.
   const modelReply =
     conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY;
   const actionable = Object.keys(pending?.patch ?? {}).length > 0;
@@ -1830,9 +1830,9 @@ function replyWhileOlderPending(
 ): string {
   const filtered = replyAfterRetiredSuggestion(reply, false);
   if (filtered === reply) return reply;
-  const notice = `Only the earlier ${questStepSectionLabel(
+  const notice = `The ${questStepSectionLabel(
     pending.step,
-  )} suggestion is waiting on a yes.`;
+  )} is still waiting on a yes.`;
   const kept = filtered
     .split(/\n+|(?<=[.!?])\s+/)
     .map((part) => part.trim())

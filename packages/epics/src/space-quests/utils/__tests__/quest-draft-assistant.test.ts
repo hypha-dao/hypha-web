@@ -2283,9 +2283,7 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(clarified?.draft.goal).toBe('');
     expect(clarified?.draft.leadName).toBe(emptyDraft.leadName);
     expect(clarified?.reply).toMatch(/Do you mean the Lead role/);
-    expect(clarified?.reply).toMatch(
-      /Only the earlier Scope suggestion is waiting on a yes/,
-    );
+    expect(clarified?.reply).toMatch(/The Scope is still waiting on a yes/);
     expect(clarified?.reply).not.toMatch(/until you confirm/i);
     expect(clarified?.reply).not.toMatch(/as a suggestion/i);
     expect(clarified?.reply).not.toMatch(/Nothing is waiting on a yes/i);
@@ -2357,5 +2355,31 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(calls).not.toContain(
       'Draft the scope, success criteria, and milestones. In scope: verify proposal display and milestone editing in sandbox. Out of scope: production rollout.',
     );
+  });
+
+  it('strips unbacked confirm claims while an older section is still pending', () => {
+    const pending = {
+      step: 'goal' as const,
+      patch: { goal: 'A reviewer can tell the confirmed goal stayed.' },
+    };
+    const result = runNewQuestDraftTurn({
+      message: 'Add lead scoring',
+      currentStep: 'scope',
+      draft: { ...emptyDraft, goal: 'saved' },
+      pending,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      model: {
+        reply:
+          'Do you mean the Lead role? That is not saved until you confirm it.',
+        patch: { leadName: 'scoring' },
+      },
+    });
+    expect(result.wrote).toBe(false);
+    expect(result.pending).toEqual(pending);
+    expect(result.reply).toMatch(/Do you mean the Lead role/);
+    expect(result.reply).not.toMatch(/not saved until you confirm/i);
+    expect(result.reply).toMatch(/The Goal is still waiting on a yes/);
+    expect(result.reply).not.toMatch(/Nothing is waiting on a yes/);
   });
 });

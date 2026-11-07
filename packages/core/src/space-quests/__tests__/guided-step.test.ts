@@ -328,6 +328,13 @@ describe('resolveQuestDraftTarget', () => {
         'goal',
       ),
     ).toEqual({ step: 'goal', bulk: true });
+    const colonSeveral =
+      'Draft the scope, success criteria, and milestones. In scope: verify proposal display and milestone editing in sandbox. Out of scope: production rollout.';
+    expect(isBulkQuestDraftRequest(colonSeveral)).toBe(true);
+    expect(resolveQuestDraftTarget(colonSeveral, 'scope')).toEqual({
+      step: 'scope',
+      bulk: true,
+    });
   });
 
   it('treats one unpunctuated scope boundary as scope and keeps a multi-section command bulk', () => {

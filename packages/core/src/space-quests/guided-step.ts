@@ -146,9 +146,9 @@ function bulkFromDraftSignals(text: string): boolean {
   // "milestone editing", are not a request to draft another section.
   // A preamble that names several sections stays a bulk request.
   if (scopeBoundaryLists(text)) return false;
-  // One labeled payload is that section. Words inside the payload
-  // ("milestone editing" on an in-scope line) are not a second section.
-  // A preamble that already names several sections stays bulk, colons or not.
+  // One labeled payload is that section, unless a preamble already named
+  // several sections. Words inside the payload ("milestone editing" on an
+  // in-scope line) are not a second section.
   const labeled = labeledSectionMatch(text);
   if (labeled && !mentionsSeveralSections(text.slice(0, labeled.index))) {
     return false;
