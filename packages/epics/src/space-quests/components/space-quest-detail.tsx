@@ -9,6 +9,7 @@ import {
   useMe,
   type QuestHealthState,
   type QuestMilestoneStatus,
+  type QuestPatchStatus,
   type QuestRecord,
   type QuestStatus,
   type QuestUpdateRecord,
@@ -1205,7 +1206,7 @@ export function SpaceQuestDetail({
   const [editingModal, setEditingModal] = useState<EditingModal>(null);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [nextStatus, setNextStatus] = useState<QuestStatus>('active');
+  const [nextStatus, setNextStatus] = useState<QuestPatchStatus>('active');
   const [detailChatOpen, setDetailChatOpen] = useState(false);
   const [detailChatInput, setDetailChatInput] = useState('');
   const [detailChatTyping, setDetailChatTyping] = useState(false);

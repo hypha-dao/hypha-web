@@ -19,6 +19,6 @@ export async function deleteUnacceptedProposedQuestByDocumentId(
         isNull(spaceQuests.acceptedAt),
       ),
     )
-    .returning({ id: spaceQuests.id });
+    .returning();
   return removed.length;
 }
