@@ -2,6 +2,7 @@ import { and, eq, inArray, isNull } from 'drizzle-orm';
 import {
   documents,
   matrixUserLinks,
+  memberships,
   people,
   spaceQuestDeliverables,
   spaceQuestMembers,
@@ -38,6 +39,7 @@ import {
   splitMarkdownLinesToBullets,
   withoutPlaceholderLeadDuplicates,
 } from '../markdown';
+import { offRosterQuestPersonIds } from '../roster';
 import type { QuestRecord } from '../types';
 import type {
   schemaCreateSpaceQuest,
@@ -329,11 +331,16 @@ export async function createSpaceQuest(
     return { ok: false, error: 'invalid_input' };
   }
 
-  const rosterError = await assertPersonIdsAreSpaceMembers(
+  const rosterError = await assertPersonIdsAreSpaceMembers({
     spaceSlug,
-    [leadPersonId, ...input.members.map((member) => member.personId)],
+    spaceId: space.id,
+    personIds: [
+      leadPersonId,
+      ...input.members.map((member) => member.personId),
+    ],
+    actorId: actor?.id ?? null,
     db,
-  );
+  });
   if (rosterError) return { ok: false, error: rosterError };
 
   const [created] = await db
@@ -451,26 +458,61 @@ function uniquePositiveIds(
 }
 
 /**
- * Members-tab roster check: only on-chain space members may be stored as
- * lead/member person IDs (and later invited to the Quest Matrix room).
+ * Members-tab roster check: only space members may be stored as new lead/member
+ * person IDs (and later invited to the Quest Matrix room). Already-saved IDs
+ * are preserved so an outsider who remains on the quest is not blocked.
  */
-async function assertPersonIdsAreSpaceMembers(
-  spaceSlug: string,
-  personIds: Array<number | null | undefined>,
-  db: DbConfig['db'],
-): Promise<SpaceQuestWriteError | null> {
-  const ids = uniquePositiveIds(personIds);
-  if (ids.length === 0) return null;
+async function assertPersonIdsAreSpaceMembers({
+  spaceSlug,
+  spaceId,
+  personIds,
+  actorId,
+  preservedIds,
+  db,
+}: {
+  spaceSlug: string;
+  spaceId: number;
+  personIds: Array<number | null | undefined>;
+  actorId?: number | null;
+  preservedIds?: ReadonlySet<number>;
+  db: DbConfig['db'];
+}): Promise<SpaceQuestWriteError | null> {
+  const preserved = preservedIds ?? new Set<number>();
+  if (offRosterQuestPersonIds(personIds, new Set(), preserved).length === 0) {
+    return null;
+  }
 
-  const computed = await computeSpaceMemberEntries(spaceSlug, { db });
-  if (!computed.found) return 'not_found';
+  const rosterIds = new Set<number>();
+  if (typeof actorId === 'number' && actorId > 0) {
+    rosterIds.add(actorId);
+  }
 
-  const memberIds = new Set(
-    computed.entries
-      .filter((entry) => entry.member_kind === 'person')
-      .map((entry) => entry.person.id),
-  );
-  return ids.some((id) => !memberIds.has(id)) ? 'invalid_input' : null;
+  try {
+    const computed = await computeSpaceMemberEntries(spaceSlug, { db });
+    if (!computed.found) return 'not_found';
+    for (const entry of computed.entries) {
+      if (entry.member_kind === 'person') {
+        rosterIds.add(entry.person.id);
+      }
+    }
+  } catch (error) {
+    console.warn(
+      '[space-quests] space roster lookup skipped:',
+      error instanceof Error ? error.message : error,
+    );
+  }
+
+  const membershipRows = await db
+    .select({ personId: memberships.personId })
+    .from(memberships)
+    .where(eq(memberships.spaceId, spaceId));
+  for (const row of membershipRows) {
+    rosterIds.add(row.personId);
+  }
+
+  return offRosterQuestPersonIds(personIds, rosterIds, preserved).length > 0
+    ? 'invalid_input'
+    : null;
 }
 
 export async function updateSpaceQuest(
@@ -605,29 +647,23 @@ export async function updateSpaceQuest(
     return { ok: false, error: 'forbidden' };
   }
 
-  const existingMemberPersonIds = new Set(
+  const preservedIds = new Set(
     uniquePositiveIds([
       current.leadPersonId,
       ...current.members.map((member) => member.personId),
     ]),
   );
-  const rosterError = await assertPersonIdsAreSpaceMembers(
+  const rosterError = await assertPersonIdsAreSpaceMembers({
     spaceSlug,
-    [
-      patch.leadPersonId != null && patch.leadPersonId !== current.leadPersonId
-        ? patch.leadPersonId
-        : null,
-      ...(patch.members ?? [])
-        .map((member) => member.personId)
-        .filter(
-          (id): id is number =>
-            typeof id === 'number' &&
-            id > 0 &&
-            !existingMemberPersonIds.has(id),
-        ),
+    spaceId: current.spaceId,
+    personIds: [
+      patch.leadPersonId,
+      ...(patch.members ?? []).map((member) => member.personId),
     ],
+    actorId: actor.id ?? null,
+    preservedIds,
     db,
-  );
+  });
   if (rosterError) return { ok: false, error: rosterError };
 
   const now = new Date();

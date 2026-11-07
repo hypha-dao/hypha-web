@@ -1965,7 +1965,8 @@ export function SpaceQuestDetail({
       >
         <div className="space-y-4">
           <p className="text-[13px] text-neutral-11">
-            Hide {quest.name} from the list. Content becomes read-only.
+            Hide {quest.name} from the list. Content becomes read-only, and
+            there is no restore action for the Lead.
           </p>
           <div className="flex justify-end gap-2">
             <Button
