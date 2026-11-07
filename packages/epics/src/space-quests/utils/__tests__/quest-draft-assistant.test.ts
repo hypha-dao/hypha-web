@@ -1817,4 +1817,203 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(yes?.reply).toMatch(/Nothing is waiting on a yes/i);
     expect(yes?.reply).not.toMatch(/still a suggestion/i);
   });
+
+  it('files a grounded scope proposal and leaves prose-only confirmation in chat', async () => {
+    const boundaries =
+      'In scope: verify proposal display and milestone editing in sandbox; out of scope: production rollout.';
+    const requested = `Please propose these exact scope boundaries for my confirmation: ${boundaries}`;
+    const readyReply =
+      'That boundary is a suggestion and is not saved until you confirm. Should I add that to the Scope?';
+    const state: CreateDraftTurnSnapshot = {
+      draft: { ...emptyDraft, scopeIn: [], scopeOut: [] },
+      pending: null,
+      currentStep: 'scope',
+    };
+    const calls: string[] = [];
+    const settle = (message: string, model: QuestDraftModelTurn | null) =>
+      settleCreateDraftTurn({
+        message,
+        history: [],
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: [],
+        readState: () => state,
+        isCurrent: () => true,
+        loadModel: async () => {
+          calls.push(message);
+          return model;
+        },
+      });
+
+    const concrete = await settle(boundaries, {
+      reply: readyReply,
+      patch: {
+        scopeIn: ['invented'],
+        goal: 'replaced',
+        leadName: 'scoring',
+      },
+    });
+    expect(concrete?.wrote).toBe(false);
+    expect(concrete?.draft.scopeIn).toEqual([]);
+    expect(concrete?.draft.scopeOut).toEqual([]);
+    expect(concrete?.draft.goal).toBe('');
+    expect(concrete?.pending?.step).toBe('scope');
+    expect(concrete?.pending?.patch.scopeIn).toEqual([
+      'verify proposal display and milestone editing in sandbox',
+    ]);
+    expect(concrete?.pending?.patch.scopeOut).toEqual(['production rollout.']);
+    expect(concrete?.pending?.patch.goal).toBeUndefined();
+    expect(concrete?.pending?.patch.leadName).toBeUndefined();
+    expect(concrete?.reply).toMatch(/Not saved yet/);
+    expect(concrete?.reply).toMatch(/Do you want that to be in the Scope\?/);
+    expect(
+      concrete?.reply.match(/Do you want that to be in the Scope/gi),
+    ).toHaveLength(1);
+    expect(concrete?.reply).not.toMatch(/one section at a time/i);
+
+    const proposed = await settle(requested, {
+      reply:
+        "We'll take one section at a time. What's in scope, and what's explicitly out of scope? This is not saved until you confirm.",
+      patch: {},
+    });
+    expect(proposed?.wrote).toBe(false);
+    expect(proposed?.reply).not.toMatch(/^We'll take one section at a time/);
+    expect(proposed?.pending?.step).toBe('scope');
+    expect(proposed?.pending?.patch.scopeIn).toEqual([
+      'verify proposal display and milestone editing in sandbox',
+    ]);
+    expect(proposed?.pending?.patch.scopeOut).toEqual(['production rollout.']);
+    expect(proposed?.reply).toMatch(/Not saved yet/);
+    expect(proposed?.reply).toMatch(/Do you want that to be in the Scope\?/);
+    expect(proposed?.draft.scopeIn).toEqual([]);
+
+    const checklist = 'Ship the sandbox checklist to every new member.';
+    const approved = await settle(checklist, {
+      reply: 'That is one deliverable. Should I add that to the Scope?',
+      patch: { scopeIn: ['invented scope'], leadName: 'checklist' },
+    });
+    expect(approved?.wrote).toBe(false);
+    expect(approved?.pending?.step).toBe('scope');
+    expect(approved?.pending?.patch.scopeIn).toEqual([checklist]);
+    expect(approved?.pending?.patch.leadName).toBeUndefined();
+    expect(approved?.reply).toMatch(/one deliverable/);
+    expect(approved?.reply).toMatch(/Not saved yet/);
+    expect(approved?.reply).toMatch(/Do you want that to be in the Scope\?/);
+    expect(approved?.draft.scopeIn).toEqual([]);
+
+    const clarification =
+      'Do you mean the Lead role, or the work of adding lead scoring? What outcome should voters be able to check?';
+    const prose =
+      "I'll treat those words as a suggestion. They aren't saved until you confirm.";
+    for (const patch of [
+      {},
+      {
+        scopeIn: ['Add lead scoring'],
+        leadName: 'scoring',
+        goal: 'replaced',
+      },
+    ]) {
+      const clarified = await settle('Add lead scoring', {
+        reply: `${prose} ${clarification}`,
+        patch,
+      });
+      expect(clarified?.wrote).toBe(false);
+      expect(clarified?.pending).toBeNull();
+      expect(clarified?.draft.scopeIn).toEqual([]);
+      expect(clarified?.draft.leadName).toBe(emptyDraft.leadName);
+      expect(clarified?.draft.goal).toBe('');
+      expect(clarified?.reply).toMatch(/Do you mean the Lead role/);
+      expect(clarified?.reply).not.toMatch(/until you confirm/i);
+      expect(clarified?.reply).not.toMatch(/Not saved yet/i);
+      expect(clarified?.reply).not.toMatch(/Do you want that to be in/i);
+      expect(clarified?.reply).toMatch(/Nothing is waiting on a yes/i);
+    }
+
+    const fabricated = await settle("now let's define the scope", {
+      reply:
+        'Here is a suggestion for the sandbox work. It is not saved until you confirm. Do you want that to be in the Scope?',
+      patch: { scopeIn: ['invented sandbox work'], goal: 'replaced' },
+    });
+    expect(calls).toContain("now let's define the scope");
+    expect(fabricated?.wrote).toBe(false);
+    expect(fabricated?.pending).toBeNull();
+    expect(fabricated?.draft.scopeIn).toEqual([]);
+    expect(fabricated?.draft.goal).toBe('');
+    expect(fabricated?.reply).not.toMatch(/until you confirm/i);
+    expect(fabricated?.reply).not.toMatch(/Not saved yet/i);
+    expect(fabricated?.reply).not.toMatch(/Do you want that to be in/i);
+    expect(fabricated?.reply).not.toMatch(/invented sandbox work/);
+
+    state.pending = concrete?.pending ?? null;
+    const question = await settle('what reward should we pay?', {
+      reply:
+        "Rewards are a later section. Nothing here names an amount. A reviewer could confirm the outcome from the member list. The earlier suggestion isn't saved until you confirm it.",
+      patch: {
+        rewards: [{ amount: '2500', token: 'USDC' }],
+        scopeIn: ['what reward should we pay?'],
+      },
+    });
+    expect(question?.wrote).toBe(false);
+    expect(question?.pending).toBeNull();
+    expect(question?.draft.scopeIn).toEqual([]);
+    expect(question?.draft.scopeOut).toEqual([]);
+    expect(question?.draft.rewards).toEqual([]);
+    expect(question?.reply).toMatch(/Nothing here names an amount/);
+    expect(question?.reply).toMatch(/reviewer could confirm the outcome/);
+    expect(question?.reply).toMatch(/no longer waiting on a yes/i);
+    expect(question?.reply).not.toMatch(/until you confirm/i);
+    expect(question?.reply).not.toMatch(/Not saved yet/i);
+
+    state.pending = null;
+    const yes = await settle('yes', {
+      reply: 'Say yes to save the earlier suggestion.',
+      patch: concrete?.pending?.patch ?? { scopeIn: ['invented'] },
+    });
+    expect(calls).not.toContain('yes');
+    expect(yes?.wrote).toBe(false);
+    expect(yes?.pending).toBeNull();
+    expect(yes?.draft.scopeIn).toEqual([]);
+    expect(yes?.reply).toMatch(/Nothing is waiting on a yes/i);
+
+    let quotedLoaded = false;
+    const quoted = await settleCreateDraftTurn({
+      message:
+        'Put in scope "verify proposal display and milestone editing in sandbox"',
+      history: [],
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      readState: () => state,
+      isCurrent: () => true,
+      loadModel: async () => {
+        quotedLoaded = true;
+        return { patch: { scopeIn: ['invented'], goal: 'replaced' } };
+      },
+    });
+    expect(quotedLoaded).toBe(false);
+    expect(quoted?.wrote).toBe(true);
+    expect(quoted?.pending).toBeNull();
+    expect(quoted?.draft.scopeIn).toEqual([
+      'verify proposal display and milestone editing in sandbox',
+    ]);
+    expect(quoted?.draft.goal).toBe('');
+    state.draft = quoted?.draft ?? state.draft;
+    state.pending = null;
+
+    const bulk = await settle(
+      'Draft the scope, success criteria, and milestones.',
+      {
+        reply: 'I drafted all three.',
+        patch: {
+          scopeIn: ['invented'],
+          successCriteriaBullets: ['a check'],
+          milestones: [{ name: 'M1' }],
+        },
+      },
+    );
+    expect(bulk?.wrote).toBe(false);
+    expect(bulk?.pending).toBeNull();
+    expect(bulk?.reply).toMatch(/one section at a time/i);
+    expect(bulk?.draft.scopeIn).toEqual([
+      'verify proposal display and milestone editing in sandbox',
+    ]);
+  });
 });

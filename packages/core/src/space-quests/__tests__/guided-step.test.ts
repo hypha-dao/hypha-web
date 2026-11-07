@@ -279,6 +279,27 @@ describe('resolveQuestDraftTarget', () => {
     ).toEqual({ step: 'members', bulk: false });
   });
 
+  it('keeps one labeled scope payload on scope when the payload mentions another section', () => {
+    const message =
+      'Please propose these exact scope boundaries for my confirmation: In scope: verify proposal display and milestone editing in sandbox; out of scope: production rollout.';
+    expect(resolveQuestDraftTarget(message, 'scope')).toEqual({
+      step: 'scope',
+      bulk: false,
+    });
+    expect(
+      resolveQuestDraftTarget(
+        'Draft the scope, success criteria, and milestones.',
+        'scope',
+      ),
+    ).toEqual({ step: 'scope', bulk: true });
+    expect(
+      resolveQuestDraftTarget(
+        'Draft everything. In scope: verify proposal display.',
+        'goal',
+      ),
+    ).toEqual({ step: 'goal', bulk: true });
+  });
+
   it('lets a named section win over milestone-shaped lines', () => {
     expect(
       resolveQuestDraftTarget(

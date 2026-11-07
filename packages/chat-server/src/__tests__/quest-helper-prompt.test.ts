@@ -14,6 +14,9 @@ describe('quest helper prompt', () => {
     expect(NEW_QUEST_HELPER_RULES).toMatch(/do not invent/i);
     expect(NEW_QUEST_HELPER_RULES).toMatch(/not saved until they confirm/i);
     expect(NEW_QUEST_HELPER_RULES).toMatch(
+      /do not say the wording is waiting for confirmation/i,
+    );
+    expect(NEW_QUEST_HELPER_RULES).toMatch(
       /question retires any unsaved suggestion/i,
     );
     expect(NEW_QUEST_HELPER_RULES).toMatch(/chat answer/i);

@@ -98,6 +98,9 @@ export function isBulkQuestDraftRequest(text: string): boolean {
     return true;
   }
   if (/\bonly\b/.test(lower) || /\bfocus\b/.test(lower)) return false;
+  // One labeled payload is that section. Words inside the payload
+  // ("milestone editing" on an in-scope line) are not a second section.
+  if (labeledSectionStep(text)) return false;
   return mentionsSeveralSections(lower);
 }
 
@@ -161,6 +164,13 @@ const LABELED_SECTION_PATTERNS: ReadonlyArray<{
     step: 'name',
   },
 ];
+
+/** The section a labeled payload is for, or null when the message has no field label. */
+export function labeledQuestDraftSection(
+  text: string,
+): QuestStewardStep | null {
+  return labeledSectionStep(text);
+}
 
 function labeledSectionStep(text: string): QuestStewardStep | null {
   let best: { index: number; step: QuestStewardStep } | null = null;

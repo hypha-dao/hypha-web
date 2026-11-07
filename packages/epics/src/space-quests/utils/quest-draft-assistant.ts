@@ -2,6 +2,7 @@ import {
   QUEST_STEWARD_STEPS,
   bulletsToMarkdownList,
   isBulkQuestDraftRequest,
+  labeledQuestDraftSection,
   limitQuestPatchToStep,
   resolveQuestDraftTarget,
   splitMarkdownLinesToBullets,
@@ -1354,9 +1355,24 @@ function sentenceOffersRetiredConfirmation(sentence: string): boolean {
   );
 }
 
+const UNBACKED_CONFIRM =
+  /\b(?:not saved until|aren'?t saved until|isn'?t saved until|until (?:you|they) confirm|do you want that to be in|not saved yet|still (?:a |an )?suggestion)\b/i;
+
+/**
+ * Prose that says yes will save something. A reviewer's check ("a reviewer
+ * could confirm") is not that claim.
+ */
+function sentenceClaimsUnbackedConfirm(sentence: string): boolean {
+  if (/\ba reviewer could confirm\b/i.test(sentence)) return false;
+  return (
+    sentenceOffersRetiredConfirmation(sentence) ||
+    UNBACKED_CONFIRM.test(sentence)
+  );
+}
+
 /**
  * A question leaves no suggestion for yes to save. Keep the answer, and drop
- * only a claim that confirmation of the retired suggestion would still work.
+ * only a claim that confirmation would still save something.
  */
 function replyAfterRetiredSuggestion(
   reply: string,
@@ -1368,17 +1384,17 @@ function replyAfterRetiredSuggestion(
     .filter(Boolean);
   let changed = false;
   const kept = chunks.flatMap((part) => {
-    if (!sentenceOffersRetiredConfirmation(part)) return [part];
+    if (!sentenceClaimsUnbackedConfirm(part)) return [part];
     changed = true;
-    PRIOR_SUGGESTION_OFFER.lastIndex = 0;
-    const offer = PRIOR_SUGGESTION_OFFER.exec(part);
+    UNBACKED_CONFIRM.lastIndex = 0;
+    const offer = UNBACKED_CONFIRM.exec(part);
     const index = offer?.index ?? -1;
     if (index > 24) {
       const prefix = part
         .slice(0, index)
         .replace(/[\s,;:—-]+$/g, '')
         .trim();
-      if (prefix.length > 12 && !sentenceOffersRetiredConfirmation(prefix)) {
+      if (prefix.length > 12 && !sentenceClaimsUnbackedConfirm(prefix)) {
         return [prefix];
       }
     }
@@ -1416,15 +1432,42 @@ function sectionLabelSource(step: QuestStewardStep): string {
 }
 
 /**
+ * A question that asks the member to approve a suggestion already in hand.
+ * It is not a request for a missing fact.
+ */
+const MISSING_DECISION =
+  /\b(?:do you mean|which|what|who|how|when|where|why|whether|\bor\b)\b/i;
+
+function questionAsksForApproval(
+  question: string,
+  step: QuestStewardStep,
+): boolean {
+  if (!question.includes('?') || MISSING_DECISION.test(question)) return false;
+  const label = sectionLabelSource(step);
+  return (
+    /\b(?:do you want|should I|shall I|can I|may I|confirm|sound right|look right|good to (?:add|use|file)|put (?:that|this|it) in|add (?:that|this|it) to)\b/i.test(
+      question,
+    ) || new RegExp(`\\b(?:${label})\\b`, 'i').test(question)
+  );
+}
+
+/**
  * Guidance is not a field value. A reply still asking for a missing decision,
  * or sending the sentence to another section, must not also become pending
- * content. A comment with no open question leaves the member's sentence pending.
+ * content. An approval question on a finished suggestion does not withhold it.
  */
 function modelGuidanceWithholdsFiling(
   reply: string,
   step: QuestStewardStep,
 ): boolean {
   const label = sectionLabelSource(step);
+  const questions = reply
+    .split(/(?<=\?)\s+/)
+    .map((part) => part.trim())
+    .filter((part) => part.includes('?'));
+  if (questions.some((question) => !questionAsksForApproval(question, step))) {
+    return true;
+  }
   const withoutFilingAsk = reply
     .replace(
       new RegExp(`do you want that to be in(?:\\s+the)?\\s+${label}\\??`, 'ig'),
@@ -1432,7 +1475,6 @@ function modelGuidanceWithholdsFiling(
     )
     .replace(/\s+/g, ' ')
     .trim();
-  if (/\?/.test(withoutFilingAsk)) return true;
   if (
     new RegExp(
       `\\b(?:not|isn'?t|is not|aren'?t|are not|rather than|instead of|outside(?:\\s+of)?)\\s+(?:(?:an?|the|this)\\s+)?(?:[\\w-]+\\s+){0,4}${label}\\b`,
@@ -1452,6 +1494,71 @@ function modelGuidanceWithholdsFiling(
     `\\b(?:belongs in|goes in|put (?:that|this|it) in)\\s+(?:the\\s+)?(?:${otherLabels})\\b`,
     'i',
   ).test(withoutFilingAsk);
+}
+
+/**
+ * What this turn may offer. A labeled payload is the member's proposal.
+ * A model tool patch is a proposal only when the reply is not still asking
+ * for a decision. Prose on its own is never a proposal.
+ */
+export type QuestDraftSuggestionDecision = {
+  intent: 'clarify' | 'propose';
+  patch: QuestDraftPatchInput;
+};
+
+export function decideQuestDraftSuggestion({
+  message,
+  step,
+  memberPatch,
+  model,
+}: {
+  message: string;
+  step: QuestStewardStep;
+  memberPatch: QuestDraftPatchInput;
+  model: QuestDraftModelTurn | null;
+}): QuestDraftSuggestionDecision {
+  const reply = model?.reply?.trim() ?? '';
+  const clarifying =
+    reply.length > 0 && modelGuidanceWithholdsFiling(reply, step);
+  const labeled =
+    labeledQuestDraftSection(message) === step &&
+    Object.keys(memberPatch).length > 0;
+  if (labeled || (!clarifying && Object.keys(memberPatch).length > 0)) {
+    return { intent: 'propose', patch: memberPatch };
+  }
+  const modelPatch = withoutVagueGoal(limitedModelPatch(model, step));
+  if (!clarifying && Object.keys(modelPatch).length > 0) {
+    return { intent: 'propose', patch: modelPatch };
+  }
+  return { intent: 'clarify', patch: {} };
+}
+
+function replyForPendingSuggestion(
+  modelReply: string | null,
+  step: QuestStewardStep,
+  patch: QuestDraftPatchInput,
+): string {
+  const ask = replyWithSectionApprovalAsk(null, step, patch);
+  if (!modelReply) return ask;
+  const commentary = modelReply
+    .replace(
+      new RegExp(
+        `do you want that to be in(?:\\s+the)?\\s+${sectionLabelSource(
+          step,
+        )}\\??`,
+        'ig',
+      ),
+      '',
+    )
+    .split(/\n+|(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .filter(
+      (part) => part.length > 0 && !/\bone section at a time\b/i.test(part),
+    )
+    .join('\n\n')
+    .trim();
+  if (!commentary) return ask;
+  return `${commentary}\n\nNot saved yet.\n${ask}`;
 }
 
 /**
@@ -1591,7 +1698,10 @@ export function runNewQuestDraftTurn({
 
   if (isQuestSectionCoachingOpener(text)) {
     return stay(
-      conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY,
+      replyAfterRetiredSuggestion(
+        conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY,
+        false,
+      ),
       target.step,
     );
   }
@@ -1610,10 +1720,13 @@ export function runNewQuestDraftTurn({
       );
     }
     return stay(
-      conversationalModelReply(model, text) ??
-        `I won't replace the ${questStepSectionLabel(
-          target.step,
-        )} until you approve a wording. What should change?`,
+      replyAfterRetiredSuggestion(
+        conversationalModelReply(model, text) ??
+          `I won't replace the ${questStepSectionLabel(
+            target.step,
+          )} until you approve a wording. What should change?`,
+        false,
+      ),
       target.step,
     );
   }
@@ -1630,7 +1743,10 @@ export function runNewQuestDraftTurn({
         patch: suggested,
       });
     }
-    return stay(reply ?? QUEST_HELPER_OFFLINE_REPLY, 'goal');
+    return stay(
+      replyAfterRetiredSuggestion(reply ?? QUEST_HELPER_OFFLINE_REPLY, false),
+      'goal',
+    );
   }
 
   const supplied = messageSuppliesSectionContent(text)
@@ -1648,36 +1764,34 @@ export function runNewQuestDraftTurn({
         ),
       )
     : {};
-  if (Object.keys(supplied).length > 0) {
-    const modelReply = conversationalModelReply(model, text);
-    if (modelReply && modelGuidanceWithholdsFiling(modelReply, target.step)) {
-      // Keep an unrelated proposal. Do not file this sentence over it.
-      return stay(modelReply, currentStep, pending);
-    }
-    const ask = replyWithSectionApprovalAsk(null, target.step, supplied);
+  const decision = decideQuestDraftSuggestion({
+    message: text,
+    step: target.step,
+    memberPatch: supplied,
+    model,
+  });
+  if (decision.intent === 'propose') {
     return stay(
-      modelReply ? `${modelReply}\n\nNot saved yet.\n${ask}` : ask,
-      target.step,
-      { step: target.step, patch: supplied },
-    );
-  }
-
-  const suggested = limitedModelPatch(model, target.step);
-  if (Object.keys(suggested).length > 0) {
-    return stay(
-      `Suggested refinement, not saved yet:\n${replyWithSectionApprovalAsk(
-        null,
+      replyForPendingSuggestion(
+        conversationalModelReply(model, text),
         target.step,
-        suggested,
-      )}`,
+        decision.patch,
+      ),
       target.step,
-      { step: target.step, patch: suggested },
+      { step: target.step, patch: decision.patch },
     );
   }
 
-  const modelReply = conversationalModelReply(model, text);
-  if (modelReply) return stay(modelReply, target.step);
-  return stay(QUEST_HELPER_OFFLINE_REPLY, target.step);
+  // Chat only. Keep an unrelated proposal, and do not describe a confirm
+  // that this turn did not create.
+  const modelReply =
+    conversationalModelReply(model, text) ?? QUEST_HELPER_OFFLINE_REPLY;
+  const actionable = Object.keys(pending?.patch ?? {}).length > 0;
+  return stay(
+    actionable ? modelReply : replyAfterRetiredSuggestion(modelReply, false),
+    actionable ? currentStep : target.step,
+    pending,
+  );
 }
 
 export type CreateDraftTurnSnapshot = {

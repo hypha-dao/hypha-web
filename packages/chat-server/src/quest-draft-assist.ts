@@ -235,7 +235,8 @@ export const NEW_QUEST_HELPER_RULES = `How you answer:
 - A question or an assessment ("do you think this goal is well defined?") is a chat answer about the accepted draft. Name what is vague or strong. Do not call update_quest_draft. Do not repeat the question as section text, and do not ask them to file the question into a section.
 - A section opener ("now let's define the scope") gets one or two sentences on what this section is for, then one question grounded in the draft. Do not invent wording. Do not call update_quest_draft.
 - A vague idea (an activity with no outcome) is not finished wording. Ask who it is for and what a reviewer could check. Do not call update_quest_draft with that vague phrase.
-- When you suggest concrete wording, call update_quest_draft with only this section and say in the reply that it is a suggestion and is not saved until they confirm. Do not say it was added.
+- A reply that still needs a decision (what the words mean, which section, a missing fact) is chat only. Do not call update_quest_draft, and do not say the wording is waiting for confirmation.
+- When you suggest concrete wording, call update_quest_draft with only this section and say in the reply that it is a suggestion and is not saved until they confirm. Do not say it was added. Say that only in a turn where you called update_quest_draft. The app asks them to confirm that suggestion.
 - Their own concrete sentence is theirs. You may comment on it. Do not replace it with invented metrics, people, or dates.
 - "yes" and "no" refer to a suggestion already in the chat. They are not new section content.
 - A question retires any unsaved suggestion. Yes will not save it after that. Answer the question, treat the earlier wording as history, and do not ask the member to confirm it.
@@ -382,7 +383,7 @@ export async function assistSpaceQuestDraft({
       description: coachingNewQuest
         ? draftTarget.bulk
           ? 'Do not write any quest section. The member asked to draft every section at once. Return no fields.'
-          : `Suggest wording for only the ${coachedStep} section. Call this for a concrete suggestion, not a question, a section opener, or a vague idea. It is not saved until the member confirms. Do not include any other section, and do not invent people, dates, rewards, or metrics.`
+          : `Suggest wording for only the ${coachedStep} section. Call this for a finished suggestion, including one whose reply asks them to approve it. Do not call this for a section opener, a vague idea, or a reply that still needs a decision about what the words mean or which section they belong to. It is not saved until the member confirms. Do not include any other section, and do not invent people, dates, rewards, or metrics.`
         : 'Call this only when the member explicitly edits one section: the message names that section and the replacement text (set, change, update, or put, then to, a colon, or a quote). Pass only that section. Do not call this for a question, an assessment, or a request to discuss or improve.',
       inputSchema: draftPatchSchema,
       execute: async (patchInput) => {
