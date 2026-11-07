@@ -327,9 +327,7 @@ export function QuestDraftParticipantsCard({
       className="flex w-full flex-col items-start gap-2 border border-border bg-background p-3.5 text-left hover:border-foreground/40"
     >
       <div className="flex w-full items-center justify-between">
-        <span className="text-[10px] font-bold tracking-[0.01em] text-neutral-11">
-          Participants
-        </span>
+        <span className={LABEL_CLASS}>Participants</span>
         <span className="text-xs text-neutral-11">✎</span>
       </div>
       <div className="w-full divide-y divide-border/70">
@@ -406,7 +404,7 @@ export function QuestParticipantsCard({
       className="border border-border bg-background p-5"
       data-testid="quest-overview-members"
     >
-      <CardHeading title="Participants" onEdit={onEdit} />
+      <CardHeading title="Participants" onEdit={onEdit} uppercase />
       <div className="divide-y divide-border">
         {members.map((member) => {
           const isOpen = expanded.has(member.id);
@@ -518,13 +516,21 @@ export function QuestRewardStrip({
 function CardHeading({
   title,
   onEdit,
+  uppercase = false,
 }: {
   title: string;
   onEdit?: () => void;
+  /** Section titles that use the shared capslock treatment. */
+  uppercase?: boolean;
 }) {
   return (
     <div className="mb-3.5 flex items-center justify-between gap-3">
-      <h2 className="font-display text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+      <h2
+        className={cn(
+          'font-display text-[15px] font-semibold tracking-[-0.01em] text-foreground',
+          uppercase && 'uppercase tracking-[0.08em]',
+        )}
+      >
         {title}
       </h2>
       {onEdit ? (

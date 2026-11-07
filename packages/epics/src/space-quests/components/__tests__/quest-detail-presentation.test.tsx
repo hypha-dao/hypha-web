@@ -209,7 +209,17 @@ describe('quest detail presentation', () => {
         ]}
       />,
     );
-    expect(screen.getByRole('heading', { name: 'Participants' })).toBeTruthy();
+    const participantsHeading = screen.getByRole('heading', {
+      name: 'Participants',
+    });
+    expect(participantsHeading.textContent).toBe('Participants');
+    expect(participantsHeading.className).toMatch(/(?:^|\s)uppercase(?:\s|$)/);
+    expect(screen.getByText('Ada Lovelace').className).not.toMatch(
+      /(?:^|\s)uppercase(?:\s|$)/,
+    );
+    expect(screen.getByText('Researcher').className).not.toMatch(
+      /(?:^|\s)uppercase(?:\s|$)/,
+    );
     expect(screen.queryByText(/\d+\s+responsibilit/i)).toBeNull();
     expect(screen.getByText('RESPONSIBILITY')).toBeTruthy();
     expect(screen.getByText('Researcher')).toBeTruthy();
@@ -374,7 +384,13 @@ describe('participant role editor', () => {
     render(<LocalDraftParticipants />);
 
     const overview = screen.getByTestId('draft-section-members');
-    expect(within(overview).getByText('Participants')).toBeTruthy();
+    const participantsLabel = within(overview).getByText('Participants');
+    expect(participantsLabel.textContent).toBe('Participants');
+    expect(participantsLabel.className).toContain('uppercase');
+    expect(participantsLabel.className).toContain('tracking-[0.08em]');
+    expect(within(overview).getByText('QA Tester').className).not.toMatch(
+      /(?:^|\s)uppercase(?:\s|$)/,
+    );
     expect(within(overview).queryByText('MEMBERS')).toBeNull();
     expect(within(overview).getByText('QA Tester')).toBeTruthy();
     expect(within(overview).getByText('Run the checklist')).toBeTruthy();

@@ -990,16 +990,10 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
               </div>
             ) : null}
 
-            {/* Quest draft subheader + progress bar */}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="font-display text-[18px] font-semibold text-foreground">
-                  Quest draft
-                </h2>
-                <p className="text-xs text-neutral-11">
-                  Fills in live as you chat · click any section to edit
-                </p>
-              </div>
+              <p className="text-xs text-neutral-11">
+                Fills in live as you chat · click any section to edit
+              </p>
               <div className="flex items-center gap-3">
                 {panelAvailable && !rightPanelOpen ? (
                   <button
