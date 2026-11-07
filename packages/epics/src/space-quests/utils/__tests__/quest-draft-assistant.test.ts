@@ -2345,7 +2345,9 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(clarified?.draft.goal).toBe('');
     expect(clarified?.draft.leadName).toBe(emptyDraft.leadName);
     expect(clarified?.reply).toMatch(/Do you mean the Lead role/);
-    expect(clarified?.reply).toMatch(/The Scope is still waiting on a yes/);
+    expect(clarified?.reply).toMatch(
+      /The Scope suggestion is still waiting on a yes/,
+    );
     expect(clarified?.reply).not.toMatch(/until you confirm/i);
     expect(clarified?.reply).not.toMatch(/as a suggestion/i);
     expect(clarified?.reply).not.toMatch(/Nothing is waiting on a yes/i);
@@ -2441,7 +2443,9 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(result.pending).toEqual(pending);
     expect(result.reply).toMatch(/Do you mean the Lead role/);
     expect(result.reply).not.toMatch(/not saved until you confirm/i);
-    expect(result.reply).toMatch(/The Goal is still waiting on a yes/);
+    expect(result.reply).toMatch(
+      /The Goal suggestion is still waiting on a yes/,
+    );
     expect(result.reply).not.toMatch(/Nothing is waiting on a yes/);
   });
 
@@ -2813,5 +2817,68 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(failed?.pending).toBeNull();
     expect(failed?.draft.goal).toBe(revisedGoal);
     expect(failed?.draft.scopeIn).toEqual(scopeIn);
+  });
+
+  it('stores an embedded abbreviation as one goal command', async () => {
+    const message = 'Set the goal to include "e.g." then write all docs';
+    expect(isBulkQuestDraftRequest(message)).toBe(false);
+    expect(explicitQuestSectionCommand(message)).toEqual({
+      step: 'goal',
+      content: 'include "e.g." then write all docs',
+    });
+    expect(questDraftTurnUsesModel(message)).toBe(false);
+    const calls: string[] = [];
+    const saved = await settleCreateDraftTurn({
+      message,
+      history: [],
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      readState: () => ({
+        draft: { ...emptyDraft, goal: '' },
+        pending: {
+          step: 'scope',
+          patch: { scopeIn: ['older scope'] },
+        },
+        currentStep: 'scope',
+      }),
+      isCurrent: () => true,
+      loadModel: async () => {
+        calls.push(message);
+        return { reply: 'Draft every section.', patch: { scopeIn: ['nope'] } };
+      },
+    });
+    expect(calls).toEqual([]);
+    expect(saved?.wrote).toBe(true);
+    expect(saved?.pending).toBeNull();
+    expect(saved?.draft.goal).toBe('include "e.g." then write all docs');
+    expect(saved?.draft.scopeIn).toEqual([]);
+    expect(saved?.reply).toMatch(/Added that to the Goal/);
+    expect(saved?.reply).not.toMatch(/one section at a time/i);
+
+    const milestonesNotice = questPendingYesNotice('milestones');
+    const kept = runNewQuestDraftTurn({
+      message: 'Add lead scoring',
+      currentStep: 'milestones',
+      draft: emptyDraft,
+      pending: {
+        step: 'milestones',
+        patch: { milestones: [{ name: 'Run check one' }] },
+      },
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      model: {
+        reply: `${milestonesNotice}\n\nDo you mean the owner?`,
+        patch: { leadName: 'scoring' },
+      },
+    });
+    const parts = kept.reply.split(milestonesNotice);
+    expect(parts).toHaveLength(2);
+    expect(parts[1]?.trim()).toBe('');
+    expect(kept.reply).toMatch(/Do you mean the owner/);
+    expect(kept.reply).toMatch(
+      /Yes applies that Milestones suggestion and nothing else/,
+    );
+    expect(kept.reply).not.toMatch(/The Milestones is still/);
+    expect(kept.pending?.step).toBe('milestones');
   });
 });

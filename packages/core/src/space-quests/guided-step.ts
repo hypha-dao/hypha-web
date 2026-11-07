@@ -18,7 +18,7 @@ const PENDING_SECTION_LABEL: Record<QuestStewardStep, string> = {
  */
 export function questPendingYesNotice(step: QuestStewardStep): string {
   const section = PENDING_SECTION_LABEL[step];
-  return `The ${section} is still waiting on a yes. Yes applies that ${section} suggestion and nothing else.`;
+  return `The ${section} suggestion is still waiting on a yes. Yes applies that ${section} suggestion and nothing else.`;
 }
 
 export type QuestDraftTarget = {
@@ -133,16 +133,91 @@ function commandedPayloadSpan(
     while (isJsWhitespace(text[i])) i += 1;
   }
   if (i >= text.length) return null;
-  let end = text.length;
-  for (let j = i; j < text.length; j += 1) {
-    const ch = text[j];
-    if (ch === '.' || ch === '!' || ch === '?') {
-      end = j + 1;
-      break;
-    }
-  }
+  const end = unquotedCommandEnd(text, i);
   if (!text.slice(i, end).trim()) return null;
   return { start: i, end };
+}
+
+/**
+ * A period inside "e.g." or "i.e." is not the end of the command.
+ * The window is fixed, so the check stays linear.
+ */
+const ABBREVIATION_PERIOD = [
+  'e.g.',
+  'i.e.',
+  'etc.',
+  'u.s.',
+  'u.k.',
+  'mr.',
+  'mrs.',
+  'ms.',
+  'dr.',
+  'vs.',
+  'jr.',
+  'sr.',
+  'inc.',
+];
+
+function periodClosesAbbreviation(text: string, dot: number): boolean {
+  if (text[dot] !== '.') return false;
+  const window = text.slice(Math.max(0, dot - 7), dot + 1).toLowerCase();
+  for (const abbr of ABBREVIATION_PERIOD) {
+    if (!window.endsWith(abbr)) continue;
+    const at = dot + 1 - abbr.length;
+    if (at > 0 && isAsciiWord(text[at - 1])) continue;
+    return true;
+  }
+  return false;
+}
+
+function startsNewSentence(text: string, index: number): boolean {
+  let i = index;
+  while (isJsWhitespace(text[i])) i += 1;
+  const ch = text[i];
+  if (!ch) return false;
+  if (ch >= 'A' && ch <= 'Z') return true;
+  return (
+    matchWordAt(text, i, 'draft') != null ||
+    matchWordAt(text, i, 'write') != null ||
+    matchWordAt(text, i, 'set') != null ||
+    matchWordAt(text, i, 'put') != null ||
+    matchWordAt(text, i, 'update') != null ||
+    matchWordAt(text, i, 'change') != null ||
+    matchWordAt(text, i, 'add') != null ||
+    matchWordAt(text, i, 'use') != null
+  );
+}
+
+/** End of an unquoted command value. Quotes and abbreviations stay inside it. */
+function unquotedCommandEnd(text: string, from: number): number {
+  let quote: '"' | '”' | null = null;
+  for (let j = from; j < text.length; j += 1) {
+    const ch = text[j];
+    if (quote) {
+      if (ch !== quote) continue;
+      const endedSentence =
+        text[j - 1] === '.' || text[j - 1] === '!' || text[j - 1] === '?';
+      quote = null;
+      if (endedSentence && startsNewSentence(text, j + 1)) return j + 1;
+      continue;
+    }
+    if (ch === '"') {
+      quote = '"';
+      continue;
+    }
+    if (ch === '“') {
+      quote = '”';
+      continue;
+    }
+    if (
+      (ch === '.' || ch === '!' || ch === '?') &&
+      (j + 1 >= text.length || isJsWhitespace(text[j + 1])) &&
+      !periodClosesAbbreviation(text, j)
+    ) {
+      return j + 1;
+    }
+  }
+  return text.length;
 }
 
 function bulkFromDraftSignals(text: string): boolean {
@@ -181,12 +256,12 @@ function bulkFromDraftSignals(text: string): boolean {
 export function isBulkQuestDraftRequest(text: string): boolean {
   const payload = commandedPayloadSpan(text);
   if (payload && payload.end > payload.start) {
-    const outside = `${text.slice(0, payload.start)} ${text.slice(
-      payload.end,
-    )}`;
-    if (outside.trim() === text.trim()) return bulkFromDraftSignals(text);
-    if (isBulkQuestDraftRequest(outside)) return true;
-    return false;
+    // Judge the words before and after the value on their own. Joining them
+    // back together would hide a later sentence inside the same command.
+    return (
+      isBulkQuestDraftRequest(text.slice(0, payload.start)) ||
+      isBulkQuestDraftRequest(text.slice(payload.end))
+    );
   }
   return bulkFromDraftSignals(text);
 }

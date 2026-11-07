@@ -438,12 +438,69 @@ describe('resolveQuestDraftTarget', () => {
   });
 
   it('names the section a preserved suggestion still applies to', () => {
-    expect(questPendingYesNotice('scope')).toBe(
-      'The Scope is still waiting on a yes. Yes applies that Scope suggestion and nothing else.',
-    );
-    expect(questPendingYesNotice('goal')).toBe(
-      'The Goal is still waiting on a yes. Yes applies that Goal suggestion and nothing else.',
-    );
+    const sections = [
+      ['goal', 'Goal'],
+      ['scope', 'Scope'],
+      ['success', 'Success criteria'],
+      ['milestones', 'Milestones'],
+      ['members', 'Members'],
+      ['lead', 'Lead'],
+      ['targetDate', 'Target date'],
+      ['rewards', 'Quest Reward'],
+      ['name', 'Name'],
+    ] as const;
+    for (const [step, section] of sections) {
+      const notice = questPendingYesNotice(step);
+      expect(notice).toBe(
+        `The ${section} suggestion is still waiting on a yes. Yes applies that ${section} suggestion and nothing else.`,
+      );
+      expect(notice).not.toMatch(
+        new RegExp(`The ${section} is still waiting`, 'i'),
+      );
+    }
+  });
+
+  it('keeps an embedded abbreviation inside one goal command', () => {
+    const embedded = 'Set the goal to include "e.g." then write all docs';
+    expect(isBulkQuestDraftRequest(embedded)).toBe(false);
+    expect(resolveQuestDraftTarget(embedded, 'scope')).toEqual({
+      step: 'goal',
+      bulk: false,
+    });
+    const bare = 'Set the goal to include e.g. then write all docs';
+    expect(isBulkQuestDraftRequest(bare)).toBe(false);
+    expect(resolveQuestDraftTarget(bare, 'milestones')).toEqual({
+      step: 'goal',
+      bulk: false,
+    });
+    const ie = 'Set the goal to include i.e. the sandbox then write all docs';
+    expect(isBulkQuestDraftRequest(ie)).toBe(false);
+    const decimal = 'Set the goal to reach 3.5 spaces then write all docs';
+    expect(isBulkQuestDraftRequest(decimal)).toBe(false);
+    const quotedSentence =
+      'Set the goal to include "U.S. docs." then write all docs';
+    expect(isBulkQuestDraftRequest(quotedSentence)).toBe(false);
+
+    const nextSentence =
+      'Set the goal to ship the checklist. Draft the scope, success criteria, and milestones.';
+    expect(isBulkQuestDraftRequest(nextSentence)).toBe(true);
+    expect(resolveQuestDraftTarget(nextSentence, 'goal')).toEqual({
+      step: 'goal',
+      bulk: true,
+    });
+    const afterQuote =
+      'Set the goal to include "ship it." Draft the scope, success criteria, and milestones.';
+    expect(isBulkQuestDraftRequest(afterQuote)).toBe(true);
+    const preamble =
+      'Draft the scope, success criteria, and milestones. Set the goal to include "e.g." then write all docs';
+    expect(isBulkQuestDraftRequest(preamble)).toBe(true);
+    expect(resolveQuestDraftTarget(preamble, 'goal')).toEqual({
+      step: 'goal',
+      bulk: true,
+    });
+    expect(
+      isBulkQuestDraftRequest('Set the scope to "write all onboarding docs"'),
+    ).toBe(false);
   });
 
   it('lets a named section win over milestone-shaped lines', () => {
