@@ -100,7 +100,12 @@ function splitListItems(raw: string): string[] {
   if (single.includes(';')) {
     return single
       .split(';')
-      .map((s) => s.replace(/^[-*•\d.)\s]+/, '').trim())
+      .map((s) =>
+        s
+          .trim()
+          .replace(/^(?:[-*•]|\d+[.)])\s+/, '')
+          .trim(),
+      )
       .filter(Boolean);
   }
   if (single.split(',').length >= 3) {

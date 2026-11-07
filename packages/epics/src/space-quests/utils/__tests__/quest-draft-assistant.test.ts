@@ -300,6 +300,20 @@ describe('quest-draft-assistant', () => {
     expect(next.successCriteria).toContain('30 November 2026');
   });
 
+  it('keeps leading digits that are part of semicolon-separated item text', () => {
+    const patch = buildLocalQuestDraftPatch({
+      message: '60% join a Space; 1. ship the matcher; - document the flow',
+      currentStep: 'success',
+      draft: emptyDraft,
+      viewerDisplayName: 'Vlad Hramtsov',
+    });
+    expect(patch.successCriteriaBullets).toEqual([
+      '60% join a Space',
+      'ship the matcher',
+      'document the flow',
+    ]);
+  });
+
   it('proposes only the milestones the member named', () => {
     const message =
       'Milestones: M1 Run check one, due 20 November 2026. M2 Run check two, due 25 November 2026. M3 Run check three and post findings note, due 30 November 2026. Owner Vlad for all. Please propose these as Milestones in chat first.';

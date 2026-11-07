@@ -82,7 +82,17 @@ const draftPatchSchema = z.object({
     .array(
       z.object({
         name: z.string().trim().min(1).max(200),
-        url: z.string().trim().max(1000).optional(),
+        url: z
+          .string()
+          .trim()
+          .max(1000)
+          .refine(
+            (value) => value.length === 0 || /^https?:\/\//i.test(value),
+            {
+              message: 'Only http/https URLs are allowed.',
+            },
+          )
+          .optional(),
         note: z.string().trim().max(1000).optional(),
       }),
     )

@@ -1153,21 +1153,25 @@ export async function activateSpaceQuestByDocumentId(
 
   for (const row of matching) {
     if (row.status === 'proposed') {
-      const updated = await db
-        .update(spaceQuests)
-        .set({
-          status: 'active',
-          acceptedAt: now,
-          updatedAt: now,
-          healthUpdatedAt: now,
-        })
-        .where(
-          and(eq(spaceQuests.id, row.id), eq(spaceQuests.status, 'proposed')),
-        )
-        .returning();
+      const claimed = await db.transaction(async (tx) => {
+        const updated = await tx
+          .update(spaceQuests)
+          .set({
+            status: 'active',
+            acceptedAt: now,
+            updatedAt: now,
+            healthUpdatedAt: now,
+          })
+          .where(
+            and(eq(spaceQuests.id, row.id), eq(spaceQuests.status, 'proposed')),
+          )
+          .returning();
 
-      if (claimedProposedQuestActivation(updated.length)) {
-        await db.insert(spaceQuestUpdates).values({
+        if (!claimedProposedQuestActivation(updated.length)) {
+          return false;
+        }
+
+        await tx.insert(spaceQuestUpdates).values({
           questId: row.id,
           authorPersonId: row.leadPersonId ?? null,
           authorName: row.leadName || 'Operations Lead',
@@ -1177,6 +1181,10 @@ export async function activateSpaceQuestByDocumentId(
           links: [],
         });
 
+        return true;
+      });
+
+      if (claimed) {
         activatedCount += 1;
       }
     }
