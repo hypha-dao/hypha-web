@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildQuestProposalDescription,
   canMemberEditQuest,
+  claimedProposedQuestActivation,
   embeddedQuestProposalMatchesQuest,
   buildEmbeddedQuestProposalPayload,
   isViewerQuestLead,
@@ -10,6 +11,7 @@ import {
   mergeRefinedQuestMilestones,
   parseQuestProposalFromDescription,
   questRecordToProposalDraft,
+  questRefineLeadFields,
   slugifyQuestName,
   stripQuestProposalMarker,
   stripViewerYouMarker,
@@ -393,6 +395,58 @@ describe('quest proposal description', () => {
         note: null,
       },
     ]);
+  });
+
+  it('keeps every saved deliverable when the assistant sends none', () => {
+    expect(
+      mergeRefinedQuestDeliverables(
+        [{ id: 4, name: 'Spec', url: null, note: 'keep' }],
+        [],
+      ),
+    ).toEqual([{ id: 4, name: 'Spec', url: null, note: 'keep' }]);
+  });
+
+  it('omits both lead fields unless the actor is the lead and the name resolves', () => {
+    expect(
+      questRefineLeadFields({
+        actorIsLead: false,
+        requestedLeadName: 'Ada Lovelace',
+        resolvedPersonId: 12,
+      }),
+    ).toBeNull();
+    expect(
+      questRefineLeadFields({
+        actorIsLead: true,
+        requestedLeadName: 'Ada Lovelace',
+        resolvedPersonId: null,
+      }),
+    ).toBeNull();
+    expect(
+      questRefineLeadFields({
+        actorIsLead: true,
+        requestedLeadName: '   ',
+        resolvedPersonId: 12,
+      }),
+    ).toBeNull();
+    expect(
+      questRefineLeadFields({
+        actorIsLead: true,
+        requestedLeadName: ' Ada Lovelace ',
+        resolvedPersonId: 0,
+      }),
+    ).toBeNull();
+    expect(
+      questRefineLeadFields({
+        actorIsLead: true,
+        requestedLeadName: ' Ada Lovelace ',
+        resolvedPersonId: 12,
+      }),
+    ).toEqual({ leadName: 'Ada Lovelace', leadPersonId: 12 });
+  });
+
+  it('records the acceptance post only when the proposed-row update changed a row', () => {
+    expect(claimedProposedQuestActivation(0)).toBe(false);
+    expect(claimedProposedQuestActivation(1)).toBe(true);
   });
 
   it('marks lead only by role or exact cleaned name', () => {

@@ -13,6 +13,7 @@ import {
   mergeRefinedQuestDeliverables,
   mergeRefinedQuestMembers,
   mergeRefinedQuestMilestones,
+  questRefineLeadFields,
   selectSpecialistForQuestion,
   spaceContextQuarterEndIso,
   specialistById,
@@ -535,18 +536,14 @@ ${untrusted(
         return null;
       };
 
-      const nextLeadPersonId = collectedPatch.leadName
-        ? resolveMemberId(collectedPatch.leadName)
-        : null;
       const leadPatch =
-        collectedPatch.leadName &&
-        isViewerQuestLead(actor, existingQuest) &&
-        nextLeadPersonId != null
-          ? {
-              leadName: collectedPatch.leadName,
-              leadPersonId: nextLeadPersonId,
-            }
-          : {};
+        questRefineLeadFields({
+          actorIsLead: isViewerQuestLead(actor, existingQuest),
+          requestedLeadName: collectedPatch.leadName,
+          resolvedPersonId: collectedPatch.leadName
+            ? resolveMemberId(collectedPatch.leadName)
+            : null,
+        }) ?? {};
 
       const writeResult = await updateSpaceQuest(
         {

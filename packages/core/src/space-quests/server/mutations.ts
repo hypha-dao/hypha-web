@@ -32,6 +32,7 @@ import { QUEST_DOCUMENT_LABEL, type QuestStatus } from '../constants';
 import {
   bulletsToMarkdownList,
   canMemberEditQuest,
+  claimedProposedQuestActivation,
   embeddedQuestProposalMatchesQuest,
   isViewerQuestLead,
   parseQuestProposalFromDescription,
@@ -1165,7 +1166,7 @@ export async function activateSpaceQuestByDocumentId(
         )
         .returning();
 
-      if (updated.length > 0) {
+      if (claimedProposedQuestActivation(updated.length)) {
         await db.insert(spaceQuestUpdates).values({
           questId: row.id,
           authorPersonId: row.leadPersonId ?? null,

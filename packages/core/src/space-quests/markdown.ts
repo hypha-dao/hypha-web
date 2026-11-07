@@ -420,6 +420,35 @@ export function mergeRefinedQuestDeliverables(
   return merged.filter((item) => item.name.length > 0);
 }
 
+/**
+ * Lead fields for an assistant refine. Both are omitted together when
+ * the actor is not the lead, the name is blank, or it does not resolve
+ * to a person — otherwise the whole patch is rejected before any other
+ * section is saved.
+ */
+export function questRefineLeadFields(input: {
+  actorIsLead: boolean;
+  requestedLeadName?: string | null;
+  resolvedPersonId?: number | null;
+}): { leadName: string; leadPersonId: number } | null {
+  const leadName = input.requestedLeadName?.trim() ?? '';
+  const personId = input.resolvedPersonId;
+  if (!input.actorIsLead || !leadName) return null;
+  if (personId == null || personId <= 0) return null;
+  return { leadName, leadPersonId: personId };
+}
+
+/**
+ * The acceptance post is written only when the conditional update
+ * changed a still-proposed row. A webhook that lost the race gets
+ * zero rows and must not post again.
+ */
+export function claimedProposedQuestActivation(
+  updatedRowCount: number,
+): boolean {
+  return updatedRowCount > 0;
+}
+
 export function questRecordToProposalDraft(
   quest: Pick<
     QuestRecord,

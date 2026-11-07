@@ -111,5 +111,10 @@ describe('network room join guard', () => {
     expect(source).toContain(
       '[spaceSlug, roomId, pathname, mode, coherenceSlug, coherenceChannel]',
     );
+    const fallbackAt = source.indexOf('buildCallJoinHref({\n            lang,');
+    expect(fallbackAt).toBeGreaterThan(-1);
+    expect(source.slice(fallbackAt, fallbackAt + 420)).toContain(
+      "!coherenceChannel || coherenceChannel === 'signal'",
+    );
   });
 });

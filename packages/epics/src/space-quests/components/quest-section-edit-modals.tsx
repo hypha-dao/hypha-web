@@ -25,6 +25,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { Plus, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
+import { shouldResetQuestModalDraft } from '../utils/modal-draft-reset';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { QuestRewardRowsEditor } from './quest-reward-tokens';
 
@@ -439,7 +440,7 @@ export function EditQuestScopeModal({
   useEffect(() => {
     const wasOpen = wasOpenRef.current;
     wasOpenRef.current = open;
-    if (open && !wasOpen) {
+    if (shouldResetQuestModalDraft(open, wasOpen)) {
       setInMd(scopeInMarkdown?.trim() || bulletsToMarkdownList(scopeIn));
       setOutMd(scopeOutMarkdown?.trim() || bulletsToMarkdownList(scopeOut));
     }
@@ -1341,7 +1342,7 @@ export function EditQuestDeliverablesModal({
   useEffect(() => {
     const wasOpen = wasOpenRef.current;
     wasOpenRef.current = open;
-    if (open && !wasOpen) {
+    if (shouldResetQuestModalDraft(open, wasOpen)) {
       setRows(
         deliverables.length > 0
           ? deliverables.map((d) => ({
