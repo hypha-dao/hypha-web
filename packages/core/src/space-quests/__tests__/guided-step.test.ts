@@ -338,6 +338,59 @@ describe('resolveQuestDraftTarget', () => {
     ).toBe(true);
   });
 
+  it('parses scope boundaries with long spaces and tabs in linear time', () => {
+    const gap = ' \t'.repeat(4000);
+    const requested = `Please propose these exact scope boundaries for my confirmation:${gap}in${gap}scope${gap}verify proposal display and milestone editing in sandbox;${gap}out${gap}of${gap}scope${gap}production rollout.`;
+    const started = Date.now();
+    expect(scopeBoundaryLists(requested)).toEqual({
+      scopeIn: 'verify proposal display and milestone editing in sandbox',
+      scopeOut: 'production rollout',
+    });
+    expect(isBulkQuestDraftRequest(requested)).toBe(false);
+    expect(resolveQuestDraftTarget(requested, 'scope')).toEqual({
+      step: 'scope',
+      bulk: false,
+    });
+    const several = `Draft the scope, success criteria, and milestones.${gap}in${gap}scope${gap}verify proposal display and milestone editing in sandbox;${gap}out${gap}of${gap}scope${gap}production rollout.`;
+    expect(scopeBoundaryLists(several)).toBeNull();
+    expect(isBulkQuestDraftRequest(several)).toBe(true);
+    expect(resolveQuestDraftTarget(several, 'scope')).toEqual({
+      step: 'scope',
+      bulk: true,
+    });
+    expect(
+      scopeBoundaryLists('In scope: alpha; beta. Out of scope: gamma; delta.'),
+    ).toEqual({
+      scopeIn: 'alpha; beta.',
+      scopeOut: 'gamma; delta',
+    });
+    expect(scopeBoundaryLists('in\tscope\tfoo\tout\tof\tscope\tbar!')).toEqual({
+      scopeIn: 'foo',
+      scopeOut: 'bar',
+    });
+    expect(scopeBoundaryLists(`in${gap}scope${gap}`)).toBeNull();
+    expect(
+      scopeBoundaryLists(
+        `${gap}out${gap}of${gap}scope${gap}production rollout`,
+      ),
+    ).toBeNull();
+    expect(
+      scopeBoundaryLists(`in${gap}scope${gap}out${gap}of${gap}scope${gap}`),
+    ).toBeNull();
+    expect(
+      scopeBoundaryLists(
+        `in${gap}scope${';'.repeat(
+          2000,
+        )}${gap}out${gap}of${gap}scope${gap}production`,
+      ),
+    ).toBeNull();
+    expect(scopeBoundaryLists('in scope ;; out of scope bar')).toBeNull();
+    expect(scopeBoundaryLists('in scope foo out of scope')).toBeNull();
+    expect(scopeBoundaryLists('within scope foo out of scope bar')).toBeNull();
+    expect(scopeBoundaryLists('in scopes foo out of scope bar')).toBeNull();
+    expect(Date.now() - started).toBeLessThan(250);
+  });
+
   it('lets a named section win over milestone-shaped lines', () => {
     expect(
       resolveQuestDraftTarget(

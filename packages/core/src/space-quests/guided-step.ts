@@ -108,28 +108,152 @@ export function isBulkQuestDraftRequest(text: string): boolean {
   return mentionsSeveralSections(lower);
 }
 
+/** JavaScript `\s`, matched per character so a long run cannot backtrack. */
+function isJsWhitespace(ch: string | undefined): boolean {
+  if (!ch) return false;
+  const code = ch.charCodeAt(0);
+  return (
+    code === 0x09 ||
+    code === 0x0a ||
+    code === 0x0b ||
+    code === 0x0c ||
+    code === 0x0d ||
+    code === 0x20 ||
+    code === 0x00a0 ||
+    code === 0x1680 ||
+    (code >= 0x2000 && code <= 0x200a) ||
+    code === 0x2028 ||
+    code === 0x2029 ||
+    code === 0x202f ||
+    code === 0x205f ||
+    code === 0x3000 ||
+    code === 0xfeff
+  );
+}
+
+/** ASCII `\w`, which is what an un-flagged `\b` uses. */
+function isAsciiWord(ch: string | undefined): boolean {
+  if (!ch) return false;
+  const code = ch.charCodeAt(0);
+  return (
+    (code >= 48 && code <= 57) ||
+    (code >= 65 && code <= 90) ||
+    (code >= 97 && code <= 122) ||
+    code === 95
+  );
+}
+
+function skipWhitespace(text: string, index: number): number {
+  let i = index;
+  while (isJsWhitespace(text[i])) i += 1;
+  return i;
+}
+
+function matchWordAt(text: string, index: number, word: string): number | null {
+  if (index < 0 || isAsciiWord(text[index - 1])) return null;
+  for (let i = 0; i < word.length; i += 1) {
+    const ch = text[index + i];
+    if (!ch) return null;
+    const folded =
+      ch >= 'A' && ch <= 'Z' ? String.fromCharCode(ch.charCodeAt(0) + 32) : ch;
+    if (folded !== word[i]) return null;
+  }
+  if (isAsciiWord(text[index + word.length])) return null;
+  return index + word.length;
+}
+
+/** Optional whitespace, one colon, optional whitespace. */
+function skipOptionalColon(text: string, index: number): number {
+  let i = skipWhitespace(text, index);
+  if (text[i] === ':') i = skipWhitespace(text, i + 1);
+  return i;
+}
+
+function findSeparatedWords(
+  text: string,
+  from: number,
+  words: readonly string[],
+): { start: number; end: number } | null {
+  const first = words[0];
+  if (!first) return null;
+  for (let i = from; i < text.length; i += 1) {
+    const afterFirst = matchWordAt(text, i, first);
+    if (afterFirst == null || !isJsWhitespace(text[afterFirst])) continue;
+    let cursor = skipWhitespace(text, afterFirst);
+    let matched = true;
+    for (let w = 1; w < words.length; w += 1) {
+      const after = matchWordAt(text, cursor, words[w]!);
+      if (after == null) {
+        matched = false;
+        break;
+      }
+      const needsGap = w < words.length - 1;
+      if (needsGap && !isJsWhitespace(text[after])) {
+        matched = false;
+        break;
+      }
+      cursor = needsGap ? skipWhitespace(text, after) : after;
+    }
+    if (matched) return { start: i, end: cursor };
+  }
+  return null;
+}
+
+function trimJs(value: string): string {
+  let start = 0;
+  let end = value.length;
+  while (start < end && isJsWhitespace(value[start])) start += 1;
+  while (end > start && isJsWhitespace(value[end - 1])) end -= 1;
+  return value.slice(start, end);
+}
+
+/** Drop a trailing `\s*(?:;\s*)?` that sits against "out of scope". */
+function withoutScopeSeparator(value: string): string {
+  let end = value.length;
+  while (end > 0 && isJsWhitespace(value[end - 1])) end -= 1;
+  if (value[end - 1] === ';') {
+    end -= 1;
+    while (end > 0 && isJsWhitespace(value[end - 1])) end -= 1;
+  }
+  return value.slice(0, end);
+}
+
+function stripTrailing(
+  value: string,
+  isExtra: (ch: string) => boolean,
+): string {
+  const trimmed = trimJs(value);
+  let end = trimmed.length;
+  while (end > 0) {
+    const ch = trimmed[end - 1]!;
+    if (!isJsWhitespace(ch) && !isExtra(ch)) break;
+    end -= 1;
+  }
+  return trimJs(trimmed.slice(0, end));
+}
+
 /**
  * "in scope … out of scope …", with or without colons.
  * Null when the words before that pair already name several sections.
+ * Scanned forward: repeated spaces or tabs stay linear.
  */
 export function scopeBoundaryLists(
   text: string,
 ): { scopeIn: string; scopeOut: string } | null {
-  const match =
-    /\bin\s+scope\b\s*:?\s*([\s\S]*?)\s*(?:;\s*)?\bout\s+of\s+scope\b\s*:?\s*([\s\S]*)$/i.exec(
-      text,
-    );
-  if (!match || match.index == null) return null;
-  const preamble = text.slice(0, match.index);
-  if (mentionsSeveralSections(preamble)) return null;
-  const scopeIn = (match[1] ?? '')
-    .trim()
-    .replace(/[;\s]+$/g, '')
-    .trim();
-  const scopeOut = (match[2] ?? '')
-    .trim()
-    .replace(/[.!\s]+$/g, '')
-    .trim();
+  const opening = findSeparatedWords(text, 0, ['in', 'scope']);
+  if (!opening) return null;
+  if (mentionsSeveralSections(text.slice(0, opening.start))) return null;
+  const contentFrom = skipOptionalColon(text, opening.end);
+  const closing = findSeparatedWords(text, contentFrom, ['out', 'of', 'scope']);
+  if (!closing) return null;
+  const scopeIn = stripTrailing(
+    withoutScopeSeparator(text.slice(contentFrom, closing.start)),
+    (ch) => ch === ';',
+  );
+  const scopeOut = stripTrailing(
+    text.slice(skipOptionalColon(text, closing.end)),
+    (ch) => ch === '.' || ch === '!',
+  );
   if (!scopeIn || !scopeOut) return null;
   return { scopeIn, scopeOut };
 }
