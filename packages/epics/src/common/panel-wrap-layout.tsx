@@ -389,10 +389,11 @@ const PANEL_COLUMN_WIDTH_PX = 320;
 const LEFT_AI_PANEL_WIDTH_PX = PANEL_COLUMN_WIDTH_PX;
 const LEFT_SIDEBAR_ICON_WIDTH_PX = 72;
 const RIGHT_SIDEBAR_WIDTH = `${PANEL_COLUMN_WIDTH_PX}px`;
-// Mobile: keep only a slim gutter so chat/menu content uses almost full width.
-const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(560px, calc(100vw - 16px))';
-/** Same ceiling as the left AI resize handle (without the icon rail). */
-const RIGHT_SIDEBAR_RESIZE_MAX_PX = 600;
+// Mobile sheet still uses `mobileWidth="100vw"`; this is only the reserved
+// desktop track. Keep it at the same 320px as the left AI column.
+const RIGHT_SIDEBAR_WIDTH_COMPACT = RIGHT_SIDEBAR_WIDTH;
+/** Right chat must not outgrow the left AI column default (320px). */
+const RIGHT_SIDEBAR_RESIZE_MAX_PX = PANEL_COLUMN_WIDTH_PX;
 const DUAL_PANEL_MIN_VIEWPORT_PX = 1200;
 const MIN_MAIN_COLUMN_WIDTH_PX = 560;
 const MOBILE_PANEL_BREAKPOINT_PX = 768;
@@ -692,6 +693,22 @@ export function PanelWrapLayout({
       clearMainColumnLayoutMirrorFromDocument();
     };
   }, [sidebarLeftPx, sidebarRightPx]);
+
+  // ResizeHandle writes `--sidebar-width` as an inline style. React will not
+  // re-apply the style prop when its value is unchanged, so a prior drag (e.g.
+  // the old 400px cap) can leave the chat column stuck wide. Re-seed whenever
+  // the panel opens or the intended width changes.
+  useLayoutEffect(() => {
+    if (!rightOpen || !rightPanelAvailable) return;
+    const root = wrapperRef.current;
+    if (!root) return;
+    root.querySelectorAll('[data-side="right"]').forEach((sideEl) => {
+      const provider = sideEl.closest(
+        '[data-sidebar="wrapper"]',
+      ) as HTMLElement | null;
+      provider?.style.setProperty('--sidebar-width', rightSidebarWidth);
+    });
+  }, [rightOpen, rightPanelAvailable, rightSidebarWidth]);
 
   // Core content that goes inside the scrollable SidebarInset (when panels wrap layout)
   let content = <>{children}</>;
