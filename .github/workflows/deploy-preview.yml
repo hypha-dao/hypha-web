@@ -115,6 +115,22 @@ jobs:
         id: branch-name
         uses: tj-actions/branch-names@v8
 
+      # create-branch-action reuses an existing branch when present. Long-lived PR
+      # preview DBs can drift (e.g. renumbered migrations / partial applies) and then
+      # drizzle migrate fails with 42P01. Reset from main before recreate.
+      - name: Reset Neon Preview Branch
+        if: needs.detect-changes.outputs.has_migrations == 'true'
+        continue-on-error: true
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          branch: preview/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
+          api_key: ${{ env.NEON_API_KEY }}
+
+      - name: Wait for Neon branch deletion
+        if: needs.detect-changes.outputs.has_migrations == 'true'
+        run: sleep 5
+
       - name: Create Neon Branch
         if: needs.detect-changes.outputs.has_migrations == 'true'
         id: create-branch
