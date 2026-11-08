@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -37,24 +37,6 @@ export function HumanChatPanelEmojiPicker({
   className,
   modal = true,
 }: HumanChatPanelEmojiPickerProps) {
-  const triggerWrapRef = useRef<HTMLDivElement>(null);
-  const [boundary, setBoundary] = useState<Element | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    /**
-     * Prefer the chat panel body — never `[data-sidebar="sidebar"]`.
-     * That node is transform-animated (desktop track / mobile Sheet). Using it
-     * as Floating UI `collisionBoundary` + portal `container` caused a position
-     * update loop (~1000 console errors) that tripped the panel error boundary
-     * when opening composer emoji.
-     */
-    const node = triggerWrapRef.current?.closest(
-      '[data-hypha-chat-panel], [data-testid="e2e-emoji-chat"]',
-    );
-    setBoundary(node ?? null);
-  }, [open]);
-
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -71,7 +53,7 @@ export function HumanChatPanelEmojiPicker({
 
   return (
     <Popover modal={modal} open={open} onOpenChange={onOpenChange}>
-      <div ref={triggerWrapRef} className={cn('inline-flex', className)}>
+      <div className={cn('inline-flex', className)}>
         <PopoverTrigger asChild className="inline-flex">
           {children}
         </PopoverTrigger>
@@ -81,11 +63,11 @@ export function HumanChatPanelEmojiPicker({
         side={side}
         sideOffset={8}
         collisionPadding={12}
-        collisionBoundary={boundary ?? undefined}
         /**
-         * Always portal to `document.body`. Portaling into the sidebar/Sheet
-         * broke iOS less than it hurt: body + Sheet `isEmojiMartEvent` guards
-         * keep taps on emoji-mart, without the Floating UI loop above.
+         * Portal to `document.body` and collide with the viewport only.
+         * Never pass a `collisionBoundary` inside the transform-animated
+         * sidebar / chat panel — Floating UI position updates loop and trip
+         * the message/panel error boundary when opening react/composer emoji.
          */
         data-testid="hypha-emoji-picker-panel"
         className="pointer-events-auto z-[100] w-[min(22rem,var(--radix-popover-content-available-width),calc(100vw-2rem))] max-w-[min(22rem,var(--radix-popover-content-available-width),calc(100vw-2rem))] overflow-x-hidden overflow-hidden border-border p-0 shadow-lg"

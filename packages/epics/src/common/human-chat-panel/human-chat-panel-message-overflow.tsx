@@ -733,34 +733,47 @@ export function HumanChatPanelMessageOverflow({
       <MoreHorizontal className="h-3 w-3" strokeWidth={2} aria-hidden />
     </button>
   ) : (
-    <DropdownMenu
-      open={dropdownOpen}
-      onOpenChange={(open) => {
-        setDropdownOpen(open);
-        if (!open) setReactionPickerOpen(false);
-      }}
-      modal={false}
+    /*
+     * Keep DropdownMenu here for positioning, but isolate pointer/context
+     * events from the parent ContextMenuTrigger (nested Radix menus otherwise
+     * trip the per-message error boundary → "Couldn't display this message").
+     */
+    <div
+      className="inline-flex"
+      onPointerDown={(event) => event.stopPropagation()}
+      onContextMenu={(event) => event.stopPropagation()}
     >
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:block"
-          aria-label={t('moreButton')}
-          aria-expanded={dropdownOpen}
-        >
-          <MoreHorizontal className="h-3 w-3" strokeWidth={2} aria-hidden />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        side="bottom"
-        sideOffset={4}
-        collisionPadding={16}
-        className="min-w-[220px] p-1"
+      <DropdownMenu
+        open={dropdownOpen}
+        onOpenChange={(open) => {
+          setDropdownOpen(open);
+          if (!open) setReactionPickerOpen(false);
+        }}
+        modal={false}
       >
-        {dropdownMenu}
-      </DropdownMenuContent>
-    </DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:block"
+            aria-label={t('moreButton')}
+            aria-expanded={dropdownOpen}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <MoreHorizontal className="h-3 w-3" strokeWidth={2} aria-hidden />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          side="bottom"
+          sideOffset={4}
+          collisionPadding={16}
+          className="min-w-[220px] p-1"
+          onCloseAutoFocus={(event) => event.preventDefault()}
+        >
+          {dropdownMenu}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 
   const rowInner =

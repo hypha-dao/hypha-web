@@ -2764,7 +2764,9 @@ export function HumanChatPanelMessageBubble({
         </div>
       </div>
 
-      {/* Discord-style floating bar: compact height, tight to icon row */}
+      {/* Discord-style floating bar: compact height, tight to icon row.
+          Stop pointer/context bubbling so nested Popover/DropdownMenu are not
+          swallowed by the row ContextMenuTrigger (trips the message EB). */}
       <div
         data-chat-message-actions=""
         className={cn(
@@ -2778,6 +2780,8 @@ export function HumanChatPanelMessageBubble({
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
+        onPointerDown={(event) => event.stopPropagation()}
+        onContextMenu={(event) => event.stopPropagation()}
       >
         <HumanChatPanelEmojiPicker
           open={hoverReactPickerOpen}

@@ -14,7 +14,9 @@ describe('emoji picker layout', () => {
       'w-[min(22rem,var(--radix-popover-content-available-width),calc(100vw-2rem))]',
     );
     expect(picker).toContain('overflow-x-hidden');
-    expect(picker).toContain('collisionBoundary');
+    // Viewport collision only — a panel/sidebar collisionBoundary loops
+    // Floating UI and crashes the message row when opening react emoji.
+    expect(picker).not.toContain('collisionBoundary');
   });
 
   it('closes only the picker on Escape and lets the wheel scroll the grid', () => {
