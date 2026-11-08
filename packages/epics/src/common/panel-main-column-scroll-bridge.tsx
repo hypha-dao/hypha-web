@@ -131,7 +131,11 @@ export function PanelDualSidebarScrollBridge({
             className="z-[50]"
             shouldPreventEscapeDismiss={shouldPreventChatSheetEscapeDismiss}
           >
-            <SidebarResizeHandle />
+            <SidebarResizeHandle
+              minWidth={280}
+              maxWidth={400}
+              defaultWidth={320}
+            />
             <HumanChatPanelErrorBoundary>
               {rightContent}
             </HumanChatPanelErrorBoundary>

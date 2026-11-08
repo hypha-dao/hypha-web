@@ -387,8 +387,10 @@ const LEFT_SIDEBAR_EXPANDED_WIDTH = '320px';
 const LEFT_AI_PANEL_WIDTH_PX = 320;
 const LEFT_SIDEBAR_ICON_WIDTH_PX = 72;
 const RIGHT_SIDEBAR_WIDTH = '320px';
-// Mobile: keep only a slim gutter so chat/menu content uses almost full width.
-const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(560px, calc(100vw - 16px))';
+// Mobile sheet: fill the viewport with a small gutter — never outgrow the
+// desktop 320px chat column once the layout is side-by-side.
+const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(400px, calc(100vw - 16px))';
+const RIGHT_SIDEBAR_RESIZE_MAX_PX = 400;
 const DUAL_PANEL_MIN_VIEWPORT_PX = 1200;
 const MIN_MAIN_COLUMN_WIDTH_PX = 560;
 const MOBILE_PANEL_BREAKPOINT_PX = 768;
@@ -760,7 +762,11 @@ export function PanelWrapLayout({
           className="z-[50]"
           shouldPreventEscapeDismiss={shouldPreventChatSheetEscapeDismiss}
         >
-          <SidebarResizeHandle />
+          <SidebarResizeHandle
+            minWidth={280}
+            maxWidth={RIGHT_SIDEBAR_RESIZE_MAX_PX}
+            defaultWidth={320}
+          />
           <HumanChatPanelErrorBoundary>
             {effectiveRight.content}
           </HumanChatPanelErrorBoundary>

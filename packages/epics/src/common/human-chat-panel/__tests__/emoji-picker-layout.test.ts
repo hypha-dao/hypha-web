@@ -27,17 +27,11 @@ describe('emoji picker layout', () => {
     expect(picker).toContain("addEventListener('keydown', onKeyDown, true)");
     expect(picker).toContain('onWheel');
     const overflow = read('human-chat-panel-message-overflow.tsx');
-    expect(overflow).toContain('onWheel={(event) => event.stopPropagation()}');
-    expect(overflow).toContain('onEscapeKeyDown={(event) => {');
-    expect(overflow).toContain('event.stopPropagation()');
-    // Reaction-picker Escape must stopPropagation only — not preventDefault —
-    // so the parent overflow menu can still close. Scope to that handler body.
-    const reactionEscape = overflow.match(
-      /onEscapeKeyDown=\{\(event\) => \{[^}]*\}/,
-    )?.[0];
-    expect(reactionEscape).toBeTruthy();
-    expect(reactionEscape).toContain('event.stopPropagation()');
-    expect(reactionEscape).not.toContain('event.preventDefault()');
+    // Message ⋯ / right-click use a Dialog sheet (not nested ContextMenu +
+    // DropdownMenu) so Radix focus traps cannot wipe the chat panel.
+    expect(overflow).toContain('<Dialog');
+    expect(overflow).not.toContain('ContextMenuTrigger');
+    expect(overflow).not.toContain('DropdownMenuTrigger');
     const chatBar = read('human-chat-panel-chat-bar.tsx');
     expect(chatBar).toContain(
       "e.key === 'Escape' && closeComposerOverlayFromEscape(e)",
