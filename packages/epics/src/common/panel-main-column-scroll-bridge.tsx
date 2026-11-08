@@ -133,7 +133,7 @@ export function PanelDualSidebarScrollBridge({
           >
             <SidebarResizeHandle
               minWidth={280}
-              maxWidth={400}
+              maxWidth={600}
               defaultWidth={320}
             />
             <HumanChatPanelErrorBoundary>

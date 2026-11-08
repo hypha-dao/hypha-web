@@ -384,13 +384,15 @@ const PANEL_COMPACT_ATTR = 'data-compact-panels';
 const PANEL_OPEN_ATTR = 'data-side-panels-open';
 const LEFT_PANEL_EXPANDED_ATTR = 'data-left-panel-expanded';
 const LEFT_SIDEBAR_EXPANDED_WIDTH = '320px';
-const LEFT_AI_PANEL_WIDTH_PX = 320;
+/** Shared default column width — left AI panel and right chat must match. */
+const PANEL_COLUMN_WIDTH_PX = 320;
+const LEFT_AI_PANEL_WIDTH_PX = PANEL_COLUMN_WIDTH_PX;
 const LEFT_SIDEBAR_ICON_WIDTH_PX = 72;
-const RIGHT_SIDEBAR_WIDTH = '320px';
-// Mobile sheet: fill the viewport with a small gutter — never outgrow the
-// desktop 320px chat column once the layout is side-by-side.
-const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(400px, calc(100vw - 16px))';
-const RIGHT_SIDEBAR_RESIZE_MAX_PX = 400;
+const RIGHT_SIDEBAR_WIDTH = `${PANEL_COLUMN_WIDTH_PX}px`;
+// Mobile: keep only a slim gutter so chat/menu content uses almost full width.
+const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(560px, calc(100vw - 16px))';
+/** Same ceiling as the left AI resize handle (without the icon rail). */
+const RIGHT_SIDEBAR_RESIZE_MAX_PX = 600;
 const DUAL_PANEL_MIN_VIEWPORT_PX = 1200;
 const MIN_MAIN_COLUMN_WIDTH_PX = 560;
 const MOBILE_PANEL_BREAKPOINT_PX = 768;
@@ -765,7 +767,7 @@ export function PanelWrapLayout({
           <SidebarResizeHandle
             minWidth={280}
             maxWidth={RIGHT_SIDEBAR_RESIZE_MAX_PX}
-            defaultWidth={320}
+            defaultWidth={PANEL_COLUMN_WIDTH_PX}
           />
           <HumanChatPanelErrorBoundary>
             {effectiveRight.content}
@@ -809,8 +811,8 @@ export function PanelWrapLayout({
           {!isOnboarding ? (
             <SidebarResizeHandle
               minWidth={280 + leftIconRailPx}
-              maxWidth={600 + leftIconRailPx}
-              defaultWidth={320 + leftIconRailPx}
+              maxWidth={RIGHT_SIDEBAR_RESIZE_MAX_PX + leftIconRailPx}
+              defaultWidth={PANEL_COLUMN_WIDTH_PX + leftIconRailPx}
             />
           ) : null}
         </Sidebar>
