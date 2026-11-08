@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID } from '@hypha-platform/core/client';
 import { useNetworkGlobeReady } from '@hypha-platform/epics';
 import { Footer, type FooterProps } from '@hypha-platform/ui';
@@ -30,17 +30,24 @@ function clearSiteFooterOffset() {
 /**
  * Publishes `--site-footer-offset` so fixed sidebars (chat / AI) and the
  * sticky messages list lift above the visible "Powered by Hypha" bar.
+ *
+ * When the footer is on screen it is also pinned `fixed` full viewport width.
+ * In dual-panel layout the footer lives in the center column; without the pin
+ * it only paints between the rails while the side panels cover the sides.
  */
 function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const [pinHeight, setPinHeight] = useState<number | null>(null);
 
   useEffect(() => {
     const sync = () => {
       const footer =
+        rootRef.current?.querySelector('[data-site-footer]') ??
         rootRef.current?.querySelector('footer') ??
-        document.querySelector('footer');
+        document.querySelector('[data-site-footer]');
       if (!(footer instanceof HTMLElement)) {
         clearSiteFooterOffset();
+        setPinHeight(null);
         return;
       }
       const rect = footer.getBoundingClientRect();
@@ -53,12 +60,17 @@ function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
         SITE_FOOTER_OFFSET_VAR,
         `${overlap}px`,
       );
+      // Pin full-bleed once the footer is meaningfully on screen. Keep the
+      // in-flow spacer height so scroll length does not jump.
+      setPinHeight(overlap > 0 ? Math.ceil(rect.height) : null);
     };
 
     sync();
     const observer = new ResizeObserver(sync);
     observer.observe(document.documentElement);
-    const footerEl = rootRef.current?.querySelector('footer');
+    const footerEl =
+      rootRef.current?.querySelector('[data-site-footer]') ??
+      rootRef.current?.querySelector('footer');
     if (footerEl) observer.observe(footerEl);
 
     const scrollRoot =
@@ -77,7 +89,22 @@ function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  return <div ref={rootRef}>{children}</div>;
+  const pinned = pinHeight != null && pinHeight > 0;
+
+  return (
+    <div
+      ref={rootRef}
+      className="shrink-0"
+      style={pinned ? { height: pinHeight } : undefined}
+    >
+      <div
+        data-site-footer-pinned={pinned ? '' : undefined}
+        className={pinned ? 'fixed inset-x-0 bottom-0 z-[45]' : undefined}
+      >
+        {children}
+      </div>
+    </div>
+  );
 }
 
 export function DeferredFooter(props: FooterProps) {
