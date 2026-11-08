@@ -448,6 +448,8 @@ export function CreateAgreementBaseFields({
   const handleResetForm = React.useCallback(() => {
     form.reset();
     setExistingAttachments([]);
+    setImageFiles([]);
+    setDocumentFiles([]);
     setResubmitFormData(null);
     try {
       sessionStorage.removeItem(RESUBMIT_FORM_DATA_KEY);
@@ -696,7 +698,14 @@ export function CreateAgreementBaseFields({
                         type="button"
                         aria-pressed={selected}
                         disabled={isLoading}
-                        onClick={() => setMediaKind(kind)}
+                        onClick={() => {
+                          if (kind === 'images') {
+                            form.setValue('videoUrl', '', {
+                              shouldDirty: true,
+                            });
+                          }
+                          setMediaKind(kind);
+                        }}
                         style={{ width: 112, height: 112 }}
                         className={cn(
                           'flex flex-col items-center justify-center gap-2 border px-2',

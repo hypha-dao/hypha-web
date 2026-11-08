@@ -638,8 +638,21 @@ export function SpaceMemoryTimelineItem({
             thumbShellClass={MEDIA_SHELL}
           />
         ) : linkedVideo ? (
-          <div className={cn(MEDIA_SHELL, 'relative aspect-video bg-black')}>
-            <SignalVideoPlayer video={linkedVideo} title={cardTitle} />
+          <div className="flex flex-col gap-2">
+            <div className={cn(MEDIA_SHELL, 'relative aspect-video bg-black')}>
+              <SignalVideoPlayer video={linkedVideo} title={cardTitle} />
+            </div>
+            {openHref ? (
+              <a
+                href={openHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={openRowClass}
+              >
+                <span>{openLinkLabel}</span>
+                <ExternalLink className="h-3 w-3 shrink-0 opacity-50" />
+              </a>
+            ) : null}
           </div>
         ) : canOpen ? (
           <a

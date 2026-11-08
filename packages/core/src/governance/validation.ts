@@ -150,9 +150,18 @@ const createAgreementWeb2Props = {
       const trimmed = value.trim();
       return trimmed.length > 0 ? trimmed : undefined;
     })
-    .refine((value) => value == null || /^https?:\/\//i.test(value), {
-      message: 'Enter a link that starts with http:// or https://',
-    }),
+    .refine(
+      (value) => {
+        if (value == null) return true;
+        try {
+          const { protocol } = new URL(value);
+          return protocol === 'http:' || protocol === 'https:';
+        } catch {
+          return false;
+        }
+      },
+      { message: 'Enter a link that starts with http:// or https://' },
+    ),
 };
 
 export const schemaCreateAgreementWeb2 = z.object(createAgreementWeb2Props);

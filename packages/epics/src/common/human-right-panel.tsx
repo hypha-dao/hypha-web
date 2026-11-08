@@ -2137,6 +2137,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const signalDeepLinkEpochRef = useRef(0);
   /** Slugs that 404'd this visit — do not put them back into `?signal=`. */
   const rejectedSignalSlugsRef = useRef(new Set<string>());
+  /** Skip one notice clear after we strip an invalid `?signal=` ourselves. */
+  const pendingSignalStripRef = useRef(false);
   const previousSignalChatSlugRef = useRef<string | null | undefined>(
     undefined,
   );
@@ -2989,10 +2991,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const isSignalThread = mode === 'coherence' && Boolean(coherenceSlug?.trim());
   /**
    * Team policy is only known after the roster resolves. While unresolved,
-   * keep manage/interact gates closed so a failed hydrate cannot briefly open
-   * controls to non-members. Composer lock still waits for a resolved
-   * non-empty roster (see `hasSignalTeamPolicy`) to avoid the room-switch
-   * “Only selected team members…” flash.
+   * keep manage/interact gates closed so a failed hydrate cannot open
+   * controls to non-members. `hasSignalTeamPolicy` is the resolved non-empty
+   * roster (UI chrome); interact/join use the fail-closed formula below.
    */
   const hasSignalTeamPolicy =
     isSignalThread &&
@@ -3005,8 +3006,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const isCurrentUserSignalTeamMember = Boolean(
     currentUserId && signalTeamMemberIdSet.has(currentUserId),
   );
+  // Fail closed while the roster is unresolved; open to everyone only when
+  // resolved with an empty team (no policy).
   const canInteractWithSignalThread =
-    !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
+    !isSignalThread ||
+    (signalTeamRosterResolved &&
+      (signalTeamMemberIds.length === 0 || isCurrentUserSignalTeamMember));
   const archivedGroup =
     isDirectConversation &&
     isArchivedGroupRoom(client?.getRoom(roomId ?? undefined));
@@ -3024,11 +3029,15 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     ? tCommon('joinSpaceToUse')
     : archivedGroup
     ? t('archivedGroupReadOnly')
+    : isSignalThread && !signalTeamRosterResolved
+    ? undefined
     : !canInteractWithSignalThread
     ? t('signalTeamInteractionRestricted')
     : undefined;
   const canJoinSignalThreadCall =
-    !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
+    !isSignalThread ||
+    (signalTeamRosterResolved &&
+      (signalTeamMemberIds.length === 0 || isCurrentUserSignalTeamMember));
 
   useEffect(() => {
     if (spaceCallState !== 'connected') return;
@@ -6047,6 +6056,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     const qpSignal = readSignalDeepLinkSlug(searchParams);
     if (!qpSignal) {
+      if (pendingSignalStripRef.current) {
+        pendingSignalStripRef.current = false;
+        return;
+      }
       setSignalDeepLinkNotice(null);
       return;
     }
@@ -6105,6 +6118,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
     const stripInvalidSignalFromUrl = () => {
       signalDeepLinkEpochRef.current += 1;
+      pendingSignalStripRef.current = true;
       const cleaned = setSignalSearchParam(
         pathname,
         searchParams?.toString() ?? '',

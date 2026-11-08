@@ -80,6 +80,7 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
   useEffect(() => {
     let lastAppliedHeight = -1;
     let lastOverflows: boolean | null = null;
+    let lastAppliedList: Element | null = null;
     let raf = 0;
 
     const fitNow = () => {
@@ -115,8 +116,10 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
             ? filters.scrollHeight
             : 0;
         const overflows = messagesChannelMenuOverflows(contentHeight, height);
+        const listChanged = lastAppliedList !== list;
 
-        if (lastAppliedHeight !== height) {
+        if (listChanged || lastAppliedHeight !== height) {
+          lastAppliedList = list;
           lastAppliedHeight = height;
           list.style.height = `${height}px`;
           list.style.maxHeight = `${height}px`;
@@ -126,7 +129,10 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
           }
         }
 
-        if (filters instanceof HTMLElement && lastOverflows !== overflows) {
+        if (
+          filters instanceof HTMLElement &&
+          (listChanged || lastOverflows !== overflows)
+        ) {
           lastOverflows = overflows;
           // Keep overflow stable once the menu can exceed the cap — clearing
           // and re-applying on every fit made sticky columns thrash.
@@ -138,6 +144,7 @@ export function MessagesViewportLock({ children }: { children: ReactNode }) {
 
       lastAppliedHeight = -1;
       lastOverflows = null;
+      lastAppliedList = null;
       clearListFrameHeight(root);
     };
 

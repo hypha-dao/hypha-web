@@ -40,6 +40,20 @@ describe('resolveTypingPeerName', () => {
       ),
     ).toBe('Unknown');
   });
+
+  it('skips a technical member.name and uses rawDisplayName', () => {
+    expect(
+      resolveTypingPeerName(
+        '@prod_privy_abc:hypha.chat',
+        () => 'Unknown',
+        'Unknown',
+        {
+          name: '@prod_privy_abc:hypha.chat',
+          rawDisplayName: 'Vlad Kampers',
+        } as never,
+      ),
+    ).toBe('Vlad Kampers');
+  });
 });
 
 describe('typingPeersFromUserIds', () => {

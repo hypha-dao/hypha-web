@@ -488,10 +488,14 @@ export function HumanChatPanelMessageOverflow({
     setActionSheetOpen(true);
   }, [startSelectionLock]);
 
+  const actionSheetWasOpenRef = useRef(false);
+
   useEffect(() => {
+    const wasOpen = actionSheetWasOpenRef.current;
+    actionSheetWasOpenRef.current = actionSheetOpen;
     if (!actionSheetOpen) {
       stopSelectionLock();
-      clearNativeTextSelection();
+      if (wasOpen) clearNativeTextSelection();
     }
   }, [actionSheetOpen, stopSelectionLock]);
 
@@ -778,7 +782,7 @@ export function HumanChatPanelMessageOverflow({
             if (!(target instanceof Element)) return;
             if (
               target.closest(
-                'button, a, input, textarea, [role="menuitem"], [data-chat-message-actions]',
+                'button, a, input, textarea, video[controls], [role="menuitem"], [data-chat-message-actions]',
               )
             ) {
               return;

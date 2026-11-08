@@ -2359,6 +2359,8 @@ export function HumanChatPanelChatBar({
               if (e.button !== 0) return;
               pointerSelectingRef.current = true;
               setSelectionBar(null);
+              clearTouchFormatTimer();
+              setTouchFormatVisible(false);
             }}
             onChange={(e) => {
               onChange(e.target.value);

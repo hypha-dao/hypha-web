@@ -53,12 +53,20 @@ export function resolveTypingPeerName(
     return resolved;
   }
 
-  const memberName = member?.name?.trim() || member?.rawDisplayName?.trim();
-  if (memberName && !looksLikeTechnicalMatrixDisplayName(memberName, userId)) {
-    return memberName;
+  for (const candidate of [member?.name, member?.rawDisplayName]) {
+    const memberName = candidate?.trim();
+    if (
+      memberName &&
+      !looksLikeTechnicalMatrixDisplayName(memberName, userId)
+    ) {
+      return memberName;
+    }
   }
 
-  const visible = visibleMatrixMemberName(userId, memberName).trim();
+  const visible = visibleMatrixMemberName(
+    userId,
+    member?.name?.trim() || member?.rawDisplayName?.trim(),
+  ).trim();
   if (visible) return visible;
 
   return unknownMemberLabel.trim() || resolved;
