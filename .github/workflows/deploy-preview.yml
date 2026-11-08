@@ -115,22 +115,9 @@ jobs:
         id: branch-name
         uses: tj-actions/branch-names@v8
 
-      # create-branch-action reuses an existing branch when present. Long-lived PR
-      # preview DBs can drift (e.g. renumbered migrations / partial applies) and then
-      # drizzle migrate fails with 42P01. Reset from main before recreate.
-      - name: Reset Neon Preview Branch
-        if: needs.detect-changes.outputs.has_migrations == 'true'
-        continue-on-error: true
-        uses: neondatabase/delete-branch-action@v3
-        with:
-          project_id: ${{ env.NEON_PROJECT_ID }}
-          branch: preview/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
-          api_key: ${{ env.NEON_API_KEY }}
-
-      - name: Wait for Neon branch deletion
-        if: needs.detect-changes.outputs.has_migrations == 'true'
-        run: sleep 5
-
+      # Reuse the PR preview Neon branch when it already exists. Do NOT delete it
+      # up front: cancel-in-progress deploys left the live alias pointing at a
+      # deleted DB (Privy session alive, /me 500 → profileUnavailable, Matrix down).
       - name: Create Neon Branch
         if: needs.detect-changes.outputs.has_migrations == 'true'
         id: create-branch
@@ -154,20 +141,75 @@ jobs:
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=preview --token=${{ env.VERCEL_TOKEN }}
 
+      # Long-lived preview DBs can drift (renumbered migrations / partial applies)
+      # and then drizzle migrate fails with 42P01. Only reset after a real failure.
       - name: Run Migrations
+        id: migrate
         if: needs.detect-changes.outputs.has_migrations == 'true'
+        continue-on-error: true
         env:
           BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
         run: |
           vercel env pull --environment=preview --token=${{ env.VERCEL_TOKEN }}
           pnpm run migrate
 
-      - name: Build Project Artifacts
+      - name: Reset Neon Preview Branch after migrate failure
+        id: reset-branch
+        if: needs.detect-changes.outputs.has_migrations == 'true' && steps.migrate.outcome == 'failure'
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          branch: preview/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
+          api_key: ${{ env.NEON_API_KEY }}
+
+      - name: Wait for Neon branch deletion
+        if: needs.detect-changes.outputs.has_migrations == 'true' && steps.migrate.outcome == 'failure'
+        run: sleep 8
+
+      - name: Recreate Neon Branch after migrate failure
+        id: recreate-branch
+        if: needs.detect-changes.outputs.has_migrations == 'true' && steps.migrate.outcome == 'failure'
+        uses: neondatabase/create-branch-action@v5
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          parent: main
+          branch_name: preview/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
+          username: ${{ env.NEON_DATABASE_USERNAME }}
+          database: ${{ env.NEON_DATABASE_NAME }}
+          api_key: ${{ env.NEON_API_KEY }}
+
+      - name: Update branch variables after recreate
+        if: needs.detect-changes.outputs.has_migrations == 'true' && steps.migrate.outcome == 'failure'
+        run: |
+          echo "BRANCH_DB_URL=${{ steps.recreate-branch.outputs.db_url_with_pooler }}" >> $GITHUB_ENV
+
+      - name: Retry Migrations after Neon reset
+        id: migrate-retry
+        if: needs.detect-changes.outputs.has_migrations == 'true' && steps.migrate.outcome == 'failure'
         env:
-          BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
+          BRANCH_DB_URL: ${{ steps.recreate-branch.outputs.db_url_with_pooler }}
+        run: |
+          vercel env pull --environment=preview --token=${{ env.VERCEL_TOKEN }}
+          pnpm run migrate
+
+      - name: Fail job when migrations did not apply
+        if: needs.detect-changes.outputs.has_migrations == 'true' && steps.migrate.outcome == 'failure' && steps.migrate-retry.outcome != 'success'
+        run: |
+          echo "::error::Preview migrations failed even after resetting the Neon branch."
+          exit 1
+
+      # Prefer GITHUB_ENV BRANCH_DB_URL (updated after a migrate-failure recreate).
+      # Do not pin create-branch.outputs here — that URL is dead after a reset.
+      - name: Build Project Artifacts
         run: |
           # Next.js loads env from apps/web — root .env.local is not picked up by the web build.
           vercel env pull apps/web/.env.local --environment=preview --token=${{ env.VERCEL_TOKEN }}
+          # vercel env pull can leave a stale BRANCH_DB_URL; force the URL from this run.
+          if [ -n "${BRANCH_DB_URL:-}" ]; then
+            grep -v '^BRANCH_DB_URL=' apps/web/.env.local > apps/web/.env.local.tmp || true
+            mv apps/web/.env.local.tmp apps/web/.env.local
+            echo "BRANCH_DB_URL=${BRANCH_DB_URL}" >> apps/web/.env.local
+          fi
           # Build-time feature flags; enable on preview deploys for PR testing.
           echo "NEXT_PUBLIC_ENABLE_NETWORK_MAP=true" >> apps/web/.env.local
           echo "NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME=true" >> apps/web/.env.local
@@ -200,7 +242,6 @@ jobs:
       - name: Deploy Preview to Vercel
         id: deploy
         env:
-          BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
           VERCEL_TOKEN: ${{ env.VERCEL_TOKEN }}
         run: |
           set -euo pipefail
