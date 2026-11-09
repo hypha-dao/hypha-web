@@ -17,7 +17,7 @@ import {
   useMe,
   useSpacesBySlugs,
 } from '@hypha-platform/core/client';
-import { usePathname, useParams } from 'next/navigation';
+import { usePathname, useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useAiPanel } from '../human-chat-panel-context';
@@ -26,7 +26,7 @@ import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname
 import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 import { MemberHomeMark } from '../../people/components/member-home-mark';
-import { SpaceSwitcherOption } from '../../spaces/components/space-switcher-option';
+import { SpaceSwitcherMark } from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -71,6 +71,7 @@ export function AiPanelHeader({
   const tSpaces = useTranslations('Spaces');
   const { resolvedTheme } = useTheme();
   const pathname = usePathname();
+  const router = useRouter();
   const params = useParams<{ lang?: string }>();
   const activeSpaceSlug = useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),
@@ -190,25 +191,37 @@ export function AiPanelHeader({
     };
   }, [spaceMenuOpen]);
 
-  const renderSpaceOption = (space: Space) => (
-    <DropdownMenuItem
-      key={space.id}
-      asChild
-      className="rounded-lg py-1.5 hover:bg-background-4/70"
-    >
-      <SpaceSwitcherOption
-        href={
-          getDhoSpaceContextPath({
-            pathname,
-            lang,
-            spaceSlug: space.slug,
-          }) ?? `/${lang}/dho/${space.slug}/agreements`
-        }
-        title={space.title}
-        iconUrl={getDisplayIcon(space, logoVariant)}
-      />
-    </DropdownMenuItem>
-  );
+  const renderSpaceOption = (space: Space) => {
+    const href =
+      getDhoSpaceContextPath({
+        pathname: pathname ?? '',
+        lang,
+        spaceSlug: space.slug,
+      }) ?? `/${lang}/dho/${space.slug}/agreements`;
+    return (
+      <DropdownMenuItem
+        key={space.id}
+        className="rounded-lg py-1.5 hover:bg-background-4/70"
+        onSelect={() => {
+          // Radix Item calls preventDefault on pointerdown when composed with
+          // asChild+Link, which blocks Next.js navigation. Push explicitly.
+          setSpaceMenuOpen(false);
+          router.push(href);
+        }}
+      >
+        <span
+          className="flex w-full min-w-0 items-center gap-2"
+          style={{ minHeight: 32 }}
+        >
+          <SpaceSwitcherMark
+            iconUrl={getDisplayIcon(space, logoVariant)}
+            alt={space.title}
+          />
+          <span className="min-w-0 flex-1 truncate">{space.title}</span>
+        </span>
+      </DropdownMenuItem>
+    );
+  };
 
   const showLeftSlot = Boolean(leftSlot);
   const reserveDesktopLeftColumn = showLeftSlot && !collapseLeftSlotAtMd;
