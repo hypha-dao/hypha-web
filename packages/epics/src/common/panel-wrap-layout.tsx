@@ -35,6 +35,8 @@ import {
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { isInteractiveCreatePath } from './get-path-function';
 import {
+  isConnectionsPath,
+  isMyWalletPath,
   isNetworkAiPath,
   isNetworkPath,
   showsHumanChatIcon,
@@ -481,6 +483,24 @@ export function PanelWrapLayout({
       closeHumanChatPanel();
     }
   }, [showHumanChat, closeHumanChatPanel]);
+
+  // Mobile chat is a full-viewport Sheet. Leaving Messages for Wallet (or
+  // vice versa) must dismiss it — otherwise a crashed/stale thread keeps
+  // covering the destination screen and looks like “Wallet never loads”.
+  const prevPathnameRef = useRef(pathname);
+  useEffect(() => {
+    const prev = prevPathnameRef.current;
+    prevPathnameRef.current = pathname;
+    if (prev === pathname) return;
+    if (typeof window === 'undefined') return;
+    if (window.innerWidth >= 768) return;
+    const leftMessages =
+      isConnectionsPath(prev) && !isConnectionsPath(pathname);
+    const enteredWallet = !isMyWalletPath(prev) && isMyWalletPath(pathname);
+    if (leftMessages || enteredWallet) {
+      closeHumanChatPanel();
+    }
+  }, [pathname, closeHumanChatPanel]);
 
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {

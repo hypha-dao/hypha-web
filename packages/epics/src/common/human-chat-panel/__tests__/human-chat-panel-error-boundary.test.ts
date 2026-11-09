@@ -18,20 +18,23 @@ describe('chat panel error boundary state', () => {
   });
 
   it('keeps the retry nonce when capturing an error', () => {
-    const prev = { hasError: false, retryNonce: 3 };
-    expect(chatPanelErrorBoundaryFromError(prev)).toEqual({
+    const prev = { hasError: false, retryNonce: 3, errorMessage: null };
+    expect(chatPanelErrorBoundaryFromError(prev, new Error('boom'))).toEqual({
       hasError: true,
       retryNonce: 3,
+      errorMessage: 'boom',
     });
   });
 
   it('increments the retry nonce so Retry remounts a clean hook tree', () => {
     const afterCrash = chatPanelErrorBoundaryFromError(
       idleChatPanelErrorBoundaryState(),
+      new Error('boom'),
     );
     expect(retryChatPanelErrorBoundary(afterCrash)).toEqual({
       hasError: false,
       retryNonce: 1,
+      errorMessage: null,
     });
   });
 });

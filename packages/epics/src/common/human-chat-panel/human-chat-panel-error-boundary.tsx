@@ -6,6 +6,7 @@ import { Button } from '@hypha-platform/ui';
 
 import {
   CHAT_PANEL_CRASH_FALLBACK_MESSAGE_KEY,
+  chatPanelErrorBoundaryFromError,
   idleChatPanelErrorBoundaryState,
   retryChatPanelErrorBoundary,
   type ChatPanelErrorBoundaryState,
@@ -27,11 +28,14 @@ class HumanChatPanelErrorBoundaryInner extends Component<
 > {
   state: ChatPanelErrorBoundaryState = idleChatPanelErrorBoundaryState();
 
-  static getDerivedStateFromError(): Pick<
-    ChatPanelErrorBoundaryState,
-    'hasError'
-  > {
-    return { hasError: true };
+  static getDerivedStateFromError(
+    error: Error,
+  ): Pick<ChatPanelErrorBoundaryState, 'hasError' | 'errorMessage'> {
+    return {
+      hasError: true,
+      errorMessage:
+        error instanceof Error ? error.message : String(error ?? 'Unknown'),
+    };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -40,6 +44,7 @@ class HumanChatPanelErrorBoundaryInner extends Component<
       error,
       info.componentStack,
     );
+    this.setState((prev) => chatPanelErrorBoundaryFromError(prev, error));
     // Do not rethrow — a hook-order throw must stay inside this panel.
   }
 
@@ -57,10 +62,19 @@ class HumanChatPanelErrorBoundaryInner extends Component<
       <div
         role="alert"
         className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-4 py-8 text-center"
+        data-testid="chat-panel-crashed"
       >
         <p className="text-sm text-muted-foreground">
           {this.props.fallbackTitle}
         </p>
+        {this.state.errorMessage ? (
+          <pre
+            className="max-h-40 w-full max-w-md overflow-auto whitespace-pre-wrap break-words rounded-none border border-border bg-muted/40 px-3 py-2 text-left font-mono text-[11px] leading-snug text-destructive"
+            data-testid="chat-panel-crash-detail"
+          >
+            {this.state.errorMessage}
+          </pre>
+        ) : null}
         <Button
           type="button"
           variant="outline"
@@ -102,11 +116,14 @@ class HumanChatPanelMessageErrorBoundaryInner extends Component<
 > {
   state: ChatPanelErrorBoundaryState = idleChatPanelErrorBoundaryState();
 
-  static getDerivedStateFromError(): Pick<
-    ChatPanelErrorBoundaryState,
-    'hasError'
-  > {
-    return { hasError: true };
+  static getDerivedStateFromError(
+    error: Error,
+  ): Pick<ChatPanelErrorBoundaryState, 'hasError' | 'errorMessage'> {
+    return {
+      hasError: true,
+      errorMessage:
+        error instanceof Error ? error.message : String(error ?? 'Unknown'),
+    };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -128,6 +145,11 @@ class HumanChatPanelMessageErrorBoundaryInner extends Component<
         data-testid="chat-message-row-crashed"
       >
         {this.props.fallbackLabel}
+        {this.state.errorMessage ? (
+          <span className="mt-1 block font-mono text-[10px] text-destructive/80">
+            {this.state.errorMessage}
+          </span>
+        ) : null}
       </div>
     );
   }
