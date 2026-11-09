@@ -45,6 +45,20 @@ import {
   withoutPlaceholderLeadDuplicates,
 } from '../markdown';
 import { offRosterQuestPersonIds } from '../roster';
+import {
+  questDeliverableChange,
+  questGoalChange,
+  questLeadChange,
+  questMemberChange,
+  questMilestoneChange,
+  questNameChange,
+  questRewardChange,
+  questScopeChange,
+  questScopeChangeText,
+  questStatusChange,
+  questSuccessChange,
+  questTargetDateChange,
+} from '../quest-edit-change';
 import type { QuestRecord } from '../types';
 import type {
   schemaCreateSpaceQuest,
@@ -686,13 +700,7 @@ export async function updateSpaceQuest(
     updateFields.name = patch.name.trim();
     editEvents.push({
       text: `Updated quest name to “${patch.name.trim()}”.`,
-      change: {
-        entity: 'quest',
-        field: 'name',
-        action: 'updated',
-        before: current.name,
-        after: patch.name.trim(),
-      },
+      change: questNameChange(current.name, patch.name.trim()),
     });
   }
 
@@ -700,13 +708,7 @@ export async function updateSpaceQuest(
     updateFields.goal = patch.goal.trim();
     editEvents.push({
       text: 'Updated Goal.',
-      change: {
-        entity: 'quest',
-        field: 'goal',
-        action: 'updated',
-        before: current.goal,
-        after: patch.goal.trim(),
-      },
+      change: questGoalChange(current.goal, patch.goal.trim()),
     });
   }
 
@@ -734,11 +736,15 @@ export async function updateSpaceQuest(
       patch.scopeOutMarkdown?.trim() ?? bulletsToMarkdownList(nextScopeOut);
     editEvents.push({
       text: 'Updated Scope.',
-      change: {
-        entity: 'quest',
-        field: 'scope',
-        action: 'updated',
-      },
+      change: questScopeChange(
+        questScopeChangeText(current),
+        questScopeChangeText({
+          scopeInMarkdown: String(updateFields.scopeInMarkdown ?? ''),
+          scopeOutMarkdown: String(updateFields.scopeOutMarkdown ?? ''),
+          scopeIn: nextScopeIn,
+          scopeOut: nextScopeOut,
+        }),
+      ),
     });
   }
 
@@ -749,11 +755,10 @@ export async function updateSpaceQuest(
     updateFields.successCriteria = patch.successCriteria.trim();
     editEvents.push({
       text: 'Updated Success criteria.',
-      change: {
-        entity: 'quest',
-        field: 'successCriteria',
-        action: 'updated',
-      },
+      change: questSuccessChange(
+        current.successCriteria,
+        patch.successCriteria.trim(),
+      ),
     });
   }
 
@@ -766,11 +771,7 @@ export async function updateSpaceQuest(
       text: `Updated Quest Reward (${
         cleaned.map((r) => `${r.amount} ${r.token}`).join(', ') || 'none'
       }).`,
-      change: {
-        entity: 'quest',
-        field: 'rewards',
-        action: 'updated',
-      },
+      change: questRewardChange(current.rewards, cleaned),
     });
   }
 
@@ -781,13 +782,10 @@ export async function updateSpaceQuest(
     updateFields.targetDate = patch.targetDate?.trim() || null;
     editEvents.push({
       text: `Updated Target date to ${patch.targetDate?.trim() || '—'}.`,
-      change: {
-        entity: 'quest',
-        field: 'targetDate',
-        action: 'updated',
-        before: current.targetDate,
-        after: patch.targetDate?.trim() || null,
-      },
+      change: questTargetDateChange(
+        current.targetDate,
+        patch.targetDate?.trim() || null,
+      ),
     });
   }
 
@@ -805,13 +803,7 @@ export async function updateSpaceQuest(
     updateFields.leadName = patch.leadName!.trim();
     editEvents.push({
       text: `Transferred Quest Lead to ${patch.leadName!.trim()}.`,
-      change: {
-        entity: 'quest',
-        field: 'lead',
-        action: 'updated',
-        before: current.leadName,
-        after: patch.leadName!.trim(),
-      },
+      change: questLeadChange(current.leadName, patch.leadName!.trim()),
     });
   }
 
@@ -829,13 +821,7 @@ export async function updateSpaceQuest(
     }
     editEvents.push({
       text: `Changed Quest status from ${current.status} to ${patch.status}.`,
-      change: {
-        entity: 'quest',
-        field: 'status',
-        action: 'updated',
-        before: current.status,
-        after: patch.status,
-      },
+      change: questStatusChange(current.status, patch.status),
     });
   }
 
@@ -916,11 +902,7 @@ export async function updateSpaceQuest(
         text: `Updated Milestones (${patch.milestones.length} milestone${
           patch.milestones.length === 1 ? '' : 's'
         }).`,
-        change: {
-          entity: 'milestone',
-          field: 'milestones',
-          action: 'updated',
-        },
+        change: questMilestoneChange(current.milestones, patch.milestones),
       });
     }
 
@@ -948,11 +930,7 @@ export async function updateSpaceQuest(
         text: `Updated Participants (${patch.members.length} participant${
           patch.members.length === 1 ? '' : 's'
         }).`,
-        change: {
-          entity: 'member',
-          field: 'members',
-          action: 'updated',
-        },
+        change: questMemberChange(current.members, patch.members),
       });
     }
 
@@ -977,11 +955,10 @@ export async function updateSpaceQuest(
         text: `Updated Deliverables (${patch.deliverables.length} item${
           patch.deliverables.length === 1 ? '' : 's'
         }).`,
-        change: {
-          entity: 'deliverable',
-          field: 'deliverables',
-          action: 'updated',
-        },
+        change: questDeliverableChange(
+          current.deliverables,
+          patch.deliverables,
+        ),
       });
     }
 

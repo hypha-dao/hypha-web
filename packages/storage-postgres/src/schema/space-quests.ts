@@ -26,12 +26,22 @@ export type QuestUpdateLinkItem = {
   kind?: 'pr' | 'preview' | 'doc' | 'link';
 };
 
+export type QuestUpdateChangeItem = {
+  label: string;
+  format: 'text' | 'short';
+  action: 'updated' | 'added' | 'removed' | 'reordered';
+  before?: string | null;
+  after?: string | null;
+};
+
 export type QuestUpdateChangePayload = {
   entity: 'quest' | 'milestone' | 'member' | 'deliverable';
   field: string;
-  action: 'updated' | 'added' | 'removed';
+  action: 'updated' | 'added' | 'removed' | 'reordered';
   before?: string | null;
   after?: string | null;
+  format?: 'text' | 'short';
+  items?: QuestUpdateChangeItem[];
 };
 
 /**

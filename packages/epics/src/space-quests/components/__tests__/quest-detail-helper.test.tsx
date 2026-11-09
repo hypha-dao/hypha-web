@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { QuestRecord, QuestStatus } from '@hypha-platform/core/client';
 import { SpaceQuestDetail } from '../space-quest-detail';
 
@@ -10,10 +10,12 @@ const harness = vi.hoisted(() => ({
   personId: 7,
   status: 'active' as QuestStatus,
   chatRoomId: 'room-1' as string | null,
+  quest: null as QuestRecord | null,
   setSpaceQuestDraft: vi.fn(),
   openCoherenceChat: vi.fn(),
   openHumanChatPanel: vi.fn(),
   closeAiPanel: vi.fn(),
+  postUpdate: vi.fn(),
 }));
 
 function questFixture(): QuestRecord {
@@ -176,26 +178,91 @@ vi.mock('../../hooks/use-space-quests', async () => {
   return {
     ...actual,
     useSpaceQuestDetail: () => ({
-      quest: questFixture(),
+      quest: harness.quest ?? questFixture(),
       isLoading: false,
       error: null,
-      refresh: vi.fn(),
+      refresh: async (next?: QuestRecord) => {
+        if (next && typeof next === 'object' && 'slug' in next) {
+          harness.quest = next;
+        }
+      },
     }),
     useQuestSpaceMembers: () => [],
+    postSpaceQuestUpdateRequest: (input: {
+      body: {
+        text: string;
+        milestoneOrder?: number | null;
+        milestoneLabel?: string | null;
+        links?: { label: string; url: string; kind?: string }[];
+      };
+    }) => harness.postUpdate(input),
   };
 });
 
+class LoadedImage {
+  complete = true;
+  naturalWidth = 8;
+  private currentSrc = '';
+  get src() {
+    return this.currentSrc;
+  }
+  set src(value: string) {
+    this.currentSrc = value;
+  }
+  addEventListener() {}
+  removeEventListener() {}
+}
+
 describe('saved quest helper entry', () => {
+  beforeEach(() => {
+    vi.stubGlobal('Image', LoadedImage);
+    harness.personId = 7;
+    harness.status = 'active';
+    harness.chatRoomId = 'room-1';
+    harness.quest = questFixture();
+    harness.postUpdate.mockImplementation(
+      async (input: { body: { text: string } }) => postedQuest(input.body.text),
+    );
+  });
+
   afterEach(() => {
     cleanup();
     harness.personId = 7;
     harness.status = 'active';
     harness.chatRoomId = 'room-1';
+    harness.quest = questFixture();
     harness.setSpaceQuestDraft.mockReset();
     harness.openCoherenceChat.mockReset();
     harness.openHumanChatPanel.mockReset();
     harness.closeAiPanel.mockReset();
+    harness.postUpdate.mockReset();
+    vi.unstubAllGlobals();
   });
+
+  function postedQuest(text: string): QuestRecord {
+    const quest = harness.quest ?? questFixture();
+    return {
+      ...quest,
+      updates: [
+        {
+          id: 50,
+          questId: quest.id,
+          authorPersonId: 7,
+          authorName: 'Ada Lovelace',
+          authorAvatarUrl: 'https://example.com/ada.png',
+          kind: 'post',
+          viaAgent: false,
+          milestoneOrder: null,
+          milestoneLabel: null,
+          text,
+          links: [],
+          change: null,
+          createdAt: '2026-11-09T15:04:00.000Z',
+        },
+        ...quest.updates,
+      ],
+    };
+  }
 
   it('opens the create helper for an editor and leaves Open discussion on the room', () => {
     render(<SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />);
@@ -239,5 +306,63 @@ describe('saved quest helper entry', () => {
     );
     expect(overview.textContent).toContain('M1');
     expect(overview.textContent).toContain('M2');
+  });
+
+  it('posts a written update and ignores the optional link until the message is filled', async () => {
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="updates"
+      />,
+    );
+
+    const post = screen.getByTestId('quest-update-post');
+    expect(post).toHaveProperty('disabled', true);
+    fireEvent.change(screen.getByLabelText('Link (optional)'), {
+      target: { value: 'https://example.com/notes' },
+    });
+    fireEvent.change(screen.getByLabelText('Milestone'), {
+      target: { value: '1' },
+    });
+    expect(post).toHaveProperty('disabled', true);
+
+    fireEvent.change(screen.getByLabelText('Share progress'), {
+      target: { value: 'Shipped the checklist' },
+    });
+    expect(post).toHaveProperty('disabled', false);
+    fireEvent.click(post);
+
+    expect(await screen.findByText('Shipped the checklist')).toBeTruthy();
+    const card = screen.getByTestId('quest-update-card');
+    expect(card.textContent).toContain('Ada Lovelace');
+    expect(
+      card
+        .querySelector('[data-testid="quest-update-avatar"] img')
+        ?.getAttribute('src'),
+    ).toBe('https://example.com/ada.png');
+    expect(harness.postUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          text: 'Shipped the checklist',
+          links: [
+            expect.objectContaining({ url: 'https://example.com/notes' }),
+          ],
+        }),
+      }),
+    );
+  });
+
+  it('hides the composer from someone who cannot edit', () => {
+    harness.personId = 99;
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="updates"
+      />,
+    );
+    expect(screen.queryByTestId('quest-update-composer')).toBeNull();
+    expect(screen.queryByTestId('quest-update-post')).toBeNull();
   });
 });

@@ -42,6 +42,7 @@ import {
   questDetailProgressLabel,
   resolveQuestLeadIdentity,
 } from './quest-detail-presentation';
+import { QuestUpdateCard } from './quest-update-card';
 import { ArrowLeft, ArrowUpRight, Pencil, Send } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -170,10 +171,6 @@ function defaultMarkerForState(state: QuestHealthState): number {
   }
 }
 
-function initialOf(name: string | null | undefined): string {
-  return ((name ?? '').trim()[0] ?? 'Q').toUpperCase();
-}
-
 function dayGroupLabel(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return 'EARLIER';
@@ -186,15 +183,6 @@ function dayGroupLabel(iso: string): string {
   return date
     .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     .toUpperCase();
-}
-
-function formatClock(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
 }
 
 /** Read-only rendering of the markdown the RichTextEditor produces. */
@@ -646,7 +634,6 @@ function UpdatesTab({
   quest,
   canPost,
   onPost,
-  posting,
 }: {
   quest: QuestRecord;
   canPost: boolean;
@@ -655,12 +642,12 @@ function UpdatesTab({
     milestoneOrder: number | null;
     linkUrl: string;
   }) => Promise<boolean>;
-  posting: boolean;
 }) {
   const [authorFilter, setAuthorFilter] = useState<string | null>(null);
   const [text, setText] = useState('');
   const [milestoneOrder, setMilestoneOrder] = useState<number | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
+  const [sending, setSending] = useState(false);
 
   const authors = useMemo(
     () => Array.from(new Set(quest.updates.map((u) => u.authorName))),
@@ -688,16 +675,22 @@ function UpdatesTab({
   }, [authorFilter, quest.updates]);
 
   const submit = async () => {
-    if (!text.trim()) return;
-    const posted = await onPost({
-      text: text.trim(),
-      milestoneOrder,
-      linkUrl: linkUrl.trim(),
-    });
-    if (!posted) return;
-    setText('');
-    setLinkUrl('');
-    setMilestoneOrder(null);
+    const message = text.trim();
+    if (!message || sending) return;
+    setSending(true);
+    try {
+      const posted = await onPost({
+        text: message,
+        milestoneOrder,
+        linkUrl: linkUrl.trim(),
+      });
+      if (!posted) return;
+      setText('');
+      setLinkUrl('');
+      setMilestoneOrder(null);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -742,13 +735,19 @@ function UpdatesTab({
           className="space-y-2 border border-border bg-background p-3"
           data-testid="quest-update-composer"
         >
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={2}
-            placeholder="Share progress with the quest…"
-            className="w-full resize-none bg-transparent text-[13px] text-foreground outline-none placeholder:text-neutral-11"
-          />
+          <label className="block space-y-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-11">
+              Share progress
+            </span>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              rows={3}
+              aria-label="Share progress"
+              placeholder="Share progress with the quest…"
+              className="w-full resize-none border border-border bg-background px-2 py-1.5 text-[13px] text-foreground outline-none placeholder:text-neutral-11"
+            />
+          </label>
           <div className="flex flex-wrap items-center gap-2">
             <select
               value={milestoneOrder ?? ''}
@@ -757,7 +756,7 @@ function UpdatesTab({
                   e.target.value ? Number(e.target.value) : null,
                 )
               }
-              className="h-8 border border-border bg-background-2 px-2 text-xs text-foreground"
+              className="h-8 shrink-0 border border-border bg-background-2 px-2 text-xs text-foreground"
               aria-label="Milestone"
             >
               <option value="">No milestone</option>
@@ -771,14 +770,16 @@ function UpdatesTab({
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder="Link (optional)"
+              aria-label="Link (optional)"
               className="h-8 rounded-none text-xs"
-              rootClassName="min-w-[160px] flex-1"
+              rootClassName="min-h-8 w-auto min-w-[160px] max-w-xs flex-1"
             />
             <Button
               type="button"
-              disabled={posting || !text.trim()}
+              data-testid="quest-update-post"
+              disabled={sending || !text.trim()}
               onClick={() => void submit()}
-              className="h-8 gap-1.5 rounded-none px-3 text-[11px] font-semibold uppercase tracking-[0.06em]"
+              className="h-8 shrink-0 gap-1.5 rounded-none px-3 text-[11px] font-semibold uppercase tracking-[0.06em]"
             >
               <Send className="size-3" aria-hidden />
               POST
@@ -797,74 +798,12 @@ function UpdatesTab({
             <p className={LABEL_CLASS}>{group.label}</p>
             <div className="divide-y divide-border border border-border bg-background">
               {group.items.map((update) => (
-                <QuestUpdateRow key={update.id} update={update} />
+                <QuestUpdateCard key={update.id} update={update} />
               ))}
             </div>
           </section>
         ))
       )}
-    </div>
-  );
-}
-
-function QuestUpdateRow({ update }: { update: QuestUpdateRecord }) {
-  if (update.kind === 'edit_event') {
-    return (
-      <div
-        className="flex items-start gap-2.5 px-3 py-2 text-[12px] text-neutral-11"
-        data-testid="quest-update-edit-event"
-      >
-        <Pencil className="mt-0.5 size-3 shrink-0" aria-hidden />
-        <p className="min-w-0 flex-1">
-          <span className="font-semibold text-foreground">
-            {update.authorName}
-          </span>{' '}
-          {update.text}
-        </p>
-        <span className="shrink-0">{formatClock(update.createdAt)}</span>
-      </div>
-    );
-  }
-  return (
-    <div className="flex items-start gap-2.5 px-3 py-3">
-      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-foreground text-[10px] font-bold text-background">
-        {initialOf(update.authorName)}
-      </span>
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[13px] font-semibold text-foreground">
-            {update.authorName}
-          </span>
-          {update.viaAgent ? (
-            <span className="text-[11px] text-[#4b4bff]">✦ via agent</span>
-          ) : null}
-          {update.milestoneOrder != null || update.milestoneLabel ? (
-            <span className="bg-neutral-3 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
-              {update.milestoneLabel || `M${update.milestoneOrder}`}
-            </span>
-          ) : null}
-          <span className="ml-auto text-[11px] text-neutral-11">
-            {formatClock(update.createdAt)}
-          </span>
-        </div>
-        <p className="text-[13px] text-foreground">{update.text}</p>
-        {update.links.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5 pt-0.5">
-            {update.links.map((link, idx) => (
-              <a
-                key={`${link.url}-${idx}`}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 border border-border px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-neutral-3"
-              >
-                {link.label}
-                <ArrowUpRight className="size-3" aria-hidden />
-              </a>
-            ))}
-          </div>
-        ) : null}
-      </div>
     </div>
   );
 }
@@ -1917,12 +1856,7 @@ export function SpaceQuestDetail({
         />
       ) : null}
       {tab === 'updates' ? (
-        <UpdatesTab
-          quest={quest}
-          canPost={canEdit}
-          onPost={postUpdate}
-          posting={saving}
-        />
+        <UpdatesTab quest={quest} canPost={canEdit} onPost={postUpdate} />
       ) : null}
       {tab === 'settings' ? (
         <SettingsTab
