@@ -466,6 +466,7 @@ export function EditQuestGoalModal({
           <label className={LABEL_CLASS}>GOAL</label>
           <div className={EDITOR_FRAME}>
             <RichTextEditor
+              compactToolbar
               markdown={draft}
               onChange={setDraft}
               placeholder="Describe the quest goal…"
@@ -538,6 +539,7 @@ export function EditQuestScopeModal({
             <label className={LABEL_CLASS}>IN SCOPE</label>
             <div className={EDITOR_FRAME}>
               <RichTextEditor
+                compactToolbar
                 markdown={inMd}
                 onChange={setInMd}
                 placeholder="• First item in scope…"
@@ -549,6 +551,7 @@ export function EditQuestScopeModal({
             <label className={LABEL_CLASS}>OUT OF SCOPE</label>
             <div className={EDITOR_FRAME}>
               <RichTextEditor
+                compactToolbar
                 markdown={outMd}
                 onChange={setOutMd}
                 placeholder="• First item out of scope…"
@@ -593,6 +596,7 @@ export function EditQuestSuccessModal({
           <label className={LABEL_CLASS}>SUCCESS CRITERIA</label>
           <div className={EDITOR_FRAME}>
             <RichTextEditor
+              compactToolbar
               markdown={draft}
               onChange={setDraft}
               placeholder="• Measurable outcome…"

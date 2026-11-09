@@ -24,8 +24,11 @@ import {
   resolveQuestLeadIdentity,
 } from '../quest-detail-presentation';
 import {
+  EditQuestGoalModal,
   EditQuestMembersModal,
   EditQuestMilestonesModal,
+  EditQuestScopeModal,
+  EditQuestSuccessModal,
   type EditableQuestMember,
 } from '../quest-section-edit-modals';
 import {
@@ -499,6 +502,57 @@ describe('milestone editor', () => {
     for (const toolbar of toolbars) {
       expect(toolbar.getAttribute('data-toolbar-density')).toBe('compact');
     }
+  });
+
+  it('uses the milestone description editor size for the other section editors', () => {
+    const onOpenChange = () => undefined;
+    const assertCompactEditor = () => {
+      const toolbar = screen.getByRole('toolbar');
+      expect(toolbar.getAttribute('data-toolbar-density')).toBe('compact');
+      for (const name of ['Heading 1', 'Bold', 'Bullet list']) {
+        const control = screen.getByRole('button', { name });
+        expect(control.className).toContain('h-[32px]');
+        expect(control.className).toContain('w-[32px]');
+        expect(control.className).not.toContain('min-h-8');
+      }
+    };
+
+    render(
+      <EditQuestGoalModal
+        open
+        onOpenChange={onOpenChange}
+        value="## Goal heading"
+        onSave={() => undefined}
+      />,
+    );
+    assertCompactEditor();
+    cleanup();
+
+    render(
+      <EditQuestScopeModal
+        open
+        onOpenChange={onOpenChange}
+        scopeIn={['In']}
+        scopeOut={['Out']}
+        onSave={() => undefined}
+      />,
+    );
+    const scopeToolbars = screen.getAllByRole('toolbar');
+    expect(scopeToolbars).toHaveLength(2);
+    for (const toolbar of scopeToolbars) {
+      expect(toolbar.getAttribute('data-toolbar-density')).toBe('compact');
+    }
+    cleanup();
+
+    render(
+      <EditQuestSuccessModal
+        open
+        onOpenChange={onOpenChange}
+        value="- Done"
+        onSave={() => undefined}
+      />,
+    );
+    assertCompactEditor();
   });
 });
 
