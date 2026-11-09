@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-import { people, spaceQuests } from '@hypha-platform/storage-postgres';
+import {
+  documents,
+  people,
+  spaceQuests,
+} from '@hypha-platform/storage-postgres';
 import { activateSpaceQuestByDocumentId } from '../mutations';
 
 type QuestRow = {
@@ -10,6 +14,7 @@ type QuestRow = {
   status: string;
   proposalDocumentId: number;
   chatRoomId: string;
+  creatorPersonId?: number | null;
   leadPersonId: number | null;
   leadName: string;
   name: string;
@@ -18,17 +23,30 @@ type QuestRow = {
 type PostRow = {
   questId: number;
   text: string;
+  authorPersonId?: number | null;
+  authorName?: string;
   authorAvatarUrl?: string | null;
 };
 
-type PersonRow = { id: number; avatarUrl: string | null };
+type PersonRow = {
+  id: number;
+  avatarUrl: string | null;
+  name?: string | null;
+  surname?: string | null;
+};
+
+type DocumentRow = { id: number; creatorId: number };
 
 /**
  * In-memory stand-in for the neon-serverless transaction used in production.
  * Transactions run one at a time and commit only after the callback returns,
  * matching a proposed-row UPDATE that loses to a concurrent claim.
  */
-function createActivationDb(initial: QuestRow[], peopleRows: PersonRow[] = []) {
+function createActivationDb(
+  initial: QuestRow[],
+  peopleRows: PersonRow[] = [],
+  documentRows: DocumentRow[] = [],
+) {
   let quests = initial.map((row) => ({ ...row }));
   let posts: PostRow[] = [];
   let rollbacks = 0;
@@ -101,13 +119,24 @@ function createActivationDb(initial: QuestRow[], peopleRows: PersonRow[] = []) {
       return {
         from(table: unknown) {
           return {
-            where() {
-              const rows =
+            where(filter: unknown) {
+              const values = sqlValues(filter);
+              let rows =
                 table === spaceQuests
                   ? quests.map((row) => ({ ...row }))
                   : table === people
                   ? peopleRows.map((row) => ({ ...row }))
+                  : table === documents
+                  ? documentRows.map((row) => ({ ...row }))
                   : [];
+              if (table === people || table === documents) {
+                const ids = values.filter(
+                  (value): value is number => typeof value === 'number',
+                );
+                if (ids.length > 0) {
+                  rows = rows.filter((row) => ids.includes(row.id));
+                }
+              }
               const promise = Promise.resolve(rows);
               return Object.assign(promise, {
                 limit(count: number) {
@@ -190,15 +219,95 @@ describe('activateSpaceQuestByDocumentId', () => {
     expect(store.rollbacks()).toBe(0);
   });
 
-  it('uses the lead avatar on the acceptance post when the person has one', async () => {
+  it('stores the proposal creator on the acceptance post', async () => {
     const store = createActivationDb(
       [proposedQuest()],
-      [{ id: 7, avatarUrl: 'https://example.com/ada.png' }],
+      [
+        { id: 7, name: 'Ada', surname: 'Lovelace', avatarUrl: null },
+        {
+          id: 12,
+          name: 'Grace',
+          surname: 'Hopper',
+          avatarUrl: 'https://example.com/grace.png',
+        },
+      ],
+      [{ id: 9, creatorId: 12 }],
     );
     await activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db });
     expect(store.posts()[0]).toEqual(
       expect.objectContaining({
         text: 'Quest proposal accepted — Quest is now Active.',
+        authorPersonId: 12,
+        authorName: 'Grace Hopper',
+        authorAvatarUrl: 'https://example.com/grace.png',
+      }),
+    );
+  });
+
+  it('keeps the proposal creator when that person has no photo', async () => {
+    const store = createActivationDb(
+      [proposedQuest()],
+      [
+        {
+          id: 7,
+          name: 'Ada',
+          surname: 'Lovelace',
+          avatarUrl: 'https://example.com/ada.png',
+        },
+        { id: 12, name: 'Grace', surname: 'Hopper', avatarUrl: null },
+      ],
+      [{ id: 9, creatorId: 12 }],
+    );
+    await activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db });
+    expect(store.posts()[0]).toEqual(
+      expect.objectContaining({
+        authorPersonId: 12,
+        authorName: 'Grace Hopper',
+        authorAvatarUrl: null,
+      }),
+    );
+  });
+
+  it('uses the quest creator when the proposal document has no creator row', async () => {
+    const store = createActivationDb(
+      [{ ...proposedQuest(), creatorPersonId: 4 }],
+      [
+        {
+          id: 4,
+          name: 'Katherine',
+          surname: 'Johnson',
+          avatarUrl: 'https://example.com/kj.png',
+        },
+        { id: 7, name: 'Ada', surname: 'Lovelace', avatarUrl: null },
+      ],
+    );
+    await activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db });
+    expect(store.posts()[0]).toEqual(
+      expect.objectContaining({
+        authorPersonId: 4,
+        authorName: 'Katherine Johnson',
+        authorAvatarUrl: 'https://example.com/kj.png',
+      }),
+    );
+  });
+
+  it('uses the lead when no proposal or quest creator is available', async () => {
+    const store = createActivationDb(
+      [proposedQuest()],
+      [
+        {
+          id: 7,
+          name: 'Ada',
+          surname: 'Lovelace',
+          avatarUrl: 'https://example.com/ada.png',
+        },
+      ],
+    );
+    await activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db });
+    expect(store.posts()[0]).toEqual(
+      expect.objectContaining({
+        authorPersonId: 7,
+        authorName: 'Ada Lovelace',
         authorAvatarUrl: 'https://example.com/ada.png',
       }),
     );
@@ -210,7 +319,13 @@ describe('activateSpaceQuestByDocumentId', () => {
       [{ id: 7, avatarUrl: null }],
     );
     await activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db });
-    expect(store.posts()[0]?.authorAvatarUrl).toBeNull();
+    expect(store.posts()[0]).toEqual(
+      expect.objectContaining({
+        authorPersonId: 7,
+        authorName: 'Ada Lovelace',
+        authorAvatarUrl: null,
+      }),
+    );
   });
 
   it('lets one of two overlapping activations claim the proposed row', async () => {

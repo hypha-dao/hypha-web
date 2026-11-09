@@ -31,6 +31,12 @@ import {
 } from '../markdown';
 import { parseQuestCalendarDate } from '../calendar-date';
 import { computeQuestHealth } from '../health-display';
+import {
+  QUEST_PROPOSAL_ACCEPTED_TEXT,
+  questUpdateAuthorForDisplay,
+  type QuestAuthorProfile,
+  type QuestUpdateAuthorFields,
+} from '../quest-update-author';
 import type {
   QuestDeliverableRecord,
   QuestHealthSummary,
@@ -111,6 +117,20 @@ function mapDeliverableRow(row: SpaceQuestDeliverable): QuestDeliverableRecord {
     updatedByPersonId: row.updatedByPersonId ?? null,
     updatedByName: row.updatedByName ?? null,
     updatedAt: toIso(row.updatedAt) ?? new Date().toISOString(),
+  };
+}
+
+function proposalCreatorFor(
+  creatorId: number | undefined,
+  profiles: ReadonlyMap<number, QuestAuthorProfile>,
+): QuestUpdateAuthorFields | null {
+  if (creatorId == null) return null;
+  const profile = profiles.get(creatorId);
+  const name = profile?.name?.trim();
+  return {
+    authorPersonId: creatorId,
+    authorName: name || 'Proposal creator',
+    authorAvatarUrl: profile?.avatarUrl ?? null,
   };
 }
 
@@ -217,6 +237,8 @@ type HydratedQuestExtras = {
   proposalSlug?: string | null;
   proposalWeb3Id?: number | null;
   proposalStatus?: 'accepted' | 'rejected' | 'onVoting' | null;
+  proposalCreator?: QuestUpdateAuthorFields | null;
+  authorProfiles?: ReadonlyMap<number, QuestAuthorProfile>;
   milestones: SpaceQuestMilestone[];
   members: SpaceQuestMember[];
   deliverables: SpaceQuestDeliverable[];
@@ -240,13 +262,22 @@ export function assembleQuestRecord(
   const deliverables = [...extras.deliverables]
     .sort((a, b) => a.order - b.order || a.id - b.id)
     .map(mapDeliverableRow);
+  const authorProfiles = extras.authorProfiles ?? new Map();
   const updates = [...extras.updates]
     .sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() ||
         b.id - a.id,
     )
-    .map(mapUpdateRow);
+    .map((row) => {
+      const update = mapUpdateRow(row);
+      const author = questUpdateAuthorForDisplay(
+        update,
+        authorProfiles,
+        extras.proposalCreator ?? null,
+      );
+      return { ...update, ...author };
+    });
 
   const scopeIn = Array.isArray(row.scopeIn) ? row.scopeIn : [];
   const scopeOut = Array.isArray(row.scopeOut) ? row.scopeOut : [];
@@ -316,6 +347,7 @@ export async function listSpaceQuests(
       quest: spaceQuests,
       proposalSlug: documents.slug,
       proposalWeb3Id: documents.web3ProposalId,
+      proposalCreatorId: documents.creatorId,
       leadAvatarUrl: people.avatarUrl,
     })
     .from(spaceQuests)
@@ -376,6 +408,58 @@ export async function listSpaceQuests(
     updatesByQuest.set(row.questId, list);
   }
 
+  const authorIds = new Set<number>();
+  const creatorIdByQuest = new Map<number, number>();
+  for (const row of rows) {
+    const creatorId = row.proposalCreatorId;
+    const questUpdates = updatesByQuest.get(row.quest.id) ?? [];
+    if (
+      typeof creatorId === 'number' &&
+      creatorId > 0 &&
+      questUpdates.some(
+        (update) =>
+          update.text === QUEST_PROPOSAL_ACCEPTED_TEXT &&
+          !update.authorAvatarUrl?.trim(),
+      )
+    ) {
+      creatorIdByQuest.set(row.quest.id, creatorId);
+      authorIds.add(creatorId);
+    }
+    for (const update of questUpdates) {
+      if (
+        !update.authorAvatarUrl?.trim() &&
+        typeof update.authorPersonId === 'number' &&
+        update.authorPersonId > 0
+      ) {
+        authorIds.add(update.authorPersonId);
+      }
+    }
+  }
+  const authorRows =
+    authorIds.size === 0
+      ? []
+      : await db
+          .select({
+            id: people.id,
+            name: people.name,
+            surname: people.surname,
+            avatarUrl: people.avatarUrl,
+          })
+          .from(people)
+          .where(inArray(people.id, [...authorIds]));
+  const authorProfiles = new Map<number, QuestAuthorProfile>(
+    authorRows.map((person) => [
+      person.id,
+      {
+        name: [person.name, person.surname]
+          .map((part) => part?.trim())
+          .filter((part): part is string => Boolean(part))
+          .join(' '),
+        avatarUrl: person.avatarUrl,
+      },
+    ]),
+  );
+
   const quests = rows
     .map((r) =>
       assembleQuestRecord(r.quest, {
@@ -384,6 +468,11 @@ export async function listSpaceQuests(
         leadAvatarUrl: r.leadAvatarUrl,
         proposalSlug: r.proposalSlug,
         proposalWeb3Id: r.proposalWeb3Id,
+        proposalCreator: proposalCreatorFor(
+          creatorIdByQuest.get(r.quest.id),
+          authorProfiles,
+        ),
+        authorProfiles,
         milestones: milestonesByQuest.get(r.quest.id) ?? [],
         members: membersByQuest.get(r.quest.id) ?? [],
         deliverables: deliverablesByQuest.get(r.quest.id) ?? [],

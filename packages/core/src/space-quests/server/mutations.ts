@@ -32,6 +32,7 @@ import {
 } from '../../matrix/server/matrix-http-client';
 import { HYPHA_ROOM_TYPES } from '../../matrix/room-types';
 import { QUEST_DOCUMENT_LABEL, type QuestStatus } from '../constants';
+import { QUEST_PROPOSAL_ACCEPTED_TEXT } from '../quest-update-author';
 import { NEW_QUEST_HEALTH_RECORD } from '../health-display';
 import {
   bulletsToMarkdownList,
@@ -1104,6 +1105,82 @@ export async function deleteSpaceQuest(
   return { ok: true };
 }
 
+function personDisplayName(
+  person: { name?: string | null; surname?: string | null } | undefined,
+  fallback: string,
+): string {
+  const full = [person?.name, person?.surname]
+    .map((part) => part?.trim())
+    .filter((part): part is string => Boolean(part))
+    .join(' ');
+  return full || fallback;
+}
+
+/**
+ * The acceptance post is written from the proposal webhook, which has no
+ * executing user. The proposal document's creator started the activation.
+ * The quest creator, then the lead, are only used when that id is missing.
+ */
+async function acceptanceUpdateAuthor(
+  row: {
+    proposalDocumentId: number | null;
+    creatorPersonId: number | null;
+    leadPersonId: number | null;
+    leadName: string | null;
+  },
+  db: TransactionalDatabase,
+): Promise<{ id: number | null; name: string; avatarUrl: string | null }> {
+  let preferredId: number | null = null;
+  if (typeof row.proposalDocumentId === 'number') {
+    const [doc] = await db
+      .select({ creatorId: documents.creatorId })
+      .from(documents)
+      .where(eq(documents.id, row.proposalDocumentId))
+      .limit(1);
+    if (typeof doc?.creatorId === 'number' && doc.creatorId > 0) {
+      preferredId = doc.creatorId;
+    }
+  }
+  if (
+    preferredId == null &&
+    typeof row.creatorPersonId === 'number' &&
+    row.creatorPersonId > 0
+  ) {
+    preferredId = row.creatorPersonId;
+  }
+  if (
+    preferredId == null &&
+    typeof row.leadPersonId === 'number' &&
+    row.leadPersonId > 0
+  ) {
+    preferredId = row.leadPersonId;
+  }
+
+  const [person] =
+    preferredId == null
+      ? []
+      : await db
+          .select({
+            name: people.name,
+            surname: people.surname,
+            avatarUrl: people.avatarUrl,
+          })
+          .from(people)
+          .where(eq(people.id, preferredId))
+          .limit(1);
+  const leadName = row.leadName?.trim() || 'Operations Lead';
+  return {
+    id: preferredId,
+    name: personDisplayName(
+      person,
+      preferredId != null && preferredId === row.leadPersonId
+        ? leadName
+        : 'Proposal creator',
+    ),
+    avatarUrl: person?.avatarUrl?.trim() || null,
+  };
+}
+
 /**
  * Activate a Quest when its Agreements proposal passes.
  * Also provisions the Quest channel (`kind: quest`) in Matrix and invites
@@ -1138,15 +1215,7 @@ export async function activateSpaceQuestByDocumentId(
 
   for (const row of matching) {
     if (row.status === 'proposed') {
-      let authorAvatarUrl: string | null = null;
-      if (typeof row.leadPersonId === 'number') {
-        const [person] = await db
-          .select({ avatarUrl: people.avatarUrl })
-          .from(people)
-          .where(eq(people.id, row.leadPersonId))
-          .limit(1);
-        authorAvatarUrl = person?.avatarUrl?.trim() || null;
-      }
+      const author = await acceptanceUpdateAuthor(row, db);
       const claimed = await db.transaction(async (tx) => {
         const updated = await tx
           .update(spaceQuests)
@@ -1167,12 +1236,12 @@ export async function activateSpaceQuestByDocumentId(
 
         await tx.insert(spaceQuestUpdates).values({
           questId: row.id,
-          authorPersonId: row.leadPersonId ?? null,
-          authorName: row.leadName || 'Operations Lead',
-          authorAvatarUrl,
+          authorPersonId: author.id,
+          authorName: author.name,
+          authorAvatarUrl: author.avatarUrl,
           kind: 'post',
           viaAgent: false,
-          text: 'Quest proposal accepted — Quest is now Active.',
+          text: QUEST_PROPOSAL_ACCEPTED_TEXT,
           links: [],
         });
 
