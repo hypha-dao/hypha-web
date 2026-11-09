@@ -4,12 +4,16 @@ import React from 'react';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { QuestRecord, QuestStatus } from '@hypha-platform/core/client';
 import { SAVED_QUEST_HELPER_INTRO } from '../../utils/quest-saved-helper';
-import { QuestDiscussionHelper } from '../quest-discussion-helper';
-import type { SpaceQuestDraftPanelSession } from '../../../common/human-chat-panel-context';
+import {
+  QuestDiscussionHelper,
+  appendQuestHelperMessages,
+  questHelperOwnsRoomMessage,
+  type QuestHelperThread,
+} from '../quest-discussion-helper';
 
 const harness = vi.hoisted(() => ({
   personId: 7,
@@ -78,28 +82,30 @@ function questFixture(): QuestRecord {
   };
 }
 
-vi.mock('../space-quest-chat-panel', () => ({
-  SpaceQuestChatBody: ({
-    session,
-  }: {
-    session: SpaceQuestDraftPanelSession;
-  }) => (
-    <div data-testid="quest-helper-thread">
-      <p data-testid="quest-helper-coach">{session.coach}</p>
-      {session.messages.map((message) => (
-        <p key={message.id}>{message.text}</p>
-      ))}
-      <input
-        aria-label="Helper message"
-        value={session.input}
-        onChange={(event) => session.onInputChange(event.target.value)}
+function HelperHost({
+  onResult,
+}: {
+  onResult: (thread: QuestHelperThread | null) => void;
+}) {
+  const [thread, setThread] = React.useState<QuestHelperThread | null>(null);
+  return (
+    <div>
+      <QuestDiscussionHelper
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        onThread={(next) => {
+          setThread(next);
+          onResult(next);
+        }}
       />
-      <button type="button" onClick={session.onSend}>
-        Send helper
-      </button>
+      <div data-testid="helper-transcript">
+        {thread?.messages.map((message) => (
+          <p key={message.id}>{message.text}</p>
+        ))}
+      </div>
     </div>
-  ),
-}));
+  );
+}
 
 vi.mock('@hypha-platform/authentication', () => ({
   useAuthentication: () => ({
@@ -157,9 +163,23 @@ describe('quest discussion helper', () => {
     );
     expect(mount).toContain('<QuestDiscussionHelper');
     expect(mount).toContain('questSlug={coherenceSlug.trim()}');
+    expect(mount).toContain('onThread={onHelperThread}');
     expect(panel.indexOf('if (questDraft)')).toBeLessThan(
       panel.indexOf('<QuestDiscussionHelper'),
     );
+    expect(panel.match(/<HumanChatPanelMessages/g)).toHaveLength(1);
+    expect(panel.match(/<HumanChatPanelChatBar/g)).toHaveLength(1);
+    expect(panel).toContain('appendQuestHelperMessages');
+    const helper = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        '../quest-discussion-helper.tsx',
+      ),
+      'utf8',
+    );
+    expect(helper).not.toContain('SpaceQuestChatBody');
+    expect(helper).not.toContain('HumanChatPanelChatBar');
+    expect(helper).not.toContain('HumanChatPanelMessages');
   });
 
   afterEach(() => {
@@ -170,57 +190,87 @@ describe('quest discussion helper', () => {
     harness.patchQuest.mockReset();
   });
 
-  it('shows the saved helper inside the discussion for an editor', () => {
-    render(
-      <QuestDiscussionHelper spaceSlug="sandbox" questSlug="onboarding" />,
-    );
-    const helper = screen.getByTestId('quest-discussion-helper');
-    expect(helper.getAttribute('aria-label')).toBe('Quest Helper');
-    expect(helper.textContent).toContain(SAVED_QUEST_HELPER_INTRO);
-    expect(screen.getByTestId('quest-helper-coach').textContent).toBe(
-      'quest-helper',
+  it('shows the saved helper inside the one discussion for an editor', async () => {
+    const thread: { current: QuestHelperThread | null } = { current: null };
+    render(<HelperHost onResult={(next) => (thread.current = next)} />);
+    expect(await screen.findByText(SAVED_QUEST_HELPER_INTRO)).toBeTruthy();
+    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(thread.current?.messages.map((message) => message.text)).toContain(
+      SAVED_QUEST_HELPER_INTRO,
     );
   });
 
-  it('stays hidden from a viewer and from a proposed quest', () => {
+  it('stays hidden from a viewer and from a proposed quest', async () => {
     harness.personId = 99;
+    const thread: { current: QuestHelperThread | null } = { current: null };
     const { rerender } = render(
-      <QuestDiscussionHelper spaceSlug="sandbox" questSlug="onboarding" />,
+      <HelperHost onResult={(next) => (thread.current = next)} />,
     );
-    expect(screen.queryByTestId('quest-discussion-helper')).toBeNull();
+    await screen.findByTestId('helper-transcript');
+    expect(thread.current).toBeNull();
+    expect(screen.queryByText(SAVED_QUEST_HELPER_INTRO)).toBeNull();
 
     harness.personId = 7;
     harness.status = 'proposed';
-    rerender(
-      <QuestDiscussionHelper spaceSlug="sandbox" questSlug="onboarding" />,
-    );
-    expect(screen.queryByTestId('quest-discussion-helper')).toBeNull();
+    rerender(<HelperHost onResult={(next) => (thread.current = next)} />);
+    expect(screen.queryByText(SAVED_QUEST_HELPER_INTRO)).toBeNull();
   });
 
   it('keeps a section suggestion inside the discussion until it can be saved', async () => {
     harness.patchQuest.mockResolvedValue(questFixture());
-    render(
-      <QuestDiscussionHelper spaceSlug="sandbox" questSlug="onboarding" />,
-    );
-    fireEvent.change(screen.getByLabelText('Helper message'), {
-      target: { value: 'Change the goal to ship the checklist' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Send helper' }));
+    const thread: { current: QuestHelperThread | null } = { current: null };
+    render(<HelperHost onResult={(next) => (thread.current = next)} />);
+    expect(await screen.findByText(SAVED_QUEST_HELPER_INTRO)).toBeTruthy();
+    expect(
+      thread.current?.accept('Change the goal to ship the checklist'),
+    ).toBe(true);
     expect(await screen.findByText(/not saved yet/i)).toBeTruthy();
     expect(
       screen.getByText(/do you want that to be in the goal/i),
     ).toBeTruthy();
     expect(harness.patchQuest).not.toHaveBeenCalled();
 
-    fireEvent.change(screen.getByLabelText('Helper message'), {
-      target: { value: 'yes' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Send helper' }));
+    expect(thread.current?.accept('yes')).toBe(true);
     expect(await screen.findByText('Saved the Goal.')).toBeTruthy();
     expect(harness.patchQuest).toHaveBeenCalledTimes(1);
     const saved = harness.patchQuest.mock.calls[0]?.[0] as {
       patch?: { goal?: string };
     };
     expect(saved.patch?.goal).toMatch(/ship the checklist/i);
+  });
+
+  it('leaves ordinary room chat out of the helper', () => {
+    expect(questHelperOwnsRoomMessage('See you Thursday', false)).toBe(false);
+    expect(questHelperOwnsRoomMessage('yes', false)).toBe(false);
+    expect(
+      questHelperOwnsRoomMessage(
+        'Change the goal to ship the checklist',
+        false,
+      ),
+    ).toBe(true);
+    expect(questHelperOwnsRoomMessage('yes', true)).toBe(true);
+  });
+
+  it('puts the helper turns into the same timeline as the quest channel', () => {
+    const room = [
+      {
+        id: 'room-1',
+        timestamp: new Date('2026-11-09T12:32:00.000Z'),
+        text: 'Quest accepted',
+      },
+    ];
+    const helper = [
+      {
+        id: 'quest-helper:helper-m1',
+        timestamp: new Date('2026-11-09T19:55:00.000Z'),
+        text: SAVED_QUEST_HELPER_INTRO,
+      },
+    ];
+    expect(
+      appendQuestHelperMessages(room, helper).map((row) => row.id),
+    ).toEqual(['room-1', 'quest-helper:helper-m1']);
+    expect(appendQuestHelperMessages(room, []).map((row) => row.text)).toEqual([
+      'Quest accepted',
+    ]);
   });
 });

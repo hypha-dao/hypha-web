@@ -5,6 +5,8 @@ import {
   QUEST_HELPER_NAME,
   QUEST_STEWARD_STEPS,
   canMemberEditQuest,
+  labeledQuestDraftSection,
+  questEditRequestSection,
   useMe,
 } from '@hypha-platform/core/client';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -15,6 +17,9 @@ import {
   useSpaceQuestDetail,
 } from '../hooks/use-space-quests';
 import {
+  explicitQuestSectionCommand,
+  isQuestSectionApproval,
+  isQuestSectionRejection,
   questAssistHistoryEntries,
   questDraftTurnUsesModel,
   questHelperPendingSuggestion,
@@ -38,7 +43,60 @@ import {
   questRecordToDraftSnapshot,
   runSavedQuestHelperTurn,
 } from '../utils/quest-saved-helper';
-import { SpaceQuestChatBody } from './space-quest-chat-panel';
+import { sortMessagesChronologically } from '../../common/human-chat-panel/human-chat-timeline-order';
+
+export type QuestHelperThread = {
+  messages: SpaceQuestDraftChatMessage[];
+  typing: boolean;
+  accept: (text: string) => boolean;
+};
+
+/**
+ * The room composer stays the only composer. It reaches the Helper when the
+ * member addresses the Helper, confirms or rejects a pending suggestion, or
+ * names one section to edit. Ordinary room chat stays in the quest channel.
+ */
+export function questHelperOwnsRoomMessage(
+  raw: string,
+  pending: boolean,
+): boolean {
+  const text = questHelperTurnMessage(raw);
+  if (!text) return false;
+  if (text !== raw.trim()) return true;
+  if (
+    pending &&
+    (isQuestSectionApproval(text) || isQuestSectionRejection(text))
+  ) {
+    return true;
+  }
+  if (questEditRequestSection(text) || labeledQuestDraftSection(text)) {
+    return true;
+  }
+  return explicitQuestSectionCommand(text) != null;
+}
+
+export function questHelperTimelineRows(
+  messages: readonly SpaceQuestDraftChatMessage[],
+) {
+  return messages.map((message) => ({
+    id: `quest-helper:${message.id}`,
+    role: message.role,
+    isSynthetic: true as const,
+    parts: [{ type: 'text' as const, text: message.text }],
+    ...(message.senderName ? { senderName: message.senderName } : {}),
+    ...(message.avatarUrl ? { avatarUrl: message.avatarUrl } : {}),
+    timestamp: message.timestamp,
+  }));
+}
+
+/** One timeline: the quest channel, with the Helper's turns in time order. */
+export function appendQuestHelperMessages<T extends { timestamp?: Date }>(
+  roomMessages: readonly T[],
+  helperMessages: readonly T[],
+): T[] {
+  if (helperMessages.length === 0) return [...roomMessages];
+  return sortMessagesChronologically([...roomMessages, ...helperMessages]);
+}
 
 function helperIntro(): SpaceQuestDraftChatMessage {
   return {
@@ -57,9 +115,11 @@ function helperIntro(): SpaceQuestDraftChatMessage {
 export function QuestDiscussionHelper({
   spaceSlug,
   questSlug,
+  onThread,
 }: {
   spaceSlug: string;
   questSlug: string;
+  onThread?: (thread: QuestHelperThread | null) => void;
 }) {
   const { person } = useMe();
   const { getAccessToken } = useAuthentication();
@@ -260,31 +320,35 @@ export function QuestDiscussionHelper({
   sendRef.current = (overridePrompt?: string) => {
     void send(overridePrompt);
   };
-  const triggerSend = useCallback(() => {
-    sendRef.current();
+  const acceptRef = useRef<(text: string) => boolean>(() => false);
+  acceptRef.current = (raw: string) => {
+    if (!canEdit || !quest || !draftRef.current) return false;
+    if (!questHelperOwnsRoomMessage(raw, pendingRef.current != null)) {
+      return false;
+    }
+    sendRef.current(raw);
+    return true;
+  };
+  const onThreadRef = useRef(onThread);
+  onThreadRef.current = onThread;
+
+  useEffect(() => {
+    return () => onThreadRef.current?.(null);
   }, []);
 
-  if (!canEdit || !quest) return null;
+  useEffect(() => {
+    const publish = onThreadRef.current;
+    if (!publish) return;
+    if (!canEdit) {
+      publish(null);
+      return;
+    }
+    publish({
+      messages,
+      typing,
+      accept: (text) => acceptRef.current(text),
+    });
+  }, [canEdit, messages, typing]);
 
-  return (
-    <section
-      data-testid="quest-discussion-helper"
-      aria-label="Quest Helper"
-      className="flex h-[min(280px,46%)] min-h-[160px] shrink-0 flex-col overflow-hidden border-b border-border"
-    >
-      <SpaceQuestChatBody
-        session={{
-          spaceSlug,
-          questTitle: quest.name,
-          messages,
-          input,
-          onInputChange: setInput,
-          onSend: triggerSend,
-          isAgentTyping: typing,
-          coach: 'quest-helper',
-        }}
-        activeTab="chat"
-      />
-    </section>
-  );
+  return null;
 }

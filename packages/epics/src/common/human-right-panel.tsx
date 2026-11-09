@@ -75,6 +75,7 @@ import {
   isSignalDescriptionAnchorMessage,
   usePersonById,
   headingForSectionKey,
+  QUEST_HELPER_NAME,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -201,7 +202,12 @@ import { SignalIndicativeAmounts } from '../coherence/components/signal-indicati
 import { SpaceContextSidePanel } from '../space-context/components/space-context-chat-panel';
 import { useSpaceContextSectionAgent } from '../space-context/hooks/use-space-context-section-agent';
 import { SpaceQuestSidePanel } from '../space-quests/components/space-quest-chat-panel';
-import { QuestDiscussionHelper } from '../space-quests/components/quest-discussion-helper';
+import {
+  QuestDiscussionHelper,
+  appendQuestHelperMessages,
+  questHelperTimelineRows,
+  type QuestHelperThread,
+} from '../space-quests/components/quest-discussion-helper';
 import { AgentMentionLabelProvider } from './human-chat-panel/agent-mention-label-context';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
@@ -1492,6 +1498,16 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const sendOperationTokenRef = useRef<symbol | null>(null);
   const sendAbortControllerRef = useRef<AbortController | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
+  const helperAcceptRef = useRef<(text: string) => boolean>(() => false);
+  const [helperMessages, setHelperMessages] = useState<
+    QuestHelperThread['messages'] | null
+  >(null);
+  const [helperTyping, setHelperTyping] = useState(false);
+  const onHelperThread = useCallback((thread: QuestHelperThread | null) => {
+    helperAcceptRef.current = thread?.accept ?? (() => false);
+    setHelperMessages(thread?.messages ?? null);
+    setHelperTyping(Boolean(thread?.typing));
+  }, []);
   /** Coalesce Matrix timeline bursts into one React commit per frame (sync backfills). */
   const timelineFlushRafRef = useRef<number | null>(null);
   const pendingTimelineRedactIdsRef = useRef<Set<string>>(new Set());
@@ -5269,9 +5285,19 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     signalCreatorPerson?.avatarUrl,
   ]);
 
+  const mergedTimeline = useMemo(() => {
+    if (coherenceChannel !== 'quest' || !helperMessages?.length) {
+      return mergedMessages;
+    }
+    return appendQuestHelperMessages(
+      mergedMessages,
+      questHelperTimelineRows(helperMessages),
+    );
+  }, [coherenceChannel, helperMessages, mergedMessages]);
+
   const calledAgents = useMemo(
-    () => calledSpecialistIds(mergedMessages),
-    [mergedMessages],
+    () => calledSpecialistIds(mergedTimeline),
+    [mergedTimeline],
   );
 
   useEffect(() => {
@@ -6314,6 +6340,18 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     const trimmed = input.trim();
     if (!trimmed && draftAttachments.length === 0) return;
+    if (
+      trimmed &&
+      draftAttachments.length === 0 &&
+      !replyDraft &&
+      !editDraft &&
+      helperAcceptRef.current(trimmed)
+    ) {
+      setComposerTyping(false);
+      setInput('');
+      clearComposerDraft(roomId);
+      return;
+    }
     setComposerTyping(false);
     const text = input;
     const replyToEventId = replyDraft?.messageId;
@@ -7437,6 +7475,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                   <QuestDiscussionHelper
                     spaceSlug={coherenceSpaceSlug?.trim() || spaceSlug || ''}
                     questSlug={coherenceSlug.trim()}
+                    onThread={onHelperThread}
                   />
                 ) : null}
                 {isJoining ? (
@@ -7444,7 +7483,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                 ) : (
                   <HumanChatPanelErrorBoundary key={roomId ?? 'messages'}>
                     <HumanChatPanelMessages
-                      messages={mergedMessages}
+                      messages={mergedTimeline}
                       roomId={roomId}
                       currentUserId={currentUserId}
                       currentUserAvatarUrl={currentUserAvatarUrl}
@@ -7584,7 +7623,16 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 border-t border-border/70 bg-page-background p-0 dark:bg-background-2">
             <div>
-              <HumanChatPanelTypingIndicator peers={typingPeers} />
+              <HumanChatPanelTypingIndicator
+                peers={
+                  helperTyping && coherenceChannel === 'quest'
+                    ? [
+                        ...typingPeers,
+                        { userId: 'quest-helper', name: QUEST_HELPER_NAME },
+                      ]
+                    : typingPeers
+                }
+              />
               <HumanChatPanelErrorBoundary key={roomId ?? 'composer'}>
                 <HumanChatPanelChatBar
                   value={input}
