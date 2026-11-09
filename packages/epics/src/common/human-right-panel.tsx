@@ -2068,6 +2068,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const previousSignalUrlSlugRef = useRef<string | null | undefined>(undefined);
   const previousSignalChoiceRef = useRef<string | null>(null);
+  /**
+   * Back from a space signal closes the panel. The thread stays mounted until
+   * the sidebar finishes sliding away, so the space room does not appear in
+   * its place. Cleared before mode returns to space.
+   */
+  const signalDismissUntilClosedRef = useRef(false);
+  const signalDismissTimerRef = useRef<number | null>(null);
 
   /** Leave signal/coherence chat without the deep-link effect re-opening from `?signal=`. */
   const exitCoherenceChat = useCallback(() => {
@@ -2077,7 +2084,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
     const hasSignalDeepLink =
       Boolean(readLiveSearchParam('signal')) ||
-      Boolean(readLiveSearchParam('msg'));
+      Boolean(searchParams?.get('signal')?.trim()) ||
+      Boolean(readLiveSearchParam('msg')) ||
+      Boolean(searchParams?.get('msg')?.trim());
     if (hasSignalDeepLink) {
       const next = new URLSearchParams(searchParams?.toString() ?? '');
       next.delete('signal');
@@ -2090,6 +2099,34 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       router.replace(cleaned, { scroll: false });
     }
 
+    // Messages already closes the panel. On a space signals screen, back must
+    // do the same — not fall through to the space room. The top-right chat
+    // icon still opens space channels once mode returns to space.
+    const leavingSignalInSpace =
+      Boolean(coherenceSlug?.trim()) &&
+      Boolean(routeSpaceSlug) &&
+      !isConnectionsPage;
+    if (leavingSignalInSpace && sidebarOpen) {
+      if (signalDismissTimerRef.current != null) {
+        window.clearTimeout(signalDismissTimerRef.current);
+      }
+      signalDismissUntilClosedRef.current = true;
+      closeHumanChatPanel();
+      setOpenMobile(false);
+      // duration-300 on the offcanvas sidebar. Reset after it is off screen.
+      signalDismissTimerRef.current = window.setTimeout(() => {
+        signalDismissTimerRef.current = null;
+        signalDismissUntilClosedRef.current = false;
+        closeCoherenceChat();
+      }, 320);
+      return;
+    }
+
+    if (signalDismissTimerRef.current != null) {
+      window.clearTimeout(signalDismissTimerRef.current);
+      signalDismissTimerRef.current = null;
+    }
+    signalDismissUntilClosedRef.current = false;
     closeCoherenceChat();
     if (isConnectionsPage) {
       closeHumanChatPanel();
@@ -2098,11 +2135,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     closeCoherenceChat,
     closeHumanChatPanel,
+    coherenceSlug,
     isConnectionsPage,
     pathname,
+    routeSpaceSlug,
     router,
     searchParams,
     setOpenMobile,
+    sidebarOpen,
   ]);
 
   const pendingCallStartNotifyRef = useRef(false);
@@ -4012,6 +4052,17 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     );
   }, [currentUserAvatarUrl]);
 
+  useEffect(() => {
+    return () => {
+      if (signalDismissTimerRef.current != null) {
+        window.clearTimeout(signalDismissTimerRef.current);
+        signalDismissTimerRef.current = null;
+        signalDismissUntilClosedRef.current = false;
+        closeCoherenceChat();
+      }
+    };
+  }, [closeCoherenceChat]);
+
   // Track previous sidebar open state to detect close events
   const prevSidebarOpenRef = useRef(sidebarOpen);
   const prevChatModeRef = useRef(mode);
@@ -4019,7 +4070,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const hasLoadedCoherenceMessagesRef = useRef(false);
   useEffect(() => {
     if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
-      exitCoherenceChat();
+      // Back from a space signal closes the panel and resets after the slide.
+      // Clearing here would swap in the space room while it is still visible.
+      if (!signalDismissUntilClosedRef.current) {
+        exitCoherenceChat();
+      }
     }
     prevSidebarOpenRef.current = sidebarOpen;
   }, [sidebarOpen, mode, exitCoherenceChat]);
@@ -5748,6 +5803,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     const prevMode = prevChatModeRef.current;
     prevChatModeRef.current = mode;
+
+    // Panel is closing on a space signal. Do not write `?signal=` back, or
+    // the signals screen reopens the thread.
+    if (signalDismissUntilClosedRef.current) return;
 
     if (mode === 'coherence' && coherenceSlug?.trim()) {
       const slug = coherenceSlug.trim();

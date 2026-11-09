@@ -82,6 +82,18 @@ describe('network room join guard', () => {
     expect(source).toContain('Leaving those pages (e.g. into a DHO)');
   });
 
+  it('closes a space signal instead of opening the space room', () => {
+    expect(source).toContain('const leavingSignalInSpace =');
+    expect(source).toContain('signalDismissUntilClosedRef.current = true');
+    expect(source).toContain('closeHumanChatPanel();');
+    const dismissAt = source.indexOf('const leavingSignalInSpace =');
+    expect(dismissAt).toBeGreaterThan(-1);
+    expect(source.slice(dismissAt, dismissAt + 900)).toContain(
+      'closeCoherenceChat();',
+    );
+    expect(source).toContain('if (!signalDismissUntilClosedRef.current)');
+  });
+
   it('labels a signal page thread Signal, same as Messages', () => {
     expect(source).toContain(
       "if (coherenceChannel === 'signal' || isSignalThread)",
