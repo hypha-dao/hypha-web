@@ -164,7 +164,7 @@ import {
   getDhoSpaceSlugFromPathname,
   routeSpaceSlugFromLocation,
 } from './get-dho-space-slug-from-pathname';
-import { isNetworkPath } from './use-is-space-context';
+import { isNetworkAiPath } from './use-is-space-context';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { getDhoPathOverview, getSignalPath } from './get-path-function';
 import {
@@ -1310,12 +1310,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     !coherenceSlug?.trim() &&
     !coherenceChannel;
   const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
-  const onNetworkPage = isNetworkPath(pathname);
-  // Shared network room lives only on `/{lang}/network` in space mode.
-  // Home / Messages / wallet also have mode `space` and no slug — do not treat
-  // those as the network room (that caused hangs before the path guard, and
-  // empty Network chrome after it).
-  const isNetworkSpaceChat = onNetworkPage && mode === 'space';
+  // Shared network room for Network and the member shell pages when no channel
+  // is selected (Home / Messages / Wallet / My Spaces). A DM or inbox channel
+  // stays in coherence mode and does not hit this path. DHO routes keep their
+  // own space chat. The panel unmounts when closed on these shell pages, so
+  // this does not call ensureNetworkRoom in the background.
+  const isNetworkSpaceChat = isNetworkAiPath(pathname) && mode === 'space';
   // Network page space-mode is only the shared network room — never inherit a
   // leftover DHO slug (route or coherence) or space/ecosystem tabs appear with
   // that space's timeline under the Network chrome.
@@ -4038,17 +4038,20 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     resetChatStateOnAuthDrop();
   }, [routeSpaceSlug, exitCoherenceChat, resetChatStateOnAuthDrop]);
 
-  // Entering Network clears leftover DHO / coherence space chrome so the
-  // shared room can join. Leaving Network clears that join sentinel so Home
-  // does not keep Network chrome / an empty composer with no join.
-  const wasNetworkPathRef = useRef(onNetworkPage);
+  // Entering a network-default shell page clears leftover DHO / coherence
+  // space chrome so the shared room can join. Moving between Home, Messages,
+  // Wallet, Spaces, and Network does not reset a channel the member already
+  // opened. Leaving those pages (e.g. into a DHO) clears the join sentinel
+  // so space chat can take over.
+  const onNetworkDefaultPath = isNetworkAiPath(pathname);
+  const wasNetworkPathRef = useRef(onNetworkDefaultPath);
   useEffect(() => {
     const wasNetwork = wasNetworkPathRef.current;
-    wasNetworkPathRef.current = onNetworkPage;
-    if (wasNetwork === onNetworkPage) return;
+    wasNetworkPathRef.current = onNetworkDefaultPath;
+    if (wasNetwork === onNetworkDefaultPath) return;
     if (isDirectConversation) return;
 
-    if (!onNetworkPage) {
+    if (!onNetworkDefaultPath) {
       if (joinedRef.current === NETWORK_JOINED_SENTINEL) {
         joinEpochRef.current += 1;
         const previousRoomId = roomIdRef.current?.trim();
@@ -4091,7 +4094,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     setError(null);
     setIsJoining(false);
   }, [
-    onNetworkPage,
+    onNetworkDefaultPath,
     isDirectConversation,
     mode,
     coherenceChannel,
@@ -4351,14 +4354,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     revealRoomTimeline,
   ]);
 
-  // The network page has one room. An ecosystem is a root space, so that
-  // room sits beside the space chat, not beside the network.
-  // Only join on `/{lang}/network` — default panel mode is `space`, and Home /
-  // Messages / wallet have no space slug, so without this guard every member
-  // page would call ensureNetworkRoom (400s + long poll → tab hang).
+  // Home, Messages, Wallet, Spaces, and Network share one room when no
+  // channel is selected. An ecosystem is a root space, so that room sits
+  // beside the space chat, not beside the network. DHO routes keep their own
+  // space join. The panel unmounts on the shell pages when closed, so this
+  // does not poll ensureNetworkRoom in the background.
   useEffect(() => {
     if (mode !== 'space') return;
-    if (!isNetworkPath(pathname)) return;
+    if (!isNetworkAiPath(pathname)) return;
     if (spaceSlug?.trim()) return;
     if (!isMatrixAvailable || !isMatrixAuthenticated) return;
     if (joinedRef.current === NETWORK_JOINED_SENTINEL) return;
