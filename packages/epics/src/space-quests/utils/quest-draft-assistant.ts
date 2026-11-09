@@ -1445,70 +1445,44 @@ function conversationalModelReply(
   return reply;
 }
 
-const PRIOR_SUGGESTION_OFFER =
-  /\b(?:still (?:a |an )?suggestion|suggestion (?:above|earlier)|lines above|earlier suggestion|previous suggestion|that suggestion|those lines)\b/i;
-
-const CONFIRM_TO_SAVE =
-  /\b(?:until you (?:confirm|say yes|approve)|say yes|confirm (?:them|it|that|those)|approve (?:them|it|that|those)|if you confirm)\b/i;
-
-/** A sentence that tells the member a prior suggestion is still saved by yes. */
-function sentenceOffersRetiredConfirmation(sentence: string): boolean {
-  return (
-    PRIOR_SUGGESTION_OFFER.test(sentence) && CONFIRM_TO_SAVE.test(sentence)
-  );
-}
-
-const UNBACKED_CONFIRM =
-  /\b(?:not saved until|aren'?t saved until|isn'?t saved until|until (?:you|they) confirm|do you want that to be in|not saved yet|still (?:a |an )?suggestion)\b/i;
-
 /**
- * Prose that says yes will save something. A reviewer's check ("a reviewer
- * could confirm") is not that claim.
+ * The model does not own pending or saved state. Drop a sentence that
+ * claims something is waiting, not waiting, saved, not saved, or suggested
+ * above. The app appends one line from the real card, or none.
  */
-function sentenceClaimsUnbackedConfirm(sentence: string): boolean {
-  if (/\ba reviewer could confirm\b/i.test(sentence)) return false;
-  return (
-    sentenceOffersRetiredConfirmation(sentence) ||
-    UNBACKED_CONFIRM.test(sentence)
-  );
+const MODEL_STATE_CLAIM =
+  /\b(?:waiting|sav(?:ed|es)|suggested above|suggestion above|do you want that to be in)\b/i;
+
+function stripModelStateClaims(reply: string): string {
+  const pieces = reply.split(/(\n+|(?<=[.!?])\s+)/);
+  let kept = '';
+  for (let index = 0; index < pieces.length; index += 2) {
+    const sentence = pieces[index] ?? '';
+    const separator = pieces[index + 1] ?? '';
+    if (!sentence.trim() || MODEL_STATE_CLAIM.test(sentence)) continue;
+    kept += sentence + separator;
+  }
+  return kept
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 /**
- * A question leaves no suggestion for yes to save. Keep the answer, and drop
- * only a claim that confirmation would still save something.
+ * A question leaves no suggestion for yes to save. Keep the answer. When the
+ * model claimed a retired suggestion was still confirmable, say that it is not.
  */
 function replyAfterRetiredSuggestion(
   reply: string,
   hadPending: boolean,
 ): string {
-  const chunks = reply
-    .split(/\n+|(?<=[.!?])\s+/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-  let changed = false;
-  const kept = chunks.flatMap((part) => {
-    if (!sentenceClaimsUnbackedConfirm(part)) return [part];
-    changed = true;
-    UNBACKED_CONFIRM.lastIndex = 0;
-    const offer = UNBACKED_CONFIRM.exec(part);
-    const index = offer?.index ?? -1;
-    if (index > 24) {
-      const prefix = part
-        .slice(0, index)
-        .replace(/[\s,;:—-]+$/g, '')
-        .trim();
-      if (prefix.length > 12 && !sentenceClaimsUnbackedConfirm(prefix)) {
-        return [prefix];
-      }
-    }
-    return [];
-  });
-  if (!changed) return reply;
-  const notice = hadPending
-    ? 'The earlier suggestion is no longer waiting on a yes.'
-    : 'Nothing is waiting on a yes.';
-  if (kept.length === 0) return notice;
-  return `${kept.join('\n\n')}\n\n${notice}`;
+  const body = stripModelStateClaims(reply);
+  const removedClaim = body.trim() !== reply.trim();
+  if (!hadPending || !removedClaim) return body;
+  const notice = 'The earlier suggestion is no longer waiting on a yes.';
+  if (!body) return notice;
+  if (body.includes(notice)) return body;
+  return `${body}\n\n${notice}`;
 }
 
 function sectionLabelSource(step: QuestStewardStep): string {
@@ -1728,6 +1702,8 @@ export function decideQuestDraftSuggestion({
   const modelPatch = questWordingRevisionStep(message, step)
     ? limitedModelPatch(model, step)
     : withoutVagueGoal(limitedModelPatch(model, step));
+  // A finished tool patch is the card. A reply that still needs a decision
+  // withholds it, including on a proposal turn. Prose never becomes the card.
   if (!clarifying && Object.keys(modelPatch).length > 0) {
     return { intent: 'propose', patch: modelPatch };
   }
@@ -1780,32 +1756,33 @@ function replyForPendingSuggestion(
   step: QuestStewardStep,
   patch: QuestDraftPatchInput,
 ): string {
-  const ask = replyWithSectionApprovalAsk(null, step, patch);
-  if (!modelReply) return ask;
-  const commentary = modelReply
-    .replace(
-      new RegExp(
-        `do you want that to be in(?:\\s+the)?\\s+${sectionLabelSource(
-          step,
-        )}\\??`,
-        'ig',
-      ),
-      '',
-    )
-    .split(/\n+|(?<=[.!?])\s+/)
-    .map((part) => part.trim())
-    .filter(
-      (part) =>
-        part.length > 0 &&
-        !/\bone section at a time\b/i.test(part) &&
-        !/\b(?:nothing is waiting on a yes|still waiting on (?:your |a )?yes|nothing has been saved(?: yet)?)\b/i.test(
-          part,
+  const cleaned = stripModelStateClaims(
+    (modelReply ?? '')
+      .replace(
+        new RegExp(
+          `do you want that to be in(?:\\s+the)?\\s+${sectionLabelSource(
+            step,
+          )}\\??`,
+          'ig',
         ),
-    )
-    .join('\n\n')
-    .trim();
-  if (!commentary) return ask;
-  return `${commentary}\n\nNot saved yet.\n${ask}`;
+        '',
+      )
+      .split(/\n+|(?<=[.!?])\s+/)
+      .map((part) => part.trim())
+      .filter(
+        (part) => part.length > 0 && !/\bone section at a time\b/i.test(part),
+      )
+      .join('\n\n'),
+  );
+  const ask = replyWithSectionApprovalAsk(cleaned, step, patch);
+  const question = questSectionApprovalQuestion(step);
+  if (ask === cleaned) {
+    return cleaned
+      ? `${cleaned}\n\nNot saved yet.\n${question}`
+      : `Not saved yet.\n${question}`;
+  }
+  if (!cleaned) return `Not saved yet.\n${ask}`;
+  return `${cleaned}\n\nNot saved yet.\n${ask}`;
 }
 
 /**
@@ -1925,6 +1902,9 @@ export function runNewQuestDraftTurn({
     const hasPending = Object.keys(pendingPatch).length > 0;
     if (pending && hasPending && (!named || named === pending.step)) {
       return finishApply(pending.step, pending.patch);
+    }
+    if (pending && hasPending) {
+      return stay(questPendingYesNotice(pending.step), currentStep, pending);
     }
     return stay(
       `Nothing is waiting on a yes. ${stewardQuestionForStep(currentStep)}`,
@@ -2085,7 +2065,8 @@ function replyWhileOlderPending(
   pending: PendingQuestSectionProposal,
 ): string {
   const notice = questPendingYesNotice(pending.step);
-  const source = withoutExactNotice(reply, notice);
+  const withoutNotice = withoutExactNotice(reply, notice);
+  const source = stripModelStateClaims(withoutNotice);
   const filtered = replyAfterRetiredSuggestion(source, false);
   const parts = filtered
     .split(/\n+|(?<=[.!?])\s+/)
@@ -2094,7 +2075,7 @@ function replyWhileOlderPending(
   const withoutClaims = parts.filter(
     (part) => !CONFLICTING_PENDING_CLAIM.test(part),
   );
-  const unbacked = filtered !== source;
+  const unbacked = source.trim() !== withoutNotice.trim();
   const kept = unbacked
     ? withoutClaims.filter(
         (part) =>

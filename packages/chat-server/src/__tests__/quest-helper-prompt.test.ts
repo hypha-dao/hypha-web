@@ -14,9 +14,8 @@ import {
 describe('quest helper prompt', () => {
   it('sends the draft, history, and message as data, and does not auto-save a question', () => {
     expect(NEW_QUEST_HELPER_RULES).toMatch(/do not invent/i);
-    expect(NEW_QUEST_HELPER_RULES).toMatch(/not saved until they confirm/i);
     expect(NEW_QUEST_HELPER_RULES).toMatch(
-      /do not say the wording is waiting for confirmation/i,
+      /do not say whether anything is waiting, saved, not saved, or suggested above/i,
     );
     expect(NEW_QUEST_HELPER_RULES).toMatch(
       /question retires any unsaved suggestion/i,
@@ -25,7 +24,9 @@ describe('quest helper prompt', () => {
     expect(NEW_QUEST_HELPER_RULES).toMatch(
       /do not tell them to use a put command/i,
     );
-    expect(NEW_QUEST_HELPER_RULES).toMatch(/do not leave it only in prose/i);
+    expect(NEW_QUEST_HELPER_RULES).toMatch(
+      /do not leave that wording only in prose/i,
+    );
     expect(NEW_QUEST_HELPER_RULES).not.toMatch(/do not rewrite it/i);
     expect(EXISTING_QUEST_HELPER_RULES).not.toContain('THE AI DOES IT FOR ME');
     expect(EXISTING_QUEST_HELPER_RULES).toMatch(

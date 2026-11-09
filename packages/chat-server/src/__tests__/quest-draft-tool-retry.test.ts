@@ -17,10 +17,7 @@ vi.mock('../stream-chat', () => ({
 }));
 
 import * as questServer from '@hypha-platform/core/server';
-import {
-  assistSpaceQuestDraft,
-  questDraftReplyNeedsToolRetry,
-} from '../quest-draft-assist';
+import { assistSpaceQuestDraft } from '../quest-draft-assist';
 
 type DraftTool = {
   execute: (patch: Record<string, unknown>) => Promise<unknown>;
@@ -61,7 +58,6 @@ describe('quest draft tool retry', () => {
         toolChoice?: { type: string; toolName: string };
         tools: { update_quest_draft: DraftTool };
       }) => {
-        if (!toolChoice) return { text: prose };
         expect(toolChoice).toEqual({
           type: 'tool',
           toolName: 'update_quest_draft',
@@ -70,7 +66,7 @@ describe('quest draft tool retry', () => {
           goal: shorter,
           scopeIn: ['should not stick'],
         });
-        return { text: 'tool only' };
+        return { text: prose };
       },
     );
 
@@ -88,10 +84,9 @@ describe('quest draft tool retry', () => {
       },
     });
 
-    expect(generateText).toHaveBeenCalledTimes(2);
+    expect(generateText).toHaveBeenCalledTimes(1);
     expect(result.patch).toEqual({ goal: shorter });
     expect(result.reply).toMatch(/shorter version/i);
-    expect(result.reply).not.toBe('tool only');
     expect(result.updatedQuest).toBeNull();
     expect(questServer.updateSpaceQuest).not.toHaveBeenCalled();
   });
@@ -112,13 +107,16 @@ describe('quest draft tool retry', () => {
         toolChoice?: { type: string; toolName: string };
         tools: { update_quest_draft: DraftTool };
       }) => {
-        if (!toolChoice) return { text: prose };
+        expect(toolChoice).toEqual({
+          type: 'tool',
+          toolName: 'update_quest_draft',
+        });
         await tools.update_quest_draft.execute({
           scopeIn: ['verify proposal display', 'verify milestone editing'],
           scopeOut: ['production rollout'],
           goal: 'should not stick',
         });
-        return { text: '' };
+        return { text: prose };
       },
     );
 
@@ -131,7 +129,7 @@ describe('quest draft tool retry', () => {
       },
     });
 
-    expect(generateText).toHaveBeenCalledTimes(2);
+    expect(generateText).toHaveBeenCalledTimes(1);
     expect(result.patch).toEqual({
       scopeIn: ['verify proposal display', 'verify milestone editing'],
       scopeOut: ['production rollout'],
@@ -161,36 +159,6 @@ describe('quest draft tool retry', () => {
       'Out of scope: production rollout',
       'Next: success criteria — what could a reviewer check to call each of these verified?',
     ].join('\n');
-    for (const message of [attempt1, attempt2, attempt3]) {
-      expect(
-        questDraftReplyNeedsToolRetry({
-          message,
-          reply: liveReply,
-          hasPatch: false,
-          bulk: false,
-          pendingStep: null,
-        }),
-      ).toBe(true);
-      expect(
-        questDraftReplyNeedsToolRetry({
-          message,
-          reply: headingsOnly,
-          hasPatch: false,
-          bulk: false,
-          pendingStep: null,
-        }),
-      ).toBe(true);
-    }
-    expect(
-      questDraftReplyNeedsToolRetry({
-        message: attempt1,
-        reply: liveReply,
-        hasPatch: false,
-        bulk: true,
-        pendingStep: null,
-      }),
-    ).toBe(false);
-
     generateText.mockImplementation(
       async ({
         toolChoice,
@@ -199,7 +167,6 @@ describe('quest draft tool retry', () => {
         toolChoice?: { type: string; toolName: string };
         tools: { update_quest_draft: DraftTool };
       }) => {
-        if (!toolChoice) return { text: headingsOnly };
         expect(toolChoice).toEqual({
           type: 'tool',
           toolName: 'update_quest_draft',
@@ -213,7 +180,7 @@ describe('quest draft tool retry', () => {
           scopeOut: ['Production rollout'],
           milestones: [{ name: 'should not stick' }],
         });
-        return { text: 'tool only' };
+        return { text: headingsOnly };
       },
     );
 
@@ -221,7 +188,7 @@ describe('quest draft tool retry', () => {
       spaceSlug: 'sandbox',
       input: { message: attempt2, currentStep: 'goal' },
     });
-    expect(generateText).toHaveBeenCalledTimes(2);
+    expect(generateText).toHaveBeenCalledTimes(1);
     expect(result.patch).toEqual({
       scopeIn: [
         'Verify proposal display',
@@ -232,6 +199,9 @@ describe('quest draft tool retry', () => {
     });
     expect(result.reply).toBe(headingsOnly);
     expect(result.updatedQuest).toBeNull();
+    expect(liveReply).toMatch(/In scope/);
+    expect(attempt1).toMatch(/Propose a Scope/);
+    expect(attempt3).toMatch(/for my confirmation/);
   });
 
   it('retries the live scope reply that asks whether to add more', async () => {
@@ -256,7 +226,10 @@ describe('quest draft tool retry', () => {
         toolChoice?: { type: string; toolName: string };
         tools: { update_quest_draft: DraftTool };
       }) => {
-        if (!toolChoice) return { text: liveReply };
+        expect(toolChoice).toEqual({
+          type: 'tool',
+          toolName: 'update_quest_draft',
+        });
         await tools.update_quest_draft.execute({
           scopeIn: [
             'Verify proposal display',
@@ -266,7 +239,7 @@ describe('quest draft tool retry', () => {
           scopeOut: ['Production rollout'],
           goal: 'should not stick',
         });
-        return { text: '' };
+        return { text: liveReply };
       },
     );
 
@@ -274,7 +247,7 @@ describe('quest draft tool retry', () => {
       spaceSlug: 'sandbox',
       input: { message, currentStep: 'goal' },
     });
-    expect(generateText).toHaveBeenCalledTimes(2);
+    expect(generateText).toHaveBeenCalledTimes(1);
     expect(result.patch).toEqual({
       scopeIn: [
         'Verify proposal display',
@@ -287,10 +260,43 @@ describe('quest draft tool retry', () => {
     expect(result.updatedQuest).toBeNull();
   });
 
-  it('does not retry a question or a chat aside, and stays closed when the retry sends no patch', async () => {
-    generateText.mockResolvedValue({
-      text: 'It names an activity. Who should be able to tell?',
-    });
+  it('requires the tool once for the live proposal messages and stays closed without a patch', async () => {
+    const messages = [
+      'Propose a Scope for verifying proposal display, milestone editing and reward display in this sandbox; out of scope production rollout.',
+      'Propose a Scope for this quest: verify proposal display, verify milestone editing, verify reward display; out of scope production rollout.',
+      'Propose a goal for my confirmation: the quest lead runs one quest end-to-end in this sandbox and logs a pass or fail for each step.',
+      'I like the goal but make it shorter',
+    ];
+    for (const message of messages) {
+      generateText.mockReset();
+      generateText.mockImplementation(
+        async ({ toolChoice }: { toolChoice?: unknown }) => {
+          expect(toolChoice).toEqual({
+            type: 'tool',
+            toolName: 'update_quest_draft',
+          });
+          return {
+            text: 'Nothing is waiting on a yes. Suggested above — confirm it and it saves to Scope.',
+          };
+        },
+      );
+      const result = await assistSpaceQuestDraft({
+        spaceSlug: 'sandbox',
+        input: { message, currentStep: 'goal' },
+      });
+      expect(generateText).toHaveBeenCalledTimes(1);
+      expect(result.patch).toBeNull();
+      expect(result.updatedQuest).toBeNull();
+    }
+  });
+
+  it('leaves the tool optional for a question or a chat aside, and stays closed when the required call sends no patch', async () => {
+    generateText.mockImplementation(
+      async ({ toolChoice }: { toolChoice?: unknown }) => {
+        expect(toolChoice).toBeUndefined();
+        return { text: 'It names an activity. Who should be able to tell?' };
+      },
+    );
     const question = await assistSpaceQuestDraft({
       spaceSlug: 'sandbox',
       input: { message: 'do you think that is well defined goal?' },
@@ -299,7 +305,12 @@ describe('quest draft tool retry', () => {
     expect(question.patch).toBeNull();
 
     generateText.mockReset();
-    generateText.mockResolvedValue({ text: 'Lead scoring can wait.' });
+    generateText.mockImplementation(
+      async ({ toolChoice }: { toolChoice?: unknown }) => {
+        expect(toolChoice).toBeUndefined();
+        return { text: 'Lead scoring can wait.' };
+      },
+    );
     const aside = await assistSpaceQuestDraft({
       spaceSlug: 'sandbox',
       input: {
@@ -318,12 +329,13 @@ describe('quest draft tool retry', () => {
     generateText.mockReset();
     generateText.mockImplementation(
       async ({ toolChoice }: { toolChoice?: unknown }) => {
-        if (!toolChoice) {
-          return {
-            text: "Shorter version — it's a suggestion, but I will not file it.",
-          };
-        }
-        return { text: '' };
+        expect(toolChoice).toEqual({
+          type: 'tool',
+          toolName: 'update_quest_draft',
+        });
+        return {
+          text: "Shorter version — it's a suggestion, but I will not file it.",
+        };
       },
     );
     const missed = await assistSpaceQuestDraft({
@@ -333,7 +345,7 @@ describe('quest draft tool retry', () => {
         pendingSuggestion: { status: 'revising', step: 'goal' },
       },
     });
-    expect(generateText).toHaveBeenCalledTimes(2);
+    expect(generateText).toHaveBeenCalledTimes(1);
     expect(missed.patch).toBeNull();
     expect(missed.reply).toMatch(/shorter version/i);
   });

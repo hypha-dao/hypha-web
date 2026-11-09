@@ -4,6 +4,7 @@ import {
   isBulkQuestDraftRequest,
   limitQuestPatchToStep,
   questDraftCoachedStep,
+  questDraftMessageRequiresTool,
   questExistingTurnMayPersist,
   questPendingYesNotice,
   questWordingRevisionStep,
@@ -646,5 +647,30 @@ describe('resolveQuestDraftTarget', () => {
     expect(
       isBulkQuestDraftRequest('Draft the milestones and the rewards'),
     ).toBe(true);
+  });
+
+  it('requires the tool for one proposal or revision, and leaves questions and asides optional', () => {
+    const required = [
+      'Propose a Scope for verifying proposal display, milestone editing and reward display in this sandbox; out of scope production rollout.',
+      'Propose a Scope for this quest: verify proposal display, verify milestone editing, verify reward display; out of scope production rollout.',
+      'Propose a goal for my confirmation: the quest lead runs one quest end-to-end in this sandbox and logs a pass or fail for each step.',
+      'I like the goal but make it shorter',
+      'make it shorter',
+      'Please remove the first bullet',
+    ];
+    for (const message of required) {
+      expect(questDraftMessageRequiresTool(message, 'goal')).toBe(true);
+    }
+    expect(questDraftMessageRequiresTool('make it shorter', null)).toBe(false);
+
+    for (const message of [
+      'do you think that is well defined goal?',
+      'Add lead scoring',
+      "now let's define the scope",
+      'Draft the scope, success criteria, and milestones.',
+      'I confirm the goal',
+    ]) {
+      expect(questDraftMessageRequiresTool(message, 'scope')).toBe(false);
+    }
   });
 });

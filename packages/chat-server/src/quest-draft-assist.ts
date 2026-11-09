@@ -7,9 +7,9 @@ import {
   QUEST_STEWARD_STEPS,
   escapeUntrustedDataBoundary,
   existingQuestEditSection,
-  isBulkQuestDraftRequest,
   limitQuestPatchToStep,
   questDraftCoachedStep,
+  questDraftMessageRequiresTool,
   questWordingRevisionStep,
   isAllowedQuestDeliverableUrl,
   isSandboxOrThrowawaySpace,
@@ -262,14 +262,14 @@ export const NEW_QUEST_HELPER_RULES = `How you answer:
 - A question or an assessment ("do you think this goal is well defined?") is a chat answer about the accepted draft. Name what is vague or strong. Do not call update_quest_draft. Do not repeat the question as section text, and do not ask them to file the question into a section.
 - A section opener ("now let's define the scope") gets one or two sentences on what this section is for, then one question grounded in the draft. Do not invent wording. Do not call update_quest_draft.
 - A vague idea (an activity with no outcome) is not finished wording. Ask who it is for and what a reviewer could check. Do not call update_quest_draft with that vague phrase.
-- A reply that still needs a decision (what the words mean, which section, a missing fact) is chat only. Do not call update_quest_draft, and do not say the wording is waiting for confirmation. Asking whether they want to add anything else is not that decision: when the wording is already concrete, call update_quest_draft with it and do not leave it only in prose.
-- When you suggest concrete wording, call update_quest_draft with only this section. The words you pass are the only words yes can save, and the confirm card shows those words, not the member's raw message. Say in the reply that it is a suggestion and is not saved until they confirm. Do not say it was added. Say that only in a turn where you called update_quest_draft. The app asks them to confirm that suggestion. An example you asked about is not a confirmed fact; when they adopt it, put the finished suggestion in update_quest_draft. Do not invent a beneficiary, metric, date, reward, or outcome they did not already support. You may tighten wording they accepted.
+- A question that is not a proposal is chat only. Do not call update_quest_draft. When the member asked you to propose or revise one section, call update_quest_draft with the finished wording even if you also ask whether to add more. Do not leave that wording only in prose.
+- When you suggest concrete wording, call update_quest_draft with only this section. The words you pass are the only words yes can save, and the confirm card shows those words, not the member's raw message. Do not say whether anything is waiting, saved, not saved, or suggested above. The app adds that line from the real card. Do not say it was added. An example you asked about is not a confirmed fact; when they adopt it, put the finished suggestion in update_quest_draft. Do not invent a beneficiary, metric, date, reward, or outcome they did not already support. You may tighten wording they accepted.
 - Tighten wording they already gave. Do not add metrics, people, dates, rewards, or outcomes they did not support.
 - "yes" and "no" refer to a suggestion already in the chat. They are not new section content.
 - The Actionable suggestion line is the app's state for this turn. Your prose does not change what yes will save.
 - A question retires any unsaved suggestion only when that line says the suggestion is history. Yes will not save it after that. On every other turn, do not call the earlier suggestion history or retired.
-- When they ask to propose or shorten one named section, including a section that is already accepted, call update_quest_draft with the revised wording for that section only. Base it on the accepted text. Do not tell them to use a Put command. It is not saved until they confirm.
-- A follow-up such as "make it shorter", "drop the word …", or "remove a bullet" revises the suggestion already in progress. When that wording is finished, call update_quest_draft with it. If a decision is still open, ask it and do not call the tool. Do not leave a finished revision only in prose, and do not describe a revised list as what yes will save.
+- When they ask to propose or shorten one named section, including a section that is already accepted, call update_quest_draft with the revised wording for that section only. Base it on the accepted text. Do not tell them to use a Put command. Do not say whether it is saved or waiting.
+- A follow-up such as "make it shorter", "drop the word …", or "remove a bullet" revises the suggestion already in progress. Call update_quest_draft with the revised wording. Do not leave a finished revision only in prose, and do not describe a revised list as what yes will save.
 - An explicit edit such as Put in goal "…" is applied by the app. Do not expand it into other sections.
 - Lines such as "Please write these as Success Criteria, proposing in chat first" are instructions, not quest content. Never copy them into update_quest_draft.
 - For milestones, propose only checkpoints, dates, and owners already named. Do not add a row or invent a date.
@@ -348,65 +348,6 @@ export function buildQuestHelperTurnPrompt({
   ]
     .filter(Boolean)
     .join('\n\n');
-}
-
-const CONCRETE_DRAFT_REQUEST =
-  /\b(?:draft|suggest|propose|write|fill(?:\s+in|\s+out)?|generate)\b/i;
-
-/**
- * A proposal or revision whose reply already states wording, but the tool
- * was not called. One retry may require the tool. The patch is still only
- * the tool arguments.
- */
-export function questDraftReplyNeedsToolRetry({
-  message,
-  reply,
-  hasPatch,
-  bulk,
-  pendingStep,
-}: {
-  message: string;
-  reply: string;
-  hasPatch: boolean;
-  bulk: boolean;
-  pendingStep: QuestStewardStep | null;
-}): boolean {
-  if (hasPatch || bulk || isBulkQuestDraftRequest(message)) return false;
-  const text = message.trim();
-  if (!text || /[?？]\s*$/.test(text)) return false;
-  const revision = questWordingRevisionStep(text, pendingStep);
-  if (!revision && !CONCRETE_DRAFT_REQUEST.test(text)) return false;
-  return replyOffersConcreteWording(reply);
-}
-
-function replyOffersConcreteWording(reply: string): boolean {
-  const text = reply.trim();
-  if (!text) return false;
-  if (
-    /\b(?:suggestion|shorter version|revised wording|not saved until|for your confirmation)\b/i.test(
-      text,
-    )
-  ) {
-    return true;
-  }
-  if (/(?:^|\n)\s*(?:>|[“"])\s*\S.{20,}/m.test(text)) return true;
-  const lines = text
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-  return lines.some((line, index) => {
-    if (
-      (/^[-*•]/.test(line) || /^(?:in|out)\s*:/i.test(line)) &&
-      line.length > 8
-    ) {
-      return true;
-    }
-    // "In scope" / "Out of scope" is a list even without a colon on "in".
-    if (/^(?:in|out)(?:\s+of)?\s+scope\s*:\s*\S.{8,}/i.test(line)) return true;
-    const heading = /^(?:in|out)(?:\s+of)?\s+scope\b/i.test(line);
-    const following = lines[index + 1];
-    return Boolean(heading && following && following.length > 8);
-  });
 }
 
 function untrusted(label: string, value: string, empty = '(empty)'): string {
@@ -674,54 +615,29 @@ ${untrusted(
     suggestion: input.pendingSuggestion,
   });
 
+  const requireTool =
+    coachingNewQuest &&
+    !draftTarget.bulk &&
+    questDraftMessageRequiresTool(message, pendingStep);
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), QUEST_DRAFT_MS);
   try {
-    let result = await generateText({
+    const result = await generateText({
       model: getHyphaChatModel(),
       system,
       prompt,
       tools,
+      ...(requireTool
+        ? {
+            toolChoice: {
+              type: 'tool' as const,
+              toolName: 'update_quest_draft',
+            },
+          }
+        : {}),
       stopWhen: stepCountIs(QUEST_DRAFT_MAX_STEPS),
       abortSignal: abort.signal,
     });
-
-    if (
-      coachingNewQuest &&
-      questDraftReplyNeedsToolRetry({
-        message,
-        reply: result.text,
-        hasPatch: Object.keys(collectedPatch).length > 0,
-        bulk: draftTarget.bulk,
-        pendingStep,
-      })
-    ) {
-      const firstReply = result.text;
-      try {
-        const retry = await generateText({
-          model: getHyphaChatModel(),
-          system,
-          prompt: [
-            prompt,
-            `The previous reply proposed finished ${coachedStep} wording and did not call update_quest_draft. Call update_quest_draft now with only that finished ${coachedStep} wording. Do not invent facts. Do not pass the member's instruction as the field value.`,
-            untrusted('previous reply', firstReply),
-          ].join('\n\n'),
-          tools,
-          toolChoice: {
-            type: 'tool',
-            toolName: 'update_quest_draft',
-          },
-          stopWhen: stepCountIs(2),
-          abortSignal: abort.signal,
-        });
-        if (!firstReply.trim() && retry.text.trim()) result = retry;
-      } catch (error) {
-        console.warn(
-          '[space-quests.draft-assist] tool retry skipped:',
-          error instanceof Error ? error.message : error,
-        );
-      }
-    }
 
     if (coachingNewQuest) {
       collectedPatch = draftTarget.bulk

@@ -708,6 +708,24 @@ export function questWordingRevisionStep(
   return pendingStep;
 }
 
+/**
+ * A proposal or revision of one section. The first model call must file
+ * that section with the tool. A question, a coaching opener, and a
+ * multi-section request do not.
+ */
+export function questDraftMessageRequiresTool(
+  message: string,
+  pendingStep: QuestStewardStep | null,
+): boolean {
+  const text = message.trim();
+  if (!text || isBulkQuestDraftRequest(text)) return false;
+  if (/[?？]\s*$/.test(text)) return false;
+  if (questWordingRevisionStep(text, pendingStep)) return true;
+  return /\b(?:draft|suggest|propose|write|fill(?:\s+in|\s+out)?|generate)\b/i.test(
+    text,
+  );
+}
+
 export function questRevisionNamesSeveralSections(message: string): boolean {
   const text = textOutsideCommandedPayload(message.trim());
   if (!asksToReviseWording(text)) return false;

@@ -2076,7 +2076,7 @@ describe('create draft turn settles against the latest snapshot', () => {
       expect(clarified?.reply).not.toMatch(/until you confirm/i);
       expect(clarified?.reply).not.toMatch(/Not saved yet/i);
       expect(clarified?.reply).not.toMatch(/Do you want that to be in/i);
-      expect(clarified?.reply).toMatch(/Nothing is waiting on a yes/i);
+      expect(clarified?.reply).not.toMatch(/Nothing is waiting on a yes/i);
     }
 
     const fabricated = await settle("now let's define the scope", {
@@ -3142,7 +3142,7 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(chatOnly?.reply).toContain(
       'Each in-scope check (proposal display, milestone editing)',
     );
-    expect(chatOnly?.reply).toMatch(/Nothing is waiting on a yes/i);
+    expect(chatOnly?.reply).not.toMatch(/Nothing is waiting on a yes/i);
     expect(chatOnly?.reply).not.toMatch(/Not saved yet/i);
     expect(chatOnly?.reply).not.toContain(successProse);
 
@@ -3756,6 +3756,168 @@ describe('quest draft review corrections', () => {
     const notice = questPendingYesNotice('scope');
     expect(kept.reply.split(notice)).toHaveLength(2);
     expect(kept.reply.endsWith(notice)).toBe(true);
+  });
+
+  it('replaces a false Suggested above or Nothing is waiting claim with the real card', () => {
+    const scopeMessage =
+      'Propose a Scope for this quest: verify proposal display, verify milestone editing, verify reward display; out of scope production rollout.';
+    const claimed =
+      'Suggested above — confirm it and it saves to Scope. Note the guided focus is still Goal: want to say what a passing test looks like there before we move on?';
+    const missing = send(scopeMessage, emptyDraft, null, 'goal', {
+      reply: claimed,
+      patch: null,
+    });
+    expect(missing.pending).toBeNull();
+    expect(missing.wrote).toBe(false);
+    expect(missing.draft.scopeIn).toEqual([]);
+    expect(missing.draft.scopeOut).toEqual([]);
+    expect(missing.reply).not.toMatch(/Suggested above/i);
+    expect(missing.reply).not.toMatch(/saves to Scope/i);
+    expect(missing.reply).not.toMatch(/Nothing is waiting on a yes/i);
+    expect(missing.reply).not.toMatch(/Not saved yet/i);
+    expect(missing.reply).toMatch(/passing test looks like/i);
+
+    const patch = {
+      scopeIn: [
+        'Verify proposal display',
+        'Verify milestone editing',
+        'Verify reward display',
+      ],
+      scopeOut: ['Production rollout'],
+      goal: 'should not stick',
+    };
+    const filed = send(scopeMessage, emptyDraft, null, 'goal', {
+      reply: 'Suggested above — confirm it and it saves to Scope.',
+      patch,
+    });
+    expect(filed.wrote).toBe(false);
+    expect(filed.pending?.step).toBe('scope');
+    expect(filed.pending?.patch.scopeIn).toEqual(patch.scopeIn);
+    expect(filed.pending?.patch.scopeOut).toEqual(patch.scopeOut);
+    expect(filed.pending?.patch.goal).toBeUndefined();
+    expect(filed.draft.scopeIn).toEqual([]);
+    expect(filed.reply).not.toMatch(/Suggested above/i);
+    expect(filed.reply).not.toMatch(/Nothing is waiting on a yes/i);
+    expect(filed.reply.match(/Not saved yet/gi)).toEqual(['Not saved yet']);
+    expect(filed.reply).toContain('Verify proposal display');
+
+    const goalMessage =
+      'Propose a goal for my confirmation: the quest lead runs one quest end-to-end in this sandbox and logs a pass or fail for each step.';
+    const goalClaim = send(goalMessage, emptyDraft, null, 'goal', {
+      reply: 'Nothing is waiting on a yes.',
+      patch: null,
+    });
+    expect(goalClaim.pending).toBeNull();
+    expect(goalClaim.wrote).toBe(false);
+    expect(goalClaim.draft.goal).toBe('');
+    expect(goalClaim.reply).not.toMatch(/Nothing is waiting on a yes/i);
+    expect(goalClaim.reply).not.toMatch(/Not saved yet/i);
+    expect(goalClaim.reply).not.toMatch(/Suggested above/i);
+
+    const goal =
+      'The quest lead runs one quest end-to-end in this sandbox and logs a pass or fail for each step.';
+    const goalCard = send(goalMessage, emptyDraft, null, 'goal', {
+      reply:
+        'Nothing is waiting on a yes. Suggested above — confirm it and it saves to the Goal.',
+      patch: { goal, scopeIn: ['should not stick'] },
+    });
+    expect(goalCard.wrote).toBe(false);
+    expect(goalCard.pending?.step).toBe('goal');
+    expect(goalCard.pending?.patch.goal).toBe(goal);
+    expect(goalCard.pending?.patch.scopeIn).toBeUndefined();
+    expect(goalCard.draft.goal).toBe('');
+    expect(goalCard.reply).not.toMatch(/Nothing is waiting on a yes/i);
+    expect(goalCard.reply).not.toMatch(/Suggested above/i);
+    expect(goalCard.reply.match(/Not saved yet/gi)).toEqual(['Not saved yet']);
+    expect(goalCard.reply).toContain(goal);
+  });
+
+  it('does not invent a card for the live scope reply that never filed a patch', () => {
+    const message =
+      'Propose a Scope for verifying proposal display, milestone editing and reward display in this sandbox; out of scope production rollout.';
+    const reply =
+      'One thing worth settling if it comes up: does "proposal display" mean the published proposal as members see it, or the confirmation card you see before saving? That choice would sharpen the in-scope line, but I\'ve kept your wording as given.';
+    const missed = send(message, emptyDraft, null, 'goal', {
+      reply,
+      patch: null,
+    });
+    expect(missed.pending).toBeNull();
+    expect(missed.wrote).toBe(false);
+    expect(missed.draft.scopeIn).toEqual([]);
+    expect(missed.reply).toMatch(/does "proposal display" mean/i);
+    expect(missed.reply).not.toMatch(/Not saved yet/i);
+    expect(missed.reply).not.toMatch(/Nothing is waiting on a yes/i);
+    expect(missed.reply).not.toMatch(/Suggested above/i);
+  });
+
+  it('keeps the pending Scope when the member confirms the Goal', () => {
+    const draft = {
+      ...emptyDraft,
+      goal: 'Testing the quest lead flow end-to-end in this sandbox',
+    };
+    const pending: PendingQuestSectionProposal = {
+      step: 'scope',
+      patch: {
+        scopeIn: [
+          'Verifying proposal display in this sandbox',
+          'Verifying milestone editing in this sandbox',
+          'Verifying reward display in this sandbox',
+        ],
+        scopeOut: ['Production rollout'],
+      },
+    };
+    const confirmed = send('I confirm the goal', draft, pending, 'scope', {
+      reply:
+        "Nothing is waiting on a yes. What's in scope, and what's explicitly out of scope?",
+      patch: { goal: 'should not apply', scopeIn: ['should not apply'] },
+    });
+    expect(confirmed.wrote).toBe(false);
+    expect(confirmed.pending).toEqual(pending);
+    expect(confirmed.draft.goal).toBe(draft.goal);
+    expect(confirmed.draft.scopeIn).toEqual([]);
+    expect(confirmed.draft.scopeOut).toEqual([]);
+    expect(confirmed.reply).toBe(questPendingYesNotice('scope'));
+    expect(confirmed.reply).not.toMatch(/Nothing is waiting on a yes/i);
+    expect(confirmed.reply.match(/still waiting on a yes/gi)).toHaveLength(1);
+  });
+
+  it('renders Not saved yet once on the live shorter-goal card', () => {
+    const accepted = 'Testing the quest lead flow end-to-end in this sandbox';
+    const shorter =
+      'The lead runs one quest end-to-end in this sandbox, logging pass/fail notes per step.';
+    const pending: PendingQuestSectionProposal = {
+      step: 'goal',
+      patch: {
+        goal: 'The quest lead runs one quest end-to-end in this sandbox, logging pass/fail notes for each step.',
+      },
+    };
+    const reply = [
+      'Shorter, same content — a suggestion only, saved once you confirm it on the card.',
+      shorter,
+      'Not saved yet.',
+      'Not saved yet.',
+      'Do you want that to be in the Goal?',
+    ].join('\n\n');
+    const revised = send(
+      'I like the goal but make it shorter',
+      { ...emptyDraft, goal: accepted },
+      pending,
+      'scope',
+      { reply, patch: { goal: shorter, scopeIn: ['should not stick'] } },
+    );
+    expect(revised.wrote).toBe(false);
+    expect(revised.draft.goal).toBe(accepted);
+    expect(revised.draft.scopeIn).toEqual([]);
+    expect(revised.pending?.step).toBe('goal');
+    expect(revised.pending?.patch.goal).toBe(shorter);
+    expect(revised.pending?.patch.scopeIn).toBeUndefined();
+    expect(revised.reply.match(/Not saved yet/gi)).toEqual(['Not saved yet']);
+    expect(revised.reply).not.toMatch(/saved once you confirm/i);
+    expect(revised.reply).not.toMatch(/Nothing is waiting on a yes/i);
+    expect(
+      revised.reply.match(/Do you want that to be in the Goal\?/g),
+    ).toEqual(['Do you want that to be in the Goal?']);
+    expect(revised.reply.split(shorter)).toHaveLength(2);
   });
 
   it('caps assist history at the schema limits', () => {
