@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
+  HYPHA_CLOSE_HUMAN_CHAT_EVENT,
   SidebarProvider,
   Sidebar,
   SidebarResizeHandle,
@@ -501,6 +502,18 @@ export function PanelWrapLayout({
       closeHumanChatPanel();
     }
   }, [pathname, closeHumanChatPanel]);
+
+  // Wallet nav fires this before the route changes so the sheet is gone even
+  // when soft navigation stalls on the Messages/Matrix main thread.
+  useEffect(() => {
+    const onClose = () => {
+      closeHumanChatPanel();
+    };
+    window.addEventListener(HYPHA_CLOSE_HUMAN_CHAT_EVENT, onClose);
+    return () => {
+      window.removeEventListener(HYPHA_CLOSE_HUMAN_CHAT_EVENT, onClose);
+    };
+  }, [closeHumanChatPanel]);
 
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {

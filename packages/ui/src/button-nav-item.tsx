@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useLinkStatus } from 'next/link';
 import { Button } from './button';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 
 export type ButtonNavItemProps = {
@@ -20,12 +20,26 @@ export type ButtonNavItemProps = {
   ariaLabel?: string;
 };
 
-function NavLinkPendingBody({ children }: { children: React.ReactNode }) {
+/** Dispatched before leaving Messages for Wallet so the mobile chat sheet closes. */
+export const HYPHA_CLOSE_HUMAN_CHAT_EVENT = 'hypha:close-human-chat';
+
+function isWalletHref(href: string | undefined): boolean {
+  return Boolean(href?.includes('/my-wallet'));
+}
+
+function NavLinkPendingBody({
+  children,
+  forcePending,
+}: {
+  children: React.ReactNode;
+  forcePending?: boolean;
+}) {
   const { pending } = useLinkStatus();
+  const busy = forcePending || pending;
   return (
     <span
-      className={clsx('inline-flex items-center', pending && 'opacity-60')}
-      aria-busy={pending || undefined}
+      className={clsx('inline-flex items-center', busy && 'opacity-60')}
+      aria-busy={busy || undefined}
     >
       {children}
     </span>
@@ -46,14 +60,41 @@ export const ButtonNavItem = ({
   const router = useRouter();
   const isActive = href && pathname.includes(href);
   const badgeLabel = badge > 99 ? '99+' : String(badge);
+  const walletHref = isWalletHref(href);
+  const [walletNavPending, setWalletNavPending] = useState(false);
 
   // Wallet (and other heavy first visits) feel stuck without a warm RSC/JS
   // cache. Prefetch as soon as the nav item mounts, not only on hover.
   useEffect(() => {
-    if (!href || disabled) return;
-    if (!href.includes('/my-wallet')) return;
+    if (!href || disabled || !walletHref) return;
     router.prefetch(href);
-  }, [disabled, href, router]);
+  }, [disabled, href, router, walletHref]);
+
+  useEffect(() => {
+    if (!walletNavPending) return;
+    if (pathname.includes('/my-wallet')) {
+      setWalletNavPending(false);
+    }
+  }, [pathname, walletNavPending]);
+
+  const handleClick: React.MouseEventHandler = (event) => {
+    onClick?.(event);
+    if (event.defaultPrevented || !href || disabled || !walletHref) return;
+
+    // Soft nav from Messages can sit forever while Matrix still owns the main
+    // thread — the old screen stays up and Wallet looks like it "never loads".
+    event.preventDefault();
+    setWalletNavPending(true);
+    window.dispatchEvent(new Event(HYPHA_CLOSE_HUMAN_CHAT_EVENT));
+    router.push(href);
+
+    const target = href;
+    window.setTimeout(() => {
+      if (!window.location.pathname.includes('/my-wallet')) {
+        window.location.assign(target);
+      }
+    }, 1200);
+  };
 
   const content = (
     <>
@@ -85,15 +126,17 @@ export const ButtonNavItem = ({
       )}
       asChild={!disabled && !!href}
       disabled={disabled}
-      aria-busy={disabled}
+      aria-busy={disabled || walletNavPending}
       aria-label={
         badge > 0 ? ariaLabel ?? `${label}, ${badgeLabel}` : undefined
       }
-      onClick={onClick}
+      onClick={handleClick}
     >
       {!disabled && href ? (
         <Link href={href} prefetch>
-          <NavLinkPendingBody>{content}</NavLinkPendingBody>
+          <NavLinkPendingBody forcePending={walletNavPending}>
+            {content}
+          </NavLinkPendingBody>
         </Link>
       ) : (
         <span>{content}</span>
