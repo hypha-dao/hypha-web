@@ -208,6 +208,10 @@ import {
   questHelperTimelineRows,
   type QuestHelperThread,
 } from '../space-quests/components/quest-discussion-helper';
+import {
+  QUEST_HELPER_MENTION_ID,
+  withQuestHelperMention,
+} from '../space-quests/utils/quest-helper-mention';
 import { AgentMentionLabelProvider } from './human-chat-panel/agent-mention-label-context';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
@@ -3115,16 +3119,22 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           };
     // One "AI Agents" row, as in Signals. A Context room still answers as its
     // section specialist; that name is the reply label, not a tag target.
-    return withMatrixAgentMention(
-      roster,
-      t('agentMentionLabel'),
-      contextSectionAgent?.skills ?? matrixAgentSkills(t),
+    // Quest Helper is a second row, only while that coach is in this room.
+    return withQuestHelperMention(
+      withMatrixAgentMention(
+        roster,
+        t('agentMentionLabel'),
+        contextSectionAgent?.skills ?? matrixAgentSkills(t),
+        agentIcon,
+      ),
+      coherenceChannel === 'quest' && helperMessages != null,
       agentIcon,
     );
   }, [
     coherenceChannel,
     contextSectionAgent,
     currentUserId,
+    helperMessages,
     isDirectConversation,
     isNetworkSpaceChat,
     isSignalThread,
@@ -3183,6 +3193,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const mentionSanitizedLabelToUserId = useMemo(() => {
     const m = new Map<string, string>();
     for (const [userId, label] of mentionLabelByUserId) {
+      if (userId === QUEST_HELPER_MENTION_ID) continue;
       const key = disambiguatedMentionTokenKey(
         userId,
         label,

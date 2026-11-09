@@ -48,6 +48,13 @@ function scrollChildIntoTimeline(
   });
 }
 
+/** Helper and other non-Matrix rows are not room messages, so they have no edit bar. */
+export function showsChatMessageActions(message: {
+  isSynthetic?: boolean;
+}): boolean {
+  return !message.isSynthetic;
+}
+
 type UIMessage = {
   id: string;
   role: 'user' | 'member';
@@ -854,10 +861,12 @@ export function HumanChatPanelMessages({
 
             const msg = row.message;
             const index = displayMessages.findIndex((m) => m.id === msg.id);
-            const canInteract = !msg.isSynthetic;
+            const canInteract = showsChatMessageActions(msg);
             const isActionBarVisible =
-              lockActionMessageId === msg.id ||
-              (hoverActionMessageId === msg.id && lockActionMessageId == null);
+              canInteract &&
+              (lockActionMessageId === msg.id ||
+                (hoverActionMessageId === msg.id &&
+                  lockActionMessageId == null));
 
             return (
               <HumanChatPanelMessageBubble

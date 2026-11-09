@@ -1,7 +1,6 @@
 import {
   QUEST_STEWARD_STEPS,
   bulletsToMarkdownList,
-  QUEST_HELPER_NAME,
   isBulkQuestDraftRequest,
   labeledQuestDraftSection,
   limitQuestPatchToStep,
@@ -1414,16 +1413,28 @@ export const QUEST_HELPER_OFFLINE_REPLY =
   "I can't reach the assistant right now, so I won't guess wording or fill a section. Your draft is unchanged. Try again, or give the exact line to put in a section.";
 
 /**
- * The create screen trims the composer, then drops a leading @Quest Helper
- * or @AI Agents mention. The rest of the turn sees that string only.
+ * A turn addressed to the Helper at the start of the composer.
+ * Bare "Helper" needs a comma or colon so ordinary sentences stay in the room.
+ * "@Helper" and "@Quest Helper" do not. The mention picker inserts a
+ * zero-width space after "@".
+ */
+const QUEST_HELPER_ADDRESS =
+  /^(?:@\u200b?)(?:quest[\s_-]+helper|helper|ai[\s_-]*agents)\b[,:\s]*|^helper\s*[,:]\s*/i;
+
+/** True when the member is talking to the Helper, with or without a pending card. */
+export function questMessageAddressesHelper(raw: string): boolean {
+  return QUEST_HELPER_ADDRESS.test(raw.trim());
+}
+
+/**
+ * The create screen trims the composer, then drops a leading Helper address
+ * (@Quest Helper, @Helper, Helper, / Helper:, or @AI Agents). The rest of the
+ * turn sees that string only.
  */
 export function questHelperTurnMessage(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) return '';
-  const helper = QUEST_HELPER_NAME.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const withoutMention = trimmed
-    .replace(new RegExp(`^@(?:${helper}|AI[\\s_-]*Agents)\\b[,:\\s]*`, 'i'), '')
-    .trim();
+  const withoutMention = trimmed.replace(QUEST_HELPER_ADDRESS, '').trim();
   return withoutMention || trimmed;
 }
 

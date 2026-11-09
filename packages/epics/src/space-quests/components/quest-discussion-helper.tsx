@@ -24,6 +24,7 @@ import {
   questDraftTurnUsesModel,
   questHelperPendingSuggestion,
   questHelperTurnMessage,
+  questMessageAddressesHelper,
   type PendingQuestSectionProposal,
   type QuestDraftModelTurn,
   type QuestDraftStateSnapshot,
@@ -60,9 +61,9 @@ export function questHelperOwnsRoomMessage(
   raw: string,
   pending: boolean,
 ): boolean {
+  if (questMessageAddressesHelper(raw)) return true;
   const text = questHelperTurnMessage(raw);
   if (!text) return false;
-  if (text !== raw.trim()) return true;
   if (
     pending &&
     (isQuestSectionApproval(text) || isQuestSectionRejection(text))
@@ -83,7 +84,13 @@ export function questHelperTimelineRows(
     role: message.role,
     isSynthetic: true as const,
     parts: [{ type: 'text' as const, text: message.text }],
-    ...(message.senderName ? { senderName: message.senderName } : {}),
+    // Own channel messages leave the name blank so the bubble says "You".
+    ...(message.role === 'member'
+      ? {
+          senderName: message.senderName ?? QUEST_HELPER_NAME,
+          agentSpecialistId: message.agentSpecialistId ?? 'quest-helper',
+        }
+      : {}),
     ...(message.avatarUrl ? { avatarUrl: message.avatarUrl } : {}),
     timestamp: message.timestamp,
   }));
@@ -205,7 +212,6 @@ export function QuestDiscussionHelper({
         {
           id: `hu-${now.getTime()}`,
           role: 'user',
-          senderName: viewerName,
           avatarUrl: person?.avatarUrl ?? undefined,
           timestamp: now,
           text: rawTrimmed,

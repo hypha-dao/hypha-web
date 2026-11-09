@@ -7,11 +7,25 @@ import { fileURLToPath } from 'node:url';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { QuestRecord, QuestStatus } from '@hypha-platform/core/client';
+import { QUEST_HELPER_NAME } from '@hypha-platform/core/client';
+import { getAgentAvatarInitials } from '../../../common/ai-agent-competencies';
+import { isAgentChatAuthor } from '../../../common/human-chat-panel/agent-initials-avatar';
+import { showsChatMessageActions } from '../../../common/human-chat-panel/human-chat-panel-messages';
+import { mentionCandidateMatchRank } from '../../../common/human-chat-panel/human-chat-mention-search';
+import {
+  QUEST_HELPER_OFFLINE_REPLY,
+  questHelperTurnMessage,
+} from '../../utils/quest-draft-assistant';
 import { SAVED_QUEST_HELPER_INTRO } from '../../utils/quest-saved-helper';
+import {
+  QUEST_HELPER_MENTION_ID,
+  withQuestHelperMention,
+} from '../../utils/quest-helper-mention';
 import {
   QuestDiscussionHelper,
   appendQuestHelperMessages,
   questHelperOwnsRoomMessage,
+  questHelperTimelineRows,
   type QuestHelperThread,
 } from '../quest-discussion-helper';
 
@@ -242,6 +256,9 @@ describe('quest discussion helper', () => {
   it('leaves ordinary room chat out of the helper', () => {
     expect(questHelperOwnsRoomMessage('See you Thursday', false)).toBe(false);
     expect(questHelperOwnsRoomMessage('yes', false)).toBe(false);
+    expect(questHelperOwnsRoomMessage('Helpers, meet Thursday', false)).toBe(
+      false,
+    );
     expect(
       questHelperOwnsRoomMessage(
         'Change the goal to ship the checklist',
@@ -249,6 +266,123 @@ describe('quest discussion helper', () => {
       ),
     ).toBe(true);
     expect(questHelperOwnsRoomMessage('yes', true)).toBe(true);
+  });
+
+  it('routes a message addressed to the Helper when nothing is pending', () => {
+    const addressed = [
+      'Helper, what is the goal?',
+      '@Helper what is the goal?',
+      '@Quest Helper what is the goal?',
+      '@quest helper: what is the goal?',
+      'HELPER, what is the goal?',
+      `@\u200BQuest Helper what is the goal?`,
+    ];
+    for (const message of addressed) {
+      expect(questHelperOwnsRoomMessage(message, false)).toBe(true);
+      expect(questHelperTurnMessage(message)).toBe('what is the goal?');
+    }
+    expect(
+      questHelperOwnsRoomMessage(
+        'Helper: what does the Goal section currently say?',
+        false,
+      ),
+    ).toBe(true);
+    expect(
+      questHelperTurnMessage(
+        'Helper: what does the Goal section currently say?',
+      ),
+    ).toBe('what does the Goal section currently say?');
+    expect(
+      questHelperOwnsRoomMessage('@AI Agents what is the goal?', false),
+    ).toBe(true);
+  });
+
+  it('answers an addressed question after a discard, and labels it as the member', async () => {
+    const thread: { current: QuestHelperThread | null } = { current: null };
+    render(<HelperHost onResult={(next) => (thread.current = next)} />);
+    expect(await screen.findByText(SAVED_QUEST_HELPER_INTRO)).toBeTruthy();
+    expect(
+      thread.current?.accept('Change the goal to ship the checklist'),
+    ).toBe(true);
+    expect(await screen.findByText(/not saved yet/i)).toBeTruthy();
+    expect(thread.current?.accept('no')).toBe(true);
+    expect(await screen.findByText(/left that out/i)).toBeTruthy();
+
+    expect(thread.current?.accept('Helper, what is the goal?')).toBe(true);
+    expect(await screen.findByText(QUEST_HELPER_OFFLINE_REPLY)).toBeTruthy();
+    const user = thread.current?.messages.find(
+      (message) => message.text === 'Helper, what is the goal?',
+    );
+    expect(user?.text).toBe('Helper, what is the goal?');
+    expect(user?.senderName).toBeUndefined();
+    const reply = thread.current?.messages.find(
+      (message) => message.text === QUEST_HELPER_OFFLINE_REPLY,
+    );
+    expect(reply?.senderName).toBe(QUEST_HELPER_NAME);
+  });
+
+  it('shows a routed member line as You and the Helper with the agent face', () => {
+    const rows = questHelperTimelineRows([
+      {
+        id: 'user-1',
+        role: 'user',
+        text: 'Helper, what is the goal?',
+        senderName: 'Vlad Hramtsov',
+        avatarUrl: 'https://example.test/vlad.png',
+        timestamp: new Date('2026-11-09T12:00:00.000Z'),
+      },
+      {
+        id: 'helper-1',
+        role: 'member',
+        text: SAVED_QUEST_HELPER_INTRO,
+        senderName: QUEST_HELPER_NAME,
+        timestamp: new Date('2026-11-09T12:00:01.000Z'),
+      },
+    ]);
+    expect(rows[0]).not.toHaveProperty('senderName');
+    expect(rows[0]?.avatarUrl).toBe('https://example.test/vlad.png');
+    expect(rows[1]?.senderName).toBe(QUEST_HELPER_NAME);
+    expect(
+      isAgentChatAuthor({
+        agentSpecialistId: rows[1]?.agentSpecialistId,
+        label: rows[1]?.senderName,
+      }),
+    ).toBe(true);
+    expect(getAgentAvatarInitials(QUEST_HELPER_NAME)).toBe('QH');
+    expect(showsChatMessageActions({ isSynthetic: true })).toBe(false);
+    expect(showsChatMessageActions({ isSynthetic: false })).toBe(true);
+  });
+
+  it('offers Quest Helper in the @ picker for an open quest coach', () => {
+    const people = [
+      {
+        userId: '@ada:example.org',
+        displayLabel: 'Ada Lovelace',
+        rowKey: 'ada',
+      },
+    ];
+    expect(withQuestHelperMention(people, false)).toEqual(people);
+    const open = withQuestHelperMention(
+      [
+        {
+          userId: '@bot:example.org',
+          displayLabel: 'AI Agents',
+          rowKey: 'agent',
+        },
+        ...people,
+      ],
+      true,
+      { kind: 'space', logoUrl: 'https://example.test/logo.png' },
+    );
+    expect(open.map((row) => row.displayLabel)).toEqual([
+      'AI Agents',
+      'Quest Helper',
+      'Ada Lovelace',
+    ]);
+    const helper = open[1];
+    expect(helper?.userId).toBe(QUEST_HELPER_MENTION_ID);
+    expect(mentionCandidateMatchRank(helper!, 'quest')).toBe('start');
+    expect(mentionCandidateMatchRank(helper!, 'helper')).toBe('start');
   });
 
   it('puts the helper turns into the same timeline as the quest channel', () => {
