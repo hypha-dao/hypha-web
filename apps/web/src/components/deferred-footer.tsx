@@ -43,6 +43,10 @@ function readScrollRoot(): HTMLElement | Element | null {
  * The footer only appears once the main column is fully scrolled. Until then
  * it stays in flow (reserving height) but invisible, so it cannot peek in the
  * center column or pin early. At scroll-end it pins full viewport width.
+ *
+ * Messages (and similar) cap an inner list after paint — the first measure can
+ * see a short scrollHeight and wrongly treat the page as already at end. We
+ * re-observe main-column children so that later height lock clears the pin.
  */
 function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -50,7 +54,11 @@ function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
   const [atScrollEnd, setAtScrollEnd] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+    let raf = 0;
+
     const sync = () => {
+      if (cancelled) return;
       const footer =
         rootRef.current?.querySelector('[data-site-footer]') ??
         rootRef.current?.querySelector('footer') ??
@@ -77,11 +85,11 @@ function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
                   : footer.offsetHeight,
             })
           : false;
-      setAtScrollEnd(atEnd);
 
       if (!atEnd) {
         clearSiteFooterOffset();
         setPinHeight(null);
+        setAtScrollEnd(false);
         return;
       }
 
@@ -95,24 +103,66 @@ function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
         SITE_FOOTER_OFFSET_VAR,
         `${overlap}px`,
       );
+      setAtScrollEnd(true);
       setPinHeight(Math.ceil(rect.height) || null);
     };
 
-    sync();
-    const observer = new ResizeObserver(sync);
-    observer.observe(document.documentElement);
-    const footerEl =
-      rootRef.current?.querySelector('[data-site-footer]') ??
-      rootRef.current?.querySelector('footer');
-    if (footerEl) observer.observe(footerEl);
+    const sizeObserver = new ResizeObserver(sync);
+    sizeObserver.observe(document.documentElement);
+
+    const contentObserver = new ResizeObserver(sync);
+    const bindContentTargets = () => {
+      contentObserver.disconnect();
+      const scrollRoot = readScrollRoot();
+      if (scrollRoot instanceof HTMLElement) {
+        for (const child of scrollRoot.children) {
+          contentObserver.observe(child);
+        }
+      }
+      // MessagesViewportLock writes height onto this node after first paint.
+      const listFrame = document.querySelector('[data-messages-list-frame]');
+      if (listFrame instanceof HTMLElement) {
+        contentObserver.observe(listFrame);
+      }
+      const footerEl =
+        rootRef.current?.querySelector('[data-site-footer]') ??
+        rootRef.current?.querySelector('footer');
+      if (footerEl instanceof HTMLElement) {
+        contentObserver.observe(footerEl);
+      }
+    };
+    bindContentTargets();
 
     const scrollRoot = readScrollRoot();
+    const childListObserver =
+      scrollRoot instanceof HTMLElement
+        ? new MutationObserver(bindContentTargets)
+        : null;
+    if (scrollRoot instanceof HTMLElement && childListObserver) {
+      childListObserver.observe(scrollRoot, { childList: true });
+    }
+
     scrollRoot?.addEventListener('scroll', sync, { passive: true });
     window.addEventListener('resize', sync);
     window.visualViewport?.addEventListener('resize', sync);
 
+    sync();
+    // Catch the post-paint messages list cap (and similar layout locks).
+    raf = window.requestAnimationFrame(() => {
+      bindContentTargets();
+      sync();
+      raf = window.requestAnimationFrame(() => {
+        raf = 0;
+        sync();
+      });
+    });
+
     return () => {
-      observer.disconnect();
+      cancelled = true;
+      if (raf) window.cancelAnimationFrame(raf);
+      sizeObserver.disconnect();
+      contentObserver.disconnect();
+      childListObserver?.disconnect();
       scrollRoot?.removeEventListener('scroll', sync);
       window.removeEventListener('resize', sync);
       window.visualViewport?.removeEventListener('resize', sync);
