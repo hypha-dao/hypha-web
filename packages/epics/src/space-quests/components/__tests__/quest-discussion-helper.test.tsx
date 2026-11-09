@@ -12,10 +12,7 @@ import { getAgentAvatarInitials } from '../../../common/ai-agent-competencies';
 import { isAgentChatAuthor } from '../../../common/human-chat-panel/agent-initials-avatar';
 import { showsChatMessageActions } from '../../../common/human-chat-panel/human-chat-panel-messages';
 import { mentionCandidateMatchRank } from '../../../common/human-chat-panel/human-chat-mention-search';
-import {
-  QUEST_HELPER_OFFLINE_REPLY,
-  questHelperTurnMessage,
-} from '../../utils/quest-draft-assistant';
+import { questHelperTurnMessage } from '../../utils/quest-draft-assistant';
 import { SAVED_QUEST_HELPER_INTRO } from '../../utils/quest-saved-helper';
 import {
   QUEST_HELPER_MENTION_ID,
@@ -309,16 +306,42 @@ describe('quest discussion helper', () => {
     expect(await screen.findByText(/left that out/i)).toBeTruthy();
 
     expect(thread.current?.accept('Helper, what is the goal?')).toBe(true);
-    expect(await screen.findByText(QUEST_HELPER_OFFLINE_REPLY)).toBeTruthy();
+    expect(await screen.findByText(/Keep the saved goal/)).toBeTruthy();
     const user = thread.current?.messages.find(
       (message) => message.text === 'Helper, what is the goal?',
     );
     expect(user?.text).toBe('Helper, what is the goal?');
     expect(user?.senderName).toBeUndefined();
-    const reply = thread.current?.messages.find(
-      (message) => message.text === QUEST_HELPER_OFFLINE_REPLY,
+    const reply = thread.current?.messages.find((message) =>
+      message.text.includes('Keep the saved goal'),
     );
     expect(reply?.senderName).toBe(QUEST_HELPER_NAME);
+    expect(reply?.text).not.toMatch(/not saved yet/i);
+  });
+
+  it('keeps this build’s helper turns after a reload in the same tab', async () => {
+    const thread: { current: QuestHelperThread | null } = { current: null };
+    const first = render(
+      <HelperHost onResult={(next) => (thread.current = next)} />,
+    );
+    expect(await screen.findByText(SAVED_QUEST_HELPER_INTRO)).toBeTruthy();
+    expect(thread.current?.accept('@Quest Helper what is the goal?')).toBe(
+      true,
+    );
+    expect(await screen.findByText(/Keep the saved goal/)).toBeTruthy();
+    const stored = window.sessionStorage.getItem(
+      'hypha-quest-helper:sandbox:onboarding',
+    );
+    expect(stored).toContain('@Quest Helper what is the goal?');
+    expect(stored).toContain('Keep the saved goal');
+    first.unmount();
+
+    render(<HelperHost onResult={(next) => (thread.current = next)} />);
+    expect(
+      await screen.findByText('@Quest Helper what is the goal?'),
+    ).toBeTruthy();
+    expect(screen.getByText(/Keep the saved goal/)).toBeTruthy();
+    expect(screen.getAllByText(SAVED_QUEST_HELPER_INTRO)).toHaveLength(1);
   });
 
   it('shows a routed member line as You and the Helper with the agent face', () => {

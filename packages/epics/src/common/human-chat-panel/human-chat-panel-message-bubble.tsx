@@ -62,6 +62,7 @@ import {
   isHyphaDhoChatMessageUrl,
 } from './human-chat-message-link';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
+import { questHelperMentionPill } from './human-chat-display-mention';
 import {
   isHyphaBotMatrixIdentity,
   matrixMemberDisplayLabelFromRoom,
@@ -1428,6 +1429,20 @@ export function renderTextWithMentions(
             {fragment.slice(last, mentionStart)}
           </span>,
         );
+      }
+      const helperMention = questHelperMentionPill(fragment, mentionStart);
+      if (helperMention) {
+        chunks.push(
+          <span
+            key={`${keyBase}-at-${keyN++}`}
+            className={chatMentionPillClass(viewerMentionTintRow)}
+          >
+            @{helperMention.label}
+          </span>,
+        );
+        last = helperMention.end;
+        reLocal.lastIndex = last;
+        continue;
       }
       const bridgedMxid = resolveBridgedLocalHandleToMxid(
         handle,

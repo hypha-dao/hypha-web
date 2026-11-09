@@ -334,6 +334,128 @@ export function isQuestDraftQuestion(text: string): boolean {
   return QUESTION_OPENING.test(trimmed);
 }
 
+const READ_ONLY_SECTION_NAME =
+  '(success\\s+criteria|milestones?|target\\s+dates?|quest\\s+rewards?|rewards?|scopes?|goals?|(?:quest\\s+)?(?:names?|titles?)|participants?|members?|leads?)';
+
+/**
+ * A question about the saved section. "what is the scope?" and "show me the
+ * goal" read the draft. They are not a request to write new wording.
+ */
+const READ_ONLY_SECTION_QUESTION = new RegExp(
+  `^(?:please\\s+|(?:can|could)\\s+you\\s+)?(?:show\\s+me|tell\\s+me|what(?:'s|\\s+is|\\s+are)|what\\s+does)(?:\\s+the)?(?:\\s+current)?\\s+(${READ_ONLY_SECTION_NAME})(?:\\s+section)?(?:\\s+currently)?(?:\\s+says?)?\\s*\\??$`,
+  'i',
+);
+
+function stepFromReadOnlyName(name: string): QuestStewardStep | null {
+  const normalized = name.toLowerCase().replace(/\s+/g, ' ').trim();
+  if (/^goals?$/.test(normalized)) return 'goal';
+  if (/^scopes?$/.test(normalized)) return 'scope';
+  if (/^success(?: criteria)?$/.test(normalized)) return 'success';
+  if (/^milestones?$/.test(normalized)) return 'milestones';
+  if (/^(?:quest )?rewards?$/.test(normalized)) return 'rewards';
+  if (/^target dates?$/.test(normalized)) return 'targetDate';
+  if (/^(?:quest )?(?:names?|titles?)$/.test(normalized)) return 'name';
+  if (/^(?:participants?|members?)$/.test(normalized)) return 'members';
+  if (/^leads?$/.test(normalized)) return 'lead';
+  return null;
+}
+
+/** The section a member is asking to read, or null when the message is an edit. */
+export function questReadOnlySectionQuestion(
+  text: string,
+): QuestStewardStep | null {
+  const trimmed = questHelperTurnMessage(text)
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!trimmed || isQuestSectionApproval(trimmed)) return null;
+  const match = READ_ONLY_SECTION_QUESTION.exec(trimmed);
+  const name = match?.[1];
+  if (!name) return null;
+  return stepFromReadOnlyName(name);
+}
+
+function formatSavedQuestSection(
+  step: QuestStewardStep,
+  draft: QuestDraftStateSnapshot,
+): string {
+  switch (step) {
+    case 'goal':
+      return draft.goal.trim();
+    case 'name':
+      return draft.name.trim();
+    case 'targetDate':
+      return draft.targetDate?.trim() ?? '';
+    case 'lead':
+      return stripViewerYouMarker(draft.leadName).trim();
+    case 'success':
+      return draft.successCriteria.trim();
+    case 'rewards':
+      return draft.rewards
+        .map((reward) => `${reward.amount} ${reward.token}`.trim())
+        .filter(Boolean)
+        .join(', ');
+    case 'scope': {
+      const scopeIn = draft.scopeIn.some((item) => item.trim())
+        ? bulletsToMarkdownList(draft.scopeIn)
+        : draft.scopeInMarkdown.trim();
+      const scopeOut = draft.scopeOut.some((item) => item.trim())
+        ? bulletsToMarkdownList(draft.scopeOut)
+        : draft.scopeOutMarkdown.trim();
+      const lines: string[] = [];
+      if (scopeIn) lines.push(`In:\n${scopeIn}`);
+      if (scopeOut) lines.push(`Out:\n${scopeOut}`);
+      return lines.join('\n\n');
+    }
+    case 'milestones':
+      return draft.milestones
+        .map((milestone, index) => {
+          const name = milestone.name.trim();
+          if (!name) return '';
+          const when = milestone.dueDate?.trim();
+          const owner = milestone.ownerName?.trim();
+          const detail = [when, owner].filter(Boolean).join(' · ');
+          return `M${index + 1} · ${name}${detail ? ` (${detail})` : ''}`;
+        })
+        .filter(Boolean)
+        .join('\n');
+    case 'members':
+      return draft.members
+        .map((member) => member.memberName.trim())
+        .filter(Boolean)
+        .join('\n');
+  }
+}
+
+/**
+ * Plain-text answer from the saved draft. No suggestion card. A waiting
+ * card is retired so a later yes cannot save wording the member did not ask for.
+ */
+export function readOnlyQuestSectionTurn(
+  message: string,
+  draft: QuestDraftStateSnapshot,
+  pending: PendingQuestSectionProposal | null,
+  currentStep: QuestStewardStep,
+): NewQuestDraftTurnResult | null {
+  const step = questReadOnlySectionQuestion(message);
+  if (!step) return null;
+  const body = formatSavedQuestSection(step, draft);
+  const label = questStepSectionLabel(step);
+  const answer = body
+    ? `The ${label} currently says:\n\n${body}`
+    : `The ${label} is empty.`;
+  const hadPending = Boolean(pending && Object.keys(pending.patch).length > 0);
+  return {
+    draft,
+    wrote: false,
+    pending: null,
+    focusStep: currentStep,
+    reply: hadPending
+      ? `${answer}\n\nThe earlier suggestion is no longer waiting on a yes.`
+      : answer,
+  };
+}
+
 /**
  * A short goal that names an activity and no outcome. Structural, so a new
  * wording of the same shape is guided instead of stored as a finished goal.
@@ -1747,6 +1869,9 @@ export function decideQuestDraftSuggestion({
   memberPatch: QuestDraftPatchInput;
   model: QuestDraftModelTurn | null;
 }): QuestDraftSuggestionDecision {
+  if (questReadOnlySectionQuestion(message)) {
+    return { intent: 'clarify', patch: {} };
+  }
   const reply = model?.reply?.trim() ?? '';
   const clarifying =
     reply.length > 0 && modelGuidanceWithholdsFiling(reply, step);
@@ -1870,6 +1995,8 @@ export function runNewQuestDraftTurn({
   voice?: 'create' | 'saved';
 }): NewQuestDraftTurnResult {
   const text = message.trim();
+  const readOnly = readOnlyQuestSectionTurn(text, draft, pending, currentStep);
+  if (readOnly) return readOnly;
   const pendingStep =
     pending && Object.keys(pending.patch).length > 0 ? pending.step : null;
   const target = questDraftCoachedStep(text, currentStep, pendingStep);
@@ -2213,6 +2340,17 @@ export async function settleCreateDraftTurn({
   loadModel: () => Promise<QuestDraftModelTurn | null>;
   voice?: 'create' | 'saved';
 }): Promise<NewQuestDraftTurnResult | null> {
+  if (questReadOnlySectionQuestion(message)) {
+    if (!isCurrent()) return null;
+    const latest = readState();
+    return readOnlyQuestSectionTurn(
+      message,
+      latest.draft,
+      latest.pending,
+      latest.currentStep,
+    );
+  }
+
   const run = (model: QuestDraftModelTurn | null) => {
     if (!isCurrent()) return null;
     const latest = readState();
@@ -2241,6 +2379,7 @@ export async function settleCreateDraftTurn({
   if (!isCurrent()) return null;
   const latest = readState();
   return applyQuestHelperAgentTurn({
+    message,
     helper: model.helper,
     reply: model.reply ?? null,
     currentStep: latest.currentStep,
@@ -2265,6 +2404,7 @@ function joinReply(...parts: Array<string | null | undefined>): string {
  * The "Added that to …" line comes from the app, never from model prose.
  */
 export function applyQuestHelperAgentTurn({
+  message,
   helper,
   reply,
   currentStep,
@@ -2274,6 +2414,7 @@ export function applyQuestHelperAgentTurn({
   spaceMembers,
   voice = 'create',
 }: {
+  message: string;
   helper: QuestHelperAgentResult;
   reply: string | null;
   currentStep: QuestStewardStep;
@@ -2283,6 +2424,13 @@ export function applyQuestHelperAgentTurn({
   spaceMembers: readonly QuestSpaceMember[];
   voice?: 'create' | 'saved';
 }): NewQuestDraftTurnResult {
+  const readOnly = readOnlyQuestSectionTurn(
+    message,
+    draft,
+    pending,
+    currentStep,
+  );
+  if (readOnly) return readOnly;
   const prose = stripModelStateClaims(reply ?? '');
   const suggestion = helper.suggestion
     ? {

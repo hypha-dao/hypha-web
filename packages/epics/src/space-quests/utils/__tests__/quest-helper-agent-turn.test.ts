@@ -231,4 +231,118 @@ describe('quest helper agent turn', () => {
     expect(outcome?.saved).toBe(true);
     expect(outcome?.reply).toBe('Saved the Goal.');
   });
+
+  it('answers a read of the saved section in plain text and does not call the agent', async () => {
+    const filled: QuestDraftStateSnapshot = {
+      name: 'Sandbox edit test',
+      goal: 'Prove that quest editing works in this open-access sandbox.',
+      scopeIn: ['Open the existing saved quest in this sandbox'],
+      scopeOut: ['Changing production'],
+      scopeInMarkdown: '',
+      scopeOutMarkdown: '',
+      successCriteria: 'A reviewer can repeat the edit',
+      rewards: [{ amount: '10', token: 'HYPHA' }],
+      milestones: [
+        {
+          name: 'QA pass',
+          description: '',
+          dueDate: '2026-12-01',
+          ownerName: null,
+          status: 'not_started',
+        },
+      ],
+      leadName: 'Ada Lovelace',
+      selectedLeadPersonId: 7,
+      members: [],
+      targetDate: '2026-12-15',
+    };
+    const invented: QuestDraftModelTurn = {
+      reply: 'Here is tighter wording.',
+      patch: { scopeIn: ['Invented scope line'] },
+      helper: {
+        suggestion: {
+          step: 'scope',
+          patch: { scopeIn: ['Invented scope line'] },
+        },
+        saved: null,
+        discarded: false,
+      },
+    };
+    const cases: Array<{ message: string; saved: string }> = [
+      {
+        message: '@Quest Helper what is the goal?',
+        saved: filled.goal,
+      },
+      {
+        message: 'helper: what is the scope?',
+        saved: 'Open the existing saved quest in this sandbox',
+      },
+      {
+        message: 'what does the success criteria say?',
+        saved: 'A reviewer can repeat the edit',
+      },
+      {
+        message: 'show me the milestones',
+        saved: 'QA pass',
+      },
+      {
+        message: 'what are the rewards?',
+        saved: '10 HYPHA',
+      },
+      {
+        message: "what's the target date?",
+        saved: '2026-12-15',
+      },
+    ];
+    for (const { message, saved } of cases) {
+      const { result, loadModel } = settle(
+        message,
+        { draft: filled, pending: scopeCard, currentStep: 'scope' },
+        invented,
+      );
+      const turn = await result;
+      expect(loadModel, message).not.toHaveBeenCalled();
+      expect(turn?.wrote, message).toBe(false);
+      expect(turn?.pending, message).toBeNull();
+      expect(turn?.reply, message).toContain(saved);
+      expect(turn?.reply, message).not.toMatch(/not saved yet/i);
+      expect(turn?.reply, message).not.toContain('Invented scope line');
+      expect(turn?.draft.goal, message).toBe(filled.goal);
+      expect(turn?.draft.scopeIn, message).toEqual(filled.scopeIn);
+    }
+  });
+
+  it('says when the asked section is empty instead of inventing one', async () => {
+    const { result, loadModel } = settle(
+      'what is the scope?',
+      { draft: draftWithGoal, pending: null, currentStep: 'goal' },
+      {
+        reply: 'In: Open the existing saved quest.',
+        helper: {
+          suggestion: scopeCard,
+          saved: null,
+          discarded: false,
+        },
+      },
+    );
+    const turn = await result;
+    expect(loadModel).not.toHaveBeenCalled();
+    expect(turn?.pending).toBeNull();
+    expect(turn?.reply).toBe('The Scope is empty.');
+  });
+
+  it('still asks the agent to propose wording that is not a read of the saved section', async () => {
+    const { result, loadModel } = settle(
+      'what should the goal be?',
+      { draft: draftWithGoal, pending: null, currentStep: 'goal' },
+      {
+        reply: 'A reviewer could check that the edit can be repeated.',
+        helper: { suggestion: null, saved: null, discarded: false },
+      },
+    );
+    const turn = await result;
+    expect(loadModel).toHaveBeenCalledTimes(1);
+    expect(turn?.pending).toBeNull();
+    expect(turn?.reply).toMatch(/reviewer could check/);
+  });
 });
