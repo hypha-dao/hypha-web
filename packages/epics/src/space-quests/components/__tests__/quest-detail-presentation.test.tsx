@@ -23,6 +23,7 @@ import {
   questParticipantRoleText,
   resolveQuestLeadIdentity,
 } from '../quest-detail-presentation';
+import { QuestSectionMarkdown } from '../quest-section-markdown';
 import {
   EditQuestGoalModal,
   EditQuestMembersModal,
@@ -653,5 +654,31 @@ describe('quest list cards', () => {
       'Target 20 November 2026',
     );
     expect(shortCard.textContent).not.toContain('Target');
+  });
+
+  it('shows a saved bracket escape as the typed characters', () => {
+    const goal = 'Verify editing of an existing quest. \\[QA\\]';
+    render(
+      <>
+        <QuestSectionMarkdown markdown={goal} />
+        <QuestCard
+          quest={questFixture({
+            slug: 'qa',
+            name: 'QA',
+            goal,
+          })}
+          href="/qa"
+        />
+      </>,
+    );
+    const preview = screen.getByTestId('quest-card-qa');
+    expect(preview.textContent).toContain(
+      'Verify editing of an existing quest. [QA]',
+    );
+    expect(preview.textContent).not.toContain('\\');
+    expect(document.body.textContent).toContain(
+      'Verify editing of an existing quest. [QA]',
+    );
+    expect(document.body.textContent).not.toContain('\\');
   });
 });

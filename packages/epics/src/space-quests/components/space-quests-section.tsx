@@ -11,13 +11,14 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { Button, Input, Skeleton } from '@hypha-platform/ui';
-import { cn, stripMarkdown } from '@hypha-platform/ui-utils';
+import { cn } from '@hypha-platform/ui-utils';
 import { Search } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { useSpaceQuests } from '../hooks/use-space-quests';
+import { questRichTextPlain } from '../utils/quest-rich-text';
 
 function statusBadgeClasses(status: QuestStatus): string {
   switch (status) {
@@ -189,10 +190,7 @@ export function QuestCard({
   const progress = milestoneProgressMeta(quest);
   const leadName = quest.leadName.trim();
   const leadInitial = leadName[0]?.toUpperCase() ?? '';
-  const goalPlain = stripMarkdown(quest.goal || '', {
-    orderedListMarkers: false,
-    unorderedListMarkers: false,
-  }).trim();
+  const goalPlain = questRichTextPlain(quest.goal);
   const targetLabel = questCardTargetLabel(quest.targetDate, locale);
 
   return (
