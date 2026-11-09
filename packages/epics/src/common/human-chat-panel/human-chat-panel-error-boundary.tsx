@@ -44,8 +44,8 @@ class HumanChatPanelErrorBoundaryInner extends Component<
       error,
       info.componentStack,
     );
-    this.setState((prev) => chatPanelErrorBoundaryFromError(prev, error));
-    // Do not rethrow — a hook-order throw must stay inside this panel.
+    // getDerivedStateFromError already recorded the message — do not setState
+    // again here (extra updates during recovery can amplify update-depth faults).
   }
 
   handleRetry = () => {

@@ -1001,7 +1001,9 @@ function ChatReplyConnectorMeasured({
       const rep = replyAvatarRef.current;
       const main = mainAvatarRef.current;
       if (!rEl || !rep || !main) {
-        setGeom(null);
+        // Bail when already null — ResizeObserver can re-enter during layout
+        // and a fresh `setGeom(null)` still schedules work.
+        setGeom((prev) => (prev === null ? prev : null));
         return;
       }
       const rowRect = rEl.getBoundingClientRect();
@@ -1010,7 +1012,7 @@ function ChatReplyConnectorMeasured({
       const w = rowRect.width;
       const h = rowRect.height;
       if (w <= 0 || h <= 0) {
-        setGeom(null);
+        setGeom((prev) => (prev === null ? prev : null));
         return;
       }
       const xMain = mainRect.left + mainRect.width / 2 - rowRect.left;
@@ -1040,7 +1042,13 @@ function ChatReplyConnectorMeasured({
         yRep,
         xEnd,
       });
-      setGeom({ width: w, height: h, d });
+      // Same geometry → same state. Without this, RO + SVG mount fights itself
+      // into React #185 (maximum update depth) on reply-heavy threads.
+      setGeom((prev) =>
+        prev && prev.width === w && prev.height === h && prev.d === d
+          ? prev
+          : { width: w, height: h, d },
+      );
     };
 
     const requestMeasure = () => {
@@ -2052,19 +2060,21 @@ export function HumanChatPanelMessageBubble({
 
   useEffect(() => {
     setLocalExpandedId(null);
-    setTextCanExpand(Boolean(textContent.trim()) && textLooksLong);
+    const next = Boolean(textContent.trim()) && textLooksLong;
+    setTextCanExpand((prev) => (prev === next ? prev : next));
   }, [message.id, textContent, richTextHtml, textLooksLong]);
 
   useLayoutEffect(() => {
     const el = textBodyRef.current;
     if (!el || !textContent.trim()) {
-      setTextCanExpand(false);
+      setTextCanExpand((prev) => (prev === false ? prev : false));
       return;
     }
     if (textExpanded) return;
     const measure = () => {
       const overflows = el.scrollHeight > el.clientHeight + 1;
-      setTextCanExpand(overflows || textLooksLong);
+      const next = overflows || textLooksLong;
+      setTextCanExpand((prev) => (prev === next ? prev : next));
     };
     measure();
     const ro = new ResizeObserver(measure);
