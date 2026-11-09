@@ -119,6 +119,7 @@ import {
   mergeDirectoryPeople,
   fetchMessageDirectorySearch,
   personRowsFromDmRooms,
+  dedupeDirectMemberRowsByPeer,
   nextSelectedMembers,
   resolvedMatrixIdsForGroup,
   visibleMemberRowsAfterTitleResolve,
@@ -2459,16 +2460,18 @@ export function MyConnections({
   const listLoading = !listSettled && !dataReady;
   const resolvedMembers = useMemo(
     () =>
-      applyResolvedPeerTitles(
-        members,
-        rows,
-        peopleBySub,
-        personIdToMatrixUserId,
-        {
-          loading: titlesLoading,
-          pendingSubs,
-          hideUnresolved: true,
-        },
+      dedupeDirectMemberRowsByPeer(
+        applyResolvedPeerTitles(
+          members,
+          rows,
+          peopleBySub,
+          personIdToMatrixUserId,
+          {
+            loading: titlesLoading,
+            pendingSubs,
+            hideUnresolved: true,
+          },
+        ),
       ),
     [
       members,

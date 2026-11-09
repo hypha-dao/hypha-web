@@ -360,6 +360,85 @@ export function visibleMemberRowsAfterTitleResolve<
   return rows.filter((row) => !row.titlePending);
 }
 
+function memberActivityFingerprint(
+  row: Pick<MemberRow, 'lastTs' | 'mine' | 'preview'>,
+): string | null {
+  const ts = row.lastTs ?? 0;
+  const preview = row.preview.trim();
+  if (ts <= 0 || !preview) return null;
+  return `${ts}|${row.mine ? 1 : 0}|${preview}`;
+}
+
+/** Prefer a titled / avatared / directory-backed DM row over a blank twin. */
+export function preferDirectMemberRow<T extends ConnectionListPerson>(
+  current: MemberRow<T>,
+  next: MemberRow<T>,
+): MemberRow<T> {
+  const currentReady = Boolean(current.name.trim()) && !current.titlePending;
+  const nextReady = Boolean(next.name.trim()) && !next.titlePending;
+  if (currentReady !== nextReady) return nextReady ? next : current;
+  const currentAvatar = Boolean(current.avatarUrl?.trim());
+  const nextAvatar = Boolean(next.avatarUrl?.trim());
+  if (currentAvatar !== nextAvatar) return nextAvatar ? next : current;
+  if (current.person.id > 0 !== next.person.id > 0) {
+    return next.person.id > 0 ? next : current;
+  }
+  return (next.lastTs ?? 0) >= (current.lastTs ?? 0) ? next : current;
+}
+
+/**
+ * Collapse duplicate DM rows for the same peer after titles resolve.
+ * Two Matrix rooms (or a blank synthetic + a directory row) can share one
+ * preview; keep a single inbox entry.
+ */
+export function dedupeDirectMemberRowsByPeer<T extends ConnectionListPerson>(
+  rows: readonly MemberRow<T>[],
+): MemberRow<T>[] {
+  const byPerson = new Map<number, MemberRow<T>>();
+  const groups: MemberRow<T>[] = [];
+  const synthetic: MemberRow<T>[] = [];
+
+  for (const row of rows) {
+    if (row.faces && row.faces.length > 0) {
+      groups.push(row);
+      continue;
+    }
+    if (row.person.id > 0) {
+      const current = byPerson.get(row.person.id);
+      byPerson.set(
+        row.person.id,
+        current ? preferDirectMemberRow(current, row) : row,
+      );
+      continue;
+    }
+    synthetic.push(row);
+  }
+
+  const kept = [...byPerson.values()];
+  const fingerprints = new Set(
+    kept
+      .map((row) => memberActivityFingerprint(row))
+      .filter((value): value is string => Boolean(value)),
+  );
+  const seenSyntheticFp = new Set<string>();
+  for (const row of synthetic) {
+    const fingerprint = memberActivityFingerprint(row);
+    if (fingerprint && fingerprints.has(fingerprint)) continue;
+    if (fingerprint) {
+      if (seenSyntheticFp.has(fingerprint)) continue;
+      seenSyntheticFp.add(fingerprint);
+      fingerprints.add(fingerprint);
+    }
+    kept.push(row);
+  }
+
+  return [...groups, ...kept].sort((left, right) => {
+    const byTime = (right.lastTs ?? 0) - (left.lastTs ?? 0);
+    if (byTime !== 0) return byTime;
+    return left.name.localeCompare(right.name);
+  });
+}
+
 export type MessagesPeopleListReadyInput = {
   isMatrixAvailable: boolean;
   isConnecting: boolean;
@@ -963,11 +1042,19 @@ function preferDirectRoom(current: ConversationRow, next: ConversationRow) {
   return (next.lastTs ?? 0) >= (current.lastTs ?? 0) ? next : current;
 }
 
+/** One key per human peer — Privy sub when the mxid encodes one, else mxid. */
+function directPeerDedupeKey(otherUserId: string): string {
+  const mxid = otherUserId.trim();
+  const sub = matrixUserIdToCanonicalPrivySub(mxid);
+  if (sub) return `sub:${sub}`;
+  return `mx:${mxid.toLowerCase()}`;
+}
+
 function directRoomByMatrixId(rows: readonly ConversationRow[]) {
   const rooms = new Map<string, ConversationRow>();
   for (const row of rows) {
     if (row.signalThread || row.kind !== 'person' || !row.otherUserId) continue;
-    const key = row.otherUserId.toLowerCase();
+    const key = directPeerDedupeKey(row.otherUserId);
     const current = rooms.get(key);
     rooms.set(key, current ? preferDirectRoom(current, row) : row);
   }
@@ -1329,6 +1416,7 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
   const superseded = new Set(supersededDirectRoomIds(rooms));
   const hiddenPairs = new Set(hiddenLegacyPairRoomIds(rooms));
   const usedMxids = new Set<string>();
+  const usedPeerKeys = new Set<string>();
   const usedRoomIds = new Set<string>();
   const usedPersonIds = new Set<number>();
   const fromRooms: MemberRow<T>[] = [];
@@ -1353,7 +1441,11 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
     if (!isTypedDirectPersonRoom(room)) continue;
     if (superseded.has(room.roomId) || hiddenPairs.has(room.roomId)) continue;
     const mxid = room.otherUserId?.trim().toLowerCase();
+    const peerKey = room.otherUserId
+      ? directPeerDedupeKey(room.otherUserId)
+      : null;
     if (mxid && usedMxids.has(mxid)) continue;
+    if (peerKey && usedPeerKeys.has(peerKey)) continue;
     if (usedRoomIds.has(room.roomId)) continue;
     const technicalName = looksLikeTechnicalMatrixDisplayName(
       room.name,
@@ -1380,6 +1472,7 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
       ) {
         continue;
       }
+      if (person.id > 0 && usedPersonIds.has(person.id)) continue;
       fromRooms.push(
         memberRowFromPersonRoom(room, person, personName(person, fallback)),
       );
@@ -1408,6 +1501,7 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
       });
     }
     if (mxid) usedMxids.add(mxid);
+    if (peerKey) usedPeerKeys.add(peerKey);
     usedRoomIds.add(room.roomId);
   }
 
@@ -1417,6 +1511,7 @@ export function personRowsFromDmRooms<T extends ConnectionListPerson>(
     if (person.id > 0 && usedPersonIds.has(person.id)) continue;
     const mxid = personIdToMatrixUserId[person.id]?.trim().toLowerCase();
     if (mxid && usedMxids.has(mxid)) continue;
+    if (mxid && usedPeerKeys.has(directPeerDedupeKey(mxid))) continue;
     if (isHyphaBot(personIdToMatrixUserId[person.id], personName(person, ''))) {
       continue;
     }

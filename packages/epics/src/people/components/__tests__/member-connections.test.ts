@@ -26,6 +26,8 @@ import {
   resolvedMatrixIdsForGroup,
   personRowsFromDmRooms,
   applyResolvedPeerTitles,
+  dedupeDirectMemberRowsByPeer,
+  preferDirectMemberRow,
   addPeopleCandidateStatus,
   directoryPeopleFromSearch,
   fetchMessageDirectorySearch,
@@ -269,6 +271,72 @@ describe('memberRowsForConnections', () => {
   });
 });
 
+describe('dedupeDirectMemberRowsByPeer', () => {
+  it('keeps one directory row when two rooms resolve to the same person', () => {
+    const vlad = person(42, 'Vlad', 'Hramtsov');
+    const rows = dedupeDirectMemberRowsByPeer([
+      {
+        person: { ...vlad, id: -11 },
+        name: '',
+        titlePending: true,
+        avatarUrl: undefined,
+        preview: 'maybe',
+        mine: false,
+        lastTs: 8000,
+        unread: 0,
+        roomId: '!blank',
+      },
+      {
+        person: vlad,
+        name: 'Vlad Hramtsov',
+        titlePending: false,
+        avatarUrl: 'https://cdn/vlad.png',
+        preview: 'maybe',
+        mine: false,
+        lastTs: 8000,
+        unread: 0,
+        roomId: '!vlad',
+      },
+    ]);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      roomId: '!vlad',
+      name: 'Vlad Hramtsov',
+      person: { id: 42 },
+    });
+  });
+
+  it('prefers the titled row when merging the same person id', () => {
+    const vlad = person(42, 'Vlad', 'Hramtsov');
+    const kept = preferDirectMemberRow(
+      {
+        person: vlad,
+        name: '',
+        titlePending: true,
+        preview: 'maybe',
+        mine: false,
+        lastTs: 8000,
+        unread: 1,
+        roomId: '!a',
+      },
+      {
+        person: vlad,
+        name: 'Vlad Hramtsov',
+        titlePending: false,
+        avatarUrl: 'https://cdn/vlad.png',
+        preview: 'maybe',
+        mine: false,
+        lastTs: 8000,
+        unread: 0,
+        roomId: '!b',
+      },
+    );
+    expect(kept.roomId).toBe('!b');
+    expect(kept.name).toBe('Vlad Hramtsov');
+  });
+});
+
 describe('supersededDirectRoomIds', () => {
   it('keeps the later room for a person and returns the earlier one', () => {
     const losers = supersededDirectRoomIds([
@@ -342,6 +410,28 @@ describe('supersededDirectRoomIds', () => {
       }),
     ]);
     expect(losers).toEqual(['!legacy']);
+  });
+
+  it('treats two Privy-encoded mxids for the same person as one peer', () => {
+    const losers = supersededDirectRoomIds([
+      room({
+        roomId: '!older',
+        kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
+        otherUserId: '@prod_privy_did_privy_vlad:matrix',
+        lastTs: 10,
+        preview: 'maybe',
+      }),
+      room({
+        roomId: '!newer',
+        kind: 'person',
+        roomType: HYPHA_ROOM_TYPES.dm,
+        otherUserId: '@prod_privy_did_privy_vlad:hs2',
+        lastTs: 20,
+        preview: 'maybe',
+      }),
+    ]);
+    expect(losers).toEqual(['!older']);
   });
 });
 
