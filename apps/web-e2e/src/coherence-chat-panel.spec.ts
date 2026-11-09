@@ -352,7 +352,7 @@ test.describe('Coherence Chat Panel Integration', () => {
         // The panel closes. It must not stay open on the space room.
         await expect(chatPanel.backButton).not.toBeVisible();
         await expect(chatPanel.openPanelButton).toBeVisible();
-        await expect(chatPanel.panelHeaderTitle).not.toBeVisible();
+        await expect(chatPanel.panelHeaderTitle).not.toBeInViewport();
       },
     );
 
@@ -417,7 +417,9 @@ test.describe('Coherence Chat Panel Integration', () => {
 
         await expect(chatPanel.openPanelButton).toBeVisible();
         await expect(chatPanel.chatInput).not.toBeVisible();
-        await expect(chatPanel.panelHeaderTitle).not.toHaveText('Chat');
+        // Off-screen or unmounted. `not.toHaveText` waits for the node and
+        // times out when the panel has closed.
+        await expect(chatPanel.panelHeaderTitle).not.toBeInViewport();
       },
     );
   });
