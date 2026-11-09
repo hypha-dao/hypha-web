@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { Button } from './button';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import clsx from 'clsx';
 
 export type ButtonNavItemProps = {
@@ -29,8 +30,18 @@ export const ButtonNavItem = ({
   ariaLabel,
 }: ButtonNavItemProps) => {
   const pathname = usePathname();
+  const router = useRouter();
   const isActive = href && pathname.includes(href);
   const badgeLabel = badge > 99 ? '99+' : String(badge);
+
+  // Wallet (and other heavy first visits) feel stuck without a warm RSC/JS
+  // cache. Prefetch as soon as the nav item mounts, not only on hover.
+  useEffect(() => {
+    if (!href || disabled) return;
+    if (!href.includes('/my-wallet')) return;
+    router.prefetch(href);
+  }, [disabled, href, router]);
+
   const content = (
     <>
       {icon ? (
