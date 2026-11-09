@@ -3,7 +3,10 @@ export { SpaceQuestCreateDraft } from './components/space-quest-create-draft';
 export { SpaceQuestDetail } from './components/space-quest-detail';
 export {
   SPACE_QUEST_DETAIL_TABS,
+  isRetiredQuestParticipantTab,
   isSpaceQuestDetailTab,
+  questDetailSearchTargetsParticipantTab,
+  spaceQuestDetailTabLinks,
   type SpaceQuestDetailTab,
 } from './space-quest-tabs';
 export {

@@ -38,7 +38,6 @@ import {
   QuestRewardStrip,
   QuestTargetDateCard,
   questDetailProgressLabel,
-  questParticipantRoleText,
   resolveQuestLeadIdentity,
 } from './quest-detail-presentation';
 import { ArrowLeft, ArrowUpRight, Pencil, Send } from 'lucide-react';
@@ -88,7 +87,10 @@ import {
   formatRelativeTimeShort,
   healthBadgeMeta,
 } from './space-quests-section';
-import type { SpaceQuestDetailTab } from '../space-quest-tabs';
+import {
+  spaceQuestDetailTabLinks,
+  type SpaceQuestDetailTab,
+} from '../space-quest-tabs';
 import {
   QUEST_HELPER_OFFLINE_REPLY,
   questAssistHistoryEntries,
@@ -189,28 +191,6 @@ function QuestRichText({
   return (
     <div className={className}>
       <QuestSectionMarkdown markdown={markdown} empty={empty} />
-    </div>
-  );
-}
-
-function BulletList({
-  items,
-  empty = '—',
-}: {
-  items: string[];
-  empty?: string;
-}) {
-  if (items.length === 0) {
-    return <p className="text-[13px] text-neutral-11">{empty}</p>;
-  }
-  return (
-    <div className="space-y-1.5 text-[13.5px] leading-relaxed text-foreground">
-      {items.map((item, idx) => (
-        <p key={idx} className="flex gap-2">
-          <span className="font-semibold text-neutral-11">•</span>
-          <span>{item}</span>
-        </p>
-      ))}
     </div>
   );
 }
@@ -866,48 +846,6 @@ function QuestUpdateRow({ update }: { update: QuestUpdateRecord }) {
           </div>
         ) : null}
       </div>
-    </div>
-  );
-}
-
-function MembersTab({
-  quest,
-  canEdit,
-  openModal,
-}: {
-  quest: QuestRecord;
-  canEdit: boolean;
-  openModal: (modal: EditingModal) => void;
-}) {
-  return (
-    <div className="mx-auto w-full max-w-[760px]">
-      <section className={CARD_CLASS}>
-        <SectionHeader
-          title={`PARTICIPANTS · ${quest.members.length}`}
-          onEdit={canEdit ? () => openModal('members') : undefined}
-        />
-        <div className="divide-y divide-border">
-          {quest.members.map((member) => (
-            <div key={member.id} className="flex gap-3 py-3 first:pt-0">
-              <span className="grid size-8 shrink-0 place-items-center bg-foreground text-[11px] font-bold text-background">
-                {initialOf(member.memberName)}
-              </span>
-              <div className="min-w-0 flex-1 space-y-1">
-                <p className="text-[13px] font-semibold text-foreground">
-                  {member.memberName}
-                  {questParticipantRoleText(member) ? (
-                    <span className="ml-2 text-[11px] font-normal text-neutral-11">
-                      {questParticipantRoleText(member)}
-                    </span>
-                  ) : null}
-                </p>
-                <p className={LABEL_CLASS}>RESPONSIBILITY</p>
-                <BulletList items={member.responsibilities} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
@@ -1611,13 +1549,7 @@ export function SpaceQuestDetail({
     if (!open) setEditingModal(null);
   };
 
-  const tabs: Array<{ key: SpaceQuestDetailTab; label: string; href: string }> =
-    [
-      { key: 'overview', label: 'OVERVIEW', href: baseHref },
-      { key: 'updates', label: 'UPDATES', href: `${baseHref}/updates` },
-      { key: 'members', label: 'PARTICIPANTS', href: `${baseHref}/members` },
-      { key: 'settings', label: 'SETTINGS', href: `${baseHref}/settings` },
-    ];
+  const tabs = spaceQuestDetailTabLinks(baseHref);
 
   return (
     <div className="space-y-4" data-testid="quest-detail">
@@ -1741,13 +1673,6 @@ export function SpaceQuestDetail({
           canPost={canEdit}
           onPost={postUpdate}
           posting={saving}
-        />
-      ) : null}
-      {tab === 'members' ? (
-        <MembersTab
-          quest={quest}
-          canEdit={canEdit}
-          openModal={setEditingModal}
         />
       ) : null}
       {tab === 'settings' ? (
