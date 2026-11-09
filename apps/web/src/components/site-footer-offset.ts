@@ -5,6 +5,40 @@
  */
 export const SITE_FOOTER_OVERLAP_IGNORE_BELOW_PX = 24;
 
+/** Slack for sub-pixel / rubber-band scroll end detection. */
+export const SITE_FOOTER_SCROLL_END_SLACK_PX = 4;
+
+/**
+ * True when the scroll root cannot scroll further (or content fits the
+ * viewport). The site footer only pins/shows in that state.
+ */
+export function isScrollRootAtEnd(input: {
+  scrollTop: number;
+  clientHeight: number;
+  scrollHeight: number;
+  slackPx?: number;
+}): boolean {
+  const top = input.scrollTop;
+  const view = input.clientHeight;
+  const height = input.scrollHeight;
+  if (
+    !Number.isFinite(top) ||
+    !Number.isFinite(view) ||
+    !Number.isFinite(height) ||
+    view <= 0 ||
+    height <= 0
+  ) {
+    return false;
+  }
+  const slack =
+    typeof input.slackPx === 'number' && Number.isFinite(input.slackPx)
+      ? Math.max(0, input.slackPx)
+      : SITE_FOOTER_SCROLL_END_SLACK_PX;
+  // Content fits: already "fully scrolled".
+  if (height <= view + slack) return true;
+  return top + view >= height - slack;
+}
+
 /**
  * How many pixels of the site footer currently cover the bottom of the
  * viewport. Fixed sidebars use this so the composer does not paint over

@@ -4,10 +4,12 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID } from '@hypha-platform/core/client';
 import { useNetworkGlobeReady } from '@hypha-platform/epics';
 import { Footer, type FooterProps } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useSearchParams } from 'next/navigation';
 
 import {
   SITE_FOOTER_OFFSET_VAR,
+  isScrollRootAtEnd,
   siteFooterViewportOverlap,
 } from './site-footer-offset';
 
@@ -27,17 +29,25 @@ function clearSiteFooterOffset() {
   document.documentElement.style.removeProperty(SITE_FOOTER_OFFSET_VAR);
 }
 
+function readScrollRoot(): HTMLElement | Element | null {
+  return (
+    document.getElementById(HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID) ??
+    document.scrollingElement
+  );
+}
+
 /**
  * Publishes `--site-footer-offset` so fixed sidebars (chat / AI) and the
  * sticky messages list lift above the visible "Powered by Hypha" bar.
  *
- * When the footer is on screen it is also pinned `fixed` full viewport width.
- * In dual-panel layout the footer lives in the center column; without the pin
- * it only paints between the rails while the side panels cover the sides.
+ * The footer only appears once the main column is fully scrolled. Until then
+ * it stays in flow (reserving height) but invisible, so it cannot peek in the
+ * center column or pin early. At scroll-end it pins full viewport width.
  */
 function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [pinHeight, setPinHeight] = useState<number | null>(null);
+  const [atScrollEnd, setAtScrollEnd] = useState(false);
 
   useEffect(() => {
     const sync = () => {
@@ -48,8 +58,34 @@ function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
       if (!(footer instanceof HTMLElement)) {
         clearSiteFooterOffset();
         setPinHeight(null);
+        setAtScrollEnd(false);
         return;
       }
+
+      const scrollRoot = readScrollRoot();
+      const atEnd =
+        scrollRoot instanceof HTMLElement || scrollRoot instanceof Element
+          ? isScrollRootAtEnd({
+              scrollTop:
+                'scrollTop' in scrollRoot ? scrollRoot.scrollTop : 0,
+              clientHeight:
+                'clientHeight' in scrollRoot
+                  ? scrollRoot.clientHeight
+                  : window.innerHeight,
+              scrollHeight:
+                'scrollHeight' in scrollRoot
+                  ? scrollRoot.scrollHeight
+                  : footer.offsetHeight,
+            })
+          : false;
+      setAtScrollEnd(atEnd);
+
+      if (!atEnd) {
+        clearSiteFooterOffset();
+        setPinHeight(null);
+        return;
+      }
+
       const rect = footer.getBoundingClientRect();
       const overlap = siteFooterViewportOverlap({
         footerTop: rect.top,
@@ -60,9 +96,7 @@ function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
         SITE_FOOTER_OFFSET_VAR,
         `${overlap}px`,
       );
-      // Pin full-bleed once the footer is meaningfully on screen. Keep the
-      // in-flow spacer height so scroll length does not jump.
-      setPinHeight(overlap > 0 ? Math.ceil(rect.height) : null);
+      setPinHeight(Math.ceil(rect.height) || null);
     };
 
     sync();
@@ -73,9 +107,7 @@ function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
       rootRef.current?.querySelector('footer');
     if (footerEl) observer.observe(footerEl);
 
-    const scrollRoot =
-      document.getElementById(HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID) ??
-      document.scrollingElement;
+    const scrollRoot = readScrollRoot();
     scrollRoot?.addEventListener('scroll', sync, { passive: true });
     window.addEventListener('resize', sync);
     window.visualViewport?.addEventListener('resize', sync);
@@ -89,7 +121,7 @@ function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const pinned = pinHeight != null && pinHeight > 0;
+  const pinned = atScrollEnd && pinHeight != null && pinHeight > 0;
 
   return (
     <div
@@ -99,7 +131,11 @@ function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
     >
       <div
         data-site-footer-pinned={pinned ? '' : undefined}
-        className={pinned ? 'fixed inset-x-0 bottom-0 z-[45]' : undefined}
+        aria-hidden={atScrollEnd ? undefined : true}
+        className={cn(
+          pinned && 'fixed inset-x-0 bottom-0 z-[45]',
+          !atScrollEnd && 'pointer-events-none invisible',
+        )}
       >
         {children}
       </div>

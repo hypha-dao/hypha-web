@@ -1,6 +1,41 @@
 import { describe, expect, it } from 'vitest';
 
-import { siteFooterViewportOverlap } from '../site-footer-offset';
+import {
+  isScrollRootAtEnd,
+  siteFooterViewportOverlap,
+} from '../site-footer-offset';
+
+describe('isScrollRootAtEnd', () => {
+  it('is true when content fits the viewport', () => {
+    expect(
+      isScrollRootAtEnd({
+        scrollTop: 0,
+        clientHeight: 900,
+        scrollHeight: 800,
+      }),
+    ).toBe(true);
+  });
+
+  it('is false while there is room to scroll', () => {
+    expect(
+      isScrollRootAtEnd({
+        scrollTop: 100,
+        clientHeight: 900,
+        scrollHeight: 2000,
+      }),
+    ).toBe(false);
+  });
+
+  it('is true at the bottom within slack', () => {
+    expect(
+      isScrollRootAtEnd({
+        scrollTop: 1098,
+        clientHeight: 900,
+        scrollHeight: 2000,
+      }),
+    ).toBe(true);
+  });
+});
 
 describe('siteFooterViewportOverlap', () => {
   it('is zero while the footer is still below the fold', () => {
