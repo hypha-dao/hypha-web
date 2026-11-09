@@ -303,7 +303,7 @@ describe('saved quest helper entry', () => {
     );
   });
 
-  it('opens the helper from Settings and leaves Open discussion on the room', () => {
+  it('opens the quest discussion room and keeps the helper off the page', () => {
     render(
       <SpaceQuestDetail
         spaceSlug="sandbox"
@@ -312,20 +312,9 @@ describe('saved quest helper entry', () => {
       />,
     );
 
+    expect(screen.queryByTestId('open-quest-helper-button')).toBeNull();
+    expect(screen.queryByText('Quest Helper')).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Participants' })).toBeNull();
-    expect(screen.getByTestId('open-quest-chat-button').textContent).toContain(
-      'Open discussion',
-    );
-    expect(
-      screen.getByTestId('open-quest-helper-button').textContent,
-    ).toContain('Quest Helper');
-    fireEvent.click(screen.getByTestId('open-quest-helper-button'));
-    expect(harness.openHumanChatPanel).toHaveBeenCalled();
-    expect(harness.openCoherenceChat).not.toHaveBeenCalled();
-    const helperSession = harness.setSpaceQuestDraft.mock.calls.at(-1)?.[0];
-    expect(helperSession.coach).toBe('quest-helper');
-    expect(helperSession.questTitle).toBe('Onboarding');
-
     fireEvent.click(screen.getByTestId('open-quest-chat-button'));
     expect(harness.openCoherenceChat).toHaveBeenCalledWith(
       'room-1',
@@ -335,6 +324,9 @@ describe('saved quest helper entry', () => {
       'sandbox',
       { channel: 'quest' },
     );
+    expect(harness.setSpaceQuestDraft).toHaveBeenCalledTimes(1);
+    expect(harness.setSpaceQuestDraft).toHaveBeenCalledWith(null);
+    expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
     expect(screen.getByTestId('open-quest-chat-button').textContent).toContain(
       'Open discussion',
     );

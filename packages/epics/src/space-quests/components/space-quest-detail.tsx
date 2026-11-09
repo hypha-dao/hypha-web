@@ -3,9 +3,7 @@
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   QUEST_HEALTH_STATES,
-  QUEST_HELPER_NAME,
   QUEST_MILESTONE_STATUSES,
-  QUEST_STEWARD_STEPS,
   buildMilestoneStatusPatch,
   canChangeMilestoneStatus,
   canMemberEditQuest,
@@ -96,26 +94,9 @@ import {
 } from '../space-quest-tabs';
 import {
   QUEST_HELPER_OFFLINE_REPLY,
-  formatPendingQuestPatch,
   questAssistHistoryEntries,
-  questDraftSuggestionStatus,
-  questDraftTurnUsesModel,
-  questHelperTurnMessage,
-  type PendingQuestSectionProposal,
-  type QuestDraftModelTurn,
   type QuestDraftPatchInput,
-  type QuestDraftStateSnapshot,
 } from '../utils/quest-draft-assistant';
-import {
-  questHelperTypingAfterTurn,
-  questHelperTypingForTurn,
-} from '../utils/quest-helper-typing';
-import {
-  SAVED_QUEST_HELPER_INTRO,
-  questHelperDraftAssistBody,
-  questRecordToDraftSnapshot,
-  runSavedQuestHelperTurn,
-} from '../utils/quest-saved-helper';
 
 type QuestPatch = z.infer<typeof schemaPatchSpaceQuest>;
 
@@ -827,7 +808,6 @@ function SettingsTab({
   saving,
   openModal,
   onPatch,
-  onOpenHelper,
 }: {
   quest: QuestRecord;
   isLead: boolean;
@@ -836,7 +816,6 @@ function SettingsTab({
   saving: boolean;
   openModal: (modal: EditingModal) => void;
   onPatch: (patch: QuestPatch) => void;
-  onOpenHelper: () => void;
 }) {
   const locale = useLocale();
   const visibility = questOverviewVisibility(quest);
@@ -852,31 +831,6 @@ function SettingsTab({
           Only the Lead can change status, transfer the lead, or use the danger
           zone.
         </p>
-      ) : null}
-
-      {canEdit ? (
-        <section className={CARD_CLASS}>
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[13px] font-semibold text-foreground">
-                Quest Helper
-              </p>
-              <p className="text-[12px] text-neutral-11">
-                Suggest one section at a time, then save it
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              data-testid="open-quest-helper-button"
-              onClick={onOpenHelper}
-              className="shrink-0"
-            >
-              Quest Helper
-            </Button>
-          </div>
-        </section>
       ) : null}
 
       <section className={CARD_CLASS}>
@@ -1171,28 +1125,6 @@ export function SpaceQuestDetail({
       text: 'Ask me to refine the Goal, Scope, Success Criteria, Milestones, Deliverables, or Quest Reward for this quest.',
     },
   ]);
-  const [helperOpen, setHelperOpen] = useState(false);
-  const [helperInput, setHelperInput] = useState('');
-  const [helperTyping, setHelperTyping] = useState(false);
-  const [helperMessages, setHelperMessages] = useState<
-    SpaceQuestDraftChatMessage[]
-  >(() => [
-    {
-      id: 'helper-m1',
-      role: 'member',
-      senderName: QUEST_HELPER_NAME,
-      timestamp: new Date(),
-      text: SAVED_QUEST_HELPER_INTRO,
-    },
-  ]);
-  const helperDraftRef = useRef<QuestDraftStateSnapshot | null>(null);
-  const helperPendingRef = useRef<PendingQuestSectionProposal | null>(null);
-  const helperStepRef = useRef(0);
-  const helperTurnRef = useRef(0);
-  const helperSendRef = useRef<(overridePrompt?: string) => void>(() => {});
-  const triggerHelperSend = useCallback(() => {
-    helperSendRef.current();
-  }, []);
 
   const viewer = useMemo(
     () =>
@@ -1219,50 +1151,7 @@ export function SpaceQuestDetail({
   }, []);
 
   useEffect(() => {
-    if (!quest) {
-      helperDraftRef.current = null;
-      return;
-    }
-    helperDraftRef.current = questRecordToDraftSnapshot(quest);
-  }, [quest]);
-
-  const helperEditable =
-    !!quest &&
-    (quest.status === 'active' || quest.status === 'paused') &&
-    canMemberEditQuest(viewer, quest);
-
-  useEffect(() => {
-    if (!helperOpen) return;
-    if (!quest || !helperEditable) {
-      setHelperOpen(false);
-      if (!detailChatOpen) setSpaceQuestDraft(null);
-      return;
-    }
-    setSpaceQuestDraft({
-      spaceSlug,
-      questTitle: quest.name,
-      messages: helperMessages,
-      input: helperInput,
-      onInputChange: setHelperInput,
-      onSend: triggerHelperSend,
-      isAgentTyping: helperTyping,
-      coach: 'quest-helper',
-    });
-  }, [
-    detailChatOpen,
-    helperEditable,
-    helperInput,
-    helperMessages,
-    helperOpen,
-    helperTyping,
-    quest,
-    setSpaceQuestDraft,
-    spaceSlug,
-    triggerHelperSend,
-  ]);
-
-  useEffect(() => {
-    if (!detailChatOpen || !quest || helperOpen) return;
+    if (!detailChatOpen || !quest) return;
     setSpaceQuestDraft({
       spaceSlug,
       questTitle: quest.name,
@@ -1278,7 +1167,6 @@ export function SpaceQuestDetail({
     detailChatMessages,
     detailChatOpen,
     detailChatTyping,
-    helperOpen,
     quest,
     setSpaceQuestDraft,
     spaceSlug,
@@ -1346,7 +1234,6 @@ export function SpaceQuestDetail({
     if (typeof window !== 'undefined' && window.innerWidth < 1200) {
       closeAiPanel();
     }
-    setHelperOpen(false);
     if (quest.chatRoomId) {
       setDetailChatOpen(false);
       setSpaceQuestDraft(null);
@@ -1519,154 +1406,6 @@ export function SpaceQuestDetail({
     } finally {
       setSaving(false);
     }
-  };
-
-  const openQuestHelper = () => {
-    if (!canEdit) return;
-    if (helperOpen) {
-      setHelperOpen(false);
-      if (!detailChatOpen) setSpaceQuestDraft(null);
-      return;
-    }
-    if (typeof window !== 'undefined' && window.innerWidth < 1200) {
-      closeAiPanel();
-    }
-    setDetailChatOpen(false);
-    setHelperOpen(true);
-    openHumanChatPanel();
-  };
-
-  const handleSendHelperMessage = async (overridePrompt?: string) => {
-    const rawTrimmed = (overridePrompt ?? helperInput).trim();
-    if (!rawTrimmed || !canEdit) return;
-    if (!overridePrompt) setHelperInput('');
-    const snapshot = helperDraftRef.current;
-    if (!snapshot) return;
-
-    const trimmed = questHelperTurnMessage(rawTrimmed);
-    const generation = ++helperTurnRef.current;
-    const readTurnState = () => ({
-      draft: helperDraftRef.current ?? snapshot,
-      pending: helperPendingRef.current,
-      currentStep: QUEST_STEWARD_STEPS[helperStepRef.current] ?? 'goal',
-    });
-    const viewerName = viewer?.name?.trim() || 'Participant';
-    const now = new Date();
-    setHelperMessages((prev) => [
-      ...prev,
-      {
-        id: `hu-${now.getTime()}`,
-        role: 'user',
-        senderName: viewerName,
-        avatarUrl: person?.avatarUrl ?? undefined,
-        timestamp: now,
-        text: rawTrimmed,
-      },
-    ]);
-    const history = helperMessages.slice(-8).map((entry) => ({
-      role: entry.role === 'user' ? ('user' as const) : ('agent' as const),
-      text: entry.text,
-    }));
-    const usesModel = questDraftTurnUsesModel(trimmed);
-    setHelperTyping(questHelperTypingForTurn(usesModel));
-    try {
-      const outcome = await runSavedQuestHelperTurn({
-        message: trimmed,
-        history,
-        viewerDisplayName: viewerName,
-        spaceMembers,
-        readState: readTurnState,
-        isCurrent: () => helperTurnRef.current === generation,
-        saveSection: async (patch) => {
-          const updated = await savePatch(patch);
-          if (!updated) return false;
-          helperDraftRef.current = questRecordToDraftSnapshot(updated);
-          return true;
-        },
-        loadModel: async () => {
-          const currentSnapshot = helperDraftRef.current;
-          if (!currentSnapshot) return null;
-          const token = await getAccessToken?.().catch(() => null);
-          if (!token || helperTurnRef.current !== generation) return null;
-          const currentStep =
-            QUEST_STEWARD_STEPS[helperStepRef.current] ?? 'goal';
-          const pendingNow = helperPendingRef.current;
-          const suggestion = questDraftSuggestionStatus(trimmed, pendingNow);
-          try {
-            const response = await fetch(
-              `/api/v1/spaces/${encodeURIComponent(
-                spaceSlug,
-              )}/quests/draft-assist`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(
-                  questHelperDraftAssistBody({
-                    message: trimmed,
-                    currentStep,
-                    spaceTitle: quest.spaceTitle,
-                    draft: currentSnapshot,
-                    spaceMembers,
-                    history: questAssistHistoryEntries(history),
-                    pendingSuggestion: (() => {
-                      const wording =
-                        pendingNow &&
-                        (suggestion.status === 'awaiting' ||
-                          suggestion.status === 'revising')
-                          ? formatPendingQuestPatch(pendingNow.patch).slice(
-                              0,
-                              2000,
-                            )
-                          : '';
-                      return {
-                        status: suggestion.status,
-                        ...(suggestion.step ? { step: suggestion.step } : {}),
-                        ...(wording ? { wording } : {}),
-                      };
-                    })(),
-                  }),
-                ),
-              },
-            );
-            if (helperTurnRef.current !== generation || !response.ok) {
-              return null;
-            }
-            return (await response.json()) as QuestDraftModelTurn;
-          } catch {
-            return null;
-          }
-        },
-      });
-      if (!outcome || helperTurnRef.current !== generation) return;
-      helperPendingRef.current = outcome.pending;
-      helperStepRef.current = Math.max(
-        0,
-        QUEST_STEWARD_STEPS.indexOf(outcome.focusStep),
-      );
-      setHelperMessages((prev) => [
-        ...prev,
-        {
-          id: `hs-${Date.now()}`,
-          role: 'member',
-          senderName: QUEST_HELPER_NAME,
-          timestamp: new Date(),
-          text: outcome.reply,
-        },
-      ]);
-    } finally {
-      const typing = questHelperTypingAfterTurn(
-        generation,
-        helperTurnRef.current,
-      );
-      if (typing === false) setHelperTyping(false);
-    }
-  };
-
-  helperSendRef.current = (overridePrompt?: string) => {
-    void handleSendHelperMessage(overridePrompt);
   };
 
   const postUpdate = async ({
@@ -1854,7 +1593,6 @@ export function SpaceQuestDetail({
             setEditingModal(modal);
           }}
           onPatch={(patch) => void savePatch(patch)}
-          onOpenHelper={openQuestHelper}
         />
       ) : null}
 

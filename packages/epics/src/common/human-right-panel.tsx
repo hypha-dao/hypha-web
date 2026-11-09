@@ -201,6 +201,7 @@ import { SignalIndicativeAmounts } from '../coherence/components/signal-indicati
 import { SpaceContextSidePanel } from '../space-context/components/space-context-chat-panel';
 import { useSpaceContextSectionAgent } from '../space-context/hooks/use-space-context-section-agent';
 import { SpaceQuestSidePanel } from '../space-quests/components/space-quest-chat-panel';
+import { QuestDiscussionHelper } from '../space-quests/components/quest-discussion-helper';
 import { AgentMentionLabelProvider } from './human-chat-panel/agent-mention-label-context';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
@@ -7429,6 +7430,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                   >
                     {t('publicRoomTitle')} — {t('publicWelcome')}
                   </p>
+                ) : null}
+                {coherenceChannel === 'quest' &&
+                coherenceSlug?.trim() &&
+                (coherenceSpaceSlug?.trim() || spaceSlug) ? (
+                  <QuestDiscussionHelper
+                    spaceSlug={coherenceSpaceSlug?.trim() || spaceSlug || ''}
+                    questSlug={coherenceSlug.trim()}
+                  />
                 ) : null}
                 {isJoining ? (
                   <HumanChatPanelLoader showPreview />

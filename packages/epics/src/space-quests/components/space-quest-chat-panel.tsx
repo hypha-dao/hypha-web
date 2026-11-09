@@ -63,7 +63,7 @@ const QUICK_DRAFT_PROMPTS = [
   },
 ] as const;
 
-function SpaceQuestChatBody({
+export function SpaceQuestChatBody({
   session,
   activeTab,
 }: {
