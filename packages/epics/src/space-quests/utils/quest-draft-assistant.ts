@@ -204,36 +204,62 @@ const SECTION_REWRITE =
 const SECTION_OPENER =
   /\b(?:let'?s|let us|now)\b.{0,48}\b(?:define|talk about|work on|move on|start|cover)\b|\b(?:define|talk about|work on|move on to|start on|cover)\s+(?:the\s+)?(success\s+criteria|in[-\s]?scope|out[-\s]of[-\s]?scope|milestones?|members?|target\s+date|quest\s+rewards?|rewards?|quest\s+name|scope|success|lead|goal|name|title)\b|\b(what is|what['\u2019]s|how (?:do|should) (?:i|we)|help me (?:think|understand)|explain)\b/i;
 
-function approvalRemainder(rest: string): boolean {
-  const text = rest
-    .trim()
-    .replace(/[.!]+$/g, '')
-    .trim();
-  if (!text) return true;
-  return new RegExp(`^(?:please|${APPROVAL_PHRASE})$`, 'i').test(text);
-}
+/** "the goal", "goal suggestion", "your suggestion", "that", "it". */
+const APPROVAL_REF = `(?:(?:(?:the|that|this|your|my|our)\\s+)?(?:(?:suggested|proposed|new)\\s+)?(?:${APPROVAL_SECTION}(?:\\s+(?:suggestion|wording|version|text|draft|proposal))?|suggestion|wording|version|proposal|draft)|it|that|this|them|those|these)`;
+
+const APPROVAL_FINE =
+  '(?:good|great|fine|right|perfect|correct|ok|okay|clear|solid)';
 
 /**
- * "yes", "yes please", "Yes, put that in the Goal.", "include that", "I approve".
- * A longer answer that only starts with yes is still content.
+ * One piece of a confirmation. A message counts as approval only when every
+ * piece is one of these, so "yes, make a goal from it" stays content.
+ */
+const APPROVAL_CLAUSE = [
+  APPROVAL_PHRASE,
+  'please',
+  'thanks|thank you',
+  `(?:(?:i|we)\\s+)?(?:confirm|accept|approve)(?:\\s+${APPROVAL_REF})?`,
+  'confirmed|accepted|agreed|lgtm|great|correct|exactly|absolutely|definitely|of course|works for me|that works|all good|good',
+  `(?:(?:i|we)\\s+)?agree(?:\\s+with\\s+${APPROVAL_REF})?`,
+  `(?:i|we)\\s+(?:really\\s+)?(?:like|love)\\s+${APPROVAL_REF}`,
+  `(?:like|love)\\s+(?:it|that|this)`,
+  `(?:yes|yeah|yep|ok|okay|sure)\\s+(?:to|for)\\s+${APPROVAL_REF}`,
+  `(?:(?:let'?s|let us|please|you can|go ahead and)\\s+)?(?:save|keep|apply|use|take|go with)(?:\\s+${APPROVAL_REF})?(?:\\s+(?:to|in|into|as)\\s+(?:the\\s+)?${APPROVAL_SECTION})?`,
+  `${APPROVAL_REF}(?:'s|\\s+is|\\s+looks|\\s+sounds|\\s+seems)\\s+(?:really\\s+)?${APPROVAL_FINE}`,
+  "(?:let'?s\\s+)?(?:move\\s+on|continue|proceed)",
+  'next(?:\\s+section)?',
+].join('|');
+
+const APPROVAL_SEPARATOR =
+  '(?:\\s*[,;\u2014\u2013]\\s*|\\s*[.!]+\\s*|\\s+-\\s+|\\s+)(?:(?:and|so|then)\\s+)?';
+
+const APPROVAL_MESSAGE = new RegExp(
+  `^(?:${APPROVAL_CLAUSE})(?:${APPROVAL_SEPARATOR}(?:${APPROVAL_CLAUSE}))*$`,
+  'i',
+);
+
+/**
+ * "yes", "Yes, put that in the Goal.", "I confirm the goal", "yes to goal
+ * suggestion", "let's save it", "I like the goal". A longer answer that
+ * only starts with yes is still content.
  */
 export function isQuestSectionApproval(message: string): boolean {
   const text = message
     .trim()
+    .replace(/[\u2018\u2019]/g, "'")
     .replace(/[.!]+$/g, '')
     .replace(/\s+/g, ' ')
     .trim();
   if (!text || text.length > 120) return false;
-  if (/\b(but|except|instead|rather|change|don't|do not)\b/i.test(text)) {
+  if (
+    /\b(but|except|instead|rather|change|don't|do not|not|never|wait)\b/i.test(
+      text,
+    )
+  ) {
     return false;
   }
   if (SECTION_REWRITE.test(text)) return false;
-  const match = new RegExp(
-    `^(${APPROVAL_PHRASE})(?:\\s*,)?(?:\\s+please)?(?:\\s*,\\s*|\\s+)?(.*)$`,
-    'i',
-  ).exec(text);
-  if (!match) return false;
-  return approvalRemainder(match[2] ?? '');
+  return APPROVAL_MESSAGE.test(text);
 }
 
 const REJECTION_PHRASE =
@@ -470,9 +496,10 @@ export type NewQuestDraftTurn =
     }
   | { kind: 'propose'; step: QuestStewardStep };
 
+/** In an approval, any section word names the suggestion: "I confirm the goal". */
 function sectionNamedInApproval(message: string): QuestStewardStep | null {
   const named =
-    /\b(?:in|into|for|to)\s+(?:the\s+)?(success\s+criteria|milestones?|members?|target\s+date|rewards?|scope|success|lead|goal|name|title)\b/i.exec(
+    /\b(success\s+criteria|milestones?|members?|target\s+date|rewards?|scope|success|lead|goal|name|title)\b/i.exec(
       message,
     );
   if (!named?.[1]) return null;

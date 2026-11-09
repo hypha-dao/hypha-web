@@ -256,6 +256,92 @@ describe('quest-draft-assistant', () => {
     ).not.toBe('apply');
   });
 
+  it('accepts confirm, save, and like wording as approval of the pending section', () => {
+    const pending = {
+      step: 'goal' as const,
+      patch: {
+        goal: 'Validate that a published Quest proposal can be confirmed from outside the space.',
+      },
+    };
+    for (const message of [
+      'I confirm the goal',
+      'yes to goal suggestion',
+      'Yes, I confirm the goal.',
+      'confirm',
+      'confirmed',
+      'yes, let\u2019s save the goal',
+      "let's save it",
+      'save the goal',
+      'yes, save it',
+      'I like the goal',
+      'I like it, save it',
+      'the goal looks good',
+      "that's great, let's move on",
+      'yes to the goal suggestion, next',
+      'I accept the suggested goal',
+      'agreed',
+      'lgtm',
+    ]) {
+      expect(isQuestSectionApproval(message)).toBe(true);
+      expect(
+        decideNewQuestDraftTurn({
+          message,
+          currentStep: 'goal',
+          targetStep: 'goal',
+          bulk: false,
+          pending,
+        }),
+      ).toEqual({ kind: 'apply', step: 'goal', patch: pending.patch });
+    }
+
+    for (const message of [
+      'yes I like your example, make a goal from it',
+      'I like the goal but make it shorter',
+      'I do not confirm the goal',
+      'not yet, wait',
+      'I like the goal, can you add a date?',
+      'Yes, all three checks run inside the sandbox with throwaway accounts.',
+    ]) {
+      expect(isQuestSectionApproval(message)).toBe(false);
+    }
+  });
+
+  it('does not apply a pending Scope when the member confirms the Goal', () => {
+    expect(
+      decideNewQuestDraftTurn({
+        message: 'I confirm the goal',
+        currentStep: 'scope',
+        targetStep: 'scope',
+        bulk: false,
+        pending: {
+          step: 'scope',
+          patch: { scopeIn: ['Sandbox checklist'], scopeOut: ['Voting'] },
+        },
+      }).kind,
+    ).not.toBe('apply');
+  });
+
+  it('saves the pending goal into the Goal section on "I confirm the goal"', () => {
+    const goal =
+      'Validate that a Quest proposal published in this sandbox can be opened and confirmed by a member outside the space.';
+    for (const message of ['I confirm the goal', 'yes to goal suggestion']) {
+      const result = runNewQuestDraftTurn({
+        message,
+        currentStep: 'goal',
+        draft: emptyDraft,
+        pending: { step: 'goal', patch: { goal } },
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: [],
+        model: null,
+      });
+      expect(result.wrote).toBe(true);
+      expect(result.draft.goal).toBe(goal);
+      expect(result.pending).toBeNull();
+      expect(result.reply).toMatch(/Added that to the Goal/);
+    }
+    expect(questDraftTurnUsesModel('I confirm the goal')).toBe(false);
+  });
+
   it('treats okay as approval, not a leftover ay after matching ok', () => {
     expect(isQuestSectionApproval('okay')).toBe(true);
     expect(isQuestSectionApproval('ok')).toBe(true);
