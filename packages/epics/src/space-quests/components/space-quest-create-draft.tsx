@@ -76,16 +76,21 @@ import {
 } from './quest-section-edit-modals';
 import { QuestRewardRowsEditor } from './quest-reward-tokens';
 import { SpaceQuestChatPanel } from './space-quest-chat-panel';
+import {
+  STALE_DEPLOYMENT_MESSAGE,
+  questPublishFailurePlan,
+} from '../utils/quest-create-recovery';
+import {
+  questCreateSessionKey,
+  readQuestCreateSession,
+  writeQuestCreateSession,
+  type QuestCreateCheckpoint,
+} from '../utils/quest-create-session';
 
 const LABEL_CLASS =
   'text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11';
 
-type PendingProposalLink = {
-  questSlug: string;
-  agreementId: number;
-  agreementSlug: string | null;
-  proposalTitle: string;
-};
+type PendingProposalLink = QuestCreateCheckpoint;
 
 function proposalPageHref(
   locale: string,
@@ -219,6 +224,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [deployReload, setDeployReload] = useState(false);
   const [proposalLinkError, setProposalLinkError] = useState<{
     proposalTitle: string;
     href: string | null;
@@ -227,6 +233,11 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   } | null>(null);
   const [pendingProposalLink, setPendingProposalLink] =
     useState<PendingProposalLink | null>(null);
+  const pendingProposalLinkRef = useRef<PendingProposalLink | null>(null);
+  pendingProposalLinkRef.current = pendingProposalLink;
+  const chatMessagesRef = useRef(chatMessages);
+  chatMessagesRef.current = chatMessages;
+  const skipCreateSessionWrite = useRef(true);
   const pendingProposalRef = useRef<PendingQuestSectionProposal | null>(null);
   const stewardStepIndexRef = useRef(0);
   const turnGenerationRef = useRef(0);
@@ -253,6 +264,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
     isPending,
     progress,
     currentAction,
+    reset: resetAgreementProgress,
   } = useCreateAgreementOrchestrator({
     authToken: jwt,
     config,
@@ -297,6 +309,68 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
     },
     [leadName],
   );
+
+  const commitDraftRef = useRef(commitDraftSnapshot);
+  commitDraftRef.current = commitDraftSnapshot;
+
+  const persistCreateSession = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    writeQuestCreateSession(
+      window.sessionStorage,
+      questCreateSessionKey(spaceSlug),
+      {
+        draft: draftSnapshotRef.current,
+        messages: chatMessagesRef.current,
+        step: stewardStepIndexRef.current,
+        pending: pendingProposalRef.current,
+        checkpoint: pendingProposalLinkRef.current,
+      },
+    );
+  }, [spaceSlug]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const restored = readQuestCreateSession(
+      window.sessionStorage,
+      questCreateSessionKey(spaceSlug),
+    );
+    skipCreateSessionWrite.current = true;
+    if (!restored) return;
+    commitDraftRef.current(restored.draft);
+    if (restored.messages.length > 0) setChatMessages(restored.messages);
+    setStewardStepIndex(restored.step);
+    pendingProposalRef.current = restored.pending;
+    if (restored.checkpoint) {
+      pendingProposalLinkRef.current = restored.checkpoint;
+      setPendingProposalLink(restored.checkpoint);
+    }
+  }, [spaceSlug]);
+
+  useEffect(() => {
+    if (skipCreateSessionWrite.current) {
+      skipCreateSessionWrite.current = false;
+      return;
+    }
+    persistCreateSession();
+  }, [
+    chatMessages,
+    goal,
+    leadName,
+    members,
+    milestones,
+    name,
+    pendingProposalLink,
+    persistCreateSession,
+    rewards,
+    scopeIn,
+    scopeInMarkdown,
+    scopeOut,
+    scopeOutMarkdown,
+    selectedLeadPersonId,
+    stewardStepIndex,
+    successCriteria,
+    targetDate,
+  ]);
 
   const handleSendStewardMessage = useCallback(
     async (overridePrompt?: string) => {
@@ -512,6 +586,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const handleConfirmCreateProposal = async () => {
     setSubmitting(true);
     setSubmitError(null);
+    setDeployReload(false);
     setProposalLinkError(null);
     setConfirmOpen(false);
 
@@ -733,6 +808,18 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             : {}),
         });
       } catch (agreementErr) {
+        const plan = questPublishFailurePlan(agreementErr, createdQuestSlug);
+        if (plan.kind === 'stale' && plan.keepAgreement) {
+          linkTarget = {
+            questSlug: createdQuestSlug,
+            agreementId: plan.keepAgreement.id,
+            agreementSlug: plan.keepAgreement.slug,
+            proposalTitle: draftPayload.name,
+          };
+          pendingProposalLinkRef.current = linkTarget;
+          setPendingProposalLink(linkTarget);
+          throw agreementErr;
+        }
         // A proposed quest without a proposal can never be activated.
         await deleteSpaceQuestRequest({
           spaceSlug,
@@ -757,10 +844,19 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
         agreementSlug: createdAgreement.slug ?? null,
         proposalTitle: draftPayload.name,
       };
+      pendingProposalLinkRef.current = linkTarget;
       setPendingProposalLink(linkTarget);
 
       await linkCreatedQuest(linkTarget);
     } catch (err) {
+      const plan = questPublishFailurePlan(err, null);
+      if (plan.kind === 'stale') {
+        resetAgreementProgress();
+        persistCreateSession();
+        setDeployReload(true);
+        setSubmitError(null);
+        return;
+      }
       if (linkTarget) {
         const raw = err instanceof Error ? err.message : '';
         const detail =
@@ -976,6 +1072,20 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
               <div className="border border-error-6 bg-background-2 px-4 py-3 text-xs text-error-11">
                 This quest is too long to publish as a proposal. Shorten the
                 goal, scope, milestones or participants before creating.
+              </div>
+            ) : null}
+            {deployReload ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 border border-error-6 bg-background-2 px-4 py-3 text-xs text-error-11">
+                <p>{STALE_DEPLOYMENT_MESSAGE}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  colorVariant="neutral"
+                  className="rounded-none"
+                  onClick={() => window.location.reload()}
+                >
+                  Reload
+                </Button>
               </div>
             ) : null}
             {submitError ? (

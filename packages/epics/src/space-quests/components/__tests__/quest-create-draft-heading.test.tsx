@@ -84,6 +84,7 @@ vi.mock('../../hooks/use-space-quests', () => ({
 
 afterEach(() => {
   cleanup();
+  window.sessionStorage.clear();
 });
 
 describe('quest create draft heading', () => {
