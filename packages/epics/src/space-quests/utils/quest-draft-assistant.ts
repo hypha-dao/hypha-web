@@ -1569,6 +1569,39 @@ const UNRESOLVED_CHOICE =
   /^(?:should|do you|would you|could you|shall)\b[\s\S]{0,180}\bor\b/i;
 
 /**
+ * A finished proposal can ask whether to add something else.
+ * "Should anything else be in scope, or is it covered by the items above?"
+ * does not reopen those items. "Does reward display mean checking or
+ * issuing?", "Still open", and "Do you mean A or B?" do.
+ */
+function questionIsOptionalAddition(question: string): boolean {
+  const text = question.trim();
+  if (/\bstill open\b/i.test(text)) return false;
+  if (/\bdo you mean\b/i.test(text)) return false;
+  if (/\bdoes\b[\s\S]{0,200}\bmean\b/i.test(text)) return false;
+  const withoutExamples = text
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\bfor example\b[^,]*/gi, ' ');
+  const asksToAddMore =
+    /\b(?:should|could|would)\s+(?:anything|something|we|i)\b/i.test(
+      withoutExamples,
+    ) ||
+    /\b(?:anything else|anything more|also include|also add)\b/i.test(
+      withoutExamples,
+    );
+  const alreadyCovered =
+    /\bor\b[\s\S]{0,80}\b(?:is it |it is )?(?:already )?(?:covered|included|enough)\b/i.test(
+      withoutExamples,
+    );
+  if (!asksToAddMore || !alreadyCovered) return false;
+  const beforeCovered = withoutExamples.replace(
+    /\bor\b[\s\S]{0,80}\b(?:is it |it is )?(?:already )?(?:covered|included|enough)\b[\s\S]*$/i,
+    '',
+  );
+  return !/\bor\b/i.test(beforeCovered);
+}
+
+/**
  * "Next: success criteria — what could a reviewer check…?" invites the
  * following section. It does not leave the section being filed undecided.
  * A choice, or the same question about the section itself, still withholds.
@@ -1619,7 +1652,8 @@ function modelGuidanceWithholdsFiling(
       (part) =>
         part.includes('?') &&
         !questionIsOptionalAside(part) &&
-        !questionIsNextSectionPrompt(part, step),
+        !questionIsNextSectionPrompt(part, step) &&
+        !questionIsOptionalAddition(part),
     );
   if (
     questions.some(
@@ -1761,7 +1795,12 @@ function replyForPendingSuggestion(
     .split(/\n+|(?<=[.!?])\s+/)
     .map((part) => part.trim())
     .filter(
-      (part) => part.length > 0 && !/\bone section at a time\b/i.test(part),
+      (part) =>
+        part.length > 0 &&
+        !/\bone section at a time\b/i.test(part) &&
+        !/\b(?:nothing is waiting on a yes|still waiting on (?:your |a )?yes|nothing has been saved(?: yet)?)\b/i.test(
+          part,
+        ),
     )
     .join('\n\n')
     .trim();
@@ -2039,7 +2078,7 @@ function withoutExactNotice(reply: string, notice: string): string {
  * notice, once. Model sentences do not decide whether yes still applies.
  */
 const CONFLICTING_PENDING_CLAIM =
-  /\b(?:nothing is waiting on a yes|no longer waiting|(?:suggestion|wording|it) is history|stays history|is history until|(?:has been|been|is|was) retired)\b/i;
+  /\b(?:nothing is waiting on a yes|no longer waiting|(?:suggestion|wording|it) is history|stays history|is history until|(?:has been|been|is|was) retired|still waiting on (?:your |a )?yes|nothing has been saved(?: yet)?|not saved yet)\b/i;
 
 function replyWhileOlderPending(
   reply: string,

@@ -234,6 +234,59 @@ describe('quest draft tool retry', () => {
     expect(result.updatedQuest).toBeNull();
   });
 
+  it('retries the live scope reply that asks whether to add more', async () => {
+    const message =
+      'Propose a Scope for this quest: verify proposal display, verify milestone editing, verify reward display; out of scope production rollout.';
+    const liveReply = [
+      "Here's the Scope suggestion",
+      'In scope',
+      '• Verify proposal display',
+      '• Verify milestone editing',
+      '• Verify reward display',
+      'Out of scope',
+      '• Production rollout',
+      'One question: should anything about the lead flow itself (for example verifying who can claim or edit as lead) be in scope, or is it covered by the three items above?',
+      'Nothing is waiting on a yes.',
+    ].join('\n');
+    generateText.mockImplementation(
+      async ({
+        toolChoice,
+        tools,
+      }: {
+        toolChoice?: { type: string; toolName: string };
+        tools: { update_quest_draft: DraftTool };
+      }) => {
+        if (!toolChoice) return { text: liveReply };
+        await tools.update_quest_draft.execute({
+          scopeIn: [
+            'Verify proposal display',
+            'Verify milestone editing',
+            'Verify reward display',
+          ],
+          scopeOut: ['Production rollout'],
+          goal: 'should not stick',
+        });
+        return { text: '' };
+      },
+    );
+
+    const result = await assistSpaceQuestDraft({
+      spaceSlug: 'sandbox',
+      input: { message, currentStep: 'goal' },
+    });
+    expect(generateText).toHaveBeenCalledTimes(2);
+    expect(result.patch).toEqual({
+      scopeIn: [
+        'Verify proposal display',
+        'Verify milestone editing',
+        'Verify reward display',
+      ],
+      scopeOut: ['Production rollout'],
+    });
+    expect(result.reply).toContain('One question: should anything');
+    expect(result.updatedQuest).toBeNull();
+  });
+
   it('does not retry a question or a chat aside, and stays closed when the retry sends no patch', async () => {
     generateText.mockResolvedValue({
       text: 'It names an activity. Who should be able to tell?',

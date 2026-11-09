@@ -3657,6 +3657,107 @@ describe('quest draft review corrections', () => {
     expect(choice.draft.scopeIn).toEqual([]);
   });
 
+  it('files the live scope proposal when the reply only asks whether to add more', () => {
+    const message =
+      'Propose a Scope for this quest: verify proposal display, verify milestone editing, verify reward display; out of scope production rollout.';
+    const reply = [
+      "Here's the Scope suggestion",
+      'In scope',
+      '• Verify proposal display',
+      '• Verify milestone editing',
+      '• Verify reward display',
+      'Out of scope',
+      '• Production rollout',
+      'One question: should anything about the lead flow itself (for example verifying who can claim or edit as lead) be in scope, or is it covered by the three items above?',
+      'Nothing is waiting on a yes.',
+    ].join('\n');
+    const patch = {
+      scopeIn: [
+        'Verify proposal display',
+        'Verify milestone editing',
+        'Verify reward display',
+      ],
+      scopeOut: ['Production rollout'],
+      goal: 'should not stick',
+    };
+    const filed = send(message, emptyDraft, null, 'goal', { reply, patch });
+    expect(filed.wrote).toBe(false);
+    expect(filed.pending?.step).toBe('scope');
+    expect(filed.pending?.patch.scopeIn).toEqual(patch.scopeIn);
+    expect(filed.pending?.patch.scopeOut).toEqual(patch.scopeOut);
+    expect(filed.pending?.patch.goal).toBeUndefined();
+    expect(filed.draft.scopeIn).toEqual([]);
+    expect(filed.reply).toMatch(/Not saved yet/);
+    expect(filed.reply).toMatch(
+      /One question: should anything about the lead flow/,
+    );
+    expect(filed.reply).not.toMatch(/Nothing is waiting on a yes/i);
+    expect(filed.reply).not.toMatch(/one section at a time/i);
+
+    const saved = send('yes', emptyDraft, filed.pending, 'scope', null);
+    expect(saved.wrote).toBe(true);
+    expect(saved.draft.scopeIn).toEqual(patch.scopeIn);
+    expect(saved.draft.scopeOut).toEqual(patch.scopeOut);
+    expect(saved.draft.goal).toBe('');
+
+    const proseOnly = send(message, emptyDraft, null, 'goal', {
+      reply,
+      patch: null,
+    });
+    expect(proseOnly.pending).toBeNull();
+    expect(proseOnly.wrote).toBe(false);
+    expect(proseOnly.draft.scopeIn).toEqual([]);
+
+    const undecided = send(message, emptyDraft, null, 'goal', {
+      reply:
+        'Still open: does "verify reward display" mean only checking the reward renders, or also issuing the reward?',
+      patch,
+    });
+    expect(undecided.pending).toBeNull();
+    expect(undecided.draft.scopeIn).toEqual([]);
+
+    const eitherOr = send(message, emptyDraft, null, 'goal', {
+      reply: 'Should this cover new members or existing members?',
+      patch: { scopeIn: ['new members or existing members'] },
+    });
+    expect(eitherOr.pending).toBeNull();
+    expect(eitherOr.draft.scopeIn).toEqual([]);
+  });
+
+  it('states the preserved-pending notice once', () => {
+    const pending: PendingQuestSectionProposal = {
+      step: 'scope',
+      patch: {
+        scopeIn: [
+          'Verify proposal display in this sandbox',
+          'Verify milestone editing in this sandbox',
+          'Verify reward display in this sandbox',
+        ],
+        scopeOut: ['Production rollout'],
+      },
+    };
+    const reply = [
+      '"Lead scoring" is too broad to add as a scope line — it reads like an activity with no verifiable outcome.',
+      "1. Do you mean verifying that a quest's Lead is displayed somewhere in this sandbox, or a separate scoring feature?",
+      '2. What could a reviewer check to say it passed?',
+      'The pending Scope suggestion (verify proposal display, milestone editing, reward display in this sandbox, production rollout out of scope) is still waiting on your yes — nothing has been saved yet.',
+    ].join('\n\n');
+    const kept = send('Add lead scoring', emptyDraft, pending, 'scope', {
+      reply,
+      patch: null,
+    });
+    expect(kept.pending).toEqual(pending);
+    expect(kept.wrote).toBe(false);
+    expect(kept.draft.scopeIn).toEqual([]);
+    expect(kept.reply).toContain('too broad to add as a scope line');
+    expect(kept.reply).toContain('Do you mean verifying');
+    expect(kept.reply).not.toMatch(/still waiting on your yes/i);
+    expect(kept.reply).not.toMatch(/nothing has been saved yet/i);
+    const notice = questPendingYesNotice('scope');
+    expect(kept.reply.split(notice)).toHaveLength(2);
+    expect(kept.reply.endsWith(notice)).toBe(true);
+  });
+
   it('caps assist history at the schema limits', () => {
     const history = Array.from({ length: 25 }, (_, index) => ({
       role: index % 2 === 0 ? 'user' : 'assistant',
