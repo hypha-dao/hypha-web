@@ -5771,7 +5771,27 @@
       "active": "Aktive",
       "proposed": "Foreslått",
       "paused": "Pauset",
-      "completed": "Fullført"
+      "completed": "Fullført",
+      "drafts": "Mine utkast"
+    },
+    "drafts": {
+      "empty": "Du har ingen lagrede utkast i dette området.",
+      "continue": "Fortsett",
+      "delete": "Slett",
+      "deleteTitle": "Slette dette utkastet?",
+      "deleteBody": "Dette fjerner det lagrede utkastet. Ingen eksisterende oppdrag endres.",
+      "deleteConfirm": "Slett utkast",
+      "cancel": "Avbryt",
+      "edited": "Redigert {when}",
+      "untitled": "Oppdrag uten tittel",
+      "save": "Lagre utkast",
+      "saving": "Lagrer…",
+      "saved": "Utkast lagret",
+      "saveFailed": "Utkastet kunne ikke lagres. Prøv igjen.",
+      "keepTitle": "Beholde dette utkastet?",
+      "keepBody": "Du kan fortsette dette oppdraget senere under Mine utkast. Forkast fjerner utkastet.",
+      "keep": "Behold utkast",
+      "discard": "Forkast"
     },
     "error": {
       "load": "Kunne ikke laste oppdrag.",

@@ -5788,7 +5788,27 @@
       "active": "Active",
       "proposed": "Proposed",
       "paused": "Paused",
-      "completed": "Completed"
+      "completed": "Completed",
+      "drafts": "My drafts"
+    },
+    "drafts": {
+      "empty": "You have no saved quest drafts in this space.",
+      "continue": "Continue",
+      "delete": "Delete",
+      "deleteTitle": "Delete this draft?",
+      "deleteBody": "This removes your saved draft. It does not affect any quest.",
+      "deleteConfirm": "Delete draft",
+      "cancel": "Cancel",
+      "edited": "Edited {when}",
+      "untitled": "Untitled quest",
+      "save": "Save draft",
+      "saving": "Saving…",
+      "saved": "Draft saved",
+      "saveFailed": "Could not save the draft. Try again.",
+      "keepTitle": "Keep this draft?",
+      "keepBody": "You can continue this quest later from My drafts. Discard removes it.",
+      "keep": "Keep draft",
+      "discard": "Discard"
     },
     "error": {
       "load": "Quests could not be loaded.",

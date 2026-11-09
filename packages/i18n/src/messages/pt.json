@@ -5764,7 +5764,27 @@
       "active": "Ativas",
       "proposed": "Propostas",
       "paused": "Pausadas",
-      "completed": "Concluídas"
+      "completed": "Concluídas",
+      "drafts": "Meus rascunhos"
+    },
+    "drafts": {
+      "empty": "Você não tem rascunhos de missões salvos neste espaço.",
+      "continue": "Continuar",
+      "delete": "Excluir",
+      "deleteTitle": "Excluir este rascunho?",
+      "deleteBody": "Isso remove o rascunho salvo. Nenhuma missão existente é alterada.",
+      "deleteConfirm": "Excluir rascunho",
+      "cancel": "Cancelar",
+      "edited": "Editado {when}",
+      "untitled": "Missão sem título",
+      "save": "Salvar rascunho",
+      "saving": "Salvando…",
+      "saved": "Rascunho salvo",
+      "saveFailed": "Não foi possível salvar o rascunho. Tente de novo.",
+      "keepTitle": "Manter este rascunho?",
+      "keepBody": "Você pode continuar esta missão depois em Meus rascunhos. Descartar remove o rascunho.",
+      "keep": "Manter rascunho",
+      "discard": "Descartar"
     },
     "error": {
       "load": "Não foi possível carregar as missões.",

@@ -8,12 +8,35 @@ import {
   type schemaCreateSpaceQuest,
   type schemaPatchSpaceQuest,
   type schemaPostQuestUpdate,
+  type schemaQuestCreateDraftPayload,
 } from '@hypha-platform/core/client';
 import useSWR, { mutate } from 'swr';
 import type { z } from 'zod';
 import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 
 export const SPACE_QUESTS_SWR_KEY = 'space-quests' as const;
+export const SPACE_QUEST_DRAFTS_SWR_KEY = 'space-quest-drafts' as const;
+
+export type QuestDraftListItem = {
+  id: number;
+  name: string;
+  updatedAt: string;
+};
+
+export type QuestDraftRecord = QuestDraftListItem & {
+  payload: z.infer<typeof schemaQuestCreateDraftPayload>;
+};
+
+function revalidateQuestDrafts(spaceSlug: string) {
+  return mutate(
+    (key: unknown) =>
+      Array.isArray(key) &&
+      key[0] === SPACE_QUEST_DRAFTS_SWR_KEY &&
+      key[1] === spaceSlug,
+    undefined,
+    { revalidate: true },
+  );
+}
 
 export function revalidateSpaceQuests(spaceSlug: string) {
   return mutate(
@@ -387,4 +410,107 @@ export async function deleteSpaceQuestRequest({
     throw await requestError(response, 'Failed to delete quest');
   }
   await revalidateSpaceQuests(spaceSlug);
+}
+
+export function useMyQuestDrafts(spaceSlug: string | undefined) {
+  const { getAccessToken, user, isLoading: authLoading } = useAuthentication();
+  const viewerKey = authLoading ? null : user?.id ?? null;
+
+  const {
+    data,
+    error,
+    isLoading,
+    mutate: refresh,
+  } = useSWR(
+    spaceSlug && viewerKey
+      ? [SPACE_QUEST_DRAFTS_SWR_KEY, spaceSlug, viewerKey]
+      : null,
+    async ([, slug]) => {
+      const headers = await authHeaders(getAccessToken);
+      const response = await fetch(`/api/v1/spaces/${slug}/quests/drafts`, {
+        headers,
+      });
+      if (!response.ok) {
+        throw new Error('Failed to load quest drafts');
+      }
+      return (await response.json()) as { drafts: QuestDraftListItem[] };
+    },
+    { revalidateOnFocus: true },
+  );
+
+  return {
+    drafts: data?.drafts ?? [],
+    visible: Boolean(viewerKey),
+    error,
+    isLoading: authLoading || (Boolean(viewerKey) && isLoading),
+    refresh,
+  };
+}
+
+export async function getQuestDraftRequest({
+  spaceSlug,
+  draftId,
+  getAccessToken,
+}: {
+  spaceSlug: string;
+  draftId: number;
+  getAccessToken?: () => Promise<string | null | undefined>;
+}): Promise<QuestDraftRecord> {
+  const headers = await authHeaders(getAccessToken);
+  const response = await fetch(
+    `/api/v1/spaces/${spaceSlug}/quests/drafts/${draftId}`,
+    { headers },
+  );
+  if (!response.ok) {
+    throw await requestError(response, 'Failed to load quest draft');
+  }
+  return (await response.json()) as QuestDraftRecord;
+}
+
+export async function saveQuestDraftRequest({
+  spaceSlug,
+  id,
+  payload,
+  getAccessToken,
+  keepalive = false,
+}: {
+  spaceSlug: string;
+  id?: number | null;
+  payload: z.infer<typeof schemaQuestCreateDraftPayload>;
+  getAccessToken?: () => Promise<string | null | undefined>;
+  keepalive?: boolean;
+}): Promise<QuestDraftRecord> {
+  const headers = await authHeaders(getAccessToken);
+  const response = await fetch(`/api/v1/spaces/${spaceSlug}/quests/drafts`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify(id ? { id, payload } : { payload }),
+    keepalive,
+  });
+  if (!response.ok) {
+    throw await requestError(response, 'Failed to save quest draft');
+  }
+  const saved = (await response.json()) as QuestDraftRecord;
+  await revalidateQuestDrafts(spaceSlug);
+  return saved;
+}
+
+export async function deleteQuestDraftRequest({
+  spaceSlug,
+  draftId,
+  getAccessToken,
+}: {
+  spaceSlug: string;
+  draftId: number;
+  getAccessToken?: () => Promise<string | null | undefined>;
+}): Promise<void> {
+  const headers = await authHeaders(getAccessToken);
+  const response = await fetch(
+    `/api/v1/spaces/${spaceSlug}/quests/drafts/${draftId}`,
+    { method: 'DELETE', headers },
+  );
+  if (!response.ok) {
+    throw await requestError(response, 'Failed to delete quest draft');
+  }
+  await revalidateQuestDrafts(spaceSlug);
 }

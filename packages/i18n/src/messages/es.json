@@ -5780,7 +5780,27 @@
       "active": "Activas",
       "proposed": "Propuestas",
       "paused": "En pausa",
-      "completed": "Completadas"
+      "completed": "Completadas",
+      "drafts": "Mis borradores"
+    },
+    "drafts": {
+      "empty": "No tienes borradores de misiones guardados en este espacio.",
+      "continue": "Continuar",
+      "delete": "Eliminar",
+      "deleteTitle": "¿Eliminar este borrador?",
+      "deleteBody": "Esto elimina tu borrador guardado. No afecta a ninguna misión.",
+      "deleteConfirm": "Eliminar borrador",
+      "cancel": "Cancelar",
+      "edited": "Editado {when}",
+      "untitled": "Misión sin título",
+      "save": "Guardar borrador",
+      "saving": "Guardando…",
+      "saved": "Borrador guardado",
+      "saveFailed": "No se pudo guardar el borrador. Inténtalo de nuevo.",
+      "keepTitle": "¿Conservar este borrador?",
+      "keepBody": "Puedes continuar esta misión más tarde desde Mis borradores. Descartar lo elimina.",
+      "keep": "Conservar borrador",
+      "discard": "Descartar"
     },
     "error": {
       "load": "No se pudieron cargar las misiones.",

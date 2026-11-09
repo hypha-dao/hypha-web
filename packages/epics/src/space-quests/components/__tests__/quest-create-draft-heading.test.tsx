@@ -80,6 +80,9 @@ vi.mock('../../hooks/use-space-quests', () => ({
   createSpaceQuestRequest: vi.fn(),
   deleteSpaceQuestRequest: vi.fn(),
   patchSpaceQuestRequest: vi.fn(),
+  getQuestDraftRequest: vi.fn(),
+  saveQuestDraftRequest: vi.fn().mockResolvedValue({ id: 1 }),
+  deleteQuestDraftRequest: vi.fn().mockResolvedValue(undefined),
 }));
 
 afterEach(() => {
@@ -98,7 +101,8 @@ describe('quest create draft heading', () => {
     ).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Quest draft' })).toBeNull();
     expect(screen.queryByText('Quest draft')).toBeNull();
-    expect(screen.getByRole('link', { name: 'CANCEL' })).toBeTruthy();
+    expect(screen.getByTestId('cancel-quest-button')).toBeTruthy();
+    expect(screen.getByTestId('save-quest-draft-button')).toBeTruthy();
     expect(screen.getByTestId('create-quest-button')).toBeTruthy();
     expect(
       screen.getByRole('button', { name: /Open discussion/ }),

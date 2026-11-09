@@ -49,6 +49,7 @@ import {
 } from './space-context';
 import {
   spaceQuests,
+  spaceQuestDrafts,
   spaceQuestMilestones,
   spaceQuestMembers,
   spaceQuestDeliverables,
@@ -130,6 +131,7 @@ export const schema = {
   spaceContextSectionMessages,
   spaceContextAgentMemories,
   spaceQuests,
+  spaceQuestDrafts,
   spaceQuestMilestones,
   spaceQuestMembers,
   spaceQuestDeliverables,

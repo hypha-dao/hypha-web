@@ -20,6 +20,9 @@ const harness = vi.hoisted(() => ({
   createSpaceQuestRequest: vi.fn(),
   deleteSpaceQuestRequest: vi.fn(),
   patchSpaceQuestRequest: vi.fn(),
+  getQuestDraftRequest: vi.fn(),
+  saveQuestDraftRequest: vi.fn(),
+  deleteQuestDraftRequest: vi.fn(),
   setSpaceQuestDraft: vi.fn(),
   push: vi.fn(),
   agreement: null as { slug?: string; proposalId?: number } | null,
@@ -105,6 +108,9 @@ vi.mock('../../hooks/use-space-quests', () => ({
   createSpaceQuestRequest: harness.createSpaceQuestRequest,
   deleteSpaceQuestRequest: harness.deleteSpaceQuestRequest,
   patchSpaceQuestRequest: harness.patchSpaceQuestRequest,
+  getQuestDraftRequest: harness.getQuestDraftRequest,
+  saveQuestDraftRequest: harness.saveQuestDraftRequest,
+  deleteQuestDraftRequest: harness.deleteQuestDraftRequest,
 }));
 
 const SPACE = 'myspace-stale-oa-20261027-1059';
@@ -194,12 +200,22 @@ beforeEach(() => {
   harness.createSpaceQuestRequest.mockReset();
   harness.deleteSpaceQuestRequest.mockReset();
   harness.patchSpaceQuestRequest.mockReset();
+  harness.getQuestDraftRequest.mockReset();
+  harness.saveQuestDraftRequest.mockReset();
+  harness.deleteQuestDraftRequest.mockReset();
   harness.setSpaceQuestDraft.mockReset();
   harness.push.mockReset();
   harness.agreement = null;
   harness.createSpaceQuestRequest.mockResolvedValue(savedQuest());
   harness.deleteSpaceQuestRequest.mockResolvedValue(undefined);
   harness.patchSpaceQuestRequest.mockResolvedValue(undefined);
+  harness.saveQuestDraftRequest.mockResolvedValue({
+    id: 1,
+    name: 'Quest test',
+    updatedAt: '2026-11-09T20:02:00.000Z',
+    payload: {},
+  });
+  harness.deleteQuestDraftRequest.mockResolvedValue(undefined);
   harness.updateAgreementBySlug.mockResolvedValue(undefined);
 });
 

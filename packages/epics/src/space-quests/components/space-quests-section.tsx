@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   QUEST_LIST_FILTERS,
   formatQuestCalendarDate,
@@ -10,14 +11,26 @@ import {
   type QuestStatus,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
-import { Button, Input, Skeleton } from '@hypha-platform/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  Input,
+  Skeleton,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { Search } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
-import { useSpaceQuests } from '../hooks/use-space-quests';
+import {
+  deleteQuestDraftRequest,
+  useMyQuestDrafts,
+  useSpaceQuests,
+} from '../hooks/use-space-quests';
 import { questRichTextPlain } from '../utils/quest-rich-text';
 
 function statusBadgeClasses(status: QuestStatus): string {
@@ -272,14 +285,20 @@ export function QuestCard({
   );
 }
 
+type QuestListView = QuestListFilter | 'drafts';
+
 export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
   const locale = useLocale();
   const t = useTranslations('SpaceQuests');
+  const { getAccessToken } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug);
   const { canMutate } = useCanMutateInSpace({ spaceSlug, space });
   const { overview, isLoading, error, refresh } = useSpaceQuests(spaceSlug);
-  const [filter, setFilter] = useState<QuestListFilter>('active');
+  const { drafts, visible: draftsVisible } = useMyQuestDrafts(spaceSlug);
+  const [filter, setFilter] = useState<QuestListView>('active');
   const [search, setSearch] = useState('');
+  const [draftToDelete, setDraftToDelete] = useState<number | null>(null);
+  const [deletingDraft, setDeletingDraft] = useState(false);
 
   const quests = useMemo(() => overview?.quests ?? [], [overview]);
   const counts = overview?.counts ?? {
@@ -310,7 +329,33 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
       );
   }, [filter, quests, search]);
 
-  const newQuestHref = `/${locale}/dho/${spaceSlug}/quests/new`;
+  const visibleDrafts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return drafts.filter((draft) => {
+      if (!q) return true;
+      return draft.name.toLowerCase().includes(q);
+    });
+  }, [drafts, search]);
+  const showingDrafts = filter === 'drafts' && draftsVisible;
+
+  const newQuestHref = `/${locale}/dho/${spaceSlug}/quests/new?fresh=1`;
+
+  const confirmDeleteDraft = async () => {
+    if (draftToDelete == null) return;
+    setDeletingDraft(true);
+    try {
+      await deleteQuestDraftRequest({
+        spaceSlug,
+        draftId: draftToDelete,
+        getAccessToken,
+      });
+      setDraftToDelete(null);
+    } catch {
+      // Leave the confirm open so the author can retry.
+    } finally {
+      setDeletingDraft(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -412,10 +457,78 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
             </button>
           );
         })}
+        {draftsVisible ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={showingDrafts}
+            data-testid="quest-filter-drafts"
+            onClick={() => setFilter('drafts')}
+            className={cn(
+              'inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold transition-colors',
+              showingDrafts
+                ? 'bg-foreground text-background'
+                : 'bg-neutral-3 text-foreground hover:bg-neutral-4',
+            )}
+          >
+            <span>{t('filters.drafts')}</span>
+            <span>{drafts.length}</span>
+          </button>
+        ) : null}
       </div>
 
       {/* Grid of Quest cards (no Kanban board) */}
-      {filtered.length === 0 ? (
+      {showingDrafts ? (
+        visibleDrafts.length === 0 ? (
+          <div
+            className="border border-dashed border-border bg-background-2 px-6 py-10 text-center"
+            data-testid="quest-drafts-empty"
+          >
+            <p className="text-sm text-neutral-11">{t('drafts.empty')}</p>
+          </div>
+        ) : (
+          <div className="space-y-2" data-testid="quest-drafts-list">
+            {visibleDrafts.map((draft) => (
+              <div
+                key={draft.id}
+                data-testid={`quest-draft-${draft.id}`}
+                className="flex flex-wrap items-center justify-between gap-3 border border-border bg-background px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {draft.name.trim() || t('drafts.untitled')}
+                  </p>
+                  <p className="text-xs text-neutral-11">
+                    {t('drafts.edited', {
+                      when: formatRelativeTimeShort(draft.updatedAt),
+                    })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button asChild variant="outline" className="rounded-none">
+                    <Link
+                      href={`/${locale}/dho/${spaceSlug}/quests/new?draft=${draft.id}`}
+                      data-testid={`continue-quest-draft-${draft.id}`}
+                    >
+                      {t('drafts.continue')}
+                    </Link>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    colorVariant="neutral"
+                    className="rounded-none"
+                    onClick={() => setDraftToDelete(draft.id)}
+                    data-testid={`delete-quest-draft-${draft.id}`}
+                  >
+                    {t('drafts.delete')}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : filtered.length === 0 ? (
         <div
           className="border border-dashed border-border bg-background-2 px-6 py-10 text-center"
           data-testid="quest-list-empty"
@@ -441,6 +554,48 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
           ))}
         </div>
       )}
+
+      <Dialog
+        open={draftToDelete != null}
+        onOpenChange={(open) => {
+          if (!open && !deletingDraft) setDraftToDelete(null);
+        }}
+      >
+        <DialogContent
+          hideCloseButton
+          className="max-w-[480px] rounded-none border border-border bg-background p-6"
+        >
+          <div className="space-y-4">
+            <DialogTitle className="font-display text-[18px] font-bold text-foreground">
+              {t('drafts.deleteTitle')}
+            </DialogTitle>
+            <DialogDescription className="text-[13px] leading-relaxed text-neutral-11">
+              {t('drafts.deleteBody')}
+            </DialogDescription>
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="neutral"
+                className="rounded-none"
+                disabled={deletingDraft}
+                onClick={() => setDraftToDelete(null)}
+              >
+                {t('drafts.cancel')}
+              </Button>
+              <Button
+                type="button"
+                className="bg-foreground text-background hover:bg-foreground/90"
+                disabled={deletingDraft}
+                onClick={() => void confirmDeleteDraft()}
+                data-testid="confirm-delete-quest-draft"
+              >
+                {t('drafts.deleteConfirm')}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

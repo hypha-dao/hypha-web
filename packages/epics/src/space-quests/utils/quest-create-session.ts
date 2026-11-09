@@ -17,6 +17,8 @@ export type QuestCreateSession = {
   step: number;
   pending: PendingQuestSectionProposal | null;
   checkpoint: QuestCreateCheckpoint | null;
+  /** Server row for this draft. Null until the first save. */
+  draftId: number | null;
 };
 
 const MAX_MESSAGES = 40;
@@ -149,6 +151,7 @@ export function readQuestCreateSession(
       step?: number;
       pending?: unknown;
       checkpoint?: unknown;
+      draftId?: unknown;
     };
     const messages = (parsed.messages ?? [])
       .filter(
@@ -169,13 +172,29 @@ export function readQuestCreateSession(
         ...(typeof message.senderName === 'string'
           ? { senderName: message.senderName }
           : {}),
+        ...(typeof message.senderMatrixId === 'string'
+          ? { senderMatrixId: message.senderMatrixId }
+          : {}),
         ...(typeof message.avatarUrl === 'string'
           ? { avatarUrl: message.avatarUrl }
+          : {}),
+        ...(typeof message.agentSpecialistId === 'string'
+          ? { agentSpecialistId: message.agentSpecialistId }
           : {}),
       }));
     const draft = readDraft(parsed.draft);
     const checkpoint = readCheckpoint(parsed.checkpoint);
-    if (messages.length === 0 && !draft.name && !draft.goal && !checkpoint) {
+    const draftId =
+      typeof parsed.draftId === 'number' && parsed.draftId > 0
+        ? parsed.draftId
+        : null;
+    if (
+      messages.length === 0 &&
+      !draft.name &&
+      !draft.goal &&
+      !checkpoint &&
+      !draftId
+    ) {
       return null;
     }
     return {
@@ -185,6 +204,7 @@ export function readQuestCreateSession(
         typeof parsed.step === 'number' && parsed.step >= 0 ? parsed.step : 0,
       pending: readPending(parsed.pending),
       checkpoint,
+      draftId,
     };
   } catch {
     return null;
@@ -204,7 +224,13 @@ export function writeQuestCreateSession(
       text: message.text,
       timestamp: message.timestamp.toISOString(),
       ...(message.senderName ? { senderName: message.senderName } : {}),
+      ...(message.senderMatrixId
+        ? { senderMatrixId: message.senderMatrixId }
+        : {}),
       ...(message.avatarUrl ? { avatarUrl: message.avatarUrl } : {}),
+      ...(message.agentSpecialistId
+        ? { agentSpecialistId: message.agentSpecialistId }
+        : {}),
     }));
     storage.setItem(
       key,
@@ -214,9 +240,61 @@ export function writeQuestCreateSession(
         step: session.step,
         pending: session.pending,
         checkpoint: session.checkpoint,
+        draftId: session.draftId,
       }),
     );
   } catch {
     // A full or blocked session store still leaves the live draft intact.
   }
+}
+
+/** A greeting-only page is not a draft worth keeping. */
+export function questCreateDraftIsWorthSaving(
+  session: Pick<QuestCreateSession, 'draft' | 'messages' | 'pending'>,
+): boolean {
+  const draft = session.draft;
+  if (draft.name.trim() || draft.goal.trim() || draft.successCriteria.trim()) {
+    return true;
+  }
+  if (
+    draft.scopeIn.length > 0 ||
+    draft.scopeOut.length > 0 ||
+    draft.scopeInMarkdown.trim() ||
+    draft.scopeOutMarkdown.trim()
+  ) {
+    return true;
+  }
+  if (
+    draft.rewards.length > 0 ||
+    draft.milestones.length > 0 ||
+    draft.members.length > 0 ||
+    draft.targetDate
+  ) {
+    return true;
+  }
+  if (session.pending) return true;
+  if (session.messages.some((message) => message.role === 'user')) return true;
+  return session.messages.length > 1;
+}
+
+export function questCreateDraftPayload(session: QuestCreateSession) {
+  return {
+    draft: session.draft,
+    messages: session.messages.slice(-MAX_MESSAGES).map((message) => ({
+      id: message.id,
+      role: message.role,
+      text: message.text,
+      timestamp: message.timestamp.toISOString(),
+      ...(message.senderName ? { senderName: message.senderName } : {}),
+      ...(message.senderMatrixId
+        ? { senderMatrixId: message.senderMatrixId }
+        : {}),
+      ...(message.avatarUrl ? { avatarUrl: message.avatarUrl } : {}),
+      ...(message.agentSpecialistId
+        ? { agentSpecialistId: message.agentSpecialistId }
+        : {}),
+    })),
+    step: session.step,
+    pending: session.pending,
+  };
 }

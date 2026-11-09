@@ -5762,7 +5762,27 @@
       "active": "Actives",
       "proposed": "Proposées",
       "paused": "En pause",
-      "completed": "Terminées"
+      "completed": "Terminées",
+      "drafts": "Mes brouillons"
+    },
+    "drafts": {
+      "empty": "Vous n’avez aucun brouillon de quête enregistré dans cet espace.",
+      "continue": "Continuer",
+      "delete": "Supprimer",
+      "deleteTitle": "Supprimer ce brouillon ?",
+      "deleteBody": "Cela retire votre brouillon enregistré. Aucune quête existante n’est modifiée.",
+      "deleteConfirm": "Supprimer le brouillon",
+      "cancel": "Annuler",
+      "edited": "Modifié {when}",
+      "untitled": "Quête sans titre",
+      "save": "Enregistrer le brouillon",
+      "saving": "Enregistrement…",
+      "saved": "Brouillon enregistré",
+      "saveFailed": "Le brouillon n’a pas pu être enregistré. Réessayez.",
+      "keepTitle": "Conserver ce brouillon ?",
+      "keepBody": "Vous pourrez reprendre cette quête plus tard dans Mes brouillons. Abandonner le supprime.",
+      "keep": "Conserver le brouillon",
+      "discard": "Abandonner"
     },
     "error": {
       "load": "Impossible de charger les quêtes.",

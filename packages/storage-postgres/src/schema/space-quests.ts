@@ -162,6 +162,32 @@ export const spaceQuestDeliverables = pgTable(
   (table) => [index('space_quest_deliverables_quest_id_idx').on(table.questId)],
 );
 
+/**
+ * Unfinished create-quest form for one member. Private to the author.
+ * Not a quest row and not an agreement.
+ */
+export const spaceQuestDrafts = pgTable(
+  'space_quest_drafts',
+  {
+    id: serial('id').primaryKey(),
+    spaceId: integer('space_id')
+      .notNull()
+      .references(() => spaces.id, { onDelete: 'cascade' }),
+    authorPersonId: integer('author_person_id')
+      .notNull()
+      .references(() => people.id, { onDelete: 'cascade' }),
+    name: text('name').notNull().default(''),
+    payload: jsonb('payload').$type<Record<string, unknown>>().notNull(),
+    ...commonDateFields,
+  },
+  (table) => [
+    index('space_quest_drafts_space_author_idx').on(
+      table.spaceId,
+      table.authorPersonId,
+    ),
+  ],
+);
+
 export const spaceQuestUpdates = pgTable(
   'space_quest_updates',
   {
@@ -186,6 +212,8 @@ export const spaceQuestUpdates = pgTable(
   (table) => [index('space_quest_updates_quest_id_idx').on(table.questId)],
 );
 
+export type SpaceQuestDraft = InferSelectModel<typeof spaceQuestDrafts>;
+export type NewSpaceQuestDraft = InferInsertModel<typeof spaceQuestDrafts>;
 export type SpaceQuest = InferSelectModel<typeof spaceQuests>;
 export type NewSpaceQuest = InferInsertModel<typeof spaceQuests>;
 export type SpaceQuestMilestone = InferSelectModel<typeof spaceQuestMilestones>;

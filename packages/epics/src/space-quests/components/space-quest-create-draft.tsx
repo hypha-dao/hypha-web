@@ -21,7 +21,13 @@ import {
   type QuestReward,
   type QuestStewardStep,
 } from '@hypha-platform/core/client';
-import { Button, Dialog, DialogContent, DialogTitle } from '@hypha-platform/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -39,10 +45,13 @@ import { QuestDraftParticipantsCard } from './quest-detail-presentation';
 import { QuestSectionMarkdown } from './quest-section-markdown';
 import {
   createSpaceQuestRequest,
+  deleteQuestDraftRequest,
   deleteSpaceQuestRequest,
   findQuestSpaceMember,
   findQuestSpaceMemberId,
+  getQuestDraftRequest,
   patchSpaceQuestRequest,
+  saveQuestDraftRequest,
   toQuestSpaceMemberPersons,
   useQuestSpaceMembers,
 } from '../hooks/use-space-quests';
@@ -81,10 +90,13 @@ import {
   questPublishFailurePlan,
 } from '../utils/quest-create-recovery';
 import {
+  questCreateDraftIsWorthSaving,
+  questCreateDraftPayload,
   questCreateSessionKey,
   readQuestCreateSession,
   writeQuestCreateSession,
   type QuestCreateCheckpoint,
+  type QuestCreateSession,
 } from '../utils/quest-create-session';
 
 const LABEL_CLASS =
@@ -132,13 +144,22 @@ function chainProposalId(current: {
   return null;
 }
 
-export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
+export function SpaceQuestCreateDraft({
+  spaceSlug,
+  resumeDraftId = null,
+  startFresh = false,
+}: {
+  spaceSlug: string;
+  resumeDraftId?: number | null;
+  startFresh?: boolean;
+}) {
   const spaceMembers = useQuestSpaceMembers(spaceSlug);
   const spaceMemberNames = useMemo(
     () => spaceMembers.map((m) => m.name),
     [spaceMembers],
   );
   const locale = useLocale();
+  const tDrafts = useTranslations('SpaceQuests');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const router = useRouter();
   const { person } = useMe();
@@ -222,6 +243,10 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
 
   // Confirm modal state ("Are you sure?" — Figma 93:2)
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [draftSaveState, setDraftSaveState] = useState<
+    'idle' | 'saving' | 'saved' | 'error'
+  >('idle');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [deployReload, setDeployReload] = useState(false);
@@ -238,6 +263,11 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const chatMessagesRef = useRef(chatMessages);
   chatMessagesRef.current = chatMessages;
   const skipCreateSessionWrite = useRef(true);
+  const serverDraftIdRef = useRef<number | null>(resumeDraftId);
+  const draftConsumedRef = useRef(false);
+  const holdSessionWrite = useRef(startFresh || resumeDraftId != null);
+  const getAccessTokenRef = useRef(getAccessToken);
+  getAccessTokenRef.current = getAccessToken;
   const pendingProposalRef = useRef<PendingQuestSectionProposal | null>(null);
   const stewardStepIndexRef = useRef(0);
   const turnGenerationRef = useRef(0);
@@ -313,45 +343,135 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
   const commitDraftRef = useRef(commitDraftSnapshot);
   commitDraftRef.current = commitDraftSnapshot;
 
+  const currentCreateSession = useCallback((): QuestCreateSession => {
+    return {
+      draft: draftSnapshotRef.current,
+      messages: chatMessagesRef.current,
+      step: stewardStepIndexRef.current,
+      pending: pendingProposalRef.current,
+      checkpoint: pendingProposalLinkRef.current,
+      draftId: serverDraftIdRef.current,
+    };
+  }, []);
+
+  const applyCreateSession = useCallback((session: QuestCreateSession) => {
+    commitDraftRef.current(session.draft);
+    if (session.messages.length > 0) setChatMessages(session.messages);
+    setStewardStepIndex(session.step);
+    pendingProposalRef.current = session.pending;
+    serverDraftIdRef.current = session.draftId;
+    pendingProposalLinkRef.current = session.checkpoint;
+    setPendingProposalLink(session.checkpoint);
+  }, []);
+
   const persistCreateSession = useCallback(() => {
     if (typeof window === 'undefined') return;
     writeQuestCreateSession(
       window.sessionStorage,
       questCreateSessionKey(spaceSlug),
-      {
-        draft: draftSnapshotRef.current,
-        messages: chatMessagesRef.current,
-        step: stewardStepIndexRef.current,
-        pending: pendingProposalRef.current,
-        checkpoint: pendingProposalLinkRef.current,
-      },
+      currentCreateSession(),
     );
-  }, [spaceSlug]);
+  }, [currentCreateSession, spaceSlug]);
+
+  const saveDraftToServer = useCallback(async () => {
+    if (draftConsumedRef.current) return serverDraftIdRef.current;
+    const session = currentCreateSession();
+    if (!questCreateDraftIsWorthSaving(session)) return null;
+    setDraftSaveState((current) => (current === 'saving' ? current : 'saving'));
+    try {
+      const saved = await saveQuestDraftRequest({
+        spaceSlug,
+        id: serverDraftIdRef.current,
+        payload: questCreateDraftPayload(session),
+        getAccessToken: getAccessTokenRef.current,
+      });
+      serverDraftIdRef.current = saved.id;
+      persistCreateSession();
+      setDraftSaveState('saved');
+      return saved.id;
+    } catch {
+      setDraftSaveState('error');
+      return null;
+    }
+  }, [currentCreateSession, persistCreateSession, spaceSlug]);
+
+  const saveDraftRef = useRef(saveDraftToServer);
+  saveDraftRef.current = saveDraftToServer;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const restored = readQuestCreateSession(
-      window.sessionStorage,
-      questCreateSessionKey(spaceSlug),
-    );
+    const key = questCreateSessionKey(spaceSlug);
     skipCreateSessionWrite.current = true;
-    if (!restored) return;
-    commitDraftRef.current(restored.draft);
-    if (restored.messages.length > 0) setChatMessages(restored.messages);
-    setStewardStepIndex(restored.step);
-    pendingProposalRef.current = restored.pending;
-    if (restored.checkpoint) {
-      pendingProposalLinkRef.current = restored.checkpoint;
-      setPendingProposalLink(restored.checkpoint);
+    if (startFresh) {
+      window.sessionStorage.removeItem(key);
+      serverDraftIdRef.current = null;
+      holdSessionWrite.current = false;
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('fresh')) {
+        url.searchParams.delete('fresh');
+        window.history.replaceState(
+          null,
+          '',
+          `${url.pathname}${url.search}${url.hash}`,
+        );
+      }
+      return;
     }
-  }, [spaceSlug]);
+    if (resumeDraftId) {
+      let cancelled = false;
+      void (async () => {
+        try {
+          const row = await getQuestDraftRequest({
+            spaceSlug,
+            draftId: resumeDraftId,
+            getAccessToken: getAccessTokenRef.current,
+          });
+          if (cancelled) return;
+          const restored = readQuestCreateSession(
+            {
+              getItem: () =>
+                JSON.stringify({ ...row.payload, draftId: row.id }),
+            },
+            key,
+          );
+          if (restored) applyCreateSession(restored);
+          holdSessionWrite.current = false;
+          persistCreateSession();
+        } catch {
+          if (cancelled) return;
+          holdSessionWrite.current = false;
+          const local = readQuestCreateSession(window.sessionStorage, key);
+          if (local) applyCreateSession(local);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+    holdSessionWrite.current = false;
+    const restored = readQuestCreateSession(window.sessionStorage, key);
+    if (!restored) return;
+    applyCreateSession(restored);
+  }, [
+    applyCreateSession,
+    persistCreateSession,
+    resumeDraftId,
+    spaceSlug,
+    startFresh,
+  ]);
 
   useEffect(() => {
+    if (holdSessionWrite.current) return;
     if (skipCreateSessionWrite.current) {
       skipCreateSessionWrite.current = false;
       return;
     }
     persistCreateSession();
+    if (draftConsumedRef.current || submitting) return;
+    const timer = window.setTimeout(() => {
+      void saveDraftRef.current();
+    }, 800);
+    return () => window.clearTimeout(timer);
   }, [
     chatMessages,
     goal,
@@ -368,9 +488,32 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
     scopeOutMarkdown,
     selectedLeadPersonId,
     stewardStepIndex,
+    submitting,
     successCriteria,
     targetDate,
   ]);
+
+  useEffect(() => {
+    return () => {
+      if (draftConsumedRef.current) return;
+      const session = {
+        draft: draftSnapshotRef.current,
+        messages: chatMessagesRef.current,
+        step: stewardStepIndexRef.current,
+        pending: pendingProposalRef.current,
+        checkpoint: pendingProposalLinkRef.current,
+        draftId: serverDraftIdRef.current,
+      };
+      if (!questCreateDraftIsWorthSaving(session)) return;
+      void saveQuestDraftRequest({
+        spaceSlug,
+        id: serverDraftIdRef.current,
+        payload: questCreateDraftPayload(session),
+        getAccessToken: getAccessTokenRef.current,
+        keepalive: true,
+      }).catch(() => undefined);
+    };
+  }, [spaceSlug]);
 
   const handleSendStewardMessage = useCallback(
     async (overridePrompt?: string) => {
@@ -846,6 +989,17 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       };
       pendingProposalLinkRef.current = linkTarget;
       setPendingProposalLink(linkTarget);
+      draftConsumedRef.current = true;
+      const consumedDraftId = serverDraftIdRef.current;
+      serverDraftIdRef.current = null;
+      if (consumedDraftId) {
+        void deleteQuestDraftRequest({
+          spaceSlug,
+          draftId: consumedDraftId,
+          getAccessToken,
+        }).catch(() => undefined);
+      }
+      persistCreateSession();
 
       await linkCreatedQuest(linkTarget);
     } catch (err) {
@@ -958,6 +1112,50 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
     proposalCharacterCount > QUEST_PROPOSAL_DESCRIPTION_LIMIT;
 
   const questsListHref = `/${locale}/dho/${spaceSlug}/quests`;
+  const leaveCreate = () => {
+    router.push(questsListHref);
+  };
+  const requestCancel = () => {
+    if (pendingProposalLink) {
+      leaveCreate();
+      return;
+    }
+    if (
+      serverDraftIdRef.current ||
+      questCreateDraftIsWorthSaving(currentCreateSession())
+    ) {
+      setCancelOpen(true);
+      return;
+    }
+    leaveCreate();
+  };
+  const keepDraftAndLeave = async () => {
+    const savedId = await saveDraftToServer();
+    if (
+      savedId == null &&
+      questCreateDraftIsWorthSaving(currentCreateSession())
+    ) {
+      setCancelOpen(false);
+      return;
+    }
+    setCancelOpen(false);
+    leaveCreate();
+  };
+  const discardDraftAndLeave = async () => {
+    const id = serverDraftIdRef.current;
+    draftConsumedRef.current = true;
+    serverDraftIdRef.current = null;
+    window.sessionStorage.removeItem(questCreateSessionKey(spaceSlug));
+    setCancelOpen(false);
+    if (id) {
+      await deleteQuestDraftRequest({
+        spaceSlug,
+        draftId: id,
+        getAccessToken,
+      }).catch(() => undefined);
+    }
+    leaveCreate();
+  };
   const successBullets = splitMarkdownLinesToBullets(successCriteria);
   const scopeInPreview =
     scopeInMarkdown.trim() || bulletsToMarkdownList(scopeIn);
@@ -1019,12 +1217,30 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
               </div>
               <div className="flex items-center gap-2">
                 <Button
-                  asChild
+                  type="button"
                   variant="outline"
                   colorVariant="neutral"
                   className="rounded-none"
+                  onClick={requestCancel}
+                  data-testid="cancel-quest-button"
                 >
-                  <Link href={questsListHref}>CANCEL</Link>
+                  CANCEL
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  colorVariant="neutral"
+                  className="rounded-none"
+                  disabled={
+                    draftSaveState === 'saving' ||
+                    !questCreateDraftIsWorthSaving(currentCreateSession())
+                  }
+                  onClick={() => void saveDraftToServer()}
+                  data-testid="save-quest-draft-button"
+                >
+                  {draftSaveState === 'saving'
+                    ? tDrafts('drafts.saving')
+                    : tDrafts('drafts.save')}
                 </Button>
                 <Button
                   type="button"
@@ -1041,6 +1257,20 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                 </Button>
               </div>
             </div>
+            {draftSaveState === 'saved' || draftSaveState === 'error' ? (
+              <p
+                className={
+                  draftSaveState === 'error'
+                    ? 'text-xs text-error-11'
+                    : 'text-xs text-neutral-11'
+                }
+                data-testid="quest-draft-save-status"
+              >
+                {draftSaveState === 'error'
+                  ? tDrafts('drafts.saveFailed')
+                  : tDrafts('drafts.saved')}
+              </p>
+            ) : null}
 
             {proposalLinkError ? (
               <div className="border border-error-6 bg-background-2 px-4 py-3 text-xs text-error-11">
@@ -1497,6 +1727,42 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                   className="bg-foreground text-background hover:bg-foreground/90"
                 >
                   YES, CREATE PROPOSAL
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+          <DialogContent
+            hideCloseButton
+            className="max-w-[480px] rounded-none border border-border bg-background p-6"
+          >
+            <div className="space-y-4">
+              <DialogTitle className="font-display text-[18px] font-bold text-foreground">
+                {tDrafts('drafts.keepTitle')}
+              </DialogTitle>
+              <DialogDescription className="text-[13px] leading-relaxed text-neutral-11">
+                {tDrafts('drafts.keepBody')}
+              </DialogDescription>
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  colorVariant="neutral"
+                  onClick={() => void discardDraftAndLeave()}
+                  data-testid="discard-quest-draft-button"
+                  className="rounded-none"
+                >
+                  {tDrafts('drafts.discard')}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => void keepDraftAndLeave()}
+                  data-testid="keep-quest-draft-button"
+                  className="bg-foreground text-background hover:bg-foreground/90"
+                >
+                  {tDrafts('drafts.keep')}
                 </Button>
               </div>
             </div>

@@ -5772,7 +5772,27 @@
       "active": "Actief",
       "proposed": "Voorgesteld",
       "paused": "Gepauzeerd",
-      "completed": "Voltooid"
+      "completed": "Voltooid",
+      "drafts": "Mijn concepten"
+    },
+    "drafts": {
+      "empty": "Je hebt geen opgeslagen quest-concepten in deze space.",
+      "continue": "Doorgaan",
+      "delete": "Verwijderen",
+      "deleteTitle": "Dit concept verwijderen?",
+      "deleteBody": "Dit verwijdert je opgeslagen concept. Bestaande quests blijven ongewijzigd.",
+      "deleteConfirm": "Concept verwijderen",
+      "cancel": "Annuleren",
+      "edited": "Bewerkt {when}",
+      "untitled": "Quest zonder titel",
+      "save": "Concept opslaan",
+      "saving": "Opslaan…",
+      "saved": "Concept opgeslagen",
+      "saveFailed": "Het concept kon niet worden opgeslagen. Probeer het opnieuw.",
+      "keepTitle": "Dit concept bewaren?",
+      "keepBody": "Je kunt deze quest later verder zetten via Mijn concepten. Weggooien wist het concept.",
+      "keep": "Concept bewaren",
+      "discard": "Weggooien"
     },
     "error": {
       "load": "Quests konden niet worden geladen.",

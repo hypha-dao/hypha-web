@@ -5,6 +5,8 @@ import {
   questPublishFailurePlan,
 } from '../quest-create-recovery';
 import {
+  questCreateDraftIsWorthSaving,
+  questCreateDraftPayload,
   questCreateSessionKey,
   readQuestCreateSession,
   writeQuestCreateSession,
@@ -91,6 +93,7 @@ describe('quest create session', () => {
       ],
       step: 2,
       pending: null,
+      draftId: 3,
       checkpoint: {
         questSlug: 'quest-test',
         agreementId: 44,
@@ -115,5 +118,110 @@ describe('quest create session', () => {
       proposalTitle: 'Quest test',
     });
     expect(restored?.step).toBe(2);
+    expect(restored?.draftId).toBe(3);
+  });
+
+  it('keeps a named draft and ignores a greeting-only page', () => {
+    const greeting = {
+      draft: {
+        name: '',
+        goal: '',
+        scopeIn: [],
+        scopeOut: [],
+        scopeInMarkdown: '',
+        scopeOutMarkdown: '',
+        successCriteria: '',
+        rewards: [],
+        milestones: [],
+        leadName: '',
+        selectedLeadPersonId: null,
+        members: [],
+        targetDate: null,
+      },
+      messages: [
+        {
+          id: 'm1',
+          role: 'member' as const,
+          text: 'Hey, what is the goal of the quest you want to create?',
+          timestamp: new Date(),
+        },
+      ],
+      pending: null,
+    };
+    expect(questCreateDraftIsWorthSaving(greeting)).toBe(false);
+    expect(
+      questCreateDraftIsWorthSaving({
+        ...greeting,
+        draft: { ...greeting.draft, name: 'Checklist' },
+      }),
+    ).toBe(true);
+    expect(
+      questCreateDraftIsWorthSaving({
+        ...greeting,
+        messages: [
+          ...greeting.messages,
+          {
+            id: 'u1',
+            role: 'user',
+            text: 'Ship it',
+            timestamp: new Date(),
+          },
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  it('stores the helper thread on the draft payload without the agreement checkpoint', () => {
+    const storage = new Map<string, string>();
+    const memory = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        storage.set(key, value);
+      },
+    };
+    const key = questCreateSessionKey('sandbox');
+    writeQuestCreateSession(memory, key, {
+      draft: {
+        name: 'Checklist',
+        goal: '',
+        scopeIn: [],
+        scopeOut: [],
+        scopeInMarkdown: '',
+        scopeOutMarkdown: '',
+        successCriteria: '',
+        rewards: [],
+        milestones: [],
+        leadName: '',
+        selectedLeadPersonId: null,
+        members: [],
+        targetDate: null,
+      },
+      messages: [
+        {
+          id: 'm1',
+          role: 'member',
+          senderName: 'Quest Helper',
+          agentSpecialistId: 'quest-helper',
+          text: 'What is the goal?',
+          timestamp: new Date('2026-11-09T20:00:00.000Z'),
+        },
+      ],
+      step: 0,
+      pending: null,
+      draftId: 8,
+      checkpoint: {
+        questSlug: 'checklist',
+        agreementId: 1,
+        agreementSlug: 'checklist-proposal',
+        proposalTitle: 'Checklist',
+      },
+    });
+    const restored = readQuestCreateSession(memory, key);
+    expect(restored?.messages[0]?.agentSpecialistId).toBe('quest-helper');
+    const payload = questCreateDraftPayload(restored!);
+    expect(payload).not.toHaveProperty('checkpoint');
+    expect(payload).not.toHaveProperty('draftId');
+    expect(payload.messages[0]?.text).toBe('What is the goal?');
+    expect(payload.messages[0]?.agentSpecialistId).toBe('quest-helper');
   });
 });

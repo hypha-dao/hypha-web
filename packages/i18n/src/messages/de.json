@@ -5766,7 +5766,27 @@
       "active": "Aktiv",
       "proposed": "Vorgeschlagen",
       "paused": "Pausiert",
-      "completed": "Abgeschlossen"
+      "completed": "Abgeschlossen",
+      "drafts": "Meine Entwürfe"
+    },
+    "drafts": {
+      "empty": "Du hast in diesem Space keine gespeicherten Quest-Entwürfe.",
+      "continue": "Weiter",
+      "delete": "Löschen",
+      "deleteTitle": "Diesen Entwurf löschen?",
+      "deleteBody": "Das entfernt deinen gespeicherten Entwurf. Bestehende Quests bleiben unverändert.",
+      "deleteConfirm": "Entwurf löschen",
+      "cancel": "Abbrechen",
+      "edited": "Bearbeitet {when}",
+      "untitled": "Quest ohne Titel",
+      "save": "Entwurf speichern",
+      "saving": "Speichern…",
+      "saved": "Entwurf gespeichert",
+      "saveFailed": "Der Entwurf konnte nicht gespeichert werden. Versuche es erneut.",
+      "keepTitle": "Diesen Entwurf behalten?",
+      "keepBody": "Du kannst diese Quest später unter Meine Entwürfe fortsetzen. Verwerfen entfernt sie.",
+      "keep": "Entwurf behalten",
+      "discard": "Verwerfen"
     },
     "error": {
       "load": "Quests konnten nicht geladen werden.",
