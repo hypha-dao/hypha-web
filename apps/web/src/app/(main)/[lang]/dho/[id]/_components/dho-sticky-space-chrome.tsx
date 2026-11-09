@@ -1542,7 +1542,15 @@ export function DhoStickySpaceChrome({
         </div>
       </div>
 
-      <div ref={bannerColumnRef} className="flex flex-col">
+      {/*
+        Root layout pads the main column (`pt-4 md:pt-5`) and MenuTop uses
+        `-mb-px`. Pull the cover up so the lead image meets the menu bottom —
+        same seal as member home, without changing global page padding.
+      */}
+      <div
+        ref={bannerColumnRef}
+        className="flex flex-col -mt-[calc(1rem+1px)] md:-mt-[calc(1.25rem+1px)]"
+      >
         <div className="relative">
           {banner}
           <div
