@@ -29,7 +29,7 @@ export type QuestDraftTarget = {
 };
 
 const SECTION_NAME =
-  '(success\\s+criteria|in[-\\s]?scope|out[-\\s]of[-\\s]?scope|milestones?|participants?|members?|target\\s+date|quest\\s+rewards?|rewards?|quest\\s+name|scope|success(?!\\s+[A-Za-z])|lead|goal|name|title)';
+  '(scope\\s+in|scope\\s+out|success\\s+criteria|in[-\\s]?scope|out[-\\s]of[-\\s]?scope|milestones?|participants?|members?|target\\s+date|quest\\s+rewards?|rewards?|quest\\s+name|scope|success(?!\\s+[A-Za-z])|lead|goal|name|title)';
 
 /**
  * A section address, not a sentence that happens to use a section word.
@@ -708,6 +708,33 @@ export function questWordingRevisionStep(
   return pendingStep;
 }
 
+const EDIT_REQUEST_VERB =
+  '(?:add|put|set|update|change|include|append|insert|remove|drop|move|reorder)';
+
+/**
+ * An edit that names one section, including "Add \"…\" to Scope In".
+ * The section after to/into/on/for wins. A bare "add lead scoring" does not.
+ * A question and a request to fill every section do not.
+ */
+export function questEditRequestSection(
+  message: string,
+): QuestStewardStep | null {
+  const text = message.trim();
+  if (!text || /[?？]\s*$/.test(text) || isBulkQuestDraftRequest(text)) {
+    return null;
+  }
+  const targeted = new RegExp(
+    `\\b${EDIT_REQUEST_VERB}\\b[\\s\\S]{0,200}?\\b(?:to|into|on|for|under)\\s+(?:the\\s+)?(${SECTION_NAME})\\b`,
+    'i',
+  ).exec(text);
+  const direct = new RegExp(
+    `\\b${EDIT_REQUEST_VERB}\\s+(?:in(?:to)?|on|for|as|to)?\\s*(?:the\\s+)?(${SECTION_NAME})\\b(?=\\s*(?:to\\b|:|["“]))`,
+    'i',
+  ).exec(text);
+  const raw = targeted?.[1] ?? direct?.[1];
+  return raw ? stepFromSectionName(raw) : null;
+}
+
 /**
  * A proposal or revision of one section. The first model call must file
  * that section with the tool. A question, a coaching opener, and a
@@ -720,6 +747,8 @@ export function questDraftMessageRequiresTool(
   const text = message.trim();
   if (!text || isBulkQuestDraftRequest(text)) return false;
   if (/[?？]\s*$/.test(text)) return false;
+  if (questEditRequestSection(text)) return true;
+  if (labeledQuestDraftSection(text)) return true;
   if (questWordingRevisionStep(text, pendingStep)) return true;
   return /\b(?:draft|suggest|propose|write|fill(?:\s+in|\s+out)?|generate)\b/i.test(
     text,
@@ -755,6 +784,8 @@ export function resolveQuestDraftTarget(
   ) {
     return { step: currentStep, bulk: true };
   }
+  const edit = questEditRequestSection(text);
+  if (edit) return { step: edit, bulk: false };
   const proposal = namedProposalContentSpan(text);
   if (proposal) {
     const named = sectionsMentioned(text.slice(0, proposal.start));
@@ -830,6 +861,34 @@ export function existingQuestEditSection(
   if (!questExistingTurnMayPersist(message)) return null;
   const named = COMMANDED_SECTION.exec(message.trim())?.[1];
   return named ? stepFromSectionName(named) : null;
+}
+
+function patchFieldHasValue(value: unknown): boolean {
+  if (value == null) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+/**
+ * The one section present on a tool patch, or null when it is empty or
+ * mixes two sections.
+ */
+export function questDraftPatchSection(
+  patch: object | null | undefined,
+): QuestStewardStep | null {
+  if (!patch) return null;
+  const record = patch as Record<string, unknown>;
+  const steps = new Set<QuestStewardStep>();
+  for (const step of Object.keys(QUEST_STEP_PATCH_KEYS) as QuestStewardStep[]) {
+    if (
+      QUEST_STEP_PATCH_KEYS[step].some((key) => patchFieldHasValue(record[key]))
+    ) {
+      steps.add(step);
+    }
+  }
+  if (steps.size !== 1) return null;
+  return [...steps][0] ?? null;
 }
 
 /**

@@ -254,8 +254,41 @@ function pairByKey<B extends Named, A extends Named>(
 function withItems(
   change: QuestUpdateChange,
   items: QuestUpdateChangeItem[],
+  beforeSummary?: string,
+  afterSummary?: string,
 ): QuestUpdateChange {
-  return items.length > 0 ? { ...change, items } : change;
+  const before = trimmed(beforeSummary) || null;
+  const after = trimmed(afterSummary) || null;
+  if (items.length > 0) return { ...change, items };
+  if (before === after) return change;
+  return {
+    ...change,
+    format: 'text',
+    before,
+    after,
+  };
+}
+
+function normalizeMilestoneName(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/^m\d+\s+/, '');
+}
+
+export function questChangeIsVisible(change: QuestUpdateChange): boolean {
+  if (
+    change.items?.some(
+      (item) =>
+        item.action === 'reordered' ||
+        item.action === 'added' ||
+        item.action === 'removed' ||
+        trimmed(item.before) !== trimmed(item.after),
+    )
+  ) {
+    return true;
+  }
+  return trimmed(change.before) !== trimmed(change.after);
 }
 
 type MilestoneInput = {
@@ -271,22 +304,28 @@ export function questMilestoneChange(
   before: readonly QuestMilestoneRecord[],
   after: readonly MilestoneInput[],
 ): QuestUpdateChange {
-  const nameOf = (item: { name?: string }) => item.name ?? '';
+  const nameOf = (item: { name?: string }) =>
+    normalizeMilestoneName(item.name ?? '');
   const { pairs, added, removed } = pairByKey(before, after, nameOf);
   const items: QuestUpdateChangeItem[] = [];
-  if (orderChanged(listKeys(before, nameOf), listKeys(after, nameOf))) {
-    items.push(
-      shortItem(
-        'Order',
-        'reordered',
-        before
-          .map((item, index) => `M${index + 1} ${trimmed(item.name)}`)
-          .join(', '),
-        after
-          .map((item, index) => `M${index + 1} ${trimmed(item.name)}`)
-          .join(', '),
-      ),
-    );
+  const beforeOrder = before
+    .map((item, index) => `M${index + 1} ${trimmed(item.name)}`)
+    .join(', ');
+  const afterOrder = after
+    .map((item, index) => `M${index + 1} ${trimmed(item.name)}`)
+    .join(', ');
+  const beforeNames = before.map((item) => nameOf(item)).join('\0');
+  const afterNames = after.map((item) => nameOf(item)).join('\0');
+  const sameMilestoneSet =
+    before.length > 1 &&
+    before.length === after.length &&
+    [...before.map((item) => nameOf(item))].sort().join('\0') ===
+      [...after.map((item) => nameOf(item))].sort().join('\0');
+  if (
+    orderChanged(listKeys(before, nameOf), listKeys(after, nameOf)) ||
+    (sameMilestoneSet && beforeNames !== afterNames)
+  ) {
+    items.push(shortItem('Order', 'reordered', beforeOrder, afterOrder));
   }
   for (const item of added) {
     items.push(shortItem('Milestone', 'added', null, item.name));
@@ -297,7 +336,9 @@ export function questMilestoneChange(
   for (const pair of pairs) {
     const label =
       trimmed(pair.after.name) || trimmed(pair.before.name) || 'Milestone';
-    pushShort(items, `${label} name`, pair.before.name, pair.after.name);
+    if (nameOf(pair.before) !== nameOf(pair.after)) {
+      pushShort(items, `${label} name`, pair.before.name, pair.after.name);
+    }
     if (trimmed(pair.before.description) !== trimmed(pair.after.description)) {
       items.push(
         textItem(
@@ -333,6 +374,8 @@ export function questMilestoneChange(
       action: 'updated',
     },
     items,
+    beforeOrder,
+    afterOrder,
   );
 }
 
@@ -401,6 +444,14 @@ export function questMemberChange(
       );
     }
   }
+  const memberLine = (item: {
+    memberName?: string;
+    roleLabel?: string | null;
+  }) => {
+    const name = trimmed(item.memberName) || 'none';
+    const role = trimmed(item.roleLabel);
+    return role ? `${name} (${role})` : name;
+  };
   return withItems(
     {
       entity: 'member',
@@ -408,6 +459,8 @@ export function questMemberChange(
       action: 'updated',
     },
     items,
+    before.map(memberLine).join(', ') || 'none',
+    after.map(memberLine).join(', ') || 'none',
   );
 }
 
@@ -448,6 +501,15 @@ export function questDeliverableChange(
     pushShort(items, `${label} link`, pair.before.url, pair.after.url);
     pushShort(items, `${label} note`, pair.before.note, pair.after.note);
   }
+  const deliverableLine = (item: {
+    name?: string;
+    url?: string | null;
+    note?: string | null;
+  }) => {
+    const name = trimmed(item.name) || 'none';
+    const extra = [trimmed(item.url), trimmed(item.note)].filter(Boolean);
+    return extra.length > 0 ? `${name} (${extra.join('; ')})` : name;
+  };
   return withItems(
     {
       entity: 'deliverable',
@@ -455,5 +517,7 @@ export function questDeliverableChange(
       action: 'updated',
     },
     items,
+    before.map(deliverableLine).join(', ') || 'none',
+    after.map(deliverableLine).join(', ') || 'none',
   );
 }

@@ -63,8 +63,8 @@ describe('quest update detail', () => {
         ],
       }).map((entry) => (entry.kind === 'short' ? entry.line : entry.label)),
     ).toEqual([
-      'Milestone: from none to Ship',
-      'Order: from M1 Draft, M2 Review to M1 Review, M2 Draft',
+      'Added Milestone: Ship',
+      'Reordered from M1 Draft, M2 Review to M1 Review, M2 Draft',
     ]);
   });
 

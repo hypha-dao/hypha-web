@@ -10,6 +10,8 @@ import {
   limitQuestPatchToStep,
   questDraftCoachedStep,
   questDraftMessageRequiresTool,
+  questDraftPatchSection,
+  questEditRequestSection,
   questWordingRevisionStep,
   isAllowedQuestDeliverableUrl,
   isSandboxOrThrowawaySpace,
@@ -434,6 +436,8 @@ export async function assistSpaceQuestDraft({
     : false;
 
   let collectedPatch: QuestDraftAssistPatch = {};
+  let rawPatch: QuestDraftAssistPatch = {};
+  let activeStep: QuestStewardStep = 'goal';
   const coachingNewQuest = !existingQuest;
   const draftTarget = coachingNewQuest
     ? questAssistCoachedTarget(message, currentStep, input.pendingSuggestion)
@@ -445,6 +449,7 @@ export async function assistSpaceQuestDraft({
       ? input.pendingSuggestion.step ?? null
       : null;
   const coachedStep = draftTarget.step;
+  activeStep = coachedStep;
   const revisingNamedSection =
     coachingNewQuest &&
     !draftTarget.bulk &&
@@ -459,11 +464,12 @@ export async function assistSpaceQuestDraft({
         : 'Call this only when the member explicitly edits one section: the message names that section and the replacement text (set, change, update, or put, then to, a colon, or a quote). Pass only that section. Do not call this for a question, an assessment, or a request to discuss or improve.',
       inputSchema: draftPatchSchema,
       execute: async (patchInput) => {
+        rawPatch = { ...rawPatch, ...patchInput };
         const accepted = !coachingNewQuest
           ? patchInput
           : draftTarget.bulk
           ? {}
-          : limitQuestPatchToStep(patchInput, coachedStep);
+          : limitQuestPatchToStep(patchInput, activeStep);
         collectedPatch = { ...collectedPatch, ...accepted };
         return {
           ok: true,
@@ -619,30 +625,69 @@ ${untrusted(
     coachingNewQuest &&
     !draftTarget.bulk &&
     questDraftMessageRequiresTool(message, pendingStep);
+  const requestedSection = coachingNewQuest
+    ? questEditRequestSection(message)
+    : null;
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), QUEST_DRAFT_MS);
+  const wrongSection = (
+    requested: QuestStewardStep,
+    raw: QuestDraftAssistPatch,
+    limited: QuestDraftAssistPatch,
+  ) => {
+    const limitedSection = questDraftPatchSection(limited);
+    if (limitedSection && limitedSection !== requested) return true;
+    const rawSection = questDraftPatchSection(raw);
+    return !limitedSection && rawSection != null && rawSection !== requested;
+  };
   try {
-    const result = await generateText({
-      model: getHyphaChatModel(),
-      system,
-      prompt,
-      tools,
-      ...(requireTool
-        ? {
-            toolChoice: {
-              type: 'tool' as const,
-              toolName: 'update_quest_draft',
-            },
-          }
-        : {}),
-      stopWhen: stepCountIs(QUEST_DRAFT_MAX_STEPS),
-      abortSignal: abort.signal,
-    });
+    const callModel = (extra?: string) => {
+      collectedPatch = {};
+      rawPatch = {};
+      return generateText({
+        model: getHyphaChatModel(),
+        system: extra ? `${system}\n\n${extra}` : system,
+        prompt,
+        tools,
+        ...(requireTool || extra
+          ? {
+              toolChoice: {
+                type: 'tool' as const,
+                toolName: 'update_quest_draft',
+              },
+            }
+          : {}),
+        stopWhen: stepCountIs(QUEST_DRAFT_MAX_STEPS),
+        abortSignal: abort.signal,
+      });
+    };
+    let result = await callModel();
+    if (
+      requestedSection &&
+      wrongSection(requestedSection, rawPatch, collectedPatch)
+    ) {
+      activeStep = requestedSection;
+      result = await callModel(
+        `The member asked to edit the ${requestedSection} section only. The previous update_quest_draft call used a different section. Call update_quest_draft again with only the ${requestedSection} fields.`,
+      );
+      if (
+        wrongSection(requestedSection, rawPatch, collectedPatch) ||
+        Object.keys(collectedPatch).length === 0
+      ) {
+        return {
+          ok: true,
+          patch: null,
+          updatedQuest: null,
+          reply: null,
+          specialistId: specialist?.id ?? 'operations',
+        };
+      }
+    }
 
     if (coachingNewQuest) {
       collectedPatch = draftTarget.bulk
         ? {}
-        : { ...limitQuestPatchToStep(collectedPatch, coachedStep) };
+        : { ...limitQuestPatchToStep(collectedPatch, activeStep) };
     } else {
       const settled = settleExistingQuestToolPatch({
         message,

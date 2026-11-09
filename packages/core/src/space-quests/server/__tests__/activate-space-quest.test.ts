@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-import { spaceQuests } from '@hypha-platform/storage-postgres';
+import { people, spaceQuests } from '@hypha-platform/storage-postgres';
 import { activateSpaceQuestByDocumentId } from '../mutations';
 
 type QuestRow = {
@@ -15,14 +15,20 @@ type QuestRow = {
   name: string;
 };
 
-type PostRow = { questId: number; text: string };
+type PostRow = {
+  questId: number;
+  text: string;
+  authorAvatarUrl?: string | null;
+};
+
+type PersonRow = { id: number; avatarUrl: string | null };
 
 /**
  * In-memory stand-in for the neon-serverless transaction used in production.
  * Transactions run one at a time and commit only after the callback returns,
  * matching a proposed-row UPDATE that loses to a concurrent claim.
  */
-function createActivationDb(initial: QuestRow[]) {
+function createActivationDb(initial: QuestRow[], peopleRows: PersonRow[] = []) {
   let quests = initial.map((row) => ({ ...row }));
   let posts: PostRow[] = [];
   let rollbacks = 0;
@@ -97,7 +103,11 @@ function createActivationDb(initial: QuestRow[]) {
           return {
             where() {
               const rows =
-                table === spaceQuests ? quests.map((row) => ({ ...row })) : [];
+                table === spaceQuests
+                  ? quests.map((row) => ({ ...row }))
+                  : table === people
+                  ? peopleRows.map((row) => ({ ...row }))
+                  : [];
               const promise = Promise.resolve(rows);
               return Object.assign(promise, {
                 limit(count: number) {
@@ -178,6 +188,29 @@ describe('activateSpaceQuestByDocumentId', () => {
       }),
     ]);
     expect(store.rollbacks()).toBe(0);
+  });
+
+  it('uses the lead avatar on the acceptance post when the person has one', async () => {
+    const store = createActivationDb(
+      [proposedQuest()],
+      [{ id: 7, avatarUrl: 'https://example.com/ada.png' }],
+    );
+    await activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db });
+    expect(store.posts()[0]).toEqual(
+      expect.objectContaining({
+        text: 'Quest proposal accepted — Quest is now Active.',
+        authorAvatarUrl: 'https://example.com/ada.png',
+      }),
+    );
+  });
+
+  it('leaves the acceptance avatar empty when the lead has none', async () => {
+    const store = createActivationDb(
+      [proposedQuest()],
+      [{ id: 7, avatarUrl: null }],
+    );
+    await activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db });
+    expect(store.posts()[0]?.authorAvatarUrl).toBeNull();
   });
 
   it('lets one of two overlapping activations claim the proposed row', async () => {

@@ -9,6 +9,7 @@ import {
   canMemberEditQuest,
   formatQuestCalendarDate,
   isViewerQuestLead,
+  ACTIVE_QUEST_HEALTH_LABEL,
   questHealthDisplay,
   questOverviewVisibility,
   bulletsToMarkdownList,
@@ -246,7 +247,17 @@ function healthPresentation(quest: QuestRecord) {
   };
 }
 
-function HealthScale({ marker }: { marker: number }) {
+function HealthScale({
+  marker,
+  startLabel = 'Off track',
+  endLabel = 'Healthy',
+  uppercase = true,
+}: {
+  marker: number;
+  startLabel?: string;
+  endLabel?: string;
+  uppercase?: boolean;
+}) {
   const clamped = Math.min(100, Math.max(0, marker));
   const atStart = clamped <= 0;
   const atEnd = clamped >= 100;
@@ -264,9 +275,14 @@ function HealthScale({ marker }: { marker: number }) {
           aria-hidden
         />
       </div>
-      <div className="flex justify-between text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-11">
-        <span>Off track</span>
-        <span>Healthy</span>
+      <div
+        className={cn(
+          'flex justify-between text-[10px] font-semibold tracking-[0.08em] text-neutral-11',
+          uppercase && 'uppercase',
+        )}
+      >
+        <span data-testid="quest-health-scale-start">{startLabel}</span>
+        <span data-testid="quest-health-scale-end">{endLabel}</span>
       </div>
     </div>
   );
@@ -510,7 +526,16 @@ function OverviewTab({
               />
               <span className={health.textClass}>{health.label}</span>
             </p>
-            <HealthScale marker={health.marker} />
+            <HealthScale
+              marker={health.marker}
+              {...(quest.status === 'active'
+                ? {
+                    startLabel: ACTIVE_QUEST_HEALTH_LABEL.off_track,
+                    endLabel: ACTIVE_QUEST_HEALTH_LABEL.on_track,
+                    uppercase: false,
+                  }
+                : {})}
+            />
             <p className="text-[11px] text-neutral-11">
               {quest.health.updatesThisWeek}{' '}
               {quest.health.updatesThisWeek === 1 ? 'update' : 'updates'} this

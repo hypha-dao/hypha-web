@@ -197,6 +197,7 @@ describe('quest discussion helper', () => {
   });
 
   it('keeps a section suggestion inside the discussion until it can be saved', async () => {
+    harness.patchQuest.mockResolvedValue(questFixture());
     render(
       <QuestDiscussionHelper spaceSlug="sandbox" questSlug="onboarding" />,
     );
@@ -205,11 +206,17 @@ describe('quest discussion helper', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send helper' }));
     expect(await screen.findByText(/not saved yet/i)).toBeTruthy();
-    expect(screen.getByText(/suggestion that was waiting/i)).toBeTruthy();
     expect(
-      screen.getByText('Change the goal to ship the checklist'),
+      screen.getByText(/do you want that to be in the goal/i),
     ).toBeTruthy();
-    expect(harness.patchQuest).toHaveBeenCalled();
+    expect(harness.patchQuest).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('Helper message'), {
+      target: { value: 'yes' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send helper' }));
+    expect(await screen.findByText('Saved the Goal.')).toBeTruthy();
+    expect(harness.patchQuest).toHaveBeenCalledTimes(1);
     const saved = harness.patchQuest.mock.calls[0]?.[0] as {
       patch?: { goal?: string };
     };

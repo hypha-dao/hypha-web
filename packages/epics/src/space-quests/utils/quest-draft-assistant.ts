@@ -6,6 +6,8 @@ import {
   labeledQuestDraftSection,
   limitQuestPatchToStep,
   questDraftCoachedStep,
+  questDraftPatchSection,
+  questEditRequestSection,
   questPendingYesNotice,
   questWordingRevisionStep,
   scopeBoundaryLists,
@@ -1455,7 +1457,7 @@ function conversationalModelReply(
  * above. The app appends one line from the real card, or none.
  */
 const MODEL_STATE_CLAIM =
-  /\b(?:waiting|sav(?:ed|es)|suggested above|suggestion above|do you want that to be in)\b|(?<!\b(?:once|when|until|after|if|before|unless)\s+(?:the\s+|your\s+)?)\b(?:goal|scope|success\s+criteria|milestones?|members?|lead|target\s+date|(?:quest\s+)?rewards?|name)(?:'s|\s+(?:is|are|has\s+been|have\s+been))\s+(?:now\s+)?(?:set|added|applied|filled(?:\s+in)?|recorded|in\s+place|locked(?:\s+in)?|done)\b|\b(?:i(?:'ve|\s+have)|we(?:'ve|\s+have))\s+(?:now\s+)?(?:added|applied|set|filled|recorded|put)\b|\badded\s+(?:that|it|those|these|them)\s+to\b/i;
+  /\b(?:waiting|sav(?:ed|es)|suggested above|suggestion above|do you want that to be in)\b|(?<!\b(?:once|when|until|after|if|before|unless)\s+(?:the\s+|your\s+)?)\b(?:goal|scope|success\s+criteria|milestones?|members?|lead|target\s+date|(?:quest\s+)?rewards?|name)(?:'s|\s+(?:is|are|has\s+been|have\s+been))\s+(?:now\s+)?(?:set|added|applied|filled(?:\s+in)?|recorded|in\s+place|locked(?:\s+in)?|done)\b|\b(?:i(?:'ve|\s+have)|we(?:'ve|\s+have))\s+(?:now\s+)?(?:added|applied|set|filled|recorded|put|changed|updated|edited|saved)\b|\badded\s+(?:that|it|those|these|them)\s+to\b|\bnow\s+reads\b|\bnow\s+(?:says|includes)\b|\b(?:has been|was|is now)\s+(?:changed|updated|saved|edited)\b/i;
 
 function stripModelStateClaims(reply: string): string {
   const pieces = reply.split(/(\n+|(?<=[.!?])\s+)/);
@@ -1471,6 +1473,21 @@ function stripModelStateClaims(reply: string): string {
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
+
+/**
+ * Drop a model sentence that claims a section changed, was saved, or
+ * "now reads" when no patch was filed. An empty result means the reply
+ * was only that claim.
+ */
+export function replyWithoutUnbackedEditClaim(reply: string): string {
+  const stripped = stripModelStateClaims(reply).trim();
+  if (!stripped || /^[.\s]+$/.test(stripped)) return '';
+  return stripped;
+}
+
+/** Shown when an edit named a section and no patch was filed for it. */
+export const QUEST_EDIT_NOT_FILED_REPLY =
+  'I did not file a suggestion for that section, so nothing changed.';
 
 /**
  * A question leaves no suggestion for yes to save. Keep the answer. When the
@@ -1801,6 +1818,7 @@ export function runNewQuestDraftTurn({
   viewerDisplayName,
   spaceMembers,
   model,
+  voice = 'create',
 }: {
   message: string;
   currentStep: QuestStewardStep;
@@ -1811,6 +1829,8 @@ export function runNewQuestDraftTurn({
   viewerDisplayName: string;
   spaceMembers: readonly QuestSpaceMember[];
   model: QuestDraftModelTurn | null;
+  /** Saved-quest chat must not ask the create-flow questions. */
+  voice?: 'create' | 'saved';
 }): NewQuestDraftTurnResult {
   const text = message.trim();
   const pendingStep =
@@ -1845,9 +1865,12 @@ export function runNewQuestDraftTurn({
         wrote: false,
         pending: null,
         focusStep: currentStep,
-        reply: `Nothing is waiting on a yes. ${stewardQuestionForStep(
-          currentStep,
-        )}`,
+        reply:
+          voice === 'saved'
+            ? 'Nothing is waiting to confirm.'
+            : `Nothing is waiting on a yes. ${stewardQuestionForStep(
+                currentStep,
+              )}`,
       };
     }
     if (step === 'goal' && isVagueQuestGoal(next.goal)) {
@@ -1880,9 +1903,11 @@ export function runNewQuestDraftTurn({
 
   if (!text || target.bulk || isBulkSectionDraftRequest(text)) {
     return stay(
-      `We'll take one section at a time. ${stewardQuestionForStep(
-        currentStep,
-      )}`,
+      voice === 'saved'
+        ? 'Tell me one section to change.'
+        : `We'll take one section at a time. ${stewardQuestionForStep(
+            currentStep,
+          )}`,
     );
   }
 
@@ -1897,6 +1922,19 @@ export function runNewQuestDraftTurn({
       viewerDisplayName,
       commandPayload: true,
     });
+    if (voice === 'saved') {
+      const patch = sanitizeQuestDraftPatch(
+        limitQuestPatchToStep(extracted, command.step),
+      );
+      if (Object.keys(patch).length === 0) {
+        return stay(QUEST_EDIT_NOT_FILED_REPLY, command.step);
+      }
+      return stay(
+        replyForPendingSuggestion(null, command.step, patch),
+        command.step,
+        { step: command.step, patch },
+      );
+    }
     return finishApply(command.step, extracted);
   }
 
@@ -1911,13 +1949,20 @@ export function runNewQuestDraftTurn({
       return stay(questPendingYesNotice(pending.step), currentStep, pending);
     }
     return stay(
-      `Nothing is waiting on a yes. ${stewardQuestionForStep(currentStep)}`,
+      voice === 'saved'
+        ? 'Nothing is waiting to confirm.'
+        : `Nothing is waiting on a yes. ${stewardQuestionForStep(currentStep)}`,
     );
   }
 
   if (isQuestSectionRejection(text)) {
     const step = pending?.step ?? currentStep;
-    return stay(`Okay, I left that out. ${stewardQuestionForStep(step)}`, step);
+    return stay(
+      voice === 'saved'
+        ? 'Okay, I left that out.'
+        : `Okay, I left that out. ${stewardQuestionForStep(step)}`,
+      step,
+    );
   }
 
   if (isQuestDraftQuestion(text)) {
@@ -2013,6 +2058,11 @@ export function runNewQuestDraftTurn({
         older,
       );
     }
+    const requested = questEditRequestSection(text);
+    const filed = questDraftPatchSection(decision.patch);
+    if (requested && filed !== requested) {
+      return stay(QUEST_EDIT_NOT_FILED_REPLY, requested);
+    }
     return stay(
       replyForPendingSuggestion(
         conversationalModelReply(model, text),
@@ -2038,13 +2088,15 @@ export function runNewQuestDraftTurn({
     );
   }
   const actionable = Object.keys(pending?.patch ?? {}).length > 0;
-  return stay(
+  const chatReply =
     actionable && pending
       ? replyWhileOlderPending(modelReply, pending)
-      : replyAfterRetiredSuggestion(modelReply, false),
-    actionable ? currentStep : target.step,
-    pending,
-  );
+      : replyAfterRetiredSuggestion(modelReply, false);
+  if (voice === 'saved' && !actionable && questEditRequestSection(text)) {
+    const cleaned = replyWithoutUnbackedEditClaim(chatReply);
+    return stay(cleaned || QUEST_EDIT_NOT_FILED_REPLY, target.step);
+  }
+  return stay(chatReply, actionable ? currentStep : target.step, pending);
 }
 
 /** Drop copies of the app's own notice so a reply carries it once, at the end. */
@@ -2113,6 +2165,7 @@ export async function settleCreateDraftTurn({
   readState,
   isCurrent,
   loadModel,
+  voice = 'create',
 }: {
   message: string;
   history?: readonly QuestDraftTurnHistoryItem[];
@@ -2121,6 +2174,7 @@ export async function settleCreateDraftTurn({
   readState: () => CreateDraftTurnSnapshot;
   isCurrent: () => boolean;
   loadModel: () => Promise<QuestDraftModelTurn | null>;
+  voice?: 'create' | 'saved';
 }): Promise<NewQuestDraftTurnResult | null> {
   const run = (model: QuestDraftModelTurn | null) => {
     if (!isCurrent()) return null;
@@ -2134,6 +2188,7 @@ export async function settleCreateDraftTurn({
       viewerDisplayName,
       spaceMembers,
       model,
+      voice,
     });
   };
 

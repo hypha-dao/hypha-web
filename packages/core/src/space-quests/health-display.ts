@@ -20,10 +20,16 @@ export const NEW_QUEST_HEALTH_RECORD = {
   healthSummary: '',
 };
 
-const STATE_LABEL: Record<QuestHealthState, string> = {
+/** Words computeQuestHealth can produce. Active cards and detail use these only. */
+export const ACTIVE_QUEST_HEALTH_LABEL = {
   on_track: 'On track',
-  at_risk: 'At risk',
   off_track: 'Off track',
+} as const;
+
+const STATE_LABEL: Record<QuestHealthState, string> = {
+  on_track: ACTIVE_QUEST_HEALTH_LABEL.on_track,
+  at_risk: 'At risk',
+  off_track: ACTIVE_QUEST_HEALTH_LABEL.off_track,
 };
 
 /** Green side of the existing health bar. Not the start position. */

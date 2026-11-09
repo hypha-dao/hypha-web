@@ -401,4 +401,86 @@ describe('quest draft tool retry', () => {
     expect(questServer.updateSpaceQuest).not.toHaveBeenCalled();
     expect(questServer.getSpaceQuestBySlug).not.toHaveBeenCalled();
   });
+
+  it('forces the tool for an edit that names Scope In', async () => {
+    generateText.mockImplementation(
+      async ({ toolChoice }: { toolChoice?: unknown }) => {
+        expect(toolChoice).toEqual({
+          type: 'tool',
+          toolName: 'update_quest_draft',
+        });
+        return { text: 'Scope In now reads Check helper edits.' };
+      },
+    );
+    const result = await assistSpaceQuestDraft({
+      spaceSlug: 'sandbox',
+      input: {
+        message: 'Add "Check helper edits" to Scope In',
+        currentStep: 'goal',
+      },
+    });
+    expect(generateText).toHaveBeenCalledTimes(1);
+    expect(result.patch).toBeNull();
+  });
+
+  it('retries once when Success is requested and the tool files the goal', async () => {
+    let calls = 0;
+    generateText.mockImplementation(
+      async ({
+        tools,
+        toolChoice,
+      }: {
+        tools: { update_quest_draft: DraftTool };
+        toolChoice?: { type: string; toolName: string };
+      }) => {
+        calls += 1;
+        expect(toolChoice).toEqual({
+          type: 'tool',
+          toolName: 'update_quest_draft',
+        });
+        if (calls === 1) {
+          await tools.update_quest_draft.execute({
+            goal: 'Wrong section for this quest.',
+          });
+          return { text: 'Goal now reads the wrong section.' };
+        }
+        await tools.update_quest_draft.execute({
+          successCriteriaBullets: ['The app ships'],
+        });
+        return { text: 'Filed the success check.' };
+      },
+    );
+    const result = await assistSpaceQuestDraft({
+      spaceSlug: 'sandbox',
+      input: {
+        message: 'Add "The app ships" to Success',
+        currentStep: 'goal',
+      },
+    });
+    expect(calls).toBe(2);
+    expect(result.patch).toEqual({
+      successCriteriaBullets: ['The app ships'],
+    });
+  });
+
+  it('fails closed when the retried section still does not match', async () => {
+    generateText.mockImplementation(
+      async ({ tools }: { tools: { update_quest_draft: DraftTool } }) => {
+        await tools.update_quest_draft.execute({
+          goal: 'Still the goal for this quest.',
+        });
+        return { text: 'Goal now reads still the goal.' };
+      },
+    );
+    const result = await assistSpaceQuestDraft({
+      spaceSlug: 'sandbox',
+      input: {
+        message: 'Add "The app ships" to Success',
+        currentStep: 'goal',
+      },
+    });
+    expect(generateText).toHaveBeenCalledTimes(2);
+    expect(result.patch).toBeNull();
+    expect(result.reply).toBeNull();
+  });
 });

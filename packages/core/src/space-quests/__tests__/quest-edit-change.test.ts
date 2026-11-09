@@ -186,6 +186,29 @@ describe('quest edit change payloads', () => {
     });
   });
 
+  it('logs a milestone reorder with the old and new order', () => {
+    const before = [
+      milestone({ id: 1, name: 'First check' }),
+      milestone({ id: 2, name: 'M2 reorder check' }),
+    ];
+    const reordered = questMilestoneChange(before, [
+      { name: 'M2 reorder check' },
+      { name: 'First check' },
+    ]);
+    expect(reordered.items).toEqual([
+      {
+        label: 'Order',
+        format: 'short',
+        action: 'reordered',
+        before: 'M1 First check, M2 M2 reorder check',
+        after: 'M1 M2 reorder check, M2 First check',
+      },
+    ]);
+    expect(reordered.items?.some((item) => item.action === 'added')).toBe(
+      false,
+    );
+  });
+
   it('omits item detail when the saved list did not change', () => {
     const before = [milestone({ id: 1, name: 'Draft', description: 'Notes' })];
     expect(

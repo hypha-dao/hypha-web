@@ -57,6 +57,7 @@ import {
   questScopeChangeText,
   questStatusChange,
   questSuccessChange,
+  questChangeIsVisible,
   questTargetDateChange,
 } from '../quest-edit-change';
 import type { QuestRecord } from '../types';
@@ -963,9 +964,12 @@ export async function updateSpaceQuest(
     }
 
     // Every post-pass edit writes an edit_event to Updates (who changed what)
-    if (editEvents.length > 0) {
+    const visibleEdits = editEvents.filter((ev) =>
+      questChangeIsVisible(ev.change),
+    );
+    if (visibleEdits.length > 0) {
       await tx.insert(spaceQuestUpdates).values(
-        editEvents.map((ev) => ({
+        visibleEdits.map((ev) => ({
           questId: current.id,
           authorPersonId: actor.id ?? null,
           authorName: actorName,
@@ -1134,6 +1138,15 @@ export async function activateSpaceQuestByDocumentId(
 
   for (const row of matching) {
     if (row.status === 'proposed') {
+      let authorAvatarUrl: string | null = null;
+      if (typeof row.leadPersonId === 'number') {
+        const [person] = await db
+          .select({ avatarUrl: people.avatarUrl })
+          .from(people)
+          .where(eq(people.id, row.leadPersonId))
+          .limit(1);
+        authorAvatarUrl = person?.avatarUrl?.trim() || null;
+      }
       const claimed = await db.transaction(async (tx) => {
         const updated = await tx
           .update(spaceQuests)
@@ -1156,6 +1169,7 @@ export async function activateSpaceQuestByDocumentId(
           questId: row.id,
           authorPersonId: row.leadPersonId ?? null,
           authorName: row.leadName || 'Operations Lead',
+          authorAvatarUrl,
           kind: 'post',
           viaAgent: false,
           text: 'Quest proposal accepted — Quest is now Active.',

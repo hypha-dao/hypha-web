@@ -5,6 +5,8 @@ import {
   limitQuestPatchToStep,
   questDraftCoachedStep,
   questDraftMessageRequiresTool,
+  questDraftPatchSection,
+  questEditRequestSection,
   questExistingTurnMayPersist,
   questPendingYesNotice,
   questWordingRevisionStep,
@@ -672,5 +674,28 @@ describe('resolveQuestDraftTarget', () => {
     ]) {
       expect(questDraftMessageRequiresTool(message, 'scope')).toBe(false);
     }
+  });
+
+  it('forces the named section for an edit, including Scope In and Success', () => {
+    const scope = 'Add "Check helper edits" to Scope In';
+    expect(questEditRequestSection(scope)).toBe('scope');
+    expect(questDraftMessageRequiresTool(scope, 'goal')).toBe(true);
+    expect(resolveQuestDraftTarget(scope, 'goal')).toEqual({
+      step: 'scope',
+      bulk: false,
+    });
+
+    const success = 'Add "the app ships" to Success';
+    expect(questEditRequestSection(success)).toBe('success');
+    expect(resolveQuestDraftTarget(success, 'goal')).toEqual({
+      step: 'success',
+      bulk: false,
+    });
+    expect(questDraftPatchSection({ goal: 'Wrong card' })).toBe('goal');
+    expect(
+      questDraftPatchSection({ successCriteriaBullets: ['the app ships'] }),
+    ).toBe('success');
+    expect(questEditRequestSection('Add lead scoring')).toBeNull();
+    expect(questEditRequestSection('We update members every week')).toBeNull();
   });
 });

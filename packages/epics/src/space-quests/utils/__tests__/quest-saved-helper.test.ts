@@ -8,9 +8,10 @@ import type {
 } from '../quest-draft-assistant';
 import {
   SAVED_QUEST_HELPER_NOT_SAVED,
+  SAVED_QUEST_HELPER_NOTHING_PENDING,
   SAVED_QUEST_HELPER_SAVE_FAILED,
-  SAVED_QUEST_HELPER_SAVED,
   SAVED_QUEST_HELPER_UNCHANGED,
+  preserveQuestMarkdown,
   planSavedHelperWrite,
   questHelperDraftAssistBody,
   questRecordToDraftSnapshot,
@@ -128,8 +129,9 @@ describe('saved quest helper', () => {
     });
     expect(outcome?.saved).toBe(true);
     expect(outcome?.pending).toBeNull();
-    expect(outcome?.reply).toBe(SAVED_QUEST_HELPER_SAVED);
+    expect(outcome?.reply).toBe('Saved the Goal.');
     expect(outcome?.reply).not.toMatch(/CREATE QUEST/i);
+    expect(outcome?.reply).not.toBe('.');
 
     const incomplete = turn({
       message: 'yes',
@@ -146,7 +148,8 @@ describe('saved quest helper', () => {
     expect(incomplete.saveSection.mock.calls[0]?.[0]).toEqual({
       goal: storedQuestRichText(goal),
     });
-    expect(scoped?.reply).toMatch(/Added that to the Goal/i);
+    expect(scoped?.reply).toBe('Saved the Goal.');
+    expect(scoped?.reply).not.toMatch(/quest you want to create/i);
   });
 
   it('keeps the suggestion when the save fails', async () => {
@@ -260,5 +263,84 @@ describe('saved quest helper', () => {
       selectedLeadPersonId: null,
     });
     expect(plan.kind).toBe('blocked');
+  });
+
+  it('answers yes with nothing pending in edit mode', async () => {
+    const outcome = await turn({ message: 'yes' }).run();
+    expect(outcome?.saved).toBe(false);
+    expect(outcome?.pending).toBeNull();
+    expect(outcome?.reply).toBe(SAVED_QUEST_HELPER_NOTHING_PENDING);
+    expect(outcome?.reply).not.toMatch(/quest you want to create/i);
+  });
+
+  it('does not claim a section changed when no patch was filed', async () => {
+    const { run, saveSection } = turn({
+      message: 'Add "Check helper edits" to Scope In',
+      loadModel: async () => ({
+        reply: 'Scope In now reads Check helper edits.',
+        patch: null,
+      }),
+    });
+    const outcome = await run();
+    expect(saveSection).not.toHaveBeenCalled();
+    expect(outcome?.pending).toBeNull();
+    expect(outcome?.reply).not.toMatch(/now reads/i);
+    expect(outcome?.reply).toMatch(/did not file a suggestion/i);
+  });
+
+  it('rejects a goal card when the edit named Success', async () => {
+    const { run, saveSection } = turn({
+      message: 'Add "the app ships" to Success',
+      loadModel: async () => ({
+        reply: 'Goal now reads a different outcome.',
+        patch: { goal: 'A different outcome for this quest.' },
+      }),
+    });
+    const outcome = await run();
+    expect(saveSection).not.toHaveBeenCalled();
+    expect(outcome?.pending).toBeNull();
+    expect(outcome?.reply).not.toMatch(/do you want that to be in the goal/i);
+    expect(outcome?.reply).toMatch(/did not file a suggestion/i);
+  });
+
+  it('files a success card when the tool patch matches Success', async () => {
+    const outcome = await turn({
+      message: 'Add "the app ships" to Success',
+      loadModel: async () => ({
+        reply: 'Success now reads the app ships.',
+        patch: { successCriteriaBullets: ['the app ships'] },
+      }),
+    }).run();
+    expect(outcome?.saved).toBe(false);
+    expect(outcome?.pending?.step).toBe('success');
+    expect(outcome?.reply).toMatch(/do you want that to be in the success/i);
+    expect(outcome?.reply).not.toMatch(/now reads/i);
+  });
+
+  it('keeps a paragraph and does not add a period unless asked', () => {
+    expect(
+      preserveQuestMarkdown(
+        'Mobile app',
+        '- Mobile app.',
+        'Add "Check helper edits" to Scope In',
+      ),
+    ).toBe('Mobile app');
+    expect(
+      preserveQuestMarkdown(
+        'Mobile app',
+        '- Mobile app.\n- Check helper edits.',
+        'Add "Check helper edits" to Scope In',
+      ),
+    ).toBe('Mobile app Check helper edits');
+    expect(
+      preserveQuestMarkdown(
+        '- Mobile app',
+        '- Mobile app.\n- Check helper edits.',
+        'Add "Check helper edits" to Scope In',
+      ),
+    ).toBe('- Mobile app\n- Check helper edits');
+    expect(
+      preserveQuestMarkdown('Mobile app', '- Mobile app.', 'Make it a list'),
+    ).toBe('- Mobile app');
   });
 });

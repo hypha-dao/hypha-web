@@ -1,4 +1,6 @@
 import {
+  bulletsToMarkdownList,
+  questEditRequestSection,
   splitMarkdownLinesToBullets,
   type QuestStewardStep,
   type schemaPatchSpaceQuest,
@@ -6,7 +8,8 @@ import {
 import type { z } from 'zod';
 import type { QuestSpaceMember } from '../hooks/use-space-quests';
 import {
-  QUEST_DRAFT_READY_REPLY,
+  QUEST_EDIT_NOT_FILED_REPLY,
+  replyWithoutUnbackedEditClaim,
   settleCreateDraftTurn,
   type PendingQuestSectionProposal,
   type QuestDraftModelTurn,
@@ -67,6 +70,31 @@ export const SAVED_QUEST_HELPER_UNCHANGED =
 /** A filled quest has no empty section, so the create-screen "submit" line does not apply. */
 export const SAVED_QUEST_HELPER_SAVED =
   'Saved that section. Tell me the next section to change.';
+
+export const SAVED_QUEST_HELPER_NOTHING_PENDING =
+  'Nothing is waiting to confirm.';
+
+export function savedQuestSectionReply(patch: QuestPatch): string {
+  if (patch.goal !== undefined) return 'Saved the Goal.';
+  if (
+    patch.scopeIn !== undefined ||
+    patch.scopeOut !== undefined ||
+    patch.scopeInMarkdown !== undefined ||
+    patch.scopeOutMarkdown !== undefined
+  ) {
+    return 'Saved the Scope.';
+  }
+  if (patch.successCriteria !== undefined) return 'Saved the Success criteria.';
+  if (patch.milestones !== undefined) return 'Saved the Milestones.';
+  if (patch.members !== undefined) return 'Saved the Participants.';
+  if (patch.leadName !== undefined || patch.leadPersonId !== undefined) {
+    return 'Saved the Lead.';
+  }
+  if (patch.targetDate !== undefined) return 'Saved the Target date.';
+  if (patch.rewards !== undefined) return 'Saved the Quest Reward.';
+  if (patch.name !== undefined) return 'Saved the Name.';
+  return SAVED_QUEST_HELPER_SAVED;
+}
 
 export type SavedHelperWritePlan =
   | { kind: 'save'; patch: QuestPatch }
@@ -177,6 +205,80 @@ export function questHelperDraftAssistBody({
   };
 }
 
+function questMarkdownIsList(markdown: string): boolean {
+  const lines = markdown
+    .split(/\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return (
+    lines.length > 0 &&
+    lines.every((line) => /^(?:[-*•]|\d+[.)])\s+/.test(line))
+  );
+}
+
+function userAskedForList(message: string): boolean {
+  return /\b(?:bullets?|as a list|into a list|make (?:it |this |that |them )?a list)\b/i.test(
+    message,
+  );
+}
+
+/** A trailing period the member did not type and the saved text did not have. */
+function stripUnaskedPeriod(
+  item: string,
+  before: string,
+  message: string,
+): string {
+  const trimmed = item.trim();
+  if (!trimmed.endsWith('.') || trimmed.endsWith('...')) return trimmed;
+  if (message.includes(trimmed) || before.includes(trimmed)) return trimmed;
+  return trimmed.slice(0, -1).trimEnd();
+}
+
+/**
+ * Keep a paragraph as a paragraph, and a list as a list.
+ * An edit has to ask for bullets before a paragraph becomes a list.
+ */
+export function preserveQuestMarkdown(
+  before: string,
+  after: string,
+  message: string,
+): string {
+  const items = splitMarkdownLinesToBullets(after)
+    .map((item) => stripUnaskedPeriod(item, before, message))
+    .filter(Boolean);
+  if (items.length === 0) return after.trim();
+  const asList =
+    userAskedForList(message) || questMarkdownIsList(before) || !before.trim();
+  if (asList) return bulletsToMarkdownList(items);
+  if (!before.includes('\n')) return items.join(' ');
+  return items.join('\n');
+}
+
+function alignSavedListReply(
+  reply: string,
+  draft: QuestDraftStateSnapshot,
+  message: string,
+  step: QuestStewardStep,
+): string {
+  const before =
+    step === 'scope'
+      ? `${draft.scopeInMarkdown}\n${draft.scopeOutMarkdown}`
+      : step === 'success'
+      ? draft.successCriteria
+      : '';
+  if (!before.trim()) return reply;
+  const asList = userAskedForList(message) || questMarkdownIsList(before);
+  return reply
+    .split('\n')
+    .map((line) => {
+      const bullet = /^([-*•]|\d+[.)])\s+(.*)$/.exec(line.trim());
+      if (!bullet?.[2]) return line;
+      const item = stripUnaskedPeriod(bullet[2], before, message);
+      return asList ? `${bullet[1]} ${item}` : item;
+    })
+    .join('\n');
+}
+
 function sameList(left: readonly string[], right: readonly string[]): boolean {
   return (
     left.length === right.length &&
@@ -280,6 +382,7 @@ function rewardPayload(
 export function planSavedHelperWrite(
   before: QuestDraftStateSnapshot,
   after: QuestDraftStateSnapshot,
+  message = '',
 ): SavedHelperWritePlan {
   const sections: Array<{ patch: QuestPatch }> = [];
 
@@ -293,12 +396,20 @@ export function planSavedHelperWrite(
     sections.push({ patch: { goal } });
   }
 
-  const scopeInMarkdown = storedQuestRichText(after.scopeInMarkdown);
-  const scopeOutMarkdown = storedQuestRichText(after.scopeOutMarkdown);
-  const scopeIn = splitMarkdownLinesToBullets(scopeInMarkdown);
-  const scopeOut = splitMarkdownLinesToBullets(scopeOutMarkdown);
   const beforeScopeInMarkdown = storedQuestRichText(before.scopeInMarkdown);
   const beforeScopeOutMarkdown = storedQuestRichText(before.scopeOutMarkdown);
+  const scopeInMarkdown = preserveQuestMarkdown(
+    beforeScopeInMarkdown,
+    storedQuestRichText(after.scopeInMarkdown),
+    message,
+  );
+  const scopeOutMarkdown = preserveQuestMarkdown(
+    beforeScopeOutMarkdown,
+    storedQuestRichText(after.scopeOutMarkdown),
+    message,
+  );
+  const scopeIn = splitMarkdownLinesToBullets(scopeInMarkdown);
+  const scopeOut = splitMarkdownLinesToBullets(scopeOutMarkdown);
   if (
     scopeInMarkdown !== beforeScopeInMarkdown ||
     scopeOutMarkdown !== beforeScopeOutMarkdown ||
@@ -310,8 +421,13 @@ export function planSavedHelperWrite(
     });
   }
 
-  const successCriteria = storedQuestRichText(after.successCriteria);
-  if (successCriteria !== storedQuestRichText(before.successCriteria)) {
+  const beforeSuccess = storedQuestRichText(before.successCriteria);
+  const successCriteria = preserveQuestMarkdown(
+    beforeSuccess,
+    storedQuestRichText(after.successCriteria),
+    message,
+  );
+  if (successCriteria !== beforeSuccess) {
     sections.push({ patch: { successCriteria } });
   }
 
@@ -390,11 +506,26 @@ export async function runSavedQuestHelperTurn({
     readState,
     isCurrent,
     loadModel,
+    voice: 'saved',
   });
   if (!settled || !isCurrent()) return null;
   if (!settled.wrote) {
+    const latest = readState();
+    let reply = settled.reply;
+    if (!settled.pending && questEditRequestSection(message)) {
+      reply =
+        replyWithoutUnbackedEditClaim(reply) || QUEST_EDIT_NOT_FILED_REPLY;
+    }
+    if (settled.pending) {
+      reply = alignSavedListReply(
+        reply,
+        latest.draft,
+        message,
+        settled.pending.step,
+      );
+    }
     return {
-      reply: settled.reply,
+      reply,
       pending: settled.pending,
       focusStep: settled.focusStep,
       saved: false,
@@ -402,7 +533,7 @@ export async function runSavedQuestHelperTurn({
   }
 
   const latest = readState();
-  const plan = planSavedHelperWrite(latest.draft, settled.draft);
+  const plan = planSavedHelperWrite(latest.draft, settled.draft, message);
   if (plan.kind === 'unchanged') {
     return {
       reply: SAVED_QUEST_HELPER_UNCHANGED,
@@ -436,10 +567,7 @@ export async function runSavedQuestHelperTurn({
     };
   }
   return {
-    reply:
-      settled.reply === QUEST_DRAFT_READY_REPLY
-        ? SAVED_QUEST_HELPER_SAVED
-        : settled.reply,
+    reply: savedQuestSectionReply(plan.patch),
     pending: null,
     focusStep: settled.focusStep,
     saved: true,

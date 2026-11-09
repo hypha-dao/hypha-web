@@ -409,6 +409,13 @@ describe('saved quest helper entry', () => {
     expect(screen.getByTestId('quest-health-label').textContent).toContain(
       'On track',
     );
+    expect(screen.getByTestId('quest-health-scale-start').textContent).toBe(
+      'Off track',
+    );
+    expect(screen.getByTestId('quest-health-scale-end').textContent).toBe(
+      'On track',
+    );
+    expect(health.textContent).not.toMatch(/healthy/i);
     expect(health.innerHTML).toContain('#2e9e5b');
     expect(
       screen.getByTestId('quest-health-marker').getAttribute('data-marker'),
@@ -422,6 +429,13 @@ describe('saved quest helper entry', () => {
     expect(screen.getByTestId('quest-health-label').textContent).toContain(
       'Off track',
     );
+    expect(screen.getByTestId('quest-health-scale-start').textContent).toBe(
+      'Off track',
+    );
+    expect(screen.getByTestId('quest-health-scale-end').textContent).toBe(
+      'On track',
+    );
+    expect(health.textContent).not.toMatch(/healthy/i);
     expect(health.innerHTML).toContain('#d2463c');
     expect(
       screen.getByTestId('quest-health-marker').getAttribute('data-marker'),

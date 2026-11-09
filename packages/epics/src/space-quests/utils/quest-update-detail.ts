@@ -41,24 +41,51 @@ function textEntry(
   before: string | null | undefined,
   after: string | null | undefined,
 ): QuestUpdateDetailEntry | null {
+  const beforeRaw = (before ?? '').trim();
+  const afterRaw = (after ?? '').trim();
+  if (beforeRaw === afterRaw) return null;
   const beforeText = shownText(before);
   const afterText = shownText(after);
-  if (beforeText === afterText) return null;
-  return { kind: 'text', label, before: beforeText, after: afterText };
+  return {
+    kind: 'text',
+    label,
+    before: beforeText === afterText ? beforeRaw || 'none' : beforeText,
+    after: beforeText === afterText ? afterRaw || 'none' : afterText,
+  };
+}
+
+function shortLine(
+  label: string,
+  action: string | undefined,
+  beforeText: string,
+  afterText: string,
+): string {
+  if (action === 'reordered') {
+    return `Reordered from ${beforeText} to ${afterText}`;
+  }
+  if (action === 'added') return `Added ${label}: ${afterText}`;
+  if (action === 'removed') return `Removed ${label}: ${beforeText}`;
+  return `${label}: from ${beforeText} to ${afterText}`;
 }
 
 function shortEntry(
   label: string,
   before: string | null | undefined,
   after: string | null | undefined,
+  action?: string,
 ): QuestUpdateDetailEntry | null {
   const beforeText = shownShort(before);
   const afterText = shownShort(after);
-  if (beforeText === afterText) return null;
+  if (action !== 'reordered' && action !== 'added' && action !== 'removed') {
+    if (beforeText === afterText) return null;
+  }
+  if (action === 'added' && afterText === 'none') return null;
+  if (action === 'removed' && beforeText === 'none') return null;
+  if (action === 'reordered' && beforeText === afterText) return null;
   return {
     kind: 'short',
     label,
-    line: `${label}: from ${beforeText} to ${afterText}`,
+    line: shortLine(label, action, beforeText, afterText),
   };
 }
 
@@ -67,13 +94,14 @@ export function questUpdateDetailEntries(
 ): QuestUpdateDetailEntry[] {
   if (!change) return [];
   if (change.items && change.items.length > 0) {
-    return change.items.flatMap((item) => {
+    const entries = change.items.flatMap((item) => {
       const entry =
         item.format === 'text'
           ? textEntry(item.label, item.before, item.after)
-          : shortEntry(item.label, item.before, item.after);
+          : shortEntry(item.label, item.before, item.after, item.action);
       return entry ? [entry] : [];
     });
+    if (entries.length > 0) return entries;
   }
   if (change.before == null && change.after == null) return [];
   const text =
@@ -81,7 +109,12 @@ export function questUpdateDetailEntries(
     (change.format == null && TEXT_FIELDS.has(change.field));
   const entry = text
     ? textEntry(fieldLabel(change.field), change.before, change.after)
-    : shortEntry(fieldLabel(change.field), change.before, change.after);
+    : shortEntry(
+        fieldLabel(change.field),
+        change.before,
+        change.after,
+        change.action,
+      );
   return entry ? [entry] : [];
 }
 
