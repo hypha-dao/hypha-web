@@ -10,7 +10,6 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import {
   SITE_FOOTER_OFFSET_VAR,
   isScrollRootAtEnd,
-  siteFooterViewportOverlap,
 } from './site-footer-offset';
 
 function isNetworkMapView(pathname: string, view: string | null): boolean {
@@ -93,18 +92,20 @@ function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
         return;
       }
 
-      const rect = footer.getBoundingClientRect();
-      const overlap = siteFooterViewportOverlap({
-        footerTop: rect.top,
-        footerHeight: rect.height,
-        viewportHeight: window.innerHeight,
-      });
+      // At scroll-end the bar pins to the viewport bottom. Use its layout
+      // height for the sidebar lift — pre-pin getBoundingClientRect can still
+      // sit below the fold (overlap 0), which left the chat rail on the
+      // viewport floor while the center column ended above the footer.
+      const height =
+        Math.ceil(footer.getBoundingClientRect().height) ||
+        Math.ceil(footer.offsetHeight) ||
+        0;
       document.documentElement.style.setProperty(
         SITE_FOOTER_OFFSET_VAR,
-        `${overlap}px`,
+        `${height}px`,
       );
       setAtScrollEnd(true);
-      setPinHeight(Math.ceil(rect.height) || null);
+      setPinHeight(height > 0 ? height : null);
     };
 
     const sizeObserver = new ResizeObserver(sync);
