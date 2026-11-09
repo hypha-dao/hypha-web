@@ -1486,13 +1486,20 @@ export function DhoStickySpaceChrome({
            * Mobile shows this one-line row on non-overview tabs (and when the
            * cover is scrolled past on overview).
            */
-          'pointer-events-none fixed left-[var(--panel-left-inset,var(--sidebar-left-width,0px))] z-[25] block',
           /*
-           * Stop 0.25rem short of the column edge — the same width as
+           * Mobile: full-bleed under MenuTop (sidebars are Sheets). Matching
+           * LoadingBackdrop / ProposalOverlay — never trust a stale 72px icon
+           * rail inset or the bar paints as a floating white card over
+           * "In this space".
+           */
+          'pointer-events-none fixed left-0 right-0 z-[25] block',
+          'md:left-[var(--panel-left-inset,var(--sidebar-left-width,0px))]',
+          /*
+           * Desktop: stop 0.25rem short of the column edge — the same width as
            * `.narrow-scrollbar` — so this bar does not paint over the thumb.
            * The header hairline is a 1px rule, not a framed border.
            */
-          'right-[calc(var(--panel-right-inset,var(--sidebar-right-width,0px))+0.25rem)]',
+          'md:right-[calc(var(--panel-right-inset,var(--sidebar-right-width,0px))+0.25rem)]',
           'h-[var(--secondary-chrome-actions-row-height,66px)]',
           'bg-page-background',
           'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border',
@@ -1535,7 +1542,15 @@ export function DhoStickySpaceChrome({
         </div>
       </div>
 
-      <div ref={bannerColumnRef} className="flex flex-col">
+      {/*
+        Root layout pads the main column (`pt-4 md:pt-5`) and MenuTop uses
+        `-mb-px`. Pull the cover up so the lead image meets the menu bottom —
+        same seal as member home, without changing global page padding.
+      */}
+      <div
+        ref={bannerColumnRef}
+        className="flex flex-col -mt-[calc(1rem+1px)] md:-mt-[calc(1.25rem+1px)]"
+      >
         <div className="relative">
           {banner}
           <div

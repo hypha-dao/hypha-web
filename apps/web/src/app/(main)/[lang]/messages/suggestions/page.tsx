@@ -1,14 +1,4 @@
-import { Suspense } from 'react';
-import { MyConnections } from '@hypha-platform/epics';
-
-import { MessagesPageFrame } from '../_components/messages-page-frame';
-
+/** Section body lives in the parent `messages/layout.tsx`. */
 export default function MessageSuggestionsPage() {
-  return (
-    <MessagesPageFrame heading="suggestions">
-      <Suspense fallback={null}>
-        <MyConnections section="suggestions" />
-      </Suspense>
-    </MessagesPageFrame>
-  );
+  return null;
 }

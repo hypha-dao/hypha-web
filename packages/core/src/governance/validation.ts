@@ -141,6 +141,27 @@ const createAgreementWeb2Props = {
   web3ProposalId: z.number().optional(),
   label: z.string().optional(),
   state: z.nativeEnum(DocumentState).optional(),
+  /** Optional video link (Space Memory / Signals-style). Empty string → omitted. */
+  videoUrl: z
+    .union([z.string(), z.null(), z.undefined()])
+    .optional()
+    .transform((value) => {
+      if (typeof value !== 'string') return undefined;
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    })
+    .refine(
+      (value) => {
+        if (value == null) return true;
+        try {
+          const { protocol } = new URL(value);
+          return protocol === 'http:' || protocol === 'https:';
+        } catch {
+          return false;
+        }
+      },
+      { message: 'Enter a link that starts with http:// or https://' },
+    ),
 };
 
 export const schemaCreateAgreementWeb2 = z.object(createAgreementWeb2Props);

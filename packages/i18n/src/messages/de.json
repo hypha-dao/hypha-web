@@ -3864,6 +3864,7 @@
     "connectionRetryingLabel": "Wird erneut versucht…",
     "connectionLostRetry": "Erneut versuchen",
     "chatThreadCrashedDescription": "Diese Chat-Ansicht ist abgestürzt. Versuchen Sie es erneut.",
+    "messageRowCrashed": "Diese Nachricht konnte nicht angezeigt werden.",
     "openPanel": "Chat-Panel öffnen",
     "openPanelWithUnreadMentions": "Chat-Panel öffnen (ungelesene Erwähnungen)",
     "hidePanel": "Chat-Panel ausblenden",
@@ -3886,6 +3887,11 @@
     "tabMentions": "Erwähnungen",
     "tabMentionsWithMentionCount": "{tabLabel}, {count, plural, one {# ungelesene Erwähnung} other {# ungelesene Erwähnungen}}",
     "membersCount": "{count, plural, one {# Mitglied} other {# Mitglieder}} · {online} online",
+    "roomOnlineCount": "{count, plural, one {# online} other {# online}}",
+    "viewMembersAria": "Mitglieder anzeigen",
+    "memberOnline": "Online",
+    "groupDetailsAria": "Gruppendetails",
+    "groupDetailsDescription": "Gruppe umbenennen, Personen hinzufügen oder archivieren.",
     "you": "Du",
     "reactButton": "Reagieren",
     "addReactionButton": "Reaktion hinzufügen",
@@ -4389,7 +4395,7 @@
     "spaceMemoryOutline": "Inhalt",
     "newMemoryUploadDocumentsTitle": "Dokumente hochladen",
     "newMemoryUploadingFiles": "Space-Memories werden hochgeladen...",
-    "newMemoryAttachmentsRequired": "Bitte laden Sie mindestens ein Dokument für diese Erinnerung hoch.",
+    "newMemoryAttachmentsRequired": "Bitte fügen Sie mindestens ein Bild, einen Videolink oder ein Dokument für diese Erinnerung hinzu.",
     "newMemory": "Neue Erinnerung",
     "spaceMemoryEmptyTab": "In dieser Ansicht wurden keine Einträge gefunden.",
     "spaceMemoryAiChatEmpty": "AI-Chat-Erinnerungen sind noch nicht verfügbar.",
@@ -4773,7 +4779,8 @@
     "spaceMemoryConversationsBody": "Geschriebene Gesprächszusammenfassungen.",
     "spaceMemoryCallsBody": "Anrufaufzeichnungen und Transkripte.",
     "spaceMemoryAiDiscussionsBody": "Erinnerungen aus dem KI-Chat.",
-    "spaceMemoryFilesBody": "Uploads und Anhänge."
+    "spaceMemoryFilesBody": "Uploads und Anhänge.",
+    "newMemoryDocumentHint": "PDF — max. 16 MB"
   },
   "GlobalCallDock": {
     "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",

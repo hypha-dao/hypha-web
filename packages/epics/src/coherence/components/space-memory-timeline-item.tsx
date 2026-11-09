@@ -12,6 +12,8 @@ import React, { useMemo } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { ResolvedCallTranscriptExcerpt } from './resolved-call-transcript-excerpt';
 import { SpaceMemoryCallRecordingPlayer } from './space-memory-call-recording-player';
+import { resolveSignalVideo, signalVideoPoster } from '../utils/signal-video';
+import { SignalVideoPlayer } from './signal-video-player';
 
 /** Static preview when call recording URL is not yet openable. */
 function CallRecordingStaticPreview({
@@ -520,17 +522,41 @@ export function SpaceMemoryTimelineItem({
       );
     }
     if (item.kind === 'video') {
-      return (
-        <video
-          src={item.url}
-          muted
-          playsInline
-          preload="none"
-          className="h-full w-full object-cover bg-black"
-        >
-          <track kind="captions" />
-        </video>
-      );
+      const embed = resolveSignalVideo(item.url);
+      if (embed?.kind === 'file') {
+        return (
+          <video
+            src={embed.src}
+            muted
+            playsInline
+            preload="none"
+            className="h-full w-full object-cover bg-black"
+          >
+            <track kind="captions" />
+          </video>
+        );
+      }
+      if (embed) {
+        const poster = signalVideoPoster(embed);
+        return (
+          <div className="relative h-full w-full bg-black">
+            {poster ? (
+              <img
+                src={poster}
+                alt=""
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            ) : null}
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-white ring-1 ring-white/15">
+                <Play className="h-5 w-5 fill-current" aria-hidden />
+              </span>
+            </span>
+          </div>
+        );
+      }
+      return emptyMediaIcon;
     }
     if (item.kind === 'document' && looksLikePdf(item.name, item.url)) {
       return pdfSrc ? (
@@ -572,6 +598,10 @@ export function SpaceMemoryTimelineItem({
   ) : (
     <div className={MEDIA_SHELL}>{thumbPreview}</div>
   );
+  const linkedVideo =
+    !isCallRecording && item.kind === 'video' && httpSafe
+      ? resolveSignalVideo(item.url)
+      : null;
 
   return (
     <li className="craft-card-interactive group flex min-w-0 flex-col gap-2.5 p-3.5 dark:bg-background-5">
@@ -607,6 +637,23 @@ export function SpaceMemoryTimelineItem({
             openHref={openHref}
             thumbShellClass={MEDIA_SHELL}
           />
+        ) : linkedVideo ? (
+          <div className="flex flex-col gap-2">
+            <div className={cn(MEDIA_SHELL, 'relative aspect-video bg-black')}>
+              <SignalVideoPlayer video={linkedVideo} title={cardTitle} />
+            </div>
+            {openHref ? (
+              <a
+                href={openHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={openRowClass}
+              >
+                <span>{openLinkLabel}</span>
+                <ExternalLink className="h-3 w-3 shrink-0 opacity-50" />
+              </a>
+            ) : null}
+          </div>
         ) : canOpen ? (
           <a
             href={openHref!}

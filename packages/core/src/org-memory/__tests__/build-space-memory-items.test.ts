@@ -54,6 +54,22 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
     expect(rows[0]?.context.textExcerpt).toContain('roadmap');
   });
 
+  it('emits a video row from document.videoUrl (Signals-style)', () => {
+    const rows = buildSpaceMemoryItemsFromDocuments([
+      baseDoc({
+        title: 'Call recording notes',
+        description: 'Summary of the call.',
+        state: DocumentState.MEMORY,
+        label: 'Space Memory',
+        videoUrl: 'https://www.youtube.com/watch?v=abc123XYZ_0',
+      }),
+    ]);
+    const video = rows.find((r) => r.kind === 'video');
+    expect(video?.url).toBe('https://www.youtube.com/watch?v=abc123XYZ_0');
+    expect(video?.source).toBe('memory');
+    expect(video?.id).toBe('1:video');
+  });
+
   it('emits one row per attachment', () => {
     const docs = [
       baseDoc({

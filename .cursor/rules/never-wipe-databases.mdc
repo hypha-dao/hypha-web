@@ -1,0 +1,27 @@
+---
+description: Never delete, reset, or wipe databases as a CI or debugging fix
+alwaysApply: true
+---
+
+# Never wipe databases
+
+Do **not** delete, reset, recreate-from-parent, truncate, or otherwise destroy
+database data — including Neon preview / branch databases — to unblock
+migrations, CI, deploys, or debugging.
+
+## Forbidden without an explicit human decision outside this agent
+
+- `delete-branch` / reset-branch on Neon (or any host) as a routine CI step
+- Dropping schemas/tables, `TRUNCATE`, or re-seed that destroys existing rows
+  to make migrate succeed
+- “Just recreate the preview DB from main” as a default recovery path
+
+## What to do instead
+
+- Fix the migration / journal drift
+- Add a forward migration
+- Fail the job loudly and stop
+- Ask the human if recovery truly requires a destructive reset
+
+A cancelled preview deploy pointing at a bad URL is still better than silently
+destroying data. Preview DBs often hold real session/profile state.

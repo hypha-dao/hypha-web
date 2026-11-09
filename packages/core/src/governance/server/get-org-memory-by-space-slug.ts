@@ -456,6 +456,25 @@ function collectMemoryDocumentAssets(
       seen.add(key);
       out.push(row);
     });
+
+    const videoUrl = doc.videoUrl?.trim();
+    if (videoUrl) {
+      const key = `memory:${doc.id}:video:${videoUrl}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push({
+          source: 'memory',
+          filename: title,
+          app_url: videoUrl,
+          mime: 'video/url',
+          document_id: doc.id,
+          occurred_at: doc.updatedAt.toISOString(),
+          text_excerpt:
+            memoryDocumentExcerpt(doc.description).slice(0, 500) || undefined,
+          ...proposalDocContextFields(doc),
+        });
+      }
+    }
   }
 
   return out;
@@ -469,6 +488,7 @@ function collectProposalAssets(
   const out: OrgMemoryAsset[] = [];
   const seen = new Set<string>();
   for (const doc of documents) {
+    if (isMemoryDocument(doc)) continue;
     const attachments = doc.attachments ?? [];
     attachments.forEach((a, i) => {
       const row = normalizeAttachment(doc, a, i);
@@ -478,6 +498,23 @@ function collectProposalAssets(
       seen.add(key);
       out.push(row);
     });
+
+    const videoUrl = doc.videoUrl?.trim();
+    if (videoUrl) {
+      const key = `doc:${doc.id}:video:${videoUrl}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push({
+          source: 'proposal_upload',
+          filename: doc.title?.trim() || 'Video',
+          app_url: videoUrl,
+          mime: 'video/url',
+          document_id: doc.id,
+          occurred_at: doc.updatedAt.toISOString(),
+          ...proposalDocContextFields(doc),
+        });
+      }
+    }
   }
   return out;
 }

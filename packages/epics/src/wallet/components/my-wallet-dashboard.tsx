@@ -1,16 +1,66 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useMe } from '@hypha-platform/core/client';
-import { PendingRewardsSection } from '../../treasury/components/assets/pending-rewards-section';
-import { UserAssetsSection } from '../../treasury/components/assets/user-assets-section';
-import { UserTransactionsSection } from '../../treasury/components/requests/user-transactions-section';
-import { ProfileBankingSection } from '../../banking/components/profile-banking-section';
 import { SpaceAccessDenied } from '../../spaces/components/space-access-denied';
 import { UserSpaceState } from '../../spaces/hooks/use-user-space-state.web3.rpc';
 import { AssetCard } from '../../treasury/components/assets/asset-card';
 import { WalletShortcutCards } from './wallet-shortcut-cards';
 import type { WalletSectionNavKey } from './wallet-section-nav';
+
+function AssetsSectionFallback() {
+  return (
+    <div className="grid w-full grid-cols-1 items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <AssetCard isLoading />
+      <AssetCard isLoading />
+      <AssetCard isLoading />
+    </div>
+  );
+}
+
+/** Defer Alchemy/RPC-heavy sections so the shortcut shell paints first. */
+const UserAssetsSection = dynamic(
+  () =>
+    import('../../treasury/components/assets/user-assets-section').then(
+      (mod) => mod.UserAssetsSection,
+    ),
+  { loading: () => <AssetsSectionFallback /> },
+);
+
+const UserTransactionsSection = dynamic(
+  () =>
+    import('../../treasury/components/requests/user-transactions-section').then(
+      (mod) => mod.UserTransactionsSection,
+    ),
+  {
+    loading: () => (
+      <div className="flex w-full flex-col gap-3">
+        <div className="h-10 w-full animate-pulse bg-neutral-3" />
+        <div className="h-24 w-full animate-pulse bg-neutral-3" />
+        <div className="h-24 w-full animate-pulse bg-neutral-3" />
+      </div>
+    ),
+  },
+);
+
+const PendingRewardsSection = dynamic(
+  () =>
+    import('../../treasury/components/assets/pending-rewards-section').then(
+      (mod) => mod.PendingRewardsSection,
+    ),
+  { loading: () => <AssetsSectionFallback /> },
+);
+
+const ProfileBankingSection = dynamic(
+  () =>
+    import('../../banking/components/profile-banking-section').then(
+      (mod) => mod.ProfileBankingSection,
+    ),
+  {
+    loading: () => <div className="h-48 w-full animate-pulse bg-neutral-3" />,
+  },
+);
 
 type MyWalletDashboardProps = {
   lang: string;

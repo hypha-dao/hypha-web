@@ -974,7 +974,8 @@ export function MatrixDiscussionThread({
   const { typingPeers, setComposerTyping } = useChatRoomTyping({
     client: client ?? null,
     roomId,
-    resolveName: resolveMemberLabel,
+    resolveName: (userId: string) => resolveMemberLabel(userId),
+    unknownMemberLabel: tChat('unknownMember'),
   });
 
   const sendMessage = React.useCallback(async () => {

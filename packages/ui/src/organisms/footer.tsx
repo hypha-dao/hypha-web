@@ -55,7 +55,10 @@ export const Footer = ({
   ];
 
   return (
-    <footer className="border-t border-border/60 bg-background-2">
+    <footer
+      data-site-footer
+      className="border-t border-border/60 bg-background-2"
+    >
       <Container className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center">
         <div className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
           <span>{poweredByLabel}</span>

@@ -262,7 +262,10 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
             data-sidebar="sidebar"
             data-mobile="true"
             className={cn(
-              'w-(--sidebar-width) max-w-none sm:max-w-none bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden',
+              // `overflow-hidden` + column flex: keep SidebarHeader (back / call)
+              // pinned. Without it iOS can scroll the whole sheet and bury the
+              // back control under message history (Discord keeps that chrome sticky).
+              'flex h-full w-(--sidebar-width) max-w-none flex-col overflow-hidden sm:max-w-none bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden',
               className,
             )}
             style={
@@ -291,7 +294,9 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
               <SheetTitle>Sidebar</SheetTitle>
               <SheetDescription>Displays the mobile sidebar.</SheetDescription>
             </SheetHeader>
-            <div className="flex h-full w-full flex-col">{children}</div>
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+              {children}
+            </div>
           </SheetContent>
         </Sheet>
       );
@@ -337,7 +342,12 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
           className={cn(
             // Transform slide (not left/right) so open/close always animates —
             // left/right calc can fail when --sidebar-width is a min() value.
-            'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) translate-x-0 overflow-visible transition-[transform,width,bottom] duration-300 ease-out md:flex',
+            // Bottom clearance: phone tab bar below xl; site footer on xl+
+            // (`--site-footer-offset` from DeferredFooter) so the composer
+            // does not cover "Powered by Hypha". Do not transition `bottom` —
+            // animating clearance made the composer chrome look like it was
+            // stretching over the footer.
+            'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) translate-x-0 overflow-visible transition-[transform,width] duration-300 ease-out md:flex xl:!top-0 xl:!bottom-[var(--site-footer-offset,0px)] xl:!h-auto xl:overflow-hidden',
             side === 'left'
               ? 'left-0 max-xl:!bottom-[var(--mobile-tab-offset,0px)] max-xl:!h-auto group-data-[collapsible=offcanvas]:-translate-x-full'
               : 'right-0 max-xl:!bottom-[var(--mobile-tab-offset,0px)] max-xl:!h-auto group-data-[collapsible=offcanvas]:translate-x-full',

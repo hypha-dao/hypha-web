@@ -115,6 +115,10 @@ jobs:
         id: branch-name
         uses: tj-actions/branch-names@v8
 
+      # Reuse the PR preview Neon branch when it already exists.
+      # Never delete/reset it from CI — preview DBs hold real session data, and
+      # cancel-in-progress made wipe-then-recreate leave the live alias on a dead DB.
+      # If migrate fails (e.g. 42P01 drift), fail the job; a human decides recovery.
       - name: Create Neon Branch
         if: needs.detect-changes.outputs.has_migrations == 'true'
         id: create-branch
@@ -152,6 +156,12 @@ jobs:
         run: |
           # Next.js loads env from apps/web — root .env.local is not picked up by the web build.
           vercel env pull apps/web/.env.local --environment=preview --token=${{ env.VERCEL_TOKEN }}
+          # vercel env pull can leave a stale BRANCH_DB_URL; force the URL from this run.
+          if [ -n "${BRANCH_DB_URL:-}" ]; then
+            grep -v '^BRANCH_DB_URL=' apps/web/.env.local > apps/web/.env.local.tmp || true
+            mv apps/web/.env.local.tmp apps/web/.env.local
+            echo "BRANCH_DB_URL=${BRANCH_DB_URL}" >> apps/web/.env.local
+          fi
           # Build-time feature flags; enable on preview deploys for PR testing.
           echo "NEXT_PUBLIC_ENABLE_NETWORK_MAP=true" >> apps/web/.env.local
           echo "NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME=true" >> apps/web/.env.local
@@ -184,7 +194,6 @@ jobs:
       - name: Deploy Preview to Vercel
         id: deploy
         env:
-          BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
           VERCEL_TOKEN: ${{ env.VERCEL_TOKEN }}
         run: |
           set -euo pipefail

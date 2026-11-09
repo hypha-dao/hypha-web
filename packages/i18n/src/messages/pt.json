@@ -3292,6 +3292,7 @@
     "connectionRetryingLabel": "A tentar novamente…",
     "connectionLostRetry": "Tentar novamente",
     "chatThreadCrashedDescription": "Esta vista do chat falhou. Tente novamente.",
+    "messageRowCrashed": "Não foi possível mostrar esta mensagem.",
     "openPanel": "Abrir painel de chat",
     "openPanelWithUnreadMentions": "Abrir painel de chat (menções não lidas)",
     "hidePanel": "Ocultar painel de chat",
@@ -3314,6 +3315,11 @@
     "tabMentions": "Menções",
     "tabMentionsWithMentionCount": "{tabLabel}, {count, plural, one {# menção não lida} other {# menções não lidas}}",
     "membersCount": "{count, plural, one {# membro} other {# membros}} · {online} online",
+    "roomOnlineCount": "{count, plural, one {# online} other {# online}}",
+    "viewMembersAria": "Ver membros",
+    "memberOnline": "Online",
+    "groupDetailsAria": "Detalhes do grupo",
+    "groupDetailsDescription": "Renomeie o grupo, adicione pessoas ou arquive-o.",
     "you": "Você",
     "reactButton": "Reagir",
     "addReactionButton": "Adicionar reação",
@@ -3817,7 +3823,7 @@
     "spaceMemoryOutline": "Índice",
     "newMemoryUploadDocumentsTitle": "Carregar documentos",
     "newMemoryUploadingFiles": "A carregar memórias do espaço...",
-    "newMemoryAttachmentsRequired": "Carregue pelo menos um documento para esta memória.",
+    "newMemoryAttachmentsRequired": "Adicione pelo menos uma imagem, um link de vídeo ou um documento para esta memória.",
     "newMemory": "Nova memória",
     "spaceMemoryEmptyTab": "Nenhum item encontrado nesta visualização.",
     "spaceMemoryAiChatEmpty": "As memórias do chat com IA ainda não estão disponíveis.",
@@ -4199,7 +4205,8 @@
     "spaceMemoryConversationsBody": "Resumos escritos de conversas.",
     "spaceMemoryCallsBody": "Gravações e transcrições de chamadas.",
     "spaceMemoryAiDiscussionsBody": "Memórias do chat com IA.",
-    "spaceMemoryFilesBody": "Envios e anexos."
+    "spaceMemoryFilesBody": "Envios e anexos.",
+    "newMemoryDocumentHint": "PDF — máx. 16 MB"
   },
   "GlobalCallDock": {
     "callTitle": "Chamada - {count, plural, one {# membro} other {# membros}}",

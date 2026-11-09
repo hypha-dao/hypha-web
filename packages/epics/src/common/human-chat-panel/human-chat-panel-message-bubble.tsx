@@ -956,10 +956,14 @@ function buildReplyConnectorPathD(params: {
   yRep: number;
   xEnd: number;
 }): string {
-  const { xMain, yStemStart, yRep, xEnd } = params;
+  // Whole pixels keep the path string stable across ResizeObserver chatter.
+  const xMain = Math.round(params.xMain);
+  const yStemStart = Math.round(params.yStemStart);
+  const yRep = Math.round(params.yRep);
+  const xEnd = Math.round(params.xEnd);
   const r = REPLY_CONNECTOR_CORNER_R;
 
-  if (Math.abs(xEnd - xMain) < 0.75) {
+  if (Math.abs(xEnd - xMain) < 1) {
     return `M ${xMain} ${yStemStart} L ${xMain} ${yRep}`;
   }
 
@@ -981,6 +985,10 @@ function buildReplyConnectorPathD(params: {
 /**
  * Measured Discord-style connector: stem from main-avatar column (under the image),
  * up to the reply row with a **rounded** elbow, horizontal to just before the small avatar.
+ *
+ * After the SVG mounts, geometry is written imperatively. Putting every
+ * ResizeObserver tick through `setState` re-entered React (#185) when
+ * sub-pixel rects jittered — equality checks were not enough.
  */
 function ChatReplyConnectorMeasured({
   rowRef,
@@ -991,26 +999,61 @@ function ChatReplyConnectorMeasured({
   replyAvatarRef: RefObject<HTMLDivElement | null>;
   mainAvatarRef: RefObject<HTMLDivElement | null>;
 }) {
-  const [geom, setGeom] = useState<ReplyConnectorGeometry | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const pathRef = useRef<SVGPathElement | null>(null);
+  const lastGeomRef = useRef<ReplyConnectorGeometry | null>(null);
 
   useLayoutEffect(() => {
     let raf = 0;
+    let cancelled = false;
+
+    const applyGeom = (next: ReplyConnectorGeometry | null) => {
+      if (cancelled) return;
+      const prev = lastGeomRef.current;
+      if (next == null) {
+        if (prev == null) return;
+        lastGeomRef.current = null;
+        setMounted(false);
+        return;
+      }
+      if (
+        prev &&
+        prev.width === next.width &&
+        prev.height === next.height &&
+        prev.d === next.d
+      ) {
+        return;
+      }
+      lastGeomRef.current = next;
+      const svg = svgRef.current;
+      const path = pathRef.current;
+      if (svg && path) {
+        svg.setAttribute('width', String(next.width));
+        svg.setAttribute('height', String(next.height));
+        svg.setAttribute('viewBox', `0 0 ${next.width} ${next.height}`);
+        path.setAttribute('d', next.d);
+        return;
+      }
+      // One React commit to mount the SVG; further ticks stay imperative.
+      setMounted(true);
+    };
 
     const measure = () => {
       const rEl = rowRef.current;
       const rep = replyAvatarRef.current;
       const main = mainAvatarRef.current;
       if (!rEl || !rep || !main) {
-        setGeom(null);
+        applyGeom(null);
         return;
       }
       const rowRect = rEl.getBoundingClientRect();
       const repRect = rep.getBoundingClientRect();
       const mainRect = main.getBoundingClientRect();
-      const w = rowRect.width;
-      const h = rowRect.height;
+      const w = Math.round(rowRect.width);
+      const h = Math.round(rowRect.height);
       if (w <= 0 || h <= 0) {
-        setGeom(null);
+        applyGeom(null);
         return;
       }
       const xMain = mainRect.left + mainRect.width / 2 - rowRect.left;
@@ -1040,7 +1083,7 @@ function ChatReplyConnectorMeasured({
         yRep,
         xEnd,
       });
-      setGeom({ width: w, height: h, d });
+      applyGeom({ width: w, height: h, d });
     };
 
     const requestMeasure = () => {
@@ -1081,6 +1124,7 @@ function ChatReplyConnectorMeasured({
     });
     window.addEventListener('resize', requestMeasure);
     return () => {
+      cancelled = true;
       if (raf) {
         cancelAnimationFrame(raf);
       }
@@ -1090,10 +1134,25 @@ function ChatReplyConnectorMeasured({
     };
   }, [rowRef, replyAvatarRef, mainAvatarRef]);
 
-  if (!geom) return null;
+  // After mount, sync attributes once refs exist (first paint after setMounted).
+  useLayoutEffect(() => {
+    if (!mounted) return;
+    const next = lastGeomRef.current;
+    const svg = svgRef.current;
+    const path = pathRef.current;
+    if (!next || !svg || !path) return;
+    svg.setAttribute('width', String(next.width));
+    svg.setAttribute('height', String(next.height));
+    svg.setAttribute('viewBox', `0 0 ${next.width} ${next.height}`);
+    path.setAttribute('d', next.d);
+  }, [mounted]);
+
+  if (!mounted || !lastGeomRef.current) return null;
+  const geom = lastGeomRef.current;
 
   return (
     <svg
+      ref={svgRef}
       className="pointer-events-none absolute inset-0 z-0 overflow-visible text-border/80 dark:text-border/85"
       width={geom.width}
       height={geom.height}
@@ -1102,6 +1161,7 @@ function ChatReplyConnectorMeasured({
       aria-hidden
     >
       <path
+        ref={pathRef}
         d={geom.d}
         fill="none"
         stroke="currentColor"
@@ -1668,7 +1728,14 @@ export function HumanChatPanelMessageBubble({
   const specialist = message.agentSpecialistId
     ? specialistById(message.agentSpecialistId)
     : null;
-  const specialistName = specialist ? tCoherence(specialist.roleKey) : null;
+  let specialistName: string | null = null;
+  if (specialist) {
+    try {
+      specialistName = tCoherence(specialist.roleKey);
+    } catch {
+      specialistName = null;
+    }
+  }
   const format = useFormatter();
   const { client } = useMatrix();
   const bodyResolveMx = useMemo(
@@ -1680,9 +1747,14 @@ export function HumanChatPanelMessageBubble({
   );
   const roomMemberUserIds = useMemo(() => {
     const room = client?.getRoom(roomId ?? undefined);
-    return (room?.getMembers() ?? [])
-      .map((member) => member.userId?.trim())
-      .filter((id): id is string => Boolean(id));
+    if (!room) return [];
+    try {
+      return (room.getMembers?.() ?? [])
+        .map((member) => member.userId?.trim())
+        .filter((id): id is string => Boolean(id));
+    } catch {
+      return [];
+    }
   }, [client, roomId]);
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
@@ -1705,21 +1777,29 @@ export function HumanChatPanelMessageBubble({
   const mediaDownloadUrl = useMemo(() => {
     const mxc = message.media?.mxcUrl;
     if (!mxc || !client) return null;
-    return client.mxcUrlToHttp(
-      mxc,
-      undefined,
-      undefined,
-      undefined,
-      true,
-      false,
-      false,
-    );
+    try {
+      return client.mxcUrlToHttp(
+        mxc,
+        undefined,
+        undefined,
+        undefined,
+        true,
+        false,
+        false,
+      );
+    } catch {
+      return null;
+    }
   }, [client, message.media?.mxcUrl]);
 
   const mediaPreviewUrl = useMemo(() => {
     const mxc = message.media?.mxcUrl;
     if (!mxc || !client) return null;
-    return client.mxcUrlToHttp(mxc, 800, 600, 'scale', true, false, false);
+    try {
+      return client.mxcUrlToHttp(mxc, 800, 600, 'scale', true, false, false);
+    } catch {
+      return null;
+    }
   }, [client, message.media?.mxcUrl]);
 
   // TODO: Handle non-text parts (file attachments, tool results, etc.)
@@ -1729,23 +1809,34 @@ export function HumanChatPanelMessageBubble({
     ) ?? [];
   const textContent = textParts.map((p) => p.text).join('');
   const replyTo = message.replyTo;
-  const jumboLayout = textContent
-    ? getEmojiOnlyJumboLayout(textContent, Boolean(replyTo))
-    : { mode: 'normal' as const };
+  let jumboLayout: ReturnType<typeof getEmojiOnlyJumboLayout> = {
+    mode: 'normal',
+  };
+  if (textContent) {
+    try {
+      jumboLayout = getEmojiOnlyJumboLayout(textContent, Boolean(replyTo));
+    } catch {
+      jumboLayout = { mode: 'normal' };
+    }
+  }
 
   /** Prefer Matrix formatted_body; otherwise derive HTML from Discord-like markup in body. */
   const richTextHtml = useMemo(() => {
-    if (message.formattedContentHtml?.trim()) {
-      return message.formattedContentHtml;
-    }
-    if (!textContent.trim() || jumboLayout.mode === 'jumbo') {
+    try {
+      if (message.formattedContentHtml?.trim()) {
+        return message.formattedContentHtml;
+      }
+      if (!textContent.trim() || jumboLayout.mode === 'jumbo') {
+        return null;
+      }
+      if (!chatMarkupLooksFormatted(textContent)) {
+        return null;
+      }
+      const html = chatMarkupToHtml(textContent);
+      return html || null;
+    } catch {
       return null;
     }
-    if (!chatMarkupLooksFormatted(textContent)) {
-      return null;
-    }
-    const html = chatMarkupToHtml(textContent);
-    return html || null;
   }, [message.formattedContentHtml, textContent, jumboLayout.mode]);
 
   const rosterSenderLabel =
@@ -2003,28 +2094,45 @@ export function HumanChatPanelMessageBubble({
   const hasInlineMedia =
     Boolean(message.media) ||
     Boolean(message.mediaSlots && message.mediaSlots.length > 0);
+  /*
+   * Prefer max-height over `-webkit-line-clamp`. On iOS WebKit, `line-clamp`
+   * + `whitespace-pre-wrap` often makes scrollHeight === clientHeight, so the
+   * Read more control never appears even though the body looks truncated.
+   */
   const textBodyClassName = cn(
     /* Shared with the AI panel: 13px, a little tighter than body text. */
     'text-[13px] leading-[1.35] whitespace-pre-wrap break-words text-foreground',
+    /* Touch: native iOS selection must not win over the long-press action sheet. */
+    isTouchComposer && 'select-none [-webkit-touch-callout:none]',
     hasInlineMedia ? 'mt-0.5' : 'mt-0',
-    !textExpanded && 'line-clamp-10',
+    !textExpanded && 'max-h-[calc(1.35em*10)] overflow-hidden',
   );
+  const textLooksLong =
+    textContent.split('\n').length > 10 || textContent.length > 500;
+
+  useEffect(() => {
+    setLocalExpandedId(null);
+    const next = Boolean(textContent.trim()) && textLooksLong;
+    setTextCanExpand((prev) => (prev === next ? prev : next));
+  }, [message.id, textContent, richTextHtml, textLooksLong]);
 
   useLayoutEffect(() => {
     const el = textBodyRef.current;
     if (!el || !textContent.trim()) {
-      setTextCanExpand(false);
+      setTextCanExpand((prev) => (prev === false ? prev : false));
       return;
     }
     if (textExpanded) return;
     const measure = () => {
-      setTextCanExpand(el.scrollHeight > el.clientHeight + 1);
+      const overflows = el.scrollHeight > el.clientHeight + 1;
+      const next = overflows || textLooksLong;
+      setTextCanExpand((prev) => (prev === next ? prev : next));
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [textContent, textExpanded, richTextHtml, hasInlineMedia]);
+  }, [textContent, textExpanded, richTextHtml, hasInlineMedia, textLooksLong]);
 
   const replyExcerpt =
     replyTo && replyTo.excerpt != null && replyTo.excerpt !== '' ? (
@@ -2718,7 +2826,9 @@ export function HumanChatPanelMessageBubble({
         </div>
       </div>
 
-      {/* Discord-style floating bar: compact height, tight to icon row */}
+      {/* Discord-style floating bar: compact height, tight to icon row.
+          Stop pointer/context bubbling so nested Popover/DropdownMenu are not
+          swallowed by the row ContextMenuTrigger (trips the message EB). */}
       <div
         data-chat-message-actions=""
         className={cn(
@@ -2732,6 +2842,8 @@ export function HumanChatPanelMessageBubble({
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
+        onPointerDown={(event) => event.stopPropagation()}
+        onContextMenu={(event) => event.stopPropagation()}
       >
         <HumanChatPanelEmojiPicker
           open={hoverReactPickerOpen}

@@ -95,6 +95,10 @@ type MemberHomeProps = {
 };
 
 const ORIENTATIONS: SignupOrientation[] = ['member', 'builder', 'investor'];
+/** Preview rows in each home side tile — keep short to avoid overload. */
+const HOME_TILE_PREVIEW = 3;
+const ATTENTION_PAGE = HOME_TILE_PREVIEW;
+
 function orientationLabelKey(orientation: SignupOrientation) {
   if (orientation === 'member') return 'orientationMember' as const;
   if (orientation === 'builder') return 'orientationBuilder' as const;
@@ -330,7 +334,7 @@ export function MemberHome({
   }, [home]);
 
   return (
-    <div className="@container/home relative isolate -mb-8 -mt-4 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] min-h-0 w-full min-w-0 flex-col overflow-hidden md:-mt-5 xl:h-[calc(100svh-var(--menu-top-height,4.5rem))] xl:pt-5">
+    <div className="@container/home relative isolate -mb-8 -mt-[calc(1rem+1px)] flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem)+1px)] min-h-0 w-full min-w-0 flex-col overflow-hidden pt-[calc(1rem+1px)] md:-mt-[calc(1.25rem+1px)] md:pt-[calc(1.25rem+1px)] xl:h-[calc(100svh-var(--menu-top-height,4.5rem)+1px)]">
       <MemberHomeBanner />
       <div className="flex min-h-0 w-full min-w-0 flex-1 flex-row overflow-hidden">
         <div
@@ -431,7 +435,7 @@ export function MemberHome({
                 <ResourceList
                   isLoading={railsBusy}
                   empty={t('noNotifications')}
-                  maxItems={5}
+                  maxItems={HOME_TILE_PREVIEW}
                   markSize={24}
                   items={
                     home
@@ -469,7 +473,7 @@ export function MemberHome({
                       : []
                   }
                 />
-                {home && home.notifications.length > 5 ? (
+                {home && home.notifications.length > HOME_TILE_PREVIEW ? (
                   <Button asChild className="mt-4 w-full text-sm">
                     <Link href={`/${lang}/home/notifications`}>
                       {t('seeMoreNotifications')}
@@ -1041,8 +1045,6 @@ function Tile({
     </section>
   );
 }
-
-const ATTENTION_PAGE = 5;
 
 function AttentionNeeded({
   lang,

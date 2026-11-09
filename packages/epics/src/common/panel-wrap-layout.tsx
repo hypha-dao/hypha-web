@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
+  HYPHA_CLOSE_HUMAN_CHAT_EVENT,
   SidebarProvider,
   Sidebar,
   SidebarResizeHandle,
@@ -35,6 +36,8 @@ import {
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { isInteractiveCreatePath } from './get-path-function';
 import {
+  isConnectionsPath,
+  isMyWalletPath,
   isNetworkAiPath,
   isNetworkPath,
   showsHumanChatIcon,
@@ -384,11 +387,16 @@ const PANEL_COMPACT_ATTR = 'data-compact-panels';
 const PANEL_OPEN_ATTR = 'data-side-panels-open';
 const LEFT_PANEL_EXPANDED_ATTR = 'data-left-panel-expanded';
 const LEFT_SIDEBAR_EXPANDED_WIDTH = '320px';
-const LEFT_AI_PANEL_WIDTH_PX = 320;
+/** Shared default column width — left AI panel and right chat must match. */
+const PANEL_COLUMN_WIDTH_PX = 320;
+const LEFT_AI_PANEL_WIDTH_PX = PANEL_COLUMN_WIDTH_PX;
 const LEFT_SIDEBAR_ICON_WIDTH_PX = 72;
-const RIGHT_SIDEBAR_WIDTH = '320px';
-// Mobile: keep only a slim gutter so chat/menu content uses almost full width.
-const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(560px, calc(100vw - 16px))';
+const RIGHT_SIDEBAR_WIDTH = `${PANEL_COLUMN_WIDTH_PX}px`;
+// Mobile sheet still uses `mobileWidth="100vw"`; this is only the reserved
+// desktop track. Keep it at the same 320px as the left AI column.
+const RIGHT_SIDEBAR_WIDTH_COMPACT = RIGHT_SIDEBAR_WIDTH;
+/** Right chat must not outgrow the left AI column default (320px). */
+const RIGHT_SIDEBAR_RESIZE_MAX_PX = PANEL_COLUMN_WIDTH_PX;
 const DUAL_PANEL_MIN_VIEWPORT_PX = 1200;
 const MIN_MAIN_COLUMN_WIDTH_PX = 560;
 const MOBILE_PANEL_BREAKPOINT_PX = 768;
@@ -477,9 +485,41 @@ export function PanelWrapLayout({
     }
   }, [showHumanChat, closeHumanChatPanel]);
 
+  // Mobile chat is a full-viewport Sheet. Leaving Messages for Wallet (or
+  // vice versa) must dismiss it — otherwise a crashed/stale thread keeps
+  // covering the destination screen and looks like “Wallet never loads”.
+  const prevPathnameRef = useRef(pathname);
+  useEffect(() => {
+    const prev = prevPathnameRef.current;
+    prevPathnameRef.current = pathname;
+    if (prev === pathname) return;
+    if (typeof window === 'undefined') return;
+    if (window.innerWidth >= 768) return;
+    const leftMessages =
+      isConnectionsPath(prev) && !isConnectionsPath(pathname);
+    const enteredWallet = !isMyWalletPath(prev) && isMyWalletPath(pathname);
+    if (leftMessages || enteredWallet) {
+      closeHumanChatPanel();
+    }
+  }, [pathname, closeHumanChatPanel]);
+
+  // Wallet nav fires this before the route changes so the sheet is gone even
+  // when soft navigation stalls on the Messages/Matrix main thread.
+  useEffect(() => {
+    const onClose = () => {
+      closeHumanChatPanel();
+    };
+    window.addEventListener(HYPHA_CLOSE_HUMAN_CHAT_EVENT, onClose);
+    return () => {
+      window.removeEventListener(HYPHA_CLOSE_HUMAN_CHAT_EVENT, onClose);
+    };
+  }, [closeHumanChatPanel]);
+
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {
-      return MOBILE_PANEL_BREAKPOINT_PX;
+      // Mobile-first SSR: `width < 768` must be true so sticky chrome / insets
+      // do not briefly assume a 72px desktop icon rail (floating white card).
+      return MOBILE_PANEL_BREAKPOINT_PX - 1;
     }
     return window.innerWidth;
   });
@@ -687,6 +727,22 @@ export function PanelWrapLayout({
     };
   }, [sidebarLeftPx, sidebarRightPx]);
 
+  // ResizeHandle writes `--sidebar-width` as an inline style. React will not
+  // re-apply the style prop when its value is unchanged, so a prior drag (e.g.
+  // the old 400px cap) can leave the chat column stuck wide. Re-seed whenever
+  // the panel opens or the intended width changes.
+  useLayoutEffect(() => {
+    if (!rightOpen || !rightPanelAvailable) return;
+    const root = wrapperRef.current;
+    if (!root) return;
+    root.querySelectorAll('[data-side="right"]').forEach((sideEl) => {
+      const provider = sideEl.closest(
+        '[data-sidebar="wrapper"]',
+      ) as HTMLElement | null;
+      provider?.style.setProperty('--sidebar-width', rightSidebarWidth);
+    });
+  }, [rightOpen, rightPanelAvailable, rightSidebarWidth]);
+
   // Core content that goes inside the scrollable SidebarInset (when panels wrap layout)
   let content = <>{children}</>;
 
@@ -758,7 +814,11 @@ export function PanelWrapLayout({
           className="z-[50]"
           shouldPreventEscapeDismiss={shouldPreventChatSheetEscapeDismiss}
         >
-          <SidebarResizeHandle />
+          <SidebarResizeHandle
+            minWidth={280}
+            maxWidth={RIGHT_SIDEBAR_RESIZE_MAX_PX}
+            defaultWidth={PANEL_COLUMN_WIDTH_PX}
+          />
           <HumanChatPanelErrorBoundary>
             {effectiveRight.content}
           </HumanChatPanelErrorBoundary>
@@ -801,8 +861,8 @@ export function PanelWrapLayout({
           {!isOnboarding ? (
             <SidebarResizeHandle
               minWidth={280 + leftIconRailPx}
-              maxWidth={600 + leftIconRailPx}
-              defaultWidth={320 + leftIconRailPx}
+              maxWidth={RIGHT_SIDEBAR_RESIZE_MAX_PX + leftIconRailPx}
+              defaultWidth={PANEL_COLUMN_WIDTH_PX + leftIconRailPx}
             />
           ) : null}
         </Sidebar>

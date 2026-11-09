@@ -79,6 +79,7 @@ import {
   type NetworkHorizonCandidate,
   type NetworkHorizonSignal,
 } from '../network-horizon';
+import { decodeHtmlEntities } from '../../common/decode-html-entities';
 
 export {
   MEMBER_ORIENTATIONS,
@@ -836,7 +837,7 @@ async function loadNetworkHorizonSignals(
       {
         id: row.id,
         slug: row.slug,
-        title: row.title,
+        title: displayTitle(row.title, ''),
         type: row.type,
         description: optionalExcerpt(row.description),
         tags: stringTags(row.tags),
@@ -947,7 +948,7 @@ async function loadMemberMovement(
         voting: row.voting === true,
         tokenType: row.tokenType,
       }),
-      title: row.title?.trim() || 'An agreement',
+      title: displayTitle(row.title, 'An agreement'),
       spaceSlug: row.spaceSlug,
       spaceTitle: row.spaceTitle,
       spaceLogo: toSpaceLogo(row),
@@ -1045,8 +1046,17 @@ async function loadMemberMovement(
   return selectMemberMovement(movement);
 }
 
+/** Titles stored from rich text sometimes keep `&amp;` etc.; decode for plain UI. */
+function displayTitle(
+  value: string | null | undefined,
+  fallback: string,
+): string {
+  const text = decodeHtmlEntities((value ?? '').trim());
+  return text || fallback;
+}
+
 function excerpt(value: string | null | undefined, max = 180): string {
-  const text = (value ?? '')
+  const text = decodeHtmlEntities(value ?? '')
     .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')
     .replace(/<[^>]+>/g, ' ')
@@ -1282,7 +1292,7 @@ export async function getMemberIntelligence(
         proposals: proposalRows.map((row) => ({
           id: row.id,
           slug: row.slug,
-          title: row.title?.trim() || 'Untitled proposal',
+          title: displayTitle(row.title, 'Untitled proposal'),
           state: row.state,
           label: row.label,
           spaceSlug: row.spaceSlug,
@@ -1387,7 +1397,7 @@ export async function getMemberIntelligence(
           id: row.id,
           slug: row.slug,
           roomId: row.roomId,
-          title: row.title,
+          title: displayTitle(row.title, ''),
           type:
             memberHomeSignalCategory(row.type, ...stringTags(row.tags)) ??
             row.type,
@@ -1499,7 +1509,7 @@ export async function getMemberIntelligence(
                 {
                   id: `proposal-${row.id}`,
                   kind: 'proposal' as const,
-                  title: row.title?.trim() || 'Untitled proposal',
+                  title: displayTitle(row.title, 'Untitled proposal'),
                   detail: `${row.spaceTitle} · a decision`,
                   spaceSlug: row.spaceSlug,
                   spaceTitle: row.spaceTitle,
@@ -1516,7 +1526,7 @@ export async function getMemberIntelligence(
                 {
                   id: `signal-${row.id}`,
                   kind: 'signal' as const,
-                  title: row.title,
+                  title: displayTitle(row.title, ''),
                   detail: [row.type, row.spaceTitle]
                     .filter(Boolean)
                     .join(' · '),
@@ -1737,7 +1747,7 @@ export async function getMemberIntelligence(
     ...missingProposals.map((row) => ({
       id: row.id,
       slug: row.slug,
-      title: row.title?.trim() || 'Untitled proposal',
+      title: displayTitle(row.title, 'Untitled proposal'),
       state: row.state,
       label: row.label,
       spaceSlug: row.spaceSlug,
@@ -1896,7 +1906,7 @@ export async function getMemberIntelligence(
         id: row.id,
         slug: row.slug,
         roomId: row.roomId,
-        title: row.title,
+        title: displayTitle(row.title, ''),
         type:
           memberHomeSignalCategory(row.type, ...stringTags(row.tags)) ??
           row.type,
@@ -2066,7 +2076,7 @@ export async function listNetworkCapitalAsks(
     asks: rows.map((row) => ({
       id: row.id,
       slug: row.slug,
-      title: row.title?.trim() || 'Untitled ask',
+      title: displayTitle(row.title, 'Untitled ask'),
       excerpt: excerpt(row.description),
       state: row.state,
       spaceSlug: row.spaceSlug,

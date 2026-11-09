@@ -216,7 +216,7 @@ export function MemberHomeSpacesWidget({
   );
 }
 
-const CONNECTIONS_PREVIEW = 5;
+const CONNECTIONS_PREVIEW = 3;
 
 export function MemberHomeConnectionsWidget({
   lang,
