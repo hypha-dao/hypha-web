@@ -92,14 +92,19 @@ describe('questHealthDisplay', () => {
       }),
     ).toMatchObject({ label: 'On track', marker: 100, state: 'on_track' });
     expect(
-      questHealthDisplay({
-        status: 'active',
-        health: stored,
-      }),
+      questHealthDisplay(
+        {
+          status: 'active',
+          targetDate: '2026-12-01',
+          milestones: [],
+          health: { ...stored, marker: 0 },
+        },
+        new Date(2026, 10, 9),
+      ),
     ).toMatchObject({
       notStarted: false,
       label: 'On track',
-      marker: 82,
+      marker: 80,
       summary: null,
       state: 'on_track',
     });

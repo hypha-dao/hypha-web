@@ -1,3 +1,4 @@
+import { parseQuestCalendarDate } from './calendar-date';
 import type { QuestHealthState, QuestStatus } from './constants';
 
 export type QuestHealthDisplay = {
@@ -25,18 +26,84 @@ const STATE_LABEL: Record<QuestHealthState, string> = {
   off_track: 'Off track',
 };
 
+/** Green side of the existing health bar. Not the start position. */
+export const QUEST_ON_TRACK_MARKER = 80;
+/** Red side of the existing health bar. */
+export const QUEST_OFF_TRACK_MARKER = 15;
+
+export type QuestHealthEstimate = {
+  state: 'on_track' | 'off_track';
+  marker: number;
+};
+
+type QuestHealthInput = {
+  status?: string | null;
+  targetDate?: string | null;
+  milestones?: ReadonlyArray<{
+    status?: string | null;
+    dueDate?: string | null;
+  }>;
+};
+
+function calendarStamp(year: number, month: number, day: number): number {
+  return year * 10_000 + month * 100 + day;
+}
+
+function todayStamp(now: Date): number {
+  return calendarStamp(now.getFullYear(), now.getMonth() + 1, now.getDate());
+}
+
+function dateStamp(value: string | null | undefined): number | null {
+  const parsed = parseQuestCalendarDate(value);
+  if (!parsed) return null;
+  return calendarStamp(parsed.year, parsed.month, parsed.day);
+}
+
+/**
+ * Active-quest health. Off track when an incomplete milestone is undated or
+ * late, or when the quest target date is already past. Completed milestones
+ * are ignored. A missing quest target date is judged from milestones only.
+ * Replace this function when an AI estimate takes over the same result.
+ */
+export function computeQuestHealth(
+  quest: QuestHealthInput,
+  now: Date = new Date(),
+): QuestHealthEstimate {
+  const today = todayStamp(now);
+  const incomplete = (quest.milestones ?? []).filter(
+    (milestone) => milestone.status !== 'done',
+  );
+  const milestoneOffTrack = incomplete.some((milestone) => {
+    const due = dateStamp(milestone.dueDate);
+    return due == null || due < today;
+  });
+  const questDue = dateStamp(quest.targetDate);
+  const questOffTrack =
+    quest.status !== 'completed' && questDue != null && questDue < today;
+  const offTrack = milestoneOffTrack || questOffTrack;
+  return offTrack
+    ? { state: 'off_track', marker: QUEST_OFF_TRACK_MARKER }
+    : { state: 'on_track', marker: QUEST_ON_TRACK_MARKER };
+}
+
 /**
  * Proposed quests sit at the start of the bar and read "Not started".
- * Active, paused, completed, and archived quests keep their stored health.
+ * Active quests use computeQuestHealth. Paused, completed, and archived
+ * quests keep their stored health.
  */
-export function questHealthDisplay(quest: {
-  status: QuestStatus;
-  health: {
-    state: QuestHealthState;
-    marker: number;
-    summary?: string | null;
-  };
-}): QuestHealthDisplay {
+export function questHealthDisplay(
+  quest: {
+    status: QuestStatus;
+    targetDate?: string | null;
+    milestones?: QuestHealthInput['milestones'];
+    health: {
+      state: QuestHealthState;
+      marker: number;
+      summary?: string | null;
+    };
+  },
+  now: Date = new Date(),
+): QuestHealthDisplay {
   if (quest.status === 'proposed') {
     return {
       notStarted: true,
@@ -44,6 +111,16 @@ export function questHealthDisplay(quest: {
       marker: 0,
       summary: null,
       state: null,
+    };
+  }
+  if (quest.status === 'active') {
+    const estimate = computeQuestHealth(quest, now);
+    return {
+      notStarted: false,
+      label: STATE_LABEL[estimate.state],
+      marker: estimate.marker,
+      summary: null,
+      state: estimate.state,
     };
   }
   const marker = Number.isFinite(quest.health.marker)

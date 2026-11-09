@@ -308,6 +308,40 @@ describe('saved quest helper entry', () => {
     expect(overview.textContent).toContain('M2');
   });
 
+  it('shows a dated active quest on track in the green part of the bar', () => {
+    const quest = questFixture();
+    quest.targetDate = '2099-01-01';
+    quest.milestones = quest.milestones.map((milestone) => ({
+      ...milestone,
+      dueDate: '2099-01-01',
+    }));
+    quest.health = { ...quest.health, marker: 0, state: 'off_track' };
+    harness.quest = quest;
+    render(<SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />);
+
+    const health = screen.getByTestId('quest-overview-health');
+    expect(screen.getByTestId('quest-health-label').textContent).toContain(
+      'On track',
+    );
+    expect(health.innerHTML).toContain('#2e9e5b');
+    expect(
+      screen.getByTestId('quest-health-marker').getAttribute('data-marker'),
+    ).toBe('80');
+    expect(health.querySelector('button')).toBeNull();
+  });
+
+  it('shows off track in red when an incomplete milestone has no date', () => {
+    render(<SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />);
+    const health = screen.getByTestId('quest-overview-health');
+    expect(screen.getByTestId('quest-health-label').textContent).toContain(
+      'Off track',
+    );
+    expect(health.innerHTML).toContain('#d2463c');
+    expect(
+      screen.getByTestId('quest-health-marker').getAttribute('data-marker'),
+    ).toBe('15');
+  });
+
   it('posts a written update and ignores the optional link until the message is filled', async () => {
     render(
       <SpaceQuestDetail

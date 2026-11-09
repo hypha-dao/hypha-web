@@ -531,7 +531,7 @@ function OverviewTab({
         <section className={CARD_CLASS} data-testid="quest-overview-health">
           <SectionHeader
             title="Quest Health"
-            onEdit={edit('health')}
+            onEdit={quest.status === 'active' ? undefined : edit('health')}
             right={
               <span className="text-[11px] text-neutral-11">
                 Updated {formatRelativeTimeShort(healthUpdatedAt)}

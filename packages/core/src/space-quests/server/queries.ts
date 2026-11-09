@@ -30,6 +30,7 @@ import {
   withoutPlaceholderLeadDuplicates,
 } from '../markdown';
 import { parseQuestCalendarDate } from '../calendar-date';
+import { computeQuestHealth } from '../health-display';
 import type {
   QuestDeliverableRecord,
   QuestHealthSummary,
@@ -139,15 +140,29 @@ function buildHealthSummary(
   updates: QuestUpdateRecord[],
   milestones: QuestMilestoneRecord[],
 ): QuestHealthSummary {
-  const state: QuestHealthState = isQuestHealthState(row.healthState)
+  const computed =
+    row.status === 'active'
+      ? computeQuestHealth(
+          {
+            status: row.status,
+            targetDate: row.targetDate,
+            milestones,
+          },
+          new Date(),
+        )
+      : null;
+  const state: QuestHealthState = computed
+    ? computed.state
+    : isQuestHealthState(row.healthState)
     ? row.healthState
     : 'on_track';
   const defaultMarker =
     state === 'on_track' ? 80 : state === 'at_risk' ? 48 : 18;
-  const marker =
-    typeof row.healthMarker === 'number' && Number.isFinite(row.healthMarker)
-      ? Math.max(0, Math.min(100, row.healthMarker))
-      : defaultMarker;
+  const marker = computed
+    ? computed.marker
+    : typeof row.healthMarker === 'number' && Number.isFinite(row.healthMarker)
+    ? Math.max(0, Math.min(100, row.healthMarker))
+    : defaultMarker;
 
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const updatesThisWeek = updates.filter(
@@ -156,15 +171,16 @@ function buildHealthSummary(
   const lastUpdateAt = updates[0]?.createdAt ?? null;
   const doneCount = milestones.filter((m) => m.status === 'done').length;
 
-  const defaultSummary =
-    row.healthSummary?.trim() ||
-    (updates.length > 0
-      ? `${doneCount} of ${
-          milestones.length
-        } milestones complete. ${updatesThisWeek} update${
-          updatesThisWeek === 1 ? '' : 's'
-        } posted this week.`
-      : 'No updates posted yet. Post progress updates to keep Quest health current.');
+  const defaultSummary = computed
+    ? ''
+    : row.healthSummary?.trim() ||
+      (updates.length > 0
+        ? `${doneCount} of ${
+            milestones.length
+          } milestones complete. ${updatesThisWeek} update${
+            updatesThisWeek === 1 ? '' : 's'
+          } posted this week.`
+        : 'No updates posted yet. Post progress updates to keep Quest health current.');
 
   return {
     state,
