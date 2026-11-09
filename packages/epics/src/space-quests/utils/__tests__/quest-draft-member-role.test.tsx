@@ -13,11 +13,11 @@ afterEach(() => {
 });
 
 describe('draft participant role', () => {
-  it('uses Member for a blank role and keeps an explicit role', () => {
-    expect(draftParticipantRoleLabel(null)).toBe('Member');
-    expect(draftParticipantRoleLabel(undefined)).toBe('Member');
-    expect(draftParticipantRoleLabel('')).toBe('Member');
-    expect(draftParticipantRoleLabel('   ')).toBe('Member');
+  it('uses Participant for a blank role and keeps an explicit role', () => {
+    expect(draftParticipantRoleLabel(null)).toBe('Participant');
+    expect(draftParticipantRoleLabel(undefined)).toBe('Participant');
+    expect(draftParticipantRoleLabel('')).toBe('Participant');
+    expect(draftParticipantRoleLabel('   ')).toBe('Participant');
     expect(draftParticipantRoleLabel(' QA runner ')).toBe('QA runner');
     expect(draftParticipantRoleLabel('Lead')).toBe('Lead');
     expect(
@@ -49,7 +49,7 @@ describe('draft participant role', () => {
 
     expect(members[0]).toMatchObject({
       personId: 9,
-      roleLabel: 'Member',
+      roleLabel: 'Participant',
       responsibilities: ['Run the checklist', 'Record the result'],
     });
     expect(members[1]?.roleLabel).toBe('QA runner');
@@ -59,7 +59,7 @@ describe('draft participant role', () => {
     );
     const overview = screen.getByTestId('draft-section-members');
     expect(within(overview).getByText('QA Tester')).toBeTruthy();
-    expect(within(overview).getByText('Member')).toBeTruthy();
+    expect(within(overview).getByText('Participant')).toBeTruthy();
     expect(within(overview).getByText('QA runner')).toBeTruthy();
     expect(within(overview).getByText('Run the checklist')).toBeTruthy();
     expect(within(overview).getByText('Record the result')).toBeTruthy();

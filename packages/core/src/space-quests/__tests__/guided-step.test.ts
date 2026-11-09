@@ -513,7 +513,7 @@ describe('resolveQuestDraftTarget', () => {
       ['scope', 'Scope'],
       ['success', 'Success criteria'],
       ['milestones', 'Milestones'],
-      ['members', 'Members'],
+      ['members', 'Participants'],
       ['lead', 'Lead'],
       ['targetDate', 'Target date'],
       ['rewards', 'Quest Reward'],

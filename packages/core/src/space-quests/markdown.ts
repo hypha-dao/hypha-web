@@ -338,7 +338,7 @@ export function mergeRefinedQuestMembers(
       memberName: (next?.memberName ?? current.memberName).trim(),
       memberAvatarUrl: current.memberAvatarUrl ?? null,
       roleLabel:
-        current.roleLabel?.trim() || next?.roleLabel?.trim() || 'Member',
+        current.roleLabel?.trim() || next?.roleLabel?.trim() || 'Participant',
       responsibilities: next?.responsibilities
         ? [...next.responsibilities]
         : [...(current.responsibilities ?? [])],
@@ -350,7 +350,7 @@ export function mergeRefinedQuestMembers(
       personId: resolvePersonId(item.memberName),
       memberName: item.memberName.trim(),
       memberAvatarUrl: null,
-      roleLabel: item.roleLabel?.trim() || 'Member',
+      roleLabel: item.roleLabel?.trim() || 'Participant',
       responsibilities: [...(item.responsibilities ?? [])],
     });
   });

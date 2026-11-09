@@ -141,6 +141,9 @@ describe('quest proposal modal body', () => {
     expect(source).toContain('onReject={handleReject}');
     expect(source).toContain('<ProposalQuestData');
     expect(source).toContain('<ProposalQuestOverviewLink');
+    expect(source.indexOf('<ProposalQuestOverviewLink')).toBeGreaterThan(
+      source.indexOf('<ProposalQuestData'),
+    );
     expect(source).not.toContain('QUEST REWARD');
     expect(source).not.toContain('showMilestones');
   });

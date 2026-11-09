@@ -67,7 +67,7 @@ export function ProposalQuestOverviewLink({
         </Link>
       </Button>
       <p className="min-w-0 flex-1 text-[11px] text-neutral-11">
-        See milestones, members, and more on the quest page.
+        See milestones, participants, and more on the quest page.
       </p>
     </div>
   );

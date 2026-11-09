@@ -15,6 +15,8 @@ type HumanChatPanelTabsProps = {
    * Falls back to the generic "Room" copy when omitted.
    */
   chatTabLabel?: string;
+  /** Quest chats call this roster Participants. Other chats keep Members. */
+  membersTabLabel?: string;
   /** e.g. voice / video / search (space call controls); end of the tab row (right column). */
   tabRowEnd?: ReactNode;
 };
@@ -23,6 +25,7 @@ export function HumanChatPanelTabs({
   activeTab,
   onTabChange,
   chatTabLabel,
+  membersTabLabel,
   tabRowEnd,
 }: HumanChatPanelTabsProps) {
   const t = useTranslations('HumanChatPanel');
@@ -50,7 +53,7 @@ export function HumanChatPanelTabs({
 
   const tabs: { key: ChatPanelTab; label: string }[] = [
     { key: 'chat', label: chatTabLabel?.trim() || t('tabChat') },
-    { key: 'members', label: t('tabMembers') },
+    { key: 'members', label: membersTabLabel?.trim() || t('tabMembers') },
   ];
 
   const handleKeyDown = (e: React.KeyboardEvent, currentIndex: number) => {

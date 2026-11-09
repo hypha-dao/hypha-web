@@ -203,10 +203,10 @@ function SpaceQuestChatBody({
         data-testid="chat-panel-members"
       >
         <div className="px-1 pb-2 text-xs font-medium text-muted-foreground">
-          {tChat('membersCount', { count: totalCount, online: 1 })}
+          {`${totalCount} ${totalCount === 1 ? 'participant' : 'participants'}`}
         </div>
         <label className="relative mb-2 min-w-0">
-          <span className="sr-only">{tChat('membersSearch')}</span>
+          <span className="sr-only">Search participants</span>
           <Search
             className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
             strokeWidth={1.5}
@@ -215,7 +215,7 @@ function SpaceQuestChatBody({
           <input
             value={memberQuery}
             onChange={(event) => setMemberQuery(event.target.value)}
-            placeholder={tChat('membersSearch')}
+            placeholder="Search participants"
             data-testid="chat-panel-members-search"
             className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
           />
@@ -415,6 +415,7 @@ export function SpaceQuestSidePanel({
           activeTab={activeTab}
           onTabChange={setActiveTab}
           chatTabLabel={tChat('tabChatQuest')}
+          membersTabLabel="Participants"
         />
       </SidebarHeader>
       <SidebarContent
@@ -464,6 +465,7 @@ export function SpaceQuestChatPanel({
             activeTab={activeTab}
             onTabChange={setActiveTab}
             chatTabLabel={tChat('tabChatQuest')}
+            membersTabLabel="Participants"
           />
         </div>
         <SpaceQuestChatBody session={session} activeTab={activeTab} />

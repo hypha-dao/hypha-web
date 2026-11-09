@@ -6825,6 +6825,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             activeTab={activeTab}
             onTabChange={setActiveTab}
             chatTabLabel={chatTabLabel}
+            membersTabLabel={
+              coherenceChannel === 'quest' ? 'Participants' : undefined
+            }
             tabRowEnd={
               (showSidebarCallChrome &&
                 !inSpaceCall &&
@@ -7545,6 +7548,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                     spaceSlug={spaceSlug}
                     roomId={roomId}
                     roomScoped={isDirectConversation}
+                    rosterCopy={
+                      coherenceChannel === 'quest' ? 'participants' : undefined
+                    }
                     calledSpecialistIds={calledAgents}
                     inCallMatrixUserIds={spaceCallInCallUserIds}
                     inOurCallSession={

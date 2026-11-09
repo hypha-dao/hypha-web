@@ -59,6 +59,7 @@ import {
   PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
 } from '../../governance';
 import { isPast } from 'date-fns';
+import { usePathname } from 'next/navigation';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
 import { useTranslations } from 'next-intl';
@@ -522,6 +523,10 @@ export const ProposalDetail = ({
   spacesForWhitelist,
 }: ProposalDetailProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
+  const pathname = usePathname();
+  const closeStaleQuestOverlay = useCallback(() => {
+    window.location.assign(pathname);
+  }, [pathname]);
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
   });
@@ -1266,6 +1271,13 @@ export const ProposalDetail = ({
             closeUrl={closeUrl}
             className="px-0 md:px-3"
             preferBack
+            onClose={
+              label === 'Quest' &&
+              spaceSlug.length > 0 &&
+              pathname.includes(`/dho/${spaceSlug}/quests/`)
+                ? closeStaleQuestOverlay
+                : undefined
+            }
           />
         </div>
       </div>
@@ -1285,13 +1297,6 @@ export const ProposalDetail = ({
           proposalStatus={proposalStatus}
         />
       </div>
-      {isQuestProposal ? (
-        <ProposalQuestOverviewLink
-          spaceSlug={spaceSlug}
-          documentId={documentId}
-          content={content}
-        />
-      ) : null}
       <Separator />
       <Skeleton
         width="100%"
@@ -1319,7 +1324,14 @@ export const ProposalDetail = ({
         web3SpaceId={proposalDetails?.spaceId}
       />
       {isQuestProposal ? (
-        <ProposalQuestData title={title} content={content} />
+        <>
+          <ProposalQuestData title={title} content={content} />
+          <ProposalQuestOverviewLink
+            spaceSlug={spaceSlug}
+            documentId={documentId}
+            content={content}
+          />
+        </>
       ) : (
         <>
           {descriptionMarkdown}

@@ -103,7 +103,7 @@ function QuestRosterCombobox({
         ]
       : []),
     ...roster.map((person) => {
-      const label = personRosterDisplayLabel(person, 'Space member');
+      const label = personRosterDisplayLabel(person, 'Participant');
       return {
         value: String(person.id),
         label,
@@ -121,8 +121,8 @@ function QuestRosterCombobox({
       options={options}
       initialValue={value ?? (allowUnassigned ? UNASSIGNED_MEMBER : '')}
       placeholder={placeholder}
-      searchPlaceholder="Search members…"
-      emptyListMessage="No space members found."
+      searchPlaceholder="Search participants…"
+      emptyListMessage="No participants found."
       allowEmptyChoice={false}
       popoverModal={false}
       className="h-10 w-full justify-between rounded-none px-3 text-left font-normal normal-case tracking-normal md:w-full"
@@ -667,7 +667,7 @@ export function EditQuestLeadModal({
           if (!selectedPerson) return;
           const label = personRosterDisplayLabel(
             selectedPerson,
-            'Space Member',
+            'Participant',
           ).trim();
           if (!label) return;
           onSave(label, selectedPerson.id > 0 ? selectedPerson.id : null);
@@ -679,7 +679,7 @@ export function EditQuestLeadModal({
           <QuestRosterCombobox
             members={catalog}
             value={selectedId}
-            placeholder="Select a space member…"
+            placeholder="Select a participant…"
             onChange={(next) => setSelectedId(next ? String(next.id) : null)}
           />
         </div>
@@ -979,7 +979,7 @@ export function EditQuestMilestonesModal({
                             ownerName: next
                               ? personRosterDisplayLabel(
                                   next,
-                                  'Space Member',
+                                  'Participant',
                                 ).trim() || null
                               : null,
                           };
@@ -1134,7 +1134,7 @@ export function EditQuestMembersModal({
     if (!selectedPerson) return;
     const cleanName = personRosterDisplayLabel(
       selectedPerson,
-      'Space Member',
+      'Participant',
     ).trim();
     if (!cleanName) return;
     const bullets = newBullets.map((b) => b.trim()).filter(Boolean);
@@ -1302,13 +1302,13 @@ export function EditQuestMembersModal({
 
         {/* ADD MEMBER card */}
         <div className="space-y-2.5 border border-border bg-background-2 p-3">
-          <p className={LABEL_CLASS}>ADD MEMBER</p>
+          <p className={LABEL_CLASS}>ADD PARTICIPANT</p>
           <div className="space-y-1">
             <label className={LABEL_CLASS}>PERSON</label>
             <QuestRosterCombobox
               members={memberCatalog}
               value={selectedPersonId}
-              placeholder="Choose or search a space member…"
+              placeholder="Choose or search a participant…"
               onChange={(next) =>
                 setSelectedPersonId(next ? String(next.id) : null)
               }

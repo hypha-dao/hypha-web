@@ -234,7 +234,7 @@ function questHelperSectionBrief(step: QuestStewardStep): string {
     case 'milestones':
       return 'Active section: Milestones. Ordered checkpoints the member described. Include a dueDate or ownerName only when that date or person is already in the conversation, the draft, or the space roster. Never invent a person or a date. The only field you may propose is `milestones`.';
     case 'members':
-      return 'Active section: Members. Match names from the space roster and give each person outcome responsibilities. Do not add a second Lead row, and do not invent duties such as "Overall delivery" or "Unblock reviews". The only field you may propose is `members`.';
+      return 'Active section: Participants. Match names from the space roster and give each person outcome responsibilities. Do not add a second Lead row, and do not invent duties such as "Overall delivery" or "Unblock reviews". Call them participants, never members. The only field you may propose is `members`.';
     case 'lead':
       return 'Active section: Lead. The only field you may propose is `leadName`, using a real name from the space roster.';
     case 'targetDate':
@@ -544,7 +544,7 @@ export async function assistSpaceQuestDraft({
   }). update_quest_draft saves immediately, and only when their message is an explicit edit of one section. A question, an assessment, or a discussion is chat only and must not be saved.`;
 
   const sharedContext = `What you know about good Quest definitions (same rigor as Hypha Space Context specialists):
-- A Quest replaces a task board with a clear outcome: Goal, Scope (In & Out), measurable Success Criteria, ordered Milestones, Members with outcome responsibilities, Lead, Target Date, and multi-token Quest Reward. There is NO Priority field anywhere.`;
+- A Quest replaces a task board with a clear outcome: Goal, Scope (In & Out), measurable Success Criteria, ordered Milestones, Participants with outcome responsibilities, Lead, Target Date, and multi-token Quest Reward. There is NO Priority field anywhere. Call the people on a quest participants, never members.`;
 
   const refineSystem = `You are AI Agents (${
     specialist?.role ?? 'Operations Lead'
@@ -554,14 +554,14 @@ export async function assistSpaceQuestDraft({
 ${modeDescription}
 
 What you know about good Quest definitions (same rigor as Hypha Space Context specialists):
-- A Quest replaces a task board with a clear outcome: Goal, Scope (In & Out), measurable Success Criteria, ordered Milestones, Members with outcome responsibilities, Lead, Target Date, and multi-token Quest Reward. There is NO Priority field anywhere.
+- A Quest replaces a task board with a clear outcome: Goal, Scope (In & Out), measurable Success Criteria, ordered Milestones, Participants with outcome responsibilities, Lead, Target Date, and multi-token Quest Reward. There is NO Priority field anywhere. Call the people on a quest participants, never members.
 - **Goal**: 1–2 crisp sentences stating why this quest exists now, who benefits, and the concrete change it delivers. Test a draft: reject vague verbs ("explore", "improve", "support") unless paired with a concrete deliverable or metric.
-- **Scope (scopeIn / scopeOut)**: 3–5 concrete in-scope deliverables/workstreams in \`scopeIn\`, paired with 2–3 explicit boundaries/non-goals in \`scopeOut\` so members and voters know what falls outside this quest.
+- **Scope (scopeIn / scopeOut)**: 3–5 concrete in-scope deliverables/workstreams in \`scopeIn\`, paired with 2–3 explicit boundaries/non-goals in \`scopeOut\` so participants and voters know what falls outside this quest.
 - **Success Criteria (successCriteriaBullets)**: 2–4 verifiable, measurable outcomes (numbers, adoption checks, or shipped artifacts) that prove the quest succeeded.
 - **Milestones**: Ordered checkpoints the member described. Include a due date or owner only when that date or person is already in the quest, the conversation, or the roster (${
     memberNamesPreview || 'none listed'
   }). Never invent a date or a person.
-- **Members & Lead**: Match member names from that roster. Do not add a second Lead row, and do not invent duties such as "Overall delivery" or "Unblock reviews".
+- **Participants & Lead**: Match participant names from that roster. Do not add a second Lead row, and do not invent duties such as "Overall delivery" or "Unblock reviews". Call them participants, never members.
 - **Length**: The published proposal, including every section, must stay under 4000 characters. Keep bullets short.
 - **Quest Reward (rewards)**: \`{ amount, token }\` entries only when the member already named the amount and token. Do not invent either.
 ${
@@ -584,10 +584,10 @@ ${untrusted(
   }" (${spaceSlug}). You help one member define a new Quest before they publish it as an Agreements proposal. You are not a room of AI Agents, and there is no agent to pick — you always answer.
 
 ${sharedContext}
-- Section order, one at a time: goal, scope, success criteria, milestones, members, lead, target date, rewards, name.
+- Section order, one at a time: goal, scope, success criteria, milestones, participants, lead, target date, rewards, name. Call the people on a quest participants, never members.
 - ${
     draftTarget.bulk
-      ? `The member asked to draft every section at once. Do not call update_quest_draft. Do not write Scope, Success Criteria, Milestones, Members, Rewards, a name, or any other field — including the section you were about to coach (${currentStep}). Say you will take one section at a time, then ask one question about ${currentStep} only.`
+      ? `The member asked to draft every section at once. Do not call update_quest_draft. Do not write Scope, Success Criteria, Milestones, Participants, Rewards, a name, or any other field — including the section you were about to coach (${currentStep}). Say you will take one section at a time, then ask one question about ${currentStep} only.`
       : coachedStep === currentStep
       ? questHelperSectionBrief(coachedStep)
       : revisingNamedSection

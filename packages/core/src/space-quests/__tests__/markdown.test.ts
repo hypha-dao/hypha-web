@@ -344,7 +344,7 @@ describe('quest proposal description', () => {
       'Lead / QA runner',
       'Reviewer',
       'Researcher',
-      'Member',
+      'Participant',
     ]);
   });
 

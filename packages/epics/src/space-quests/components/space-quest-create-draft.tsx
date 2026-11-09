@@ -666,7 +666,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
       ).length;
       if (descriptionLength > QUEST_PROPOSAL_DESCRIPTION_LIMIT) {
         setSubmitError(
-          'This quest is too long to publish as a proposal. Shorten the goal, scope, milestones or members and try again.',
+          'This quest is too long to publish as a proposal. Shorten the goal, scope, milestones or participants and try again.',
         );
         return;
       }
@@ -680,7 +680,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
 
       if (!draftPayload.leadPersonId) {
         setSubmitError(
-          'Select a space member as the Quest Lead before creating the proposal.',
+          'Select a participant as the Quest Lead before creating the proposal.',
         );
         return;
       }
@@ -732,7 +732,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
           getAccessToken,
         }).catch(() => undefined);
         setSubmitError(
-          'This quest is too long to publish as a proposal. Shorten the goal, scope, milestones or members and try again.',
+          'This quest is too long to publish as a proposal. Shorten the goal, scope, milestones or participants and try again.',
         );
         return;
       }
@@ -992,7 +992,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             {proposalOverLimit && !pendingProposalLink ? (
               <div className="border border-error-6 bg-background-2 px-4 py-3 text-xs text-error-11">
                 This quest is too long to publish as a proposal. Shorten the
-                goal, scope, milestones or members before creating.
+                goal, scope, milestones or participants before creating.
               </div>
             ) : null}
             {submitError ? (
@@ -1379,8 +1379,8 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
               </DialogTitle>
               <p className="text-[13px] leading-relaxed text-neutral-11">
                 Creating this quest submits it as a proposal to Hypha for voting
-                right away. Name, goal, scope, success, milestones, members and
-                Quest Reward will be published as shown.
+                right away. Name, goal, scope, success, milestones, participants
+                and Quest Reward will be published as shown.
               </p>
               <div className="flex items-center justify-end gap-2 pt-1">
                 <Button

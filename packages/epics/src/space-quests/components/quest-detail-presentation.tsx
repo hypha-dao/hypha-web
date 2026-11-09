@@ -21,7 +21,7 @@ const LABEL_CLASS =
 /**
  * Stored quest-participant display label (`roleLabel`).
  * Empty text is not a role. Quest lead identity still reads "Lead" when no
- * label was saved. A blank non-lead does not become the placeholder "Member".
+ * label was saved. A blank non-lead does not become the placeholder "Participant".
  */
 export function questParticipantRoleText(member: {
   roleLabel?: string | null;

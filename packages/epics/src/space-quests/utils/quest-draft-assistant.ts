@@ -178,7 +178,7 @@ const QUEST_STEP_LABEL: Record<QuestStewardStep, string> = {
   scope: 'Scope',
   success: 'Success criteria',
   milestones: 'Milestones',
-  members: 'Members',
+  members: 'Participants',
   lead: 'Lead',
   targetDate: 'Target date',
   rewards: 'Quest Reward',
@@ -190,7 +190,7 @@ export function questStepSectionLabel(step: QuestStewardStep): string {
 }
 
 const APPROVAL_SECTION =
-  '(?:success\\s+criteria|milestones?|members?|target\\s+date|quest\\s+rewards?|rewards?|scope|success|lead|goal|name|title)';
+  '(?:success\\s+criteria|milestones?|participants?|members?|target\\s+date|quest\\s+rewards?|rewards?|scope|success|lead|goal|name|title)';
 
 const APPROVAL_PHRASE = `(?:yeah|yep|yup|okay|yes|ok|sure|approved|i approve|include that|include it|put that in(?: the)?(?:\\s+${APPROVAL_SECTION})?|put it in(?: the)?(?:\\s+${APPROVAL_SECTION})?|use that|use it|looks good|go ahead|add it|apply it|that(?:'s| is) good|perfect|do it|sounds good)`;
 
@@ -202,7 +202,7 @@ const SECTION_REWRITE =
   /\b(improve|evaluate|rewrite|reword|tighten|revise|suggest(?:\s+\w+){0,3}\s+(?:wording|copy|text)|make (?:this|it|that) (?:sharper|clearer|shorter|better))\b/i;
 
 const SECTION_OPENER =
-  /\b(?:let'?s|let us|now)\b.{0,48}\b(?:define|talk about|work on|move on|start|cover)\b|\b(?:define|talk about|work on|move on to|start on|cover)\s+(?:the\s+)?(success\s+criteria|in[-\s]?scope|out[-\s]of[-\s]?scope|milestones?|members?|target\s+date|quest\s+rewards?|rewards?|quest\s+name|scope|success|lead|goal|name|title)\b|\b(what is|what['\u2019]s|how (?:do|should) (?:i|we)|help me (?:think|understand)|explain)\b/i;
+  /\b(?:let'?s|let us|now)\b.{0,48}\b(?:define|talk about|work on|move on|start|cover)\b|\b(?:define|talk about|work on|move on to|start on|cover)\s+(?:the\s+)?(success\s+criteria|in[-\s]?scope|out[-\s]of[-\s]?scope|milestones?|participants?|members?|target\s+date|quest\s+rewards?|rewards?|quest\s+name|scope|success|lead|goal|name|title)\b|\b(what is|what['\u2019]s|how (?:do|should) (?:i|we)|help me (?:think|understand)|explain)\b/i;
 
 /** "the goal", "goal suggestion", "your suggestion", "that", "it". */
 const APPROVAL_REF = `(?:(?:(?:the|that|this|your|my|our)\\s+)?(?:(?:suggested|proposed|new)\\s+)?(?:${APPROVAL_SECTION}(?:\\s+(?:suggestion|wording|version|text|draft|proposal))?|suggestion|wording|version|proposal|draft)|it|that|this|them|those|these)`;
@@ -352,7 +352,7 @@ function sectionFromCommandName(name: string): QuestStewardStep | null {
   if (/^success(?: criteria)?$/.test(normalized)) return 'success';
   if (/^milestones?$/.test(normalized)) return 'milestones';
   if (/^leads?$/.test(normalized)) return 'lead';
-  if (/^members?$/.test(normalized)) return 'members';
+  if (/^(?:members?|participants?)$/.test(normalized)) return 'members';
   if (/^(?:quest\s+)?rewards?$/.test(normalized)) return 'rewards';
   if (/^target dates?$/.test(normalized)) return 'targetDate';
   if (/^(?:quest\s+)?(?:names?|titles?)$/.test(normalized)) return 'name';
@@ -469,9 +469,9 @@ export function questSectionCoachReply(step: QuestStewardStep): string {
     case 'milestones':
       return 'Milestones are ordered checkpoints on the way to that outcome. Each one needs an owner and a date, and each should make the next step possible. What is the first checkpoint, and who owns it?';
     case 'members':
-      return 'Members are people from this space who own an outcome, not a job title. Each person should have one or two responsibilities you could check. Who needs to be on this quest, and what do they own?';
+      return 'Participants are people from this space who own an outcome, not a job title. Each person should have one or two responsibilities you could check. Who needs to be on this quest, and what do they own?';
     case 'lead':
-      return 'The lead is the one space member accountable for the quest as a whole. Who should carry that?';
+      return 'The lead is the one participant accountable for the quest as a whole. Who should carry that?';
     case 'targetDate':
       return 'The target date is when the outcome should be real, not when the first milestone lands. What date should voters hold the quest to?';
     case 'rewards':
@@ -499,7 +499,7 @@ export type NewQuestDraftTurn =
 /** In an approval, any section word names the suggestion: "I confirm the goal". */
 function sectionNamedInApproval(message: string): QuestStewardStep | null {
   const named =
-    /\b(success\s+criteria|milestones?|members?|target\s+date|rewards?|scope|success|lead|goal|name|title)\b/i.exec(
+    /\b(success\s+criteria|milestones?|participants?|members?|target\s+date|rewards?|scope|success|lead|goal|name|title)\b/i.exec(
       message,
     );
   if (!named?.[1]) return null;
@@ -507,7 +507,7 @@ function sectionNamedInApproval(message: string): QuestStewardStep | null {
   if (raw.includes('scope')) return 'scope';
   if (raw.includes('success')) return 'success';
   if (raw.includes('milestone')) return 'milestones';
-  if (raw.includes('member')) return 'members';
+  if (raw.includes('member') || raw.includes('participant')) return 'members';
   if (raw.includes('target')) return 'targetDate';
   if (raw.includes('reward')) return 'rewards';
   if (raw.includes('name') || raw.includes('title')) return 'name';
@@ -785,7 +785,7 @@ export function buildLocalQuestDraftPatch({
         const responsibilities = respText ? splitListItems(respText) : [];
         return {
           memberName,
-          roleLabel: 'Member',
+          roleLabel: 'Participant',
           responsibilities,
         };
       });
@@ -1237,7 +1237,7 @@ export function applyPatchToQuestDraftState({
         personId: matched?.personId ?? null,
         memberName: matched?.name || m.memberName.trim(),
         memberAvatarUrl: matched?.avatarUrl ?? null,
-        roleLabel: m.roleLabel?.trim() || 'Member',
+        roleLabel: m.roleLabel?.trim() || 'Participant',
         responsibilities: m.responsibilities ?? [],
       };
     });
@@ -1249,7 +1249,7 @@ export function applyPatchToQuestDraftState({
       byName.set(item.memberName.toLowerCase(), item);
     }
     next.members = [...byName.values()];
-    updatedLabels.push('Members');
+    updatedLabels.push('Participants');
   }
 
   if (clean.leadName?.trim()) {
@@ -1522,7 +1522,7 @@ function sectionLabelSource(step: QuestStewardStep): string {
     case 'milestones':
       return 'milestones?';
     case 'members':
-      return 'members?';
+      return '(?:members?|participants?)';
     case 'lead':
       return 'leads?';
     case 'targetDate':
@@ -1620,7 +1620,7 @@ function questionIsNextSectionPrompt(
     return false;
   }
   const next =
-    /^next\s*:\s*(success(?:\s+criteria)?|milestones?|members?|(?:quest\s+)?rewards?|(?:in[-\s])?scope|goals?|leads?|(?:quest\s+)?(?:names?|titles?)|target\s+dates?)\b/i.exec(
+    /^next\s*:\s*(success(?:\s+criteria)?|milestones?|participants?|members?|(?:quest\s+)?rewards?|(?:in[-\s])?scope|goals?|leads?|(?:quest\s+)?(?:names?|titles?)|target\s+dates?)\b/i.exec(
       text,
     );
   if (next) {
@@ -1628,7 +1628,7 @@ function questionIsNextSectionPrompt(
     const sameSection =
       (step === 'success' && /success|criteria/.test(label)) ||
       (step === 'milestones' && /milestone/.test(label)) ||
-      (step === 'members' && /member/.test(label)) ||
+      (step === 'members' && /member|participant/.test(label)) ||
       (step === 'rewards' && /reward/.test(label)) ||
       (step === 'scope' && /scope/.test(label)) ||
       (step === 'goal' && /goal/.test(label)) ||

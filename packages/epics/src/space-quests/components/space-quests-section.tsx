@@ -162,12 +162,12 @@ function cardHealth(quest: QuestRecord): {
 function latestCardUpdateLine(quest: QuestRecord): string {
   const latest = quest.updates[0];
   if (!latest) {
-    const first = (quest.leadName || 'Member').split(' ')[0];
+    const first = (quest.leadName || 'Participant').split(' ')[0];
     return quest.status === 'proposed'
       ? `${first} · just now: proposed, waiting for votes`
       : `${first} · recently: quest active`;
   }
-  const first = (latest.authorName || 'Member').split(' ')[0];
+  const first = (latest.authorName || 'Participant').split(' ')[0];
   const rel = formatRelativeTimeShort(latest.createdAt);
   const linkSuffix =
     latest.links[0]?.label && !latest.text.includes(latest.links[0].label)

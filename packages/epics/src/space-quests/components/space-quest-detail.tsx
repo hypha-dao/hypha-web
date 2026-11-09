@@ -632,8 +632,8 @@ function OverviewTab({
             </div>
             {canEdit ? (
               <p className="mt-3 text-[11px] text-neutral-11">
-                Any member can edit · click the section, or mention AI Agents in
-                chat
+                Any participant can edit · click the section, or mention AI
+                Agents in chat
               </p>
             ) : null}
           </section>
@@ -705,7 +705,7 @@ function UpdatesTab({
     <div className="mx-auto w-full max-w-[760px] space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className={LABEL_CLASS}>
-          UPDATES · newest first · posted by members
+          UPDATES · newest first · posted by participants
         </p>
         <div className="flex flex-wrap gap-1.5">
           <button
@@ -883,7 +883,7 @@ function MembersTab({
     <div className="mx-auto w-full max-w-[760px]">
       <section className={CARD_CLASS}>
         <SectionHeader
-          title={`MEMBERS · ${quest.members.length}`}
+          title={`PARTICIPANTS · ${quest.members.length}`}
           onEdit={canEdit ? () => openModal('members') : undefined}
         />
         <div className="divide-y divide-border">
@@ -1141,9 +1141,9 @@ function SettingsTab({
             onAction={() => openModal('lead')}
           />
           <SettingsRow
-            label="Members"
+            label="Participants"
             value={`${quest.members.length} ${
-              quest.members.length === 1 ? 'member' : 'members'
+              quest.members.length === 1 ? 'participant' : 'participants'
             }`}
             action="MANAGE"
             disabled={!canEdit}
@@ -1157,7 +1157,7 @@ function SettingsTab({
         <div className="divide-y divide-border">
           <SettingsRow
             label="AI health summaries"
-            value="AI Agents refresh the health summary from member updates"
+            value="AI Agents refresh the health summary from participant updates"
             action={quest.stewardHealthSummaries ? 'ON' : 'OFF'}
             disabled={leadOnly}
             onAction={() =>
@@ -1167,8 +1167,8 @@ function SettingsTab({
             }
           />
           <SettingsRow
-            label="Member update alerts"
-            value="Notify Quest members when someone posts an update"
+            label="Participant update alerts"
+            value="Notify Quest participants when someone posts an update"
             action={quest.memberUpdateAlerts ? 'ON' : 'OFF'}
             disabled={leadOnly}
             onAction={() =>
@@ -1186,7 +1186,7 @@ function SettingsTab({
             value={
               isPaused
                 ? 'Return the quest to Active'
-                : 'Members keep access; updates are paused'
+                : 'Participants keep access; updates are paused'
             }
             action={isPaused ? 'RESUME' : 'PAUSE'}
             disabled={
@@ -1398,7 +1398,7 @@ export function SpaceQuestDetail({
       rawTrimmed.replace(/^@AI\s+Agents\b[,:\s]*/i, '').trim() || rawTrimmed;
     recordMobilizedAiAgentsForQuestion(spaceSlug, trimmed);
 
-    const viewerName = viewer?.name?.trim() || 'Member';
+    const viewerName = viewer?.name?.trim() || 'Participant';
     const now = new Date();
     setDetailChatMessages((prev) => [
       ...prev,
@@ -1615,7 +1615,7 @@ export function SpaceQuestDetail({
     [
       { key: 'overview', label: 'OVERVIEW', href: baseHref },
       { key: 'updates', label: 'UPDATES', href: `${baseHref}/updates` },
-      { key: 'members', label: 'MEMBERS', href: `${baseHref}/members` },
+      { key: 'members', label: 'PARTICIPANTS', href: `${baseHref}/members` },
       { key: 'settings', label: 'SETTINGS', href: `${baseHref}/settings` },
     ];
 
@@ -2003,8 +2003,8 @@ export function SpaceQuestDetail({
       >
         <div className="space-y-4">
           <p className="text-[13px] text-neutral-11">
-            This permanently removes {quest.name} with its milestones, members,
-            deliverables and updates.
+            This permanently removes {quest.name} with its milestones,
+            participants, deliverables and updates.
           </p>
           <div className="flex justify-end gap-2">
             <Button

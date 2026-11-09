@@ -5,7 +5,7 @@ const PENDING_SECTION_LABEL: Record<QuestStewardStep, string> = {
   scope: 'Scope',
   success: 'Success criteria',
   milestones: 'Milestones',
-  members: 'Members',
+  members: 'Participants',
   lead: 'Lead',
   targetDate: 'Target date',
   rewards: 'Quest Reward',
@@ -29,7 +29,7 @@ export type QuestDraftTarget = {
 };
 
 const SECTION_NAME =
-  '(success\\s+criteria|in[-\\s]?scope|out[-\\s]of[-\\s]?scope|milestones?|members?|target\\s+date|quest\\s+rewards?|rewards?|quest\\s+name|scope|success(?!\\s+[A-Za-z])|lead|goal|name|title)';
+  '(success\\s+criteria|in[-\\s]?scope|out[-\\s]of[-\\s]?scope|milestones?|participants?|members?|target\\s+date|quest\\s+rewards?|rewards?|quest\\s+name|scope|success(?!\\s+[A-Za-z])|lead|goal|name|title)';
 
 /**
  * A section address, not a sentence that happens to use a section word.
@@ -128,7 +128,7 @@ function mentionsSeveralSections(text: string): boolean {
   if (hasRequestedSection(text, /\bscope\b/i)) count += 1;
   if (hasRequestedSection(text, /\b(?:success|criteria)\b/i)) count += 1;
   if (hasRequestedSection(text, /\bmilestones?\b/i)) count += 1;
-  if (hasRequestedSection(text, /\bmembers?\b/i)) count += 1;
+  if (hasRequestedSection(text, /\b(?:members?|participants?)\b/i)) count += 1;
   if (hasRequestedSection(text, /\brewards?\b/i)) count += 1;
   return count >= 2;
 }
@@ -291,7 +291,7 @@ function bulkFromDraftSignals(text: string): boolean {
 function draftRequestNamesGoalAndAnother(text: string): boolean {
   if (!/\bgoals?\b/i.test(text)) return false;
   if (!sectionsMentioned(text).some((step) => step !== 'goal')) return false;
-  return /\b(?:draft|suggest|propose|generate|write|fill(?:\s+in|\s+out)?)\s+(?:the\s+)?(?:goals?|scopes?|success(?:\s+criteria)?|milestones?|members?|rewards?)\b/i.test(
+  return /\b(?:draft|suggest|propose|generate|write|fill(?:\s+in|\s+out)?)\s+(?:the\s+)?(?:goals?|scopes?|success(?:\s+criteria)?|milestones?|participants?|members?|rewards?)\b/i.test(
     text,
   );
 }
@@ -556,7 +556,7 @@ const LABELED_SECTION_PATTERNS: ReadonlyArray<{
     step: 'milestones',
   },
   {
-    pattern: /(?:^|[\n.])\s*members?\s*:/i,
+    pattern: /(?:^|[\n.])\s*(?:members?|participants?)\s*:/i,
     step: 'members',
   },
   {

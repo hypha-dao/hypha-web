@@ -266,7 +266,7 @@ async function provisionQuestChannelOnAccept({
     await matrixSendTextMessage(
       roomId,
       `Quest accepted · ${acceptedDate} — channel opened${
-        rosterLine ? `\nMembers: ${rosterLine}` : ''
+        rosterLine ? `\nParticipants: ${rosterLine}` : ''
       }`,
       botToken,
       homeserver,
@@ -413,7 +413,7 @@ export async function createSpaceQuest(
       personId: m.personId ?? null,
       memberName: m.memberName.trim(),
       memberAvatarUrl: m.memberAvatarUrl ?? null,
-      roleLabel: m.roleLabel?.trim() || (idx === 0 ? 'Lead' : 'Member'),
+      roleLabel: m.roleLabel?.trim() || (idx === 0 ? 'Lead' : 'Participant'),
       responsibilities: (m.responsibilities ?? [])
         .map((r) => r.trim())
         .filter(Boolean),
@@ -945,7 +945,7 @@ export async function updateSpaceQuest(
         );
       }
       editEvents.push({
-        text: `Updated Members (${patch.members.length} member${
+        text: `Updated Participants (${patch.members.length} participant${
           patch.members.length === 1 ? '' : 's'
         }).`,
         change: {
