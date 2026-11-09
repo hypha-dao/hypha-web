@@ -1541,6 +1541,45 @@ function questionIsOptionalAside(question: string): boolean {
 const UNRESOLVED_CHOICE =
   /^(?:should|do you|would you|could you|shall)\b[\s\S]{0,180}\bor\b/i;
 
+/**
+ * "Next: success criteria — what could a reviewer check…?" invites the
+ * following section. It does not leave the section being filed undecided.
+ * A choice, or the same question about the section itself, still withholds.
+ */
+function questionIsNextSectionPrompt(
+  question: string,
+  step: QuestStewardStep,
+): boolean {
+  const text = question.trim();
+  if (
+    UNRESOLVED_CHOICE.test(text) ||
+    /\b(?:do you mean|which|who|whether)\b/i.test(text) ||
+    /\bstill open\b/i.test(text) ||
+    /\bdoes\b[\s\S]{0,180}\bmean\b/i.test(text)
+  ) {
+    return false;
+  }
+  const next =
+    /^next\s*:\s*(success(?:\s+criteria)?|milestones?|members?|(?:quest\s+)?rewards?|(?:in[-\s])?scope|goals?|leads?|(?:quest\s+)?(?:names?|titles?)|target\s+dates?)\b/i.exec(
+      text,
+    );
+  if (next) {
+    const label = (next[1] ?? '').toLowerCase();
+    const sameSection =
+      (step === 'success' && /success|criteria/.test(label)) ||
+      (step === 'milestones' && /milestone/.test(label)) ||
+      (step === 'members' && /member/.test(label)) ||
+      (step === 'rewards' && /reward/.test(label)) ||
+      (step === 'scope' && /scope/.test(label)) ||
+      (step === 'goal' && /goal/.test(label)) ||
+      (step === 'lead' && /lead/.test(label)) ||
+      (step === 'name' && /name|title/.test(label)) ||
+      (step === 'targetDate' && /date/.test(label));
+    return !sameSection;
+  }
+  return step !== 'success' && /\bwhat could a reviewer check\b/i.test(text);
+}
+
 function modelGuidanceWithholdsFiling(
   reply: string,
   step: QuestStewardStep,
@@ -1549,7 +1588,12 @@ function modelGuidanceWithholdsFiling(
   const questions = reply
     .split(/(?<=\?)\s+/)
     .map((part) => questionSentence(part))
-    .filter((part) => part.includes('?') && !questionIsOptionalAside(part));
+    .filter(
+      (part) =>
+        part.includes('?') &&
+        !questionIsOptionalAside(part) &&
+        !questionIsNextSectionPrompt(part, step),
+    );
   if (
     questions.some(
       (question) =>

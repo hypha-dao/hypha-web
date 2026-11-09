@@ -17,7 +17,10 @@ vi.mock('../stream-chat', () => ({
 }));
 
 import * as questServer from '@hypha-platform/core/server';
-import { assistSpaceQuestDraft } from '../quest-draft-assist';
+import {
+  assistSpaceQuestDraft,
+  questDraftReplyNeedsToolRetry,
+} from '../quest-draft-assist';
 
 type DraftTool = {
   execute: (patch: Record<string, unknown>) => Promise<unknown>;
@@ -135,6 +138,100 @@ describe('quest draft tool retry', () => {
     });
     expect(result.patch?.goal).toBeUndefined();
     expect(result.reply).toContain('verify proposal display');
+  });
+
+  it('requires the tool for the live scope proposals and their in/out reply', async () => {
+    const attempt1 =
+      'Propose a Scope for verifying proposal display, milestone editing and reward display in this sandbox; out of scope production rollout.';
+    const attempt2 =
+      'Propose a Scope for this quest: verify proposal display, verify milestone editing, verify reward display; out of scope production rollout.';
+    const attempt3 = `${attempt1.slice(0, -1)} for my confirmation.`;
+    const liveReply = [
+      "Here's that scope as a suggestion",
+      'In scope',
+      '• Verify proposal display',
+      '• Verify milestone editing',
+      '• Verify reward display',
+      'Out of scope',
+      '• Production rollout',
+      'Next: success criteria — what could a reviewer check to call each of these verified?',
+    ].join('\n');
+    const headingsOnly = [
+      'In scope: verify proposal display, verify milestone editing, verify reward display',
+      'Out of scope: production rollout',
+      'Next: success criteria — what could a reviewer check to call each of these verified?',
+    ].join('\n');
+    for (const message of [attempt1, attempt2, attempt3]) {
+      expect(
+        questDraftReplyNeedsToolRetry({
+          message,
+          reply: liveReply,
+          hasPatch: false,
+          bulk: false,
+          pendingStep: null,
+        }),
+      ).toBe(true);
+      expect(
+        questDraftReplyNeedsToolRetry({
+          message,
+          reply: headingsOnly,
+          hasPatch: false,
+          bulk: false,
+          pendingStep: null,
+        }),
+      ).toBe(true);
+    }
+    expect(
+      questDraftReplyNeedsToolRetry({
+        message: attempt1,
+        reply: liveReply,
+        hasPatch: false,
+        bulk: true,
+        pendingStep: null,
+      }),
+    ).toBe(false);
+
+    generateText.mockImplementation(
+      async ({
+        toolChoice,
+        tools,
+      }: {
+        toolChoice?: { type: string; toolName: string };
+        tools: { update_quest_draft: DraftTool };
+      }) => {
+        if (!toolChoice) return { text: headingsOnly };
+        expect(toolChoice).toEqual({
+          type: 'tool',
+          toolName: 'update_quest_draft',
+        });
+        await tools.update_quest_draft.execute({
+          scopeIn: [
+            'Verify proposal display',
+            'Verify milestone editing',
+            'Verify reward display',
+          ],
+          scopeOut: ['Production rollout'],
+          milestones: [{ name: 'should not stick' }],
+        });
+        return { text: 'tool only' };
+      },
+    );
+
+    const result = await assistSpaceQuestDraft({
+      spaceSlug: 'sandbox',
+      input: { message: attempt2, currentStep: 'goal' },
+    });
+    expect(generateText).toHaveBeenCalledTimes(2);
+    expect(result.patch).toEqual({
+      scopeIn: [
+        'Verify proposal display',
+        'Verify milestone editing',
+        'Verify reward display',
+      ],
+      scopeOut: ['Production rollout'],
+    });
+    expect(result.reply).toBe(headingsOnly);
+    expect(result.updatedQuest).toBeNull();
   });
 
   it('does not retry a question or a chat aside, and stays closed when the retry sends no patch', async () => {

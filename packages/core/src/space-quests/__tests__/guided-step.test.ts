@@ -619,4 +619,32 @@ describe('resolveQuestDraftTarget', () => {
       questWordingRevisionStep('Please remove the first bullet', 'scope'),
     ).toBe('scope');
   });
+
+  it('keeps one named scope proposal when the work mentions other sections', () => {
+    const attempt1 =
+      'Propose a Scope for verifying proposal display, milestone editing and reward display in this sandbox; out of scope production rollout.';
+    const attempt2 =
+      'Propose a Scope for this quest: verify proposal display, verify milestone editing, verify reward display; out of scope production rollout.';
+    const attempt3 = `${attempt1.slice(0, -1)} for my confirmation.`;
+    for (const message of [attempt1, attempt2, attempt3]) {
+      expect(isBulkQuestDraftRequest(message)).toBe(false);
+      expect(resolveQuestDraftTarget(message, 'goal')).toEqual({
+        step: 'scope',
+        bulk: false,
+      });
+    }
+    expect(
+      isBulkQuestDraftRequest(
+        'Propose a Scope for verifying proposal display. Draft the milestones.',
+      ),
+    ).toBe(true);
+    expect(
+      isBulkQuestDraftRequest(
+        'Draft the scope, success criteria, and milestones.',
+      ),
+    ).toBe(true);
+    expect(
+      isBulkQuestDraftRequest('Draft the milestones and the rewards'),
+    ).toBe(true);
+  });
 });

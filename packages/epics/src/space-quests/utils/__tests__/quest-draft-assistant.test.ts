@@ -3505,6 +3505,72 @@ describe('quest draft review corrections', () => {
     expect(yes.reply).toMatch(/Nothing is waiting on a yes/i);
   });
 
+  it('files a named scope proposal from the tool patch, including the live in/out reply', () => {
+    const attempt1 =
+      'Propose a Scope for verifying proposal display, milestone editing and reward display in this sandbox; out of scope production rollout.';
+    const attempt2 =
+      'Propose a Scope for this quest: verify proposal display, verify milestone editing, verify reward display; out of scope production rollout.';
+    const attempt3 = `${attempt1.slice(0, -1)} for my confirmation.`;
+    const reply = [
+      "Here's that scope as a suggestion",
+      'In scope',
+      '• Verify proposal display',
+      '• Verify milestone editing',
+      '• Verify reward display',
+      'Out of scope',
+      '• Production rollout',
+      'Next: success criteria — what could a reviewer check to call each of these verified?',
+    ].join('\n');
+    const patch = {
+      scopeIn: [
+        'Verify proposal display',
+        'Verify milestone editing',
+        'Verify reward display',
+      ],
+      scopeOut: ['Production rollout'],
+      goal: 'should not stick',
+      milestones: [{ name: 'should not stick' }],
+    };
+    for (const message of [attempt1, attempt2, attempt3]) {
+      const refused = send(message, emptyDraft, null, 'goal', {
+        reply,
+        patch: null,
+      });
+      expect(refused.reply).not.toMatch(/one section at a time/i);
+      expect(refused.pending).toBeNull();
+      expect(refused.wrote).toBe(false);
+      expect(refused.draft.scopeIn).toEqual([]);
+      expect(refused.draft.scopeOut).toEqual([]);
+
+      const filed = send(message, emptyDraft, null, 'goal', { reply, patch });
+      expect(filed.wrote).toBe(false);
+      expect(filed.pending?.step).toBe('scope');
+      expect(filed.pending?.patch.scopeIn).toEqual(patch.scopeIn);
+      expect(filed.pending?.patch.scopeOut).toEqual(patch.scopeOut);
+      expect(filed.pending?.patch.goal).toBeUndefined();
+      expect(filed.pending?.patch.milestones).toBeUndefined();
+      expect(filed.draft.scopeIn).toEqual([]);
+      expect(filed.reply).toMatch(/Not saved yet/);
+      expect(filed.reply).not.toMatch(/Nothing is waiting on a yes/i);
+      expect(filed.reply).not.toMatch(/one section at a time/i);
+
+      const saved = send('yes', emptyDraft, filed.pending, 'scope', null);
+      expect(saved.wrote).toBe(true);
+      expect(saved.draft.scopeIn).toEqual(patch.scopeIn);
+      expect(saved.draft.scopeOut).toEqual(patch.scopeOut);
+      expect(saved.draft.goal).toBe('');
+      expect(saved.draft.milestones).toEqual([]);
+    }
+
+    const choice = send(attempt2, emptyDraft, null, 'scope', {
+      reply:
+        'Still open: does "verify reward display" mean only checking the reward renders, or also issuing the reward?',
+      patch,
+    });
+    expect(choice.pending).toBeNull();
+    expect(choice.draft.scopeIn).toEqual([]);
+  });
+
   it('caps assist history at the schema limits', () => {
     const history = Array.from({ length: 25 }, (_, index) => ({
       role: index % 2 === 0 ? 'user' : 'assistant',

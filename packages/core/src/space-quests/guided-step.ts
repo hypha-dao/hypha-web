@@ -39,7 +39,7 @@ const SECTION_NAME =
  * cannot swallow a following word such as "stories".
  */
 const NAMED_SECTION = new RegExp(
-  `(?:focus(?:\\s+only)?\\s+on|only\\s+on|help(?:\\s+me)?\\s+with(?:\\s+the)?|tighten(?:\\s+the)?|just(?:\\s+the)?|(?:draft|fill|write|update|revise)\\s+the\\s+|(?:improve|rewrite|reword|evaluate)\\s+the\\s+)\\s*(?:the\\s+)?${SECTION_NAME}\\b`,
+  `(?:focus(?:\\s+only)?\\s+on|only\\s+on|help(?:\\s+me)?\\s+with(?:\\s+the)?|tighten(?:\\s+the)?|just(?:\\s+the)?|(?:draft|fill|write|update|revise)\\s+the\\s+|(?:improve|rewrite|reword|evaluate)\\s+the\\s+|(?:propose|suggest)\\s+(?:(?:a|an|the|these|this)\\s+)?)\\s*(?:the\\s+)?${SECTION_NAME}\\b`,
   'i',
 );
 
@@ -89,14 +89,47 @@ function stepFromSectionName(raw: string): QuestStewardStep | null {
   return null;
 }
 
+/**
+ * "milestone editing" and "reward display" name the work inside a section.
+ * They are not a request to draft Milestones or Rewards. A section word
+ * followed by another word is that kind of content, unless it is the
+ * section the member asked to draft or propose, or list glue such as
+ * "and" or "criteria".
+ */
+function isContentNounUse(
+  text: string,
+  index: number,
+  length: number,
+): boolean {
+  const next = /^\s+([A-Za-z]+)/.exec(text.slice(index + length));
+  if (!next) return false;
+  if (/^(?:and|or|section|criteria|date)$/i.test(next[1] ?? '')) return false;
+  const before = text.slice(0, index);
+  return !/(?:\b(?:draft|suggest|propose|write|generate|fill(?:\s+in|\s+out)?|update|revise|rewrite|reword))\s+(?:(?:a|an|the|these|this|some|my|our)\s+)?$/i.test(
+    before,
+  );
+}
+
+function hasRequestedSection(text: string, pattern: RegExp): boolean {
+  const flags = pattern.flags.includes('g')
+    ? pattern.flags
+    : `${pattern.flags}g`;
+  const re = new RegExp(pattern.source, flags);
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    if (!isContentNounUse(text, match.index, match[0].length)) return true;
+    if (match[0].length === 0) break;
+  }
+  return false;
+}
+
 function mentionsSeveralSections(text: string): boolean {
-  const lower = text.toLowerCase();
   let count = 0;
-  if (/\bscope\b/.test(lower)) count += 1;
-  if (/\b(success|criteria)\b/.test(lower)) count += 1;
-  if (/\bmilestones?\b/.test(lower)) count += 1;
-  if (/\bmembers?\b/.test(lower)) count += 1;
-  if (/\brewards?\b/.test(lower)) count += 1;
+  if (hasRequestedSection(text, /\bscope\b/i)) count += 1;
+  if (hasRequestedSection(text, /\b(?:success|criteria)\b/i)) count += 1;
+  if (hasRequestedSection(text, /\bmilestones?\b/i)) count += 1;
+  if (hasRequestedSection(text, /\bmembers?\b/i)) count += 1;
+  if (hasRequestedSection(text, /\brewards?\b/i)) count += 1;
   return count >= 2;
 }
 

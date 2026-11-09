@@ -390,14 +390,23 @@ function replyOffersConcreteWording(reply: string): boolean {
     return true;
   }
   if (/(?:^|\n)\s*(?:>|[“"])\s*\S.{20,}/m.test(text)) return true;
-  return text
+  const lines = text
     .split(/\n+/)
     .map((line) => line.trim())
-    .some(
-      (line) =>
-        (/^[-*•]/.test(line) || /^(?:in|out)\s*:/i.test(line)) &&
-        line.length > 8,
-    );
+    .filter((line) => line.length > 0);
+  return lines.some((line, index) => {
+    if (
+      (/^[-*•]/.test(line) || /^(?:in|out)\s*:/i.test(line)) &&
+      line.length > 8
+    ) {
+      return true;
+    }
+    // "In scope" / "Out of scope" is a list even without a colon on "in".
+    if (/^(?:in|out)(?:\s+of)?\s+scope\s*:\s*\S.{8,}/i.test(line)) return true;
+    const heading = /^(?:in|out)(?:\s+of)?\s+scope\b/i.test(line);
+    const following = lines[index + 1];
+    return Boolean(heading && following && following.length > 8);
+  });
 }
 
 function untrusted(label: string, value: string, empty = '(empty)'): string {
