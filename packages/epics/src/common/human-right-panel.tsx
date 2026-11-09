@@ -6555,7 +6555,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     if (coherenceChannel === 'proposal') return t('tabChatProposal');
     if (coherenceChannel === 'context') return t('tabChatContext');
-    if (coherenceChannel === 'signal') return t('tabChatSignal');
+    // Messages tags the room `signal`. The signal page opens the same thread
+    // with a slug and no channel tag — both titles are "Signal", not "Room".
+    if (coherenceChannel === 'signal' || isSignalThread) {
+      return t('tabChatSignal');
+    }
     if (
       coherenceChannel === 'space-public' ||
       coherencePublic ||
@@ -6584,6 +6588,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     groupChatFaces,
     isDirectConversation,
     isNetworkSpaceChat,
+    isSignalThread,
     loadedRoomIsPublic,
     mode,
     roomId,

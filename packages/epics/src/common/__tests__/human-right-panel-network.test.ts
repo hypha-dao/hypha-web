@@ -82,6 +82,13 @@ describe('network room join guard', () => {
     expect(source).toContain('Leaving those pages (e.g. into a DHO)');
   });
 
+  it('labels a signal page thread Signal, same as Messages', () => {
+    expect(source).toContain(
+      "if (coherenceChannel === 'signal' || isSignalThread)",
+    );
+    expect(source).toContain("return t('tabChatSignal');");
+  });
+
   it('answers a Context room opened from Messages with its section agent', () => {
     expect(source).toContain("coherenceChannel === 'context'");
     expect(source).toContain('useSpaceContextSectionAgent(');
