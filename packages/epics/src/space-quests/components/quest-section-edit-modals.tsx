@@ -22,6 +22,10 @@ import {
   Input,
   RichTextEditor,
 } from '@hypha-platform/ui';
+import {
+  storedQuestPlainField,
+  storedQuestRichText,
+} from '../utils/quest-rich-text';
 import { cn } from '@hypha-platform/ui-utils';
 import { Plus, X } from 'lucide-react';
 import {
@@ -458,7 +462,7 @@ export function EditQuestGoalModal({
         onClose={() => onOpenChange(false)}
         onCancel={() => onOpenChange(false)}
         onSave={() => {
-          onSave(draft.trim());
+          onSave(storedQuestRichText(draft));
           onOpenChange(false);
         }}
       >
@@ -525,11 +529,13 @@ export function EditQuestScopeModal({
         onClose={() => onOpenChange(false)}
         onCancel={() => onOpenChange(false)}
         onSave={() => {
+          const scopeInMarkdown = storedQuestRichText(inMd);
+          const scopeOutMarkdown = storedQuestRichText(outMd);
           onSave({
-            scopeIn: splitMarkdownLinesToBullets(inMd),
-            scopeOut: splitMarkdownLinesToBullets(outMd),
-            scopeInMarkdown: inMd.trim(),
-            scopeOutMarkdown: outMd.trim(),
+            scopeIn: splitMarkdownLinesToBullets(scopeInMarkdown),
+            scopeOut: splitMarkdownLinesToBullets(scopeOutMarkdown),
+            scopeInMarkdown,
+            scopeOutMarkdown,
           });
           onOpenChange(false);
         }}
@@ -588,7 +594,7 @@ export function EditQuestSuccessModal({
         onClose={() => onOpenChange(false)}
         onCancel={() => onOpenChange(false)}
         onSave={() => {
-          onSave(draft.trim());
+          onSave(storedQuestRichText(draft));
           onOpenChange(false);
         }}
       >
@@ -877,6 +883,7 @@ export function EditQuestMilestonesModal({
             .map((r) => ({
               ...r,
               name: r.name.trim(),
+              description: storedQuestRichText(r.description),
               dueDate: r.dueDate?.trim() || null,
               ownerName: r.ownerName?.trim() || null,
             }))
@@ -1416,9 +1423,9 @@ export function EditQuestDeliverablesModal({
           const cleaned = rows
             .map((r) => ({
               ...r,
-              name: r.name.trim(),
-              url: r.url.trim(),
-              note: r.note.trim(),
+              name: storedQuestPlainField(r.name),
+              url: storedQuestPlainField(r.url),
+              note: storedQuestPlainField(r.note),
             }))
             .filter((r) => r.name.length > 0);
           onSave(cleaned);

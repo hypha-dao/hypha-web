@@ -24,6 +24,7 @@ import {
   resolveQuestLeadIdentity,
 } from '../quest-detail-presentation';
 import { QuestSectionMarkdown } from '../quest-section-markdown';
+import { storedQuestRichText } from '../../utils/quest-rich-text';
 import {
   EditQuestGoalModal,
   EditQuestMembersModal,
@@ -654,6 +655,21 @@ describe('quest list cards', () => {
       'Target 20 November 2026',
     );
     expect(shortCard.textContent).not.toContain('Target');
+  });
+
+  it('keeps italic and brackets after a second save', () => {
+    const typed = 'Verify editing of an existing quest. [QA] *x* _x_ # x';
+    const stored = storedQuestRichText(typed);
+    const reopened = storedQuestRichText(stored);
+    render(<QuestSectionMarkdown markdown={reopened} />);
+    expect(document.body.textContent).toContain(
+      'Verify editing of an existing quest. [QA] x x # x',
+    );
+    expect(document.body.textContent).not.toContain('\\');
+    expect(document.body.textContent).not.toContain('*x*');
+    expect(document.body.textContent).not.toContain('_x_');
+    expect(document.querySelectorAll('em')).toHaveLength(2);
+    expect(stored).toBe(reopened);
   });
 
   it('shows a saved bracket escape as the typed characters', () => {

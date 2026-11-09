@@ -2,7 +2,12 @@ import { MarkdownManager } from '@tiptap/markdown';
 import StarterKit from '@tiptap/starter-kit';
 import { describe, expect, it } from 'vitest';
 import { applyPatchToQuestDraftState } from '../quest-draft-assistant';
-import { parseQuestRichText, questRichTextPlain } from '../quest-rich-text';
+import {
+  parseQuestRichText,
+  questRichTextPlain,
+  storedQuestPlainField,
+  storedQuestRichText,
+} from '../quest-rich-text';
 
 const editor = new MarkdownManager({ extensions: [StarterKit] });
 
@@ -69,6 +74,49 @@ describe('quest rich text round trip', () => {
     expect(questRichTextPlain('# Title with \\[QA\\]')).toBe('Title with [QA]');
     expect(questRichTextPlain('cost &gt; limit')).toBe('cost > limit');
     expect(questRichTextPlain('[label](https://example.com)')).toBe('label');
+  });
+
+  it.each([
+    ['goal', 'Verify editing of an existing quest.'],
+    ['scopeIn', 'Edit each section.'],
+    ['scopeOut', 'Production rollout.'],
+    ['successCriteria', 'Every edit persists and reverts cleanly.'],
+    ['milestoneDescription', 'M1 edit check.'],
+  ] as const)(
+    'keeps %s stable from save through reopen and save',
+    (_field, prefix) => {
+      const typed = `${prefix} [QA] *x* _x_ # x`;
+      const stored = storedQuestRichText(typed);
+      const reopened = storedQuestRichText(stored);
+      const shown = questRichTextPlain(stored);
+      const shownAgain = questRichTextPlain(reopened);
+
+      expect(reopened).toBe(stored);
+      expect(shownAgain).toBe(shown);
+      expect(shown).toBe(`${prefix} [QA] x x # x`);
+      expect(shown).not.toContain('\\');
+      expect(stored).not.toContain('_x_');
+      expect(stored).toContain('*x* *x*');
+
+      const block = parseQuestRichText(stored)[0];
+      expect(block?.type).toBe('p');
+      if (block?.type !== 'p') return;
+      expect(block.tokens.filter((token) => token.type === 'italic')).toEqual([
+        { type: 'italic', value: 'x' },
+        { type: 'italic', value: 'x' },
+      ]);
+    },
+  );
+
+  it('leaves deliverable name and note as typed plain text', () => {
+    const name = 'QA deliverable [QA] *x* _x_ # x';
+    const note = 'note [QA] *x* _x_ # x';
+    expect(storedQuestPlainField(name)).toBe(name);
+    expect(storedQuestPlainField(storedQuestPlainField(name))).toBe(name);
+    expect(storedQuestPlainField(note)).toBe(note);
+    expect(storedQuestPlainField(storedQuestPlainField(note))).toBe(note);
+    expect(storedQuestPlainField(name)).toContain('*x*');
+    expect(storedQuestPlainField(note)).toContain('_x_');
   });
 
   it('does not escape helper update_quest_draft text', () => {

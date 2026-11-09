@@ -1,3 +1,5 @@
+import { canonicalizeRichTextMarkdown } from '@hypha-platform/ui';
+
 export type QuestInlineToken =
   | { type: 'text'; value: string }
   | { type: 'bold'; value: string }
@@ -264,6 +266,19 @@ function inlinePlain(tokens: readonly QuestInlineToken[]): string {
       return token.value;
     })
     .join('');
+}
+
+/**
+ * Editor save for Goal, Scope, Success, and milestone descriptions.
+ * Italic from `*x*` or `_x_` is kept as italic. The string is stable if saved again.
+ */
+export function storedQuestRichText(markdown: string): string {
+  return canonicalizeRichTextMarkdown(markdown);
+}
+
+/** Deliverable name, link, and note are plain inputs, not rich text. */
+export function storedQuestPlainField(value: string): string {
+  return value.trim();
 }
 
 /** Characters a reader sees, with formatting marks removed and escapes undone. */

@@ -8,8 +8,8 @@ import {
 } from '@tiptap/react';
 import { Markdown } from '@tiptap/markdown';
 import { Placeholder } from '@tiptap/extensions';
-import StarterKit from '@tiptap/starter-kit';
 import { PasteMarkdown } from './paste-markdown';
+import { createRichTextDocumentExtensions } from './rich-text-markdown';
 import {
   Bold,
   Heading1,
@@ -46,28 +46,16 @@ import { Input } from '../input';
 import { Label } from '../label';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { Separator } from '../separator';
-import { AsteriskBold, UnderscoreUnderline } from './chat-markdown-marks';
-
 import './editor.css';
+
+export { canonicalizeRichTextMarkdown } from './rich-text-markdown';
 
 const EDITOR_CONTENT_CLASS =
   'richtext-editor-content prose max-w-full focus:outline-none';
 
 function createRichTextExtensions(placeholder: string) {
   return [
-    StarterKit.configure({
-      // Replaced by AsteriskBold / UnderscoreUnderline for chat-compatible __/ **.
-      bold: false,
-      underline: false,
-      heading: { levels: [1, 2, 3, 4] },
-      link: {
-        openOnClick: false,
-        autolink: true,
-        defaultProtocol: 'https',
-      },
-    }),
-    AsteriskBold,
-    UnderscoreUnderline,
+    ...createRichTextDocumentExtensions(),
     Placeholder.configure({ placeholder }),
     Markdown,
     PasteMarkdown,
