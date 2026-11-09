@@ -15,10 +15,9 @@ import {
   useSpaceQuestDetail,
 } from '../hooks/use-space-quests';
 import {
-  formatPendingQuestPatch,
   questAssistHistoryEntries,
-  questDraftSuggestionStatus,
   questDraftTurnUsesModel,
+  questHelperPendingSuggestion,
   questHelperTurnMessage,
   type PendingQuestSectionProposal,
   type QuestDraftModelTurn,
@@ -188,7 +187,6 @@ export function QuestDiscussionHelper({
             if (!token || turnRef.current !== generation) return null;
             const currentStep = QUEST_STEWARD_STEPS[stepRef.current] ?? 'goal';
             const pendingNow = pendingRef.current;
-            const suggestion = questDraftSuggestionStatus(trimmed, pendingNow);
             try {
               const response = await fetch(
                 `/api/v1/spaces/${encodeURIComponent(
@@ -208,22 +206,8 @@ export function QuestDiscussionHelper({
                       draft: currentSnapshot,
                       spaceMembers,
                       history: questAssistHistoryEntries(history),
-                      pendingSuggestion: (() => {
-                        const wording =
-                          pendingNow &&
-                          (suggestion.status === 'awaiting' ||
-                            suggestion.status === 'revising')
-                            ? formatPendingQuestPatch(pendingNow.patch).slice(
-                                0,
-                                2000,
-                              )
-                            : '';
-                        return {
-                          status: suggestion.status,
-                          ...(suggestion.step ? { step: suggestion.step } : {}),
-                          ...(wording ? { wording } : {}),
-                        };
-                      })(),
+                      pendingSuggestion:
+                        questHelperPendingSuggestion(pendingNow),
                     }),
                   ),
                 },

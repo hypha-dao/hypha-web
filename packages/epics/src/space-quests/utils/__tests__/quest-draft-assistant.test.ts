@@ -339,7 +339,7 @@ describe('quest-draft-assistant', () => {
       expect(result.pending).toBeNull();
       expect(result.reply).toMatch(/Added that to the Goal/);
     }
-    expect(questDraftTurnUsesModel('I confirm the goal')).toBe(false);
+    expect(questDraftTurnUsesModel('I confirm the goal')).toBe(true);
   });
 
   it('saves the pending Scope on "yes add those to scope"', () => {
@@ -380,7 +380,7 @@ describe('quest-draft-assistant', () => {
       expect(result.pending).toBeNull();
       expect(result.reply).toMatch(/Added that to the Scope/);
     }
-    expect(questDraftTurnUsesModel('yes add those to scope')).toBe(false);
+    expect(questDraftTurnUsesModel('yes add those to scope')).toBe(true);
     expect(isQuestSectionApproval('add lead scoring')).toBe(false);
     expect(
       isQuestSectionApproval('add a milestone for the sandbox review'),
@@ -868,7 +868,7 @@ describe('new quest helper transcript', () => {
     expect(
       questDraftTurnUsesModel('do you think that is well defined goal?'),
     ).toBe(true);
-    expect(questDraftTurnUsesModel('yes')).toBe(false);
+    expect(questDraftTurnUsesModel('yes')).toBe(true);
 
     const offlineOpening = send('goal is to test quest', {
       draft: emptyDraft,
@@ -1733,7 +1733,7 @@ describe('create draft turn settles against the latest snapshot', () => {
 
     state.pending = proposed?.pending ?? null;
     const accepted = await settle('yes', null);
-    expect(calls).not.toContain('yes');
+    expect(calls).toContain('yes');
     expect(accepted?.wrote).toBe(true);
     expect(accepted?.draft.goal).toBe(polished);
     state.draft = accepted?.draft ?? state.draft;
@@ -1769,7 +1769,7 @@ describe('create draft turn settles against the latest snapshot', () => {
 
     state.pending = refine?.pending ?? null;
     const rejected = await settle('no', null);
-    expect(calls).not.toContain('no');
+    expect(calls).toContain('no');
     expect(rejected?.pending).toBeNull();
     expect(rejected?.draft.goal).toBe(polished);
     state.pending = null;
@@ -1933,7 +1933,7 @@ describe('create draft turn settles against the latest snapshot', () => {
 
     state.pending = question?.pending ?? null;
     const accepted = await settle('yes', null);
-    expect(calls).not.toContain('yes');
+    expect(calls).toContain('yes');
     expect(accepted?.wrote).toBe(false);
     expect(accepted?.draft.goal).toBe(savedGoal);
     expect(accepted?.draft.scopeIn).toEqual(keptScope);
@@ -1968,6 +1968,7 @@ describe('create draft turn settles against the latest snapshot', () => {
       concrete,
       'Add lead scoring',
       'what reward should we pay?',
+      'yes',
     ]);
   });
 
@@ -2192,7 +2193,7 @@ describe('create draft turn settles against the latest snapshot', () => {
       reply: 'Say yes to save the earlier suggestion.',
       patch: concrete?.pending?.patch ?? { scopeIn: ['invented'] },
     });
-    expect(calls).not.toContain('yes');
+    expect(calls).toContain('yes');
     expect(yes?.wrote).toBe(false);
     expect(yes?.pending).toBeNull();
     expect(yes?.draft.scopeIn).toEqual([]);
@@ -2312,8 +2313,8 @@ describe('create draft turn settles against the latest snapshot', () => {
         milestones: [{ name: 'M1' }],
       },
     });
-    expect(calls).toEqual([entered]);
-    expect(questDraftTurnUsesModel(several)).toBe(false);
+    expect(calls).toEqual([entered, several]);
+    expect(questDraftTurnUsesModel(several)).toBe(true);
     expect(bulk?.wrote).toBe(false);
     expect(bulk?.pending).toBeNull();
     expect(bulk?.draft).toEqual(state.draft);
@@ -2432,7 +2433,7 @@ describe('create draft turn settles against the latest snapshot', () => {
       reply: 'Saved lead scoring into the scope.',
       patch: { scopeIn: ['Add lead scoring'], goal: 'replaced' },
     });
-    expect(calls).toEqual([exact]);
+    expect(calls).toEqual([exact, 'yes']);
     expect(saved?.wrote).toBe(true);
     expect(saved?.pending).toBeNull();
     expect(saved?.draft.scopeIn).toEqual([
@@ -2576,7 +2577,7 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(colonBulk?.reply).toBe(
       "We'll take one section at a time. What's in scope, and what's explicitly out of scope?",
     );
-    expect(calls).not.toContain(
+    expect(calls).toContain(
       'Draft the scope, success criteria, and milestones. In scope: verify proposal display and milestone editing in sandbox. Out of scope: production rollout.',
     );
   });
@@ -2688,7 +2689,7 @@ describe('create draft turn settles against the latest snapshot', () => {
         goal: 'replaced',
       },
     });
-    expect(calls).not.toContain('yes');
+    expect(calls).toContain('yes');
     expect(yesScope?.wrote).toBe(true);
     expect(yesScope?.pending).toBeNull();
     expect(yesScope?.draft.scopeIn).toEqual([
@@ -2745,7 +2746,7 @@ describe('create draft turn settles against the latest snapshot', () => {
         scopeIn: ['Add lead scoring'],
       },
     });
-    expect(calls).not.toContain('yes');
+    expect(calls).toContain('yes');
     expect(yesAfterQuestion?.wrote).toBe(false);
     expect(yesAfterQuestion?.pending).toBeNull();
     expect(yesAfterQuestion?.draft.goal).toBe('');
@@ -2830,7 +2831,7 @@ describe('create draft turn settles against the latest snapshot', () => {
       reply: 'Saved the raw sentence.',
       patch: { goal: rawAcceptance },
     });
-    expect(calls).not.toContain('yes');
+    expect(calls).toContain('yes');
     expect(savedGoal?.wrote).toBe(true);
     expect(savedGoal?.pending).toBeNull();
     expect(savedGoal?.draft.goal).toBe(polishedGoal);
@@ -2922,7 +2923,7 @@ describe('create draft turn settles against the latest snapshot', () => {
     expect(replacement?.draft.goal).toBe(polishedGoal);
     state.pending = replacement?.pending ?? null;
     const rejected = await settle('no', null);
-    expect(calls).not.toContain('no');
+    expect(calls).toContain('no');
     expect(rejected?.pending).toBeNull();
     expect(rejected?.draft.goal).toBe(polishedGoal);
 
@@ -3149,7 +3150,7 @@ describe('create draft turn settles against the latest snapshot', () => {
       reply: 'Saved the raw no.',
       patch: { goal: shorterStill },
     });
-    expect(calls).not.toContain('yes');
+    expect(calls).toContain('yes');
     expect(saved?.wrote).toBe(true);
     expect(saved?.pending).toBeNull();
     expect(saved?.draft.goal).toBe(refined);
@@ -3176,12 +3177,12 @@ describe('create draft turn settles against the latest snapshot', () => {
 
     state.pending = null;
     const several = 'Please propose shorter versions of the goal and the scope';
-    expect(questDraftTurnUsesModel(several)).toBe(false);
+    expect(questDraftTurnUsesModel(several)).toBe(true);
     const bulk = await settle(several, {
       reply: 'Here are both.',
       patch: { goal: 'x', scopeIn: ['y'] },
     });
-    expect(calls).not.toContain(several);
+    expect(calls).toContain(several);
     expect(bulk?.wrote).toBe(false);
     expect(bulk?.pending).toBeNull();
     expect(bulk?.draft.goal).toBe(accepted);

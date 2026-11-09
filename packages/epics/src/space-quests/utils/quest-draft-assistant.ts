@@ -1364,9 +1364,23 @@ export type QuestDraftTurnHistoryItem = {
   text: string;
 };
 
+export type QuestHelperSectionPatch = {
+  step: QuestStewardStep;
+  patch: QuestDraftPatchInput;
+};
+
+/** What the Quest Helper agent did with its tools on this turn. */
+export type QuestHelperAgentResult = {
+  suggestion: QuestHelperSectionPatch | null;
+  saved: (QuestHelperSectionPatch & { source: 'pending' | 'shown' }) | null;
+  discarded: boolean;
+};
+
 export type QuestDraftModelTurn = {
   patch?: QuestDraftPatchInput | null;
   reply?: string | null;
+  /** Present when the agent answered. Without it the turn falls back to the local rules. */
+  helper?: QuestHelperAgentResult | null;
 };
 
 export type NewQuestDraftTurnResult = {
@@ -1414,22 +1428,34 @@ export function questHelperTurnMessage(raw: string): string {
 }
 
 /**
- * Local safety turns never call the model: yes/no for the current proposal,
- * and an explicit put/set/change with the words to store. Everything else —
- * questions, vague ideas, follow-ups, and rewrites — is a model turn, the
- * same way a Context section agent answers every mention.
+ * Every turn goes to the Quest Helper agent, including yes and no, except an
+ * explicit put/set/change with the words to store, which is a literal edit.
+ * The local rules only answer when the agent cannot be reached.
  */
 export function questDraftTurnUsesModel(message: string): boolean {
   const text = message.trim();
-  if (!text || isBulkSectionDraftRequest(text)) return false;
-  if (isQuestSectionApproval(text) || isQuestSectionRejection(text)) {
-    return false;
+  if (!text) return false;
+  return explicitQuestSectionCommand(text) == null;
+}
+
+/** The waiting card, sent so the agent can confirm exactly what the member sees. */
+export function questHelperPendingSuggestion(
+  pending: PendingQuestSectionProposal | null,
+): {
+  status: 'none' | 'awaiting';
+  step?: QuestStewardStep;
+  wording?: string;
+  patch?: QuestDraftPatchInput;
+} {
+  if (!pending || Object.keys(pending.patch).length === 0) {
+    return { status: 'none' };
   }
-  if (explicitQuestSectionCommand(text) || BARE_SECTION_COMMAND.test(text)) {
-    return false;
-  }
-  if (EXPLICIT_COMMAND.test(text) && COMMAND_SECTION.test(text)) return false;
-  return true;
+  return {
+    status: 'awaiting',
+    step: pending.step,
+    wording: formatPendingQuestPatch(pending.patch).slice(0, 2000),
+    patch: pending.patch,
+  };
 }
 
 /**
@@ -2200,5 +2226,143 @@ export async function settleCreateDraftTurn({
   } catch {
     model = null;
   }
-  return run(model);
+  if (!model?.helper) return run(model);
+  if (!isCurrent()) return null;
+  const latest = readState();
+  return applyQuestHelperAgentTurn({
+    helper: model.helper,
+    reply: model.reply ?? null,
+    currentStep: latest.currentStep,
+    draft: latest.draft,
+    pending: latest.pending,
+    viewerDisplayName,
+    spaceMembers,
+    voice,
+  });
+}
+
+function joinReply(...parts: Array<string | null | undefined>): string {
+  return parts
+    .map((part) => part?.trim() ?? '')
+    .filter((part) => part.length > 0)
+    .join('\n\n');
+}
+
+/**
+ * The agent decided; the app applies it. A confirmed card is applied from
+ * the client's own copy, so the agent cannot change words the member saw.
+ * The "Added that to …" line comes from the app, never from model prose.
+ */
+export function applyQuestHelperAgentTurn({
+  helper,
+  reply,
+  currentStep,
+  draft,
+  pending,
+  viewerDisplayName,
+  spaceMembers,
+  voice = 'create',
+}: {
+  helper: QuestHelperAgentResult;
+  reply: string | null;
+  currentStep: QuestStewardStep;
+  draft: QuestDraftStateSnapshot;
+  pending: PendingQuestSectionProposal | null;
+  viewerDisplayName: string;
+  spaceMembers: readonly QuestSpaceMember[];
+  voice?: 'create' | 'saved';
+}): NewQuestDraftTurnResult {
+  const prose = stripModelStateClaims(reply ?? '');
+  const suggestion = helper.suggestion
+    ? {
+        step: helper.suggestion.step,
+        patch: sanitizeQuestDraftPatch(
+          limitQuestPatchToStep(
+            helper.suggestion.patch,
+            helper.suggestion.step,
+          ),
+        ),
+      }
+    : null;
+  const nextSuggestion =
+    suggestion && Object.keys(suggestion.patch).length > 0 ? suggestion : null;
+
+  let nextDraft = draft;
+  let wrote = false;
+  let savedLine: string | null = null;
+  let focusStep = currentStep;
+  let complete = false;
+  let keptPending: PendingQuestSectionProposal | null = helper.discarded
+    ? null
+    : pending;
+
+  if (helper.saved) {
+    const step = helper.saved.step;
+    const source =
+      helper.saved.source === 'pending' && pending?.step === step
+        ? pending.patch
+        : helper.saved.patch;
+    const { next, updatedLabels } = applyPatchToQuestDraftState({
+      current: draft,
+      patch: sanitizeQuestDraftPatch(limitQuestPatchToStep(source, step)),
+      spaceMembers,
+      viewerDisplayName,
+    });
+    if (updatedLabels.length > 0) {
+      nextDraft = next;
+      wrote = true;
+      savedLine = `Added that to the ${questStepSectionLabel(step)}.`;
+      const advance = nextQuestStepAfterUpdate({
+        draft: next,
+        currentStep: step,
+        updatedLabels,
+      });
+      focusStep = advance.step;
+      complete = advance.complete;
+      if (keptPending?.step === step) keptPending = null;
+    }
+  }
+
+  if (nextSuggestion) {
+    return {
+      draft: nextDraft,
+      wrote,
+      pending: nextSuggestion,
+      focusStep: nextSuggestion.step,
+      reply: joinReply(
+        savedLine,
+        replyForPendingSuggestion(
+          prose || null,
+          nextSuggestion.step,
+          nextSuggestion.patch,
+        ),
+      ),
+    };
+  }
+
+  if (wrote && complete && voice === 'create') {
+    return {
+      draft: nextDraft,
+      wrote,
+      pending: keptPending,
+      focusStep,
+      reply: joinReply(savedLine, QUEST_DRAFT_READY_REPLY),
+    };
+  }
+  const fallback = wrote
+    ? voice === 'saved'
+      ? ''
+      : stewardQuestionForStep(focusStep)
+    : keptPending
+    ? questSectionApprovalQuestion(keptPending.step)
+    : voice === 'saved'
+    ? 'Tell me one section to change.'
+    : stewardQuestionForStep(currentStep);
+  return {
+    draft: nextDraft,
+    wrote,
+    pending: keptPending,
+    focusStep,
+    reply: joinReply(savedLine, prose || fallback),
+  };
 }

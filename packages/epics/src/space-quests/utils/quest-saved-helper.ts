@@ -335,10 +335,12 @@ export function questHelperDraftAssistBody({
     status: 'none' | 'awaiting' | 'retired' | 'revising';
     step?: QuestStewardStep;
     wording?: string;
+    patch?: QuestDraftPatchInput;
   };
 }) {
   return {
     message,
+    helperMode: 'saved' as const,
     currentStep,
     spaceTitle,
     draft: {

@@ -47,10 +47,9 @@ import {
   useQuestSpaceMembers,
 } from '../hooks/use-space-quests';
 import {
-  formatPendingQuestPatch,
   questAssistHistoryEntries,
-  questDraftSuggestionStatus,
   questDraftTurnUsesModel,
+  questHelperPendingSuggestion,
   questHelperTurnMessage,
   settleCreateDraftTurn,
   type PendingQuestSectionProposal,
@@ -376,7 +375,6 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
             const currentStep =
               QUEST_STEWARD_STEPS[stewardStepIndexRef.current] ?? 'goal';
             const pendingNow = pendingProposalRef.current;
-            const suggestion = questDraftSuggestionStatus(trimmed, pendingNow);
             try {
               const token = await getAccessToken?.().catch(() => null);
               if (!token || turnGenerationRef.current !== generation) {
@@ -422,22 +420,7 @@ export function SpaceQuestCreateDraft({ spaceSlug }: { spaceSlug: string }) {
                       name: m.name,
                     })),
                     history: questAssistHistoryEntries(history),
-                    pendingSuggestion: (() => {
-                      const wording =
-                        pendingNow &&
-                        (suggestion.status === 'awaiting' ||
-                          suggestion.status === 'revising')
-                          ? formatPendingQuestPatch(pendingNow.patch).slice(
-                              0,
-                              2000,
-                            )
-                          : '';
-                      return {
-                        status: suggestion.status,
-                        ...(suggestion.step ? { step: suggestion.step } : {}),
-                        ...(wording ? { wording } : {}),
-                      };
-                    })(),
+                    pendingSuggestion: questHelperPendingSuggestion(pendingNow),
                   }),
                 },
               );
