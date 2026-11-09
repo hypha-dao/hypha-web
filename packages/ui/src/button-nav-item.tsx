@@ -87,7 +87,7 @@ export const ButtonNavItem = ({
       disabled={disabled}
       aria-busy={disabled}
       aria-label={
-        badge > 0 ? (ariaLabel ?? `${label}, ${badgeLabel}`) : undefined
+        badge > 0 ? ariaLabel ?? `${label}, ${badgeLabel}` : undefined
       }
       onClick={onClick}
     >
