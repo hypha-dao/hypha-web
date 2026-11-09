@@ -3459,6 +3459,52 @@ describe('quest draft review corrections', () => {
     expect(kept.reply).toContain(questPendingYesNotice('scope'));
   });
 
+  it('keeps a shortened goal when the tool patch arrives with an optional aside', () => {
+    const pendingGoal =
+      'The quest lead runs one quest end-to-end in this sandbox and logs pass/fail notes for each step.';
+    const shorter =
+      'Run one quest end-to-end in this sandbox, logging pass/fail notes per step.';
+    const pending: PendingQuestSectionProposal = {
+      step: 'goal',
+      patch: { goal: pendingGoal },
+    };
+    const prose = [
+      "Shorter version, same substance — it's a suggestion.",
+      shorter,
+      'Want to keep it this length, or name where those notes live before we move to scope?',
+    ].join('\n\n');
+    const revised = send('make it shorter', emptyDraft, pending, 'scope', {
+      reply: prose,
+      patch: { goal: shorter, scopeIn: ['should not stick'] },
+    });
+    expect(revised.wrote).toBe(false);
+    expect(revised.pending?.step).toBe('goal');
+    expect(revised.pending?.patch.goal).toBe(shorter);
+    expect(revised.pending?.patch.scopeIn).toBeUndefined();
+    expect(revised.draft.goal).toBe('');
+    expect(revised.reply).toContain(shorter);
+    expect(revised.reply).toMatch(/Not saved yet/);
+    expect(revised.reply).not.toMatch(/did not capture a replacement/i);
+
+    const saved = send('yes', emptyDraft, revised.pending, 'goal', null);
+    expect(saved.wrote).toBe(true);
+    expect(saved.draft.goal).toBe(shorter);
+    expect(saved.draft.scopeIn).toEqual([]);
+
+    const proseOnly = send('make it shorter', emptyDraft, pending, 'scope', {
+      reply: prose,
+      patch: null,
+    });
+    expect(proseOnly.pending).toBeNull();
+    expect(proseOnly.wrote).toBe(false);
+    expect(proseOnly.draft.goal).toBe('');
+    expect(proseOnly.reply).toMatch(/did not capture a replacement Goal/i);
+    const yes = send('yes', emptyDraft, proseOnly.pending, 'goal', null);
+    expect(yes.wrote).toBe(false);
+    expect(yes.draft.goal).toBe('');
+    expect(yes.reply).toMatch(/Nothing is waiting on a yes/i);
+  });
+
   it('caps assist history at the schema limits', () => {
     const history = Array.from({ length: 25 }, (_, index) => ({
       role: index % 2 === 0 ? 'user' : 'assistant',

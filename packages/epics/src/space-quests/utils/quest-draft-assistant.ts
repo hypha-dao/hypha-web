@@ -1521,10 +1521,17 @@ const MISSING_DECISION =
 /** The sentence that asks, not the finished statement before it. */
 function questionSentence(chunk: string): string {
   const sentences = chunk
-    .split(/(?<=[.!])\s+/)
+    .split(/(?<=[.!])\s+|\n+/)
     .map((part) => part.trim())
     .filter((part) => part.length > 0);
   return sentences.find((part) => part.includes('?')) ?? chunk.trim();
+}
+
+/** "Want to keep it this length, or name where the notes live?" is an aside. */
+function questionIsOptionalAside(question: string): boolean {
+  return /^(?:want to|if you want|you can also|optionally)\b/i.test(
+    question.trim(),
+  );
 }
 
 /**
@@ -1542,7 +1549,7 @@ function modelGuidanceWithholdsFiling(
   const questions = reply
     .split(/(?<=\?)\s+/)
     .map((part) => questionSentence(part))
-    .filter((part) => part.includes('?'));
+    .filter((part) => part.includes('?') && !questionIsOptionalAside(part));
   if (
     questions.some(
       (question) =>

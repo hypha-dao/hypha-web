@@ -7,6 +7,7 @@ import {
   QUEST_STEWARD_STEPS,
   escapeUntrustedDataBoundary,
   existingQuestEditSection,
+  isBulkQuestDraftRequest,
   limitQuestPatchToStep,
   questDraftCoachedStep,
   questWordingRevisionStep,
@@ -349,6 +350,56 @@ export function buildQuestHelperTurnPrompt({
     .join('\n\n');
 }
 
+const CONCRETE_DRAFT_REQUEST =
+  /\b(?:draft|suggest|propose|write|fill(?:\s+in|\s+out)?|generate)\b/i;
+
+/**
+ * A proposal or revision whose reply already states wording, but the tool
+ * was not called. One retry may require the tool. The patch is still only
+ * the tool arguments.
+ */
+export function questDraftReplyNeedsToolRetry({
+  message,
+  reply,
+  hasPatch,
+  bulk,
+  pendingStep,
+}: {
+  message: string;
+  reply: string;
+  hasPatch: boolean;
+  bulk: boolean;
+  pendingStep: QuestStewardStep | null;
+}): boolean {
+  if (hasPatch || bulk || isBulkQuestDraftRequest(message)) return false;
+  const text = message.trim();
+  if (!text || /[?？]\s*$/.test(text)) return false;
+  const revision = questWordingRevisionStep(text, pendingStep);
+  if (!revision && !CONCRETE_DRAFT_REQUEST.test(text)) return false;
+  return replyOffersConcreteWording(reply);
+}
+
+function replyOffersConcreteWording(reply: string): boolean {
+  const text = reply.trim();
+  if (!text) return false;
+  if (
+    /\b(?:suggestion|shorter version|revised wording|not saved until|for your confirmation)\b/i.test(
+      text,
+    )
+  ) {
+    return true;
+  }
+  if (/(?:^|\n)\s*(?:>|[“"])\s*\S.{20,}/m.test(text)) return true;
+  return text
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .some(
+      (line) =>
+        (/^[-*•]/.test(line) || /^(?:in|out)\s*:/i.test(line)) &&
+        line.length > 8,
+    );
+}
+
 function untrusted(label: string, value: string, empty = '(empty)'): string {
   const body = escapeUntrustedDataBoundary(value).trim() || empty;
   return `----- BEGIN UNTRUSTED DATA (${label}) -----\n${body}\n----- END UNTRUSTED DATA -----`;
@@ -454,7 +505,7 @@ export async function assistSpaceQuestDraft({
       description: coachingNewQuest
         ? draftTarget.bulk
           ? 'Do not write any quest section. The member asked to draft every section at once. Return no fields.'
-          : `Suggest wording for only the ${coachedStep} section. Call this for a finished suggestion, including one whose reply asks them to approve it. Do not call this for a section opener, a vague idea, or a reply that still needs a decision about what the words mean or which section they belong to. It is not saved until the member confirms. Do not include any other section, and do not invent people, dates, rewards, or metrics.`
+          : `Suggest wording for only the ${coachedStep} section. When the reply states finished ${coachedStep} wording, call this tool with that wording in the same turn. Prose alone is not a suggestion. Do not call this for a section opener, a vague idea, or a reply that still needs a decision about what the words mean or which section they belong to. It is not saved until the member confirms. Do not include any other section, and do not invent people, dates, rewards, or metrics.`
         : 'Call this only when the member explicitly edits one section: the message names that section and the replacement text (set, change, update, or put, then to, a colon, or a quote). Pass only that section. Do not call this for a question, an assessment, or a request to discuss or improve.',
       inputSchema: draftPatchSchema,
       execute: async (patchInput) => {
@@ -617,7 +668,7 @@ ${untrusted(
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), QUEST_DRAFT_MS);
   try {
-    const result = await generateText({
+    let result = await generateText({
       model: getHyphaChatModel(),
       system,
       prompt,
@@ -625,6 +676,43 @@ ${untrusted(
       stopWhen: stepCountIs(QUEST_DRAFT_MAX_STEPS),
       abortSignal: abort.signal,
     });
+
+    if (
+      coachingNewQuest &&
+      questDraftReplyNeedsToolRetry({
+        message,
+        reply: result.text,
+        hasPatch: Object.keys(collectedPatch).length > 0,
+        bulk: draftTarget.bulk,
+        pendingStep,
+      })
+    ) {
+      const firstReply = result.text;
+      try {
+        const retry = await generateText({
+          model: getHyphaChatModel(),
+          system,
+          prompt: [
+            prompt,
+            `The previous reply proposed finished ${coachedStep} wording and did not call update_quest_draft. Call update_quest_draft now with only that finished ${coachedStep} wording. Do not invent facts. Do not pass the member's instruction as the field value.`,
+            untrusted('previous reply', firstReply),
+          ].join('\n\n'),
+          tools,
+          toolChoice: {
+            type: 'tool',
+            toolName: 'update_quest_draft',
+          },
+          stopWhen: stepCountIs(2),
+          abortSignal: abort.signal,
+        });
+        if (!firstReply.trim() && retry.text.trim()) result = retry;
+      } catch (error) {
+        console.warn(
+          '[space-quests.draft-assist] tool retry skipped:',
+          error instanceof Error ? error.message : error,
+        );
+      }
+    }
 
     if (coachingNewQuest) {
       collectedPatch = draftTarget.bulk
