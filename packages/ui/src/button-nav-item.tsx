@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useLinkStatus } from 'next/link';
 import { Button } from './button';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -18,6 +19,18 @@ export type ButtonNavItemProps = {
   /** Replaces the visible label in the accessible name when a badge is showing. */
   ariaLabel?: string;
 };
+
+function NavLinkPendingBody({ children }: { children: React.ReactNode }) {
+  const { pending } = useLinkStatus();
+  return (
+    <span
+      className={clsx('inline-flex items-center', pending && 'opacity-60')}
+      aria-busy={pending || undefined}
+    >
+      {children}
+    </span>
+  );
+}
 
 export const ButtonNavItem = ({
   href,
@@ -74,12 +87,14 @@ export const ButtonNavItem = ({
       disabled={disabled}
       aria-busy={disabled}
       aria-label={
-        badge > 0 ? ariaLabel ?? `${label}, ${badgeLabel}` : undefined
+        badge > 0 ? (ariaLabel ?? `${label}, ${badgeLabel}`) : undefined
       }
       onClick={onClick}
     >
       {!disabled && href ? (
-        <Link href={href}>{content}</Link>
+        <Link href={href} prefetch>
+          <NavLinkPendingBody>{content}</NavLinkPendingBody>
+        </Link>
       ) : (
         <span>{content}</span>
       )}

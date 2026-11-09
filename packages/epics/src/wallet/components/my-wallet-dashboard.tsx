@@ -58,9 +58,7 @@ const ProfileBankingSection = dynamic(
       (mod) => mod.ProfileBankingSection,
     ),
   {
-    loading: () => (
-      <div className="h-48 w-full animate-pulse bg-neutral-3" />
-    ),
+    loading: () => <div className="h-48 w-full animate-pulse bg-neutral-3" />,
   },
 );
 

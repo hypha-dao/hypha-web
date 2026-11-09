@@ -66,8 +66,7 @@ function SiteFooterOffsetSync({ children }: { children: ReactNode }) {
       const atEnd =
         scrollRoot instanceof HTMLElement || scrollRoot instanceof Element
           ? isScrollRootAtEnd({
-              scrollTop:
-                'scrollTop' in scrollRoot ? scrollRoot.scrollTop : 0,
+              scrollTop: 'scrollTop' in scrollRoot ? scrollRoot.scrollTop : 0,
               clientHeight:
                 'clientHeight' in scrollRoot
                   ? scrollRoot.clientHeight
