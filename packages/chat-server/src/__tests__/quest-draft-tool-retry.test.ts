@@ -349,4 +349,56 @@ describe('quest draft tool retry', () => {
     expect(missed.patch).toBeNull();
     expect(missed.reply).toMatch(/shorter version/i);
   });
+
+  it('coaches a saved quest from its draft and does not write it', async () => {
+    generateText.mockImplementation(
+      async ({
+        toolChoice,
+        prompt,
+        tools,
+      }: {
+        toolChoice?: { type: string; toolName: string };
+        prompt: string;
+        tools: { update_quest_draft: DraftTool };
+      }) => {
+        expect(toolChoice).toEqual({
+          type: 'tool',
+          toolName: 'update_quest_draft',
+        });
+        expect(prompt).toContain('Keep the saved goal');
+        await tools.update_quest_draft.execute({
+          goal: 'Ship the onboarding checklist for new members.',
+          scopeIn: ['should not stick'],
+        });
+        return { text: 'Suggested a shorter goal.' };
+      },
+    );
+
+    const result = await assistSpaceQuestDraft({
+      spaceSlug: 'sandbox',
+      input: {
+        message: 'make the goal shorter',
+        currentStep: 'goal',
+        draft: {
+          name: 'Onboarding',
+          goal: 'Keep the saved goal',
+          scopeIn: ['docs'],
+          scopeOut: [],
+          successCriteria: '- members finish',
+          targetDate: null,
+          leadName: 'Ada Lovelace',
+          rewards: [],
+          milestones: [{ name: 'Draft', description: 'Notes' }],
+          members: [],
+        },
+      },
+    });
+
+    expect(result.patch).toEqual({
+      goal: 'Ship the onboarding checklist for new members.',
+    });
+    expect(result.updatedQuest).toBeNull();
+    expect(questServer.updateSpaceQuest).not.toHaveBeenCalled();
+    expect(questServer.getSpaceQuestBySlug).not.toHaveBeenCalled();
+  });
 });

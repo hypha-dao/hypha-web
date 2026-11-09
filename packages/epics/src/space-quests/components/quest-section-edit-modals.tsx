@@ -27,7 +27,7 @@ import {
   storedQuestRichText,
 } from '../utils/quest-rich-text';
 import { cn } from '@hypha-platform/ui-utils';
-import { Plus, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react';
 import {
   useEffect,
   useMemo,
@@ -867,6 +867,18 @@ export function EditQuestMilestonesModal({
     setRows((current) => current.filter((_, idx) => idx !== index));
   };
 
+  const moveRow = (index: number, direction: -1 | 1) => {
+    setRows((current) => {
+      const target = index + direction;
+      if (target < 0 || target >= current.length) return current;
+      const next = [...current];
+      const [item] = next.splice(index, 1);
+      if (!item) return current;
+      next.splice(target, 0, item);
+      return next;
+    });
+  };
+
   const chrome = milestoneEditorChrome(rows.length);
 
   return (
@@ -919,15 +931,39 @@ export function EditQuestMilestonesModal({
                     <span className="text-xs font-semibold text-neutral-11">
                       {renumberedLabel}
                     </span>
-                    {rows.length > 1 ? (
-                      <button
+                    <div className="flex items-center gap-1">
+                      <Button
                         type="button"
-                        onClick={() => removeAt(idx)}
-                        className="text-xs text-neutral-11 hover:text-foreground"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Move ${renumberedLabel} up`}
+                        disabled={idx === 0}
+                        onClick={() => moveRow(idx, -1)}
+                        data-testid={`move-milestone-up-${order}`}
                       >
-                        Remove
-                      </button>
-                    ) : null}
+                        <ArrowUp className="size-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Move ${renumberedLabel} down`}
+                        disabled={idx >= rows.length - 1}
+                        onClick={() => moveRow(idx, 1)}
+                        data-testid={`move-milestone-down-${order}`}
+                      >
+                        <ArrowDown className="size-4" />
+                      </Button>
+                      {rows.length > 1 ? (
+                        <button
+                          type="button"
+                          onClick={() => removeAt(idx)}
+                          className="text-xs text-neutral-11 hover:text-foreground"
+                        >
+                          Remove
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="flex flex-col gap-2.5 sm:flex-row">

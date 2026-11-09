@@ -171,6 +171,13 @@ describe('quest detail presentation', () => {
     expect(screen.getByTestId('quest-milestone-date-3').textContent).toBe(
       '1 December 2026',
     );
+    const overview = screen.getByTestId('quest-overview-milestones');
+    expect(overview.textContent?.indexOf('M1')).toBeLessThan(
+      overview.textContent?.indexOf('M2') ?? -1,
+    );
+    expect(overview.textContent?.indexOf('Draft the brief')).toBeLessThan(
+      overview.textContent?.indexOf('Review') ?? -1,
+    );
 
     const first = screen.getByTestId('quest-milestone-toggle-1');
     const second = screen.getByTestId('quest-milestone-toggle-2');
@@ -475,6 +482,14 @@ describe('milestone editor', () => {
     expect(screen.getAllByText(/Add milestone here/).length).toBeGreaterThan(0);
     expect(screen.getByText('M1')).toBeTruthy();
     expect(screen.getByDisplayValue('Draft')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Move M1 up' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    expect(screen.getByRole('button', { name: 'Move M3 down' })).toHaveProperty(
+      'disabled',
+      true,
+    );
 
     const owner = screen.getByTestId('quest-milestone-owner-1');
     const combobox = within(owner).getByRole('combobox');
@@ -504,6 +519,58 @@ describe('milestone editor', () => {
     for (const toolbar of toolbars) {
       expect(toolbar.getAttribute('data-toolbar-density')).toBe('compact');
     }
+  });
+
+  it('moves a milestone with the keyboard-accessible up and down buttons and saves that order', () => {
+    const onSave = vi.fn();
+    render(
+      <EditQuestMilestonesModal
+        open
+        onOpenChange={() => undefined}
+        milestones={[
+          {
+            id: 1,
+            name: 'Draft',
+            description: 'Notes',
+            dueDate: '2026-11-20',
+            ownerName: null,
+            ownerPersonId: null,
+            status: 'in_progress',
+          },
+          {
+            id: 2,
+            name: 'Review',
+            description: 'Read',
+            dueDate: null,
+            ownerName: 'Ada Lovelace',
+            ownerPersonId: 4,
+            status: 'done',
+          },
+        ]}
+        showStatusSelect
+        onSave={onSave}
+      />,
+    );
+
+    const down = screen.getByRole('button', { name: 'Move M1 down' });
+    expect(down.tagName).toBe('BUTTON');
+    expect(down.getAttribute('type')).toBe('button');
+    fireEvent.click(down);
+    const draft = screen.getByDisplayValue('Draft');
+    const review = screen.getByDisplayValue('Review');
+    expect(
+      review.compareDocumentPosition(draft) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledTimes(1);
+    const saved = onSave.mock.calls[0]?.[0] as Array<{
+      id?: number;
+      name: string;
+      status: string;
+    }>;
+    expect(saved.map((row) => row.name)).toEqual(['Review', 'Draft']);
+    expect(saved.map((row) => row.id)).toEqual([2, 1]);
+    expect(saved.map((row) => row.status)).toEqual(['done', 'in_progress']);
   });
 
   it('uses the milestone description editor size for the other section editors', () => {

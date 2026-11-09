@@ -120,8 +120,8 @@ export type SpaceQuestDraftPanelSession = {
   onQuickPrompt?: (prompt: string) => void;
   isAgentTyping?: boolean;
   /**
-   * New-quest chat is a 1:1 with Quest Helper.
-   * Detail refine leaves this unset and stays the AI Agents room.
+   * Quest Helper is a 1:1 coach. The create flow and the saved-quest
+   * helper set this. Discussion refine leaves it unset and stays AI Agents.
    */
   coach?: 'quest-helper';
 };

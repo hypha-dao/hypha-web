@@ -3,7 +3,9 @@
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   QUEST_HEALTH_STATES,
+  QUEST_HELPER_NAME,
   QUEST_MILESTONE_STATUSES,
+  QUEST_STEWARD_STEPS,
   buildMilestoneStatusPatch,
   canChangeMilestoneStatus,
   canMemberEditQuest,
@@ -93,9 +95,26 @@ import {
 } from '../space-quest-tabs';
 import {
   QUEST_HELPER_OFFLINE_REPLY,
+  formatPendingQuestPatch,
   questAssistHistoryEntries,
+  questDraftSuggestionStatus,
+  questDraftTurnUsesModel,
+  questHelperTurnMessage,
+  type PendingQuestSectionProposal,
+  type QuestDraftModelTurn,
   type QuestDraftPatchInput,
+  type QuestDraftStateSnapshot,
 } from '../utils/quest-draft-assistant';
+import {
+  questHelperTypingAfterTurn,
+  questHelperTypingForTurn,
+} from '../utils/quest-helper-typing';
+import {
+  SAVED_QUEST_HELPER_INTRO,
+  questHelperDraftAssistBody,
+  questRecordToDraftSnapshot,
+  runSavedQuestHelperTurn,
+} from '../utils/quest-saved-helper';
 
 type QuestPatch = z.infer<typeof schemaPatchSpaceQuest>;
 
@@ -1201,6 +1220,28 @@ export function SpaceQuestDetail({
       text: 'Ask me to refine the Goal, Scope, Success Criteria, Milestones, Deliverables, or Quest Reward for this quest.',
     },
   ]);
+  const [helperOpen, setHelperOpen] = useState(false);
+  const [helperInput, setHelperInput] = useState('');
+  const [helperTyping, setHelperTyping] = useState(false);
+  const [helperMessages, setHelperMessages] = useState<
+    SpaceQuestDraftChatMessage[]
+  >(() => [
+    {
+      id: 'helper-m1',
+      role: 'member',
+      senderName: QUEST_HELPER_NAME,
+      timestamp: new Date(),
+      text: SAVED_QUEST_HELPER_INTRO,
+    },
+  ]);
+  const helperDraftRef = useRef<QuestDraftStateSnapshot | null>(null);
+  const helperPendingRef = useRef<PendingQuestSectionProposal | null>(null);
+  const helperStepRef = useRef(0);
+  const helperTurnRef = useRef(0);
+  const helperSendRef = useRef<(overridePrompt?: string) => void>(() => {});
+  const triggerHelperSend = useCallback(() => {
+    helperSendRef.current();
+  }, []);
 
   const viewer = useMemo(
     () =>
@@ -1227,7 +1268,50 @@ export function SpaceQuestDetail({
   }, []);
 
   useEffect(() => {
-    if (!detailChatOpen || !quest) return;
+    if (!quest) {
+      helperDraftRef.current = null;
+      return;
+    }
+    helperDraftRef.current = questRecordToDraftSnapshot(quest);
+  }, [quest]);
+
+  const helperEditable =
+    !!quest &&
+    (quest.status === 'active' || quest.status === 'paused') &&
+    canMemberEditQuest(viewer, quest);
+
+  useEffect(() => {
+    if (!helperOpen) return;
+    if (!quest || !helperEditable) {
+      setHelperOpen(false);
+      if (!detailChatOpen) setSpaceQuestDraft(null);
+      return;
+    }
+    setSpaceQuestDraft({
+      spaceSlug,
+      questTitle: quest.name,
+      messages: helperMessages,
+      input: helperInput,
+      onInputChange: setHelperInput,
+      onSend: triggerHelperSend,
+      isAgentTyping: helperTyping,
+      coach: 'quest-helper',
+    });
+  }, [
+    detailChatOpen,
+    helperEditable,
+    helperInput,
+    helperMessages,
+    helperOpen,
+    helperTyping,
+    quest,
+    setSpaceQuestDraft,
+    spaceSlug,
+    triggerHelperSend,
+  ]);
+
+  useEffect(() => {
+    if (!detailChatOpen || !quest || helperOpen) return;
     setSpaceQuestDraft({
       spaceSlug,
       questTitle: quest.name,
@@ -1243,6 +1327,7 @@ export function SpaceQuestDetail({
     detailChatMessages,
     detailChatOpen,
     detailChatTyping,
+    helperOpen,
     quest,
     setSpaceQuestDraft,
     spaceSlug,
@@ -1310,6 +1395,7 @@ export function SpaceQuestDetail({
     if (typeof window !== 'undefined' && window.innerWidth < 1200) {
       closeAiPanel();
     }
+    setHelperOpen(false);
     if (quest.chatRoomId) {
       setDetailChatOpen(false);
       setSpaceQuestDraft(null);
@@ -1430,7 +1516,7 @@ export function SpaceQuestDetail({
           ...(data.patch.rewards ? { rewards: data.patch.rewards } : {}),
         };
         if (Object.keys(patchToSave).length > 0) {
-          saved = await savePatch(patchToSave);
+          saved = Boolean(await savePatch(patchToSave));
         }
       }
       const replyText =
@@ -1462,7 +1548,7 @@ export function SpaceQuestDetail({
     void handleSendDetailChatMessage(overridePrompt);
   };
 
-  const savePatch = async (patch: QuestPatch): Promise<boolean> => {
+  const savePatch = async (patch: QuestPatch): Promise<QuestRecord | null> => {
     setSaving(true);
     setActionError(null);
     try {
@@ -1473,15 +1559,163 @@ export function SpaceQuestDetail({
         getAccessToken,
       });
       await refresh(updated, { revalidate: false });
-      return true;
+      return updated;
     } catch (err) {
       setActionError(
         err instanceof Error ? err.message : 'Failed to update quest',
       );
-      return false;
+      return null;
     } finally {
       setSaving(false);
     }
+  };
+
+  const openQuestHelper = () => {
+    if (!canEdit) return;
+    if (helperOpen) {
+      setHelperOpen(false);
+      if (!detailChatOpen) setSpaceQuestDraft(null);
+      return;
+    }
+    if (typeof window !== 'undefined' && window.innerWidth < 1200) {
+      closeAiPanel();
+    }
+    setDetailChatOpen(false);
+    setHelperOpen(true);
+    openHumanChatPanel();
+  };
+
+  const handleSendHelperMessage = async (overridePrompt?: string) => {
+    const rawTrimmed = (overridePrompt ?? helperInput).trim();
+    if (!rawTrimmed || !canEdit) return;
+    if (!overridePrompt) setHelperInput('');
+    const snapshot = helperDraftRef.current;
+    if (!snapshot) return;
+
+    const trimmed = questHelperTurnMessage(rawTrimmed);
+    const generation = ++helperTurnRef.current;
+    const readTurnState = () => ({
+      draft: helperDraftRef.current ?? snapshot,
+      pending: helperPendingRef.current,
+      currentStep: QUEST_STEWARD_STEPS[helperStepRef.current] ?? 'goal',
+    });
+    const viewerName = viewer?.name?.trim() || 'Participant';
+    const now = new Date();
+    setHelperMessages((prev) => [
+      ...prev,
+      {
+        id: `hu-${now.getTime()}`,
+        role: 'user',
+        senderName: viewerName,
+        avatarUrl: person?.avatarUrl ?? undefined,
+        timestamp: now,
+        text: rawTrimmed,
+      },
+    ]);
+    const history = helperMessages.slice(-8).map((entry) => ({
+      role: entry.role === 'user' ? ('user' as const) : ('agent' as const),
+      text: entry.text,
+    }));
+    const usesModel = questDraftTurnUsesModel(trimmed);
+    setHelperTyping(questHelperTypingForTurn(usesModel));
+    try {
+      const outcome = await runSavedQuestHelperTurn({
+        message: trimmed,
+        history,
+        viewerDisplayName: viewerName,
+        spaceMembers,
+        readState: readTurnState,
+        isCurrent: () => helperTurnRef.current === generation,
+        saveSection: async (patch) => {
+          const updated = await savePatch(patch);
+          if (!updated) return false;
+          helperDraftRef.current = questRecordToDraftSnapshot(updated);
+          return true;
+        },
+        loadModel: async () => {
+          const currentSnapshot = helperDraftRef.current;
+          if (!currentSnapshot) return null;
+          const token = await getAccessToken?.().catch(() => null);
+          if (!token || helperTurnRef.current !== generation) return null;
+          const currentStep =
+            QUEST_STEWARD_STEPS[helperStepRef.current] ?? 'goal';
+          const pendingNow = helperPendingRef.current;
+          const suggestion = questDraftSuggestionStatus(trimmed, pendingNow);
+          try {
+            const response = await fetch(
+              `/api/v1/spaces/${encodeURIComponent(
+                spaceSlug,
+              )}/quests/draft-assist`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(
+                  questHelperDraftAssistBody({
+                    message: trimmed,
+                    currentStep,
+                    spaceTitle: quest.spaceTitle,
+                    draft: currentSnapshot,
+                    spaceMembers,
+                    history: questAssistHistoryEntries(history),
+                    pendingSuggestion: (() => {
+                      const wording =
+                        pendingNow &&
+                        (suggestion.status === 'awaiting' ||
+                          suggestion.status === 'revising')
+                          ? formatPendingQuestPatch(pendingNow.patch).slice(
+                              0,
+                              2000,
+                            )
+                          : '';
+                      return {
+                        status: suggestion.status,
+                        ...(suggestion.step ? { step: suggestion.step } : {}),
+                        ...(wording ? { wording } : {}),
+                      };
+                    })(),
+                  }),
+                ),
+              },
+            );
+            if (helperTurnRef.current !== generation || !response.ok) {
+              return null;
+            }
+            return (await response.json()) as QuestDraftModelTurn;
+          } catch {
+            return null;
+          }
+        },
+      });
+      if (!outcome || helperTurnRef.current !== generation) return;
+      helperPendingRef.current = outcome.pending;
+      helperStepRef.current = Math.max(
+        0,
+        QUEST_STEWARD_STEPS.indexOf(outcome.focusStep),
+      );
+      setHelperMessages((prev) => [
+        ...prev,
+        {
+          id: `hs-${Date.now()}`,
+          role: 'member',
+          senderName: QUEST_HELPER_NAME,
+          timestamp: new Date(),
+          text: outcome.reply,
+        },
+      ]);
+    } finally {
+      const typing = questHelperTypingAfterTurn(
+        generation,
+        helperTurnRef.current,
+      );
+      if (typing === false) setHelperTyping(false);
+    }
+  };
+
+  helperSendRef.current = (overridePrompt?: string) => {
+    void handleSendHelperMessage(overridePrompt);
   };
 
   const postUpdate = async ({
@@ -1588,16 +1822,31 @@ export function SpaceQuestDetail({
               <span className={health.textClass}>{health.label}</span>
             </span>
           </div>
-          {quest.status !== 'proposed' && (quest.chatRoomId || canEdit) ? (
-            <button
-              type="button"
-              onClick={openQuestChat}
-              data-testid="open-quest-chat-button"
-              className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
-            >
-              Open discussion
-              <span aria-hidden>→</span>
-            </button>
+          {canEdit ||
+          (quest.status !== 'proposed' && (quest.chatRoomId || canEdit)) ? (
+            <div className="flex shrink-0 items-center gap-3">
+              {canEdit ? (
+                <button
+                  type="button"
+                  onClick={openQuestHelper}
+                  data-testid="open-quest-helper-button"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
+                >
+                  Quest Helper
+                </button>
+              ) : null}
+              {quest.status !== 'proposed' && (quest.chatRoomId || canEdit) ? (
+                <button
+                  type="button"
+                  onClick={openQuestChat}
+                  data-testid="open-quest-chat-button"
+                  className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
+                >
+                  Open discussion
+                  <span aria-hidden>→</span>
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
         <QuestDetailSubheading
