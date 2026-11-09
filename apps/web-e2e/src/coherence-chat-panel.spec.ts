@@ -329,32 +329,30 @@ test.describe('Coherence Chat Panel Integration', () => {
   // Back Navigation and Panel Close (authenticated)
   //
   // Tests for the "back" interaction and panel close behavior:
-  // - Clicking back returns to space chat mode
-  // - Closing panel resets to space chat mode (on re-open)
-  // - Space chat is preserved when cycling through coherence mode
+  // - Clicking back on a space signal closes the panel (does not open the space room)
+  // - Closing the panel another way resets to space chat mode (on re-open)
+  // - The top-right chat icon still opens the space channels
   //
   // Requires: authenticated session with signal cards visible.
   // TODO: Add auth fixture (JWT/cookie) and remove fixme.
   // ─────────────────────────────────────────────────────────────────────────
   test.describe('Back Navigation and Panel Close (authenticated)', () => {
     test.fixme(
-      'clicking back button returns panel to space chat mode',
+      'clicking back on a space signal closes the panel',
       async ({ page }) => {
         const chatPanel = new CoherenceChatPanelPage(page, SPACE_SLUG);
         await chatPanel.openCoherencePage();
 
-        // Enter coherence mode
         await chatPanel.firstSignalCard.click();
         await chatPanel.waitForCoherenceMode();
         await expect(chatPanel.backButton).toBeVisible();
 
-        // Click back
         await chatPanel.backButton.click();
-        await chatPanel.waitForSpaceMode();
 
-        // Should be back in space mode — "Chat" title, no back button
-        await expect(chatPanel.panelHeaderTitle).toHaveText('Chat');
+        // The panel closes. It must not stay open on the space room.
         await expect(chatPanel.backButton).not.toBeVisible();
+        await expect(chatPanel.openPanelButton).toBeVisible();
+        await expect(chatPanel.panelHeaderTitle).not.toBeVisible();
       },
     );
 
@@ -391,9 +389,9 @@ test.describe('Coherence Chat Panel Integration', () => {
         await chatPanel.waitForCoherenceMode();
         await expect(chatPanel.panelHeaderTitle).toHaveText(firstTitle);
 
-        // Go back to coherence page
+        // Back closes the panel. The next signal opens it again.
         await chatPanel.backButton.click();
-        await chatPanel.waitForSpaceMode();
+        await expect(chatPanel.openPanelButton).toBeVisible();
 
         // Click the second signal
         const secondTitle = await chatPanel.getSecondSignalTitle();
@@ -407,7 +405,7 @@ test.describe('Coherence Chat Panel Integration', () => {
     );
 
     test.fixme(
-      'panel remains open after clicking back (does not close)',
+      'panel closes after clicking back and does not show the space room',
       async ({ page }) => {
         const chatPanel = new CoherenceChatPanelPage(page, SPACE_SLUG);
         await chatPanel.openCoherencePage();
@@ -415,13 +413,11 @@ test.describe('Coherence Chat Panel Integration', () => {
         await chatPanel.firstSignalCard.click();
         await chatPanel.waitForCoherenceMode();
 
-        // Click back — panel should remain visible (not closed)
         await chatPanel.backButton.click();
-        await chatPanel.waitForSpaceMode();
 
-        // Close button still present = panel is still open
-        await expect(chatPanel.closeButton).toBeVisible();
-        await expect(chatPanel.chatInput).toBeVisible();
+        await expect(chatPanel.openPanelButton).toBeVisible();
+        await expect(chatPanel.chatInput).not.toBeVisible();
+        await expect(chatPanel.panelHeaderTitle).not.toHaveText('Chat');
       },
     );
   });

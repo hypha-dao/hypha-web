@@ -165,6 +165,10 @@ import {
   routeSpaceSlugFromLocation,
 } from './get-dho-space-slug-from-pathname';
 import { isNetworkAiPath } from './use-is-space-context';
+import {
+  shouldDelaySpaceSignalReset,
+  shouldPreserveDirectMessageOnSpaceLeave,
+} from './human-chat-route-transition';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { getDhoPathOverview, getSignalPath } from './get-path-function';
 import {
@@ -2102,11 +2106,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     // Messages already closes the panel. On a space signals screen, back must
     // do the same — not fall through to the space room. The top-right chat
     // icon still opens space channels once mode returns to space.
-    const leavingSignalInSpace =
-      Boolean(coherenceSlug?.trim()) &&
-      Boolean(routeSpaceSlug) &&
-      !isConnectionsPage;
-    if (leavingSignalInSpace && sidebarOpen) {
+    if (
+      shouldDelaySpaceSignalReset({
+        coherenceSlug,
+        routeSpaceSlug,
+        isConnectionsPage,
+        sidebarOpen,
+      })
+    ) {
       if (signalDismissTimerRef.current != null) {
         window.clearTimeout(signalDismissTimerRef.current);
       }
@@ -4088,10 +4095,31 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     lastHumanChatSpaceSlugRef.current = nextSlug;
     if (!prevSlug) return;
 
+    // A direct message opened in this space stays open on Home, Messages,
+    // Wallet, My Spaces, and Network, including its composer draft.
+    // Space-to-space navigation still resets.
+    if (
+      shouldPreserveDirectMessageOnSpaceLeave({
+        isDirectConversation,
+        previousSpaceSlug: prevSlug,
+        nextSpaceSlug: nextSlug,
+        onNetworkShell: isNetworkAiPath(pathname),
+      })
+    ) {
+      setSpaceRoom('space');
+      return;
+    }
+
     setSpaceRoom('space');
     exitCoherenceChat();
     resetChatStateOnAuthDrop();
-  }, [routeSpaceSlug, exitCoherenceChat, resetChatStateOnAuthDrop]);
+  }, [
+    exitCoherenceChat,
+    isDirectConversation,
+    pathname,
+    resetChatStateOnAuthDrop,
+    routeSpaceSlug,
+  ]);
 
   // Entering a network-default shell page clears leftover DHO / coherence
   // space chrome so the shared room can join. Moving between Home, Messages,
