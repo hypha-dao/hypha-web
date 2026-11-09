@@ -420,21 +420,15 @@ function EditHealthDialog({
 
 function OverviewTab({
   quest,
-  canEdit,
   spaceTokens,
-  openModal,
 }: {
   quest: QuestRecord;
-  canEdit: boolean;
   spaceTokens: readonly ExtendedToken[];
-  openModal: (modal: EditingModal) => void;
 }) {
   const locale = useLocale();
   const visibility = questOverviewVisibility(quest);
   const health = healthPresentation(quest);
   const healthUpdatedAt = quest.health.generatedAt ?? quest.health.lastUpdateAt;
-  const edit = (modal: EditingModal) =>
-    canEdit ? () => openModal(modal) : undefined;
 
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -445,11 +439,7 @@ function OverviewTab({
             <div className="space-y-5">
               {visibility.showGoal ? (
                 <div className="space-y-2 border-b border-border/70 pb-4">
-                  <SectionHeader
-                    title="Goal"
-                    variant="subsection"
-                    onEdit={edit('goal')}
-                  />
+                  <SectionHeader title="Goal" variant="subsection" />
                   <QuestRichText
                     markdown={quest.goal}
                     className="text-[15px] font-medium leading-relaxed text-foreground"
@@ -461,11 +451,7 @@ function OverviewTab({
                 <div className="grid grid-cols-1 gap-4 border-b border-border/70 pb-4 sm:grid-cols-2">
                   {visibility.showScopeIn ? (
                     <div className="space-y-2 border border-border/60 bg-background-2/40 p-3.5">
-                      <SectionHeader
-                        title="In Scope"
-                        variant="subsection"
-                        onEdit={edit('scope')}
-                      />
+                      <SectionHeader title="In Scope" variant="subsection" />
                       <QuestSectionMarkdown
                         markdown={
                           quest.scopeInMarkdown?.trim() ||
@@ -498,7 +484,6 @@ function OverviewTab({
                   <SectionHeader
                     title="Success Criteria"
                     variant="subsection"
-                    onEdit={edit('success')}
                   />
                   <QuestRichText
                     markdown={quest.successCriteria}
@@ -512,7 +497,7 @@ function OverviewTab({
 
         {visibility.showRewards ? (
           <section className={CARD_CLASS} data-testid="quest-overview-reward">
-            <SectionHeader title="Quest Reward" onEdit={edit('rewards')} />
+            <SectionHeader title="Quest Reward" />
             <QuestRewardStrip
               rewards={quest.rewards}
               spaceTokens={spaceTokens}
@@ -521,17 +506,12 @@ function OverviewTab({
         ) : null}
 
         {visibility.showMilestones ? (
-          <QuestMilestonesCard
-            milestones={quest.milestones}
-            locale={locale}
-            onEdit={edit('milestones')}
-          />
+          <QuestMilestonesCard milestones={quest.milestones} locale={locale} />
         ) : null}
 
         <section className={CARD_CLASS} data-testid="quest-overview-health">
           <SectionHeader
             title="Quest Health"
-            onEdit={quest.status === 'active' ? undefined : edit('health')}
             right={
               <span className="text-[11px] text-neutral-11">
                 Updated {formatRelativeTimeShort(healthUpdatedAt)}
@@ -574,16 +554,12 @@ function OverviewTab({
 
       <div className="min-w-0 space-y-5">
         {visibility.showMembers ? (
-          <QuestParticipantsCard
-            members={quest.members}
-            onEdit={edit('members')}
-          />
+          <QuestParticipantsCard members={quest.members} />
         ) : null}
 
         {visibility.showTargetDate ? (
           <QuestTargetDateCard
             label={formatQuestCalendarDate(quest.targetDate, locale)}
-            onEdit={edit('targetDate')}
           />
         ) : null}
 
@@ -592,7 +568,7 @@ function OverviewTab({
             className={CARD_CLASS}
             data-testid="quest-overview-deliverables"
           >
-            <SectionHeader title="Deliverables" onEdit={edit('deliverables')} />
+            <SectionHeader title="Deliverables" />
             <div className="divide-y divide-border">
               {quest.deliverables.map((d) => (
                 <div key={d.id} className="space-y-0.5 py-2 first:pt-0">
@@ -617,12 +593,6 @@ function OverviewTab({
                 </div>
               ))}
             </div>
-            {canEdit ? (
-              <p className="mt-3 text-[11px] text-neutral-11">
-                Any participant can edit · click the section, or mention AI
-                Agents in chat
-              </p>
-            ) : null}
           </section>
         ) : null}
       </div>
@@ -857,6 +827,7 @@ function SettingsTab({
   saving,
   openModal,
   onPatch,
+  onOpenHelper,
 }: {
   quest: QuestRecord;
   isLead: boolean;
@@ -865,6 +836,7 @@ function SettingsTab({
   saving: boolean;
   openModal: (modal: EditingModal) => void;
   onPatch: (patch: QuestPatch) => void;
+  onOpenHelper: () => void;
 }) {
   const locale = useLocale();
   const visibility = questOverviewVisibility(quest);
@@ -880,6 +852,31 @@ function SettingsTab({
           Only the Lead can change status, transfer the lead, or use the danger
           zone.
         </p>
+      ) : null}
+
+      {canEdit ? (
+        <section className={CARD_CLASS}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-foreground">
+                Quest Helper
+              </p>
+              <p className="text-[12px] text-neutral-11">
+                Suggest one section at a time, then save it
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              data-testid="open-quest-helper-button"
+              onClick={onOpenHelper}
+              className="shrink-0"
+            >
+              Quest Helper
+            </Button>
+          </div>
+        </section>
       ) : null}
 
       <section className={CARD_CLASS}>
@@ -899,12 +896,27 @@ function SettingsTab({
             disabled={!canEdit}
             onAction={() => openModal('targetDate')}
           />
+          {quest.status !== 'active' ? (
+            <SettingsRow
+              label="Quest health"
+              action="EDIT"
+              disabled={!canEdit}
+              onAction={() => openModal('health')}
+            />
+          ) : null}
         </div>
       </section>
 
       <section className={CARD_CLASS} data-testid="quest-settings-content">
         <p className={LABEL_CLASS}>QUEST CONTENT</p>
         <div className="divide-y divide-border">
+          <SettingsRow
+            label="Quest name"
+            value={quest.name}
+            action="EDIT"
+            disabled={!canEdit}
+            onAction={() => openModal('name')}
+          />
           <SettingsRow
             label="Goal"
             action={visibility.showGoal ? 'EDIT' : 'ADD'}
@@ -1740,16 +1752,6 @@ export function SpaceQuestDetail({
             <h1 className="font-display text-[22px] font-semibold text-foreground">
               {quest.name}
             </h1>
-            {canEdit ? (
-              <button
-                type="button"
-                onClick={() => setEditingModal('name')}
-                className="text-neutral-11 hover:text-foreground"
-                aria-label="Edit quest name"
-              >
-                <Pencil className="size-3.5" />
-              </button>
-            ) : null}
             <span className="bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
               {statusLabel(quest.status)}
             </span>
@@ -1761,31 +1763,16 @@ export function SpaceQuestDetail({
               <span className={health.textClass}>{health.label}</span>
             </span>
           </div>
-          {canEdit ||
-          (quest.status !== 'proposed' && (quest.chatRoomId || canEdit)) ? (
-            <div className="flex shrink-0 items-center gap-3">
-              {canEdit ? (
-                <button
-                  type="button"
-                  onClick={openQuestHelper}
-                  data-testid="open-quest-helper-button"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
-                >
-                  Quest Helper
-                </button>
-              ) : null}
-              {quest.status !== 'proposed' && (quest.chatRoomId || canEdit) ? (
-                <button
-                  type="button"
-                  onClick={openQuestChat}
-                  data-testid="open-quest-chat-button"
-                  className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
-                >
-                  Open discussion
-                  <span aria-hidden>→</span>
-                </button>
-              ) : null}
-            </div>
+          {quest.status !== 'proposed' && (quest.chatRoomId || canEdit) ? (
+            <button
+              type="button"
+              onClick={openQuestChat}
+              data-testid="open-quest-chat-button"
+              className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
+            >
+              Open discussion
+              <span aria-hidden>→</span>
+            </button>
           ) : null}
         </div>
         <QuestDetailSubheading
@@ -1848,12 +1835,7 @@ export function SpaceQuestDetail({
       ) : null}
 
       {tab === 'overview' ? (
-        <OverviewTab
-          quest={quest}
-          canEdit={canEdit}
-          spaceTokens={spaceTokens}
-          openModal={setEditingModal}
-        />
+        <OverviewTab quest={quest} spaceTokens={spaceTokens} />
       ) : null}
       {tab === 'updates' ? (
         <UpdatesTab quest={quest} canPost={canEdit} onPost={postUpdate} />
@@ -1872,6 +1854,7 @@ export function SpaceQuestDetail({
             setEditingModal(modal);
           }}
           onPatch={(patch) => void savePatch(patch)}
+          onOpenHelper={openQuestHelper}
         />
       ) : null}
 

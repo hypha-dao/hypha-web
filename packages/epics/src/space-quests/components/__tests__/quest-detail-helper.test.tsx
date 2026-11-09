@@ -264,12 +264,61 @@ describe('saved quest helper entry', () => {
     };
   }
 
-  it('opens the create helper for an editor and leaves Open discussion on the room', () => {
+  function settingsAction(label: string) {
+    const labelNode = screen.getByText(label);
+    const button =
+      labelNode.parentElement?.parentElement?.querySelector('button');
+    if (!button) throw new Error(`missing settings action for ${label}`);
+    return button;
+  }
+
+  it('keeps overview read-only, including the participants list', () => {
     render(<SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />);
 
+    expect(screen.queryByTestId('open-quest-helper-button')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^edit$/i })).toBeNull();
+    expect(screen.queryByLabelText(/edit quest name/i)).toBeNull();
+    expect(screen.queryByTestId('quest-participant-role-0')).toBeNull();
+    expect(screen.queryByText('ADD PARTICIPANT')).toBeNull();
+    expect(screen.queryByText(/any participant can edit/i)).toBeNull();
     expect(screen.getByTestId('open-quest-chat-button').textContent).toContain(
       'Open discussion',
     );
+
+    const participants = screen.getByTestId('quest-overview-members');
+    const participantsHeading = screen.getByRole('heading', {
+      name: 'Participants',
+    });
+    expect(participantsHeading.className).toMatch(/(?:^|\s)uppercase(?:\s|$)/);
+    const participantName = participants.querySelector(
+      '[data-testid="quest-participant-toggle-3"]',
+    );
+    expect(participantName?.textContent).toContain('Ada Lovelace');
+    expect(participantName?.textContent).toContain('Lead');
+    expect(participantName?.className ?? '').not.toMatch(
+      /(?:^|\s)uppercase(?:\s|$)/,
+    );
+    expect(screen.getByTestId('quest-participant-toggle-3').tagName).toBe(
+      'BUTTON',
+    );
+  });
+
+  it('opens the helper from Settings and leaves Open discussion on the room', () => {
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="settings"
+      />,
+    );
+
+    expect(screen.queryByRole('heading', { name: 'Participants' })).toBeNull();
+    expect(screen.getByTestId('open-quest-chat-button').textContent).toContain(
+      'Open discussion',
+    );
+    expect(
+      screen.getByTestId('open-quest-helper-button').textContent,
+    ).toContain('Quest Helper');
     fireEvent.click(screen.getByTestId('open-quest-helper-button'));
     expect(harness.openHumanChatPanel).toHaveBeenCalled();
     expect(harness.openCoherenceChat).not.toHaveBeenCalled();
@@ -291,11 +340,56 @@ describe('saved quest helper entry', () => {
     );
   });
 
+  it('edits the quest name, participants, and paused health from Settings', () => {
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="settings"
+      />,
+    );
+
+    expect(screen.queryByText('Quest health')).toBeNull();
+    fireEvent.click(settingsAction('Quest name'));
+    expect(screen.getByRole('heading', { name: 'Edit name' })).toBeTruthy();
+
+    fireEvent.click(settingsAction('Participants'));
+    expect(
+      screen.getByRole('heading', { name: 'Edit participants' }),
+    ).toBeTruthy();
+    expect(screen.getByTestId('quest-participant-role-0')).toBeTruthy();
+    expect(screen.getByTestId('quest-new-participant-role')).toBeTruthy();
+    expect(screen.getByText('ADD PARTICIPANT')).toBeTruthy();
+
+    cleanup();
+    harness.status = 'paused';
+    harness.quest = questFixture();
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="settings"
+      />,
+    );
+    fireEvent.click(settingsAction('Quest health'));
+    expect(
+      screen.getByRole('heading', { name: 'Edit quest health' }),
+    ).toBeTruthy();
+  });
+
   it('hides the helper from a viewer who cannot edit', () => {
     harness.personId = 99;
-    render(<SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />);
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="settings"
+      />,
+    );
     expect(screen.queryByTestId('open-quest-helper-button')).toBeNull();
     expect(screen.getByTestId('open-quest-chat-button')).toBeTruthy();
+    expect(settingsAction('Quest name')).toHaveProperty('disabled', true);
+    expect(settingsAction('Participants')).toHaveProperty('disabled', true);
   });
 
   it('lists overview milestones in saved order', () => {
