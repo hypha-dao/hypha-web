@@ -695,6 +695,25 @@ describe('resolveQuestDraftTarget', () => {
     expect(
       questDraftPatchSection({ successCriteriaBullets: ['the app ships'] }),
     ).toBe('success');
+    expect(
+      questEditRequestSection(
+        'Please propose adding "Check helper in chat" to Scope In for my confirmation',
+      ),
+    ).toBe('scope');
+    expect(
+      resolveQuestDraftTarget(
+        'Please propose adding "Check helper in chat" to Scope In for my confirmation',
+        'goal',
+      ),
+    ).toEqual({ step: 'scope', bulk: false });
+    expect(
+      questEditRequestSection(
+        'Please propose adding "Mobile app" to Scope Out for my confirmation',
+      ),
+    ).toBe('scope');
+    expect(questEditRequestSection('Add "Terse test" to Scope In')).toBe(
+      'scope',
+    );
     expect(questEditRequestSection('Add lead scoring')).toBeNull();
     expect(questEditRequestSection('We update members every week')).toBeNull();
   });

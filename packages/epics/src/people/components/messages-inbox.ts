@@ -529,6 +529,17 @@ export function resolveInboxPlace(
   };
 }
 
+/**
+ * Slug the opened room belongs to. Quest rooms are not signals: Messages
+ * must pass the quest slug or the discussion helper has nothing to load.
+ */
+export function inboxCoherenceSlug(
+  place: Pick<InboxPlace, 'kind' | 'signalSlug' | 'questSlug'>,
+): string {
+  if (place.kind === 'quest') return place.questSlug?.trim() ?? '';
+  return place.signalSlug?.trim() ?? '';
+}
+
 export function inboxContextLine(
   place: InboxPlace,
   signalTypeLabel: string | null,

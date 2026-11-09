@@ -709,7 +709,7 @@ export function questWordingRevisionStep(
 }
 
 const EDIT_REQUEST_VERB =
-  '(?:add|put|set|update|change|include|append|insert|remove|drop|move|reorder)';
+  '(?:add(?:ing)?|put(?:ting)?|set(?:ting)?|updat(?:e|ing)|chang(?:e|ing)|includ(?:e|ing)|append(?:ing)?|insert(?:ing)?|remov(?:e|ing)|drop(?:ping)?|mov(?:e|ing)|reorder(?:ing)?|propos(?:e|ing)|suggest(?:ing)?)';
 
 /**
  * An edit that names one section, including "Add \"…\" to Scope In".

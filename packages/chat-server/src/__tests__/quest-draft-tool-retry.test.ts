@@ -483,4 +483,37 @@ describe('quest draft tool retry', () => {
     expect(result.patch).toBeNull();
     expect(result.reply).toBeNull();
   });
+
+  it('keeps a Scope In tool patch for a propose-adding request', async () => {
+    generateText.mockImplementation(
+      async ({
+        tools,
+        toolChoice,
+      }: {
+        tools: { update_quest_draft: DraftTool };
+        toolChoice?: { type: string; toolName: string };
+      }) => {
+        expect(toolChoice).toEqual({
+          type: 'tool',
+          toolName: 'update_quest_draft',
+        });
+        await tools.update_quest_draft.execute({
+          goal: 'Wrong section for this quest.',
+          scopeIn: ['Check helper in chat'],
+        });
+        return { text: '' };
+      },
+    );
+    const result = await assistSpaceQuestDraft({
+      spaceSlug: 'sandbox',
+      input: {
+        message:
+          'Please propose adding "Check helper in chat" to Scope In for my confirmation',
+        currentStep: 'goal',
+      },
+    });
+    expect(generateText).toHaveBeenCalledTimes(1);
+    expect(result.patch).toEqual({ scopeIn: ['Check helper in chat'] });
+    expect(result.reply).toBe('Not saved yet.');
+  });
 });

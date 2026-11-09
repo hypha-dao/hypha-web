@@ -1,4 +1,5 @@
 import {
+  QUEST_STEWARD_STEPS,
   bulletsToMarkdownList,
   questEditRequestSection,
   splitMarkdownLinesToBullets,
@@ -8,11 +9,17 @@ import {
 import type { z } from 'zod';
 import type { QuestSpaceMember } from '../hooks/use-space-quests';
 import {
+  QUEST_DRAFT_READY_REPLY,
   QUEST_EDIT_NOT_FILED_REPLY,
+  formatPendingQuestPatch,
+  questSectionApprovalQuestion,
+  questStepSectionLabel,
   replyWithoutUnbackedEditClaim,
   settleCreateDraftTurn,
+  stewardQuestionForStep,
   type PendingQuestSectionProposal,
   type QuestDraftModelTurn,
+  type QuestDraftPatchInput,
   type QuestDraftStateSnapshot,
   type QuestDraftTurnHistoryItem,
 } from './quest-draft-assistant';
@@ -73,6 +80,165 @@ export const SAVED_QUEST_HELPER_SAVED =
 
 export const SAVED_QUEST_HELPER_NOTHING_PENDING =
   'Nothing is waiting to confirm.';
+
+type ScopeSide = 'in' | 'out' | 'both';
+
+function scopeSide(message: string): ScopeSide | null {
+  const inNamed = /\b(?:scope\s+in|in[-\s]?scope)\b/i.test(message);
+  const outNamed = /\b(?:scope\s+out|out[-\s]of[-\s]?scope)\b/i.test(message);
+  if (inNamed && outNamed) return 'both';
+  if (outNamed) return 'out';
+  if (inNamed) return 'in';
+  return null;
+}
+
+/** Add/include, and a single "Scope In:" line, keep the items already stored. */
+function appendsScopeList(message: string): boolean {
+  if (
+    /\b(?:replace|chang(?:e|ing)|set(?:ting)?|updat(?:e|ing)|rewrite|remov(?:e|ing)|drop(?:ping)?)\b/i.test(
+      message,
+    )
+  ) {
+    return false;
+  }
+  if (
+    /\b(?:add(?:ing)?|includ(?:e|ing)|append(?:ing)?|insert(?:ing)?|propos(?:e|ing)|suggest(?:ing)?)\b/i.test(
+      message,
+    )
+  ) {
+    return true;
+  }
+  return /^\s*(?:scope\s+in|scope\s+out|in\s+scope|out\s+of\s+scope)\s*:/i.test(
+    message,
+  );
+}
+
+function quotedScopeItem(message: string): string | null {
+  const quoted = /["“]([^"”]+)["”]/.exec(message)?.[1]?.trim();
+  return quoted || null;
+}
+
+function labeledScopeItem(message: string, side: 'in' | 'out'): string | null {
+  const pattern =
+    side === 'in'
+      ? /(?:^|\n)\s*(?:scope\s+in|in\s+scope)\s*:\s*(.+)$/i
+      : /(?:^|\n)\s*(?:scope\s+out|out\s+of\s+scope)\s*:\s*(.+)$/i;
+  const value = pattern.exec(message.trim())?.[1]?.trim();
+  if (!value) return null;
+  return quotedScopeItem(value) ?? value;
+}
+
+function cleanAddedItem(item: string, message: string): string {
+  const trimmed = item.trim();
+  if (!trimmed) return '';
+  if (message.includes(trimmed)) return trimmed;
+  const withoutPeriod = trimmed.replace(/\.+$/, '').trim();
+  if (withoutPeriod && message.includes(withoutPeriod)) return withoutPeriod;
+  return trimmed;
+}
+
+function mergeScopeItems(
+  existing: readonly string[],
+  incoming: readonly string[],
+  message: string,
+): string[] {
+  const seen = new Set(
+    existing.map((item) => item.trim().toLowerCase()).filter(Boolean),
+  );
+  const next = existing.map((item) => item.trim()).filter(Boolean);
+  for (const raw of incoming) {
+    const item = cleanAddedItem(raw, message);
+    const key = item.toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    next.push(item);
+  }
+  return next;
+}
+
+/**
+ * An add/include on a saved quest appends. The patch is the list the card
+ * shows, including the items that were already there.
+ */
+export function savedScopeAppendPatch(
+  draft: QuestDraftStateSnapshot,
+  message: string,
+  patch: QuestDraftPatchInput | null,
+): QuestDraftPatchInput | null {
+  if (!appendsScopeList(message)) return null;
+  const side = scopeSide(message);
+  if (!side) return null;
+  const next: QuestDraftPatchInput = {};
+  if (side !== 'out') {
+    const labeled = labeledScopeItem(message, 'in');
+    const quoted = side === 'in' ? quotedScopeItem(message) : null;
+    const incoming = [
+      ...(patch?.scopeIn ?? []),
+      ...(labeled ? [labeled] : []),
+      ...(quoted ? [quoted] : []),
+    ];
+    if (incoming.length > 0) {
+      next.scopeIn = mergeScopeItems(draft.scopeIn, incoming, message);
+    }
+  }
+  if (side !== 'in') {
+    const labeled = labeledScopeItem(message, 'out');
+    const quoted = side === 'out' ? quotedScopeItem(message) : null;
+    const incoming = [
+      ...(patch?.scopeOut ?? []),
+      ...(labeled ? [labeled] : []),
+      ...(quoted ? [quoted] : []),
+    ];
+    if (incoming.length > 0) {
+      next.scopeOut = mergeScopeItems(draft.scopeOut, incoming, message);
+    }
+  }
+  const inChanged =
+    next.scopeIn != null &&
+    (next.scopeIn.length !== draft.scopeIn.length ||
+      next.scopeIn.some((item, index) => item !== draft.scopeIn[index]));
+  const outChanged =
+    next.scopeOut != null &&
+    (next.scopeOut.length !== draft.scopeOut.length ||
+      next.scopeOut.some((item, index) => item !== draft.scopeOut[index]));
+  if (!inChanged && !outChanged) return null;
+  return next;
+}
+
+function savedPendingCard(pending: PendingQuestSectionProposal): string {
+  const preview = formatPendingQuestPatch(pending.patch).trim();
+  const question = questSectionApprovalQuestion(pending.step);
+  return [preview, 'Not saved yet.', question].filter(Boolean).join('\n\n');
+}
+
+function withoutCreateFlowQuestions(reply: string, message: string): string {
+  const requested = questEditRequestSection(message);
+  const about = requested ? questStepSectionLabel(requested) : '';
+  const prompts = QUEST_STEWARD_STEPS.map((step) =>
+    stewardQuestionForStep(step),
+  );
+  const pieces = reply.split(/(\n+|(?<=[.!?])\s+)/);
+  let kept = '';
+  for (let index = 0; index < pieces.length; index += 2) {
+    const sentence = pieces[index] ?? '';
+    const separator = pieces[index + 1] ?? '';
+    const text = sentence.trim();
+    if (!text) continue;
+    if (text === QUEST_DRAFT_READY_REPLY || text.includes('CREATE QUEST')) {
+      continue;
+    }
+    if (prompts.some((prompt) => text.includes(prompt))) continue;
+    if (
+      text.includes('?') &&
+      about &&
+      !new RegExp(about.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(text)
+    ) {
+      continue;
+    }
+    kept += sentence + separator;
+  }
+  return kept.replace(/\n{3,}/g, '\n\n').trim();
+}
 
 export function savedQuestSectionReply(patch: QuestPatch): string {
   if (patch.goal !== undefined) return 'Saved the Goal.';
@@ -511,23 +677,47 @@ export async function runSavedQuestHelperTurn({
   if (!settled || !isCurrent()) return null;
   if (!settled.wrote) {
     const latest = readState();
-    let reply = settled.reply;
-    if (!settled.pending && questEditRequestSection(message)) {
-      reply =
-        replyWithoutUnbackedEditClaim(reply) || QUEST_EDIT_NOT_FILED_REPLY;
+    const appended = savedScopeAppendPatch(
+      latest.draft,
+      message,
+      settled.pending?.patch ?? null,
+    );
+    if (appended) {
+      const pending: PendingQuestSectionProposal = {
+        step: 'scope',
+        patch: appended,
+      };
+      return {
+        reply: savedPendingCard(pending),
+        pending,
+        focusStep: 'scope',
+        saved: false,
+      };
     }
-    if (settled.pending) {
-      reply = alignSavedListReply(
-        reply,
-        latest.draft,
-        message,
-        settled.pending.step,
-      );
+    const pending = settled.pending;
+    let reply = pending
+      ? alignSavedListReply(
+          savedPendingCard(pending),
+          latest.draft,
+          message,
+          pending.step,
+        )
+      : withoutCreateFlowQuestions(
+          questEditRequestSection(message)
+            ? replyWithoutUnbackedEditClaim(settled.reply) ||
+                QUEST_EDIT_NOT_FILED_REPLY
+            : settled.reply,
+          message,
+        );
+    if (!reply.trim()) {
+      reply = questEditRequestSection(message)
+        ? QUEST_EDIT_NOT_FILED_REPLY
+        : 'Tell me one section to change.';
     }
     return {
       reply,
-      pending: settled.pending,
-      focusStep: settled.focusStep,
+      pending,
+      focusStep: pending?.step ?? settled.focusStep,
       saved: false,
     };
   }

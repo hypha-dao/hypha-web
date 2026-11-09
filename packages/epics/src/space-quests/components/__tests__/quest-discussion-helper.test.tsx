@@ -164,6 +164,7 @@ describe('quest discussion helper', () => {
 
   afterEach(() => {
     cleanup();
+    window.sessionStorage.clear();
     harness.personId = 7;
     harness.status = 'active';
     harness.patchQuest.mockReset();

@@ -828,7 +828,9 @@ ${untrusted(
       ok: true,
       patch: hasPatch ? collectedPatch : null,
       updatedQuest,
-      reply: result.text.trim().slice(0, 1800) || null,
+      reply:
+        result.text.trim().slice(0, 1800) ||
+        (hasPatch ? 'Not saved yet.' : null),
       specialistId: specialist?.id ?? 'operations',
     };
   } catch (error) {

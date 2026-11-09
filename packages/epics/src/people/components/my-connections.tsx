@@ -141,6 +141,7 @@ import { MessagesInboxFilters } from './messages-inbox-filters';
 import {
   channelRowsFromSnapshots,
   directInboxPlace,
+  inboxCoherenceSlug,
   inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
@@ -2962,7 +2963,7 @@ export function MyConnections({
       openCoherenceChat(
         row.roomId,
         row.name,
-        row.inbox.signalSlug ?? '',
+        inboxCoherenceSlug(row.inbox),
         null,
         spaceSlug,
         {

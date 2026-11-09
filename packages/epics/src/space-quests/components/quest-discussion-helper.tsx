@@ -29,6 +29,11 @@ import {
   questHelperTypingForTurn,
 } from '../utils/quest-helper-typing';
 import {
+  questHelperSessionKey,
+  readQuestHelperSession,
+  writeQuestHelperSession,
+} from '../utils/quest-helper-session';
+import {
   SAVED_QUEST_HELPER_INTRO,
   questHelperDraftAssistBody,
   questRecordToDraftSnapshot,
@@ -61,6 +66,7 @@ export function QuestDiscussionHelper({
   const { getAccessToken } = useAuthentication();
   const { quest, refresh } = useSpaceQuestDetail(spaceSlug, questSlug);
   const spaceMembers = useQuestSpaceMembers(spaceSlug);
+  const sessionKey = questHelperSessionKey(spaceSlug, questSlug);
   const [messages, setMessages] = useState<SpaceQuestDraftChatMessage[]>(() => [
     helperIntro(),
   ]);
@@ -71,6 +77,8 @@ export function QuestDiscussionHelper({
   const stepRef = useRef(0);
   const turnRef = useRef(0);
   const sendRef = useRef<(overridePrompt?: string) => void>(() => {});
+  const sessionKeyRef = useRef(sessionKey);
+  const skipSessionWrite = useRef(true);
 
   const viewer = person
     ? {
@@ -84,13 +92,33 @@ export function QuestDiscussionHelper({
     canMemberEditQuest(viewer, quest);
 
   useEffect(() => {
-    setMessages([helperIntro()]);
+    const restored =
+      typeof window === 'undefined'
+        ? null
+        : readQuestHelperSession(window.sessionStorage, sessionKey);
+    sessionKeyRef.current = sessionKey;
+    skipSessionWrite.current = true;
+    setMessages(restored?.messages ?? [helperIntro()]);
     setInput('');
     setTyping(false);
-    pendingRef.current = null;
-    stepRef.current = 0;
+    pendingRef.current = restored?.pending ?? null;
+    stepRef.current = restored?.step ?? 0;
     turnRef.current += 1;
-  }, [questSlug, spaceSlug]);
+  }, [sessionKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (sessionKeyRef.current !== sessionKey) return;
+    if (skipSessionWrite.current) {
+      skipSessionWrite.current = false;
+      return;
+    }
+    writeQuestHelperSession(window.sessionStorage, sessionKey, {
+      messages,
+      pending: pendingRef.current,
+      step: stepRef.current,
+    });
+  }, [messages, sessionKey]);
 
   useEffect(() => {
     draftRef.current = quest ? questRecordToDraftSnapshot(quest) : null;

@@ -131,6 +131,8 @@ describe('saved quest helper', () => {
     expect(outcome?.pending).toBeNull();
     expect(outcome?.reply).toBe('Saved the Goal.');
     expect(outcome?.reply).not.toMatch(/CREATE QUEST/i);
+    expect(outcome?.reply).not.toMatch(/Quest Reward/i);
+    expect(outcome?.reply).not.toMatch(/succeeded/i);
     expect(outcome?.reply).not.toBe('.');
 
     const incomplete = turn({
@@ -273,19 +275,111 @@ describe('saved quest helper', () => {
     expect(outcome?.reply).not.toMatch(/quest you want to create/i);
   });
 
-  it('does not claim a section changed when no patch was filed', async () => {
+  it('files the quoted Scope In addition instead of claiming it now reads', async () => {
     const { run, saveSection } = turn({
-      message: 'Add "Check helper edits" to Scope In',
+      message: 'Add "Terse test" to Scope In',
       loadModel: async () => ({
-        reply: 'Scope In now reads Check helper edits.',
+        reply:
+          'Scope In now reads: Terse test. How will we know this quest succeeded?',
         patch: null,
       }),
     });
     const outcome = await run();
     expect(saveSection).not.toHaveBeenCalled();
-    expect(outcome?.pending).toBeNull();
+    expect(outcome?.pending?.patch.scopeIn).toEqual(['docs', 'Terse test']);
+    expect(outcome?.reply).toContain('docs');
+    expect(outcome?.reply).toContain('Terse test');
     expect(outcome?.reply).not.toMatch(/now reads/i);
-    expect(outcome?.reply).toMatch(/did not file a suggestion/i);
+    expect(outcome?.reply).not.toMatch(/succeeded/i);
+  });
+
+  it('keeps existing scope items on the card and in the saved patch', async () => {
+    const draft: QuestDraftStateSnapshot = {
+      ...saved,
+      scopeIn: ['Edit each section'],
+      scopeOut: ['Production rollout'],
+      scopeInMarkdown: '- Edit each section',
+      scopeOutMarkdown: '- Production rollout',
+    };
+    const state: {
+      draft: QuestDraftStateSnapshot;
+      pending: PendingQuestSectionProposal | null;
+      currentStep: QuestStewardStep;
+    } = { draft, pending: null, currentStep: 'goal' };
+    const saveSection = vi.fn(async (_patch: Record<string, unknown>) => true);
+    const run = (message: string, model: QuestDraftModelTurn | null) =>
+      runSavedQuestHelperTurn({
+        message,
+        viewerDisplayName: 'Ada Lovelace',
+        spaceMembers: [],
+        readState: () => state,
+        isCurrent: () => true,
+        loadModel: async () => model,
+        saveSection,
+      });
+    const proposed = await run('Scope In: Check helper in chat', {
+      reply: 'keeps "Edit each section" and adds Check helper in chat',
+      patch: { scopeIn: ['Check helper in chat'] },
+    });
+    expect(proposed?.pending?.patch.scopeIn).toEqual([
+      'Edit each section',
+      'Check helper in chat',
+    ]);
+    expect(proposed?.reply).toContain('Edit each section');
+    expect(proposed?.reply).toContain('Check helper in chat');
+    state.pending = proposed?.pending ?? null;
+
+    const savedIn = await run('yes', null);
+    expect(savedIn?.reply).toBe('Saved the Scope.');
+    expect(savedIn?.reply).not.toMatch(/Quest Reward|succeeded|CREATE QUEST/i);
+    expect(saveSection.mock.calls[0]?.[0]).toMatchObject({
+      scopeIn: ['Edit each section', 'Check helper in chat'],
+      scopeOut: ['Production rollout'],
+    });
+
+    state.pending = null;
+    const scopeOut = await run('Scope Out: Mobile app', {
+      reply: 'Scope Out now reads Mobile app.',
+      patch: { scopeOut: ['Mobile app'] },
+    });
+    expect(scopeOut?.pending?.patch.scopeOut).toEqual([
+      'Production rollout',
+      'Mobile app',
+    ]);
+    expect(scopeOut?.reply).toContain('Production rollout');
+    expect(scopeOut?.reply).toContain('Mobile app');
+    expect(scopeOut?.reply).not.toMatch(/now reads/i);
+  });
+
+  it('proposes a Scope In card when the assistant reply is empty', async () => {
+    const outcome = await turn({
+      message:
+        'Please propose adding "Check helper in chat" to Scope In for my confirmation',
+      loadModel: async () => null,
+    }).run();
+    expect(outcome?.pending?.patch.scopeIn).toEqual([
+      'docs',
+      'Check helper in chat',
+    ]);
+    expect(outcome?.reply).toContain('Check helper in chat');
+    expect(outcome?.reply).not.toMatch(/can't reach the assistant/i);
+    expect(outcome?.reply).not.toMatch(/Quest Reward/i);
+
+    const scopeOut = await turn({
+      message:
+        'Please propose adding "Mobile app" to Scope Out for my confirmation',
+      draft: {
+        ...saved,
+        scopeOut: ['Production rollout'],
+        scopeOutMarkdown: '- Production rollout',
+      },
+      loadModel: async () => null,
+    }).run();
+    expect(scopeOut?.pending?.patch.scopeOut).toEqual([
+      'Production rollout',
+      'Mobile app',
+    ]);
+    expect(scopeOut?.reply).not.toMatch(/can't reach the assistant/i);
   });
 
   it('rejects a goal card when the edit named Success', async () => {

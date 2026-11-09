@@ -6,6 +6,7 @@ import {
   channelHasRecentActivity,
   channelIsRelevantToMember,
   channelRowsFromSnapshots,
+  inboxCoherenceSlug,
   inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
@@ -829,6 +830,12 @@ describe('inboxContextHref', () => {
     );
     expect(inboxContextHref('en', { ...place, kind: 'quest' })).toBe(
       '/en/dho/hypha-platform/quests/onboarding-matcher',
+    );
+    expect(inboxCoherenceSlug({ ...place, kind: 'quest' })).toBe(
+      'onboarding-matcher',
+    );
+    expect(inboxCoherenceSlug({ ...place, kind: 'signal' })).toBe(
+      'roadmap-page',
     );
   });
 
