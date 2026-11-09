@@ -27,15 +27,17 @@ export type QuestDraftRecord = QuestDraftListItem & {
   payload: z.infer<typeof schemaQuestCreateDraftPayload>;
 };
 
+function questDraftListKey(spaceSlug: string) {
+  return (key: unknown) =>
+    Array.isArray(key) &&
+    key[0] === SPACE_QUEST_DRAFTS_SWR_KEY &&
+    key[1] === spaceSlug;
+}
+
+/** Refetch without replacing the cached list. Passing `undefined` as the next
+ * value clears the cache, and SWR then drops the overlapping refetch. */
 function revalidateQuestDrafts(spaceSlug: string) {
-  return mutate(
-    (key: unknown) =>
-      Array.isArray(key) &&
-      key[0] === SPACE_QUEST_DRAFTS_SWR_KEY &&
-      key[1] === spaceSlug,
-    undefined,
-    { revalidate: true },
-  );
+  return mutate(questDraftListKey(spaceSlug));
 }
 
 export function revalidateSpaceQuests(spaceSlug: string) {
@@ -512,5 +514,11 @@ export async function deleteQuestDraftRequest({
   if (!response.ok) {
     throw await requestError(response, 'Failed to delete quest draft');
   }
-  await revalidateQuestDrafts(spaceSlug);
+  await mutate(
+    questDraftListKey(spaceSlug),
+    (current: { drafts: QuestDraftListItem[] } | undefined) => ({
+      drafts: (current?.drafts ?? []).filter((draft) => draft.id !== draftId),
+    }),
+    { revalidate: true },
+  );
 }
