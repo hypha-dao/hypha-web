@@ -204,8 +204,11 @@ const SECTION_REWRITE =
 const SECTION_OPENER =
   /\b(?:let'?s|let us|now)\b.{0,48}\b(?:define|talk about|work on|move on|start|cover)\b|\b(?:define|talk about|work on|move on to|start on|cover)\s+(?:the\s+)?(success\s+criteria|in[-\s]?scope|out[-\s]of[-\s]?scope|milestones?|participants?|members?|target\s+date|quest\s+rewards?|rewards?|quest\s+name|scope|success|lead|goal|name|title)\b|\b(what is|what['\u2019]s|how (?:do|should) (?:i|we)|help me (?:think|understand)|explain)\b/i;
 
-/** "the goal", "goal suggestion", "your suggestion", "that", "it". */
-const APPROVAL_REF = `(?:(?:(?:the|that|this|your|my|our)\\s+)?(?:(?:suggested|proposed|new)\\s+)?(?:${APPROVAL_SECTION}(?:\\s+(?:suggestion|wording|version|text|draft|proposal))?|suggestion|wording|version|proposal|draft)|it|that|this|them|those|these)`;
+const APPROVAL_REF_NOUN =
+  '(?:suggestions?|wording|versions?|text|drafts?|proposals?|items?|lines?|bullets?|points?|things?)';
+
+/** "the goal", "goal suggestion", "those items", "all of them", "it". */
+const APPROVAL_REF = `(?:(?:all\\s+(?:of\\s+)?|both\\s+(?:of\\s+)?)?(?:(?:(?:the|that|this|those|these|your|my|our)\\s+)?(?:(?:suggested|proposed|new)\\s+)?(?:${APPROVAL_SECTION}(?:\\s+${APPROVAL_REF_NOUN})?|${APPROVAL_REF_NOUN})|it|that|this|them|those|these)|all|both)`;
 
 const APPROVAL_FINE =
   '(?:good|great|fine|right|perfect|correct|ok|okay|clear|solid)';
@@ -225,13 +228,14 @@ const APPROVAL_CLAUSE = [
   `(?:like|love)\\s+(?:it|that|this)`,
   `(?:yes|yeah|yep|ok|okay|sure)\\s+(?:to|for)\\s+${APPROVAL_REF}`,
   `(?:(?:let'?s|let us|please|you can|go ahead and)\\s+)?(?:save|keep|apply|use|take|go with)(?:\\s+${APPROVAL_REF})?(?:\\s+(?:to|in|into|as)\\s+(?:the\\s+)?${APPROVAL_SECTION})?`,
+  `(?:(?:let'?s|let us|please|you can|go ahead and)\\s+)?(?:add|put|include|insert)\\s+${APPROVAL_REF}(?:\\s+(?:to|in|into|as)\\s+(?:the\\s+)?${APPROVAL_SECTION}(?:\\s+section)?)?`,
   `${APPROVAL_REF}(?:'s|\\s+is|\\s+looks|\\s+sounds|\\s+seems)\\s+(?:really\\s+)?${APPROVAL_FINE}`,
   "(?:let'?s\\s+)?(?:move\\s+on|continue|proceed)",
   'next(?:\\s+section)?',
 ].join('|');
 
 const APPROVAL_SEPARATOR =
-  '(?:\\s*[,;\u2014\u2013]\\s*|\\s*[.!]+\\s*|\\s+-\\s+|\\s+)(?:(?:and|so|then)\\s+)?';
+  '(?:\\s*[,;\u2014\u2013]\\s*|\\s*[.!]+\\s*|\\s+-\\s+|\\s+)(?:(?:and\\s+)?(?:so|then)\\s+|and\\s+)?';
 
 const APPROVAL_MESSAGE = new RegExp(
   `^(?:${APPROVAL_CLAUSE})(?:${APPROVAL_SEPARATOR}(?:${APPROVAL_CLAUSE}))*$`,
@@ -1451,7 +1455,7 @@ function conversationalModelReply(
  * above. The app appends one line from the real card, or none.
  */
 const MODEL_STATE_CLAIM =
-  /\b(?:waiting|sav(?:ed|es)|suggested above|suggestion above|do you want that to be in)\b/i;
+  /\b(?:waiting|sav(?:ed|es)|suggested above|suggestion above|do you want that to be in)\b|(?<!\b(?:once|when|until|after|if|before|unless)\s+(?:the\s+|your\s+)?)\b(?:goal|scope|success\s+criteria|milestones?|members?|lead|target\s+date|(?:quest\s+)?rewards?|name)(?:'s|\s+(?:is|are|has\s+been|have\s+been))\s+(?:now\s+)?(?:set|added|applied|filled(?:\s+in)?|recorded|in\s+place|locked(?:\s+in)?|done)\b|\b(?:i(?:'ve|\s+have)|we(?:'ve|\s+have))\s+(?:now\s+)?(?:added|applied|set|filled|recorded|put)\b|\badded\s+(?:that|it|those|these|them)\s+to\b/i;
 
 function stripModelStateClaims(reply: string): string {
   const pieces = reply.split(/(\n+|(?<=[.!?])\s+)/);

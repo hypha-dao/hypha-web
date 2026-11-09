@@ -342,6 +342,79 @@ describe('quest-draft-assistant', () => {
     expect(questDraftTurnUsesModel('I confirm the goal')).toBe(false);
   });
 
+  it('saves the pending Scope on "yes add those to scope"', () => {
+    const patch = {
+      scopeIn: [
+        'Testing the quest creation feature in this sandbox space',
+        'Starting a new quest and seeing it saved as a draft',
+      ],
+      scopeOut: [
+        'Publishing the quest as a proposal',
+        'The open access entry the sandbox description mentions',
+        'Any other features or spaces',
+      ],
+    };
+    for (const message of [
+      'yes add those to scope',
+      'Yes, add them to the Scope.',
+      'add those to the scope section',
+      'put those in scope',
+      'include them in the scope',
+      'yes, add all of them',
+      'add these items to scope',
+      'yes and then add them to the scope',
+    ]) {
+      expect(isQuestSectionApproval(message)).toBe(true);
+      const result = runNewQuestDraftTurn({
+        message,
+        currentStep: 'success',
+        draft: { ...emptyDraft, goal: 'saved' },
+        pending: { step: 'scope', patch },
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: [],
+        model: null,
+      });
+      expect(result.wrote).toBe(true);
+      expect(result.draft.scopeIn).toEqual(patch.scopeIn);
+      expect(result.draft.scopeOut).toEqual(patch.scopeOut);
+      expect(result.pending).toBeNull();
+      expect(result.reply).toMatch(/Added that to the Scope/);
+    }
+    expect(questDraftTurnUsesModel('yes add those to scope')).toBe(false);
+    expect(isQuestSectionApproval('add lead scoring')).toBe(false);
+    expect(
+      isQuestSectionApproval('add a milestone for the sandbox review'),
+    ).toBe(false);
+  });
+
+  it('drops a model claim that a section is set when nothing was written', () => {
+    const pending = {
+      step: 'scope' as const,
+      patch: { scopeIn: ['Sandbox only'], scopeOut: ['Voting'] },
+    };
+    const result = runNewQuestDraftTurn({
+      message: 'Add lead scoring',
+      currentStep: 'success',
+      draft: { ...emptyDraft, goal: 'saved' },
+      pending,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      model: {
+        reply:
+          "Scope is set: two in-scope items and three explicit non-goals. I've added those to the draft. Do you mean the Lead role? Once the target date is set, we can plan milestones.",
+        patch: {},
+      },
+    });
+    expect(result.wrote).toBe(false);
+    expect(result.reply).not.toMatch(/Scope is set/);
+    expect(result.reply).not.toMatch(/I've added/);
+    expect(result.reply).toMatch(/Do you mean the Lead role/);
+    expect(result.reply).toMatch(/Once the target date is set/);
+    expect(result.reply).toMatch(
+      /The Scope suggestion is still waiting on a yes/,
+    );
+  });
+
   it('treats okay as approval, not a leftover ay after matching ok', () => {
     expect(isQuestSectionApproval('okay')).toBe(true);
     expect(isQuestSectionApproval('ok')).toBe(true);
