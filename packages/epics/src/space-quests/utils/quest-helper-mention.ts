@@ -7,8 +7,10 @@ type MentionRow = {
   userId: string;
   displayLabel: string;
   rowKey?: string;
-  agentIcon?: { kind: 'network' } | { kind: 'space'; logoUrl?: string | null };
 };
+
+/** Space, network, or context mark. Kept wide so the picker icon can grow. */
+type MentionIcon = { kind: string; logoUrl?: string | null };
 
 /**
  * Quest Helper sits with AI Agents in a quest room's @ picker.
@@ -17,7 +19,7 @@ type MentionRow = {
 export function withQuestHelperMention<T extends MentionRow>(
   candidates: readonly T[],
   enabled: boolean,
-  icon?: MentionRow['agentIcon'],
+  icon?: MentionIcon,
 ): T[] {
   if (!enabled) return [...candidates];
   if (
@@ -34,7 +36,7 @@ export function withQuestHelperMention<T extends MentionRow>(
     displayLabel: QUEST_HELPER_NAME,
     rowKey: 'quest-helper',
     agentIcon: icon ?? { kind: 'network' },
-  } as T;
+  } as unknown as T;
   const agentAt = candidates.findIndex(
     (candidate) => candidate.rowKey === 'agent',
   );
