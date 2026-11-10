@@ -27,7 +27,7 @@ run('authorization server: protocol, gate, revocation, storage', () => {
   });
 
   async function keys() {
-    const res = await s.handler(h.req('/api/as/jwks'));
+    const res = await s.handler(h.req('/api/auth/jwks'));
     return createLocalJWKSet(await res.json());
   }
 
@@ -148,14 +148,11 @@ run('authorization server: protocol, gate, revocation, storage', () => {
     expect(r.res.status).toBe(200);
   });
 
-  it('INFO: without offline_access', async () => {
+  it('offline_access is added when the app did not ask for it, so a refresh token is issued', async () => {
     const f = await h.fullFlow(s, { scope: 'spaces:read' });
-    console.log(
-      'INFO no offline_access ->',
-      f.stage,
-      JSON.stringify(Object.keys(f.token?.body ?? {})),
-    );
     expect(f.stage).toBe('done');
+    expect(f.token!.body.refresh_token).toBeTruthy();
+    expect(String(f.token!.body.scope).split(' ')).toContain('offline_access');
   });
 
   it('whitelist: a person not on the list cannot log in', async () => {
@@ -269,7 +266,7 @@ run('authorization server: protocol, gate, revocation, storage', () => {
     const a = await s.handler(h.req(u.pathname + u.search));
     const q = new URL(a.headers.get('location')!, h.ISSUER).search.slice(1);
     const res = await s.handler(
-      h.req('/api/as/privy/sign-in', {
+      h.req('/api/auth/privy/sign-in', {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
@@ -329,19 +326,19 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
     });
 
   it('answers on the issuer host; 404 on any other host', async () => {
-    const ok = await handle()(onHost('as.localhost:3000', '/api/as/jwks'));
+    const ok = await handle()(onHost('auth.localhost:3000', '/api/auth/jwks'));
     expect(ok.status).toBe(200);
     for (const host of [
       'localhost:3000',
       'app.hypha.earth',
-      'as.localhost:3001',
+      'auth.localhost:3001',
       'evil.com',
     ]) {
       for (const path of [
-        '/api/as/jwks',
-        '/api/as/oauth2/token',
+        '/api/auth/jwks',
+        '/api/auth/oauth2/token',
         '/.well-known/oauth-authorization-server',
-        '/api/as/privy/sign-in',
+        '/api/auth/privy/sign-in',
       ]) {
         const method =
           path.includes('token') || path.includes('sign-in') ? 'POST' : 'GET';
@@ -353,12 +350,12 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
 
   it('metadata and JWKS resolve under the issuer; metadata is path-less and points at the AS-only JWKS', async () => {
     const res = await handle()(
-      onHost('as.localhost:3000', '/.well-known/oauth-authorization-server'),
+      onHost('auth.localhost:3000', '/.well-known/oauth-authorization-server'),
     );
     expect(res.status).toBe(200);
     const meta = await res.json();
     expect(meta.issuer).toBe(h.ISSUER);
-    expect(meta.jwks_uri).toBe(`${h.ISSUER}/api/as/jwks`);
+    expect(meta.jwks_uri).toBe(`${h.ISSUER}/api/auth/jwks`);
     expect(meta.code_challenge_methods_supported).toEqual(['S256']);
     expect(meta.client_id_metadata_document_supported).toBe(true);
     expect(meta.authorization_response_iss_parameter_supported).toBe(true);
@@ -367,18 +364,20 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
 
   it('library endpoints outside the allowlist are not reachable', async () => {
     for (const [p, m] of [
-      ['/api/as/oauth2/create-client', 'POST'],
-      ['/api/as/oauth2/get-clients', 'GET'],
-      ['/api/as/oauth2/register', 'POST'],
-      ['/api/as/oauth2/introspect', 'POST'],
-      ['/api/as/oauth2/userinfo', 'GET'],
-      ['/api/as/sign-up/email', 'POST'],
-      ['/api/as/get-session', 'GET'],
-      ['/api/as/list-sessions', 'GET'],
-      ['/api/as/token', 'GET'],
-      ['/api/as/ok', 'GET'],
+      ['/api/auth/oauth2/create-client', 'POST'],
+      ['/api/auth/oauth2/get-clients', 'GET'],
+      ['/api/auth/oauth2/register', 'POST'],
+      ['/api/auth/oauth2/introspect', 'POST'],
+      ['/api/auth/oauth2/userinfo', 'GET'],
+      ['/api/auth/sign-up/email', 'POST'],
+      ['/api/auth/get-session', 'GET'],
+      ['/api/auth/list-sessions', 'GET'],
+      ['/api/auth/token', 'GET'],
+      ['/api/auth/ok', 'GET'],
     ] as const) {
-      const res = await handle()(onHost('as.localhost:3000', p, { method: m }));
+      const res = await handle()(
+        onHost('auth.localhost:3000', p, { method: m }),
+      );
       expect(res.status, p).toBe(404);
     }
   });
@@ -411,13 +410,13 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
     expect(
       loadAuthServerConfig({
         ...on,
-        AUTH_SERVER_ISSUER: 'https://as.example.org/auth',
+        AUTH_SERVER_ISSUER: 'https://auth.example.org/auth',
       }).enabled,
     ).toBe(false);
     expect(
       loadAuthServerConfig({
         ...on,
-        AUTH_SERVER_ISSUER: 'http://as.example.org',
+        AUTH_SERVER_ISSUER: 'http://auth.example.org',
       }).enabled,
     ).toBe(false);
     expect(
@@ -443,7 +442,7 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
       (
         loadAuthServerConfig({
           ...dev,
-          AUTH_SERVER_ISSUER: 'https://as.example.org',
+          AUTH_SERVER_ISSUER: 'https://auth.example.org',
         }) as { privyJwksUrlOverride?: string }
       ).privyJwksUrlOverride,
     ).toBeUndefined();
@@ -454,7 +453,7 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
       },
     );
     expect(
-      (await off(onHost('as.localhost:3000', '/api/as/jwks'))).status,
+      (await off(onHost('auth.localhost:3000', '/api/auth/jwks'))).status,
     ).toBe(404);
   });
 
@@ -505,7 +504,7 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
         () => leaky,
       );
       const res = await hh(
-        onHost('as.localhost:3000', '/api/as/privy/sign-in', {
+        onHost('auth.localhost:3000', '/api/auth/privy/sign-in', {
           method: 'POST',
           headers: { 'content-type': 'application/json', origin: h.ISSUER },
           body: JSON.stringify({ privyToken: secretToken }),

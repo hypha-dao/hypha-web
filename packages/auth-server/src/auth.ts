@@ -135,6 +135,36 @@ export function createAuthServer(
         findPerson: (sub) => findPersonBySub(pool, sub),
       }),
       {
+        // Every client is an AI host that should stay connected, so a refresh token is always
+        // offered: `offline_access` is added to the requested scopes (the person can still
+        // untick it on the consent page). The library only issues a refresh token when it is
+        // part of the granted scope.
+        id: 'hypha-offline-access',
+        hooks: {
+          before: [
+            {
+              matcher: (ctx) => ctx.path === '/oauth2/authorize',
+              handler: createAuthMiddleware(async (ctx) => {
+                const target = (ctx.query ?? ctx.body) as
+                  | Record<string, unknown>
+                  | undefined;
+                const requested = target?.scope;
+                if (
+                  !target ||
+                  typeof requested !== 'string' ||
+                  !requested.trim()
+                )
+                  return;
+                const scopes = requested.split(/\s+/).filter(Boolean);
+                if (!scopes.includes('offline_access')) {
+                  target.scope = [...scopes, 'offline_access'].join(' ');
+                }
+              }),
+            },
+          ],
+        },
+      },
+      {
         id: 'hypha-gate',
         hooks: {
           before: [

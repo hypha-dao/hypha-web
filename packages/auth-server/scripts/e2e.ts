@@ -9,7 +9,7 @@
  * because Client ID Metadata Documents need a public https URL that this machine does not have.
  *
  *   AUTH_SERVER_TEST_DATABASE_URL=postgresql://... E2E_PRIVY_APP_ID=... \
- *   E2E_BASE=http://127.0.0.1:3000 E2E_HOST=as.localhost:3000 npx tsx scripts/e2e.ts
+ *   E2E_BASE=http://127.0.0.1:3000 E2E_HOST=auth.localhost:3000 npx tsx scripts/e2e.ts
  */
 import { createHash, randomBytes } from 'node:crypto';
 import http from 'node:http';
@@ -17,14 +17,14 @@ import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import pg from 'pg';
 
 const BASE = process.env.E2E_BASE ?? 'http://127.0.0.1:3000';
-const AS_HOST = process.env.E2E_HOST ?? 'as.localhost:3000';
+const AS_HOST = process.env.E2E_HOST ?? 'auth.localhost:3000';
 const ISSUER = `http://${AS_HOST}`;
 const DB = process.env.AUTH_SERVER_TEST_DATABASE_URL!;
 const APP_ID = process.env.E2E_PRIVY_APP_ID!;
 const PERSON = 'did:privy:allowed1';
 const CLIENT_ID = 'e2e-client';
 const REDIRECT = 'http://127.0.0.1:8976/callback';
-const RESOURCE = `${ISSUER}/api/as/test`;
+const RESOURCE = `${ISSUER}/api/auth/test`;
 
 if (!DB || !APP_ID)
   throw new Error('set AUTH_SERVER_TEST_DATABASE_URL and E2E_PRIVY_APP_ID');
@@ -159,8 +159,8 @@ try {
   // 2. host block
   for (const host of ['localhost:3000', 'example.com']) {
     const a = await call('/.well-known/oauth-authorization-server', { host });
-    const b = await call('/api/as/jwks', { host });
-    const c = await call('/as/login', { host });
+    const b = await call('/api/auth/jwks', { host });
+    const c = await call('/auth/login', { host });
     check(
       `404 on other host ${host} (metadata, jwks, login page)`,
       a.status === 404 && b.status === 404 && c.status === 404,
@@ -169,7 +169,7 @@ try {
   }
 
   // 3. protected route without a token
-  res = await call('/api/as/test');
+  res = await call('/api/auth/test');
   check(
     'protected route: 401 without token',
     res.status === 401,
@@ -189,13 +189,13 @@ try {
     code_challenge_method: 'S256',
     resource: RESOURCE,
   });
-  res = await call(`/api/as/oauth2/authorize?${q}`);
+  res = await call(`/api/auth/oauth2/authorize?${q}`);
   const loginLoc = new URL(res.location(), ISSUER);
   check(
     'authorize without session redirects to our login page',
-    res.status === 302 && loginLoc.pathname === '/as/login',
+    res.status === 302 && loginLoc.pathname === '/auth/login',
   );
-  res = await call(`/as/login${loginLoc.search}`);
+  res = await call(`/auth/login${loginLoc.search}`);
   const loginHtml = await res.text();
   check(
     'login page renders on the AS host',
@@ -204,7 +204,7 @@ try {
   );
 
   // 5. sign in (bridge) with a Privy-style token
-  res = await call('/api/as/privy/sign-in', {
+  res = await call('/api/auth/privy/sign-in', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -221,10 +221,10 @@ try {
   check(
     'Privy token verified, AS session opened, redirected to consent',
     res.status === 200 &&
-      String(signIn.url).startsWith('/as/consent') &&
+      String(signIn.url).startsWith('/auth/consent') &&
       !!cookie,
   );
-  const bad = await call('/api/as/privy/sign-in', {
+  const bad = await call('/api/auth/privy/sign-in', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -255,7 +255,7 @@ try {
     noCookie.status !== 200 || !(await noCookie.text()).includes('E2E AI App'),
     String(noCookie.status),
   );
-  res = await call('/api/as/oauth2/consent', {
+  res = await call('/api/auth/oauth2/consent', {
     method: 'POST',
     cookie,
     headers: {
@@ -279,7 +279,7 @@ try {
   );
 
   // 7. token
-  res = await call('/api/as/oauth2/token', {
+  res = await call('/api/auth/oauth2/token', {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -298,7 +298,7 @@ try {
   );
 
   // 8. protected route with the token
-  res = await call('/api/as/test', {
+  res = await call('/api/auth/test', {
     headers: { authorization: `Bearer ${tok.access_token}` },
   });
   const who = await res.json();
@@ -311,14 +311,14 @@ try {
       who.scopes?.includes('spaces:read'),
     JSON.stringify(who),
   );
-  res = await call('/api/as/test', {
+  res = await call('/api/auth/test', {
     host: 'localhost:3000',
     headers: { authorization: `Bearer ${tok.access_token}` },
   });
   check('protected route is 404 on the main host', res.status === 404);
 
   // 9. refresh, then disconnect
-  res = await call('/api/as/oauth2/token', {
+  res = await call('/api/auth/oauth2/token', {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -334,7 +334,7 @@ try {
     'delete from as_oauth_refresh_token where "userId" = $1 and "clientId" = $2',
     [PERSON, CLIENT_ID],
   );
-  res = await call('/api/as/oauth2/token', {
+  res = await call('/api/auth/oauth2/token', {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({

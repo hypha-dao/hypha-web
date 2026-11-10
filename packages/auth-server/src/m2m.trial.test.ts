@@ -24,7 +24,7 @@ run('trial: client credentials with a role claim (information)', () => {
   function make() {
     return betterAuth({
       baseURL: ISSUER,
-      basePath: '/api/as',
+      basePath: '/api/auth',
       secret: 'contract-test-secret-'.padEnd(48, 'x'),
       database: pool,
       logger: { disabled: true },
@@ -39,15 +39,15 @@ run('trial: client credentials with a role claim (information)', () => {
           jwt: { issuer: ISSUER },
         }),
         oauthProvider({
-          loginPage: '/as/login',
-          consentPage: '/as/consent',
+          loginPage: '/auth/login',
+          consentPage: '/auth/consent',
           scopes: ['spaces:read', 'service:read'],
           grantTypes: ['client_credentials'],
           storeClientSecret: {
             hash: async (s: string) => `h:${s}`,
             verify: async (s: string, stored: string) => stored === `h:${s}`,
           },
-          resources: [`${ISSUER}/api/as/test`],
+          resources: [`${ISSUER}/api/auth/test`],
           enforcePerClientResources: false,
           customAccessTokenClaims: async ({ user }) =>
             user ? {} : { role: 'hypha_service' },
@@ -78,7 +78,7 @@ run('trial: client credentials with a role claim (information)', () => {
     );
     const basic = Buffer.from('svc-client:svc-secret').toString('base64');
     const res = await auth.handler(
-      new Request(`${ISSUER}/api/as/oauth2/token`, {
+      new Request(`${ISSUER}/api/auth/oauth2/token`, {
         method: 'POST',
         headers: {
           'content-type': 'application/x-www-form-urlencoded',
@@ -88,7 +88,7 @@ run('trial: client credentials with a role claim (information)', () => {
         body: new URLSearchParams({
           grant_type: 'client_credentials',
           scope: 'service:read',
-          resource: `${ISSUER}/api/as/test`,
+          resource: `${ISSUER}/api/auth/test`,
         }).toString(),
       }),
     );

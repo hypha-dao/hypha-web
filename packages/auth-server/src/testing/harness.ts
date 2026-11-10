@@ -5,8 +5,8 @@ import { loadAuthServerConfig, type AuthServerConfig } from '../config';
 import { createAuthDbPool } from '../db';
 
 export const TEST_DB_URL = process.env.AUTH_SERVER_TEST_DATABASE_URL;
-export const ISSUER = 'http://as.localhost:3000';
-export const RESOURCE = `${ISSUER}/api/as/test`;
+export const ISSUER = 'http://auth.localhost:3000';
+export const RESOURCE = `${ISSUER}/api/auth/test`;
 export const CLIENT_ID = 'https://client.example.com/cimd.json';
 export const REDIRECT_URI = 'https://client.example.com/callback';
 export const PERSON = 'did:privy:allowed1';
@@ -112,7 +112,7 @@ export function authorizeUrl(
   pkce: { challenge: string },
   over: Record<string, string> = {},
 ) {
-  const u = new URL(`${ISSUER}/api/as/oauth2/authorize`);
+  const u = new URL(`${ISSUER}/api/auth/oauth2/authorize`);
   const q: Record<string, string> = {
     response_type: 'code',
     client_id: CLIENT_ID,
@@ -161,7 +161,7 @@ export async function signIn(
   person = PERSON,
 ) {
   const res = await s.handler(
-    req('/api/as/privy/sign-in', {
+    req('/api/auth/privy/sign-in', {
       method: 'POST',
       jar,
       headers: {
@@ -186,7 +186,7 @@ export async function consent(
   scope: string,
 ) {
   const res = await s.handler(
-    req('/api/as/oauth2/consent', {
+    req('/api/auth/oauth2/consent', {
       method: 'POST',
       jar,
       headers: {
@@ -202,7 +202,7 @@ export async function consent(
 
 export async function tokenRequest(s: Harness, params: Record<string, string>) {
   const res = await s.handler(
-    req('/api/as/oauth2/token', {
+    req('/api/auth/oauth2/token', {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams(params).toString(),

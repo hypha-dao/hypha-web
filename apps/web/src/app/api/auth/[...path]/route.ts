@@ -1,4 +1,4 @@
-import { handleAuthServerRequest } from '../../../(as)/as/_lib/server';
+import { handleAuthServerRequest } from '../../../(auth)/auth/_lib/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

@@ -14,13 +14,13 @@ export const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
 export const AUTH_CODE_TTL_SECONDS = 60;
 
 /** Path prefix of the Better Auth handler (not the issuer: the issuer has no path). */
-export const AUTH_SERVER_API_BASE_PATH = '/api/as';
-export const AUTH_SERVER_LOGIN_PATH = '/as/login';
-export const AUTH_SERVER_CONSENT_PATH = '/as/consent';
+export const AUTH_SERVER_API_BASE_PATH = '/api/auth';
+export const AUTH_SERVER_LOGIN_PATH = '/auth/login';
+export const AUTH_SERVER_CONSENT_PATH = '/auth/consent';
 
 export type AuthServerConfig = {
   enabled: true;
-  /** Path-less issuer, no trailing slash, e.g. https://as.example.org */
+  /** Path-less issuer, no trailing slash, e.g. https://auth.example.org */
   issuer: string;
   /** Host (with port) the server answers on. Every other host gets 404. */
   host: string;

@@ -36,7 +36,7 @@ export default async function AuthServerConsentPage({
   );
   if (!request) {
     // Unsigned, expired or no session: start over from the app.
-    redirect('/as/login?error=expired');
+    redirect('/auth/login?error=expired');
   }
   return (
     <ConsentForm

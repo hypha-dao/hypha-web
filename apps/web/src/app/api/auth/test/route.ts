@@ -3,7 +3,7 @@ import {
   blockUnlessAuthServerHost,
   guardResource,
 } from '@hypha-platform/auth-server/server';
-import { getAuthServerConfig } from '../../../(as)/as/_lib/server';
+import { getAuthServerConfig } from '../../../(auth)/auth/_lib/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   if (blocked || !config.enabled)
     return blocked ?? new Response('Not Found', { status: 404 });
 
-  const audience = `${config.issuer}/api/as/test`;
+  const audience = `${config.issuer}/api/auth/test`;
   if (!config.resources.includes(audience)) {
     return new Response('Not Found', { status: 404 });
   }
