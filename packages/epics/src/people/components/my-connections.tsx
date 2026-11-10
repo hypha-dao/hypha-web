@@ -3511,10 +3511,50 @@ export function MyConnections({
 }
 
 const MEMBER_LIST_SKELETON_ROWS = 6;
+const INBOX_FILTER_SKELETON_ROWS = 6;
 
 export function MessagesPeopleListSkeleton() {
   const t = useTranslations('Connections');
   return <MemberListSkeleton title={t('people')} loadingLabel={t('loading')} />;
+}
+
+/**
+ * Full Messages shell while auth / Suspense resolve — filters + list — so the
+ * page title does not sit alone on a white canvas for a frame.
+ */
+export function MessagesInboxShellSkeleton() {
+  const t = useTranslations('Connections');
+  const loadingLabel = t('loading');
+  return (
+    <div
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row lg:items-start lg:gap-6"
+      role="status"
+      aria-busy="true"
+      aria-label={loadingLabel}
+      data-testid="messages-inbox-shell-loader"
+    >
+      <div
+        className="hidden w-full shrink-0 overflow-hidden rounded-none border border-border bg-background lg:block lg:w-80"
+        aria-hidden
+      >
+        {Array.from({ length: INBOX_FILTER_SKELETON_ROWS }, (_, index) => (
+          <div
+            key={index}
+            className="flex items-start gap-3 border-b border-border px-4 py-4 last:border-b-0"
+          >
+            <span className="mt-0.5 size-4 shrink-0 animate-pulse rounded-sm bg-neutral-5" />
+            <span className="min-w-0 flex-1">
+              <span className="block h-4 w-28 max-w-[70%] animate-pulse rounded-sm bg-neutral-5" />
+              <span className="mt-2 block h-3 w-40 max-w-full animate-pulse rounded-sm bg-neutral-5" />
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="min-h-0 min-w-0 flex-1">
+        <MemberListSkeleton title={t('people')} loadingLabel={loadingLabel} />
+      </div>
+    </div>
+  );
 }
 
 function MemberListSkeleton({
