@@ -214,9 +214,10 @@ function ReplyPreviewAuthorName({
     ) {
       return fallback;
     }
-    return matrixUserId
-      ? visibleMatrixMemberName(matrixUserId, fallback)
-      : unknownMemberLabel;
+    return (
+      (matrixUserId ? visibleMatrixMemberName(matrixUserId, fallback) : '') ||
+      unknownMemberLabel
+    );
   }, [
     agentMentionLabel,
     authorLabel,

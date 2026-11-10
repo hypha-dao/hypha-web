@@ -2772,7 +2772,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           }
         }
       }
-      return visibleMatrixMemberName(userId, profileLabel) || '';
+      return visibleMatrixMemberName(userId, profileLabel) || unresolvedLabel;
     },
     [
       agentMentionLabel,
