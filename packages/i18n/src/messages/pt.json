@@ -5769,6 +5769,9 @@
       "rejected": "Rejeitadas",
       "drafts": "Meus rascunhos"
     },
+    "activity": {
+      "proposalRejected": "proposta rejeitada"
+    },
     "drafts": {
       "empty": "Você não tem rascunhos de missões salvos neste espaço.",
       "continue": "Continuar",

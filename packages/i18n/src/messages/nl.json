@@ -5777,6 +5777,9 @@
       "rejected": "Afgewezen",
       "drafts": "Mijn concepten"
     },
+    "activity": {
+      "proposalRejected": "voorstel afgewezen"
+    },
     "drafts": {
       "empty": "Je hebt geen opgeslagen quest-concepten in deze space.",
       "continue": "Doorgaan",

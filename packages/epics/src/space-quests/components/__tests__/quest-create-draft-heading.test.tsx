@@ -132,6 +132,12 @@ describe('quest create draft heading', () => {
     const helper = screen.getByText(
       'Fills in live as you chat · click any section to edit',
     );
+    const intro = screen.getByTestId('quest-create-intro');
+    expect(intro.className).toContain('flex-col');
+    expect(intro.className).toContain('gap-2');
+    expect(intro.contains(heading)).toBe(true);
+    expect(intro.contains(status)).toBe(true);
+    expect(intro.contains(helper)).toBe(true);
     expect(status.textContent).toContain('Not saved yet');
     expect(
       heading.compareDocumentPosition(status) &
@@ -140,7 +146,7 @@ describe('quest create draft heading', () => {
     expect(
       status.compareDocumentPosition(helper) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(status.className).toContain('h-8');
+    expect(status.className).toContain('h-5');
     expect(status.className).toContain('min-w-[11.5rem]');
     expect(
       screen.getByTestId('cancel-quest-button').parentElement?.contains(status),
@@ -231,7 +237,7 @@ describe('quest create draft heading', () => {
     const status = screen.getByTestId('quest-draft-save-status');
     expect(status.getAttribute('data-state')).toBe('loading');
     expect(status.getAttribute('aria-busy')).toBe('true');
-    expect(status.className).toContain('h-8');
+    expect(status.className).toContain('h-5');
     expect(status.className).toContain('min-w-[11.5rem]');
     expect(status.textContent ?? '').not.toContain('Not saved yet');
     expect(status.textContent ?? '').not.toContain('Saving…');
@@ -281,7 +287,7 @@ describe('quest create draft heading', () => {
     expect(screen.getByText('Finish the checklist')).toBeTruthy();
     expect(screen.queryByTestId('quest-draft-loading')).toBeNull();
     const saved = screen.getByTestId('quest-draft-save-status');
-    expect(saved.className).toContain('h-8');
+    expect(saved.className).toContain('h-5');
     expect(saved.className).toContain('min-w-[11.5rem]');
     expect(saved.textContent).toContain('Saved automatically');
     expect(saved.textContent).not.toContain('Not saved yet');

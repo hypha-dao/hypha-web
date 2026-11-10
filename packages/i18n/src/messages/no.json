@@ -5776,6 +5776,9 @@
       "rejected": "Avvist",
       "drafts": "Mine utkast"
     },
+    "activity": {
+      "proposalRejected": "forslag avvist"
+    },
     "drafts": {
       "empty": "Du har ingen lagrede utkast i dette området.",
       "continue": "Fortsett",

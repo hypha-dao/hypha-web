@@ -5793,6 +5793,9 @@
       "rejected": "Rejected",
       "drafts": "My drafts"
     },
+    "activity": {
+      "proposalRejected": "proposal rejected"
+    },
     "drafts": {
       "empty": "You have no saved quest drafts in this space.",
       "continue": "Continue",

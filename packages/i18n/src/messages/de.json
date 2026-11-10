@@ -5771,6 +5771,9 @@
       "rejected": "Abgelehnt",
       "drafts": "Meine Entwürfe"
     },
+    "activity": {
+      "proposalRejected": "Vorschlag abgelehnt"
+    },
     "drafts": {
       "empty": "Du hast in diesem Space keine gespeicherten Quest-Entwürfe.",
       "continue": "Weiter",

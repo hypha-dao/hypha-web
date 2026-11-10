@@ -195,13 +195,19 @@ function cardHealth(quest: QuestRecord): {
   return { ...meta, label: display.label };
 }
 
-function latestCardUpdateLine(quest: QuestRecord): string {
+function latestCardUpdateLine(
+  quest: QuestRecord,
+  proposalRejectedLabel: string,
+): string {
   const latest = quest.updates[0];
+  if (isRejectedProposedQuest(quest)) {
+    const name = latest?.authorName || quest.leadName || 'Participant';
+    const first = name.split(' ')[0] || 'Participant';
+    const rel = latest ? formatRelativeTimeShort(latest.createdAt) : 'just now';
+    return `${first} · ${rel}: ${proposalRejectedLabel}`;
+  }
   if (!latest) {
     const first = (quest.leadName || 'Participant').split(' ')[0];
-    if (isRejectedProposedQuest(quest)) {
-      return `${first} · just now: proposal rejected`;
-    }
     return quest.status === 'proposed'
       ? `${first} · just now: proposed, waiting for votes`
       : `${first} · recently: quest active`;
@@ -254,6 +260,7 @@ export function QuestCard({
   locale?: string;
   spaceMembers?: readonly QuestSpaceMember[];
 }) {
+  const t = useTranslations('SpaceQuests');
   const health = cardHealth(quest);
   const progress = milestoneProgressMeta(quest);
   const leadName = quest.leadName.trim();
@@ -348,7 +355,7 @@ export function QuestCard({
       {/* Latest update line (desktop 01-quests-list) */}
       <div className="mt-auto border-t border-border pt-2.5">
         <p className="line-clamp-2 break-words text-xs text-neutral-11 [overflow-wrap:anywhere]">
-          {latestCardUpdateLine(quest)}
+          {latestCardUpdateLine(quest, t('activity.proposalRejected'))}
         </p>
       </div>
     </Link>

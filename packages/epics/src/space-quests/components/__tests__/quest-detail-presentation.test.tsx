@@ -51,6 +51,7 @@ vi.mock('next-intl', () => ({
       'milestones.status.not_started': 'Not started',
       'milestones.status.in_progress': 'In progress',
       'milestones.status.done': 'Done',
+      'activity.proposalRejected': 'proposal rejected',
     };
     return labels[key] ?? key;
   },
@@ -930,7 +931,9 @@ describe('quest list cards', () => {
 
     const rejected = screen.getByTestId('quest-card-voted-down');
     expect(rejected.textContent).toContain('Rejected');
+    expect(rejected.textContent).toContain('proposal rejected');
     expect(rejected.textContent).not.toContain('Proposed');
+    expect(rejected.textContent).not.toContain('waiting for votes');
     expect(rejected.textContent).not.toMatch(/On track|Off track|Not started/);
 
     const open = screen.getByTestId('quest-card-still-open');

@@ -5785,6 +5785,9 @@
       "rejected": "Rechazadas",
       "drafts": "Mis borradores"
     },
+    "activity": {
+      "proposalRejected": "propuesta rechazada"
+    },
     "drafts": {
       "empty": "No tienes borradores de misiones guardados en este espacio.",
       "continue": "Continuar",

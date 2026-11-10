@@ -55,12 +55,31 @@ function quest(
   };
 }
 
+function proposalUpdate(questId: number) {
+  return {
+    id: questId,
+    questId,
+    authorPersonId: 9,
+    authorName: 'Vlad Hramtsov',
+    authorAvatarUrl: null,
+    kind: 'post' as const,
+    viaAgent: false,
+    milestoneOrder: null,
+    milestoneLabel: null,
+    text: 'proposed, waiting for votes',
+    links: [],
+    change: null,
+    createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+  };
+}
+
 const voting = quest({
   id: 1,
   slug: 'voting',
   name: 'Voting quest',
   status: 'proposed',
   proposalStatus: 'onVoting',
+  updates: [proposalUpdate(1)],
 });
 const rejected = quest({
   id: 2,
@@ -69,6 +88,7 @@ const rejected = quest({
   status: 'proposed',
   proposalStatus: 'rejected',
   proposalDocumentId: 11,
+  updates: [proposalUpdate(2)],
 });
 
 vi.mock('next/link', () => ({
@@ -88,7 +108,8 @@ vi.mock('next/link', () => ({
 
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
-  useTranslations: () => (key: string) => key,
+  useTranslations: () => (key: string) =>
+    key === 'activity.proposalRejected' ? 'proposal rejected' : key,
 }));
 
 vi.mock('@hypha-platform/authentication', () => ({
@@ -158,7 +179,7 @@ describe('rejected quest filter', () => {
     expect(screen.getByText('Voting quest')).toBeTruthy();
     expect(screen.queryByText('Voted down')).toBeNull();
     expect(screen.getByTestId('quest-card-voting').textContent).toContain(
-      'Proposed',
+      'Vlad · 3h ago: proposed, waiting for votes',
     );
 
     fireEvent.click(screen.getByTestId('quest-filter-rejected'));
@@ -166,7 +187,7 @@ describe('rejected quest filter', () => {
     const card = screen.getByTestId('quest-card-voted-down');
     expect(card.textContent).toContain('Voted down');
     expect(card.textContent).toContain('Rejected');
-    expect(card.textContent).toContain('proposal rejected');
+    expect(card.textContent).toContain('Vlad · 3h ago: proposal rejected');
     expect(card.textContent).not.toContain('Proposed');
     expect(card.textContent).not.toContain('waiting for votes');
     expect(card.textContent).not.toMatch(/On track|Off track|Not started/);

@@ -5767,6 +5767,9 @@
       "rejected": "Rejetées",
       "drafts": "Mes brouillons"
     },
+    "activity": {
+      "proposalRejected": "proposition rejetée"
+    },
     "drafts": {
       "empty": "Vous n’avez aucun brouillon de quête enregistré dans cet espace.",
       "continue": "Continuer",

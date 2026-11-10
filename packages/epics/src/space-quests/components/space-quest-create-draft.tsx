@@ -103,7 +103,7 @@ import {
 const LABEL_CLASS =
   'text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11';
 const DRAFT_SAVE_STATUS_CLASS =
-  'inline-flex h-8 min-w-[11.5rem] items-center gap-1.5 whitespace-nowrap text-left text-[11px] font-medium';
+  'inline-flex h-5 min-w-[11.5rem] items-center gap-1.5 whitespace-nowrap text-left text-[11px] font-medium';
 
 function DraftResumeSkeleton() {
   const columns = [
@@ -1313,95 +1313,136 @@ export function SpaceQuestCreateDraft({
         <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
           {/* Main Draft Column */}
           <div className="min-w-0 flex-1 space-y-5">
-            {/* Top header bar: New quest [Draft] + CANCEL / CREATE QUEST */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <h1 className="font-display text-[18px] font-semibold text-foreground">
-                  New quest
-                </h1>
-                <span className="bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
-                  Draft
-                </span>
+            <div
+              data-testid="quest-create-intro"
+              className="flex flex-col gap-2"
+            >
+              {/* Top header bar: New quest [Draft] + CANCEL / CREATE QUEST */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <h1 className="font-display text-[18px] font-semibold text-foreground">
+                    New quest
+                  </h1>
+                  <span className="bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
+                    Draft
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    colorVariant="neutral"
+                    className="rounded-none"
+                    onClick={requestCancel}
+                    data-testid="cancel-quest-button"
+                  >
+                    CANCEL
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={
+                      submitting ||
+                      (!pendingProposalLink &&
+                        (!name.trim() || !goal.trim() || proposalOverLimit))
+                    }
+                    onClick={() => setConfirmOpen(true)}
+                    data-testid="create-quest-button"
+                    className="bg-foreground text-background hover:bg-foreground/90"
+                  >
+                    CREATE QUEST
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  className="rounded-none"
-                  onClick={requestCancel}
-                  data-testid="cancel-quest-button"
+
+              {draftHydrating ? (
+                <div
+                  data-testid="quest-draft-save-status"
+                  data-state="loading"
+                  aria-busy="true"
+                  aria-live="polite"
+                  className={DRAFT_SAVE_STATUS_CLASS}
                 >
-                  CANCEL
-                </Button>
-                <Button
+                  <span className="h-3 w-24 bg-neutral-4" aria-hidden />
+                </div>
+              ) : draftSaveState === 'error' ? (
+                <button
                   type="button"
-                  disabled={
-                    submitting ||
-                    (!pendingProposalLink &&
-                      (!name.trim() || !goal.trim() || proposalOverLimit))
-                  }
-                  onClick={() => setConfirmOpen(true)}
-                  data-testid="create-quest-button"
-                  className="bg-foreground text-background hover:bg-foreground/90"
+                  onClick={() => void saveDraftToServer()}
+                  data-testid="quest-draft-save-status"
+                  className={`${DRAFT_SAVE_STATUS_CLASS} text-error-11`}
                 >
-                  CREATE QUEST
-                </Button>
+                  {tDrafts('drafts.retry')}
+                </button>
+              ) : (
+                <div
+                  data-testid="quest-draft-save-status"
+                  aria-live="polite"
+                  className={DRAFT_SAVE_STATUS_CLASS}
+                >
+                  {draftSaveState === 'saving' ? (
+                    <>
+                      <Loader2
+                        className="size-3.5 shrink-0 animate-spin text-neutral-11"
+                        aria-hidden
+                      />
+                      <span className="text-neutral-11">
+                        {tDrafts('drafts.saving')}
+                      </span>
+                    </>
+                  ) : draftSaveState === 'saved' ? (
+                    <>
+                      <Check
+                        className="size-3.5 shrink-0 text-success-11"
+                        aria-hidden
+                      />
+                      <span className="text-success-11">
+                        {tDrafts('drafts.savedAuto')}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-neutral-11">
+                      {tDrafts('drafts.notSaved')}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs text-neutral-11">
+                  Fills in live as you chat · click any section to edit
+                </p>
+                <div className="flex items-center gap-3">
+                  {panelAvailable && !rightPanelOpen ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (
+                          typeof window !== 'undefined' &&
+                          window.innerWidth < 1200
+                        ) {
+                          closeAiPanel();
+                        }
+                        openHumanChatPanel();
+                      }}
+                      className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
+                    >
+                      Open discussion
+                      <span aria-hidden>→</span>
+                    </button>
+                  ) : null}
+                  <div className="h-1.5 w-[140px] overflow-hidden bg-neutral-4">
+                    <div
+                      className="h-full bg-foreground transition-[width]"
+                      style={{
+                        width: draftHydrating
+                          ? '0%'
+                          : `${draftCompletionPercent}%`,
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-
-            {draftHydrating ? (
-              <div
-                data-testid="quest-draft-save-status"
-                data-state="loading"
-                aria-busy="true"
-                aria-live="polite"
-                className={DRAFT_SAVE_STATUS_CLASS}
-              >
-                <span className="h-3 w-24 bg-neutral-4" aria-hidden />
-              </div>
-            ) : draftSaveState === 'error' ? (
-              <button
-                type="button"
-                onClick={() => void saveDraftToServer()}
-                data-testid="quest-draft-save-status"
-                className={`${DRAFT_SAVE_STATUS_CLASS} text-error-11`}
-              >
-                {tDrafts('drafts.retry')}
-              </button>
-            ) : (
-              <div
-                data-testid="quest-draft-save-status"
-                aria-live="polite"
-                className={DRAFT_SAVE_STATUS_CLASS}
-              >
-                {draftSaveState === 'saving' ? (
-                  <>
-                    <Loader2
-                      className="size-3.5 shrink-0 animate-spin text-neutral-11"
-                      aria-hidden
-                    />
-                    <span className="text-neutral-11">
-                      {tDrafts('drafts.saving')}
-                    </span>
-                  </>
-                ) : draftSaveState === 'saved' ? (
-                  <>
-                    <Check
-                      className="size-3.5 shrink-0 text-success-11"
-                      aria-hidden
-                    />
-                    <span className="text-success-11">
-                      {tDrafts('drafts.savedAuto')}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-neutral-11">
-                    {tDrafts('drafts.notSaved')}
-                  </span>
-                )}
-              </div>
-            )}
 
             {proposalLinkError ? (
               <div className="border border-error-6 bg-background-2 px-4 py-3 text-xs text-error-11">
@@ -1454,42 +1495,6 @@ export function SpaceQuestCreateDraft({
                 {submitError}
               </div>
             ) : null}
-
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs text-neutral-11">
-                Fills in live as you chat · click any section to edit
-              </p>
-              <div className="flex items-center gap-3">
-                {panelAvailable && !rightPanelOpen ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (
-                        typeof window !== 'undefined' &&
-                        window.innerWidth < 1200
-                      ) {
-                        closeAiPanel();
-                      }
-                      openHumanChatPanel();
-                    }}
-                    className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
-                  >
-                    Open discussion
-                    <span aria-hidden>→</span>
-                  </button>
-                ) : null}
-                <div className="h-1.5 w-[140px] overflow-hidden bg-neutral-4">
-                  <div
-                    className="h-full bg-foreground transition-[width]"
-                    style={{
-                      width: draftHydrating
-                        ? '0%'
-                        : `${draftCompletionPercent}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
 
             {/* Two-column draft grid (Figma node 6:2) — NO Priority anywhere */}
             {draftHydrating ? (
