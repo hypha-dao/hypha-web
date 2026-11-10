@@ -34,11 +34,13 @@ import {
   TooltipTrigger,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   MATRIX_MXID_IN_PLAIN_TEXT,
   chatMarkupLooksFormatted,
   chatMarkupToHtml,
   normalizePlainTextMxidCaptureFromMatch,
+  useJwt,
   useMatrix,
   usePersonBySub,
   specialistById,
@@ -65,6 +67,7 @@ import {
 import { ChatMessageRichText } from './parse-simple-matrix-html';
 import {
   isHyphaBotMatrixIdentity,
+  isUnresolvedMemberLabel,
   matrixMemberDisplayLabelFromRoom,
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
@@ -1129,6 +1132,41 @@ function needsHyphaProfileForMatrixLabel(
   return needsHyphaProfileResolutionForMatrixLabel(label);
 }
 
+function omitUnresolvedMemberLabel(
+  label: string | undefined | null,
+  unresolvedLabel: string,
+): string {
+  const trimmed = label?.trim() ?? '';
+  if (!trimmed || isUnresolvedMemberLabel(trimmed, unresolvedLabel)) return '';
+  return trimmed;
+}
+
+/**
+ * True while the Hypha person behind a Matrix id is still loading.
+ * A missing JWT used to make `usePersonBySub` look idle, so the header
+ * painted the fallback name before Privy had a chance to resolve.
+ */
+function hyphaPersonLookupPending({
+  linkLoading,
+  personLoading,
+  sub,
+  user,
+  isLoadingJwt,
+  jwt,
+}: {
+  linkLoading: boolean;
+  personLoading: boolean;
+  sub?: string;
+  user: unknown;
+  isLoadingJwt: boolean;
+  jwt?: string | null;
+}): boolean {
+  if (linkLoading) return true;
+  if (!sub) return false;
+  if (personLoading) return true;
+  return (Boolean(user) && isLoadingJwt && !jwt) || (!user && isLoadingJwt);
+}
+
 function formatPersonDisplayName(p: {
   name?: string | null;
   surname?: string | null;
@@ -1351,7 +1389,10 @@ function MxidMentionPill({
   syncLabel: string;
   viewerMentionTintRow: boolean;
 }) {
-  const needsProfile = needsHyphaProfileForMatrixLabel(syncLabel, fullMxid);
+  const t = useTranslations('HumanChatPanel');
+  const unresolvedLabel = t('unknownMember');
+  const cleanedSync = omitUnresolvedMemberLabel(syncLabel, unresolvedLabel);
+  const needsProfile = needsHyphaProfileForMatrixLabel(cleanedSync, fullMxid);
   const canonicalSub = needsProfile
     ? matrixUserIdToCanonicalPrivySub(fullMxid) ?? undefined
     : undefined;
@@ -1359,29 +1400,35 @@ function MxidMentionPill({
     useUserPrivyIdByMatrixId({
       matrixUserId: needsProfile && !canonicalSub ? fullMxid : undefined,
     });
-  const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: linkedSub ?? canonicalSub ?? undefined,
-  });
+  const sub = linkedSub ?? canonicalSub ?? undefined;
+  const { person, isLoading: loadingPerson } = usePersonBySub({ sub });
+  const { user } = useAuthentication();
+  const { jwt, isLoadingJwt } = useJwt();
 
-  const t = useTranslations('HumanChatPanel');
   const displayLabel = useMemo(() => {
-    if (isHyphaBotMatrixIdentity(fullMxid, syncLabel)) {
+    if (isHyphaBotMatrixIdentity(fullMxid, cleanedSync)) {
       // Picker and chip stay "AI Agents". Specialist names are reply attribution.
       return botMentionChipText(t('agentMentionLabel'));
     }
     const fromPerson = person ? formatPersonDisplayName(person) : '';
-    const visible = visibleMatrixMemberName(fullMxid, fromPerson, syncLabel);
+    const visible = visibleMatrixMemberName(fullMxid, fromPerson, cleanedSync);
     if (!visible) return '';
     return visible.startsWith('@') ? visible : `@${visible}`;
-  }, [person, syncLabel, fullMxid, t]);
+  }, [cleanedSync, person, fullMxid, t]);
 
-  const loading =
+  const pending =
     needsProfile &&
-    (loadingLink ||
-      (Boolean(linkedSub ?? canonicalSub) && loadingPerson) ||
-      !displayLabel.trim());
+    !displayLabel.trim() &&
+    hyphaPersonLookupPending({
+      linkLoading: loadingLink,
+      personLoading: loadingPerson,
+      sub,
+      user,
+      isLoadingJwt,
+      jwt,
+    });
 
-  if (loading) {
+  if (pending) {
     return (
       <Skeleton
         className="inline-block rounded align-baseline"
@@ -1392,10 +1439,12 @@ function MxidMentionPill({
     );
   }
 
+  const shown =
+    displayLabel.trim() || (needsProfile ? `@${unresolvedLabel}` : '');
+  if (!shown) return null;
+
   return (
-    <span className={chatMentionPillClass(viewerMentionTintRow)}>
-      {displayLabel}
-    </span>
+    <span className={chatMentionPillClass(viewerMentionTintRow)}>{shown}</span>
   );
 }
 
@@ -1663,6 +1712,8 @@ export function HumanChatPanelMessageBubble({
   receiptStatus = null,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
+  const { user } = useAuthentication();
+  const { jwt, isLoadingJwt } = useJwt();
   const tCoherence = useTranslations('CoherenceTab');
   const agentMentionLabel = useAgentMentionLabel();
   const specialist = message.agentSpecialistId
@@ -1761,18 +1812,36 @@ export function HumanChatPanelMessageBubble({
     message.role === 'member' ? message.senderMatrixId?.trim() : undefined;
   const replyMatrixId = replyTo?.sourceUserId?.trim() || undefined;
 
+  const unresolvedLabel = t('unknownMember');
+  const cleanRosterSenderLabel = omitUnresolvedMemberLabel(
+    rosterSenderLabel,
+    unresolvedLabel,
+  );
+  const cleanMessageSenderName = omitUnresolvedMemberLabel(
+    message.senderName,
+    unresolvedLabel,
+  );
+  const cleanRosterReplyLabel = omitUnresolvedMemberLabel(
+    rosterReplyLabel,
+    unresolvedLabel,
+  );
+  const cleanReplyAuthorLabel = omitUnresolvedMemberLabel(
+    replyTo?.authorLabel,
+    unresolvedLabel,
+  );
+
   const resolveSenderProfile =
     Boolean(senderMatrixId) &&
     needsHyphaProfileForMatrixLabel(
       // Empty string from filtered technical roster labels must not block
       // falling through to message.senderName / person lookup.
-      rosterSenderLabel || message.senderName,
+      cleanRosterSenderLabel || cleanMessageSenderName,
       senderMatrixId,
     );
   const resolveReplyProfile =
     Boolean(replyMatrixId) &&
     needsHyphaProfileForMatrixLabel(
-      rosterReplyLabel || replyTo?.authorLabel,
+      cleanRosterReplyLabel || cleanReplyAuthorLabel,
       replyMatrixId,
     );
 
@@ -1820,19 +1889,19 @@ export function HumanChatPanelMessageBubble({
         ? visibleMatrixMemberName(
             message.senderMatrixId,
             fromPerson,
-            rosterSenderLabel,
-            message.senderName,
+            cleanRosterSenderLabel,
+            cleanMessageSenderName,
           )
-        : fromPerson || rosterSenderLabel?.trim() || message.senderName?.trim();
-    return visible || t('unknownMember');
+        : fromPerson || cleanRosterSenderLabel || cleanMessageSenderName;
+    return visible || unresolvedLabel;
   }, [
     agentMentionLabel,
+    cleanMessageSenderName,
+    cleanRosterSenderLabel,
     message.role,
     message.senderMatrixId,
-    message.senderName,
-    rosterSenderLabel,
     senderPerson,
-    t,
+    unresolvedLabel,
   ]);
 
   const resolvedReplyAuthorLabel = useMemo(() => {
@@ -1846,12 +1915,19 @@ export function HumanChatPanelMessageBubble({
         ? visibleMatrixMemberName(
             replyTo.sourceUserId,
             fromPerson,
-            rosterReplyLabel,
-            replyTo.authorLabel,
+            cleanRosterReplyLabel,
+            cleanReplyAuthorLabel,
           )
-        : fromPerson || rosterReplyLabel?.trim() || replyTo.authorLabel?.trim();
-    return visible || t('unknownMember');
-  }, [agentMentionLabel, replyPerson, replyTo, rosterReplyLabel, t]);
+        : fromPerson || cleanRosterReplyLabel || cleanReplyAuthorLabel;
+    return visible || unresolvedLabel;
+  }, [
+    agentMentionLabel,
+    cleanReplyAuthorLabel,
+    cleanRosterReplyLabel,
+    replyPerson,
+    replyTo,
+    unresolvedLabel,
+  ]);
 
   const senderHasVisibleLabel = useMemo(() => {
     if (message.role !== 'member' || !message.senderMatrixId) return true;
@@ -1859,53 +1935,73 @@ export function HumanChatPanelMessageBubble({
       pickUserVisibleMemberLabel(
         message.senderMatrixId,
         senderPerson ? formatPersonDisplayName(senderPerson) : '',
-        rosterSenderLabel,
-        message.senderName,
+        cleanRosterSenderLabel,
+        cleanMessageSenderName,
       ),
     );
   }, [
+    cleanMessageSenderName,
+    cleanRosterSenderLabel,
     message.role,
     message.senderMatrixId,
-    message.senderName,
-    rosterSenderLabel,
     senderPerson,
   ]);
 
   /**
-   * Show header skeleton while SWR is in flight or labels are still technical after idle.
-   * Never surface bridged Privy locals — fall back to "Unknown member" once resolution finishes.
+   * Skeleton while the Privy person is still loading.
+   * Show "Member" only after that lookup finishes with no name.
    */
+  const senderSub = senderPrivySub ?? senderCanonicalSub;
   const senderProfileLoading =
     !specialistName &&
     message.role === 'member' &&
     Boolean(message.senderMatrixId) &&
     !senderHasVisibleLabel &&
     (resolveSenderProfile
-      ? isLoadingSenderLink ||
-        (Boolean(senderPrivySub ?? senderCanonicalSub) && isLoadingSenderPerson)
+      ? hyphaPersonLookupPending({
+          linkLoading: isLoadingSenderLink,
+          personLoading: isLoadingSenderPerson,
+          sub: senderSub,
+          user,
+          isLoadingJwt,
+          jwt,
+        })
       : needsHyphaProfileForMatrixLabel(
-          rosterSenderLabel || message.senderName,
+          cleanRosterSenderLabel || cleanMessageSenderName,
           message.senderMatrixId,
         ));
 
+  const replySub = replyPrivySub ?? replyCanonicalSub;
+  const replyHasVisibleLabel = Boolean(
+    replyTo?.sourceUserId &&
+      pickUserVisibleMemberLabel(
+        replyTo.sourceUserId,
+        replyPerson ? formatPersonDisplayName(replyPerson) : '',
+        cleanRosterReplyLabel,
+        cleanReplyAuthorLabel,
+      ),
+  );
   const replyProfileLoading =
     replyTo?.sourceUserId != null &&
-    !pickUserVisibleMemberLabel(
-      replyTo.sourceUserId,
-      replyPerson ? formatPersonDisplayName(replyPerson) : '',
-      rosterReplyLabel,
-      replyTo.authorLabel,
-    ) &&
+    !replyHasVisibleLabel &&
     (resolveReplyProfile
-      ? isLoadingReplyLink ||
-        (Boolean(replyPrivySub ?? replyCanonicalSub) && isLoadingReplyPerson)
+      ? hyphaPersonLookupPending({
+          linkLoading: isLoadingReplyLink,
+          personLoading: isLoadingReplyPerson,
+          sub: replySub,
+          user,
+          isLoadingJwt,
+          jwt,
+        })
       : needsHyphaProfileForMatrixLabel(
-          rosterReplyLabel || replyTo.authorLabel,
+          cleanRosterReplyLabel || cleanReplyAuthorLabel,
           replyTo.sourceUserId,
         ));
 
-  const senderName = specialistName ?? resolvedSenderName;
-  const replyAuthorLabelForUi = replyTo ? resolvedReplyAuthorLabel : '';
+  const senderName =
+    specialistName ?? (senderProfileLoading ? '' : resolvedSenderName);
+  const replyAuthorLabelForUi =
+    replyTo && !replyProfileLoading ? resolvedReplyAuthorLabel : '';
   const senderIsAgent =
     message.id !== 'welcome' &&
     isAgentChatAuthor({
@@ -2064,11 +2160,20 @@ export function HumanChatPanelMessageBubble({
         )}
       </div>
       <span className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
-        <span className="shrink-0 font-semibold text-muted-foreground">
-          {replyAuthorLabelForUi.startsWith('@')
-            ? replyAuthorLabelForUi
-            : `@${replyAuthorLabelForUi}`}
-        </span>
+        {replyProfileLoading ? (
+          <Skeleton
+            className="inline-block shrink-0 align-baseline"
+            loading
+            width={72}
+            height={12}
+          />
+        ) : (
+          <span className="shrink-0 font-semibold text-muted-foreground">
+            {replyAuthorLabelForUi.startsWith('@')
+              ? replyAuthorLabelForUi
+              : `@${replyAuthorLabelForUi}`}
+          </span>
+        )}
         {replyExcerpt}
       </span>
     </>

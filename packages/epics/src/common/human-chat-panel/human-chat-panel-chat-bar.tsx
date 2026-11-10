@@ -55,6 +55,7 @@ import {
 import { MemberHomeMark } from '../../people/components/member-home-mark';
 import {
   isHyphaBotMatrixIdentity,
+  isUnresolvedMemberLabel,
   looksLikeTechnicalMatrixDisplayName,
   visibleMatrixMemberName,
 } from './matrix-room-member-display';
@@ -208,6 +209,7 @@ function ReplyPreviewAuthorName({
     const fallback = authorLabel.trim();
     if (
       fallback &&
+      !isUnresolvedMemberLabel(fallback, unknownMemberLabel) &&
       !looksLikeTechnicalMatrixDisplayName(fallback, matrixUserId)
     ) {
       return fallback;

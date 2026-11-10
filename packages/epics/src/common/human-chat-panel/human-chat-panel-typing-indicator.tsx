@@ -1,7 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { ChatTypingPeer } from './use-chat-room-typing';
+import {
+  formatTypingIndicatorLabel,
+  type ChatTypingPeer,
+} from './use-chat-room-typing';
 
 type HumanChatPanelTypingIndicatorProps = {
   peers: readonly ChatTypingPeer[];
@@ -13,17 +16,13 @@ export function HumanChatPanelTypingIndicator({
   const t = useTranslations('HumanChatPanel');
   if (peers.length === 0) return null;
 
-  let label: string;
-  if (peers.length === 1) {
-    label = t('typingOne', { name: peers[0]!.name });
-  } else if (peers.length === 2) {
-    label = t('typingTwo', {
-      name: peers[0]!.name,
-      other: peers[1]!.name,
-    });
-  } else {
-    label = t('typingMany', { count: peers.length });
-  }
+  const label = formatTypingIndicatorLabel(peers, {
+    someone: t('typingSomeone'),
+    one: (name) => t('typingOne', { name }),
+    two: (name, other) => t('typingTwo', { name, other }),
+    nameAndSomeone: (name) => t('typingNameAndSomeone', { name }),
+    many: (count) => t('typingMany', { count }),
+  });
 
   return (
     <p
