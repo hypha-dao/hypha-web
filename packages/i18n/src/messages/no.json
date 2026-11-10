@@ -3997,7 +3997,7 @@
     "noMembers": "Ingen medlemmer funnet",
     "membersSearch": "Søk etter medlemmer",
     "membersNoMatches": "Ingen medlemmer matcher.",
-    "unknownMember": "Ukjent",
+    "unknownMember": "Medlem",
     "failedToJoinRoom": "Kunne ikke bli med i samtalerommet",
     "emojiPickerComposer": "Velg emoji",
     "emojiPickerReactToMessage": "Reager med emoji",
@@ -4289,7 +4289,9 @@
     "archivedGroupReadOnly": "Denne gruppen er arkivert. Gjenopprett den for å sende meldinger.",
     "typingOne": "{name} skriver…",
     "typingTwo": "{name} og {other} skriver…",
-    "typingMany": "{count} personer skriver…"
+    "typingMany": "{count} personer skriver…",
+    "typingSomeone": "Noen skriver…",
+    "typingNameAndSomeone": "{name} og noen skriver…"
   },
   "CoherenceTab": {
     "signals": "Signaler",

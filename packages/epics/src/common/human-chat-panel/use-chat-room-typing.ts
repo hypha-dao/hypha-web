@@ -9,6 +9,10 @@ import {
   type MatrixEvent,
   type RoomMember,
 } from 'matrix-js-sdk';
+import {
+  isUnresolvedMemberLabel,
+  looksLikeTechnicalMatrixDisplayName,
+} from './matrix-room-member-display';
 
 const TYPING_TIMEOUT_MS = 30_000;
 /** Re-assert typing before the server expires it. */
@@ -21,11 +25,39 @@ export type ChatTypingPeer = {
   name: string;
 };
 
+/**
+ * A name safe to put in "{name} is typing".
+ * The Privy/Hypha fallback and bridged Matrix ids are not names — return empty
+ * so the indicator can say "Someone" until a real label arrives.
+ */
+export function visibleTypingPeerName(
+  userId: string,
+  resolveName: (userId: string) => string,
+  unresolvedLabel: string,
+  member?: RoomMember | null,
+): string {
+  const candidates = [
+    resolveName(userId),
+    member?.name,
+    member?.rawDisplayName,
+    member?.user?.displayName,
+  ];
+  for (const candidate of candidates) {
+    const label = candidate?.trim() ?? '';
+    if (!label || label === userId) continue;
+    if (isUnresolvedMemberLabel(label, unresolvedLabel)) continue;
+    if (looksLikeTechnicalMatrixDisplayName(label, userId)) continue;
+    return label;
+  }
+  return '';
+}
+
 export function typingPeersFromUserIds(
   client: MatrixClient,
   roomId: string,
   userIds: readonly string[],
   resolveName: (userId: string) => string,
+  unresolvedLabel: string,
 ): ChatTypingPeer[] {
   const selfId = client.getUserId()?.trim() ?? '';
   const room = client.getRoom(roomId);
@@ -36,17 +68,41 @@ export function typingPeersFromUserIds(
     const member = room?.getMember(userId);
     peers.push({
       userId,
-      name: resolveName(userId) || member?.name || userId,
+      name: visibleTypingPeerName(userId, resolveName, unresolvedLabel, member),
     });
   }
   peers.sort((a, b) => a.name.localeCompare(b.name));
   return peers;
 }
 
+export function formatTypingIndicatorLabel(
+  peers: readonly { name: string }[],
+  labels: {
+    someone: string;
+    one: (name: string) => string;
+    two: (name: string, other: string) => string;
+    nameAndSomeone: (name: string) => string;
+    many: (count: number) => string;
+  },
+): string {
+  if (peers.length === 0) return '';
+  const named = peers
+    .map((peer) => peer.name.trim())
+    .filter((name) => name.length > 0);
+  if (named.length === 0) {
+    return peers.length === 1 ? labels.someone : labels.many(peers.length);
+  }
+  if (peers.length === 1) return labels.one(named[0]!);
+  if (named.length === 1) return labels.nameAndSomeone(named[0]!);
+  if (peers.length === 2) return labels.two(named[0]!, named[1]!);
+  return labels.many(peers.length);
+}
+
 function typingPeersFromRoom(
   client: MatrixClient,
   roomId: string,
   resolveName: (userId: string) => string,
+  unresolvedLabel: string,
 ): ChatTypingPeer[] {
   const selfId = client.getUserId()?.trim() ?? '';
   const room = client.getRoom(roomId);
@@ -58,7 +114,7 @@ function typingPeersFromRoom(
     if (!userId || userId === selfId) continue;
     peers.push({
       userId,
-      name: resolveName(userId) || member.name || userId,
+      name: visibleTypingPeerName(userId, resolveName, unresolvedLabel, member),
     });
   }
   peers.sort((a, b) => a.name.localeCompare(b.name));
@@ -83,10 +139,13 @@ export function useChatRoomTyping({
   client,
   roomId,
   resolveName,
+  unresolvedMemberLabel,
 }: {
   client: MatrixClient | null;
   roomId: string | null;
   resolveName: (userId: string) => string;
+  /** i18n fallback ("Member") — not a person's name while Privy is loading. */
+  unresolvedMemberLabel: string;
 }): {
   typingPeers: ChatTypingPeer[];
   setComposerTyping: (isTyping: boolean) => void;
@@ -96,6 +155,8 @@ export function useChatRoomTyping({
   roomIdRef.current = roomId;
   const resolveNameRef = useRef(resolveName);
   resolveNameRef.current = resolveName;
+  const unresolvedMemberLabelRef = useRef(unresolvedMemberLabel);
+  unresolvedMemberLabelRef.current = unresolvedMemberLabel;
   const localTypingRef = useRef(false);
   const refreshTimerRef = useRef(0);
   const idleTimerRef = useRef(0);
@@ -106,7 +167,12 @@ export function useChatRoomTyping({
       return;
     }
     setTypingPeers(
-      typingPeersFromRoom(client, roomIdRef.current, resolveNameRef.current),
+      typingPeersFromRoom(
+        client,
+        roomIdRef.current,
+        resolveNameRef.current,
+        unresolvedMemberLabelRef.current,
+      ),
     );
   }, [client]);
 
@@ -122,6 +188,7 @@ export function useChatRoomTyping({
           roomIdRef.current,
           userIds,
           resolveNameRef.current,
+          unresolvedMemberLabelRef.current,
         ),
       );
     },
@@ -222,6 +289,12 @@ export function useChatRoomTyping({
       client.removeListener(ClientEvent.Event, onClientEvent);
     };
   }, [applyTypingUserIds, client, roomId, refreshPeers]);
+
+  // Names often arrive after the first typing event (Privy / roster). Refresh
+  // the line when the resolver changes so "Someone" becomes the real name.
+  useEffect(() => {
+    refreshPeers();
+  }, [refreshPeers, resolveName, unresolvedMemberLabel]);
 
   // Stop typing when leaving the room / unmounting.
   useEffect(() => {

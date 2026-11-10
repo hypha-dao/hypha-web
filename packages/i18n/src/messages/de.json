@@ -3993,7 +3993,7 @@
     "noMembers": "Keine Mitglieder gefunden",
     "membersSearch": "Mitglieder suchen",
     "membersNoMatches": "Keine Mitglieder passen.",
-    "unknownMember": "Unbekannt",
+    "unknownMember": "Mitglied",
     "backToSpaceChat": "Zurück zum Space-Chat",
     "failedToJoinRoom": "Gesprächsraum konnte nicht beigetreten werden",
     "emojiPickerComposer": "Emoji wählen",
@@ -4288,7 +4288,9 @@
     "archivedGroupReadOnly": "Diese Gruppe ist archiviert. Stelle sie wieder her, um Nachrichten zu senden.",
     "typingOne": "{name} tippt…",
     "typingTwo": "{name} und {other} tippen…",
-    "typingMany": "{count} Personen tippen…"
+    "typingMany": "{count} Personen tippen…",
+    "typingSomeone": "Jemand tippt…",
+    "typingNameAndSomeone": "{name} und jemand tippen…"
   },
   "CoherenceTab": {
     "signals": "Signale",

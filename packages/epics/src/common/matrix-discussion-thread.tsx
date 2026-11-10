@@ -46,6 +46,8 @@ import {
 import { AgentMentionLabelProvider } from './human-chat-panel/agent-mention-label-context';
 import {
   isHyphaBotMatrixIdentity,
+  isUnresolvedMemberLabel,
+  looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
   matrixMemberDisplayLabelFromRoom,
   shortenMatrixIdForDisplay,
@@ -386,13 +388,21 @@ export function MatrixDiscussionThread({
 
   const resolveMemberLabel = React.useCallback(
     (userId: string | undefined) => {
-      if (!userId) return tChat('unknownMember');
+      if (!userId) return '';
       if (isHyphaBotMatrixIdentity(userId)) return agentLabel;
-      return matrixMemberDisplayLabelFromRoom(
+      const fromRoom = matrixMemberDisplayLabelFromRoom(
         clientRef.current ?? null,
         roomIdRef.current,
         userId,
       );
+      if (
+        !fromRoom ||
+        looksLikeTechnicalMatrixDisplayName(fromRoom, userId) ||
+        isUnresolvedMemberLabel(fromRoom, tChat('unknownMember'))
+      ) {
+        return '';
+      }
+      return fromRoom;
     },
     [agentLabel, tChat],
   );
@@ -975,6 +985,7 @@ export function MatrixDiscussionThread({
     client: client ?? null,
     roomId,
     resolveName: resolveMemberLabel,
+    unresolvedMemberLabel: tChat('unknownMember'),
   });
 
   const sendMessage = React.useCallback(async () => {

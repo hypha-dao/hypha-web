@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   countHumanMatrixMembers,
   isHyphaBotMatrixIdentity,
+  isUnresolvedMemberLabel,
   looksLikeTechnicalMatrixDisplayName,
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
@@ -14,6 +15,15 @@ import {
 } from '../matrix-member-display';
 
 const PROD_MXID = '@prod_privy_did_privy_cmabc123:srv1294735.hstgr.cloud';
+
+describe('isUnresolvedMemberLabel', () => {
+  it('treats empty and the translated fallback as unresolved', () => {
+    expect(isUnresolvedMemberLabel('', 'Member')).toBe(true);
+    expect(isUnresolvedMemberLabel('Member', 'Member')).toBe(true);
+    expect(isUnresolvedMemberLabel('Unknown', 'Unknown')).toBe(true);
+    expect(isUnresolvedMemberLabel('Alex', 'Member')).toBe(false);
+  });
+});
 
 describe('pickUserVisibleMemberLabel', () => {
   it('returns the first non-technical candidate', () => {
