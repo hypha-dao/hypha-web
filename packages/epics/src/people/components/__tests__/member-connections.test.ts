@@ -35,6 +35,7 @@ import {
   resolvePeerRowTitle,
   conversationDisplayName,
   visibleMemberRowsAfterTitleResolve,
+  messagesInboxEmptyStillLoading,
   messagesPeopleListReady,
   messagePreview,
   previewForInboxDisplay,
@@ -1255,6 +1256,32 @@ describe('messagesPeopleListReady', () => {
         initialSyncComplete: false,
       }),
     ).toBe(true);
+  });
+});
+
+describe('messagesInboxEmptyStillLoading', () => {
+  it('keeps loading while an empty filter waits for initial sync', () => {
+    expect(
+      messagesInboxEmptyStillLoading({
+        shownRowCount: 0,
+        initialSyncComplete: false,
+      }),
+    ).toBe(true);
+    expect(
+      messagesInboxEmptyStillLoading({
+        shownRowCount: 0,
+        initialSyncComplete: true,
+      }),
+    ).toBe(false);
+  });
+
+  it('does not block when the selected filter already has rows', () => {
+    expect(
+      messagesInboxEmptyStillLoading({
+        shownRowCount: 3,
+        initialSyncComplete: false,
+      }),
+    ).toBe(false);
   });
 });
 

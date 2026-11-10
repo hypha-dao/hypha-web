@@ -101,6 +101,7 @@ import {
   membersForGroupPicker,
   conversationsVisibleInSection,
   enrichSearchMembers,
+  messagesInboxEmptyStillLoading,
   messagesPeopleListReady,
   isPeopleListGroup,
   isRememberedBoundChatRoom,
@@ -2744,6 +2745,16 @@ export function MyConnections({
     : section === 'messages' && !picking
     ? inboxView.rows
     : people;
+  // Store paint can ready the list via a channel while Direct still has no
+  // rows — keep the skeleton until initial sync before claiming empty.
+  const messagesEmptyPending =
+    section === 'messages' &&
+    !picking &&
+    !needle &&
+    messagesInboxEmptyStillLoading({
+      shownRowCount: shownRows.length,
+      initialSyncComplete,
+    });
   const missingChannelPreviewIds = useMemo(() => {
     if (section !== 'messages' || picking) return [] as string[];
     return shownRows
@@ -3386,7 +3397,7 @@ export function MyConnections({
               ) : null}
 
               <div className="flex min-h-0 flex-1 flex-col gap-3">
-                {listLoading ? (
+                {listLoading || messagesEmptyPending ? (
                   <MemberListSkeleton
                     title={
                       section === 'archived' ? t('tabs.archived') : t('people')
@@ -3396,6 +3407,7 @@ export function MyConnections({
                 ) : null}
 
                 {!listLoading &&
+                !messagesEmptyPending &&
                 section === 'archived' &&
                 isMatrixAvailable &&
                 people.length === 0 &&
@@ -3406,6 +3418,7 @@ export function MyConnections({
                 ) : null}
 
                 {!listLoading &&
+                !messagesEmptyPending &&
                 section !== 'archived' &&
                 isMatrixAvailable &&
                 shownRows.length === 0 &&
@@ -3424,7 +3437,9 @@ export function MyConnections({
                   </p>
                 ) : null}
 
-                {!listLoading && shownRows.length > 0 ? (
+                {!listLoading &&
+                !messagesEmptyPending &&
+                shownRows.length > 0 ? (
                   <MemberList
                     title={listTitle}
                     rows={shownRows}
