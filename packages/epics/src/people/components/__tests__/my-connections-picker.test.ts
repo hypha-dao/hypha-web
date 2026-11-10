@@ -94,6 +94,9 @@ describe('group picker chips and radio', () => {
     expect(source).toContain('visibleMemberRowsAfterTitleResolve');
     // Previews stay skeletoned until sync/backfill after the list paints.
     expect(source).toContain('!initialSyncComplete || channelPreviewsPending');
+    // Empty Direct must not flash while store paint came from another filter.
+    expect(source).toContain('messagesInboxEmptyStillLoading');
+    expect(source).toContain('messagesEmptyPending');
     expect(source).toContain(
       'if (dataReady && isMatrixAvailable) setListSettled(true)',
     );

@@ -422,6 +422,18 @@ export function messagesPeopleListReady(
   return input.initialSyncComplete;
 }
 
+/**
+ * Selected Messages filter has no rows yet, but initial sync is still running.
+ * Early list paint can latch ready from a stored channel while Direct is still
+ * empty — keep the skeleton instead of flashing the empty copy.
+ */
+export function messagesInboxEmptyStillLoading(input: {
+  shownRowCount: number;
+  initialSyncComplete: boolean;
+}): boolean {
+  return input.shownRowCount === 0 && !input.initialSyncComplete;
+}
+
 /** Union directory pages / search hits by person id. Synthetics stay out. */
 export function mergeDirectoryPeople<T extends { id: number }>(
   ...lists: Array<readonly T[] | null | undefined>
