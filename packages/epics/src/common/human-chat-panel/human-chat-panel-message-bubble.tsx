@@ -1012,15 +1012,9 @@ function ChatReplyConnectorMeasured({
     let raf = 0;
     let cancelled = false;
 
-    const applyGeom = (next: ReplyConnectorGeometry | null) => {
+    const applyGeom = (next: ReplyConnectorGeometry) => {
       if (cancelled) return;
       const prev = lastGeomRef.current;
-      if (next == null) {
-        if (prev == null) return;
-        lastGeomRef.current = null;
-        setMounted(false);
-        return;
-      }
       if (
         prev &&
         prev.width === next.width &&
@@ -1040,15 +1034,18 @@ function ChatReplyConnectorMeasured({
         return;
       }
       // One React commit to mount the SVG; further ticks stay imperative.
-      setMounted(true);
+      // Never setMounted(false) — Member-name skeletons briefly drop refs /
+      // zero size and remounting re-enters React (#185).
+      setMounted((was) => (was ? was : true));
     };
 
     const measure = () => {
       const rEl = rowRef.current;
       const rep = replyAvatarRef.current;
       const main = mainAvatarRef.current;
+      // Skip this tick only. Clearing geom / unmounting here races with
+      // Privy name skeletons and trips max update depth.
       if (!rEl || !rep || !main) {
-        applyGeom(null);
         return;
       }
       const rowRect = rEl.getBoundingClientRect();
@@ -1057,7 +1054,6 @@ function ChatReplyConnectorMeasured({
       const w = Math.round(rowRect.width);
       const h = Math.round(rowRect.height);
       if (w <= 0 || h <= 0) {
-        applyGeom(null);
         return;
       }
       const xMain = mainRect.left + mainRect.width / 2 - rowRect.left;
