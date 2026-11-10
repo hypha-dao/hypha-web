@@ -7,6 +7,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SpaceQuestsSection } from '../space-quests-section';
@@ -56,7 +57,18 @@ vi.mock('@hypha-platform/authentication', () => ({
 }));
 
 vi.mock('@hypha-platform/core/client', () => ({
-  QUEST_LIST_FILTERS: ['active', 'proposed', 'paused', 'completed'],
+  QUEST_LIST_FILTERS: ['active', 'proposed', 'paused', 'completed', 'rejected'],
+  questListBucket: (quest: {
+    status: string;
+    proposalStatus?: string | null;
+  }) =>
+    quest.status === 'proposed' && quest.proposalStatus === 'rejected'
+      ? 'rejected'
+      : quest.status,
+  isRejectedProposedQuest: (quest: {
+    status: string;
+    proposalStatus?: string | null;
+  }) => quest.status === 'proposed' && quest.proposalStatus === 'rejected',
   useSpaceBySlug: () => ({ space: { slug: 'sandbox' } }),
   formatQuestCalendarDate: () => '',
   questHealthDisplay: () => ({
@@ -79,6 +91,7 @@ vi.mock('../../hooks/use-space-quests', () => ({
         proposed: 0,
         paused: 0,
         completed: 0,
+        rejected: 0,
         archived: 0,
         total: 0,
       },
@@ -134,6 +147,18 @@ describe('quest list drafts', () => {
     );
     expect(create.textContent).toBe('newQuest');
     const filters = screen.getByRole('tablist');
+    expect(
+      within(filters)
+        .getAllByRole('tab')
+        .map((tab) => tab.getAttribute('data-testid')),
+    ).toEqual([
+      'quest-filter-active',
+      'quest-filter-proposed',
+      'quest-filter-paused',
+      'quest-filter-completed',
+      'quest-filter-rejected',
+      'quest-filter-drafts',
+    ]);
     expect(toolbar.compareDocumentPosition(filters)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );

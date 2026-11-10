@@ -4,7 +4,9 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import {
   QUEST_LIST_FILTERS,
   formatQuestCalendarDate,
+  isRejectedProposedQuest,
   questHealthDisplay,
+  questListBucket,
   type QuestHealthState,
   type QuestListFilter,
   type QuestRecord,
@@ -37,8 +39,11 @@ import {
 } from '../hooks/use-space-quests';
 import { questRichTextPlain } from '../utils/quest-rich-text';
 
-function statusBadgeClasses(status: QuestStatus): string {
-  switch (status) {
+function statusBadgeClasses(
+  quest: Pick<QuestRecord, 'status' | 'proposalStatus'>,
+): string {
+  if (isRejectedProposedQuest(quest)) return 'bg-neutral-3 text-foreground';
+  switch (quest.status) {
     case 'proposed':
       return 'bg-[#edebff] text-[#4b4bff] dark:bg-accent-3 dark:text-accent-11';
     case 'completed':
@@ -65,6 +70,19 @@ function statusLabel(status: QuestStatus): string {
     default:
       return 'Active';
   }
+}
+
+function questStatusTag(
+  quest: Pick<QuestRecord, 'status' | 'proposalStatus'>,
+): string {
+  if (isRejectedProposedQuest(quest)) return 'Rejected';
+  return statusLabel(quest.status);
+}
+
+function showQuestHealthTag(
+  quest: Pick<QuestRecord, 'status' | 'proposalStatus'>,
+): boolean {
+  return quest.status !== 'completed' && !isRejectedProposedQuest(quest);
 }
 
 export function healthBadgeMeta(state: QuestHealthState): {
@@ -181,6 +199,9 @@ function latestCardUpdateLine(quest: QuestRecord): string {
   const latest = quest.updates[0];
   if (!latest) {
     const first = (quest.leadName || 'Participant').split(' ')[0];
+    if (isRejectedProposedQuest(quest)) {
+      return `${first} · just now: proposal rejected`;
+    }
     return quest.status === 'proposed'
       ? `${first} · just now: proposed, waiting for votes`
       : `${first} · recently: quest active`;
@@ -251,18 +272,20 @@ export function QuestCard({
         <span
           className={cn(
             'inline-flex items-center px-2 py-0.5 text-[11px] font-semibold',
-            statusBadgeClasses(quest.status),
+            statusBadgeClasses(quest),
           )}
         >
-          {statusLabel(quest.status)}
+          {questStatusTag(quest)}
         </span>
-        <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold">
-          <span
-            className={cn('size-2 shrink-0 rounded-full', health.dotClass)}
-            aria-hidden
-          />
-          <span className={health.textClass}>{health.label}</span>
-        </span>
+        {showQuestHealthTag(quest) ? (
+          <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold">
+            <span
+              className={cn('size-2 shrink-0 rounded-full', health.dotClass)}
+              aria-hidden
+            />
+            <span className={health.textClass}>{health.label}</span>
+          </span>
+        ) : null}
       </div>
 
       <h2 className="break-words font-display text-4 font-medium tracking-tight text-foreground [overflow-wrap:anywhere]">
@@ -360,6 +383,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
     proposed: 0,
     paused: 0,
     completed: 0,
+    rejected: 0,
     archived: 0,
     total: 0,
   };
@@ -367,7 +391,9 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return quests
-      .filter((quest) => quest.status === filter)
+      .filter(
+        (quest) => filter !== 'drafts' && questListBucket(quest) === filter,
+      )
       .filter((quest) => {
         if (!q) return true;
         return (
@@ -445,6 +471,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
     proposed: t('filters.proposed'),
     paused: t('filters.paused'),
     completed: t('filters.completed'),
+    rejected: t('filters.rejected'),
   };
 
   return (
@@ -492,7 +519,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
         ) : null}
       </div>
 
-      {/* Status filter chips: Active, Proposed, Paused, Completed */}
+      {/* Status filter chips: Active, Proposed, Paused, Completed, Rejected */}
       <div
         role="tablist"
         aria-label={t('title')}

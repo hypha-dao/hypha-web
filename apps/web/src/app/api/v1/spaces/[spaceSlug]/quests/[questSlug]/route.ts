@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   deleteSpaceQuest,
-  getSpaceQuestBySlug,
   schemaPatchSpaceQuest,
   syncSpaceQuestProposalStatuses,
   updateSpaceQuest,
@@ -24,9 +23,12 @@ export async function GET(
     const auth = await authorizeQuestRead(request, spaceSlug);
     if (!auth.ok) return auth.response;
 
-    await syncSpaceQuestProposalStatuses({ spaceSlug }, { db });
-
-    const quest = await getSpaceQuestBySlug({ spaceSlug, questSlug }, { db });
+    const overview = await syncSpaceQuestProposalStatuses(
+      { spaceSlug },
+      { db },
+    );
+    const quest =
+      overview?.quests.find((item) => item.slug === questSlug) ?? null;
     if (!quest) {
       return NextResponse.json({ error: 'Quest not found' }, { status: 404 });
     }

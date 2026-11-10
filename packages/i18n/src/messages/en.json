@@ -5790,6 +5790,7 @@
       "proposed": "Proposed",
       "paused": "Paused",
       "completed": "Completed",
+      "rejected": "Rejected",
       "drafts": "My drafts"
     },
     "drafts": {

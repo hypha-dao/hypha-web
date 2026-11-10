@@ -88,9 +88,16 @@ describe('questHealthDisplay', () => {
     expect(
       questHealthDisplay({
         status: 'completed',
-        health: { state: 'on_track', marker: 100, summary: 'Shipped' },
+        targetDate: '2020-01-01',
+        milestones: [{ status: 'not_started', dueDate: null }],
+        health: { state: 'off_track', marker: 12, summary: 'Shipped' },
       }),
-    ).toMatchObject({ label: 'On track', marker: 100, state: 'on_track' });
+    ).toMatchObject({
+      label: 'Off track',
+      marker: 100,
+      summary: 'Shipped',
+      state: 'off_track',
+    });
     expect(
       questHealthDisplay(
         {

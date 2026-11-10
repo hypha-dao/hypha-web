@@ -7,6 +7,7 @@ import {
   fetchProposalOutcomeSetsForSpace,
 } from '../../governance/server/resolve-document-proposal-status';
 import type { Document } from '../../governance/types';
+import { applyProposalStatusesToOverview } from '../proposal-list-status';
 import type { SpaceQuestsOverview } from '../types';
 import { listSpaceQuests } from './queries';
 import { activateSpaceQuestByDocumentId } from './mutations';
@@ -63,11 +64,22 @@ export async function syncSpaceQuestProposalStatuses(
         })
       : null;
 
+  const statusByDocumentId = new Map<
+    number,
+    'accepted' | 'rejected' | 'onVoting'
+  >();
   for (const doc of docs) {
     const withStatus = attachProposalStatusToDocument(
       doc as Document,
       outcomes,
     );
+    if (
+      withStatus.status === 'accepted' ||
+      withStatus.status === 'rejected' ||
+      withStatus.status === 'onVoting'
+    ) {
+      statusByDocumentId.set(doc.id, withStatus.status);
+    }
     if (withStatus.status === 'accepted') {
       const count = await activateSpaceQuestByDocumentId(
         { documentId: doc.id },
@@ -77,5 +89,9 @@ export async function syncSpaceQuestProposalStatuses(
     }
   }
 
-  return changed ? listSpaceQuests({ spaceSlug }, { db }) : overview;
+  const fresh = changed
+    ? await listSpaceQuests({ spaceSlug }, { db })
+    : overview;
+  if (!fresh) return null;
+  return applyProposalStatusesToOverview(fresh, statusByDocumentId);
 }

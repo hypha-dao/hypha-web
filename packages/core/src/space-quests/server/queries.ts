@@ -31,6 +31,7 @@ import {
 } from '../markdown';
 import { parseQuestCalendarDate } from '../calendar-date';
 import { computeQuestHealth } from '../health-display';
+import { questOverviewCounts } from '../proposal-list-status';
 import {
   QUEST_PROPOSAL_ACCEPTED_TEXT,
   questUpdateAuthorForDisplay,
@@ -485,14 +486,7 @@ export async function listSpaceQuests(
         new Date(a.latestUpdateAt).getTime(),
     );
 
-  const counts = {
-    active: quests.filter((q) => q.status === 'active').length,
-    proposed: quests.filter((q) => q.status === 'proposed').length,
-    paused: quests.filter((q) => q.status === 'paused').length,
-    completed: quests.filter((q) => q.status === 'completed').length,
-    archived: quests.filter((q) => q.status === 'archived').length,
-    total: quests.filter((q) => q.status !== 'archived').length,
-  };
+  const counts = questOverviewCounts(quests);
 
   return {
     spaceSlug: space.slug,

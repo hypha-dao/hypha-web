@@ -94,8 +94,8 @@ export function computeQuestHealth(
 
 /**
  * Proposed quests sit at the start of the bar and read "Not started".
- * Active quests use computeQuestHealth. Paused, completed, and archived
- * quests keep their stored health.
+ * Active quests use computeQuestHealth. A completed quest always sits at the
+ * healthy end of the bar. Paused and archived quests keep their stored health.
  */
 export function questHealthDisplay(
   quest: {
@@ -127,6 +127,19 @@ export function questHealthDisplay(
       marker: estimate.marker,
       summary: null,
       state: estimate.state,
+    };
+  }
+  if (quest.status === 'completed') {
+    const summary = quest.health.summary?.trim() ?? '';
+    return {
+      notStarted: false,
+      label: STATE_LABEL[quest.health.state],
+      marker: 100,
+      summary:
+        summary.length > 0 && !VOTING_HEALTH_COPY.test(summary)
+          ? summary
+          : null,
+      state: quest.health.state,
     };
   }
   const marker = Number.isFinite(quest.health.marker)

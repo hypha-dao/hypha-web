@@ -9,6 +9,7 @@ import {
   formatQuestCalendarDate,
   isViewerQuestLead,
   ACTIVE_QUEST_HEALTH_LABEL,
+  isRejectedProposedQuest,
   questHealthDisplay,
   questOverviewVisibility,
   bulletsToMarkdownList,
@@ -139,6 +140,19 @@ function statusLabel(status: QuestStatus): string {
     default:
       return 'Active';
   }
+}
+
+function questStatusTag(
+  quest: Pick<QuestRecord, 'status' | 'proposalStatus'>,
+): string {
+  if (isRejectedProposedQuest(quest)) return 'Rejected';
+  return statusLabel(quest.status);
+}
+
+function showQuestHealthTag(
+  quest: Pick<QuestRecord, 'status' | 'proposalStatus'>,
+): boolean {
+  return quest.status !== 'completed' && !isRejectedProposedQuest(quest);
 }
 
 function healthStateLabel(state: QuestHealthState): string {
@@ -553,16 +567,18 @@ function OverviewTab({
             }
           />
           <div className="space-y-3">
-            <p
-              className="inline-flex items-center gap-1.5 text-[13px] font-semibold"
-              data-testid="quest-health-label"
-            >
-              <span
-                className={cn('size-2 rounded-full', health.dotClass)}
-                aria-hidden
-              />
-              <span className={health.textClass}>{health.label}</span>
-            </p>
+            {showQuestHealthTag(quest) ? (
+              <p
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold"
+                data-testid="quest-health-label"
+              >
+                <span
+                  className={cn('size-2 rounded-full', health.dotClass)}
+                  aria-hidden
+                />
+                <span className={health.textClass}>{health.label}</span>
+              </p>
+            ) : null}
             <HealthScale
               marker={health.marker}
               {...(quest.status === 'active'
@@ -897,7 +913,7 @@ function SettingsTab({
         <div className="divide-y divide-border">
           <SettingsRow
             label="Quest status"
-            value={statusLabel(quest.status)}
+            value={questStatusTag(quest)}
             action="CHANGE"
             disabled={leadOnly || quest.status === 'proposed'}
             onAction={() => openModal('status')}
@@ -1527,15 +1543,17 @@ export function SpaceQuestDetail({
               {quest.name}
             </h1>
             <span className="bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
-              {statusLabel(quest.status)}
+              {questStatusTag(quest)}
             </span>
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
-              <span
-                className={cn('size-2 rounded-full', health.dotClass)}
-                aria-hidden
-              />
-              <span className={health.textClass}>{health.label}</span>
-            </span>
+            {showQuestHealthTag(quest) ? (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
+                <span
+                  className={cn('size-2 rounded-full', health.dotClass)}
+                  aria-hidden
+                />
+                <span className={health.textClass}>{health.label}</span>
+              </span>
+            ) : null}
           </div>
           {quest.status !== 'proposed' && (quest.chatRoomId || canEdit) ? (
             <button

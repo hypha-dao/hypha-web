@@ -24,6 +24,7 @@ export const QUEST_LIST_FILTERS = [
   'proposed',
   'paused',
   'completed',
+  'rejected',
 ] as const;
 
 export type QuestListFilter = (typeof QUEST_LIST_FILTERS)[number];

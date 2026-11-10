@@ -254,11 +254,16 @@ describe('questHealthDisplay active rule', () => {
         {
           status: 'completed',
           targetDate: yesterday,
-          milestones: [milestone('done', yesterday)],
-          health: { state: 'on_track', marker: 100, summary: 'Shipped' },
+          milestones: [milestone('not_started', null)],
+          health: { state: 'off_track', marker: 12, summary: 'Shipped' },
         },
         now,
       ),
-    ).toMatchObject({ label: 'On track', marker: 100, state: 'on_track' });
+    ).toMatchObject({
+      label: 'Off track',
+      marker: 100,
+      state: 'off_track',
+      summary: 'Shipped',
+    });
   });
 });

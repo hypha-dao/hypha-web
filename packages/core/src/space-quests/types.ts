@@ -152,6 +152,7 @@ export type SpaceQuestsOverview = {
     proposed: number;
     paused: number;
     completed: number;
+    rejected: number;
     archived: number;
     total: number;
   };

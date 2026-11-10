@@ -3,6 +3,7 @@ export * from './calendar-date';
 export * from './detail-sections';
 export * from './guided-step';
 export * from './health-display';
+export * from './proposal-list-status';
 export * from './types';
 export * from './markdown';
 export * from './validation';

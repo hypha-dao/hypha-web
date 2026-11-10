@@ -880,6 +880,63 @@ describe('quest list cards', () => {
       restore();
     }
   });
+
+  it('shows Completed without a health tag, and Rejected instead of Proposed', () => {
+    render(
+      <>
+        <QuestCard
+          quest={questFixture({
+            slug: 'done',
+            name: 'Done quest',
+            status: 'completed',
+            health: {
+              state: 'off_track',
+              marker: 12,
+              summary: 'Shipped',
+              updatesThisWeek: 0,
+              lastUpdateAt: null,
+              generatedAt: null,
+              daysToTarget: null,
+            },
+          })}
+          href="/done"
+        />
+        <QuestCard
+          quest={questFixture({
+            slug: 'voted-down',
+            name: 'Voted down',
+            status: 'proposed',
+            proposalStatus: 'rejected',
+          })}
+          href="/voted-down"
+        />
+        <QuestCard
+          quest={questFixture({
+            slug: 'still-open',
+            name: 'Still open',
+            status: 'proposed',
+            proposalStatus: 'onVoting',
+          })}
+          href="/still-open"
+        />
+      </>,
+    );
+
+    const done = screen.getByTestId('quest-card-done');
+    expect(done.textContent).toContain('Completed');
+    expect(done.textContent).not.toMatch(
+      /On track|Off track|At risk|Not started/,
+    );
+
+    const rejected = screen.getByTestId('quest-card-voted-down');
+    expect(rejected.textContent).toContain('Rejected');
+    expect(rejected.textContent).not.toContain('Proposed');
+    expect(rejected.textContent).not.toMatch(/On track|Off track|Not started/);
+
+    const open = screen.getByTestId('quest-card-still-open');
+    expect(open.textContent).toContain('Proposed');
+    expect(open.textContent).toContain('Not started');
+  });
 });
 
 function withLoadedAvatars() {

@@ -461,6 +461,43 @@ describe('saved quest helper entry', () => {
     ).toBe('15');
   });
 
+  it('shows a completed quest at the end of the health bar without a health tag', () => {
+    harness.status = 'completed';
+    const quest = questFixture();
+    quest.targetDate = '2020-01-01';
+    quest.health = { ...quest.health, state: 'off_track', marker: 12 };
+    harness.quest = quest;
+    render(<SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />);
+
+    const header = screen
+      .getByRole('heading', { name: 'Onboarding' })
+      .closest('header');
+    expect(header?.textContent).toContain('Completed');
+    expect(header?.textContent).not.toMatch(
+      /On track|Off track|At risk|Not started/,
+    );
+    expect(screen.queryByTestId('quest-health-label')).toBeNull();
+    const marker = screen.getByTestId('quest-health-marker');
+    expect(marker.getAttribute('data-marker')).toBe('100');
+    expect(marker.className).toContain('right-0');
+  });
+
+  it('shows Rejected instead of Proposed and hides the health tag', () => {
+    harness.status = 'proposed';
+    const quest = questFixture();
+    quest.proposalStatus = 'rejected';
+    harness.quest = quest;
+    render(<SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />);
+
+    const header = screen
+      .getByRole('heading', { name: 'Onboarding' })
+      .closest('header');
+    expect(header?.textContent).toContain('Rejected');
+    expect(header?.textContent).not.toContain('Proposed');
+    expect(header?.textContent).not.toMatch(/On track|Off track|Not started/);
+    expect(screen.queryByTestId('quest-health-label')).toBeNull();
+  });
+
   it('posts a written update from the milestone menu without a link field', async () => {
     installPointerCapture();
     render(
