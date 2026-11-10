@@ -352,7 +352,11 @@ export function applyResolvedPeerTitles<T extends ConnectionListPerson>(
   });
 }
 
-/** Drop DM rows whose title never resolved. Skeletons stay while profiles load. */
+/**
+ * Keep every DM row while peer profiles load (title skeleton). After settle,
+ * drop rows whose title never resolved. Room open is unrelated — this only
+ * decides list visibility so names can fill in after first paint.
+ */
 export function visibleMemberRowsAfterTitleResolve<
   T extends ConnectionListPerson,
 >(rows: readonly MemberRow<T>[], loading: boolean): MemberRow<T>[] {
@@ -363,7 +367,11 @@ export function visibleMemberRowsAfterTitleResolve<
 export type MessagesPeopleListReadyInput = {
   isMatrixAvailable: boolean;
   isConnecting: boolean;
-  /** Matrix has reached Prepared/Syncing. Not enough on its own — Syncing can be empty. */
+  /**
+   * Matrix has reached Catchup/Prepared/Syncing. Not enough on its own —
+   * Syncing can be empty. Ignored when conversations are already known
+   * (IndexedDB / prior sync) so the list can paint before live sync.
+   */
   synced: boolean;
   /**
    * First /sync finished (`Prepared` or `isInitialSyncComplete`). Full catch-up
@@ -371,8 +379,9 @@ export type MessagesPeopleListReadyInput = {
    */
   initialSyncComplete: boolean;
   /**
-   * At least one joined DM, group, or channel room is already known. Lets the
-   * list paint during Syncing without waiting for the full initial sync.
+   * At least one joined DM, group, or channel room is already known (including
+   * from the IndexedDB store before live sync). List-only: never a substitute
+   * for join / room-open readiness.
    */
   hasMatrixConversations: boolean;
   /**
@@ -392,10 +401,12 @@ export type MessagesPeopleListReadyInput = {
 };
 
 /**
- * The Messages people list is safe to paint. Wait for Matrix sync, then either
- * the first /sync to finish or at least one real conversation room so we do not
- * sit on the skeleton for the full multi-second catch-up. Do not wait for home
- * intelligence, room summaries, or peer profiles (those stream in after paint).
+ * The Messages people list is safe to paint. Prefer rooms already in the Matrix
+ * store (IndexedDB) so a returning visit does not wait for Prepared. Otherwise
+ * wait for live sync, then either the first /sync to finish or at least one
+ * conversation. Do not wait for home intelligence, room summaries, or peer
+ * profiles (those stream in after paint). This gate is display-only — room
+ * open still uses join + store membership checks.
  *
  * Matrix unavailable and not connecting is "ready" so the empty/unavailable
  * copy can show. Callers latch this so a later room pump does not hide the list.
@@ -404,8 +415,11 @@ export function messagesPeopleListReady(
   input: MessagesPeopleListReadyInput,
 ): boolean {
   if (!input.isMatrixAvailable) return !input.isConnecting;
+  // Store-backed rooms: paint before Catchup/Prepared. Empty store stays on the
+  // skeleton until live sync proves empty or rooms arrive.
+  if (input.hasMatrixConversations) return true;
   if (!input.synced) return false;
-  return input.initialSyncComplete || input.hasMatrixConversations;
+  return input.initialSyncComplete;
 }
 
 /** Union directory pages / search hits by person id. Synthetics stay out. */

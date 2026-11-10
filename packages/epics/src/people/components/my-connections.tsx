@@ -2258,7 +2258,14 @@ export function MyConnections({
         return sameChannelSnapshots(current, next) ? current : next;
       });
       const state = client.getSyncState();
-      if (state === SyncState.Prepared || state === SyncState.Syncing) {
+      // Catchup is the IndexedDB restore path — treat it like Syncing so an
+      // empty store can leave the skeleton once initial sync finishes. Rooms
+      // already in the store paint earlier via hasMatrixConversations.
+      if (
+        state === SyncState.Prepared ||
+        state === SyncState.Syncing ||
+        state === SyncState.Catchup
+      ) {
         setSynced(true);
       }
       if (
