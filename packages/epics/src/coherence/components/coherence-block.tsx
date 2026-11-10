@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import {
@@ -214,7 +213,6 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
                   href={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
                   scroll={false}
                 >
-                  <Plus className="craft-icon" aria-hidden />
                   {t('newSignal')}
                 </Link>
               </Button>

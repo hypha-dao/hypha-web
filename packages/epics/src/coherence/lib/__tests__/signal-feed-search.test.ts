@@ -94,6 +94,7 @@ describe('feed title search', () => {
     expect(feedSource).toContain("t('newSignal')");
     expect(feedSource).toContain('coherence/new-signal');
     expect(feedSource).not.toContain("t('createSignal')");
+    expect(feedSource).not.toContain('<Plus');
   });
 });
 
