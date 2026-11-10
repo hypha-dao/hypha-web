@@ -18,7 +18,6 @@ import {
   QuestParticipantsCard,
   QuestRewardStrip,
   QuestTargetDateCard,
-  questDetailProgressLabel,
   questMilestoneMetaLines,
   questParticipantRoleText,
   resolveQuestLeadIdentity,
@@ -44,6 +43,18 @@ vi.mock('next/image', () => ({
   default: (props: { alt?: string }) => <img alt={props.alt ?? ''} />,
 }));
 
+vi.mock('next-intl', () => ({
+  useLocale: () => 'en',
+  useTranslations: () => (key: string) => {
+    const labels: Record<string, string> = {
+      'milestones.status.not_started': 'Not started',
+      'milestones.status.in_progress': 'In progress',
+      'milestones.status.done': 'Done',
+    };
+    return labels[key] ?? key;
+  },
+}));
+
 afterEach(() => {
   cleanup();
 });
@@ -67,7 +78,6 @@ describe('quest detail presentation', () => {
           avatarSrc: '/ada.png',
           personId: 4,
         })}
-        progress={null}
       />,
     );
     const label = screen.getByTestId('quest-lead-label');
@@ -78,36 +88,9 @@ describe('quest detail presentation', () => {
     expect(follows(label, avatar)).toBe(true);
     expect(follows(avatar, name)).toBe(true);
     expect(screen.queryByText(/^Target/)).toBeNull();
+    expect(screen.queryByTestId('quest-header-progress')).toBeNull();
     expect(screen.queryByText(/Milestone \d+ of/)).toBeNull();
-  });
-
-  it('hides proposed progress and keeps an active milestone count', () => {
-    expect(
-      questDetailProgressLabel({
-        status: 'proposed',
-        milestones: [
-          { status: 'not_started' },
-          { status: 'not_started' },
-          { status: 'not_started' },
-        ],
-      }),
-    ).toBeNull();
-    expect(
-      questDetailProgressLabel({
-        status: 'active',
-        milestones: [
-          { status: 'done' },
-          { status: 'in_progress' },
-          { status: 'not_started' },
-        ],
-      }),
-    ).toBe('Milestone 2 of 3');
-    expect(
-      questDetailProgressLabel({
-        status: 'paused',
-        milestones: [],
-      }),
-    ).toBe('No milestones yet');
+    expect(screen.queryByText('No milestones yet')).toBeNull();
   });
 
   it('stacks milestone title, owner, and date on separate lines and expands independently', () => {
@@ -225,7 +208,12 @@ describe('quest detail presentation', () => {
       name: 'Participants',
     });
     expect(participantsHeading.textContent).toBe('Participants');
-    expect(participantsHeading.className).toMatch(/(?:^|\s)uppercase(?:\s|$)/);
+    expect(participantsHeading.className).toContain('font-display');
+    expect(participantsHeading.className).toContain('text-[15px]');
+    expect(participantsHeading.className).toContain('font-semibold');
+    expect(participantsHeading.className).not.toMatch(
+      /(?:^|\s)uppercase(?:\s|$)/,
+    );
     expect(screen.getByText('Ada Lovelace').className).not.toMatch(
       /(?:^|\s)uppercase(?:\s|$)/,
     );
@@ -252,9 +240,12 @@ describe('quest detail presentation', () => {
   it('shows a Target Date card only through the formatted value', () => {
     render(<QuestTargetDateCard label="20 November 2026" />);
     expect(screen.getByRole('heading', { name: 'Target Date' })).toBeTruthy();
-    expect(screen.getByTestId('quest-target-date-value').textContent).toBe(
-      '20 November 2026',
-    );
+    const value = screen.getByTestId('quest-target-date-value');
+    expect(value.textContent).toBe('20 November 2026');
+    expect(value.className).toContain('text-[13px]');
+    expect(value.className).toContain('font-medium');
+    expect(value.className).toContain('leading-relaxed');
+    expect(value.className).toContain('text-foreground');
   });
 
   it('lays reward tokens out as compact wrapping boxes', () => {

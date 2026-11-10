@@ -24,7 +24,7 @@ describe('quest update detail', () => {
     ]);
   });
 
-  it('shows small fields as from X to Y', () => {
+  it('shows small fields as a single before to after line', () => {
     expect(
       questUpdateDetailEntries({
         entity: 'quest',
@@ -37,7 +37,8 @@ describe('quest update detail', () => {
       {
         kind: 'short',
         label: 'Title',
-        line: 'Title: from Old title to New title',
+        before: 'Old title',
+        after: 'New title',
       },
     ]);
     expect(
@@ -54,6 +55,13 @@ describe('quest update detail', () => {
             after: 'Ship',
           },
           {
+            label: 'Milestone',
+            format: 'short',
+            action: 'removed',
+            before: 'Archive',
+            after: null,
+          },
+          {
             label: 'Order',
             format: 'short',
             action: 'reordered',
@@ -61,10 +69,44 @@ describe('quest update detail', () => {
             after: 'M1 Review, M2 Draft',
           },
         ],
-      }).map((entry) => (entry.kind === 'short' ? entry.line : entry.label)),
+      }),
     ).toEqual([
-      'Added Milestone: Ship',
-      'Reordered from M1 Draft, M2 Review to M1 Review, M2 Draft',
+      {
+        kind: 'list',
+        label: 'Milestones',
+        rows: [
+          { kind: 'added', text: 'Ship', label: 'Milestone' },
+          { kind: 'removed', text: 'Archive', label: 'Milestone' },
+        ],
+      },
+      {
+        kind: 'short',
+        label: 'Order',
+        before: 'M1 Draft, M2 Review',
+        after: 'M1 Review, M2 Draft',
+      },
+    ]);
+  });
+
+  it('diffs bullet lists instead of repeating both texts', () => {
+    expect(
+      questUpdateDetailEntries({
+        entity: 'quest',
+        field: 'scope',
+        action: 'updated',
+        format: 'text',
+        before: 'In:\n- Keep\n- Ship\n\nOut:\n- Pause',
+        after: 'In:\n- Keep\n- Launch\n\nOut:\n- Pause\n- Archive',
+      }),
+    ).toEqual([
+      {
+        kind: 'list',
+        label: 'Scope',
+        rows: [
+          { kind: 'changed', before: 'Ship', after: 'Launch', label: 'In' },
+          { kind: 'added', text: 'Archive', label: 'Out' },
+        ],
+      },
     ]);
   });
 

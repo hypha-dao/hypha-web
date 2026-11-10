@@ -5784,7 +5784,24 @@
       "keepTitle": "Manter este rascunho?",
       "keepBody": "Você pode continuar esta missão depois em Meus rascunhos. Descartar remove o rascunho.",
       "keep": "Manter rascunho",
-      "discard": "Descartar"
+      "discard": "Descartar",
+      "savedAuto": "Guardado automaticamente",
+      "notSaved": "Ainda não guardado",
+      "retry": "Não foi possível guardar. Tentar de novo",
+      "deleteFailed": "Não foi possível apagar esse rascunho. Ele voltou para a lista."
+    },
+    "updates": {
+      "before": "Antes",
+      "after": "Depois",
+      "showChanges": "Mostrar alterações",
+      "hideChanges": "Ocultar alterações"
+    },
+    "milestones": {
+      "status": {
+        "not_started": "Não iniciado",
+        "in_progress": "Em progresso",
+        "done": "Concluído"
+      }
     },
     "error": {
       "load": "Não foi possível carregar as missões.",

@@ -289,7 +289,11 @@ describe('saved quest helper entry', () => {
     const participantsHeading = screen.getByRole('heading', {
       name: 'Participants',
     });
-    expect(participantsHeading.className).toMatch(/(?:^|\s)uppercase(?:\s|$)/);
+    expect(participantsHeading.className).toContain('font-display');
+    expect(participantsHeading.className).toContain('text-[15px]');
+    expect(participantsHeading.className).not.toMatch(
+      /(?:^|\s)uppercase(?:\s|$)/,
+    );
     const participantName = participants.querySelector(
       '[data-testid="quest-participant-toggle-3"]',
     );

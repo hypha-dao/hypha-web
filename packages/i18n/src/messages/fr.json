@@ -5782,7 +5782,24 @@
       "keepTitle": "Conserver ce brouillon ?",
       "keepBody": "Vous pourrez reprendre cette quête plus tard dans Mes brouillons. Abandonner le supprime.",
       "keep": "Conserver le brouillon",
-      "discard": "Abandonner"
+      "discard": "Abandonner",
+      "savedAuto": "Enregistré automatiquement",
+      "notSaved": "Pas encore enregistré",
+      "retry": "Enregistrement impossible. Réessayer",
+      "deleteFailed": "Impossible de supprimer ce brouillon. Il est de retour dans la liste."
+    },
+    "updates": {
+      "before": "Avant",
+      "after": "Après",
+      "showChanges": "Afficher les modifications",
+      "hideChanges": "Masquer les modifications"
+    },
+    "milestones": {
+      "status": {
+        "not_started": "Pas commencé",
+        "in_progress": "En cours",
+        "done": "Terminé"
+      }
     },
     "error": {
       "load": "Impossible de charger les quêtes.",

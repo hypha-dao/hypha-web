@@ -102,7 +102,10 @@ describe('quest create draft heading', () => {
     expect(screen.queryByRole('heading', { name: 'Quest draft' })).toBeNull();
     expect(screen.queryByText('Quest draft')).toBeNull();
     expect(screen.getByTestId('cancel-quest-button')).toBeTruthy();
-    expect(screen.getByTestId('save-quest-draft-button')).toBeTruthy();
+    expect(screen.queryByTestId('save-quest-draft-button')).toBeNull();
+    expect(screen.getByTestId('quest-draft-save-status').textContent).toContain(
+      'drafts.notSaved',
+    );
     expect(screen.getByTestId('create-quest-button')).toBeTruthy();
     expect(
       screen.getByRole('button', { name: /Open discussion/ }),

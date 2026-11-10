@@ -5786,7 +5786,24 @@
       "keepTitle": "Diesen Entwurf behalten?",
       "keepBody": "Du kannst diese Quest später unter Meine Entwürfe fortsetzen. Verwerfen entfernt sie.",
       "keep": "Entwurf behalten",
-      "discard": "Verwerfen"
+      "discard": "Verwerfen",
+      "savedAuto": "Automatisch gespeichert",
+      "notSaved": "Noch nicht gespeichert",
+      "retry": "Speichern fehlgeschlagen. Erneut versuchen",
+      "deleteFailed": "Der Entwurf konnte nicht gelöscht werden. Er ist wieder in der Liste."
+    },
+    "updates": {
+      "before": "Vorher",
+      "after": "Nachher",
+      "showChanges": "Änderungen anzeigen",
+      "hideChanges": "Änderungen ausblenden"
+    },
+    "milestones": {
+      "status": {
+        "not_started": "Nicht begonnen",
+        "in_progress": "In Arbeit",
+        "done": "Erledigt"
+      }
     },
     "error": {
       "load": "Quests konnten nicht geladen werden.",

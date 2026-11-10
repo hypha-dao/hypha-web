@@ -1,14 +1,17 @@
 'use client';
 
 import type { QuestUpdateRecord } from '@hypha-platform/core/client';
+import { cn } from '@hypha-platform/ui-utils';
+import { ArrowUpRight, ChevronDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useId, useState } from 'react';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { ArrowUpRight } from 'lucide-react';
-import { useState } from 'react';
 import {
   questUpdateDetailEntries,
-  questUpdateDetailIsLong,
   type QuestUpdateDetailEntry,
+  type QuestUpdateListRow,
 } from '../utils/quest-update-detail';
+import { QuestSectionMarkdown } from './quest-section-markdown';
 
 function formatClock(iso: string): string {
   const date = new Date(iso);
@@ -19,69 +22,94 @@ function formatClock(iso: string): string {
   });
 }
 
-function ChangeEntry({ entry }: { entry: QuestUpdateDetailEntry }) {
-  if (entry.kind === 'short') {
-    return <p className="text-[13px] text-foreground">{entry.line}</p>;
-  }
+function ChangeList({ rows }: { rows: readonly QuestUpdateListRow[] }) {
   return (
-    <div className="space-y-1">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-11">
-        {entry.label}
-      </p>
-      <p className="text-[11px] text-neutral-11">Before</p>
-      <p className="whitespace-pre-wrap text-[13px] text-foreground">
-        {entry.before}
-      </p>
-      <p className="text-[11px] text-neutral-11">After</p>
-      <p className="whitespace-pre-wrap text-[13px] text-foreground">
-        {entry.after}
-      </p>
-    </div>
+    <ul className="space-y-1 text-[13px] leading-relaxed">
+      {rows.map((row, index) => {
+        const prefix = row.label ? `${row.label} ` : '';
+        if (row.kind === 'added') {
+          return (
+            <li key={`${row.text}-${index}`} className="text-success-11">
+              {prefix}+ {row.text}
+            </li>
+          );
+        }
+        if (row.kind === 'removed') {
+          return (
+            <li
+              key={`${row.text}-${index}`}
+              className="text-neutral-11 line-through"
+            >
+              {prefix}− {row.text}
+            </li>
+          );
+        }
+        return (
+          <li key={`${row.before}-${row.after}-${index}`}>
+            {prefix ? <span className="text-neutral-11">{prefix}</span> : null}
+            <span className="text-neutral-11">{row.before}</span>
+            <span className="text-neutral-11"> → </span>
+            <span className="text-foreground">{row.after}</span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
-function ChangeDetail({ entries }: { entries: QuestUpdateDetailEntry[] }) {
-  const long = questUpdateDetailIsLong(entries);
-  const [expanded, setExpanded] = useState(false);
-  const visible = !long || expanded ? entries : entries.slice(0, 1);
-  const preview =
-    long && !expanded && visible[0]?.kind === 'text'
-      ? [
-          {
-            ...visible[0],
-            before:
-              visible[0].before.length > 120
-                ? `${visible[0].before.slice(0, 120)}…`
-                : visible[0].before,
-            after:
-              visible[0].after.length > 120
-                ? `${visible[0].after.slice(0, 120)}…`
-                : visible[0].after,
-          },
-        ]
-      : visible;
-
+function ChangeEntry({ entry }: { entry: QuestUpdateDetailEntry }) {
+  const t = useTranslations('SpaceQuests');
+  if (entry.kind === 'list') {
+    return (
+      <div className="space-y-1">
+        {entry.label ? (
+          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-11">
+            {entry.label}
+          </p>
+        ) : null}
+        <ChangeList rows={entry.rows} />
+      </div>
+    );
+  }
+  if (entry.kind === 'short') {
+    return (
+      <p className="text-[13px] leading-relaxed text-foreground">
+        {entry.label ? (
+          <span className="mr-1 text-neutral-11">{entry.label}</span>
+        ) : null}
+        <span className="text-neutral-11">{entry.before}</span>
+        <span className="text-neutral-11"> → </span>
+        <span>{entry.after}</span>
+      </p>
+    );
+  }
   return (
-    <div className="space-y-2 pt-1" data-testid="quest-update-change">
-      {preview.map((entry, index) => (
-        <ChangeEntry key={`${entry.label}-${index}`} entry={entry} />
-      ))}
-      {long ? (
-        <button
-          type="button"
-          className="text-[11px] font-semibold text-foreground underline-offset-2 hover:underline"
-          data-testid="quest-update-change-toggle"
-          onClick={() => setExpanded((open) => !open)}
-        >
-          {expanded ? 'Hide change' : 'Show change'}
-        </button>
-      ) : null}
+    <div className="grid gap-2 sm:grid-cols-2">
+      <div className="min-w-0 space-y-1">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-11">
+          {entry.label}
+        </p>
+        <p className="text-[11px] text-neutral-11">{t('updates.before')}</p>
+        <div className="text-neutral-11 [&_*]:text-neutral-11">
+          <QuestSectionMarkdown markdown={entry.before} empty="—" />
+        </div>
+      </div>
+      <div className="min-w-0 space-y-1">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-11">
+          {t('updates.after')}
+        </p>
+        <QuestSectionMarkdown markdown={entry.after} empty="—" />
+      </div>
     </div>
   );
 }
 
 export function QuestUpdateCard({ update }: { update: QuestUpdateRecord }) {
+  const t = useTranslations('SpaceQuests');
   const entries = questUpdateDetailEntries(update.change);
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+
   return (
     <div
       className="flex items-start gap-2.5 px-3 py-3"
@@ -114,8 +142,41 @@ export function QuestUpdateCard({ update }: { update: QuestUpdateRecord }) {
             {formatClock(update.createdAt)}
           </span>
         </div>
-        <p className="text-[13px] text-foreground">{update.text}</p>
-        {entries.length > 0 ? <ChangeDetail entries={entries} /> : null}
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <p className="min-w-0 flex-1 text-[13px] text-foreground">
+            {update.text}
+          </p>
+          {entries.length > 0 ? (
+            <button
+              type="button"
+              aria-expanded={open}
+              aria-controls={panelId}
+              data-testid="quest-update-change-toggle"
+              onClick={() => setOpen((current) => !current)}
+              className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-neutral-11 hover:text-foreground"
+            >
+              {open ? t('updates.hideChanges') : t('updates.showChanges')}
+              <ChevronDown
+                className={cn(
+                  'size-3.5 transition-transform',
+                  open && 'rotate-180',
+                )}
+                aria-hidden
+              />
+            </button>
+          ) : null}
+        </div>
+        {open && entries.length > 0 ? (
+          <div
+            id={panelId}
+            className="max-h-60 space-y-2 overflow-y-auto border-l border-border pl-2"
+            data-testid="quest-update-change"
+          >
+            {entries.map((entry, index) => (
+              <ChangeEntry key={`${entry.kind}-${index}`} entry={entry} />
+            ))}
+          </div>
+        ) : null}
         {update.links.length > 0 ? (
           <div className="flex flex-wrap gap-1.5 pt-0.5">
             {update.links.map((link, idx) => (

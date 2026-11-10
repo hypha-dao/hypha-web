@@ -506,19 +506,30 @@ export async function deleteQuestDraftRequest({
   draftId: number;
   getAccessToken?: () => Promise<string | null | undefined>;
 }): Promise<void> {
-  const headers = await authHeaders(getAccessToken);
-  const response = await fetch(
-    `/api/v1/spaces/${spaceSlug}/quests/drafts/${draftId}`,
-    { method: 'DELETE', headers },
-  );
-  if (!response.ok) {
-    throw await requestError(response, 'Failed to delete quest draft');
-  }
+  const key = questDraftListKey(spaceSlug);
+  let snapshot: { drafts: QuestDraftListItem[] } | undefined;
   await mutate(
-    questDraftListKey(spaceSlug),
-    (current: { drafts: QuestDraftListItem[] } | undefined) => ({
-      drafts: (current?.drafts ?? []).filter((draft) => draft.id !== draftId),
-    }),
-    { revalidate: true },
+    key,
+    (current: { drafts: QuestDraftListItem[] } | undefined) => {
+      snapshot = current;
+      return {
+        drafts: (current?.drafts ?? []).filter((draft) => draft.id !== draftId),
+      };
+    },
+    { revalidate: false },
   );
+  try {
+    const headers = await authHeaders(getAccessToken);
+    const response = await fetch(
+      `/api/v1/spaces/${spaceSlug}/quests/drafts/${draftId}`,
+      { method: 'DELETE', headers },
+    );
+    if (!response.ok) {
+      throw await requestError(response, 'Failed to delete quest draft');
+    }
+    await revalidateQuestDrafts(spaceSlug);
+  } catch (error) {
+    await mutate(key, snapshot, { revalidate: false });
+    throw error;
+  }
 }

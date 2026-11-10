@@ -6,6 +6,18 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { QuestUpdateRecord } from '@hypha-platform/core/client';
 import { QuestUpdateCard } from '../quest-update-card';
 
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => {
+    const labels: Record<string, string> = {
+      'updates.before': 'Before',
+      'updates.after': 'After',
+      'updates.showChanges': 'Show changes',
+      'updates.hideChanges': 'Hide changes',
+    };
+    return labels[key] ?? key;
+  },
+}));
+
 function update(
   partial: Partial<QuestUpdateRecord> & Pick<QuestUpdateRecord, 'id' | 'text'>,
 ): QuestUpdateRecord {
@@ -90,9 +102,15 @@ describe('quest update card', () => {
     expect(
       screen.getByText('Quest proposal accepted — Quest is now Active.'),
     ).toBeTruthy();
+    expect(screen.getByText('Updated Goal.')).toBeTruthy();
+    expect(screen.queryByText('Before')).toBeNull();
+    expect(screen.queryByText('New goal')).toBeNull();
+    const toggle = screen.getByTestId('quest-update-change-toggle');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByText('Before')).toBeTruthy();
     expect(screen.getByText('New goal')).toBeTruthy();
-    expect(screen.queryByTestId('quest-update-change-toggle')).toBeNull();
   });
 
   it('shows the profile picture and the user icon fallback', () => {
@@ -143,8 +161,13 @@ describe('quest update card', () => {
       />,
     );
     expect(screen.queryByText(new RegExp(ending))).toBeNull();
-    fireEvent.click(screen.getByTestId('quest-update-change-toggle'));
+    const toggle = screen.getByTestId('quest-update-change-toggle');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(toggle);
     expect(screen.getByText(new RegExp(ending))).toBeTruthy();
+    const panel = screen.getByTestId('quest-update-change');
+    expect(panel.className).toContain('max-h-60');
+    expect(panel.className).toContain('overflow-y-auto');
   });
 
   it('keeps the summary when no change data was stored', () => {

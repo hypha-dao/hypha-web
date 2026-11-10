@@ -5808,7 +5808,24 @@
       "keepTitle": "Keep this draft?",
       "keepBody": "You can continue this quest later from My drafts. Discard removes it.",
       "keep": "Keep draft",
-      "discard": "Discard"
+      "discard": "Discard",
+      "savedAuto": "Saved automatically",
+      "notSaved": "Not saved yet",
+      "retry": "Couldn't save. Retry",
+      "deleteFailed": "Could not delete that draft. It is back in your list."
+    },
+    "updates": {
+      "before": "Before",
+      "after": "After",
+      "showChanges": "Show changes",
+      "hideChanges": "Hide changes"
+    },
+    "milestones": {
+      "status": {
+        "not_started": "Not started",
+        "in_progress": "In progress",
+        "done": "Done"
+      }
     },
     "error": {
       "load": "Quests could not be loaded.",

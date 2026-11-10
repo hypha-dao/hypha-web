@@ -54,8 +54,8 @@ function resetDrafts() {
   );
 }
 
-function DraftChip() {
-  const { drafts: mine, visible } = useMyQuestDrafts('sandbox');
+function DraftChip({ spaceSlug = 'sandbox' }: { spaceSlug?: string }) {
+  const { drafts: mine, visible } = useMyQuestDrafts(spaceSlug);
   const { getAccessToken } = useAuthentication();
   return (
     <div>
@@ -67,13 +67,13 @@ function DraftChip() {
       ))}
       <button
         type="button"
-        onClick={() =>
+        onClick={() => {
           void deleteQuestDraftRequest({
-            spaceSlug: 'sandbox',
+            spaceSlug,
             draftId: 4,
             getAccessToken,
-          })
-        }
+          }).catch(() => undefined);
+        }}
       >
         Delete alpha
       </button>
@@ -95,9 +95,14 @@ afterEach(async () => {
 describe('quest draft delete cache', () => {
   it('removes only the deleted draft and keeps the other', async () => {
     let getCount = 0;
+    let deleteStarted = false;
     let releaseRefetch: () => void = () => undefined;
+    let releaseDelete: () => void = () => undefined;
     const refetchGate = new Promise<void>((resolve) => {
       releaseRefetch = resolve;
+    });
+    const deleteGate = new Promise<void>((resolve) => {
+      releaseDelete = resolve;
     });
     vi.stubGlobal(
       'fetch',
@@ -113,6 +118,8 @@ describe('quest draft delete cache', () => {
           });
         }
         if (url.endsWith('/quests/drafts/4') && method === 'DELETE') {
+          deleteStarted = true;
+          await deleteGate;
           const index = drafts.findIndex((draft) => draft.id === 4);
           if (index >= 0) drafts.splice(index, 1);
           return new Response(null, { status: 204 });
@@ -136,14 +143,61 @@ describe('quest draft delete cache', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('draft-4')).toBeNull();
     });
+    expect(deleteStarted).toBe(true);
     expect(screen.getByTestId('draft-count').textContent).toBe('1');
     expect(screen.getByTestId('draft-5').textContent).toBe('Beta draft');
 
+    releaseDelete();
     releaseRefetch();
     await waitFor(() => {
       expect(screen.getByTestId('draft-count').textContent).toBe('1');
     });
     expect(screen.queryByTestId('draft-4')).toBeNull();
+    expect(screen.getByTestId('draft-5').textContent).toBe('Beta draft');
+  });
+
+  it('restores the draft when delete fails', async () => {
+    let releaseDelete: () => void = () => undefined;
+    const deleteGate = new Promise<void>((resolve) => {
+      releaseDelete = resolve;
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = init?.method ?? 'GET';
+        if (url.endsWith('/quests/drafts') && method === 'GET') {
+          return new Response(JSON.stringify({ drafts: drafts.slice() }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        if (url.endsWith('/quests/drafts/4') && method === 'DELETE') {
+          await deleteGate;
+          return new Response('no', { status: 500 });
+        }
+        return new Response('not found', { status: 404 });
+      }),
+    );
+
+    render(
+      <SWRConfig value={{ dedupingInterval: 5000 }}>
+        <DraftChip spaceSlug="sandbox-restore" />
+      </SWRConfig>,
+    );
+
+    expect(await screen.findByTestId('draft-4')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete alpha' }));
+    await waitFor(() => {
+      expect(screen.queryByTestId('draft-4')).toBeNull();
+    });
+    expect(screen.getByTestId('draft-count').textContent).toBe('1');
+
+    releaseDelete();
+    await waitFor(() => {
+      expect(screen.getByTestId('draft-count').textContent).toBe('2');
+    });
+    expect(screen.getByTestId('draft-4').textContent).toBe('Alpha draft');
     expect(screen.getByTestId('draft-5').textContent).toBe('Beta draft');
   });
 });

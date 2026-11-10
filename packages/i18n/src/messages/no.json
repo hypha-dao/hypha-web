@@ -5791,7 +5791,24 @@
       "keepTitle": "Beholde dette utkastet?",
       "keepBody": "Du kan fortsette dette oppdraget senere under Mine utkast. Forkast fjerner utkastet.",
       "keep": "Behold utkast",
-      "discard": "Forkast"
+      "discard": "Forkast",
+      "savedAuto": "Lagret automatisk",
+      "notSaved": "Ikke lagret ennå",
+      "retry": "Kunne ikke lagre. Prøv igjen",
+      "deleteFailed": "Kunne ikke slette det utkastet. Det er tilbake i listen."
+    },
+    "updates": {
+      "before": "Før",
+      "after": "Etter",
+      "showChanges": "Vis endringer",
+      "hideChanges": "Skjul endringer"
+    },
+    "milestones": {
+      "status": {
+        "not_started": "Ikke startet",
+        "in_progress": "Pågår",
+        "done": "Ferdig"
+      }
     },
     "error": {
       "load": "Kunne ikke laste oppdrag.",

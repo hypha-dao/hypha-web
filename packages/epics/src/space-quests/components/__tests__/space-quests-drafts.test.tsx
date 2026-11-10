@@ -25,7 +25,7 @@ const harness = vi.hoisted(() => ({
       updatedAt: new Date().toISOString(),
     },
   ],
-  deleteQuestDraftRequest: vi.fn(),
+  deleteQuestDraftRequest: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('next/link', () => ({
@@ -150,6 +150,23 @@ describe('quest list drafts', () => {
         expect.objectContaining({ spaceSlug: 'sandbox', draftId: 4 }),
       );
     });
+    expect(screen.queryByTestId('confirm-delete-quest-draft')).toBeNull();
+  });
+
+  it('closes the confirm at once and shows an error when delete fails', async () => {
+    harness.deleteQuestDraftRequest.mockRejectedValue(new Error('no'));
+    render(<SpaceQuestsSection spaceSlug="sandbox" />);
+    fireEvent.click(screen.getByTestId('quest-filter-drafts'));
+    fireEvent.click(screen.getByTestId('delete-quest-draft-4'));
+    fireEvent.click(screen.getByTestId('confirm-delete-quest-draft'));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('confirm-delete-quest-draft')).toBeNull();
+    });
+    expect(screen.getByTestId('quest-draft-delete-error').textContent).toBe(
+      'drafts.deleteFailed',
+    );
+    expect(screen.getByTestId('quest-draft-4')).toBeTruthy();
   });
 
   it('hides My drafts when nobody is signed in', () => {

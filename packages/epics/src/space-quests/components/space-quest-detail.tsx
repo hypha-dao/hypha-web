@@ -3,7 +3,6 @@
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   QUEST_HEALTH_STATES,
-  QUEST_MILESTONE_STATUSES,
   buildMilestoneStatusPatch,
   canChangeMilestoneStatus,
   canMemberEditQuest,
@@ -15,7 +14,6 @@ import {
   bulletsToMarkdownList,
   useMe,
   type QuestHealthState,
-  type QuestMilestoneStatus,
   type QuestPatchStatus,
   type QuestRecord,
   type QuestStatus,
@@ -38,7 +36,6 @@ import {
   QuestParticipantsCard,
   QuestRewardStrip,
   QuestTargetDateCard,
-  questDetailProgressLabel,
   resolveQuestLeadIdentity,
 } from './quest-detail-presentation';
 import { QuestUpdateCard } from './quest-update-card';
@@ -83,6 +80,7 @@ import {
   EditQuestSuccessModal,
   EditQuestTargetDateModal,
 } from './quest-section-edit-modals';
+import { QuestMilestoneStatusSelect } from './quest-milestone-status-select';
 import { useQuestRewardTokenCatalog } from './quest-reward-tokens';
 import type { ExtendedToken } from '../../treasury/hooks/use-tokens';
 import {
@@ -819,12 +817,6 @@ function SettingsRow({
   );
 }
 
-function milestoneStatusLabel(status: QuestMilestoneStatus): string {
-  if (status === 'done') return 'Done';
-  if (status === 'in_progress') return 'In progress';
-  return 'Not started';
-}
-
 function SettingsTab({
   quest,
   isLead,
@@ -980,22 +972,15 @@ function SettingsTab({
                       .join(' · ') || '—'}
                   </p>
                 </div>
-                <select
-                  aria-label={`Status for ${milestone.name}`}
-                  data-testid={`milestone-status-${milestone.id}`}
+                <QuestMilestoneStatusSelect
+                  ariaLabel={`Status for ${milestone.name}`}
+                  testId={`milestone-status-${milestone.id}`}
                   value={milestone.status}
                   disabled={
                     !canChangeMilestones || saving || milestone.id == null
                   }
-                  onChange={(event) => {
-                    const status = event.target.value as QuestMilestoneStatus;
-                    if (
-                      !(QUEST_MILESTONE_STATUSES as readonly string[]).includes(
-                        status,
-                      )
-                    ) {
-                      return;
-                    }
+                  className="w-[9.5rem] shrink-0"
+                  onChange={(status) => {
                     const patch = buildMilestoneStatusPatch(
                       quest.milestones,
                       milestone.id,
@@ -1003,14 +988,7 @@ function SettingsTab({
                     );
                     if (patch) onPatch(patch);
                   }}
-                  className="h-10 min-h-10 shrink-0 border border-border bg-background px-2 text-[11px] font-semibold text-foreground disabled:opacity-50"
-                >
-                  {QUEST_MILESTONE_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {milestoneStatusLabel(status)}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             ))}
           </div>
@@ -1561,7 +1539,6 @@ export function SpaceQuestDetail({
                 ? person?.id
                 : undefined),
           })}
-          progress={questDetailProgressLabel(quest)}
         />
       </header>
 

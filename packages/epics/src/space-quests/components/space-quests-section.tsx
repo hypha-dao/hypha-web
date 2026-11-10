@@ -24,7 +24,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { Search } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import {
   deleteQuestDraftRequest,
@@ -298,7 +298,13 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
   const [filter, setFilter] = useState<QuestListView>('active');
   const [search, setSearch] = useState('');
   const [draftToDelete, setDraftToDelete] = useState<number | null>(null);
-  const [deletingDraft, setDeletingDraft] = useState(false);
+  const [draftDeleteError, setDraftDeleteError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!draftDeleteError) return;
+    const timer = window.setTimeout(() => setDraftDeleteError(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [draftDeleteError]);
 
   const quests = useMemo(() => overview?.quests ?? [], [overview]);
   const counts = overview?.counts ?? {
@@ -340,21 +346,20 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
 
   const newQuestHref = `/${locale}/dho/${spaceSlug}/quests/new?fresh=1`;
 
-  const confirmDeleteDraft = async () => {
+  const confirmDeleteDraft = () => {
     if (draftToDelete == null) return;
-    setDeletingDraft(true);
-    try {
-      await deleteQuestDraftRequest({
+    const draftId = draftToDelete;
+    setDraftToDelete(null);
+    setDraftDeleteError(null);
+    void Promise.resolve(
+      deleteQuestDraftRequest({
         spaceSlug,
-        draftId: draftToDelete,
+        draftId,
         getAccessToken,
-      });
-      setDraftToDelete(null);
-    } catch {
-      // Leave the confirm open so the author can retry.
-    } finally {
-      setDeletingDraft(false);
-    }
+      }),
+    ).catch(() => {
+      setDraftDeleteError(t('drafts.deleteFailed'));
+    });
   };
 
   if (isLoading) {
@@ -396,6 +401,15 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
 
   return (
     <div className="space-y-4">
+      {draftDeleteError ? (
+        <div
+          role="alert"
+          data-testid="quest-draft-delete-error"
+          className="fixed bottom-4 left-1/2 z-50 max-w-sm -translate-x-1/2 border border-error-6 bg-background px-4 py-2 text-sm text-error-11"
+        >
+          {draftDeleteError}
+        </div>
+      ) : null}
       <header className="flex w-full flex-wrap items-center justify-between gap-3">
         <h1 className={QUEST_LIST_TITLE_CLASS}>
           {t('title')}
@@ -558,7 +572,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
       <Dialog
         open={draftToDelete != null}
         onOpenChange={(open) => {
-          if (!open && !deletingDraft) setDraftToDelete(null);
+          if (!open) setDraftToDelete(null);
         }}
       >
         <DialogContent
@@ -578,7 +592,6 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
                 variant="outline"
                 colorVariant="neutral"
                 className="rounded-none"
-                disabled={deletingDraft}
                 onClick={() => setDraftToDelete(null)}
               >
                 {t('drafts.cancel')}
@@ -586,8 +599,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
               <Button
                 type="button"
                 className="bg-foreground text-background hover:bg-foreground/90"
-                disabled={deletingDraft}
-                onClick={() => void confirmDeleteDraft()}
+                onClick={confirmDeleteDraft}
                 data-testid="confirm-delete-quest-draft"
               >
                 {t('drafts.deleteConfirm')}

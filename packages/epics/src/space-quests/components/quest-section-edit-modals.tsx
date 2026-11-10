@@ -2,7 +2,6 @@
 
 import {
   QUEST_DEFAULT_REWARD_TOKENS,
-  QUEST_MILESTONE_STATUSES,
   bulletsToMarkdownList,
   splitMarkdownLinesToBullets,
   stripViewerYouMarker,
@@ -37,6 +36,7 @@ import {
   type ReactNode,
 } from 'react';
 import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
+import { QuestMilestoneStatusSelect } from './quest-milestone-status-select';
 import { shouldResetQuestModalDraft } from '../utils/modal-draft-reset';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { QuestRewardRowsEditor } from './quest-reward-tokens';
@@ -1033,28 +1033,16 @@ export function EditQuestMilestonesModal({
                     {showStatusSelect ? (
                       <div className="w-full space-y-1 sm:w-[150px]">
                         <label className={LABEL_CLASS}>STATUS</label>
-                        <select
+                        <QuestMilestoneStatusSelect
                           value={item.status}
-                          onChange={(e) => {
+                          ariaLabel="Status"
+                          className="w-full"
+                          onChange={(status) => {
                             const next = [...rows];
-                            next[idx] = {
-                              ...item,
-                              status: e.target.value as QuestMilestoneStatus,
-                            };
+                            next[idx] = { ...item, status };
                             setRows(next);
                           }}
-                          className="h-10 w-full border border-border bg-background-2 px-3 text-xs text-foreground"
-                        >
-                          {QUEST_MILESTONE_STATUSES.map((st) => (
-                            <option key={st} value={st}>
-                              {st === 'done'
-                                ? 'Done'
-                                : st === 'in_progress'
-                                ? 'In progress'
-                                : 'Not started'}
-                            </option>
-                          ))}
-                        </select>
+                        />
                       </div>
                     ) : null}
                   </div>

@@ -32,6 +32,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { Check, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useConfig } from 'wagmi';
 import {
@@ -362,6 +363,7 @@ export function SpaceQuestCreateDraft({
     serverDraftIdRef.current = session.draftId;
     pendingProposalLinkRef.current = session.checkpoint;
     setPendingProposalLink(session.checkpoint);
+    if (session.draftId) setDraftSaveState('saved');
   }, []);
 
   const persistCreateSession = useCallback(() => {
@@ -373,11 +375,21 @@ export function SpaceQuestCreateDraft({
     );
   }, [currentCreateSession, spaceSlug]);
 
+  const saveGenerationRef = useRef(0);
   const saveDraftToServer = useCallback(async () => {
     if (draftConsumedRef.current) return serverDraftIdRef.current;
     const session = currentCreateSession();
     if (!questCreateDraftIsWorthSaving(session)) return null;
-    setDraftSaveState((current) => (current === 'saving' ? current : 'saving'));
+    const generation = saveGenerationRef.current + 1;
+    saveGenerationRef.current = generation;
+    const started = Date.now();
+    setDraftSaveState('saving');
+    const holdSaving = async () => {
+      const remaining = 400 - (Date.now() - started);
+      if (remaining > 0) {
+        await new Promise((resolve) => window.setTimeout(resolve, remaining));
+      }
+    };
     try {
       const saved = await saveQuestDraftRequest({
         spaceSlug,
@@ -387,10 +399,12 @@ export function SpaceQuestCreateDraft({
       });
       serverDraftIdRef.current = saved.id;
       persistCreateSession();
-      setDraftSaveState('saved');
+      await holdSaving();
+      if (saveGenerationRef.current === generation) setDraftSaveState('saved');
       return saved.id;
     } catch {
-      setDraftSaveState('error');
+      await holdSaving();
+      if (saveGenerationRef.current === generation) setDraftSaveState('error');
       return null;
     }
   }, [currentCreateSession, persistCreateSession, spaceSlug]);
@@ -1216,6 +1230,48 @@ export function SpaceQuestCreateDraft({
                 </span>
               </div>
               <div className="flex items-center gap-2">
+                {draftSaveState === 'error' ? (
+                  <button
+                    type="button"
+                    onClick={() => void saveDraftToServer()}
+                    data-testid="quest-draft-save-status"
+                    className="inline-flex h-8 min-w-[11.5rem] items-center gap-1.5 whitespace-nowrap text-left text-[11px] font-medium text-error-11"
+                  >
+                    {tDrafts('drafts.retry')}
+                  </button>
+                ) : (
+                  <div
+                    data-testid="quest-draft-save-status"
+                    aria-live="polite"
+                    className="inline-flex h-8 min-w-[11.5rem] items-center gap-1.5 whitespace-nowrap text-[11px] font-medium"
+                  >
+                    {draftSaveState === 'saving' ? (
+                      <>
+                        <Loader2
+                          className="size-3.5 shrink-0 animate-spin text-neutral-11"
+                          aria-hidden
+                        />
+                        <span className="text-neutral-11">
+                          {tDrafts('drafts.saving')}
+                        </span>
+                      </>
+                    ) : draftSaveState === 'saved' ? (
+                      <>
+                        <Check
+                          className="size-3.5 shrink-0 text-success-11"
+                          aria-hidden
+                        />
+                        <span className="text-success-11">
+                          {tDrafts('drafts.savedAuto')}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-neutral-11">
+                        {tDrafts('drafts.notSaved')}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <Button
                   type="button"
                   variant="outline"
@@ -1225,22 +1281,6 @@ export function SpaceQuestCreateDraft({
                   data-testid="cancel-quest-button"
                 >
                   CANCEL
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  className="rounded-none"
-                  disabled={
-                    draftSaveState === 'saving' ||
-                    !questCreateDraftIsWorthSaving(currentCreateSession())
-                  }
-                  onClick={() => void saveDraftToServer()}
-                  data-testid="save-quest-draft-button"
-                >
-                  {draftSaveState === 'saving'
-                    ? tDrafts('drafts.saving')
-                    : tDrafts('drafts.save')}
                 </Button>
                 <Button
                   type="button"
@@ -1257,20 +1297,6 @@ export function SpaceQuestCreateDraft({
                 </Button>
               </div>
             </div>
-            {draftSaveState === 'saved' || draftSaveState === 'error' ? (
-              <p
-                className={
-                  draftSaveState === 'error'
-                    ? 'text-xs text-error-11'
-                    : 'text-xs text-neutral-11'
-                }
-                data-testid="quest-draft-save-status"
-              >
-                {draftSaveState === 'error'
-                  ? tDrafts('drafts.saveFailed')
-                  : tDrafts('drafts.saved')}
-              </p>
-            ) : null}
 
             {proposalLinkError ? (
               <div className="border border-error-6 bg-background-2 px-4 py-3 text-xs text-error-11">

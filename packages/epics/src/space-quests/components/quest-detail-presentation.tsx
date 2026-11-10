@@ -5,7 +5,6 @@ import {
   questHtmlHasVisibleText,
   type QuestMilestoneStatus,
   type QuestReward,
-  type QuestStatus,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { ChevronDown, ChevronUp, Pencil } from 'lucide-react';
@@ -31,25 +30,6 @@ export function questParticipantRoleText(member: {
   if (stored) return stored;
   if (member.isLead) return 'Lead';
   return null;
-}
-
-/** Header progress. Proposed quests keep only the status word. */
-export function questDetailProgressLabel(quest: {
-  status: QuestStatus;
-  milestones: readonly { status: string }[];
-}): string | null {
-  if (quest.status === 'proposed') return null;
-  const total = quest.milestones.length;
-  if (total === 0) return 'No milestones yet';
-  const done = quest.milestones.filter((m) => m.status === 'done').length;
-  if (quest.status === 'completed' || done === total) {
-    return `Milestone ${total} of ${total}`;
-  }
-  const inProgress = quest.milestones.findIndex(
-    (m) => m.status === 'in_progress',
-  );
-  const current = inProgress >= 0 ? inProgress + 1 : Math.min(total, done + 1);
-  return `Milestone ${current} of ${total}`;
 }
 
 /**
@@ -107,29 +87,17 @@ export function QuestLeadIdentity({
 
 export function QuestDetailSubheading({
   lead,
-  progress,
 }: {
   lead: { name: string; avatarSrc?: string; personId?: number } | null;
-  progress: string | null;
 }) {
-  if (!lead && !progress) return null;
+  if (!lead) return null;
   return (
-    <div className="space-y-1" data-testid="quest-detail-subheading">
-      {lead ? (
-        <QuestLeadIdentity
-          name={lead.name}
-          avatarSrc={lead.avatarSrc}
-          personId={lead.personId}
-        />
-      ) : null}
-      {progress ? (
-        <p
-          className="text-xs text-neutral-11"
-          data-testid="quest-header-progress"
-        >
-          {progress}
-        </p>
-      ) : null}
+    <div data-testid="quest-detail-subheading">
+      <QuestLeadIdentity
+        name={lead.name}
+        avatarSrc={lead.avatarSrc}
+        personId={lead.personId}
+      />
     </div>
   );
 }
@@ -404,7 +372,7 @@ export function QuestParticipantsCard({
       className="border border-border bg-background p-5"
       data-testid="quest-overview-members"
     >
-      <CardHeading title="Participants" onEdit={onEdit} uppercase />
+      <CardHeading title="Participants" onEdit={onEdit} />
       <div className="divide-y divide-border">
         {members.map((member) => {
           const isOpen = expanded.has(member.id);
@@ -479,7 +447,7 @@ export function QuestTargetDateCard({
     >
       <CardHeading title="Target Date" onEdit={onEdit} />
       <p
-        className="text-[15px] font-medium text-foreground"
+        className="text-[13px] font-medium leading-relaxed text-foreground"
         data-testid="quest-target-date-value"
       >
         {label}
@@ -516,21 +484,13 @@ export function QuestRewardStrip({
 function CardHeading({
   title,
   onEdit,
-  uppercase = false,
 }: {
   title: string;
   onEdit?: () => void;
-  /** Section titles that use the shared capslock treatment. */
-  uppercase?: boolean;
 }) {
   return (
     <div className="mb-3.5 flex items-center justify-between gap-3">
-      <h2
-        className={cn(
-          'font-display text-[15px] font-semibold tracking-[-0.01em] text-foreground',
-          uppercase && 'uppercase tracking-[0.08em]',
-        )}
-      >
+      <h2 className="font-display text-[15px] font-semibold tracking-[-0.01em] text-foreground">
         {title}
       </h2>
       {onEdit ? (

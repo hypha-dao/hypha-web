@@ -5,12 +5,12 @@ import {
   BookOpen,
   Circle,
   FileText,
-  Flag,
   Globe2,
   LayoutGrid,
   MessageSquare,
   MessagesSquare,
   Radio,
+  Scroll,
   Target,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -36,7 +36,7 @@ const FILTER_ICONS: Record<InboxFilter, ElementType> = {
   rooms: Circle,
   proposals: FileText,
   signals: Radio,
-  quests: Flag,
+  quests: Scroll,
   context: BookOpen,
   ecosystem: Target,
   network: Globe2,
