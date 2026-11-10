@@ -959,10 +959,14 @@ function buildReplyConnectorPathD(params: {
   yRep: number;
   xEnd: number;
 }): string {
-  const { xMain, yStemStart, yRep, xEnd } = params;
+  // Whole pixels keep the path string stable across ResizeObserver chatter.
+  const xMain = Math.round(params.xMain);
+  const yStemStart = Math.round(params.yStemStart);
+  const yRep = Math.round(params.yRep);
+  const xEnd = Math.round(params.xEnd);
   const r = REPLY_CONNECTOR_CORNER_R;
 
-  if (Math.abs(xEnd - xMain) < 0.75) {
+  if (Math.abs(xEnd - xMain) < 1) {
     return `M ${xMain} ${yStemStart} L ${xMain} ${yRep}`;
   }
 
@@ -984,6 +988,11 @@ function buildReplyConnectorPathD(params: {
 /**
  * Measured Discord-style connector: stem from main-avatar column (under the image),
  * up to the reply row with a **rounded** elbow, horizontal to just before the small avatar.
+ *
+ * After the SVG mounts, geometry is written imperatively. Putting every
+ * ResizeObserver tick through `setState` re-entered React (#185) when
+ * sub-pixel rects jittered — equality checks were not enough. Member-name
+ * skeletons resolving to real labels make the same loop more likely.
  */
 function ChatReplyConnectorMeasured({
   rowRef,
@@ -994,26 +1003,61 @@ function ChatReplyConnectorMeasured({
   replyAvatarRef: RefObject<HTMLDivElement | null>;
   mainAvatarRef: RefObject<HTMLDivElement | null>;
 }) {
-  const [geom, setGeom] = useState<ReplyConnectorGeometry | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const pathRef = useRef<SVGPathElement | null>(null);
+  const lastGeomRef = useRef<ReplyConnectorGeometry | null>(null);
 
   useLayoutEffect(() => {
     let raf = 0;
+    let cancelled = false;
+
+    const applyGeom = (next: ReplyConnectorGeometry | null) => {
+      if (cancelled) return;
+      const prev = lastGeomRef.current;
+      if (next == null) {
+        if (prev == null) return;
+        lastGeomRef.current = null;
+        setMounted(false);
+        return;
+      }
+      if (
+        prev &&
+        prev.width === next.width &&
+        prev.height === next.height &&
+        prev.d === next.d
+      ) {
+        return;
+      }
+      lastGeomRef.current = next;
+      const svg = svgRef.current;
+      const path = pathRef.current;
+      if (svg && path) {
+        svg.setAttribute('width', String(next.width));
+        svg.setAttribute('height', String(next.height));
+        svg.setAttribute('viewBox', `0 0 ${next.width} ${next.height}`);
+        path.setAttribute('d', next.d);
+        return;
+      }
+      // One React commit to mount the SVG; further ticks stay imperative.
+      setMounted(true);
+    };
 
     const measure = () => {
       const rEl = rowRef.current;
       const rep = replyAvatarRef.current;
       const main = mainAvatarRef.current;
       if (!rEl || !rep || !main) {
-        setGeom(null);
+        applyGeom(null);
         return;
       }
       const rowRect = rEl.getBoundingClientRect();
       const repRect = rep.getBoundingClientRect();
       const mainRect = main.getBoundingClientRect();
-      const w = rowRect.width;
-      const h = rowRect.height;
+      const w = Math.round(rowRect.width);
+      const h = Math.round(rowRect.height);
       if (w <= 0 || h <= 0) {
-        setGeom(null);
+        applyGeom(null);
         return;
       }
       const xMain = mainRect.left + mainRect.width / 2 - rowRect.left;
@@ -1043,7 +1087,7 @@ function ChatReplyConnectorMeasured({
         yRep,
         xEnd,
       });
-      setGeom({ width: w, height: h, d });
+      applyGeom({ width: w, height: h, d });
     };
 
     const requestMeasure = () => {
@@ -1084,6 +1128,7 @@ function ChatReplyConnectorMeasured({
     });
     window.addEventListener('resize', requestMeasure);
     return () => {
+      cancelled = true;
       if (raf) {
         cancelAnimationFrame(raf);
       }
@@ -1093,10 +1138,25 @@ function ChatReplyConnectorMeasured({
     };
   }, [rowRef, replyAvatarRef, mainAvatarRef]);
 
-  if (!geom) return null;
+  // After mount, sync attributes once refs exist (first paint after setMounted).
+  useLayoutEffect(() => {
+    if (!mounted) return;
+    const next = lastGeomRef.current;
+    const svg = svgRef.current;
+    const path = pathRef.current;
+    if (!next || !svg || !path) return;
+    svg.setAttribute('width', String(next.width));
+    svg.setAttribute('height', String(next.height));
+    svg.setAttribute('viewBox', `0 0 ${next.width} ${next.height}`);
+    path.setAttribute('d', next.d);
+  }, [mounted]);
+
+  if (!mounted || !lastGeomRef.current) return null;
+  const geom = lastGeomRef.current;
 
   return (
     <svg
+      ref={svgRef}
       className="pointer-events-none absolute inset-0 z-0 overflow-visible text-border/80 dark:text-border/85"
       width={geom.width}
       height={geom.height}
@@ -1105,6 +1165,7 @@ function ChatReplyConnectorMeasured({
       aria-hidden
     >
       <path
+        ref={pathRef}
         d={geom.d}
         fill="none"
         stroke="currentColor"
@@ -2109,12 +2170,13 @@ export function HumanChatPanelMessageBubble({
   useLayoutEffect(() => {
     const el = textBodyRef.current;
     if (!el || !textContent.trim()) {
-      setTextCanExpand(false);
+      setTextCanExpand((prev) => (prev === false ? prev : false));
       return;
     }
     if (textExpanded) return;
     const measure = () => {
-      setTextCanExpand(el.scrollHeight > el.clientHeight + 1);
+      const next = el.scrollHeight > el.clientHeight + 1;
+      setTextCanExpand((prev) => (prev === next ? prev : next));
     };
     measure();
     const ro = new ResizeObserver(measure);
