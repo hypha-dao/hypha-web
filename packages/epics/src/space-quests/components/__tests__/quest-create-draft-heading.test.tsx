@@ -127,9 +127,24 @@ describe('quest create draft heading', () => {
     expect(screen.queryByText('Quest draft')).toBeNull();
     expect(screen.getByTestId('cancel-quest-button')).toBeTruthy();
     expect(screen.queryByTestId('save-quest-draft-button')).toBeNull();
-    expect(screen.getByTestId('quest-draft-save-status').textContent).toContain(
-      'Not saved yet',
+    const heading = screen.getByRole('heading', { name: 'New quest' });
+    const status = screen.getByTestId('quest-draft-save-status');
+    const helper = screen.getByText(
+      'Fills in live as you chat · click any section to edit',
     );
+    expect(status.textContent).toContain('Not saved yet');
+    expect(
+      heading.compareDocumentPosition(status) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      status.compareDocumentPosition(helper) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(status.className).toContain('h-8');
+    expect(status.className).toContain('min-w-[11.5rem]');
+    expect(
+      screen.getByTestId('cancel-quest-button').parentElement?.contains(status),
+    ).toBe(false);
     expect(screen.getByTestId('create-quest-button')).toBeTruthy();
     expect(
       screen.getByRole('button', { name: /Open discussion/ }),

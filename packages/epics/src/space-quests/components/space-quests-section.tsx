@@ -25,11 +25,15 @@ import { Search } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { PersonAvatar } from '../../people/components/person-avatar';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import {
   deleteQuestDraftRequest,
+  findQuestSpaceMember,
   useMyQuestDrafts,
+  useQuestSpaceMembers,
   useSpaceQuests,
+  type QuestSpaceMember,
 } from '../hooks/use-space-quests';
 import { questRichTextPlain } from '../utils/quest-rich-text';
 
@@ -190,19 +194,50 @@ function latestCardUpdateLine(quest: QuestRecord): string {
   return `${first} · ${rel}: ${latest.text.replace(/\.$/, '')}${linkSuffix}`;
 }
 
+function questLeadPortrait(
+  quest: QuestRecord,
+  spaceMembers: readonly QuestSpaceMember[],
+): { avatarSrc?: string; personId?: number } {
+  const leadName = quest.leadName.trim().toLowerCase();
+  const lead =
+    quest.members.find((member) => member.isLead) ??
+    quest.members.find(
+      (member) => member.memberName.trim().toLowerCase() === leadName,
+    );
+  const roster = findQuestSpaceMember(spaceMembers, {
+    personId: lead?.personId ?? quest.leadPersonId,
+    name: quest.leadName,
+  });
+  const avatarSrc =
+    lead?.memberAvatarUrl?.trim() ||
+    quest.leadAvatarUrl?.trim() ||
+    roster?.avatarUrl?.trim() ||
+    undefined;
+  const personId =
+    (lead?.personId && lead.personId > 0 ? lead.personId : undefined) ??
+    (quest.leadPersonId && quest.leadPersonId > 0
+      ? quest.leadPersonId
+      : undefined) ??
+    roster?.personId;
+  return { avatarSrc: avatarSrc || undefined, personId };
+}
+
 export function QuestCard({
   quest,
   href,
   locale = 'en',
+  spaceMembers = [],
 }: {
   quest: QuestRecord;
   href: string;
   locale?: string;
+  spaceMembers?: readonly QuestSpaceMember[];
 }) {
   const health = cardHealth(quest);
   const progress = milestoneProgressMeta(quest);
   const leadName = quest.leadName.trim();
   const leadInitial = leadName[0]?.toUpperCase() ?? '';
+  const leadPortrait = questLeadPortrait(quest, spaceMembers);
   const goalPlain = questRichTextPlain(quest.goal);
   const targetLabel = questCardTargetLabel(quest.targetDate, locale);
 
@@ -243,9 +278,21 @@ export function QuestCard({
         <div className="flex min-w-0 flex-col gap-0.5 text-xs">
           {leadName ? (
             <span className="inline-flex min-w-0 items-center gap-1.5">
-              <span className="grid size-5 shrink-0 place-items-center rounded-full bg-foreground text-[9px] font-bold text-background">
-                {leadInitial}
-              </span>
+              {leadPortrait.avatarSrc ? (
+                <PersonAvatar
+                  size="sm"
+                  shape="circle"
+                  showPresence={false}
+                  avatarSrc={leadPortrait.avatarSrc}
+                  userName={leadName}
+                  personId={leadPortrait.personId}
+                  className="h-5 w-5"
+                />
+              ) : (
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-foreground text-[9px] font-bold text-background">
+                  {leadInitial}
+                </span>
+              )}
               <span className="break-words font-medium text-foreground [overflow-wrap:anywhere]">
                 {leadName}
               </span>
@@ -295,6 +342,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
   const { canMutate } = useCanMutateInSpace({ spaceSlug, space });
   const { overview, isLoading, error, refresh } = useSpaceQuests(spaceSlug);
   const { drafts, visible: draftsVisible } = useMyQuestDrafts(spaceSlug);
+  const spaceMembers = useQuestSpaceMembers(spaceSlug);
   const [filter, setFilter] = useState<QuestListView>('active');
   const [search, setSearch] = useState('');
   const [draftToDelete, setDraftToDelete] = useState<number | null>(null);
@@ -561,6 +609,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
               key={quest.slug}
               quest={quest}
               locale={locale}
+              spaceMembers={spaceMembers}
               href={`/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
                 quest.slug,
               )}`}

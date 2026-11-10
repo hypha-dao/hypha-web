@@ -57,6 +57,7 @@ import {
   findQuestSpaceMember,
   findQuestSpaceMemberId,
   patchSpaceQuestRequest,
+  type QuestSpaceMember,
   postSpaceQuestUpdateRequest,
   toQuestSpaceMemberPersons,
   useQuestSpaceMembers,
@@ -413,12 +414,46 @@ function EditHealthDialog({
   );
 }
 
+function participantPortrait(
+  member: {
+    personId: number | null;
+    memberName: string;
+    memberAvatarUrl: string | null;
+  },
+  spaceMembers: readonly QuestSpaceMember[],
+  viewer: { id: number; name: string; avatarUrl?: string | null } | null,
+): { avatarSrc?: string; personId?: number } {
+  const roster = findQuestSpaceMember(spaceMembers, {
+    personId: member.personId,
+    name: member.memberName,
+  });
+  const viewerMatch = Boolean(
+    viewer?.name &&
+      member.memberName.trim().toLowerCase() ===
+        viewer.name.trim().toLowerCase(),
+  );
+  const avatarSrc =
+    member.memberAvatarUrl?.trim() ||
+    roster?.avatarUrl?.trim() ||
+    (viewerMatch ? viewer?.avatarUrl?.trim() : '') ||
+    undefined;
+  const personId =
+    (member.personId && member.personId > 0 ? member.personId : undefined) ??
+    roster?.personId ??
+    (viewerMatch ? viewer?.id : undefined);
+  return { avatarSrc: avatarSrc || undefined, personId };
+}
+
 function OverviewTab({
   quest,
   spaceTokens,
+  spaceMembers,
+  viewer,
 }: {
   quest: QuestRecord;
   spaceTokens: readonly ExtendedToken[];
+  spaceMembers: readonly QuestSpaceMember[];
+  viewer: { id: number; name: string; avatarUrl?: string | null } | null;
 }) {
   const locale = useLocale();
   const visibility = questOverviewVisibility(quest);
@@ -558,7 +593,12 @@ function OverviewTab({
 
       <div className="min-w-0 space-y-5">
         {visibility.showMembers ? (
-          <QuestParticipantsCard members={quest.members} />
+          <QuestParticipantsCard
+            members={quest.members.map((member) => ({
+              ...member,
+              ...participantPortrait(member, spaceMembers, viewer),
+            }))}
+          />
         ) : null}
 
         {visibility.showTargetDate ? (
@@ -1576,7 +1616,20 @@ export function SpaceQuestDetail({
       ) : null}
 
       {tab === 'overview' ? (
-        <OverviewTab quest={quest} spaceTokens={spaceTokens} />
+        <OverviewTab
+          quest={quest}
+          spaceTokens={spaceTokens}
+          spaceMembers={spaceMembers}
+          viewer={
+            viewer
+              ? {
+                  id: viewer.id,
+                  name: viewer.name,
+                  avatarUrl: person?.avatarUrl,
+                }
+              : null
+          }
+        />
       ) : null}
       {tab === 'updates' ? (
         <UpdatesTab quest={quest} canPost={canEdit} onPost={postUpdate} />

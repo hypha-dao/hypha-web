@@ -1324,58 +1324,6 @@ export function SpaceQuestCreateDraft({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                {draftHydrating ? (
-                  <div
-                    data-testid="quest-draft-save-status"
-                    data-state="loading"
-                    aria-busy="true"
-                    aria-live="polite"
-                    className={DRAFT_SAVE_STATUS_CLASS}
-                  >
-                    <span className="h-3 w-24 bg-neutral-4" aria-hidden />
-                  </div>
-                ) : draftSaveState === 'error' ? (
-                  <button
-                    type="button"
-                    onClick={() => void saveDraftToServer()}
-                    data-testid="quest-draft-save-status"
-                    className={`${DRAFT_SAVE_STATUS_CLASS} text-error-11`}
-                  >
-                    {tDrafts('drafts.retry')}
-                  </button>
-                ) : (
-                  <div
-                    data-testid="quest-draft-save-status"
-                    aria-live="polite"
-                    className={DRAFT_SAVE_STATUS_CLASS}
-                  >
-                    {draftSaveState === 'saving' ? (
-                      <>
-                        <Loader2
-                          className="size-3.5 shrink-0 animate-spin text-neutral-11"
-                          aria-hidden
-                        />
-                        <span className="text-neutral-11">
-                          {tDrafts('drafts.saving')}
-                        </span>
-                      </>
-                    ) : draftSaveState === 'saved' ? (
-                      <>
-                        <Check
-                          className="size-3.5 shrink-0 text-success-11"
-                          aria-hidden
-                        />
-                        <span className="text-success-11">
-                          {tDrafts('drafts.savedAuto')}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-neutral-11">
-                        {tDrafts('drafts.notSaved')}
-                      </span>
-                    )}
-                  </div>
-                )}
                 <Button
                   type="button"
                   variant="outline"
@@ -1401,6 +1349,59 @@ export function SpaceQuestCreateDraft({
                 </Button>
               </div>
             </div>
+
+            {draftHydrating ? (
+              <div
+                data-testid="quest-draft-save-status"
+                data-state="loading"
+                aria-busy="true"
+                aria-live="polite"
+                className={DRAFT_SAVE_STATUS_CLASS}
+              >
+                <span className="h-3 w-24 bg-neutral-4" aria-hidden />
+              </div>
+            ) : draftSaveState === 'error' ? (
+              <button
+                type="button"
+                onClick={() => void saveDraftToServer()}
+                data-testid="quest-draft-save-status"
+                className={`${DRAFT_SAVE_STATUS_CLASS} text-error-11`}
+              >
+                {tDrafts('drafts.retry')}
+              </button>
+            ) : (
+              <div
+                data-testid="quest-draft-save-status"
+                aria-live="polite"
+                className={DRAFT_SAVE_STATUS_CLASS}
+              >
+                {draftSaveState === 'saving' ? (
+                  <>
+                    <Loader2
+                      className="size-3.5 shrink-0 animate-spin text-neutral-11"
+                      aria-hidden
+                    />
+                    <span className="text-neutral-11">
+                      {tDrafts('drafts.saving')}
+                    </span>
+                  </>
+                ) : draftSaveState === 'saved' ? (
+                  <>
+                    <Check
+                      className="size-3.5 shrink-0 text-success-11"
+                      aria-hidden
+                    />
+                    <span className="text-success-11">
+                      {tDrafts('drafts.savedAuto')}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-neutral-11">
+                    {tDrafts('drafts.notSaved')}
+                  </span>
+                )}
+              </div>
+            )}
 
             {proposalLinkError ? (
               <div className="border border-error-6 bg-background-2 px-4 py-3 text-xs text-error-11">

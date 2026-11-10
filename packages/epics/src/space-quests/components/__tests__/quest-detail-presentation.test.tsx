@@ -32,6 +32,7 @@ import {
   EditQuestSuccessModal,
   type EditableQuestMember,
 } from '../quest-section-edit-modals';
+import type { QuestSpaceMember } from '../../hooks/use-space-quests';
 import {
   QUEST_LIST_GRID_CLASS,
   QUEST_LIST_TITLE_CLASS,
@@ -235,6 +236,42 @@ describe('quest detail presentation', () => {
     fireEvent.click(ada);
     expect(ada.getAttribute('aria-expanded')).toBe('false');
     expect(grace.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('shows a participant photo and keeps the initial when there is no avatar', () => {
+    const restore = withLoadedAvatars();
+    try {
+      render(
+        <QuestParticipantsCard
+          members={[
+            {
+              id: 7,
+              memberName: 'Ada Lovelace',
+              roleLabel: 'Researcher',
+              responsibilities: [],
+              avatarSrc: 'https://cdn.example/ada.png',
+              personId: 4,
+            },
+            {
+              id: 8,
+              memberName: 'Grace Hopper',
+              roleLabel: null,
+              responsibilities: [],
+            },
+          ]}
+        />,
+      );
+      expect(
+        screen
+          .getByRole('img', { name: "Ada Lovelace's avatar" })
+          .getAttribute('src'),
+      ).toBe('https://cdn.example/ada.png');
+      const grace = screen.getByTestId('quest-participant-toggle-8');
+      expect(grace.querySelector('img')).toBeNull();
+      expect(grace.querySelector('span.bg-foreground')?.textContent).toBe('G');
+    } finally {
+      restore();
+    }
   });
 
   it('shows a Target Date card only through the formatted value', () => {
@@ -755,4 +792,115 @@ describe('quest list cards', () => {
     );
     expect(document.body.textContent).not.toContain('\\');
   });
+
+  it('shows the lead profile photo and falls back to the initial', () => {
+    const restore = withLoadedAvatars();
+    try {
+      const member = {
+        id: 3,
+        questId: 1,
+        personId: 9,
+        memberName: 'Vlad Hramtsov',
+        memberAvatarUrl: 'https://cdn.example/vlad.png',
+        roleLabel: 'Lead',
+        responsibilities: [],
+        order: 0,
+        isLead: true,
+      };
+      render(
+        <>
+          <QuestCard
+            quest={questFixture({
+              slug: 'photo',
+              name: 'With photo',
+              leadName: 'Vlad Hramtsov',
+              leadPersonId: 9,
+              members: [member],
+            })}
+            href="/photo"
+          />
+          <QuestCard
+            quest={questFixture({
+              slug: 'stored',
+              name: 'Stored photo',
+              leadName: 'Vlad Hramtsov',
+              leadAvatarUrl: 'https://cdn.example/stored.png',
+            })}
+            href="/stored"
+          />
+          <QuestCard
+            quest={questFixture({
+              slug: 'roster',
+              name: 'Roster photo',
+              leadName: 'Ada Lovelace',
+              leadPersonId: 8,
+            })}
+            href="/roster"
+            spaceMembers={[
+              {
+                personId: 8,
+                name: 'Ada Lovelace',
+                avatarUrl: 'https://cdn.example/ada.png',
+                nickname: null,
+                person: { id: 8 },
+              } as QuestSpaceMember,
+            ]}
+          />
+          <QuestCard
+            quest={questFixture({
+              slug: 'initial',
+              name: 'No photo',
+              leadName: 'Vlad Hramtsov',
+              leadAvatarUrl: null,
+              members: [],
+            })}
+            href="/initial"
+          />
+        </>,
+      );
+      expect(
+        within(screen.getByTestId('quest-card-photo'))
+          .getByRole('img', { name: "Vlad Hramtsov's avatar" })
+          .getAttribute('src'),
+      ).toBe('https://cdn.example/vlad.png');
+      expect(
+        within(screen.getByTestId('quest-card-stored'))
+          .getByRole('img', { name: "Vlad Hramtsov's avatar" })
+          .getAttribute('src'),
+      ).toBe('https://cdn.example/stored.png');
+      expect(
+        within(screen.getByTestId('quest-card-roster'))
+          .getByRole('img', { name: "Ada Lovelace's avatar" })
+          .getAttribute('src'),
+      ).toBe('https://cdn.example/ada.png');
+      const initial = screen.getByTestId('quest-card-initial');
+      expect(initial.querySelector('img')).toBeNull();
+      expect(initial.querySelector('span.grid')?.textContent).toBe('V');
+    } finally {
+      restore();
+    }
+  });
 });
+
+function withLoadedAvatars() {
+  const Original = window.Image;
+  class LoadedImage {
+    complete = false;
+    naturalWidth = 0;
+    private currentSrc = '';
+    set src(value: string) {
+      this.currentSrc = value;
+      this.complete = true;
+      this.naturalWidth = 8;
+    }
+    get src() {
+      return this.currentSrc;
+    }
+    addEventListener() {}
+    removeEventListener() {}
+  }
+  window.Image = LoadedImage as unknown as typeof Image;
+  return () => {
+    window.Image = Original;
+  };
+}

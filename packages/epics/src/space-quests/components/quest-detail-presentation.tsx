@@ -264,6 +264,8 @@ export type QuestParticipantCardModel = {
   roleLabel?: string | null;
   isLead?: boolean;
   responsibilities: readonly string[];
+  avatarSrc?: string | null;
+  personId?: number | null;
 };
 
 export type QuestDraftParticipantView = {
@@ -391,9 +393,24 @@ export function QuestParticipantsCard({
                 aria-expanded={isOpen}
                 data-testid={`quest-participant-toggle-${member.id}`}
               >
-                <span className="grid size-6 shrink-0 place-items-center bg-foreground text-[10px] font-bold text-background">
-                  {(member.memberName.trim()[0] ?? '').toUpperCase()}
-                </span>
+                {member.avatarSrc?.trim() ? (
+                  <PersonAvatar
+                    size="sm"
+                    shape="circle"
+                    showPresence={false}
+                    avatarSrc={member.avatarSrc.trim()}
+                    userName={member.memberName}
+                    personId={
+                      member.personId && member.personId > 0
+                        ? member.personId
+                        : undefined
+                    }
+                  />
+                ) : (
+                  <span className="grid size-6 shrink-0 place-items-center bg-foreground text-[10px] font-bold text-background">
+                    {(member.memberName.trim()[0] ?? '').toUpperCase()}
+                  </span>
+                )}
                 <span className="min-w-0 flex-1">
                   <span className="block break-words text-[13px] font-semibold text-foreground">
                     {member.memberName}

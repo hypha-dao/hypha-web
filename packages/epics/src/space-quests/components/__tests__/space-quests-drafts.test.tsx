@@ -92,6 +92,8 @@ vi.mock('../../hooks/use-space-quests', () => ({
     visible: harness.visible,
   }),
   deleteQuestDraftRequest: harness.deleteQuestDraftRequest,
+  useQuestSpaceMembers: () => [],
+  findQuestSpaceMember: () => null,
 }));
 
 afterEach(() => {
