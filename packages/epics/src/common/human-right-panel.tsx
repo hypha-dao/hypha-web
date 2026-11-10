@@ -157,7 +157,11 @@ import {
   getDhoSpaceSlugFromPathname,
   routeSpaceSlugFromLocation,
 } from './get-dho-space-slug-from-pathname';
-import { isNetworkPath } from './use-is-space-context';
+import { isNetworkAiPath } from './use-is-space-context';
+import {
+  shouldDelaySpaceSignalReset,
+  shouldPreserveDirectMessageOnSpaceLeave,
+} from './human-chat-route-transition';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { getDhoPathOverview, getSignalPath } from './get-path-function';
 import {
@@ -1137,12 +1141,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     isPublic: coherencePublic,
   });
   const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
-  const onNetworkPage = isNetworkPath(pathname);
-  // Shared network room lives only on `/{lang}/network` in space mode.
-  // Home / Messages / wallet also have mode `space` and no slug — do not treat
-  // those as the network room (that caused hangs before the path guard, and
-  // empty Network chrome after it).
-  const isNetworkSpaceChat = onNetworkPage && mode === 'space';
+  // Shared network room for Network and the member shell pages when no channel
+  // is selected (Home / Messages / Wallet / My Spaces). A DM or inbox channel
+  // stays in coherence mode and does not hit this path. DHO routes keep their
+  // own space chat. The panel unmounts when closed on these shell pages, so
+  // this does not call ensureNetworkRoom in the background.
+  const isNetworkSpaceChat = isNetworkAiPath(pathname) && mode === 'space';
   // Network page space-mode is only the shared network room — never inherit a
   // leftover DHO slug (route or coherence) or space/ecosystem tabs appear with
   // that space's timeline under the Network chrome.
@@ -1866,6 +1870,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const previousSignalUrlSlugRef = useRef<string | null | undefined>(undefined);
   const previousSignalChoiceRef = useRef<string | null>(null);
+  /**
+   * Back from a space signal closes the panel. The thread stays mounted until
+   * the sidebar finishes sliding away, so the space room does not appear in
+   * its place. Cleared before mode returns to space.
+   */
+  const signalDismissUntilClosedRef = useRef(false);
+  const signalDismissTimerRef = useRef<number | null>(null);
 
   /** Leave signal/coherence chat without the deep-link effect re-opening from `?signal=`. */
   const exitCoherenceChat = useCallback(() => {
@@ -1875,7 +1886,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
     const hasSignalDeepLink =
       Boolean(readLiveSearchParam('signal')) ||
-      Boolean(readLiveSearchParam('msg'));
+      Boolean(searchParams?.get('signal')?.trim()) ||
+      Boolean(readLiveSearchParam('msg')) ||
+      Boolean(searchParams?.get('msg')?.trim());
     if (hasSignalDeepLink) {
       const next = new URLSearchParams(searchParams?.toString() ?? '');
       next.delete('signal');
@@ -1888,6 +1901,37 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       router.replace(cleaned, { scroll: false });
     }
 
+    // Messages already closes the panel. On a space signals screen, back must
+    // do the same — not fall through to the space room. The top-right chat
+    // icon still opens space channels once mode returns to space.
+    if (
+      shouldDelaySpaceSignalReset({
+        coherenceSlug,
+        routeSpaceSlug,
+        isConnectionsPage,
+        sidebarOpen,
+      })
+    ) {
+      if (signalDismissTimerRef.current != null) {
+        window.clearTimeout(signalDismissTimerRef.current);
+      }
+      signalDismissUntilClosedRef.current = true;
+      closeHumanChatPanel();
+      setOpenMobile(false);
+      // duration-300 on the offcanvas sidebar. Reset after it is off screen.
+      signalDismissTimerRef.current = window.setTimeout(() => {
+        signalDismissTimerRef.current = null;
+        signalDismissUntilClosedRef.current = false;
+        closeCoherenceChat();
+      }, 320);
+      return;
+    }
+
+    if (signalDismissTimerRef.current != null) {
+      window.clearTimeout(signalDismissTimerRef.current);
+      signalDismissTimerRef.current = null;
+    }
+    signalDismissUntilClosedRef.current = false;
     closeCoherenceChat();
     if (isConnectionsPage) {
       closeHumanChatPanel();
@@ -1896,11 +1940,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     closeCoherenceChat,
     closeHumanChatPanel,
+    coherenceSlug,
     isConnectionsPage,
     pathname,
+    routeSpaceSlug,
     router,
     searchParams,
     setOpenMobile,
+    sidebarOpen,
   ]);
 
   const pendingCallStartNotifyRef = useRef(false);
@@ -3404,6 +3451,17 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     );
   }, [currentUserAvatarUrl]);
 
+  useEffect(() => {
+    return () => {
+      if (signalDismissTimerRef.current != null) {
+        window.clearTimeout(signalDismissTimerRef.current);
+        signalDismissTimerRef.current = null;
+        signalDismissUntilClosedRef.current = false;
+        closeCoherenceChat();
+      }
+    };
+  }, [closeCoherenceChat]);
+
   // Track previous sidebar open state to detect close events
   const prevSidebarOpenRef = useRef(sidebarOpen);
   const prevChatModeRef = useRef(mode);
@@ -3411,7 +3469,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const hasLoadedCoherenceMessagesRef = useRef(false);
   useEffect(() => {
     if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
-      exitCoherenceChat();
+      // Back from a space signal closes the panel and resets after the slide.
+      // Clearing here would swap in the space room while it is still visible.
+      if (!signalDismissUntilClosedRef.current) {
+        exitCoherenceChat();
+      }
     }
     prevSidebarOpenRef.current = sidebarOpen;
   }, [sidebarOpen, mode, exitCoherenceChat]);
@@ -3425,22 +3487,46 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     lastHumanChatSpaceSlugRef.current = nextSlug;
     if (!prevSlug) return;
 
+    // A direct message opened in this space stays open on Home, Messages,
+    // Wallet, My Spaces, and Network, including its composer draft.
+    // Space-to-space navigation still resets.
+    if (
+      shouldPreserveDirectMessageOnSpaceLeave({
+        isDirectConversation,
+        previousSpaceSlug: prevSlug,
+        nextSpaceSlug: nextSlug,
+        onNetworkShell: isNetworkAiPath(pathname),
+      })
+    ) {
+      setSpaceRoom('space');
+      return;
+    }
+
     setSpaceRoom('space');
     exitCoherenceChat();
     resetChatStateOnAuthDrop();
-  }, [routeSpaceSlug, exitCoherenceChat, resetChatStateOnAuthDrop]);
+  }, [
+    exitCoherenceChat,
+    isDirectConversation,
+    pathname,
+    resetChatStateOnAuthDrop,
+    routeSpaceSlug,
+  ]);
 
-  // Entering Network clears leftover DHO / coherence space chrome so the
-  // shared room can join. Leaving Network clears that join sentinel so Home
-  // does not keep Network chrome / an empty composer with no join.
-  const wasNetworkPathRef = useRef(onNetworkPage);
+  // Entering a network-default shell page clears leftover DHO / coherence
+  // space chrome so the shared room can join. Moving between Home, Messages,
+  // Wallet, Spaces, and Network does not reset a channel the member already
+  // opened. Leaving those pages (e.g. into a DHO) clears the join sentinel
+  // so space chat can take over.
+  const onNetworkDefaultPath = isNetworkAiPath(pathname);
+  const wasNetworkPathRef = useRef(onNetworkDefaultPath);
   useEffect(() => {
     const wasNetwork = wasNetworkPathRef.current;
-    wasNetworkPathRef.current = onNetworkPage;
-    if (wasNetwork === onNetworkPage) return;
+    wasNetworkPathRef.current = onNetworkDefaultPath;
+    if (wasNetwork === onNetworkDefaultPath) return;
     if (isDirectConversation) return;
 
-    if (!onNetworkPage) {
+    if (!onNetworkDefaultPath) {
       if (joinedRef.current === NETWORK_JOINED_SENTINEL) {
         joinEpochRef.current += 1;
         const previousRoomId = roomIdRef.current?.trim();
@@ -3483,7 +3569,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     setError(null);
     setIsJoining(false);
   }, [
-    onNetworkPage,
+    onNetworkDefaultPath,
     isDirectConversation,
     mode,
     coherenceChannel,
@@ -3743,14 +3829,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     revealRoomTimeline,
   ]);
 
-  // The network page has one room. An ecosystem is a root space, so that
-  // room sits beside the space chat, not beside the network.
-  // Only join on `/{lang}/network` — default panel mode is `space`, and Home /
-  // Messages / wallet have no space slug, so without this guard every member
-  // page would call ensureNetworkRoom (400s + long poll → tab hang).
+  // Home, Messages, Wallet, Spaces, and Network share one room when no
+  // channel is selected. An ecosystem is a root space, so that room sits
+  // beside the space chat, not beside the network. DHO routes keep their own
+  // space join. The panel unmounts on the shell pages when closed, so this
+  // does not poll ensureNetworkRoom in the background.
   useEffect(() => {
     if (mode !== 'space') return;
-    if (!isNetworkPath(pathname)) return;
+    if (!isNetworkAiPath(pathname)) return;
     if (spaceSlug?.trim()) return;
     if (!isMatrixAvailable || !isMatrixAuthenticated) return;
     if (joinedRef.current === NETWORK_JOINED_SENTINEL) return;
@@ -5066,6 +5152,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     const prevMode = prevChatModeRef.current;
     prevChatModeRef.current = mode;
 
+    // Panel is closing on a space signal. Do not write `?signal=` back, or
+    // the signals screen reopens the thread.
+    if (signalDismissUntilClosedRef.current) return;
+
     if (mode === 'coherence' && coherenceSlug?.trim()) {
       const slug = coherenceSlug.trim();
       const currentSpace = spaceSlug?.trim();
@@ -5929,7 +6019,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     if (coherenceChannel === 'proposal') return t('tabChatProposal');
     if (coherenceChannel === 'context') return t('tabChatContext');
-    if (coherenceChannel === 'signal') return t('tabChatSignal');
+    // Messages tags the room `signal`. The signal page opens the same thread
+    // with a slug and no channel tag — both titles are "Signal", not "Room".
+    if (coherenceChannel === 'signal' || isSignalThread) {
+      return t('tabChatSignal');
+    }
     if (
       coherenceChannel === 'space-public' ||
       coherencePublic ||

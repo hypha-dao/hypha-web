@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import {
   AccountRequiredGate,
-  MessagesPeopleListSkeleton,
+  MessagesInboxShellSkeleton,
   MyConnections,
 } from '@hypha-platform/epics';
 
@@ -12,8 +12,8 @@ export default function MessagesPage() {
   return (
     <MessagesViewportLock>
       <MessagesPageFrame>
-        <AccountRequiredGate>
-          <Suspense fallback={<MessagesPeopleListSkeleton />}>
+        <AccountRequiredGate loadingFallback={<MessagesInboxShellSkeleton />}>
+          <Suspense fallback={<MessagesInboxShellSkeleton />}>
             <MyConnections section="messages" />
           </Suspense>
         </AccountRequiredGate>

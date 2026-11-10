@@ -75,11 +75,13 @@ describe('group picker chips and radio', () => {
     expect(source).toContain('event.stopPropagation()');
   });
 
-  it('holds PEOPLE AROUND behind a list skeleton until sync has rooms or finishes', () => {
+  it('holds PEOPLE AROUND behind a list skeleton until store rooms or sync finishes', () => {
     expect(source).toContain('messagesPeopleListReady');
     expect(source).toContain('synced');
     expect(source).toContain('initialSyncComplete');
     expect(source).toContain('hasMatrixConversations');
+    // IndexedDB Catchup counts as sync progress for the empty-store path.
+    expect(source).toContain('SyncState.Catchup');
     // Direct list reuses Home shell/full SWR keys; does not block on homeLoaded.
     expect(source).toContain("memberId, 'shell'");
     expect(source).toContain("memberId, 'full'");
@@ -87,8 +89,14 @@ describe('group picker chips and radio', () => {
     expect(source).toContain('isInboxDirectConversation');
     expect(source).toContain('MemberListSkeleton');
     expect(source).toContain('data-testid="messages-people-loader"');
+    // Titles stay skeletoned per-row while Privy profiles load after paint.
+    expect(source).toContain('titlePending');
+    expect(source).toContain('visibleMemberRowsAfterTitleResolve');
     // Previews stay skeletoned until sync/backfill after the list paints.
     expect(source).toContain('!initialSyncComplete || channelPreviewsPending');
+    // Empty Direct must not flash while store paint came from another filter.
+    expect(source).toContain('messagesInboxEmptyStillLoading');
+    expect(source).toContain('messagesEmptyPending');
     expect(source).toContain(
       'if (dataReady && isMatrixAvailable) setListSettled(true)',
     );

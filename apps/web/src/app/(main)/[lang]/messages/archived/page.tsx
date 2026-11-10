@@ -12,7 +12,7 @@ export default function MessagesArchivedPage() {
   return (
     <MessagesViewportLock>
       <MessagesPageFrame heading="archived">
-        <AccountRequiredGate>
+        <AccountRequiredGate loadingFallback={<MessagesPeopleListSkeleton />}>
           <Suspense fallback={<MessagesPeopleListSkeleton />}>
             <MyConnections section="archived" />
           </Suspense>
