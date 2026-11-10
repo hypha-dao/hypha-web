@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { HYPHA_ROOM_TYPES } from '../../../../../core/src/matrix/room-types';
 
@@ -26,6 +26,11 @@ import {
   resolvedMatrixIdsForGroup,
   personRowsFromDmRooms,
   applyResolvedPeerTitles,
+  addPeopleCandidateStatus,
+  directoryPeopleFromSearch,
+  fetchMessageDirectorySearch,
+  personIdsForMatrixLookup,
+  selectedPeopleMissingMatrixId,
   mergeDirectoryPeople,
   resolvePeerRowTitle,
   conversationDisplayName,
@@ -1272,6 +1277,442 @@ describe('conversationsMatchingSearch', () => {
     };
     expect(conversationMatchesSearch(bob, 'Bob')).toBe(true);
     expect(conversationsMatchingSearch([bob], 'Bob')).toHaveLength(1);
+  });
+});
+
+describe('message directory search', () => {
+  const kate = {
+    id: 2,
+    slug: 'kate-bennett',
+    name: 'Kate',
+    surname: 'Bennett',
+    nickname: 'kate',
+    avatarUrl: null,
+    sharedSpaceCount: 3,
+  };
+  const dimche = {
+    id: 9,
+    slug: 'dimche-risteski',
+    name: 'Dimche',
+    surname: 'Risteski',
+    nickname: null,
+    avatarUrl: null,
+    address: null as string | null,
+  };
+
+  it('keeps a network person the shared-space page does not include', () => {
+    const hits = directoryPeopleFromSearch([kate], [dimche]);
+    expect(hits.map((person) => person.id)).toEqual([2, 9]);
+    expect(
+      addablePeopleForGroup(
+        hits.filter((person) => person.id === kate.id),
+        hits,
+        {},
+        new Set(['@kate:matrix']),
+        'Dimche',
+      ).map((person) => person.id),
+    ).toEqual([9]);
+  });
+
+  it('drops a network person who is already in the group', () => {
+    expect(
+      addablePeopleForGroup(
+        [],
+        directoryPeopleFromSearch([], [dimche]),
+        { 9: '@dimche:matrix' },
+        new Set(['@dimche:matrix']),
+        'Dimche',
+      ),
+    ).toEqual([]);
+  });
+
+  it('hides every directory row for someone already in the room', () => {
+    const alex = {
+      id: 4,
+      slug: 'alex-prate',
+      name: 'Alex',
+      surname: 'Prate',
+      nickname: null,
+      avatarUrl: null,
+      address: '0xALEX',
+    };
+    const alexAgain = {
+      id: 40,
+      slug: 'alex-prate-2',
+      name: 'Alex',
+      surname: 'Prate',
+      nickname: null,
+      avatarUrl: 'https://example/alex.png',
+      address: '0xOTHER',
+    };
+    const alexBySlug = {
+      id: 41,
+      slug: 'alex-prate',
+      name: 'A.',
+      surname: 'P.',
+      nickname: null,
+      avatarUrl: null,
+      address: null,
+    };
+    const vlad = {
+      id: 7,
+      slug: 'vlad-other',
+      name: 'Vlad',
+      surname: 'Hramtsov',
+      nickname: null,
+      avatarUrl: null,
+      address: '0xOTHER',
+    };
+    const ronnie = {
+      id: 8,
+      slug: 'ronnie-xerxes-potel',
+      name: 'Ronnie Xerxes',
+      surname: 'Potel',
+      nickname: null,
+      avatarUrl: null,
+      address: '0xRONNIE',
+    };
+    const previewAlex = {
+      id: 42,
+      slug: 'alex-preview',
+      name: 'Preview',
+      surname: 'Alex',
+      nickname: null,
+      avatarUrl: null,
+      address: null as string | null,
+    };
+    const occupants = [
+      {
+        personId: 1,
+        slug: 'vlad-hramtsov',
+        address: '0xVLAD',
+        label: 'Vlad Hramtsov',
+        matrixUserId: '@prod_privy_did_privy_vlad:matrix',
+      },
+      {
+        personId: 4,
+        slug: 'alex-prate',
+        address: '0xALEX',
+        label: 'Alex Prate',
+        matrixUserId: '@prod_privy_did_privy_alex123:matrix',
+      },
+      { personId: 5, slug: 'xerxes', label: 'Xerxes Potel' },
+    ];
+
+    expect(
+      addablePeopleForGroup(
+        [alex, alexAgain, alexBySlug, vlad, ronnie, kate],
+        [dimche, previewAlex],
+        { 42: '@prev_privy_did_privy_alex123:matrix' },
+        new Set(['@prod_privy_did_privy_alex123:matrix']),
+        '',
+        occupants,
+      ).map((person) => person.id),
+    ).toEqual([8, 2]);
+    expect(
+      addablePeopleForGroup(
+        [],
+        [dimche, { ...dimche, id: 90, slug: 'dimche-risteski-2' }],
+        {},
+        new Set(['@prod_privy_did_privy_alex123:matrix']),
+        'Dimche',
+        occupants,
+      ).map((person) => person.id),
+    ).toEqual([9, 90]);
+  });
+
+  it('treats preview and prod Matrix ids for one Privy account as the same member', () => {
+    const previewAlex = {
+      id: 42,
+      slug: 'alex-preview',
+      name: 'Preview',
+      surname: 'Alex',
+      nickname: null,
+      avatarUrl: null,
+      address: null as string | null,
+    };
+    expect(
+      addablePeopleForGroup(
+        [previewAlex],
+        [],
+        { 42: '@prev_privy_did_privy_alex123:matrix' },
+        new Set(['@prod_privy_did_privy_alex123:matrix']),
+        '',
+      ),
+    ).toEqual([]);
+  });
+
+  it('keeps the current member out even when their directory row has another id', () => {
+    const duplicate = {
+      id: 70,
+      slug: 'vlad-hramtsov',
+      name: 'Someone',
+      surname: 'Else',
+      nickname: null,
+      avatarUrl: null,
+      address: '0xVLAD',
+    };
+    expect(
+      addablePeopleForGroup([duplicate], [], {}, new Set<string>(), '', [
+        {
+          personId: 1,
+          slug: 'vlad-hramtsov',
+          address: '0xVlad',
+          label: 'Vlad Hramtsov',
+        },
+      ]),
+    ).toEqual([]);
+  });
+
+  it('still returns network hits when the shared-space search fails', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (String(url).includes('/people/search')) {
+        return {
+          ok: true,
+          json: async () => ({ people: [dimche] }),
+        };
+      }
+      return { ok: false, json: async () => ({}) };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      await expect(
+        fetchMessageDirectorySearch('Dimche', { headers: {} }),
+      ).resolves.toEqual({
+        failed: false,
+        people: [
+          {
+            id: 9,
+            slug: 'dimche-risteski',
+            name: 'Dimche',
+            surname: 'Risteski',
+            nickname: null,
+            avatarUrl: null,
+            address: null,
+            sharedSpaceCount: 0,
+          },
+        ],
+      });
+      expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
+        '/api/v1/people/me/intelligence?q=Dimche',
+      );
+      expect(String(fetchMock.mock.calls[1]?.[0])).toContain(
+        '/api/v1/people/search?q=Dimche',
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('keeps the network hit when the shared-space body cannot be read', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (String(url).includes('/people/search')) {
+          return {
+            ok: true,
+            json: async () => ({ people: [dimche] }),
+          };
+        }
+        return {
+          ok: true,
+          json: async () => {
+            throw new SyntaxError('bad json');
+          },
+        };
+      }),
+    );
+    try {
+      const parsed = await fetchMessageDirectorySearch('Dimche', {
+        headers: {},
+      });
+      expect(parsed.failed).toBe(false);
+      expect(parsed.people.map((person) => person.id)).toEqual([9]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('keeps the shared-space hit when network search rejects', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (String(url).includes('/people/search')) {
+          throw new Error('offline');
+        }
+        return {
+          ok: true,
+          json: async () => ({ connections: [kate] }),
+        };
+      }),
+    );
+    try {
+      const parsed = await fetchMessageDirectorySearch('Kate', { headers: {} });
+      expect(parsed.failed).toBe(false);
+      expect(parsed.people.map((person) => person.id)).toEqual([2]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('reports failure only when every search endpoint fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, json: async () => ({}) })),
+    );
+    try {
+      await expect(
+        fetchMessageDirectorySearch('Dimche', { headers: {} }),
+      ).resolves.toEqual({ people: [], failed: true });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          throw new DOMException('aborted', 'AbortError');
+        }),
+      );
+      await expect(
+        fetchMessageDirectorySearch('Dimche', { headers: {} }),
+      ).rejects.toMatchObject({ name: 'AbortError' });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('keeps the shared-space wallet when the same person is also a network hit', () => {
+    const shared = { ...kate, address: '0xKATE' };
+    const [row] = directoryPeopleFromSearch(
+      [shared],
+      [
+        {
+          id: kate.id,
+          name: 'Katherine',
+          surname: null,
+          nickname: null,
+          slug: null,
+          avatarUrl: null,
+        },
+      ],
+    );
+    expect(row).toMatchObject({
+      id: 2,
+      name: 'Katherine',
+      surname: 'Bennett',
+      slug: 'kate-bennett',
+      address: '0xKATE',
+      sharedSpaceCount: 3,
+    });
+  });
+
+  it('still looks up Matrix ids for people selected before the search was cleared', () => {
+    expect(personIdsForMatrixLookup([[1, 4], [], [9], [2]])).toEqual([
+      1, 4, 9, 2,
+    ]);
+    expect(
+      selectedPeopleMissingMatrixId(
+        [9, 4],
+        { 4: '@alex:matrix' },
+        { 9: 'Dimche Risteski', 4: 'Alex Prate' },
+      ),
+    ).toEqual(['Dimche Risteski']);
+  });
+});
+
+describe('addPeopleCandidateStatus', () => {
+  it('does not call an in-flight directory empty', () => {
+    expect(
+      addPeopleCandidateStatus({
+        query: '',
+        debouncedQuery: '',
+        directoryLoaded: false,
+        directoryFailed: false,
+        searching: false,
+        matchCount: 0,
+      }),
+    ).toBe('loading');
+    expect(
+      addPeopleCandidateStatus({
+        query: '',
+        debouncedQuery: '',
+        directoryLoaded: true,
+        directoryFailed: false,
+        searching: false,
+        matchCount: 0,
+      }),
+    ).toBe('empty');
+    expect(
+      addPeopleCandidateStatus({
+        query: '',
+        debouncedQuery: '',
+        directoryLoaded: false,
+        directoryFailed: true,
+        searching: false,
+        matchCount: 0,
+      }),
+    ).toBe('load-failed');
+  });
+
+  it('waits for a search before saying nobody matches', () => {
+    expect(
+      addPeopleCandidateStatus({
+        query: 'Dimche',
+        debouncedQuery: '',
+        directoryLoaded: true,
+        directoryFailed: false,
+        searching: false,
+        matchCount: 0,
+      }),
+    ).toBe('loading');
+    expect(
+      addPeopleCandidateStatus({
+        query: 'Dimche',
+        debouncedQuery: 'Dimche',
+        directoryLoaded: true,
+        directoryFailed: false,
+        searching: true,
+        matchCount: 0,
+      }),
+    ).toBe('loading');
+    expect(
+      addPeopleCandidateStatus({
+        query: 'Dimche',
+        debouncedQuery: 'Dimche',
+        directoryLoaded: false,
+        directoryFailed: false,
+        searching: false,
+        matchCount: 0,
+      }),
+    ).toBe('loading');
+    expect(
+      addPeopleCandidateStatus({
+        query: 'Dimche',
+        debouncedQuery: 'Dimche',
+        directoryLoaded: true,
+        directoryFailed: false,
+        searching: false,
+        matchCount: 0,
+        searchFailed: true,
+      }),
+    ).toBe('load-failed');
+    expect(
+      addPeopleCandidateStatus({
+        query: 'Dimche',
+        debouncedQuery: 'Dimche',
+        directoryLoaded: false,
+        directoryFailed: true,
+        searching: false,
+        matchCount: 0,
+      }),
+    ).toBe('no-matches');
+    expect(
+      addPeopleCandidateStatus({
+        query: 'Dimche',
+        debouncedQuery: 'Dimche',
+        directoryLoaded: false,
+        directoryFailed: true,
+        searching: false,
+        matchCount: 1,
+      }),
+    ).toBe('results');
   });
 });
 

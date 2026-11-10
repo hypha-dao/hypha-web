@@ -139,10 +139,10 @@ export function SpaceContextAddSectionDialog({
         </form>
         {removedSections.length > 0 ? (
           <div className="space-y-2 border-t border-border/70 pt-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-11">
+            <p className="text-sm font-medium text-foreground">
               {t('addSection.restoreLabel')}
             </p>
-            <ul className="divide-y divide-border/70 border border-border/70">
+            <ul className="craft-card divide-y divide-border/70">
               {removedSections.map((removed) => (
                 <li
                   key={removed.sectionKey}
@@ -155,7 +155,7 @@ export function SpaceContextAddSectionDialog({
                     type="button"
                     variant="outline"
                     colorVariant="neutral"
-                    className="h-8 shrink-0 px-2"
+                    className="shrink-0"
                     disabled={busy}
                     onClick={() =>
                       void submit({ restoreSectionKey: removed.sectionKey })

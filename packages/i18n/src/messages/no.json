@@ -4282,6 +4282,8 @@
     "addPeopleConfirm": "Legg til",
     "addPeopleCancel": "Avbryt",
     "addPeopleFailed": "Kunne ikke legge til personer i denne gruppen. Prøv igjen.",
+    "addPeopleMissingMatrix": "{names} kan ikke legges til. Fjern dem og prøv igjen.",
+    "addPeopleLoadFailed": "Kunne ikke laste inn personer. Prøv igjen.",
     "addPeopleEmpty": "Alle du kan legge til er allerede her.",
     "addPeopleNoMatches": "Ingen personer matcher det søket.",
     "addPeopleSearch": "Søk etter personer",
@@ -5634,7 +5636,6 @@
   },
   "SpaceContext": {
     "title": "Kontekst",
-    "subtitle": "Én felles sannhetskilde for denne spacen. Medlemmene diskuterer hver seksjon sammen, nevner agenten når de vil ha hjelp, og ratifiserer den deretter gjennom en avtale.",
     "progress": "{ratified} av {total} ratifisert",
     "propose": "Foreslå for ratifisering",
     "filters": {

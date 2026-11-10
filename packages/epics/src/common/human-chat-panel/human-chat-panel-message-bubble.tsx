@@ -13,6 +13,7 @@ import type { ReactNode, RefObject } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
 import {
+  BookOpen,
   Smile,
   SmilePlus,
   X,
@@ -771,6 +772,8 @@ type HumanChatPanelMessageBubbleProps = {
     mentionedUserIds?: string[];
   };
   isStreaming?: boolean;
+  /** Context section welcomes use the book. Other welcomes keep the mycelium. */
+  welcomeMark?: 'context';
   /** When set, Reply is enabled (omit for synthetic messages like welcome). */
   onReply?: () => void;
   /** When set, the reply quote scrolls the timeline to the original. */
@@ -1657,6 +1660,7 @@ export function HumanChatPanelMessageBubble({
   isTouchComposer = false,
   onHoverReactPickerOpenChange,
   message,
+  welcomeMark,
   isStreaming,
   roomId,
   currentUserId,
@@ -2166,7 +2170,15 @@ export function HumanChatPanelMessageBubble({
         >
           <div ref={mainAvatarMeasureRef} className="relative">
             {message.id === 'welcome' ? (
-              <MemberHomeMark className="h-10 w-10" />
+              welcomeMark === 'context' ? (
+                <BookOpen
+                  className="h-10 w-10 text-foreground"
+                  strokeWidth={1.25}
+                  aria-hidden
+                />
+              ) : (
+                <MemberHomeMark className="h-10 w-10" />
+              )
             ) : senderIsAgent ? (
               <AgentInitialsAvatar name={senderName} />
             ) : (

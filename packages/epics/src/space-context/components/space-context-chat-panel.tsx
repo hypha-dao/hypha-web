@@ -102,13 +102,13 @@ export function SpaceContextChatPanel({
   const sectionTitle = useSectionTitle(spaceSlug, sectionKey);
 
   return (
-    <aside className="flex h-full min-h-[40rem] w-full flex-col border border-border/70 bg-background-2 xl:w-[28rem] xl:shrink-0">
-      <header className="flex items-start justify-between gap-3 border-b border-border/70 px-4 py-3">
+    <aside className="craft-card flex h-full min-h-[40rem] w-full flex-col xl:w-[28rem] xl:shrink-0">
+      <header className="flex items-start justify-between gap-3 border-b border-border/70 px-3.5 py-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-11">
-            {t('chat.title')}
-          </p>
-          <h2 className="mt-1 truncate text-3 font-medium">{sectionTitle}</h2>
+          <p className="craft-meta">{t('chat.title')}</p>
+          <h2 className="mt-1 truncate text-3 font-medium [font-family:var(--font-family-heading)] tracking-[-0.03em]">
+            {sectionTitle}
+          </h2>
         </div>
         <Button
           type="button"
@@ -118,7 +118,7 @@ export function SpaceContextChatPanel({
           aria-label={t('chat.close')}
           onClick={onClose}
         >
-          <X className="size-4" strokeWidth={1.25} />
+          <X className="craft-icon" strokeWidth={1.25} />
         </Button>
       </header>
       <SpaceContextSectionBody
@@ -209,16 +209,13 @@ function SpaceContextSectionBody({
         />
       ) : null}
 
-      <div className="space-y-3 border-b border-border/70 px-4 py-3">
+      <div className="space-y-3 border-b border-border/70 px-3.5 py-3">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em]">
-            {t('chat.draftLabel')}
-          </p>
+          <p className="craft-meta">{t('chat.draftLabel')}</p>
           <Button
             type="button"
             variant="outline"
             colorVariant="neutral"
-            className="h-8 px-2"
             disabled={!section}
             onClick={() => setDraftOpen(true)}
           >
@@ -371,16 +368,14 @@ function SectionInfo({
       ) : null}
 
       {notice ? (
-        <p className="border border-dashed border-neutral-6 px-3 py-2 text-1 text-neutral-11">
-          {notice}
-        </p>
+        <p className="craft-card craft-meta px-3 py-2">{notice}</p>
       ) : null}
 
       {proposalHref ? (
         <Link
           href={proposalHref}
           scroll={false}
-          className="text-1 font-semibold text-foreground underline-offset-2 hover:underline"
+          className="text-2 font-medium text-foreground underline-offset-2 hover:underline"
         >
           {t('card.viewProposal')}
         </Link>
@@ -392,7 +387,6 @@ function SectionInfo({
             type="button"
             variant="outline"
             colorVariant="neutral"
-            className="h-8 px-2"
             disabled={busy}
             onClick={() => void withdrawAddition()}
           >

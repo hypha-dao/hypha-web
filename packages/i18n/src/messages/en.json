@@ -4313,6 +4313,8 @@
     "addPeopleConfirm": "Add",
     "addPeopleCancel": "Cancel",
     "addPeopleFailed": "Could not add people to this group. Try again.",
+    "addPeopleMissingMatrix": "{names} can't be added. Remove them and try again.",
+    "addPeopleLoadFailed": "Could not load people to add. Try again.",
     "addPeopleEmpty": "Everyone you can add is already here.",
     "addPeopleNoMatches": "No people match that search.",
     "addPeopleSearch": "Search people",
@@ -5651,7 +5653,6 @@
   },
   "SpaceContext": {
     "title": "Context",
-    "subtitle": "One shared source of truth for this space. Members discuss each section together, mention its agent when they want help, then ratify it through an agreement.",
     "progress": "{ratified} of {total} ratified",
     "propose": "Propose to ratify",
     "filters": {

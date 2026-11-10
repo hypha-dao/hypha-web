@@ -11,6 +11,7 @@ import {
 } from 'react';
 import {
   Bold,
+  BookOpen,
   Italic,
   Strikethrough,
   Code,
@@ -266,10 +267,11 @@ export type ChatDraftEditSlot = {
   spoiler?: boolean;
 };
 
-/** Mycelium mark in the network room, or the space logo in a space room. */
+/** Mycelium mark in the network room, space logo in a space room, book in Context. */
 export type ChatMentionAgentIcon =
   | { kind: 'network' }
-  | { kind: 'space'; logoUrl?: string | null };
+  | { kind: 'space'; logoUrl?: string | null }
+  | { kind: 'context' };
 
 /** Matrix room member for `@` autocomplete (MXID + display label). */
 export type ChatMentionCandidate = {
@@ -292,7 +294,7 @@ export type ChatMentionCandidate = {
    * row, so the picker does not list one agent per skill.
    */
   skills?: readonly { id: string; prompt: string }[];
-  /** Mycelium in a network room, or the space logo in a space room. */
+  /** Network mycelium, space logo, or the Context book. */
   agentIcon?: ChatMentionAgentIcon;
 };
 
@@ -587,6 +589,13 @@ function AgentSkillMentionIcon({ icon }: { icon?: ChatMentionAgentIcon }) {
     return (
       <span className="flex h-6 w-6 shrink-0 overflow-hidden rounded-full">
         <img src={src} alt="" className="h-full w-full object-cover" />
+      </span>
+    );
+  }
+  if (icon?.kind === 'context') {
+    return (
+      <span className="grid size-6 shrink-0 place-items-center border border-border/70 text-foreground">
+        <BookOpen className="size-3.5" strokeWidth={1.25} aria-hidden />
       </span>
     );
   }

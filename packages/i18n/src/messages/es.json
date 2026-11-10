@@ -3723,6 +3723,8 @@
     "addPeopleConfirm": "Añadir",
     "addPeopleCancel": "Cancelar",
     "addPeopleFailed": "No se pudo añadir personas a este grupo. Inténtalo de nuevo.",
+    "addPeopleMissingMatrix": "{names} no se pueden añadir. Quítalos e inténtalo de nuevo.",
+    "addPeopleLoadFailed": "No se pudieron cargar las personas. Inténtalo de nuevo.",
     "addPeopleEmpty": "Todas las personas que puedes añadir ya están aquí.",
     "addPeopleNoMatches": "Nadie coincide con esa búsqueda.",
     "addPeopleSearch": "Buscar personas",
@@ -5643,7 +5645,6 @@
   },
   "SpaceContext": {
     "title": "Contexto",
-    "subtitle": "Una única fuente de verdad compartida para este espacio. Los miembros debaten cada sección juntos, mencionan a su agente cuando quieren ayuda y luego la ratifican mediante un acuerdo.",
     "progress": "{ratified} de {total} ratificadas",
     "propose": "Proponer para ratificar",
     "filters": {

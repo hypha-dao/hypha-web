@@ -8,24 +8,9 @@ import type {
 import { useTranslations } from 'next-intl';
 
 const TONE = {
-  ratified: {
-    colorVariant: 'success',
-    className:
-      'border-success-11 bg-success-3 text-success-11 hover:bg-success-3',
-    dot: 'bg-success-11',
-  },
-  proposed: {
-    colorVariant: 'warn',
-    className:
-      'border-warning-11 bg-warning-3 text-warning-11 hover:bg-warning-3',
-    dot: 'bg-warning-11',
-  },
-  quiet: {
-    colorVariant: 'neutral',
-    className:
-      'border-neutral-11 bg-neutral-1 text-neutral-11 hover:bg-neutral-1 hover:text-neutral-11',
-    dot: 'bg-neutral-11',
-  },
+  ratified: 'success',
+  proposed: 'warn',
+  quiet: 'neutral',
 } as const;
 
 export function SpaceContextStatusChip({
@@ -42,16 +27,15 @@ export function SpaceContextStatusChip({
       : status === 'draft'
       ? t('status.draft')
       : t('status.notStarted');
-  const tone =
+  const colorVariant =
     status === 'ratified' || status === 'proposed' ? TONE[status] : TONE.quiet;
 
   return (
     <Badge
-      variant="surface"
-      colorVariant={tone.colorVariant}
-      className={`shrink-0 gap-1.5 px-2 py-[3px] text-[10px] font-bold uppercase tracking-[0.06em] ${tone.className}`}
+      variant="outline"
+      colorVariant={colorVariant}
+      className="shrink-0 capitalize"
     >
-      <span className={`size-1.5 ${tone.dot}`} aria-hidden />
       {label}
     </Badge>
   );
@@ -67,9 +51,9 @@ export function SpaceContextChangeBadge({
   if (!change) return null;
   return (
     <Badge
-      variant="surface"
+      variant="outline"
       colorVariant="neutral"
-      className="shrink-0 border-dashed border-neutral-11 bg-transparent px-2 py-[3px] text-[10px] font-bold uppercase tracking-[0.06em] text-neutral-11 hover:bg-transparent"
+      className="craft-chip shrink-0"
     >
       {change === 'add' ? t('change.add') : t('change.remove')}
     </Badge>
