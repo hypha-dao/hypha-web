@@ -272,7 +272,6 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
                 activity={signal.roomId ? activity[signal.roomId] : undefined}
                 refresh={refresh}
                 sort={sort}
-                timeFrame={timeFrame}
                 summaryState={upvoteSummaryState}
               />
             ) : null,

@@ -8,7 +8,6 @@ import {
   useJwt,
   type CoherenceUpvoteSummary,
   type SignalSort,
-  type SignalTimeFrame,
   type SignalUpvoteSummaryState,
   type SignalVotingMode,
 } from '@hypha-platform/core/client';
@@ -85,11 +84,11 @@ type SignalUpvoteButtonProps = {
   archived?: boolean;
   /**
    * Kept so list and detail share one control. Layout does not change with it.
-   * `top-power` shows total voting power; every other sort shows the voter count.
+   * `top-power` shows the all-time token total; every other sort shows the
+   * all-time voter count. The list time window does not change the figure.
    */
   variant?: 'feed' | 'page';
   sort?: SignalSort;
-  timeFrame?: SignalTimeFrame;
   /**
    * `ready` is a settled list, including a cached one. A missing summary is
    * then zero. `loading` keeps the ellipsis. `error` must not display as zero.
@@ -115,7 +114,6 @@ export function SignalUpvoteButton({
   archived = false,
   variant = 'feed',
   sort = 'top-voters',
-  timeFrame = 'week',
   summaryState = 'ready',
   className,
 }: SignalUpvoteButtonProps) {
@@ -233,7 +231,6 @@ export function SignalUpvoteButton({
 
   const cellMeasure = signalUpvoteCellMeasure({
     sort,
-    timeFrame,
     upvotes: localSummary ?? upvotes ?? null,
     summaryState,
   });

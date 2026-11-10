@@ -26,7 +26,6 @@ type CoherenceTabKey =
   | 'signalSortNew'
   | 'signalSortTopVoters'
   | 'signalSortTopPower'
-  | 'signalTimeFrameNow'
   | 'signalTimeFrameToday'
   | 'signalTimeFrameWeek'
   | 'signalTimeFrameMonth'
@@ -34,7 +33,6 @@ type CoherenceTabKey =
   | 'signalTimeFrameAll';
 
 const TIME_FRAME_LABEL_KEY: Record<SignalTimeFrame, CoherenceTabKey> = {
-  now: 'signalTimeFrameNow',
   today: 'signalTimeFrameToday',
   week: 'signalTimeFrameWeek',
   month: 'signalTimeFrameMonth',

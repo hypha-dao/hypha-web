@@ -60,7 +60,8 @@ describe('upvote cell shared by the list and the detail', () => {
     expect(feedRowSource).toContain('<SignalUpvoteButton');
     expect(pageSource).toContain('<SignalUpvoteButton');
     expect(feedRowSource).toContain('sort={sort}');
-    expect(feedRowSource).toContain('timeFrame={timeFrame}');
+    expect(feedRowSource).not.toContain('timeFrame={timeFrame}');
+    expect(upvoteSource).not.toContain('timeFrame');
     expect(pageSource).not.toContain('sort={sort}');
     expect(upvoteSource).toContain('signalUpvoteCellMeasure');
     expect(upvoteSource).toContain('<SignalUpvoteCellChrome');

@@ -10,7 +10,6 @@ export type SignalSort = (typeof SIGNAL_SORTS)[number];
 
 /** Time frame of the Top sorts. `all` is all time. */
 export const SIGNAL_TIME_FRAMES = [
-  'now',
   'today',
   'week',
   'month',
@@ -40,7 +39,7 @@ export const SIGNAL_RECENT_WINDOW_MS: Record<SignalRecentWindow, number> = {
 
 export const DEFAULT_SIGNAL_TIME_FRAME: SignalTimeFrame = 'week';
 
-export const DEFAULT_SIGNAL_SORT: SignalSort = 'top-voters';
+export const DEFAULT_SIGNAL_SORT: SignalSort = 'new';
 
 export function parseSignalSort(raw: string | null | undefined): SignalSort {
   return (SIGNAL_SORTS as readonly string[]).includes(raw ?? '')
@@ -49,6 +48,8 @@ export function parseSignalSort(raw: string | null | undefined): SignalSort {
 }
 
 const LEGACY_TIME_FRAMES: Record<string, SignalTimeFrame> = {
+  // The past-hour option is gone. Old `t=now` links use this week's window.
+  now: 'week',
   '7d': 'week',
   '30d': 'month',
 };
@@ -124,18 +125,17 @@ export function signalListUpvoteSummaryState({
 }
 
 /**
- * Feed cell figure. Ordinary sorts keep the voter count. Top by voting power
- * shows the time-frame total (all-time `totalVotingPower` when the frame is
- * `all`), never the viewer's own vote. One summary, one token.
+ * Feed cell figure. Top by voting power shows the all-time token total.
+ * Every other sort, including New and Top by voters, shows the all-time
+ * voter count. The selected time window ranks the list and does not change
+ * this number. Never the viewer's own vote. One summary, one token.
  */
 export function signalUpvoteCellMeasure({
   sort,
-  timeFrame,
   upvotes,
   summaryState = 'ready',
 }: {
   sort: SignalSort;
-  timeFrame: SignalTimeFrame;
   upvotes?: CoherenceUpvoteSummary | null;
   summaryState?: SignalUpvoteSummaryState;
 }): SignalUpvoteCellMeasure {
@@ -145,7 +145,7 @@ export function signalUpvoteCellMeasure({
   if (upvotes != null) {
     return {
       kind: 'power',
-      raw: signalVotingPowerInTimeFrame(upvotes, timeFrame).toString(),
+      raw: toBigInt(upvotes.totalVotingPower).toString(),
       tokenDecimals: upvotes.tokenDecimals,
     };
   }

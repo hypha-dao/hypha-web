@@ -7,7 +7,6 @@ import { useFormatter, useNow, useTranslations } from 'next-intl';
 import type {
   Coherence,
   SignalSort,
-  SignalTimeFrame,
   SignalUpvoteSummaryState,
   SignalVotingMode,
 } from '@hypha-platform/core/client';
@@ -60,7 +59,6 @@ type SignalFeedRowProps = {
   activity?: SignalRoomActivity;
   refresh?: () => Promise<unknown>;
   sort: SignalSort;
-  timeFrame: SignalTimeFrame;
   summaryState?: SignalUpvoteSummaryState;
 };
 
@@ -75,7 +73,6 @@ export function SignalFeedRow({
   activity,
   refresh,
   sort,
-  timeFrame,
   summaryState,
 }: SignalFeedRowProps) {
   const t = useTranslations('CoherenceTab');
@@ -121,7 +118,6 @@ export function SignalFeedRow({
         refresh={refresh}
         archived={signal.archived}
         sort={sort}
-        timeFrame={timeFrame}
         summaryState={summaryState}
         className="relative z-10"
       />

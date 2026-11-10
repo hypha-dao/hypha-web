@@ -83,10 +83,10 @@ describe('signal sort defaults', () => {
     expect(SIGNAL_SORTS).toEqual(['new', 'top-voters', 'top-power']);
   });
 
-  it('defaults to top by voters', () => {
-    expect(DEFAULT_SIGNAL_SORT).toBe('top-voters');
-    expect(parseSignalSort(null)).toBe('top-voters');
-    expect(parseSignalSort('bogus')).toBe('top-voters');
+  it('defaults to newest first', () => {
+    expect(DEFAULT_SIGNAL_SORT).toBe('new');
+    expect(parseSignalSort(null)).toBe('new');
+    expect(parseSignalSort('bogus')).toBe('new');
   });
 
   it('keeps every explicit sort', () => {
@@ -96,8 +96,16 @@ describe('signal sort defaults', () => {
   });
 
   it('defaults the time frame to this week and maps legacy windows', () => {
+    expect(SIGNAL_TIME_FRAMES).toEqual([
+      'today',
+      'week',
+      'month',
+      'year',
+      'all',
+    ]);
     expect(parseSignalTimeFrame(null)).toBe('week');
     expect(parseSignalTimeFrame('bogus')).toBe('week');
+    expect(parseSignalTimeFrame('now')).toBe('week');
     expect(parseSignalTimeFrame('year')).toBe('year');
     expect(parseSignalTimeFrame('30d')).toBe('month');
   });
@@ -135,7 +143,12 @@ describe('rankSignals', () => {
 
   it('ranks by voter count inside the time frame', () => {
     expect(ids('top-voters', 'all')).toEqual(['crowd', 'week', 'old', 'none']);
-    expect(ids('top-voters', 'now')).toEqual(['crowd', 'week', 'old', 'none']);
+    expect(ids('top-voters', 'today')).toEqual([
+      'week',
+      'crowd',
+      'old',
+      'none',
+    ]);
   });
 
   it('does not mutate the input', () => {
@@ -150,111 +163,97 @@ describe('rankSignals', () => {
 });
 
 describe('signalUpvoteCellMeasure', () => {
-  it('keeps the voter count for new and top-voters, including zero', () => {
+  it('keeps the all-time voter count for new and top-voters, including zero', () => {
+    expect(signalVotersInTimeFrame(crowd.upvotes, 'week')).toBe(0);
     expect(
       signalUpvoteCellMeasure({
         sort: 'new',
-        timeFrame: 'week',
         upvotes: crowd.upvotes,
       }),
     ).toEqual({ kind: 'count', count: 4 });
     expect(
       signalUpvoteCellMeasure({
         sort: 'top-voters',
-        timeFrame: 'week',
         upvotes: crowd.upvotes,
       }),
     ).toEqual({ kind: 'count', count: 4 });
     expect(
       signalUpvoteCellMeasure({
         sort: 'top-voters',
-        timeFrame: 'all',
         upvotes: null,
       }),
     ).toEqual({ kind: 'count', count: 0 });
   });
 
-  it('shows the time-frame total voting power, not the voter count or the viewer vote', () => {
+  it('shows the all-time voting power, not the window, the voter count, or the viewer vote', () => {
     const withMine = {
       ...crowd.upvotes,
       myUpvote: { votingPower: '999', maxVotingPower: '999' },
     };
+    expect(signalVotingPowerInTimeFrame(crowd.upvotes, 'week')).toBe(0n);
+    expect(signalVotingPowerInTimeFrame(crowd.upvotes, 'today')).toBe(0n);
     expect(
       signalUpvoteCellMeasure({
         sort: 'top-power',
-        timeFrame: 'month',
         upvotes: withMine,
       }),
     ).toEqual({ kind: 'power', raw: '20', tokenDecimals: 0 });
     expect(
       signalUpvoteCellMeasure({
         sort: 'top-power',
-        timeFrame: 'all',
         upvotes: old.upvotes,
       }),
     ).toEqual({ kind: 'power', raw: '50', tokenDecimals: 0 });
     expect(
       signalUpvoteCellMeasure({
         sort: 'top-power',
-        timeFrame: 'week',
-        upvotes: crowd.upvotes,
+        upvotes: week.upvotes,
+      }),
+    ).toEqual({ kind: 'power', raw: '5', tokenDecimals: 0 });
+  });
+
+  it('shows a settled missing summary as zero voting power', () => {
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-power',
+        upvotes: undefined,
+      }),
+    ).toEqual({ kind: 'power', raw: '0', tokenDecimals: 0 });
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-power',
+        upvotes: null,
+        summaryState: 'ready',
       }),
     ).toEqual({ kind: 'power', raw: '0', tokenDecimals: 0 });
   });
 
-  it('shows a settled missing summary as zero voting power for every time frame', () => {
-    for (const timeFrame of SIGNAL_TIME_FRAMES) {
-      expect(
-        signalUpvoteCellMeasure({
-          sort: 'top-power',
-          timeFrame,
-          upvotes: undefined,
-        }),
-      ).toEqual({ kind: 'power', raw: '0', tokenDecimals: 0 });
-      expect(
-        signalUpvoteCellMeasure({
-          sort: 'top-power',
-          timeFrame,
-          upvotes: null,
-          summaryState: 'ready',
-        }),
-      ).toEqual({ kind: 'power', raw: '0', tokenDecimals: 0 });
-    }
-  });
-
   it('keeps the ellipsis only while a missing summary is still loading', () => {
-    for (const timeFrame of SIGNAL_TIME_FRAMES) {
-      expect(
-        signalUpvoteCellMeasure({
-          sort: 'top-power',
-          timeFrame,
-          upvotes: undefined,
-          summaryState: 'loading',
-        }),
-      ).toEqual({ kind: 'loading' });
-    }
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-power',
+        upvotes: undefined,
+        summaryState: 'loading',
+      }),
+    ).toEqual({ kind: 'loading' });
   });
 
   it('does not turn a failed missing summary into zero', () => {
-    for (const timeFrame of SIGNAL_TIME_FRAMES) {
-      const measure = signalUpvoteCellMeasure({
-        sort: 'top-power',
-        timeFrame,
-        upvotes: null,
-        summaryState: 'error',
-      });
-      expect(measure).toEqual({ kind: 'error' });
-      expect(measure).not.toEqual(
-        expect.objectContaining({ kind: 'power', raw: '0' }),
-      );
-    }
+    const measure = signalUpvoteCellMeasure({
+      sort: 'top-power',
+      upvotes: null,
+      summaryState: 'error',
+    });
+    expect(measure).toEqual({ kind: 'error' });
+    expect(measure).not.toEqual(
+      expect.objectContaining({ kind: 'power', raw: '0' }),
+    );
   });
 
   it('keeps a cached summary while a later refresh is loading or has failed', () => {
     expect(
       signalUpvoteCellMeasure({
         sort: 'top-power',
-        timeFrame: 'all',
         upvotes: old.upvotes,
         summaryState: 'loading',
       }),
@@ -262,7 +261,6 @@ describe('signalUpvoteCellMeasure', () => {
     expect(
       signalUpvoteCellMeasure({
         sort: 'top-power',
-        timeFrame: 'month',
         upvotes: crowd.upvotes,
         summaryState: 'error',
       }),
