@@ -102,6 +102,7 @@ import {
   membersForGroupPicker,
   conversationsVisibleInSection,
   enrichSearchMembers,
+  messagesInboxEmptyStillLoading,
   messagesPeopleListReady,
   isPeopleListGroup,
   isRememberedBoundChatRoom,
@@ -2261,7 +2262,14 @@ export function MyConnections({
         return sameChannelSnapshots(current, next) ? current : next;
       });
       const state = client.getSyncState();
-      if (state === SyncState.Prepared || state === SyncState.Syncing) {
+      // Catchup is the IndexedDB restore path — treat it like Syncing so an
+      // empty store can leave the skeleton once initial sync finishes. Rooms
+      // already in the store paint earlier via hasMatrixConversations.
+      if (
+        state === SyncState.Prepared ||
+        state === SyncState.Syncing ||
+        state === SyncState.Catchup
+      ) {
         setSynced(true);
       }
       if (
@@ -2740,6 +2748,16 @@ export function MyConnections({
     : section === 'messages' && !picking
     ? inboxView.rows
     : people;
+  // Store paint can ready the list via a channel while Direct still has no
+  // rows — keep the skeleton until initial sync before claiming empty.
+  const messagesEmptyPending =
+    section === 'messages' &&
+    !picking &&
+    !needle &&
+    messagesInboxEmptyStillLoading({
+      shownRowCount: shownRows.length,
+      initialSyncComplete,
+    });
   const missingChannelPreviewIds = useMemo(() => {
     if (section !== 'messages' || picking) return [] as string[];
     return shownRows
@@ -3382,7 +3400,7 @@ export function MyConnections({
               ) : null}
 
               <div className="flex min-h-0 flex-1 flex-col gap-3">
-                {listLoading ? (
+                {listLoading || messagesEmptyPending ? (
                   <MemberListSkeleton
                     title={
                       section === 'archived' ? t('tabs.archived') : t('people')
@@ -3392,6 +3410,7 @@ export function MyConnections({
                 ) : null}
 
                 {!listLoading &&
+                !messagesEmptyPending &&
                 section === 'archived' &&
                 isMatrixAvailable &&
                 people.length === 0 &&
@@ -3402,6 +3421,7 @@ export function MyConnections({
                 ) : null}
 
                 {!listLoading &&
+                !messagesEmptyPending &&
                 section !== 'archived' &&
                 isMatrixAvailable &&
                 shownRows.length === 0 &&
@@ -3420,7 +3440,9 @@ export function MyConnections({
                   </p>
                 ) : null}
 
-                {!listLoading && shownRows.length > 0 ? (
+                {!listLoading &&
+                !messagesEmptyPending &&
+                shownRows.length > 0 ? (
                   <MemberList
                     title={listTitle}
                     rows={shownRows}
@@ -3492,10 +3514,50 @@ export function MyConnections({
 }
 
 const MEMBER_LIST_SKELETON_ROWS = 6;
+const INBOX_FILTER_SKELETON_ROWS = 6;
 
 export function MessagesPeopleListSkeleton() {
   const t = useTranslations('Connections');
   return <MemberListSkeleton title={t('people')} loadingLabel={t('loading')} />;
+}
+
+/**
+ * Full Messages shell while auth / Suspense resolve — filters + list — so the
+ * page title does not sit alone on a white canvas for a frame.
+ */
+export function MessagesInboxShellSkeleton() {
+  const t = useTranslations('Connections');
+  const loadingLabel = t('loading');
+  return (
+    <div
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row lg:items-start lg:gap-6"
+      role="status"
+      aria-busy="true"
+      aria-label={loadingLabel}
+      data-testid="messages-inbox-shell-loader"
+    >
+      <div
+        className="hidden w-full shrink-0 overflow-hidden rounded-none border border-border bg-background lg:block lg:w-80"
+        aria-hidden
+      >
+        {Array.from({ length: INBOX_FILTER_SKELETON_ROWS }, (_, index) => (
+          <div
+            key={index}
+            className="flex items-start gap-3 border-b border-border px-4 py-4 last:border-b-0"
+          >
+            <span className="mt-0.5 size-4 shrink-0 animate-pulse rounded-sm bg-neutral-5" />
+            <span className="min-w-0 flex-1">
+              <span className="block h-4 w-28 max-w-[70%] animate-pulse rounded-sm bg-neutral-5" />
+              <span className="mt-2 block h-3 w-40 max-w-full animate-pulse rounded-sm bg-neutral-5" />
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="min-h-0 min-w-0 flex-1">
+        <MemberListSkeleton title={t('people')} loadingLabel={loadingLabel} />
+      </div>
+    </div>
+  );
 }
 
 function MemberListSkeleton({
