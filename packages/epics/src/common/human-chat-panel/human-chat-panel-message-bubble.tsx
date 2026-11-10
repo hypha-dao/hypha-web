@@ -2278,13 +2278,18 @@ export function HumanChatPanelMessageBubble({
           : undefined
       }
     >
-      {replyTo && (
+      {/*
+        Reply connector stays off while Privy name skeletons are resolving.
+        Mounting/measuring it during that layout churn re-enters React (#185)
+        and trips the chat error boundary. Decorative only — safe to skip.
+      */}
+      {replyTo && !senderProfileLoading && !replyProfileLoading ? (
         <ChatReplyConnectorMeasured
           rowRef={messageRowRef}
           replyAvatarRef={replyAvatarMeasureRef}
           mainAvatarRef={mainAvatarMeasureRef}
         />
-      )}
+      ) : null}
       {replyTo && replyContextBody ? (
         <div
           data-testid="chat-message-reply-context"
