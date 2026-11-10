@@ -1,5 +1,6 @@
 export {
   isHyphaBotMatrixIdentity,
+  isUnresolvedMemberLabel,
   looksLikeTechnicalMatrixDisplayName,
   looksLikeTechnicalSpeakerLabel,
   matrixMemberDisplayLabel,

@@ -3421,7 +3421,7 @@
     "noMembers": "Aucun membre trouvé",
     "membersSearch": "Rechercher des membres",
     "membersNoMatches": "Aucun membre ne correspond.",
-    "unknownMember": "Inconnu",
+    "unknownMember": "Membre",
     "backToSpaceChat": "Retour au chat de l'espace",
     "failedToJoinRoom": "Impossible de rejoindre la salle de conversation",
     "emojiPickerComposer": "Choisir un emoji",
@@ -3714,7 +3714,9 @@
     "archivedGroupReadOnly": "Ce groupe est archivé. Restaure-le pour envoyer des messages.",
     "typingOne": "{name} est en train d’écrire…",
     "typingTwo": "{name} et {other} sont en train d’écrire…",
-    "typingMany": "{count} personnes sont en train d’écrire…"
+    "typingMany": "{count} personnes sont en train d’écrire…",
+    "typingSomeone": "Quelqu’un est en train d’écrire…",
+    "typingNameAndSomeone": "{name} et quelqu’un sont en train d’écrire…"
   },
   "CoherenceTab": {
     "signals": "Signaux",

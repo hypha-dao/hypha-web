@@ -35,6 +35,7 @@ import {
   resolvePeerRowTitle,
   conversationDisplayName,
   visibleMemberRowsAfterTitleResolve,
+  messagesInboxEmptyStillLoading,
   messagesPeopleListReady,
   messagePreview,
   previewForInboxDisplay,
@@ -1211,6 +1212,28 @@ describe('messagesPeopleListReady', () => {
     ).toBe(true);
   });
 
+  it('paints store-backed rooms before live sync reaches Catchup/Prepared', () => {
+    expect(
+      messagesPeopleListReady({
+        ...ready,
+        synced: false,
+        initialSyncComplete: false,
+        hasMatrixConversations: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('keeps the skeleton when the store is empty and sync has not started', () => {
+    expect(
+      messagesPeopleListReady({
+        ...ready,
+        synced: false,
+        initialSyncComplete: false,
+        hasMatrixConversations: false,
+      }),
+    ).toBe(false);
+  });
+
   it('does not wait for home intelligence or room/id/profile backfill', () => {
     expect(
       messagesPeopleListReady({
@@ -1233,6 +1256,32 @@ describe('messagesPeopleListReady', () => {
         initialSyncComplete: false,
       }),
     ).toBe(true);
+  });
+});
+
+describe('messagesInboxEmptyStillLoading', () => {
+  it('keeps loading while an empty filter waits for initial sync', () => {
+    expect(
+      messagesInboxEmptyStillLoading({
+        shownRowCount: 0,
+        initialSyncComplete: false,
+      }),
+    ).toBe(true);
+    expect(
+      messagesInboxEmptyStillLoading({
+        shownRowCount: 0,
+        initialSyncComplete: true,
+      }),
+    ).toBe(false);
+  });
+
+  it('does not block when the selected filter already has rows', () => {
+    expect(
+      messagesInboxEmptyStillLoading({
+        shownRowCount: 3,
+        initialSyncComplete: false,
+      }),
+    ).toBe(false);
   });
 });
 
