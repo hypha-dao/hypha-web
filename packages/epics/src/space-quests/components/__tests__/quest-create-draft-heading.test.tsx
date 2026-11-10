@@ -1,9 +1,16 @@
 // @vitest-environment jsdom
 
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SpaceQuestCreateDraft } from '../space-quest-create-draft';
+import { saveQuestDraftRequest } from '../../hooks/use-space-quests';
 
 vi.mock('next/image', () => ({
   default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
@@ -27,7 +34,15 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
-  useTranslations: () => (key: string) => key,
+  useTranslations: () => (key: string) =>
+    ((
+      {
+        'drafts.notSaved': 'Not saved yet',
+        'drafts.saving': 'Saving…',
+        'drafts.savedAuto': 'Saved automatically',
+        'drafts.retry': "Couldn't save. Retry",
+      } as Record<string, string>
+    )[key] ?? key),
 }));
 
 vi.mock('wagmi', () => ({
@@ -104,7 +119,7 @@ describe('quest create draft heading', () => {
     expect(screen.getByTestId('cancel-quest-button')).toBeTruthy();
     expect(screen.queryByTestId('save-quest-draft-button')).toBeNull();
     expect(screen.getByTestId('quest-draft-save-status').textContent).toContain(
-      'drafts.notSaved',
+      'Not saved yet',
     );
     expect(screen.getByTestId('create-quest-button')).toBeTruthy();
     expect(
@@ -114,5 +129,66 @@ describe('quest create draft heading', () => {
     const label = participants.querySelector('span');
     expect(label?.textContent).toBe('Participants');
     expect(label?.className).toContain('uppercase');
+  });
+
+  it('autosaves a focused Goal edit without waiting for blur', async () => {
+    render(<SpaceQuestCreateDraft spaceSlug="sandbox" />);
+
+    expect(screen.getByTestId('quest-draft-save-status').textContent).toContain(
+      'Not saved yet',
+    );
+    fireEvent.click(screen.getByTestId('draft-section-goal'));
+    const editor = await screen.findByRole('textbox', {
+      name: 'Rich text editor',
+    });
+    editor.focus();
+    expect(screen.getByTestId('quest-draft-save-status').textContent).toContain(
+      'Not saved yet',
+    );
+
+    const tiptap = (
+      editor as HTMLElement & {
+        editor?: {
+          commands: { insertContent: (text: string) => boolean };
+        };
+      }
+    ).editor;
+    expect(tiptap).toBeTruthy();
+    tiptap?.commands.insertContent('Ship the focused goal');
+
+    expect(
+      editor.contains(document.activeElement) ||
+        document.activeElement === editor,
+    ).toBe(true);
+    expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('quest-draft-save-status').textContent,
+      ).toContain('Saving…');
+    });
+    expect(saveQuestDraftRequest).not.toHaveBeenCalled();
+    await waitFor(
+      () => {
+        expect(
+          screen.getByTestId('quest-draft-save-status').textContent,
+        ).toContain('Saved automatically');
+      },
+      { timeout: 3000 },
+    );
+    expect(screen.queryByText('Not saved yet')).toBeNull();
+    expect(saveQuestDraftRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          draft: expect.objectContaining({
+            goal: expect.stringContaining('Ship the focused goal'),
+          }),
+        }),
+      }),
+    );
+    expect(
+      document.activeElement === editor ||
+        editor.contains(document.activeElement),
+    ).toBe(true);
   });
 });

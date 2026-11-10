@@ -376,20 +376,41 @@ export function SpaceQuestCreateDraft({
   }, [currentCreateSession, spaceSlug]);
 
   const saveGenerationRef = useRef(0);
+  const saveDebouncePendingRef = useRef(false);
+  const saveInFlightRef = useRef(false);
+  const savingVisibleSinceRef = useRef<number | null>(null);
+  const showSaving = useCallback(() => {
+    if (savingVisibleSinceRef.current == null) {
+      savingVisibleSinceRef.current = Date.now();
+    }
+    setDraftSaveState('saving');
+  }, []);
+  const settleSaving = useCallback(
+    async (generation: number, next: 'saved' | 'error') => {
+      const visibleSince = savingVisibleSinceRef.current ?? Date.now();
+      const remaining = 400 - (Date.now() - visibleSince);
+      if (remaining > 0) {
+        await new Promise((resolve) => window.setTimeout(resolve, remaining));
+      }
+      if (
+        saveGenerationRef.current !== generation ||
+        saveDebouncePendingRef.current
+      ) {
+        return;
+      }
+      savingVisibleSinceRef.current = null;
+      setDraftSaveState(next);
+    },
+    [],
+  );
   const saveDraftToServer = useCallback(async () => {
     if (draftConsumedRef.current) return serverDraftIdRef.current;
     const session = currentCreateSession();
     if (!questCreateDraftIsWorthSaving(session)) return null;
     const generation = saveGenerationRef.current + 1;
     saveGenerationRef.current = generation;
-    const started = Date.now();
-    setDraftSaveState('saving');
-    const holdSaving = async () => {
-      const remaining = 400 - (Date.now() - started);
-      if (remaining > 0) {
-        await new Promise((resolve) => window.setTimeout(resolve, remaining));
-      }
-    };
+    saveInFlightRef.current = true;
+    showSaving();
     try {
       const saved = await saveQuestDraftRequest({
         spaceSlug,
@@ -399,15 +420,21 @@ export function SpaceQuestCreateDraft({
       });
       serverDraftIdRef.current = saved.id;
       persistCreateSession();
-      await holdSaving();
-      if (saveGenerationRef.current === generation) setDraftSaveState('saved');
+      await settleSaving(generation, 'saved');
       return saved.id;
     } catch {
-      await holdSaving();
-      if (saveGenerationRef.current === generation) setDraftSaveState('error');
+      await settleSaving(generation, 'error');
       return null;
+    } finally {
+      saveInFlightRef.current = false;
     }
-  }, [currentCreateSession, persistCreateSession, spaceSlug]);
+  }, [
+    currentCreateSession,
+    persistCreateSession,
+    settleSaving,
+    showSaving,
+    spaceSlug,
+  ]);
 
   const saveDraftRef = useRef(saveDraftToServer);
   saveDraftRef.current = saveDraftToServer;
@@ -481,13 +508,37 @@ export function SpaceQuestCreateDraft({
       return;
     }
     persistCreateSession();
-    if (draftConsumedRef.current || submitting) return;
+    if (draftConsumedRef.current || submitting) {
+      saveDebouncePendingRef.current = false;
+      return;
+    }
+    if (!questCreateDraftIsWorthSaving(currentCreateSession())) {
+      saveDebouncePendingRef.current = false;
+      if (!saveInFlightRef.current) {
+        savingVisibleSinceRef.current = null;
+        setDraftSaveState((state) =>
+          state === 'saving'
+            ? serverDraftIdRef.current
+              ? 'saved'
+              : 'idle'
+            : state,
+        );
+      }
+      return;
+    }
+    saveDebouncePendingRef.current = true;
+    showSaving();
     const timer = window.setTimeout(() => {
+      saveDebouncePendingRef.current = false;
       void saveDraftRef.current();
     }, 800);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      saveDebouncePendingRef.current = false;
+    };
   }, [
     chatMessages,
+    currentCreateSession,
     goal,
     leadName,
     members,
@@ -496,6 +547,7 @@ export function SpaceQuestCreateDraft({
     pendingProposalLink,
     persistCreateSession,
     rewards,
+    showSaving,
     scopeIn,
     scopeInMarkdown,
     scopeOut,
@@ -1801,12 +1853,14 @@ export function SpaceQuestCreateDraft({
           onOpenChange={(open) => !open && setEditingModal(null)}
           value={name}
           onSave={setName}
+          onLiveChange={setName}
         />
         <EditQuestGoalModal
           open={editingModal === 'goal'}
           onOpenChange={(open) => !open && setEditingModal(null)}
           value={goal}
           onSave={setGoal}
+          onLiveChange={setGoal}
         />
         <EditQuestScopeModal
           open={editingModal === 'scope'}
@@ -1821,12 +1875,19 @@ export function SpaceQuestCreateDraft({
             setScopeInMarkdown(next.scopeInMarkdown);
             setScopeOutMarkdown(next.scopeOutMarkdown);
           }}
+          onLiveChange={(next) => {
+            setScopeIn(next.scopeIn);
+            setScopeOut(next.scopeOut);
+            setScopeInMarkdown(next.scopeInMarkdown);
+            setScopeOutMarkdown(next.scopeOutMarkdown);
+          }}
         />
         <EditQuestSuccessModal
           open={editingModal === 'success'}
           onOpenChange={(open) => !open && setEditingModal(null)}
           value={successCriteria}
           onSave={setSuccessCriteria}
+          onLiveChange={setSuccessCriteria}
         />
         <EditQuestRewardsModal
           open={editingModal === 'rewards'}
@@ -1834,6 +1895,7 @@ export function SpaceQuestCreateDraft({
           rewards={rewards}
           spaceSlug={spaceSlug}
           onSave={setRewards}
+          onLiveChange={setRewards}
         />
         <EditQuestMilestonesModal
           open={editingModal === 'milestones'}
@@ -1842,6 +1904,7 @@ export function SpaceQuestCreateDraft({
           spaceMembers={spaceMemberPersons}
           spaceMemberNames={spaceMemberNames}
           onSave={setMilestones}
+          onLiveChange={setMilestones}
         />
         <EditQuestLeadModal
           open={editingModal === 'lead'}
@@ -1854,6 +1917,10 @@ export function SpaceQuestCreateDraft({
             setLeadNameOverride(nextLeadName);
             setSelectedLeadPersonId(nextLeadPersonId ?? null);
           }}
+          onLiveChange={(nextLeadName, nextLeadPersonId) => {
+            setLeadNameOverride(nextLeadName);
+            setSelectedLeadPersonId(nextLeadPersonId ?? null);
+          }}
         />
         <EditQuestMembersModal
           open={editingModal === 'members'}
@@ -1862,12 +1929,14 @@ export function SpaceQuestCreateDraft({
           spaceMembers={spaceMemberPersons}
           spaceMemberNames={spaceMemberNames}
           onSave={setMembers}
+          onLiveChange={setMembers}
         />
         <EditQuestTargetDateModal
           open={editingModal === 'targetDate'}
           onOpenChange={(open) => !open && setEditingModal(null)}
           value={targetDate}
           onSave={setTargetDate}
+          onLiveChange={setTargetDate}
         />
       </>
     </SpaceLoadingBackdrop>

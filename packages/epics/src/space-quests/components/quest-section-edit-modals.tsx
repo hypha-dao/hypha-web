@@ -28,6 +28,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react';
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -233,6 +234,56 @@ function findPersonInCatalog(
   );
 }
 
+/** Skip a repeat of the same section payload so a focused editor can publish each real change. */
+function useChangedPublish() {
+  const lastSignature = useRef<string | null>(null);
+  return useCallback((signature: string, publish: () => void) => {
+    if (signature === lastSignature.current) return;
+    lastSignature.current = signature;
+    publish();
+  }, []);
+}
+
+function cleanEditableMilestones(
+  rows: EditableQuestMilestone[],
+): EditableQuestMilestone[] {
+  return rows
+    .map((row) => ({
+      ...row,
+      name: row.name.trim(),
+      description: storedQuestRichText(row.description),
+      dueDate: row.dueDate?.trim() || null,
+      ownerName: row.ownerName?.trim() || null,
+    }))
+    .filter((row) => row.name.length > 0);
+}
+
+function cleanEditableMembers(
+  rows: EditableQuestMember[],
+): EditableQuestMember[] {
+  return rows
+    .map((member) => ({
+      ...member,
+      memberName: member.memberName.trim(),
+      roleLabel: member.roleLabel?.trim().slice(0, 80) || null,
+      responsibilities: member.responsibilities
+        .map((item) => item.trim())
+        .filter(Boolean),
+    }))
+    .filter((member) => member.memberName.length > 0);
+}
+
+function scopeDraftPayload(inMarkdown: string, outMarkdown: string) {
+  const scopeInMarkdown = storedQuestRichText(inMarkdown);
+  const scopeOutMarkdown = storedQuestRichText(outMarkdown);
+  return {
+    scopeIn: splitMarkdownLinesToBullets(scopeInMarkdown),
+    scopeOut: splitMarkdownLinesToBullets(scopeOutMarkdown),
+    scopeInMarkdown,
+    scopeOutMarkdown,
+  };
+}
+
 export type EditableQuestMilestone = {
   id?: number;
   name: string;
@@ -401,16 +452,24 @@ export function EditQuestNameModal({
   onOpenChange,
   value,
   onSave,
+  onLiveChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   value: string;
   onSave: (next: string) => void;
+  /** Create-draft autosave. Fires while the field still has focus. */
+  onLiveChange?: (next: string) => void;
 }) {
   const [draft, setDraft] = useState(value);
+  const wasOpenRef = useRef(false);
+  const publishChange = useChangedPublish();
   useEffect(() => {
-    if (open) setDraft(value);
-  }, [open, value]);
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (!open) return;
+    if (!wasOpen || !onLiveChange) setDraft(value);
+  }, [onLiveChange, open, value]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -429,7 +488,11 @@ export function EditQuestNameModal({
           <label className={LABEL_CLASS}>NAME</label>
           <Input
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(event) => {
+              const next = event.target.value;
+              setDraft(next);
+              publishChange(next, () => onLiveChange?.(next));
+            }}
             placeholder="e.g. Onboarding matcher"
             className="h-10 rounded-none bg-background-2"
           />
@@ -444,16 +507,24 @@ export function EditQuestGoalModal({
   onOpenChange,
   value,
   onSave,
+  onLiveChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   value: string;
   onSave: (next: string) => void;
+  /** Create-draft autosave. Fires while the editor still has focus. */
+  onLiveChange?: (next: string) => void;
 }) {
   const [draft, setDraft] = useState(value);
+  const wasOpenRef = useRef(false);
+  const publishChange = useChangedPublish();
   useEffect(() => {
-    if (open) setDraft(value);
-  }, [open, value]);
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (!open) return;
+    if (!wasOpen || !onLiveChange) setDraft(value);
+  }, [onLiveChange, open, value]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -472,7 +543,11 @@ export function EditQuestGoalModal({
             <RichTextEditor
               compactToolbar
               markdown={draft}
-              onChange={setDraft}
+              onChange={(markdown) => {
+                setDraft(markdown);
+                const stored = storedQuestRichText(markdown);
+                publishChange(stored, () => onLiveChange?.(stored));
+              }}
               placeholder="Describe the quest goal…"
               bordered={false}
             />
@@ -491,6 +566,7 @@ export function EditQuestScopeModal({
   scopeInMarkdown,
   scopeOutMarkdown,
   onSave,
+  onLiveChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -504,6 +580,12 @@ export function EditQuestScopeModal({
     scopeInMarkdown: string;
     scopeOutMarkdown: string;
   }) => void;
+  onLiveChange?: (next: {
+    scopeIn: string[];
+    scopeOut: string[];
+    scopeInMarkdown: string;
+    scopeOutMarkdown: string;
+  }) => void;
 }) {
   const [inMd, setInMd] = useState(
     scopeInMarkdown?.trim() || bulletsToMarkdownList(scopeIn),
@@ -512,6 +594,11 @@ export function EditQuestScopeModal({
     scopeOutMarkdown?.trim() || bulletsToMarkdownList(scopeOut),
   );
   const wasOpenRef = useRef(false);
+  const publishChange = useChangedPublish();
+  const publishScope = (nextIn: string, nextOut: string) => {
+    const payload = scopeDraftPayload(nextIn, nextOut);
+    publishChange(JSON.stringify(payload), () => onLiveChange?.(payload));
+  };
 
   useEffect(() => {
     const wasOpen = wasOpenRef.current;
@@ -529,14 +616,7 @@ export function EditQuestScopeModal({
         onClose={() => onOpenChange(false)}
         onCancel={() => onOpenChange(false)}
         onSave={() => {
-          const scopeInMarkdown = storedQuestRichText(inMd);
-          const scopeOutMarkdown = storedQuestRichText(outMd);
-          onSave({
-            scopeIn: splitMarkdownLinesToBullets(scopeInMarkdown),
-            scopeOut: splitMarkdownLinesToBullets(scopeOutMarkdown),
-            scopeInMarkdown,
-            scopeOutMarkdown,
-          });
+          onSave(scopeDraftPayload(inMd, outMd));
           onOpenChange(false);
         }}
       >
@@ -547,7 +627,10 @@ export function EditQuestScopeModal({
               <RichTextEditor
                 compactToolbar
                 markdown={inMd}
-                onChange={setInMd}
+                onChange={(markdown) => {
+                  setInMd(markdown);
+                  publishScope(markdown, outMd);
+                }}
                 placeholder="• First item in scope…"
                 bordered={false}
               />
@@ -559,7 +642,10 @@ export function EditQuestScopeModal({
               <RichTextEditor
                 compactToolbar
                 markdown={outMd}
-                onChange={setOutMd}
+                onChange={(markdown) => {
+                  setOutMd(markdown);
+                  publishScope(inMd, markdown);
+                }}
                 placeholder="• First item out of scope…"
                 bordered={false}
               />
@@ -576,16 +662,23 @@ export function EditQuestSuccessModal({
   onOpenChange,
   value,
   onSave,
+  onLiveChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   value: string;
   onSave: (next: string) => void;
+  onLiveChange?: (next: string) => void;
 }) {
   const [draft, setDraft] = useState(value);
+  const wasOpenRef = useRef(false);
+  const publishChange = useChangedPublish();
   useEffect(() => {
-    if (open) setDraft(value);
-  }, [open, value]);
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (!open) return;
+    if (!wasOpen || !onLiveChange) setDraft(value);
+  }, [onLiveChange, open, value]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -604,7 +697,11 @@ export function EditQuestSuccessModal({
             <RichTextEditor
               compactToolbar
               markdown={draft}
-              onChange={setDraft}
+              onChange={(markdown) => {
+                setDraft(markdown);
+                const stored = storedQuestRichText(markdown);
+                publishChange(stored, () => onLiveChange?.(stored));
+              }}
               placeholder="• Measurable outcome…"
               bordered={false}
             />
@@ -623,6 +720,7 @@ export function EditQuestLeadModal({
   spaceMembers = [],
   spaceMemberNames = [],
   onSave,
+  onLiveChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -631,6 +729,10 @@ export function EditQuestLeadModal({
   spaceMembers?: Person[];
   spaceMemberNames?: string[];
   onSave: (nextLeadName: string, nextLeadPersonId?: number | null) => void;
+  onLiveChange?: (
+    nextLeadName: string,
+    nextLeadPersonId?: number | null,
+  ) => void;
 }) {
   const catalog = useMemo(
     () =>
@@ -686,7 +788,16 @@ export function EditQuestLeadModal({
             members={catalog}
             value={selectedId}
             placeholder="Select a participant…"
-            onChange={(next) => setSelectedId(next ? String(next.id) : null)}
+            onChange={(next) => {
+              setSelectedId(next ? String(next.id) : null);
+              if (!next || !onLiveChange) return;
+              const label = personRosterDisplayLabel(
+                next,
+                'Participant',
+              ).trim();
+              if (!label) return;
+              onLiveChange(label, next.id > 0 ? next.id : null);
+            }}
           />
         </div>
       </QuestEditDialogFrame>
@@ -699,16 +810,23 @@ export function EditQuestTargetDateModal({
   onOpenChange,
   value,
   onSave,
+  onLiveChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   value: string | null;
   onSave: (next: string | null) => void;
+  onLiveChange?: (next: string | null) => void;
 }) {
   const [draft, setDraft] = useState(value ?? '');
+  const wasOpenRef = useRef(false);
+  const publishChange = useChangedPublish();
   useEffect(() => {
-    if (open) setDraft(value ?? '');
-  }, [open, value]);
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (!open) return;
+    if (!wasOpen || !onLiveChange) setDraft(value ?? '');
+  }, [onLiveChange, open, value]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -725,7 +843,12 @@ export function EditQuestTargetDateModal({
           <label className={LABEL_CLASS}>TARGET DATE</label>
           <Input
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(event) => {
+              const next = event.target.value;
+              setDraft(next);
+              const stored = next.trim() || null;
+              publishChange(stored ?? '', () => onLiveChange?.(stored));
+            }}
             placeholder="20 November 2026"
             className="h-10 rounded-none bg-background-2"
           />
@@ -742,6 +865,7 @@ export function EditQuestRewardsModal({
   spaceSlug,
   tokenSymbols = QUEST_DEFAULT_REWARD_TOKENS,
   onSave,
+  onLiveChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -749,9 +873,11 @@ export function EditQuestRewardsModal({
   spaceSlug?: string;
   tokenSymbols?: readonly string[];
   onSave: (next: QuestReward[]) => void;
+  onLiveChange?: (next: QuestReward[]) => void;
 }) {
   const [rows, setRows] = useState<QuestReward[]>(rewards);
   const wasOpenRef = useRef(false);
+  const publishChange = useChangedPublish();
 
   useEffect(() => {
     const wasOpen = wasOpenRef.current;
@@ -780,7 +906,16 @@ export function EditQuestRewardsModal({
           <label className={LABEL_CLASS}>QUEST REWARD</label>
           <QuestRewardRowsEditor
             rows={rows}
-            onChange={setRows}
+            onChange={(next) => {
+              setRows(next);
+              const stored = next.filter(
+                (row) =>
+                  row.amount.trim().length > 0 && row.token.trim().length > 0,
+              );
+              publishChange(JSON.stringify(stored), () =>
+                onLiveChange?.(stored),
+              );
+            }}
             spaceSlug={spaceSlug}
             tokenSymbols={tokenSymbols}
           />
@@ -804,6 +939,7 @@ export function EditQuestMilestonesModal({
   spaceMemberNames = [],
   showStatusSelect = false,
   onSave,
+  onLiveChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -812,8 +948,9 @@ export function EditQuestMilestonesModal({
   spaceMemberNames?: string[];
   showStatusSelect?: boolean;
   onSave: (next: EditableQuestMilestone[]) => void;
+  onLiveChange?: (next: EditableQuestMilestone[]) => void;
 }) {
-  const [rows, setRows] = useState<EditableQuestMilestone[]>(() =>
+  const [rows, setRowsState] = useState<EditableQuestMilestone[]>(() =>
     milestones.map((milestone, index) => ({
       ...milestone,
       insertedNew: false,
@@ -821,12 +958,31 @@ export function EditQuestMilestonesModal({
     })),
   );
   const wasOpenRef = useRef(false);
+  const onLiveChangeRef = useRef(onLiveChange);
+  onLiveChangeRef.current = onLiveChange;
+  const publishChange = useChangedPublish();
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+  const setRows = (
+    updater:
+      | EditableQuestMilestone[]
+      | ((current: EditableQuestMilestone[]) => EditableQuestMilestone[]),
+  ) => {
+    const next =
+      typeof updater === 'function' ? updater(rowsRef.current) : updater;
+    rowsRef.current = next;
+    setRowsState(next);
+    const cleaned = cleanEditableMilestones(next);
+    publishChange(JSON.stringify(cleaned), () =>
+      onLiveChangeRef.current?.(cleaned),
+    );
+  };
 
   useEffect(() => {
     const wasOpen = wasOpenRef.current;
     wasOpenRef.current = open;
     if (open && !wasOpen) {
-      setRows(
+      setRowsState(
         milestones.map((m, i) => ({
           ...m,
           insertedNew: false,
@@ -891,16 +1047,7 @@ export function EditQuestMilestonesModal({
         onInteractOutside={keepMemberSelectPopoverOpen}
         onFocusOutside={keepMemberSelectPopoverOpen}
         onSave={() => {
-          const cleaned = rows
-            .map((r) => ({
-              ...r,
-              name: r.name.trim(),
-              description: storedQuestRichText(r.description),
-              dueDate: r.dueDate?.trim() || null,
-              ownerName: r.ownerName?.trim() || null,
-            }))
-            .filter((r) => r.name.length > 0);
-          onSave(cleaned);
+          onSave(cleanEditableMilestones(rows));
           onOpenChange(false);
         }}
       >
@@ -1107,6 +1254,7 @@ export function EditQuestMembersModal({
   spaceMembers = [],
   spaceMemberNames = [],
   onSave,
+  onLiveChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -1114,12 +1262,32 @@ export function EditQuestMembersModal({
   spaceMembers?: Person[];
   spaceMemberNames?: string[];
   onSave: (next: EditableQuestMember[]) => void;
+  onLiveChange?: (next: EditableQuestMember[]) => void;
 }) {
-  const [rows, setRows] = useState<EditableQuestMember[]>([]);
+  const [rows, setRowsState] = useState<EditableQuestMember[]>([]);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [newRoleLabel, setNewRoleLabel] = useState('');
   const [newBullets, setNewBullets] = useState<string[]>(['']);
   const wasOpenRef = useRef(false);
+  const onLiveChangeRef = useRef(onLiveChange);
+  onLiveChangeRef.current = onLiveChange;
+  const publishChange = useChangedPublish();
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+  const setRows = (
+    updater:
+      | EditableQuestMember[]
+      | ((current: EditableQuestMember[]) => EditableQuestMember[]),
+  ) => {
+    const next =
+      typeof updater === 'function' ? updater(rowsRef.current) : updater;
+    rowsRef.current = next;
+    setRowsState(next);
+    const cleaned = cleanEditableMembers(next);
+    publishChange(JSON.stringify(cleaned), () =>
+      onLiveChangeRef.current?.(cleaned),
+    );
+  };
 
   const memberCatalog = useMemo(
     () =>
@@ -1134,7 +1302,7 @@ export function EditQuestMembersModal({
     const wasOpen = wasOpenRef.current;
     wasOpenRef.current = open;
     if (open && !wasOpen) {
-      setRows(
+      setRowsState(
         members.map((m) => {
           const matched = findPersonInCatalog(memberCatalog, {
             id: m.personId,
@@ -1195,17 +1363,7 @@ export function EditQuestMembersModal({
         onInteractOutside={keepMemberSelectPopoverOpen}
         onFocusOutside={keepMemberSelectPopoverOpen}
         onSave={() => {
-          const cleaned = rows
-            .map((m) => ({
-              ...m,
-              memberName: m.memberName.trim(),
-              roleLabel: m.roleLabel?.trim().slice(0, 80) || null,
-              responsibilities: m.responsibilities
-                .map((r) => r.trim())
-                .filter(Boolean),
-            }))
-            .filter((m) => m.memberName.length > 0);
-          onSave(cleaned);
+          onSave(cleanEditableMembers(rows));
           onOpenChange(false);
         }}
       >

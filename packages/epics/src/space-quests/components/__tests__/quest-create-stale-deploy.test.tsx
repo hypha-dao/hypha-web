@@ -24,6 +24,8 @@ const harness = vi.hoisted(() => ({
   saveQuestDraftRequest: vi.fn(),
   deleteQuestDraftRequest: vi.fn(),
   setSpaceQuestDraft: vi.fn(),
+  closeAiPanel: vi.fn(),
+  openHumanChatPanel: vi.fn(),
   push: vi.fn(),
   agreement: null as { slug?: string; proposalId?: number } | null,
 }));
@@ -91,11 +93,11 @@ vi.mock('@hypha-platform/core/client', async () => {
 });
 
 vi.mock('../../../common/human-chat-panel-context', () => ({
-  useAiPanel: () => ({ closeAiPanel: vi.fn() }),
+  useAiPanel: () => ({ closeAiPanel: harness.closeAiPanel }),
   useHumanChatPanel: () => ({
     open: false,
     panelAvailable: true,
-    openHumanChatPanel: vi.fn(),
+    openHumanChatPanel: harness.openHumanChatPanel,
     setSpaceQuestDraft: harness.setSpaceQuestDraft,
   }),
 }));
