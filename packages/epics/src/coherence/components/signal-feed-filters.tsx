@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, SearchIcon } from 'lucide-react';
 import {
   SIGNAL_SORTS,
   SIGNAL_TIME_FRAMES,
@@ -125,6 +125,8 @@ export type SignalFeedFiltersProps = {
   onTimeFrameChange: (timeFrame: SignalTimeFrame) => void;
   titleQuery: string;
   onTitleQueryChange: (titleQuery: string) => void;
+  /** Sits at the end of the search row, the same slot as Agreements. */
+  action?: React.ReactNode;
   className?: string;
 };
 
@@ -138,6 +140,7 @@ export function SignalFeedFilters({
   onTimeFrameChange,
   titleQuery,
   onTitleQueryChange,
+  action,
   className,
 }: SignalFeedFiltersProps) {
   const t = useTranslations('CoherenceTab');
@@ -160,35 +163,41 @@ export function SignalFeedFilters({
   );
 
   return (
-    <div className={cn('flex flex-wrap items-center gap-2', className)}>
-      <Input
-        type="search"
-        value={titleQuery}
-        placeholder={t('searchSignals')}
-        aria-label={t('searchSignals')}
-        data-testid="signal-title-search"
-        onChange={(event) => onTitleQueryChange(event.target.value)}
-        rootClassName="min-h-10 w-full min-w-0 flex-1 basis-full sm:basis-56 sm:max-w-sm"
-        className="h-10 min-h-10 text-left placeholder:text-left"
-      />
-      <FilterPill
-        label={t(SORT_LABEL_KEY[sort])}
-        heading={t('signalSortBy')}
-        value={sort}
-        options={sortOptions}
-        onChange={onSortChange}
-        testId="signal-sort-pill"
-      />
-      {sort !== 'new' ? (
-        <FilterPill
-          label={t(TIME_FRAME_LABEL_KEY[timeFrame])}
-          heading={t('signalTimeFrame')}
-          value={timeFrame}
-          options={timeFrameOptions}
-          onChange={onTimeFrameChange}
-          testId="signal-time-frame-pill"
+    <div className={cn('flex flex-col gap-3', className)}>
+      <div className="flex w-full items-center gap-3">
+        <Input
+          type="search"
+          value={titleQuery}
+          placeholder={t('searchSignals')}
+          aria-label={t('searchSignals')}
+          data-testid="signal-title-search"
+          onChange={(event) => onTitleQueryChange(event.target.value)}
+          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+          rootClassName="min-w-0 flex-1"
+          className="min-w-0"
         />
-      ) : null}
+        {action}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <FilterPill
+          label={t(SORT_LABEL_KEY[sort])}
+          heading={t('signalSortBy')}
+          value={sort}
+          options={sortOptions}
+          onChange={onSortChange}
+          testId="signal-sort-pill"
+        />
+        {sort !== 'new' ? (
+          <FilterPill
+            label={t(TIME_FRAME_LABEL_KEY[timeFrame])}
+            heading={t('signalTimeFrame')}
+            value={timeFrame}
+            options={timeFrameOptions}
+            onChange={onTimeFrameChange}
+            testId="signal-time-frame-pill"
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -85,7 +85,15 @@ describe('feed title search', () => {
     );
     expect(filtersSource).toContain('data-testid="signal-title-search"');
     expect(filtersSource).toContain('type="search"');
-    expect(filtersSource).toContain('placeholder:text-left');
+    expect(filtersSource).toContain(
+      'leftIcon={<SearchIcon className="text-accent-9" size="16px" />}',
+    );
+    expect(filtersSource).toContain('rootClassName="min-w-0 flex-1"');
+    expect(filtersSource).not.toContain('sm:max-w-sm');
+    expect(filtersSource).toContain('flex flex-col gap-3');
+    expect(feedSource).toContain("t('newSignal')");
+    expect(feedSource).toContain('coherence/new-signal');
+    expect(feedSource).not.toContain("t('createSignal')");
   });
 });
 

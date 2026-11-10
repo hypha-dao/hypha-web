@@ -195,17 +195,6 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
             </span>
           ) : null}
         </h1>
-        {canMutate ? (
-          <Button asChild variant="default" colorVariant="accent">
-            <Link
-              href={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
-              scroll={false}
-            >
-              <Plus className="craft-icon" aria-hidden />
-              {t('createSignal')}
-            </Link>
-          </Button>
-        ) : null}
       </header>
 
       <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
@@ -217,6 +206,21 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
         onTimeFrameChange={handleTimeFrameChange}
         titleQuery={titleInput}
         onTitleQueryChange={onTitleChange}
+        action={
+          canMutate ? (
+            <div className="shrink-0">
+              <Button asChild variant="default" colorVariant="accent">
+                <Link
+                  href={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
+                  scroll={false}
+                >
+                  <Plus className="craft-icon" aria-hidden />
+                  {t('newSignal')}
+                </Link>
+              </Button>
+            </div>
+          ) : null
+        }
       />
 
       {isLoading ? (
