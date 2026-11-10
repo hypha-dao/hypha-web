@@ -83,22 +83,20 @@ function ChangeEntry({ entry }: { entry: QuestUpdateDetailEntry }) {
       </p>
     );
   }
+  const changeLabelClass =
+    'text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-11';
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      <div className="min-w-0 space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-11">
-          {entry.label}
-        </p>
-        <p className="text-[11px] text-neutral-11">{t('updates.before')}</p>
-        <div className="text-neutral-11 [&_*]:text-neutral-11">
+    <div className="min-w-0 space-y-1">
+      {entry.label ? <p className={changeLabelClass}>{entry.label}</p> : null}
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="min-w-0 space-y-1" data-testid="quest-update-before">
+          <p className={changeLabelClass}>{t('updates.before')}</p>
           <QuestSectionMarkdown markdown={entry.before} empty="—" />
         </div>
-      </div>
-      <div className="min-w-0 space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-11">
-          {t('updates.after')}
-        </p>
-        <QuestSectionMarkdown markdown={entry.after} empty="—" />
+        <div className="min-w-0 space-y-1" data-testid="quest-update-after">
+          <p className={changeLabelClass}>{t('updates.after')}</p>
+          <QuestSectionMarkdown markdown={entry.after} empty="—" />
+        </div>
       </div>
     </div>
   );

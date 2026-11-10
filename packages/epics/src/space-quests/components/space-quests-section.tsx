@@ -21,7 +21,7 @@ import {
   Skeleton,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { Search } from 'lucide-react';
+import { SearchIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
@@ -465,29 +465,31 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
             | {new Intl.NumberFormat(locale).format(counts.total)}
           </span>
         </h1>
-        {canMutate ? (
-          <Button
-            asChild
-            className="ml-auto shrink-0 bg-foreground text-background hover:bg-foreground/90"
-            data-testid="new-quest-button"
-          >
-            <Link href={newQuestHref}>{t('newQuest')}</Link>
-          </Button>
-        ) : null}
       </header>
 
-      {/* Search bar */}
-      <div className="w-full">
+      <div
+        className="flex w-full items-center gap-3"
+        data-testid="quest-list-toolbar"
+      >
         <Input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('searchPlaceholder')}
-          leftIcon={<Search className="size-3.5 text-neutral-11" />}
-          rootClassName="w-full"
-          className="rounded-none"
+          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+          rootClassName="min-w-0 flex-1"
+          className="min-w-0"
           data-testid="search-quests-input"
         />
+        {canMutate ? (
+          <Button
+            asChild
+            className="shrink-0 bg-foreground text-background hover:bg-foreground/90"
+            data-testid="new-quest-button"
+          >
+            <Link href={newQuestHref}>{t('newQuest')}</Link>
+          </Button>
+        ) : null}
       </div>
 
       {/* Status filter chips: Active, Proposed, Paused, Completed */}

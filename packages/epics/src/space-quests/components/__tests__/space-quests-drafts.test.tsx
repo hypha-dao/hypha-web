@@ -119,13 +119,30 @@ describe('quest list drafts', () => {
   it('shows only the signed-in author’s drafts, with continue and delete', async () => {
     render(<SpaceQuestsSection spaceSlug="sandbox" />);
 
+    const toolbar = screen.getByTestId('quest-list-toolbar');
+    const search = screen.getByTestId('search-quests-input');
+    const create = screen.getByTestId('new-quest-button');
+    expect(toolbar.contains(search)).toBe(true);
+    expect(toolbar.contains(create)).toBe(true);
+    expect(toolbar.className).toContain('flex');
+    expect(toolbar.className).toContain('items-center');
+    expect(search.compareDocumentPosition(create)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(create.getAttribute('href')).toBe(
+      '/en/dho/sandbox/quests/new?fresh=1',
+    );
+    expect(create.textContent).toBe('newQuest');
+    const filters = screen.getByRole('tablist');
+    expect(toolbar.compareDocumentPosition(filters)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
     expect(
       screen
-        .getAllByRole('link', { name: 'newQuest' })
-        .every((link) =>
-          link.getAttribute('href')?.endsWith('/quests/new?fresh=1'),
-        ),
-    ).toBe(true);
+        .getByRole('heading', { name: /title/ })
+        .closest('header')
+        ?.contains(create),
+    ).toBe(false);
     fireEvent.click(screen.getByTestId('quest-filter-drafts'));
 
     expect(screen.getByTestId('quest-draft-4')).toBeTruthy();

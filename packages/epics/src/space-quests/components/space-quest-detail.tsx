@@ -25,7 +25,11 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Skeleton,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -654,13 +658,11 @@ function UpdatesTab({
   onPost: (input: {
     text: string;
     milestoneOrder: number | null;
-    linkUrl: string;
   }) => Promise<boolean>;
 }) {
   const [authorFilter, setAuthorFilter] = useState<string | null>(null);
   const [text, setText] = useState('');
   const [milestoneOrder, setMilestoneOrder] = useState<number | null>(null);
-  const [linkUrl, setLinkUrl] = useState('');
   const [sending, setSending] = useState(false);
 
   const authors = useMemo(
@@ -696,11 +698,9 @@ function UpdatesTab({
       const posted = await onPost({
         text: message,
         milestoneOrder,
-        linkUrl: linkUrl.trim(),
       });
       if (!posted) return;
       setText('');
-      setLinkUrl('');
       setMilestoneOrder(null);
     } finally {
       setSending(false);
@@ -763,31 +763,33 @@ function UpdatesTab({
             />
           </label>
           <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={milestoneOrder ?? ''}
-              onChange={(e) =>
-                setMilestoneOrder(
-                  e.target.value ? Number(e.target.value) : null,
-                )
-              }
-              className="h-8 shrink-0 border border-border bg-background-2 px-2 text-xs text-foreground"
-              aria-label="Milestone"
-            >
-              <option value="">No milestone</option>
-              {quest.milestones.map((m) => (
-                <option key={m.id} value={m.order}>
-                  M{m.order} · {m.name}
-                </option>
-              ))}
-            </select>
-            <Input
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              placeholder="Link (optional)"
-              aria-label="Link (optional)"
-              className="h-8 rounded-none text-xs"
-              rootClassName="min-h-8 w-auto min-w-[160px] max-w-xs flex-1"
-            />
+            <div className="w-full max-w-xs shrink-0">
+              <Select
+                value={milestoneOrder == null ? 'none' : String(milestoneOrder)}
+                onValueChange={(next) =>
+                  setMilestoneOrder(next === 'none' ? null : Number(next))
+                }
+              >
+                <SelectTrigger
+                  aria-label="Milestone"
+                  data-testid="quest-update-milestone"
+                  className="h-10 rounded-none bg-background px-3 text-[11px] font-semibold"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No milestone</SelectItem>
+                  {quest.milestones.map((milestone) => (
+                    <SelectItem
+                      key={milestone.id}
+                      value={String(milestone.order)}
+                    >
+                      M{milestone.order} · {milestone.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Button
               type="button"
               data-testid="quest-update-post"
@@ -1454,11 +1456,9 @@ export function SpaceQuestDetail({
   const postUpdate = async ({
     text,
     milestoneOrder,
-    linkUrl,
   }: {
     text: string;
     milestoneOrder: number | null;
-    linkUrl: string;
   }) => {
     setSaving(true);
     setActionError(null);
@@ -1470,15 +1470,7 @@ export function SpaceQuestDetail({
           text,
           milestoneOrder,
           milestoneLabel: milestoneOrder != null ? `M${milestoneOrder}` : null,
-          links: linkUrl
-            ? [
-                {
-                  label: linkUrl.replace(/^https?:\/\//, '').slice(0, 60),
-                  url: linkUrl,
-                  kind: 'link',
-                },
-              ]
-            : [],
+          links: [],
         },
         getAccessToken,
       });

@@ -199,6 +199,21 @@ vi.mock('../../hooks/use-space-quests', async () => {
   };
 });
 
+function installPointerCapture() {
+  if (!HTMLElement.prototype.hasPointerCapture) {
+    HTMLElement.prototype.hasPointerCapture = () => false;
+  }
+  if (!HTMLElement.prototype.setPointerCapture) {
+    HTMLElement.prototype.setPointerCapture = () => undefined;
+  }
+  if (!HTMLElement.prototype.releasePointerCapture) {
+    HTMLElement.prototype.releasePointerCapture = () => undefined;
+  }
+  if (!HTMLElement.prototype.scrollIntoView) {
+    HTMLElement.prototype.scrollIntoView = () => undefined;
+  }
+}
+
 class LoadedImage {
   complete = true;
   naturalWidth = 8;
@@ -446,7 +461,8 @@ describe('saved quest helper entry', () => {
     ).toBe('15');
   });
 
-  it('posts a written update and ignores the optional link until the message is filled', async () => {
+  it('posts a written update from the milestone menu without a link field', async () => {
+    installPointerCapture();
     render(
       <SpaceQuestDetail
         spaceSlug="sandbox"
@@ -455,14 +471,19 @@ describe('saved quest helper entry', () => {
       />,
     );
 
+    const composer = screen.getByTestId('quest-update-composer');
+    expect(screen.queryByLabelText('Link (optional)')).toBeNull();
+    expect(composer.querySelector('select')).toBeNull();
+    const milestone = screen.getByTestId('quest-update-milestone');
+    expect(milestone.className).toContain('px-3');
+    expect(milestone.className).toContain('h-10');
+    expect(milestone.querySelector('svg')).toBeTruthy();
+
     const post = screen.getByTestId('quest-update-post');
     expect(post).toHaveProperty('disabled', true);
-    fireEvent.change(screen.getByLabelText('Link (optional)'), {
-      target: { value: 'https://example.com/notes' },
-    });
-    fireEvent.change(screen.getByLabelText('Milestone'), {
-      target: { value: '1' },
-    });
+    fireEvent.pointerDown(milestone, { button: 0, pointerId: 1 });
+    fireEvent.click(milestone);
+    fireEvent.click(await screen.findByRole('option', { name: 'M1 · Draft' }));
     expect(post).toHaveProperty('disabled', true);
 
     fireEvent.change(screen.getByLabelText('Share progress'), {
@@ -483,9 +504,9 @@ describe('saved quest helper entry', () => {
       expect.objectContaining({
         body: expect.objectContaining({
           text: 'Shipped the checklist',
-          links: [
-            expect.objectContaining({ url: 'https://example.com/notes' }),
-          ],
+          milestoneOrder: 1,
+          milestoneLabel: 'M1',
+          links: [],
         }),
       }),
     );

@@ -113,6 +113,62 @@ describe('quest update card', () => {
     expect(screen.getByText('New goal')).toBeTruthy();
   });
 
+  it('renders a goal before block with the same markdown as after', () => {
+    render(
+      <QuestUpdateCard
+        update={update({
+          id: 6,
+          kind: 'edit_event',
+          text: 'Updated Goal.',
+          change: {
+            entity: 'quest',
+            field: 'goal',
+            action: 'updated',
+            format: 'text',
+            before: 'Keep \\[QA\\] and *draft*',
+            after: 'Ship **live** today',
+          },
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('quest-update-change-toggle'));
+    const before = screen.getByTestId('quest-update-before');
+    const after = screen.getByTestId('quest-update-after');
+    expect(before.querySelector('p')?.className).toBe(
+      after.querySelector('p')?.className,
+    );
+    expect(before.querySelector('div')?.className).toBe(
+      after.querySelector('div')?.className,
+    );
+    expect(before.querySelector('div')?.className).toContain('leading-relaxed');
+    expect(before.querySelector('div')?.className).toContain('text-foreground');
+    expect(before.className).not.toContain('text-neutral-11');
+    expect(before.textContent).toContain('Keep [QA]');
+    expect(before.textContent).not.toContain('\\');
+    expect(before.querySelector('em')?.textContent).toBe('draft');
+    expect(after.querySelector('strong')?.textContent).toBe('live');
+  });
+
+  it('still shows a link stored on an existing update', () => {
+    render(
+      <QuestUpdateCard
+        update={update({
+          id: 7,
+          text: 'Notes',
+          links: [
+            {
+              label: 'Checklist',
+              url: 'https://example.com/notes',
+              kind: 'link',
+            },
+          ],
+        })}
+      />,
+    );
+    const link = screen.getByRole('link', { name: /Checklist/ });
+    expect(link.getAttribute('href')).toBe('https://example.com/notes');
+  });
+
   it('shows the profile picture and the user icon fallback', () => {
     vi.stubGlobal('Image', LoadedImage);
     const { rerender } = render(
