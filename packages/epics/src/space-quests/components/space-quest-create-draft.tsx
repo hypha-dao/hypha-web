@@ -102,6 +102,39 @@ import {
 
 const LABEL_CLASS =
   'text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11';
+const DRAFT_SAVE_STATUS_CLASS =
+  'inline-flex h-8 min-w-[11.5rem] items-center gap-1.5 whitespace-nowrap text-left text-[11px] font-medium';
+
+function DraftResumeSkeleton() {
+  const columns = [
+    ['NAME', 'GOAL', 'SCOPE', 'SUCCESS CRITERIA', 'QUEST REWARD', 'MILESTONES'],
+    ['LEAD', 'PARTICIPANTS', 'TARGET DATE'],
+  ];
+  return (
+    <div
+      className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,1fr)_330px]"
+      data-testid="quest-draft-loading"
+      aria-busy="true"
+    >
+      {columns.map((column) => (
+        <div key={column[0]} className="space-y-2.5">
+          {column.map((label) => (
+            <div
+              key={label}
+              className="flex w-full flex-col items-start gap-1.5 border border-border bg-background p-3.5"
+            >
+              <span className={LABEL_CLASS}>{label}</span>
+              <span className="h-4 w-2/3 animate-pulse bg-neutral-4" />
+              {label === 'GOAL' || label === 'SCOPE' ? (
+                <span className="h-4 w-1/2 animate-pulse bg-neutral-4" />
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 type PendingProposalLink = QuestCreateCheckpoint;
 
@@ -248,6 +281,8 @@ export function SpaceQuestCreateDraft({
   const [draftSaveState, setDraftSaveState] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
+  const [draftHydrating, setDraftHydrating] = useState(resumeDraftId != null);
+  const draftHydratingRef = useRef(resumeDraftId != null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [deployReload, setDeployReload] = useState(false);
@@ -404,6 +439,7 @@ export function SpaceQuestCreateDraft({
     [],
   );
   const saveDraftToServer = useCallback(async () => {
+    if (draftHydratingRef.current) return null;
     if (draftConsumedRef.current) return serverDraftIdRef.current;
     const session = currentCreateSession();
     if (!questCreateDraftIsWorthSaving(session)) return null;
@@ -476,13 +512,17 @@ export function SpaceQuestCreateDraft({
             key,
           );
           if (restored) applyCreateSession(restored);
+          draftHydratingRef.current = false;
           holdSessionWrite.current = false;
+          setDraftHydrating(false);
           persistCreateSession();
         } catch {
           if (cancelled) return;
-          holdSessionWrite.current = false;
           const local = readQuestCreateSession(window.sessionStorage, key);
           if (local) applyCreateSession(local);
+          draftHydratingRef.current = false;
+          holdSessionWrite.current = false;
+          setDraftHydrating(false);
         }
       })();
       return () => {
@@ -502,7 +542,7 @@ export function SpaceQuestCreateDraft({
   ]);
 
   useEffect(() => {
-    if (holdSessionWrite.current) return;
+    if (draftHydratingRef.current || holdSessionWrite.current) return;
     if (skipCreateSessionWrite.current) {
       skipCreateSessionWrite.current = false;
       return;
@@ -554,6 +594,7 @@ export function SpaceQuestCreateDraft({
     scopeOutMarkdown,
     selectedLeadPersonId,
     stewardStepIndex,
+    draftHydrating,
     submitting,
     successCriteria,
     targetDate,
@@ -561,7 +602,7 @@ export function SpaceQuestCreateDraft({
 
   useEffect(() => {
     return () => {
-      if (draftConsumedRef.current) return;
+      if (draftHydratingRef.current || draftConsumedRef.current) return;
       const session = {
         draft: draftSnapshotRef.current,
         messages: chatMessagesRef.current,
@@ -784,8 +825,9 @@ export function SpaceQuestCreateDraft({
   }, [closeAiPanel, openHumanChatPanel, setSpaceQuestDraft]);
 
   useEffect(() => {
+    if (draftHydrating) return;
     setSpaceQuestDraft(draftChatSession);
-  }, [draftChatSession, setSpaceQuestDraft]);
+  }, [draftChatSession, draftHydrating, setSpaceQuestDraft]);
 
   /**
    * Hard Rule #1:
@@ -1282,12 +1324,22 @@ export function SpaceQuestCreateDraft({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                {draftSaveState === 'error' ? (
+                {draftHydrating ? (
+                  <div
+                    data-testid="quest-draft-save-status"
+                    data-state="loading"
+                    aria-busy="true"
+                    aria-live="polite"
+                    className={DRAFT_SAVE_STATUS_CLASS}
+                  >
+                    <span className="h-3 w-24 bg-neutral-4" aria-hidden />
+                  </div>
+                ) : draftSaveState === 'error' ? (
                   <button
                     type="button"
                     onClick={() => void saveDraftToServer()}
                     data-testid="quest-draft-save-status"
-                    className="inline-flex h-8 min-w-[11.5rem] items-center gap-1.5 whitespace-nowrap text-left text-[11px] font-medium text-error-11"
+                    className={`${DRAFT_SAVE_STATUS_CLASS} text-error-11`}
                   >
                     {tDrafts('drafts.retry')}
                   </button>
@@ -1295,7 +1347,7 @@ export function SpaceQuestCreateDraft({
                   <div
                     data-testid="quest-draft-save-status"
                     aria-live="polite"
-                    className="inline-flex h-8 min-w-[11.5rem] items-center gap-1.5 whitespace-nowrap text-[11px] font-medium"
+                    className={DRAFT_SAVE_STATUS_CLASS}
                   >
                     {draftSaveState === 'saving' ? (
                       <>
@@ -1428,339 +1480,347 @@ export function SpaceQuestCreateDraft({
                 <div className="h-1.5 w-[140px] overflow-hidden bg-neutral-4">
                   <div
                     className="h-full bg-foreground transition-[width]"
-                    style={{ width: `${draftCompletionPercent}%` }}
+                    style={{
+                      width: draftHydrating
+                        ? '0%'
+                        : `${draftCompletionPercent}%`,
+                    }}
                   />
                 </div>
               </div>
             </div>
 
             {/* Two-column draft grid (Figma node 6:2) — NO Priority anywhere */}
-            <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,1fr)_330px]">
-              {/* Left column: Name, Goal, Scope, Success Criteria, Quest Reward, Milestones */}
-              <div className="space-y-2.5">
-                {/* NAME */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveSection('name');
-                    setEditingModal('name');
-                  }}
-                  data-testid="draft-section-name"
-                  className={cn(
-                    'flex w-full flex-col items-start gap-1.5 border p-3.5 text-left transition-colors',
-                    activeSection === 'name'
-                      ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
-                      : 'border-border bg-background hover:border-foreground/40',
-                  )}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className={LABEL_CLASS}>NAME</span>
-                    <span className="text-xs text-neutral-11">✎</span>
-                  </div>
-                  <p className="font-display text-base font-semibold text-foreground">
-                    {name || (
-                      <span className="text-neutral-11">Untitled quest</span>
+            {draftHydrating ? (
+              <DraftResumeSkeleton />
+            ) : (
+              <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,1fr)_330px]">
+                {/* Left column: Name, Goal, Scope, Success Criteria, Quest Reward, Milestones */}
+                <div className="space-y-2.5">
+                  {/* NAME */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveSection('name');
+                      setEditingModal('name');
+                    }}
+                    data-testid="draft-section-name"
+                    className={cn(
+                      'flex w-full flex-col items-start gap-1.5 border p-3.5 text-left transition-colors',
+                      activeSection === 'name'
+                        ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
+                        : 'border-border bg-background hover:border-foreground/40',
                     )}
-                  </p>
-                </button>
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <span className={LABEL_CLASS}>NAME</span>
+                      <span className="text-xs text-neutral-11">✎</span>
+                    </div>
+                    <p className="font-display text-base font-semibold text-foreground">
+                      {name || (
+                        <span className="text-neutral-11">Untitled quest</span>
+                      )}
+                    </p>
+                  </button>
 
-                {/* GOAL */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => {
-                    setActiveSection('goal');
-                    setEditingModal('goal');
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Enter' && event.key !== ' ') return;
-                    event.preventDefault();
-                    setActiveSection('goal');
-                    setEditingModal('goal');
-                  }}
-                  data-testid="draft-section-goal"
-                  className={cn(
-                    'flex w-full flex-col items-start gap-1.5 border p-3.5 text-left transition-colors',
-                    activeSection === 'goal'
-                      ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
-                      : 'border-border bg-background hover:border-foreground/40',
-                  )}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className={LABEL_CLASS}>GOAL</span>
-                    <span className="text-xs text-neutral-11">✎</span>
-                  </div>
-                  <QuestSectionMarkdown markdown={goal} />
-                </div>
-
-                {/* SCOPE */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => {
-                    setActiveSection('scope');
-                    setEditingModal('scope');
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Enter' && event.key !== ' ') return;
-                    event.preventDefault();
-                    setActiveSection('scope');
-                    setEditingModal('scope');
-                  }}
-                  data-testid="draft-section-scope"
-                  className={cn(
-                    'flex w-full flex-col items-start gap-1.5 border p-3.5 text-left transition-colors',
-                    activeSection === 'scope'
-                      ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
-                      : 'border-border bg-background hover:border-foreground/40',
-                  )}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className={LABEL_CLASS}>SCOPE</span>
-                    <span className="text-xs text-neutral-11">✎</span>
-                  </div>
-                  <div className="w-full space-y-2 text-[13px] text-foreground">
-                    {!scopeInPreview && !scopeOutPreview ? (
-                      <span className="text-neutral-11">
-                        Not set yet — reply in chat or click to edit
-                      </span>
-                    ) : (
-                      <>
-                        {scopeInPreview ? (
-                          <div className="space-y-1">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11">
-                              In
-                            </p>
-                            <QuestSectionMarkdown
-                              markdown={scopeInPreview}
-                              empty=""
-                            />
-                          </div>
-                        ) : null}
-                        {scopeOutPreview ? (
-                          <div className="space-y-1">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11">
-                              Out
-                            </p>
-                            <QuestSectionMarkdown
-                              markdown={scopeOutPreview}
-                              empty=""
-                            />
-                          </div>
-                        ) : null}
-                      </>
+                  {/* GOAL */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      setActiveSection('goal');
+                      setEditingModal('goal');
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ') return;
+                      event.preventDefault();
+                      setActiveSection('goal');
+                      setEditingModal('goal');
+                    }}
+                    data-testid="draft-section-goal"
+                    className={cn(
+                      'flex w-full flex-col items-start gap-1.5 border p-3.5 text-left transition-colors',
+                      activeSection === 'goal'
+                        ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
+                        : 'border-border bg-background hover:border-foreground/40',
                     )}
-                  </div>
-                </div>
-
-                {/* SUCCESS CRITERIA */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => {
-                    setActiveSection('success');
-                    setEditingModal('success');
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Enter' && event.key !== ' ') return;
-                    event.preventDefault();
-                    setActiveSection('success');
-                    setEditingModal('success');
-                  }}
-                  data-testid="draft-section-success"
-                  className={cn(
-                    'flex w-full flex-col items-start gap-1.5 border p-3.5 text-left transition-colors',
-                    activeSection === 'success'
-                      ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
-                      : 'border-border bg-background hover:border-foreground/40',
-                  )}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className={LABEL_CLASS}>SUCCESS CRITERIA</span>
-                    <span className="text-xs text-neutral-11">✎</span>
-                  </div>
-                  <QuestSectionMarkdown markdown={successCriteria} />
-                </div>
-
-                {/* QUEST REWARD (Node 91:2 — inline editable multi-token amount + select + ADD TOKEN) */}
-                <div
-                  data-testid="draft-section-rewards"
-                  className={cn(
-                    'flex w-full flex-col items-start gap-2.5 border p-3.5 transition-colors',
-                    activeSection === 'rewards'
-                      ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
-                      : 'border-border bg-background',
-                  )}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className={LABEL_CLASS}>QUEST REWARD</span>
-                    <button
-                      type="button"
-                      onClick={() => setEditingModal('rewards')}
-                      className="text-xs text-neutral-11 hover:text-foreground"
-                      aria-label="Edit quest reward"
-                    >
-                      ✎
-                    </button>
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <span className={LABEL_CLASS}>GOAL</span>
+                      <span className="text-xs text-neutral-11">✎</span>
+                    </div>
+                    <QuestSectionMarkdown markdown={goal} />
                   </div>
 
-                  <QuestRewardRowsEditor
-                    rows={rewards}
-                    onChange={setRewards}
-                    spaceSlug={spaceSlug}
-                    addTestId="add-reward-token-button"
-                  />
-                </div>
-
-                {/* MILESTONES */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => {
-                    setActiveSection('milestones');
-                    setEditingModal('milestones');
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Enter' && event.key !== ' ') return;
-                    event.preventDefault();
-                    setActiveSection('milestones');
-                    setEditingModal('milestones');
-                  }}
-                  data-testid="draft-section-milestones"
-                  className={cn(
-                    'flex w-full flex-col items-start gap-2 border p-3.5 text-left transition-colors',
-                    activeSection === 'milestones'
-                      ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
-                      : 'border-border bg-background hover:border-foreground/40',
-                  )}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className={LABEL_CLASS}>MILESTONES</span>
-                    <span className="text-xs text-neutral-11">✎</span>
-                  </div>
-                  <div className="w-full space-y-2">
-                    {milestones.length === 0 ? (
-                      <p className="text-[13px]">
+                  {/* SCOPE */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      setActiveSection('scope');
+                      setEditingModal('scope');
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ') return;
+                      event.preventDefault();
+                      setActiveSection('scope');
+                      setEditingModal('scope');
+                    }}
+                    data-testid="draft-section-scope"
+                    className={cn(
+                      'flex w-full flex-col items-start gap-1.5 border p-3.5 text-left transition-colors',
+                      activeSection === 'scope'
+                        ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
+                        : 'border-border bg-background hover:border-foreground/40',
+                    )}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <span className={LABEL_CLASS}>SCOPE</span>
+                      <span className="text-xs text-neutral-11">✎</span>
+                    </div>
+                    <div className="w-full space-y-2 text-[13px] text-foreground">
+                      {!scopeInPreview && !scopeOutPreview ? (
                         <span className="text-neutral-11">
                           Not set yet — reply in chat or click to edit
                         </span>
-                      </p>
-                    ) : null}
-                    {milestones.map((m, idx) => (
-                      <div key={idx} className="space-y-0.5 py-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[13px] font-semibold text-foreground">
-                            M{idx + 1} · {m.name}
+                      ) : (
+                        <>
+                          {scopeInPreview ? (
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11">
+                                In
+                              </p>
+                              <QuestSectionMarkdown
+                                markdown={scopeInPreview}
+                                empty=""
+                              />
+                            </div>
+                          ) : null}
+                          {scopeOutPreview ? (
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11">
+                                Out
+                              </p>
+                              <QuestSectionMarkdown
+                                markdown={scopeOutPreview}
+                                empty=""
+                              />
+                            </div>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* SUCCESS CRITERIA */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      setActiveSection('success');
+                      setEditingModal('success');
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ') return;
+                      event.preventDefault();
+                      setActiveSection('success');
+                      setEditingModal('success');
+                    }}
+                    data-testid="draft-section-success"
+                    className={cn(
+                      'flex w-full flex-col items-start gap-1.5 border p-3.5 text-left transition-colors',
+                      activeSection === 'success'
+                        ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
+                        : 'border-border bg-background hover:border-foreground/40',
+                    )}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <span className={LABEL_CLASS}>SUCCESS CRITERIA</span>
+                      <span className="text-xs text-neutral-11">✎</span>
+                    </div>
+                    <QuestSectionMarkdown markdown={successCriteria} />
+                  </div>
+
+                  {/* QUEST REWARD (Node 91:2 — inline editable multi-token amount + select + ADD TOKEN) */}
+                  <div
+                    data-testid="draft-section-rewards"
+                    className={cn(
+                      'flex w-full flex-col items-start gap-2.5 border p-3.5 transition-colors',
+                      activeSection === 'rewards'
+                        ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
+                        : 'border-border bg-background',
+                    )}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <span className={LABEL_CLASS}>QUEST REWARD</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditingModal('rewards')}
+                        className="text-xs text-neutral-11 hover:text-foreground"
+                        aria-label="Edit quest reward"
+                      >
+                        ✎
+                      </button>
+                    </div>
+
+                    <QuestRewardRowsEditor
+                      rows={rewards}
+                      onChange={setRewards}
+                      spaceSlug={spaceSlug}
+                      addTestId="add-reward-token-button"
+                    />
+                  </div>
+
+                  {/* MILESTONES */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      setActiveSection('milestones');
+                      setEditingModal('milestones');
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ') return;
+                      event.preventDefault();
+                      setActiveSection('milestones');
+                      setEditingModal('milestones');
+                    }}
+                    data-testid="draft-section-milestones"
+                    className={cn(
+                      'flex w-full flex-col items-start gap-2 border p-3.5 text-left transition-colors',
+                      activeSection === 'milestones'
+                        ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
+                        : 'border-border bg-background hover:border-foreground/40',
+                    )}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <span className={LABEL_CLASS}>MILESTONES</span>
+                      <span className="text-xs text-neutral-11">✎</span>
+                    </div>
+                    <div className="w-full space-y-2">
+                      {milestones.length === 0 ? (
+                        <p className="text-[13px]">
+                          <span className="text-neutral-11">
+                            Not set yet — reply in chat or click to edit
                           </span>
-                          <span className="text-xs text-neutral-11">
-                            {m.dueDate
-                              ? formatQuestCalendarDate(m.dueDate, locale)
-                              : '—'}
-                          </span>
+                        </p>
+                      ) : null}
+                      {milestones.map((m, idx) => (
+                        <div key={idx} className="space-y-0.5 py-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[13px] font-semibold text-foreground">
+                              M{idx + 1} · {m.name}
+                            </span>
+                            <span className="text-xs text-neutral-11">
+                              {m.dueDate
+                                ? formatQuestCalendarDate(m.dueDate, locale)
+                                : '—'}
+                            </span>
+                          </div>
+                          {m.description ? (
+                            <QuestSectionMarkdown
+                              markdown={m.description}
+                              empty=""
+                            />
+                          ) : null}
+                          {m.ownerName ? (
+                            <p className="text-[11px] text-neutral-11">
+                              Owner · {m.ownerName}
+                            </p>
+                          ) : null}
                         </div>
-                        {m.description ? (
-                          <QuestSectionMarkdown
-                            markdown={m.description}
-                            empty=""
-                          />
-                        ) : null}
-                        {m.ownerName ? (
-                          <p className="text-[11px] text-neutral-11">
-                            Owner · {m.ownerName}
-                          </p>
-                        ) : null}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
+
+                {/* Right column: Lead, Participants, Target Date */}
+                <div className="space-y-2.5">
+                  {/* LEAD */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveSection('lead');
+                      setEditingModal('lead');
+                    }}
+                    data-testid="draft-section-lead"
+                    className="flex w-full flex-col items-start gap-2 border border-border bg-background p-3.5 text-left hover:border-foreground/40"
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <span className={LABEL_CLASS}>LEAD</span>
+                      <span className="text-xs text-neutral-11">✎</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <PersonAvatar
+                        size="sm"
+                        shape="circle"
+                        showPresence={false}
+                        avatarSrc={leadAvatarUrl ?? undefined}
+                        userName={cleanLead || leadName}
+                        personId={leadPersonId ?? undefined}
+                      />
+                      <span className="text-[13px] font-semibold text-foreground">
+                        {leadName}
+                      </span>
+                      <span className="text-xs text-neutral-11">Lead</span>
+                    </div>
+                  </button>
+
+                  <QuestDraftParticipantsCard
+                    members={members.map((m) => {
+                      const rosterMember = findQuestSpaceMember(spaceMembers, {
+                        personId: m.personId,
+                        name: m.memberName,
+                      });
+                      const memberAvatar =
+                        m.memberAvatarUrl ??
+                        rosterMember?.avatarUrl ??
+                        (stripViewerYouMarker(m.memberName)
+                          .trim()
+                          .toLowerCase() ===
+                        viewerDisplayName.trim().toLowerCase()
+                          ? person?.avatarUrl
+                          : null);
+                      return {
+                        memberName: m.memberName,
+                        roleLabel: draftParticipantRoleLabel(m.roleLabel),
+                        responsibilities: m.responsibilities,
+                        avatarSrc: memberAvatar ?? undefined,
+                        personId:
+                          m.personId && m.personId > 0
+                            ? m.personId
+                            : rosterMember?.personId,
+                      };
+                    })}
+                    onEdit={() => {
+                      setActiveSection('members');
+                      setEditingModal('members');
+                    }}
+                  />
+
+                  {/* TARGET DATE (NO Priority section below this!) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveSection('targetDate');
+                      setEditingModal('targetDate');
+                    }}
+                    data-testid="draft-section-target-date"
+                    className="flex w-full flex-col items-start gap-1.5 border border-border bg-background p-3.5 text-left hover:border-foreground/40"
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <span className={LABEL_CLASS}>TARGET DATE</span>
+                      <span className="text-xs text-neutral-11">✎</span>
+                    </div>
+                    <p className="text-[13px] font-semibold text-foreground">
+                      {targetDate
+                        ? formatQuestCalendarDate(targetDate, locale)
+                        : '—'}
+                    </p>
+                  </button>
+                </div>
               </div>
-
-              {/* Right column: Lead, Participants, Target Date */}
-              <div className="space-y-2.5">
-                {/* LEAD */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveSection('lead');
-                    setEditingModal('lead');
-                  }}
-                  data-testid="draft-section-lead"
-                  className="flex w-full flex-col items-start gap-2 border border-border bg-background p-3.5 text-left hover:border-foreground/40"
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className={LABEL_CLASS}>LEAD</span>
-                    <span className="text-xs text-neutral-11">✎</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <PersonAvatar
-                      size="sm"
-                      shape="circle"
-                      showPresence={false}
-                      avatarSrc={leadAvatarUrl ?? undefined}
-                      userName={cleanLead || leadName}
-                      personId={leadPersonId ?? undefined}
-                    />
-                    <span className="text-[13px] font-semibold text-foreground">
-                      {leadName}
-                    </span>
-                    <span className="text-xs text-neutral-11">Lead</span>
-                  </div>
-                </button>
-
-                <QuestDraftParticipantsCard
-                  members={members.map((m) => {
-                    const rosterMember = findQuestSpaceMember(spaceMembers, {
-                      personId: m.personId,
-                      name: m.memberName,
-                    });
-                    const memberAvatar =
-                      m.memberAvatarUrl ??
-                      rosterMember?.avatarUrl ??
-                      (stripViewerYouMarker(m.memberName)
-                        .trim()
-                        .toLowerCase() ===
-                      viewerDisplayName.trim().toLowerCase()
-                        ? person?.avatarUrl
-                        : null);
-                    return {
-                      memberName: m.memberName,
-                      roleLabel: draftParticipantRoleLabel(m.roleLabel),
-                      responsibilities: m.responsibilities,
-                      avatarSrc: memberAvatar ?? undefined,
-                      personId:
-                        m.personId && m.personId > 0
-                          ? m.personId
-                          : rosterMember?.personId,
-                    };
-                  })}
-                  onEdit={() => {
-                    setActiveSection('members');
-                    setEditingModal('members');
-                  }}
-                />
-
-                {/* TARGET DATE (NO Priority section below this!) */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveSection('targetDate');
-                    setEditingModal('targetDate');
-                  }}
-                  data-testid="draft-section-target-date"
-                  className="flex w-full flex-col items-start gap-1.5 border border-border bg-background p-3.5 text-left hover:border-foreground/40"
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className={LABEL_CLASS}>TARGET DATE</span>
-                    <span className="text-xs text-neutral-11">✎</span>
-                  </div>
-                  <p className="text-[13px] font-semibold text-foreground">
-                    {targetDate
-                      ? formatQuestCalendarDate(targetDate, locale)
-                      : '—'}
-                  </p>
-                </button>
-              </div>
-            </div>
+            )}
           </div>
 
           {!panelAvailable ? (

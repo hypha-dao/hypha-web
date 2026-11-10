@@ -2,15 +2,19 @@
 
 import React from 'react';
 import {
+  act,
   cleanup,
   fireEvent,
   render,
   screen,
   waitFor,
 } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpaceQuestCreateDraft } from '../space-quest-create-draft';
-import { saveQuestDraftRequest } from '../../hooks/use-space-quests';
+import {
+  getQuestDraftRequest,
+  saveQuestDraftRequest,
+} from '../../hooks/use-space-quests';
 
 vi.mock('next/image', () => ({
   default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
@@ -99,6 +103,11 @@ vi.mock('../../hooks/use-space-quests', () => ({
   saveQuestDraftRequest: vi.fn().mockResolvedValue({ id: 1 }),
   deleteQuestDraftRequest: vi.fn().mockResolvedValue(undefined),
 }));
+
+beforeEach(() => {
+  vi.mocked(saveQuestDraftRequest).mockClear();
+  vi.mocked(getQuestDraftRequest).mockReset();
+});
 
 afterEach(() => {
   cleanup();
@@ -190,5 +199,81 @@ describe('quest create draft heading', () => {
       document.activeElement === editor ||
         editor.contains(document.activeElement),
     ).toBe(true);
+  });
+
+  it('keeps Continue neutral until the saved draft hydrates', async () => {
+    let resolveDraft: (
+      value: Awaited<ReturnType<typeof getQuestDraftRequest>>,
+    ) => void = () => undefined;
+    vi.mocked(getQuestDraftRequest).mockReturnValue(
+      new Promise((resolve) => {
+        resolveDraft = resolve;
+      }),
+    );
+
+    render(<SpaceQuestCreateDraft spaceSlug="sandbox" resumeDraftId={9} />);
+
+    const status = screen.getByTestId('quest-draft-save-status');
+    expect(status.getAttribute('data-state')).toBe('loading');
+    expect(status.getAttribute('aria-busy')).toBe('true');
+    expect(status.className).toContain('h-8');
+    expect(status.className).toContain('min-w-[11.5rem]');
+    expect(status.textContent ?? '').not.toContain('Not saved yet');
+    expect(status.textContent ?? '').not.toContain('Saving…');
+    expect(screen.getByTestId('quest-draft-loading')).toBeTruthy();
+    expect(screen.queryByText('Untitled quest')).toBeNull();
+    expect(screen.queryByText(/Not set yet/)).toBeNull();
+    expect(screen.queryByText('Vlad Hramtsov (you)')).toBeNull();
+    expect(saveQuestDraftRequest).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveDraft({
+        id: 9,
+        name: 'Late checklist',
+        updatedAt: '2026-11-09T21:00:00.000Z',
+        payload: {
+          draft: {
+            name: 'Late checklist',
+            goal: 'Finish the checklist',
+            scopeIn: [],
+            scopeOut: [],
+            scopeInMarkdown: '',
+            scopeOutMarkdown: '',
+            successCriteria: '',
+            rewards: [],
+            milestones: [],
+            leadName: 'Ada Lovelace',
+            selectedLeadPersonId: null,
+            members: [],
+            targetDate: null,
+          },
+          messages: [
+            {
+              id: 'h1',
+              role: 'member',
+              senderName: 'Quest Helper',
+              text: 'What should the goal be?',
+              timestamp: '2026-11-09T21:00:00.000Z',
+            },
+          ],
+          step: 1,
+          pending: null,
+        },
+      });
+    });
+
+    expect(await screen.findByText('Late checklist')).toBeTruthy();
+    expect(screen.getByText('Finish the checklist')).toBeTruthy();
+    expect(screen.queryByTestId('quest-draft-loading')).toBeNull();
+    const saved = screen.getByTestId('quest-draft-save-status');
+    expect(saved.className).toContain('h-8');
+    expect(saved.className).toContain('min-w-[11.5rem]');
+    expect(saved.textContent).toContain('Saved automatically');
+    expect(saved.textContent).not.toContain('Not saved yet');
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 900));
+    });
+    expect(saveQuestDraftRequest).not.toHaveBeenCalled();
   });
 });
