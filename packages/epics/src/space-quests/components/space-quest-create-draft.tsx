@@ -103,7 +103,7 @@ import {
 const LABEL_CLASS =
   'text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11';
 const DRAFT_SAVE_STATUS_CLASS =
-  'inline-flex h-5 min-w-[11.5rem] items-center gap-1.5 whitespace-nowrap text-left text-[11px] font-medium';
+  'inline-flex h-[16.5px] min-w-[11.5rem] items-center gap-1.5 whitespace-nowrap text-left text-[11px] font-medium';
 
 function DraftResumeSkeleton() {
   const columns = [
@@ -1315,12 +1315,12 @@ export function SpaceQuestCreateDraft({
           <div className="min-w-0 flex-1 space-y-5">
             <div
               data-testid="quest-create-intro"
-              className="flex flex-col gap-2"
+              className="flex flex-col gap-1"
             >
               {/* Top header bar: New quest [Draft] + CANCEL / CREATE QUEST */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-end justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <h1 className="font-display text-[18px] font-semibold text-foreground">
+                  <h1 className="font-display text-[18px] font-semibold leading-none text-foreground">
                     New quest
                   </h1>
                   <span className="bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
