@@ -1211,6 +1211,28 @@ describe('messagesPeopleListReady', () => {
     ).toBe(true);
   });
 
+  it('paints store-backed rooms before live sync reaches Catchup/Prepared', () => {
+    expect(
+      messagesPeopleListReady({
+        ...ready,
+        synced: false,
+        initialSyncComplete: false,
+        hasMatrixConversations: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('keeps the skeleton when the store is empty and sync has not started', () => {
+    expect(
+      messagesPeopleListReady({
+        ...ready,
+        synced: false,
+        initialSyncComplete: false,
+        hasMatrixConversations: false,
+      }),
+    ).toBe(false);
+  });
+
   it('does not wait for home intelligence or room/id/profile backfill', () => {
     expect(
       messagesPeopleListReady({
