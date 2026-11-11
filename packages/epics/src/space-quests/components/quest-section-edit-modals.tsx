@@ -422,6 +422,32 @@ function QuestEditDialogFrame({
         contentProps.onCloseAutoFocus?.(event);
         event.preventDefault();
       }}
+      onPointerDownOutside={(event) => {
+        contentProps.onPointerDownOutside?.(event);
+        if (event.defaultPrevented) return;
+        const target = event.target;
+        if (
+          target instanceof Element &&
+          target.closest(
+            '[data-radix-popper-content-wrapper], [data-quest-date-popover]',
+          )
+        ) {
+          event.preventDefault();
+        }
+      }}
+      onInteractOutside={(event) => {
+        contentProps.onInteractOutside?.(event);
+        if (event.defaultPrevented) return;
+        const target = event.target;
+        if (
+          target instanceof Element &&
+          target.closest(
+            '[data-radix-popper-content-wrapper], [data-quest-date-popover]',
+          )
+        ) {
+          event.preventDefault();
+        }
+      }}
     >
       <style>{`
         [data-quest-edit-dialog] .ProseMirror,

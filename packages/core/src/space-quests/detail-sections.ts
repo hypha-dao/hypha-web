@@ -71,6 +71,8 @@ export type QuestOverviewVisibility = {
 
 /**
  * Optional overview cards hide when they have no content.
+ * `showDeliverables` means the list is non-empty (Add vs Edit). The overview
+ * still renders the Deliverables card when the list is empty.
  * Health and the quest title stay. Create-draft inputs are a different surface.
  */
 export function questOverviewVisibility(quest: {

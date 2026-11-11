@@ -108,9 +108,16 @@ import {
   CHAT_COMPOSER_ROOT_CLASS,
 } from '../../common/human-chat-panel/composer-field';
 import {
+  clearMainColumnScrollFreeze,
   getMainColumnScrollY,
-  scrollMainColumnTo,
+  releaseMainColumnScrollHeightHold,
 } from '../../common/main-column-scroll';
+import {
+  clearQuestDetailScrollMemory,
+  readQuestDetailScroll,
+  rememberQuestDetailScroll,
+  retainQuestDetailScroll,
+} from '../quest-detail-scroll';
 import {
   spaceQuestDetailTabLinks,
   type SpaceQuestDetailTab,
@@ -158,14 +165,6 @@ function statusLabel(status: QuestStatus): string {
     default:
       return 'Active';
   }
-}
-
-const QUEST_DETAIL_SCROLL_KEY = 'hypha-quest-detail-scroll';
-
-function restoreQuestDetailScroll(top: number) {
-  scrollMainColumnTo(top);
-  if (typeof window === 'undefined') return;
-  window.requestAnimationFrame(() => scrollMainColumnTo(top));
 }
 
 function showQuestHealthTag(
@@ -486,11 +485,15 @@ function OverviewTab({
   spaceTokens,
   spaceMembers,
   viewer,
+  canEditDeliverables,
+  onEditDeliverables,
 }: {
   quest: QuestRecord;
   spaceTokens: readonly ExtendedToken[];
   spaceMembers: readonly QuestSpaceMember[];
   viewer: { id: number; name: string; avatarUrl?: string | null } | null;
+  canEditDeliverables: boolean;
+  onEditDeliverables: () => void;
 }) {
   const locale = useLocale();
   const visibility = questOverviewVisibility(quest);
@@ -646,13 +649,34 @@ function OverviewTab({
           />
         ) : null}
 
-        {visibility.showDeliverables ? (
-          <section
-            className={CARD_CLASS}
-            data-testid="quest-overview-deliverables"
-          >
-            <SectionHeader title="Deliverables" />
-            <div className="divide-y divide-border">
+        <section
+          className={CARD_CLASS}
+          data-testid="quest-overview-deliverables"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+              Deliverables
+            </h2>
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              disabled={!canEditDeliverables}
+              data-testid="quest-overview-deliverables-action"
+              onClick={onEditDeliverables}
+            >
+              {quest.deliverables.length === 0 ? 'Add' : 'Edit'}
+            </Button>
+          </div>
+          {quest.deliverables.length === 0 ? (
+            <p
+              className="pt-3 text-[12px] text-neutral-11"
+              data-testid="quest-overview-deliverables-empty"
+            >
+              No deliverables yet
+            </p>
+          ) : (
+            <div className="divide-y divide-border pt-3">
               {quest.deliverables.map((d) => (
                 <div key={d.id} className="space-y-0.5 py-2 first:pt-0">
                   {d.url ? (
@@ -676,8 +700,8 @@ function OverviewTab({
                 </div>
               ))}
             </div>
-          </section>
-        ) : null}
+          )}
+        </section>
       </div>
     </div>
   );
@@ -1294,13 +1318,9 @@ export function SpaceQuestDetail({
   };
 
   useLayoutEffect(() => {
-    if (typeof window === 'undefined') return;
-    const raw = window.sessionStorage.getItem(QUEST_DETAIL_SCROLL_KEY);
-    if (raw == null) return;
-    window.sessionStorage.removeItem(QUEST_DETAIL_SCROLL_KEY);
-    const top = Number(raw);
-    if (!Number.isFinite(top)) return;
-    restoreQuestDetailScroll(top);
+    const saved = readQuestDetailScroll();
+    if (saved == null) return;
+    return retainQuestDetailScroll(saved);
   }, []);
 
   useEffect(() => {
@@ -1536,6 +1556,7 @@ export function SpaceQuestDetail({
 
   const savePatch = async (patch: QuestPatch): Promise<QuestRecord | null> => {
     const scrollTop = getMainColumnScrollY();
+    rememberQuestDetailScroll(scrollTop);
     setSaving(true);
     setActionError(null);
     try {
@@ -1547,19 +1568,14 @@ export function SpaceQuestDetail({
       });
       await refresh(updated, { revalidate: false });
       if (tab !== 'overview') {
-        if (typeof window !== 'undefined') {
-          window.sessionStorage.setItem(
-            QUEST_DETAIL_SCROLL_KEY,
-            String(scrollTop),
-          );
-        }
         router.replace(baseHref, { scroll: false });
-        restoreQuestDetailScroll(scrollTop);
-      } else {
-        restoreQuestDetailScroll(scrollTop);
       }
+      retainQuestDetailScroll(scrollTop);
       return updated;
     } catch (err) {
+      clearMainColumnScrollFreeze();
+      releaseMainColumnScrollHeightHold();
+      clearQuestDetailScrollMemory();
       setActionError(
         err instanceof Error ? err.message : 'Failed to update quest',
       );
@@ -1739,6 +1755,8 @@ export function SpaceQuestDetail({
           quest={quest}
           spaceTokens={spaceTokens}
           spaceMembers={spaceMembers}
+          canEditDeliverables={canEdit}
+          onEditDeliverables={() => setEditingModal('deliverables')}
           viewer={
             viewer
               ? {

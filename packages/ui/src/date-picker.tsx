@@ -30,6 +30,7 @@ export function DatePicker({
   locale,
   formatLabel,
 }: DatePickerProps) {
+  const [open, setOpen] = React.useState(false);
   const [internalValue, setInternalValue] = React.useState<
     Date | DateRange | undefined
   >(value);
@@ -64,7 +65,7 @@ export function DatePicker({
   };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -79,12 +80,27 @@ export function DatePicker({
           <CalendarIcon className="mr-2 h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
+      {/*
+        Dialogs are z-50 and their scrim covers the viewport. A body-portaled
+        popover at z-50 paints under that scrim, and the dialog's scroll lock
+        sets pointer-events: none on the body. Match the combobox: sit above
+        the overlay and accept clicks. Portaling into the dialog would clip,
+        because quest dialogs are overflow-hidden.
+      */}
+      <PopoverContent
+        data-quest-date-popover=""
+        className="pointer-events-auto z-[200] w-auto p-0"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        onCloseAutoFocus={(event) => event.preventDefault()}
+      >
         {mode === 'single' ? (
           <Calendar
             mode="single"
             selected={selected instanceof Date ? selected : undefined}
-            onSelect={(date) => handleSelect(date)}
+            onSelect={(date) => {
+              handleSelect(date);
+              setOpen(false);
+            }}
             locale={locale}
           />
         ) : (

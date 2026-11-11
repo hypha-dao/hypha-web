@@ -336,6 +336,16 @@ describe('saved quest helper entry', () => {
     expect(screen.getByTestId('quest-participant-toggle-3').tagName).toBe(
       'BUTTON',
     );
+
+    const deliverables = screen.getByTestId('quest-overview-deliverables');
+    expect(deliverables.textContent).toContain('No deliverables yet');
+    expect(
+      screen.getByTestId('quest-overview-deliverables-action').textContent,
+    ).toBe('Add');
+    fireEvent.click(screen.getByTestId('quest-overview-deliverables-action'));
+    expect(
+      screen.getByRole('heading', { name: 'Edit deliverables' }),
+    ).toBeTruthy();
   });
 
   it('opens the quest discussion room and keeps the helper off the page', () => {
