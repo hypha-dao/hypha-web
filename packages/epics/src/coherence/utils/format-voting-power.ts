@@ -2,7 +2,8 @@ import { formatUnits } from 'viem';
 
 /**
  * Formats raw voting power units (wei-scale for token sources, whole votes
- * for 1m1v) into a compact human string, e.g. "12.4K".
+ * for 1m1v). Small nets keep fractions such as 0.5 and 1.25 and drop trailing
+ * zeros. Values from 1,000 up stay compact, e.g. "694.3K".
  */
 export function formatVotingPowerCompact(
   raw: string | undefined,
@@ -19,9 +20,11 @@ export function formatVotingPowerCompact(
     value = 0;
   }
   if (!Number.isFinite(value)) value = 0;
+  const compact = Math.abs(value) >= 1000;
   return new Intl.NumberFormat(locale, {
-    notation: 'compact',
-    maximumFractionDigits: 1,
+    notation: compact ? 'compact' : 'standard',
+    maximumFractionDigits: compact ? 1 : 2,
+    minimumFractionDigits: 0,
   }).format(value);
 }
 

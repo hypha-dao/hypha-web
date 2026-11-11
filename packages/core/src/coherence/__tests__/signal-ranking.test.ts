@@ -289,6 +289,53 @@ describe('signalUpvoteCellMeasure', () => {
     ).toEqual(['crowd', 'down']);
   });
 
+  it('shows the weighted net on every sort in a token space', () => {
+    const half = (10n ** 18n / 2n).toString();
+    const token = {
+      ...crowd.upvotes,
+      totalVotingPower: half,
+      netVoteCount: 1,
+      upvoteCount: 1,
+      tokenDecimals: 18,
+    };
+    for (const sort of ['new', 'top-voters', 'top-power'] as const) {
+      expect(
+        signalUpvoteCellMeasure({
+          sort,
+          votingMode: 'token',
+          upvotes: token,
+        }),
+      ).toEqual({ kind: 'power', raw: half, tokenDecimals: 18 });
+    }
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-power',
+        votingMode: 'one-member-one-vote',
+        upvotes: { ...token, netVoteCount: 3 },
+      }),
+    ).toEqual({ kind: 'count', count: 3 });
+  });
+
+  it('ranks top by voting power on the raw weighted net', () => {
+    const half = {
+      id: 'half',
+      createdAt: new Date('2026-11-03'),
+      upvotes: upvotes({ power: (10n ** 18n / 2n).toString(), voters: 1 }, {}),
+    };
+    const whole = {
+      id: 'whole',
+      createdAt: new Date('2026-11-01'),
+      upvotes: upvotes({ power: (10n ** 18n).toString(), voters: 1 }, {}),
+    };
+    half.upvotes.tokenDecimals = 18;
+    whole.upvotes.tokenDecimals = 18;
+    expect(
+      rankSignals([half, whole], { sort: 'top-power', timeFrame: 'all' }).map(
+        (signal) => signal.id,
+      ),
+    ).toEqual(['whole', 'half']);
+  });
+
   it('keeps a cached summary while a later refresh is loading or has failed', () => {
     expect(
       signalUpvoteCellMeasure({

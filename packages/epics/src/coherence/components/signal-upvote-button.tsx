@@ -108,8 +108,8 @@ type SignalUpvoteButtonProps = {
   archived?: boolean;
   /**
    * Kept so list and detail share one control. Layout does not change with it.
-   * `top-power` shows the all-time token total; every other sort shows the
-   * all-time voter count. The list time window does not change the figure.
+   * Token spaces show the all-time weighted net. One member, one vote shows
+   * the integer net count. The list time window does not change the figure.
    */
   variant?: 'feed' | 'page';
   sort?: SignalSort;
@@ -311,6 +311,7 @@ export function SignalUpvoteButton({
     sort,
     upvotes: localSummary ?? upvotes ?? null,
     summaryState,
+    votingMode,
   });
   const figureLabel =
     cellMeasure.kind === 'loading'

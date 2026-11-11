@@ -132,6 +132,77 @@ describe('SignalUpvoteButton', () => {
     });
   });
 
+  it('shows a fractional token net instead of the voter count', () => {
+    const half = (10n ** 18n / 2n).toString();
+    const quarterMore = ((10n ** 18n * 125n) / 100n).toString();
+    const fractional = {
+      ...summary,
+      upvoteCount: 1,
+      downvoteCount: 0,
+      netVoteCount: 1,
+      tokenDecimals: 18,
+      totalVotingPower: half,
+      upVotingPower: half,
+    };
+    const listed = render(
+      <SignalUpvoteButton
+        slug="signal"
+        spaceSlug="myspace"
+        votingMode="token"
+        sort="new"
+        upvotes={fractional}
+      />,
+    );
+    expect(listed.getByTestId('signal-upvote-figure').textContent).toBe('0.5');
+    listed.unmount();
+
+    const detail = render(
+      <SignalUpvoteButton
+        slug="signal"
+        spaceSlug="myspace"
+        votingMode="token"
+        upvotes={{
+          ...fractional,
+          totalVotingPower: quarterMore,
+          upVotingPower: quarterMore,
+        }}
+      />,
+    );
+    expect(detail.getByTestId('signal-upvote-figure').textContent).toBe('1.25');
+    detail.unmount();
+
+    const ranked = render(
+      <SignalUpvoteButton
+        slug="signal"
+        spaceSlug="myspace"
+        votingMode="token"
+        sort="top-power"
+        upvotes={{
+          ...fractional,
+          totalVotingPower: `-${half}`,
+          downVotingPower: half,
+          upVotingPower: '0',
+          upvoteCount: 0,
+          downvoteCount: 1,
+          netVoteCount: -1,
+        }}
+      />,
+    );
+    expect(ranked.getByTestId('signal-upvote-figure').textContent).toBe('-0.5');
+    ranked.unmount();
+
+    const headcount = render(
+      <SignalUpvoteButton
+        slug="signal"
+        spaceSlug="myspace"
+        votingMode="one-member-one-vote"
+        sort="top-power"
+        upvotes={fractional}
+      />,
+    );
+    expect(headcount.getByTestId('signal-upvote-figure').textContent).toBe('1');
+  });
+
   it('closes the token allocation panel on cancel without voting', () => {
     const view = render(
       <SignalUpvoteButton

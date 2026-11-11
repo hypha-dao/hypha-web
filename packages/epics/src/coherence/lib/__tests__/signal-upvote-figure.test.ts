@@ -43,4 +43,24 @@ describe('formatVotingPowerExact', () => {
     expect(formatVotingPowerCompact('-1500', 0, 'en')).toBe('-1.5K');
     expect(formatVotingPowerExact('-1500', 0, 'en')).toBe('-1,500');
   });
+
+  it('keeps fractional token nets and trims trailing zeros', () => {
+    const unit = 10n ** 18n;
+    expect(formatVotingPowerCompact((unit / 2n).toString(), 18, 'en')).toBe(
+      '0.5',
+    );
+    expect(formatVotingPowerCompact((-(unit / 2n)).toString(), 18, 'en')).toBe(
+      '-0.5',
+    );
+    expect(
+      formatVotingPowerCompact(((unit * 125n) / 100n).toString(), 18, 'en'),
+    ).toBe('1.25');
+    expect(
+      formatVotingPowerCompact(((unit * 15n) / 10n).toString(), 18, 'en'),
+    ).toBe('1.5');
+    expect(formatVotingPowerCompact(unit.toString(), 18, 'en')).toBe('1');
+    expect(
+      formatVotingPowerCompact((694300n * unit).toString(), 18, 'en'),
+    ).toBe('694.3K');
+  });
 });
