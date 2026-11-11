@@ -133,6 +133,8 @@ export type QuestRecord = {
   health: QuestHealthSummary;
   stewardHealthSummaries: boolean;
   memberUpdateAlerts: boolean;
+  /** Overview Deliverables card. Rows that already have deliverables stay visible. */
+  deliverablesEnabled: boolean;
   milestones: QuestMilestoneRecord[];
   members: QuestMemberRecord[];
   deliverables: QuestDeliverableRecord[];

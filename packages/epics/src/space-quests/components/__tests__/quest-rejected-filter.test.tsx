@@ -43,6 +43,7 @@ function quest(
     },
     stewardHealthSummaries: false,
     memberUpdateAlerts: false,
+    deliverablesEnabled: false,
     milestones: [],
     members: [],
     deliverables: [],

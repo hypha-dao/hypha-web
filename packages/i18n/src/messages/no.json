@@ -5777,6 +5777,15 @@
       "drafts": "Mine utkast",
       "status": "Status"
     },
+    "settings": {
+      "deliverables": "Leveranser",
+      "deliverablesHint": "Vis et leveransekort i oversikten",
+      "deliverablesKept": "Eksisterende leveranser blir stående i oversikten",
+      "on": "På",
+      "off": "Av"
+    },
+    "deliverableUrl": "Skriv inn en lenke som starter med http:// eller https://",
+    "deliverableSaveError": "Kunne ikke lagre leveransene. Prøv igjen.",
     "activity": {
       "proposalRejected": "forslag avvist"
     },

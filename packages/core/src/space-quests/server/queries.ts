@@ -325,6 +325,7 @@ export function assembleQuestRecord(
     health,
     stewardHealthSummaries: row.stewardHealthSummaries ?? true,
     memberUpdateAlerts: row.memberUpdateAlerts ?? true,
+    deliverablesEnabled: row.deliverablesEnabled ?? false,
     milestones,
     members,
     deliverables,

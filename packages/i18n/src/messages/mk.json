@@ -5759,6 +5759,15 @@
       "drafts": "Мои нацрти",
       "status": "Статус"
     },
+    "settings": {
+      "deliverables": "Испораки",
+      "deliverablesHint": "Прикажи картичка за испораки на прегледот",
+      "deliverablesKept": "Постоечките испораки остануваат на прегледот",
+      "on": "Вклучено",
+      "off": "Исклучено"
+    },
+    "deliverableUrl": "Внесете врска што започнува со http:// или https://",
+    "deliverableSaveError": "Испораките не може да се зачуваат. Обидете се повторно.",
     "activity": {
       "proposalRejected": "предлогот е одбиен"
     },

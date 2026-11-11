@@ -5772,6 +5772,15 @@
       "drafts": "Meine Entwürfe",
       "status": "Status"
     },
+    "settings": {
+      "deliverables": "Deliverables",
+      "deliverablesHint": "Eine Deliverables-Karte in der Übersicht anzeigen",
+      "deliverablesKept": "Vorhandene Deliverables bleiben in der Übersicht",
+      "on": "An",
+      "off": "Aus"
+    },
+    "deliverableUrl": "Gib einen Link ein, der mit http:// oder https:// beginnt",
+    "deliverableSaveError": "Deliverables konnten nicht gespeichert werden. Versuche es erneut.",
     "activity": {
       "proposalRejected": "Vorschlag abgelehnt"
     },

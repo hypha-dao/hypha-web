@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   createSpaceQuest,
+  questSchemaErrorPayload,
   schemaCreateSpaceQuest,
   syncSpaceQuestProposalStatuses,
 } from '@hypha-platform/core/server';
@@ -51,10 +52,9 @@ export async function POST(
     const body = await request.json();
     const parsed = schemaCreateSpaceQuest.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.message },
-        { status: 400 },
-      );
+      return NextResponse.json(questSchemaErrorPayload(parsed.error), {
+        status: 400,
+      });
     }
 
     const result = await createSpaceQuest(

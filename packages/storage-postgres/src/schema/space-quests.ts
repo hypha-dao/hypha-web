@@ -88,6 +88,10 @@ export const spaceQuests = pgTable(
       .notNull()
       .default(true),
     memberUpdateAlerts: boolean('member_update_alerts').notNull().default(true),
+    /** Overview Deliverables card. Existing rows with deliverables are backfilled on. */
+    deliverablesEnabled: boolean('deliverables_enabled')
+      .notNull()
+      .default(false),
     ...commonDateFields,
   },
   (table) => [

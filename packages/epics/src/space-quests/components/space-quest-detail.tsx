@@ -12,6 +12,7 @@ import {
   isRejectedProposedQuest,
   questHealthDisplay,
   questOverviewVisibility,
+  readableQuestErrorMessage,
   bulletsToMarkdownList,
   useMe,
   type QuestHealthState,
@@ -53,7 +54,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   useCallback,
   useEffect,
@@ -69,6 +70,7 @@ import {
   findQuestSpaceMember,
   findQuestSpaceMemberId,
   patchSpaceQuestRequest,
+  SpaceQuestRequestError,
   type QuestSpaceMember,
   postSpaceQuestUpdateRequest,
   toQuestSpaceMemberPersons,
@@ -648,59 +650,61 @@ function OverviewTab({
           />
         ) : null}
 
-        <section
-          className={CARD_CLASS}
-          data-testid="quest-overview-deliverables"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-display text-[15px] font-semibold tracking-[-0.01em] text-foreground">
-              Deliverables
-            </h2>
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              disabled={!canEditDeliverables}
-              data-testid="quest-overview-deliverables-action"
-              onClick={onEditDeliverables}
-            >
-              {quest.deliverables.length === 0 ? 'Add' : 'Edit'}
-            </Button>
-          </div>
-          {quest.deliverables.length === 0 ? (
-            <p
-              className="pt-3 text-[12px] text-neutral-11"
-              data-testid="quest-overview-deliverables-empty"
-            >
-              No deliverables yet
-            </p>
-          ) : (
-            <div className="divide-y divide-border pt-3">
-              {quest.deliverables.map((d) => (
-                <div key={d.id} className="space-y-0.5 py-2 first:pt-0">
-                  {d.url ? (
-                    <a
-                      href={d.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[13px] font-semibold text-foreground hover:underline"
-                    >
-                      {d.name}
-                      <ArrowUpRight className="size-3" aria-hidden />
-                    </a>
-                  ) : (
-                    <p className="text-[13px] font-semibold text-foreground">
-                      {d.name}
-                    </p>
-                  )}
-                  {d.note ? (
-                    <p className="text-[11px] text-neutral-11">{d.note}</p>
-                  ) : null}
-                </div>
-              ))}
+        {visibility.showDeliverablesSection ? (
+          <section
+            className={CARD_CLASS}
+            data-testid="quest-overview-deliverables"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-display text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+                Deliverables
+              </h2>
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="neutral"
+                disabled={!canEditDeliverables}
+                data-testid="quest-overview-deliverables-action"
+                onClick={onEditDeliverables}
+              >
+                {quest.deliverables.length === 0 ? 'Add' : 'Edit'}
+              </Button>
             </div>
-          )}
-        </section>
+            {quest.deliverables.length === 0 ? (
+              <p
+                className="pt-3 text-[12px] text-neutral-11"
+                data-testid="quest-overview-deliverables-empty"
+              >
+                No deliverables yet
+              </p>
+            ) : (
+              <div className="divide-y divide-border pt-3">
+                {quest.deliverables.map((d) => (
+                  <div key={d.id} className="space-y-0.5 py-2 first:pt-0">
+                    {d.url ? (
+                      <a
+                        href={d.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[13px] font-semibold text-foreground hover:underline"
+                      >
+                        {d.name}
+                        <ArrowUpRight className="size-3" aria-hidden />
+                      </a>
+                    ) : (
+                      <p className="text-[13px] font-semibold text-foreground">
+                        {d.name}
+                      </p>
+                    )}
+                    {d.note ? (
+                      <p className="text-[11px] text-neutral-11">{d.note}</p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        ) : null}
       </div>
     </div>
   );
@@ -899,6 +903,7 @@ function SettingsRow({
   onAction,
   disabled,
   tone = 'default',
+  testId,
 }: {
   label: string;
   value?: ReactNode;
@@ -906,6 +911,7 @@ function SettingsRow({
   onAction: () => void;
   disabled?: boolean;
   tone?: 'default' | 'danger';
+  testId?: string;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 py-3">
@@ -920,6 +926,7 @@ function SettingsRow({
         disabled={disabled}
         onClick={onAction}
         className="shrink-0"
+        data-testid={testId}
       >
         {action}
       </Button>
@@ -945,6 +952,7 @@ function SettingsTab({
   onPatch: (patch: QuestPatch) => void;
 }) {
   const locale = useLocale();
+  const t = useTranslations('SpaceQuests');
   const visibility = questOverviewVisibility(quest);
   const leadOnly = !isLead;
   const isPaused = quest.status === 'paused';
@@ -1025,20 +1033,47 @@ function SettingsTab({
             onAction={() => openModal('rewards')}
           />
           <SettingsRow
-            label="Deliverables"
+            label={t('settings.deliverables')}
             value={
-              quest.status === 'proposed'
-                ? 'Available once the quest is active'
-                : `${quest.deliverables.length} ${
-                    quest.deliverables.length === 1
-                      ? 'deliverable'
-                      : 'deliverables'
-                  }`
+              visibility.showDeliverables
+                ? t('settings.deliverablesKept')
+                : t('settings.deliverablesHint')
             }
-            action={visibility.showDeliverables ? 'EDIT' : 'ADD'}
-            disabled={!canEdit || quest.status === 'proposed'}
-            onAction={() => openModal('deliverables')}
+            action={
+              visibility.showDeliverablesSection
+                ? t('settings.on')
+                : t('settings.off')
+            }
+            disabled={
+              !canEdit ||
+              saving ||
+              quest.status === 'proposed' ||
+              quest.deliverables.length > 0
+            }
+            testId="quest-settings-deliverables-toggle"
+            onAction={() =>
+              onPatch({
+                deliverablesEnabled: !visibility.showDeliverablesSection,
+              })
+            }
           />
+          {visibility.showDeliverablesSection ? (
+            <SettingsRow
+              label="Deliverables"
+              value={
+                quest.status === 'proposed'
+                  ? 'Available once the quest is active'
+                  : `${quest.deliverables.length} ${
+                      quest.deliverables.length === 1
+                        ? 'deliverable'
+                        : 'deliverables'
+                    }`
+              }
+              action={visibility.showDeliverables ? 'EDIT' : 'ADD'}
+              disabled={!canEdit || quest.status === 'proposed'}
+              onAction={() => openModal('deliverables')}
+            />
+          ) : null}
         </div>
       </section>
 
@@ -1523,7 +1558,7 @@ export function SpaceQuestDetail({
           ...(data.patch.rewards ? { rewards: data.patch.rewards } : {}),
         };
         if (Object.keys(patchToSave).length > 0) {
-          saved = Boolean(await savePatch(patchToSave));
+          saved = (await savePatch(patchToSave)).ok;
         }
       }
       const replyText =
@@ -1555,7 +1590,18 @@ export function SpaceQuestDetail({
     void handleSendDetailChatMessage(overridePrompt);
   };
 
-  const savePatch = async (patch: QuestPatch): Promise<QuestRecord | null> => {
+  const savePatch = async (
+    patch: QuestPatch,
+    options?: { inline?: boolean },
+  ): Promise<
+    | { ok: true; quest: QuestRecord }
+    | {
+        ok: false;
+        message: string;
+        code: string | null;
+        path: Array<string | number> | null;
+      }
+  > => {
     const leavingForOverview = tab !== 'overview';
     // Record the scroller and the tabs' viewport Y, and hold the column.
     // Do not restore here. This screen can still hold the offset, so the
@@ -1575,7 +1621,7 @@ export function SpaceQuestDetail({
       if (leavingForOverview) {
         router.replace(baseHref, { scroll: false });
       }
-      return updated;
+      return { ok: true, quest: updated };
     } catch (err) {
       if (leavingForOverview) {
         releaseQuestDetailScrollPin();
@@ -1583,10 +1629,16 @@ export function SpaceQuestDetail({
         releaseMainColumnScrollHeightHold();
         clearQuestDetailScrollMemory();
       }
-      setActionError(
+      const message = readableQuestErrorMessage(
         err instanceof Error ? err.message : 'Failed to update quest',
       );
-      return null;
+      if (!options?.inline) setActionError(message);
+      return {
+        ok: false,
+        message,
+        code: err instanceof SpaceQuestRequestError ? err.code : null,
+        path: err instanceof SpaceQuestRequestError ? err.path : null,
+      };
     } finally {
       setSaving(false);
     }
@@ -1617,7 +1669,9 @@ export function SpaceQuestDetail({
       return true;
     } catch (err) {
       setActionError(
-        err instanceof Error ? err.message : 'Failed to post update',
+        readableQuestErrorMessage(
+          err instanceof Error ? err.message : 'Failed to post update',
+        ),
       );
       return false;
     } finally {
@@ -1637,7 +1691,9 @@ export function SpaceQuestDetail({
       router.push(listHref);
     } catch (err) {
       setActionError(
-        err instanceof Error ? err.message : 'Failed to delete quest',
+        readableQuestErrorMessage(
+          err instanceof Error ? err.message : 'Failed to delete quest',
+        ),
       );
       setSaving(false);
     }
@@ -1753,8 +1809,11 @@ export function SpaceQuestDetail({
       </nav>
 
       {actionError ? (
-        <p className="border border-error-6 bg-background-2 px-3 py-2 text-[12px] text-error-11">
-          {actionError}
+        <p
+          className="border border-error-6 bg-background-2 px-3 py-2 text-[12px] text-error-11"
+          data-testid="quest-action-error"
+        >
+          {readableQuestErrorMessage(actionError)}
         </p>
       ) : null}
 
@@ -1898,16 +1957,19 @@ export function SpaceQuestDetail({
         onOpenChange={closeModal}
         deliverables={quest.deliverables}
         onSave={(next) =>
-          void savePatch({
-            deliverables: next
-              .filter((d) => d.name.trim())
-              .map((d) => ({
-                id: d.id,
-                name: d.name.trim(),
-                url: d.url.trim() || null,
-                note: d.note.trim() || null,
-              })),
-          })
+          savePatch(
+            {
+              deliverables: next
+                .filter((d) => d.name.trim())
+                .map((d) => ({
+                  id: d.id,
+                  name: d.name.trim(),
+                  url: d.url.trim() || null,
+                  note: d.note.trim() || null,
+                })),
+            },
+            { inline: true },
+          )
         }
       />
       <EditQuestLeadModal

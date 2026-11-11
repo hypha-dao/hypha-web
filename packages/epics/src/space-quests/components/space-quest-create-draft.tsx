@@ -10,6 +10,7 @@ import {
   bulletsToMarkdownList,
   formatQuestCalendarDate,
   questRecordToProposalDraft,
+  readableQuestErrorMessage,
   stripViewerYouMarker,
   withoutPlaceholderLeadDuplicates,
   splitMarkdownLinesToBullets,
@@ -1152,7 +1153,9 @@ export function SpaceQuestCreateDraft({
         return;
       }
       if (linkTarget) {
-        const raw = err instanceof Error ? err.message : '';
+        const raw = readableQuestErrorMessage(
+          err instanceof Error ? err.message : '',
+        );
         const detail =
           !raw || raw.includes('Server Components') || raw.length > 240
             ? 'Linking did not finish. Open the quest or the proposal, or submit again to retry only the link.'
@@ -1167,9 +1170,11 @@ export function SpaceQuestCreateDraft({
         });
       } else {
         setSubmitError(
-          err instanceof Error
-            ? err.message
-            : 'Failed to create quest proposal.',
+          readableQuestErrorMessage(
+            err instanceof Error
+              ? err.message
+              : 'Failed to create quest proposal.',
+          ),
         );
       }
     } finally {

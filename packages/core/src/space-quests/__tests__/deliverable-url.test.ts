@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  QUEST_DELIVERABLE_URL_CODE,
+  QUEST_DELIVERABLE_URL_MESSAGE,
+  questSchemaErrorPayload,
+  readableQuestErrorMessage,
   schemaPatchSpaceQuest,
   schemaQuestDeliverableInput,
 } from '../validation';
@@ -49,11 +53,37 @@ describe('manual quest deliverable URLs', () => {
       expect(
         schemaQuestDeliverableInput.safeParse({ name: 'Spec', url }).success,
       ).toBe(false);
-      expect(
-        schemaPatchSpaceQuest.safeParse({
-          deliverables: [{ name: 'Spec', url }],
-        }).success,
-      ).toBe(false);
+      const parsed = schemaPatchSpaceQuest.safeParse({
+        deliverables: [{ name: 'Spec', url }],
+      });
+      expect(parsed.success).toBe(false);
+      if (!parsed.success) {
+        expect(questSchemaErrorPayload(parsed.error)).toEqual({
+          error: QUEST_DELIVERABLE_URL_MESSAGE,
+          code: QUEST_DELIVERABLE_URL_CODE,
+          path: ['deliverables', 0, 'url'],
+        });
+      }
+    }
+  });
+
+  it('turns a raw Zod issue dump into the field sentence', () => {
+    const dumped = JSON.stringify([
+      {
+        code: 'custom',
+        message: 'Only http/https URLs are allowed.',
+        path: ['deliverables', 0, 'url'],
+      },
+    ]);
+    expect(readableQuestErrorMessage(dumped)).toBe(
+      QUEST_DELIVERABLE_URL_MESSAGE,
+    );
+    expect(readableQuestErrorMessage('Quest not found')).toBe(
+      'Quest not found',
+    );
+    const other = schemaPatchSpaceQuest.safeParse({ name: '' });
+    if (!other.success) {
+      expect(questSchemaErrorPayload(other.error).error).not.toMatch(/^\s*\[/);
     }
   });
 });

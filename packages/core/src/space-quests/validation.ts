@@ -38,13 +38,89 @@ export function isAllowedQuestDeliverableUrl(value: string): boolean {
   return value.length === 0 || /^https?:\/\//i.test(value);
 }
 
+/** Stable API code for a deliverable link that is not http(s). */
+export const QUEST_DELIVERABLE_URL_CODE = 'deliverable_url';
+
+/** English fallback. Quest pages translate this for the URL field. */
+export const QUEST_DELIVERABLE_URL_MESSAGE =
+  'Enter a link starting with http:// or https://';
+
 const questDeliverableUrl = z
   .string()
   .trim()
   .max(1000)
   .refine(isAllowedQuestDeliverableUrl, {
-    message: 'Only http/https URLs are allowed.',
+    message: QUEST_DELIVERABLE_URL_MESSAGE,
   });
+
+export type QuestSchemaErrorBody = {
+  error: string;
+  code?: string;
+  path?: Array<string | number>;
+};
+
+function issuePath(path: ReadonlyArray<PropertyKey>): string[] {
+  return path.map((part) => String(part));
+}
+
+function isDeliverableUrlPath(path: ReadonlyArray<PropertyKey>): boolean {
+  const parts = issuePath(path);
+  return parts.includes('deliverables') && parts.includes('url');
+}
+
+/** Field-aware body for a failed quest schema parse. Never the raw Zod JSON. */
+export function questSchemaErrorPayload(
+  error: z.ZodError,
+): QuestSchemaErrorBody {
+  const urlIssue = error.issues.find((issue) =>
+    isDeliverableUrlPath(issue.path),
+  );
+  if (urlIssue) {
+    return {
+      error: QUEST_DELIVERABLE_URL_MESSAGE,
+      code: QUEST_DELIVERABLE_URL_CODE,
+      path: urlIssue.path.flatMap((part) =>
+        typeof part === 'string' || typeof part === 'number' ? [part] : [],
+      ),
+    };
+  }
+  const messages = [
+    ...new Set(
+      error.issues
+        .map((issue) => issue.message.trim())
+        .filter((message) => message.length > 0),
+    ),
+  ];
+  return {
+    error: messages.join(' ') || 'Check the form and try again.',
+  };
+}
+
+/**
+ * Turn a Zod issue dump into the issue messages. Other text is unchanged.
+ * Deliverable URL issues use the field sentence.
+ */
+export function readableQuestErrorMessage(message: string): string {
+  const trimmed = message.trim();
+  if (!trimmed.startsWith('[') && !trimmed.startsWith('{')) return message;
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    const issues = Array.isArray(parsed) ? parsed : [parsed];
+    const messages = issues.flatMap((issue) => {
+      if (!issue || typeof issue !== 'object') return [];
+      const record = issue as { message?: unknown; path?: unknown };
+      const path = Array.isArray(record.path) ? record.path : [];
+      if (isDeliverableUrlPath(path)) return [QUEST_DELIVERABLE_URL_MESSAGE];
+      return typeof record.message === 'string' && record.message.trim()
+        ? [record.message.trim()]
+        : [];
+    });
+    if (messages.length === 0) return message;
+    return [...new Set(messages)].join(' ');
+  } catch {
+    return message;
+  }
+}
 
 export const schemaQuestDeliverableInput = z.object({
   id: z.number().int().positive().optional(),
@@ -88,6 +164,7 @@ export const schemaPatchSpaceQuest = z.object({
   proposalDocumentId: z.number().int().positive().nullable().optional(),
   stewardHealthSummaries: z.boolean().optional(),
   memberUpdateAlerts: z.boolean().optional(),
+  deliverablesEnabled: z.boolean().optional(),
   healthState: z.enum(QUEST_HEALTH_STATES).optional(),
   healthMarker: z.number().int().min(0).max(100).optional(),
   healthSummary: z.string().max(4000).optional(),

@@ -5770,6 +5770,15 @@
       "drafts": "Meus rascunhos",
       "status": "Estado"
     },
+    "settings": {
+      "deliverables": "Entregas",
+      "deliverablesHint": "Mostrar um cartão de entregas na visão geral",
+      "deliverablesKept": "As entregas existentes continuam na visão geral",
+      "on": "Ativado",
+      "off": "Desativado"
+    },
+    "deliverableUrl": "Introduza um link que comece por http:// ou https://",
+    "deliverableSaveError": "Não foi possível guardar as entregas. Tente novamente.",
     "activity": {
       "proposalRejected": "proposta rejeitada"
     },

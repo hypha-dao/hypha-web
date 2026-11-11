@@ -692,6 +692,7 @@ function questFixture(
     },
     stewardHealthSummaries: false,
     memberUpdateAlerts: false,
+    deliverablesEnabled: false,
     milestones: [],
     members: [],
     deliverables: [],

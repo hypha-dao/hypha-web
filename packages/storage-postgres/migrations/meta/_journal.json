@@ -708,6 +708,13 @@
       "when": 1784000000031,
       "tag": "0100_space_quest_drafts",
       "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1784000000032,
+      "tag": "0101_space_quest_deliverables_enabled",
+      "breakpoints": true
     }
   ]
 }

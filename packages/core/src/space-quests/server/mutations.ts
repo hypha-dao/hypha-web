@@ -389,6 +389,9 @@ export async function createSpaceQuest(
       healthMarker: NEW_QUEST_HEALTH_RECORD.healthMarker,
       healthSummary: NEW_QUEST_HEALTH_RECORD.healthSummary,
       healthUpdatedAt: new Date(),
+      deliverablesEnabled: (input.deliverables ?? []).some(
+        (item) => item.name.trim().length > 0,
+      ),
     })
     .returning();
 
@@ -847,6 +850,12 @@ export async function updateSpaceQuest(
   }
   if (patch.memberUpdateAlerts !== undefined) {
     updateFields.memberUpdateAlerts = patch.memberUpdateAlerts;
+  }
+  if (patch.deliverablesEnabled !== undefined) {
+    updateFields.deliverablesEnabled = patch.deliverablesEnabled;
+  }
+  if ((patch.deliverables?.length ?? 0) > 0) {
+    updateFields.deliverablesEnabled = true;
   }
   if (patch.healthState !== undefined) {
     updateFields.healthState = patch.healthState;

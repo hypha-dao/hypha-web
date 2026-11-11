@@ -20,6 +20,7 @@ const harness = vi.hoisted(() => ({
   dismissQuestChat: vi.fn(),
   closeAiPanel: vi.fn(),
   postUpdate: vi.fn(),
+  patchQuest: vi.fn(),
 }));
 
 function questFixture(): QuestRecord {
@@ -60,6 +61,7 @@ function questFixture(): QuestRecord {
     },
     stewardHealthSummaries: false,
     memberUpdateAlerts: false,
+    deliverablesEnabled: false,
     milestones: [
       {
         id: 1,
@@ -204,6 +206,7 @@ vi.mock('../../hooks/use-space-quests', async () => {
         links?: { label: string; url: string; kind?: string }[];
       };
     }) => harness.postUpdate(input),
+    patchSpaceQuestRequest: (input: unknown) => harness.patchQuest(input),
   };
 });
 
@@ -263,6 +266,7 @@ describe('saved quest helper entry', () => {
     harness.dismissQuestChat.mockReset();
     harness.closeAiPanel.mockReset();
     harness.postUpdate.mockReset();
+    harness.patchQuest.mockReset();
     vi.unstubAllGlobals();
   });
 
@@ -337,15 +341,97 @@ describe('saved quest helper entry', () => {
       'BUTTON',
     );
 
-    const deliverables = screen.getByTestId('quest-overview-deliverables');
-    expect(deliverables.textContent).toContain('No deliverables yet');
+    expect(screen.queryByTestId('quest-overview-deliverables')).toBeNull();
+  });
+
+  it('shows the deliverables card only after the setting is on or items exist', () => {
+    const { rerender } = render(
+      <SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />,
+    );
+    expect(screen.queryByTestId('quest-overview-deliverables')).toBeNull();
+
+    harness.quest = { ...questFixture(), deliverablesEnabled: true };
+    rerender(<SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />);
+    expect(
+      screen.getByTestId('quest-overview-deliverables').textContent,
+    ).toContain('No deliverables yet');
     expect(
       screen.getByTestId('quest-overview-deliverables-action').textContent,
     ).toBe('Add');
-    fireEvent.click(screen.getByTestId('quest-overview-deliverables-action'));
+
+    harness.quest = {
+      ...questFixture(),
+      deliverablesEnabled: false,
+      deliverables: [
+        {
+          id: 9,
+          questId: 1,
+          name: 'Spec',
+          url: 'https://example.com/spec',
+          note: null,
+          order: 1,
+          updatedByPersonId: null,
+          updatedByName: null,
+          updatedAt: '2026-11-01T00:00:00.000Z',
+        },
+      ],
+    };
+    rerender(<SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />);
     expect(
-      screen.getByRole('heading', { name: 'Edit deliverables' }),
-    ).toBeTruthy();
+      screen.getByTestId('quest-overview-deliverables').textContent,
+    ).toContain('Spec');
+  });
+
+  it('lets an editor turn deliverables on from settings and keeps stored items visible', () => {
+    harness.patchQuest.mockImplementation(
+      async (input: { patch: { deliverablesEnabled?: boolean } }) => ({
+        ...(harness.quest ?? questFixture()),
+        deliverablesEnabled: input.patch.deliverablesEnabled ?? false,
+      }),
+    );
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="settings"
+      />,
+    );
+    const toggle = screen.getByTestId('quest-settings-deliverables-toggle');
+    expect(toggle.textContent).toContain('settings.off');
+    fireEvent.click(toggle);
+    expect(harness.patchQuest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        patch: { deliverablesEnabled: true },
+      }),
+    );
+
+    cleanup();
+    harness.quest = {
+      ...questFixture(),
+      deliverables: [
+        {
+          id: 9,
+          questId: 1,
+          name: 'Spec',
+          url: null,
+          note: null,
+          order: 1,
+          updatedByPersonId: null,
+          updatedByName: null,
+          updatedAt: '2026-11-01T00:00:00.000Z',
+        },
+      ],
+    };
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="settings"
+      />,
+    );
+    const locked = screen.getByTestId('quest-settings-deliverables-toggle');
+    expect(locked.textContent).toContain('settings.on');
+    expect(locked).toHaveProperty('disabled', true);
   });
 
   it('opens the quest discussion room and keeps the helper off the page', () => {

@@ -5794,6 +5794,15 @@
       "drafts": "My drafts",
       "status": "Status"
     },
+    "settings": {
+      "deliverables": "Deliverables",
+      "deliverablesHint": "Show a Deliverables card on the overview",
+      "deliverablesKept": "Existing deliverables stay on the overview",
+      "on": "On",
+      "off": "Off"
+    },
+    "deliverableUrl": "Enter a link starting with http:// or https://",
+    "deliverableSaveError": "Could not save deliverables. Try again.",
     "activity": {
       "proposalRejected": "proposal rejected"
     },

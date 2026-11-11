@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   postSpaceQuestUpdate,
+  questSchemaErrorPayload,
   schemaPostQuestUpdate,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -20,10 +21,9 @@ export async function POST(
     const body = await request.json();
     const parsed = schemaPostQuestUpdate.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.message },
-        { status: 400 },
-      );
+      return NextResponse.json(questSchemaErrorPayload(parsed.error), {
+        status: 400,
+      });
     }
 
     const result = await postSpaceQuestUpdate(

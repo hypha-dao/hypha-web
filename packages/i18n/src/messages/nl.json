@@ -5778,6 +5778,15 @@
       "drafts": "Mijn concepten",
       "status": "Status"
     },
+    "settings": {
+      "deliverables": "Deliverables",
+      "deliverablesHint": "Toon een Deliverables-kaart in het overzicht",
+      "deliverablesKept": "Bestaande deliverables blijven in het overzicht",
+      "on": "Aan",
+      "off": "Uit"
+    },
+    "deliverableUrl": "Voer een link in die begint met http:// of https://",
+    "deliverableSaveError": "Deliverables konden niet worden opgeslagen. Probeer het opnieuw.",
     "activity": {
       "proposalRejected": "voorstel afgewezen"
     },

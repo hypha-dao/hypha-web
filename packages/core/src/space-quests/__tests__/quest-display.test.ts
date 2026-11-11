@@ -167,6 +167,7 @@ describe('questOverviewVisibility', () => {
       showMilestones: false,
       showMembers: false,
       showDeliverables: false,
+      showDeliverablesSection: false,
       showHealth: true,
       showTargetDate: false,
     });
@@ -194,14 +195,32 @@ describe('questOverviewVisibility', () => {
       showMilestones: true,
       showMembers: true,
       showDeliverables: true,
+      showDeliverablesSection: true,
     });
     expect(
       questOverviewVisibility({
         ...empty,
         status: 'active',
         deliverables: [{ name: 'Notes' }],
-      }).showDeliverables,
+      }).showDeliverablesSection,
     ).toBe(true);
+    expect(
+      questOverviewVisibility({
+        ...empty,
+        status: 'active',
+        deliverablesEnabled: true,
+      }),
+    ).toMatchObject({
+      showDeliverables: false,
+      showDeliverablesSection: true,
+    });
+    expect(
+      questOverviewVisibility({
+        ...empty,
+        status: 'active',
+        deliverablesEnabled: false,
+      }).showDeliverablesSection,
+    ).toBe(false);
     expect(
       questOverviewVisibility({ ...empty, targetDate: '   ' }).showTargetDate,
     ).toBe(false);

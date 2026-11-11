@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   deleteSpaceQuest,
+  questSchemaErrorPayload,
   schemaPatchSpaceQuest,
   syncSpaceQuestProposalStatuses,
   updateSpaceQuest,
@@ -54,10 +55,9 @@ export async function PATCH(
     const body = await request.json();
     const parsed = schemaPatchSpaceQuest.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.message },
-        { status: 400 },
-      );
+      return NextResponse.json(questSchemaErrorPayload(parsed.error), {
+        status: 400,
+      });
     }
 
     const result = await updateSpaceQuest(

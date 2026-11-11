@@ -1,4 +1,7 @@
-import { isAllowedQuestDeliverableUrl } from '@hypha-platform/core/client';
+import {
+  isAllowedQuestDeliverableUrl,
+  QUEST_DELIVERABLE_URL_MESSAGE,
+} from '@hypha-platform/core/client';
 import { z } from 'zod';
 
 export const draftPatchSchema = z.object({
@@ -54,7 +57,7 @@ export const draftPatchSchema = z.object({
           .trim()
           .max(1000)
           .refine(isAllowedQuestDeliverableUrl, {
-            message: 'Only http/https URLs are allowed.',
+            message: QUEST_DELIVERABLE_URL_MESSAGE,
           })
           .optional(),
         note: z.string().trim().max(1000).optional(),

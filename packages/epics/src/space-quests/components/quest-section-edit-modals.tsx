@@ -2,8 +2,11 @@
 
 import {
   QUEST_DEFAULT_REWARD_TOKENS,
+  QUEST_DELIVERABLE_URL_CODE,
+  QUEST_DELIVERABLE_URL_MESSAGE,
   bulletsToMarkdownList,
   formatQuestCalendarDate,
+  isAllowedQuestDeliverableUrl,
   parseQuestCalendarDate,
   splitMarkdownLinesToBullets,
   stripViewerYouMarker,
@@ -29,6 +32,7 @@ import {
 } from '../utils/quest-rich-text';
 import { cn } from '@hypha-platform/ui-utils';
 import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   useCallback,
   useEffect,
@@ -1628,6 +1632,13 @@ export function EditQuestMembersModal({
  * Edit Deliverables modal (Figma node 54:25 — 02-edit-deliverables.png):
  * Only available on Active Quests; any Quest member can edit.
  */
+export type QuestDeliverableSaveResult = void | {
+  ok: boolean;
+  code?: string | null;
+  message?: string;
+  path?: ReadonlyArray<string | number> | null;
+};
+
 export function EditQuestDeliverablesModal({
   open,
   onOpenChange,
@@ -1642,10 +1653,17 @@ export function EditQuestDeliverablesModal({
     url?: string | null;
     note?: string | null;
   }>;
-  onSave: (next: EditableQuestDeliverable[]) => void;
+  onSave: (
+    next: EditableQuestDeliverable[],
+  ) => QuestDeliverableSaveResult | Promise<QuestDeliverableSaveResult>;
 }) {
+  const t = useTranslations('SpaceQuests');
   const [rows, setRows] = useState<EditableQuestDeliverable[]>([]);
+  const [urlErrors, setUrlErrors] = useState<ReadonlySet<number>>(new Set());
+  const [formError, setFormError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const wasOpenRef = useRef(false);
+  const urlErrorText = t('deliverableUrl');
 
   useEffect(() => {
     const wasOpen = wasOpenRef.current;
@@ -1661,8 +1679,74 @@ export function EditQuestDeliverablesModal({
             }))
           : [{ name: '', url: '', note: '' }],
       );
+      setUrlErrors(new Set());
+      setFormError(null);
     }
   }, [deliverables, open]);
+
+  const invalidUrlIndexes = (draft: readonly EditableQuestDeliverable[]) => {
+    const indexes = new Set<number>();
+    draft.forEach((row, index) => {
+      const url = row.url.trim();
+      if (url.length > 0 && !isAllowedQuestDeliverableUrl(url)) {
+        indexes.add(index);
+      }
+    });
+    return indexes;
+  };
+
+  const handleSave = async () => {
+    const invalid = invalidUrlIndexes(rows);
+    if (invalid.size > 0) {
+      setUrlErrors(invalid);
+      setFormError(null);
+      return;
+    }
+    const cleaned = rows
+      .map((row) => ({
+        ...row,
+        name: storedQuestPlainField(row.name),
+        url: storedQuestPlainField(row.url),
+        note: storedQuestPlainField(row.note),
+      }))
+      .filter((row) => row.name.length > 0);
+    setSaving(true);
+    try {
+      const result = await onSave(cleaned);
+      if (result && result.ok === false) {
+        const failure = result;
+        const serverIndex = failure?.path?.[1];
+        if (
+          failure?.code === QUEST_DELIVERABLE_URL_CODE ||
+          failure?.message === QUEST_DELIVERABLE_URL_MESSAGE
+        ) {
+          const namedIndexes = rows.flatMap((row, index) =>
+            row.name.trim() ? [index] : [],
+          );
+          const formIndex =
+            typeof serverIndex === 'number'
+              ? namedIndexes[serverIndex]
+              : undefined;
+          setUrlErrors(
+            new Set(
+              formIndex != null
+                ? [formIndex]
+                : namedIndexes.length > 0
+                ? namedIndexes
+                : [0],
+            ),
+          );
+          setFormError(null);
+          return;
+        }
+        setFormError(failure?.message ?? t('deliverableSaveError'));
+        return;
+      }
+      onOpenChange(false);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1671,17 +1755,9 @@ export function EditQuestDeliverablesModal({
         onClose={() => onOpenChange(false)}
         onCancel={() => onOpenChange(false)}
         onSave={() => {
-          const cleaned = rows
-            .map((r) => ({
-              ...r,
-              name: storedQuestPlainField(r.name),
-              url: storedQuestPlainField(r.url),
-              note: storedQuestPlainField(r.note),
-            }))
-            .filter((r) => r.name.length > 0);
-          onSave(cleaned);
-          onOpenChange(false);
+          void handleSave();
         }}
+        saveDisabled={saving}
       >
         <div className="space-y-3">
           {rows.map((row, idx) => (
@@ -1724,10 +1800,25 @@ export function EditQuestDeliverablesModal({
                     const next = [...rows];
                     next[idx] = { ...row, url: e.target.value };
                     setRows(next);
+                    if (urlErrors.has(idx)) {
+                      const remaining = new Set(urlErrors);
+                      remaining.delete(idx);
+                      setUrlErrors(remaining);
+                    }
                   }}
                   placeholder="https://github.com/..."
+                  aria-invalid={urlErrors.has(idx) || undefined}
+                  data-testid={`deliverable-url-${idx}`}
                   className="h-10 rounded-none bg-background"
                 />
+                {urlErrors.has(idx) ? (
+                  <p
+                    className="text-[12px] text-error-11"
+                    data-testid={`deliverable-url-error-${idx}`}
+                  >
+                    {urlErrorText}
+                  </p>
+                ) : null}
               </div>
 
               <div className="space-y-1">
@@ -1746,6 +1837,15 @@ export function EditQuestDeliverablesModal({
             </div>
           ))}
         </div>
+
+        {formError ? (
+          <p
+            className="text-[12px] text-error-11"
+            data-testid="deliverable-save-error"
+          >
+            {formError}
+          </p>
+        ) : null}
 
         <button
           type="button"

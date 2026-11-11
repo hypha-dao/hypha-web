@@ -2,6 +2,7 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
+  readableQuestErrorMessage,
   type Person,
   type QuestRecord,
   type SpaceQuestsOverview,
@@ -289,23 +290,38 @@ export class SpaceQuestRequestError extends Error {
     message: string,
     readonly status: number,
     readonly code: string | null,
+    readonly path: Array<string | number> | null = null,
   ) {
     super(message);
     this.name = 'SpaceQuestRequestError';
   }
 }
 
+function questErrorPath(value: unknown): Array<string | number> | null {
+  if (!Array.isArray(value)) return null;
+  const path = value.flatMap((part) =>
+    typeof part === 'string' || typeof part === 'number' ? [part] : [],
+  );
+  return path.length > 0 ? path : null;
+}
+
 async function requestError(response: Response, fallback: string) {
   let code: string | null = null;
   let message = fallback;
+  let path: Array<string | number> | null = null;
   try {
-    const body = (await response.json()) as { error?: string; code?: string };
+    const body = (await response.json()) as {
+      error?: string;
+      code?: string;
+      path?: unknown;
+    };
     code = body.code ?? null;
-    message = body.error || fallback;
+    path = questErrorPath(body.path);
+    message = readableQuestErrorMessage(body.error || fallback);
   } catch {
     // Non-JSON error body
   }
-  return new SpaceQuestRequestError(message, response.status, code);
+  return new SpaceQuestRequestError(message, response.status, code, path);
 }
 
 export async function createSpaceQuestRequest({

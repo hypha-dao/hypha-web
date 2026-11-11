@@ -65,14 +65,17 @@ export type QuestOverviewVisibility = {
   showMilestones: boolean;
   showMembers: boolean;
   showDeliverables: boolean;
+  /** Overview card: the setting is on, or the quest already has deliverables. */
+  showDeliverablesSection: boolean;
   showHealth: boolean;
   showTargetDate: boolean;
 };
 
 /**
  * Optional overview cards hide when they have no content.
- * `showDeliverables` means the list is non-empty (Add vs Edit). The overview
- * still renders the Deliverables card when the list is empty.
+ * `showDeliverables` means the list is non-empty (Add vs Edit).
+ * `showDeliverablesSection` is the overview card. It stays hidden until the
+ * quest turns Deliverables on, unless deliverables are already stored.
  * Health and the quest title stay. Create-draft inputs are a different surface.
  */
 export function questOverviewVisibility(quest: {
@@ -87,6 +90,7 @@ export function questOverviewVisibility(quest: {
   milestones?: readonly unknown[] | null;
   members?: readonly unknown[] | null;
   deliverables?: readonly unknown[] | null;
+  deliverablesEnabled?: boolean | null;
   targetDate?: string | null;
 }): QuestOverviewVisibility {
   const showGoal = hasText(quest.goal);
@@ -104,6 +108,9 @@ export function questOverviewVisibility(quest: {
     showMilestones: (quest.milestones?.length ?? 0) > 0,
     showMembers: (quest.members?.length ?? 0) > 0,
     showDeliverables: (quest.deliverables?.length ?? 0) > 0,
+    showDeliverablesSection:
+      Boolean(quest.deliverablesEnabled) ||
+      (quest.deliverables?.length ?? 0) > 0,
     showHealth: true,
     showTargetDate: hasText(quest.targetDate),
   };

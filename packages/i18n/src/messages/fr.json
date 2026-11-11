@@ -5768,6 +5768,15 @@
       "drafts": "Mes brouillons",
       "status": "Statut"
     },
+    "settings": {
+      "deliverables": "Livrables",
+      "deliverablesHint": "Afficher une carte Livrables dans l’aperçu",
+      "deliverablesKept": "Les livrables existants restent dans l’aperçu",
+      "on": "Activé",
+      "off": "Désactivé"
+    },
+    "deliverableUrl": "Saisissez un lien commençant par http:// ou https://",
+    "deliverableSaveError": "Impossible d’enregistrer les livrables. Réessayez.",
     "activity": {
       "proposalRejected": "proposition rejetée"
     },

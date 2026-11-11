@@ -70,6 +70,7 @@ function questFixture(): QuestRecord {
     },
     stewardHealthSummaries: false,
     memberUpdateAlerts: false,
+    deliverablesEnabled: false,
     milestones: [],
     members: [
       {

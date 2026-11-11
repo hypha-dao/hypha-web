@@ -3,6 +3,7 @@ import {
   assistSpaceQuestDraft,
   questDraftAssistRequestSchema,
 } from '@hypha-platform/chat-server';
+import { questSchemaErrorPayload } from '@hypha-platform/core/server';
 import { authorizeQuestWrite } from '../_lib';
 
 export const dynamic = 'force-dynamic';
@@ -28,7 +29,9 @@ export async function POST(
 
   const parsed = questDraftAssistRequestSchema.safeParse(rawBody);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.message }, { status: 400 });
+    return NextResponse.json(questSchemaErrorPayload(parsed.error), {
+      status: 400,
+    });
   }
 
   const result = await assistSpaceQuestDraft({
