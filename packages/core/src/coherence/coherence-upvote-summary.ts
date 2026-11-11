@@ -10,8 +10,6 @@ import type {
   SignalWindowUpvotes,
 } from './types';
 
-const MAX_VOTERS_PER_SUMMARY = 12;
-
 export type CoherenceUpvoteAggregateRow = {
   coherenceId: number;
   personId: number;
@@ -175,7 +173,6 @@ export function aggregateCoherenceUpvoteSummaries({
       const diff = BigInt(b.votingPower) - BigInt(a.votingPower);
       return diff > 0n ? 1 : diff < 0n ? -1 : 0;
     });
-    summary.voters = summary.voters.slice(0, MAX_VOTERS_PER_SUMMARY);
   }
 
   return summaries;

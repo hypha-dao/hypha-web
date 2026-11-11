@@ -134,7 +134,7 @@ export type CoherenceUpvoteSummary = {
   netVoteCount: number;
   /** Display decimals of the voting power source (0 for 1m1v, 18 for token/voice). */
   tokenDecimals: number;
-  /** Voters ordered by voting power, highest first (capped). */
+  /** Voters ordered by voting power, highest first. */
   voters: CoherenceUpvoter[];
   /** The requesting user's own vote, when authenticated. */
   myUpvote: {

@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import type { ComponentProps } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  SignalAllocationVoters,
   SignalVoteRoster,
   SignalVoteTotals,
 } from '../../components/signal-vote-summary';
@@ -105,5 +106,55 @@ describe('signal vote summary', () => {
       'No votes yet',
     );
     expect(view.queryByTestId('signal-voter-row')).toBeNull();
+  });
+
+  it('lists allocation voters by power with the shared formatter', () => {
+    const unit = 10n ** 18n;
+    const view = render(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <SignalAllocationVoters
+          summary={summary({
+            tokenDecimals: 18,
+            voters: [
+              {
+                personId: 2,
+                name: 'Ada',
+                avatarUrl: null,
+                votingPower: (unit / 2n).toString(),
+                direction: 'up',
+              },
+              {
+                personId: 1,
+                name: 'Bea',
+                avatarUrl: null,
+                votingPower: ((unit * 125n) / 100n).toString(),
+                direction: 'down',
+              },
+            ],
+          })}
+        />
+      </NextIntlClientProvider>,
+    );
+    const rows = view.getAllByTestId('signal-allocation-voter');
+    expect(rows.map((row) => row.getAttribute('data-vote-direction'))).toEqual([
+      'down',
+      'up',
+    ]);
+    expect(rows[0]?.textContent).toContain('Bea');
+    expect(rows[0]?.textContent).toContain('1.25');
+    expect(rows[1]?.textContent).toContain('Ada');
+    expect(rows[1]?.textContent).toContain('0.5');
+    expect(rows[0]?.textContent).not.toContain('%');
+  });
+
+  it('shows an empty allocation list when nobody has voted', () => {
+    const view = render(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <SignalAllocationVoters summary={summary({ voters: [] })} />
+      </NextIntlClientProvider>,
+    );
+    expect(view.getByTestId('signal-allocation-empty').textContent).toBe(
+      'No votes yet',
+    );
   });
 });

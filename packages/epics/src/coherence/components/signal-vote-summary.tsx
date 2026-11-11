@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import type { CoherenceUpvoteSummary } from '@hypha-platform/core/client';
@@ -157,6 +158,87 @@ export function SignalVoteRoster({
                     summary.tokenDecimals,
                     locale,
                   )}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function votersByPower(summary: CoherenceUpvoteSummary) {
+  return [...summary.voters].sort((a, b) => {
+    try {
+      const diff = BigInt(b.votingPower) - BigInt(a.votingPower);
+      return diff > 0n ? 1 : diff < 0n ? -1 : 0;
+    } catch {
+      return 0;
+    }
+  });
+}
+
+/**
+ * Compact voter list for the token allocation popover: avatar, name, and the
+ * power they cast, with an arrow for the direction. Largest power first.
+ */
+export function SignalAllocationVoters({
+  summary,
+}: {
+  summary: CoherenceUpvoteSummary;
+}) {
+  const t = useTranslations('SignalCard');
+  const locale = useLocale();
+  const voters = votersByPower(summary);
+  if (voters.length === 0) {
+    return (
+      <p
+        className="m-0 text-1 text-muted-foreground"
+        data-testid="signal-allocation-empty"
+      >
+        {t('noVotesYet')}
+      </p>
+    );
+  }
+
+  return (
+    <ul
+      className="m-0 flex max-h-36 flex-col gap-1 overflow-y-auto narrow-scrollbar"
+      data-testid="signal-allocation-voters"
+    >
+      {voters.map((voter) => {
+        const down = voter.direction === 'down';
+        const power = formatVotingPowerCompact(
+          voter.votingPower,
+          summary.tokenDecimals,
+          locale,
+        );
+        const name = voter.name || t('anonymousSupporter');
+        const Icon = down ? ArrowDown : ArrowUp;
+        return (
+          <li
+            key={voter.personId}
+            className="flex min-w-0 items-center gap-2 py-0.5"
+            data-testid="signal-allocation-voter"
+            data-vote-direction={down ? 'down' : 'up'}
+          >
+            <PersonAvatar
+              size="sm"
+              shape="circle"
+              avatarSrc={voter.avatarUrl ?? ''}
+              userName={voter.name ?? undefined}
+              personId={voter.personId}
+            />
+            <span className="min-w-0 flex-1 truncate text-1 text-foreground">
+              {name}
+            </span>
+            <span
+              className={cn(
+                'inline-flex shrink-0 items-center gap-0.5 text-1 tabular-nums',
+                down ? 'text-error-11' : 'text-accent-11',
+              )}
+            >
+              <Icon className="size-3" strokeWidth={2} aria-hidden />
+              {power}
             </span>
           </li>
         );

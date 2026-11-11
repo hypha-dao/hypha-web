@@ -50,6 +50,9 @@ describe('token vote allocation in a browser', () => {
             };
           }
           export function useJwt() { return { jwt: 'token' }; }
+          export function useMySignalVotingPower() {
+            return { votingPower: null, isLoading: false, error: null };
+          }
           export function useMatrix() { return { client: null }; }
           export function useMatrixUserIdsByPersonIds() {
             return { personIdToMatrixUserId: {} };

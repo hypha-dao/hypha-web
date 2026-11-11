@@ -23,6 +23,11 @@ vi.mock('@hypha-platform/core/client', () => ({
     isRemovingUpvote: false,
   }),
   useJwt: () => ({ jwt: 'token' }),
+  useMySignalVotingPower: () => ({
+    votingPower: null,
+    isLoading: false,
+    error: null,
+  }),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -112,15 +117,35 @@ describe('SignalUpvoteButton', () => {
             maxVotingPower: '4',
             direction: 'down',
           },
+          voters: [
+            {
+              personId: 3,
+              name: 'Ada',
+              avatarUrl: null,
+              votingPower: '1',
+              direction: 'up',
+            },
+          ],
         }}
       />,
     );
 
     fireEvent.click(view.getByTestId('signal-vote-up'));
     expect(calls.upvote).not.toHaveBeenCalled();
-    const percent = view.getByTestId('signal-vote-percent') as HTMLInputElement;
-    expect(percent.value).toBe('100');
-    fireEvent.change(percent, { target: { value: '50' } });
+    expect(view.queryByTestId('signal-vote-percent')).toBeNull();
+    expect(view.queryByText(/%/)).toBeNull();
+    expect(view.getByTestId('signal-vote-amount').textContent).toBe('4');
+    expect(view.getByTestId('signal-allocation-voters').textContent).toContain(
+      'Ada',
+    );
+    expect(view.getByTestId('signal-vote-cancel')).toBeTruthy();
+    expect(view.getByTestId('signal-vote-confirm')).toBeTruthy();
+    expect(view.getByRole('button', { name: 'removeDownvote' })).toBeTruthy();
+    const slider = view.getByTestId('signal-vote-slider');
+    for (let step = 0; step < 50; step += 1) {
+      fireEvent.keyDown(slider, { key: 'ArrowLeft' });
+    }
+    expect(view.getByTestId('signal-vote-amount').textContent).toBe('2');
     fireEvent.click(view.getByTestId('signal-vote-confirm'));
 
     await waitFor(() => {

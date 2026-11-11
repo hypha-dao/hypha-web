@@ -8,6 +8,7 @@ import {
   signalUpvoteCellMeasure,
   useCoherenceUpvoteMutations,
   useJwt,
+  useMySignalVotingPower,
   type CoherenceUpvoteSummary,
   type SignalSort,
   type SignalUpvoteSummaryState,
@@ -25,6 +26,7 @@ import { SignalUpvoteCellChrome } from './signal-upvote-cell';
 import { isArchivedSignalVoteError } from '../lib/signal-upvote-errors';
 import type { SignalVotingModeStatus } from '../hooks/use-signal-voting-mode';
 import {
+  SignalAllocationVoters,
   SignalVoteRoster,
   SignalVoteTotals,
   useSignalSpaceSlug,
@@ -60,21 +62,17 @@ function myUpvotePercent(summary: CoherenceUpvoteSummary): number {
 }
 
 function allocationAmount(
-  summary: CoherenceUpvoteSummary,
+  maxRaw: string | null | undefined,
+  tokenDecimals: number,
   percent: number,
   locale: string,
 ): string | null {
-  const max = summary.myUpvote?.maxVotingPower;
-  if (!max) return null;
+  if (!maxRaw) return null;
   try {
-    const units = BigInt(max);
+    const units = BigInt(maxRaw);
     if (units <= 0n) return null;
     const share = (units * BigInt(percent)) / 100n;
-    return formatVotingPowerCompact(
-      share.toString(),
-      summary.tokenDecimals,
-      locale,
-    );
+    return formatVotingPowerCompact(share.toString(), tokenDecimals, locale);
   } catch {
     return null;
   }
@@ -149,6 +147,10 @@ export function SignalUpvoteButton({
   const format = useFormatter();
   const { jwt } = useJwt();
   const resolvedSpaceSlug = useSignalSpaceSlug(spaceSlug);
+  const { votingPower: myVotingPower } = useMySignalVotingPower({
+    spaceSlug: votingMode === 'token' ? resolvedSpaceSlug : null,
+    authToken: jwt,
+  });
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
   const { upvote, removeUpvote, isUpvoting, isRemovingUpvote } =
     useCoherenceUpvoteMutations(jwt);
@@ -349,11 +351,12 @@ export function SignalUpvoteButton({
     : direction === 'down'
     ? t('removeDownvote')
     : t('downvote');
-  const chosenAmount = allocationAmount(summary, percent, locale);
-  const allocationLabel =
-    allocationDirection === 'down'
-      ? t('downvoteWithVotingPower')
-      : t('upvoteWithVotingPower');
+  const chosenAmount = allocationAmount(
+    myVotingPower?.votingPower ?? summary.myUpvote?.maxVotingPower,
+    myVotingPower?.tokenDecimals ?? summary.tokenDecimals,
+    percent,
+    locale,
+  );
 
   return (
     <div
@@ -391,46 +394,18 @@ export function SignalUpvoteButton({
               sideOffset={6}
               collisionPadding={12}
               data-testid="signal-vote-allocation"
-              className="w-[min(16rem,calc(100vw-2rem))] rounded-none border border-border/80 bg-background-2 p-3 shadow-md"
+              className="w-[min(18rem,calc(100vw-2rem))] rounded-none border border-border/80 bg-background-2 p-3 shadow-md"
               style={spaceAccentPortalStyle}
               data-space-accent-scope
               onClick={stopPropagation}
             >
               <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-1 text-foreground">
-                    {allocationLabel}
-                  </span>
-                  <label className="inline-flex items-center gap-1 text-1 font-semibold tabular-nums text-foreground">
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      max={100}
-                      step={1}
-                      value={percent}
-                      disabled={isMutating}
-                      aria-label={t('votingPowerPercent')}
-                      data-testid="signal-vote-percent"
-                      className="h-7 w-14 border border-border bg-transparent px-1 text-right text-1 tabular-nums text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      onChange={(event) => {
-                        const raw = event.target.value;
-                        if (raw.trim() === '') return;
-                        const next = Number(raw);
-                        if (!Number.isFinite(next)) return;
-                        setPercent(
-                          Math.min(100, Math.max(1, Math.round(next))),
-                        );
-                      }}
-                    />
-                    <span aria-hidden>%</span>
-                  </label>
-                </div>
-                {chosenAmount ? (
-                  <p className="m-0 text-1 tabular-nums text-muted-foreground">
-                    {t('votingPowerAllocated', { amount: chosenAmount })}
-                  </p>
-                ) : null}
+                <p
+                  className="m-0 text-2 font-semibold tabular-nums text-foreground"
+                  data-testid="signal-vote-amount"
+                >
+                  {chosenAmount ?? '—'}
+                </p>
                 <Slider
                   min={1}
                   max={100}
@@ -438,7 +413,8 @@ export function SignalUpvoteButton({
                   value={[percent]}
                   onValueChange={(value) => setPercent(value[0] ?? 100)}
                   disabled={isMutating}
-                  aria-label={allocationLabel}
+                  aria-label={chosenAmount ?? t('votes')}
+                  data-testid="signal-vote-slider"
                 />
                 <div className="grid grid-cols-2 gap-2">
                   <Button
@@ -486,6 +462,8 @@ export function SignalUpvoteButton({
                     {error}
                   </p>
                 ) : null}
+                <Separator className="bg-border/70" />
+                <SignalAllocationVoters summary={summary} />
               </div>
             </PopoverContent>
           ) : undefined
