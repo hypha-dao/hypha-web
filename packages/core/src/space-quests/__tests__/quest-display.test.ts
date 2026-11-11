@@ -51,6 +51,8 @@ describe('formatQuestCalendarDate', () => {
     expect(portuguese).not.toContain('19');
     expect(formatQuestCalendarDate('next quarter')).toBe('next quarter');
     expect(formatQuestCalendarDate('2026-02-31')).toBe('2026-02-31');
+    expect(formatQuestCalendarDate('2323-01-01')).toBe('2323-01-01');
+    expect(formatQuestCalendarDate('2323')).toBe('2323');
     expect(formatQuestCalendarDate(null)).toBe('');
   });
 });
@@ -170,7 +172,7 @@ describe('questOverviewVisibility', () => {
     });
   });
 
-  it('shows defined content and hides deliverables while proposed', () => {
+  it('shows defined content, including deliverables while proposed', () => {
     expect(
       questOverviewVisibility({
         ...empty,
@@ -191,7 +193,7 @@ describe('questOverviewVisibility', () => {
       showRewards: true,
       showMilestones: true,
       showMembers: true,
-      showDeliverables: false,
+      showDeliverables: true,
     });
     expect(
       questOverviewVisibility({
@@ -278,7 +280,7 @@ describe('milestone editor chrome', () => {
       showInsertHint: false,
     });
     expect(milestoneEditorChrome(2)).toEqual({
-      addLabel: 'Add milestone at end',
+      addLabel: 'Add milestone',
       showInsertHint: true,
     });
   });

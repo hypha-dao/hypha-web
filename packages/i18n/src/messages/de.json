@@ -3597,7 +3597,7 @@
       "youVoted": "Du hast {vote} abgestimmt",
       "voteValueYes": "Ja",
       "voteValueNo": "Nein",
-      "questActivationNote": "Wird der Vorschlag angenommen, wird diese Quest aktiviert."
+      "questActivationNote": "Wenn dieser Vorschlag angenommen wird, wird die Quest aktiv."
     },
     "withdrawResubmit": {
       "title": "Vorschlag zurückziehen oder bearbeiten und erneut einreichen?",
@@ -5773,6 +5773,12 @@
     },
     "activity": {
       "proposalRejected": "Vorschlag abgelehnt"
+    },
+    "confirm": {
+      "title": "Diese Quest einreichen?",
+      "body": "Damit wird die Quest als Vorschlag zur Abstimmung in {space} eingereicht. Die Quest bleibt vorgeschlagen, bis die Abstimmung angenommen ist.",
+      "cancel": "Abbrechen",
+      "submit": "Zur Abstimmung einreichen"
     },
     "drafts": {
       "empty": "Du hast in diesem Space keine gespeicherten Quest-Entwürfe.",

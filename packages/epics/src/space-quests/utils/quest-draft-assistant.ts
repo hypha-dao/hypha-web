@@ -16,6 +16,7 @@ import {
   type QuestStewardStep,
 } from '@hypha-platform/core/client';
 import type {
+  EditableQuestDeliverable,
   EditableQuestMember,
   EditableQuestMilestone,
 } from '../components/quest-section-edit-modals';
@@ -52,6 +53,7 @@ export type QuestDraftStateSnapshot = {
   selectedLeadPersonId: number | null;
   members: EditableQuestMember[];
   targetDate: string | null;
+  deliverables?: EditableQuestDeliverable[];
 };
 
 export type QuestDraftPatchInput = {

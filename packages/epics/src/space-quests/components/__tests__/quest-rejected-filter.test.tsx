@@ -124,7 +124,12 @@ vi.mock('@hypha-platform/core/client', async () => {
   >('@hypha-platform/core/client');
   return {
     ...actual,
-    useSpaceBySlug: () => ({ space: { slug: 'sandbox' } }),
+    useSpaceBySlug: () => ({
+      space: {
+        slug: 'sandbox',
+        leadImage: 'https://cdn.example/space.jpg',
+      },
+    }),
   };
 });
 
@@ -191,5 +196,9 @@ describe('rejected quest filter', () => {
     expect(card.textContent).not.toContain('Proposed');
     expect(card.textContent).not.toContain('waiting for votes');
     expect(card.textContent).not.toMatch(/On track|Off track|Not started/);
+    expect(
+      screen.getByTestId('quest-card-image-voted-down').getAttribute('src'),
+    ).toBe('https://cdn.example/space.jpg');
+    expect(card.querySelector('[class*="border-error-8/70"]')).toBeTruthy();
   });
 });

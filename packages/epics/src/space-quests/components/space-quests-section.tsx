@@ -10,7 +10,6 @@ import {
   type QuestHealthState,
   type QuestListFilter,
   type QuestRecord,
-  type QuestStatus,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import {
@@ -28,6 +27,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { PersonAvatar } from '../../people/components/person-avatar';
+import { QuestStatusBadge } from './quest-status-badge';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import {
   deleteQuestDraftRequest,
@@ -39,44 +39,15 @@ import {
 } from '../hooks/use-space-quests';
 import { questRichTextPlain } from '../utils/quest-rich-text';
 
-function statusBadgeClasses(
-  quest: Pick<QuestRecord, 'status' | 'proposalStatus'>,
-): string {
-  if (isRejectedProposedQuest(quest)) return 'bg-neutral-3 text-foreground';
-  switch (quest.status) {
-    case 'proposed':
-      return 'bg-[#edebff] text-[#4b4bff] dark:bg-accent-3 dark:text-accent-11';
-    case 'completed':
-      return 'bg-neutral-3 text-foreground';
-    case 'paused':
-      return 'bg-neutral-3 text-neutral-11';
-    case 'archived':
-      return 'bg-neutral-3 text-neutral-11';
-    default:
-      return 'bg-neutral-3 text-foreground';
-  }
-}
+const PLACEHOLDER_LEAD_IMAGES = new Set([
+  '/placeholder/document-lead-image.webp',
+  '/placeholder/space-lead-image.webp',
+]);
 
-function statusLabel(status: QuestStatus): string {
-  switch (status) {
-    case 'proposed':
-      return 'Proposed';
-    case 'paused':
-      return 'Paused';
-    case 'completed':
-      return 'Completed';
-    case 'archived':
-      return 'Archived';
-    default:
-      return 'Active';
-  }
-}
-
-function questStatusTag(
-  quest: Pick<QuestRecord, 'status' | 'proposalStatus'>,
-): string {
-  if (isRejectedProposedQuest(quest)) return 'Rejected';
-  return statusLabel(quest.status);
+function questCardLeadImage(src: string | null | undefined): string | null {
+  const trimmed = src?.trim() ?? '';
+  if (!trimmed || PLACEHOLDER_LEAD_IMAGES.has(trimmed)) return null;
+  return trimmed;
 }
 
 function showQuestHealthTag(
@@ -254,11 +225,13 @@ export function QuestCard({
   href,
   locale = 'en',
   spaceMembers = [],
+  spaceLeadImage = null,
 }: {
   quest: QuestRecord;
   href: string;
   locale?: string;
   spaceMembers?: readonly QuestSpaceMember[];
+  spaceLeadImage?: string | null;
 }) {
   const t = useTranslations('SpaceQuests');
   const health = cardHealth(quest);
@@ -268,6 +241,7 @@ export function QuestCard({
   const leadPortrait = questLeadPortrait(quest, spaceMembers);
   const goalPlain = questRichTextPlain(quest.goal);
   const targetLabel = questCardTargetLabel(quest.targetDate, locale);
+  const leadImage = questCardLeadImage(spaceLeadImage);
 
   return (
     <Link
@@ -275,15 +249,16 @@ export function QuestCard({
       data-testid={`quest-card-${quest.slug}`}
       className="craft-card-interactive group flex h-full min-w-0 w-full max-w-full flex-col gap-2.5 p-3.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
     >
+      {leadImage ? (
+        <img
+          src={leadImage}
+          alt=""
+          data-testid={`quest-card-image-${quest.slug}`}
+          className="-mx-3.5 -mt-3.5 h-36 w-[calc(100%+1.75rem)] max-w-none object-cover"
+        />
+      ) : null}
       <div className="flex items-center justify-between gap-2">
-        <span
-          className={cn(
-            'inline-flex items-center px-2 py-0.5 text-[11px] font-semibold',
-            statusBadgeClasses(quest),
-          )}
-        >
-          {questStatusTag(quest)}
-        </span>
+        <QuestStatusBadge quest={quest} />
         {showQuestHealthTag(quest) ? (
           <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold">
             <span
@@ -526,7 +501,6 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
         ) : null}
       </div>
 
-      {/* Status filter chips: Active, Proposed, Paused, Completed, Rejected */}
       <div
         role="tablist"
         aria-label={t('title')}
@@ -536,42 +510,40 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
           const active = filter === key;
           const count = counts[key];
           return (
-            <button
+            <Button
               key={key}
               type="button"
+              variant="outline"
               role="tab"
               aria-selected={active}
               data-testid={`quest-filter-${key}`}
               onClick={() => setFilter(key)}
               className={cn(
-                'inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold transition-colors',
-                active
-                  ? 'bg-foreground text-background'
-                  : 'bg-neutral-3 text-foreground hover:bg-neutral-4',
+                'gap-1',
+                active && 'border-foreground/40 bg-foreground/5',
               )}
             >
               <span>{filterLabels[key]}</span>
               <span>{count}</span>
-            </button>
+            </Button>
           );
         })}
         {draftsVisible ? (
-          <button
+          <Button
             type="button"
+            variant="outline"
             role="tab"
             aria-selected={showingDrafts}
             data-testid="quest-filter-drafts"
             onClick={() => setFilter('drafts')}
             className={cn(
-              'inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold transition-colors',
-              showingDrafts
-                ? 'bg-foreground text-background'
-                : 'bg-neutral-3 text-foreground hover:bg-neutral-4',
+              'gap-1',
+              showingDrafts && 'border-foreground/40 bg-foreground/5',
             )}
           >
             <span>{t('filters.drafts')}</span>
             <span>{drafts.length}</span>
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -646,6 +618,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
               quest={quest}
               locale={locale}
               spaceMembers={spaceMembers}
+              spaceLeadImage={space?.leadImage}
               href={`/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
                 quest.slug,
               )}`}

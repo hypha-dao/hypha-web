@@ -3,17 +3,19 @@
 import {
   QUEST_DEFAULT_REWARD_TOKENS,
   bulletsToMarkdownList,
+  formatQuestCalendarDate,
+  parseQuestCalendarDate,
   splitMarkdownLinesToBullets,
   stripViewerYouMarker,
   type Person,
   milestoneEditorChrome,
-  type QuestDeliverableRecord,
   type QuestMilestoneStatus,
   type QuestReward,
 } from '@hypha-platform/core/client';
 import {
   Button,
   Combobox,
+  DatePicker,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -416,6 +418,10 @@ function QuestEditDialogFrame({
       data-quest-edit-dialog=""
       className={cn(QUEST_EDIT_DIALOG_CLASS, className)}
       {...contentProps}
+      onCloseAutoFocus={(event) => {
+        contentProps.onCloseAutoFocus?.(event);
+        event.preventDefault();
+      }}
     >
       <style>{`
         [data-quest-edit-dialog] .ProseMirror,
@@ -805,6 +811,22 @@ export function EditQuestLeadModal({
   );
 }
 
+function questStoredDateToPickerDate(
+  value: string | null | undefined,
+): Date | undefined {
+  const parsed = parseQuestCalendarDate(value);
+  if (!parsed) return undefined;
+  return new Date(parsed.year, parsed.month - 1, parsed.day, 12, 0, 0, 0);
+}
+
+function pickerDateToQuestStored(date: Date): string | null {
+  const year = date.getFullYear();
+  if (year < 2000 || year > 2100) return null;
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function EditQuestTargetDateModal({
   open,
   onOpenChange,
@@ -841,17 +863,33 @@ export function EditQuestTargetDateModal({
       >
         <div className="space-y-1.5">
           <label className={LABEL_CLASS}>TARGET DATE</label>
-          <Input
-            value={draft}
-            onChange={(event) => {
-              const next = event.target.value;
-              setDraft(next);
-              const stored = next.trim() || null;
-              publishChange(stored ?? '', () => onLiveChange?.(stored));
-            }}
+          <DatePicker
+            value={questStoredDateToPickerDate(draft)}
             placeholder="20 November 2026"
-            className="h-10 rounded-none bg-background-2"
+            className="w-full normal-case tracking-normal"
+            formatLabel={(date) =>
+              formatQuestCalendarDate(pickerDateToQuestStored(date) ?? '')
+            }
+            onChange={(next) => {
+              if (!(next instanceof Date)) return;
+              const stored = pickerDateToQuestStored(next);
+              if (!stored) return;
+              setDraft(stored);
+              publishChange(stored, () => onLiveChange?.(stored));
+            }}
           />
+          {draft.trim() ? (
+            <button
+              type="button"
+              className="text-xs text-neutral-11 underline-offset-2 hover:underline"
+              onClick={() => {
+                setDraft('');
+                publishChange('', () => onLiveChange?.(null));
+              }}
+            >
+              Clear date
+            </button>
+          ) : null}
         </div>
       </QuestEditDialogFrame>
     </Dialog>
@@ -929,7 +967,7 @@ export function EditQuestRewardsModal({
  * Edit Milestones modal (Figma node 47:2):
  * Each milestone has a name, target date, owner, and RichTextEditor description.
  * Supports "+ Add milestone here" between rows with automatic M1/M2/M3… renumbering,
- * plus "+ Add milestone at end".
+ * plus "Add milestone".
  */
 export function EditQuestMilestonesModal({
   open,
@@ -1244,7 +1282,7 @@ export function EditQuestMilestonesModal({
 
 /**
  * Edit Members modal (Figma node 32:148 & 33:2):
- * Lists members with RESPONSIBILITY bullets (+ Add bullet) and an ADD MEMBER box
+ * Lists members with RESPONSIBILITY bullets (+ Add Responsibility) and an ADD MEMBER box
  * (PERSON picker + RESPONSIBILITY bullets + ADD TO QUEST).
  */
 export function EditQuestMembersModal({
@@ -1481,7 +1519,7 @@ export function EditQuestMembersModal({
                     }}
                     className="text-xs font-semibold text-neutral-11 hover:text-foreground"
                   >
-                    + Add bullet
+                    + Add Responsibility
                   </button>
                 </div>
               </div>
@@ -1542,7 +1580,7 @@ export function EditQuestMembersModal({
               onClick={() => setNewBullets([...newBullets, ''])}
               className="text-xs font-medium text-neutral-11 hover:text-foreground"
             >
-              + Add bullet
+              + Add Responsibility
             </button>
           </div>
           <Button
@@ -1572,7 +1610,12 @@ export function EditQuestDeliverablesModal({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  deliverables: QuestDeliverableRecord[];
+  deliverables: ReadonlyArray<{
+    id?: number;
+    name: string;
+    url?: string | null;
+    note?: string | null;
+  }>;
   onSave: (next: EditableQuestDeliverable[]) => void;
 }) {
   const [rows, setRows] = useState<EditableQuestDeliverable[]>([]);

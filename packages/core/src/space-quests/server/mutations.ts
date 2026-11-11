@@ -394,6 +394,21 @@ export async function createSpaceQuest(
 
   if (!created) return { ok: false, error: 'invalid_input' };
 
+  const deliverables = input.deliverables ?? [];
+  if (deliverables.length > 0) {
+    await db.insert(spaceQuestDeliverables).values(
+      deliverables.map((item, idx) => ({
+        questId: created.id,
+        order: idx + 1,
+        name: item.name.trim(),
+        url: item.url?.trim() || null,
+        note: item.note?.trim() || null,
+        updatedByPersonId: actor?.id ?? null,
+        updatedByName: actorName,
+      })),
+    );
+  }
+
   if (input.milestones.length > 0) {
     await db.insert(spaceQuestMilestones).values(
       input.milestones.map((m, idx) => ({

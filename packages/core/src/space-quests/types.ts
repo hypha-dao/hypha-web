@@ -186,4 +186,9 @@ export type QuestDraftInput = {
     roleLabel?: string | null;
     responsibilities: string[];
   }>;
+  deliverables?: Array<{
+    name: string;
+    url?: string | null;
+    note?: string | null;
+  }>;
 };

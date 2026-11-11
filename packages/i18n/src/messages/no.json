@@ -3598,7 +3598,7 @@
       "youVoted": "Du stemte {vote}",
       "voteValueYes": "ja",
       "voteValueNo": "nei",
-      "questActivationNote": "Ved godkjenning aktiveres dette oppdraget."
+      "questActivationNote": "Hvis dette forslaget blir vedtatt, blir oppdraget aktivt."
     },
     "withdrawResubmit": {
       "title": "Vil du trekke tilbake forslaget ditt, eller redigere og sende inn på nytt?",
@@ -5778,6 +5778,12 @@
     },
     "activity": {
       "proposalRejected": "forslag avvist"
+    },
+    "confirm": {
+      "title": "Sende inn dette oppdraget?",
+      "body": "Dette sender oppdraget inn som et forslag som {space} stemmer over. Oppdraget forblir foreslått til avstemningen går gjennom.",
+      "cancel": "Avbryt",
+      "submit": "Send til avstemning"
     },
     "drafts": {
       "empty": "Du har ingen lagrede utkast i dette området.",

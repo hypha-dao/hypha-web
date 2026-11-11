@@ -3039,7 +3039,7 @@
       "youVoted": "Votaste {vote}",
       "voteValueYes": "Sí",
       "voteValueNo": "No",
-      "questActivationNote": "Si se aprueba, esta misión se activa."
+      "questActivationNote": "Si esta propuesta se aprueba, la misión pasa a estar activa."
     },
     "withdrawResubmit": {
       "title": "¿Retirar tu propuesta o editarla y enviarla de nuevo?",
@@ -5787,6 +5787,12 @@
     },
     "activity": {
       "proposalRejected": "propuesta rechazada"
+    },
+    "confirm": {
+      "title": "¿Enviar esta misión?",
+      "body": "Esto envía la misión como propuesta para que {space} vote. La misión sigue propuesta hasta que la votación se apruebe.",
+      "cancel": "Cancelar",
+      "submit": "Enviar a votación"
     },
     "drafts": {
       "empty": "No tienes borradores de misiones guardados en este espacio.",

@@ -3599,7 +3599,7 @@
       "youVoted": "Je hebt op {vote} gestemd",
       "voteValueYes": "Ja",
       "voteValueNo": "Nee",
-      "questActivationNote": "Bij goedkeuring wordt deze Quest geactiveerd."
+      "questActivationNote": "Als dit voorstel wordt aangenomen, wordt de quest actief."
     },
     "withdrawResubmit": {
       "title": "Uw voorstel intrekken of bewerken en opnieuw indienen?",
@@ -5779,6 +5779,12 @@
     },
     "activity": {
       "proposalRejected": "voorstel afgewezen"
+    },
+    "confirm": {
+      "title": "Deze quest indienen?",
+      "body": "Dit dient de quest in als voorstel waar {space} over stemt. De quest blijft voorgesteld tot de stemming slaagt.",
+      "cancel": "Annuleren",
+      "submit": "Indienen voor stemming"
     },
     "drafts": {
       "empty": "Je hebt geen opgeslagen quest-concepten in deze space.",

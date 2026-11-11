@@ -101,8 +101,7 @@ export function questOverviewVisibility(quest: {
     showRewards: (quest.rewards?.length ?? 0) > 0,
     showMilestones: (quest.milestones?.length ?? 0) > 0,
     showMembers: (quest.members?.length ?? 0) > 0,
-    showDeliverables:
-      quest.status !== 'proposed' && (quest.deliverables?.length ?? 0) > 0,
+    showDeliverables: (quest.deliverables?.length ?? 0) > 0,
     showHealth: true,
     showTargetDate: hasText(quest.targetDate),
   };
@@ -171,5 +170,5 @@ export function milestoneEditorChrome(count: number): {
   if (count <= 0) {
     return { addLabel: 'Add milestone', showInsertHint: false };
   }
-  return { addLabel: 'Add milestone at end', showInsertHint: true };
+  return { addLabel: 'Add milestone', showInsertHint: true };
 }

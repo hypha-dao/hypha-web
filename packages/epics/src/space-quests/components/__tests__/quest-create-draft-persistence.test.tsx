@@ -98,6 +98,10 @@ vi.mock('../../../common/human-chat-panel-context', () => ({
     open: false,
     panelAvailable: true,
     openHumanChatPanel: harness.openHumanChatPanel,
+    closeHumanChatPanel: vi.fn(),
+    closeCoherenceChat: vi.fn(),
+    requestQuestChat: vi.fn(),
+    dismissQuestChat: vi.fn(),
     setSpaceQuestDraft: harness.setSpaceQuestDraft,
   }),
 }));
@@ -254,7 +258,7 @@ describe('quest create draft persistence', () => {
 
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} resumeDraftId={9} />);
 
-    expect(await screen.findByText('Late checklist')).toBeTruthy();
+    expect(await screen.findByDisplayValue('Late checklist')).toBeTruthy();
     expect(screen.getByText('Finish the checklist')).toBeTruthy();
     await waitFor(() => {
       const latest = harness.setSpaceQuestDraft.mock.calls.at(-1)?.[0];
@@ -282,7 +286,7 @@ describe('quest create draft persistence', () => {
   it('asks to keep or discard on cancel', async () => {
     seedSession(4);
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
-    expect(await screen.findByText('Quest test')).toBeTruthy();
+    expect(await screen.findByDisplayValue('Quest test')).toBeTruthy();
 
     fireEvent.click(screen.getByTestId('cancel-quest-button'));
     fireEvent.click(screen.getByTestId('keep-quest-draft-button'));
@@ -298,7 +302,7 @@ describe('quest create draft persistence', () => {
   it('discards the server draft and the local session', async () => {
     seedSession(4);
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
-    expect(await screen.findByText('Quest test')).toBeTruthy();
+    expect(await screen.findByDisplayValue('Quest test')).toBeTruthy();
 
     fireEvent.click(screen.getByTestId('cancel-quest-button'));
     fireEvent.click(screen.getByTestId('discard-quest-draft-button'));
@@ -321,7 +325,7 @@ describe('quest create draft persistence', () => {
       slug: 'quest-test-proposal',
     });
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
-    expect(await screen.findByText('Quest test')).toBeTruthy();
+    expect(await screen.findByDisplayValue('Quest test')).toBeTruthy();
 
     await waitFor(() => {
       expect(

@@ -3025,7 +3025,7 @@
       "youVoted": "Vous avez voté {vote}",
       "voteValueYes": "Oui",
       "voteValueNo": "Non",
-      "questActivationNote": "Son adoption active cette quête."
+      "questActivationNote": "Si cette proposition est adoptée, la quête devient active."
     },
     "withdrawResubmit": {
       "title": "Retirer votre proposition ou la modifier et la soumettre à nouveau ?",
@@ -5769,6 +5769,12 @@
     },
     "activity": {
       "proposalRejected": "proposition rejetée"
+    },
+    "confirm": {
+      "title": "Soumettre cette quête ?",
+      "body": "Cela soumet la quête comme proposition au vote de {space}. La quête reste proposée jusqu’à l’adoption du vote.",
+      "cancel": "Annuler",
+      "submit": "Soumettre au vote"
     },
     "drafts": {
       "empty": "Vous n’avez aucun brouillon de quête enregistré dans cet espace.",

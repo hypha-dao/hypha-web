@@ -17,6 +17,8 @@ interface DatePickerProps {
   placeholder?: string;
   className?: string;
   locale?: Locale;
+  /** Replaces the default `PPP` label for a single date. */
+  formatLabel?: (date: Date) => string;
 }
 
 export function DatePicker({
@@ -26,6 +28,7 @@ export function DatePicker({
   placeholder = 'Select a date',
   className,
   locale,
+  formatLabel,
 }: DatePickerProps) {
   const [internalValue, setInternalValue] = React.useState<
     Date | DateRange | undefined
@@ -42,7 +45,9 @@ export function DatePicker({
     if (!selected) return placeholder;
 
     if (mode === 'single' && selected instanceof Date) {
-      return format(selected, 'PPP', { locale });
+      return formatLabel
+        ? formatLabel(selected)
+        : format(selected, 'PPP', { locale });
     }
 
     if (mode === 'range' && typeof selected === 'object') {

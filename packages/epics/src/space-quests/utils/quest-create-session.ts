@@ -54,6 +54,7 @@ function emptyDraft(): QuestDraftStateSnapshot {
     selectedLeadPersonId: null,
     members: [],
     targetDate: null,
+    deliverables: [],
   };
 }
 
@@ -102,6 +103,26 @@ function readDraft(value: unknown): QuestDraftStateSnapshot {
         typeof milestone === 'object' &&
         typeof (milestone as { name?: unknown }).name === 'string',
     );
+  }
+  if (Array.isArray(row.deliverables)) {
+    draft.deliverables = row.deliverables.flatMap((item) => {
+      if (!item || typeof item !== 'object') return [];
+      const rowItem = item as {
+        id?: unknown;
+        name?: unknown;
+        url?: unknown;
+        note?: unknown;
+      };
+      if (typeof rowItem.name !== 'string' || !rowItem.name.trim()) return [];
+      return [
+        {
+          ...(typeof rowItem.id === 'number' ? { id: rowItem.id } : {}),
+          name: rowItem.name,
+          url: typeof rowItem.url === 'string' ? rowItem.url : '',
+          note: typeof rowItem.note === 'string' ? rowItem.note : '',
+        },
+      ];
+    });
   }
   if (Array.isArray(row.members)) {
     draft.members = row.members.filter(
@@ -268,7 +289,8 @@ export function questCreateDraftIsWorthSaving(
     draft.rewards.length > 0 ||
     draft.milestones.length > 0 ||
     draft.members.length > 0 ||
-    draft.targetDate
+    draft.targetDate ||
+    (draft.deliverables?.length ?? 0) > 0
   ) {
     return true;
   }

@@ -14,6 +14,10 @@ const harness = vi.hoisted(() => ({
   setSpaceQuestDraft: vi.fn(),
   openCoherenceChat: vi.fn(),
   openHumanChatPanel: vi.fn(),
+  closeCoherenceChat: vi.fn(),
+  closeHumanChatPanel: vi.fn(),
+  requestQuestChat: vi.fn(),
+  dismissQuestChat: vi.fn(),
   closeAiPanel: vi.fn(),
   postUpdate: vi.fn(),
 }));
@@ -119,7 +123,7 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
 vi.mock('next-intl', () => ({
@@ -157,6 +161,10 @@ vi.mock('../../../common/human-chat-panel-context', () => ({
   useHumanChatPanel: () => ({
     openCoherenceChat: harness.openCoherenceChat,
     openHumanChatPanel: harness.openHumanChatPanel,
+    closeCoherenceChat: harness.closeCoherenceChat,
+    closeHumanChatPanel: harness.closeHumanChatPanel,
+    requestQuestChat: harness.requestQuestChat,
+    dismissQuestChat: harness.dismissQuestChat,
     setSpaceQuestDraft: harness.setSpaceQuestDraft,
   }),
 }));
@@ -249,6 +257,10 @@ describe('saved quest helper entry', () => {
     harness.setSpaceQuestDraft.mockReset();
     harness.openCoherenceChat.mockReset();
     harness.openHumanChatPanel.mockReset();
+    harness.closeCoherenceChat.mockReset();
+    harness.closeHumanChatPanel.mockReset();
+    harness.requestQuestChat.mockReset();
+    harness.dismissQuestChat.mockReset();
     harness.closeAiPanel.mockReset();
     harness.postUpdate.mockReset();
     vi.unstubAllGlobals();
@@ -296,9 +308,13 @@ describe('saved quest helper entry', () => {
     expect(screen.queryByTestId('quest-participant-role-0')).toBeNull();
     expect(screen.queryByText('ADD PARTICIPANT')).toBeNull();
     expect(screen.queryByText(/any participant can edit/i)).toBeNull();
-    expect(screen.getByTestId('open-quest-chat-button').textContent).toContain(
-      'Open discussion',
-    );
+    const title = screen.getByRole('heading', { name: 'Onboarding' });
+    expect(title.className).toContain('m-0');
+    expect(title.className).toContain('text-4');
+    expect(title.className).toContain('leading-tight');
+    expect(
+      screen.getByTestId('open-quest-discussion-button').textContent,
+    ).toContain('Open discussion');
 
     const participants = screen.getByTestId('quest-overview-members');
     const participantsHeading = screen.getByRole('heading', {
@@ -334,6 +350,11 @@ describe('saved quest helper entry', () => {
     expect(screen.queryByTestId('open-quest-helper-button')).toBeNull();
     expect(screen.queryByText('Quest Helper')).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Participants' })).toBeNull();
+    fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
+    expect(harness.openCoherenceChat).not.toHaveBeenCalled();
+    expect(harness.closeCoherenceChat).toHaveBeenCalled();
+    expect(harness.openHumanChatPanel).toHaveBeenCalled();
+
     fireEvent.click(screen.getByTestId('open-quest-chat-button'));
     expect(harness.openCoherenceChat).toHaveBeenCalledWith(
       'room-1',
@@ -343,12 +364,10 @@ describe('saved quest helper entry', () => {
       'sandbox',
       { channel: 'quest' },
     );
-    expect(harness.setSpaceQuestDraft).toHaveBeenCalledTimes(1);
     expect(harness.setSpaceQuestDraft).toHaveBeenCalledWith(null);
-    expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
-    expect(screen.getByTestId('open-quest-chat-button').textContent).toContain(
-      'Open discussion',
-    );
+    expect(
+      screen.getByTestId('open-quest-chat-button').getAttribute('aria-label'),
+    ).toBe('Quest chat');
   });
 
   it('edits the quest name, participants, and paused health from Settings', () => {
@@ -509,6 +528,15 @@ describe('saved quest helper entry', () => {
     );
 
     const composer = screen.getByTestId('quest-update-composer');
+    expect(composer.className).toContain('px-3');
+    expect(composer.className).toContain('pt-3');
+    expect(composer.innerHTML).toContain('rounded-none');
+    expect(composer.innerHTML).toContain('border-border');
+    expect(composer.innerHTML).toContain('bg-neutral-1');
+    expect(screen.getByLabelText('Share progress').className).toContain('px-3');
+    expect(screen.getByLabelText('Share progress').className).toContain(
+      'py-2.5',
+    );
     expect(screen.queryByLabelText('Link (optional)')).toBeNull();
     expect(composer.querySelector('select')).toBeNull();
     const milestone = screen.getByTestId('quest-update-milestone');

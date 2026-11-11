@@ -29,6 +29,7 @@ export { RecentSpaceHistoryTracker } from './recent-space-history-tracker';
 export * from './get-root-space';
 
 export * from './get-path-function';
+export * from './outlined-list-tag';
 export * from './space-section-nav';
 export * from './space-section-nav-icons';
 export * from './hypha-network-feedback-dialog';

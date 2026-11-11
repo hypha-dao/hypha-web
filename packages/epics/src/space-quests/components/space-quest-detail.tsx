@@ -44,13 +44,20 @@ import {
   resolveQuestLeadIdentity,
 } from './quest-detail-presentation';
 import { QuestUpdateCard } from './quest-update-card';
-import { ArrowLeft, ArrowUpRight, Pencil, Send } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  MessageCircle,
+  Pencil,
+  Send,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -93,6 +100,17 @@ import {
   formatRelativeTimeShort,
   healthBadgeMeta,
 } from './space-quests-section';
+import { QuestStatusBadge, questStatusTag } from './quest-status-badge';
+import {
+  CHAT_COMPOSER_ACTIONS_CLASS,
+  CHAT_COMPOSER_FIELD_CLASS,
+  CHAT_COMPOSER_INPUT_CLASS,
+  CHAT_COMPOSER_ROOT_CLASS,
+} from '../../common/human-chat-panel/composer-field';
+import {
+  getMainColumnScrollY,
+  scrollMainColumnTo,
+} from '../../common/main-column-scroll';
 import {
   spaceQuestDetailTabLinks,
   type SpaceQuestDetailTab,
@@ -142,11 +160,12 @@ function statusLabel(status: QuestStatus): string {
   }
 }
 
-function questStatusTag(
-  quest: Pick<QuestRecord, 'status' | 'proposalStatus'>,
-): string {
-  if (isRejectedProposedQuest(quest)) return 'Rejected';
-  return statusLabel(quest.status);
+const QUEST_DETAIL_SCROLL_KEY = 'hypha-quest-detail-scroll';
+
+function restoreQuestDetailScroll(top: number) {
+  scrollMainColumnTo(top);
+  if (typeof window === 'undefined') return;
+  window.requestAnimationFrame(() => scrollMainColumnTo(top));
 }
 
 function showQuestHealthTag(
@@ -762,60 +781,70 @@ function UpdatesTab({
 
       {canPost ? (
         <div
-          className="space-y-2 border border-border bg-background p-3"
+          className={CHAT_COMPOSER_ROOT_CLASS}
           data-testid="quest-update-composer"
         >
-          <label className="block space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-11">
-              Share progress
-            </span>
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows={3}
-              aria-label="Share progress"
-              placeholder="Share progress with the quest…"
-              className="w-full resize-none border border-border bg-background px-2 py-1.5 text-[13px] text-foreground outline-none placeholder:text-neutral-11"
-            />
-          </label>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="w-full max-w-xs shrink-0">
-              <Select
-                value={milestoneOrder == null ? 'none' : String(milestoneOrder)}
-                onValueChange={(next) =>
-                  setMilestoneOrder(next === 'none' ? null : Number(next))
-                }
-              >
-                <SelectTrigger
-                  aria-label="Milestone"
-                  data-testid="quest-update-milestone"
-                  className="h-10 rounded-none bg-background px-3 text-[11px] font-semibold"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No milestone</SelectItem>
-                  {quest.milestones.map((milestone) => (
-                    <SelectItem
-                      key={milestone.id}
-                      value={String(milestone.order)}
-                    >
-                      M{milestone.order} · {milestone.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              type="button"
-              data-testid="quest-update-post"
-              disabled={sending || !text.trim()}
-              onClick={() => void submit()}
-              className="h-8 shrink-0 gap-1.5 rounded-none px-3 text-[11px] font-semibold uppercase tracking-[0.06em]"
+          <div className={CHAT_COMPOSER_FIELD_CLASS}>
+            <label className="block">
+              <span className="sr-only">Share progress</span>
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={3}
+                aria-label="Share progress"
+                placeholder="Share progress with the quest…"
+                className={cn(
+                  'w-full resize-none text-[16px] leading-5 text-foreground outline-none placeholder:text-neutral-11',
+                  CHAT_COMPOSER_INPUT_CLASS,
+                )}
+              />
+            </label>
+            <div
+              className={cn(
+                CHAT_COMPOSER_ACTIONS_CLASS,
+                'flex-row flex-wrap items-center',
+              )}
             >
-              <Send className="size-3" aria-hidden />
-              POST
-            </Button>
+              <div className="w-full max-w-xs shrink-0">
+                <Select
+                  value={
+                    milestoneOrder == null ? 'none' : String(milestoneOrder)
+                  }
+                  onValueChange={(next) =>
+                    setMilestoneOrder(next === 'none' ? null : Number(next))
+                  }
+                >
+                  <SelectTrigger
+                    aria-label="Milestone"
+                    data-testid="quest-update-milestone"
+                    className="h-10 rounded-none bg-background px-3 text-[11px] font-semibold"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No milestone</SelectItem>
+                    {quest.milestones.map((milestone) => (
+                      <SelectItem
+                        key={milestone.id}
+                        value={String(milestone.order)}
+                      >
+                        M{milestone.order} · {milestone.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                type="button"
+                data-testid="quest-update-post"
+                disabled={sending || !text.trim()}
+                onClick={() => void submit()}
+                className="h-8 shrink-0 gap-1.5 rounded-none px-3 text-[11px] font-semibold uppercase tracking-[0.06em]"
+              >
+                <Send className="size-3" aria-hidden />
+                POST
+              </Button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -1159,8 +1188,18 @@ export function SpaceQuestDetail({
   const { person } = useMe();
   const { getAccessToken } = useAuthentication();
   const { closeAiPanel } = useAiPanel();
-  const { openCoherenceChat, openHumanChatPanel, setSpaceQuestDraft } =
-    useHumanChatPanel();
+  const {
+    openCoherenceChat,
+    openHumanChatPanel,
+    closeCoherenceChat,
+    closeHumanChatPanel,
+    setSpaceQuestDraft,
+    requestQuestChat,
+    dismissQuestChat,
+    mode: chatMode,
+    coherenceSlug: chatSlug,
+    questChatRequested,
+  } = useHumanChatPanel();
   const { quest, isLoading, error, refresh } = useSpaceQuestDetail(
     spaceSlug,
     questSlug,
@@ -1235,11 +1274,49 @@ export function SpaceQuestDetail({
     triggerDetailSend,
   ]);
 
+  const questChatRef = useRef({
+    mode: chatMode,
+    slug: chatSlug,
+    questChatRequested,
+    closeCoherenceChat,
+    closeHumanChatPanel,
+    dismissQuestChat,
+    setSpaceQuestDraft,
+  });
+  questChatRef.current = {
+    mode: chatMode,
+    slug: chatSlug,
+    questChatRequested,
+    closeCoherenceChat,
+    closeHumanChatPanel,
+    dismissQuestChat,
+    setSpaceQuestDraft,
+  };
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    const raw = window.sessionStorage.getItem(QUEST_DETAIL_SCROLL_KEY);
+    if (raw == null) return;
+    window.sessionStorage.removeItem(QUEST_DETAIL_SCROLL_KEY);
+    const top = Number(raw);
+    if (!Number.isFinite(top)) return;
+    restoreQuestDetailScroll(top);
+  }, []);
+
   useEffect(() => {
     return () => {
-      setSpaceQuestDraft(null);
+      const current = questChatRef.current;
+      current.setSpaceQuestDraft(null);
+      const openedThisQuest =
+        current.questChatRequested ||
+        (current.mode === 'coherence' &&
+          (current.slug?.trim() ?? '') === questSlug);
+      if (!openedThisQuest) return;
+      current.dismissQuestChat();
+      current.closeCoherenceChat();
+      current.closeHumanChatPanel();
     };
-  }, [setSpaceQuestDraft]);
+  }, [questSlug]);
 
   if (isLoading) {
     return (
@@ -1291,6 +1368,16 @@ export function SpaceQuestDetail({
     memberOptions,
   );
 
+  const openSpaceChannel = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1200) {
+      closeAiPanel();
+    }
+    setDetailChatOpen(false);
+    dismissQuestChat();
+    closeCoherenceChat();
+    openHumanChatPanel();
+  };
+
   const openQuestChat = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 1200) {
       closeAiPanel();
@@ -1309,7 +1396,7 @@ export function SpaceQuestDetail({
       return;
     }
     setDetailChatOpen(true);
-    openHumanChatPanel();
+    requestQuestChat();
   };
 
   const handleSendDetailChatMessage = async (overridePrompt?: string) => {
@@ -1448,6 +1535,7 @@ export function SpaceQuestDetail({
   };
 
   const savePatch = async (patch: QuestPatch): Promise<QuestRecord | null> => {
+    const scrollTop = getMainColumnScrollY();
     setSaving(true);
     setActionError(null);
     try {
@@ -1458,6 +1546,18 @@ export function SpaceQuestDetail({
         getAccessToken,
       });
       await refresh(updated, { revalidate: false });
+      if (tab !== 'overview') {
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.setItem(
+            QUEST_DETAIL_SCROLL_KEY,
+            String(scrollTop),
+          );
+        }
+        router.replace(baseHref, { scroll: false });
+        restoreQuestDetailScroll(scrollTop);
+      } else {
+        restoreQuestDetailScroll(scrollTop);
+      }
       return updated;
     } catch (err) {
       setActionError(
@@ -1539,12 +1639,10 @@ export function SpaceQuestDetail({
       <header className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-display text-[22px] font-semibold text-foreground">
+            <h1 className="m-0 min-w-0 text-4 leading-tight text-foreground">
               {quest.name}
             </h1>
-            <span className="bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
-              {questStatusTag(quest)}
-            </span>
+            <QuestStatusBadge quest={quest} />
             {showQuestHealthTag(quest) ? (
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
                 <span
@@ -1555,17 +1653,28 @@ export function SpaceQuestDetail({
               </span>
             ) : null}
           </div>
-          {quest.status !== 'proposed' && (quest.chatRoomId || canEdit) ? (
+          <div className="flex shrink-0 items-center gap-3">
             <button
               type="button"
-              onClick={openQuestChat}
-              data-testid="open-quest-chat-button"
-              className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
+              onClick={openSpaceChannel}
+              data-testid="open-quest-discussion-button"
+              className="inline-flex items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
             >
               Open discussion
               <span aria-hidden>→</span>
             </button>
-          ) : null}
+            {quest.status !== 'proposed' && (quest.chatRoomId || canEdit) ? (
+              <button
+                type="button"
+                onClick={openQuestChat}
+                data-testid="open-quest-chat-button"
+                aria-label="Quest chat"
+                className="inline-flex size-8 items-center justify-center border border-foreground/15 text-foreground hover:bg-foreground/5"
+              >
+                <MessageCircle className="size-3.5" aria-hidden />
+              </button>
+            ) : null}
+          </div>
         </div>
         <QuestDetailSubheading
           lead={resolveQuestLeadIdentity({

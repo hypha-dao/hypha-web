@@ -174,6 +174,14 @@ export type HumanChatPanelContextValue = {
   closeSpaceContextSection: () => void;
   spaceQuestDraft: SpaceQuestDraftPanelSession | null;
   setSpaceQuestDraft: (session: SpaceQuestDraftPanelSession | null) => void;
+  /**
+   * The create-quest helper session can stay loaded without being shown.
+   * Only the quest chat button sets this; Open discussion leaves it false
+   * so the panel stays on the space channel.
+   */
+  questChatRequested: boolean;
+  requestQuestChat: () => void;
+  dismissQuestChat: () => void;
 };
 
 const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
@@ -204,6 +212,9 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   closeSpaceContextSection: () => {},
   spaceQuestDraft: null,
   setSpaceQuestDraft: () => {},
+  questChatRequested: false,
+  requestQuestChat: () => {},
+  dismissQuestChat: () => {},
 });
 
 /**
@@ -247,6 +258,7 @@ export function HumanChatPanelProvider({
     useState<SpaceContextPanelSection | null>(null);
   const [spaceQuestDraft, setSpaceQuestDraft] =
     useState<SpaceQuestDraftPanelSession | null>(null);
+  const [questChatRequested, setQuestChatRequested] = useState(false);
 
   useEffect(() => {
     if (!open) setSpaceContextSection(null);
@@ -329,6 +341,8 @@ export function HumanChatPanelProvider({
       );
       setMode('coherence');
       setSpaceContextSection(null);
+      // A real room replaces the quest helper. This does not create a room.
+      setQuestChatRequested(false);
       // Idempotently open the sidebar — avoids race condition with toggle()
       setOpen(true);
     },
@@ -353,8 +367,18 @@ export function HumanChatPanelProvider({
   }, [setOpen]);
 
   const closeHumanChatPanel = useCallback(() => {
+    setQuestChatRequested(false);
     setOpen(false);
   }, [setOpen]);
+
+  const requestQuestChat = useCallback(() => {
+    setQuestChatRequested(true);
+    setOpen(true);
+  }, [setOpen]);
+
+  const dismissQuestChat = useCallback(() => {
+    setQuestChatRequested(false);
+  }, []);
 
   return (
     <HumanChatPanelContext.Provider
@@ -386,6 +410,9 @@ export function HumanChatPanelProvider({
         closeSpaceContextSection,
         spaceQuestDraft,
         setSpaceQuestDraft,
+        questChatRequested,
+        requestQuestChat,
+        dismissQuestChat,
       }}
     >
       {children}

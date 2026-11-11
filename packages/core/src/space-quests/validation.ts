@@ -69,6 +69,7 @@ export const schemaCreateSpaceQuest = z.object({
   status: z.literal('proposed').optional().default('proposed'),
   milestones: z.array(schemaQuestMilestoneInput).max(30).default([]),
   members: z.array(schemaQuestMemberInput).max(50).default([]),
+  deliverables: z.array(schemaQuestDeliverableInput).max(40).default([]),
 });
 
 export const schemaPatchSpaceQuest = z.object({
@@ -150,6 +151,17 @@ export const schemaQuestCreateDraftPayload = z.object({
     selectedLeadPersonId: z.number().int().positive().nullable(),
     members: z.array(questDraftMember).max(50),
     targetDate: z.string().max(64).nullable(),
+    deliverables: z
+      .array(
+        z.object({
+          id: z.number().int().positive().optional(),
+          name: z.string().max(200),
+          url: z.string().max(1000).nullable().optional(),
+          note: z.string().max(1000).nullable().optional(),
+        }),
+      )
+      .max(40)
+      .optional(),
   }),
   messages: z.array(questDraftMessage).max(40),
   step: z.number().int().min(0).max(20),

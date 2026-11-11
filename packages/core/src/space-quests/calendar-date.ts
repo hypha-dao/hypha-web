@@ -63,6 +63,7 @@ function validCalendarDate(
   ) {
     return null;
   }
+  if (year < 2000 || year > 2100) return null;
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
   const utc = new Date(Date.UTC(year, month - 1, day));
   if (

@@ -1221,6 +1221,7 @@ export function HumanRightPanel(props: HumanRightPanelProps) {
     spaceContextSection,
     closeSpaceContextSection,
     spaceQuestDraft,
+    questChatRequested,
     closeHumanChatPanel,
   } = useHumanChatPanel();
   const routeSpaceSlug = getDhoSpaceSlugFromPathname(pathname) || '';
@@ -1229,7 +1230,9 @@ export function HumanRightPanel(props: HumanRightPanelProps) {
       ? spaceContextSection
       : null;
   const questDraft =
-    spaceQuestDraft?.spaceSlug === routeSpaceSlug ? spaceQuestDraft : null;
+    questChatRequested && spaceQuestDraft?.spaceSlug === routeSpaceSlug
+      ? spaceQuestDraft
+      : null;
 
   useEffect(() => {
     if (spaceContextSection && !section) closeSpaceContextSection();

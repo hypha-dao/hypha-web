@@ -32,7 +32,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, MessageCircle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useConfig } from 'wagmi';
 import {
@@ -72,6 +72,7 @@ import {
   questHelperTypingForTurn,
 } from '../utils/quest-helper-typing';
 import {
+  EditQuestDeliverablesModal,
   EditQuestGoalModal,
   EditQuestLeadModal,
   EditQuestMembersModal,
@@ -81,6 +82,7 @@ import {
   EditQuestScopeModal,
   EditQuestSuccessModal,
   EditQuestTargetDateModal,
+  type EditableQuestDeliverable,
   type EditableQuestMember,
   type EditableQuestMilestone,
 } from './quest-section-edit-modals';
@@ -203,10 +205,13 @@ export function SpaceQuestCreateDraft({
   const config = useConfig();
   const { closeAiPanel } = useAiPanel();
   const {
-    open: rightPanelOpen,
     panelAvailable,
     openHumanChatPanel,
+    closeHumanChatPanel,
+    closeCoherenceChat,
     setSpaceQuestDraft,
+    requestQuestChat,
+    dismissQuestChat,
   } = useHumanChatPanel();
 
   const viewerDisplayName = useMemo(() => {
@@ -226,6 +231,9 @@ export function SpaceQuestCreateDraft({
   const [successCriteria, setSuccessCriteria] = useState('');
   const [rewards, setRewards] = useState<QuestReward[]>([]);
   const [milestones, setMilestones] = useState<EditableQuestMilestone[]>([]);
+  const [deliverables, setDeliverables] = useState<EditableQuestDeliverable[]>(
+    [],
+  );
   const [leadNameOverride, setLeadNameOverride] = useState<string | null>(null);
   const leadName = leadNameOverride ?? `${viewerDisplayName} (you)`;
   const [selectedLeadPersonId, setSelectedLeadPersonId] = useState<
@@ -269,6 +277,7 @@ export function SpaceQuestCreateDraft({
     | 'success'
     | 'rewards'
     | 'milestones'
+    | 'deliverables'
     | 'lead'
     | 'members'
     | 'targetDate'
@@ -321,6 +330,7 @@ export function SpaceQuestCreateDraft({
     selectedLeadPersonId: null,
     members: [],
     targetDate: null,
+    deliverables: [],
   });
 
   const {
@@ -351,12 +361,15 @@ export function SpaceQuestCreateDraft({
     selectedLeadPersonId,
     members,
     targetDate,
+    deliverables,
   };
   stewardStepIndexRef.current = stewardStepIndex;
 
   const commitDraftSnapshot = useCallback(
     (next: QuestDraftStateSnapshot) => {
-      draftSnapshotRef.current = next;
+      const keptDeliverables =
+        next.deliverables ?? draftSnapshotRef.current.deliverables ?? [];
+      draftSnapshotRef.current = { ...next, deliverables: keptDeliverables };
       setName(next.name);
       setGoal(next.goal);
       setScopeIn(next.scopeIn);
@@ -372,6 +385,7 @@ export function SpaceQuestCreateDraft({
       setSelectedLeadPersonId(next.selectedLeadPersonId);
       setMembers(next.members);
       setTargetDate(next.targetDate);
+      setDeliverables(keptDeliverables);
     },
     [leadName],
   );
@@ -813,16 +827,23 @@ export function SpaceQuestCreateDraft({
     [chatInput, chatMessages, isAgentTyping, name, spaceSlug, triggerSend],
   );
 
-  // Open the shared right side panel on mount and host the Quest chat there.
+  const closeCreateChatRef = useRef({
+    dismissQuestChat,
+    setSpaceQuestDraft,
+  });
+  closeCreateChatRef.current = { dismissQuestChat, setSpaceQuestDraft };
+
+  // Keep the helper session ready, but leave the panel closed until the
+  // quest chat button. Open discussion uses the space channel instead.
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 1200) {
       closeAiPanel();
     }
-    openHumanChatPanel();
     return () => {
-      setSpaceQuestDraft(null);
+      closeCreateChatRef.current.dismissQuestChat();
+      closeCreateChatRef.current.setSpaceQuestDraft(null);
     };
-  }, [closeAiPanel, openHumanChatPanel, setSpaceQuestDraft]);
+  }, [closeAiPanel]);
 
   useEffect(() => {
     if (draftHydrating) return;
@@ -883,6 +904,10 @@ export function SpaceQuestCreateDraft({
     const finishLinked = (target: PendingProposalLink) => {
       setPendingProposalLink(null);
       setProposalLinkError(null);
+      dismissQuestChat();
+      closeCoherenceChat();
+      closeHumanChatPanel();
+      setSpaceQuestDraft(null);
       router.push(
         target.agreementSlug
           ? proposalPageHref(locale, spaceSlug, target.agreementSlug)
@@ -1023,6 +1048,13 @@ export function SpaceQuestCreateDraft({
             roleLabel: draftParticipantRoleLabel(m.roleLabel),
             responsibilities: m.responsibilities,
           })),
+          deliverables: deliverables
+            .filter((item) => item.name.trim().length > 0)
+            .map((item) => ({
+              name: item.name.trim(),
+              url: item.url.trim() || null,
+              note: item.note.trim() || null,
+            })),
         },
         getAccessToken,
       });
@@ -1317,12 +1349,16 @@ export function SpaceQuestCreateDraft({
               data-testid="quest-create-intro"
               className="flex flex-col gap-1"
             >
-              {/* Top header bar: New quest [Draft] + CANCEL / CREATE QUEST */}
               <div className="flex flex-wrap items-end justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <h1 className="font-display text-[18px] font-semibold leading-none text-foreground">
-                    New quest
-                  </h1>
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <input
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    placeholder="New quest"
+                    aria-label="Quest title"
+                    data-testid="quest-create-title"
+                    className="min-w-0 flex-1 bg-transparent font-display text-[18px] font-semibold leading-none text-foreground outline-none placeholder:text-neutral-11"
+                  />
                   <span className="bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
                     Draft
                   </span>
@@ -1412,23 +1448,36 @@ export function SpaceQuestCreateDraft({
                   Fills in live as you chat · click any section to edit
                 </p>
                 <div className="flex items-center gap-3">
-                  {panelAvailable && !rightPanelOpen ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (
-                          typeof window !== 'undefined' &&
-                          window.innerWidth < 1200
-                        ) {
-                          closeAiPanel();
-                        }
-                        openHumanChatPanel();
-                      }}
-                      className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
-                    >
-                      Open discussion
-                      <span aria-hidden>→</span>
-                    </button>
+                  {panelAvailable ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (
+                            typeof window !== 'undefined' &&
+                            window.innerWidth < 1200
+                          ) {
+                            closeAiPanel();
+                          }
+                          dismissQuestChat();
+                          closeCoherenceChat();
+                          openHumanChatPanel();
+                        }}
+                        className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
+                      >
+                        Open discussion
+                        <span aria-hidden>→</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => requestQuestChat()}
+                        aria-label="Quest chat"
+                        data-testid="open-quest-chat-button"
+                        className="inline-flex size-8 shrink-0 items-center justify-center border border-foreground/15 text-foreground hover:bg-foreground/5"
+                      >
+                        <MessageCircle className="size-3.5" aria-hidden />
+                      </button>
+                    </>
                   ) : null}
                   <div className="h-1.5 w-[140px] overflow-hidden bg-neutral-4">
                     <div
@@ -1501,34 +1550,7 @@ export function SpaceQuestCreateDraft({
               <DraftResumeSkeleton />
             ) : (
               <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,1fr)_330px]">
-                {/* Left column: Name, Goal, Scope, Success Criteria, Quest Reward, Milestones */}
                 <div className="space-y-2.5">
-                  {/* NAME */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveSection('name');
-                      setEditingModal('name');
-                    }}
-                    data-testid="draft-section-name"
-                    className={cn(
-                      'flex w-full flex-col items-start gap-1.5 border p-3.5 text-left transition-colors',
-                      activeSection === 'name'
-                        ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
-                        : 'border-border bg-background hover:border-foreground/40',
-                    )}
-                  >
-                    <div className="flex w-full items-center justify-between">
-                      <span className={LABEL_CLASS}>NAME</span>
-                      <span className="text-xs text-neutral-11">✎</span>
-                    </div>
-                    <p className="font-display text-base font-semibold text-foreground">
-                      {name || (
-                        <span className="text-neutral-11">Untitled quest</span>
-                      )}
-                    </p>
-                  </button>
-
                   {/* GOAL */}
                   <div
                     role="button"
@@ -1738,6 +1760,37 @@ export function SpaceQuestCreateDraft({
                       ))}
                     </div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditingModal('deliverables')}
+                    data-testid="draft-section-deliverables"
+                    className={cn(
+                      'flex w-full flex-col items-start gap-1.5 border p-3.5 text-left transition-colors',
+                      editingModal === 'deliverables'
+                        ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
+                        : 'border-border bg-background hover:border-foreground/40',
+                    )}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <span className={LABEL_CLASS}>DELIVERABLES</span>
+                      <span className="text-xs text-neutral-11">✎</span>
+                    </div>
+                    {deliverables.length === 0 ? (
+                      <p className="text-[13px] text-neutral-11">—</p>
+                    ) : (
+                      <div className="w-full space-y-1">
+                        {deliverables.map((item, index) => (
+                          <p
+                            key={`${item.name}-${index}`}
+                            className="text-[13px] font-semibold text-foreground"
+                          >
+                            {item.name}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </button>
                 </div>
 
                 {/* Right column: Lead, Participants, Target Date */}
@@ -1842,12 +1895,12 @@ export function SpaceQuestCreateDraft({
           >
             <div className="space-y-4">
               <DialogTitle className="font-display text-[18px] font-bold text-foreground">
-                Are you sure?
+                {tDrafts('confirm.title')}
               </DialogTitle>
               <p className="text-[13px] leading-relaxed text-neutral-11">
-                Creating this quest submits it as a proposal to Hypha for voting
-                right away. Name, goal, scope, success, milestones, participants
-                and Quest Reward will be published as shown.
+                {tDrafts('confirm.body', {
+                  space: space?.title?.trim() || spaceSlug,
+                })}
               </p>
               <div className="flex items-center justify-end gap-2 pt-1">
                 <Button
@@ -1858,7 +1911,7 @@ export function SpaceQuestCreateDraft({
                   data-testid="confirm-cancel-button"
                   className="rounded-none"
                 >
-                  CANCEL
+                  {tDrafts('confirm.cancel')}
                 </Button>
                 <Button
                   type="button"
@@ -1870,7 +1923,7 @@ export function SpaceQuestCreateDraft({
                   data-testid="confirm-create-proposal-button"
                   className="bg-foreground text-background hover:bg-foreground/90"
                 >
-                  YES, CREATE PROPOSAL
+                  {tDrafts('confirm.submit')}
                 </Button>
               </div>
             </div>
@@ -1914,6 +1967,12 @@ export function SpaceQuestCreateDraft({
         </Dialog>
 
         {/* Section Edit Modals */}
+        <EditQuestDeliverablesModal
+          open={editingModal === 'deliverables'}
+          onOpenChange={(open) => !open && setEditingModal(null)}
+          deliverables={deliverables}
+          onSave={setDeliverables}
+        />
         <EditQuestNameModal
           open={editingModal === 'name'}
           onOpenChange={(open) => !open && setEditingModal(null)}

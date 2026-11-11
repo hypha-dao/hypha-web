@@ -3025,7 +3025,7 @@
       "youVoted": "Você votou em {vote}",
       "voteValueYes": "sim",
       "voteValueNo": "não",
-      "questActivationNote": "A aprovação ativa esta missão."
+      "questActivationNote": "Se esta proposta for aprovada, a missão fica ativa."
     },
     "withdrawResubmit": {
       "title": "Retirar sua proposta ou editar e enviar novamente?",
@@ -5771,6 +5771,12 @@
     },
     "activity": {
       "proposalRejected": "proposta rejeitada"
+    },
+    "confirm": {
+      "title": "Enviar esta missão?",
+      "body": "Isto envia a missão como proposta para {space} votar. A missão continua proposta até a votação ser aprovada.",
+      "cancel": "Cancelar",
+      "submit": "Enviar para votação"
     },
     "drafts": {
       "empty": "Você não tem rascunhos de missões salvos neste espaço.",

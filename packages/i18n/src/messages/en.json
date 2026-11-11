@@ -3627,7 +3627,7 @@
       "youVoted": "You voted {vote}",
       "voteValueYes": "yes",
       "voteValueNo": "no",
-      "questActivationNote": "Passing activates this Quest."
+      "questActivationNote": "If this proposal passes, the quest becomes active."
     },
     "withdrawResubmit": {
       "title": "Withdraw your proposal or edit and submit again?",
@@ -5795,6 +5795,12 @@
     },
     "activity": {
       "proposalRejected": "proposal rejected"
+    },
+    "confirm": {
+      "title": "Submit this quest?",
+      "body": "This submits the quest as a proposal for {space} to vote on. The quest stays proposed until the vote passes.",
+      "cancel": "Cancel",
+      "submit": "Submit for a vote"
     },
     "drafts": {
       "empty": "You have no saved quest drafts in this space.",

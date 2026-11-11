@@ -87,6 +87,10 @@ vi.mock('../../../common/human-chat-panel-context', () => ({
     open: false,
     panelAvailable: true,
     openHumanChatPanel: vi.fn(),
+    closeHumanChatPanel: vi.fn(),
+    closeCoherenceChat: vi.fn(),
+    requestQuestChat: vi.fn(),
+    dismissQuestChat: vi.fn(),
     setSpaceQuestDraft: vi.fn(),
   }),
 }));
@@ -115,10 +119,12 @@ afterEach(() => {
 });
 
 describe('quest create draft heading', () => {
-  it('keeps New quest and drops the duplicate Quest draft title', () => {
+  it('uses the title field as the header and drops the duplicate name card', () => {
     render(<SpaceQuestCreateDraft spaceSlug="sandbox" />);
 
-    expect(screen.getByRole('heading', { name: 'New quest' })).toBeTruthy();
+    const heading = screen.getByLabelText('Quest title');
+    expect(heading.getAttribute('placeholder')).toBe('New quest');
+    expect(screen.queryByTestId('draft-section-name')).toBeNull();
     expect(screen.getByText('Draft')).toBeTruthy();
     expect(
       screen.getByText('Fills in live as you chat · click any section to edit'),
@@ -127,7 +133,6 @@ describe('quest create draft heading', () => {
     expect(screen.queryByText('Quest draft')).toBeNull();
     expect(screen.getByTestId('cancel-quest-button')).toBeTruthy();
     expect(screen.queryByTestId('save-quest-draft-button')).toBeNull();
-    const heading = screen.getByRole('heading', { name: 'New quest' });
     const status = screen.getByTestId('quest-draft-save-status');
     const helper = screen.getByText(
       'Fills in live as you chat · click any section to edit',
@@ -283,7 +288,7 @@ describe('quest create draft heading', () => {
       });
     });
 
-    expect(await screen.findByText('Late checklist')).toBeTruthy();
+    expect(await screen.findByDisplayValue('Late checklist')).toBeTruthy();
     expect(screen.getByText('Finish the checklist')).toBeTruthy();
     expect(screen.queryByTestId('quest-draft-loading')).toBeNull();
     const saved = screen.getByTestId('quest-draft-save-status');

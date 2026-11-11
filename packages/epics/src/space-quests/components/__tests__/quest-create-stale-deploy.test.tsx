@@ -98,6 +98,10 @@ vi.mock('../../../common/human-chat-panel-context', () => ({
     open: false,
     panelAvailable: true,
     openHumanChatPanel: harness.openHumanChatPanel,
+    closeHumanChatPanel: vi.fn(),
+    closeCoherenceChat: vi.fn(),
+    requestQuestChat: vi.fn(),
+    dismissQuestChat: vi.fn(),
     setSpaceQuestDraft: harness.setSpaceQuestDraft,
   }),
 }));
@@ -236,7 +240,7 @@ describe('quest create after a replaced deploy', () => {
     );
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
 
-    expect(await screen.findByText('Quest test')).toBeTruthy();
+    expect(await screen.findByDisplayValue('Quest test')).toBeTruthy();
     expect(
       screen.getByText('Verify that the quest flow works end-to-end.'),
     ).toBeTruthy();
@@ -278,7 +282,7 @@ describe('quest create after a replaced deploy', () => {
       new StaleDeploymentError({ id: 44, slug: 'quest-test-proposal' }),
     );
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
-    await screen.findByText('Quest test');
+    await screen.findByDisplayValue('Quest test');
     await confirmCreate();
 
     expect(
@@ -316,7 +320,7 @@ describe('quest create after a replaced deploy', () => {
     harness.agreement = { slug: 'quest-test-proposal', proposalId: 9 };
 
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
-    await screen.findByText('Quest test');
+    await screen.findByDisplayValue('Quest test');
     await confirmCreate();
 
     await waitFor(() => {
@@ -342,7 +346,7 @@ describe('quest create after a replaced deploy', () => {
     seedDraft();
     harness.createAgreement.mockRejectedValue(new Error('wallet rejected'));
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
-    await screen.findByText('Quest test');
+    await screen.findByDisplayValue('Quest test');
     await confirmCreate();
 
     expect(await screen.findByText('wallet rejected')).toBeTruthy();

@@ -47,7 +47,7 @@ describe('EditQuestMilestonesModal chrome', () => {
     expect(html).toContain('overflow-wrap:anywhere');
   });
 
-  it('says Add milestone at end and shows the insert hint when rows exist', () => {
+  it('keeps Add milestone and shows the insert hint when rows exist', () => {
     const html = renderToStaticMarkup(
       <EditQuestMilestonesModal
         open
@@ -71,7 +71,8 @@ describe('EditQuestMilestonesModal chrome', () => {
         onSave={() => undefined}
       />,
     );
-    expect(html).toContain('Add milestone at end');
+    expect(html).toContain('Add milestone');
+    expect(html).not.toContain('Add milestone at end');
     expect(html).toContain('Add milestone here');
     expect(html).not.toContain('Hover between two milestones');
     expect(html).not.toContain('inserted after');

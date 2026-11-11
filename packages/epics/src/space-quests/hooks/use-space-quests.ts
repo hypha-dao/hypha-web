@@ -46,8 +46,6 @@ export function revalidateSpaceQuests(spaceSlug: string) {
       Array.isArray(key) &&
       key[0] === SPACE_QUESTS_SWR_KEY &&
       key[1] === spaceSlug,
-    undefined,
-    { revalidate: true },
   );
 }
 
