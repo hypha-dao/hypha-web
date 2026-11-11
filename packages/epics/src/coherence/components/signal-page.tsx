@@ -509,6 +509,25 @@ export function SignalPage({
             <h1 className="m-0 min-w-0 text-4 leading-tight text-foreground">
               {signal.title}
             </h1>
+            <SignalUpvoteButton
+              slug={signal.slug}
+              spaceSlug={spaceSlug}
+              upvotes={signal.upvotes}
+              votingMode={votingMode}
+              votingModeStatus={votingModeStatus}
+              onRetryVotingMode={retryVotingMode}
+              isNonMember={isNonMember}
+              isMembershipPending={isMembershipPending}
+              refresh={refresh}
+              archived={signal.archived}
+              variant="page"
+              summaryState={signalListUpvoteSummaryState({
+                hasSettledList: Boolean(coherences),
+                isLoading: isSignalsLoading,
+                hasError: signalsError != null,
+              })}
+              className="self-start"
+            />
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2 self-start">
             <SignalCreatorActions
@@ -521,68 +540,50 @@ export function SignalPage({
           </div>
         </div>
 
-        <div
+        <dl
           data-testid="signal-page-meta"
-          className="flex flex-wrap items-end gap-x-6 gap-y-4 border-t border-border/70 pt-4"
+          className="m-0 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-border/70 pt-4 lg:grid-cols-5"
         >
-          <SignalUpvoteButton
-            slug={signal.slug}
-            spaceSlug={spaceSlug}
-            upvotes={signal.upvotes}
-            votingMode={votingMode}
-            votingModeStatus={votingModeStatus}
-            onRetryVotingMode={retryVotingMode}
-            isNonMember={isNonMember}
-            isMembershipPending={isMembershipPending}
-            refresh={refresh}
-            archived={signal.archived}
-            variant="page"
-            summaryState={signalListUpvoteSummaryState({
-              hasSettledList: Boolean(coherences),
-              isLoading: isSignalsLoading,
-              hasError: signalsError != null,
-            })}
-            className="mb-0.5"
-          />
-          <dl className="m-0 grid min-w-0 flex-1 basis-[min(100%,28rem)] grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-5">
-            <MetaItem label={t('signalCreatedBy')}>
-              <PersonAvatar
-                size="sm"
-                shape="circle"
-                avatarSrc={creator?.avatarUrl ?? ''}
-                userName={creatorDisplayName ?? undefined}
-                personId={signal.creatorId ?? undefined}
-              />
-              <span className="truncate">{creatorDisplayName}</span>
+          <MetaItem label={t('signalCreatedBy')}>
+            <PersonAvatar
+              size="sm"
+              shape="circle"
+              avatarSrc={creator?.avatarUrl ?? ''}
+              userName={creatorDisplayName ?? undefined}
+              personId={signal.creatorId ?? undefined}
+            />
+            <span className="truncate">{creatorDisplayName}</span>
+          </MetaItem>
+          {created ? (
+            <MetaItem label={t('signalCreatedLabel')}>{created}</MetaItem>
+          ) : null}
+          {lastReply ? (
+            <MetaItem label={t('signalLastReplyLabel')}>
+              <span className="truncate">{lastReply}</span>
             </MetaItem>
-            {created ? (
-              <MetaItem label={t('signalCreatedLabel')}>{created}</MetaItem>
-            ) : null}
-            {lastReply ? (
-              <MetaItem label={t('signalLastReplyLabel')}>
-                <span className="truncate">{lastReply}</span>
-              </MetaItem>
-            ) : null}
+          ) : null}
+          <div className="col-span-full flex min-w-0 items-end justify-between gap-3">
             <MetaItem label={t('signalDiscussion')}>
-              {humanChatEnabled ? (
-                <button
-                  type="button"
-                  onClick={openChat}
-                  className="truncate text-left underline-offset-4 hover:underline"
-                >
-                  {discussion}
-                </button>
-              ) : (
-                <span className="truncate">{discussion}</span>
-              )}
+              <span className="truncate">{discussion}</span>
             </MetaItem>
-            {mediaSummary ? (
-              <MetaItem label={t('signalAttachmentsLabel')}>
-                <span className="truncate">{mediaSummary}</span>
-              </MetaItem>
+            {humanChatEnabled ? (
+              <button
+                type="button"
+                data-testid="signal-open-discussion"
+                onClick={openChat}
+                className="inline-flex shrink-0 items-center gap-1 text-2 font-medium text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {t('openDiscussion')}
+                <span aria-hidden>→</span>
+              </button>
             ) : null}
-          </dl>
-        </div>
+          </div>
+          {mediaSummary ? (
+            <MetaItem label={t('signalAttachmentsLabel')}>
+              <span className="truncate">{mediaSummary}</span>
+            </MetaItem>
+          ) : null}
+        </dl>
       </section>
 
       {description ? (

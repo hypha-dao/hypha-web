@@ -33,7 +33,8 @@ describe('SignalUpvoteCellChrome', () => {
     const down = view.getByTestId('signal-vote-down');
     expect(cell.getAttribute('aria-pressed')).toBe('true');
     expect(cell.getAttribute('title')).toBe('-2');
-    expect(cell.className).toContain('rounded-full');
+    expect(cell.className).toContain('rounded-none');
+    expect(cell.className).not.toContain('rounded-full');
     expect(cell.textContent).not.toContain('Net');
     expect(up.compareDocumentPosition(figure)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,

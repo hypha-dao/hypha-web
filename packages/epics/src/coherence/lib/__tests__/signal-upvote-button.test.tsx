@@ -131,4 +131,21 @@ describe('SignalUpvoteButton', () => {
       });
     });
   });
+
+  it('closes the token allocation panel on cancel without voting', () => {
+    const view = render(
+      <SignalUpvoteButton
+        slug="signal"
+        spaceSlug="myspace"
+        votingMode="token"
+        upvotes={summary}
+      />,
+    );
+
+    fireEvent.click(view.getByTestId('signal-vote-down'));
+    expect(view.getByTestId('signal-vote-allocation')).toBeTruthy();
+    fireEvent.click(view.getByTestId('signal-vote-cancel'));
+    expect(view.queryByTestId('signal-vote-allocation')).toBeNull();
+    expect(calls.upvote).not.toHaveBeenCalled();
+  });
 });

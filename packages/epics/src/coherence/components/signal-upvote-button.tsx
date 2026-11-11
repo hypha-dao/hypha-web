@@ -14,14 +14,7 @@ import {
   type SignalVoteDirection,
   type SignalVotingMode,
 } from '@hypha-platform/core/client';
-import {
-  Button,
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-  Separator,
-  Slider,
-} from '@hypha-platform/ui';
+import { Button, PopoverContent, Separator, Slider } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import {
@@ -367,9 +360,19 @@ export function SignalUpvoteButton({
       onClick={stopPropagation}
       onKeyDown={stopPropagation}
     >
-      <Popover
-        open={open && canOpen}
-        onOpenChange={(next) => {
+      <SignalUpvoteCellChrome
+        figure={figureLabel}
+        exactLabel={exactLabel}
+        pressed={hasVoted}
+        direction={direction}
+        upLabel={upLabel}
+        downLabel={downLabel}
+        figureLabel={`${t('votes')} · ${exactLabel}`}
+        voteDisabled={!canVote || isMutating}
+        onVoteUp={() => handleArrow('up')}
+        onVoteDown={() => handleArrow('down')}
+        detailsOpen={open && canOpen}
+        onDetailsOpenChange={(next) => {
           if (next && !canOpen) return;
           setOpen(next);
           if (next) {
@@ -377,220 +380,203 @@ export function SignalUpvoteButton({
             setError(null);
           }
         }}
-      >
-        <PopoverAnchor asChild>
-          <div>
-            <SignalUpvoteCellChrome
-              figure={figureLabel}
-              exactLabel={exactLabel}
-              pressed={hasVoted}
-              direction={direction}
-              upLabel={upLabel}
-              downLabel={downLabel}
-              figureLabel={`${t('votes')} · ${exactLabel}`}
-              voteDisabled={!canVote || isMutating}
-              onVoteUp={() => handleArrow('up')}
-              onVoteDown={() => handleArrow('down')}
-              onFigureClick={() => {
-                if (!canOpen) return;
-                setAllocationDirection(null);
-                setOpen((current) => !current);
-                setError(null);
-              }}
-              allocationDirection={allocationDirection}
-              onAllocationClose={() => setAllocationDirection(null)}
-              allocationPanel={
-                allocatesPower ? (
-                  <PopoverContent
-                    align="start"
-                    sideOffset={6}
-                    data-testid="signal-vote-allocation"
-                    className="w-[min(16rem,calc(100vw-2rem))] rounded-none border border-border/80 bg-background-2 p-3 shadow-md"
-                    style={spaceAccentPortalStyle}
-                    data-space-accent-scope
-                    onClick={stopPropagation}
+        allocationDirection={allocationDirection}
+        onAllocationClose={() => setAllocationDirection(null)}
+        allocationPanel={
+          allocatesPower ? (
+            <PopoverContent
+              align="start"
+              side="bottom"
+              sideOffset={6}
+              collisionPadding={12}
+              data-testid="signal-vote-allocation"
+              className="w-[min(16rem,calc(100vw-2rem))] rounded-none border border-border/80 bg-background-2 p-3 shadow-md"
+              style={spaceAccentPortalStyle}
+              data-space-accent-scope
+              onClick={stopPropagation}
+            >
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-1 text-foreground">
+                    {allocationLabel}
+                  </span>
+                  <label className="inline-flex items-center gap-1 text-1 font-semibold tabular-nums text-foreground">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={100}
+                      step={1}
+                      value={percent}
+                      disabled={isMutating}
+                      aria-label={t('votingPowerPercent')}
+                      data-testid="signal-vote-percent"
+                      className="h-7 w-14 border border-border bg-transparent px-1 text-right text-1 tabular-nums text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      onChange={(event) => {
+                        const raw = event.target.value;
+                        if (raw.trim() === '') return;
+                        const next = Number(raw);
+                        if (!Number.isFinite(next)) return;
+                        setPercent(
+                          Math.min(100, Math.max(1, Math.round(next))),
+                        );
+                      }}
+                    />
+                    <span aria-hidden>%</span>
+                  </label>
+                </div>
+                {chosenAmount ? (
+                  <p className="m-0 text-1 tabular-nums text-muted-foreground">
+                    {t('votingPowerAllocated', { amount: chosenAmount })}
+                  </p>
+                ) : null}
+                <Slider
+                  min={1}
+                  max={100}
+                  step={1}
+                  value={[percent]}
+                  onValueChange={(value) => setPercent(value[0] ?? 100)}
+                  disabled={isMutating}
+                  aria-label={allocationLabel}
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    colorVariant="neutral"
+                    size="sm"
+                    disabled={isMutating}
+                    data-testid="signal-vote-cancel"
+                    onClick={() => setAllocationDirection(null)}
                   >
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-1 text-foreground">
-                          {allocationLabel}
-                        </span>
-                        <label className="inline-flex items-center gap-1 text-1 font-semibold tabular-nums text-foreground">
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            min={1}
-                            max={100}
-                            step={1}
-                            value={percent}
-                            disabled={isMutating}
-                            aria-label={t('votingPowerPercent')}
-                            data-testid="signal-vote-percent"
-                            className="h-7 w-14 border border-border bg-transparent px-1 text-right text-1 tabular-nums text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            onChange={(event) => {
-                              const raw = event.target.value;
-                              if (raw.trim() === '') return;
-                              const next = Number(raw);
-                              if (!Number.isFinite(next)) return;
-                              setPercent(
-                                Math.min(100, Math.max(1, Math.round(next))),
-                              );
-                            }}
-                          />
-                          <span aria-hidden>%</span>
-                        </label>
-                      </div>
-                      {chosenAmount ? (
-                        <p className="m-0 text-1 tabular-nums text-muted-foreground">
-                          {t('votingPowerAllocated', { amount: chosenAmount })}
-                        </p>
-                      ) : null}
-                      <Slider
-                        min={1}
-                        max={100}
-                        step={1}
-                        value={[percent]}
-                        onValueChange={(value) => setPercent(value[0] ?? 100)}
-                        disabled={isMutating}
-                        aria-label={allocationLabel}
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          colorVariant="neutral"
-                          size="sm"
-                          disabled={isMutating}
-                          data-testid="signal-vote-cancel"
-                          onClick={() => setAllocationDirection(null)}
-                        >
-                          {t('cancelVote')}
-                        </Button>
-                        <Button
-                          type="button"
-                          colorVariant="accent"
-                          size="sm"
-                          disabled={isMutating}
-                          data-testid="signal-vote-confirm"
-                          onClick={handleConfirmAllocation}
-                        >
-                          {t('confirmVote')}
-                        </Button>
-                      </div>
-                      {hasVoted ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          colorVariant="neutral"
-                          size="sm"
-                          className="w-full text-muted-foreground hover:text-foreground"
-                          disabled={isMutating}
-                          onClick={() => void handleRemove()}
-                        >
-                          {direction === 'down'
-                            ? t('removeDownvote')
-                            : t('removeUpvote')}
-                        </Button>
-                      ) : null}
-                      {error ? (
-                        <p
-                          role="alert"
-                          className="border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
-                        >
-                          {error}
-                        </p>
-                      ) : null}
-                    </div>
-                  </PopoverContent>
-                ) : undefined
-              }
-              aria-label={`${t('votes')} · ${exactLabel}`}
-              aria-busy={!canOpen}
-              data-upvote-variant={variant}
-              data-upvote-measure={cellMeasure.kind}
-              className={cn(
-                (isMutating || !canOpen) && 'opacity-65',
-                !canOpen && 'cursor-progress',
-              )}
-            />
-          </div>
-        </PopoverAnchor>
-        <PopoverContent
-          align="start"
-          sideOffset={6}
-          className="w-[min(18rem,calc(100vw-2rem))] rounded-none border border-border/80 bg-background-2 p-0 shadow-md"
-          style={spaceAccentPortalStyle}
-          data-space-accent-scope
-          onClick={stopPropagation}
-        >
-          {archived ? (
-            <p className="p-3 text-1 leading-relaxed text-muted-foreground">
-              {t('upvoteArchived')}
-            </p>
-          ) : showVotingModeError ? (
-            <div className="flex flex-col gap-3 p-3">
-              <p
-                role="alert"
-                className="border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
-              >
-                {t('votingModeLoadFailed')}
+                    {t('cancelVote')}
+                  </Button>
+                  <Button
+                    type="button"
+                    colorVariant="accent"
+                    size="sm"
+                    disabled={isMutating}
+                    data-testid="signal-vote-confirm"
+                    onClick={handleConfirmAllocation}
+                  >
+                    {t('confirmVote')}
+                  </Button>
+                </div>
+                {hasVoted ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    colorVariant="neutral"
+                    size="sm"
+                    className="w-full text-muted-foreground hover:text-foreground"
+                    disabled={isMutating}
+                    onClick={() => void handleRemove()}
+                  >
+                    {direction === 'down'
+                      ? t('removeDownvote')
+                      : t('removeUpvote')}
+                  </Button>
+                ) : null}
+                {error ? (
+                  <p
+                    role="alert"
+                    className="border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
+                  >
+                    {error}
+                  </p>
+                ) : null}
+              </div>
+            </PopoverContent>
+          ) : undefined
+        }
+        aria-label={`${t('votes')} · ${exactLabel}`}
+        aria-busy={!canOpen}
+        data-upvote-variant={variant}
+        data-upvote-measure={cellMeasure.kind}
+        className={cn(
+          (isMutating || !canOpen) && 'opacity-65',
+          !canOpen && 'cursor-progress',
+        )}
+        detailsPanel={
+          <PopoverContent
+            align="start"
+            side="bottom"
+            collisionPadding={12}
+            sideOffset={6}
+            className="w-[min(18rem,calc(100vw-2rem))] rounded-none border border-border/80 bg-background-2 p-0 shadow-md"
+            style={spaceAccentPortalStyle}
+            data-space-accent-scope
+            onClick={stopPropagation}
+          >
+            {archived ? (
+              <p className="p-3 text-1 leading-relaxed text-muted-foreground">
+                {t('upvoteArchived')}
               </p>
-              {onRetryVotingMode ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  size="sm"
-                  className="w-full"
-                  onClick={onRetryVotingMode}
-                >
-                  {t('votingModeRetry')}
-                </Button>
-              ) : null}
-            </div>
-          ) : showVotingUnavailable ? (
-            <p className="p-3 text-1 leading-relaxed text-muted-foreground">
-              {t('votingUnavailable')}
-            </p>
-          ) : (
-            <div className="flex flex-col gap-3 p-3">
-              <SignalVoteTotals
-                summary={summary}
-                totalLabel={totalLabel}
-                mode={isOneMemberOneVote ? 'count' : 'power'}
-              />
-              {isOneMemberOneVote ? (
-                <span className="-mt-2 text-1 text-muted-foreground">
-                  {t('oneMemberOneVote')}
-                </span>
-              ) : null}
-              {!canVote ? (
-                <p className="text-1 leading-relaxed text-muted-foreground">
-                  {isBlockedNonMember
-                    ? t('upvoteMembersOnly')
-                    : jwt && isMembershipPending
-                    ? t('upvoteCheckingMembership')
-                    : t('signInToUpvote')}
-                </p>
-              ) : null}
-              {error ? (
+            ) : showVotingModeError ? (
+              <div className="flex flex-col gap-3 p-3">
                 <p
                   role="alert"
                   className="border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
                 >
-                  {error}
+                  {t('votingModeLoadFailed')}
                 </p>
-              ) : null}
-              <Separator className="bg-border/70" />
-              <SignalVoteRoster
-                summary={summary}
-                mode={isOneMemberOneVote ? 'count' : 'power'}
-                className="-mt-1"
-              />
-            </div>
-          )}
-        </PopoverContent>
-      </Popover>
+                {onRetryVotingMode ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    colorVariant="neutral"
+                    size="sm"
+                    className="w-full"
+                    onClick={onRetryVotingMode}
+                  >
+                    {t('votingModeRetry')}
+                  </Button>
+                ) : null}
+              </div>
+            ) : showVotingUnavailable ? (
+              <p className="p-3 text-1 leading-relaxed text-muted-foreground">
+                {t('votingUnavailable')}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-3 p-3">
+                <SignalVoteTotals
+                  summary={summary}
+                  totalLabel={totalLabel}
+                  mode={isOneMemberOneVote ? 'count' : 'power'}
+                />
+                {isOneMemberOneVote ? (
+                  <span className="-mt-2 text-1 text-muted-foreground">
+                    {t('oneMemberOneVote')}
+                  </span>
+                ) : null}
+                {!canVote ? (
+                  <p className="text-1 leading-relaxed text-muted-foreground">
+                    {isBlockedNonMember
+                      ? t('upvoteMembersOnly')
+                      : jwt && isMembershipPending
+                      ? t('upvoteCheckingMembership')
+                      : t('signInToUpvote')}
+                  </p>
+                ) : null}
+                {error ? (
+                  <p
+                    role="alert"
+                    className="border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
+                  >
+                    {error}
+                  </p>
+                ) : null}
+                <Separator className="bg-border/70" />
+                <SignalVoteRoster
+                  summary={summary}
+                  mode={isOneMemberOneVote ? 'count' : 'power'}
+                  className="-mt-1"
+                />
+              </div>
+            )}
+          </PopoverContent>
+        }
+      />
     </div>
   );
 }

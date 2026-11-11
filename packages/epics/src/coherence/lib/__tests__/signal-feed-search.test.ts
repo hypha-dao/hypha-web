@@ -70,7 +70,9 @@ describe('upvote cell shared by the list and the detail', () => {
     expect(upvoteCellSource).toContain("'signal-vote-down'");
     expect(upvoteCellSource).toContain('ArrowUp');
     expect(upvoteCellSource).toContain('ArrowDown');
-    expect(upvoteCellSource).toContain('rounded-full');
+    expect(upvoteCellSource).toContain('rounded-none');
+    expect(upvoteCellSource).not.toContain('rounded-full');
+    expect(upvoteCellSource).toContain('<PopoverAnchor asChild>');
     expect(upvoteCellSource).not.toContain("t('net')");
     expect(upvoteSource).toContain('resolveSignalVoteAction');
     expect(upvoteSource).toContain('applyPendingSignalUpvotes');
@@ -88,12 +90,17 @@ describe('upvote cell shared by the list and the detail', () => {
     expect(buttonAt).toBeGreaterThan(metaAt);
     expect(createdAt).toBeGreaterThan(buttonAt);
     expect(feedRowSource).not.toContain('flex items-start gap-4');
-    const pageMetaAt = pageSource.indexOf('data-testid="signal-page-meta"');
+    const pageTitleAt = pageSource.indexOf(
+      '<h1 className="m-0 min-w-0 text-4 leading-tight text-foreground">',
+    );
     const pageButtonAt = pageSource.indexOf('<SignalUpvoteButton');
-    const pageCreatedAt = pageSource.indexOf("t('signalCreatedLabel')");
-    expect(pageMetaAt).toBeGreaterThan(-1);
-    expect(pageButtonAt).toBeGreaterThan(pageMetaAt);
-    expect(pageCreatedAt).toBeGreaterThan(pageButtonAt);
+    const pageMetaAt = pageSource.indexOf('data-testid="signal-page-meta"');
+    expect(pageTitleAt).toBeGreaterThan(-1);
+    expect(pageButtonAt).toBeGreaterThan(pageTitleAt);
+    expect(pageMetaAt).toBeGreaterThan(pageButtonAt);
+    expect(pageSource).toContain("t('openDiscussion')");
+    expect(pageSource).toContain('data-testid="signal-open-discussion"');
+    expect(pageSource).toContain('onClick={openChat}');
     expect(upvoteSource).not.toContain("t('totalUpvotes')");
     expect(upvoteSource).not.toContain("t('supportersCount')");
     const voteSummarySource = readFileSync(

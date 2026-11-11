@@ -4820,6 +4820,7 @@
     "signalCreatedLabel": "Created",
     "signalLastReplyLabel": "Last reply",
     "signalDiscussion": "Discussion",
+    "openDiscussion": "Open discussion",
     "signalAttachmentsLabel": "Attachments",
     "signalNotFound": "This signal could not be found.",
     "signalFormVoteWithPercent": "Vote with % of your voting power",
