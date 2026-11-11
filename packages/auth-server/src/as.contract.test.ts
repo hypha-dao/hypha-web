@@ -388,6 +388,21 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
       headers: { host, ...(init.headers as object) },
     });
 
+  it('the library itself refuses endpoints we never serve (behind the wrapper)', async () => {
+    for (const [p, m] of [
+      ['/api/auth/oauth2/create-client', 'POST'],
+      ['/api/auth/oauth2/register', 'POST'],
+      ['/api/auth/oauth2/introspect', 'POST'],
+      ['/api/auth/oauth2/userinfo', 'GET'],
+      ['/api/auth/sign-up/email', 'POST'],
+      ['/api/auth/get-session', 'GET'],
+      ['/api/auth/token', 'GET'],
+    ] as const) {
+      const res = await s.auth.handler(h.req(p, { method: m }));
+      expect(res.status, p).toBe(404);
+    }
+  });
+
   it('answers on the issuer host; 404 on any other host', async () => {
     const ok = await handle()(onHost('auth.localhost:3000', '/api/auth/jwks'));
     expect(ok.status).toBe(200);

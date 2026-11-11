@@ -67,6 +67,23 @@ export function createAuthServer(
     account: { modelName: 'as_account' },
     verification: { modelName: 'as_verification' },
     emailAndPassword: { enabled: false },
+    // Second layer behind the HTTP allowlist in handler.ts: library endpoints this server must
+    // never serve (client management, registration, userinfo/introspection, sessions listing).
+    disabledPaths: [
+      '/oauth2/create-client',
+      '/oauth2/get-clients',
+      '/oauth2/get-client',
+      '/oauth2/update-client',
+      '/oauth2/delete-client',
+      '/oauth2/register',
+      '/oauth2/introspect',
+      '/oauth2/userinfo',
+      '/sign-up/email',
+      '/sign-in/email',
+      '/get-session',
+      '/list-sessions',
+      '/token',
+    ],
     logger: { log: redactingLog },
     advanced: {
       useSecureCookies: config.issuer.startsWith('https://'),
