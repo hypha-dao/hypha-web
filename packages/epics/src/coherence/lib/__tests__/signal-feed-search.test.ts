@@ -108,11 +108,18 @@ describe('upvote cell shared by the list and the detail', () => {
       pageMetaAt,
       pageSource.indexOf('</dl>', pageMetaAt),
     );
-    expect(metaSlice).toContain(
-      'flex w-full flex-nowrap items-start gap-x-[clamp(1rem,4vw,3.5rem)] gap-y-4',
+    expect(pageSource).toContain('data-testid="signal-page-meta"');
+    expect(pageSource).toContain('SIGNAL_PAGE_META_ROW_CLASS');
+    expect(pageSource).toContain(
+      'flex w-full min-w-0 flex-nowrap items-start gap-x-[clamp(1rem,4cqi,3.5rem)] gap-y-4',
     );
-    expect(metaSlice).toContain('max-[420px]:flex-wrap');
-    expect(pageSource).toContain('min-w-[5.5rem] max-w-full shrink');
+    expect(pageSource).toContain('@min-[720px]:gap-x-[clamp(1rem,4vw,3.5rem)]');
+    expect(pageSource).toContain('@max-[520px]:flex-wrap');
+    expect(pageSource).toContain(
+      'flex min-w-0 max-w-full shrink flex-col gap-1 overflow-hidden @max-[520px]:shrink-0',
+    );
+    expect(pageSource).not.toContain('min-w-[5.5rem]');
+    expect(pageSource).not.toContain('max-[420px]:flex-wrap');
     expect(pageSource).toContain('signalDiscussionCount');
     expect(metaSlice).not.toContain('col-span-full');
     expect(metaSlice).not.toContain('grid-cols-2');

@@ -46,6 +46,13 @@ import { SignalVideoPlayer } from './signal-video-player';
 const SECTION_LABEL_CLASS =
   'text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground';
 
+/** Wide screens keep a ~51px column gap. Narrow cards scale it and wrap. */
+export const SIGNAL_PAGE_META_ROW_CLASS =
+  'm-0 flex w-full min-w-0 flex-nowrap items-start gap-x-[clamp(1rem,4cqi,3.5rem)] gap-y-4 border-t border-border/70 pt-4 @min-[720px]:gap-x-[clamp(1rem,4vw,3.5rem)] @max-[520px]:flex-wrap';
+
+export const SIGNAL_PAGE_META_ITEM_CLASS =
+  'flex min-w-0 max-w-full shrink flex-col gap-1 overflow-hidden @max-[520px]:shrink-0';
+
 function fileExtension(name: string, url: string): string {
   const source = name.includes('.') ? name : url.split('?')[0] ?? '';
   const ext = source.split('.').pop()?.trim() ?? '';
@@ -60,7 +67,7 @@ function MetaItem({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-w-[5.5rem] max-w-full shrink flex-col gap-1 overflow-hidden max-[420px]:shrink-0">
+    <div className={SIGNAL_PAGE_META_ITEM_CLASS}>
       <dt className={cn(SECTION_LABEL_CLASS, 'truncate')}>{label}</dt>
       <dd className="m-0 flex min-w-0 items-center gap-2 text-1 text-foreground">
         {children}
@@ -465,7 +472,7 @@ export function SignalPage({
   const description = signal.description?.trim() ?? '';
 
   return (
-    <div className="flex flex-col gap-4" data-testid="signal-page">
+    <div className="flex min-w-0 flex-col gap-4" data-testid="signal-page">
       <nav
         aria-label={t('signals')}
         className="flex min-w-0 items-center gap-2 text-1 text-muted-foreground"
@@ -500,7 +507,7 @@ export function SignalPage({
         </div>
       ) : null}
 
-      <section className="craft-card flex flex-col gap-5 p-5">
+      <section className="craft-card @container flex min-w-0 flex-col gap-5 p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <SignalTypeBadge type={signal.type} variant="box" />
@@ -540,7 +547,7 @@ export function SignalPage({
 
         <dl
           data-testid="signal-page-meta"
-          className="m-0 flex w-full flex-nowrap items-start gap-x-[clamp(1rem,4vw,3.5rem)] gap-y-4 border-t border-border/70 pt-4 max-[420px]:flex-wrap"
+          className={SIGNAL_PAGE_META_ROW_CLASS}
         >
           <MetaItem label={t('signalCreatedBy')}>
             <PersonAvatar

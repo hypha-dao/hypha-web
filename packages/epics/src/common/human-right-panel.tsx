@@ -1112,6 +1112,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     closeHumanChatPanel,
     setUnreadMentionCount,
   } = useHumanChatPanel();
+  const chatModeRef = useRef(mode);
+  chatModeRef.current = mode;
   // A Context section room opened from Messages is answered by that section's
   // agent, the same one its Context tab discussion uses.
   const contextSectionKey =
@@ -3182,6 +3184,45 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       };
 
       paint();
+      if (chatModeRef.current === 'coherence') {
+        // One batch leaves the thread on its recent tail. Keep paging until
+        // the room start (or the deadline) so the bubbles and the comment
+        // count see the same human history. Show messages as soon as any
+        // are painted; the count stays on the stored total until the start.
+        if (messageCount() > 0 && !isCancelled()) setIsJoining(false);
+        const deadline = Date.now() + 12000;
+        let hasMoreOlder = true;
+        while (!isCancelled() && hasMoreOlder && Date.now() < deadline) {
+          let historyResult: { hasMoreOlder: boolean; addedEvents: number };
+          try {
+            historyResult = await matrixRef.current.loadRoomHistory(
+              targetRoomId,
+              { pageSize: 50, maxBatches: 4 },
+            );
+          } catch (error) {
+            if (!isCancelled()) {
+              console.warn(
+                '[HumanRightPanel] Signal chat history load failed:',
+                error,
+              );
+            }
+            break;
+          }
+          if (isCancelled()) return;
+          hasMoreOlder = historyResult.hasMoreOlder;
+          paint();
+          if (messageCount() > 0) setIsJoining(false);
+          if (!hasMoreOlder) break;
+          if (historyResult.addedEvents === 0) {
+            if (messageCount() > 0) break;
+            await new Promise((resolve) => window.setTimeout(resolve, 300));
+          }
+        }
+        if (isCancelled()) return;
+        setHasMoreOlderMessages(hasMoreOlder);
+        setIsJoining(false);
+        return;
+      }
       if (messageCount() > 0) {
         if (!isCancelled()) setIsJoining(false);
         try {
@@ -3468,6 +3509,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const prevChatModeRef = useRef(mode);
   const lastHumanChatSpaceSlugRef = useRef(routeSpaceSlug || null);
   const hasLoadedCoherenceMessagesRef = useRef(false);
+  const persistedCoherenceCountRef = useRef<number | null>(null);
   useEffect(() => {
     if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
       // Back from a space signal closes the panel and resets after the slide.
@@ -3580,6 +3622,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
   useEffect(() => {
     hasLoadedCoherenceMessagesRef.current = false;
+    persistedCoherenceCountRef.current = null;
   }, [coherenceSlug, mode]);
 
   // Reset chat state when space changes. The dashboard network room has no slug,
@@ -4391,28 +4434,53 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (mode !== 'coherence') return;
     if (!isMatrixAvailable || !coherenceSlug || !roomId || isJoining) return;
-    const discussion = readSignalRoomDiscussionCount(
-      matrix.client,
-      roomId,
-      coherenceDescription,
-    );
-    // A partial timeline is not the comment total. Wait until it reaches the
-    // room start, then store the same filtered reply count the page shows.
-    if (!discussion?.reachesRoomStart) return;
-    if (!hasLoadedCoherenceMessagesRef.current && discussion.comments === 0)
-      return;
-    hasLoadedCoherenceMessagesRef.current = true;
-    updateCoherenceBySlugRef
-      .current({
-        slug: coherenceSlug,
-        messages: discussion.comments,
-      })
-      .catch((error) => {
-        console.warn(
-          '[HumanRightPanel] Failed to persist coherence message count:',
-          error,
-        );
-      });
+    const client = matrix.client;
+    if (!client) return;
+
+    let cancelled = false;
+    const persist = () => {
+      if (cancelled) return;
+      const discussion = readSignalRoomDiscussionCount(
+        client,
+        roomId,
+        coherenceDescription,
+      );
+      // A partial timeline is not the comment total. Scrollback that reaches
+      // the room start often adds no visible messages (the tail was already
+      // painted), so this must run on timeline events, not messages.length.
+      if (!discussion?.reachesRoomStart) return;
+      if (!hasLoadedCoherenceMessagesRef.current && discussion.comments === 0) {
+        return;
+      }
+      if (persistedCoherenceCountRef.current === discussion.comments) return;
+      hasLoadedCoherenceMessagesRef.current = true;
+      persistedCoherenceCountRef.current = discussion.comments;
+      updateCoherenceBySlugRef
+        .current({
+          slug: coherenceSlug,
+          messages: discussion.comments,
+        })
+        .catch((error) => {
+          if (persistedCoherenceCountRef.current === discussion.comments) {
+            persistedCoherenceCountRef.current = null;
+          }
+          console.warn(
+            '[HumanRightPanel] Failed to persist coherence message count:',
+            error,
+          );
+        });
+    };
+
+    persist();
+    const onTimeline = (_event: MatrixEvent, room: Room | undefined) => {
+      if (room?.roomId && room.roomId !== roomId) return;
+      persist();
+    };
+    client.on(RoomEvent.Timeline, onTimeline);
+    return () => {
+      cancelled = true;
+      client.off(RoomEvent.Timeline, onTimeline);
+    };
   }, [
     mode,
     isMatrixAvailable,
@@ -4421,7 +4489,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceSlug,
     roomId,
     isJoining,
-    messages.length,
   ]);
 
   // Keep message ids in sync when the SDK replaces provisional ~… ids with $… after send

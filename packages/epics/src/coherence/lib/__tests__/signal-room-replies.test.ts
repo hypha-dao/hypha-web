@@ -1,8 +1,12 @@
+import { EventType } from 'matrix-js-sdk';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   signalDiscussionCount,
   signalLastReplierLabel,
   summarizeSignalReplies,
+  timelineReachesRoomStart,
   type SignalRoomMessage,
 } from '../../utils/signal-room-replies';
 
@@ -95,6 +99,20 @@ describe('summarizeSignalReplies', () => {
     );
     expect(summary).toMatchObject({ comments: 2, people: 1 });
   });
+
+  it('does not count events the chat hides', () => {
+    const summary = summarizeSignalReplies(
+      [
+        { ...message(ALEX, 1, 'Added Sam to the signal team'), hidden: true },
+        message(SAM, 2, 'I can help on Saturday'),
+      ],
+      null,
+      { isBot },
+    );
+    expect(summary.comments).toBe(1);
+    expect(summary.people).toBe(1);
+    expect(summary.lastReplySenderId).toBe(SAM);
+  });
 });
 
 describe('signalLastReplierLabel', () => {
@@ -120,6 +138,59 @@ describe('signalLastReplierLabel', () => {
 
   it('returns null rather than a bridged id when no name is known', () => {
     expect(signalLastReplierLabel({ senderId: ALEX })).toBeNull();
+  });
+});
+
+describe('timelineReachesRoomStart', () => {
+  function room(types: string[], token: string | null) {
+    return {
+      oldState: { paginationToken: token },
+      getLiveTimeline: () => ({
+        getEvents: () => types.map((type) => ({ getType: () => type })),
+      }),
+    };
+  }
+
+  it('stays incomplete while older pages remain, even if create is loaded', () => {
+    expect(
+      timelineReachesRoomStart(
+        room([EventType.RoomCreate, EventType.RoomMessage], 'prev'),
+      ),
+    ).toBe(false);
+  });
+
+  it('is complete only when the backwards token is clear and create is loaded', () => {
+    expect(
+      timelineReachesRoomStart(
+        room([EventType.RoomMessage, EventType.RoomCreate], null),
+      ),
+    ).toBe(true);
+    expect(timelineReachesRoomStart(room([EventType.RoomMessage], null))).toBe(
+      false,
+    );
+    expect(timelineReachesRoomStart(room([], null))).toBe(false);
+  });
+});
+
+describe('signal discussion count persistence', () => {
+  const panelSource = readFileSync(
+    resolve(__dirname, '../../../common/human-right-panel.tsx'),
+    'utf8',
+  );
+  const chatRoomSource = readFileSync(
+    resolve(__dirname, '../../components/chat-room.tsx'),
+    'utf8',
+  );
+
+  it('saves the human count when scrollback reaches the start, not when the tail length changes', () => {
+    for (const source of [panelSource, chatRoomSource]) {
+      expect(source).toContain('readSignalRoomDiscussionCount');
+      expect(source).toContain('RoomEvent.Timeline');
+      expect(source).toContain('reachesRoomStart');
+    }
+    expect(chatRoomSource).not.toContain('messages.length,\n    slug');
+    expect(panelSource).toContain('pageSize: 50, maxBatches: 4');
+    expect(panelSource).toContain("chatModeRef.current === 'coherence'");
   });
 });
 

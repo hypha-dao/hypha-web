@@ -1,3 +1,4 @@
+import { EventType } from 'matrix-js-sdk';
 import { isSignalDescriptionCopy } from '../../../../core/src/coherence/signal-creator';
 
 export type SignalRoomMessage = {
@@ -6,6 +7,10 @@ export type SignalRoomMessage = {
   body: string | null;
   /** Latest `m.replace` body for this message, when an edit is loaded. */
   editedBody?: string | null;
+  /**
+   * Hidden in the human chat (team roster, call, screenshare). Not a comment.
+   */
+  hidden?: boolean;
 };
 
 export type SignalRepliesSummary = {
@@ -16,9 +21,10 @@ export type SignalRepliesSummary = {
 };
 
 /**
- * Replies in a signal room. Bot posts and copies of the signal description
- * (older rooms got the description posted into chat) are not replies, so
- * they never count as a comment, a participant or the last reply.
+ * Replies in a signal room. Bot posts, copies of the signal description
+ * (older rooms got the description posted into chat), and events the chat
+ * hides are not replies, so they never count as a comment, a participant
+ * or the last reply.
  */
 export function summarizeSignalReplies(
   messages: readonly SignalRoomMessage[],
@@ -30,6 +36,7 @@ export function summarizeSignalReplies(
   let lastReplyAt: number | null = null;
   let lastReplySenderId: string | null = null;
   for (const message of messages) {
+    if (message.hidden) continue;
     if (isBot(message.sender)) continue;
     const isCopy = isSignalDescriptionCopy({
       messageContent: message.editedBody ?? message.body,
@@ -52,10 +59,31 @@ export function summarizeSignalReplies(
 }
 
 /**
+ * Whether this room's loaded timeline is the whole history.
+ *
+ * `scrollback()` reports the start by clearing `oldState.paginationToken`.
+ * The live timeline's own backwards token is cleared on the first scrollback
+ * even when older pages remain, so it is not a completeness check. An empty
+ * timeline also has a null token before `/sync` delivers the room, so events
+ * must be present, and `m.room.create` must be among them.
+ */
+export function timelineReachesRoomStart(room: {
+  oldState?: { paginationToken: string | null } | null;
+  getLiveTimeline(): {
+    getEvents(): ReadonlyArray<{ getType(): string }>;
+  };
+}): boolean {
+  const events = room.getLiveTimeline().getEvents();
+  if (events.length === 0) return false;
+  if (room.oldState?.paginationToken != null) return false;
+  return events.some((event) => event.getType() === EventType.RoomCreate);
+}
+
+/**
  * Comment total for a signal. A timeline that reaches the room start is the
- * only source: that count is replies, without the description seed or bot
- * posts. Until then the stored total stands, and a shorter partial timeline
- * cannot replace it.
+ * only source: that count is human replies the chat shows, without the
+ * description seed, bot posts, or hidden notices. Until then the stored total
+ * stands, and a shorter partial timeline cannot replace it.
  */
 export function signalDiscussionCount(
   stored: number | null | undefined,

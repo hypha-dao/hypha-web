@@ -14,6 +14,7 @@ import {
   isRedactedRoomMessageEvent,
   useMatrix,
 } from '@hypha-platform/core/client';
+import { isHiddenHumanChatRoomMessage } from '../../../../core/src/matrix/human-chat-timeline-message';
 import {
   isHyphaBotMatrixIdentity,
   pickUserVisibleMemberLabel,
@@ -21,6 +22,7 @@ import {
 import {
   sameSignalRoomActivity,
   summarizeSignalReplies,
+  timelineReachesRoomStart,
   type SignalRoomMessage,
 } from '../utils/signal-room-replies';
 
@@ -34,8 +36,8 @@ export type SignalRoomActivity = {
   /** Matrix display name, only when it is a real name (never a bridged id). */
   lastReplySenderName: string | null;
   /**
-   * Whether the loaded timeline goes back to the room start. When false the
-   * counts only cover the recent tail, so callers fall back to stored totals.
+   * Whether scrollback has reached the room start. When false the counts only
+   * cover the recent tail, so callers keep the stored total.
    */
   reachesRoomStart: boolean;
 };
@@ -59,9 +61,7 @@ function readRoomActivity(
   if (!room || room.getMyMembership() !== 'join') return null;
 
   const events = room.getLiveTimeline().getEvents();
-  const reachesRoomStart = events.some(
-    (event) => event.getType() === EventType.RoomCreate,
-  );
+  const reachesRoomStart = timelineReachesRoomStart(room);
   const editedBodies = new Map<string, string>();
   for (const event of events) {
     if (event.getType() !== EventType.RoomMessage) continue;
@@ -86,6 +86,7 @@ function readRoomActivity(
       ts: event.getTs(),
       body: messageBody(event.getContent()),
       editedBody: eventId ? editedBodies.get(eventId) ?? null : null,
+      hidden: isHiddenHumanChatRoomMessage(event),
     });
   }
 

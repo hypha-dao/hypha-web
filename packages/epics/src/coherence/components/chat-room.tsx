@@ -2,6 +2,7 @@
 
 import {
   Message,
+  RoomEvent,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMatrix,
@@ -43,32 +44,57 @@ export const ChatRoom = ({
   const bottomId = React.useId();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const hasLoadedMessagesRef = React.useRef(false);
+  const persistedCountRef = React.useRef<number | null>(null);
   const descriptionText = signalDescription?.trim() ?? '';
 
   React.useEffect(() => {
-    if (!isMatrixAvailable || !roomId || !slug || isLoading) {
+    hasLoadedMessagesRef.current = false;
+    persistedCountRef.current = null;
+  }, [roomId, slug]);
+
+  React.useEffect(() => {
+    if (!isMatrixAvailable || !roomId || !slug || isLoading || !client) {
       return;
     }
-    const discussion = readSignalRoomDiscussionCount(
-      client,
-      roomId,
-      descriptionText,
-    );
-    // A partial timeline is not the comment total. Wait until it reaches the
-    // room start, then store the same filtered reply count the page shows.
-    if (!discussion?.reachesRoomStart) return;
-    if (!hasLoadedMessagesRef.current && discussion.comments === 0) return;
-    hasLoadedMessagesRef.current = true;
-    updateCoherenceBySlug({ slug, messages: discussion.comments }).catch(
-      (error) => {
-        console.warn('Error due update conversation:', error);
-      },
-    );
+    let cancelled = false;
+    const persist = () => {
+      if (cancelled) return;
+      const discussion = readSignalRoomDiscussionCount(
+        client,
+        roomId,
+        descriptionText,
+      );
+      // Scrollback can reach the room start without changing the visible
+      // message length. Listen for timeline events so the stored total is
+      // the full human count, not the tail that painted first.
+      if (!discussion?.reachesRoomStart) return;
+      if (!hasLoadedMessagesRef.current && discussion.comments === 0) return;
+      if (persistedCountRef.current === discussion.comments) return;
+      hasLoadedMessagesRef.current = true;
+      persistedCountRef.current = discussion.comments;
+      updateCoherenceBySlug({ slug, messages: discussion.comments }).catch(
+        (error) => {
+          if (persistedCountRef.current === discussion.comments) {
+            persistedCountRef.current = null;
+          }
+          console.warn('Error due update conversation:', error);
+        },
+      );
+    };
+    persist();
+    const onTimeline = (_event: unknown, room?: { roomId?: string }) => {
+      if (room?.roomId && room.roomId !== roomId) return;
+      persist();
+    };
+    client.on(RoomEvent.Timeline, onTimeline);
+    return () => {
+      cancelled = true;
+      client.off(RoomEvent.Timeline, onTimeline);
+    };
   }, [
     isMatrixAvailable,
     client,
     roomId,
-    messages.length,
     slug,
     descriptionText,
     updateCoherenceBySlug,
