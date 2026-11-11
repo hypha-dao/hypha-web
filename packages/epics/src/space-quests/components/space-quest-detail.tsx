@@ -1423,28 +1423,38 @@ export function SpaceQuestDetail({
     setSpaceQuestDraft(null);
 
     const snapshot = quest;
-    const authToken = jwt ?? null;
     void (async () => {
       let roomId: string | null = null;
       try {
         let questRoomId = snapshot.chatRoomId;
-        if (!questRoomId?.trim()) {
+        let proposalRoomId = snapshot.proposalChatRoomId ?? null;
+        let proposalSlug = snapshot.proposalSlug;
+        if (!questRoomId?.trim() && !proposalRoomId?.trim()) {
           // The detail request provisions a missing quest room for an accepted
-          // quest. Refresh once so Open discussion joins that room.
+          // quest, and includes the proposal document's room id.
           const latest = await refresh();
-          if (
-            latest &&
-            typeof latest === 'object' &&
-            'chatRoomId' in latest &&
-            typeof latest.chatRoomId === 'string'
-          ) {
-            questRoomId = latest.chatRoomId;
+          if (latest && typeof latest === 'object' && 'slug' in latest) {
+            if (typeof latest.chatRoomId === 'string') {
+              questRoomId = latest.chatRoomId;
+            }
+            if (
+              !proposalRoomId?.trim() &&
+              typeof latest.proposalChatRoomId === 'string'
+            ) {
+              proposalRoomId = latest.proposalChatRoomId;
+            }
+            if (!proposalSlug && typeof latest.proposalSlug === 'string') {
+              proposalSlug = latest.proposalSlug;
+            }
           }
         }
 
+        const authToken =
+          jwt ?? (await getAccessToken().catch(() => null)) ?? null;
         roomId = await resolveQuestDiscussionRoomId({
           questRoomId,
-          proposalSlug: snapshot.proposalSlug,
+          proposalRoomId,
+          proposalSlug,
           proposalTitle: snapshot.name,
           authToken,
           loadProposalRoomId: (slug) =>
@@ -1472,6 +1482,12 @@ export function SpaceQuestDetail({
         openingDiscussionRef.current = false;
       }
 
+      // Opening with no room id renders the empty direct-message shell.
+      if (!roomId?.trim()) {
+        setActionError('Discussion could not be opened. Try again.');
+        return;
+      }
+      setActionError(null);
       openCoherenceChat(
         roomId,
         snapshot.name,

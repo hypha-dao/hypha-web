@@ -152,9 +152,13 @@ export function QuestDiscussionHelper({
         name: [person.name, person.surname].filter(Boolean).join(' '),
       }
     : null;
+  // Proposed quests use the proposal room and still get the helper.
+  // Completed and archived quests stay read-only.
   const canEdit =
     !!quest &&
-    (quest.status === 'active' || quest.status === 'paused') &&
+    (quest.status === 'proposed' ||
+      quest.status === 'active' ||
+      quest.status === 'paused') &&
     canMemberEditQuest(viewer, quest);
 
   useEffect(() => {

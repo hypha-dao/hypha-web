@@ -126,6 +126,11 @@ export type QuestRecord = {
   creatorPersonId: number | null;
   proposalDocumentId: number | null;
   proposalSlug: string | null;
+  /**
+   * Matrix room of the linked proposal (`documents.chat_room_id`).
+   * Proposed quests discuss there until acceptance creates the quest room.
+   */
+  proposalChatRoomId?: string | null;
   proposalWeb3Id: number | null;
   proposalStatus: 'accepted' | 'rejected' | 'onVoting' | null;
   acceptedAt: string | null;

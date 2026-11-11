@@ -182,6 +182,7 @@ describe('quest discussion helper', () => {
     expect(panel.match(/<HumanChatPanelMessages/g)).toHaveLength(1);
     expect(panel.match(/<HumanChatPanelChatBar/g)).toHaveLength(1);
     expect(panel).toContain('appendQuestHelperMessages');
+    expect(panel).toContain("coherenceChannel !== 'quest'");
     const helper = readFileSync(
       join(
         dirname(fileURLToPath(import.meta.url)),
@@ -212,20 +213,40 @@ describe('quest discussion helper', () => {
     );
   });
 
-  it('stays hidden from a viewer and from a proposed quest', async () => {
+  it('stays hidden from a viewer who cannot edit the quest', async () => {
     harness.personId = 99;
     const thread: { current: QuestHelperThread | null } = { current: null };
-    const { rerender } = render(
-      <HelperHost onResult={(next) => (thread.current = next)} />,
-    );
+    render(<HelperHost onResult={(next) => (thread.current = next)} />);
     await screen.findByTestId('helper-transcript');
     expect(thread.current).toBeNull();
     expect(screen.queryByText(SAVED_QUEST_HELPER_INTRO)).toBeNull();
+  });
 
-    harness.personId = 7;
-    harness.status = 'proposed';
-    rerender(<HelperHost onResult={(next) => (thread.current = next)} />);
-    expect(screen.queryByText(SAVED_QUEST_HELPER_INTRO)).toBeNull();
+  it('shows the helper by quest status', async () => {
+    for (const status of ['proposed', 'active', 'paused'] as const) {
+      cleanup();
+      window.sessionStorage.clear();
+      harness.personId = 7;
+      harness.status = status;
+      const thread: { current: QuestHelperThread | null } = { current: null };
+      render(<HelperHost onResult={(next) => (thread.current = next)} />);
+      expect(await screen.findByText(SAVED_QUEST_HELPER_INTRO)).toBeTruthy();
+      expect(thread.current?.messages.map((message) => message.text)).toContain(
+        SAVED_QUEST_HELPER_INTRO,
+      );
+    }
+
+    for (const status of ['completed', 'archived'] as const) {
+      cleanup();
+      window.sessionStorage.clear();
+      harness.personId = 7;
+      harness.status = status;
+      const thread: { current: QuestHelperThread | null } = { current: null };
+      render(<HelperHost onResult={(next) => (thread.current = next)} />);
+      await screen.findByTestId('helper-transcript');
+      expect(screen.queryByText(SAVED_QUEST_HELPER_INTRO)).toBeNull();
+      expect(thread.current).toBeNull();
+    }
   });
 
   it('keeps a section suggestion inside the discussion until it can be saved', async () => {

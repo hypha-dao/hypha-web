@@ -33,6 +33,7 @@ export async function loadProposalDiscussionRoomId(
 
 export async function resolveQuestDiscussionRoomId({
   questRoomId,
+  proposalRoomId,
   proposalSlug,
   proposalTitle,
   authToken,
@@ -41,6 +42,8 @@ export async function resolveQuestDiscussionRoomId({
   persistProposalRoomId,
 }: {
   questRoomId: string | null;
+  /** Room already stored on the proposal document, when the quest payload has it. */
+  proposalRoomId?: string | null;
   proposalSlug: string | null;
   proposalTitle: string;
   authToken: string | null;
@@ -50,6 +53,9 @@ export async function resolveQuestDiscussionRoomId({
 }): Promise<string | null> {
   const questRoom = questRoomId?.trim() || null;
   if (questRoom) return questRoom;
+
+  const knownProposalRoom = proposalRoomId?.trim() || null;
+  if (knownProposalRoom) return knownProposalRoom;
 
   const slug = proposalSlug?.trim();
   if (!slug) return null;

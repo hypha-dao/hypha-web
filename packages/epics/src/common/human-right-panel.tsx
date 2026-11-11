@@ -4746,7 +4746,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             );
           }
           targetRoomId = acceptedPublicRoomId;
-        } else if (!targetRoomId && openingSpaceSlug) {
+        } else if (
+          !targetRoomId &&
+          openingSpaceSlug &&
+          coherenceChannel !== 'quest'
+        ) {
           targetRoomId =
             space?.chatRoomId?.trim() ||
             getStoredRoomId(openingSpaceSlug) ||
@@ -4755,7 +4759,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
         // A space room must not be created as a signal room.
         // Public map→chat must not create/join `spaces.chatRoomId` either.
-        if (!targetRoomId && openingSpaceSlug && !coherencePublic) {
+        // A quest discussion with no room yet must not become the space
+        // channel or an empty direct-message shell.
+        if (
+          !targetRoomId &&
+          openingSpaceSlug &&
+          !coherencePublic &&
+          coherenceChannel !== 'quest'
+        ) {
           if (blockSpaceChatForMembership) {
             setIsJoining(false);
             return;

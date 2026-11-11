@@ -592,6 +592,40 @@ describe('saved quest helper entry', () => {
     }
   });
 
+  it('opens the proposal room stored on the quest without creating another', async () => {
+    harness.status = 'proposed';
+    harness.chatRoomId = null;
+    const quest = questFixture();
+    quest.proposalSlug = 'proposal-1';
+    quest.proposalChatRoomId = '!proposal:stored';
+    harness.quest = quest;
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="overview"
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
+    await waitFor(() => {
+      expect(harness.openCoherenceChat).toHaveBeenCalledWith(
+        '!proposal:stored',
+        'Onboarding',
+        'onboarding',
+        'Keep the saved goal',
+        'sandbox',
+        { channel: 'quest' },
+      );
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(harness.createRoom).not.toHaveBeenCalled();
+    expect(harness.requestQuestChat).not.toHaveBeenCalled();
+    expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
+  });
+
   it('joins the proposal room when the quest room does not exist yet', async () => {
     harness.status = 'proposed';
     harness.chatRoomId = null;
@@ -673,6 +707,37 @@ describe('saved quest helper entry', () => {
       chatRoomId: '!created:room',
     });
     expect(harness.requestQuestChat).not.toHaveBeenCalled();
+    expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
+  });
+
+  it('does not open the empty direct-message shell when the proposal room cannot be created', async () => {
+    harness.status = 'proposed';
+    harness.chatRoomId = null;
+    harness.jwt = 'token';
+    const quest = questFixture();
+    quest.proposalSlug = 'proposal-1';
+    harness.quest = quest;
+    harness.createRoom.mockRejectedValue(new Error('Matrix unavailable'));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ chatRoomId: null }),
+      })),
+    );
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="overview"
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
+    expect(
+      await screen.findByText('Discussion could not be opened. Try again.'),
+    ).toBeTruthy();
+    expect(harness.openCoherenceChat).not.toHaveBeenCalled();
     expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
   });
 

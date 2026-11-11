@@ -43,6 +43,21 @@ describe('resolveQuestDiscussionRoomId', () => {
     expect(createProposalRoom).not.toHaveBeenCalled();
   });
 
+  it('uses the proposal room already stored on the quest', async () => {
+    const loadProposalRoomId = vi.fn(async () => '!other:room');
+    const createProposalRoom = vi.fn(async () => '!created:room');
+    const roomId = await resolveQuestDiscussionRoomId({
+      ...base,
+      questRoomId: null,
+      proposalRoomId: ' !proposal:stored ',
+      loadProposalRoomId,
+      createProposalRoom,
+    });
+    expect(roomId).toBe('!proposal:stored');
+    expect(loadProposalRoomId).not.toHaveBeenCalled();
+    expect(createProposalRoom).not.toHaveBeenCalled();
+  });
+
   it('joins an existing proposal room when the quest has none', async () => {
     const loadProposalRoomId = vi.fn(async () => ' !proposal:room ');
     const createProposalRoom = vi.fn(async () => '!created:room');
