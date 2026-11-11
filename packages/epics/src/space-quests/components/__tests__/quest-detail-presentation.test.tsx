@@ -745,13 +745,66 @@ describe('quest list cards', () => {
     expect(shortCard.className).toContain('min-w-0');
     expect(shortCard.querySelector('h2')).toBeTruthy();
     expect(shortCard.querySelector('h2')?.className).not.toContain('truncate');
+    expect(shortCard.querySelector('h2')?.className).toContain('line-clamp-2');
+    expect(shortCard.querySelector('h2')?.className).toContain('h-[2lh]');
     expect(longCard.querySelector('h2')?.className).toContain('break-words');
-    expect(screen.queryByTestId('quest-card-target-short')).toBeNull();
     expect(screen.queryByText(/Target\s*[—–-]\s*$/)).toBeNull();
+    const missingTarget = screen.getByTestId('quest-card-target-short');
+    expect(missingTarget.textContent).toBe('');
+    expect(missingTarget.className).toContain('h-5');
     expect(screen.getByTestId('quest-card-target-long').textContent).toBe(
       'Target 20 November 2026',
     );
     expect(shortCard.textContent).not.toContain('Target');
+  });
+
+  it('reserves the same slots so lead, progress, and footer line up', () => {
+    const short = questFixture({
+      slug: 'short',
+      name: 'Short',
+      goal: '',
+      targetDate: null,
+      leadName: 'Ada Lovelace',
+    });
+    const long = questFixture({
+      slug: 'long',
+      name: 'A very long quest title that wraps onto a second line inside a narrow card column',
+      goal: 'One sentence.\n\nA second paragraph that is long enough to need the reserved description lines on every card.',
+      targetDate: '2026-12-11',
+      leadName: 'Vlad Hramtsov',
+    });
+    render(
+      <div className={QUEST_LIST_GRID_CLASS}>
+        <QuestCard quest={short} href="/short" />
+        <QuestCard quest={long} href="/long" />
+      </div>,
+    );
+
+    for (const slug of ['short', 'long']) {
+      const card = screen.getByTestId(`quest-card-${slug}`);
+      expect(card.className).toContain('flex-col');
+      const title = screen.getByTestId(`quest-card-title-${slug}`);
+      const goal = screen.getByTestId(`quest-card-goal-${slug}`);
+      const lead = screen.getByTestId(`quest-card-lead-${slug}`);
+      const target = screen.getByTestId(`quest-card-target-${slug}`);
+      const progress = screen.getByTestId(`quest-card-progress-${slug}`);
+      const footer = screen.getByTestId(`quest-card-footer-${slug}`);
+      expect(title.className).toContain('h-[2lh]');
+      expect(goal.className).toContain('line-clamp-2');
+      expect(goal.className).toContain('h-[2lh]');
+      expect(lead.className).toContain('h-5');
+      expect(target.className).toContain('h-5');
+      expect(footer.className).toContain('mt-auto');
+      expect(follows(title, goal)).toBe(true);
+      expect(follows(goal, lead)).toBe(true);
+      expect(follows(lead, target)).toBe(true);
+      expect(follows(target, progress)).toBe(true);
+      expect(follows(progress, footer)).toBe(true);
+    }
+    expect(screen.getByTestId('quest-card-goal-short').textContent).toBe('');
+    expect(screen.getByTestId('quest-card-goal-long').textContent).toContain(
+      'second paragraph',
+    );
   });
 
   it('keeps italic and brackets after a second save', () => {

@@ -197,23 +197,6 @@ function dayGroupLabel(iso: string): string {
     .toUpperCase();
 }
 
-/** Read-only rendering of the markdown the RichTextEditor produces. */
-function QuestRichText({
-  markdown,
-  empty = '—',
-  className,
-}: {
-  markdown: string | null | undefined;
-  empty?: string;
-  className?: string;
-}) {
-  return (
-    <div className={className}>
-      <QuestSectionMarkdown markdown={markdown} empty={empty} />
-    </div>
-  );
-}
-
 function SectionHeader({
   title,
   variant = 'card',
@@ -491,6 +474,7 @@ function OverviewTab({
   onEditDeliverables: () => void;
 }) {
   const locale = useLocale();
+  const t = useTranslations('SpaceQuests');
   const visibility = questOverviewVisibility(quest);
   const health = healthPresentation(quest);
   const healthUpdatedAt = quest.health.generatedAt ?? quest.health.lastUpdateAt;
@@ -498,65 +482,63 @@ function OverviewTab({
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0 space-y-5">
-        {visibility.showScopeCard ? (
+        {visibility.showGoal ? (
+          <section className={CARD_CLASS} data-testid="quest-overview-goal">
+            <SectionHeader title={t('overview.goal')} />
+            <QuestSectionMarkdown
+              markdown={quest.goal}
+              variant="body"
+              empty=""
+            />
+          </section>
+        ) : null}
+
+        {visibility.showScopeIn || visibility.showScopeOut ? (
           <section className={CARD_CLASS} data-testid="quest-overview-scope">
-            <SectionHeader title="Scope &amp; Goal" />
+            <SectionHeader title={t('overview.scope')} />
             <div className="space-y-5">
-              {visibility.showGoal ? (
-                <div className="space-y-2 border-b border-border/70 pb-4">
-                  <SectionHeader title="Goal" variant="subsection" />
-                  <QuestRichText
-                    markdown={quest.goal}
-                    className="text-[15px] font-medium leading-relaxed text-foreground"
-                  />
-                </div>
-              ) : null}
-
-              {visibility.showScopeIn || visibility.showScopeOut ? (
-                <div className="grid grid-cols-1 gap-4 border-b border-border/70 pb-4 sm:grid-cols-2">
-                  {visibility.showScopeIn ? (
-                    <div className="space-y-2 border border-border/60 bg-background-2/40 p-3.5">
-                      <SectionHeader title="In Scope" variant="subsection" />
-                      <QuestSectionMarkdown
-                        markdown={
-                          quest.scopeInMarkdown?.trim() ||
-                          bulletsToMarkdownList(quest.scopeIn)
-                        }
-                        empty=""
-                      />
-                    </div>
-                  ) : null}
-                  {visibility.showScopeOut ? (
-                    <div className="space-y-2 border border-border/60 bg-background-2/40 p-3.5">
-                      <SectionHeader
-                        title="Out of Scope"
-                        variant="subsection"
-                      />
-                      <QuestSectionMarkdown
-                        markdown={
-                          quest.scopeOutMarkdown?.trim() ||
-                          bulletsToMarkdownList(quest.scopeOut)
-                        }
-                        empty=""
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {visibility.showSuccess ? (
+              {visibility.showScopeIn ? (
                 <div className="space-y-2">
-                  <SectionHeader
-                    title="Success Criteria"
-                    variant="subsection"
+                  <h3 className="text-2 font-semibold leading-relaxed text-foreground">
+                    {t('overview.inScope')}
+                  </h3>
+                  <QuestSectionMarkdown
+                    markdown={
+                      quest.scopeInMarkdown?.trim() ||
+                      bulletsToMarkdownList(quest.scopeIn)
+                    }
+                    variant="body"
+                    empty=""
                   />
-                  <QuestRichText
-                    markdown={quest.successCriteria}
-                    className="font-medium"
+                </div>
+              ) : null}
+              {visibility.showScopeOut ? (
+                <div className="space-y-2">
+                  <h3 className="text-2 font-semibold leading-relaxed text-foreground">
+                    {t('overview.outOfScope')}
+                  </h3>
+                  <QuestSectionMarkdown
+                    markdown={
+                      quest.scopeOutMarkdown?.trim() ||
+                      bulletsToMarkdownList(quest.scopeOut)
+                    }
+                    variant="body"
+                    empty=""
                   />
                 </div>
               ) : null}
             </div>
+          </section>
+        ) : null}
+
+        {visibility.showSuccess ? (
+          <section className={CARD_CLASS} data-testid="quest-overview-success">
+            <SectionHeader title={t('overview.successCriteria')} />
+            <QuestSectionMarkdown
+              markdown={quest.successCriteria}
+              variant="body"
+              empty=""
+            />
           </section>
         ) : null}
 

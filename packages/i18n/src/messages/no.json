@@ -5777,6 +5777,13 @@
       "drafts": "Mine utkast",
       "status": "Status"
     },
+    "overview": {
+      "goal": "Mål",
+      "scope": "Omfang",
+      "inScope": "Innenfor omfanget",
+      "outOfScope": "Utenfor omfanget",
+      "successCriteria": "Suksesskriterier"
+    },
     "settings": {
       "deliverables": "Leveranser",
       "deliverablesHint": "Vis et leveransekort i oversikten",

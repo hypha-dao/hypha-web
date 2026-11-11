@@ -5778,6 +5778,13 @@
       "drafts": "Mijn concepten",
       "status": "Status"
     },
+    "overview": {
+      "goal": "Doel",
+      "scope": "Reikwijdte",
+      "inScope": "Binnen de reikwijdte",
+      "outOfScope": "Buiten de reikwijdte",
+      "successCriteria": "Succescriteria"
+    },
     "settings": {
       "deliverables": "Deliverables",
       "deliverablesHint": "Toon een Deliverables-kaart in het overzicht",

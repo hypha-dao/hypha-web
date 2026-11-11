@@ -5786,6 +5786,13 @@
       "drafts": "Mis borradores",
       "status": "Estado"
     },
+    "overview": {
+      "goal": "Objetivo",
+      "scope": "Alcance",
+      "inScope": "Dentro del alcance",
+      "outOfScope": "Fuera del alcance",
+      "successCriteria": "Criterios de éxito"
+    },
     "settings": {
       "deliverables": "Entregables",
       "deliverablesHint": "Mostrar una tarjeta de entregables en el resumen",

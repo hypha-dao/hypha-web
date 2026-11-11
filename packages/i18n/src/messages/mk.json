@@ -5759,6 +5759,13 @@
       "drafts": "Мои нацрти",
       "status": "Статус"
     },
+    "overview": {
+      "goal": "Цел",
+      "scope": "Опфат",
+      "inScope": "Во опфат",
+      "outOfScope": "Надвор од опфат",
+      "successCriteria": "Критериуми за успех"
+    },
     "settings": {
       "deliverables": "Испораки",
       "deliverablesHint": "Прикажи картичка за испораки на прегледот",

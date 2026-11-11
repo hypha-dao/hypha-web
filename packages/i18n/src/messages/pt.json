@@ -5770,6 +5770,13 @@
       "drafts": "Meus rascunhos",
       "status": "Estado"
     },
+    "overview": {
+      "goal": "Objetivo",
+      "scope": "Âmbito",
+      "inScope": "Dentro do âmbito",
+      "outOfScope": "Fora do âmbito",
+      "successCriteria": "Critérios de sucesso"
+    },
     "settings": {
       "deliverables": "Entregas",
       "deliverablesHint": "Mostrar um cartão de entregas na visão geral",

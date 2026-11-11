@@ -75,20 +75,47 @@ const HEADING_CLASS = [
 export function QuestSectionMarkdown({
   markdown,
   empty = 'Not set yet — reply in chat or click to edit',
+  variant = 'compact',
 }: {
   markdown: string | null | undefined;
   empty?: string;
+  /** Overview cards use the same body size as the rest of the app. */
+  variant?: 'compact' | 'body';
 }) {
   const blocks = parseQuestRichText(markdown);
+  const body = variant === 'body';
   if (blocks.length === 0) {
-    return <p className="text-[13px] text-neutral-11">{empty}</p>;
+    return (
+      <p
+        className={
+          body
+            ? 'text-2 leading-relaxed text-neutral-11'
+            : 'text-[13px] text-neutral-11'
+        }
+      >
+        {empty}
+      </p>
+    );
   }
   return (
-    <div className="w-full space-y-1.5 text-[13px] leading-relaxed text-foreground">
+    <div
+      className={
+        body
+          ? 'w-full space-y-3 text-2 leading-relaxed text-foreground'
+          : 'w-full space-y-1.5 text-[13px] leading-relaxed text-foreground'
+      }
+    >
       {blocks.map((block, index) => {
         if (block.type === 'heading') {
           return (
-            <p key={index} className={HEADING_CLASS[block.level - 1]}>
+            <p
+              key={index}
+              className={
+                body
+                  ? 'text-2 font-semibold leading-relaxed text-foreground'
+                  : HEADING_CLASS[block.level - 1]
+              }
+            >
               <InlineTokens tokens={block.tokens} />
             </p>
           );
@@ -100,7 +127,11 @@ export function QuestSectionMarkdown({
               key={index}
               className={
                 block.type === 'ol'
-                  ? 'list-decimal space-y-0.5 pl-4'
+                  ? body
+                    ? 'list-decimal space-y-1.5 pl-5'
+                    : 'list-decimal space-y-0.5 pl-4'
+                  : body
+                  ? 'list-disc space-y-1.5 pl-5'
                   : 'list-disc space-y-0.5 pl-4'
               }
             >

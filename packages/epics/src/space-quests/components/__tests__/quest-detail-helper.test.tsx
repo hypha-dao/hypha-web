@@ -344,6 +344,57 @@ describe('saved quest helper entry', () => {
     expect(screen.queryByTestId('quest-overview-deliverables')).toBeNull();
   });
 
+  it('splits goal and scope into separate overview cards', () => {
+    harness.quest = {
+      ...questFixture(),
+      goal: 'Keep the saved goal.\n\nA second paragraph.',
+      scopeIn: ['Ship the matcher'],
+      scopeInMarkdown: '- Ship the matcher\n- Keep the list',
+      scopeOut: ['Rewrite the app'],
+      scopeOutMarkdown: '- Rewrite the app',
+      successCriteria: 'Members can find the quest.',
+    };
+    render(<SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />);
+
+    expect(screen.queryByText('Scope & Goal')).toBeNull();
+    const goal = screen.getByTestId('quest-overview-goal');
+    const scope = screen.getByTestId('quest-overview-scope');
+    const success = screen.getByTestId('quest-overview-success');
+    expect(goal.querySelector('h2')?.textContent).toBe('overview.goal');
+    expect(scope.querySelector('h2')?.textContent).toBe('overview.scope');
+    expect(success.querySelector('h2')?.textContent).toBe(
+      'overview.successCriteria',
+    );
+    for (const card of [goal, scope, success]) {
+      expect(card.querySelector('h2')?.className).toContain('font-display');
+      expect(card.querySelector('h2')?.className).toContain('text-[15px]');
+    }
+    const body = goal.querySelector('.space-y-3');
+    expect(body?.className).toContain('text-2');
+    expect(body?.className).toContain('leading-relaxed');
+    expect(scope.querySelector('ul')?.className).toContain('space-y-1.5');
+    expect(scope.innerHTML).not.toContain('border-border/60');
+    expect(scope.textContent).toContain('overview.inScope');
+    expect(scope.textContent).toContain('overview.outOfScope');
+    expect(scope.textContent).toContain('Ship the matcher');
+    expect(screen.queryByRole('button', { name: /^edit$/i })).toBeNull();
+
+    cleanup();
+    harness.quest = {
+      ...questFixture(),
+      goal: '',
+      scopeIn: [],
+      scopeInMarkdown: '',
+      scopeOut: [],
+      scopeOutMarkdown: '',
+      successCriteria: '',
+    };
+    render(<SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />);
+    expect(screen.queryByTestId('quest-overview-goal')).toBeNull();
+    expect(screen.queryByTestId('quest-overview-scope')).toBeNull();
+    expect(screen.queryByTestId('quest-overview-success')).toBeNull();
+  });
+
   it('shows the deliverables card only after the setting is on or items exist', () => {
     const { rerender } = render(
       <SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />,
@@ -432,6 +483,32 @@ describe('saved quest helper entry', () => {
     const locked = screen.getByTestId('quest-settings-deliverables-toggle');
     expect(locked.textContent).toContain('settings.on');
     expect(locked).toHaveProperty('disabled', true);
+  });
+
+  it('hides the chat icon for every quest status and keeps Open discussion', () => {
+    for (const status of [
+      'proposed',
+      'active',
+      'paused',
+      'completed',
+      'archived',
+    ] as const) {
+      cleanup();
+      harness.status = status;
+      harness.chatRoomId = status === 'proposed' ? null : 'room-1';
+      harness.personId = 7;
+      harness.quest = questFixture();
+      render(
+        <SpaceQuestDetail
+          spaceSlug="sandbox"
+          questSlug="onboarding"
+          tab="overview"
+        />,
+      );
+      expect(screen.queryByTestId('open-quest-chat-button')).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Quest chat' })).toBeNull();
+      expect(screen.getByTestId('open-quest-discussion-button')).toBeTruthy();
+    }
   });
 
   it('opens the space channel from Open discussion and has no chat icon', () => {

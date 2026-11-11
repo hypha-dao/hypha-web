@@ -242,7 +242,7 @@ export function QuestCard({
       data-testid={`quest-card-${quest.slug}`}
       className="craft-card-interactive group flex h-full min-w-0 w-full max-w-full flex-col gap-2.5 p-3.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex h-8 shrink-0 flex-nowrap items-center justify-between gap-2 overflow-hidden">
         <QuestStatusBadge quest={quest} />
         {showQuestHealthTag(quest) ? (
           <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold">
@@ -255,52 +255,57 @@ export function QuestCard({
         ) : null}
       </div>
 
-      <h2 className="break-words font-display text-4 font-medium tracking-tight text-foreground [overflow-wrap:anywhere]">
+      <h2
+        data-testid={`quest-card-title-${quest.slug}`}
+        className="line-clamp-2 h-[2lh] shrink-0 break-words font-display text-4 font-medium leading-tight tracking-tight text-foreground [overflow-wrap:anywhere]"
+      >
         {quest.name}
       </h2>
-      {goalPlain ? (
-        <p className="line-clamp-2 break-words text-[13px] text-neutral-11 [overflow-wrap:anywhere]">
-          {goalPlain}
-        </p>
-      ) : null}
+      <p
+        data-testid={`quest-card-goal-${quest.slug}`}
+        className="line-clamp-2 h-[2lh] shrink-0 break-words text-[13px] leading-relaxed text-neutral-11 [overflow-wrap:anywhere]"
+      >
+        {goalPlain}
+      </p>
 
-      {leadName || targetLabel ? (
-        <div className="flex min-w-0 flex-col gap-0.5 text-xs">
-          {leadName ? (
-            <span className="inline-flex min-w-0 items-center gap-1.5">
-              {leadPortrait.avatarSrc ? (
-                <PersonAvatar
-                  size="sm"
-                  shape="circle"
-                  showPresence={false}
-                  avatarSrc={leadPortrait.avatarSrc}
-                  userName={leadName}
-                  personId={leadPortrait.personId}
-                  className="h-5 w-5"
-                />
-              ) : (
-                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-foreground text-[9px] font-bold text-background">
-                  {leadInitial}
-                </span>
-              )}
-              <span className="break-words font-medium text-foreground [overflow-wrap:anywhere]">
-                {leadName}
+      <div
+        className="flex h-5 shrink-0 min-w-0 items-center gap-1.5"
+        data-testid={`quest-card-lead-${quest.slug}`}
+      >
+        {leadName ? (
+          <>
+            {leadPortrait.avatarSrc ? (
+              <PersonAvatar
+                size="sm"
+                shape="circle"
+                showPresence={false}
+                avatarSrc={leadPortrait.avatarSrc}
+                userName={leadName}
+                personId={leadPortrait.personId}
+                className="h-5 w-5"
+              />
+            ) : (
+              <span className="grid size-5 shrink-0 place-items-center rounded-full bg-foreground text-[9px] font-bold text-background">
+                {leadInitial}
               </span>
+            )}
+            <span className="min-w-0 truncate text-xs font-medium text-foreground">
+              {leadName}
             </span>
-          ) : null}
-          {targetLabel ? (
-            <span
-              className="break-words font-medium text-neutral-11 [overflow-wrap:anywhere]"
-              data-testid={`quest-card-target-${quest.slug}`}
-            >
-              {targetLabel}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
+          </>
+        ) : null}
+      </div>
+      <p
+        className="flex h-5 min-w-0 shrink-0 items-center truncate text-xs font-medium text-neutral-11"
+        data-testid={`quest-card-target-${quest.slug}`}
+      >
+        {targetLabel ?? ''}
+      </p>
 
-      {/* Progress bar + Mx of N */}
-      <div className="flex items-center gap-2.5">
+      <div
+        className="flex shrink-0 items-center gap-2.5"
+        data-testid={`quest-card-progress-${quest.slug}`}
+      >
         <div className="h-1.5 flex-1 overflow-hidden bg-neutral-4">
           <div
             className="h-full bg-foreground transition-[width]"
@@ -312,9 +317,11 @@ export function QuestCard({
         </span>
       </div>
 
-      {/* Latest update line (desktop 01-quests-list) */}
-      <div className="mt-auto border-t border-border pt-2.5">
-        <p className="line-clamp-2 break-words text-xs text-neutral-11 [overflow-wrap:anywhere]">
+      <div
+        className="mt-auto shrink-0 border-t border-border pt-2.5"
+        data-testid={`quest-card-footer-${quest.slug}`}
+      >
+        <p className="line-clamp-2 h-[2lh] break-words text-xs leading-relaxed text-neutral-11 [overflow-wrap:anywhere]">
           {latestCardUpdateLine(quest, t('activity.proposalRejected'))}
         </p>
       </div>

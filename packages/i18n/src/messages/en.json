@@ -5794,6 +5794,13 @@
       "drafts": "My drafts",
       "status": "Status"
     },
+    "overview": {
+      "goal": "Goal",
+      "scope": "Scope",
+      "inScope": "In scope",
+      "outOfScope": "Out of scope",
+      "successCriteria": "Success criteria"
+    },
     "settings": {
       "deliverables": "Deliverables",
       "deliverablesHint": "Show a Deliverables card on the overview",

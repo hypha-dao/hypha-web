@@ -5772,6 +5772,13 @@
       "drafts": "Meine Entwürfe",
       "status": "Status"
     },
+    "overview": {
+      "goal": "Ziel",
+      "scope": "Umfang",
+      "inScope": "Im Umfang",
+      "outOfScope": "Außerhalb des Umfangs",
+      "successCriteria": "Erfolgskriterien"
+    },
     "settings": {
       "deliverables": "Deliverables",
       "deliverablesHint": "Eine Deliverables-Karte in der Übersicht anzeigen",
