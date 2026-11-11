@@ -12,7 +12,9 @@ How production gets deployed, and what that means when an environment variable c
 
 - Values read **at build time** (for example the `next.config` redirects, and the white-label host config `WHITE_LABEL_HOST_CONFIG`) are fixed when the workflow builds. Changing the variable in the Vercel dashboard does nothing until a **new workflow run** builds again.
 - Because the deployment is prebuilt, the Vercel dashboard **Redeploy** button reuses the already built output. Do not rely on it to pick up a build-time variable.
+- The workflow also supplies some values from **GitHub secrets**, not from Vercel (for example the migration uses the `POSTGRES_URL` secret as `DEFAULT_DB_URL`). When one of these changes, for example after a credential rotation, update the corresponding GitHub secret as well as any Vercel value, **before** re-running the workflow.
 - To apply a changed variable, re-run the **Deploy Production** workflow in GitHub Actions ("Re-run all jobs"), or merge a new commit to `main`.
+- **A re-run uses the original commit of that run**, so it can redeploy older code over a newer release. Before re-running, check that the run's commit is the current head of `main` and that no newer production deployment exists. If not, merge a new commit to `main` instead.
 
 ## If the workflow does not start
 
