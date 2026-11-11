@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { routing } from '@hypha-platform/i18n';
 import {
   classifyLink,
   sectionHref,
@@ -20,9 +21,10 @@ export function WhiteLabelProvider({
   value: WhiteLabelLinkContext;
   children: React.ReactNode;
 }) {
+  const fullAppOrigin = value.mode === 'host' ? value.fullAppOrigin : '';
   const memo = React.useMemo(
     () => value,
-    [value.mode, value.spaceSlug, value.lang], // eslint-disable-line react-hooks/exhaustive-deps
+    [value.mode, value.spaceSlug, value.lang, fullAppOrigin], // eslint-disable-line react-hooks/exhaustive-deps
   );
   return (
     <WhiteLabelContext.Provider value={memo}>
@@ -51,9 +53,11 @@ export function useWhiteLabelSectionHref(): (
 
 /**
  * The shared components render main-app links. In a white-label tree this
- * wrapper maps a click on any link: this Space stays inside `/embed`, every
- * other destination opens the full app in a new tab (the main app can not be
- * framed). Plain modified clicks (new tab, download) are left to the browser.
+ * wrapper maps a click on any link: this Space stays in the white-label tree
+ * (`/embed`, or the host root), every other destination opens the full app in
+ * a new tab (in the iframe the main app can not be framed; on a mapped host it
+ * is another origin). Plain modified clicks (new tab, download) are left to
+ * the browser.
  */
 export function WhiteLabelLinkGuard({
   children,
@@ -77,6 +81,7 @@ export function WhiteLabelLinkGuard({
         anchor.getAttribute('href') ?? '',
         ctx,
         window.location.origin,
+        routing.locales,
       );
       if (!decision) return;
 

@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getLocale, getMessages } from 'next-intl/server';
+import { getAppBaseUrl } from '@hypha-platform/core/server';
 import { defaultMessages } from '@hypha-platform/i18n/messages';
 import { Html, ThemeProvider } from '@hypha-platform/ui/server';
-import { AnonymousAuthProvider } from '@hypha-platform/authentication';
 import { TooltipProvider } from '@hypha-platform/ui';
 import {
   GlobalCallDockProvider,
@@ -22,7 +22,15 @@ import {
   WhiteLabelLinkGuard,
   WhiteLabelProvider,
 } from '@web/components/white-label/white-label-provider';
-import { WL_MODE_HEADER, WL_SPACE_HEADER } from '@web/lib/white-label';
+import { WhiteLabelAuthProvider } from '@web/components/white-label/auth-seam';
+import {
+  WL_AUTH_HEADER,
+  WL_MODE_HEADER,
+  WL_SPACE_HEADER,
+  readAuthConfigHeader,
+  type WhiteLabelLinkContext,
+  type WhiteLabelMode,
+} from '@web/lib/white-label';
 
 import '@hypha-platform/ui-utils/global.css';
 import 'react-tooltip/dist/react-tooltip.css';
@@ -43,8 +51,9 @@ export const metadata: Metadata = {
  * It resolves nothing: middleware does, and sets the request headers read here.
  * Without them (a direct request to /wl/...) it renders the 404.
  *
- * No `AuthProvider`: this tree is read-only and mounts no Privy. The visitor
- * is always signed out (`AnonymousAuthProvider`).
+ * The mode (`embed` on the main host, `host` on a mapped host) picks the auth
+ * provider through `WhiteLabelAuthProvider`. Both are signed out and mount no
+ * Privy for now: the tree is read-only.
  */
 export default async function WhiteLabelRootLayout({
   children,
@@ -53,9 +62,15 @@ export default async function WhiteLabelRootLayout({
 }) {
   const requestHeaders = await headers();
   const spaceSlug = requestHeaders.get(WL_SPACE_HEADER);
-  if (!spaceSlug || requestHeaders.get(WL_MODE_HEADER) !== 'embed') {
+  const mode = requestHeaders.get(WL_MODE_HEADER);
+  if (!spaceSlug || (mode !== 'embed' && mode !== 'host')) {
     notFound();
   }
+  const whiteLabelMode: WhiteLabelMode = mode;
+  const authConfig =
+    whiteLabelMode === 'host'
+      ? readAuthConfigHeader(requestHeaders.get(WL_AUTH_HEADER))
+      : null;
 
   let locale = 'en';
   let messages: Record<string, unknown> = defaultMessages;
@@ -66,9 +81,19 @@ export default async function WhiteLabelRootLayout({
     console.error('[wl/layout] Failed to resolve locale or messages', error);
   }
 
+  const linkContext: WhiteLabelLinkContext =
+    whiteLabelMode === 'host'
+      ? {
+          mode: 'host',
+          spaceSlug,
+          lang: locale,
+          fullAppOrigin: getAppBaseUrl(),
+        }
+      : { mode: 'embed', spaceSlug, lang: locale };
+
   return (
     <Html lang={locale} className={hyphaFontVariables}>
-      <AnonymousAuthProvider>
+      <WhiteLabelAuthProvider mode={whiteLabelMode} authConfig={authConfig}>
         <SwrProvider>
           <ThemeProvider
             attribute="class"
@@ -80,9 +105,7 @@ export default async function WhiteLabelRootLayout({
             <ThemeStorageNormalize />
             <LocalizedIntlProvider locale={locale} messages={messages}>
               <TooltipProvider>
-                <WhiteLabelProvider
-                  value={{ mode: 'embed', spaceSlug, lang: locale }}
-                >
+                <WhiteLabelProvider value={linkContext}>
                   {/* Context providers the shared sections read. Matrix, chat
                       panels, notifications and the call dock UI are not mounted. */}
                   <ConditionalMatrixProvider enabled={false}>
@@ -105,7 +128,7 @@ export default async function WhiteLabelRootLayout({
             </LocalizedIntlProvider>
           </ThemeProvider>
         </SwrProvider>
-      </AnonymousAuthProvider>
+      </WhiteLabelAuthProvider>
     </Html>
   );
 }

@@ -14,7 +14,7 @@ import {
 } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 
-import { sectionHref } from '@web/lib/white-label/link';
+import { sectionFromPathname, sectionHref } from '@web/lib/white-label/link';
 import { useWhiteLabel } from './white-label-provider';
 
 const ALWAYS: SpaceSectionNavKey[] = [
@@ -27,7 +27,7 @@ const ALWAYS: SpaceSectionNavKey[] = [
 /**
  * Section menu of the white-label tree. Same sections as the main app's Space
  * menu, minus the ones that are not served (see the `wl` pages), with hrefs
- * under `/embed`.
+ * under `/embed` or, on a mapped host, at the host root.
  */
 export function WhiteLabelSectionNav({
   spaceSlug,
@@ -101,11 +101,8 @@ export function WhiteLabelSectionNav({
 
   if (!ctx) return null;
 
-  // /embed/<slug>[/<lang>][/<section>...]: the section is the first segment
-  // after the slug that is not the locale.
-  const parts = pathname.split('/').filter(Boolean).slice(2);
-  const section = parts[0] === ctx.lang ? parts[1] : parts[0];
-  const active = section ?? 'overview';
+  // /embed/<slug>[/<lang>][/<section>] or, on a mapped host, [/<lang>]/<section>.
+  const active = sectionFromPathname(ctx, pathname);
 
   return (
     <nav
