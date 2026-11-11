@@ -3,12 +3,40 @@ import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import createWithVercelToolbar from '@vercel/toolbar/plugins/next';
 import { routing } from '../../packages/i18n/src/routing';
+import {
+  WHITE_LABEL_HOST_CONFIG_ENV,
+  parseWhiteLabelHostConfig,
+} from './src/lib/white-label/config';
 
 const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
 const LOCALES = routing.locales;
 
 /**
- * Path prefixes the middleware matcher (src/middleware.ts) skips, except `api`.
+ * Hostnames mapped to a Space (white-label host delivery). A config redirect
+ * runs before middleware, so the two root redirects below must skip these
+ * hosts: their root is the Space, not the network page. Read at build time, like
+ * every env change on Vercel (it applies to a new deployment).
+ */
+const MAPPED_HOSTNAMES = [
+  ...new Set(
+    parseWhiteLabelHostConfig(process.env[WHITE_LABEL_HOST_CONFIG_ENV]).flatMap(
+      (client) => client.hosts.map((h) => h.host.replace(/:[0-9]+$/, '')),
+    ),
+  ),
+];
+const escapeRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, (char) => `\\${char}`);
+const NOT_MAPPED_HOST = MAPPED_HOSTNAMES.length
+  ? [
+      {
+        type: 'host' as const,
+        value: `(${MAPPED_HOSTNAMES.map(escapeRegExp).join('|')})`,
+      },
+    ]
+  : undefined;
+
+/**
+ * Path prefixes the middleware matcher (src/middleware.ts) skips.
  * Keep in step with that matcher.
  */
 const MIDDLEWARE_SKIPPED_PREFIXES = [
@@ -105,11 +133,13 @@ const nextConfig: NextConfig = {
         source: '/',
         destination: `/${routing.defaultLocale}/network`,
         permanent: true,
+        missing: NOT_MAPPED_HOST,
       },
       {
         source: `/:lang(${LOCALES.join('|')})`,
         destination: '/:lang/network',
         permanent: true,
+        missing: NOT_MAPPED_HOST,
       },
       // The bare space URL lands on the overview tab. Next forwards the query string
       // (`?signal=`, `?msg=`, `?invite=`). Done here rather than with `redirect()` in a
@@ -129,10 +159,12 @@ const nextConfig: NextConfig = {
       // private-folder convention (`_matrix`) rules out a literal app-router folder, and
       // the i18n/CSP middleware would otherwise intercept it (excluded in middleware.ts),
       // so map it onto a normal API route. Legacy unprefixed variant (`/_matrix/app/...`)
-      // is not served — Dendrite uses the v1 path.
+      // is not served — Dendrite uses the v1 path. Main hosts only: the matcher
+      // skips `_matrix`, so a mapped host would otherwise reach it unchecked.
       {
         source: '/_matrix/app/v1/:path*',
         destination: '/api/matrix/appservice/:path*',
+        missing: NOT_MAPPED_HOST,
       },
     ];
   },

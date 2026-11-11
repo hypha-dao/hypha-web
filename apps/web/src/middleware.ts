@@ -2,15 +2,22 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { middleware as i18nMiddleware, routing } from '@hypha-platform/i18n';
 import { matrixTurnConnectSourcesFromEnv } from './lib/matrix-connect-src';
 import {
+  API_PREFIX,
   DENY_FRAMING,
+  HOST_FRAMING,
   INTERNAL_NOT_FOUND_PATH,
+  WL_AUTH_HEADER,
+  WL_CLIENT_HEADER,
+  WL_LOCALE_COOKIE,
   WL_MODE_HEADER,
   WL_NOT_FOUND_HEADER,
   WL_SPACE_HEADER,
   embedFraming,
   getWhiteLabelConfig,
+  isMappedHost,
   localeForPath,
   resolve,
+  serializeAuthConfig,
   stripWhiteLabelHeaders,
   type FramingPolicy,
 } from './lib/white-label';
@@ -183,40 +190,83 @@ function applyFramingHeaders(
 }
 
 export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const isApi =
+    pathname === `/${API_PREFIX}` || pathname.startsWith(`/${API_PREFIX}/`);
+  const host = request.headers.get('host');
+  const config = getWhiteLabelConfig();
+
   // White label: the resolver decides, this function only applies it.
   const whiteLabelOptions = {
     locales: routing.locales,
     defaultLocale: routing.defaultLocale,
     acceptLanguage: request.headers.get('accept-language'),
+    localeCookie: request.cookies.get(WL_LOCALE_COOKIE)?.value ?? null,
+    method: request.method,
   };
-  const decision = resolve(
-    request.headers.get('host'),
-    request.nextUrl.pathname,
-    getWhiteLabelConfig(),
-    whiteLabelOptions,
-  );
+  const decision = resolve(host, pathname, config, whiteLabelOptions);
+
+  if (decision.kind === 'api-allow') {
+    // A read a mapped host may call: the route runs unchanged.
+    return NextResponse.next({
+      request: { headers: stripWhiteLabelHeaders(request.headers) },
+    });
+  }
 
   if (decision.kind === 'rewrite') {
     const headers = stripWhiteLabelHeaders(request.headers);
     headers.set(WL_SPACE_HEADER, decision.spaceSlug);
-    headers.set(WL_MODE_HEADER, 'embed');
+    headers.set(WL_MODE_HEADER, decision.mode);
     headers.set(INTL_LOCALE_HEADER, decision.locale);
+    if (decision.mode === 'host') {
+      headers.set(WL_CLIENT_HEADER, decision.clientId);
+      if (decision.authConfig) {
+        headers.set(WL_AUTH_HEADER, serializeAuthConfig(decision.authConfig));
+      }
+    }
     const url = request.nextUrl.clone();
     url.pathname = decision.pathname;
-    const framing = embedFraming(decision.framingOrigins);
+    const framing =
+      decision.mode === 'host'
+        ? HOST_FRAMING
+        : embedFraming(decision.framingOrigins);
     const rewrite = NextResponse.rewrite(url, { request: { headers } });
-    // The locale may come from Accept-Language: caches must not share it.
-    rewrite.headers.append('Vary', 'Accept-Language');
+    // The locale may come from Accept-Language (and, on a host, the cookie):
+    // caches must not share it.
+    rewrite.headers.append(
+      'Vary',
+      decision.mode === 'host' ? 'Accept-Language, Cookie' : 'Accept-Language',
+    );
+    if (
+      decision.mode === 'host' &&
+      decision.localeFromPath &&
+      whiteLabelOptions.localeCookie !== decision.locale
+    ) {
+      // First party on a host: remember the language the visitor chose.
+      rewrite.cookies.set(WL_LOCALE_COOKIE, decision.locale, {
+        path: '/',
+        sameSite: 'lax',
+        secure: request.nextUrl.protocol === 'https:',
+        maxAge: 60 * 60 * 24 * 365,
+      });
+    }
     return applyFramingHeaders(applyCsp(rewrite, request, framing), framing);
   }
 
   if (decision.kind === 'not-found') {
+    // An API path is answered here: no page, no body.
+    if (isApi) {
+      return new NextResponse(null, {
+        status: 404,
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
     // Unmatched internal path plus a marker: global-not-found renders the bare shell.
     const headers = stripWhiteLabelHeaders(request.headers);
     headers.set(WL_NOT_FOUND_HEADER, '1');
     headers.set(
       INTL_LOCALE_HEADER,
-      localeForPath(request.nextUrl.pathname, whiteLabelOptions),
+      localeForPath(pathname, whiteLabelOptions, isMappedHost(config, host)),
     );
     const url = request.nextUrl.clone();
     url.pathname = INTERNAL_NOT_FOUND_PATH;
@@ -225,6 +275,15 @@ export function middleware(request: NextRequest) {
       applyCsp(NextResponse.rewrite(url, { request: { headers } }), request),
       DENY_FRAMING,
     );
+  }
+
+  // Main host (or feature off): `/api` behaves as before the matcher included
+  // it, except that the internal white-label headers are dropped so a caller
+  // can never smuggle them to a route.
+  if (isApi) {
+    return NextResponse.next({
+      request: { headers: stripWhiteLabelHeaders(request.headers) },
+    });
   }
 
   const response = i18nMiddleware(request);
@@ -238,8 +297,10 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // `/api` is included so a mapped host can be narrowed (allowlist in
+    // lib/white-label); on the main host the middleware returns `next()` for it.
     // `_matrix` — inbound Matrix Application Service transaction pushes (#2483).
     // Rewritten in next.config to /api/matrix/appservice; must skip i18n + CSP here.
-    '/((?!api|_matrix|placeholder|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_matrix|placeholder|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
   ],
 };
