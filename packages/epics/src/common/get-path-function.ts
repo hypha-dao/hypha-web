@@ -1,6 +1,7 @@
 'use client';
 
 import { Locale } from '@hypha-platform/i18n';
+import { signalDetailPath } from '../coherence/lib/signal-detail-path';
 
 export const getDhoPathAgreements = (lang: Locale, id: string) => {
   return `/${lang}/dho/${id}/agreements`;
@@ -39,11 +40,9 @@ export const getSignalPath = (
   spaceSlug: string,
   signalSlug: string,
 ) => {
-  // The signal page opens its chat in the right panel when Human chat is on.
-  // Coherence-off redirects it to overview with `?signal=`.
-  return `/${lang}/dho/${spaceSlug}/coherence/signal/${encodeURIComponent(
-    signalSlug,
-  )}`;
+  // Signal detail. Chat stays closed until the member opens it.
+  // Coherence-off redirects to overview with `?signal=`.
+  return signalDetailPath(lang, spaceSlug, signalSlug);
 };
 
 export const getProposalUrl = (

@@ -17,12 +17,7 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
-import {
-  Button,
-  MarkdownSuspense,
-  Skeleton,
-  useIsMobile,
-} from '@hypha-platform/ui';
+import { Button, MarkdownSuspense, Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { shouldCloseSignalDetailChat } from '../lib/signal-detail-chat';
@@ -258,7 +253,6 @@ export function SignalPage({
   const format = useFormatter();
   const now = useNow({ updateInterval: 60_000 });
   const shortDate = useSignalShortDate();
-  const isMobile = useIsMobile();
 
   const { space } = useSpaceBySlug(spaceSlug);
   const {
@@ -311,7 +305,6 @@ export function SignalPage({
   );
 
   const {
-    open: chatOpen,
     mode: chatMode,
     coherenceSlug: chatSlug,
     openCoherenceChat,
@@ -328,25 +321,6 @@ export function SignalPage({
       spaceSlug,
     );
   }, [openCoherenceChat, signal, spaceSlug]);
-
-  const autoOpenedForRef = React.useRef<string | null>(null);
-  React.useEffect(() => {
-    if (!humanChatEnabled || isMobile !== false || !signal?.slug) return;
-    if (autoOpenedForRef.current === signal.slug) return;
-    autoOpenedForRef.current = signal.slug;
-    if (chatOpen && chatMode === 'coherence' && chatSlug === signal.slug) {
-      return;
-    }
-    openChat();
-  }, [
-    chatMode,
-    chatOpen,
-    chatSlug,
-    humanChatEnabled,
-    isMobile,
-    openChat,
-    signal,
-  ]);
 
   const signalChatRef = React.useRef({
     mode: chatMode,
@@ -379,11 +353,8 @@ export function SignalPage({
   React.useLayoutEffect(() => {
     return () => {
       closeOpenedSignalChat();
-      if (autoOpenedForRef.current === signalSlug) {
-        autoOpenedForRef.current = null;
-      }
     };
-  }, [closeOpenedSignalChat, signalSlug]);
+  }, [closeOpenedSignalChat]);
 
   const { person } = useMe();
   const { jwt } = useJwt();
@@ -553,7 +524,7 @@ export function SignalPage({
                   hasError: signalsError != null,
                 })}
               />
-              <h1 className="craft-page-title min-w-0 text-6 leading-tight">
+              <h1 className="m-0 min-w-0 text-4 leading-tight text-foreground">
                 {signal.title}
               </h1>
             </div>
