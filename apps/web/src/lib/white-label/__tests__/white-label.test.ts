@@ -22,6 +22,8 @@ const OPTIONS: ResolveOptions = {
 };
 
 const CONFIG: WhiteLabelConfig = {
+  hostClients: [],
+  mainHosts: [],
   clients: [
     {
       id: 'client-a',
@@ -53,7 +55,7 @@ const run = (path: string, config = CONFIG) =>
 
 describe('resolve: feature off', () => {
   it.each([
-    ['empty clients', { clients: [] }],
+    ['empty clients', { clients: [], hostClients: [], mainHosts: [] }],
     ['parsed from unset env', parseWhiteLabelConfig(undefined)],
     ['parsed from empty env', parseWhiteLabelConfig('')],
     ['parsed from garbage', parseWhiteLabelConfig('{nope')],
@@ -500,6 +502,8 @@ describe('review follow-ups', () => {
 
   it('merges origins from repeated records of one Space in one client', () => {
     const config: WhiteLabelConfig = {
+      hostClients: [],
+      mainHosts: [],
       clients: [
         {
           id: 'client-a',

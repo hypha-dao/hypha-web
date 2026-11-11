@@ -27,6 +27,12 @@ export const DENY_FRAMING: FramingPolicy = {
   frameAncestors: "'none'",
 };
 
+/**
+ * Mapped host: the page is first party and nothing may frame it. `'none'`
+ * (not `'self'`): no section frames anything of its own.
+ */
+export const HOST_FRAMING: FramingPolicy = DENY_FRAMING;
+
 export function embedFraming(origins: readonly string[]): FramingPolicy {
   return {
     // No origins (config drops such Spaces, so this stays closed) keeps DENY.
