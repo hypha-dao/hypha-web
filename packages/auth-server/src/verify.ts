@@ -1,5 +1,9 @@
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose';
-import { AUTH_SERVER_API_BASE_PATH, loadAuthServerConfig } from './config';
+import {
+  AUTH_SERVER_API_BASE_PATH,
+  AUTH_SERVER_JWKS_PATH,
+  loadAuthServerConfig,
+} from './config';
 
 export type VerifiedAccessToken = {
   /** Person id: the Privy user id (= people.sub). */
@@ -35,7 +39,7 @@ function keysFor(issuer: string): JWTVerifyGetKey {
   let keys = remoteKeys.get(issuer);
   if (!keys) {
     keys = createRemoteJWKSet(
-      new URL(`${issuer}${AUTH_SERVER_API_BASE_PATH}/jwks`),
+      new URL(`${issuer}${AUTH_SERVER_API_BASE_PATH}${AUTH_SERVER_JWKS_PATH}`),
       {
         cooldownDuration: 30_000,
         cacheMaxAge: 10 * 60_000,

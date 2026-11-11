@@ -14,6 +14,7 @@ import {
   AUTH_CODE_TTL_SECONDS,
   AUTH_SERVER_API_BASE_PATH,
   AUTH_SERVER_CONSENT_PATH,
+  AUTH_SERVER_JWKS_PATH,
   AUTH_SERVER_LOGIN_PATH,
   AUTH_SERVER_SCOPES,
   REFRESH_TOKEN_TTL_SECONDS,
@@ -96,7 +97,7 @@ export function createAuthServer(
       jwt({
         jwks: {
           // Own key set, published under the issuer, separate from the main host's Neon aggregator.
-          jwksPath: '/jwks',
+          jwksPath: AUTH_SERVER_JWKS_PATH,
           keyPairConfig: { alg: 'ES256' },
           rotationInterval: 60 * 60 * 24 * 90,
           gracePeriod: 60 * 60 * 24 * 30,

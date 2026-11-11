@@ -1,5 +1,6 @@
 import {
   AUTH_SERVER_API_BASE_PATH,
+  AUTH_SERVER_JWKS_PATH,
   type AuthServerConfig,
   type AuthServerDisabled,
 } from './config';
@@ -18,7 +19,7 @@ const ALLOWED: ReadonlyArray<{ path: string; methods: readonly string[] }> = [
   { path: '/oauth2/continue', methods: ['POST'] },
   { path: '/oauth2/token', methods: ['POST'] },
   { path: '/oauth2/revoke', methods: ['POST'] },
-  { path: '/jwks', methods: ['GET'] },
+  { path: AUTH_SERVER_JWKS_PATH, methods: ['GET'] },
   { path: '/provider/sign-in', methods: ['POST'] },
 ];
 const WELL_KNOWN = '/.well-known/oauth-authorization-server';

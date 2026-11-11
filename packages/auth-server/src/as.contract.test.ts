@@ -27,7 +27,7 @@ run('authorization server: protocol, gate, revocation, storage', () => {
   });
 
   async function keys() {
-    const res = await s.handler(h.req('/api/auth/jwks'));
+    const res = await s.handler(h.req('/api/auth/jwks.json'));
     return createLocalJWKSet(await res.json());
   }
 
@@ -404,7 +404,9 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
   });
 
   it('answers on the issuer host; 404 on any other host', async () => {
-    const ok = await handle()(onHost('auth.localhost:3000', '/api/auth/jwks'));
+    const ok = await handle()(
+      onHost('auth.localhost:3000', '/api/auth/jwks.json'),
+    );
     expect(ok.status).toBe(200);
     for (const host of [
       'localhost:3000',
@@ -413,7 +415,7 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
       'evil.com',
     ]) {
       for (const path of [
-        '/api/auth/jwks',
+        '/api/auth/jwks.json',
         '/api/auth/oauth2/token',
         '/.well-known/oauth-authorization-server',
         '/api/auth/provider/sign-in',
@@ -433,7 +435,7 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
     expect(res.status).toBe(200);
     const meta = await res.json();
     expect(meta.issuer).toBe(h.ISSUER);
-    expect(meta.jwks_uri).toBe(`${h.ISSUER}/api/auth/jwks`);
+    expect(meta.jwks_uri).toBe(`${h.ISSUER}/api/auth/jwks.json`);
     expect(meta.code_challenge_methods_supported).toEqual(['S256']);
     expect(meta.client_id_metadata_document_supported).toBe(true);
     expect(meta.authorization_response_iss_parameter_supported).toBe(true);
@@ -531,7 +533,7 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
       },
     );
     expect(
-      (await off(onHost('auth.localhost:3000', '/api/auth/jwks'))).status,
+      (await off(onHost('auth.localhost:3000', '/api/auth/jwks.json'))).status,
     ).toBe(404);
   });
 

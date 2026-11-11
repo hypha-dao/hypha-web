@@ -15,6 +15,8 @@ export const AUTH_CODE_TTL_SECONDS = 60;
 
 /** Path prefix of the Better Auth handler (not the issuer: the issuer has no path). */
 export const AUTH_SERVER_API_BASE_PATH = '/api/auth';
+/** Path of the AS key set under the base path; `.json` so plain clients and caches treat it as JSON. */
+export const AUTH_SERVER_JWKS_PATH = '/jwks.json';
 export const AUTH_SERVER_LOGIN_PATH = '/auth/login';
 export const AUTH_SERVER_CONSENT_PATH = '/auth/consent';
 

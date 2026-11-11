@@ -159,7 +159,7 @@ try {
   // 2. host block
   for (const host of ['localhost:3000', 'example.com']) {
     const a = await call('/.well-known/oauth-authorization-server', { host });
-    const b = await call('/api/auth/jwks', { host });
+    const b = await call('/api/auth/jwks.json', { host });
     const c = await call('/auth/login', { host });
     check(
       `404 on other host ${host} (metadata, jwks, login page)`,
