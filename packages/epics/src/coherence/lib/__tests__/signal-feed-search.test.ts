@@ -104,6 +104,24 @@ describe('upvote cell shared by the list and the detail', () => {
       'inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline',
     );
     expect(pageSource).toContain('onClick={openChat}');
+    const metaSlice = pageSource.slice(
+      pageMetaAt,
+      pageSource.indexOf('</dl>', pageMetaAt),
+    );
+    expect(metaSlice).toContain('flex w-full flex-wrap items-start');
+    expect(metaSlice).not.toContain('col-span-full');
+    expect(metaSlice).not.toContain('grid-cols-2');
+    const createdByAt = metaSlice.indexOf("t('signalCreatedBy')");
+    const createdLabelAt = metaSlice.indexOf("t('signalCreatedLabel')");
+    const discussionAt = metaSlice.indexOf("t('signalDiscussion')");
+    const openAt = metaSlice.indexOf('data-testid="signal-open-discussion"');
+    expect(createdByAt).toBeGreaterThan(-1);
+    expect(createdLabelAt).toBeGreaterThan(createdByAt);
+    expect(discussionAt).toBeGreaterThan(createdLabelAt);
+    expect(openAt).toBeGreaterThan(discussionAt);
+    expect(metaSlice).toContain(
+      'ml-auto flex max-w-full shrink-0 flex-col gap-1',
+    );
     expect(upvoteSource).not.toContain("t('totalUpvotes')");
     expect(upvoteSource).not.toContain("t('supportersCount')");
     const voteSummarySource = readFileSync(

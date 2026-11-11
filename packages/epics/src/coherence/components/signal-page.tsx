@@ -57,7 +57,7 @@ function MetaItem({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-w-0 flex-col gap-1">
+    <div className="flex min-w-0 max-w-full shrink-0 flex-col gap-1">
       <dt className={SECTION_LABEL_CLASS}>{label}</dt>
       <dd className="m-0 flex min-w-0 items-center gap-2 text-1 text-foreground">
         {children}
@@ -542,7 +542,7 @@ export function SignalPage({
 
         <dl
           data-testid="signal-page-meta"
-          className="m-0 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-border/70 pt-4 lg:grid-cols-5"
+          className="m-0 flex w-full flex-wrap items-start gap-x-6 gap-y-4 border-t border-border/70 pt-4"
         >
           <MetaItem label={t('signalCreatedBy')}>
             <PersonAvatar
@@ -562,11 +562,22 @@ export function SignalPage({
               <span className="truncate">{lastReply}</span>
             </MetaItem>
           ) : null}
-          <div className="col-span-full flex min-w-0 items-end justify-between gap-3">
-            <MetaItem label={t('signalDiscussion')}>
-              <span className="truncate">{discussion}</span>
+          <MetaItem label={t('signalDiscussion')}>
+            <span className="truncate">{discussion}</span>
+          </MetaItem>
+          {mediaSummary ? (
+            <MetaItem label={t('signalAttachmentsLabel')}>
+              <span className="truncate">{mediaSummary}</span>
             </MetaItem>
-            {humanChatEnabled ? (
+          ) : null}
+          {humanChatEnabled ? (
+            <div className="ml-auto flex max-w-full shrink-0 flex-col gap-1">
+              <span
+                className={cn(SECTION_LABEL_CLASS, 'invisible')}
+                aria-hidden
+              >
+                {'\u00a0'}
+              </span>
               <button
                 type="button"
                 data-testid="signal-open-discussion"
@@ -576,12 +587,7 @@ export function SignalPage({
                 {t('openDiscussion')}
                 <span aria-hidden>→</span>
               </button>
-            ) : null}
-          </div>
-          {mediaSummary ? (
-            <MetaItem label={t('signalAttachmentsLabel')}>
-              <span className="truncate">{mediaSummary}</span>
-            </MetaItem>
+            </div>
           ) : null}
         </dl>
       </section>
