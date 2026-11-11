@@ -826,3 +826,49 @@ describe('main hosts derived from env', () => {
     expect(mainHosts).not.toContain('app.hypha.earth');
   });
 });
+
+describe('host links in another locale', () => {
+  const ctx = {
+    mode: 'host' as const,
+    spaceSlug: 'space-one',
+    lang: 'en',
+    fullAppOrigin: 'https://app.example',
+  };
+  const origin = 'https://space.partner.example';
+  const locales = ['en', 'pt', 'de'];
+
+  it('keeps a section link in any configured locale, with that locale', () => {
+    expect(classifyLink('/pt/members', ctx, origin, locales)).toEqual({
+      kind: 'internal',
+      href: '/pt/members',
+    });
+    expect(classifyLink('/de', ctx, origin, locales)).toEqual({
+      kind: 'internal',
+      href: '/de/overview',
+    });
+    expect(classifyLink('/en/members', ctx, origin, locales)).toEqual({
+      kind: 'internal',
+      href: '/en/members',
+    });
+  });
+
+  it('still sends unserved paths and unknown prefixes to the full app', () => {
+    expect(classifyLink('/pt/nope', ctx, origin, locales)).toMatchObject({
+      kind: 'external',
+    });
+    expect(classifyLink('/xx/members', ctx, origin, locales)).toMatchObject({
+      kind: 'external',
+    });
+  });
+});
+
+describe('host client ids', () => {
+  it('drops every client whose id is given twice', () => {
+    const raw = JSON.stringify([
+      { id: 'dup', hosts: [{ host: 'a.example', space: 'one' }] },
+      { id: 'dup', hosts: [{ host: 'b.example', space: 'two' }] },
+      { id: 'ok', hosts: [{ host: 'c.example', space: 'three' }] },
+    ]);
+    expect(parseWhiteLabelHostConfig(raw).map((c) => c.id)).toEqual(['ok']);
+  });
+});

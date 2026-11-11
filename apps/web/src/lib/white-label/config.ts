@@ -235,9 +235,17 @@ export function parseWhiteLabelHostConfig(
     return [];
   }
   if (!Array.isArray(json)) return [];
-  const clients = json
+  const parsedClients = json
     .map(parseHostClient)
     .filter((c): c is WhiteLabelHostClientRecord => c !== null);
+
+  // One record per client id: an id given twice is ambiguous, so both are
+  // dropped (the id is what other registries map clients by).
+  const idCounts = new Map<string, number>();
+  for (const { id } of parsedClients) {
+    idCounts.set(id, (idCounts.get(id) ?? 0) + 1);
+  }
+  const clients = parsedClients.filter((c) => idCounts.get(c.id) === 1);
 
   // One owner per host: a host claimed twice is claimed by nobody.
   const counts = new Map<string, number>();

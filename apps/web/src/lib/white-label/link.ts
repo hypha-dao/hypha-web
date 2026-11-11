@@ -63,12 +63,15 @@ function leaveSpace(ctx: WhiteLabelLinkContext, url: URL): LinkDecision {
  * Only sections the tree serves stay: a link to any other page of the Space
  * (settings, a proposal) would render a dead page. Pure; takes the href as
  * written in the markup. Returns null when the browser should handle the link
- * untouched. `appOrigin` is the origin of the page itself.
+ * untouched. `appOrigin` is the origin of the page itself. `locales` are the
+ * supported locale codes: on a host, a link in any of them stays in the Space
+ * and keeps its own locale.
  */
 export function classifyLink(
   rawHref: string,
   ctx: WhiteLabelLinkContext,
   appOrigin: string,
+  locales: readonly string[] = [],
 ): LinkDecision | null {
   if (!rawHref || rawHref.startsWith('#')) return null;
   let url: URL;
@@ -87,11 +90,16 @@ export function classifyLink(
   if (ctx.mode === 'host') {
     // Host root of this Space: `/`, `/<lang>`, `/<section>`, `/<lang>/<section>`.
     // Anything with more segments is a main-app URL (or not served).
-    const own = parts[0] === ctx.lang ? parts.slice(1) : parts;
+    const first = parts[0];
+    const hasLocale =
+      first !== undefined && (first === ctx.lang || locales.includes(first));
+    const own = hasLocale ? parts.slice(1) : parts;
+    // A link keeps the locale it names; without one, the page's own.
+    const linkCtx = hasLocale ? { ...ctx, lang: first } : ctx;
     if (own.length === 0) {
       return {
         kind: 'internal',
-        href: sectionHref(ctx, LANDING_SECTION, url.search),
+        href: sectionHref(linkCtx, LANDING_SECTION, url.search),
       };
     }
     const [only] = own;
@@ -100,7 +108,7 @@ export function classifyLink(
       only !== undefined &&
       SERVED_SECTIONS.includes(only)
     ) {
-      return { kind: 'internal', href: sectionHref(ctx, only, url.search) };
+      return { kind: 'internal', href: sectionHref(linkCtx, only, url.search) };
     }
   } else if (parts[0] === EMBED_PREFIX && parts[1] === ctx.spaceSlug) {
     // Already a white-label URL of this Space. Another Space's /embed URL would

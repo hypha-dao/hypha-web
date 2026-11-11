@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { routing } from '@hypha-platform/i18n';
 import {
   classifyLink,
   sectionHref,
@@ -80,6 +81,7 @@ export function WhiteLabelLinkGuard({
         anchor.getAttribute('href') ?? '',
         ctx,
         window.location.origin,
+        routing.locales,
       );
       if (!decision) return;
 
