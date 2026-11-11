@@ -11,7 +11,10 @@ export function formatVotingPowerCompact(
 ): string {
   let value = 0;
   try {
-    value = Number(formatUnits(BigInt(raw ?? '0'), tokenDecimals));
+    const units = BigInt(raw ?? '0');
+    const negative = units < 0n;
+    value = Number(formatUnits(negative ? -units : units, tokenDecimals));
+    if (negative) value = -value;
   } catch {
     value = 0;
   }

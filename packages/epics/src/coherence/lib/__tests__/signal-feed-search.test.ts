@@ -66,6 +66,9 @@ describe('upvote cell shared by the list and the detail', () => {
     expect(upvoteSource).toContain('signalUpvoteCellMeasure');
     expect(upvoteSource).toContain('<SignalUpvoteCellChrome');
     expect(upvoteCellSource).toContain('data-testid="signal-upvote-figure"');
+    expect(upvoteCellSource).toContain('data-testid="signal-vote-up"');
+    expect(upvoteCellSource).toContain('data-testid="signal-vote-down"');
+    expect(upvoteSource).toContain('resolveSignalVoteAction');
     expect(upvoteSource).not.toContain("variant === 'feed'");
     expect(upvoteSource).not.toContain("variant === 'page'");
     expect(upvoteSource).toContain('isArchivedSignalVoteError');

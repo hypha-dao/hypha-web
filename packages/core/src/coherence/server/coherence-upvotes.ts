@@ -9,14 +9,17 @@ import { DbConfig } from '../../server';
 import {
   aggregateCoherenceUpvoteSummaries,
   emptyCoherenceUpvoteSummary,
+  signalVoteDirection,
 } from '../coherence-upvote-summary';
-import type { CoherenceUpvoteSummary } from '../types';
+import type { CoherenceUpvoteSummary, SignalVoteDirection } from '../types';
 
 export { emptyCoherenceUpvoteSummary };
 
 export const EMPTY_COHERENCE_UPVOTE_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
   upvoteCount: 0,
+  downvoteCount: 0,
+  netVoteCount: 0,
   tokenDecimals: 0,
   voters: [],
   myUpvote: null,
@@ -61,7 +64,9 @@ export const findCoherenceUpvoteSummaries = async (
       votingPower: coherenceUpvotes.votingPower,
       maxVotingPower: coherenceUpvotes.maxVotingPower,
       tokenDecimals: coherenceUpvotes.tokenDecimals,
+      direction: coherenceUpvotes.direction,
       createdAt: coherenceUpvotes.createdAt,
+      updatedAt: coherenceUpvotes.updatedAt,
       name: people.name,
       surname: people.surname,
       avatarUrl: people.avatarUrl,
@@ -77,6 +82,10 @@ export const findCoherenceUpvoteSummaries = async (
   });
 };
 
+/**
+ * Insert or replace this person's one vote.
+ * @returns the direction stored before this write, or null for a new vote.
+ */
 export const upsertCoherenceUpvote = async (
   {
     coherenceId,
@@ -84,15 +93,28 @@ export const upsertCoherenceUpvote = async (
     votingPower,
     maxVotingPower,
     tokenDecimals,
+    direction,
   }: {
     coherenceId: number;
     personId: number;
     votingPower: string;
     maxVotingPower: string;
     tokenDecimals: number;
+    direction: SignalVoteDirection;
   },
   { db }: DbConfig,
-) => {
+): Promise<SignalVoteDirection | null> => {
+  const [existing] = await db
+    .select({ direction: coherenceUpvotes.direction })
+    .from(coherenceUpvotes)
+    .where(
+      and(
+        eq(coherenceUpvotes.coherenceId, coherenceId),
+        eq(coherenceUpvotes.personId, personId),
+      ),
+    )
+    .limit(1);
+
   await db
     .insert(coherenceUpvotes)
     .values({
@@ -101,6 +123,7 @@ export const upsertCoherenceUpvote = async (
       votingPower,
       maxVotingPower,
       tokenDecimals,
+      direction,
     })
     .onConflictDoUpdate({
       target: [coherenceUpvotes.coherenceId, coherenceUpvotes.personId],
@@ -108,16 +131,19 @@ export const upsertCoherenceUpvote = async (
         votingPower,
         maxVotingPower,
         tokenDecimals,
+        direction,
         updatedAt: new Date(),
       },
     });
+
+  return existing ? signalVoteDirection(existing.direction) : null;
 };
 
-/** @returns true when an upvote row was actually deleted. */
+/** @returns the removed direction, or null when there was no row. */
 export const removeCoherenceUpvote = async (
   { coherenceId, personId }: { coherenceId: number; personId: number },
   { db }: DbConfig,
-): Promise<boolean> => {
+): Promise<SignalVoteDirection | null> => {
   const deleted = await db
     .delete(coherenceUpvotes)
     .where(
@@ -127,5 +153,6 @@ export const removeCoherenceUpvote = async (
       ),
     )
     .returning();
-  return deleted.length > 0;
+  const row = deleted[0];
+  return row ? signalVoteDirection(row.direction) : null;
 };

@@ -81,13 +81,13 @@ export function signalVotingPowerInTimeFrame(
   return toBigInt(upvotes.recentUpvotes?.[timeFrame]?.votingPower);
 }
 
-/** Members who upvoted a signal inside the time frame. */
+/** Net voters (up minus down) inside the time frame. */
 export function signalVotersInTimeFrame(
   upvotes: CoherenceUpvoteSummary | undefined,
   timeFrame: SignalTimeFrame,
 ): number {
   if (!upvotes) return 0;
-  if (timeFrame === 'all') return upvotes.upvoteCount;
+  if (timeFrame === 'all') return upvotes.netVoteCount ?? upvotes.upvoteCount;
   return upvotes.recentUpvotes?.[timeFrame]?.voters ?? 0;
 }
 
@@ -125,10 +125,10 @@ export function signalListUpvoteSummaryState({
 }
 
 /**
- * Feed cell figure. Top by voting power shows the all-time token total.
- * Every other sort, including New and Top by voters, shows the all-time
- * voter count. The selected time window ranks the list and does not change
- * this number. Never the viewer's own vote. One summary, one token.
+ * Feed cell figure. Top by voting power shows the all-time net token total
+ * (up minus down). Every other sort shows the all-time net voter count.
+ * The selected time window ranks the list and does not change this number.
+ * Never the viewer's own vote. One summary, one token.
  */
 export function signalUpvoteCellMeasure({
   sort,
@@ -140,7 +140,10 @@ export function signalUpvoteCellMeasure({
   summaryState?: SignalUpvoteSummaryState;
 }): SignalUpvoteCellMeasure {
   if (sort !== 'top-power') {
-    return { kind: 'count', count: upvotes?.upvoteCount ?? 0 };
+    return {
+      kind: 'count',
+      count: upvotes?.netVoteCount ?? upvotes?.upvoteCount ?? 0,
+    };
   }
   if (upvotes != null) {
     return {
@@ -187,9 +190,9 @@ function compareDesc(a: bigint | number, b: bigint | number): number {
 }
 
 /**
- * `new` is newest first. Top sorts rank by support received inside the time
- * frame; ties fall back to all-time support, then newest first, so quiet
- * time frames still read as a sensible list.
+ * `new` is newest first. Top sorts rank by net support (up minus down)
+ * received inside the time frame; ties fall back to all-time net support,
+ * then newest first, so quiet time frames still read as a sensible list.
  */
 export function rankSignals<T extends Pick<Coherence, 'createdAt' | 'upvotes'>>(
   signals: readonly T[],

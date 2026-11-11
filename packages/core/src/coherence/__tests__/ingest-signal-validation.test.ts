@@ -132,6 +132,24 @@ describe('schemaIngestedSignalUpvote', () => {
     expect(parsed.votingPowerPercent).toBe(25);
   });
 
+  it('treats a missing direction as an upvote and accepts down', () => {
+    const omitted = schemaIngestedSignalUpvote.parse({
+      voter: { walletAddress: wallet },
+    });
+    expect(omitted.direction).toBeUndefined();
+    const down = schemaIngestedSignalUpvote.parse({
+      voter: { walletAddress: wallet },
+      direction: 'down',
+    });
+    expect(down.direction).toBe('down');
+    expect(() =>
+      schemaIngestedSignalUpvote.parse({
+        voter: { walletAddress: wallet },
+        direction: 'sideways',
+      }),
+    ).toThrow();
+  });
+
   it('rejects an out-of-range percentage', () => {
     expect(() =>
       schemaIngestedSignalUpvote.parse({

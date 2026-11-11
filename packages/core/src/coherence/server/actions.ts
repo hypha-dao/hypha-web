@@ -518,7 +518,13 @@ export async function upvoteCoherenceAction(
   {
     slug,
     votingPowerPercent = 100,
-  }: { slug: string; votingPowerPercent?: number },
+    direction,
+  }: {
+    slug: string;
+    votingPowerPercent?: number;
+    /** Omitted means an upvote. */
+    direction?: 'up' | 'down';
+  },
   { authToken }: { authToken?: string },
 ): Promise<CoherenceUpvoteSummary> {
   const { self, coherence } = await resolveCoherenceUpvoteContext({
@@ -534,7 +540,7 @@ export async function upvoteCoherenceAction(
   });
 
   return applyCoherenceUpvote(
-    { coherence, actor: self, votingPowerPercent },
+    { coherence, actor: self, votingPowerPercent, direction },
     { db },
   );
 }

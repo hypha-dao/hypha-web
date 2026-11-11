@@ -6,6 +6,7 @@ import type {
   CoherenceUpvoteSummary,
   CoherenceUpvoter,
   SignalRecentWindow,
+  SignalVoteDirection,
   SignalWindowUpvotes,
 } from './types';
 
@@ -18,16 +19,28 @@ export type CoherenceUpvoteAggregateRow = {
   maxVotingPower: string;
   tokenDecimals: number;
   createdAt: Date | string;
+  /** When the current direction was last written. Falls back to createdAt. */
+  updatedAt?: Date | string | null;
+  /** Missing rows from before downvotes are upvotes. Any other value counts as up. */
+  direction?: string | null;
   name: string | null;
   surname: string | null;
   avatarUrl: string | null;
 };
+
+export function signalVoteDirection(
+  direction: string | null | undefined,
+): SignalVoteDirection {
+  return direction === 'down' ? 'down' : 'up';
+}
 
 /** A settled summary for a signal that has no upvote rows. */
 export function emptyCoherenceUpvoteSummary(): CoherenceUpvoteSummary {
   return {
     totalVotingPower: '0',
     upvoteCount: 0,
+    downvoteCount: 0,
+    netVoteCount: 0,
     tokenDecimals: 0,
     voters: [],
     myUpvote: null,
@@ -55,7 +68,7 @@ function emptyRecentTotals(): Record<
 /**
  * One summary per requested signal. Signals with no rows stay at zero for
  * every time frame — a missing row is not an in-flight request. Totals are
- * the sum of each voter's raw power, using the summary's single token decimals.
+ * the net of each voter's raw power (up minus down), using one token decimals.
  */
 export function aggregateCoherenceUpvoteSummaries({
   coherenceIds,
@@ -89,8 +102,12 @@ export function aggregateCoherenceUpvoteSummaries({
     } catch {
       power = 0n;
     }
-    totals.set(row.coherenceId, (totals.get(row.coherenceId) ?? 0n) + power);
-    const castAt = new Date(row.createdAt).getTime();
+    if (power < 0n) power = -power;
+    const direction = signalVoteDirection(row.direction);
+    const signed = direction === 'down' ? -power : power;
+    const people = direction === 'down' ? -1 : 1;
+    totals.set(row.coherenceId, (totals.get(row.coherenceId) ?? 0n) + signed);
+    const castAt = new Date(row.updatedAt ?? row.createdAt).getTime();
     let windows = recent.get(row.coherenceId);
     if (!windows) {
       windows = emptyRecentTotals();
@@ -99,23 +116,26 @@ export function aggregateCoherenceUpvoteSummaries({
     if (!Number.isNaN(castAt)) {
       for (const window of SIGNAL_RECENT_WINDOWS) {
         if (castAt < now - SIGNAL_RECENT_WINDOW_MS[window]) continue;
-        windows[window].votingPower += power;
-        windows[window].voters += 1;
+        windows[window].votingPower += signed;
+        windows[window].voters += people;
       }
     }
-    summary.upvoteCount += 1;
+    if (direction === 'down') summary.downvoteCount += 1;
+    else summary.upvoteCount += 1;
     summary.tokenDecimals = Math.max(summary.tokenDecimals, row.tokenDecimals);
     const voter: CoherenceUpvoter = {
       personId: row.personId,
       name: [row.name, row.surname].filter(Boolean).join(' ').trim() || null,
       avatarUrl: row.avatarUrl,
       votingPower: power.toString(),
+      direction,
     };
     summary.voters.push(voter);
     if (viewerPersonId != null && row.personId === viewerPersonId) {
       summary.myUpvote = {
-        votingPower: row.votingPower,
+        votingPower: power.toString(),
         maxVotingPower: row.maxVotingPower,
+        direction,
       };
     }
   }
@@ -123,6 +143,7 @@ export function aggregateCoherenceUpvoteSummaries({
   for (const [coherenceId, summary] of Object.entries(summaries)) {
     const id = Number(coherenceId);
     summary.totalVotingPower = (totals.get(id) ?? 0n).toString();
+    summary.netVoteCount = summary.upvoteCount - summary.downvoteCount;
     const windows = recent.get(id) ?? emptyRecentTotals();
     summary.recentUpvotes = Object.fromEntries(
       SIGNAL_RECENT_WINDOWS.map((window) => [

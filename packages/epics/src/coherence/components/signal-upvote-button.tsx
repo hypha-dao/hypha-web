@@ -3,19 +3,21 @@
 import React from 'react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import {
+  resolveSignalVoteAction,
   signalUpvoteCellMeasure,
   useCoherenceUpvoteMutations,
   useJwt,
   type CoherenceUpvoteSummary,
   type SignalSort,
   type SignalUpvoteSummaryState,
+  type SignalVoteDirection,
   type SignalVotingMode,
 } from '@hypha-platform/core/client';
 import {
   Button,
   Popover,
+  PopoverAnchor,
   PopoverContent,
-  PopoverTrigger,
   Separator,
   Slider,
 } from '@hypha-platform/ui';
@@ -40,6 +42,8 @@ export { isArchivedSignalVoteError };
 const EMPTY_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
   upvoteCount: 0,
+  downvoteCount: 0,
+  netVoteCount: 0,
   tokenDecimals: 0,
   voters: [],
   myUpvote: null,
@@ -98,8 +102,9 @@ type SignalUpvoteButtonProps = {
 };
 
 /**
- * The ▲ upvote cell. It opens the upvote panel directly: a voting power
- * slider in token spaces, a single toggle when each member has one vote.
+ * Up and down on one cell. The selected direction is filled; clicking it
+ * again clears the vote, and clicking the other direction switches. The
+ * figure is the net. The figure opens the voting-power slider in token spaces.
  */
 export function SignalUpvoteButton({
   slug,
@@ -141,7 +146,12 @@ export function SignalUpvoteButton({
   }, [isNonMember, isMembershipPending, jwt, slug]);
 
   const summary = localSummary ?? upvotes ?? EMPTY_SUMMARY;
-  const hasVoted = summary.myUpvote != null;
+  const direction: SignalVoteDirection | null = summary.myUpvote
+    ? summary.myUpvote.direction === 'down'
+      ? 'down'
+      : 'up'
+    : null;
+  const hasVoted = direction != null;
   const isMutating = isUpvoting || isRemovingUpvote;
   const isVotingModeResolved = votingMode != null;
   const showVotingModeError =
@@ -167,7 +177,7 @@ export function SignalUpvoteButton({
   const [percent, setPercent] = React.useState(() => myUpvotePercent(summary));
 
   const totalLabel = isOneMemberOneVote
-    ? format.number(summary.upvoteCount)
+    ? format.number(summary.netVoteCount)
     : formatVotingPowerCompact(
         summary.totalVotingPower,
         summary.tokenDecimals,
@@ -214,14 +224,24 @@ export function SignalUpvoteButton({
   );
 
   const trimmedSlug = slug?.trim() ?? '';
-  const handleToggle = () =>
-    run(() =>
-      hasVoted
-        ? removeUpvote({ slug: trimmedSlug })
-        : upvote({ slug: trimmedSlug }),
-    );
+  const handleDirection = (clicked: SignalVoteDirection) =>
+    run(() => {
+      const action = resolveSignalVoteAction(direction, clicked);
+      if (action === 'remove') return removeUpvote({ slug: trimmedSlug });
+      return upvote({
+        slug: trimmedSlug,
+        direction: action,
+        ...(isOneMemberOneVote ? {} : { votingPowerPercent: percent }),
+      });
+    });
   const handleApplyPercent = () =>
-    run(() => upvote({ slug: trimmedSlug, votingPowerPercent: percent }));
+    run(() =>
+      upvote({
+        slug: trimmedSlug,
+        votingPowerPercent: percent,
+        direction: direction ?? 'up',
+      }),
+    );
   const handleRemove = () => run(() => removeUpvote({ slug: trimmedSlug }));
 
   const stopPropagation = React.useCallback(
@@ -256,7 +276,9 @@ export function SignalUpvoteButton({
       : cellMeasure.kind === 'count'
       ? format.number(cellMeasure.count)
       : figureLabel;
-  const cellLabel = hasVoted ? t('upvoted') : t('upvote');
+  const cellLabel = t('net');
+  const upLabel = direction === 'up' ? t('removeUpvote') : t('upvote');
+  const downLabel = direction === 'down' ? t('removeDownvote') : t('downvote');
 
   return (
     <div
@@ -275,24 +297,36 @@ export function SignalUpvoteButton({
           }
         }}
       >
-        <PopoverTrigger asChild>
-          <SignalUpvoteCellChrome
-            figure={figureLabel}
-            exactLabel={exactLabel}
-            label={cellLabel}
-            pressed={hasVoted}
-            aria-haspopup="dialog"
-            aria-label={`${t('upvote')} · ${exactLabel}`}
-            aria-busy={!canOpen}
-            disabled={!canOpen}
-            data-upvote-variant={variant}
-            data-upvote-measure={cellMeasure.kind}
-            className={cn(
-              (isMutating || !canOpen) && 'opacity-65',
-              !canOpen && 'cursor-progress',
-            )}
-          />
-        </PopoverTrigger>
+        <PopoverAnchor asChild>
+          <div>
+            <SignalUpvoteCellChrome
+              figure={figureLabel}
+              exactLabel={exactLabel}
+              label={cellLabel}
+              pressed={hasVoted}
+              direction={direction}
+              upLabel={upLabel}
+              downLabel={downLabel}
+              voteDisabled={!canVote || isMutating}
+              onVoteUp={() => handleDirection('up')}
+              onVoteDown={() => handleDirection('down')}
+              onFigureClick={() => {
+                if (!canOpen) return;
+                setOpen((current) => !current);
+                setPercent(myUpvotePercent(summary));
+                setError(null);
+              }}
+              aria-label={`${t('net')} · ${exactLabel}`}
+              aria-busy={!canOpen}
+              data-upvote-variant={variant}
+              data-upvote-measure={cellMeasure.kind}
+              className={cn(
+                (isMutating || !canOpen) && 'opacity-65',
+                !canOpen && 'cursor-progress',
+              )}
+            />
+          </div>
+        </PopoverAnchor>
         <PopoverContent
           align="start"
           sideOffset={6}
@@ -347,25 +381,41 @@ export function SignalUpvoteButton({
                     {t('oneMemberOneVote')}
                   </span>
                   {canVote ? (
-                    <Button
-                      type="button"
-                      variant={hasVoted ? 'default' : 'outline'}
-                      colorVariant="accent"
-                      className="w-full gap-2"
-                      disabled={isMutating}
-                      aria-pressed={hasVoted}
-                      onClick={() => void handleToggle()}
-                    >
-                      <SignalUpvoteTriangle />
-                      {hasVoted ? t('upvoted') : t('upvote')}
-                    </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant={direction === 'up' ? 'default' : 'outline'}
+                        colorVariant="accent"
+                        className="w-full gap-2"
+                        disabled={isMutating}
+                        aria-pressed={direction === 'up'}
+                        onClick={() => handleDirection('up')}
+                      >
+                        <SignalUpvoteTriangle />
+                        {direction === 'up' ? t('upvoted') : t('upvote')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={direction === 'down' ? 'default' : 'outline'}
+                        colorVariant="error"
+                        className="w-full gap-2"
+                        disabled={isMutating}
+                        aria-pressed={direction === 'down'}
+                        onClick={() => handleDirection('down')}
+                      >
+                        <SignalUpvoteTriangle className="rotate-180" />
+                        {direction === 'down' ? t('downvoted') : t('downvote')}
+                      </Button>
+                    </div>
                   ) : null}
                 </>
               ) : canVote ? (
                 <>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-1 text-foreground">
-                      {t('upvoteWithVotingPower')}
+                      {direction === 'down'
+                        ? t('downvoteWithVotingPower')
+                        : t('upvoteWithVotingPower')}
                     </span>
                     <span className="text-1 font-semibold tabular-nums text-foreground">
                       {percent}%
@@ -448,7 +498,15 @@ export function SignalUpvoteButton({
                           {voter.name || t('anonymousSupporter')}
                         </span>
                       </span>
-                      <span className="shrink-0 text-1 tabular-nums text-muted-foreground">
+                      <span
+                        className={cn(
+                          'shrink-0 text-1 tabular-nums',
+                          voter.direction === 'down'
+                            ? 'text-error-11'
+                            : 'text-muted-foreground',
+                        )}
+                      >
+                        {voter.direction === 'down' ? '−' : ''}
                         {isOneMemberOneVote
                           ? t('votesCount', { count: 1 })
                           : formatVotingPowerCompact(

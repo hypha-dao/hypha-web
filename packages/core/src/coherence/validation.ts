@@ -303,6 +303,8 @@ export const schemaIngestedSignalUpvote = z
   .object({
     voter: z.object({ walletAddress: evmAddressSchema }).strict(),
     votingPowerPercent: z.number().int().min(1).max(100).optional(),
+    /** Omitted means an upvote, matching votes recorded before downvotes. */
+    direction: z.enum(['up', 'down']).optional(),
   })
   .strict();
 

@@ -38,4 +38,9 @@ describe('formatVotingPowerExact', () => {
     expect(formatVotingPowerExact(wei, decimals, 'en')).toBe('694,300');
     expect(formatVotingPowerExact(wei, decimals, 'de')).toContain('694');
   });
+
+  it('keeps the sign of a negative net total', () => {
+    expect(formatVotingPowerCompact('-1500', 0, 'en')).toBe('-1.5K');
+    expect(formatVotingPowerExact('-1500', 0, 'en')).toBe('-1,500');
+  });
 });

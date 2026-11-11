@@ -79,9 +79,12 @@ describe('aggregateCoherenceUpvoteSummaries', () => {
     expect(voted?.upvoteCount).toBe(2);
     expect(voted?.totalVotingPower).toBe('4000000000000000000');
     expect(voted?.tokenDecimals).toBe(18);
+    expect(voted?.downvoteCount).toBe(0);
+    expect(voted?.netVoteCount).toBe(2);
     expect(voted?.myUpvote).toEqual({
       votingPower: '1000000000000000000',
       maxVotingPower: '4000000000000000000',
+      direction: 'up',
     });
     expect(voted?.myUpvote?.votingPower).not.toBe(voted?.totalVotingPower);
     expect(voted?.voters.map((voter) => voter.personId)).toEqual([10, 11]);
@@ -119,5 +122,51 @@ describe('aggregateCoherenceUpvoteSummaries', () => {
     expect(signalVotingPowerInTimeFrame(older, 'year').toString()).toBe('7');
     expect(signalVotingPowerInTimeFrame(older, 'all').toString()).toBe('7');
     expect(summaries[99]).toBeUndefined();
+  });
+
+  it('subtracts a downvote and dates it from the direction change', () => {
+    const mixed = aggregateCoherenceUpvoteSummaries({
+      coherenceIds: [7],
+      viewerPersonId: 2,
+      now: NOW,
+      rows: [
+        row({
+          coherenceId: 7,
+          personId: 1,
+          votingPower: '10',
+          maxVotingPower: '10',
+          tokenDecimals: 0,
+          createdAt: new Date(NOW - 2 * DAY_MS).toISOString(),
+          name: 'Up',
+          surname: null,
+          avatarUrl: null,
+        }),
+        row({
+          coherenceId: 7,
+          personId: 2,
+          votingPower: '4',
+          maxVotingPower: '10',
+          tokenDecimals: 0,
+          direction: 'down',
+          createdAt: new Date(NOW - 40 * DAY_MS).toISOString(),
+          updatedAt: new Date(NOW - DAY_MS).toISOString(),
+          name: 'Down',
+          surname: null,
+          avatarUrl: null,
+        }),
+      ],
+    });
+    const summary = mixed[7];
+    expect(summary?.upvoteCount).toBe(1);
+    expect(summary?.downvoteCount).toBe(1);
+    expect(summary?.netVoteCount).toBe(0);
+    expect(summary?.totalVotingPower).toBe('6');
+    expect(summary?.myUpvote).toEqual({
+      votingPower: '4',
+      maxVotingPower: '10',
+      direction: 'down',
+    });
+    expect(signalVotingPowerInTimeFrame(summary, 'week').toString()).toBe('6');
+    expect(summary?.recentUpvotes?.week.voters).toBe(0);
   });
 });

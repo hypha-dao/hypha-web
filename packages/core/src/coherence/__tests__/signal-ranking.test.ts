@@ -30,6 +30,8 @@ function upvotes(
   return {
     totalVotingPower: total.power,
     upvoteCount: total.voters,
+    downvoteCount: 0,
+    netVoteCount: total.voters,
     tokenDecimals: 0,
     voters: [],
     myUpvote: null,
@@ -248,6 +250,41 @@ describe('signalUpvoteCellMeasure', () => {
     expect(measure).not.toEqual(
       expect.objectContaining({ kind: 'power', raw: '0' }),
     );
+  });
+
+  it('uses the net of up and down for the count and the all-time power total', () => {
+    const down = upvotes(
+      { power: '-30', voters: 5 },
+      { week: { power: '-30', voters: -1 } },
+    );
+    down.upvoteCount = 2;
+    down.downvoteCount = 3;
+    down.netVoteCount = -1;
+    expect(signalVotersInTimeFrame(down, 'all')).toBe(-1);
+    expect(signalVotersInTimeFrame(down, 'week')).toBe(-1);
+    expect(
+      signalUpvoteCellMeasure({ sort: 'top-voters', upvotes: down }),
+    ).toEqual({ kind: 'count', count: -1 });
+    expect(signalUpvoteCellMeasure({ sort: 'new', upvotes: down })).toEqual({
+      kind: 'count',
+      count: -1,
+    });
+    expect(
+      signalUpvoteCellMeasure({ sort: 'top-power', upvotes: down }),
+    ).toEqual({ kind: 'power', raw: '-30', tokenDecimals: 0 });
+    expect(
+      rankSignals(
+        [
+          crowd,
+          {
+            id: 'down',
+            createdAt: new Date('2026-11-02'),
+            upvotes: down,
+          },
+        ],
+        { sort: 'top-voters', timeFrame: 'all' },
+      ).map((signal) => signal.id),
+    ).toEqual(['crowd', 'down']);
   });
 
   it('keeps a cached summary while a later refresh is loading or has failed', () => {

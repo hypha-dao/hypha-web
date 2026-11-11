@@ -22,7 +22,15 @@ export const useCoherenceUpvoteMutations = (authToken?: string | null) => {
     authToken ? [authToken, 'upvoteCoherence'] : null,
     async (
       [authToken],
-      { arg }: { arg: { slug: string; votingPowerPercent?: number } },
+      {
+        arg,
+      }: {
+        arg: {
+          slug: string;
+          votingPowerPercent?: number;
+          direction?: 'up' | 'down';
+        };
+      },
     ) => upvoteCoherenceAction(arg, { authToken }),
   );
 
