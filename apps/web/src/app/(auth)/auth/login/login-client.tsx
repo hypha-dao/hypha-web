@@ -5,7 +5,13 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { Button } from '@hypha-platform/ui';
 import { AUTH_SERVER_API_BASE_PATH } from '@hypha-platform/auth-server/client';
 
-type Phase = 'idle' | 'signing-in' | 'denied' | 'failed';
+type Phase =
+  | 'idle'
+  | 'signing-in'
+  | 'denied'
+  | 'expired'
+  | 'unavailable'
+  | 'failed';
 
 /**
  * Login page of the authorization server. The person signs in with Privy on this host (a
@@ -53,7 +59,10 @@ export function LoginClient() {
         setPhase('denied');
         return;
       }
-      setPhase('failed');
+      // Never say why beyond what the person can act on.
+      if (res.status === 401) setPhase('expired');
+      else if (res.status === 404 || res.status >= 500) setPhase('unavailable');
+      else setPhase('failed');
     } catch {
       setPhase('failed');
     }
@@ -83,8 +92,27 @@ export function LoginClient() {
           <p role="alert" className="text-2">
             {message}
           </p>
+          <p className="text-2 text-neutral-11">
+            If you think this is a mistake, contact the Hypha team.
+          </p>
           <Button variant="outline" onClick={switchAccount}>
             Use a different account
+          </Button>
+        </>
+      ) : phase === 'expired' ? (
+        <>
+          <p role="alert" className="text-2">
+            Your sign-in expired. Please sign in again.
+          </p>
+          <Button onClick={switchAccount}>Sign in again</Button>
+        </>
+      ) : phase === 'unavailable' ? (
+        <>
+          <p role="alert" className="text-2">
+            Connecting apps is not available right now. Please try again later.
+          </p>
+          <Button variant="outline" onClick={() => void signIn()}>
+            Try again
           </Button>
         </>
       ) : phase === 'failed' ? (
