@@ -32,6 +32,7 @@ import {
 } from '../../matrix/server/matrix-http-client';
 import { HYPHA_ROOM_TYPES } from '../../matrix/room-types';
 import { QUEST_DOCUMENT_LABEL, type QuestStatus } from '../constants';
+import { questChannelOpenedNotice } from '../quest-channel-notice';
 import { QUEST_PROPOSAL_ACCEPTED_TEXT } from '../quest-update-author';
 import { NEW_QUEST_HEALTH_RECORD } from '../health-display';
 import {
@@ -275,17 +276,17 @@ async function provisionQuestChannelOnAccept({
       day: 'numeric',
       year: 'numeric',
     });
-    const rosterLine = [leadName, ...memberNames.filter((n) => n !== leadName)]
-      .filter(Boolean)
-      .join(', ');
-
+    const notice = questChannelOpenedNotice({
+      acceptedDate,
+      leadName,
+      memberNames,
+    });
     await matrixSendTextMessage(
       roomId,
-      `Quest accepted · ${acceptedDate} — channel opened${
-        rosterLine ? `\nParticipants: ${rosterLine}` : ''
-      }`,
+      notice.body,
       botToken,
       homeserver,
+      notice.extraContent,
     ).catch(() => undefined);
 
     return roomId;

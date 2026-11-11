@@ -47,6 +47,7 @@ import {
 import {
   AgentInitialsAvatar,
   isAgentChatAuthor,
+  visibleAgentSenderName,
 } from './agent-initials-avatar';
 import { MemberHomeMark } from '../../people/components/member-home-mark';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -1821,9 +1822,13 @@ export function HumanChatPanelMessageBubble({
     usePersonBySub({ sub: replyPrivySub ?? replyCanonicalSub });
 
   const resolvedSenderName = useMemo(() => {
-    if (isHyphaBotMatrixIdentity(message.senderMatrixId, message.senderName)) {
-      return agentMentionLabel;
-    }
+    const agentLabel = visibleAgentSenderName({
+      agentSpecialistId: message.agentSpecialistId,
+      senderMatrixId: message.senderMatrixId,
+      senderName: message.senderName,
+      agentMentionLabel,
+    });
+    if (agentLabel) return agentLabel;
     if (message.role === 'user') {
       return message.senderName ?? t('you');
     }
@@ -1842,6 +1847,7 @@ export function HumanChatPanelMessageBubble({
     return visible || t('unknownMember');
   }, [
     agentMentionLabel,
+    message.agentSpecialistId,
     message.role,
     message.senderMatrixId,
     message.senderName,

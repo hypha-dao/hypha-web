@@ -4,7 +4,7 @@ import React from 'react';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { QuestRecord, QuestStatus } from '@hypha-platform/core/client';
 import { QUEST_HELPER_NAME } from '@hypha-platform/core/client';
@@ -203,14 +203,17 @@ describe('quest discussion helper', () => {
     harness.patchQuest.mockReset();
   });
 
-  it('shows the saved helper inside the one discussion for an editor', async () => {
+  it('keeps the helper available without an automatic greeting', async () => {
     const thread: { current: QuestHelperThread | null } = { current: null };
     render(<HelperHost onResult={(next) => (thread.current = next)} />);
-    expect(await screen.findByText(SAVED_QUEST_HELPER_INTRO)).toBeTruthy();
+    await waitFor(() => {
+      expect(thread.current).not.toBeNull();
+    });
+    expect(thread.current?.messages).toEqual([]);
+    expect(screen.queryByText(SAVED_QUEST_HELPER_INTRO)).toBeNull();
     expect(screen.queryByRole('textbox')).toBeNull();
-    expect(thread.current?.messages.map((message) => message.text)).toContain(
-      SAVED_QUEST_HELPER_INTRO,
-    );
+    expect(thread.current?.accept('Helper, what is the goal?')).toBe(true);
+    expect(await screen.findByText(/Keep the saved goal/)).toBeTruthy();
   });
 
   it('stays hidden from a viewer who cannot edit the quest', async () => {
@@ -230,10 +233,11 @@ describe('quest discussion helper', () => {
       harness.status = status;
       const thread: { current: QuestHelperThread | null } = { current: null };
       render(<HelperHost onResult={(next) => (thread.current = next)} />);
-      expect(await screen.findByText(SAVED_QUEST_HELPER_INTRO)).toBeTruthy();
-      expect(thread.current?.messages.map((message) => message.text)).toContain(
-        SAVED_QUEST_HELPER_INTRO,
-      );
+      await waitFor(() => {
+        expect(thread.current).not.toBeNull();
+      });
+      expect(thread.current?.messages).toEqual([]);
+      expect(screen.queryByText(SAVED_QUEST_HELPER_INTRO)).toBeNull();
     }
 
     for (const status of ['completed', 'archived'] as const) {
@@ -253,7 +257,10 @@ describe('quest discussion helper', () => {
     harness.patchQuest.mockResolvedValue(questFixture());
     const thread: { current: QuestHelperThread | null } = { current: null };
     render(<HelperHost onResult={(next) => (thread.current = next)} />);
-    expect(await screen.findByText(SAVED_QUEST_HELPER_INTRO)).toBeTruthy();
+    await waitFor(() => {
+      expect(thread.current).not.toBeNull();
+    });
+    expect(screen.queryByText(SAVED_QUEST_HELPER_INTRO)).toBeNull();
     expect(
       thread.current?.accept('Change the goal to ship the checklist'),
     ).toBe(true);
@@ -319,7 +326,9 @@ describe('quest discussion helper', () => {
   it('answers an addressed question after a discard, and labels it as the member', async () => {
     const thread: { current: QuestHelperThread | null } = { current: null };
     render(<HelperHost onResult={(next) => (thread.current = next)} />);
-    expect(await screen.findByText(SAVED_QUEST_HELPER_INTRO)).toBeTruthy();
+    await waitFor(() => {
+      expect(thread.current).not.toBeNull();
+    });
     expect(
       thread.current?.accept('Change the goal to ship the checklist'),
     ).toBe(true);
@@ -346,7 +355,9 @@ describe('quest discussion helper', () => {
     const first = render(
       <HelperHost onResult={(next) => (thread.current = next)} />,
     );
-    expect(await screen.findByText(SAVED_QUEST_HELPER_INTRO)).toBeTruthy();
+    await waitFor(() => {
+      expect(thread.current).not.toBeNull();
+    });
     expect(thread.current?.accept('@Quest Helper what is the goal?')).toBe(
       true,
     );
@@ -363,7 +374,35 @@ describe('quest discussion helper', () => {
       await screen.findByText('@Quest Helper what is the goal?'),
     ).toBeTruthy();
     expect(screen.getByText(/Keep the saved goal/)).toBeTruthy();
-    expect(screen.getAllByText(SAVED_QUEST_HELPER_INTRO)).toHaveLength(1);
+    expect(screen.queryByText(SAVED_QUEST_HELPER_INTRO)).toBeNull();
+  });
+
+  it('drops a stored automatic greeting and keeps the later turns', async () => {
+    window.sessionStorage.setItem(
+      'hypha-quest-helper:sandbox:onboarding',
+      JSON.stringify({
+        messages: [
+          {
+            id: 'helper-m1',
+            role: 'member',
+            text: SAVED_QUEST_HELPER_INTRO,
+            timestamp: '2026-11-09T12:00:00.000Z',
+            senderName: 'Quest Helper',
+          },
+          {
+            id: 'hu-1',
+            role: 'user',
+            text: 'Helper, what is the goal?',
+            timestamp: '2026-11-09T12:01:00.000Z',
+          },
+        ],
+        pending: null,
+        step: 0,
+      }),
+    );
+    render(<HelperHost onResult={() => undefined} />);
+    expect(await screen.findByText('Helper, what is the goal?')).toBeTruthy();
+    expect(screen.queryByText(SAVED_QUEST_HELPER_INTRO)).toBeNull();
   });
 
   it('shows a routed member line as You and the Helper with the agent face', () => {

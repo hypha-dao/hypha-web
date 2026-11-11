@@ -105,14 +105,15 @@ export function appendQuestHelperMessages<T extends { timestamp?: Date }>(
   return sortMessagesChronologically([...roomMessages, ...helperMessages]);
 }
 
-function helperIntro(): SpaceQuestDraftChatMessage {
-  return {
-    id: 'helper-m1',
-    role: 'member',
-    senderName: QUEST_HELPER_NAME,
-    timestamp: new Date(),
-    text: SAVED_QUEST_HELPER_INTRO,
-  };
+/** Drop the old automatic greeting. The helper answers only after a member speaks. */
+function withoutAutomaticIntro(
+  messages: readonly SpaceQuestDraftChatMessage[],
+): SpaceQuestDraftChatMessage[] {
+  return messages.filter(
+    (message) =>
+      message.id !== 'helper-m1' &&
+      message.text.trim() !== SAVED_QUEST_HELPER_INTRO,
+  );
 }
 
 /**
@@ -133,9 +134,7 @@ export function QuestDiscussionHelper({
   const { quest, refresh } = useSpaceQuestDetail(spaceSlug, questSlug);
   const spaceMembers = useQuestSpaceMembers(spaceSlug);
   const sessionKey = questHelperSessionKey(spaceSlug, questSlug);
-  const [messages, setMessages] = useState<SpaceQuestDraftChatMessage[]>(() => [
-    helperIntro(),
-  ]);
+  const [messages, setMessages] = useState<SpaceQuestDraftChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
   const draftRef = useRef<QuestDraftStateSnapshot | null>(null);
@@ -168,7 +167,7 @@ export function QuestDiscussionHelper({
         : readQuestHelperSession(window.sessionStorage, sessionKey);
     sessionKeyRef.current = sessionKey;
     skipSessionWrite.current = true;
-    setMessages(restored?.messages ?? [helperIntro()]);
+    setMessages(withoutAutomaticIntro(restored?.messages ?? []));
     setInput('');
     setTyping(false);
     pendingRef.current = restored?.pending ?? null;

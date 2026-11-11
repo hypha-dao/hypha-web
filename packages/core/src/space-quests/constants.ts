@@ -63,6 +63,12 @@ export const QUEST_DEFAULT_REWARD_TOKENS = [
 /** Dedicated coach in the new-quest chat. Not the shared “AI Agents” room. */
 export const QUEST_HELPER_NAME = 'Quest Helper';
 
+/**
+ * Timeline id for that coach. It is not a Matrix user. A room event stamped
+ * with this id is shown as the Quest Helper instead of AI Agents.
+ */
+export const QUEST_HELPER_AUTHOR_ID = 'quest-helper';
+
 /** Guided Quest Steward section order (Goal first, one section per turn, no Priority). */
 export const QUEST_STEWARD_STEPS = [
   'goal',

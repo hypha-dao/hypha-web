@@ -59,8 +59,8 @@ type SavedQuestSource = {
 };
 
 /**
- * Opening line for the helper on a quest that is already saved.
- * The create screen keeps its own first question.
+ * Former opening line. Saved-quest discussions no longer post it.
+ * Kept so a stored thread from an older tab can drop that greeting.
  */
 export const SAVED_QUEST_HELPER_INTRO =
   'This quest is already saved. Tell me which section to change — Goal, Scope, Success, Milestones, Participants, Lead, Target Date, Rewards, or the name. I will suggest one section, and yes saves only that section.';

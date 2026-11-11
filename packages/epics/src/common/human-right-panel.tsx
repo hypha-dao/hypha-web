@@ -75,6 +75,7 @@ import {
   isSignalDescriptionAnchorMessage,
   usePersonById,
   headingForSectionKey,
+  QUEST_HELPER_AUTHOR_ID,
   QUEST_HELPER_NAME,
 } from '@hypha-platform/core/client';
 import {
@@ -1082,7 +1083,11 @@ function toUIMessage(
     mediaSlots,
     formattedContentHtml:
       isMedia && !captionForMedia ? undefined : msg.formattedContentHtml,
-    senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
+    senderName: isCurrentUser
+      ? undefined
+      : msg.agentSpecialistId === QUEST_HELPER_AUTHOR_ID
+      ? QUEST_HELPER_NAME
+      : resolveMemberLabel(msg.sender),
     senderMatrixId: msg.sender,
     ...(msg.agentSpecialistId
       ? { agentSpecialistId: msg.agentSpecialistId }
@@ -4023,6 +4028,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           nextRole = 'user';
           newSenderName = undefined;
           nextMemberAvatar = currentUserAvatarUrlRef.current ?? m.avatarUrl;
+        } else if (m.agentSpecialistId === QUEST_HELPER_AUTHOR_ID) {
+          newSenderName = QUEST_HELPER_NAME;
+          nextMemberAvatar = undefined;
         } else if (m.role === 'member' && sid) {
           newSenderName = resolveMemberLabelRef.current(sid);
           nextMemberAvatar =

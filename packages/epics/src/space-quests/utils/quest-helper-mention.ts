@@ -1,7 +1,10 @@
-import { QUEST_HELPER_NAME } from '@hypha-platform/core/client';
+import {
+  QUEST_HELPER_AUTHOR_ID,
+  QUEST_HELPER_NAME,
+} from '@hypha-platform/core/client';
 
 /** Composer-only id. It is not a Matrix user, so send must not rewrite it to an MXID. */
-export const QUEST_HELPER_MENTION_ID = 'quest-helper';
+export const QUEST_HELPER_MENTION_ID = QUEST_HELPER_AUTHOR_ID;
 
 type MentionRow = {
   userId: string;
