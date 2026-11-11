@@ -1814,6 +1814,7 @@
     "channels": {
       "emailDescription": "Se envían a {email}.",
       "emailDescriptionNoAddress": "Se envían al correo de tu cuenta.",
+      "browserUnavailable": "No se pueden activar las notificaciones push en este navegador o dispositivo. El correo y el resto de ajustes siguen funcionando.",
       "browserDescription": "Alertas en este navegador o dispositivo. Actívalas en cada navegador que uses.",
       "title": "Canales de notificación",
       "description": "Elige cómo quieres recibir notificaciones:",

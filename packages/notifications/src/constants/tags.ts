@@ -1,3 +1,12 @@
+/**
+ * How these tags are used (decided in #2470 / #2549, server-side since #2611):
+ * - `subscribed` is the opt-in enrolment flag (master switch, account-level). Email and push both
+ *   require it to be `'true'`; it does not require push permission, so email-only users can enrol.
+ * - `push` / `email` are user-level channel switches; the device's own push permission and
+ *   subscription stay in the browser SDK. Email also needs an enabled Email subscription.
+ * - Preference tags (`consent_*`, `sub_*`) are enabled by default: absent = on, `'disabled'` = off.
+ * - Settings are read and written server-side (`core/preferences.ts`) by `external_id` = person slug.
+ */
 export const TAG_SUBSCRIBED = 'subscribed';
 export const TAG_PUSH = 'push';
 export const TAG_EMAIL = 'email';

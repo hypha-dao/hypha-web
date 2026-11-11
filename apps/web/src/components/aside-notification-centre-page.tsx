@@ -19,17 +19,28 @@ export default function AsideNotificationCentrePage({
 }) {
   const tNotificationCentre = useTranslations('NotificationCentre');
   const { person, isLoading } = useMe();
-  const { isAuthenticated, isLoading: authLoading } = useAuthentication();
+  const {
+    isAuthenticated,
+    isLoading: authLoading,
+    getAccessToken,
+  } = useAuthentication();
   const {
     subscribed,
     pushActive,
+    pushStateReady,
+    pushUnavailable,
     subscribe,
     unsubscribe,
     enableBrowserPush,
+    reloadSettings,
     error,
     configuration,
     saveConfigurations,
-  } = useNotifications({ person: person ?? undefined, isLoading });
+  } = useNotifications({
+    person: person ?? undefined,
+    isLoading,
+    getAccessToken,
+  });
   const progress = 0;
   const isBusy = isLoading;
   return (
@@ -51,11 +62,14 @@ export default function AsideNotificationCentrePage({
           error={error}
           subscribed={subscribed}
           pushActive={pushActive}
+          pushStateReady={pushStateReady}
+          pushUnavailable={pushUnavailable}
           enableBrowserPush={enableBrowserPush}
           subscribe={subscribe}
           unsubscribe={unsubscribe}
           configuration={configuration}
           saveConfigurations={saveConfigurations}
+          reloadSettings={reloadSettings}
         />
       </LoadingBackdrop>
     </ProposalOverlayShell>

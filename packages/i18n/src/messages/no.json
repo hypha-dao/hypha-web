@@ -1036,6 +1036,7 @@
       "emailNotifications": "E-postvarsler",
       "toEmail": "til {email}",
       "browserNotifications": "Push-varsler i nettleseren",
+      "browserUnavailable": "Push-varsler kan ikke slås på i denne nettleseren eller på denne enheten. E-post og de andre innstillingene dine fungerer fortsatt.",
       "yes": "Ja",
       "no": "Nei",
       "emailNotificationsWithEmail": "E-postvarsler ({email})",
