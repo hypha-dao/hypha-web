@@ -12,8 +12,11 @@
  *   E2E_BASE=http://127.0.0.1:3000 E2E_HOST=auth.localhost:3000 npx tsx scripts/e2e.ts
  */
 import { createHash, randomBytes } from 'node:crypto';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import http from 'node:http';
-import { exportJWK, generateKeyPair, SignJWT } from 'jose';
+import { exportJWK, generateKeyPair, importJWK, SignJWT } from 'jose';
 import pg from 'pg';
 
 const BASE = process.env.E2E_BASE ?? 'http://127.0.0.1:3000';
@@ -37,9 +40,23 @@ const check = (name: string, ok: boolean, detail = '') => {
   );
 };
 
-const { privateKey, publicKey } = await generateKeyPair('ES256');
+// The app caches the stand-in key set, so reruns must reuse the same key: keep it in a temp file
+// (throwaway test key, never used outside this script).
+const KEY_FILE = join(tmpdir(), 'hypha-as-e2e-privy-key.json');
+if (!existsSync(KEY_FILE)) {
+  const pair = await generateKeyPair('ES256', { extractable: true });
+  writeFileSync(
+    KEY_FILE,
+    JSON.stringify({
+      pub: await exportJWK(pair.publicKey),
+      priv: await exportJWK(pair.privateKey),
+    }),
+  );
+}
+const stored = JSON.parse(readFileSync(KEY_FILE, 'utf8'));
+const privateKey = await importJWK(stored.priv, 'ES256');
 const jwk = {
-  ...(await exportJWK(publicKey)),
+  ...stored.pub,
   alg: 'ES256',
   kid: 'e2e',
   use: 'sig',
