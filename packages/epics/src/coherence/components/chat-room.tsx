@@ -10,6 +10,7 @@ import React from 'react';
 import { ChatMessageContainer } from './chat-message.container';
 import { Separator } from '@hypha-platform/ui';
 import { SignalDetailMedia } from './signal-detail-media';
+import { readSignalRoomDiscussionCount } from '../hooks/use-signal-room-activity';
 
 const scrollToSection = (id: string) => {
   const element = document.getElementById(id);
@@ -37,7 +38,7 @@ export const ChatRoom = ({
   messages: Message[];
   toggleChatPinnedMessage: (messageId: string) => Promise<void>;
 }) => {
-  const { isMatrixAvailable } = useMatrix();
+  const { client, isMatrixAvailable } = useMatrix();
   const { jwt: authToken } = useJwt();
   const bottomId = React.useId();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
@@ -48,19 +49,28 @@ export const ChatRoom = ({
     if (!isMatrixAvailable || !roomId || !slug || isLoading) {
       return;
     }
-    // Avoid clobbering persisted counts with transient empty timeline snapshots.
-    if (!hasLoadedMessagesRef.current && messages.length === 0) return;
+    const discussion = readSignalRoomDiscussionCount(
+      client,
+      roomId,
+      descriptionText,
+    );
+    // A partial timeline is not the comment total. Wait until it reaches the
+    // room start, then store the same filtered reply count the page shows.
+    if (!discussion?.reachesRoomStart) return;
+    if (!hasLoadedMessagesRef.current && discussion.comments === 0) return;
     hasLoadedMessagesRef.current = true;
-    updateCoherenceBySlug({ slug, messages: messages.length }).catch(
+    updateCoherenceBySlug({ slug, messages: discussion.comments }).catch(
       (error) => {
         console.warn('Error due update conversation:', error);
       },
     );
   }, [
     isMatrixAvailable,
+    client,
     roomId,
     messages.length,
     slug,
+    descriptionText,
     updateCoherenceBySlug,
     isLoading,
   ]);

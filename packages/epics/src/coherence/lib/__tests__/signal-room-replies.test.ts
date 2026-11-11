@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  signalDiscussionCount,
   signalLastReplierLabel,
   summarizeSignalReplies,
   type SignalRoomMessage,
@@ -119,5 +120,20 @@ describe('signalLastReplierLabel', () => {
 
   it('returns null rather than a bridged id when no name is known', () => {
     expect(signalLastReplierLabel({ senderId: ALEX })).toBeNull();
+  });
+});
+
+describe('signalDiscussionCount', () => {
+  it('keeps the stored total until the timeline reaches the room start', () => {
+    expect(signalDiscussionCount(15, null)).toBe(15);
+    expect(
+      signalDiscussionCount(15, { comments: 2, reachesRoomStart: false }),
+    ).toBe(15);
+  });
+
+  it('uses the filtered reply count once the whole room is loaded', () => {
+    expect(
+      signalDiscussionCount(15, { comments: 2, reachesRoomStart: true }),
+    ).toBe(2);
   });
 });

@@ -16,6 +16,7 @@ import { SignalUpvoteButton } from './signal-upvote-button';
 import { SignalMediaChips } from './signal-media-chips';
 import { countSignalMedia } from '../utils/signal-media';
 import type { SignalRoomActivity } from '../hooks/use-signal-room-activity';
+import { signalDiscussionCount } from '../utils/signal-room-replies';
 import type { SignalVotingModeStatus } from '../hooks/use-signal-voting-mode';
 
 export function signalOneLiner(description?: string | null): string {
@@ -88,12 +89,7 @@ export function SignalFeedRow({
   );
   const media = React.useMemo(() => countSignalMedia(signal), [signal]);
   const created = shortDate(signal.createdAt);
-  const storedComments = signal.messages ?? 0;
-  const comments = activity
-    ? activity.reachesRoomStart
-      ? activity.comments
-      : Math.max(activity.comments, storedComments)
-    : storedComments;
+  const comments = signalDiscussionCount(signal.messages, activity);
   const lastReply =
     activity?.lastReplyAt != null
       ? t('signalLastReply', {

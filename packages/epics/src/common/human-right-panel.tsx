@@ -208,6 +208,7 @@ import {
   pickSignalDeepLinkTarget,
   shouldWriteOpenChatToSignalUrl,
 } from '../coherence/lib/signal-deep-link-dom';
+import { readSignalRoomDiscussionCount } from '../coherence/hooks/use-signal-room-activity';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 import {
@@ -4390,13 +4391,21 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (mode !== 'coherence') return;
     if (!isMatrixAvailable || !coherenceSlug || !roomId || isJoining) return;
-    // Avoid clobbering persisted counts with transient empty timeline snapshots.
-    if (!hasLoadedCoherenceMessagesRef.current && messages.length === 0) return;
+    const discussion = readSignalRoomDiscussionCount(
+      matrix.client,
+      roomId,
+      coherenceDescription,
+    );
+    // A partial timeline is not the comment total. Wait until it reaches the
+    // room start, then store the same filtered reply count the page shows.
+    if (!discussion?.reachesRoomStart) return;
+    if (!hasLoadedCoherenceMessagesRef.current && discussion.comments === 0)
+      return;
     hasLoadedCoherenceMessagesRef.current = true;
     updateCoherenceBySlugRef
       .current({
         slug: coherenceSlug,
-        messages: messages.length,
+        messages: discussion.comments,
       })
       .catch((error) => {
         console.warn(
@@ -4407,6 +4416,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     mode,
     isMatrixAvailable,
+    matrix.client,
+    coherenceDescription,
     coherenceSlug,
     roomId,
     isJoining,

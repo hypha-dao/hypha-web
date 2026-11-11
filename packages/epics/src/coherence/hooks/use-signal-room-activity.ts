@@ -110,6 +110,22 @@ function readRoomActivity(
   };
 }
 
+/** Filtered reply count once the caller's Matrix client has this room. */
+export function readSignalRoomDiscussionCount(
+  client: MatrixClient | null | undefined,
+  roomId: string | null | undefined,
+  description?: string | null,
+): { comments: number; reachesRoomStart: boolean } | null {
+  const id = roomId?.trim();
+  if (!client || !id) return null;
+  const activity = readRoomActivity(client, id, description);
+  if (!activity) return null;
+  return {
+    comments: activity.comments,
+    reachesRoomStart: activity.reachesRoomStart,
+  };
+}
+
 function readAllActivity(
   client: MatrixClient | null | undefined,
   rooms: readonly SignalRoomRef[],

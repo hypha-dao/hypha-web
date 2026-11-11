@@ -51,6 +51,23 @@ export function summarizeSignalReplies(
   };
 }
 
+/**
+ * Comment total for a signal. A timeline that reaches the room start is the
+ * only source: that count is replies, without the description seed or bot
+ * posts. Until then the stored total stands, and a shorter partial timeline
+ * cannot replace it.
+ */
+export function signalDiscussionCount(
+  stored: number | null | undefined,
+  activity?: { comments: number; reachesRoomStart: boolean } | null,
+): number {
+  const storedCount = stored ?? 0;
+  if (!activity?.reachesRoomStart) {
+    return Math.max(activity?.comments ?? 0, storedCount);
+  }
+  return activity.comments;
+}
+
 export function sameSignalRoomActivity<
   T extends SignalRepliesSummary & {
     lastReplySenderName: string | null;

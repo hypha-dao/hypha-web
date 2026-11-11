@@ -108,7 +108,12 @@ describe('upvote cell shared by the list and the detail', () => {
       pageMetaAt,
       pageSource.indexOf('</dl>', pageMetaAt),
     );
-    expect(metaSlice).toContain('flex w-full flex-wrap items-start');
+    expect(metaSlice).toContain(
+      'flex w-full flex-nowrap items-start gap-x-4 gap-y-4',
+    );
+    expect(metaSlice).toContain('max-[420px]:flex-wrap');
+    expect(pageSource).toContain('min-w-[5.5rem] max-w-full shrink');
+    expect(pageSource).toContain('signalDiscussionCount');
     expect(metaSlice).not.toContain('col-span-full');
     expect(metaSlice).not.toContain('grid-cols-2');
     const createdByAt = metaSlice.indexOf("t('signalCreatedBy')");

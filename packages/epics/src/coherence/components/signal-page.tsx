@@ -31,7 +31,10 @@ import {
   useSignalVotingMode,
 } from '../hooks/use-signal-voting-mode';
 import { countSignalMedia, splitSignalMedia } from '../utils/signal-media';
-import { signalLastReplierLabel } from '../utils/signal-room-replies';
+import {
+  signalDiscussionCount,
+  signalLastReplierLabel,
+} from '../utils/signal-room-replies';
 import { resolveSignalVideo } from '../utils/signal-video';
 import { SignalCreatorActions } from './signal-creator-actions';
 import { useSignalMediaSummary } from './signal-media-chips';
@@ -57,8 +60,8 @@ function MetaItem({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-w-0 max-w-full shrink-0 flex-col gap-1">
-      <dt className={SECTION_LABEL_CLASS}>{label}</dt>
+    <div className="flex min-w-[5.5rem] max-w-full shrink flex-col gap-1 overflow-hidden max-[420px]:shrink-0">
+      <dt className={cn(SECTION_LABEL_CLASS, 'truncate')}>{label}</dt>
       <dd className="m-0 flex min-w-0 items-center gap-2 text-1 text-foreground">
         {children}
       </dd>
@@ -429,12 +432,7 @@ export function SignalPage({
   }
 
   const created = shortDate(signal.createdAt);
-  const storedComments = signal.messages ?? 0;
-  const comments = activity
-    ? activity.reachesRoomStart
-      ? activity.comments
-      : Math.max(activity.comments, storedComments)
-    : storedComments;
+  const comments = signalDiscussionCount(signal.messages, activity);
   const fullName = (p?: { name?: string | null; surname?: string | null }) =>
     [p?.name, p?.surname].filter(Boolean).join(' ').trim();
   const lastReplierName = signalLastReplierLabel({
@@ -542,7 +540,7 @@ export function SignalPage({
 
         <dl
           data-testid="signal-page-meta"
-          className="m-0 flex w-full flex-wrap items-start gap-x-6 gap-y-4 border-t border-border/70 pt-4"
+          className="m-0 flex w-full flex-nowrap items-start gap-x-4 gap-y-4 border-t border-border/70 pt-4 max-[420px]:flex-wrap"
         >
           <MetaItem label={t('signalCreatedBy')}>
             <PersonAvatar
@@ -552,18 +550,18 @@ export function SignalPage({
               userName={creatorDisplayName ?? undefined}
               personId={signal.creatorId ?? undefined}
             />
-            <span className="truncate">{creatorDisplayName}</span>
+            <span className="min-w-0 truncate">{creatorDisplayName}</span>
           </MetaItem>
           {created ? (
             <MetaItem label={t('signalCreatedLabel')}>{created}</MetaItem>
           ) : null}
           {lastReply ? (
             <MetaItem label={t('signalLastReplyLabel')}>
-              <span className="truncate">{lastReply}</span>
+              <span className="min-w-0 truncate">{lastReply}</span>
             </MetaItem>
           ) : null}
           <MetaItem label={t('signalDiscussion')}>
-            <span className="truncate">{discussion}</span>
+            <span className="min-w-0 truncate">{discussion}</span>
           </MetaItem>
           {mediaSummary ? (
             <MetaItem label={t('signalAttachmentsLabel')}>
