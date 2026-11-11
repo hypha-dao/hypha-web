@@ -50,13 +50,14 @@ const useSourceProduction = (
   sourceName: string,
   granularity: Granularity,
   locale: string,
+  spaceSlug: string,
 ) => {
   const cfg = granularityConfig(granularity);
   const {
     data: telemetry,
     isLoading,
     error,
-  } = useSpaceEnergyTelemetry(cfg.period);
+  } = useSpaceEnergyTelemetry(cfg.period, spaceSlug);
 
   const live = Boolean(
     telemetry?.enabled && telemetry.configured && !error && telemetry.dataFrom,
@@ -117,10 +118,12 @@ const OwnerEarningsChart = ({
   group,
   owner,
   accent,
+  spaceSlug,
 }: {
   group: SourceGroup;
   owner: Owner;
   accent: string;
+  spaceSlug: string;
 }) => {
   const locale = useLocale();
   const t = useTranslations('Energy.ownership');
@@ -130,6 +133,7 @@ const OwnerEarningsChart = ({
     group.name,
     granularity,
     locale,
+    spaceSlug,
   );
 
   const earnings = earningsFromProduction(
@@ -187,6 +191,7 @@ const OwnerEarningsChart = ({
 };
 
 const OwnerEarningsRow = ({
+  spaceSlug,
   group,
   owner,
   displayName,
@@ -198,6 +203,7 @@ const OwnerEarningsRow = ({
   totalIsPlaceholder,
   earningsLoading,
 }: {
+  spaceSlug: string;
   group: SourceGroup;
   owner: Owner;
   displayName: string;
@@ -257,19 +263,26 @@ const OwnerEarningsRow = ({
         />
       </button>
       {expanded ? (
-        <OwnerEarningsChart group={group} owner={owner} accent={accent} />
+        <OwnerEarningsChart
+          group={group}
+          owner={owner}
+          accent={accent}
+          spaceSlug={spaceSlug}
+        />
       ) : null}
     </div>
   );
 };
 
 const SourceOwnershipCard = ({
+  spaceSlug,
   group,
   accent,
   people,
   participantProfiles,
   peopleLoading,
 }: {
+  spaceSlug: string;
   group: SourceGroup;
   accent: string;
   people: Record<string, EnergyPerson | null>;
@@ -284,6 +297,7 @@ const SourceOwnershipCard = ({
     group.name,
     'monthly',
     locale,
+    spaceSlug,
   );
   const totalProductionKwh = production.values.reduce((a, b) => a + b, 0);
 
@@ -307,6 +321,7 @@ const SourceOwnershipCard = ({
           );
           return (
             <OwnerEarningsRow
+              spaceSlug={spaceSlug}
               key={`${group.sourceId}-${owner.address}`}
               group={group}
               owner={owner}
@@ -344,6 +359,7 @@ const SourceOwnershipCard = ({
 };
 
 export const OwnershipTab = ({
+  spaceSlug,
   data,
   people,
   peopleLoading,
@@ -428,6 +444,7 @@ export const OwnershipTab = ({
       {groups.map((group, index) => (
         <SourceOwnershipCard
           key={group.sourceId}
+          spaceSlug={spaceSlug}
           group={group}
           accent={ENERGY_PALETTE[index % ENERGY_PALETTE.length]!}
           people={people}

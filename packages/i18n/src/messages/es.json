@@ -667,7 +667,8 @@
     "durationDays": "{count, plural, one {# día} other {# días}}",
     "spaceBannerRevealMeta": "Detalles",
     "moreNav": "Más",
-    "bankingTab": "Banca"
+    "bankingTab": "Banca",
+    "context": "Contexto"
   },
   "ModalAside": {
     "spaceSettings": "Configuración del espacio",
@@ -1300,7 +1301,8 @@
       "registerEnergySource": "Registrar fuente de energía",
       "addEnergyMember": "Añadir miembro de energía",
       "changeEnergyOptimization": "Cambiar optimización energética",
-      "whitelistEnergySettlement": "Lista blanca de liquidación energética"
+      "whitelistEnergySettlement": "Lista blanca de liquidación energética",
+      "spaceContext": "Contexto del espacio"
     },
     "documentBadges": {
       "invite": "Invitación",
@@ -1547,6 +1549,8 @@
       "proposalsBody": "Conversaciones sobre propuestas en las que puedes votar",
       "signalsTitle": "Señales",
       "signalsBody": "Necesidades, recursos, oportunidades, riesgos, tensiones, ideas, acciones e impacto",
+      "contextTitle": "Contexto",
+      "contextBody": "Conversaciones sobre secciones del Contexto de tus espacios",
       "ecosystemTitle": "Ecosistemas",
       "ecosystemBody": "Colaboración entre espacios y conversaciones compartidas",
       "networkTitle": "Red",
@@ -1557,6 +1561,7 @@
       "tagSpacePublic": "Canal público del espacio",
       "tagProposal": "Propuesta",
       "tagSignal": "Señales del espacio",
+      "tagContext": "Contexto del espacio",
       "tagEcosystem": "Canal del ecosistema",
       "tagNetwork": "Canal de la red",
       "filterLabel": "Filtros de mensajes",
@@ -3314,6 +3319,7 @@
     "tabChatSpace": "Canal del espacio",
     "tabChatPublic": "Canal público del espacio",
     "tabChatProposal": "Propuesta",
+    "tabChatContext": "Contexto",
     "tabChatSignal": "Señal",
     "tabChatEcosystem": "Canal del ecosistema",
     "tabChatNetwork": "Canal de la red",
@@ -3711,6 +3717,8 @@
     "addPeopleConfirm": "Añadir",
     "addPeopleCancel": "Cancelar",
     "addPeopleFailed": "No se pudo añadir personas a este grupo. Inténtalo de nuevo.",
+    "addPeopleMissingMatrix": "{names} no se pueden añadir. Quítalos e inténtalo de nuevo.",
+    "addPeopleLoadFailed": "No se pudieron cargar las personas. Inténtalo de nuevo.",
     "addPeopleEmpty": "Todas las personas que puedes añadir ya están aquí.",
     "addPeopleNoMatches": "Nadie coincide con esa búsqueda.",
     "addPeopleSearch": "Buscar personas",
@@ -3793,6 +3801,12 @@
     "spaceMemoryContextCallRecordingFromSignal": "Grabación · «{title}»",
     "spaceMemoryContextDiscussionSummary": "Resumen de la conversación",
     "spaceMemoryCallTranscriptExcerpt": "Transcripción",
+    "spaceMemoryReadFullTranscript": "Leer la transcripción completa",
+    "spaceMemoryFullTranscriptLoading": "Cargando transcripción…",
+    "spaceMemoryFullTranscriptError": "No se pudo cargar la transcripción completa.",
+    "spaceMemoryCopyTranscript": "Copiar transcripción",
+    "spaceMemoryTranscriptCopied": "Copiado",
+    "spaceMemoryCopyTranscriptFailed": "No se pudo copiar",
     "spaceMemoryCallRecordingNoUrl": "La grabación estará disponible cuando se ingiera una URL de medios para esta sesión.",
     "spaceMemoryCallArtifactNote": "Las memorias de llamada aparecen cuando termina la grabación o la transcripción para este espacio (consulta el pipeline del equipo).",
     "spaceMemoryMatrixPreviewNeedsChat": "La vista previa requiere Human Chat (Matrix)",
@@ -5622,5 +5636,134 @@
     "proposal": "Propuesta",
     "agreement": "Acuerdo",
     "backHome": "Volver al inicio"
+  },
+  "SpaceContext": {
+    "title": "Contexto",
+    "progress": "{ratified} de {total} ratificadas",
+    "propose": "Proponer para ratificar",
+    "filters": {
+      "all": "Todas",
+      "ratified": "Ratificadas",
+      "proposed": "En votación",
+      "drafts": "Borradores"
+    },
+    "status": {
+      "ratified": "Ratificada",
+      "onVoting": "En votación",
+      "draft": "Borrador",
+      "notStarted": "Sin empezar"
+    },
+    "card": {
+      "emptyBody": "No draft yet.",
+      "proposalFallback": "Proposal",
+      "viewProposal": "View proposal",
+      "openDiscussion": "Abrir debate",
+      "contributors": "{count, plural, one {# colaborador} other {# colaboradores}}",
+      "edited": "editada {when}",
+      "votingClosed": "votación cerrada",
+      "daysLeft": "{count, plural, one {queda # día} other {quedan # días}}",
+      "hoursLeft": "{count, plural, one {queda # hora} other {quedan # horas}}",
+      "read": "Leer {section}"
+    },
+    "empty": {
+      "title": "Aún no hay contexto",
+      "description": "Define quién es este espacio: misión, visión, estrategia y más. Abre una sección para debatirla con los miembros, menciona a su agente cuando quieras un borrador y ratifícala con una propuesta cuando esté lista.",
+      "startMission": "Empezar por la Misión",
+      "filter": "No sections in this filter."
+    },
+    "chat": {
+      "title": "Debate de la sección",
+      "empty": "Empieza una conversación para trabajar en un borrador de {section}.",
+      "close": "Cerrar debate",
+      "loadError": "Could not load this section chat.",
+      "connecting": "Conectando con el debate…",
+      "unavailable": "El debate no está disponible ahora. Inténtalo más tarde.",
+      "signInHint": "Inicia sesión para debatir esta sección con los miembros.",
+      "membersOnly": "Solo los miembros del espacio pueden unirse a este debate.",
+      "roomTitle": "{section} · Contexto — {space}",
+      "draftLabel": "Borrador compartido",
+      "showDraft": "Ver borrador",
+      "draftPlaceholder": "Pega o escribe aquí {section}…",
+      "draftUpdated": "Un miembro o el agente guardó un borrador más reciente.",
+      "loadLatest": "Cargar el último",
+      "saveDraft": "Save draft",
+      "saving": "Guardando…",
+      "propose": "Propose to ratify",
+      "skills": {
+        "review": "¿Es esta una buena {section}? ¿Qué falta o es vago?",
+        "refine": "Mejora el borrador compartido con lo que hemos debatido arriba.",
+        "draft": "Convierte este debate en un borrador de {section} y guárdalo.",
+        "fromSource": "Lee el enlace o documento compartido y redacta {section} a partir de él."
+      },
+      "draftLockedHint": "Esta sección está en votación. El borrador puede cambiar después de la votación."
+    },
+    "draft": {
+      "label": "Último borrador",
+      "edit": "Editar borrador",
+      "cancel": "Cancelar"
+    },
+    "proposeForm": {
+      "header": "Crear una propuesta",
+      "title": "Ratificar contexto: {sections}",
+      "titleShort": "Ratificar secciones de contexto",
+      "sections": "Sections to ratify",
+      "alreadyVoting": "Ya en votación (Acuerdo #{agreement})",
+      "noDraft": "No draft yet",
+      "proposalType": "Tipo de propuesta",
+      "proposalTypeValue": "Ratificar sección(es) de contexto",
+      "contentPrefilled": "rellenado a partir de los borradores",
+      "ratifiedAmend": "Ratificada #{agreement} — enmienda en borrador",
+      "draftVersion": "Borrador v{version}",
+      "onPassNote": "Si se aprueba, los borradores seleccionados pasan a ser el texto ratificado y se aplican las secciones sugeridas para añadir o eliminar.",
+      "cancel": "Cancelar",
+      "addSection": "Añade una sección nueva",
+      "removeSection": "Elimina esta sección",
+      "ratifiedUnchanged": "Ratificada #{agreement} — sin cambios de borrador"
+    },
+    "error": {
+      "load": "Could not load Space Context.",
+      "retry": "Try again",
+      "save": "No se pudo guardar este borrador.",
+      "link": "No se pudo vincular esta propuesta a las secciones de Context.",
+      "change": "No se pudo actualizar esta sección. Inténtalo de nuevo.",
+      "onVoting": "Esta sección está en votación. Puede cambiar después de la votación."
+    },
+    "success": {
+      "saved": "Borrador guardado.",
+      "suggested": "Sección sugerida. Se suma al Contexto cuando se aprueba una propuesta que la añade.",
+      "removalSuggested": "Eliminación sugerida. Inclúyela en una propuesta para aplicarla.",
+      "removalWithdrawn": "Sugerencia de eliminar retirada.",
+      "additionWithdrawn": "Sugerencia retirada."
+    },
+    "change": {
+      "add": "Sección sugerida",
+      "remove": "Eliminación sugerida"
+    },
+    "notice": {
+      "addition": "Sección sugerida. Se suma al Contexto solo cuando se aprueba una propuesta que la añade.",
+      "removal": "Eliminación sugerida. La sección se mantiene hasta que se aprueba una propuesta que la elimina."
+    },
+    "reader": {
+      "suggestRemoval": "Sugerir eliminar",
+      "cancelRemoval": "Retirar la sugerencia de eliminar",
+      "withdrawAddition": "Retirar la sugerencia"
+    },
+    "addSection": {
+      "open": "Añadir sección",
+      "title": "Sugerir una sección nueva",
+      "description": "Cualquier miembro puede sugerir una sección. Sigue siendo un borrador hasta que se aprueba una propuesta que la añade.",
+      "nameLabel": "Nombre de la sección",
+      "namePlaceholder": "p. ej. Incorporación",
+      "draftLabel": "Primer borrador (opcional)",
+      "draftPlaceholder": "¿Qué debería decir esta sección?",
+      "cancel": "Cancelar",
+      "submit": "Sugerir sección",
+      "submitting": "Sugiriendo…",
+      "duplicate": "Ya existe una sección con este nombre.",
+      "titleRequired": "Pon un nombre a la sección.",
+      "failed": "No se pudo sugerir la sección. Inténtalo de nuevo.",
+      "restoreLabel": "Secciones eliminadas",
+      "restore": "Sugerir restaurar"
+    }
   }
 }

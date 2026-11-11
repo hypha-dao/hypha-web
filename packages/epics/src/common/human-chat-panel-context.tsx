@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useCallback, useContext, useState } from 'react';
+import type { SpaceContextSectionKey } from '@hypha-platform/core/client';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 /**
  * Shared panel context type used by both AI and Human panel triggers.
@@ -73,12 +80,21 @@ export type CoherenceOpenedChannel =
   | 'ecosystem'
   | 'network'
   | 'signal'
-  | 'proposal';
+  | 'proposal'
+  | 'context';
 
 export type OpenCoherenceChatOptions = {
   public?: boolean;
   peerPerson?: CoherencePeerPerson | null;
   channel?: CoherenceOpenedChannel | null;
+  /** Context section whose room this is, so its section agent answers. */
+  contextSectionKey?: SpaceContextSectionKey | null;
+};
+
+/** Space Context section shown in the right panel in place of a chat. */
+export type SpaceContextPanelSection = {
+  spaceSlug: string;
+  sectionKey: SpaceContextSectionKey;
 };
 
 export type HumanChatPanelContextValue = {
@@ -109,6 +125,8 @@ export type HumanChatPanelContextValue = {
   coherencePeerPerson: CoherencePeerPerson | null;
   /** Set when opening a non-DM channel from Messages. */
   coherenceChannel: CoherenceOpenedChannel | null;
+  /** Set with `coherenceChannel: 'context'` for a Context section room. */
+  coherenceContextSectionKey: SpaceContextSectionKey | null;
   openCoherenceChat: (
     roomId: string | null,
     title: string,
@@ -118,6 +136,13 @@ export type HumanChatPanelContextValue = {
     options?: OpenCoherenceChatOptions,
   ) => void;
   closeCoherenceChat: () => void;
+  /** True while the layout renders the right panel on this route. */
+  panelAvailable: boolean;
+  setPanelAvailable: (available: boolean) => void;
+  spaceContextSection: SpaceContextPanelSection | null;
+  /** Opens the right panel on a Space Context section (detail + discussion). */
+  openSpaceContextSection: (section: SpaceContextPanelSection) => void;
+  closeSpaceContextSection: () => void;
 };
 
 const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
@@ -138,8 +163,14 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   coherencePublic: false,
   coherencePeerPerson: null,
   coherenceChannel: null,
+  coherenceContextSectionKey: null,
   openCoherenceChat: () => {},
   closeCoherenceChat: () => {},
+  panelAvailable: false,
+  setPanelAvailable: () => {},
+  spaceContextSection: null,
+  openSpaceContextSection: () => {},
+  closeSpaceContextSection: () => {},
 });
 
 /**
@@ -173,9 +204,35 @@ export function HumanChatPanelProvider({
     useState<CoherencePeerPerson | null>(null);
   const [coherenceChannel, setCoherenceChannel] =
     useState<CoherenceOpenedChannel | null>(null);
+  const [coherenceContextSectionKey, setCoherenceContextSectionKey] =
+    useState<SpaceContextSectionKey | null>(null);
   const [unreadMentionCount, setUnreadMentionCountState] = useState(0);
   const [focusedSpaceChat, setFocusedSpaceChatState] =
     useState<FocusedSpaceChat | null>(null);
+  const [panelAvailable, setPanelAvailable] = useState(false);
+  const [spaceContextSection, setSpaceContextSection] =
+    useState<SpaceContextPanelSection | null>(null);
+
+  useEffect(() => {
+    if (!open) setSpaceContextSection(null);
+  }, [open]);
+
+  const openSpaceContextSection = useCallback(
+    (section: SpaceContextPanelSection) => {
+      setSpaceContextSection((prev) =>
+        prev?.spaceSlug === section.spaceSlug &&
+        prev.sectionKey === section.sectionKey
+          ? prev
+          : section,
+      );
+      setOpen(true);
+    },
+    [setOpen],
+  );
+
+  const closeSpaceContextSection = useCallback(() => {
+    setSpaceContextSection(null);
+  }, []);
 
   const setUnreadMentionCount = useCallback((count: number) => {
     const next = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
@@ -215,6 +272,11 @@ export function HumanChatPanelProvider({
       setCoherenceSpaceSlug(spaceSlug?.trim() ? spaceSlug.trim() : null);
       setCoherencePublic(Boolean(options?.public));
       setCoherenceChannel(options?.channel ?? null);
+      setCoherenceContextSectionKey(
+        options?.channel === 'context'
+          ? options.contextSectionKey ?? null
+          : null,
+      );
       const peerSlug = options?.peerPerson?.slug?.trim() ?? '';
       const peerAddress = options?.peerPerson?.address?.trim() || null;
       const peerId =
@@ -231,6 +293,7 @@ export function HumanChatPanelProvider({
           : null,
       );
       setMode('coherence');
+      setSpaceContextSection(null);
       // Idempotently open the sidebar — avoids race condition with toggle()
       setOpen(true);
     },
@@ -247,6 +310,7 @@ export function HumanChatPanelProvider({
     setCoherencePublic(false);
     setCoherencePeerPerson(null);
     setCoherenceChannel(null);
+    setCoherenceContextSectionKey(null);
   }, []);
 
   const openHumanChatPanel = useCallback(() => {
@@ -277,8 +341,14 @@ export function HumanChatPanelProvider({
         coherencePublic,
         coherencePeerPerson,
         coherenceChannel,
+        coherenceContextSectionKey,
         openCoherenceChat,
         closeCoherenceChat,
+        panelAvailable,
+        setPanelAvailable,
+        spaceContextSection,
+        openSpaceContextSection,
+        closeSpaceContextSection,
       }}
     >
       {children}

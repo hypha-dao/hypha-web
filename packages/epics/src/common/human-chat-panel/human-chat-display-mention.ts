@@ -25,6 +25,15 @@ export function formatComposerMentionToken(displayLabel: string): string {
 }
 
 /**
+ * @ chip in a message body. Always the generic picker label ("AI Agents").
+ * The section specialist name belongs on the agent's reply, not this chip.
+ */
+export function botMentionChipText(genericLabel: string): string {
+  const label = genericLabel.trim() || 'AI Agents';
+  return label.startsWith('@') ? label : `@${label}`;
+}
+
+/**
  * Replace `@` + ZWSP + known display labels with Matrix user IDs for `m.room.message` body.
  * Longest label first so "John Smith" wins over "John".
  */

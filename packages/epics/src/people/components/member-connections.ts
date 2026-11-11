@@ -352,7 +352,11 @@ export function applyResolvedPeerTitles<T extends ConnectionListPerson>(
   });
 }
 
-/** Drop DM rows whose title never resolved. Skeletons stay while profiles load. */
+/**
+ * Keep every DM row while peer profiles load (title skeleton). After settle,
+ * drop rows whose title never resolved. Room open is unrelated — this only
+ * decides list visibility so names can fill in after first paint.
+ */
 export function visibleMemberRowsAfterTitleResolve<
   T extends ConnectionListPerson,
 >(rows: readonly MemberRow<T>[], loading: boolean): MemberRow<T>[] {
@@ -363,7 +367,11 @@ export function visibleMemberRowsAfterTitleResolve<
 export type MessagesPeopleListReadyInput = {
   isMatrixAvailable: boolean;
   isConnecting: boolean;
-  /** Matrix has reached Prepared/Syncing. Not enough on its own — Syncing can be empty. */
+  /**
+   * Matrix has reached Catchup/Prepared/Syncing. Not enough on its own —
+   * Syncing can be empty. Ignored when conversations are already known
+   * (IndexedDB / prior sync) so the list can paint before live sync.
+   */
   synced: boolean;
   /**
    * First /sync finished (`Prepared` or `isInitialSyncComplete`). Full catch-up
@@ -371,8 +379,9 @@ export type MessagesPeopleListReadyInput = {
    */
   initialSyncComplete: boolean;
   /**
-   * At least one joined DM, group, or channel room is already known. Lets the
-   * list paint during Syncing without waiting for the full initial sync.
+   * At least one joined DM, group, or channel room is already known (including
+   * from the IndexedDB store before live sync). List-only: never a substitute
+   * for join / room-open readiness.
    */
   hasMatrixConversations: boolean;
   /**
@@ -392,10 +401,12 @@ export type MessagesPeopleListReadyInput = {
 };
 
 /**
- * The Messages people list is safe to paint. Wait for Matrix sync, then either
- * the first /sync to finish or at least one real conversation room so we do not
- * sit on the skeleton for the full multi-second catch-up. Do not wait for home
- * intelligence, room summaries, or peer profiles (those stream in after paint).
+ * The Messages people list is safe to paint. Prefer rooms already in the Matrix
+ * store (IndexedDB) so a returning visit does not wait for Prepared. Otherwise
+ * wait for live sync, then either the first /sync to finish or at least one
+ * conversation. Do not wait for home intelligence, room summaries, or peer
+ * profiles (those stream in after paint). This gate is display-only — room
+ * open still uses join + store membership checks.
  *
  * Matrix unavailable and not connecting is "ready" so the empty/unavailable
  * copy can show. Callers latch this so a later room pump does not hide the list.
@@ -404,8 +415,23 @@ export function messagesPeopleListReady(
   input: MessagesPeopleListReadyInput,
 ): boolean {
   if (!input.isMatrixAvailable) return !input.isConnecting;
+  // Store-backed rooms: paint before Catchup/Prepared. Empty store stays on the
+  // skeleton until live sync proves empty or rooms arrive.
+  if (input.hasMatrixConversations) return true;
   if (!input.synced) return false;
-  return input.initialSyncComplete || input.hasMatrixConversations;
+  return input.initialSyncComplete;
+}
+
+/**
+ * Selected Messages filter has no rows yet, but initial sync is still running.
+ * Early list paint can latch ready from a stored channel while Direct is still
+ * empty — keep the skeleton instead of flashing the empty copy.
+ */
+export function messagesInboxEmptyStillLoading(input: {
+  shownRowCount: number;
+  initialSyncComplete: boolean;
+}): boolean {
+  return input.shownRowCount === 0 && !input.initialSyncComplete;
 }
 
 /** Union directory pages / search hits by person id. Synthetics stay out. */
@@ -419,6 +445,189 @@ export function mergeDirectoryPeople<T extends { id: number }>(
     }
   }
   return [...byId.values()];
+}
+
+/** A human returned by `/api/v1/people/search` — not limited to shared spaces. */
+export type DirectorySearchHit = {
+  id: number;
+  slug?: string | null;
+  name?: string | null;
+  surname?: string | null;
+  nickname?: string | null;
+  avatarUrl?: string | null;
+};
+
+export type DirectoryPerson = {
+  id: number;
+  slug: string | null;
+  name: string | null;
+  surname: string | null;
+  nickname: string | null;
+  avatarUrl: string | null;
+  sharedSpaceCount: number;
+  /** Wallet from the shared-space roster, when this id is on it. */
+  address?: string | null;
+};
+
+/**
+ * Shared-space matches plus network directory hits, same union Messages search
+ * shows. A network hit with the same id keeps that person's shared-space wallet
+ * and space count. Network name fields win when they are present.
+ */
+export function directoryPeopleFromSearch(
+  sharedSpaceHits: readonly DirectoryPerson[] | null | undefined,
+  networkHits: readonly DirectorySearchHit[] | null | undefined,
+): DirectoryPerson[] {
+  const sharedById = new Map(
+    (sharedSpaceHits ?? []).map((person) => [person.id, person]),
+  );
+  const network: DirectoryPerson[] = [];
+  for (const person of networkHits ?? []) {
+    if (!person.id || person.id <= 0) continue;
+    const shared = sharedById.get(person.id);
+    network.push({
+      id: person.id,
+      slug: person.slug ?? shared?.slug ?? null,
+      name: person.name ?? shared?.name ?? null,
+      surname: person.surname ?? shared?.surname ?? null,
+      nickname: person.nickname ?? shared?.nickname ?? null,
+      avatarUrl: person.avatarUrl ?? shared?.avatarUrl ?? null,
+      sharedSpaceCount: shared?.sharedSpaceCount ?? 0,
+      address: shared?.address ?? null,
+    });
+  }
+  return mergeDirectoryPeople(sharedSpaceHits, network);
+}
+
+export type MessageDirectorySearchResult = {
+  people: DirectoryPerson[];
+  /** Every endpoint that ran failed. One success is not a failure. */
+  failed: boolean;
+};
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
+}
+
+/** One search request. A failure here does not throw away the other request. */
+async function directorySearchSide<T>(
+  request: Promise<Response | null>,
+  read: (response: Response) => Promise<T[]>,
+): Promise<{ hits: T[]; failed: boolean }> {
+  try {
+    const response = await request;
+    if (!response) return { hits: [], failed: false };
+    if (!response.ok) return { hits: [], failed: true };
+    return { hits: await read(response), failed: false };
+  } catch (error) {
+    if (isAbortError(error)) throw error;
+    return { hits: [], failed: true };
+  }
+}
+
+/**
+ * Messages directory search. Shared-space intelligence can time out or miss
+ * someone who is not on the caller's chain roster; network people search is
+ * the directory that still finds them. Callers invite only people who resolve
+ * to a Matrix id, and skip anyone already in the room.
+ */
+export async function fetchMessageDirectorySearch(
+  term: string,
+  init: { headers: HeadersInit; signal?: AbortSignal },
+): Promise<MessageDirectorySearchResult> {
+  const trimmed = term.trim();
+  if (!trimmed) return { people: [], failed: false };
+  const ranNetwork = trimmed.length >= 2;
+  const [sharedSide, networkSide] = await Promise.all([
+    directorySearchSide(
+      fetch(
+        `/api/v1/people/me/intelligence?q=${encodeURIComponent(trimmed)}`,
+        init,
+      ),
+      async (response) => {
+        const body = (await response.json()) as {
+          connections?: DirectoryPerson[];
+        };
+        return body.connections ?? [];
+      },
+    ),
+    directorySearchSide(
+      ranNetwork
+        ? fetch(`/api/v1/people/search?q=${encodeURIComponent(trimmed)}`, init)
+        : Promise.resolve(null),
+      async (response) => {
+        const body = (await response.json()) as {
+          people?: DirectorySearchHit[];
+        };
+        return body.people ?? [];
+      },
+    ),
+  ]);
+  return {
+    people: directoryPeopleFromSearch(sharedSide.hits, networkSide.hits),
+    failed: sharedSide.failed && (!ranNetwork || networkSide.failed),
+  };
+}
+
+/** Person ids whose Matrix ids the add dialog still needs, including picks. */
+export function personIdsForMatrixLookup(
+  groups: ReadonlyArray<readonly number[] | null | undefined>,
+): number[] {
+  const ids = new Set<number>();
+  for (const group of groups) {
+    for (const id of group ?? []) {
+      if (Number.isFinite(id) && id > 0) ids.add(id);
+    }
+  }
+  return [...ids];
+}
+
+/** Labels for selected people who still have no Matrix id. */
+export function selectedPeopleMissingMatrixId(
+  selectedIds: readonly number[],
+  personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
+  labels: Readonly<Record<number, string | undefined>>,
+): string[] {
+  const names: string[] = [];
+  for (const id of selectedIds) {
+    if (personIdToMatrixUserId[id]?.trim()) continue;
+    const label = labels[id]?.trim();
+    if (label) names.push(label);
+  }
+  return names;
+}
+
+/**
+ * What the add-people list should say. An in-flight directory or search is not
+ * "everyone is already here" and not "no matches".
+ */
+export function addPeopleCandidateStatus({
+  query,
+  debouncedQuery,
+  directoryLoaded,
+  directoryFailed,
+  searching,
+  matchCount,
+  searchFailed = false,
+}: {
+  query: string;
+  debouncedQuery: string;
+  directoryLoaded: boolean;
+  directoryFailed: boolean;
+  searching: boolean;
+  matchCount: number;
+  /** Both directory-search endpoints failed. */
+  searchFailed?: boolean;
+}): 'results' | 'loading' | 'empty' | 'no-matches' | 'load-failed' {
+  if (matchCount > 0) return 'results';
+  const typed = query.trim();
+  const pending = typed !== debouncedQuery.trim();
+  if (typed && (searching || pending)) return 'loading';
+  if (!directoryLoaded && !directoryFailed) return 'loading';
+  if (typed && searchFailed) return 'load-failed';
+  if (typed) return 'no-matches';
+  if (directoryFailed) return 'load-failed';
+  return 'empty';
 }
 
 const PREVIEW_LENGTH = 48;
@@ -1477,8 +1686,52 @@ export function peopleMatchingSearch<
 }
 
 /**
- * Add-people candidates: name/username search, excluding only people whose
- * Matrix id is already joined or invited. A missing mxid is not "already here".
+ * Someone already joined or invited. Directory rows for the same person often
+ * use a different person id than the room member, and preview/prod Matrix ids
+ * differ while naming the same Privy account. Match every key we have.
+ * A row that shares none of them stays addable, even with no Matrix id.
+ */
+export type GroupOccupantIdentity = {
+  personId?: number | null;
+  slug?: string | null;
+  address?: string | null;
+  matrixUserId?: string | null;
+  /** Full name already shown for this member. Exact match only. */
+  label?: string | null;
+};
+
+function occupantToken(value: string | null | undefined): string {
+  return value?.trim().toLowerCase() ?? '';
+}
+
+/** Name the add dialog shows. Not a partial first name or username. */
+export function personDirectoryLabel(person: {
+  name?: string | null;
+  surname?: string | null;
+  nickname?: string | null;
+}): string {
+  const full = [person.name, person.surname]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+  if (full) return full;
+  return person.nickname?.trim().replace(/\s+/g, ' ').toLowerCase() ?? '';
+}
+
+function rememberPrivySub(subs: Set<string>, matrixUserId: string) {
+  const sub = matrixUserIdToCanonicalPrivySub(matrixUserId);
+  const token = occupantToken(sub);
+  if (token) subs.add(token);
+}
+
+/**
+ * Add-people candidates: the loaded shared-space page plus directory search
+ * hits (shared-space query and network people search). People already in the
+ * room, including invited people and the current member, are left out when
+ * any identity key matches: person id, slug, wallet address, Matrix id,
+ * Privy id, or the full name shown for that member.
  */
 export function addablePeopleForGroup<
   T extends {
@@ -1487,6 +1740,7 @@ export function addablePeopleForGroup<
     surname?: string | null;
     nickname?: string | null;
     slug?: string | null;
+    address?: string | null;
   },
 >(
   connections: readonly T[],
@@ -1494,11 +1748,52 @@ export function addablePeopleForGroup<
   personIdToMatrixUserId: Readonly<Record<number, string | undefined>>,
   roomMemberIds: ReadonlySet<string>,
   needle: string,
+  occupants: readonly GroupOccupantIdentity[] = [],
 ): T[] {
+  const matrixIds = new Set<string>();
+  const privySubs = new Set<string>();
+  const personIds = new Set<number>();
+  const slugs = new Set<string>();
+  const addresses = new Set<string>();
+  const labels = new Set<string>();
+
+  const rememberMatrixId = (matrixUserId: string | null | undefined) => {
+    const raw = matrixUserId?.trim();
+    if (!raw) return;
+    matrixIds.add(raw.toLowerCase());
+    rememberPrivySub(privySubs, raw);
+  };
+
+  for (const id of roomMemberIds) rememberMatrixId(id);
+  for (const occupant of occupants) {
+    if (occupant.personId != null && occupant.personId > 0) {
+      personIds.add(occupant.personId);
+    }
+    const slug = occupantToken(occupant.slug);
+    if (slug) slugs.add(slug);
+    const address = occupantToken(occupant.address);
+    if (address) addresses.add(address);
+    rememberMatrixId(occupant.matrixUserId);
+    const label = personDirectoryLabel({ name: occupant.label });
+    if (label.length >= 2) labels.add(label);
+  }
+
   return peopleMatchingSearch(connections, searchHits, needle).filter(
     (person) => {
-      const mxid = personIdToMatrixUserId[person.id]?.trim().toLowerCase();
-      return !(mxid && roomMemberIds.has(mxid));
+      if (personIds.has(person.id)) return false;
+      const slug = occupantToken(person.slug);
+      if (slug && slugs.has(slug)) return false;
+      const address = occupantToken(person.address);
+      if (address && addresses.has(address)) return false;
+      const mxid = personIdToMatrixUserId[person.id]?.trim();
+      if (mxid) {
+        if (matrixIds.has(mxid.toLowerCase())) return false;
+        const sub = matrixUserIdToCanonicalPrivySub(mxid);
+        if (sub && privySubs.has(sub.trim().toLowerCase())) return false;
+      }
+      const label = personDirectoryLabel(person);
+      if (label.length >= 2 && labels.has(label)) return false;
+      return true;
     },
   );
 }

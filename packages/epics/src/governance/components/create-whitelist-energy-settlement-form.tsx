@@ -15,17 +15,19 @@ import { useSpaceEnergy } from '../../treasury/hooks/use-space-energy';
 export const CreateWhitelistEnergySettlementForm = ({
   spaceId,
   web3SpaceId,
+  spaceSlug,
   successfulUrl,
   backUrl,
 }: {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
+  spaceSlug: string;
   successfulUrl: string;
   backUrl?: string;
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const t = useTranslations('Energy');
-  const { data: spaceEnergy } = useSpaceEnergy();
+  const { data: spaceEnergy } = useSpaceEnergy(spaceSlug);
   const communityProxyAddress = spaceEnergy?.activation?.communityProxyAddress;
 
   const schema = React.useMemo(

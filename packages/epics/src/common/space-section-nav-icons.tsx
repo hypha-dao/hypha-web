@@ -2,6 +2,7 @@
 
 import type { ComponentType } from 'react';
 import {
+  BookOpen,
   CalendarDays,
   Coins,
   FileCheck2,
@@ -52,5 +53,6 @@ export const SPACE_SECTION_NAV_ICONS: Record<
   energy: Zap,
   rewards: HandCoins,
   memory: MemorySectionNavIcon,
+  context: BookOpen,
   'ecosystem-navigation': Navigation,
 };

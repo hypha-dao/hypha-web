@@ -32,4 +32,5 @@ export const DOCUMENT_LABEL_BADGE_KEYS: Partial<Record<string, string>> = {
   'Change Energy Optimization': 'labels.changeEnergyOptimization',
   'Whitelist Energy Settlement': 'labels.whitelistEnergySettlement',
   'Space Memory': 'labels.spaceMemory',
+  'Space Context': 'labels.spaceContext',
 };

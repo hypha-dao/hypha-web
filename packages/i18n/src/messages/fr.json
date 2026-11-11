@@ -667,7 +667,8 @@
     "durationDays": "{count, plural, one {# jour} other {# jours}}",
     "spaceBannerRevealMeta": "Détails",
     "moreNav": "Plus",
-    "bankingTab": "Banque"
+    "bankingTab": "Banque",
+    "context": "Contexte"
   },
   "ModalAside": {
     "spaceSettings": "Paramètres de l’espace",
@@ -769,6 +770,8 @@
       "proposalsBody": "Conversations sur les propositions auxquelles tu peux voter",
       "signalsTitle": "Signaux",
       "signalsBody": "Besoins, ressources, opportunités, risques, tensions, idées, actions et impact",
+      "contextTitle": "Contexte",
+      "contextBody": "Discussions sur les sections du Contexte de tes espaces",
       "ecosystemTitle": "Écosystèmes",
       "ecosystemBody": "Collaboration entre espaces et conversations partagées",
       "networkTitle": "Réseau",
@@ -779,6 +782,7 @@
       "tagSpacePublic": "Canal public de l'espace",
       "tagProposal": "Proposition",
       "tagSignal": "Signaux de l'espace",
+      "tagContext": "Contexte de l'espace",
       "tagEcosystem": "Canal de l'écosystème",
       "tagNetwork": "Canal du réseau",
       "filterLabel": "Filtres des messages",
@@ -2081,7 +2085,8 @@
       "registerEnergySource": "Enregistrer une source d'énergie",
       "addEnergyMember": "Ajouter un membre énergie",
       "changeEnergyOptimization": "Modifier l'optimisation énergétique",
-      "whitelistEnergySettlement": "Liste blanche de règlement énergétique"
+      "whitelistEnergySettlement": "Liste blanche de règlement énergétique",
+      "spaceContext": "Contexte de l'espace"
     },
     "documentBadges": {
       "invite": "Invitation",
@@ -3300,6 +3305,7 @@
     "tabChatSpace": "Canal de l'espace",
     "tabChatPublic": "Canal public de l'espace",
     "tabChatProposal": "Proposition",
+    "tabChatContext": "Contexte",
     "tabChatSignal": "Signal",
     "tabChatEcosystem": "Canal de l'écosystème",
     "tabChatNetwork": "Canal du réseau",
@@ -3695,6 +3701,8 @@
     "addPeopleConfirm": "Ajouter",
     "addPeopleCancel": "Annuler",
     "addPeopleFailed": "Impossible d’ajouter des personnes à ce groupe. Réessayez.",
+    "addPeopleMissingMatrix": "{names} ne peuvent pas être ajoutés. Retirez-les et réessayez.",
+    "addPeopleLoadFailed": "Impossible de charger les personnes. Réessayez.",
     "addPeopleEmpty": "Toutes les personnes que tu peux ajouter sont déjà ici.",
     "addPeopleNoMatches": "Personne ne correspond à cette recherche.",
     "addPeopleSearch": "Rechercher des personnes",
@@ -3777,6 +3785,12 @@
     "spaceMemoryContextCallRecordingFromSignal": "Enregistrement · «{title}»",
     "spaceMemoryContextDiscussionSummary": "Résumé de conversation",
     "spaceMemoryCallTranscriptExcerpt": "Transcription",
+    "spaceMemoryReadFullTranscript": "Lire la transcription complète",
+    "spaceMemoryFullTranscriptLoading": "Chargement de la transcription…",
+    "spaceMemoryFullTranscriptError": "Impossible de charger la transcription complète.",
+    "spaceMemoryCopyTranscript": "Copier la transcription",
+    "spaceMemoryTranscriptCopied": "Copié",
+    "spaceMemoryCopyTranscriptFailed": "Impossible de copier",
     "spaceMemoryCallRecordingNoUrl": "L’enregistrement sera disponible lorsqu’une URL média sera ingérée pour cette session.",
     "spaceMemoryCallArtifactNote": "Les souvenirs d’appel apparaissent lorsque l’enregistrement ou la transcription se termine pour cet espace (voir le pipeline d’équipe).",
     "spaceMemoryMatrixPreviewNeedsChat": "L’aperçu nécessite Human Chat (Matrix)",
@@ -5604,5 +5618,134 @@
     "proposal": "Proposition",
     "agreement": "Accord",
     "backHome": "Retour à l'accueil"
+  },
+  "SpaceContext": {
+    "title": "Contexte",
+    "progress": "{ratified} sur {total} ratifiées",
+    "propose": "Proposer à la ratification",
+    "filters": {
+      "all": "Toutes",
+      "ratified": "Ratifiées",
+      "proposed": "En vote",
+      "drafts": "Brouillons"
+    },
+    "status": {
+      "ratified": "Ratifiée",
+      "onVoting": "En vote",
+      "draft": "Brouillon",
+      "notStarted": "Non commencée"
+    },
+    "card": {
+      "emptyBody": "No draft yet.",
+      "proposalFallback": "Proposal",
+      "viewProposal": "View proposal",
+      "openDiscussion": "Ouvrir la discussion",
+      "contributors": "{count, plural, one {# contributeur} other {# contributeurs}}",
+      "edited": "modifiée {when}",
+      "votingClosed": "vote clos",
+      "daysLeft": "{count, plural, one {# jour restant} other {# jours restants}}",
+      "hoursLeft": "{count, plural, one {# heure restante} other {# heures restantes}}",
+      "read": "Lire {section}"
+    },
+    "empty": {
+      "title": "Pas encore de contexte",
+      "description": "Définissez qui est cet espace — mission, vision, stratégie et plus. Ouvrez une section pour en discuter avec les membres, mentionnez son agent quand vous voulez un brouillon, et ratifiez-la par une proposition quand elle est prête.",
+      "startMission": "Commencer par la mission",
+      "filter": "No sections in this filter."
+    },
+    "chat": {
+      "title": "Discussion de la section",
+      "empty": "Lance une conversation pour travailler sur un brouillon de {section}.",
+      "close": "Fermer la discussion",
+      "loadError": "Could not load this section chat.",
+      "connecting": "Connexion à la discussion…",
+      "unavailable": "La discussion est indisponible pour le moment. Réessayez plus tard.",
+      "signInHint": "Connectez-vous pour discuter de cette section avec les membres.",
+      "membersOnly": "Seuls les membres de l’espace peuvent rejoindre cette discussion.",
+      "roomTitle": "{section} · Contexte — {space}",
+      "draftLabel": "Brouillon partagé",
+      "showDraft": "Voir le brouillon",
+      "draftPlaceholder": "Collez ou écrivez {section} ici…",
+      "draftUpdated": "Un membre ou l’agent a enregistré un brouillon plus récent.",
+      "loadLatest": "Charger le plus récent",
+      "saveDraft": "Save draft",
+      "saving": "Enregistrement…",
+      "propose": "Propose to ratify",
+      "skills": {
+        "review": "Est-ce une bonne {section} ? Qu’est-ce qui manque ou reste vague ?",
+        "refine": "Améliore le brouillon partagé à partir de notre discussion ci-dessus.",
+        "draft": "Transforme cette discussion en brouillon de {section} et enregistre-le.",
+        "fromSource": "Lis le lien ou le document partagé et rédige {section} à partir de celui-ci."
+      },
+      "draftLockedHint": "Cette section est en vote. Le brouillon pourra changer après le vote."
+    },
+    "draft": {
+      "label": "Dernier brouillon",
+      "edit": "Modifier le brouillon",
+      "cancel": "Annuler"
+    },
+    "proposeForm": {
+      "header": "Créer une proposition",
+      "title": "Ratifier le contexte : {sections}",
+      "titleShort": "Ratifier des sections de contexte",
+      "sections": "Sections to ratify",
+      "alreadyVoting": "Déjà en vote (Accord n°{agreement})",
+      "noDraft": "No draft yet",
+      "proposalType": "Type de proposition",
+      "proposalTypeValue": "Ratifier des sections du contexte",
+      "contentPrefilled": "prérempli à partir des brouillons",
+      "ratifiedAmend": "Ratifiée n°{agreement} — amendement en brouillon",
+      "draftVersion": "Brouillon v{version}",
+      "onPassNote": "Si elle est adoptée, les brouillons sélectionnés deviennent le texte ratifié, et les ajouts ou suppressions suggérés sont appliqués.",
+      "cancel": "Annuler",
+      "addSection": "Ajoute une nouvelle section",
+      "removeSection": "Supprime cette section",
+      "ratifiedUnchanged": "Ratifiée n°{agreement} — aucune modification de brouillon"
+    },
+    "error": {
+      "load": "Could not load Space Context.",
+      "retry": "Try again",
+      "save": "Impossible d'enregistrer ce brouillon.",
+      "link": "Impossible de lier cette proposition aux sections Context.",
+      "change": "Impossible de mettre à jour cette section. Réessayez.",
+      "onVoting": "Cette section est en vote. Elle pourra changer après le vote."
+    },
+    "success": {
+      "saved": "Brouillon enregistré.",
+      "suggested": "Section suggérée. Elle rejoint le Contexte dès qu’une proposition qui l’ajoute est adoptée.",
+      "removalSuggested": "Suppression suggérée. Incluez-la dans une proposition pour l’appliquer.",
+      "removalWithdrawn": "Suggestion de suppression retirée.",
+      "additionWithdrawn": "Suggestion retirée."
+    },
+    "change": {
+      "add": "Section suggérée",
+      "remove": "Suppression suggérée"
+    },
+    "notice": {
+      "addition": "Section suggérée. Elle rejoint le Contexte seulement quand une proposition qui l’ajoute est adoptée.",
+      "removal": "Suppression suggérée. La section reste jusqu’à l’adoption d’une proposition qui la supprime."
+    },
+    "reader": {
+      "suggestRemoval": "Suggérer la suppression",
+      "cancelRemoval": "Retirer la suggestion de suppression",
+      "withdrawAddition": "Retirer la suggestion"
+    },
+    "addSection": {
+      "open": "Ajouter une section",
+      "title": "Suggérer une nouvelle section",
+      "description": "Tout membre peut suggérer une section. Elle reste un brouillon jusqu’à l’adoption d’une proposition qui l’ajoute.",
+      "nameLabel": "Nom de la section",
+      "namePlaceholder": "ex. Accueil des membres",
+      "draftLabel": "Premier brouillon (facultatif)",
+      "draftPlaceholder": "Que devrait dire cette section ?",
+      "cancel": "Annuler",
+      "submit": "Suggérer la section",
+      "submitting": "Envoi…",
+      "duplicate": "Une section porte déjà ce nom.",
+      "titleRequired": "Donnez un nom à la section.",
+      "failed": "Impossible de suggérer la section. Réessayez.",
+      "restoreLabel": "Sections supprimées",
+      "restore": "Suggérer la restauration"
+    }
   }
 }

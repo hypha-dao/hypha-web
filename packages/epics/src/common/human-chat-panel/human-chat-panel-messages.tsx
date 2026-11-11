@@ -18,6 +18,7 @@ import { useIsMobile, usePrefersCoarsePointer } from '@hypha-platform/ui';
 import { HumanChatPanelDateSeparator } from './human-chat-panel-date-separator';
 import { HumanChatPanelUnreadDivider } from './human-chat-panel-unread-divider';
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
+import { toggleExpandedMessageId } from './message-text-expanded';
 import { touchComposerFromViewportFlags } from './touch-composer-flags';
 import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
 import {
@@ -201,6 +202,8 @@ type HumanChatPanelMessagesProps = {
   /** Replaces the default space welcome. Space chat leaves both unset. */
   welcomeText?: string;
   welcomeSenderName?: string;
+  /** Context section chats use the book mark. Other welcomes keep the mycelium. */
+  welcomeMark?: 'context';
   onReply?: (messageId: string) => void;
   /** Jump the timeline to the quoted original when a reply header is clicked. */
   onJumpToOriginalMessage?: (eventId: string) => void;
@@ -259,6 +262,7 @@ export function HumanChatPanelMessages({
   currentUserAvatarUrl,
   welcomeText,
   welcomeSenderName,
+  welcomeMark,
   onReply,
   onJumpToOriginalMessage,
   onEditMessage,
@@ -356,6 +360,14 @@ export function HumanChatPanelMessages({
   const [lockActionMessageId, setLockActionMessageId] = useState<string | null>(
     null,
   );
+  const [expandedMessageIds, setExpandedMessageIds] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
+  const toggleMessageExpanded = useCallback((messageId: string) => {
+    setExpandedMessageIds((current) =>
+      toggleExpandedMessageId(current, messageId),
+    );
+  }, []);
   const lockActionMessageIdRef = useRef<string | null>(null);
   lockActionMessageIdRef.current = lockActionMessageId;
   /** Pointer left row while hover picker was open (portal); hide bar when picker closes. */
@@ -854,6 +866,9 @@ export function HumanChatPanelMessages({
               <HumanChatPanelMessageBubble
                 key={row.key}
                 message={msg}
+                welcomeMark={msg.id === 'welcome' ? welcomeMark : undefined}
+                textExpanded={expandedMessageIds.has(msg.id)}
+                onToggleTextExpanded={toggleMessageExpanded}
                 roomId={roomId}
                 currentUserId={currentUserId}
                 currentUserAvatarUrl={currentUserAvatarUrl}

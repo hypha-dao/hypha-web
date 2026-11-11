@@ -3,8 +3,6 @@
 import React from 'react';
 import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { usePathname } from 'next/navigation';
-import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
 
 export type SpaceEnergySource = {
   sourceId: `0x${string}`;
@@ -88,17 +86,18 @@ export type SpaceEnergyResponse = {
   } | null;
 };
 
-export const useSpaceEnergy = () => {
-  const pathname = usePathname();
-  const spaceSlug = React.useMemo(
-    () => getDhoSpaceSlugFromPathname(pathname),
-    [pathname],
-  );
+/**
+ * Fetches energy data for the given Space. Pass `undefined` (or an empty
+ * string) when the Space is not known yet; no request is made in that case.
+ */
+export const useSpaceEnergy = (spaceSlug: string | undefined) => {
   const { getAccessToken, isLoading: isAuthLoading } = useAuthentication();
 
   const endpoint = React.useMemo(
     () =>
-      !isAuthLoading && spaceSlug ? `/api/v1/spaces/${spaceSlug}/energy` : null,
+      !isAuthLoading && spaceSlug?.trim()
+        ? `/api/v1/spaces/${encodeURIComponent(spaceSlug)}/energy`
+        : null,
     [isAuthLoading, spaceSlug],
   );
 

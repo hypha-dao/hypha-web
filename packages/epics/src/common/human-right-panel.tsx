@@ -74,11 +74,13 @@ import {
   applySignalCreatorToChatAuthor,
   isSignalDescriptionAnchorMessage,
   usePersonById,
+  headingForSectionKey,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
   isChatPanelVideoFile,
 } from './human-chat-panel/chat-panel-media-types';
+import { matrixMemberAvatarSquare } from './human-chat-panel/matrix-member-avatar';
 import { UseMembers } from '../spaces';
 import { useSpaceMembersAndDelegates } from '../spaces/hooks/use-space-members-and-delegates';
 import {
@@ -162,7 +164,11 @@ import {
   getDhoSpaceSlugFromPathname,
   routeSpaceSlugFromLocation,
 } from './get-dho-space-slug-from-pathname';
-import { isNetworkPath } from './use-is-space-context';
+import { isNetworkAiPath } from './use-is-space-context';
+import {
+  shouldDelaySpaceSignalReset,
+  shouldPreserveDirectMessageOnSpaceLeave,
+} from './human-chat-route-transition';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { getDhoPathOverview, getSignalPath } from './get-path-function';
 import {
@@ -196,6 +202,9 @@ import {
 import { SignalTurnIntoProposalButton } from '../coherence/components/signal-turn-into-proposal-button';
 import { SignalThreadMedia } from '../coherence/components/signal-detail-media';
 import { SignalIndicativeAmounts } from '../coherence/components/signal-indicative-amounts';
+import { SpaceContextSidePanel } from '../space-context/components/space-context-chat-panel';
+import { useSpaceContextSectionAgent } from '../space-context/hooks/use-space-context-section-agent';
+import { AgentMentionLabelProvider } from './human-chat-panel/agent-mention-label-context';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
   dmOtherHumanMembers,
@@ -884,27 +893,6 @@ function clearStoredRoomId(spaceSlug: string): void {
 }
 
 /**
- * Matrix member avatar → HTTP thumbnail for `<img>`.
- * Same sources as the Messages list: room member MXC, then the global user
- * store (group headers often miss room-member avatars while `getUser` has them).
- */
-function matrixMemberAvatarSquare(
-  client: MatrixClient | null | undefined,
-  roomId: string | null | undefined,
-  userId: string | undefined,
-  px: number,
-): string | undefined {
-  if (!client || !userId) return undefined;
-  const room = roomId ? client.getRoom(roomId) : null;
-  const member = room?.getMember(userId);
-  const mxc =
-    member?.getMxcAvatarUrl() || client.getUser(userId)?.avatarUrl || undefined;
-  if (!mxc || !String(mxc).startsWith('mxc://')) return undefined;
-  // Match Messages `avatarHttp` — that URL shape already loads in the inbox.
-  return client.mxcUrlToHttp(mxc, px, px, 'crop') ?? undefined;
-}
-
-/**
  * Header space mark. Never paint `DEFAULT_SPACE_AVATAR_IMAGE` (legacy Hypha
  * glyph) while the space query is still in flight — that was the one-frame
  * flash when opening signal / proposal / room chats from Messages.
@@ -958,6 +946,9 @@ function toUIMessage(
 ): UIMessage {
   const resolveAvatarForUser = (userId: string | undefined) => {
     if (!userId) return undefined;
+    // Agent replies use a square initials tile in the bubble. Do not attach
+    // the bot's profile photo or a space logo as if it were a person.
+    if (isHyphaBotMatrixIdentity(userId)) return undefined;
     return (
       resolveMemberAvatar?.(userId) ??
       matrixMemberAvatarSquare(
@@ -1211,7 +1202,33 @@ type HumanRightPanelProps = {
   useMembers: UseMembers;
 };
 
-export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
+/** Right panel host: a Space Context section when one is selected, else chat. */
+export function HumanRightPanel(props: HumanRightPanelProps) {
+  const pathname = usePathname() ?? '';
+  const { spaceContextSection, closeSpaceContextSection } = useHumanChatPanel();
+  const routeSpaceSlug = getDhoSpaceSlugFromPathname(pathname) || '';
+  const section =
+    spaceContextSection?.spaceSlug === routeSpaceSlug
+      ? spaceContextSection
+      : null;
+
+  useEffect(() => {
+    if (spaceContextSection && !section) closeSpaceContextSection();
+  }, [closeSpaceContextSection, section, spaceContextSection]);
+
+  if (section) {
+    return (
+      <SpaceContextSidePanel
+        spaceSlug={section.spaceSlug}
+        sectionKey={section.sectionKey}
+        onClose={closeSpaceContextSection}
+      />
+    );
+  }
+  return <HumanChatRightPanel {...props} />;
+}
+
+function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const t = useTranslations('HumanChatPanel');
   const tCommon = useTranslations('Common');
   const tSpaces = useTranslations('Spaces');
@@ -1264,6 +1281,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherencePublic,
     coherencePeerPerson,
     coherenceChannel,
+    coherenceContextSectionKey,
     open,
     closeCoherenceChat,
     openCoherenceChat,
@@ -1271,6 +1289,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     closeHumanChatPanel,
     setUnreadMentionCount,
   } = useHumanChatPanel();
+  // A Context section room opened from Messages is answered by that section's
+  // agent, the same one its Context tab discussion uses.
+  const contextSectionKey =
+    mode === 'coherence' && coherenceChannel === 'context'
+      ? coherenceContextSectionKey
+      : null;
+  const contextSectionAgent = useSpaceContextSectionAgent(
+    contextSectionKey,
+    coherenceTitle?.trim() ||
+      (contextSectionKey ? headingForSectionKey(contextSectionKey) : ''),
+  );
+  const agentMentionLabel =
+    contextSectionAgent?.label ?? t('agentMentionLabel');
   // Person-to-person rooms (PM / group) have a title and no signal slug — never
   // inherit a space from the route or a leftover home slug. Map public chat
   // also opens with an empty signal slug; it is not a DM and must still load
@@ -1283,12 +1314,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     !coherenceSlug?.trim() &&
     !coherenceChannel;
   const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
-  const onNetworkPage = isNetworkPath(pathname);
-  // Shared network room lives only on `/{lang}/network` in space mode.
-  // Home / Messages / wallet also have mode `space` and no slug — do not treat
-  // those as the network room (that caused hangs before the path guard, and
-  // empty Network chrome after it).
-  const isNetworkSpaceChat = onNetworkPage && mode === 'space';
+  // Shared network room for Network and the member shell pages when no channel
+  // is selected (Home / Messages / Wallet / My Spaces). A DM or inbox channel
+  // stays in coherence mode and does not hit this path. DHO routes keep their
+  // own space chat. The panel unmounts when closed on these shell pages, so
+  // this does not call ensureNetworkRoom in the background.
+  const isNetworkSpaceChat = isNetworkAiPath(pathname) && mode === 'space';
   // Network page space-mode is only the shared network room — never inherit a
   // leftover DHO slug (route or coherence) or space/ecosystem tabs appear with
   // that space's timeline under the Network chrome.
@@ -2041,6 +2072,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const previousSignalUrlSlugRef = useRef<string | null | undefined>(undefined);
   const previousSignalChoiceRef = useRef<string | null>(null);
+  /**
+   * Back from a space signal closes the panel. The thread stays mounted until
+   * the sidebar finishes sliding away, so the space room does not appear in
+   * its place. Cleared before mode returns to space.
+   */
+  const signalDismissUntilClosedRef = useRef(false);
+  const signalDismissTimerRef = useRef<number | null>(null);
 
   /** Leave signal/coherence chat without the deep-link effect re-opening from `?signal=`. */
   const exitCoherenceChat = useCallback(() => {
@@ -2050,7 +2088,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     const hasSignalDeepLink =
       Boolean(readLiveSearchParam('signal')) ||
-      Boolean(readLiveSearchParam('msg'));
+      Boolean(searchParams?.get('signal')?.trim()) ||
+      Boolean(readLiveSearchParam('msg')) ||
+      Boolean(searchParams?.get('msg')?.trim());
     if (hasSignalDeepLink) {
       const next = new URLSearchParams(searchParams?.toString() ?? '');
       next.delete('signal');
@@ -2063,6 +2103,37 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       router.replace(cleaned, { scroll: false });
     }
 
+    // Messages already closes the panel. On a space signals screen, back must
+    // do the same — not fall through to the space room. The top-right chat
+    // icon still opens space channels once mode returns to space.
+    if (
+      shouldDelaySpaceSignalReset({
+        coherenceSlug,
+        routeSpaceSlug,
+        isConnectionsPage,
+        sidebarOpen,
+      })
+    ) {
+      if (signalDismissTimerRef.current != null) {
+        window.clearTimeout(signalDismissTimerRef.current);
+      }
+      signalDismissUntilClosedRef.current = true;
+      closeHumanChatPanel();
+      setOpenMobile(false);
+      // duration-300 on the offcanvas sidebar. Reset after it is off screen.
+      signalDismissTimerRef.current = window.setTimeout(() => {
+        signalDismissTimerRef.current = null;
+        signalDismissUntilClosedRef.current = false;
+        closeCoherenceChat();
+      }, 320);
+      return;
+    }
+
+    if (signalDismissTimerRef.current != null) {
+      window.clearTimeout(signalDismissTimerRef.current);
+      signalDismissTimerRef.current = null;
+    }
+    signalDismissUntilClosedRef.current = false;
     closeCoherenceChat();
     if (isConnectionsPage) {
       closeHumanChatPanel();
@@ -2071,11 +2142,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     closeCoherenceChat,
     closeHumanChatPanel,
+    coherenceSlug,
     isConnectionsPage,
     pathname,
+    routeSpaceSlug,
     router,
     searchParams,
     setOpenMobile,
+    sidebarOpen,
   ]);
 
   const pendingCallStartNotifyRef = useRef(false);
@@ -2627,7 +2701,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     (userId: string | undefined) => {
       if (!userId) return t('unknownMember');
       if (isHyphaBotMatrixIdentity(userId)) {
-        return t('agentMentionLabel');
+        return agentMentionLabel;
       }
       if (currentUserId && userId === currentUserId) {
         const full = [me?.name, me?.surname].filter(Boolean).join(' ').trim();
@@ -2686,6 +2760,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       );
     },
     [
+      agentMentionLabel,
       client,
       currentUserId,
       directoryLabelByMxid,
@@ -3015,7 +3090,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       : rawMentionCandidates;
     const networkRoom = isNetworkSpaceChat || coherenceChannel === 'network';
     const agentIcon: ChatMentionAgentIcon =
-      networkRoom || isDirectConversation || !spaceSlug?.trim()
+      coherenceChannel === 'context'
+        ? { kind: 'context' }
+        : networkRoom || isDirectConversation || !spaceSlug?.trim()
         ? { kind: 'network' }
         : {
             kind: 'space',
@@ -3024,14 +3101,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               resolvedTheme === 'dark' ? 'dark' : 'light',
             ),
           };
+    // One "AI Agents" row, as in Signals. A Context room still answers as its
+    // section specialist; that name is the reply label, not a tag target.
     return withMatrixAgentMention(
       roster,
       t('agentMentionLabel'),
-      matrixAgentSkills(t),
+      contextSectionAgent?.skills ?? matrixAgentSkills(t),
       agentIcon,
     );
   }, [
     coherenceChannel,
+    contextSectionAgent,
     currentUserId,
     isDirectConversation,
     isNetworkSpaceChat,
@@ -3979,6 +4059,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     );
   }, [currentUserAvatarUrl]);
 
+  useEffect(() => {
+    return () => {
+      if (signalDismissTimerRef.current != null) {
+        window.clearTimeout(signalDismissTimerRef.current);
+        signalDismissTimerRef.current = null;
+        signalDismissUntilClosedRef.current = false;
+        closeCoherenceChat();
+      }
+    };
+  }, [closeCoherenceChat]);
+
   // Track previous sidebar open state to detect close events
   const prevSidebarOpenRef = useRef(sidebarOpen);
   const prevChatModeRef = useRef(mode);
@@ -3986,7 +4077,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const hasLoadedCoherenceMessagesRef = useRef(false);
   useEffect(() => {
     if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
-      exitCoherenceChat();
+      // Back from a space signal closes the panel and resets after the slide.
+      // Clearing here would swap in the space room while it is still visible.
+      if (!signalDismissUntilClosedRef.current) {
+        exitCoherenceChat();
+      }
     }
     prevSidebarOpenRef.current = sidebarOpen;
   }, [sidebarOpen, mode, exitCoherenceChat]);
@@ -4000,22 +4095,46 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     lastHumanChatSpaceSlugRef.current = nextSlug;
     if (!prevSlug) return;
 
+    // A direct message opened in this space stays open on Home, Messages,
+    // Wallet, My Spaces, and Network, including its composer draft.
+    // Space-to-space navigation still resets.
+    if (
+      shouldPreserveDirectMessageOnSpaceLeave({
+        isDirectConversation,
+        previousSpaceSlug: prevSlug,
+        nextSpaceSlug: nextSlug,
+        onNetworkShell: isNetworkAiPath(pathname),
+      })
+    ) {
+      setSpaceRoom('space');
+      return;
+    }
+
     setSpaceRoom('space');
     exitCoherenceChat();
     resetChatStateOnAuthDrop();
-  }, [routeSpaceSlug, exitCoherenceChat, resetChatStateOnAuthDrop]);
+  }, [
+    exitCoherenceChat,
+    isDirectConversation,
+    pathname,
+    resetChatStateOnAuthDrop,
+    routeSpaceSlug,
+  ]);
 
-  // Entering Network clears leftover DHO / coherence space chrome so the
-  // shared room can join. Leaving Network clears that join sentinel so Home
-  // does not keep Network chrome / an empty composer with no join.
-  const wasNetworkPathRef = useRef(onNetworkPage);
+  // Entering a network-default shell page clears leftover DHO / coherence
+  // space chrome so the shared room can join. Moving between Home, Messages,
+  // Wallet, Spaces, and Network does not reset a channel the member already
+  // opened. Leaving those pages (e.g. into a DHO) clears the join sentinel
+  // so space chat can take over.
+  const onNetworkDefaultPath = isNetworkAiPath(pathname);
+  const wasNetworkPathRef = useRef(onNetworkDefaultPath);
   useEffect(() => {
     const wasNetwork = wasNetworkPathRef.current;
-    wasNetworkPathRef.current = onNetworkPage;
-    if (wasNetwork === onNetworkPage) return;
+    wasNetworkPathRef.current = onNetworkDefaultPath;
+    if (wasNetwork === onNetworkDefaultPath) return;
     if (isDirectConversation) return;
 
-    if (!onNetworkPage) {
+    if (!onNetworkDefaultPath) {
       if (joinedRef.current === NETWORK_JOINED_SENTINEL) {
         joinEpochRef.current += 1;
         const previousRoomId = roomIdRef.current?.trim();
@@ -4058,7 +4177,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setError(null);
     setIsJoining(false);
   }, [
-    onNetworkPage,
+    onNetworkDefaultPath,
     isDirectConversation,
     mode,
     coherenceChannel,
@@ -4318,14 +4437,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     revealRoomTimeline,
   ]);
 
-  // The network page has one room. An ecosystem is a root space, so that
-  // room sits beside the space chat, not beside the network.
-  // Only join on `/{lang}/network` — default panel mode is `space`, and Home /
-  // Messages / wallet have no space slug, so without this guard every member
-  // page would call ensureNetworkRoom (400s + long poll → tab hang).
+  // Home, Messages, Wallet, Spaces, and Network share one room when no
+  // channel is selected. An ecosystem is a root space, so that room sits
+  // beside the space chat, not beside the network. DHO routes keep their own
+  // space join. The panel unmounts on the shell pages when closed, so this
+  // does not poll ensureNetworkRoom in the background.
   useEffect(() => {
     if (mode !== 'space') return;
-    if (!isNetworkPath(pathname)) return;
+    if (!isNetworkAiPath(pathname)) return;
     if (spaceSlug?.trim()) return;
     if (!isMatrixAvailable || !isMatrixAuthenticated) return;
     if (joinedRef.current === NETWORK_JOINED_SENTINEL) return;
@@ -5713,6 +5832,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const prevMode = prevChatModeRef.current;
     prevChatModeRef.current = mode;
 
+    // Panel is closing on a space signal. Do not write `?signal=` back, or
+    // the signals screen reopens the thread.
+    if (signalDismissUntilClosedRef.current) return;
+
     if (mode === 'coherence' && coherenceSlug?.trim()) {
       const slug = coherenceSlug.trim();
       const currentSpace = spaceSlug?.trim();
@@ -6064,7 +6187,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         target.role === 'user'
           ? t('you')
           : isHyphaBotMatrixIdentity(target.senderMatrixId, target.senderName)
-          ? t('agentMentionLabel')
+          ? agentMentionLabel
           : target.role === 'member' && target.senderMatrixId
           ? resolveMemberLabel(target.senderMatrixId)
           : target.senderName ?? t('unknownMember');
@@ -6086,7 +6209,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           : {}),
       });
     },
-    [mentionLabelByUserId, messages, resolveMemberLabel, t],
+    [agentMentionLabel, mentionLabelByUserId, messages, resolveMemberLabel, t],
   );
 
   const handleEditMessage = useCallback(
@@ -6364,6 +6487,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           mentionUserIds,
           context: isDirectConversation
             ? { kind: 'dm' }
+            : contextSectionKey
+            ? {
+                kind: 'space_context',
+                spaceSlug,
+                sectionKey: contextSectionKey,
+              }
             : isNetworkSpaceChat || coherenceChannel === 'network'
             ? { kind: 'network' }
             : mode === 'space' && spaceRoom === 'ecosystem'
@@ -6479,6 +6608,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isDirectConversation,
     isNetworkSpaceChat,
     coherenceChannel,
+    contextSectionKey,
     spaceSlug,
     mode,
     spaceRoom,
@@ -6511,7 +6641,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       return t('tabChatEcosystem');
     }
     if (coherenceChannel === 'proposal') return t('tabChatProposal');
-    if (coherenceChannel === 'signal') return t('tabChatSignal');
+    if (coherenceChannel === 'context') return t('tabChatContext');
+    // Messages tags the room `signal`. The signal page opens the same thread
+    // with a slug and no channel tag — both titles are "Signal", not "Room".
+    if (coherenceChannel === 'signal' || isSignalThread) {
+      return t('tabChatSignal');
+    }
     if (
       coherenceChannel === 'space-public' ||
       coherencePublic ||
@@ -6540,6 +6675,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     groupChatFaces,
     isDirectConversation,
     isNetworkSpaceChat,
+    isSignalThread,
     loadedRoomIsPublic,
     mode,
     roomId,
@@ -6548,7 +6684,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   ]);
 
   return (
-    <>
+    <AgentMentionLabelProvider value={agentMentionLabel}>
       {screenshareTabAudioPromptDialog}
       <SidebarHeader className="gap-0 bg-page-background p-0 dark:bg-background-2">
         <HumanChatPanelHeader
@@ -6577,6 +6713,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               ? tConnections('inbox.tagSignal')
               : coherenceChannel === 'proposal'
               ? tConnections('inbox.tagProposal')
+              : coherenceChannel === 'context'
+              ? tConnections('inbox.tagContext')
               : undefined
           }
           titleStart={
@@ -6628,7 +6766,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               coherenceChannel === 'space-public' ||
               coherenceChannel === 'ecosystem' ||
               coherenceChannel === 'signal' ||
-              coherenceChannel === 'proposal' ? (
+              coherenceChannel === 'proposal' ||
+              coherenceChannel === 'context' ? (
               <HeaderSpaceLogoMark
                 loading={isSpaceLoading}
                 logoUrl={resolveSpaceDisplayLogoUrl(
@@ -7510,6 +7649,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             </div>
           </SidebarFooter>
         )}
-    </>
+    </AgentMentionLabelProvider>
   );
 }

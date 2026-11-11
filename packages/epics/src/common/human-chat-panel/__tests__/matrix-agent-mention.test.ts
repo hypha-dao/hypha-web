@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { withMatrixAgentMention } from '../matrix-agent-mention';
+import {
+  isAgentMentionPick,
+  withMatrixAgentMention,
+} from '../matrix-agent-mention';
 
 const BOT_USER_ID = '@ai-agents:example.org';
 
@@ -54,6 +57,19 @@ describe('withMatrixAgentMention', () => {
       'AI Agents',
       'Ada Lovelace',
     ]);
+  });
+
+  it('treats the AI Agents row as the mention pick, not a specialist name', () => {
+    expect(
+      isAgentMentionPick({ rowKey: 'agent', displayLabel: 'AI Agents' }),
+    ).toBe(true);
+    expect(
+      isAgentMentionPick({
+        displayLabel: 'AI Agents',
+        agentIcon: { kind: 'space' },
+      }),
+    ).toBe(true);
+    expect(isAgentMentionPick({ displayLabel: 'Aura Mission' })).toBe(false);
   });
 
   it('returns the roster unchanged when the bot user id is unset', () => {

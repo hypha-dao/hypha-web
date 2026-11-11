@@ -217,6 +217,8 @@ describe('messages inbox context', () => {
           signalSlug: null,
           proposalTitle: 'Genesis IP Contribution',
           proposalSlug: 'genesis-ip',
+          contextSectionKey: null,
+          contextSectionTitle: null,
         },
         withoutWithdrawn,
       ),
@@ -363,6 +365,107 @@ describe('messages inbox context', () => {
     );
     expect(row?.roomId).toBe('!unread-proposal:hs');
     expect(row?.unread).toBe(2);
+  });
+
+  describe('Context section chats', () => {
+    const sectionContext: InboxContext = {
+      ...context,
+      contexts: [
+        {
+          roomId: '!mission:hs',
+          sectionKey: 'mission',
+          title: 'Mission',
+          spaceSlug: 'hypha-platform',
+          spaceTitle: 'Hypha Platform',
+          rootSlug: 'hypha',
+          rootTitle: 'Hypha',
+        },
+        {
+          roomId: '!vision:hs',
+          sectionKey: 'vision',
+          title: 'Vision',
+          spaceSlug: 'hypha-platform',
+          spaceTitle: 'Hypha Platform',
+          rootSlug: 'hypha',
+          rootTitle: 'Hypha',
+        },
+      ],
+    };
+    const snapshot = (
+      roomId: string,
+      preview: string,
+      unread: number,
+      lastTs: number | null = recent,
+    ) => ({
+      roomId,
+      roomType: 'io.hypha.room.context',
+      name: 'Mission · Hypha Platform',
+      aliases: [],
+      preview,
+      mine: false,
+      lastTs,
+      unread,
+    });
+
+    it('lists a started section discussion under Spaces → Context', () => {
+      expect(inboxKindForRoomType('io.hypha.room.context')).toBe('context');
+      expect(rowMatchesInboxFilter('context', 'context')).toBe(true);
+      expect(rowMatchesInboxFilter('context', 'spaces')).toBe(true);
+      expect(rowMatchesInboxFilter('context', 'rooms')).toBe(false);
+      expect(rowMatchesInboxFilter('context', 'proposals')).toBe(false);
+
+      const [row] = channelRowsFromSnapshots(
+        [snapshot('!mission:hs', 'What is our purpose?', 1, quiet)],
+        sectionContext,
+        'Network',
+        now,
+      );
+      expect(row?.name).toBe('Mission');
+      expect(row?.inbox.kind).toBe('context');
+      expect(row?.unread).toBe(1);
+      expect(inboxContextLine(row!.inbox, null)).toBe('Hypha Platform · Hypha');
+      expect(inboxContextHref('en', row?.inbox)).toBe(
+        '/en/dho/hypha-platform/context?section=mission',
+      );
+      expect(
+        inboxFilterCounts([{ kind: row!.inbox.kind, unread: row!.unread }])
+          .context,
+      ).toEqual({
+        total: 1,
+        unread: 1,
+      });
+    });
+
+    it('hides a section room nobody has written in yet', () => {
+      const rows = channelRowsFromSnapshots(
+        [snapshot('!vision:hs', '', 0)],
+        sectionContext,
+        'Network',
+        now,
+      );
+      expect(rows).toEqual([]);
+    });
+
+    it('keeps an unread section chat while its preview is still loading', () => {
+      const [row] = channelRowsFromSnapshots(
+        [snapshot('!vision:hs', '', 3)],
+        sectionContext,
+        'Network',
+        now,
+      );
+      expect(row?.roomId).toBe('!vision:hs');
+      expect(row?.unread).toBe(3);
+    });
+
+    it('hides section rooms of spaces the member is not in', () => {
+      const rows = channelRowsFromSnapshots(
+        [snapshot('!elsewhere:hs', 'hello', 2)],
+        sectionContext,
+        'Network',
+        now,
+      );
+      expect(rows).toEqual([]);
+    });
   });
 
   it('hides a signal the member is not on and has not been notified about', () => {
@@ -637,6 +740,8 @@ describe('inboxContextHref', () => {
     signalSlug: 'roadmap-page',
     proposalTitle: 'Garden vote',
     proposalSlug: 'garden-vote',
+    contextSectionKey: 'mission',
+    contextSectionTitle: 'Mission',
   };
 
   it('opens a signal, a space room, an ecosystem the member can enter, and the network', () => {
@@ -662,6 +767,9 @@ describe('inboxContextHref', () => {
     ).toBe('/en/network?spaceChat=network');
     expect(inboxContextHref('en', { ...place, kind: 'proposal' })).toBe(
       '/en/dho/hypha-platform/agreements/proposal/garden-vote',
+    );
+    expect(inboxContextHref('en', { ...place, kind: 'context' })).toBe(
+      '/en/dho/hypha-platform/context?section=mission',
     );
   });
 

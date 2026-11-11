@@ -6,6 +6,10 @@ const panel = readFileSync(
   resolve(__dirname, '../human-right-panel.tsx'),
   'utf8',
 );
+const memberAvatar = readFileSync(
+  resolve(__dirname, '../human-chat-panel/matrix-member-avatar.ts'),
+  'utf8',
+);
 
 describe('group chat header faces', () => {
   it('uses overlapping GroupFaces in the panel header for groups', () => {
@@ -18,13 +22,14 @@ describe('group chat header faces', () => {
   });
 
   it('resolves header faces like the Messages list (getUser + Hypha roster)', () => {
-    expect(panel).toContain('client.getUser(userId)?.avatarUrl');
+    expect(panel).toContain('matrixMemberAvatarSquare');
     expect(panel).toContain('resolveMemberAvatar(userId)');
     // DM group peers come from roomPeopleBySub, not only the space roster.
     expect(panel).toContain('roomPeopleBySub.get(localpartSub)?.avatarUrl');
     expect(panel).toContain('roomPeopleBySub.get(sub)');
     // Same mxcUrlToHttp shape as Messages `avatarHttp` — not the auth-media arity.
-    expect(panel).toMatch(
+    expect(memberAvatar).toContain('client.getUser(userId)?.avatarUrl');
+    expect(memberAvatar).toMatch(
       /function matrixMemberAvatarSquare[\s\S]*?mxcUrlToHttp\(mxc, px, px, 'crop'\)/,
     );
   });

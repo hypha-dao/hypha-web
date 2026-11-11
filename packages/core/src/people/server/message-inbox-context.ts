@@ -11,12 +11,14 @@ import {
 import {
   coherences,
   documents,
+  spaceContextSections,
   spaces,
 } from '@hypha-platform/storage-postgres';
 
 import { web3Client } from '../../common/server/web3-rpc/client';
 import type { DbConfig } from '../../common/server/types';
 import { proposalIdsWithdrawn } from '../../governance/server/proposal-ids-withdrawn';
+import { sectionTitleFromRow } from '../../space-context/server/map-row';
 import { getMemberSpaces } from '../../space/client/web3/dao-space-factory/get-member-spaces';
 import {
   labelInboxSpaces,
@@ -53,14 +55,27 @@ export type MessageInboxProposalLabel = {
   rootTitle: string;
 };
 
+/** Context section (Mission, Vision, …) whose discussion room exists. */
+export type MessageInboxContextSectionLabel = {
+  roomId: string;
+  sectionKey: string;
+  title: string;
+  spaceSlug: string;
+  spaceTitle: string;
+  rootSlug: string;
+  rootTitle: string;
+};
+
 export type MessageInboxContext = {
   spaces: MessageInboxSpaceLabel[];
   signals: MessageInboxSignalLabel[];
   proposals: MessageInboxProposalLabel[];
+  contexts: MessageInboxContextSectionLabel[];
 };
 
 const SIGNAL_LABEL_LIMIT = 400;
 const PROPOSAL_LABEL_LIMIT = 400;
+const CONTEXT_LABEL_LIMIT = 400;
 /** Every signal that emails or pushes this member. Do not drop one of these. */
 const NOTIFIED_SIGNAL_LIMIT = 1000;
 const MEMBER_SPACES_TIMEOUT_MS = 8_000;
@@ -187,7 +202,9 @@ function openSignalFilter() {
  * that notify this member, plus other signals in those spaces so a team
  * thread can still be named. Proposals are the open votes in those spaces
  * that have not been withdrawn — a withdrawn proposal room stays out of
- * Messages even when it still has comments. Joining a room is not enough.
+ * Messages even when it still has comments. Contexts are the section rooms
+ * in those spaces; Messages lists one only after someone has written in it.
+ * Joining a room is not enough.
  */
 export async function getMessageInboxContext(
   {
@@ -368,6 +385,49 @@ export async function getMessageInboxContext(
     ];
   });
 
+  const contextRows =
+    spaceIds.length === 0
+      ? []
+      : await db
+          .select({
+            chatRoomId: spaceContextSections.chatRoomId,
+            sectionKey: spaceContextSections.sectionKey,
+            title: spaceContextSections.title,
+            spaceId: spaceContextSections.spaceId,
+          })
+          .from(spaceContextSections)
+          .where(
+            and(
+              isNotNull(spaceContextSections.chatRoomId),
+              isNull(spaceContextSections.removedAt),
+              inArray(spaceContextSections.spaceId, spaceIds),
+            ),
+          )
+          .orderBy(desc(spaceContextSections.updatedAt))
+          .limit(CONTEXT_LABEL_LIMIT);
+
+  const seenContextRooms = new Set<string>();
+  const contexts = contextRows.flatMap((row) => {
+    const roomId = row.chatRoomId?.trim();
+    const sectionKey = row.sectionKey?.trim();
+    const space = byId.get(row.spaceId);
+    if (!roomId || !sectionKey || !space || seenContextRooms.has(roomId)) {
+      return [];
+    }
+    seenContextRooms.add(roomId);
+    return [
+      {
+        roomId,
+        sectionKey,
+        title: sectionTitleFromRow(row),
+        spaceSlug: space.slug,
+        spaceTitle: space.title,
+        rootSlug: space.rootSlug,
+        rootTitle: space.rootTitle,
+      },
+    ];
+  });
+
   const signals = [...signalRows.values()].flatMap((row) => {
     const roomId = row.roomId?.trim();
     const slug = row.slug?.trim();
@@ -389,5 +449,5 @@ export async function getMessageInboxContext(
     ];
   });
 
-  return { spaces: memberSpaces, signals, proposals };
+  return { spaces: memberSpaces, signals, proposals, contexts };
 }

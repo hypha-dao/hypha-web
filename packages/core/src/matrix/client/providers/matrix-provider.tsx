@@ -589,6 +589,7 @@ interface MatrixContextType {
   ensureRoomMembers: (
     roomId: string,
     matrixUserIds: readonly string[],
+    options?: { pruneAbsent?: boolean },
   ) => Promise<void>;
   /** Join the single network-wide room, creating it on first use. */
   ensureNetworkRoom: () => Promise<{ roomId: string }>;
@@ -706,6 +707,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       try {
         setClientInitFailed(false);
         const { accessToken, userId, homeserverUrl, deviceId } = matrixToken;
+        /**
+         * Persist the Matrix store across reloads so Messages can paint from
+         * IndexedDB rooms before live sync reaches Prepared. List-only — room
+         * open still uses join + store membership checks.
+         */
+        const indexedDbStore =
+          typeof globalThis.indexedDB !== 'undefined'
+            ? new MatrixSdk.IndexedDBStore({
+                indexedDB: globalThis.indexedDB,
+                localStorage: globalThis.localStorage,
+                dbName: `hypha-matrix-${userId}`,
+              })
+            : undefined;
         // Voice and video (group calls): keep VoIP enabled; TURN/ICE for WebRTC. See
         // docs/requirements/voice-video-call-implementation-spec.md §2.1
         const matrixClient = MatrixSdk.createClient({
@@ -713,6 +727,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           accessToken,
           userId,
           deviceId,
+          ...(indexedDbStore ? { store: indexedDbStore } : {}),
           refreshToken: HYPHA_MATRIX_REFRESH_TOKEN,
           tokenRefreshFunction: async () => {
             const refreshed = await fetchHyphaMatrixAccessToken(() =>
@@ -734,7 +749,18 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           iceCandidatePoolSize: matrixWebRtcIceCandidatePoolSizeFromEnv(),
         });
 
-        await matrixClient.startClient();
+        if (indexedDbStore) {
+          try {
+            await indexedDbStore.startup();
+          } catch (error) {
+            console.warn(
+              '[MatrixProvider] IndexedDB store startup failed; continuing with memory sync:',
+              error,
+            );
+          }
+        }
+
+        await matrixClient.startClient({ initialSyncLimit: 10 });
         startedClient = matrixClient;
 
         /** Warm TURN credentials before the first call join (reduces ICE stall). */
@@ -825,7 +851,16 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     if (!existingClient) {
       return;
     }
+    const store = existingClient.store;
     existingClient.stopClient();
+    if (
+      store &&
+      typeof (store as { destroy?: () => Promise<void> }).destroy === 'function'
+    ) {
+      void (store as { destroy: () => Promise<void> })
+        .destroy()
+        .catch(() => undefined);
+    }
     registeredRoomListenersRef.current = [];
     setRegisteredRoomListeners([]);
     clientRef.current = null;
@@ -1224,7 +1259,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
 
   const ensureRoomMembers = React.useCallback(
-    async (roomId: string, matrixUserIds: readonly string[]) => {
+    async (
+      roomId: string,
+      matrixUserIds: readonly string[],
+      options?: { pruneAbsent?: boolean },
+    ) => {
       if (!client) return;
       const trimmedRoomId = roomId.trim();
       if (!trimmedRoomId) return;
@@ -1232,10 +1271,35 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const botId = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
       const room = client.getRoom(trimmedRoomId);
       const ids = new Set<string>();
+      const allowed = new Set(matrixUserIds.map((id) => id.trim()));
+      if (selfId) allowed.add(selfId);
+      if (botId) allowed.add(botId);
       for (const matrixUserId of matrixUserIds) {
         const id = matrixUserId.trim();
         if (!id || id === selfId || id === botId) continue;
         ids.add(id);
+      }
+      if (options?.pruneAbsent && room) {
+        for (const member of room.getMembers()) {
+          const id = member.userId?.trim();
+          if (!id || allowed.has(id)) continue;
+          if (member.membership !== 'join' && member.membership !== 'invite') {
+            continue;
+          }
+          try {
+            await client.kick(
+              trimmedRoomId,
+              id,
+              'No longer a member of this space',
+            );
+          } catch (error) {
+            console.warn(
+              '[Matrix] Failed to remove a former space member:',
+              trimmedRoomId,
+              error instanceof Error ? error.message : error,
+            );
+          }
+        }
       }
       // A space room publishes an alias. Only a group chat should pull in
       // people who are still sitting on an invite.
@@ -1244,6 +1308,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           const id = member.userId?.trim();
           if (!id || id === selfId || id === botId) continue;
           if (member.membership !== 'invite') continue;
+          if (options?.pruneAbsent && !allowed.has(id)) continue;
           ids.add(id);
         }
       }

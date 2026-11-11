@@ -16,6 +16,10 @@ import {
   useSpaceMinProposalDuration,
   type Person,
   type Space,
+  normalizeProposalDocumentLabel,
+  SPACE_CONTEXT_DOCUMENT_LABEL,
+  sectionKeysFromProposalMarkdown,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { getTokenUpdateByDocumentIdAction } from '@hypha-platform/core/governance/server/actions';
 import {
@@ -36,16 +40,37 @@ import {
   getCreateRouteSegmentForProposalLabel,
 } from '../../utils/resubmit-proposal-template';
 
+function isVoteFinalized(
+  executed?: boolean,
+  expired?: boolean,
+  proposalStatus?: string | null,
+): boolean {
+  return Boolean(
+    executed ||
+      expired ||
+      proposalStatus === 'accepted' ||
+      proposalStatus === 'rejected',
+  );
+}
+
 function formatTimeRemaining(
   endTime: string,
   tProposalDetails: any,
   executed?: boolean,
   expired?: boolean,
+  proposalStatus?: string | null,
 ): string {
-  const end = new Date(endTime);
-
-  if (isPast(end) || executed || expired) {
+  if (isVoteFinalized(executed, expired, proposalStatus)) {
     return tProposalDetails('voting.voteClosed');
+  }
+
+  const end = new Date(endTime);
+  if (!endTime || Number.isNaN(end.getTime())) {
+    return tProposalDetails('voting.voteClosingSoon');
+  }
+
+  if (isPast(end)) {
+    return tProposalDetails('voting.voteClosingSoon');
   }
 
   const duration = intervalToDuration({
@@ -150,6 +175,7 @@ export const FormVoting = ({
   const { myVote, mutate: mutateMyVote } = useMyVote(documentSlug);
   const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
+  const { space: spaceFromDb } = useSpaceBySlug(spaceSlug ?? '');
   const { theme } = useTheme();
   const { person } = useMe();
   const { jwt } = useJwt();
@@ -312,6 +338,18 @@ export const FormVoting = ({
                 updateIssuedTokenResubmitPayload,
             }
           : {}),
+        ...(normalizeProposalDocumentLabel(label) ===
+        SPACE_CONTEXT_DOCUMENT_LABEL
+          ? {
+              spaceContextSectionKeys: sectionKeysFromProposalMarkdown(
+                documentDescription || '',
+              ),
+              ...(typeof spaceFromDb?.id === 'number'
+                ? { spaceContextSpaceId: spaceFromDb.id }
+                : {}),
+              ...(spaceSlug ? { spaceContextSpaceSlug: spaceSlug } : {}),
+            }
+          : {}),
       };
 
       sessionStorage.setItem(
@@ -339,6 +377,19 @@ export const FormVoting = ({
           createPath = `/${lang}/dho/${spaceSlug}/agreements/create`;
         } else {
           createPath = `/${lang}/dho/${spaceSlug}/agreements/create/${routePath}`;
+        }
+
+        const sectionKeys = sectionKeysFromProposalMarkdown(
+          documentDescription || '',
+        );
+        if (
+          normalizeProposalDocumentLabel(label) ===
+            SPACE_CONTEXT_DOCUMENT_LABEL &&
+          sectionKeys.length > 0
+        ) {
+          createPath = `${createPath}?sections=${encodeURIComponent(
+            sectionKeys.join(','),
+          )}`;
         }
 
         router.push(createPath);
@@ -426,15 +477,21 @@ export const FormVoting = ({
   const showVotedMessage = myVote || localVote;
   const voteText = myVote || localVote;
 
+  const votingEnd = new Date(endTime);
+  const votingPeriodEnded =
+    Boolean(endTime) && !Number.isNaN(votingEnd.getTime()) && isPast(votingEnd);
+
   const votingInProgress =
     Boolean(isVoting) &&
     proposalStatus === 'onVoting' &&
     !executed &&
     !expired &&
-    !isPast(new Date(endTime));
+    !votingPeriodEnded;
 
-  const isRejectDisabled = isDisabled || votingInProgress || voteText === 'no';
-  const isAcceptDisabled = isDisabled || votingInProgress || voteText === 'yes';
+  const isRejectDisabled =
+    isDisabled || votingInProgress || voteText === 'no' || votingPeriodEnded;
+  const isAcceptDisabled =
+    isDisabled || votingInProgress || voteText === 'yes' || votingPeriodEnded;
 
   const hasUserVoted = Boolean(myVote ?? localVote);
 
@@ -568,10 +625,11 @@ export const FormVoting = ({
                 tProposalDetails,
                 executed,
                 expired,
+                proposalStatus,
               )}
             </div>
           </div>
-          {executed || expired || isPast(new Date(endTime)) ? null : (
+          {isVoteFinalized(executed, expired, proposalStatus) ? null : (
             <div className="flex flex-col gap-2 items-end">
               <div className="flex gap-2">
                 <Button
