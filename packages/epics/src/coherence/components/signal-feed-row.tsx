@@ -107,24 +107,9 @@ export function SignalFeedRow({
     <article
       data-testid="signal-card"
       data-signal-slug={signal.slug ?? undefined}
-      className="craft-card-interactive relative flex items-start gap-4 p-4"
+      className="craft-card-interactive relative flex flex-col gap-1.5 p-4"
     >
-      <SignalUpvoteButton
-        slug={signal.slug}
-        spaceSlug={spaceSlug}
-        upvotes={signal.upvotes}
-        votingMode={votingMode}
-        votingModeStatus={votingModeStatus}
-        onRetryVotingMode={onRetryVotingMode}
-        isNonMember={isNonMember}
-        isMembershipPending={isMembershipPending}
-        refresh={refresh}
-        archived={signal.archived}
-        sort={sort}
-        summaryState={summaryState}
-        className="relative z-10"
-      />
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+      <div className="flex min-w-0 flex-col gap-1.5">
         <SignalTypeBadge type={signal.type} />
         <h3 className="m-0 truncate text-3 font-medium leading-snug text-foreground">
           <Link
@@ -137,7 +122,25 @@ export function SignalFeedRow({
         {about ? (
           <p className="m-0 truncate text-1 text-muted-foreground">{about}</p>
         ) : null}
-        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-1 text-muted-foreground">
+        <div
+          data-testid="signal-card-meta"
+          className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-1 text-muted-foreground"
+        >
+          <SignalUpvoteButton
+            slug={signal.slug}
+            spaceSlug={spaceSlug}
+            upvotes={signal.upvotes}
+            votingMode={votingMode}
+            votingModeStatus={votingModeStatus}
+            onRetryVotingMode={onRetryVotingMode}
+            isNonMember={isNonMember}
+            isMembershipPending={isMembershipPending}
+            refresh={refresh}
+            archived={signal.archived}
+            sort={sort}
+            summaryState={summaryState}
+            className="relative z-10"
+          />
           {created ? (
             <span className="inline-flex items-center gap-1.5">
               <Clock className="craft-icon-sm" aria-hidden />

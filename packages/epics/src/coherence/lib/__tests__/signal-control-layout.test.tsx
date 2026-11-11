@@ -159,24 +159,24 @@ function UpvoteBoard() {
       {samples.map((sample, index) => (
         <article
           key={sample.figure}
-          className="craft-card-interactive flex items-start gap-4 p-4"
+          className="craft-card-interactive flex flex-col gap-2 p-4"
           data-upvote-sample={index}
           data-exact={sample.exact}
         >
-          <SignalUpvoteCellChrome
-            figure={sample.figure}
-            exactLabel={sample.exact}
-            label={sample.label}
-            pressed={sample.pressed}
-            aria-label={`Upvote · ${sample.exact}`}
-          />
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <h3 className="m-0 truncate text-3 font-medium leading-snug text-foreground">
-              {sample.title}
-            </h3>
-            <p className="m-0 truncate text-1 text-muted-foreground">
-              {sample.pressed ? 'Voted' : 'Not voted'} · {sample.exact}
-            </p>
+          <h3 className="m-0 truncate text-3 font-medium leading-snug text-foreground">
+            {sample.title}
+          </h3>
+          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-1 text-muted-foreground">
+            <SignalUpvoteCellChrome
+              figure={sample.figure}
+              exactLabel={sample.exact}
+              pressed={sample.pressed}
+              direction={sample.pressed ? 'up' : null}
+              aria-label={`Votes · ${sample.exact}`}
+            />
+            <span>Created Nov 2</span>
+            <span>Last reply 4 days ago</span>
+            <span>2 comments</span>
           </div>
         </article>
       ))}
@@ -309,7 +309,7 @@ describe('signal upvote cell and tag field', () => {
         mkdirSync(outDir, { recursive: true });
         for (const [name, width] of [
           ['wide', 960],
-          ['narrow', 360],
+          ['narrow', 390],
         ] as const) {
           const page = await browser.newPage({
             viewport: { width, height: 1400 },
@@ -327,16 +327,16 @@ describe('signal upvote cell and tag field', () => {
               const figure = card.querySelector(
                 '[data-testid="signal-upvote-figure"]',
               ) as HTMLElement;
-              const caption = figure.nextElementSibling as HTMLElement;
+              const up = card.querySelector(
+                '[data-testid="signal-vote-up"]',
+              ) as HTMLElement;
+              const down = card.querySelector(
+                '[data-testid="signal-vote-down"]',
+              ) as HTMLElement;
               const range = document.createRange();
-              const ink = (node: HTMLElement) => {
-                range.selectNodeContents(node);
-                const rect = range.getBoundingClientRect();
-                return { left: rect.left, right: rect.right };
-              };
+              range.selectNodeContents(figure);
+              const figureInk = range.getBoundingClientRect();
               const cellBox = cell.getBoundingClientRect();
-              const figureInk = ink(figure);
-              const captionInk = ink(caption);
               const cellStyle = getComputedStyle(cell);
               return {
                 sample: card.getAttribute('data-upvote-sample'),
@@ -345,23 +345,23 @@ describe('signal upvote cell and tag field', () => {
                 title: cell.getAttribute('title'),
                 exact: card.getAttribute('data-exact'),
                 overflow: cellStyle.overflow,
-                cellWidth: cellBox.width,
+                horizontal: cellBox.width > cellBox.height,
+                order:
+                  up.getBoundingClientRect().left < figureInk.left &&
+                  figureInk.right < down.getBoundingClientRect().left,
                 figureInside:
                   figureInk.left >= cellBox.left - 0.5 &&
                   figureInk.right <= cellBox.right + 0.5,
-                captionInside:
-                  captionInk.left >= cellBox.left - 0.5 &&
-                  captionInk.right <= cellBox.right + 0.5,
-                figureWidth: figureInk.right - figureInk.left,
+                netLabel: cell.textContent?.includes('Net') ?? false,
               };
             });
           });
           for (const row of fit) {
             expect(row.overflow, row.figure ?? '').not.toBe('hidden');
-            expect(row.cellWidth, row.figure ?? '').toBeGreaterThanOrEqual(64);
-            expect(row.cellWidth, row.figure ?? '').toBeLessThanOrEqual(66);
+            expect(row.horizontal, row.figure ?? '').toBe(true);
+            expect(row.order, `${row.figure} order`).toBe(true);
             expect(row.figureInside, `${row.figure} figure`).toBe(true);
-            expect(row.captionInside, `${row.figure} caption`).toBe(true);
+            expect(row.netLabel, row.figure ?? '').toBe(false);
             expect(row.title, row.figure ?? '').toBe(row.exact);
           }
           const input = page.getByRole('combobox');

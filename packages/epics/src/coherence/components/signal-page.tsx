@@ -506,29 +506,9 @@ export function SignalPage({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <SignalTypeBadge type={signal.type} variant="box" />
-            <div className="flex items-start gap-4">
-              <SignalUpvoteButton
-                slug={signal.slug}
-                spaceSlug={spaceSlug}
-                upvotes={signal.upvotes}
-                votingMode={votingMode}
-                votingModeStatus={votingModeStatus}
-                onRetryVotingMode={retryVotingMode}
-                isNonMember={isNonMember}
-                isMembershipPending={isMembershipPending}
-                refresh={refresh}
-                archived={signal.archived}
-                variant="page"
-                summaryState={signalListUpvoteSummaryState({
-                  hasSettledList: Boolean(coherences),
-                  isLoading: isSignalsLoading,
-                  hasError: signalsError != null,
-                })}
-              />
-              <h1 className="m-0 min-w-0 text-4 leading-tight text-foreground">
-                {signal.title}
-              </h1>
-            </div>
+            <h1 className="m-0 min-w-0 text-4 leading-tight text-foreground">
+              {signal.title}
+            </h1>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2 self-start">
             <SignalCreatorActions
@@ -541,44 +521,68 @@ export function SignalPage({
           </div>
         </div>
 
-        <dl className="m-0 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-border/70 pt-4 lg:grid-cols-5">
-          <MetaItem label={t('signalCreatedBy')}>
-            <PersonAvatar
-              size="sm"
-              shape="circle"
-              avatarSrc={creator?.avatarUrl ?? ''}
-              userName={creatorDisplayName ?? undefined}
-              personId={signal.creatorId ?? undefined}
-            />
-            <span className="truncate">{creatorDisplayName}</span>
-          </MetaItem>
-          {created ? (
-            <MetaItem label={t('signalCreatedLabel')}>{created}</MetaItem>
-          ) : null}
-          {lastReply ? (
-            <MetaItem label={t('signalLastReplyLabel')}>
-              <span className="truncate">{lastReply}</span>
+        <div
+          data-testid="signal-page-meta"
+          className="flex flex-wrap items-end gap-x-6 gap-y-4 border-t border-border/70 pt-4"
+        >
+          <SignalUpvoteButton
+            slug={signal.slug}
+            spaceSlug={spaceSlug}
+            upvotes={signal.upvotes}
+            votingMode={votingMode}
+            votingModeStatus={votingModeStatus}
+            onRetryVotingMode={retryVotingMode}
+            isNonMember={isNonMember}
+            isMembershipPending={isMembershipPending}
+            refresh={refresh}
+            archived={signal.archived}
+            variant="page"
+            summaryState={signalListUpvoteSummaryState({
+              hasSettledList: Boolean(coherences),
+              isLoading: isSignalsLoading,
+              hasError: signalsError != null,
+            })}
+            className="mb-0.5"
+          />
+          <dl className="m-0 grid min-w-0 flex-1 basis-[min(100%,28rem)] grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-5">
+            <MetaItem label={t('signalCreatedBy')}>
+              <PersonAvatar
+                size="sm"
+                shape="circle"
+                avatarSrc={creator?.avatarUrl ?? ''}
+                userName={creatorDisplayName ?? undefined}
+                personId={signal.creatorId ?? undefined}
+              />
+              <span className="truncate">{creatorDisplayName}</span>
             </MetaItem>
-          ) : null}
-          <MetaItem label={t('signalDiscussion')}>
-            {humanChatEnabled ? (
-              <button
-                type="button"
-                onClick={openChat}
-                className="truncate text-left underline-offset-4 hover:underline"
-              >
-                {discussion}
-              </button>
-            ) : (
-              <span className="truncate">{discussion}</span>
-            )}
-          </MetaItem>
-          {mediaSummary ? (
-            <MetaItem label={t('signalAttachmentsLabel')}>
-              <span className="truncate">{mediaSummary}</span>
+            {created ? (
+              <MetaItem label={t('signalCreatedLabel')}>{created}</MetaItem>
+            ) : null}
+            {lastReply ? (
+              <MetaItem label={t('signalLastReplyLabel')}>
+                <span className="truncate">{lastReply}</span>
+              </MetaItem>
+            ) : null}
+            <MetaItem label={t('signalDiscussion')}>
+              {humanChatEnabled ? (
+                <button
+                  type="button"
+                  onClick={openChat}
+                  className="truncate text-left underline-offset-4 hover:underline"
+                >
+                  {discussion}
+                </button>
+              ) : (
+                <span className="truncate">{discussion}</span>
+              )}
             </MetaItem>
-          ) : null}
-        </dl>
+            {mediaSummary ? (
+              <MetaItem label={t('signalAttachmentsLabel')}>
+                <span className="truncate">{mediaSummary}</span>
+              </MetaItem>
+            ) : null}
+          </dl>
+        </div>
       </section>
 
       {description ? (

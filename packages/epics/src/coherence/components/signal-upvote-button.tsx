@@ -28,10 +28,7 @@ import {
   formatVotingPowerCompact,
   formatVotingPowerExact,
 } from '../utils/format-voting-power';
-import {
-  SignalUpvoteCellChrome,
-  SignalUpvoteTriangle,
-} from './signal-upvote-cell';
+import { SignalUpvoteCellChrome } from './signal-upvote-cell';
 import { isArchivedSignalVoteError } from '../lib/signal-upvote-errors';
 import type { SignalVotingModeStatus } from '../hooks/use-signal-voting-mode';
 import {
@@ -66,6 +63,27 @@ function myUpvotePercent(summary: CoherenceUpvoteSummary): number {
     return Math.min(100, Math.max(1, percent));
   } catch {
     return 100;
+  }
+}
+
+function allocationAmount(
+  summary: CoherenceUpvoteSummary,
+  percent: number,
+  locale: string,
+): string | null {
+  const max = summary.myUpvote?.maxVotingPower;
+  if (!max) return null;
+  try {
+    const units = BigInt(max);
+    if (units <= 0n) return null;
+    const share = (units * BigInt(percent)) / 100n;
+    return formatVotingPowerCompact(
+      share.toString(),
+      summary.tokenDecimals,
+      locale,
+    );
+  } catch {
+    return null;
   }
 }
 
@@ -111,9 +129,10 @@ type SignalUpvoteButtonProps = {
 };
 
 /**
- * Up and down on one cell. The selected direction is filled; clicking it
- * again clears the vote, and clicking the other direction switches. The
- * figure is the net. The figure opens the voting-power slider in token spaces.
+ * Up and down on one pill. The number is the net. In a token-voting space,
+ * an arrow opens a slider for that direction; confirming casts the partial
+ * allocation. One member, one vote toggles on the arrow. The number opens
+ * the up/down breakdown.
  */
 export function SignalUpvoteButton({
   slug,
@@ -214,11 +233,15 @@ export function SignalUpvoteButton({
 
   const run = React.useCallback(
     async (action: () => Promise<CoherenceUpvoteSummary | undefined>) => {
-      if (!canVote || isMutating) return;
+      if (!canVote || isMutating) return false;
       setError(null);
       try {
         const next = await action();
-        if (next) await applyResult(next);
+        if (next) {
+          await applyResult(next);
+          return true;
+        }
+        return false;
       } catch (err) {
         console.warn('Could not update signal upvote:', err);
         if (
@@ -226,19 +249,23 @@ export function SignalUpvoteButton({
           MEMBERSHIP_ERROR_PATTERN.test(err.message)
         ) {
           setRejectedAsNonMember(true);
-          return;
+          return false;
         }
         if (isArchivedSignalVoteError(err)) {
           setError(t('upvoteArchived'));
-          return;
+          return false;
         }
         setError(t('upvoteFailed'));
+        return false;
       }
     },
     [applyResult, canVote, isMutating, t],
   );
 
   const trimmedSlug = slug?.trim() ?? '';
+  const allocatesPower = votingMode != null && !isOneMemberOneVote;
+  const [allocationDirection, setAllocationDirection] =
+    React.useState<SignalVoteDirection | null>(null);
   const handleDirection = (clicked: SignalVoteDirection) =>
     run(() => {
       const action = resolveSignalVoteAction(direction, clicked);
@@ -246,18 +273,41 @@ export function SignalUpvoteButton({
       return upvote({
         slug: trimmedSlug,
         direction: action,
-        ...(isOneMemberOneVote ? {} : { votingPowerPercent: percent }),
       });
     });
-  const handleApplyPercent = () =>
-    run(() =>
+  const openAllocation = (clicked: SignalVoteDirection) => {
+    setOpen(false);
+    setError(null);
+    setPercent(direction === clicked ? myUpvotePercent(summary) : 100);
+    setAllocationDirection((current) => (current === clicked ? null : clicked));
+  };
+  const handleArrow = (clicked: SignalVoteDirection) => {
+    if (allocatesPower) {
+      openAllocation(clicked);
+      return;
+    }
+    void handleDirection(clicked);
+  };
+  const handleConfirmAllocation = () => {
+    if (!allocationDirection) return;
+    const clicked = allocationDirection;
+    void run(() =>
       upvote({
         slug: trimmedSlug,
+        direction: clicked,
         votingPowerPercent: percent,
-        direction: direction ?? 'up',
       }),
-    );
-  const handleRemove = () => run(() => removeUpvote({ slug: trimmedSlug }));
+    ).then((ok) => {
+      if (ok) setAllocationDirection(null);
+    });
+  };
+  const handleRemove = () =>
+    void run(() => removeUpvote({ slug: trimmedSlug })).then((ok) => {
+      if (ok) {
+        setOpen(false);
+        setAllocationDirection(null);
+      }
+    });
 
   const stopPropagation = React.useCallback(
     (event: React.SyntheticEvent) => event.stopPropagation(),
@@ -291,13 +341,29 @@ export function SignalUpvoteButton({
       : cellMeasure.kind === 'count'
       ? format.number(cellMeasure.count)
       : figureLabel;
-  const cellLabel = t('net');
-  const upLabel = direction === 'up' ? t('removeUpvote') : t('upvote');
-  const downLabel = direction === 'down' ? t('removeDownvote') : t('downvote');
+  const upLabel = allocatesPower
+    ? direction === 'up'
+      ? t('updateVote')
+      : t('upvote')
+    : direction === 'up'
+    ? t('removeUpvote')
+    : t('upvote');
+  const downLabel = allocatesPower
+    ? direction === 'down'
+      ? t('updateVote')
+      : t('downvote')
+    : direction === 'down'
+    ? t('removeDownvote')
+    : t('downvote');
+  const chosenAmount = allocationAmount(summary, percent, locale);
+  const allocationLabel =
+    allocationDirection === 'down'
+      ? t('downvoteWithVotingPower')
+      : t('upvoteWithVotingPower');
 
   return (
     <div
-      className={cn('shrink-0', className)}
+      className={cn('inline-flex shrink-0 items-center', className)}
       onClick={stopPropagation}
       onKeyDown={stopPropagation}
     >
@@ -307,7 +373,7 @@ export function SignalUpvoteButton({
           if (next && !canOpen) return;
           setOpen(next);
           if (next) {
-            setPercent(myUpvotePercent(summary));
+            setAllocationDirection(null);
             setError(null);
           }
         }}
@@ -317,21 +383,128 @@ export function SignalUpvoteButton({
             <SignalUpvoteCellChrome
               figure={figureLabel}
               exactLabel={exactLabel}
-              label={cellLabel}
               pressed={hasVoted}
               direction={direction}
               upLabel={upLabel}
               downLabel={downLabel}
+              figureLabel={`${t('votes')} · ${exactLabel}`}
               voteDisabled={!canVote || isMutating}
-              onVoteUp={() => handleDirection('up')}
-              onVoteDown={() => handleDirection('down')}
+              onVoteUp={() => handleArrow('up')}
+              onVoteDown={() => handleArrow('down')}
               onFigureClick={() => {
                 if (!canOpen) return;
+                setAllocationDirection(null);
                 setOpen((current) => !current);
-                setPercent(myUpvotePercent(summary));
                 setError(null);
               }}
-              aria-label={`${t('net')} · ${exactLabel}`}
+              allocationDirection={allocationDirection}
+              onAllocationClose={() => setAllocationDirection(null)}
+              allocationPanel={
+                allocatesPower ? (
+                  <PopoverContent
+                    align="start"
+                    sideOffset={6}
+                    data-testid="signal-vote-allocation"
+                    className="w-[min(16rem,calc(100vw-2rem))] rounded-none border border-border/80 bg-background-2 p-3 shadow-md"
+                    style={spaceAccentPortalStyle}
+                    data-space-accent-scope
+                    onClick={stopPropagation}
+                  >
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-1 text-foreground">
+                          {allocationLabel}
+                        </span>
+                        <label className="inline-flex items-center gap-1 text-1 font-semibold tabular-nums text-foreground">
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            max={100}
+                            step={1}
+                            value={percent}
+                            disabled={isMutating}
+                            aria-label={t('votingPowerPercent')}
+                            data-testid="signal-vote-percent"
+                            className="h-7 w-14 border border-border bg-transparent px-1 text-right text-1 tabular-nums text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            onChange={(event) => {
+                              const raw = event.target.value;
+                              if (raw.trim() === '') return;
+                              const next = Number(raw);
+                              if (!Number.isFinite(next)) return;
+                              setPercent(
+                                Math.min(100, Math.max(1, Math.round(next))),
+                              );
+                            }}
+                          />
+                          <span aria-hidden>%</span>
+                        </label>
+                      </div>
+                      {chosenAmount ? (
+                        <p className="m-0 text-1 tabular-nums text-muted-foreground">
+                          {t('votingPowerAllocated', { amount: chosenAmount })}
+                        </p>
+                      ) : null}
+                      <Slider
+                        min={1}
+                        max={100}
+                        step={1}
+                        value={[percent]}
+                        onValueChange={(value) => setPercent(value[0] ?? 100)}
+                        disabled={isMutating}
+                        aria-label={allocationLabel}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          colorVariant="neutral"
+                          size="sm"
+                          disabled={isMutating}
+                          data-testid="signal-vote-cancel"
+                          onClick={() => setAllocationDirection(null)}
+                        >
+                          {t('cancelVote')}
+                        </Button>
+                        <Button
+                          type="button"
+                          colorVariant="accent"
+                          size="sm"
+                          disabled={isMutating}
+                          data-testid="signal-vote-confirm"
+                          onClick={handleConfirmAllocation}
+                        >
+                          {t('confirmVote')}
+                        </Button>
+                      </div>
+                      {hasVoted ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          colorVariant="neutral"
+                          size="sm"
+                          className="w-full text-muted-foreground hover:text-foreground"
+                          disabled={isMutating}
+                          onClick={() => void handleRemove()}
+                        >
+                          {direction === 'down'
+                            ? t('removeDownvote')
+                            : t('removeUpvote')}
+                        </Button>
+                      ) : null}
+                      {error ? (
+                        <p
+                          role="alert"
+                          className="border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
+                        >
+                          {error}
+                        </p>
+                      ) : null}
+                    </div>
+                  </PopoverContent>
+                ) : undefined
+              }
+              aria-label={`${t('votes')} · ${exactLabel}`}
               aria-busy={!canOpen}
               data-upvote-variant={variant}
               data-upvote-measure={cellMeasure.kind}
@@ -386,88 +559,11 @@ export function SignalUpvoteButton({
                 totalLabel={totalLabel}
                 mode={isOneMemberOneVote ? 'count' : 'power'}
               />
-
               {isOneMemberOneVote ? (
-                <>
-                  <span className="-mt-2 text-1 text-muted-foreground">
-                    {t('oneMemberOneVote')}
-                  </span>
-                  {canVote ? (
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant={direction === 'up' ? 'default' : 'outline'}
-                        colorVariant="accent"
-                        className="w-full gap-2"
-                        disabled={isMutating}
-                        aria-pressed={direction === 'up'}
-                        onClick={() => handleDirection('up')}
-                      >
-                        <SignalUpvoteTriangle />
-                        {direction === 'up' ? t('upvoted') : t('upvote')}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={direction === 'down' ? 'default' : 'outline'}
-                        colorVariant="error"
-                        className="w-full gap-2"
-                        disabled={isMutating}
-                        aria-pressed={direction === 'down'}
-                        onClick={() => handleDirection('down')}
-                      >
-                        <SignalUpvoteTriangle className="rotate-180" />
-                        {direction === 'down' ? t('downvoted') : t('downvote')}
-                      </Button>
-                    </div>
-                  ) : null}
-                </>
-              ) : canVote ? (
-                <>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-1 text-foreground">
-                      {direction === 'down'
-                        ? t('downvoteWithVotingPower')
-                        : t('upvoteWithVotingPower')}
-                    </span>
-                    <span className="text-1 font-semibold tabular-nums text-foreground">
-                      {percent}%
-                    </span>
-                  </div>
-                  <Slider
-                    min={1}
-                    max={100}
-                    step={1}
-                    value={[percent]}
-                    onValueChange={(value) => setPercent(value[0] ?? 100)}
-                    disabled={isMutating}
-                    aria-label={t('upvoteWithVotingPower')}
-                  />
-                  <Button
-                    type="button"
-                    colorVariant="accent"
-                    className="w-full gap-2"
-                    disabled={isMutating}
-                    onClick={() => void handleApplyPercent()}
-                  >
-                    <SignalUpvoteTriangle />
-                    {hasVoted ? t('updateUpvote') : t('upvote')}
-                  </Button>
-                  {hasVoted ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      colorVariant="neutral"
-                      size="sm"
-                      className="-mt-1 w-full text-muted-foreground hover:text-foreground"
-                      disabled={isMutating}
-                      onClick={() => void handleRemove()}
-                    >
-                      {t('removeUpvote')}
-                    </Button>
-                  ) : null}
-                </>
+                <span className="-mt-2 text-1 text-muted-foreground">
+                  {t('oneMemberOneVote')}
+                </span>
               ) : null}
-
               {!canVote ? (
                 <p className="text-1 leading-relaxed text-muted-foreground">
                   {isBlockedNonMember
@@ -477,7 +573,6 @@ export function SignalUpvoteButton({
                     : t('signInToUpvote')}
                 </p>
               ) : null}
-
               {error ? (
                 <p
                   role="alert"
@@ -486,7 +581,6 @@ export function SignalUpvoteButton({
                   {error}
                 </p>
               ) : null}
-
               <Separator className="bg-border/70" />
               <SignalVoteRoster
                 summary={summary}
