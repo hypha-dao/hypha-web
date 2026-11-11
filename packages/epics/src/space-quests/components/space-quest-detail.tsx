@@ -436,6 +436,45 @@ function EditHealthDialog({
   );
 }
 
+function milestoneOwnerPortrait(
+  milestone: { ownerPersonId: number | null; ownerName: string | null },
+  members: readonly {
+    personId: number | null;
+    memberName: string;
+    memberAvatarUrl: string | null;
+  }[],
+  spaceMembers: readonly QuestSpaceMember[],
+  viewer: { id: number; name: string; avatarUrl?: string | null } | null,
+): { avatarSrc?: string; personId?: number } {
+  const ownerName = milestone.ownerName?.trim() ?? '';
+  const member = members.find((entry) => {
+    if (
+      milestone.ownerPersonId &&
+      milestone.ownerPersonId > 0 &&
+      entry.personId === milestone.ownerPersonId
+    ) {
+      return true;
+    }
+    return (
+      ownerName.length > 0 &&
+      entry.memberName.trim().toLowerCase() === ownerName.toLowerCase()
+    );
+  });
+  if (member) return participantPortrait(member, spaceMembers, viewer);
+  const roster = findQuestSpaceMember(spaceMembers, {
+    personId: milestone.ownerPersonId,
+    name: ownerName,
+  });
+  const personId =
+    (milestone.ownerPersonId && milestone.ownerPersonId > 0
+      ? milestone.ownerPersonId
+      : undefined) ?? roster?.personId;
+  return {
+    avatarSrc: roster?.avatarUrl?.trim() || undefined,
+    personId,
+  };
+}
+
 function participantPortrait(
   member: {
     personId: number | null;
@@ -561,7 +600,18 @@ function OverviewTab({
         ) : null}
 
         {visibility.showMilestones ? (
-          <QuestMilestonesCard milestones={quest.milestones} locale={locale} />
+          <QuestMilestonesCard
+            milestones={quest.milestones.map((milestone) => ({
+              ...milestone,
+              ...milestoneOwnerPortrait(
+                milestone,
+                quest.members,
+                spaceMembers,
+                viewer,
+              ),
+            }))}
+            locale={locale}
+          />
         ) : null}
 
         <section className={CARD_CLASS} data-testid="quest-overview-health">
@@ -1397,7 +1447,6 @@ export function SpaceQuestDetail({
   const canEdit = editableStatus && canMemberEditQuest(viewer, quest);
   const isLead = editableStatus && isViewerQuestLead(viewer, quest);
   const canChangeMilestones = canChangeMilestoneStatus(viewer, quest);
-  const health = healthPresentation(quest);
   const memberOptions = Array.from(
     new Set([
       ...spaceMembers.map((m) => m.name),
@@ -1766,15 +1815,6 @@ export function SpaceQuestDetail({
               {quest.name}
             </h1>
             <QuestStatusBadge quest={quest} />
-            {showQuestHealthTag(quest) ? (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
-                <span
-                  className={cn('size-2 rounded-full', health.dotClass)}
-                  aria-hidden
-                />
-                <span className={health.textClass}>{health.label}</span>
-              </span>
-            ) : null}
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <button

@@ -155,7 +155,41 @@ export type QuestMilestoneCardModel = {
   dueDate: string | null;
   ownerName: string | null;
   status: QuestMilestoneStatus;
+  avatarSrc?: string | null;
+  personId?: number | null;
 };
+
+function MemberPortrait({
+  name,
+  avatarSrc,
+  personId,
+}: {
+  name: string;
+  avatarSrc?: string | null;
+  personId?: number | null;
+}) {
+  const initial = name.trim()[0]?.toUpperCase() ?? '';
+  if (avatarSrc?.trim()) {
+    return (
+      <PersonAvatar
+        size="sm"
+        shape="circle"
+        showPresence={false}
+        avatarSrc={avatarSrc}
+        userName={name}
+        personId={personId && personId > 0 ? personId : undefined}
+      />
+    );
+  }
+  return (
+    <span
+      className="grid size-6 shrink-0 place-items-center rounded-full bg-foreground text-[10px] font-bold text-background"
+      aria-hidden
+    >
+      {initial}
+    </span>
+  );
+}
 
 export function QuestMilestonesCard({
   milestones,
@@ -198,27 +232,34 @@ export function QuestMilestonesCard({
                 aria-expanded={isOpen}
                 data-testid={`quest-milestone-toggle-${milestone.id}`}
               >
-                <span className="w-7 shrink-0 pt-0.5 text-xs font-semibold text-neutral-11">
+                <span className="w-8 shrink-0 text-2 font-semibold leading-relaxed text-neutral-11">
                   M{milestone.order}
                 </span>
                 <span
                   className="min-w-0 flex-1"
                   data-testid={`quest-milestone-meta-${milestone.id}`}
                 >
-                  <span className="block break-words text-[13px] font-semibold text-foreground [overflow-wrap:anywhere]">
+                  <span className="block break-words text-2 font-semibold leading-relaxed text-foreground [overflow-wrap:anywhere]">
                     {milestone.name}
                   </span>
                   {lines.owner ? (
                     <span
-                      className="mt-0.5 block break-words text-[11px] text-neutral-11"
+                      className="mt-1 flex items-center gap-2 text-2 leading-relaxed text-neutral-11"
                       data-testid={`quest-milestone-owner-${milestone.id}`}
                     >
-                      {lines.owner}
+                      <MemberPortrait
+                        name={lines.owner}
+                        avatarSrc={milestone.avatarSrc}
+                        personId={milestone.personId}
+                      />
+                      <span className="min-w-0 break-words [overflow-wrap:anywhere]">
+                        {lines.owner}
+                      </span>
                     </span>
                   ) : null}
                   {lines.date ? (
                     <span
-                      className="block break-words text-[11px] text-neutral-11"
+                      className="mt-1 block break-words text-2 leading-relaxed text-neutral-11 [overflow-wrap:anywhere]"
                       data-testid={`quest-milestone-date-${milestone.id}`}
                     >
                       {lines.date}
@@ -227,23 +268,24 @@ export function QuestMilestonesCard({
                 </span>
                 <span
                   className={cn(
-                    'mt-0.5 shrink-0 px-2 py-0.5 text-[11px] font-semibold',
+                    'shrink-0 px-2 py-0.5 text-2 font-semibold leading-relaxed',
                     meta.className,
                   )}
                 >
                   {meta.label}
                 </span>
                 {isOpen ? (
-                  <ChevronUp className="mt-0.5 size-3.5 shrink-0 text-neutral-11" />
+                  <ChevronUp className="mt-1 size-4 shrink-0 text-neutral-11" />
                 ) : (
-                  <ChevronDown className="mt-0.5 size-3.5 shrink-0 text-neutral-11" />
+                  <ChevronDown className="mt-1 size-4 shrink-0 text-neutral-11" />
                 )}
               </button>
               {isOpen && showDescription ? (
-                <div className="mt-2 pl-10">
+                <div className="mt-2 pl-11">
                   <QuestSectionMarkdown
                     markdown={milestone.description}
                     empty=""
+                    variant="body"
                   />
                 </div>
               ) : null}
@@ -251,9 +293,6 @@ export function QuestMilestonesCard({
           );
         })}
       </div>
-      <p className="mt-3 text-[11px] text-neutral-11">
-        Click a milestone to expand its description.
-      </p>
     </section>
   );
 }
@@ -412,19 +451,19 @@ export function QuestParticipantsCard({
                   </span>
                 )}
                 <span className="min-w-0 flex-1">
-                  <span className="block break-words text-[13px] font-semibold text-foreground">
+                  <span className="block break-words text-3 font-semibold leading-relaxed text-foreground">
                     {member.memberName}
                   </span>
                   {role ? (
-                    <span className="block break-words text-[11px] text-neutral-11">
+                    <span className="block break-words text-2 leading-relaxed text-neutral-11">
                       {role}
                     </span>
                   ) : null}
                 </span>
                 {isOpen ? (
-                  <ChevronUp className="mt-0.5 size-3.5 shrink-0 text-neutral-11" />
+                  <ChevronUp className="mt-1 size-4 shrink-0 text-neutral-11" />
                 ) : (
-                  <ChevronDown className="mt-0.5 size-3.5 shrink-0 text-neutral-11" />
+                  <ChevronDown className="mt-1 size-4 shrink-0 text-neutral-11" />
                 )}
               </button>
               {isOpen && points.length > 0 ? (

@@ -847,6 +847,31 @@ describe('saved quest helper entry', () => {
     );
     expect(overview.textContent).toContain('M1');
     expect(overview.textContent).toContain('M2');
+    expect(overview.textContent).not.toContain(
+      'Click a milestone to expand its description.',
+    );
+  });
+
+  it('keeps the status tag and drops the header health label', () => {
+    const quest = questFixture();
+    const milestone = quest.milestones[0];
+    if (!milestone) throw new Error('expected a milestone');
+    milestone.ownerName = 'Ada Lovelace';
+    milestone.ownerPersonId = 7;
+    harness.quest = quest;
+    render(<SpaceQuestDetail spaceSlug="sandbox" questSlug="onboarding" />);
+
+    const header = screen
+      .getByRole('heading', { name: 'Onboarding' })
+      .closest('header');
+    expect(header?.textContent).toContain('Active');
+    expect(header?.textContent).not.toMatch(
+      /On track|Off track|At risk|Not started/,
+    );
+    expect(screen.getByTestId('quest-health-label')).toBeTruthy();
+    const owner = screen.getByTestId('quest-milestone-owner-1');
+    expect(owner.textContent).toContain('Ada Lovelace');
+    expect(owner.querySelector('[aria-hidden]')?.textContent).toBe('A');
   });
 
   it('shows a dated active quest on track in the green part of the bar', () => {

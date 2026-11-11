@@ -143,11 +143,25 @@ describe('quest detail presentation', () => {
 
     const owner = screen.getByTestId('quest-milestone-owner-1');
     const date = screen.getByTestId('quest-milestone-date-1');
-    expect(owner.textContent).toBe('Grace Hopper');
+    expect(owner.textContent).toContain('Grace Hopper');
+    expect(owner.querySelector('[aria-hidden]')?.textContent).toBe('G');
     expect(date.textContent).toBe('20 November 2026');
     expect(owner.nextElementSibling).toBe(date);
-    expect(owner.className).toContain('block');
+    expect(owner.className).toContain('flex');
+    expect(owner.className).toContain('items-center');
+    expect(owner.className).toContain('text-2');
+    expect(owner.className).toContain('leading-relaxed');
     expect(date.className).toContain('block');
+    expect(date.className).toContain('text-2');
+    expect(date.className).toContain('leading-relaxed');
+    expect(screen.getByText('Draft the brief').className).toContain('text-2');
+    expect(screen.getByText('Draft the brief').className).toContain(
+      'leading-relaxed',
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Milestones' }).className,
+    ).toContain('text-[15px]');
+    expect(screen.queryByText(/Click a milestone to expand/)).toBeNull();
     expect(owner.parentElement?.textContent).not.toContain('·');
     expect(owner.parentElement?.textContent).not.toContain('—');
     expect(screen.queryByTestId('quest-milestone-owner-2')).toBeNull();
@@ -174,6 +188,42 @@ describe('quest detail presentation', () => {
     fireEvent.click(second);
     expect(first.getAttribute('aria-expanded')).toBe('true');
     expect(second.getAttribute('aria-expanded')).toBe('false');
+    const description = screen.getByText('Write the first pass').closest('div');
+    expect(description?.className).toContain('text-2');
+    expect(description?.className).toContain('leading-relaxed');
+  });
+
+  it('shows the assigned member photo, or initials when there is none', () => {
+    const restore = withLoadedAvatars();
+    try {
+      render(
+        <QuestMilestonesCard
+          locale="en"
+          milestones={[
+            {
+              id: 1,
+              order: 1,
+              name: 'Draft the brief',
+              description: '',
+              dueDate: null,
+              ownerName: 'Ada Lovelace',
+              status: 'not_started',
+              avatarSrc: 'https://cdn.example/ada.png',
+              personId: 4,
+            },
+          ]}
+        />,
+      );
+      const owner = screen.getByTestId('quest-milestone-owner-1');
+      expect(
+        within(owner)
+          .getByRole('img', { name: "Ada Lovelace's avatar" })
+          .getAttribute('src'),
+      ).toBe('https://cdn.example/ada.png');
+      expect(within(owner).getByText('Ada Lovelace')).toBeTruthy();
+    } finally {
+      restore();
+    }
   });
 
   it('keeps participant roles and points without a responsibilities count', () => {
@@ -219,8 +269,19 @@ describe('quest detail presentation', () => {
     expect(screen.getByText('Ada Lovelace').className).not.toMatch(
       /(?:^|\s)uppercase(?:\s|$)/,
     );
+    expect(screen.getByText('Ada Lovelace').className).toContain('text-3');
+    expect(screen.getByText('Ada Lovelace').className).toContain(
+      'leading-relaxed',
+    );
     expect(screen.getByText('Researcher').className).not.toMatch(
       /(?:^|\s)uppercase(?:\s|$)/,
+    );
+    expect(screen.getByText('Researcher').className).toContain('text-2');
+    expect(screen.getByText('Researcher').className).toContain(
+      'leading-relaxed',
+    );
+    expect(screen.getByText('RESPONSIBILITY').className).toContain(
+      'text-[10px]',
     );
     expect(screen.queryByText(/\d+\s+responsibilit/i)).toBeNull();
     expect(screen.getByText('RESPONSIBILITY')).toBeTruthy();
