@@ -17,6 +17,13 @@ import { QuestRewardTokenCard } from './quest-reward-tokens';
 const LABEL_CLASS =
   'text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11';
 
+/** Same type as a milestone date line. */
+const MILESTONE_DATE_CLASS = 'text-2 leading-relaxed text-neutral-11';
+
+/** Same type as the Scope card's "In Scope" label. */
+const SCOPE_LABEL_CLASS =
+  'text-2 font-semibold leading-relaxed text-foreground';
+
 /**
  * Stored quest-participant display label (`roleLabel`).
  * Empty text is not a role. Quest lead identity still reads "Lead" when no
@@ -259,7 +266,7 @@ export function QuestMilestonesCard({
                   ) : null}
                   {lines.date ? (
                     <span
-                      className="mt-1 block break-words text-2 leading-relaxed text-neutral-11 [overflow-wrap:anywhere]"
+                      className={`mt-1 block break-words ${MILESTONE_DATE_CLASS} [overflow-wrap:anywhere]`}
                       data-testid={`quest-milestone-date-${milestone.id}`}
                     >
                       {lines.date}
@@ -468,7 +475,7 @@ export function QuestParticipantsCard({
               </button>
               {isOpen && points.length > 0 ? (
                 <div className="mt-2 space-y-1 pl-8">
-                  <p className={LABEL_CLASS}>RESPONSIBILITY</p>
+                  <p className={SCOPE_LABEL_CLASS}>Responsibility</p>
                   <div className="space-y-1.5 text-[13.5px] leading-relaxed text-foreground">
                     {points.map((item, index) => (
                       <p key={`${member.id}-${index}`} className="flex gap-2">
@@ -502,10 +509,7 @@ export function QuestTargetDateCard({
       data-testid="quest-overview-target-date"
     >
       <CardHeading title="Target Date" onEdit={onEdit} />
-      <p
-        className="text-[13px] font-medium leading-relaxed text-foreground"
-        data-testid="quest-target-date-value"
-      >
+      <p className={MILESTONE_DATE_CLASS} data-testid="quest-target-date-value">
         {label}
       </p>
     </section>

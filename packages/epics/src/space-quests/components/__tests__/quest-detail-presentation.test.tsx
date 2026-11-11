@@ -152,8 +152,7 @@ describe('quest detail presentation', () => {
     expect(owner.className).toContain('text-2');
     expect(owner.className).toContain('leading-relaxed');
     expect(date.className).toContain('block');
-    expect(date.className).toContain('text-2');
-    expect(date.className).toContain('leading-relaxed');
+    expect(date.className).toContain('text-2 leading-relaxed text-neutral-11');
     expect(screen.getByText('Draft the brief').className).toContain('text-2');
     expect(screen.getByText('Draft the brief').className).toContain(
       'leading-relaxed',
@@ -280,11 +279,14 @@ describe('quest detail presentation', () => {
     expect(screen.getByText('Researcher').className).toContain(
       'leading-relaxed',
     );
-    expect(screen.getByText('RESPONSIBILITY').className).toContain(
-      'text-[10px]',
+    const responsibility = screen.getByText('Responsibility');
+    expect(responsibility.className).toBe(
+      'text-2 font-semibold leading-relaxed text-foreground',
     );
+    expect(responsibility.className).not.toMatch(/(?:^|\s)uppercase(?:\s|$)/);
+    expect(responsibility.className).not.toContain('tracking');
+    expect(screen.queryByText('RESPONSIBILITY')).toBeNull();
     expect(screen.queryByText(/\d+\s+responsibilit/i)).toBeNull();
-    expect(screen.getByText('RESPONSIBILITY')).toBeTruthy();
     expect(screen.getByText('Researcher')).toBeTruthy();
     const ada = screen.getByTestId('quest-participant-toggle-7');
     const grace = screen.getByTestId('quest-participant-toggle-8');
@@ -341,10 +343,7 @@ describe('quest detail presentation', () => {
     expect(screen.getByRole('heading', { name: 'Target Date' })).toBeTruthy();
     const value = screen.getByTestId('quest-target-date-value');
     expect(value.textContent).toBe('20 November 2026');
-    expect(value.className).toContain('text-[13px]');
-    expect(value.className).toContain('font-medium');
-    expect(value.className).toContain('leading-relaxed');
-    expect(value.className).toContain('text-foreground');
+    expect(value.className).toBe('text-2 leading-relaxed text-neutral-11');
   });
 
   it('lays reward tokens out as compact wrapping boxes', () => {
