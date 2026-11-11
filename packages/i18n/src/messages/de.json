@@ -5769,7 +5769,8 @@
       "paused": "Pausiert",
       "completed": "Abgeschlossen",
       "rejected": "Abgelehnt",
-      "drafts": "Meine Entwürfe"
+      "drafts": "Meine Entwürfe",
+      "status": "Status"
     },
     "activity": {
       "proposalRejected": "Vorschlag abgelehnt"

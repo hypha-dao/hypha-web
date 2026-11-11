@@ -5765,7 +5765,8 @@
       "paused": "En pause",
       "completed": "Terminées",
       "rejected": "Rejetées",
-      "drafts": "Mes brouillons"
+      "drafts": "Mes brouillons",
+      "status": "Statut"
     },
     "activity": {
       "proposalRejected": "proposition rejetée"

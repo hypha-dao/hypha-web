@@ -165,20 +165,37 @@ afterEach(() => {
   cleanup();
 });
 
+function openQuestStatusFilter() {
+  const trigger = screen.getByTestId('quest-status-filter');
+  trigger.focus();
+  fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+}
+
 describe('rejected quest filter', () => {
   it('lists a rejected proposal under Rejected and not under Proposed', () => {
     render(<SpaceQuestsSection spaceSlug="sandbox" />);
 
+    const trigger = screen.getByTestId('quest-status-filter');
+    expect(trigger.textContent).toContain('filters.active');
+    openQuestStatusFilter();
+    const menu = screen.getByTestId('quest-status-filter-menu');
+    expect(menu.className).toContain('min-w-44');
+    expect(menu.className).toContain('rounded-none');
     expect(
-      screen.getAllByRole('tab').map((tab) => tab.getAttribute('data-testid')),
+      ['active', 'proposed', 'paused', 'completed', 'rejected', 'drafts'].map(
+        (key) => screen.getByTestId(`quest-filter-${key}`).textContent,
+      ),
     ).toEqual([
-      'quest-filter-active',
-      'quest-filter-proposed',
-      'quest-filter-paused',
-      'quest-filter-completed',
-      'quest-filter-rejected',
-      'quest-filter-drafts',
+      'filters.active',
+      'filters.proposed',
+      'filters.paused',
+      'filters.completed',
+      'filters.rejected',
+      'filters.drafts',
     ]);
+    expect(screen.getByTestId('quest-filter-active').className).toContain(
+      'uppercase',
+    );
 
     fireEvent.click(screen.getByTestId('quest-filter-proposed'));
     expect(screen.getByText('Voting quest')).toBeTruthy();
@@ -187,6 +204,7 @@ describe('rejected quest filter', () => {
       'Vlad · 3h ago: proposed, waiting for votes',
     );
 
+    openQuestStatusFilter();
     fireEvent.click(screen.getByTestId('quest-filter-rejected'));
     expect(screen.queryByText('Voting quest')).toBeNull();
     const card = screen.getByTestId('quest-card-voted-down');
@@ -196,9 +214,8 @@ describe('rejected quest filter', () => {
     expect(card.textContent).not.toContain('Proposed');
     expect(card.textContent).not.toContain('waiting for votes');
     expect(card.textContent).not.toMatch(/On track|Off track|Not started/);
-    expect(
-      screen.getByTestId('quest-card-image-voted-down').getAttribute('src'),
-    ).toBe('https://cdn.example/space.jpg');
+    expect(card.querySelector('img')).toBeNull();
+    expect(screen.queryByTestId('quest-card-image-voted-down')).toBeNull();
     expect(card.querySelector('[class*="border-error-8/70"]')).toBeTruthy();
   });
 });

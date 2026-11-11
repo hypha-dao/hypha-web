@@ -18,16 +18,23 @@ import {
   DialogContent,
   DialogDescription,
   DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
   Input,
   Skeleton,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { SearchIcon } from 'lucide-react';
+import { ChevronDown, SearchIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { QuestStatusBadge } from './quest-status-badge';
+import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import {
   deleteQuestDraftRequest,
@@ -38,17 +45,6 @@ import {
   type QuestSpaceMember,
 } from '../hooks/use-space-quests';
 import { questRichTextPlain } from '../utils/quest-rich-text';
-
-const PLACEHOLDER_LEAD_IMAGES = new Set([
-  '/placeholder/document-lead-image.webp',
-  '/placeholder/space-lead-image.webp',
-]);
-
-function questCardLeadImage(src: string | null | undefined): string | null {
-  const trimmed = src?.trim() ?? '';
-  if (!trimmed || PLACEHOLDER_LEAD_IMAGES.has(trimmed)) return null;
-  return trimmed;
-}
 
 function showQuestHealthTag(
   quest: Pick<QuestRecord, 'status' | 'proposalStatus'>,
@@ -225,13 +221,11 @@ export function QuestCard({
   href,
   locale = 'en',
   spaceMembers = [],
-  spaceLeadImage = null,
 }: {
   quest: QuestRecord;
   href: string;
   locale?: string;
   spaceMembers?: readonly QuestSpaceMember[];
-  spaceLeadImage?: string | null;
 }) {
   const t = useTranslations('SpaceQuests');
   const health = cardHealth(quest);
@@ -241,7 +235,6 @@ export function QuestCard({
   const leadPortrait = questLeadPortrait(quest, spaceMembers);
   const goalPlain = questRichTextPlain(quest.goal);
   const targetLabel = questCardTargetLabel(quest.targetDate, locale);
-  const leadImage = questCardLeadImage(spaceLeadImage);
 
   return (
     <Link
@@ -249,14 +242,6 @@ export function QuestCard({
       data-testid={`quest-card-${quest.slug}`}
       className="craft-card-interactive group flex h-full min-w-0 w-full max-w-full flex-col gap-2.5 p-3.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
     >
-      {leadImage ? (
-        <img
-          src={leadImage}
-          alt=""
-          data-testid={`quest-card-image-${quest.slug}`}
-          className="-mx-3.5 -mt-3.5 h-36 w-[calc(100%+1.75rem)] max-w-none object-cover"
-        />
-      ) : null}
       <div className="flex items-center justify-between gap-2">
         <QuestStatusBadge quest={quest} />
         {showQuestHealthTag(quest) ? (
@@ -338,6 +323,75 @@ export function QuestCard({
 }
 
 type QuestListView = QuestListFilter | 'drafts';
+
+const STATUS_MENU_CLASS =
+  'min-w-44 rounded-none border border-border bg-background p-1 text-foreground shadow-none';
+
+const STATUS_ITEM_CLASS =
+  'rounded-none text-1 uppercase tracking-[0.12em] data-[state=checked]:bg-foreground/5';
+
+function QuestStatusFilter({
+  value,
+  options,
+  onChange,
+}: {
+  value: QuestListView;
+  options: ReadonlyArray<{ value: QuestListView; label: string }>;
+  onChange: (value: QuestListView) => void;
+}) {
+  const t = useTranslations('SpaceQuests');
+  const portalStyle = useSpaceAccentPortalStyles();
+  const label =
+    options.find((option) => option.value === value)?.label ??
+    t('filters.active');
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          data-testid="quest-status-filter"
+          className="data-[state=open]:border-foreground/40 data-[state=open]:bg-foreground/5"
+        >
+          {label}
+          <ChevronDown
+            className="size-3.5 shrink-0"
+            strokeWidth={1.25}
+            aria-hidden
+          />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        sideOffset={6}
+        className={STATUS_MENU_CLASS}
+        style={portalStyle}
+        data-space-accent-scope
+        data-testid="quest-status-filter-menu"
+      >
+        <DropdownMenuLabel className="px-3 pb-1.5 pt-2 text-1 font-medium text-muted-foreground">
+          {t('filters.status')}
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={value}
+          onValueChange={(next) => onChange(next as QuestListView)}
+        >
+          {options.map((option) => (
+            <DropdownMenuRadioItem
+              key={option.value}
+              value={option.value}
+              className={STATUS_ITEM_CLASS}
+              data-testid={`quest-filter-${option.value}`}
+            >
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
   const locale = useLocale();
@@ -502,49 +556,22 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
       </div>
 
       <div
-        role="tablist"
-        aria-label={t('title')}
         className="flex flex-wrap items-center gap-2"
+        data-testid="quest-status-filter-row"
       >
-        {QUEST_LIST_FILTERS.map((key) => {
-          const active = filter === key;
-          const count = counts[key];
-          return (
-            <Button
-              key={key}
-              type="button"
-              variant="outline"
-              role="tab"
-              aria-selected={active}
-              data-testid={`quest-filter-${key}`}
-              onClick={() => setFilter(key)}
-              className={cn(
-                'gap-1',
-                active && 'border-foreground/40 bg-foreground/5',
-              )}
-            >
-              <span>{filterLabels[key]}</span>
-              <span>{count}</span>
-            </Button>
-          );
-        })}
-        {draftsVisible ? (
-          <Button
-            type="button"
-            variant="outline"
-            role="tab"
-            aria-selected={showingDrafts}
-            data-testid="quest-filter-drafts"
-            onClick={() => setFilter('drafts')}
-            className={cn(
-              'gap-1',
-              showingDrafts && 'border-foreground/40 bg-foreground/5',
-            )}
-          >
-            <span>{t('filters.drafts')}</span>
-            <span>{drafts.length}</span>
-          </Button>
-        ) : null}
+        <QuestStatusFilter
+          value={filter}
+          options={[
+            ...QUEST_LIST_FILTERS.map((key) => ({
+              value: key,
+              label: filterLabels[key],
+            })),
+            ...(draftsVisible
+              ? [{ value: 'drafts' as const, label: t('filters.drafts') }]
+              : []),
+          ]}
+          onChange={setFilter}
+        />
       </div>
 
       {/* Grid of Quest cards (no Kanban board) */}
@@ -618,7 +645,6 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
               quest={quest}
               locale={locale}
               spaceMembers={spaceMembers}
-              spaceLeadImage={space?.leadImage}
               href={`/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
                 quest.slug,
               )}`}

@@ -5774,7 +5774,8 @@
       "paused": "Pauset",
       "completed": "Fullført",
       "rejected": "Avvist",
-      "drafts": "Mine utkast"
+      "drafts": "Mine utkast",
+      "status": "Status"
     },
     "activity": {
       "proposalRejected": "forslag avvist"

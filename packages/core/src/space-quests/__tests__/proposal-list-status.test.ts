@@ -59,7 +59,7 @@ function quest(
 }
 
 describe('rejected quest list status', () => {
-  it('places the Rejected chip after Completed', () => {
+  it('places Rejected after Completed in the status filter', () => {
     expect(QUEST_LIST_FILTERS).toEqual([
       'active',
       'proposed',

@@ -5756,7 +5756,8 @@
       "paused": "Паузирани",
       "completed": "Завршени",
       "rejected": "Одбиени",
-      "drafts": "Мои нацрти"
+      "drafts": "Мои нацрти",
+      "status": "Статус"
     },
     "activity": {
       "proposalRejected": "предлогот е одбиен"

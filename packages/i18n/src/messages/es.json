@@ -5783,7 +5783,8 @@
       "paused": "En pausa",
       "completed": "Completadas",
       "rejected": "Rechazadas",
-      "drafts": "Mis borradores"
+      "drafts": "Mis borradores",
+      "status": "Estado"
     },
     "activity": {
       "proposalRejected": "propuesta rechazada"

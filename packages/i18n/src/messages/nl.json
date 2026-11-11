@@ -5775,7 +5775,8 @@
       "paused": "Gepauzeerd",
       "completed": "Voltooid",
       "rejected": "Afgewezen",
-      "drafts": "Mijn concepten"
+      "drafts": "Mijn concepten",
+      "status": "Status"
     },
     "activity": {
       "proposalRejected": "voorstel afgewezen"

@@ -7,7 +7,6 @@ import {
   render,
   screen,
   waitFor,
-  within,
 } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SpaceQuestsSection } from '../space-quests-section';
@@ -146,21 +145,15 @@ describe('quest list drafts', () => {
       '/en/dho/sandbox/quests/new?fresh=1',
     );
     expect(create.textContent).toBe('newQuest');
-    const filters = screen.getByRole('tablist');
-    expect(
-      within(filters)
-        .getAllByRole('tab')
-        .map((tab) => tab.getAttribute('data-testid')),
-    ).toEqual([
-      'quest-filter-active',
-      'quest-filter-proposed',
-      'quest-filter-paused',
-      'quest-filter-completed',
-      'quest-filter-rejected',
-      'quest-filter-drafts',
-    ]);
+    const filters = screen.getByTestId('quest-status-filter-row');
     expect(toolbar.compareDocumentPosition(filters)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(filters.contains(screen.getByTestId('quest-status-filter'))).toBe(
+      true,
+    );
+    expect(screen.getByTestId('quest-status-filter').textContent).toContain(
+      'filters.active',
     );
     expect(
       screen
@@ -168,6 +161,9 @@ describe('quest list drafts', () => {
         .closest('header')
         ?.contains(create),
     ).toBe(false);
+    fireEvent.keyDown(screen.getByTestId('quest-status-filter'), {
+      key: 'ArrowDown',
+    });
     fireEvent.click(screen.getByTestId('quest-filter-drafts'));
 
     expect(screen.getByTestId('quest-draft-4')).toBeTruthy();
@@ -200,6 +196,9 @@ describe('quest list drafts', () => {
   it('closes the confirm at once and shows an error when delete fails', async () => {
     harness.deleteQuestDraftRequest.mockRejectedValue(new Error('no'));
     render(<SpaceQuestsSection spaceSlug="sandbox" />);
+    fireEvent.keyDown(screen.getByTestId('quest-status-filter'), {
+      key: 'ArrowDown',
+    });
     fireEvent.click(screen.getByTestId('quest-filter-drafts'));
     fireEvent.click(screen.getByTestId('delete-quest-draft-4'));
     fireEvent.click(screen.getByTestId('confirm-delete-quest-draft'));
@@ -216,6 +215,10 @@ describe('quest list drafts', () => {
   it('hides My drafts when nobody is signed in', () => {
     harness.visible = false;
     render(<SpaceQuestsSection spaceSlug="sandbox" />);
+    fireEvent.keyDown(screen.getByTestId('quest-status-filter'), {
+      key: 'ArrowDown',
+    });
     expect(screen.queryByTestId('quest-filter-drafts')).toBeNull();
+    expect(screen.getByTestId('quest-filter-paused')).toBeTruthy();
   });
 });

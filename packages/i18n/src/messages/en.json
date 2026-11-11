@@ -5791,7 +5791,8 @@
       "paused": "Paused",
       "completed": "Completed",
       "rejected": "Rejected",
-      "drafts": "My drafts"
+      "drafts": "My drafts",
+      "status": "Status"
     },
     "activity": {
       "proposalRejected": "proposal rejected"
