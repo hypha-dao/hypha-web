@@ -522,7 +522,7 @@ describe('saved quest helper entry', () => {
     expect(locked).toHaveProperty('disabled', true);
   });
 
-  it('hides the chat icon for every quest status and keeps Open discussion', () => {
+  it('hides Open discussion until the quest is accepted', () => {
     for (const status of [
       'proposed',
       'active',
@@ -544,13 +544,19 @@ describe('saved quest helper entry', () => {
       );
       expect(screen.queryByTestId('open-quest-chat-button')).toBeNull();
       expect(screen.queryByRole('button', { name: 'Quest chat' })).toBeNull();
-      expect(screen.getByTestId('open-quest-discussion-button')).toBeTruthy();
+      if (status === 'proposed') {
+        expect(screen.queryByTestId('open-quest-discussion-button')).toBeNull();
+        expect(
+          screen.queryByRole('button', { name: /Open discussion/ }),
+        ).toBeNull();
+      } else {
+        expect(screen.getByTestId('open-quest-discussion-button')).toBeTruthy();
+      }
     }
   });
 
   it('opens the quest discussion from Open discussion and has no chat icon', async () => {
     for (const status of [
-      'proposed',
       'active',
       'paused',
       'completed',
@@ -592,12 +598,58 @@ describe('saved quest helper entry', () => {
     }
   });
 
-  it('opens the proposal room stored on the quest without creating another', async () => {
+  it('does not open or create a discussion for a proposed quest', () => {
     harness.status = 'proposed';
     harness.chatRoomId = null;
     const quest = questFixture();
     quest.proposalSlug = 'proposal-1';
-    quest.proposalChatRoomId = '!proposal:stored';
+    harness.quest = quest;
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="overview"
+      />,
+    );
+
+    expect(screen.queryByTestId('open-quest-discussion-button')).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(harness.createRoom).not.toHaveBeenCalled();
+    expect(harness.joinRoom).not.toHaveBeenCalled();
+    expect(harness.updateAgreementBySlug).not.toHaveBeenCalled();
+    expect(harness.openCoherenceChat).not.toHaveBeenCalled();
+    expect(harness.requestQuestChat).not.toHaveBeenCalled();
+    expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
+  });
+
+  it('does not open a discussion for a rejected quest', () => {
+    harness.status = 'proposed';
+    harness.chatRoomId = null;
+    const quest = questFixture();
+    quest.proposalStatus = 'rejected';
+    quest.proposalSlug = 'proposal-1';
+    harness.quest = quest;
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="overview"
+      />,
+    );
+
+    expect(screen.queryByTestId('open-quest-discussion-button')).toBeNull();
+    expect(harness.createRoom).not.toHaveBeenCalled();
+    expect(harness.openCoherenceChat).not.toHaveBeenCalled();
+  });
+
+  it('does not create a room when an accepted quest has none yet', async () => {
+    harness.status = 'active';
+    harness.chatRoomId = null;
+    harness.jwt = 'token';
+    const quest = questFixture();
+    quest.proposalSlug = 'proposal-1';
     harness.quest = quest;
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
@@ -610,133 +662,13 @@ describe('saved quest helper entry', () => {
     );
 
     fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
-    await waitFor(() => {
-      expect(harness.openCoherenceChat).toHaveBeenCalledWith(
-        '!proposal:stored',
-        'Onboarding',
-        'onboarding',
-        'Keep the saved goal',
-        'sandbox',
-        { channel: 'quest' },
-      );
-    });
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(harness.createRoom).not.toHaveBeenCalled();
-    expect(harness.requestQuestChat).not.toHaveBeenCalled();
-    expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
-  });
-
-  it('joins the proposal room when the quest room does not exist yet', async () => {
-    harness.status = 'proposed';
-    harness.chatRoomId = null;
-    const quest = questFixture();
-    quest.proposalSlug = 'proposal-1';
-    harness.quest = quest;
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({ chatRoomId: '!proposal:room' }),
-      })),
-    );
-    render(
-      <SpaceQuestDetail
-        spaceSlug="sandbox"
-        questSlug="onboarding"
-        tab="overview"
-      />,
-    );
-
-    fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
-    await waitFor(() => {
-      expect(harness.openCoherenceChat).toHaveBeenCalledWith(
-        '!proposal:room',
-        'Onboarding',
-        'onboarding',
-        'Keep the saved goal',
-        'sandbox',
-        { channel: 'quest' },
-      );
-    });
-    expect(harness.requestQuestChat).not.toHaveBeenCalled();
-    expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
-    expect(harness.setSpaceQuestDraft).toHaveBeenCalledWith(null);
-    expect(harness.createRoom).not.toHaveBeenCalled();
-  });
-
-  it('creates the proposal room when neither discussion room exists yet', async () => {
-    harness.status = 'proposed';
-    harness.chatRoomId = null;
-    harness.jwt = 'token';
-    const quest = questFixture();
-    quest.proposalSlug = 'proposal-1';
-    harness.quest = quest;
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({ chatRoomId: null }),
-      })),
-    );
-    render(
-      <SpaceQuestDetail
-        spaceSlug="sandbox"
-        questSlug="onboarding"
-        tab="overview"
-      />,
-    );
-
-    fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
-    await waitFor(() => {
-      expect(harness.openCoherenceChat).toHaveBeenCalledWith(
-        '!created:room',
-        'Onboarding',
-        'onboarding',
-        'Keep the saved goal',
-        'sandbox',
-        { channel: 'quest' },
-      );
-    });
-    expect(harness.createRoom).toHaveBeenCalledWith('Proposal: Onboarding', {
-      grantCreatorPl100: true,
-      roomType: 'io.hypha.room.proposal',
-    });
-    expect(harness.joinRoom).toHaveBeenCalledWith('!created:room');
-    expect(harness.updateAgreementBySlug).toHaveBeenCalledWith({
-      slug: 'proposal-1',
-      chatRoomId: '!created:room',
-    });
-    expect(harness.requestQuestChat).not.toHaveBeenCalled();
-    expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
-  });
-
-  it('does not open the empty direct-message shell when the proposal room cannot be created', async () => {
-    harness.status = 'proposed';
-    harness.chatRoomId = null;
-    harness.jwt = 'token';
-    const quest = questFixture();
-    quest.proposalSlug = 'proposal-1';
-    harness.quest = quest;
-    harness.createRoom.mockRejectedValue(new Error('Matrix unavailable'));
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({ chatRoomId: null }),
-      })),
-    );
-    render(
-      <SpaceQuestDetail
-        spaceSlug="sandbox"
-        questSlug="onboarding"
-        tab="overview"
-      />,
-    );
-
-    fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
     expect(
       await screen.findByText('Discussion could not be opened. Try again.'),
     ).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(harness.createRoom).not.toHaveBeenCalled();
+    expect(harness.joinRoom).not.toHaveBeenCalled();
+    expect(harness.updateAgreementBySlug).not.toHaveBeenCalled();
     expect(harness.openCoherenceChat).not.toHaveBeenCalled();
     expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
   });
@@ -957,6 +889,7 @@ describe('saved quest helper entry', () => {
     expect(header?.textContent).not.toContain('Proposed');
     expect(header?.textContent).not.toMatch(/On track|Off track|Not started/);
     expect(screen.queryByTestId('quest-health-label')).toBeNull();
+    expect(screen.queryByTestId('open-quest-discussion-button')).toBeNull();
   });
 
   it('posts a written update from the milestone menu without a link field', async () => {

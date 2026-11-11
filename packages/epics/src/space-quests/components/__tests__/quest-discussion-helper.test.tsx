@@ -226,7 +226,7 @@ describe('quest discussion helper', () => {
   });
 
   it('shows the helper by quest status', async () => {
-    for (const status of ['proposed', 'active', 'paused'] as const) {
+    for (const status of ['active', 'paused'] as const) {
       cleanup();
       window.sessionStorage.clear();
       harness.personId = 7;
@@ -240,7 +240,7 @@ describe('quest discussion helper', () => {
       expect(screen.queryByText(SAVED_QUEST_HELPER_INTRO)).toBeNull();
     }
 
-    for (const status of ['completed', 'archived'] as const) {
+    for (const status of ['proposed', 'completed', 'archived'] as const) {
       cleanup();
       window.sessionStorage.clear();
       harness.personId = 7;

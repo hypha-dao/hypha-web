@@ -158,8 +158,9 @@ describe('quest create draft heading', () => {
     ).toBe(false);
     expect(screen.getByTestId('create-quest-button')).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: /Open discussion/ }),
-    ).toBeTruthy();
+      screen.queryByRole('button', { name: /Open discussion/ }),
+    ).toBeNull();
+    expect(screen.getByTestId('open-quest-chat-button')).toBeTruthy();
     const participants = screen.getByTestId('draft-section-members');
     const label = participants.querySelector('span');
     expect(label?.textContent).toBe('Participants');

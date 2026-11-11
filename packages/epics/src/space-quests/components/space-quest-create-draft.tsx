@@ -207,7 +207,6 @@ export function SpaceQuestCreateDraft({
   const { closeAiPanel } = useAiPanel();
   const {
     panelAvailable,
-    openHumanChatPanel,
     closeHumanChatPanel,
     closeCoherenceChat,
     setSpaceQuestDraft,
@@ -835,7 +834,7 @@ export function SpaceQuestCreateDraft({
   closeCreateChatRef.current = { dismissQuestChat, setSpaceQuestDraft };
 
   // Keep the helper session ready, but leave the panel closed until the
-  // quest chat button. Open discussion uses the space channel instead.
+  // quest chat button. A draft has no discussion room yet.
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 1200) {
       closeAiPanel();
@@ -1454,35 +1453,15 @@ export function SpaceQuestCreateDraft({
                 </p>
                 <div className="flex items-center gap-3">
                   {panelAvailable ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (
-                            typeof window !== 'undefined' &&
-                            window.innerWidth < 1200
-                          ) {
-                            closeAiPanel();
-                          }
-                          dismissQuestChat();
-                          closeCoherenceChat();
-                          openHumanChatPanel();
-                        }}
-                        className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
-                      >
-                        Open discussion
-                        <span aria-hidden>→</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => requestQuestChat()}
-                        aria-label="Quest chat"
-                        data-testid="open-quest-chat-button"
-                        className="inline-flex size-8 shrink-0 items-center justify-center border border-foreground/15 text-foreground hover:bg-foreground/5"
-                      >
-                        <MessageCircle className="size-3.5" aria-hidden />
-                      </button>
-                    </>
+                    <button
+                      type="button"
+                      onClick={() => requestQuestChat()}
+                      aria-label="Quest chat"
+                      data-testid="open-quest-chat-button"
+                      className="inline-flex size-8 shrink-0 items-center justify-center border border-foreground/15 text-foreground hover:bg-foreground/5"
+                    >
+                      <MessageCircle className="size-3.5" aria-hidden />
+                    </button>
                   ) : null}
                   <div className="h-1.5 w-[140px] overflow-hidden bg-neutral-4">
                     <div

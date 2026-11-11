@@ -14,10 +14,6 @@ import {
   questOverviewVisibility,
   readableQuestErrorMessage,
   bulletsToMarkdownList,
-  HYPHA_ROOM_TYPES,
-  useAgreementMutationsWeb2Rsc,
-  useJwt,
-  useMatrix,
   useMe,
   type QuestHealthState,
   type QuestPatchStatus,
@@ -121,10 +117,6 @@ import {
   spaceQuestDetailTabLinks,
   type SpaceQuestDetailTab,
 } from '../space-quest-tabs';
-import {
-  loadProposalDiscussionRoomId,
-  resolveQuestDiscussionRoomId,
-} from '../quest-discussion-room';
 import {
   QUEST_HELPER_OFFLINE_REPLY,
   questAssistHistoryEntries,
@@ -1280,9 +1272,6 @@ export function SpaceQuestDetail({
   const { person } = useMe();
   const { getAccessToken } = useAuthentication();
   const { closeAiPanel } = useAiPanel();
-  const { jwt } = useJwt();
-  const { createRoom, joinRoom } = useMatrix();
-  const { updateAgreementBySlug } = useAgreementMutationsWeb2Rsc(jwt);
   const {
     openCoherenceChat,
     closeCoherenceChat,
@@ -1460,6 +1449,9 @@ export function SpaceQuestDetail({
   );
 
   const openDiscussion = () => {
+    // The quest room is created when the quest is accepted. Proposed,
+    // rejected, and draft quests have no discussion on this page.
+    if (quest.status === 'proposed') return;
     if (openingDiscussionRef.current) return;
     openingDiscussionRef.current = true;
     if (typeof window !== 'undefined' && window.innerWidth < 1200) {
@@ -1475,58 +1467,26 @@ export function SpaceQuestDetail({
     void (async () => {
       let roomId: string | null = null;
       try {
-        let questRoomId = snapshot.chatRoomId;
-        let proposalRoomId = snapshot.proposalChatRoomId ?? null;
-        let proposalSlug = snapshot.proposalSlug;
-        if (!questRoomId?.trim() && !proposalRoomId?.trim()) {
-          // The detail request provisions a missing quest room for an accepted
-          // quest, and includes the proposal document's room id.
+        roomId = snapshot.chatRoomId?.trim() || null;
+        if (!roomId) {
+          // The detail request retries provisioning for an accepted quest
+          // whose room was missed. Use that room; do not create one here.
           const latest = await refresh();
-          if (latest && typeof latest === 'object' && 'slug' in latest) {
-            if (typeof latest.chatRoomId === 'string') {
-              questRoomId = latest.chatRoomId;
-            }
-            if (
-              !proposalRoomId?.trim() &&
-              typeof latest.proposalChatRoomId === 'string'
-            ) {
-              proposalRoomId = latest.proposalChatRoomId;
-            }
-            if (!proposalSlug && typeof latest.proposalSlug === 'string') {
-              proposalSlug = latest.proposalSlug;
-            }
+          if (
+            latest &&
+            typeof latest === 'object' &&
+            'slug' in latest &&
+            typeof latest.chatRoomId === 'string'
+          ) {
+            roomId = latest.chatRoomId.trim() || null;
           }
         }
-
-        const authToken =
-          jwt ?? (await getAccessToken().catch(() => null)) ?? null;
-        roomId = await resolveQuestDiscussionRoomId({
-          questRoomId,
-          proposalRoomId,
-          proposalSlug,
-          proposalTitle: snapshot.name,
-          authToken,
-          loadProposalRoomId: (slug) =>
-            loadProposalDiscussionRoomId(slug, authToken),
-          createProposalRoom: async (title) => {
-            const created = await createRoom(title, {
-              grantCreatorPl100: true,
-              roomType: HYPHA_ROOM_TYPES.proposal,
-            });
-            return joinRoom(created.roomId);
-          },
-          persistProposalRoomId: async (slug, createdRoomId) => {
-            await updateAgreementBySlug({
-              slug,
-              chatRoomId: createdRoomId,
-            });
-          },
-        });
       } catch (error) {
         console.warn(
           '[quest discussion] could not open the discussion room',
           error,
         );
+        roomId = null;
       } finally {
         openingDiscussionRef.current = false;
       }
@@ -1816,17 +1776,19 @@ export function SpaceQuestDetail({
             </h1>
             <QuestStatusBadge quest={quest} />
           </div>
-          <div className="flex shrink-0 items-center gap-3">
-            <button
-              type="button"
-              onClick={openDiscussion}
-              data-testid="open-quest-discussion-button"
-              className="inline-flex items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
-            >
-              Open discussion
-              <span aria-hidden>→</span>
-            </button>
-          </div>
+          {quest.status !== 'proposed' ? (
+            <div className="flex shrink-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={openDiscussion}
+                data-testid="open-quest-discussion-button"
+                className="inline-flex items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
+              >
+                Open discussion
+                <span aria-hidden>→</span>
+              </button>
+            </div>
+          ) : null}
         </div>
         <QuestDetailSubheading
           lead={resolveQuestLeadIdentity({

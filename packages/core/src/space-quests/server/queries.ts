@@ -236,7 +236,6 @@ type HydratedQuestExtras = {
   spaceTitle: string;
   leadAvatarUrl?: string | null;
   proposalSlug?: string | null;
-  proposalChatRoomId?: string | null;
   proposalWeb3Id?: number | null;
   proposalStatus?: 'accepted' | 'rejected' | 'onVoting' | null;
   proposalCreator?: QuestUpdateAuthorFields | null;
@@ -316,7 +315,6 @@ export function assembleQuestRecord(
     creatorPersonId: row.creatorPersonId ?? null,
     proposalDocumentId: row.proposalDocumentId ?? null,
     proposalSlug: extras.proposalSlug ?? null,
-    proposalChatRoomId: extras.proposalChatRoomId?.trim() || null,
     proposalWeb3Id: extras.proposalWeb3Id ?? null,
     proposalStatus: extras.proposalStatus ?? null,
     acceptedAt: toIso(row.acceptedAt),
@@ -350,7 +348,6 @@ export async function listSpaceQuests(
     .select({
       quest: spaceQuests,
       proposalSlug: documents.slug,
-      proposalChatRoomId: documents.chatRoomId,
       proposalWeb3Id: documents.web3ProposalId,
       proposalCreatorId: documents.creatorId,
       leadAvatarUrl: people.avatarUrl,
@@ -472,7 +469,6 @@ export async function listSpaceQuests(
         spaceTitle: space.title,
         leadAvatarUrl: r.leadAvatarUrl,
         proposalSlug: r.proposalSlug,
-        proposalChatRoomId: r.proposalChatRoomId,
         proposalWeb3Id: r.proposalWeb3Id,
         proposalCreator: proposalCreatorFor(
           creatorIdByQuest.get(r.quest.id),
