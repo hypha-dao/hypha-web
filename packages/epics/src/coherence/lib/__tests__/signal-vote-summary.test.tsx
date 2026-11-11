@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
+import type { ComponentProps } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   SignalVoteRoster,
@@ -31,25 +32,9 @@ const messages = {
   },
 };
 
-function summary(
-  partial: Partial<{
-    totalVotingPower: string;
-    upvoteCount: number;
-    downvoteCount: number;
-    upVotingPower: string;
-    downVotingPower: string;
-    netVoteCount: number;
-    tokenDecimals: number;
-    voters: {
-      personId: number;
-      name: string | null;
-      avatarUrl: string | null;
-      votingPower: string;
-      direction?: 'up' | 'down';
-    }[];
-    myUpvote: null;
-  }>,
-) {
+type VoteSummary = ComponentProps<typeof SignalVoteTotals>['summary'];
+
+function summary(partial: Partial<VoteSummary>): VoteSummary {
   return {
     totalVotingPower: '0',
     upvoteCount: 0,
@@ -64,7 +49,7 @@ function summary(
   };
 }
 
-function renderSummary(upvotes: CoherenceUpvoteSummary, totalLabel: string) {
+function renderSummary(upvotes: VoteSummary, totalLabel: string) {
   return render(
     <NextIntlClientProvider locale="en" messages={messages}>
       <SignalVoteTotals
