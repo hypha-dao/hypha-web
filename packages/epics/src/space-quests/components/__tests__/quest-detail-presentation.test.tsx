@@ -268,7 +268,8 @@ describe('quest detail presentation', () => {
     expect(screen.getByText('Ada Lovelace').className).not.toMatch(
       /(?:^|\s)uppercase(?:\s|$)/,
     );
-    expect(screen.getByText('Ada Lovelace').className).toContain('text-3');
+    expect(screen.getByText('Ada Lovelace').className).toContain('text-[15px]');
+    expect(screen.getByText('Ada Lovelace').className).not.toContain('text-3');
     expect(screen.getByText('Ada Lovelace').className).toContain(
       'leading-relaxed',
     );

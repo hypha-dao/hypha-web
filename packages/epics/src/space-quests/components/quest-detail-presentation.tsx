@@ -458,7 +458,7 @@ export function QuestParticipantsCard({
                   </span>
                 )}
                 <span className="min-w-0 flex-1">
-                  <span className="block break-words text-3 font-semibold leading-relaxed text-foreground">
+                  <span className="block break-words text-[15px] font-semibold leading-relaxed text-foreground">
                     {member.memberName}
                   </span>
                   {role ? (
