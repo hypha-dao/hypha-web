@@ -282,7 +282,8 @@ run('authorization server: protocol, gate, revocation, storage', () => {
       after.res.status,
       JSON.stringify(after.body).slice(0, 200),
     );
-    expect(after.res.status).toBeGreaterThanOrEqual(400);
+    expect(after.res.status).toBe(400);
+    expect(after.body.error).toBe('invalid_grant');
     expect(after.body.access_token).toBeUndefined();
   });
 

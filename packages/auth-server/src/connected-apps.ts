@@ -32,7 +32,10 @@ export async function listConnectedApps(
  * Disconnects one app for one person: deletes the consent record and every refresh and opaque
  * access token for that pair, so the app cannot refresh any more. Already issued JWT access
  * tokens stay valid until they expire (they are short-lived and not revocable server-side).
- * Better Auth's own consent delete only removes the consent row and leaves refresh working.
+ * Better Auth's own consent delete only removes the consent row and leaves refresh working: the
+ * library does not tie refresh to consent. Deleting is deliberate: marking tokens `revoked`
+ * instead does not keep an audit record, because the library treats a revoked refresh token that
+ * is presented as reuse and deletes the whole token family anyway.
  */
 export async function disconnectApp(
   pool: AuthDbPool,
