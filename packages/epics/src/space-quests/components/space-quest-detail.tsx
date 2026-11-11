@@ -109,13 +109,12 @@ import {
 } from '../../common/human-chat-panel/composer-field';
 import {
   clearMainColumnScrollFreeze,
-  getMainColumnScrollY,
   releaseMainColumnScrollHeightHold,
 } from '../../common/main-column-scroll';
 import {
+  captureQuestDetailView,
   clearQuestDetailScrollMemory,
-  readQuestDetailScroll,
-  rememberQuestDetailScroll,
+  releaseQuestDetailScrollPin,
   retainQuestDetailScroll,
 } from '../quest-detail-scroll';
 import {
@@ -1318,10 +1317,12 @@ export function SpaceQuestDetail({
   };
 
   useLayoutEffect(() => {
-    const saved = readQuestDetailScroll();
-    if (saved == null) return;
-    return retainQuestDetailScroll(saved);
-  }, []);
+    // Settings can hold the saved offset, so the restore loop must not run
+    // there: it would drop the pin before this overview screen commits.
+    // The space chrome then releases a short overview to the hero.
+    if (tab !== 'overview') return;
+    return retainQuestDetailScroll();
+  }, [tab]);
 
   useEffect(() => {
     return () => {
@@ -1555,8 +1556,12 @@ export function SpaceQuestDetail({
   };
 
   const savePatch = async (patch: QuestPatch): Promise<QuestRecord | null> => {
-    const scrollTop = getMainColumnScrollY();
-    rememberQuestDetailScroll(scrollTop);
+    const leavingForOverview = tab !== 'overview';
+    // Record the scroller and the tabs' viewport Y, and hold the column.
+    // Do not restore here. This screen can still hold the offset, so the
+    // loop would forget it before overview mounts and the chrome scrolls
+    // the short screen back to the hero.
+    if (leavingForOverview) captureQuestDetailView();
     setSaving(true);
     setActionError(null);
     try {
@@ -1567,15 +1572,17 @@ export function SpaceQuestDetail({
         getAccessToken,
       });
       await refresh(updated, { revalidate: false });
-      if (tab !== 'overview') {
+      if (leavingForOverview) {
         router.replace(baseHref, { scroll: false });
       }
-      retainQuestDetailScroll(scrollTop);
       return updated;
     } catch (err) {
-      clearMainColumnScrollFreeze();
-      releaseMainColumnScrollHeightHold();
-      clearQuestDetailScrollMemory();
+      if (leavingForOverview) {
+        releaseQuestDetailScrollPin();
+        clearMainColumnScrollFreeze();
+        releaseMainColumnScrollHeightHold();
+        clearQuestDetailScrollMemory();
+      }
       setActionError(
         err instanceof Error ? err.message : 'Failed to update quest',
       );
@@ -1720,6 +1727,7 @@ export function SpaceQuestDetail({
       <nav
         className="flex gap-1 overflow-x-auto border-b border-border"
         aria-label="Quest sections"
+        data-quest-detail-tabs=""
       >
         {tabs.map((item) => (
           <Link
