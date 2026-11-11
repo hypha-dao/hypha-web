@@ -10,7 +10,8 @@ export type AuthServerScope = (typeof AUTH_SERVER_SCOPES)[number];
 
 /** Product defaults (reported for confirmation). Seconds. */
 export const ACCESS_TOKEN_TTL_SECONDS = 10 * 60;
-export const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
+/** Sliding: each refresh issues a new token valid for this long, so 90 days of inactivity ends the connection. */
+export const REFRESH_TOKEN_TTL_SECONDS = 90 * 24 * 60 * 60;
 export const AUTH_CODE_TTL_SECONDS = 60;
 
 /** Path prefix of the Better Auth handler (not the issuer: the issuer has no path). */
