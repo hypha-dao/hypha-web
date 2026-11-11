@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { QuestRecord, QuestStatus } from '@hypha-platform/core/client';
 import { SpaceQuestDetail } from '../space-quest-detail';
@@ -10,7 +16,12 @@ const harness = vi.hoisted(() => ({
   personId: 7,
   status: 'active' as QuestStatus,
   chatRoomId: 'room-1' as string | null,
+  refreshedRoomId: null as string | null,
+  jwt: null as string | null,
   quest: null as QuestRecord | null,
+  createRoom: vi.fn(async () => ({ roomId: '!created:room' })),
+  joinRoom: vi.fn(async (roomId: string) => roomId),
+  updateAgreementBySlug: vi.fn(async () => undefined),
   setSpaceQuestDraft: vi.fn(),
   openCoherenceChat: vi.fn(),
   openHumanChatPanel: vi.fn(),
@@ -155,6 +166,14 @@ vi.mock('@hypha-platform/core/client', async () => {
         avatarUrl: null,
       },
     }),
+    useJwt: () => ({ jwt: harness.jwt, isLoadingJwt: false }),
+    useMatrix: () => ({
+      createRoom: harness.createRoom,
+      joinRoom: harness.joinRoom,
+    }),
+    useAgreementMutationsWeb2Rsc: () => ({
+      updateAgreementBySlug: harness.updateAgreementBySlug,
+    }),
   };
 });
 
@@ -194,7 +213,10 @@ vi.mock('../../hooks/use-space-quests', async () => {
       refresh: async (next?: QuestRecord) => {
         if (next && typeof next === 'object' && 'slug' in next) {
           harness.quest = next;
+          return next;
         }
+        if (!harness.refreshedRoomId) return undefined;
+        return { ...questFixture(), chatRoomId: harness.refreshedRoomId };
       },
     }),
     useQuestSpaceMembers: () => [],
@@ -245,7 +267,17 @@ describe('saved quest helper entry', () => {
     harness.personId = 7;
     harness.status = 'active';
     harness.chatRoomId = 'room-1';
+    harness.refreshedRoomId = null;
+    harness.jwt = null;
     harness.quest = questFixture();
+    harness.createRoom.mockReset();
+    harness.createRoom.mockImplementation(async () => ({
+      roomId: '!created:room',
+    }));
+    harness.joinRoom.mockReset();
+    harness.joinRoom.mockImplementation(async (roomId: string) => roomId);
+    harness.updateAgreementBySlug.mockReset();
+    harness.updateAgreementBySlug.mockResolvedValue(undefined);
     harness.postUpdate.mockImplementation(
       async (input: { body: { text: string } }) => postedQuest(input.body.text),
     );
@@ -256,8 +288,13 @@ describe('saved quest helper entry', () => {
     harness.personId = 7;
     harness.status = 'active';
     harness.chatRoomId = 'room-1';
+    harness.refreshedRoomId = null;
+    harness.jwt = null;
     harness.quest = questFixture();
     harness.setSpaceQuestDraft.mockReset();
+    harness.createRoom.mockReset();
+    harness.joinRoom.mockReset();
+    harness.updateAgreementBySlug.mockReset();
     harness.openCoherenceChat.mockReset();
     harness.openHumanChatPanel.mockReset();
     harness.closeCoherenceChat.mockReset();
@@ -511,48 +548,166 @@ describe('saved quest helper entry', () => {
     }
   });
 
-  it('opens the space channel from Open discussion and has no chat icon', () => {
-    render(
-      <SpaceQuestDetail
-        spaceSlug="sandbox"
-        questSlug="onboarding"
-        tab="settings"
-      />,
-    );
+  it('opens the quest discussion from Open discussion and has no chat icon', async () => {
+    for (const status of [
+      'proposed',
+      'active',
+      'paused',
+      'completed',
+      'archived',
+    ] as const) {
+      cleanup();
+      harness.openCoherenceChat.mockReset();
+      harness.openHumanChatPanel.mockReset();
+      harness.requestQuestChat.mockReset();
+      harness.createRoom.mockClear();
+      harness.status = status;
+      harness.chatRoomId = 'room-1';
+      harness.quest = questFixture();
+      render(
+        <SpaceQuestDetail
+          spaceSlug="sandbox"
+          questSlug="onboarding"
+          tab="settings"
+        />,
+      );
 
-    expect(screen.queryByTestId('open-quest-helper-button')).toBeNull();
-    expect(screen.queryByTestId('open-quest-chat-button')).toBeNull();
-    expect(screen.queryByText('Quest Helper')).toBeNull();
-    expect(screen.queryByRole('heading', { name: 'Participants' })).toBeNull();
-    fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
-    expect(harness.openCoherenceChat).not.toHaveBeenCalled();
-    expect(harness.requestQuestChat).not.toHaveBeenCalled();
-    expect(harness.closeCoherenceChat).toHaveBeenCalled();
-    expect(harness.openHumanChatPanel).toHaveBeenCalled();
+      expect(screen.queryByTestId('open-quest-helper-button')).toBeNull();
+      expect(screen.queryByTestId('open-quest-chat-button')).toBeNull();
+      expect(screen.queryByText('Quest Helper')).toBeNull();
+      fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
+      await waitFor(() => {
+        expect(harness.openCoherenceChat).toHaveBeenCalledWith(
+          'room-1',
+          'Onboarding',
+          'onboarding',
+          'Keep the saved goal',
+          'sandbox',
+          { channel: 'quest' },
+        );
+      });
+      expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
+      expect(harness.requestQuestChat).not.toHaveBeenCalled();
+      expect(harness.createRoom).not.toHaveBeenCalled();
+    }
   });
 
-  it('opens the helper from Open discussion when the quest has no room', () => {
+  it('joins the proposal room when the quest room does not exist yet', async () => {
+    harness.status = 'proposed';
     harness.chatRoomId = null;
-    harness.quest = questFixture();
+    const quest = questFixture();
+    quest.proposalSlug = 'proposal-1';
+    harness.quest = quest;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ chatRoomId: '!proposal:room' }),
+      })),
+    );
     render(
       <SpaceQuestDetail
         spaceSlug="sandbox"
         questSlug="onboarding"
-        tab="settings"
+        tab="overview"
       />,
     );
 
-    expect(screen.queryByTestId('open-quest-chat-button')).toBeNull();
     fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
-    expect(harness.requestQuestChat).toHaveBeenCalled();
-    expect(harness.setSpaceQuestDraft).toHaveBeenCalledWith(
-      expect.objectContaining({
-        spaceSlug: 'sandbox',
-        questTitle: 'Onboarding',
-      }),
-    );
-    expect(harness.openCoherenceChat).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(harness.openCoherenceChat).toHaveBeenCalledWith(
+        '!proposal:room',
+        'Onboarding',
+        'onboarding',
+        'Keep the saved goal',
+        'sandbox',
+        { channel: 'quest' },
+      );
+    });
+    expect(harness.requestQuestChat).not.toHaveBeenCalled();
     expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
+    expect(harness.setSpaceQuestDraft).toHaveBeenCalledWith(null);
+    expect(harness.createRoom).not.toHaveBeenCalled();
+  });
+
+  it('creates the proposal room when neither discussion room exists yet', async () => {
+    harness.status = 'proposed';
+    harness.chatRoomId = null;
+    harness.jwt = 'token';
+    const quest = questFixture();
+    quest.proposalSlug = 'proposal-1';
+    harness.quest = quest;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ chatRoomId: null }),
+      })),
+    );
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="overview"
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
+    await waitFor(() => {
+      expect(harness.openCoherenceChat).toHaveBeenCalledWith(
+        '!created:room',
+        'Onboarding',
+        'onboarding',
+        'Keep the saved goal',
+        'sandbox',
+        { channel: 'quest' },
+      );
+    });
+    expect(harness.createRoom).toHaveBeenCalledWith('Proposal: Onboarding', {
+      grantCreatorPl100: true,
+      roomType: 'io.hypha.room.proposal',
+    });
+    expect(harness.joinRoom).toHaveBeenCalledWith('!created:room');
+    expect(harness.updateAgreementBySlug).toHaveBeenCalledWith({
+      slug: 'proposal-1',
+      chatRoomId: '!created:room',
+    });
+    expect(harness.requestQuestChat).not.toHaveBeenCalled();
+    expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
+  });
+
+  it('joins a quest room provisioned on refresh before creating one', async () => {
+    harness.status = 'active';
+    harness.chatRoomId = null;
+    harness.refreshedRoomId = '!quest:provisioned';
+    harness.jwt = 'token';
+    const quest = questFixture();
+    quest.proposalSlug = 'proposal-1';
+    harness.quest = quest;
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="overview"
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
+    await waitFor(() => {
+      expect(harness.openCoherenceChat).toHaveBeenCalledWith(
+        '!quest:provisioned',
+        'Onboarding',
+        'onboarding',
+        'Keep the saved goal',
+        'sandbox',
+        { channel: 'quest' },
+      );
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(harness.createRoom).not.toHaveBeenCalled();
+    expect(harness.requestQuestChat).not.toHaveBeenCalled();
   });
 
   it('edits the quest name, participants, and paused health from Settings', () => {
@@ -592,7 +747,7 @@ describe('saved quest helper entry', () => {
     ).toBeTruthy();
   });
 
-  it('hides the helper from a viewer who cannot edit', () => {
+  it('hides the helper from a viewer who cannot edit', async () => {
     harness.personId = 99;
     render(
       <SpaceQuestDetail
@@ -604,8 +759,17 @@ describe('saved quest helper entry', () => {
     expect(screen.queryByTestId('open-quest-helper-button')).toBeNull();
     expect(screen.queryByTestId('open-quest-chat-button')).toBeNull();
     fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
-    expect(harness.openCoherenceChat).not.toHaveBeenCalled();
-    expect(harness.openHumanChatPanel).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(harness.openCoherenceChat).toHaveBeenCalledWith(
+        'room-1',
+        'Onboarding',
+        'onboarding',
+        'Keep the saved goal',
+        'sandbox',
+        { channel: 'quest' },
+      );
+    });
+    expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
     expect(settingsAction('Quest name')).toHaveProperty('disabled', true);
     expect(settingsAction('Participants')).toHaveProperty('disabled', true);
   });

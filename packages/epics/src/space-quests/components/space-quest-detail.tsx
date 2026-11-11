@@ -14,6 +14,10 @@ import {
   questOverviewVisibility,
   readableQuestErrorMessage,
   bulletsToMarkdownList,
+  HYPHA_ROOM_TYPES,
+  useAgreementMutationsWeb2Rsc,
+  useJwt,
+  useMatrix,
   useMe,
   type QuestHealthState,
   type QuestPatchStatus,
@@ -117,6 +121,10 @@ import {
   spaceQuestDetailTabLinks,
   type SpaceQuestDetailTab,
 } from '../space-quest-tabs';
+import {
+  loadProposalDiscussionRoomId,
+  resolveQuestDiscussionRoomId,
+} from '../quest-discussion-room';
 import {
   QUEST_HELPER_OFFLINE_REPLY,
   questAssistHistoryEntries,
@@ -1222,13 +1230,14 @@ export function SpaceQuestDetail({
   const { person } = useMe();
   const { getAccessToken } = useAuthentication();
   const { closeAiPanel } = useAiPanel();
+  const { jwt } = useJwt();
+  const { createRoom, joinRoom } = useMatrix();
+  const { updateAgreementBySlug } = useAgreementMutationsWeb2Rsc(jwt);
   const {
     openCoherenceChat,
-    openHumanChatPanel,
     closeCoherenceChat,
     closeHumanChatPanel,
     setSpaceQuestDraft,
-    requestQuestChat,
     dismissQuestChat,
     mode: chatMode,
     coherenceSlug: chatSlug,
@@ -1276,6 +1285,7 @@ export function SpaceQuestDetail({
   )}`;
   const listHref = `/${locale}/dho/${spaceSlug}/quests`;
 
+  const openingDiscussionRef = useRef(false);
   const sendDetailRef = useRef<(overridePrompt?: string) => void>(() => {});
   const triggerDetailSend = useCallback(() => {
     sendDetailRef.current();
@@ -1400,46 +1410,77 @@ export function SpaceQuestDetail({
     memberOptions,
   );
 
-  const openSpaceChannel = () => {
+  const openDiscussion = () => {
+    if (openingDiscussionRef.current) return;
+    openingDiscussionRef.current = true;
     if (typeof window !== 'undefined' && window.innerWidth < 1200) {
       closeAiPanel();
     }
+    // The helper lives inside the quest room. Do not open the separate
+    // create-flow panel on this page.
     setDetailChatOpen(false);
     dismissQuestChat();
-    closeCoherenceChat();
-    openHumanChatPanel();
-  };
+    setSpaceQuestDraft(null);
 
-  // Open discussion stays the space channel. The removed header icon was the
-  // only detail-page door to the helper when a quest has no room yet; that
-  // case now uses this same control. A quest room stays in Messages.
-  const openDiscussion = () => {
-    if (quest.status !== 'proposed' && !quest.chatRoomId && canEdit) {
-      openQuestChat();
-      return;
-    }
-    openSpaceChannel();
-  };
+    const snapshot = quest;
+    const authToken = jwt ?? null;
+    void (async () => {
+      let roomId: string | null = null;
+      try {
+        let questRoomId = snapshot.chatRoomId;
+        if (!questRoomId?.trim()) {
+          // The detail request provisions a missing quest room for an accepted
+          // quest. Refresh once so Open discussion joins that room.
+          const latest = await refresh();
+          if (
+            latest &&
+            typeof latest === 'object' &&
+            'chatRoomId' in latest &&
+            typeof latest.chatRoomId === 'string'
+          ) {
+            questRoomId = latest.chatRoomId;
+          }
+        }
 
-  const openQuestChat = () => {
-    if (typeof window !== 'undefined' && window.innerWidth < 1200) {
-      closeAiPanel();
-    }
-    if (quest.chatRoomId) {
-      setDetailChatOpen(false);
-      setSpaceQuestDraft(null);
+        roomId = await resolveQuestDiscussionRoomId({
+          questRoomId,
+          proposalSlug: snapshot.proposalSlug,
+          proposalTitle: snapshot.name,
+          authToken,
+          loadProposalRoomId: (slug) =>
+            loadProposalDiscussionRoomId(slug, authToken),
+          createProposalRoom: async (title) => {
+            const created = await createRoom(title, {
+              grantCreatorPl100: true,
+              roomType: HYPHA_ROOM_TYPES.proposal,
+            });
+            return joinRoom(created.roomId);
+          },
+          persistProposalRoomId: async (slug, createdRoomId) => {
+            await updateAgreementBySlug({
+              slug,
+              chatRoomId: createdRoomId,
+            });
+          },
+        });
+      } catch (error) {
+        console.warn(
+          '[quest discussion] could not open the discussion room',
+          error,
+        );
+      } finally {
+        openingDiscussionRef.current = false;
+      }
+
       openCoherenceChat(
-        quest.chatRoomId,
-        quest.name,
-        quest.slug,
-        quest.goal,
+        roomId,
+        snapshot.name,
+        snapshot.slug,
+        snapshot.goal,
         spaceSlug,
         { channel: 'quest' },
       );
-      return;
-    }
-    setDetailChatOpen(true);
-    requestQuestChat();
+    })();
   };
 
   const handleSendDetailChatMessage = async (overridePrompt?: string) => {

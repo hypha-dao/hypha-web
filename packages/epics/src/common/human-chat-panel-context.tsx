@@ -176,8 +176,8 @@ export type HumanChatPanelContextValue = {
   setSpaceQuestDraft: (session: SpaceQuestDraftPanelSession | null) => void;
   /**
    * The create-quest helper session can stay loaded without being shown.
-   * Only the quest chat button sets this; Open discussion leaves it false
-   * so the panel stays on the space channel.
+   * The create flow's quest chat button sets this. A saved quest's Open
+   * discussion opens that quest's room and leaves this false.
    */
   questChatRequested: boolean;
   requestQuestChat: () => void;
