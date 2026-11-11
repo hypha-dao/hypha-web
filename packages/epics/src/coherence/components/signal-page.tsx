@@ -571,7 +571,7 @@ export function SignalPage({
                 type="button"
                 data-testid="signal-open-discussion"
                 onClick={openChat}
-                className="inline-flex shrink-0 items-center gap-1 text-2 font-medium text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
               >
                 {t('openDiscussion')}
                 <span aria-hidden>→</span>

@@ -100,6 +100,9 @@ describe('upvote cell shared by the list and the detail', () => {
     expect(pageMetaAt).toBeGreaterThan(pageButtonAt);
     expect(pageSource).toContain("t('openDiscussion')");
     expect(pageSource).toContain('data-testid="signal-open-discussion"');
+    expect(pageSource).toContain(
+      'inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline',
+    );
     expect(pageSource).toContain('onClick={openChat}');
     expect(upvoteSource).not.toContain("t('totalUpvotes')");
     expect(upvoteSource).not.toContain("t('supportersCount')");
