@@ -118,6 +118,19 @@ export function isMappedHost(
   );
 }
 
+/**
+ * Main-app host check. A local dev host matches by hostname, whatever its port
+ * (`localhost:3000`); any other host must match exactly.
+ */
+function isMainHost(config: WhiteLabelConfig, requestHost: string): boolean {
+  if (config.mainHosts.includes(requestHost)) return true;
+  const hostname = requestHost.replace(/:[0-9]+$/, '');
+  return (
+    (hostname === 'localhost' || hostname === '127.0.0.1') &&
+    config.mainHosts.includes(hostname)
+  );
+}
+
 /** Decoded, lower-cased first path segment. */
 function firstSegment(path: string): string {
   let first = path.split('/')[1] ?? '';
@@ -237,7 +250,7 @@ export function resolve(
     if (mapped) {
       return resolveMappedHost(mapped.client, mapped.record, path, options);
     }
-    if (!requestHost || !config.mainHosts.includes(requestHost)) {
+    if (!requestHost || !isMainHost(config, requestHost)) {
       return { kind: 'not-found', reason: 'unknown-host' };
     }
   }

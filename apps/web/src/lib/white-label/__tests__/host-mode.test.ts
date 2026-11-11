@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   WL_REQUEST_HEADERS,
   WL_SECTIONS,
   classifyLink,
+  getWhiteLabelConfig,
   isApiReadAllowed,
   isMappedHost,
   localeForPath,
@@ -276,6 +277,15 @@ describe('host mode: fail closed', () => {
         reason: 'unknown-host',
       });
     }
+  });
+
+  it('a local main host matches whatever its port', () => {
+    expect(run('/en/network', {}, 'localhost:3000')).toEqual({ kind: 'pass' });
+    // Only for hosts in the main list; a non-local host never matches by name.
+    expect(run('/en/network', {}, 'app.example:3000')).toEqual({
+      kind: 'not-found',
+      reason: 'unknown-host',
+    });
   });
 
   it('an unknown host gets no API either', () => {
@@ -777,5 +787,42 @@ describe('link guard: embed keeps working', () => {
 
   it('a host-style path is not an embed link', () => {
     expect(classifyLink('/en/members', ctx, app)?.kind).toBe('external');
+  });
+});
+
+describe('main hosts derived from env', () => {
+  const ENV_KEYS = [
+    'WHITE_LABEL_HOST_CONFIG',
+    'NEXT_PUBLIC_APP_URL',
+    'VERCEL_URL',
+    'VERCEL_BRANCH_URL',
+    'VERCEL_PROJECT_PRODUCTION_URL',
+  ] as const;
+  const saved: Record<string, string | undefined> = {};
+  beforeEach(() => {
+    for (const key of ENV_KEYS) {
+      saved[key] = process.env[key];
+      delete process.env[key];
+    }
+    process.env.WHITE_LABEL_HOST_CONFIG = JSON.stringify([
+      { id: 'c', hosts: [{ host: 'space.partner.example', space: 'one' }] },
+    ]);
+  });
+  afterEach(() => {
+    for (const key of ENV_KEYS) {
+      if (saved[key] === undefined) delete process.env[key];
+      else process.env[key] = saved[key];
+    }
+  });
+
+  it('falls back to the default app host when the app URL is unset', () => {
+    expect(getWhiteLabelConfig().mainHosts).toContain('app.hypha.earth');
+  });
+
+  it('uses the app URL host when it is set', () => {
+    process.env.NEXT_PUBLIC_APP_URL = 'https://main.example';
+    const { mainHosts } = getWhiteLabelConfig();
+    expect(mainHosts).toContain('main.example');
+    expect(mainHosts).not.toContain('app.hypha.earth');
   });
 });

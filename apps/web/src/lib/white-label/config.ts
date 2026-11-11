@@ -276,13 +276,18 @@ function hostOfUrlOrHost(value: string | undefined): string | null {
 // on the edge, and the question is "is this host us?", which must also accept
 // the deployment's own `VERCEL_URL` on production (internal self-calls such as
 // the cron routes use it), where that helper deliberately skips it.
+// Same default as `getAppBaseUrl()` when `NEXT_PUBLIC_APP_URL` is unset.
+const DEFAULT_APP_HOST = 'app.hypha.earth';
+
 function derivedMainHosts(): string[] {
   const candidates = [
     ...(process.env.NODE_ENV === 'production'
       ? []
       : ['localhost', '127.0.0.1']),
     // Literal reads: `NEXT_PUBLIC_*` is inlined at build time.
-    hostOfUrlOrHost(process.env.NEXT_PUBLIC_APP_URL),
+    hostOfUrlOrHost(
+      process.env.NEXT_PUBLIC_APP_URL?.trim() || DEFAULT_APP_HOST,
+    ),
     hostOfUrlOrHost(process.env.VERCEL_URL),
     hostOfUrlOrHost(process.env.VERCEL_BRANCH_URL),
     hostOfUrlOrHost(process.env.VERCEL_PROJECT_PRODUCTION_URL),
