@@ -40,6 +40,8 @@ export function emptyCoherenceUpvoteSummary(): CoherenceUpvoteSummary {
     totalVotingPower: '0',
     upvoteCount: 0,
     downvoteCount: 0,
+    upVotingPower: '0',
+    downVotingPower: '0',
     netVoteCount: 0,
     tokenDecimals: 0,
     voters: [],
@@ -88,6 +90,8 @@ export function aggregateCoherenceUpvoteSummaries({
   }
 
   const totals = new Map<number, bigint>();
+  const upPower = new Map<number, bigint>();
+  const downPower = new Map<number, bigint>();
   const recent = new Map<
     number,
     Record<SignalRecentWindow, { votingPower: bigint; voters: number }>
@@ -120,8 +124,19 @@ export function aggregateCoherenceUpvoteSummaries({
         windows[window].voters += people;
       }
     }
-    if (direction === 'down') summary.downvoteCount += 1;
-    else summary.upvoteCount += 1;
+    if (direction === 'down') {
+      summary.downvoteCount += 1;
+      downPower.set(
+        row.coherenceId,
+        (downPower.get(row.coherenceId) ?? 0n) + power,
+      );
+    } else {
+      summary.upvoteCount += 1;
+      upPower.set(
+        row.coherenceId,
+        (upPower.get(row.coherenceId) ?? 0n) + power,
+      );
+    }
     summary.tokenDecimals = Math.max(summary.tokenDecimals, row.tokenDecimals);
     const voter: CoherenceUpvoter = {
       personId: row.personId,
@@ -143,6 +158,8 @@ export function aggregateCoherenceUpvoteSummaries({
   for (const [coherenceId, summary] of Object.entries(summaries)) {
     const id = Number(coherenceId);
     summary.totalVotingPower = (totals.get(id) ?? 0n).toString();
+    summary.upVotingPower = (upPower.get(id) ?? 0n).toString();
+    summary.downVotingPower = (downPower.get(id) ?? 0n).toString();
     summary.netVoteCount = summary.upvoteCount - summary.downvoteCount;
     const windows = recent.get(id) ?? emptyRecentTotals();
     summary.recentUpvotes = Object.fromEntries(

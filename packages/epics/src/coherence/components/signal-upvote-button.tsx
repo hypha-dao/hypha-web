@@ -3,6 +3,7 @@
 import React from 'react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import {
+  applyPendingSignalUpvotes,
   resolveSignalVoteAction,
   signalUpvoteCellMeasure,
   useCoherenceUpvoteMutations,
@@ -22,7 +23,6 @@ import {
   Slider,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import {
   formatVotingPowerCompact,
@@ -34,6 +34,11 @@ import {
 } from './signal-upvote-cell';
 import { isArchivedSignalVoteError } from '../lib/signal-upvote-errors';
 import type { SignalVotingModeStatus } from '../hooks/use-signal-voting-mode';
+import {
+  SignalVoteRoster,
+  SignalVoteTotals,
+  useSignalSpaceSlug,
+} from './signal-vote-summary';
 
 const MEMBERSHIP_ERROR_PATTERN = /space member or delegate/i;
 
@@ -43,6 +48,8 @@ const EMPTY_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
   upvoteCount: 0,
   downvoteCount: 0,
+  upVotingPower: '0',
+  downVotingPower: '0',
   netVoteCount: 0,
   tokenDecimals: 0,
   voters: [],
@@ -69,6 +76,8 @@ export {
 
 type SignalUpvoteButtonProps = {
   slug?: string | null;
+  /** Space whose signal lists should show this vote without a reload. */
+  spaceSlug?: string | null;
   upvotes?: CoherenceUpvoteSummary;
   /** `null` while the space's voting method is loading; voting stays closed. */
   votingMode: SignalVotingMode | null;
@@ -108,6 +117,7 @@ type SignalUpvoteButtonProps = {
  */
 export function SignalUpvoteButton({
   slug,
+  spaceSlug,
   upvotes,
   votingMode,
   votingModeStatus = 'loading',
@@ -126,6 +136,7 @@ export function SignalUpvoteButton({
   const locale = useLocale();
   const format = useFormatter();
   const { jwt } = useJwt();
+  const resolvedSpaceSlug = useSignalSpaceSlug(spaceSlug);
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
   const { upvote, removeUpvote, isUpvoting, isRemovingUpvote } =
     useCoherenceUpvoteMutations(jwt);
@@ -188,13 +199,17 @@ export function SignalUpvoteButton({
     async (next: CoherenceUpvoteSummary) => {
       setLocalSummary(next);
       setPercent(myUpvotePercent(next));
+      const signalSlug = slug?.trim();
+      if (resolvedSpaceSlug && signalSlug) {
+        applyPendingSignalUpvotes(resolvedSpaceSlug, signalSlug, next);
+      }
       try {
         await refresh?.();
       } catch {
-        // Ranking refresh is best-effort; the local summary is already current.
+        // The feed cache already has this vote. A refetch is best-effort.
       }
     },
-    [refresh],
+    [refresh, resolvedSpaceSlug, slug],
   );
 
   const run = React.useCallback(
@@ -366,14 +381,11 @@ export function SignalUpvoteButton({
             </p>
           ) : (
             <div className="flex flex-col gap-3 p-3">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-1 text-muted-foreground">
-                  {isOneMemberOneVote ? t('totalUpvotes') : t('totalSupport')}
-                </span>
-                <span className="text-3 font-semibold tabular-nums text-foreground">
-                  {totalLabel}
-                </span>
-              </div>
+              <SignalVoteTotals
+                summary={summary}
+                totalLabel={totalLabel}
+                mode={isOneMemberOneVote ? 'count' : 'power'}
+              />
 
               {isOneMemberOneVote ? (
                 <>
@@ -476,49 +488,11 @@ export function SignalUpvoteButton({
               ) : null}
 
               <Separator className="bg-border/70" />
-              <span className="text-1 text-muted-foreground">
-                {t('supportersCount', { count: summary.upvoteCount })}
-              </span>
-              {summary.voters.length > 0 ? (
-                <ul className="-mt-1 flex max-h-48 flex-col gap-1.5 overflow-y-auto narrow-scrollbar">
-                  {summary.voters.map((voter) => (
-                    <li
-                      key={voter.personId}
-                      className="flex items-center justify-between gap-2 border border-border/70 px-2.5 py-2"
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <PersonAvatar
-                          size="sm"
-                          shape="circle"
-                          avatarSrc={voter.avatarUrl ?? ''}
-                          userName={voter.name ?? undefined}
-                          personId={voter.personId}
-                        />
-                        <span className="truncate text-1 text-foreground">
-                          {voter.name || t('anonymousSupporter')}
-                        </span>
-                      </span>
-                      <span
-                        className={cn(
-                          'shrink-0 text-1 tabular-nums',
-                          voter.direction === 'down'
-                            ? 'text-error-11'
-                            : 'text-muted-foreground',
-                        )}
-                      >
-                        {voter.direction === 'down' ? '−' : ''}
-                        {isOneMemberOneVote
-                          ? t('votesCount', { count: 1 })
-                          : formatVotingPowerCompact(
-                              voter.votingPower,
-                              summary.tokenDecimals,
-                              locale,
-                            )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
+              <SignalVoteRoster
+                summary={summary}
+                mode={isOneMemberOneVote ? 'count' : 'power'}
+                className="-mt-1"
+              />
             </div>
           )}
         </PopoverContent>

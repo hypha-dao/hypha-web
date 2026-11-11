@@ -4,6 +4,7 @@ import React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ChevronDown } from 'lucide-react';
 import {
+  applyPendingSignalUpvotes,
   resolveSignalVoteAction,
   useCoherenceUpvoteMutations,
   useJwt,
@@ -19,15 +20,21 @@ import {
   Slider,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { formatVotingPowerCompact } from '../utils/format-voting-power';
 import { SignalUpvoteTriangle } from './signal-upvote-cell';
+import {
+  SignalVoteRoster,
+  SignalVoteTotals,
+  useSignalSpaceSlug,
+} from './signal-vote-summary';
 
 const EMPTY_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
   upvoteCount: 0,
   downvoteCount: 0,
+  upVotingPower: '0',
+  downVotingPower: '0',
   netVoteCount: 0,
   tokenDecimals: 0,
   voters: [],
@@ -72,6 +79,7 @@ export function SignalUpvoteControl({
   const t = useTranslations('SignalCard');
   const locale = useLocale();
   const { jwt } = useJwt();
+  const resolvedSpaceSlug = useSignalSpaceSlug();
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
   const { upvote, removeUpvote, isUpvoting, isRemovingUpvote } =
     useCoherenceUpvoteMutations(jwt);
@@ -113,13 +121,17 @@ export function SignalUpvoteControl({
     async (next: CoherenceUpvoteSummary) => {
       setLocalSummary(next);
       setPercent(myUpvotePercent(next));
+      const signalSlug = slug?.trim();
+      if (resolvedSpaceSlug && signalSlug) {
+        applyPendingSignalUpvotes(resolvedSpaceSlug, signalSlug, next);
+      }
       try {
         await refresh?.();
       } catch {
-        // Ranking refresh is best-effort; the local summary is already current.
+        // The feed cache already has this vote. A refetch is best-effort.
       }
     },
-    [refresh],
+    [refresh, resolvedSpaceSlug, slug],
   );
 
   const handleDirection = React.useCallback(
@@ -349,13 +361,12 @@ export function SignalUpvoteControl({
             onClick={stopPropagation}
           >
             <div className="flex flex-col">
-              <div className="flex items-center justify-between gap-3 px-4 py-3.5">
-                <span className="text-1 font-medium text-muted-foreground">
-                  {t('totalSupport')}
-                </span>
-                <span className="text-3 font-semibold tabular-nums text-foreground">
-                  {totalLabel}
-                </span>
+              <div className="flex flex-col gap-2 px-4 py-3.5">
+                <SignalVoteTotals
+                  summary={summary}
+                  totalLabel={totalLabel}
+                  mode="power"
+                />
               </div>
 
               {canVote ? (
@@ -433,47 +444,7 @@ export function SignalUpvoteControl({
 
               <Separator className="bg-border/70" />
               <div className="flex flex-col gap-3 px-4 py-3.5">
-                <span className="text-1 font-medium text-muted-foreground">
-                  {t('supportersCount', { count: summary.upvoteCount })}
-                </span>
-                {summary.voters.length > 0 ? (
-                  <ul className="flex max-h-44 flex-col gap-1 overflow-y-auto rounded-none border border-border/80 bg-background-2 p-1.5 narrow-scrollbar">
-                    {summary.voters.map((voter) => (
-                      <li
-                        key={voter.personId}
-                        className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-background-3/70"
-                      >
-                        <span className="flex min-w-0 items-center gap-2">
-                          <PersonAvatar
-                            size="sm"
-                            shape="circle"
-                            avatarSrc={voter.avatarUrl ?? ''}
-                            userName={voter.name ?? undefined}
-                            personId={voter.personId}
-                          />
-                          <span className="truncate text-1 font-medium text-foreground">
-                            {voter.name || t('anonymousSupporter')}
-                          </span>
-                        </span>
-                        <span
-                          className={cn(
-                            'shrink-0 text-1 tabular-nums',
-                            voter.direction === 'down'
-                              ? 'text-error-11'
-                              : 'text-muted-foreground',
-                          )}
-                        >
-                          {voter.direction === 'down' ? '−' : ''}
-                          {formatVotingPowerCompact(
-                            voter.votingPower,
-                            summary.tokenDecimals,
-                            locale,
-                          )}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
+                <SignalVoteRoster summary={summary} mode="power" />
               </div>
             </div>
           </PopoverContent>

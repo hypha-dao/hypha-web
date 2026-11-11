@@ -31,6 +31,8 @@ function upvotes(
     totalVotingPower: total.power,
     upvoteCount: total.voters,
     downvoteCount: 0,
+    upVotingPower: total.power,
+    downVotingPower: '0',
     netVoteCount: total.voters,
     tokenDecimals: 0,
     voters: [],

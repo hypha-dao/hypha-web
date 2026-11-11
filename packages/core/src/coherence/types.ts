@@ -126,6 +126,10 @@ export type CoherenceUpvoteSummary = {
   upvoteCount: number;
   /** People who voted down. */
   downvoteCount: number;
+  /** Positive raw power cast up, before the net. */
+  upVotingPower: string;
+  /** Positive raw power cast down, before the net. */
+  downVotingPower: string;
   /** Upvoters minus downvoters. Rankings and the count cell use this. */
   netVoteCount: number;
   /** Display decimals of the voting power source (0 for 1m1v, 18 for token/voice). */

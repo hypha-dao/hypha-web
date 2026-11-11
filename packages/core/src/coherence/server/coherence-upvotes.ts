@@ -19,6 +19,8 @@ export const EMPTY_COHERENCE_UPVOTE_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
   upvoteCount: 0,
   downvoteCount: 0,
+  upVotingPower: '0',
+  downVotingPower: '0',
   netVoteCount: 0,
   tokenDecimals: 0,
   voters: [],

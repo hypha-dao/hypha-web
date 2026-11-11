@@ -69,6 +69,23 @@ describe('upvote cell shared by the list and the detail', () => {
     expect(upvoteCellSource).toContain('data-testid="signal-vote-up"');
     expect(upvoteCellSource).toContain('data-testid="signal-vote-down"');
     expect(upvoteSource).toContain('resolveSignalVoteAction');
+    expect(upvoteSource).toContain('applyPendingSignalUpvotes');
+    expect(upvoteSource).toContain('<SignalVoteTotals');
+    expect(upvoteSource).toContain('<SignalVoteRoster');
+    expect(upvoteSource).not.toContain("t('totalUpvotes')");
+    expect(upvoteSource).not.toContain("t('supportersCount')");
+    const voteSummarySource = readFileSync(
+      resolve(__dirname, '../../components/signal-vote-summary.tsx'),
+      'utf8',
+    );
+    expect(voteSummarySource).toContain("t('votes')");
+    expect(voteSummarySource).toContain("t('noVotesYet')");
+    expect(voteSummarySource).toContain("t('voteUp')");
+    expect(voteSummarySource).toContain("t('voteDown')");
+    expect(voteSummarySource).toContain("t('upVotesCount'");
+    expect(voteSummarySource).toContain("t('upVotesPower'");
+    expect(feedRowSource).toContain('spaceSlug={spaceSlug}');
+    expect(pageSource).toContain('spaceSlug={spaceSlug}');
     expect(upvoteSource).not.toContain("variant === 'feed'");
     expect(upvoteSource).not.toContain("variant === 'page'");
     expect(upvoteSource).toContain('isArchivedSignalVoteError');

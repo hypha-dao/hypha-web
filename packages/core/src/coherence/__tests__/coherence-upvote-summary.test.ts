@@ -159,6 +159,8 @@ describe('aggregateCoherenceUpvoteSummaries', () => {
     const summary = mixed[7];
     expect(summary?.upvoteCount).toBe(1);
     expect(summary?.downvoteCount).toBe(1);
+    expect(summary?.upVotingPower).toBe('10');
+    expect(summary?.downVotingPower).toBe('4');
     expect(summary?.netVoteCount).toBe(0);
     expect(summary?.totalVotingPower).toBe('6');
     expect(summary?.myUpvote).toEqual({

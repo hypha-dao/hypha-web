@@ -509,6 +509,7 @@ export function SignalPage({
             <div className="flex items-start gap-4">
               <SignalUpvoteButton
                 slug={signal.slug}
+                spaceSlug={spaceSlug}
                 upvotes={signal.upvotes}
                 votingMode={votingMode}
                 votingModeStatus={votingModeStatus}

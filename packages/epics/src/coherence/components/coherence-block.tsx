@@ -263,6 +263,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
               <SignalFeedRow
                 key={signal.id}
                 signal={signal}
+                spaceSlug={spaceSlug}
                 href={getSignalPath(lang, spaceSlug, signal.slug)}
                 votingMode={votingMode}
                 votingModeStatus={votingModeStatus}

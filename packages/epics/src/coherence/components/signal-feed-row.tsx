@@ -50,6 +50,7 @@ export function useSignalShortDate() {
 
 type SignalFeedRowProps = {
   signal: Coherence;
+  spaceSlug: string;
   href: string;
   votingMode: SignalVotingMode | null;
   votingModeStatus?: SignalVotingModeStatus;
@@ -64,6 +65,7 @@ type SignalFeedRowProps = {
 
 export function SignalFeedRow({
   signal,
+  spaceSlug,
   href,
   votingMode,
   votingModeStatus,
@@ -109,6 +111,7 @@ export function SignalFeedRow({
     >
       <SignalUpvoteButton
         slug={signal.slug}
+        spaceSlug={spaceSlug}
         upvotes={signal.upvotes}
         votingMode={votingMode}
         votingModeStatus={votingModeStatus}
