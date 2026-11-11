@@ -155,6 +155,65 @@ run('authorization server: protocol, gate, revocation, storage', () => {
     expect(String(f.token!.body.scope).split(' ')).toContain('offline_access');
   });
 
+  it('identity link: Privy is linked on first login; another provider is never linked automatically', async () => {
+    const f = await h.fullFlow(s);
+    expect(f.stage).toBe('done');
+    const link = await s.pool.query(
+      'select "personSub" from as_identity where provider = $1 and "providerUserId" = $2',
+      ['privy', h.PERSON],
+    );
+    expect(link.rows[0].personSub).toBe(h.PERSON);
+    // A second provider reporting the same id text must not reach the person.
+    const jar = new h.CookieJar();
+    const pkce = h.makePkce();
+    const u = h.authorizeUrl(pkce);
+    const a = await s.handler(h.req(u.pathname + u.search, { jar }));
+    const q = new URL(a.headers.get('location')!, h.ISSUER).search.slice(1);
+    const post = (provider: string) =>
+      s.handler(
+        h.req('/api/auth/provider/sign-in', {
+          method: 'POST',
+          jar,
+          headers: {
+            'content-type': 'application/json',
+            accept: 'application/json',
+            origin: h.ISSUER,
+          },
+          body: JSON.stringify({
+            provider,
+            token: `ok:${h.PERSON}`,
+            oauth_query: q,
+          }),
+        }),
+      );
+    expect((await post('other')).status).toBe(403);
+    expect((await post('nope')).status).toBe(400);
+    // An explicit link makes the second provider work, and sub stays the person's sub.
+    await s.pool.query(
+      'insert into as_identity (provider, "providerUserId", "personSub") values ($1,$2,$3)',
+      ['other', 'other-user-1', h.PERSON],
+    );
+    const viaOther = await s.handler(
+      h.req('/api/auth/provider/sign-in', {
+        method: 'POST',
+        jar,
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json',
+          origin: h.ISSUER,
+        },
+        body: JSON.stringify({
+          provider: 'other',
+          token: 'ok:other-user-1',
+          oauth_query: q,
+        }),
+      }),
+    );
+    expect(viaOther.status).toBe(200);
+    const sess = await s.pool.query('select "userId" from as_session');
+    expect(sess.rows.every((r) => r.userId === h.PERSON)).toBe(true);
+  });
+
   it('whitelist: a person not on the list cannot log in', async () => {
     const f = await h.fullFlow(s, { person: h.OTHER_PERSON });
     expect(f.stage).toBe('login');
@@ -266,14 +325,18 @@ run('authorization server: protocol, gate, revocation, storage', () => {
     const a = await s.handler(h.req(u.pathname + u.search));
     const q = new URL(a.headers.get('location')!, h.ISSUER).search.slice(1);
     const res = await s.handler(
-      h.req('/api/auth/privy/sign-in', {
+      h.req('/api/auth/provider/sign-in', {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
           accept: 'application/json',
           origin: h.ISSUER,
         },
-        body: JSON.stringify({ privyToken: `ok:${h.PERSON}`, oauth_query: q }),
+        body: JSON.stringify({
+          provider: 'privy',
+          token: `ok:${h.PERSON}`,
+          oauth_query: q,
+        }),
       }),
     );
     const cookies = res.headers.getSetCookie();
@@ -338,7 +401,7 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
         '/api/auth/jwks',
         '/api/auth/oauth2/token',
         '/.well-known/oauth-authorization-server',
-        '/api/auth/privy/sign-in',
+        '/api/auth/provider/sign-in',
       ]) {
         const method =
           path.includes('token') || path.includes('sign-in') ? 'POST' : 'GET';
@@ -490,8 +553,10 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
     const leaky = await h.makeServer(
       { AUTH_SERVER_SECRET: SECRET },
       {
-        verifyPrivyToken: async (t) => {
-          throw new Error(`boom for token ${t}`);
+        providers: {
+          privy: async (t) => {
+            throw new Error(`boom for token ${t}`);
+          },
         },
       },
     );
@@ -504,10 +569,10 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
         () => leaky,
       );
       const res = await hh(
-        onHost('auth.localhost:3000', '/api/auth/privy/sign-in', {
+        onHost('auth.localhost:3000', '/api/auth/provider/sign-in', {
           method: 'POST',
           headers: { 'content-type': 'application/json', origin: h.ISSUER },
-          body: JSON.stringify({ privyToken: secretToken }),
+          body: JSON.stringify({ provider: 'privy', token: secretToken }),
         }),
       );
       const body = await res.text();

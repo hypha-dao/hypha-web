@@ -19,15 +19,20 @@ import {
   REFRESH_TOKEN_TTL_SECONDS,
   type AuthServerConfig,
 } from './config';
-import { createAuthDbPool, findPersonBySub, type AuthDbPool } from './db';
+import {
+  createAuthDbPool,
+  resolvePersonForIdentity,
+  type AuthDbPool,
+} from './db';
 import { isPersonAllowed } from './gate';
 import { redactingLog } from './redact';
-import { createPrivyBridge } from './privy-bridge';
-import { createPrivyTokenVerifier, type PrivyTokenVerifier } from './privy';
+import { createIdentityBridge } from './identity-bridge';
+import { createPrivyProvider, type ProviderRegistry } from './providers';
 
 export type AuthServerDeps = {
   pool?: AuthDbPool;
-  verifyPrivyToken?: PrivyTokenVerifier;
+  /** Login providers by name; production registers Privy. */
+  providers?: ProviderRegistry;
   /** Replaced in tests; production uses the pinned, redirect-refusing Node transport. */
   fetchClientMetadataResource?: ClientMetadataResourceFetch;
   /** Access token lifetime override (tests). */
@@ -44,9 +49,9 @@ export function createAuthServer(
   deps: AuthServerDeps = {},
 ) {
   const pool = deps.pool ?? createAuthDbPool(config.databaseUrl);
-  const verifyPrivyToken =
-    deps.verifyPrivyToken ??
-    createPrivyTokenVerifier(config.privyAppId, config.privyJwksUrlOverride);
+  const providers: ProviderRegistry = deps.providers ?? {
+    privy: createPrivyProvider(config.privyAppId, config.privyJwksUrlOverride),
+  };
 
   const gate = (personId: string | null | undefined) =>
     isPersonAllowed(config, personId);
@@ -129,10 +134,11 @@ export function createAuthServer(
           deps.fetchClientMetadataResource ?? fetchClientMetadataResource,
         metadataProfile: 'mcp-2026-07-28',
       }),
-      createPrivyBridge({
-        verifyPrivyToken,
+      createIdentityBridge({
+        providers,
         gate,
-        findPerson: (sub) => findPersonBySub(pool, sub),
+        resolvePerson: (provider, id) =>
+          resolvePersonForIdentity(pool, provider, id),
       }),
       {
         // Every client is an AI host that should stay connected, so a refresh token is always

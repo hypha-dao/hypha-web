@@ -62,6 +62,12 @@ export function testConfig(
   return config;
 }
 
+/** Fake login provider: tokens look like `ok:<provider user id>`. */
+export const fakeProvider = (_name: string) => async (t: string) =>
+  t.startsWith('ok:')
+    ? ({ ok: true, providerUserId: t.slice(3) } as const)
+    : ({ ok: false, reason: 'invalid token' } as const);
+
 export async function makeServer(
   over: Record<string, string | undefined> = {},
   deps: Parameters<typeof createAuthServer>[1] = {},
@@ -70,10 +76,7 @@ export async function makeServer(
   const pool = createAuthDbPool(config.databaseUrl);
   const server = createAuthServer(config, {
     pool,
-    verifyPrivyToken: async (t) =>
-      t.startsWith('ok:')
-        ? { ok: true, userId: t.slice(3) }
-        : { ok: false, reason: 'invalid token' },
+    providers: { privy: fakeProvider('privy'), other: fakeProvider('other') },
     fetchClientMetadataResource: fakeMetadataFetch,
     ...deps,
   });
@@ -161,7 +164,7 @@ export async function signIn(
   person = PERSON,
 ) {
   const res = await s.handler(
-    req('/api/auth/privy/sign-in', {
+    req('/api/auth/provider/sign-in', {
       method: 'POST',
       jar,
       headers: {
@@ -170,7 +173,8 @@ export async function signIn(
         origin: ISSUER,
       },
       body: JSON.stringify({
-        privyToken: `ok:${person}`,
+        provider: 'privy',
+        token: `ok:${person}`,
         oauth_query: oauthQuery,
       }),
     }),
@@ -259,6 +263,6 @@ export async function fullFlow(
 
 export async function resetAsTables(pool: Harness['pool']) {
   await pool.query(
-    'truncate as_jwks, as_oauth_consent, as_oauth_access_token, as_oauth_refresh_token, as_oauth_client, as_session, as_account, as_user, as_verification restart identity cascade',
+    'truncate as_identity, as_jwks, as_oauth_consent, as_oauth_access_token, as_oauth_refresh_token, as_oauth_client, as_session, as_account, as_user, as_verification restart identity cascade',
   );
 }

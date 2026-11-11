@@ -19,7 +19,7 @@ const ALLOWED: ReadonlyArray<{ path: string; methods: readonly string[] }> = [
   { path: '/oauth2/token', methods: ['POST'] },
   { path: '/oauth2/revoke', methods: ['POST'] },
   { path: '/jwks', methods: ['GET'] },
-  { path: '/privy/sign-in', methods: ['POST'] },
+  { path: '/provider/sign-in', methods: ['POST'] },
 ];
 const WELL_KNOWN = '/.well-known/oauth-authorization-server';
 

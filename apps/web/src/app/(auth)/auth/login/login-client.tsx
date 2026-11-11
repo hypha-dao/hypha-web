@@ -25,7 +25,7 @@ export function LoginClient() {
     try {
       const privyToken = await getAccessToken();
       if (!privyToken) throw new Error('no token');
-      const res = await fetch(`${AUTH_SERVER_API_BASE_PATH}/privy/sign-in`, {
+      const res = await fetch(`${AUTH_SERVER_API_BASE_PATH}/provider/sign-in`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
@@ -33,7 +33,8 @@ export function LoginClient() {
         },
         credentials: 'same-origin',
         body: JSON.stringify({
-          privyToken,
+          provider: 'privy',
+          token: privyToken,
           oauth_query: window.location.search.replace(/^\?/, ''),
         }),
       });

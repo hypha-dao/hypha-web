@@ -204,14 +204,18 @@ try {
   );
 
   // 5. sign in (bridge) with a Privy-style token
-  res = await call('/api/auth/privy/sign-in', {
+  res = await call('/api/auth/provider/sign-in', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
       accept: 'application/json',
       origin: ISSUER,
     },
-    body: JSON.stringify({ privyToken, oauth_query: loginLoc.search.slice(1) }),
+    body: JSON.stringify({
+      provider: 'privy',
+      token: privyToken,
+      oauth_query: loginLoc.search.slice(1),
+    }),
   });
   const signIn = await res.json();
   const cookie = res
@@ -224,7 +228,7 @@ try {
       String(signIn.url).startsWith('/auth/consent') &&
       !!cookie,
   );
-  const bad = await call('/api/auth/privy/sign-in', {
+  const bad = await call('/api/auth/provider/sign-in', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -232,7 +236,8 @@ try {
       origin: ISSUER,
     },
     body: JSON.stringify({
-      privyToken: 'eyJhbGciOiJFUzI1NiJ9.eyJ4IjoxfQ.AAAAAAAA',
+      provider: 'privy',
+      token: 'eyJhbGciOiJFUzI1NiJ9.eyJ4IjoxfQ.AAAAAAAA',
       oauth_query: loginLoc.search.slice(1),
     }),
   });

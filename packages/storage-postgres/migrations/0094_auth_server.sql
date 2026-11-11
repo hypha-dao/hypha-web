@@ -1,6 +1,6 @@
 -- #2608 authorization server (Better Auth under packages/auth-server). Additive only.
 -- Tables are prefixed as_ so they cannot collide with the app's own tables. as_user.id is the
--- Privy user id and is tied to people.sub: there is no second identity store; deleting a person
+-- the person's sub (people.sub, today the Privy user id) and is tied to people.sub: there is no second identity store; deleting a person
 -- removes their authorization-server records.
 -- Hand-authored (repo convention: IF NOT EXISTS; drizzle-kit generate/migrate/push are not used).
 -- Column names are Better Auth's own (camelCase, quoted); the library reads and writes them.
@@ -28,6 +28,13 @@ CREATE TABLE IF NOT EXISTS "as_oauth_access_token" ("id" text not null primary k
 CREATE TABLE IF NOT EXISTS "as_oauth_consent" ("id" text not null primary key, "clientId" text not null references "as_oauth_client" ("clientId") on delete cascade, "userId" text references "as_user" ("id") on delete cascade, "referenceId" text, "resources" jsonb, "requestedUserInfoClaims" jsonb, "scopes" jsonb not null, "createdAt" timestamptz not null, "updatedAt" timestamptz not null);
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "as_oauth_client_assertion" ("id" text not null primary key, "expiresAt" timestamptz not null);
+--> statement-breakpoint
+-- Login provider accounts of a person: one person can have several providers, and a provider
+-- can be swapped without changing the person's sub. Privy accounts are linked on first login
+-- (people.sub = Privy user id); other providers are linked only by an explicit, authenticated step.
+CREATE TABLE IF NOT EXISTS "as_identity" ("provider" text not null, "providerUserId" text not null, "personSub" text not null references "people" ("sub") on delete cascade, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, primary key ("provider", "providerUserId"));
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "as_identity_personSub_idx" on "as_identity" ("personSub");
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "as_session_userId_idx" on "as_session" ("userId");
 --> statement-breakpoint

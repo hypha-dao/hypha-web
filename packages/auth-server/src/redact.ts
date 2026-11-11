@@ -6,7 +6,7 @@
 const JWT = /eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}/g;
 const BEARER = /\b(Bearer|DPoP)\s+[A-Za-z0-9._~+/=-]{8,}/gi;
 const KEYED =
-  /((?:access_token|refresh_token|id_token|privyToken|privy_token|client_secret|code_verifier|code|secret|authorization|cookie|set-cookie)["']?\s*[:=]\s*["']?)([^"'\s&,;}]{4,})/gi;
+  /((?:access_token|refresh_token|id_token|privyToken|privy_token|token|client_secret|code_verifier|code|secret|authorization|cookie|set-cookie)["']?\s*[:=]\s*["']?)([^"'\s&,;}]{4,})/gi;
 
 export const REDACTED = '[redacted]';
 
