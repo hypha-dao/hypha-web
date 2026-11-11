@@ -45,13 +45,7 @@ import {
   resolveQuestLeadIdentity,
 } from './quest-detail-presentation';
 import { QuestUpdateCard } from './quest-update-card';
-import {
-  ArrowLeft,
-  ArrowUpRight,
-  MessageCircle,
-  Pencil,
-  Send,
-} from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Pencil, Send } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -1434,6 +1428,17 @@ export function SpaceQuestDetail({
     openHumanChatPanel();
   };
 
+  // Open discussion stays the space channel. The removed header icon was the
+  // only detail-page door to the helper when a quest has no room yet; that
+  // case now uses this same control. A quest room stays in Messages.
+  const openDiscussion = () => {
+    if (quest.status !== 'proposed' && !quest.chatRoomId && canEdit) {
+      openQuestChat();
+      return;
+    }
+    openSpaceChannel();
+  };
+
   const openQuestChat = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 1200) {
       closeAiPanel();
@@ -1735,24 +1740,13 @@ export function SpaceQuestDetail({
           <div className="flex shrink-0 items-center gap-3">
             <button
               type="button"
-              onClick={openSpaceChannel}
+              onClick={openDiscussion}
               data-testid="open-quest-discussion-button"
               className="inline-flex items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
             >
               Open discussion
               <span aria-hidden>→</span>
             </button>
-            {quest.status !== 'proposed' && (quest.chatRoomId || canEdit) ? (
-              <button
-                type="button"
-                onClick={openQuestChat}
-                data-testid="open-quest-chat-button"
-                aria-label="Quest chat"
-                className="inline-flex size-8 items-center justify-center border border-foreground/15 text-foreground hover:bg-foreground/5"
-              >
-                <MessageCircle className="size-3.5" aria-hidden />
-              </button>
-            ) : null}
           </div>
         </div>
         <QuestDetailSubheading

@@ -434,7 +434,7 @@ describe('saved quest helper entry', () => {
     expect(locked).toHaveProperty('disabled', true);
   });
 
-  it('opens the quest discussion room and keeps the helper off the page', () => {
+  it('opens the space channel from Open discussion and has no chat icon', () => {
     render(
       <SpaceQuestDetail
         spaceSlug="sandbox"
@@ -444,26 +444,38 @@ describe('saved quest helper entry', () => {
     );
 
     expect(screen.queryByTestId('open-quest-helper-button')).toBeNull();
+    expect(screen.queryByTestId('open-quest-chat-button')).toBeNull();
     expect(screen.queryByText('Quest Helper')).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Participants' })).toBeNull();
     fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
     expect(harness.openCoherenceChat).not.toHaveBeenCalled();
+    expect(harness.requestQuestChat).not.toHaveBeenCalled();
     expect(harness.closeCoherenceChat).toHaveBeenCalled();
     expect(harness.openHumanChatPanel).toHaveBeenCalled();
+  });
 
-    fireEvent.click(screen.getByTestId('open-quest-chat-button'));
-    expect(harness.openCoherenceChat).toHaveBeenCalledWith(
-      'room-1',
-      'Onboarding',
-      'onboarding',
-      'Keep the saved goal',
-      'sandbox',
-      { channel: 'quest' },
+  it('opens the helper from Open discussion when the quest has no room', () => {
+    harness.chatRoomId = null;
+    harness.quest = questFixture();
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="settings"
+      />,
     );
-    expect(harness.setSpaceQuestDraft).toHaveBeenCalledWith(null);
-    expect(
-      screen.getByTestId('open-quest-chat-button').getAttribute('aria-label'),
-    ).toBe('Quest chat');
+
+    expect(screen.queryByTestId('open-quest-chat-button')).toBeNull();
+    fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
+    expect(harness.requestQuestChat).toHaveBeenCalled();
+    expect(harness.setSpaceQuestDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        spaceSlug: 'sandbox',
+        questTitle: 'Onboarding',
+      }),
+    );
+    expect(harness.openCoherenceChat).not.toHaveBeenCalled();
+    expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
   });
 
   it('edits the quest name, participants, and paused health from Settings', () => {
@@ -513,7 +525,10 @@ describe('saved quest helper entry', () => {
       />,
     );
     expect(screen.queryByTestId('open-quest-helper-button')).toBeNull();
-    expect(screen.getByTestId('open-quest-chat-button')).toBeTruthy();
+    expect(screen.queryByTestId('open-quest-chat-button')).toBeNull();
+    fireEvent.click(screen.getByTestId('open-quest-discussion-button'));
+    expect(harness.openCoherenceChat).not.toHaveBeenCalled();
+    expect(harness.openHumanChatPanel).toHaveBeenCalled();
     expect(settingsAction('Quest name')).toHaveProperty('disabled', true);
     expect(settingsAction('Participants')).toHaveProperty('disabled', true);
   });
