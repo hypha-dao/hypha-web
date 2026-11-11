@@ -540,7 +540,7 @@ export function SignalPage({
 
         <dl
           data-testid="signal-page-meta"
-          className="m-0 flex w-full flex-nowrap items-start gap-x-4 gap-y-4 border-t border-border/70 pt-4 max-[420px]:flex-wrap"
+          className="m-0 flex w-full flex-nowrap items-start gap-x-[clamp(1rem,4vw,3.5rem)] gap-y-4 border-t border-border/70 pt-4 max-[420px]:flex-wrap"
         >
           <MetaItem label={t('signalCreatedBy')}>
             <PersonAvatar

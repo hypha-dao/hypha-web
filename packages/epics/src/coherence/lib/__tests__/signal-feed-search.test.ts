@@ -109,7 +109,7 @@ describe('upvote cell shared by the list and the detail', () => {
       pageSource.indexOf('</dl>', pageMetaAt),
     );
     expect(metaSlice).toContain(
-      'flex w-full flex-nowrap items-start gap-x-4 gap-y-4',
+      'flex w-full flex-nowrap items-start gap-x-[clamp(1rem,4vw,3.5rem)] gap-y-4',
     );
     expect(metaSlice).toContain('max-[420px]:flex-wrap');
     expect(pageSource).toContain('min-w-[5.5rem] max-w-full shrink');
