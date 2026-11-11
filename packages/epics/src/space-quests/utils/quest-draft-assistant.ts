@@ -1537,29 +1537,37 @@ export const QUEST_HELPER_OFFLINE_REPLY =
   "I can't reach the assistant right now, so I won't guess wording or fill a section. Your draft is unchanged. Try again, or give the exact line to put in a section.";
 
 /**
- * A turn addressed to the Helper at the start of the composer.
- * Bare "Helper" needs a comma or colon so ordinary sentences stay in the room.
- * "@Helper" and "@Quest Helper" do not. The mention picker inserts a
- * zero-width space after "@".
+ * A turn addressed to the Helper.
+ * Bare "Helper" needs a comma or colon so "Helpers, meet Thursday" stays in
+ * the room. "@Helper" and "@Quest Helper" do not. The mention picker inserts
+ * a zero-width space after "@". The address does not have to be the first
+ * word — "QA test: Helper, …" is still for the Helper — and the turn is the
+ * text after that address.
  */
-const QUEST_HELPER_ADDRESS =
-  /^(?:@\u200b?)(?:quest[\s_-]+helper|helper|ai[\s_-]*agents)\b[,:\s]*|^helper\s*[,:]\s*/i;
+const QUEST_HELPER_ADDRESS_SOURCE =
+  '(?:@\\u200b?)(?:quest[\\s_-]+helper|helper|ai[\\s_-]*agents)\\b[,:\\s]*|\\bhelper\\s*[,:]\\s*';
+
+function helperAddressMatch(text: string): RegExpExecArray | null {
+  return new RegExp(QUEST_HELPER_ADDRESS_SOURCE, 'i').exec(text);
+}
 
 /** True when the member is talking to the Helper, with or without a pending card. */
 export function questMessageAddressesHelper(raw: string): boolean {
-  return QUEST_HELPER_ADDRESS.test(raw.trim());
+  return helperAddressMatch(raw.trim()) != null;
 }
 
 /**
- * The create screen trims the composer, then drops a leading Helper address
- * (@Quest Helper, @Helper, Helper, / Helper:, or @AI Agents). The rest of the
- * turn sees that string only.
+ * Drops a Helper address (@Quest Helper, @Helper, Helper, Helper:, or
+ * @AI Agents), including one that follows a prefix. The rest of the turn
+ * sees only the text after that address.
  */
 export function questHelperTurnMessage(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) return '';
-  const withoutMention = trimmed.replace(QUEST_HELPER_ADDRESS, '').trim();
-  return withoutMention || trimmed;
+  const match = helperAddressMatch(trimmed);
+  if (!match || match.index == null) return trimmed;
+  const after = trimmed.slice(match.index + match[0].length).trim();
+  return after || trimmed;
 }
 
 /**

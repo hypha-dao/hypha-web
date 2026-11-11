@@ -321,6 +321,36 @@ describe('quest discussion helper', () => {
     expect(
       questHelperOwnsRoomMessage('@AI Agents what is the goal?', false),
     ).toBe(true);
+    expect(
+      questHelperOwnsRoomMessage('QA test: Helper, what is the goal?', false),
+    ).toBe(true);
+    expect(questHelperTurnMessage('QA test: Helper, what is the goal?')).toBe(
+      'what is the goal?',
+    );
+    expect(
+      questHelperOwnsRoomMessage(
+        'QA test: @Quest Helper what is the goal?',
+        false,
+      ),
+    ).toBe(true);
+    expect(
+      questHelperTurnMessage('QA test: @Quest Helper what is the goal?'),
+    ).toBe('what is the goal?');
+  });
+
+  it('answers a prefixed Helper address from an empty active thread', async () => {
+    const thread: { current: QuestHelperThread | null } = { current: null };
+    render(<HelperHost onResult={(next) => (thread.current = next)} />);
+    await waitFor(() => {
+      expect(thread.current).not.toBeNull();
+    });
+    expect(thread.current?.messages).toEqual([]);
+    expect(screen.queryByText(SAVED_QUEST_HELPER_INTRO)).toBeNull();
+    expect(thread.current?.accept('QA test: Helper, what is the goal?')).toBe(
+      true,
+    );
+    expect(await screen.findByText(/Keep the saved goal/)).toBeTruthy();
+    expect(screen.queryByText(SAVED_QUEST_HELPER_INTRO)).toBeNull();
   });
 
   it('answers an addressed question after a discard, and labels it as the member', async () => {
