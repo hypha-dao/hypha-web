@@ -1,6 +1,7 @@
 import 'server-only';
 import {
   authenticateIntegrationClient,
+  findPersonBySub,
   resolveV2Caller,
   V2_RESPONSE_HEADERS,
   withV2Headers,
@@ -8,6 +9,8 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { NextRequest, NextResponse } from 'next/server';
+import { getAuthServerConfig } from '../../app/(auth)/auth/_lib/server';
+import { resolveAuthServerToken } from './as-caller';
 
 export type V2AuthResult =
   | { ok: true; caller: V2Caller }
@@ -30,6 +33,35 @@ export async function authenticateV2(
         { error: clientAuth.error, code: clientAuth.code },
         { status: clientAuth.status },
       ),
+    };
+  }
+
+  // #2608 spike: a token from our own authorization server identifies the person.
+  const asToken = await resolveAuthServerToken(request, getAuthServerConfig());
+  if (asToken.kind === 'failure') {
+    return {
+      ok: false,
+      response: jsonV2({ error: asToken.error }, { status: asToken.status }),
+    };
+  }
+  if (asToken.kind === 'ok') {
+    const person = await findPersonBySub({ sub: asToken.sub }, { db });
+    if (!person) {
+      return {
+        ok: false,
+        response: jsonV2(
+          { error: 'A Hypha profile is required' },
+          { status: 403 },
+        ),
+      };
+    }
+    return {
+      ok: true,
+      caller: {
+        kind: 'user',
+        person,
+        address: (person.address as `0x${string}` | null | undefined) ?? null,
+      },
     };
   }
 
