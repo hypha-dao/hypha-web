@@ -100,7 +100,21 @@ export async function verifyAccessToken(
         ? [payload.aud]
         : [],
     };
-  } catch {
+  } catch (error) {
+    // Why it failed, for the operator: library error code, claim name and network cause only.
+    // Never the token, never the message text (it can echo claim values).
+    const e = error as {
+      name?: string;
+      code?: string;
+      claim?: string;
+      cause?: { code?: string };
+    };
+    console.warn('[auth-server] access token rejected', {
+      name: e?.name,
+      code: e?.code,
+      claim: e?.claim,
+      cause: e?.cause?.code,
+    });
     throw new AccessTokenError('invalid_token', 'Invalid access token');
   }
 }
