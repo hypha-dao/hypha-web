@@ -94,7 +94,7 @@ export default async function WhiteLabelRootLayout({
   return (
     <Html lang={locale} className={hyphaFontVariables}>
       <WhiteLabelAuthProvider mode={whiteLabelMode} authConfig={authConfig}>
-        <SwrProvider>
+        <SwrProvider skipClientErrorRetry>
           <ThemeProvider
             attribute="class"
             defaultTheme="light"
