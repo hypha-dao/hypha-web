@@ -1818,6 +1818,7 @@
       "emailNotifications": "Notificações por e-mail",
       "toEmail": "para {email}",
       "browserNotifications": "Notificações push do navegador",
+      "browserUnavailable": "Não é possível ativar as notificações push neste navegador ou dispositivo. O e-mail e as suas outras definições continuam a funcionar.",
       "yes": "Sim",
       "no": "Não",
       "emailNotificationsWithEmail": "Notificações por e-mail ({email})",

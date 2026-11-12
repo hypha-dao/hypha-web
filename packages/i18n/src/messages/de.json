@@ -1039,6 +1039,7 @@
       "emailNotifications": "E-Mail-Benachrichtigungen",
       "toEmail": "an {email}",
       "browserNotifications": "Browser-Push-Benachrichtigungen",
+      "browserUnavailable": "Push-Benachrichtigungen können in diesem Browser oder auf diesem Gerät nicht aktiviert werden. E-Mail und deine anderen Einstellungen funktionieren weiterhin.",
       "yes": "Ja",
       "no": "Nein",
       "emailNotificationsWithEmail": "E-Mail-Benachrichtigungen ({email})",

@@ -26,8 +26,10 @@ export const metadata: Metadata = {
 export default async function GlobalNotFound() {
   const tCommon = await getTranslations('Common');
   const requestHeaders = await headers();
+  const mode = requestHeaders.get(WL_MODE_HEADER);
   const whiteLabel =
-    requestHeaders.get(WL_MODE_HEADER) === 'embed' ||
+    mode === 'embed' ||
+    mode === 'host' ||
     requestHeaders.get(WL_NOT_FOUND_HEADER) === '1';
 
   if (whiteLabel) {

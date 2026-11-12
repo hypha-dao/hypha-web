@@ -5,18 +5,19 @@ import React from 'react';
 import OneSignal from 'react-onesignal';
 import {
   isTagDisabled,
-  SUBSCRIPTION_TAGS,
   SubscriptionTag,
   Tag,
-  TAG_EMAIL,
-  TAG_PUSH,
-  TAG_SUB_OWN_ACTIONS,
   TAG_SUBSCRIBED,
-  TAG_VALUE_DISABLED,
 } from '../constants';
+import {
+  enrolNotificationsAction,
+  getNotificationPreferencesAction,
+  saveNotificationPreferencesAction,
+  unenrolNotificationsAction,
+} from '../actions/notification-preferences';
+import type { NotificationPreferences } from '../core/preferences';
 
 const TRUE = 'true';
-const FALSE = 'false';
 
 export interface INotificationsContext {
   initialized: boolean;
@@ -27,6 +28,8 @@ export interface INotificationsContext {
   pushActive: boolean;
   setPushActive: React.Dispatch<React.SetStateAction<boolean>>;
   loggedIn: boolean;
+  /** The SDK failed to start (e.g. an unsupported browser): this device can't manage push. */
+  initFailed: boolean;
 }
 
 export interface NotificationConfiguration {
@@ -47,6 +50,7 @@ export const NotificationsContext = React.createContext<INotificationsContext>({
   pushActive: false,
   setPushActive: (_: React.SetStateAction<boolean>) => {},
   loggedIn: false,
+  initFailed: false,
 });
 
 /** Opt-in tags (`subscribed`): only an explicit `'true'` counts. */
@@ -71,15 +75,6 @@ export function isTagEnabled(
   tagName: Tag,
 ) {
   return !isTagDisabled(tags[tagName]);
-}
-
-/** Switching a preference on removes its tag; switching it off writes the `'disabled'` marker. */
-async function writePreferenceTag(tagName: Tag, enabled: boolean) {
-  if (enabled) {
-    await OneSignal.User.removeTag(tagName);
-  } else {
-    await OneSignal.User.addTag(tagName, TAG_VALUE_DISABLED);
-  }
 }
 
 /**
@@ -121,83 +116,111 @@ export function isPushActive() {
 export const useNotifications = ({
   person,
   isLoading,
+  getAccessToken,
 }: {
   person: Person | undefined;
   isLoading: boolean;
+  /** Privy access token for the server actions that read and write the settings. */
+  getAccessToken: () => Promise<string | null>;
 }) => {
   const {
     initialized,
-    subscribed,
+    subscribed: sdkSubscribed,
     setSubscribed,
     pushActive,
     setPushActive,
-    loggedIn,
+    initFailed,
   } = React.useContext(NotificationsContext);
   const [error, setError] = React.useState<string | null>(null);
+  const [preferences, setPreferences] =
+    React.useState<NotificationPreferences>();
   const [configuration, setConfiguration] =
     React.useState<NotificationConfiguration>();
+  const personSlug = person?.slug;
 
-  const initializeConfiguration = React.useCallback(async () => {
-    if (!initialized || !OneSignal || !loggedIn) {
-      return;
-    }
-    try {
-      const tags = await OneSignal.User.getTags();
+  /** Preferences live on the server (#2611); the SDK is only used for this browser's push state. */
+  const applyPreferences = React.useCallback(
+    (prefs: NotificationPreferences) => {
+      setPreferences(prefs);
+      setSubscribed(prefs.subscribed);
       setConfiguration({
-        // Push is per device: on only if the user-level tag allows it AND this browser is opted in.
-        browserNotifications: isTagEnabled(tags, TAG_PUSH) && isPushActive(),
-        emailNotifications: isTagEnabled(tags, TAG_EMAIL),
-        subscriptions: SUBSCRIPTION_TAGS.map((tagName) => ({
-          name: tagName,
-          value: isTagEnabled(tags, tagName),
-        })),
+        // The form ANDs this with `pushActive`: push is per browser, the tag is per user.
+        browserNotifications: prefs.pushTagEnabled,
+        emailNotifications: prefs.emailEnabled,
+        subscriptions: prefs.subscriptions,
       });
-    } catch (err) {
-      console.warn('Failed to initialize notification configuration', err);
-      setError('Could not load notification settings.');
+    },
+    [setSubscribed],
+  );
+
+  // Kept in a ref so a new function identity from the auth provider doesn't re-run the load
+  // effect (which would refetch and overwrite unsaved edits).
+  const getAccessTokenRef = React.useRef(getAccessToken);
+  getAccessTokenRef.current = getAccessToken;
+  const withToken = React.useCallback(async () => {
+    const authToken = await getAccessTokenRef.current();
+    if (!authToken) {
+      throw new Error('No access token available');
     }
-  }, [initialized, OneSignal, loggedIn, setError]);
+    return { authToken };
+  }, []);
+
+  const loadPreferences = React.useCallback(
+    async (isCancelled: () => boolean = () => false) => {
+      try {
+        const prefs = await getNotificationPreferencesAction(await withToken());
+        if (!isCancelled()) {
+          setError(null);
+          applyPreferences(prefs);
+        }
+      } catch (err) {
+        console.warn('Failed to load notification settings', err);
+        if (!isCancelled()) setError('Could not load notification settings.');
+      }
+    },
+    [withToken, applyPreferences],
+  );
 
   React.useEffect(() => {
-    initializeConfiguration();
-  }, [initializeConfiguration]);
-
-  const subscribe = React.useCallback(async () => {
-    if (!initialized) {
-      console.warn('Cannot subscribe notifications until initialized');
+    if (!personSlug) {
+      setPreferences(undefined);
+      setConfiguration(undefined);
       return;
     }
+    let cancelled = false;
+    loadPreferences(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [personSlug, loadPreferences]);
+
+  /** Retry after a failed load: fetch the stored settings again (never saves anything). */
+  const reloadSettings = React.useCallback(async () => {
+    setError(null);
+    await loadPreferences();
+  }, [loadPreferences]);
+
+  const subscribe = React.useCallback(async () => {
     setError(null);
     try {
-      // Enrolment is account-level: a declined browser prompt must not block it (email still
-      // works) - the push switch just stays off for this browser.
-      try {
-        await OneSignal.Slidedown.promptPush({ force: true });
-      } catch (promptErr) {
-        console.warn('Push prompt declined:', promptErr);
+      // Enrolment is account-level: a declined browser prompt, or a browser where the SDK
+      // can't run, must not block it (email still works) - push just stays off here.
+      if (initialized) {
+        try {
+          await OneSignal.Slidedown.promptPush({ force: true });
+        } catch (promptErr) {
+          console.warn('Push prompt declined:', promptErr);
+        }
+        setPushActive(isPushActive());
       }
-      setPushActive(isPushActive());
-      await OneSignal.User.addTag(TAG_SUBSCRIBED, TRUE);
-      // Own-action confirmations start switched off (#2549 D5) — but never overwrite a choice the
-      // user already made.
-      const tags = await OneSignal.User.getTags();
-      if (!Object.hasOwn(tags, TAG_SUB_OWN_ACTIONS)) {
-        await OneSignal.User.addTag(TAG_SUB_OWN_ACTIONS, TAG_VALUE_DISABLED);
-      }
-      setSubscribed(true);
-      await initializeConfiguration();
+      // The server also starts own-action confirmations switched off (#2549 D5) without
+      // overwriting a choice the person already made.
+      applyPreferences(await enrolNotificationsAction(await withToken()));
     } catch (err) {
       console.warn('Error:', err);
       setError('Could not turn notifications on. Please try again.');
     }
-  }, [
-    OneSignal,
-    initialized,
-    setError,
-    setSubscribed,
-    setPushActive,
-    initializeConfiguration,
-  ]);
+  }, [initialized, setPushActive, applyPreferences, withToken]);
 
   /**
    * Turns push on for this browser (asks for permission if needed). Runs straight from the
@@ -229,77 +252,86 @@ export const useNotifications = ({
       );
     }
     return active;
-  }, [OneSignal, initialized, setError, setPushActive]);
+  }, [initialized, setError, setPushActive]);
+
   const unsubscribe = React.useCallback(async () => {
-    if (!initialized) {
-      console.warn('Cannot unsubscribe notifications until initialized');
-      return;
-    }
     setError(null);
     try {
-      await OneSignal.User.addTag(TAG_SUBSCRIBED, FALSE);
-      setSubscribed(false);
+      applyPreferences(await unenrolNotificationsAction(await withToken()));
     } catch (err) {
       console.warn('Error:', err);
+      setError('Could not turn notifications off. Please try again.');
     }
-  }, [OneSignal, initialized, setError, setSubscribed]);
+  }, [applyPreferences, withToken]);
+
   const saveConfigurations = React.useCallback(
-    async (configuration: NotificationConfiguration) => {
-      if (!initialized) {
-        console.warn('Cannot save notification settings until initialized');
-        return;
-      }
+    async (configuration: NotificationConfiguration): Promise<boolean> => {
       if (isLoading || !person) {
         console.warn(
           'Cannot save notification settings while user data is loading',
         );
-        return;
+        return false;
       }
       setError(null);
       try {
-        // Push is per device: switching it off only opts THIS browser out. The user-level `push`
-        // tag is left alone so the user's other devices keep receiving; switching on clears any
-        // earlier `disabled` marker.
-        if (configuration.browserNotifications) {
-          if (
-            OneSignal.Notifications.permission &&
-            !OneSignal.User.PushSubscription.optedIn
-          ) {
-            await OneSignal.User.PushSubscription.optIn();
+        // Push is per device: switching it off only opts THIS browser out (when the SDK is
+        // available). The user-level `push` tag is left alone so the user's other devices keep
+        // receiving; switching on clears any earlier `disabled` marker.
+        if (initialized) {
+          if (configuration.browserNotifications) {
+            if (
+              OneSignal.Notifications.permission &&
+              !OneSignal.User.PushSubscription.optedIn
+            ) {
+              await OneSignal.User.PushSubscription.optIn();
+            }
+          } else if (OneSignal.User.PushSubscription.optedIn) {
+            await OneSignal.User.PushSubscription.optOut();
           }
-          await writePreferenceTag(TAG_PUSH, true);
-        } else if (OneSignal.User.PushSubscription.optedIn) {
-          await OneSignal.User.PushSubscription.optOut();
+          setPushActive(isPushActive());
         }
-        setPushActive(isPushActive());
 
-        if (configuration.emailNotifications) {
-          if (person.email) {
-            await OneSignal.User.addEmail(person.email);
-          }
-        } else if (person.email) {
-          await OneSignal.User.removeEmail(person.email);
-        }
-        await writePreferenceTag(TAG_EMAIL, configuration.emailNotifications);
-
-        for (const subscription of configuration.subscriptions) {
-          await writePreferenceTag(subscription.name, subscription.value);
-        }
-        setConfiguration(configuration);
+        applyPreferences(
+          await saveNotificationPreferencesAction(
+            {
+              ...(configuration.browserNotifications
+                ? { pushTagEnabled: true }
+                : {}),
+              emailEnabled: configuration.emailNotifications,
+              subscriptions: configuration.subscriptions,
+            },
+            await withToken(),
+          ),
+        );
+        return true;
       } catch (err) {
         console.warn('Failed to save notification configuration', err);
         setError('Could not save notification settings. Please try again.');
+        return false;
       }
     },
-    [OneSignal, initialized, person, isLoading, setPushActive],
+    [
+      initialized,
+      person,
+      isLoading,
+      setPushActive,
+      applyPreferences,
+      withToken,
+    ],
   );
 
   return {
-    subscribed,
+    // Server value once loaded; the SDK-derived context value only as a fallback.
+    subscribed: preferences ? preferences.subscribed : sdkSubscribed,
     pushActive,
+    /** This browser's push state (permission/subscription) comes from the SDK and may never be ready. */
+    pushStateReady: initialized,
+    /** The SDK could not start in this browser, so push can't be turned on here. */
+    pushUnavailable: !initialized && initFailed,
     subscribe,
     unsubscribe,
     enableBrowserPush,
+    reloadSettings,
     configuration,
     setConfiguration,
     saveConfigurations,
