@@ -3,7 +3,7 @@
 import React from 'react';
 import useSWR from 'swr';
 // TODO: #594 declare UI interface separately
-import { Space } from '@hypha-platform/core/client';
+import { Space, fetchJson } from '@hypha-platform/core/client';
 
 type UseSpacesByWeb3IdsClientReturn = {
   spaces: Space[];
@@ -25,16 +25,25 @@ export const useSpacesByWeb3IdsClient = (
     [web3SpaceIds],
   );
 
-  const { data: spaces, isLoading } = useSWR(endpoint, (endpoint) =>
-    fetch(endpoint, {
-      headers: {
-        Accept: 'application/json',
+  const {
+    data: spaces,
+    isLoading,
+    error,
+  } = useSWR<Space[]>(endpoint, (endpoint: string) =>
+    fetchJson<Space[]>(
+      endpoint,
+      {
+        headers: {
+          Accept: 'application/json',
+        },
       },
-    }).then((res) => res.json()),
+      'spaces',
+    ),
   );
 
-  if (spaces && 'error' in spaces) {
-    return { spaces: [], error: spaces, isLoading };
+  if (error) {
+    // `error` is an `Error` carrying the HTTP `status`.
+    return { spaces: [], error, isLoading };
   }
 
   return { spaces: spaces || [], isLoading };
