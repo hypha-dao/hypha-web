@@ -21,7 +21,8 @@ const DB = process.env.BRANCH_DB_URL || process.env.DEFAULT_DB_URL;
 const CLIENT_ID = 'walkthrough-client';
 const REDIRECT = 'http://127.0.0.1:8976/callback';
 const STATE_FILE = join(tmpdir(), 'hypha-as-walkthrough.json');
-const RESOURCE = `${ISSUER}/api/auth/test`;
+// WALKTHROUGH_RESOURCE=<issuer>/api/v2 asks for a token for the v2 API instead of the test route.
+const RESOURCE = process.env.WALKTHROUGH_RESOURCE ?? `${ISSUER}/api/auth/test`;
 
 if (!ISSUER || !DB) {
   throw new Error(
@@ -54,6 +55,13 @@ function claims(jwt: string) {
 }
 
 async function callProtected(accessToken: string) {
+  if (!RESOURCE.endsWith('/api/auth/test')) {
+    console.log(
+      `Token is for ${RESOURCE}; use it yourself (valid 10 minutes, local use only):
+${accessToken}`,
+    );
+    return;
+  }
   const res = await fetch(RESOURCE, {
     headers: { authorization: `Bearer ${accessToken}` },
   });
