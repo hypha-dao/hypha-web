@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   WL_API_READ_ALLOWLIST,
+  WL_API_SIGNED_IN_READ_ALLOWLIST,
+  apiAllowlistFor,
+  resolve,
+  stripWhiteLabelHeaders,
+  WL_SPACE_HEADER,
+  type WhiteLabelConfig,
+  type ResolveOptions,
   authKindFor,
   isApiReadAllowed,
   parseAuthConfig,
@@ -66,8 +73,14 @@ describe('login settings validation', () => {
 });
 
 describe('/api allowlist: signed-in reads, on the real allowlist', () => {
+  // Login on: the host's allowlist includes the signed-in list.
   const allowed = (method: string, path: string, slug = 'hypha-platform') =>
-    isApiReadAllowed(method, path.split('/').filter(Boolean), slug);
+    isApiReadAllowed(
+      method,
+      path.split('/').filter(Boolean),
+      slug,
+      apiAllowlistFor(true),
+    );
 
   it('allows the profile and the four Banking listings, GET and HEAD only', () => {
     for (const path of [
@@ -122,7 +135,10 @@ describe('/api allowlist: signed-in reads, on the real allowlist', () => {
   });
 
   it('no entry is a write path and all stay under /api/v1', () => {
-    for (const pattern of WL_API_READ_ALLOWLIST) {
+    for (const pattern of [
+      ...WL_API_READ_ALLOWLIST,
+      ...WL_API_SIGNED_IN_READ_ALLOWLIST,
+    ]) {
       expect(pattern.startsWith('/api/v1/')).toBe(true);
       expect(pattern).not.toMatch(/\/(create|update|sync|propose)\b/);
     }
@@ -195,5 +211,114 @@ describe('CSP per host', () => {
 
   it('does not repeat an origin already present', () => {
     expect(withPrivyHostOrigins(BASE, ['https://privy.main.test'])).toBe(BASE);
+  });
+});
+
+describe('login is an option of the host: resolver on the real allowlists', () => {
+  const OPTIONS: ResolveOptions = {
+    locales: ['en'],
+    defaultLocale: 'en',
+    method: 'GET',
+  };
+  const CONFIG: WhiteLabelConfig = {
+    clients: [
+      {
+        id: 'embed-client',
+        spaces: [
+          { slug: 'hypha-platform', framingOrigins: ['https://p.test'] },
+        ],
+      },
+    ],
+    hostClients: [
+      {
+        id: 'host-client',
+        hosts: [
+          {
+            host: 'login.example.test',
+            spaceSlug: 'hypha-platform',
+            authConfig: AUTH,
+          },
+          { host: 'readonly.example.test', spaceSlug: 'hypha-platform' },
+        ],
+      },
+    ],
+    mainHosts: ['app.example.test'],
+  };
+  const LOGIN = 'login.example.test';
+  const READONLY = 'readonly.example.test';
+  const run = (host: string, path: string, method = 'GET') =>
+    resolve(host, path, CONFIG, { ...OPTIONS, method });
+
+  const SIGNED_IN = [
+    '/api/v1/people/me',
+    '/api/v1/spaces/hypha-platform/banking/bank-customers',
+    '/api/v1/spaces/hypha-platform/banking/accounts',
+    '/api/v1/spaces/hypha-platform/banking/payout-accounts',
+    '/api/v1/spaces/hypha-platform/banking/transfers',
+  ];
+  const BASE = [
+    '/api/v1/spaces/hypha-platform',
+    '/api/v1/spaces/hypha-platform/members',
+    '/api/v1/events',
+  ];
+
+  it('a host with login settings reaches the signed-in entries', () => {
+    for (const path of SIGNED_IN) {
+      expect(run(LOGIN, path)).toEqual({
+        kind: 'api-allow',
+        spaceSlug: 'hypha-platform',
+      });
+      expect(run(LOGIN, path, 'HEAD').kind).toBe('api-allow');
+      expect(run(LOGIN, path, 'POST').kind).toBe('not-found');
+    }
+  });
+
+  it('a read-only host refuses them (404) and still serves the base reads', () => {
+    for (const path of SIGNED_IN) {
+      expect(run(READONLY, path)).toMatchObject({
+        kind: 'not-found',
+        reason: 'api-not-allowed',
+      });
+    }
+    for (const path of BASE) {
+      expect(run(READONLY, path).kind).toBe('api-allow');
+      expect(run(LOGIN, path).kind).toBe('api-allow');
+    }
+  });
+
+  it('the base list holds no signed-in entry', () => {
+    for (const pattern of WL_API_SIGNED_IN_READ_ALLOWLIST) {
+      expect(WL_API_READ_ALLOWLIST).not.toContain(pattern);
+    }
+    expect(apiAllowlistFor(false)).toBe(WL_API_READ_ALLOWLIST);
+  });
+
+  it('the fact comes from the registration, not from the request', () => {
+    // No header, query or cookie can switch it on: the resolver takes none.
+    const decision = resolve(READONLY, SIGNED_IN[0] as string, CONFIG, {
+      ...OPTIONS,
+      acceptLanguage: 'en',
+      localeCookie: 'en',
+    });
+    expect(decision.kind).toBe('not-found');
+    // A forged Space header never survives the strip middleware applies.
+    const forged = new Headers({ [WL_SPACE_HEADER]: 'other-space' });
+    expect(stripWhiteLabelHeaders(forged).get(WL_SPACE_HEADER)).toBeNull();
+  });
+
+  it('the iframe (main host) never gets the signed-in entries', () => {
+    for (const path of SIGNED_IN) {
+      expect(run('app.example.test', path).kind).not.toBe('api-allow');
+    }
+  });
+
+  it('no sign in/out control and no Privy on a host without login', () => {
+    expect(authKindFor('host', null)).toBe('anonymous');
+    expect(privyHostOrigins(null)).toEqual([]);
+    const csp = withPrivyHostOrigins(
+      "connect-src 'self'",
+      privyHostOrigins(null),
+    );
+    expect(csp).toBe("connect-src 'self'");
   });
 });

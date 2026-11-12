@@ -27,18 +27,6 @@ export const WL_API_READ_ALLOWLIST: readonly string[] = [
   '/api/v1/spaces/:slug/token-holdings',
   '/api/v1/currency-rates',
   '/api/v1/tokens/:address/supply',
-  // Signed-in reads (login on a mapped host). Each handler authenticates the
-  // bearer token itself; the allowlist only makes the route reachable. Measured
-  // by reading the hooks of all twelve sections, not one browser run: the
-  // profile (`useMe`, used by Banking, Overview, Members) and the four Banking
-  // listings (`transfers` also answers `?mode=transfer-options`). The rest of
-  // the signed-in calls the sections can make stay refused on purpose, see
-  // the notes in the login ticket.
-  '/api/v1/people/me',
-  '/api/v1/spaces/:slug/banking/bank-customers',
-  '/api/v1/spaces/:slug/banking/accounts',
-  '/api/v1/spaces/:slug/banking/payout-accounts',
-  '/api/v1/spaces/:slug/banking/transfers',
   // Scoped to the host's own Space inside the handler (not in this path rule):
   // they answer on a mapped host only for that Space, via the Space header
   // middleware sets. `:documentSlug` is a document slug, not the Space slug.
@@ -51,6 +39,35 @@ export const WL_API_READ_ALLOWLIST: readonly string[] = [
   '/api/v1/spaces/:slug/deals',
   '/api/v1/spaces/:slug/energy/telemetry',
 ];
+
+/**
+ * Signed-in reads (login on a mapped host). Only a host registered WITH login
+ * settings gets these; a read-only host refuses them (404) like any other path
+ * off the base list. Each handler still authenticates the bearer token itself:
+ * the list only makes the route reachable.
+ */
+export const WL_API_SIGNED_IN_READ_ALLOWLIST: readonly string[] = [
+  // Measured by reading the hooks of all twelve sections, not one browser run:
+  // the profile (`useMe`, used by Banking, Overview, Members) and the four
+  // Banking listings (`transfers` also answers `?mode=transfer-options`). The
+  // rest of the signed-in calls the sections can make stay refused on purpose.
+  '/api/v1/people/me',
+  '/api/v1/spaces/:slug/banking/bank-customers',
+  '/api/v1/spaces/:slug/banking/accounts',
+  '/api/v1/spaces/:slug/banking/payout-accounts',
+  '/api/v1/spaces/:slug/banking/transfers',
+];
+
+/**
+ * The allowlist for one host: the base list, plus the signed-in list when the
+ * host has login. `loginEnabled` comes from the host's own registration
+ * (resolved server side from config), never from the request.
+ */
+export function apiAllowlistFor(loginEnabled: boolean): readonly string[] {
+  return loginEnabled
+    ? [...WL_API_READ_ALLOWLIST, ...WL_API_SIGNED_IN_READ_ALLOWLIST]
+    : WL_API_READ_ALLOWLIST;
+}
 
 const PARAM_SEGMENT = /^[A-Za-z0-9_.-]{1,200}$/;
 /** Document slugs come from `slugify` and may hold a few more characters. */
