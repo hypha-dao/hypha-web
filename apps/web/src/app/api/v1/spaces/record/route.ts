@@ -5,6 +5,7 @@ import { schemaUpdateSpace } from '@hypha-platform/core/client';
 import {
   authorizeSpacePanelInteraction,
   findSpaceById,
+  isWeb3SpaceIdConflictError,
   updateSpaceById,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -65,6 +66,12 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json(updatedSpace);
   } catch (error) {
+    if (isWeb3SpaceIdConflictError(error)) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: 409 },
+      );
+    }
     console.error('Failed to update space record:', error);
     const message =
       error instanceof Error ? error.message : 'Failed to update space';

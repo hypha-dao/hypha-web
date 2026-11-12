@@ -18,5 +18,6 @@ export type { DirectoryCensusRow } from './network-directory-census';
 export type { NetworkGrowth } from '../network-growth';
 export * from './organizational-guidance';
 export * from './mutations';
+export * from './web3-space-id-conflict';
 export * from './space-member-invites';
 export * from './web3';

@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { schemaCreateSpaceWeb2 } from '@hypha-platform/core/client';
-import { createSpace } from '@hypha-platform/core/server';
+import {
+  createSpace,
+  isWeb3SpaceIdConflictError,
+} from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { NextResponse } from 'next/server';
 
@@ -40,6 +43,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json(space);
   } catch (error) {
+    if (isWeb3SpaceIdConflictError(error)) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: 409 },
+      );
+    }
     console.error('Failed to create space:', error);
     return NextResponse.json(
       { error: 'Failed to create space' },

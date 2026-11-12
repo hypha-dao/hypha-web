@@ -97,7 +97,7 @@ const createSpaceWeb2Props = {
   slug: spaceSlugSchema.optional(),
   ecosystemLogoUrlLight: z.string().url().optional(),
   ecosystemLogoUrlDark: z.string().url().optional(),
-  web3SpaceId: z.number().optional(),
+  web3SpaceId: z.number().nullable().optional(),
   parentId: z.number().nullable(),
   categories: z.array(z.enum(CATEGORIES)).default([]),
   links: z

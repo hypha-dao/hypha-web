@@ -14,6 +14,7 @@ import {
   serial,
   text,
   timestamp,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { commonDateFields } from './shared';
 import { categories } from './categories';
@@ -65,6 +66,9 @@ export const spaces = pgTable(
     ...commonDateFields,
   },
   (table) => [
+    uniqueIndex('spaces_web3_space_id_unique')
+      .on(table.web3SpaceId)
+      .where(sql`${table.web3SpaceId} is not null and ${table.id} <> 853`),
     index('search_index_spaces').using(
       'gin',
       sql`(
