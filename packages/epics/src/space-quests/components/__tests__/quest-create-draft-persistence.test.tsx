@@ -348,9 +348,11 @@ describe('quest create draft persistence', () => {
     expect(stored.checkpoint.agreementId).toBe(44);
   });
 
-  it('saves a yes for the newest participant and restores that person', async () => {
+  it('does not save a member parsed from an either/or helper question', async () => {
     const pendingGoal = 'Ship a shorter goal the member has not confirmed.';
     const savedGoal = 'The goal already on the card.';
+    const transcript =
+      'Grok Test is on the roster… Should Vlad Hramtsov stay the Lead only, or be listed as a participant as well?';
     window.sessionStorage.setItem(
       questCreateSessionKey(SPACE),
       JSON.stringify({
@@ -370,7 +372,7 @@ describe('quest create draft persistence', () => {
             id: 'person-1',
             role: 'member',
             senderName: 'Quest Helper',
-            text: 'Should Grok Test be listed as a participant?',
+            text: transcript,
             timestamp: '2026-11-09T20:01:00.000Z',
           },
         ],
@@ -383,13 +385,13 @@ describe('quest create draft persistence', () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        reply: 'Saved the goal.',
+        reply: 'Added that to the Participants.',
         helper: {
           suggestion: null,
           saved: {
-            step: 'goal',
-            source: 'pending',
-            patch: { goal: pendingGoal },
+            step: 'members',
+            source: 'shown',
+            patch: { members: [{ memberName: 'or' }] },
           },
           discarded: true,
         },
@@ -408,6 +410,7 @@ describe('quest create draft persistence', () => {
         harness.setSpaceQuestDraft.mock.calls.at(-1)?.[0] as
           | {
               input: string;
+              messages?: { text: string }[];
               onInputChange: (value: string) => void;
               onSend: () => void;
             }
@@ -423,10 +426,19 @@ describe('quest create draft persistence', () => {
       session()?.onSend();
 
       await waitFor(() => {
+        const texts = session()?.messages?.map((message) => message.text) ?? [];
         expect(
-          screen.getByTestId('draft-section-members').textContent,
-        ).toContain('Grok Test');
+          texts.some((text) =>
+            text.includes('Which space member should I add as a participant?'),
+          ),
+        ).toBe(true);
       });
+      const membersCard = screen.getByTestId(
+        'draft-section-members',
+      ).textContent;
+      expect(membersCard).toContain('Not set yet');
+      expect(membersCard).not.toContain('Grok Test');
+      expect(membersCard).not.toContain('Vlad Hramtsov');
       expect(screen.getByTestId('draft-section-goal').textContent).toContain(
         savedGoal,
       );
@@ -434,27 +446,27 @@ describe('quest create draft persistence', () => {
         screen.getByTestId('draft-section-goal').textContent,
       ).not.toContain(pendingGoal);
 
-      let payload: { draft: { goal: string; members: unknown[] } } | undefined;
       await waitFor(
         () => {
-          payload = harness.saveQuestDraftRequest.mock.calls
-            .map((call) => call[0]?.payload)
-            .find((saved) =>
-              saved?.draft?.members?.some(
-                (member: { memberName?: string }) =>
-                  member.memberName === 'Grok Test',
-              ),
-            );
-          expect(payload?.draft.goal).toBe(savedGoal);
-          expect(payload?.draft.members).toEqual(
-            expect.arrayContaining([
-              expect.objectContaining({ memberName: 'Grok Test' }),
-            ]),
-          );
+          expect(harness.saveQuestDraftRequest).toHaveBeenCalled();
         },
         { timeout: 4000 },
       );
+      const payloads = harness.saveQuestDraftRequest.mock.calls.map(
+        (call) => call[0]?.payload,
+      );
+      for (const saved of payloads) {
+        const names =
+          saved?.draft?.members?.map(
+            (member: { memberName?: string }) => member.memberName,
+          ) ?? [];
+        expect(names).not.toContain('or');
+        expect(names).not.toContain('Grok Test');
+        expect(names).not.toContain('Vlad Hramtsov');
+        expect(saved?.draft?.goal).toBe(savedGoal);
+      }
 
+      const payload = payloads.at(-1);
       view.unmount();
       window.sessionStorage.clear();
       harness.getQuestDraftRequest.mockResolvedValue({
@@ -468,8 +480,10 @@ describe('quest create draft persistence', () => {
       await waitFor(() => {
         expect(
           screen.getByTestId('draft-section-members').textContent,
-        ).toContain('Grok Test');
+        ).toContain('Not set yet');
       });
+      const restored = screen.getByTestId('draft-section-members').textContent;
+      expect(restored).not.toContain('Grok Test');
       expect(screen.getByTestId('draft-section-goal').textContent).toContain(
         savedGoal,
       );

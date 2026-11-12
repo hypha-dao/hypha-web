@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { QuestSpaceMember } from '../../hooks/use-space-quests';
 import {
   isBulkQuestDraftRequest,
   questPendingYesNotice,
@@ -4046,8 +4047,11 @@ describe('quest participant writes', () => {
         text: 'Should Ada Lovelace be listed as a participant?',
       },
     ]);
-    expect(confirmed.wrote).toBe(true);
-    expect(confirmed.draft.members[0]?.memberName).toBe('Ada Lovelace');
+    expect(confirmed.wrote).toBe(false);
+    expect(confirmed.draft.members).toEqual([]);
+    expect(confirmed.reply).toBe(
+      'Which space member should I add as a participant?',
+    );
 
     const prose = turn('We update members on progress every week', 'goal');
     expect(prose.wrote).toBe(false);
@@ -4103,11 +4107,30 @@ describe('quest participant writes', () => {
       viewerDisplayName: 'Vlad Hramtsov',
       spaceMembers: [],
     });
-    expect(confirmed.wrote).toBe(true);
-    expect(confirmed.draft.members[0]?.memberName).toBe('Grace Hopper');
+    expect(confirmed.wrote).toBe(false);
+    expect(confirmed.draft.members).toEqual([]);
+    expect(confirmed.reply).toBe(
+      'Which space member should I add as a participant?',
+    );
   });
 
-  it('applies a bare yes to the newest participant question, not a stale pending goal', async () => {
+  it('does not turn a bare yes on the lead-or-participant question into a member named or', async () => {
+    const roster = [
+      {
+        personId: 7,
+        name: 'Vlad Hramtsov',
+        avatarUrl: null,
+        nickname: 'vlad',
+        person: { id: 7 },
+      },
+      {
+        personId: 8,
+        name: 'Grok Test',
+        avatarUrl: null,
+        nickname: null,
+        person: { id: 8 },
+      },
+    ] as QuestSpaceMember[];
     const savedGoal = 'The goal already on the card.';
     const pendingGoal = 'Ship a shorter goal the member has not confirmed.';
     const pending: PendingQuestSectionProposal = {
@@ -4118,89 +4141,229 @@ describe('quest participant writes', () => {
       ...emptyDraft,
       goal: savedGoal,
     };
+    const transcript =
+      'Grok Test is on the roster… Should Vlad Hramtsov stay the Lead only, or be listed as a participant as well?';
     const history = [
       {
         role: 'agent' as const,
         text: `Do you want that to be in the Goal?\n\n${pendingGoal}`,
       },
-      {
-        role: 'agent' as const,
-        text: 'Should Grok Test be listed as a participant?',
-      },
+      { role: 'agent' as const, text: transcript },
     ];
+    const assertNotWritten = (
+      result: {
+        wrote: boolean;
+        draft: QuestDraftStateSnapshot;
+        pending: PendingQuestSectionProposal | null;
+        reply: string;
+      } | null,
+    ) => {
+      expect(result?.wrote).toBe(false);
+      expect(result?.draft.members).toEqual([]);
+      expect(result?.draft.goal).toBe(savedGoal);
+      expect(result?.pending).toEqual(pending);
+      expect(result?.reply).toBe(
+        'Which space member should I add as a participant?',
+      );
+      expect(result?.reply).not.toMatch(/Added that to the Participants/);
+    };
 
-    const offline = runNewQuestDraftTurn({
-      message: 'yes',
-      currentStep: 'goal',
-      draft,
-      pending,
-      history,
-      viewerDisplayName: 'Vlad Hramtsov',
-      spaceMembers: [],
-      model: null,
-    });
-    expect(offline.wrote).toBe(true);
-    expect(offline.draft.members.map((member) => member.memberName)).toEqual([
-      'Grok Test',
-    ]);
-    expect(offline.draft.goal).toBe(savedGoal);
-    expect(offline.pending).toEqual(pending);
-    expect(offline.reply).toContain('Added that to the Participants.');
-    expect(offline.reply).toContain(questPendingYesNotice('goal'));
-    expect(offline.reply).not.toContain(pendingGoal);
+    assertNotWritten(
+      runNewQuestDraftTurn({
+        message: 'yes',
+        currentStep: 'goal',
+        draft,
+        pending,
+        history,
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: roster,
+        model: null,
+      }),
+    );
 
     const state: CreateDraftTurnSnapshot = {
       draft,
       pending,
       currentStep: 'goal',
     };
-    const routed = await settleCreateDraftTurn({
-      message: 'yes',
-      history,
-      viewerDisplayName: 'Vlad Hramtsov',
-      spaceMembers: [],
-      readState: () => state,
-      isCurrent: () => true,
-      loadModel: async () => ({
-        reply: 'Saved the goal.',
-        helper: {
-          suggestion: {
-            step: 'goal',
-            patch: { goal: 'A different goal the model invented.' },
+    assertNotWritten(
+      await settleCreateDraftTurn({
+        message: 'yes',
+        history,
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: roster,
+        readState: () => state,
+        isCurrent: () => true,
+        loadModel: async () => ({
+          reply: 'Added that to the Participants.',
+          helper: {
+            suggestion: null,
+            saved: {
+              step: 'members',
+              source: 'shown',
+              patch: { members: [{ memberName: 'or' }] },
+            },
+            discarded: false,
           },
-          saved: {
-            step: 'goal',
-            source: 'pending',
-            patch: { goal: pendingGoal },
-          },
-          discarded: true,
-        },
+        }),
       }),
-    });
-    expect(routed?.wrote).toBe(true);
-    expect(routed?.draft.goal).toBe(savedGoal);
-    expect(routed?.draft.members.map((member) => member.memberName)).toEqual([
-      'Grok Test',
-    ]);
-    expect(routed?.pending).toEqual(pending);
-    expect(routed?.reply).toMatch(/Added that to the Participants/);
-    expect(routed?.reply).toContain(questPendingYesNotice('goal'));
-    expect(routed?.reply).not.toMatch(/Saved the goal/i);
-    expect(routed?.reply).not.toContain('A different goal');
+    );
+  });
 
-    const namedGoal = runNewQuestDraftTurn({
-      message: 'yes to goal suggestion',
-      currentStep: 'goal',
-      draft,
+  it('asks instead of writing when the latest question is either/or', () => {
+    const roster = [
+      {
+        personId: 9,
+        name: 'Ada Lovelace',
+        avatarUrl: null,
+        nickname: 'ada',
+        person: { id: 9 },
+      },
+    ] as QuestSpaceMember[];
+    const pending: PendingQuestSectionProposal = {
+      step: 'members',
+      patch: {
+        members: [
+          {
+            memberName: 'Ada Lovelace',
+            personId: 9,
+            responsibilities: [],
+          },
+        ],
+      },
+    };
+    const eitherOr = runNewQuestDraftTurn({
+      message: 'yes',
+      currentStep: 'members',
+      draft: emptyDraft,
       pending,
-      history,
+      history: [
+        {
+          role: 'agent',
+          text: 'Should Ada Lovelace stay the Lead only, or be listed as a participant as well?',
+        },
+      ],
       viewerDisplayName: 'Vlad Hramtsov',
-      spaceMembers: [],
+      spaceMembers: roster,
       model: null,
     });
-    expect(namedGoal.wrote).toBe(true);
-    expect(namedGoal.draft.goal).toBe(pendingGoal);
-    expect(namedGoal.draft.members).toEqual([]);
-    expect(namedGoal.pending).toBeNull();
+    expect(eitherOr.wrote).toBe(false);
+    expect(eitherOr.draft.members).toEqual([]);
+    expect(eitherOr.pending).toEqual(pending);
+    expect(eitherOr.reply).toBe(
+      'Which space member should I add as a participant?',
+    );
+
+    const unresolved = runNewQuestDraftTurn({
+      message: 'yes',
+      currentStep: 'members',
+      draft: emptyDraft,
+      pending: {
+        step: 'members',
+        patch: { members: [{ memberName: 'or' }] },
+      },
+      history: [
+        {
+          role: 'agent',
+          text: 'Should Grok Test be listed as a participant?',
+        },
+      ],
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: roster,
+      model: null,
+    });
+    expect(unresolved.wrote).toBe(false);
+    expect(unresolved.draft.members).toEqual([]);
+    expect(
+      unresolved.draft.members.some((member) => member.memberName === 'or'),
+    ).toBe(false);
+
+    const unknownId = runNewQuestDraftTurn({
+      message: 'yes',
+      currentStep: 'members',
+      draft: emptyDraft,
+      pending: {
+        step: 'members',
+        patch: {
+          members: [{ memberName: 'Ada Lovelace', personId: 999 }],
+        },
+      },
+      history: [
+        {
+          role: 'agent',
+          text: 'Should Ada Lovelace be listed as a participant?',
+        },
+      ],
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: roster,
+      model: null,
+    });
+    expect(unknownId.wrote).toBe(false);
+    expect(unknownId.draft.members).toEqual([]);
+
+    const unmatched = runNewQuestDraftTurn({
+      message: 'add Nobody as a participant',
+      currentStep: 'members',
+      draft: emptyDraft,
+      pending: null,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: roster,
+      model: null,
+    });
+    expect(unmatched.wrote).toBe(false);
+    expect(unmatched.draft.members).toEqual([]);
+  });
+
+  it('applies a bare yes only to a pending participant with a roster id', () => {
+    const roster = [
+      {
+        personId: 9,
+        name: 'Ada Lovelace',
+        avatarUrl: null,
+        nickname: 'ada',
+        person: { id: 9 },
+      },
+    ] as QuestSpaceMember[];
+    const confirmed = runNewQuestDraftTurn({
+      message: 'yes',
+      currentStep: 'goal',
+      draft: emptyDraft,
+      pending: {
+        step: 'members',
+        patch: {
+          members: [
+            {
+              memberName: 'or',
+              personId: 9,
+              responsibilities: ['Own the checklist'],
+            },
+          ],
+        },
+      },
+      history: [
+        {
+          role: 'agent',
+          text: 'Should Grok Test be listed as a participant?',
+        },
+      ],
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: roster,
+      model: null,
+    });
+    expect(confirmed.wrote).toBe(true);
+    expect(confirmed.pending).toBeNull();
+    expect(confirmed.draft.members).toEqual([
+      expect.objectContaining({
+        memberName: 'Ada Lovelace',
+        personId: 9,
+        responsibilities: ['Own the checklist'],
+      }),
+    ]);
+    expect(
+      confirmed.draft.members.some(
+        (member) =>
+          member.memberName === 'or' || member.memberName === 'Grok Test',
+      ),
+    ).toBe(false);
   });
 });

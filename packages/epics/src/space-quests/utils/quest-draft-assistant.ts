@@ -75,6 +75,8 @@ export type QuestDraftPatchInput = {
     memberName: string;
     roleLabel?: string;
     responsibilities?: string[];
+    /** Set only after the name is matched to the space roster. */
+    personId?: number;
   }>;
 };
 
@@ -1381,8 +1383,13 @@ export function sanitizeQuestDraftPatch(
         const memberName = cleanOptionalText(member.memberName);
         if (!memberName) return null;
         const responsibilities = cleanTextList(member.responsibilities);
+        const personId =
+          typeof member.personId === 'number' && member.personId > 0
+            ? member.personId
+            : undefined;
         return {
           memberName,
+          ...(personId ? { personId } : {}),
           ...(member.roleLabel ? { roleLabel: member.roleLabel } : {}),
           ...(responsibilities ? { responsibilities } : {}),
         };
@@ -1456,25 +1463,39 @@ export function applyPatchToQuestDraftState({
   }
 
   if (clean.members && clean.members.length > 0) {
-    const mapped = clean.members.map((m): EditableQuestMember => {
-      const matched = matchQuestMemberByName(spaceMembers, m.memberName);
-      return {
-        personId: matched?.personId ?? null,
-        memberName: matched?.name || m.memberName.trim(),
-        memberAvatarUrl: matched?.avatarUrl ?? null,
-        roleLabel: m.roleLabel?.trim() || 'Participant',
-        responsibilities: m.responsibilities ?? [],
-      };
+    const mapped = clean.members.flatMap((m): EditableQuestMember[] => {
+      const byId =
+        typeof m.personId === 'number' && m.personId > 0
+          ? spaceMembers.find((member) => member.personId === m.personId) ??
+            null
+          : null;
+      const matched =
+        byId ?? matchQuestMemberByName(spaceMembers, m.memberName);
+      // A known roster is the allow-list. Unmatched prose such as "or" is not a person.
+      if (spaceMembers.length > 0 && !matched) return [];
+      return [
+        {
+          personId: matched?.personId ?? null,
+          memberName: matched?.name || m.memberName.trim(),
+          memberAvatarUrl: matched?.avatarUrl ?? null,
+          roleLabel: m.roleLabel?.trim() || 'Participant',
+          responsibilities: m.responsibilities ?? [],
+        },
+      ];
     });
-    const byName = new Map<string, EditableQuestMember>();
-    for (const existing of next.members) {
-      byName.set(existing.memberName.toLowerCase(), existing);
+    if (mapped.length === 0) {
+      // Leave the card unchanged when every proposed name missed the roster.
+    } else {
+      const byName = new Map<string, EditableQuestMember>();
+      for (const existing of next.members) {
+        byName.set(existing.memberName.toLowerCase(), existing);
+      }
+      for (const item of mapped) {
+        byName.set(item.memberName.toLowerCase(), item);
+      }
+      next.members = [...byName.values()];
+      updatedLabels.push('Participants');
     }
-    for (const item of mapped) {
-      byName.set(item.memberName.toLowerCase(), item);
-    }
-    next.members = [...byName.values()];
-    updatedLabels.push('Participants');
   }
 
   if (clean.leadName?.trim()) {
@@ -2074,62 +2095,111 @@ function replyForPendingSuggestion(
   return `${cleaned}\n\nNot saved yet.\n${ask}`;
 }
 
-function participantsProposedInHistory(
+const PARTICIPANT_YES_CLARIFY =
+  'Which space member should I add as a participant?';
+
+function latestAgentText(
   history: readonly QuestDraftTurnHistoryItem[] | undefined,
+): string | null {
+  if (!history) return null;
+  for (let index = history.length - 1; index >= 0; index -= 1) {
+    const item = history[index];
+    if (item?.role === 'agent' && item.text.trim()) return item.text.trim();
+  }
+  return null;
+}
+
+/** "A or B?" cannot be answered by a bare yes. */
+function isEitherOrQuestion(text: string): boolean {
+  return text.includes('?') && /\bor\b/i.test(text);
+}
+
+function questionOffersParticipant(text: string): boolean {
+  return /\b(?:list(?:ed)?|add(?:ed)?)\s+as\s+(?:a\s+)?participants?\b/i.test(
+    text,
+  );
+}
+
+/**
+ * A bare yes may confirm only a pending participant card whose person id is
+ * on the space roster. Names parsed out of the helper's question are ignored.
+ */
+function rosterPendingParticipants(
+  pending: PendingQuestSectionProposal | null,
+  spaceMembers: readonly QuestSpaceMember[],
 ): Array<{
   memberName: string;
   roleLabel: string;
   responsibilities: string[];
-}> {
-  if (!history) return [];
-  for (let index = history.length - 1; index >= 0; index -= 1) {
-    const item = history[index];
-    if (!item || item.role !== 'agent') continue;
-    const listed =
-      /should\s+(.+?)\s+be\s+(?:listed|added)\s+as\s+(?:a\s+)?participants?/i.exec(
-        item.text,
-      ) ??
-      /(?:^|[.!?]\s+)(?:please\s+)?add\s+(.+?)\s+as\s+(?:a\s+)?participants?/i.exec(
-        item.text,
-      );
-    if (!listed?.[1]) return [];
-    return splitParticipantNameList(listed[1])
-      .filter(looksLikeParticipantName)
-      .map((memberName) => ({
-        memberName,
-        roleLabel: 'Participant',
-        responsibilities: [],
-      }));
+  personId: number;
+}> | null {
+  if (!pending || pending.step !== 'members') return null;
+  const rows = pending.patch.members ?? [];
+  if (rows.length === 0) return null;
+  const resolved = [];
+  for (const row of rows) {
+    if (typeof row.personId !== 'number' || row.personId <= 0) return null;
+    const member = spaceMembers.find(
+      (candidate) => candidate.personId === row.personId,
+    );
+    if (!member) return null;
+    resolved.push({
+      memberName: member.name,
+      roleLabel: row.roleLabel?.trim() || 'Participant',
+      responsibilities: row.responsibilities ?? [],
+      personId: member.personId,
+    });
   }
-  return [];
+  return resolved;
 }
 
-/**
- * A bare yes names no section. It answers the latest helper question, which
- * can be a participant proposal that arrived after an older pending card.
- */
-function approvalConfirmsLatestParticipant(
-  message: string,
-  history: readonly QuestDraftTurnHistoryItem[] | undefined,
-): boolean {
+function bareYesParticipantDecision({
+  message,
+  history,
+  pending,
+  spaceMembers,
+}: {
+  message: string;
+  history: readonly QuestDraftTurnHistoryItem[] | undefined;
+  pending: PendingQuestSectionProposal | null;
+  spaceMembers: readonly QuestSpaceMember[];
+}):
+  | { kind: 'skip' }
+  | { kind: 'clarify' }
+  | {
+      kind: 'apply';
+      members: Array<{
+        memberName: string;
+        roleLabel: string;
+        responsibilities: string[];
+        personId: number;
+      }>;
+    } {
   const text = message.trim();
-  if (!isQuestSectionApproval(text)) return false;
-  if (participantsNamedForImmediateWrite(text)) return false;
+  if (!isQuestSectionApproval(text)) return { kind: 'skip' };
+  if (participantsNamedForImmediateWrite(text)) return { kind: 'skip' };
   const named = sectionNamedInApproval(text);
-  if (named && named !== 'members') return false;
-  return participantsProposedInHistory(history).length > 0;
+  if (named && named !== 'members') return { kind: 'skip' };
+  const latest = latestAgentText(history);
+  const eitherOr = latest != null && isEitherOrQuestion(latest);
+  const aboutParticipant = latest != null && questionOffersParticipant(latest);
+  const resolved = rosterPendingParticipants(pending, spaceMembers);
+  if (eitherOr || (aboutParticipant && !resolved)) return { kind: 'clarify' };
+  if (resolved && (aboutParticipant || latest == null)) {
+    return { kind: 'apply', members: resolved };
+  }
+  if (aboutParticipant) return { kind: 'clarify' };
+  return { kind: 'skip' };
 }
 
 /**
  * A create-flow reply that names participants writes the card immediately.
- * Other sections still wait for yes. A bare "yes" answers the latest helper
- * question, including a participant proposal that is newer than a pending card.
+ * A bare yes does not read a name out of the helper's prose.
  */
 function participantsToStoreNow({
   message,
   currentStep,
   pending,
-  history,
   voice,
 }: {
   message: string;
@@ -2146,19 +2216,7 @@ function participantsToStoreNow({
   const text = message.trim();
   const commanded = participantsNamedForImmediateWrite(text);
   if (commanded) return commanded;
-  if (isQuestSectionApproval(text)) {
-    const named = sectionNamedInApproval(text);
-    if (named && named !== 'members') return null;
-    if (
-      pending &&
-      Object.keys(pending.patch).length > 0 &&
-      !approvalConfirmsLatestParticipant(text, history)
-    ) {
-      return null;
-    }
-    const proposed = participantsProposedInHistory(history);
-    return proposed.length > 0 ? proposed : null;
-  }
+  if (isQuestSectionApproval(text)) return null;
   const pendingStep =
     pending && Object.keys(pending.patch).length > 0 ? pending.step : null;
   const target = questDraftCoachedStep(text, currentStep, pendingStep);
@@ -2309,27 +2367,27 @@ export function runNewQuestDraftTurn({
     message: text,
     currentStep,
     pending,
-    history,
     voice,
   });
-  if (storeNow) {
-    const applied = finishApply('members', { members: storeNow });
-    if (
-      approvalConfirmsLatestParticipant(text, history) &&
-      applied.wrote &&
-      pending &&
-      pending.step !== 'members' &&
-      Object.keys(pending.patch).length > 0
-    ) {
-      return {
-        ...applied,
-        pending,
-        reply: `Added that to the Participants.\n\n${questPendingYesNotice(
-          pending.step,
-        )}`,
-      };
+  if (storeNow) return finishApply('members', { members: storeNow });
+
+  if (voice === 'create') {
+    const participantYes = bareYesParticipantDecision({
+      message: text,
+      history,
+      pending,
+      spaceMembers,
+    });
+    if (participantYes.kind === 'clarify') {
+      return stay(
+        PARTICIPANT_YES_CLARIFY,
+        currentStep,
+        pending && Object.keys(pending.patch).length > 0 ? pending : null,
+      );
     }
-    return applied;
+    if (participantYes.kind === 'apply') {
+      return finishApply('members', { members: participantYes.members });
+    }
   }
 
   if (isQuestSectionApproval(text)) {
@@ -2337,6 +2395,13 @@ export function runNewQuestDraftTurn({
     const pendingPatch = pending?.patch ?? {};
     const hasPending = Object.keys(pendingPatch).length > 0;
     if (pending && hasPending && (!named || named === pending.step)) {
+      if (pending.step === 'members') {
+        const resolved = rosterPendingParticipants(pending, spaceMembers);
+        if (!resolved) {
+          return stay(PARTICIPANT_YES_CLARIFY, currentStep, pending);
+        }
+        return finishApply('members', { members: resolved });
+      }
       return finishApply(pending.step, pending.patch);
     }
     if (pending && hasPending) {
@@ -2664,6 +2729,58 @@ export function applyQuestHelperAgentTurn({
     currentStep,
   );
   if (readOnly) return readOnly;
+  if (voice === 'create') {
+    const participantYes = bareYesParticipantDecision({
+      message,
+      history,
+      pending,
+      spaceMembers,
+    });
+    if (participantYes.kind === 'clarify') {
+      return {
+        draft,
+        wrote: false,
+        pending:
+          pending && Object.keys(pending.patch).length > 0 ? pending : null,
+        focusStep: currentStep,
+        reply: PARTICIPANT_YES_CLARIFY,
+      };
+    }
+    if (participantYes.kind === 'apply') {
+      const { next, updatedLabels } = applyPatchToQuestDraftState({
+        current: draft,
+        patch: sanitizeQuestDraftPatch(
+          limitQuestPatchToStep({ members: participantYes.members }, 'members'),
+        ),
+        spaceMembers,
+        viewerDisplayName,
+      });
+      if (updatedLabels.length === 0) {
+        return {
+          draft,
+          wrote: false,
+          pending,
+          focusStep: currentStep,
+          reply: PARTICIPANT_YES_CLARIFY,
+        };
+      }
+      const advance = nextQuestStepAfterUpdate({
+        draft: next,
+        currentStep: 'members',
+        updatedLabels,
+      });
+      const added = 'Added that to the Participants.';
+      return {
+        draft: next,
+        wrote: true,
+        pending: null,
+        focusStep: advance.step,
+        reply: advance.complete
+          ? `${added} ${QUEST_DRAFT_READY_REPLY}`
+          : `${added} ${stewardQuestionForStep(advance.step)}`,
+      };
+    }
+  }
   const prose = stripModelStateClaims(reply ?? '');
   const suggestion = helper.suggestion
     ? {
@@ -2678,27 +2795,18 @@ export function applyQuestHelperAgentTurn({
     : null;
   let pendingSuggestion =
     suggestion && Object.keys(suggestion.patch).length > 0 ? suggestion : null;
-  const confirmLatestParticipant = approvalConfirmsLatestParticipant(
-    message,
-    history,
-  );
 
   const namedNow =
-    voice === 'create' &&
-    (confirmLatestParticipant || helper.saved?.step !== 'members')
+    voice === 'create' && helper.saved?.step !== 'members'
       ? participantsToStoreNow({
           message,
           currentStep,
           pending,
-          history,
           voice,
         })
       : null;
   let immediateMembers: QuestDraftPatchInput['members'] | null = namedNow;
-  if (confirmLatestParticipant && namedNow) {
-    immediateMembers = namedNow;
-    if (pendingSuggestion?.step === 'members') pendingSuggestion = null;
-  } else if (
+  if (
     namedNow &&
     pendingSuggestion?.step === 'members' &&
     (pendingSuggestion.patch.members?.length ?? 0) > 0
@@ -2717,14 +2825,6 @@ export function applyQuestHelperAgentTurn({
   let keptPending: PendingQuestSectionProposal | null = helper.discarded
     ? null
     : pending;
-  if (
-    confirmLatestParticipant &&
-    pending &&
-    pending.step !== 'members' &&
-    Object.keys(pending.patch).length > 0
-  ) {
-    keptPending = pending;
-  }
 
   const recordWrite = (
     step: QuestStewardStep,
@@ -2756,7 +2856,7 @@ export function applyQuestHelperAgentTurn({
     recordWrite('members', { members: immediateMembers }, nextDraft);
   }
 
-  if (helper.saved && !confirmLatestParticipant) {
+  if (helper.saved) {
     const step = helper.saved.step;
     const source =
       helper.saved.source === 'pending' && pending?.step === step
@@ -2765,7 +2865,7 @@ export function applyQuestHelperAgentTurn({
     recordWrite(step, source, nextDraft);
   }
 
-  if (pendingSuggestion && !confirmLatestParticipant) {
+  if (pendingSuggestion) {
     return {
       draft: nextDraft,
       wrote,
@@ -2778,24 +2878,6 @@ export function applyQuestHelperAgentTurn({
           pendingSuggestion.step,
           pendingSuggestion.patch,
         ),
-      ),
-    };
-  }
-
-  if (
-    confirmLatestParticipant &&
-    wrote &&
-    keptPending &&
-    keptPending.step !== 'members'
-  ) {
-    return {
-      draft: nextDraft,
-      wrote,
-      pending: keptPending,
-      focusStep,
-      reply: joinReply(
-        savedLine ?? 'Added that to the Participants.',
-        questPendingYesNotice(keptPending.step),
       ),
     };
   }
@@ -2823,9 +2905,6 @@ export function applyQuestHelperAgentTurn({
     wrote,
     pending: keptPending,
     focusStep,
-    reply: joinReply(
-      savedLine,
-      confirmLatestParticipant ? fallback : prose || fallback,
-    ),
+    reply: joinReply(savedLine, prose || fallback),
   };
 }
