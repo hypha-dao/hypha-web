@@ -6,6 +6,19 @@ import { WebSocket } from 'ws';
 export type AuthDbPool = pg.Pool;
 
 /**
+ * Better Auth reads `expiresAt` and the like as `Date` objects (`key.expiresAt.getTime()`).
+ * Under the Next dev server the Neon driver handed back timestamptz as strings, which made the
+ * JWKS endpoint answer 500. Pin the parser so it does not depend on the bundled driver defaults.
+ */
+const TIMESTAMPTZ_OID = 1184;
+const timestamptzAsDate = {
+  getTypeParser: (oid: number, format?: 'text' | 'binary') =>
+    oid === TIMESTAMPTZ_OID
+      ? (value: string) => new Date(value)
+      : pg.types.getTypeParser(oid, format as 'text'),
+};
+
+/**
  * One pool per process. Local databases use plain `pg`; hosted ones use the Neon serverless
  * driver (WebSocket pool), as the rest of the app does.
  */
@@ -16,7 +29,11 @@ export function createAuthDbPool(connectionString: string): AuthDbPool {
   }
   neonConfig.webSocketConstructor = WebSocket;
   neonConfig.poolQueryViaFetch = true;
-  return new NeonPool({ connectionString, max: 5 }) as unknown as AuthDbPool;
+  return new NeonPool({
+    connectionString,
+    max: 5,
+    types: timestamptzAsDate as never,
+  }) as unknown as AuthDbPool;
 }
 
 export type PersonRecord = {
