@@ -12,6 +12,7 @@ import {
   WL_MODE_HEADER,
   WL_NOT_FOUND_HEADER,
   WL_SPACE_HEADER,
+  apiRequestHeaders,
   embedFraming,
   getWhiteLabelConfig,
   isMappedHost,
@@ -207,9 +208,12 @@ export function middleware(request: NextRequest) {
   const decision = resolve(host, pathname, config, whiteLabelOptions);
 
   if (decision.kind === 'api-allow') {
-    // A read a mapped host may call: the route runs unchanged.
+    // A read a mapped host may call: the route runs, and learns the host's
+    // Space from the header (inbound copies dropped first).
     return NextResponse.next({
-      request: { headers: stripWhiteLabelHeaders(request.headers) },
+      request: {
+        headers: apiRequestHeaders(request.headers, decision.spaceSlug),
+      },
     });
   }
 
@@ -279,10 +283,11 @@ export function middleware(request: NextRequest) {
 
   // Main host (or feature off): `/api` behaves as before the matcher included
   // it, except that the internal white-label headers are dropped so a caller
-  // can never smuggle them to a route.
+  // can never smuggle them to a route (and none is set: no Space header means
+  // "main app").
   if (isApi) {
     return NextResponse.next({
-      request: { headers: stripWhiteLabelHeaders(request.headers) },
+      request: { headers: apiRequestHeaders(request.headers) },
     });
   }
 

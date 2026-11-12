@@ -6,6 +6,10 @@ import {
   findPeopleByWeb3Addresses,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import {
+  findDocumentSpace,
+  resolveMappedHostScope,
+} from '../../../../../../lib/white-label/mapped-host-scope';
 
 type Params = { documentSlug: string };
 
@@ -23,9 +27,29 @@ export async function GET(
   }
 
   try {
-    const document = await findDocumentBySlug({ slug: documentSlug }, { db });
+    // Mapped host (Space header set by middleware): voters of a proposal of
+    // the host's own Space only. The row that passes the Space check is the one
+    // read below. No header means the main app, unchanged.
+    const scope = await resolveMappedHostScope(request, { db });
+    let web3ProposalId: number | null | undefined;
+    if (scope.kind === 'main') {
+      const document = await findDocumentBySlug({ slug: documentSlug }, { db });
+      web3ProposalId = document?.web3ProposalId;
+    } else {
+      const row =
+        scope.kind === 'mapped'
+          ? await findDocumentSpace({ slug: documentSlug }, { db })
+          : null;
+      if (!row || scope.kind !== 'mapped' || row.spaceId !== scope.spaceId) {
+        return NextResponse.json(
+          { error: 'Document not found' },
+          { status: 404 },
+        );
+      }
+      web3ProposalId = row.web3ProposalId;
+    }
 
-    if (!document || !document.web3ProposalId) {
+    if (!web3ProposalId) {
       return NextResponse.json(
         { error: 'Document not found' },
         { status: 404 },
@@ -34,7 +58,7 @@ export async function GET(
 
     const [yesVoters, noVoters] = await publicClient.readContract(
       getProposalVoters({
-        proposalId: BigInt(document.web3ProposalId),
+        proposalId: BigInt(web3ProposalId),
       }),
     );
 

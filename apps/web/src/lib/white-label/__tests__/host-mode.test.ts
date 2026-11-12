@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   WL_API_READ_ALLOWLIST,
+  WL_CLIENT_HEADER,
+  WL_MODE_HEADER,
   WL_REQUEST_HEADERS,
+  WL_SPACE_HEADER,
   WL_SECTIONS,
   classifyLink,
   getWhiteLabelConfig,
@@ -18,6 +21,7 @@ import {
   sectionHref,
   serializeAuthConfig,
   stripWhiteLabelHeaders,
+  apiRequestHeaders,
   type ResolveOptions,
   type WhiteLabelConfig,
   type WhiteLabelLinkContext,
@@ -670,6 +674,41 @@ describe('/api on a mapped host', () => {
     );
   });
 
+  it('the real allowlist serves events, spaces and voters; the own-Space rule is in the handler', () => {
+    const real = (method: string, path: string) =>
+      isApiReadAllowed(method, path.split('/').filter(Boolean), 'space-one');
+    expect(real('GET', '/api/v1/events')).toBe(true);
+    expect(real('HEAD', '/api/v1/spaces')).toBe(true);
+    // `:documentSlug` is a document slug, not the Space slug.
+    expect(real('GET', '/api/v1/documents/my-proposal-1a2b3c4d/voters')).toBe(
+      true,
+    );
+    expect(
+      real('GET', "/api/v1/documents/what's-this_(1)-1a2b3c4d/voters"),
+    ).toBe(true);
+    // Methods, extra segments and odd segments stay refused.
+    expect(real('POST', '/api/v1/events')).toBe(false);
+    expect(real('POST', '/api/v1/spaces')).toBe(false);
+    expect(real('GET', '/api/v1/events/1')).toBe(false);
+    expect(real('GET', '/api/v1/documents/x/voters/extra')).toBe(false);
+    expect(real('GET', '/api/v1/documents/voters')).toBe(false);
+    expect(real('GET', '/api/v1/documents/a%b/voters')).toBe(false);
+    expect(real('GET', '/api/v1/documents/a b/voters')).toBe(false);
+    // The path of another document is not the Space check: handler's job.
+    expect(real('GET', '/api/v1/documents/other-spaces-doc/voters')).toBe(true);
+  });
+
+  it('the resolver passes the host Space on with an allowed /api read', () => {
+    expect(run('/api/v1/events', { method: 'GET' })).toEqual({
+      kind: 'api-allow',
+      spaceSlug: 'space-one',
+    });
+    expect(run('/api/v1/events', { method: 'POST' })).toEqual({
+      kind: 'not-found',
+      reason: 'api-not-allowed',
+    });
+  });
+
   it('with the real allowlist, an empty list refuses everything', () => {
     expect(isApiReadAllowed('GET', ['api', 'v1', 'spaces', 'x'], 'x', [])).toBe(
       false,
@@ -679,6 +718,7 @@ describe('/api on a mapped host', () => {
   it('the resolver applies the host Space slug to /api', () => {
     expect(run('/api/v1/spaces/space-one', { method: 'GET' })).toEqual({
       kind: 'api-allow',
+      spaceSlug: 'space-one',
     });
     expect(run('/api/v1/spaces/space-two', { method: 'GET' })).toEqual({
       kind: 'not-found',
@@ -686,6 +726,7 @@ describe('/api on a mapped host', () => {
     });
     expect(run('/api/v1/currency-rates', { method: 'GET' })).toEqual({
       kind: 'api-allow',
+      spaceSlug: 'space-one',
     });
   });
 
@@ -908,5 +949,37 @@ describe('host client ids', () => {
       { id: 'ok', hosts: [{ host: 'c.example', space: 'three' }] },
     ]);
     expect(parseWhiteLabelHostConfig(raw).map((c) => c.id)).toEqual(['ok']);
+  });
+});
+
+describe('apiRequestHeaders (the headers an /api route sees)', () => {
+  const forged = () =>
+    new Headers({
+      host: 'partner.example',
+      authorization: 'Bearer x',
+      [WL_SPACE_HEADER]: 'someone-elses-space',
+      [WL_MODE_HEADER]: 'host',
+      [WL_CLIENT_HEADER]: 'forged-client',
+    });
+
+  it('main host: a forged inbound white-label header is stripped and none is set', () => {
+    const headers = apiRequestHeaders(forged());
+    for (const name of WL_REQUEST_HEADERS)
+      expect(headers.has(name)).toBe(false);
+    expect(headers.get('authorization')).toBe('Bearer x');
+  });
+
+  it('mapped host: forged copies are replaced by the validated own slug only', () => {
+    const headers = apiRequestHeaders(forged(), 'space-one');
+    expect(headers.get(WL_SPACE_HEADER)).toBe('space-one');
+    expect(headers.has(WL_MODE_HEADER)).toBe(false);
+    expect(headers.has(WL_CLIENT_HEADER)).toBe(false);
+    expect(headers.get('authorization')).toBe('Bearer x');
+  });
+
+  it('does not change the headers it is given', () => {
+    const input = forged();
+    apiRequestHeaders(input, 'space-one');
+    expect(input.get(WL_SPACE_HEADER)).toBe('someone-elses-space');
   });
 });
