@@ -248,7 +248,7 @@ describe('quest detail presentation', () => {
           {
             id: 8,
             memberName: 'Grace Hopper',
-            roleLabel: null,
+            roleLabel: 'Participant',
             isLead: false,
             responsibilities: ['Own the checklist'],
           },
@@ -293,6 +293,7 @@ describe('quest detail presentation', () => {
     expect(screen.queryByText('RESPONSIBILITY')).toBeNull();
     expect(screen.queryByText(/\d+\s+responsibilit/i)).toBeNull();
     expect(screen.getByText('Researcher')).toBeTruthy();
+    expect(screen.queryByText('Participant')).toBeNull();
     const ada = screen.getByTestId('quest-participant-toggle-7');
     const grace = screen.getByTestId('quest-participant-toggle-8');
     expect(ada.getAttribute('aria-expanded')).toBe('true');

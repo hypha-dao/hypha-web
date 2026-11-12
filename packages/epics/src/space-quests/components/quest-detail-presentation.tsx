@@ -26,15 +26,17 @@ const SCOPE_LABEL_CLASS =
 
 /**
  * Stored quest-participant display label (`roleLabel`).
- * Empty text is not a role. Quest lead identity still reads "Lead" when no
- * label was saved. A blank non-lead does not become the placeholder "Participant".
+ * Empty text is not a role, and neither is the generic default "Participant".
+ * A custom role is kept. Quest lead identity still reads "Lead" when no
+ * other label was saved.
  */
 export function questParticipantRoleText(member: {
   roleLabel?: string | null;
   isLead?: boolean;
 }): string | null {
   const stored = member.roleLabel?.trim() ?? '';
-  if (stored) return stored;
+  const isDefaultParticipant = stored.toLowerCase() === 'participant';
+  if (stored && !isDefaultParticipant) return stored;
   if (member.isLead) return 'Lead';
   return null;
 }
@@ -324,9 +326,9 @@ export type QuestDraftParticipantView = {
 };
 
 /**
- * Unsaved create-draft participants summary. Shows the same stored role as
- * the persisted Participants card, including the lead fallback, and keeps
- * responsibility bullets. A blank role stays blank.
+ * Unsaved create-draft participants summary. Shows a custom role the same
+ * way as the persisted Participants card, and keeps responsibility bullets.
+ * The default "Participant" label is not shown.
  */
 export function QuestDraftParticipantsCard({
   members,

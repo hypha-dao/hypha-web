@@ -23,6 +23,9 @@ describe('draft participant role', () => {
     expect(
       questParticipantRoleText({ roleLabel: '   ', isLead: false }),
     ).toBeNull();
+    expect(
+      questParticipantRoleText({ roleLabel: 'Participant', isLead: false }),
+    ).toBeNull();
     expect(questParticipantRoleText({ roleLabel: null, isLead: true })).toBe(
       'Lead',
     );
@@ -59,7 +62,8 @@ describe('draft participant role', () => {
     );
     const overview = screen.getByTestId('draft-section-members');
     expect(within(overview).getByText('QA Tester')).toBeTruthy();
-    expect(within(overview).getByText('Participant')).toBeTruthy();
+    expect(within(overview).queryByText('Participant')).toBeNull();
+    expect(within(overview).getAllByText('RESPONSIBILITY')).toHaveLength(2);
     expect(within(overview).getByText('QA runner')).toBeTruthy();
     expect(within(overview).getByText('Run the checklist')).toBeTruthy();
     expect(within(overview).getByText('Record the result')).toBeTruthy();
