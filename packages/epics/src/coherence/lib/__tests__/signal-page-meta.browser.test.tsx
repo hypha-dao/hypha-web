@@ -193,13 +193,13 @@ describe('signal page meta row', () => {
           expect(box.childrenInside, `children at ${width}`).toBe(true);
           if (width === 1280) {
             expect(box.sameRow, '1280 row').toBe(true);
-            expect(box.gap, '1280 gap').toBeGreaterThan(48);
-            expect(box.gap, '1280 gap').toBeLessThan(58);
+            expect(box.gap, '1280 gap').toBeGreaterThan(70);
+            expect(box.gap, '1280 gap').toBeLessThan(82);
           }
           if (width === 720) {
             expect(box.sameRow, '720 row').toBe(true);
-            expect(box.gap, '720 gap').toBeGreaterThan(20);
-            expect(box.gap, '720 gap').toBeLessThan(40);
+            expect(box.gap, '720 gap').toBeGreaterThan(38);
+            expect(box.gap, '720 gap').toBeLessThan(50);
           }
           if (width === 421) {
             expect(box.sameRow, '421 wraps before it clips').toBe(false);

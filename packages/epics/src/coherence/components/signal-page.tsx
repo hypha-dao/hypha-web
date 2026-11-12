@@ -46,9 +46,14 @@ import { SignalVideoPlayer } from './signal-video-player';
 const SECTION_LABEL_CLASS =
   'text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground';
 
-/** Wide screens keep a ~51px column gap. Narrow cards scale it and wrap. */
+/**
+ * Column gap for Created by / Created / Last reply / Discussion.
+ * 24px at the floor, 6% of the card up to 80px. From 720px the percent
+ * follows the viewport so a wide row opens up; under 520px the row wraps.
+ * List cards use the same pair (`signal-feed-row.tsx`).
+ */
 export const SIGNAL_PAGE_META_ROW_CLASS =
-  'm-0 flex w-full min-w-0 flex-nowrap items-start gap-x-[clamp(1rem,4cqi,3.5rem)] gap-y-4 border-t border-border/70 pt-4 @min-[720px]:gap-x-[clamp(1rem,4vw,3.5rem)] @max-[520px]:flex-wrap';
+  'm-0 flex w-full min-w-0 flex-nowrap items-start gap-y-4 border-t border-border/70 pt-4 @max-[520px]:flex-wrap gap-x-[clamp(1.5rem,6cqi,5rem)] @min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]';
 
 export const SIGNAL_PAGE_META_ITEM_CLASS =
   'flex min-w-0 max-w-full shrink flex-col gap-1 overflow-hidden @max-[520px]:shrink-0';

@@ -103,7 +103,7 @@ export function SignalFeedRow({
     <article
       data-testid="signal-card"
       data-signal-slug={signal.slug ?? undefined}
-      className="craft-card-interactive relative flex flex-col gap-1.5 p-4"
+      className="@container craft-card-interactive relative flex flex-col gap-1.5 p-4"
     >
       <div className="flex min-w-0 flex-col gap-1.5">
         <SignalTypeBadge type={signal.type} />
@@ -120,7 +120,7 @@ export function SignalFeedRow({
         ) : null}
         <div
           data-testid="signal-card-meta"
-          className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-1 text-muted-foreground"
+          className="mt-1 flex flex-wrap items-center gap-y-1.5 text-1 text-muted-foreground gap-x-[clamp(1.5rem,6cqi,5rem)] @min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]"
         >
           <SignalUpvoteButton
             slug={signal.slug}

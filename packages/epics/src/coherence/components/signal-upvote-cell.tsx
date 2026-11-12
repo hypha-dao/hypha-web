@@ -51,9 +51,7 @@ const VoteArrow = React.forwardRef<
       ref={ref}
       type="button"
       variant={active ? 'default' : 'ghost'}
-      colorVariant={
-        active ? (direction === 'down' ? 'error' : 'accent') : 'neutral'
-      }
+      colorVariant={active ? 'accent' : 'neutral'}
       size="sm"
       data-testid={direction === 'up' ? 'signal-vote-up' : 'signal-vote-down'}
       aria-pressed={active}
@@ -148,11 +146,7 @@ export function SignalUpvoteCellChrome({
       type="button"
       className={cn(
         'min-w-4 rounded-none bg-transparent px-1.5 text-1 font-medium tabular-nums leading-none',
-        selected === 'down'
-          ? 'text-error-11'
-          : selected === 'up'
-          ? 'text-accent-11'
-          : 'text-foreground',
+        selected ? 'text-accent-11' : 'text-foreground',
       )}
       data-testid="signal-upvote-figure"
       aria-label={figureLabel ?? exactLabel}
@@ -193,11 +187,7 @@ export function SignalUpvoteCellChrome({
       {...groupProps}
       className={cn(
         'inline-flex h-7 items-center rounded-none border bg-transparent px-0.5',
-        selected === 'up'
-          ? 'border-accent-8'
-          : selected === 'down'
-          ? 'border-error-8'
-          : 'border-border',
+        selected ? 'border-accent-8' : 'border-border',
         className,
       )}
     >

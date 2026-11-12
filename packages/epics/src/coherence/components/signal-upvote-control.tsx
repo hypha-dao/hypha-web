@@ -224,9 +224,7 @@ export function SignalUpvoteControl({
         className={cn(
           'group/upvote inline-flex items-stretch overflow-hidden rounded-full border transition-[border-color,background-color,opacity] duration-200 ease-out',
           pillHeightClass,
-          direction === 'down'
-            ? 'border-error-8/80 bg-background/60'
-            : direction === 'up'
+          direction === 'down' || direction === 'up'
             ? 'border-accent-8/80 bg-background/60'
             : 'border-border/75 bg-background/55 hover:border-border hover:bg-muted/25',
           isMutating && 'pointer-events-none opacity-65',
@@ -267,9 +265,7 @@ export function SignalUpvoteControl({
           className={cn(
             'flex items-center px-1.5 tabular-nums',
             compact ? 'text-[10px]' : 'text-[11px]',
-            direction === 'down'
-              ? 'font-semibold text-error-11'
-              : direction === 'up'
+            direction === 'down' || direction === 'up'
               ? 'font-semibold text-accent-11'
               : hasAnyVotes
               ? 'font-medium text-foreground'
@@ -288,7 +284,7 @@ export function SignalUpvoteControl({
             pillHeightClass,
             'w-6 rounded-none border-0 px-0 shadow-none ring-0 hover:shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
             direction === 'down'
-              ? 'bg-error-9 text-error-contrast hover:bg-error-10'
+              ? 'bg-accent-9 text-accent-contrast hover:bg-accent-10'
               : 'text-muted-foreground hover:bg-muted/35 hover:text-foreground',
           )}
           disabled={!canVote || isMutating}

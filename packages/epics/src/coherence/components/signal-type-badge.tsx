@@ -56,13 +56,13 @@ export function SignalTypeBadge({
     return (
       <span
         className={cn(
-          'inline-flex w-fit items-center gap-1.5 px-2 py-1 text-[10px] font-semibold uppercase leading-none tracking-[0.08em]',
+          'inline-flex w-fit items-center gap-1 px-1.5 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-[0.08em]',
           'bg-[color-mix(in_oklab,currentColor_10%,transparent)]',
           tone,
           className,
         )}
       >
-        <SignalTypeIcon type={value} className="size-3 shrink-0" />
+        <SignalTypeIcon type={value} className="size-2.5 shrink-0" />
         {label}
       </span>
     );
@@ -74,11 +74,11 @@ export function SignalTypeBadge({
       size={OUTLINED_LIST_TAG_SIZE}
       colorVariant={outlinedListTagColor(option.colorVariant)}
       className={cn(
-        'w-fit shrink-0 gap-1.5 uppercase tracking-[0.06em]',
+        'w-fit shrink-0 gap-1 px-2 py-0.5 text-[11px] uppercase leading-[14px] tracking-[0.06em]',
         className,
       )}
     >
-      <SignalTypeIcon type={value} className="size-3 shrink-0" />
+      <SignalTypeIcon type={value} className="size-2.5 shrink-0" />
       {label}
     </Badge>
   );

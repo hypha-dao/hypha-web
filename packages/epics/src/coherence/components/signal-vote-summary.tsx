@@ -76,7 +76,7 @@ export function SignalVoteTotals({
         <span className="text-accent-11" data-testid="signal-votes-up">
           {upLabel}
         </span>
-        <span className="text-error-11" data-testid="signal-votes-down">
+        <span className="text-foreground" data-testid="signal-votes-down">
           {downLabel}
         </span>
       </div>
@@ -137,7 +137,7 @@ export function SignalVoteRoster({
               <span
                 className={cn(
                   'shrink-0 text-1',
-                  down ? 'text-error-11' : 'text-accent-11',
+                  down ? 'font-medium text-foreground' : 'text-accent-11',
                 )}
                 data-testid="signal-voter-direction"
               >
@@ -147,7 +147,7 @@ export function SignalVoteRoster({
             <span
               className={cn(
                 'shrink-0 text-1 tabular-nums',
-                down ? 'text-error-11' : 'text-muted-foreground',
+                down ? 'font-medium text-foreground' : 'text-muted-foreground',
               )}
             >
               {down ? '−' : ''}
@@ -234,7 +234,7 @@ export function SignalAllocationVoters({
             <span
               className={cn(
                 'inline-flex shrink-0 items-center gap-0.5 text-1 tabular-nums',
-                down ? 'text-error-11' : 'text-accent-11',
+                down ? 'font-medium text-foreground' : 'text-accent-11',
               )}
             >
               <Icon className="size-3" strokeWidth={2} aria-hidden />

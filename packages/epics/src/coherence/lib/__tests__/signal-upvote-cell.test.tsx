@@ -45,6 +45,13 @@ describe('SignalUpvoteCellChrome', () => {
     expect(figure.getAttribute('aria-label')).toBe('Votes · -2');
     expect(down.getAttribute('aria-pressed')).toBe('true');
     expect(up.getAttribute('aria-pressed')).toBe('false');
+    expect(down.className).toContain('bg-accent-9');
+    expect(down.className).not.toContain('error');
+    expect(cell.className).toContain('border-accent-8');
+    expect(cell.className).not.toContain('error');
+    expect(figure.className).toContain('text-accent-11');
+    expect(figure.className).not.toContain('error');
+    expect(up.className).not.toContain('bg-accent-9');
     expect(up.getAttribute('aria-haspopup')).toBeNull();
 
     fireEvent.click(up);
