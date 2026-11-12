@@ -4,6 +4,7 @@ import { useGetDelegate } from './useGetDelegate';
 import React from 'react';
 import useSWR from 'swr';
 import { useJwt } from '@hypha-platform/core/client';
+import { fetchJson } from '../../../common/fetch-json';
 
 export const useSpaceDelegate = ({
   user,
@@ -33,7 +34,7 @@ export const useSpaceDelegate = ({
 
   const { data: person, isLoading: isPersonLoading } = useSWR(
     spaceId && endpoint ? [endpoint] : null,
-    ([endpoint]) => fetch(endpoint).then((res) => res.json()),
+    ([endpoint]) => fetchJson(endpoint, undefined, 'delegate person'),
   );
 
   const isLoading = isDelegatesLoading || (endpoint ? isPersonLoading : false);
