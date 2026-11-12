@@ -154,11 +154,16 @@ describe('quest create draft heading', () => {
       'Fills in live as you chat · click any section to edit',
     );
     const intro = screen.getByTestId('quest-create-intro');
-    expect(intro.className).toContain('flex-col');
-    expect(intro.className).toContain('gap-1');
+    const left = status.parentElement;
+    expect(intro.className).toContain('items-start');
+    expect(left?.className).toContain('flex-col');
+    expect(left?.className).toContain('gap-1');
     expect(intro.contains(heading)).toBe(true);
-    expect(intro.contains(status)).toBe(true);
-    expect(intro.contains(helper)).toBe(true);
+    expect(left?.contains(status)).toBe(true);
+    expect(left?.contains(helper)).toBe(true);
+    expect(left?.contains(screen.getByTestId('create-quest-button'))).toBe(
+      false,
+    );
     expect(status.textContent).toContain('Not saved yet');
     expect(
       heading.compareDocumentPosition(status) &
@@ -201,6 +206,10 @@ describe('quest create draft heading', () => {
     const participants = screen.getByTestId('draft-section-members');
     const label = participants.querySelector('span');
     expect(label?.textContent).toBe('Participants');
+    expect(screen.queryByTestId('create-proposal-requirement')).toBeNull();
+    expect(
+      screen.queryByText('Add a title and goal to create a proposal'),
+    ).toBeNull();
     expect(label?.className).toContain('uppercase');
   });
 

@@ -1287,9 +1287,8 @@ export function SpaceQuestCreateDraft({
     proposalCharacterCount > QUEST_PROPOSAL_DESCRIPTION_LIMIT;
   // Title and Goal are both required. A draft that is too long to publish
   // stays blocked too, and that case explains itself beside the button.
-  const missingTitleOrGoal = !name.trim() || !goal.trim();
   const createProposalBlocked =
-    !pendingProposalLink && (missingTitleOrGoal || proposalOverLimit);
+    !pendingProposalLink && (!name.trim() || !goal.trim() || proposalOverLimit);
 
   const questsListHref = `/${locale}/dho/${spaceSlug}/quests`;
   const leaveCreate = () => {
@@ -1367,119 +1366,108 @@ export function SpaceQuestCreateDraft({
           <div className="min-w-0 flex-1 space-y-5">
             <div
               data-testid="quest-create-intro"
-              className="flex flex-col gap-1"
+              className="flex flex-wrap items-start justify-between gap-3"
             >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex min-w-0 flex-col gap-1">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <h1
-                      data-testid="quest-create-title"
-                      className="font-display text-[18px] font-semibold leading-none text-foreground"
-                    >
-                      New quest
-                    </h1>
-                    <span className="shrink-0 bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
-                      Draft
-                    </span>
-                  </div>
-                  {draftHydrating ? (
-                    <div
-                      data-testid="quest-draft-save-status"
-                      data-state="loading"
-                      aria-busy="true"
-                      aria-live="polite"
-                      className={DRAFT_SAVE_STATUS_CLASS}
-                    >
-                      <span className="h-3 w-24 bg-neutral-4" aria-hidden />
-                    </div>
-                  ) : draftSaveState === 'error' ? (
-                    <button
-                      type="button"
-                      onClick={() => void saveDraftToServer()}
-                      data-testid="quest-draft-save-status"
-                      className={`${DRAFT_SAVE_STATUS_CLASS} text-error-11`}
-                    >
-                      {tDrafts('drafts.retry')}
-                    </button>
-                  ) : (
-                    <div
-                      data-testid="quest-draft-save-status"
-                      aria-live="polite"
-                      className={DRAFT_SAVE_STATUS_CLASS}
-                    >
-                      {draftSaveState === 'saving' ? (
-                        <>
-                          <Loader2
-                            className="size-3.5 shrink-0 animate-spin text-neutral-11"
-                            aria-hidden
-                          />
-                          <span className="text-neutral-11">
-                            {tDrafts('drafts.saving')}
-                          </span>
-                        </>
-                      ) : draftSaveState === 'saved' ? (
-                        <>
-                          <Check
-                            className="size-3.5 shrink-0 text-success-11"
-                            aria-hidden
-                          />
-                          <span className="text-success-11">
-                            {tDrafts('drafts.savedAuto')}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-neutral-11">
-                          {tDrafts('drafts.notSaved')}
-                        </span>
-                      )}
-                    </div>
-                  )}
+              <div className="flex min-w-0 flex-col gap-1">
+                <div className="flex min-w-0 items-center gap-2">
+                  <h1
+                    data-testid="quest-create-title"
+                    className="font-display text-[18px] font-semibold leading-none text-foreground"
+                  >
+                    New quest
+                  </h1>
+                  <span className="shrink-0 bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
+                    Draft
+                  </span>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      colorVariant="neutral"
-                      className="rounded-none"
-                      onClick={requestCancel}
-                      data-testid="cancel-quest-button"
-                    >
-                      CANCEL
-                    </Button>
-                    <Button
-                      type="button"
-                      disabled={submitting || createProposalBlocked}
-                      onClick={() => setConfirmOpen(true)}
-                      data-testid="create-quest-button"
-                      className="bg-foreground text-background hover:bg-foreground/90"
-                    >
-                      CREATE PROPOSAL
-                    </Button>
+                {draftHydrating ? (
+                  <div
+                    data-testid="quest-draft-save-status"
+                    data-state="loading"
+                    aria-busy="true"
+                    aria-live="polite"
+                    className={DRAFT_SAVE_STATUS_CLASS}
+                  >
+                    <span className="h-3 w-24 bg-neutral-4" aria-hidden />
                   </div>
-                  {missingTitleOrGoal && !pendingProposalLink ? (
-                    <p
-                      data-testid="create-proposal-requirement"
-                      className="max-w-56 text-right text-[11px] leading-snug text-neutral-11"
-                    >
-                      {tDrafts('drafts.needTitleAndGoal')}
-                    </p>
-                  ) : null}
+                ) : draftSaveState === 'error' ? (
                   <button
                     type="button"
-                    onClick={toggleQuestHelper}
-                    data-testid="open-quest-discussion-button"
-                    className="inline-flex items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
+                    onClick={() => void saveDraftToServer()}
+                    data-testid="quest-draft-save-status"
+                    className={`${DRAFT_SAVE_STATUS_CLASS} text-error-11`}
                   >
-                    Open discussion
-                    <span aria-hidden>→</span>
+                    {tDrafts('drafts.retry')}
                   </button>
-                </div>
+                ) : (
+                  <div
+                    data-testid="quest-draft-save-status"
+                    aria-live="polite"
+                    className={DRAFT_SAVE_STATUS_CLASS}
+                  >
+                    {draftSaveState === 'saving' ? (
+                      <>
+                        <Loader2
+                          className="size-3.5 shrink-0 animate-spin text-neutral-11"
+                          aria-hidden
+                        />
+                        <span className="text-neutral-11">
+                          {tDrafts('drafts.saving')}
+                        </span>
+                      </>
+                    ) : draftSaveState === 'saved' ? (
+                      <>
+                        <Check
+                          className="size-3.5 shrink-0 text-success-11"
+                          aria-hidden
+                        />
+                        <span className="text-success-11">
+                          {tDrafts('drafts.savedAuto')}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-neutral-11">
+                        {tDrafts('drafts.notSaved')}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <p className="text-xs text-neutral-11">
+                  Fills in live as you chat · click any section to edit
+                </p>
               </div>
-
-              <p className="text-xs text-neutral-11">
-                Fills in live as you chat · click any section to edit
-              </p>
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    colorVariant="neutral"
+                    className="rounded-none"
+                    onClick={requestCancel}
+                    data-testid="cancel-quest-button"
+                  >
+                    CANCEL
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={submitting || createProposalBlocked}
+                    onClick={() => setConfirmOpen(true)}
+                    data-testid="create-quest-button"
+                    className="bg-foreground text-background hover:bg-foreground/90"
+                  >
+                    CREATE PROPOSAL
+                  </Button>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleQuestHelper}
+                  data-testid="open-quest-discussion-button"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
+                >
+                  Open discussion
+                  <span aria-hidden>→</span>
+                </button>
+              </div>
             </div>
 
             {proposalLinkError ? (
@@ -1897,11 +1885,6 @@ export function SpaceQuestCreateDraft({
                   space: space?.title?.trim() || spaceSlug,
                 })}
               </p>
-              {missingTitleOrGoal && !pendingProposalLink ? (
-                <p className="text-right text-[11px] leading-snug text-neutral-11">
-                  {tDrafts('drafts.needTitleAndGoal')}
-                </p>
-              ) : null}
               <div className="flex items-center justify-end gap-2 pt-1">
                 <Button
                   type="button"

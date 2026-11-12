@@ -5818,7 +5818,6 @@
       "discard": "Verwerfen",
       "savedAuto": "Entwurf automatisch gespeichert",
       "notSaved": "Noch nicht gespeichert",
-      "needTitleAndGoal": "Füge einen Titel und ein Ziel hinzu, um einen Vorschlag zu erstellen",
       "retry": "Speichern fehlgeschlagen. Erneut versuchen",
       "deleteFailed": "Der Entwurf konnte nicht gelöscht werden. Er ist wieder in der Liste."
     },

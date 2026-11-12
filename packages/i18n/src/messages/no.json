@@ -5823,7 +5823,6 @@
       "discard": "Forkast",
       "savedAuto": "Utkast lagret automatisk",
       "notSaved": "Ikke lagret ennå",
-      "needTitleAndGoal": "Legg til en tittel og et mål for å opprette et forslag",
       "retry": "Kunne ikke lagre. Prøv igjen",
       "deleteFailed": "Kunne ikke slette det utkastet. Det er tilbake i listen."
     },

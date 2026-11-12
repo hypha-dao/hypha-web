@@ -754,9 +754,7 @@ describe('quest create draft persistence', () => {
       'create-quest-button',
     ) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
-    expect(screen.getByTestId('create-proposal-requirement').textContent).toBe(
-      'drafts.needTitleAndGoal',
-    );
+    expect(screen.queryByTestId('create-proposal-requirement')).toBeNull();
 
     fireEvent.click(screen.getByTestId('draft-section-name'));
     fireEvent.change(screen.getByPlaceholderText('e.g. Onboarding matcher'), {
@@ -772,7 +770,7 @@ describe('quest create draft persistence', () => {
       'Not set yet',
     );
     expect(button.disabled).toBe(true);
-    expect(screen.getByTestId('create-proposal-requirement')).toBeTruthy();
+    expect(screen.queryByTestId('create-proposal-requirement')).toBeNull();
   });
 
   it('persists a Title card edit through autosave and reload', async () => {
@@ -843,8 +841,6 @@ describe('quest create draft persistence', () => {
 
     const createButton = () =>
       screen.getByTestId('create-quest-button') as HTMLButtonElement;
-    const requirement = () =>
-      screen.queryByTestId('create-proposal-requirement');
     const insertEditor = (text: string, index = 0) => {
       const editor = screen.getAllByRole('textbox', {
         name: 'Rich text editor',
@@ -874,7 +870,7 @@ describe('quest create draft persistence', () => {
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
     expect(createButton().disabled).toBe(true);
     expect(screen.getByRole('heading', { name: 'New quest' })).toBeTruthy();
-    expect(requirement()?.textContent).toBe('drafts.needTitleAndGoal');
+    expect(screen.queryByTestId('create-proposal-requirement')).toBeNull();
     expect(screen.queryByText(/too long to publish/i)).toBeNull();
 
     fireEvent.click(screen.getByTestId('draft-section-goal'));
@@ -883,7 +879,7 @@ describe('quest create draft persistence', () => {
       'test2',
     );
     expect(createButton().disabled).toBe(true);
-    expect(requirement()).toBeTruthy();
+    expect(screen.queryByTestId('create-proposal-requirement')).toBeNull();
 
     fireEvent.click(screen.getByTestId('draft-section-name'));
     fireEvent.change(screen.getByPlaceholderText('e.g. Onboarding matcher'), {
@@ -894,7 +890,7 @@ describe('quest create draft persistence', () => {
     expect(screen.getByTestId('draft-section-name').textContent).toContain(
       'Sandbox quest',
     );
-    expect(requirement()).toBeNull();
+    expect(screen.queryByTestId('create-proposal-requirement')).toBeNull();
 
     fireEvent.click(screen.getByTestId('draft-section-scope'));
     await saveEditor('234');
