@@ -5829,7 +5829,7 @@
       "keepBody": "Puedes continuar esta misión más tarde desde Mis borradores. Descartar lo elimina.",
       "keep": "Conservar borrador",
       "discard": "Descartar",
-      "savedAuto": "Guardado automáticamente",
+      "savedAuto": "Borrador guardado automáticamente",
       "notSaved": "Aún no guardado",
       "retry": "No se pudo guardar. Reintentar",
       "deleteFailed": "No se pudo eliminar ese borrador. Volvió a tu lista."

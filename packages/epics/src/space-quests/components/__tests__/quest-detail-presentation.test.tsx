@@ -268,7 +268,10 @@ describe('quest detail presentation', () => {
     expect(screen.getByText('Ada Lovelace').className).not.toMatch(
       /(?:^|\s)uppercase(?:\s|$)/,
     );
-    expect(screen.getByText('Ada Lovelace').className).toContain('text-[15px]');
+    expect(screen.getByText('Ada Lovelace').className).toContain('text-[13px]');
+    expect(screen.getByText('Ada Lovelace').className).not.toContain(
+      'text-[15px]',
+    );
     expect(screen.getByText('Ada Lovelace').className).not.toContain('text-3');
     expect(screen.getByText('Ada Lovelace').className).toContain(
       'leading-relaxed',
@@ -276,7 +279,8 @@ describe('quest detail presentation', () => {
     expect(screen.getByText('Researcher').className).not.toMatch(
       /(?:^|\s)uppercase(?:\s|$)/,
     );
-    expect(screen.getByText('Researcher').className).toContain('text-2');
+    expect(screen.getByText('Researcher').className).toContain('text-[12px]');
+    expect(screen.getByText('Researcher').className).not.toContain('text-2');
     expect(screen.getByText('Researcher').className).toContain(
       'leading-relaxed',
     );
@@ -326,14 +330,17 @@ describe('quest detail presentation', () => {
           ]}
         />,
       );
-      expect(
-        screen
-          .getByRole('img', { name: "Ada Lovelace's avatar" })
-          .getAttribute('src'),
-      ).toBe('https://cdn.example/ada.png');
+      const adaPhoto = screen.getByRole('img', {
+        name: "Ada Lovelace's avatar",
+      });
+      expect(adaPhoto.getAttribute('src')).toBe('https://cdn.example/ada.png');
+      expect(adaPhoto.parentElement?.className).toContain('w-[32px]');
+      expect(adaPhoto.parentElement?.className).toContain('h-[32px]');
       const grace = screen.getByTestId('quest-participant-toggle-8');
       expect(grace.querySelector('img')).toBeNull();
-      expect(grace.querySelector('span.bg-foreground')?.textContent).toBe('G');
+      const initial = grace.querySelector('span.bg-foreground');
+      expect(initial?.textContent).toBe('G');
+      expect(initial?.className).toContain('size-8');
     } finally {
       restore();
     }

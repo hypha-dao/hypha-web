@@ -7,6 +7,7 @@ import {
 } from '@hypha-platform/core/client';
 import {
   applyPatchToQuestDraftState,
+  applyQuestHelperAgentTurn,
   buildLocalQuestDraftPatch,
   decideNewQuestDraftTurn,
   explicitQuestSectionCommand,
@@ -4005,5 +4006,104 @@ describe('quest draft review corrections', () => {
     expect(entries[0]?.role).toBe('assistant');
     expect(entries.every((entry) => entry.text.length === 2000)).toBe(true);
     expect(entries.at(-1)?.role).toBe('user');
+  });
+});
+
+describe('quest participant writes', () => {
+  const turn = (
+    message: string,
+    currentStep: QuestStewardStep,
+    history: Array<{ role: 'user' | 'agent'; text: string }> = [],
+  ) =>
+    runNewQuestDraftTurn({
+      message,
+      currentStep,
+      draft: emptyDraft,
+      pending: null,
+      history,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      model: null,
+    });
+
+  it('writes a participant the member names, including a yes after the helper proposed one', () => {
+    const added = turn('add Ada Lovelace as a participant', 'goal');
+    expect(added.wrote).toBe(true);
+    expect(added.draft.members.map((member) => member.memberName)).toEqual([
+      'Ada Lovelace',
+    ]);
+    expect(added.draft.members[0]?.responsibilities).toEqual([]);
+    expect(added.draft.goal).toBe('');
+
+    const listed = turn('Ada Lovelace', 'members');
+    expect(listed.wrote).toBe(true);
+    expect(listed.draft.members[0]?.memberName).toBe('Ada Lovelace');
+    expect(listed.draft.members[0]?.responsibilities).toEqual([]);
+
+    const confirmed = turn('yes', 'goal', [
+      {
+        role: 'agent',
+        text: 'Should Ada Lovelace be listed as a participant?',
+      },
+    ]);
+    expect(confirmed.wrote).toBe(true);
+    expect(confirmed.draft.members[0]?.memberName).toBe('Ada Lovelace');
+
+    const prose = turn('We update members on progress every week', 'goal');
+    expect(prose.wrote).toBe(false);
+    expect(prose.draft.members).toEqual([]);
+  });
+
+  it('writes a participant when the helper only suggests the person the member named', () => {
+    const suggested = applyQuestHelperAgentTurn({
+      message: 'add Ada Lovelace as a participant',
+      helper: {
+        suggestion: {
+          step: 'members',
+          patch: {
+            members: [
+              {
+                memberName: 'Ada Lovelace',
+                responsibilities: ['Own the checklist'],
+              },
+            ],
+          },
+        },
+        saved: null,
+        discarded: false,
+      },
+      reply: 'Ada can own the checklist.',
+      currentStep: 'goal',
+      draft: emptyDraft,
+      pending: null,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+    });
+    expect(suggested.wrote).toBe(true);
+    expect(suggested.pending).toBeNull();
+    expect(suggested.draft.members[0]?.memberName).toBe('Ada Lovelace');
+    expect(suggested.draft.members[0]?.responsibilities).toEqual([
+      'Own the checklist',
+    ]);
+    expect(suggested.reply).not.toMatch(/Not saved yet/i);
+
+    const confirmed = applyQuestHelperAgentTurn({
+      message: 'yes',
+      helper: { suggestion: null, saved: null, discarded: false },
+      reply: 'Okay.',
+      currentStep: 'goal',
+      draft: emptyDraft,
+      pending: null,
+      history: [
+        {
+          role: 'agent',
+          text: 'Should Grace Hopper be listed as a participant?',
+        },
+      ],
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+    });
+    expect(confirmed.wrote).toBe(true);
+    expect(confirmed.draft.members[0]?.memberName).toBe('Grace Hopper');
   });
 });

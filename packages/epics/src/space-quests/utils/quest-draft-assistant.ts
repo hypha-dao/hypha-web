@@ -101,6 +101,93 @@ export function stewardQuestionForStep(step: QuestStewardStep): string {
   }
 }
 
+const NOT_A_PARTICIPANT_NAME =
+  /\b(?:the|a|an|we|our|this|that|update|write|ship|improve|make|create|need|should|will|can|for|with|every|week)\b/i;
+
+const ADD_AS_PARTICIPANT =
+  /^(?:please\s+)?(?:add|include|put)\s+(.+?)\s+as\s+(?:a\s+)?participants?\b/i;
+
+function stripMembersLabel(text: string): string {
+  return text.replace(/^(?:participants?|members?)\s*:\s*/i, '').trim();
+}
+
+function splitParticipantNameList(raw: string): string[] {
+  return raw
+    .replace(/^@/, '')
+    .split(/\s*,\s*|\s+\band\b\s+/i)
+    .map((name) =>
+      name
+        .replace(/_/g, ' ')
+        .replace(/[.?!"']+$/g, '')
+        .trim(),
+    )
+    .filter((name) => name.length > 0 && name.length <= 80);
+}
+
+function looksLikeParticipantName(name: string): boolean {
+  const words = name.split(/\s+/).filter(Boolean);
+  if (words.length === 0 || words.length > 5) return false;
+  return !NOT_A_PARTICIPANT_NAME.test(name);
+}
+
+function messageListsParticipants(text: string): boolean {
+  const trimmed = stripMembersLabel(text.trim());
+  if (!trimmed || trimmed.includes('?') || trimmed.length > 240) return false;
+  if (isQuestDraftQuestion(trimmed) || isQuestSectionCoachingOpener(trimmed)) {
+    return false;
+  }
+  const lines = trimmed
+    .split(/\n|;/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length === 0 || lines.length > 12) return false;
+  return lines.every((line) => {
+    const names = splitParticipantNameList((line.split(':')[0] ?? '').trim());
+    return names.length > 0 && names.every(looksLikeParticipantName);
+  });
+}
+
+function membersFromNameList(text: string): Array<{
+  memberName: string;
+  roleLabel: string;
+  responsibilities: string[];
+}> {
+  const entries = stripMembersLabel(text.trim())
+    .split(/\n|;/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return entries.flatMap((entry) => {
+    const [rawPerson, ...rest] = entry.split(':');
+    const respText = rest.join(':').trim();
+    const responsibilities = respText ? splitListItems(respText) : [];
+    return splitParticipantNameList(rawPerson ?? '')
+      .filter(looksLikeParticipantName)
+      .map((memberName) => ({
+        memberName,
+        roleLabel: 'Participant',
+        responsibilities,
+      }));
+  });
+}
+
+function participantsNamedForImmediateWrite(text: string): Array<{
+  memberName: string;
+  roleLabel: string;
+  responsibilities: string[];
+}> | null {
+  const match = ADD_AS_PARTICIPANT.exec(text.trim());
+  if (!match?.[1]) return null;
+  const names = splitParticipantNameList(match[1]).filter(
+    looksLikeParticipantName,
+  );
+  if (names.length === 0) return null;
+  return names.map((memberName) => ({
+    memberName,
+    roleLabel: 'Participant',
+    responsibilities: [],
+  }));
+}
+
 function splitListItems(raw: string): string[] {
   const fromLines = splitMarkdownLinesToBullets(raw);
   if (fromLines.length > 1) return fromLines;
@@ -880,8 +967,10 @@ export function buildLocalQuestDraftPatch({
   // message that labels this section, stores that payload. A model tool
   // patch is the suggestion for everything else.
   const labeledStep = labeledQuestDraftSection(trimmed);
+  const participantList =
+    currentStep === 'members' && messageListsParticipants(trimmed);
   if (
-    (commandPayload || labeledStep === currentStep) &&
+    (commandPayload || labeledStep === currentStep || participantList) &&
     !stepFieldsAlreadyCaptured(patch, currentStep)
   ) {
     if (currentStep === 'goal') {
@@ -900,6 +989,13 @@ export function buildLocalQuestDraftPatch({
     } else if (currentStep === 'milestones') {
       const milestones = parseRequestedMilestones(trimmed, viewerDisplayName);
       if (milestones.length > 0) patch.milestones = milestones;
+    } else if (
+      currentStep === 'members' &&
+      participantList &&
+      !commandPayload
+    ) {
+      const listed = membersFromNameList(trimmed);
+      if (listed.length > 0) patch.members = listed;
     } else if (currentStep === 'members') {
       const entries = trimmed
         .split(/\n|;/)
@@ -1480,7 +1576,7 @@ export function nextQuestStepAfterUpdate({
 }
 
 export const QUEST_DRAFT_READY_REPLY =
-  "Your quest draft is ready. Click CREATE QUEST whenever you're ready to submit it as a proposal for voting.";
+  "Your quest draft is ready. Click CREATE PROPOSAL whenever you're ready to submit it as a proposal for voting.";
 
 export type QuestDraftTurnHistoryItem = {
   role: 'user' | 'agent';
@@ -1978,6 +2074,80 @@ function replyForPendingSuggestion(
   return `${cleaned}\n\nNot saved yet.\n${ask}`;
 }
 
+function participantsProposedInHistory(
+  history: readonly QuestDraftTurnHistoryItem[] | undefined,
+): Array<{
+  memberName: string;
+  roleLabel: string;
+  responsibilities: string[];
+}> {
+  if (!history) return [];
+  for (let index = history.length - 1; index >= 0; index -= 1) {
+    const item = history[index];
+    if (!item || item.role !== 'agent') continue;
+    const listed =
+      /should\s+(.+?)\s+be\s+(?:listed|added)\s+as\s+(?:a\s+)?participants?/i.exec(
+        item.text,
+      ) ??
+      /(?:^|[.!?]\s+)(?:please\s+)?add\s+(.+?)\s+as\s+(?:a\s+)?participants?/i.exec(
+        item.text,
+      );
+    if (!listed?.[1]) return [];
+    return splitParticipantNameList(listed[1])
+      .filter(looksLikeParticipantName)
+      .map((memberName) => ({
+        memberName,
+        roleLabel: 'Participant',
+        responsibilities: [],
+      }));
+  }
+  return [];
+}
+
+/**
+ * A create-flow reply that names participants writes the card immediately.
+ * Other sections still wait for yes. A bare "yes" after the helper proposed
+ * a person writes that person when no other suggestion is waiting.
+ */
+function participantsToStoreNow({
+  message,
+  currentStep,
+  pending,
+  history,
+  voice,
+}: {
+  message: string;
+  currentStep: QuestStewardStep;
+  pending: PendingQuestSectionProposal | null;
+  history?: readonly QuestDraftTurnHistoryItem[];
+  voice: 'create' | 'saved';
+}): Array<{
+  memberName: string;
+  roleLabel: string;
+  responsibilities: string[];
+}> | null {
+  if (voice !== 'create') return null;
+  const text = message.trim();
+  const commanded = participantsNamedForImmediateWrite(text);
+  if (commanded) return commanded;
+  if (isQuestSectionApproval(text)) {
+    const named = sectionNamedInApproval(text);
+    if (named && named !== 'members') return null;
+    if (pending && Object.keys(pending.patch).length > 0) return null;
+    const proposed = participantsProposedInHistory(history);
+    return proposed.length > 0 ? proposed : null;
+  }
+  const pendingStep =
+    pending && Object.keys(pending.patch).length > 0 ? pending.step : null;
+  const target = questDraftCoachedStep(text, currentStep, pendingStep);
+  if (target.bulk || target.step !== 'members') return null;
+  if (!messageSuppliesSectionContent(text) || !messageListsParticipants(text)) {
+    return null;
+  }
+  const listed = membersFromNameList(text);
+  return listed.length > 0 ? listed : null;
+}
+
 /**
  * One send on the new-quest helper. The create screen calls this after an
  * optional model turn. Only `wrote` updates the draft.
@@ -1987,6 +2157,7 @@ export function runNewQuestDraftTurn({
   currentStep,
   draft,
   pending,
+  history,
   viewerDisplayName,
   spaceMembers,
   model,
@@ -2111,6 +2282,15 @@ export function runNewQuestDraftTurn({
     }
     return finishApply(command.step, extracted);
   }
+
+  const storeNow = participantsToStoreNow({
+    message: text,
+    currentStep,
+    pending,
+    history,
+    voice,
+  });
+  if (storeNow) return finishApply('members', { members: storeNow });
 
   if (isQuestSectionApproval(text)) {
     const named = sectionNamedInApproval(text);
@@ -2395,6 +2575,7 @@ export async function settleCreateDraftTurn({
     currentStep: latest.currentStep,
     draft: latest.draft,
     pending: latest.pending,
+    history,
     viewerDisplayName,
     spaceMembers,
     voice,
@@ -2420,6 +2601,7 @@ export function applyQuestHelperAgentTurn({
   currentStep,
   draft,
   pending,
+  history,
   viewerDisplayName,
   spaceMembers,
   voice = 'create',
@@ -2430,6 +2612,7 @@ export function applyQuestHelperAgentTurn({
   currentStep: QuestStewardStep;
   draft: QuestDraftStateSnapshot;
   pending: PendingQuestSectionProposal | null;
+  history?: readonly QuestDraftTurnHistoryItem[];
   viewerDisplayName: string;
   spaceMembers: readonly QuestSpaceMember[];
   voice?: 'create' | 'saved';
@@ -2453,8 +2636,30 @@ export function applyQuestHelperAgentTurn({
         ),
       }
     : null;
-  const nextSuggestion =
+  let pendingSuggestion =
     suggestion && Object.keys(suggestion.patch).length > 0 ? suggestion : null;
+
+  const namedNow =
+    voice === 'create' && helper.saved?.step !== 'members'
+      ? participantsToStoreNow({
+          message,
+          currentStep,
+          pending,
+          history,
+          voice,
+        })
+      : null;
+  let immediateMembers: QuestDraftPatchInput['members'] | null = namedNow;
+  if (
+    namedNow &&
+    pendingSuggestion?.step === 'members' &&
+    (pendingSuggestion.patch.members?.length ?? 0) > 0
+  ) {
+    immediateMembers = pendingSuggestion.patch.members ?? namedNow;
+    pendingSuggestion = null;
+  } else if (namedNow && pendingSuggestion?.step === 'members') {
+    pendingSuggestion = null;
+  }
 
   let nextDraft = draft;
   let wrote = false;
@@ -2465,45 +2670,57 @@ export function applyQuestHelperAgentTurn({
     ? null
     : pending;
 
+  const recordWrite = (
+    step: QuestStewardStep,
+    patch: QuestDraftPatchInput,
+    base: QuestDraftStateSnapshot,
+  ) => {
+    const { next, updatedLabels } = applyPatchToQuestDraftState({
+      current: base,
+      patch: sanitizeQuestDraftPatch(limitQuestPatchToStep(patch, step)),
+      spaceMembers,
+      viewerDisplayName,
+    });
+    if (updatedLabels.length === 0) return;
+    nextDraft = next;
+    wrote = true;
+    const line = `Added that to the ${questStepSectionLabel(step)}.`;
+    savedLine = savedLine ? `${savedLine} ${line}` : line;
+    const advance = nextQuestStepAfterUpdate({
+      draft: next,
+      currentStep: step,
+      updatedLabels,
+    });
+    focusStep = advance.step;
+    complete = advance.complete;
+    if (keptPending?.step === step) keptPending = null;
+  };
+
+  if (immediateMembers && immediateMembers.length > 0) {
+    recordWrite('members', { members: immediateMembers }, nextDraft);
+  }
+
   if (helper.saved) {
     const step = helper.saved.step;
     const source =
       helper.saved.source === 'pending' && pending?.step === step
         ? pending.patch
         : helper.saved.patch;
-    const { next, updatedLabels } = applyPatchToQuestDraftState({
-      current: draft,
-      patch: sanitizeQuestDraftPatch(limitQuestPatchToStep(source, step)),
-      spaceMembers,
-      viewerDisplayName,
-    });
-    if (updatedLabels.length > 0) {
-      nextDraft = next;
-      wrote = true;
-      savedLine = `Added that to the ${questStepSectionLabel(step)}.`;
-      const advance = nextQuestStepAfterUpdate({
-        draft: next,
-        currentStep: step,
-        updatedLabels,
-      });
-      focusStep = advance.step;
-      complete = advance.complete;
-      if (keptPending?.step === step) keptPending = null;
-    }
+    recordWrite(step, source, nextDraft);
   }
 
-  if (nextSuggestion) {
+  if (pendingSuggestion) {
     return {
       draft: nextDraft,
       wrote,
-      pending: nextSuggestion,
-      focusStep: nextSuggestion.step,
+      pending: pendingSuggestion,
+      focusStep: pendingSuggestion.step,
       reply: joinReply(
         savedLine,
         replyForPendingSuggestion(
           prose || null,
-          nextSuggestion.step,
-          nextSuggestion.patch,
+          pendingSuggestion.step,
+          pendingSuggestion.patch,
         ),
       ),
     };

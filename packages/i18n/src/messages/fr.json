@@ -5811,7 +5811,7 @@
       "keepBody": "Vous pourrez reprendre cette quête plus tard dans Mes brouillons. Abandonner le supprime.",
       "keep": "Conserver le brouillon",
       "discard": "Abandonner",
-      "savedAuto": "Enregistré automatiquement",
+      "savedAuto": "Brouillon enregistré automatiquement",
       "notSaved": "Pas encore enregistré",
       "retry": "Enregistrement impossible. Réessayer",
       "deleteFailed": "Impossible de supprimer ce brouillon. Il est de retour dans la liste."

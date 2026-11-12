@@ -5813,7 +5813,7 @@
       "keepBody": "Você pode continuar esta missão depois em Meus rascunhos. Descartar remove o rascunho.",
       "keep": "Manter rascunho",
       "discard": "Descartar",
-      "savedAuto": "Guardado automaticamente",
+      "savedAuto": "Rascunho guardado automaticamente",
       "notSaved": "Ainda não guardado",
       "retry": "Não foi possível guardar. Tentar de novo",
       "deleteFailed": "Não foi possível apagar esse rascunho. Ele voltou para a lista."

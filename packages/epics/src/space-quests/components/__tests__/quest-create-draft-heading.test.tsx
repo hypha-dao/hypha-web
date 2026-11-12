@@ -10,6 +10,11 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { requestQuestChat } = vi.hoisted(() => ({
+  requestQuestChat: vi.fn(),
+}));
+
 import { SpaceQuestCreateDraft } from '../space-quest-create-draft';
 import {
   getQuestDraftRequest,
@@ -43,7 +48,7 @@ vi.mock('next-intl', () => ({
       {
         'drafts.notSaved': 'Not saved yet',
         'drafts.saving': 'Saving…',
-        'drafts.savedAuto': 'Saved automatically',
+        'drafts.savedAuto': 'Draft saved automatically',
         'drafts.retry': "Couldn't save. Retry",
       } as Record<string, string>
     )[key] ?? key),
@@ -89,7 +94,7 @@ vi.mock('../../../common/human-chat-panel-context', () => ({
     openHumanChatPanel: vi.fn(),
     closeHumanChatPanel: vi.fn(),
     closeCoherenceChat: vi.fn(),
-    requestQuestChat: vi.fn(),
+    requestQuestChat,
     dismissQuestChat: vi.fn(),
     setSpaceQuestDraft: vi.fn(),
   }),
@@ -111,6 +116,7 @@ vi.mock('../../hooks/use-space-quests', () => ({
 beforeEach(() => {
   vi.mocked(saveQuestDraftRequest).mockClear();
   vi.mocked(getQuestDraftRequest).mockReset();
+  requestQuestChat.mockClear();
 });
 
 afterEach(() => {
@@ -156,11 +162,25 @@ describe('quest create draft heading', () => {
     expect(
       screen.getByTestId('cancel-quest-button').parentElement?.contains(status),
     ).toBe(false);
-    expect(screen.getByTestId('create-quest-button')).toBeTruthy();
+    const create = screen.getByTestId('create-quest-button');
+    expect(create.textContent).toBe('CREATE PROPOSAL');
+    const discussion = screen.getByTestId('open-quest-discussion-button');
+    expect(discussion.textContent).toContain('Open discussion');
+    expect(discussion.textContent).toContain('→');
+    expect(discussion.className).toContain('text-xs');
+    expect(discussion.className).toContain('font-bold');
+    expect(discussion.className).toContain('underline-offset-2');
+    expect(screen.queryByTestId('open-quest-chat-button')).toBeNull();
+    expect(create.parentElement?.parentElement).toBe(discussion.parentElement);
     expect(
-      screen.queryByRole('button', { name: /Open discussion/ }),
-    ).toBeNull();
-    expect(screen.getByTestId('open-quest-chat-button')).toBeTruthy();
+      create.compareDocumentPosition(discussion) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(discussion.parentElement?.className).toContain('items-end');
+    const draft = screen.getByText('Draft');
+    expect(heading.nextElementSibling).toBe(draft);
+    expect(draft.parentElement?.contains(create)).toBe(false);
+    expect(requestQuestChat).toHaveBeenCalled();
     const participants = screen.getByTestId('draft-section-members');
     const label = participants.querySelector('span');
     expect(label?.textContent).toBe('Participants');
@@ -208,7 +228,7 @@ describe('quest create draft heading', () => {
       () => {
         expect(
           screen.getByTestId('quest-draft-save-status').textContent,
-        ).toContain('Saved automatically');
+        ).toContain('Draft saved automatically');
       },
       { timeout: 3000 },
     );
@@ -295,7 +315,7 @@ describe('quest create draft heading', () => {
     const saved = screen.getByTestId('quest-draft-save-status');
     expect(saved.className).toContain('h-[16.5px]');
     expect(saved.className).toContain('min-w-[11.5rem]');
-    expect(saved.textContent).toContain('Saved automatically');
+    expect(saved.textContent).toContain('Draft saved automatically');
     expect(saved.textContent).not.toContain('Not saved yet');
 
     await act(async () => {

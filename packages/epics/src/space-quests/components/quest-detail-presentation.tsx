@@ -441,7 +441,7 @@ export function QuestParticipantsCard({
               >
                 {member.avatarSrc?.trim() ? (
                   <PersonAvatar
-                    size="sm"
+                    size="md"
                     shape="circle"
                     showPresence={false}
                     avatarSrc={member.avatarSrc.trim()}
@@ -453,16 +453,16 @@ export function QuestParticipantsCard({
                     }
                   />
                 ) : (
-                  <span className="grid size-6 shrink-0 place-items-center bg-foreground text-[10px] font-bold text-background">
+                  <span className="grid size-8 shrink-0 place-items-center bg-foreground text-[11px] font-bold text-background">
                     {(member.memberName.trim()[0] ?? '').toUpperCase()}
                   </span>
                 )}
                 <span className="min-w-0 flex-1">
-                  <span className="block break-words text-[15px] font-semibold leading-relaxed text-foreground">
+                  <span className="block break-words text-[13px] font-semibold leading-relaxed text-foreground">
                     {member.memberName}
                   </span>
                   {role ? (
-                    <span className="block break-words text-2 leading-relaxed text-neutral-11">
+                    <span className="block break-words text-[12px] leading-relaxed text-neutral-11">
                       {role}
                     </span>
                   ) : null}
@@ -474,7 +474,7 @@ export function QuestParticipantsCard({
                 )}
               </button>
               {isOpen && points.length > 0 ? (
-                <div className="mt-2 space-y-1 pl-8">
+                <div className="mt-2 space-y-1 pl-10">
                   <p className={SCOPE_LABEL_CLASS}>Responsibility</p>
                   <div className="space-y-1.5 text-[13.5px] leading-relaxed text-foreground">
                     {points.map((item, index) => (

@@ -33,7 +33,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { Check, Loader2, MessageCircle } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useConfig } from 'wagmi';
 import {
@@ -206,6 +206,8 @@ export function SpaceQuestCreateDraft({
   const config = useConfig();
   const { closeAiPanel } = useAiPanel();
   const {
+    open: helperPanelOpen,
+    questChatRequested,
     panelAvailable,
     closeHumanChatPanel,
     closeCoherenceChat,
@@ -240,6 +242,7 @@ export function SpaceQuestCreateDraft({
     number | null
   >(null);
   const [members, setMembers] = useState<EditableQuestMember[]>([]);
+  const [helperInlineOpen, setHelperInlineOpen] = useState(true);
   const [targetDate, setTargetDate] = useState<string | null>(null);
 
   const spaceMemberPersons = useMemo(
@@ -833,8 +836,8 @@ export function SpaceQuestCreateDraft({
   });
   closeCreateChatRef.current = { dismissQuestChat, setSpaceQuestDraft };
 
-  // Keep the helper session ready, but leave the panel closed until the
-  // quest chat button. A draft has no discussion room yet.
+  // Keep the helper session ready. The create page has no discussion room
+  // yet, so the button opens this helper instead of a Matrix room.
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 1200) {
       closeAiPanel();
@@ -845,10 +848,32 @@ export function SpaceQuestCreateDraft({
     };
   }, [closeAiPanel]);
 
+  const openedHelperOnArrivalRef = useRef(false);
   useEffect(() => {
     if (draftHydrating) return;
     setSpaceQuestDraft(draftChatSession);
-  }, [draftChatSession, draftHydrating, setSpaceQuestDraft]);
+    if (!panelAvailable || openedHelperOnArrivalRef.current) return;
+    openedHelperOnArrivalRef.current = true;
+    requestQuestChat();
+  }, [
+    draftChatSession,
+    draftHydrating,
+    panelAvailable,
+    requestQuestChat,
+    setSpaceQuestDraft,
+  ]);
+
+  const toggleQuestHelper = () => {
+    if (!panelAvailable) {
+      setHelperInlineOpen((current) => !current);
+      return;
+    }
+    if (questChatRequested && helperPanelOpen) {
+      closeHumanChatPanel();
+      return;
+    }
+    requestQuestChat();
+  };
 
   /**
    * Hard Rule #1:
@@ -1353,44 +1378,56 @@ export function SpaceQuestCreateDraft({
               data-testid="quest-create-intro"
               className="flex flex-col gap-1"
             >
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div className="flex min-w-0 flex-1 items-center gap-2">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
                   <input
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     placeholder="New quest"
                     aria-label="Quest title"
                     data-testid="quest-create-title"
-                    className="min-w-0 flex-1 bg-transparent font-display text-[18px] font-semibold leading-none text-foreground outline-none placeholder:text-neutral-11"
+                    size={Math.max((name.trim() || 'New quest').length, 1)}
+                    className="w-auto min-w-[7.5rem] max-w-[min(100%,36rem)] bg-transparent font-display text-[18px] font-semibold leading-none text-foreground outline-none placeholder:text-neutral-11"
                   />
-                  <span className="bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
+                  <span className="shrink-0 bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
                     Draft
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorVariant="neutral"
+                      className="rounded-none"
+                      onClick={requestCancel}
+                      data-testid="cancel-quest-button"
+                    >
+                      CANCEL
+                    </Button>
+                    <Button
+                      type="button"
+                      disabled={
+                        submitting ||
+                        (!pendingProposalLink &&
+                          (!name.trim() || !goal.trim() || proposalOverLimit))
+                      }
+                      onClick={() => setConfirmOpen(true)}
+                      data-testid="create-quest-button"
+                      className="bg-foreground text-background hover:bg-foreground/90"
+                    >
+                      CREATE PROPOSAL
+                    </Button>
+                  </div>
+                  <button
                     type="button"
-                    variant="outline"
-                    colorVariant="neutral"
-                    className="rounded-none"
-                    onClick={requestCancel}
-                    data-testid="cancel-quest-button"
+                    onClick={toggleQuestHelper}
+                    data-testid="open-quest-discussion-button"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
                   >
-                    CANCEL
-                  </Button>
-                  <Button
-                    type="button"
-                    disabled={
-                      submitting ||
-                      (!pendingProposalLink &&
-                        (!name.trim() || !goal.trim() || proposalOverLimit))
-                    }
-                    onClick={() => setConfirmOpen(true)}
-                    data-testid="create-quest-button"
-                    className="bg-foreground text-background hover:bg-foreground/90"
-                  >
-                    CREATE QUEST
-                  </Button>
+                    Open discussion
+                    <span aria-hidden>→</span>
+                  </button>
                 </div>
               </div>
 
@@ -1452,17 +1489,6 @@ export function SpaceQuestCreateDraft({
                   Fills in live as you chat · click any section to edit
                 </p>
                 <div className="flex items-center gap-3">
-                  {panelAvailable ? (
-                    <button
-                      type="button"
-                      onClick={() => requestQuestChat()}
-                      aria-label="Quest chat"
-                      data-testid="open-quest-chat-button"
-                      className="inline-flex size-8 shrink-0 items-center justify-center border border-foreground/15 text-foreground hover:bg-foreground/5"
-                    >
-                      <MessageCircle className="size-3.5" aria-hidden />
-                    </button>
-                  ) : null}
                   <div className="h-1.5 w-[140px] overflow-hidden bg-neutral-4">
                     <div
                       className="h-full bg-foreground transition-[width]"
@@ -1866,7 +1892,7 @@ export function SpaceQuestCreateDraft({
             )}
           </div>
 
-          {!panelAvailable ? (
+          {!panelAvailable && helperInlineOpen ? (
             <SpaceQuestChatPanel session={draftChatSession} />
           ) : null}
         </div>

@@ -224,7 +224,11 @@ function withoutCreateFlowQuestions(reply: string, message: string): string {
     const separator = pieces[index + 1] ?? '';
     const text = sentence.trim();
     if (!text) continue;
-    if (text === QUEST_DRAFT_READY_REPLY || text.includes('CREATE QUEST')) {
+    if (
+      text === QUEST_DRAFT_READY_REPLY ||
+      text.includes('CREATE QUEST') ||
+      text.includes('CREATE PROPOSAL')
+    ) {
       continue;
     }
     if (prompts.some((prompt) => text.includes(prompt))) continue;

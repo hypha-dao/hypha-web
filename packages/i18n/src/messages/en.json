@@ -5837,7 +5837,7 @@
       "keepBody": "You can continue this quest later from My drafts. Discard removes it.",
       "keep": "Keep draft",
       "discard": "Discard",
-      "savedAuto": "Saved automatically",
+      "savedAuto": "Draft saved automatically",
       "notSaved": "Not saved yet",
       "retry": "Couldn't save. Retry",
       "deleteFailed": "Could not delete that draft. It is back in your list."

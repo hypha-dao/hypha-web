@@ -264,6 +264,43 @@ function cleanEditableMilestones(
     .filter((row) => row.name.length > 0);
 }
 
+function stagedQuestMember(
+  person: Person | null,
+  roleLabel: string,
+  bullets: string[],
+): EditableQuestMember | null {
+  if (!person) return null;
+  const memberName = personRosterDisplayLabel(person, 'Participant').trim();
+  if (!memberName) return null;
+  const responsibilities = bullets.map((item) => item.trim()).filter(Boolean);
+  return {
+    personId: person.id > 0 ? person.id : null,
+    memberName,
+    memberAvatarUrl: person.avatarUrl ?? null,
+    roleLabel: roleLabel.trim().slice(0, 80) || null,
+    responsibilities:
+      responsibilities.length > 0 ? responsibilities : ['Core contributor'],
+  };
+}
+
+function membersIncludingStaged(
+  rows: EditableQuestMember[],
+  staged: EditableQuestMember | null,
+): EditableQuestMember[] {
+  const cleaned = cleanEditableMembers(rows);
+  if (!staged) return cleaned;
+  const name = staged.memberName.trim().toLowerCase();
+  const already = cleaned.some(
+    (member) =>
+      member.memberName.trim().toLowerCase() === name ||
+      (staged.personId != null &&
+        staged.personId > 0 &&
+        member.personId === staged.personId),
+  );
+  if (already) return cleaned;
+  return cleanEditableMembers([...cleaned, staged]);
+}
+
 function cleanEditableMembers(
   rows: EditableQuestMember[],
 ): EditableQuestMember[] {
@@ -1397,6 +1434,19 @@ export function EditQuestMembersModal({
     [memberCatalog, selectedPersonId],
   );
 
+  const publishVisibleMembers = (
+    currentRows: EditableQuestMember[],
+    person: Person | null,
+    roleLabel: string,
+    bullets: string[],
+  ) => {
+    const next = membersIncludingStaged(
+      currentRows,
+      stagedQuestMember(person, roleLabel, bullets),
+    );
+    publishChange(JSON.stringify(next), () => onLiveChangeRef.current?.(next));
+  };
+
   const handleAddMemberToQuest = () => {
     if (!selectedPerson) return;
     const cleanName = personRosterDisplayLabel(
@@ -1431,7 +1481,12 @@ export function EditQuestMembersModal({
         onInteractOutside={keepMemberSelectPopoverOpen}
         onFocusOutside={keepMemberSelectPopoverOpen}
         onSave={() => {
-          onSave(cleanEditableMembers(rows));
+          onSave(
+            membersIncludingStaged(
+              rowsRef.current,
+              stagedQuestMember(selectedPerson, newRoleLabel, newBullets),
+            ),
+          );
           onOpenChange(false);
         }}
       >
@@ -1566,9 +1621,15 @@ export function EditQuestMembersModal({
               members={memberCatalog}
               value={selectedPersonId}
               placeholder="Choose or search a participant…"
-              onChange={(next) =>
-                setSelectedPersonId(next ? String(next.id) : null)
-              }
+              onChange={(next) => {
+                setSelectedPersonId(next ? String(next.id) : null);
+                publishVisibleMembers(
+                  rowsRef.current,
+                  next,
+                  newRoleLabel,
+                  newBullets,
+                );
+              }}
             />
           </div>
           <div className="space-y-1">
@@ -1579,7 +1640,15 @@ export function EditQuestMembersModal({
               id="quest-new-participant-role"
               value={newRoleLabel}
               maxLength={80}
-              onChange={(e) => setNewRoleLabel(e.target.value)}
+              onChange={(e) => {
+                setNewRoleLabel(e.target.value);
+                publishVisibleMembers(
+                  rowsRef.current,
+                  selectedPerson,
+                  e.target.value,
+                  newBullets,
+                );
+              }}
               placeholder="Optional"
               className="h-10 rounded-none bg-background"
               data-testid="quest-new-participant-role"
@@ -1598,6 +1667,12 @@ export function EditQuestMembersModal({
                       const next = [...newBullets];
                       next[idx] = e.target.value;
                       setNewBullets(next);
+                      publishVisibleMembers(
+                        rowsRef.current,
+                        selectedPerson,
+                        newRoleLabel,
+                        next,
+                      );
                     }}
                     placeholder="First concrete responsibility…"
                     className="flex-1 bg-transparent text-[13px] text-foreground outline-none"
