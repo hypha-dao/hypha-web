@@ -9,6 +9,12 @@ import { EvmProvider } from '@hypha-platform/evm';
 
 export type PrivyAuthProviderConfig = {
   appId: string;
+  /**
+   * Privy app-client id. Unset in the main app (the app's default client).
+   * A white-label host passes its own client, read per request on the server:
+   * its cookie domain and allowed origins are settings of that client.
+   */
+  clientId?: string;
 };
 
 type AuthProviderProps = {
@@ -24,6 +30,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     <PrivyProvider
       config={{ defaultChain: base }}
       appId={providerProps.config.appId}
+      clientId={providerProps.config.clientId}
     >
       <SmartWalletsProvider>
         <EvmProvider>{children}</EvmProvider>

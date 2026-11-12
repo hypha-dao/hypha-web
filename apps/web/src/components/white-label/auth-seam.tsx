@@ -1,8 +1,12 @@
 import type { ComponentType, ReactNode } from 'react';
-import { AnonymousAuthProvider } from '@hypha-platform/authentication';
-import type {
-  WhiteLabelAuthConfig,
-  WhiteLabelMode,
+import {
+  AnonymousAuthProvider,
+  AuthProvider,
+} from '@hypha-platform/authentication';
+import {
+  authKindFor,
+  type WhiteLabelAuthConfig,
+  type WhiteLabelMode,
 } from '@web/lib/white-label';
 
 export type WhiteLabelAuthProps = {
@@ -20,13 +24,28 @@ function EmbedAuth({ children }: WhiteLabelAuthProps) {
 }
 
 /**
- * Host delivery. Signed out for now: the Privy provider for the host's client
- * (`authConfig.privyClientId`, a server value handed to a client provider as a
- * prop) replaces this body in the login PR, and nothing else in the layout
- * changes.
+ * Host delivery. With the host's login settings, the same Privy provider as the
+ * main app, on the host's own app client: the client id is a server value
+ * (read per request from the host config) handed to the client provider as a
+ * prop, never a `NEXT_PUBLIC_*` build value, so one deployment serves every
+ * host. The cookie domain is a setting of that client in Privy; the layout and
+ * middleware use `authConfig.cookieDomain` for the CSP. A host without login
+ * settings stays signed out and read-only.
  */
-function HostAuth({ children }: WhiteLabelAuthProps) {
-  return <AnonymousAuthProvider>{children}</AnonymousAuthProvider>;
+function HostAuth({ authConfig, children }: WhiteLabelAuthProps) {
+  if (authKindFor('host', authConfig) === 'anonymous' || !authConfig) {
+    return <AnonymousAuthProvider>{children}</AnonymousAuthProvider>;
+  }
+  return (
+    <AuthProvider
+      config={{
+        appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
+        clientId: authConfig.privyClientId,
+      }}
+    >
+      {children}
+    </AuthProvider>
+  );
 }
 
 const AUTH_BY_MODE: Record<
