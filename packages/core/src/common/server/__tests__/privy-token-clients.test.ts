@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateKeyPair, SignJWT } from 'jose';
+import { SignJWT } from 'jose';
 import { verifyAccessToken } from '@privy-io/node';
 
 /**
@@ -11,6 +11,14 @@ import { verifyAccessToken } from '@privy-io/node';
  * second client's token contains: that needs one real login (gate G-A1).
  */
 const APP_ID = 'app-id-placeholder';
+
+/** ES256 key pair as WebCrypto keys (what the SDK and `jose` both accept). */
+const generateKeyPair = async (): Promise<CryptoKeyPair> =>
+  (await crypto.subtle.generateKey(
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    true,
+    ['sign', 'verify'],
+  )) as CryptoKeyPair;
 
 async function sign(
   key: CryptoKey,
@@ -31,7 +39,7 @@ async function sign(
 
 describe('Privy access token: the client id is not checked', () => {
   it('accepts tokens whatever client they come from, same app', async () => {
-    const { privateKey, publicKey } = await generateKeyPair('ES256');
+    const { privateKey, publicKey } = await generateKeyPair();
     for (const cid of [undefined, 'client-main', 'client-host-a']) {
       const token = await sign(privateKey, { cid });
       const result = await verifyAccessToken({
@@ -44,8 +52,8 @@ describe('Privy access token: the client id is not checked', () => {
   });
 
   it('still refuses another app, another issuer and a foreign signature', async () => {
-    const { privateKey, publicKey } = await generateKeyPair('ES256');
-    const { privateKey: otherKey } = await generateKeyPair('ES256');
+    const { privateKey, publicKey } = await generateKeyPair();
+    const { privateKey: otherKey } = await generateKeyPair();
     const cases = [
       await sign(privateKey, { aud: 'another-app' }),
       await sign(privateKey, { iss: 'evil.example' }),
