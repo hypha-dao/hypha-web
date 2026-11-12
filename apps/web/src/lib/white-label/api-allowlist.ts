@@ -39,6 +39,12 @@ export const WL_API_READ_ALLOWLIST: readonly string[] = [
   '/api/v1/spaces/:slug/banking/accounts',
   '/api/v1/spaces/:slug/banking/payout-accounts',
   '/api/v1/spaces/:slug/banking/transfers',
+  // Scoped to the host's own Space inside the handler (not in this path rule):
+  // they answer on a mapped host only for that Space, via the Space header
+  // middleware sets. `:documentSlug` is a document slug, not the Space slug.
+  '/api/v1/events',
+  '/api/v1/spaces',
+  '/api/v1/documents/:documentSlug/voters',
   // Read from the hooks of sections not exercised by that run (pipeline is
   // off for the test Space): kept until they are measured, then confirm or drop.
   '/api/v1/spaces/:slug/pipeline/config',
@@ -47,6 +53,8 @@ export const WL_API_READ_ALLOWLIST: readonly string[] = [
 ];
 
 const PARAM_SEGMENT = /^[A-Za-z0-9_.-]{1,200}$/;
+/** Document slugs come from `slugify` and may hold a few more characters. */
+const DOCUMENT_SLUG_SEGMENT = /^[A-Za-z0-9_.~+*$()'!:@-]{1,255}$/;
 const ALLOWED_METHODS = new Set(['GET', 'HEAD']);
 
 function matches(
@@ -66,6 +74,7 @@ function matches(
         PARAM_SEGMENT.test(actual)
       );
     }
+    if (part === ':documentSlug') return DOCUMENT_SLUG_SEGMENT.test(actual);
     return part.startsWith(':') ? PARAM_SEGMENT.test(actual) : part === actual;
   });
 }

@@ -105,7 +105,10 @@ export type ResolveDecision =
   | { kind: 'pass' }
   /** Serve the internal tree. `pathname` is the internal `/wl/...` path. */
   | ({ kind: 'rewrite'; pathname: string } & (ResolvedSpace | ResolvedHost))
-  /** An `/api` read a mapped host may call: continue to the route unchanged. */
-  | { kind: 'api-allow' }
+  /**
+   * An `/api` read a mapped host may call. The route runs; `spaceSlug` is the
+   * host's Space, passed on so handlers can scope what they return to it.
+   */
+  | { kind: 'api-allow'; spaceSlug: string }
   /** Not served: unapproved slug, internal prefix reached from outside, odd path. */
   | { kind: 'not-found'; reason: NotFoundReason };
