@@ -347,4 +347,137 @@ describe('quest create draft persistence', () => {
     expect(stored.draftId).toBeNull();
     expect(stored.checkpoint.agreementId).toBe(44);
   });
+
+  it('saves a yes for the newest participant and restores that person', async () => {
+    const pendingGoal = 'Ship a shorter goal the member has not confirmed.';
+    const savedGoal = 'The goal already on the card.';
+    window.sessionStorage.setItem(
+      questCreateSessionKey(SPACE),
+      JSON.stringify({
+        draft: emptyDraft({
+          name: 'Quest test',
+          goal: savedGoal,
+        }),
+        messages: [
+          {
+            id: 'goal-1',
+            role: 'member',
+            senderName: 'Quest Helper',
+            text: `Do you want that to be in the Goal?\n\n${pendingGoal}`,
+            timestamp: '2026-11-09T20:00:00.000Z',
+          },
+          {
+            id: 'person-1',
+            role: 'member',
+            senderName: 'Quest Helper',
+            text: 'Should Grok Test be listed as a participant?',
+            timestamp: '2026-11-09T20:01:00.000Z',
+          },
+        ],
+        step: 0,
+        pending: { step: 'goal', patch: { goal: pendingGoal } },
+        checkpoint: null,
+        draftId: 4,
+      }),
+    );
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        reply: 'Saved the goal.',
+        helper: {
+          suggestion: null,
+          saved: {
+            step: 'goal',
+            source: 'pending',
+            patch: { goal: pendingGoal },
+          },
+          discarded: true,
+        },
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const view = render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
+      expect(await screen.findByText(savedGoal)).toBeTruthy();
+      expect(screen.getByTestId('draft-section-members').textContent).toContain(
+        'Not set yet',
+      );
+
+      const session = () =>
+        harness.setSpaceQuestDraft.mock.calls.at(-1)?.[0] as
+          | {
+              input: string;
+              onInputChange: (value: string) => void;
+              onSend: () => void;
+            }
+          | null
+          | undefined;
+      await waitFor(() => {
+        expect(session()?.onSend).toEqual(expect.any(Function));
+      });
+      session()?.onInputChange('yes');
+      await waitFor(() => {
+        expect(session()?.input).toBe('yes');
+      });
+      session()?.onSend();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId('draft-section-members').textContent,
+        ).toContain('Grok Test');
+      });
+      expect(screen.getByTestId('draft-section-goal').textContent).toContain(
+        savedGoal,
+      );
+      expect(
+        screen.getByTestId('draft-section-goal').textContent,
+      ).not.toContain(pendingGoal);
+
+      let payload: { draft: { goal: string; members: unknown[] } } | undefined;
+      await waitFor(
+        () => {
+          payload = harness.saveQuestDraftRequest.mock.calls
+            .map((call) => call[0]?.payload)
+            .find((saved) =>
+              saved?.draft?.members?.some(
+                (member: { memberName?: string }) =>
+                  member.memberName === 'Grok Test',
+              ),
+            );
+          expect(payload?.draft.goal).toBe(savedGoal);
+          expect(payload?.draft.members).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({ memberName: 'Grok Test' }),
+            ]),
+          );
+        },
+        { timeout: 4000 },
+      );
+
+      view.unmount();
+      window.sessionStorage.clear();
+      harness.getQuestDraftRequest.mockResolvedValue({
+        id: 4,
+        name: 'Quest test',
+        updatedAt: '2026-11-12T00:00:00.000Z',
+        payload,
+      });
+      render(<SpaceQuestCreateDraft spaceSlug={SPACE} resumeDraftId={4} />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId('draft-section-members').textContent,
+        ).toContain('Grok Test');
+      });
+      expect(screen.getByTestId('draft-section-goal').textContent).toContain(
+        savedGoal,
+      );
+      expect(
+        screen.getByTestId('draft-section-goal').textContent,
+      ).not.toContain(pendingGoal);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

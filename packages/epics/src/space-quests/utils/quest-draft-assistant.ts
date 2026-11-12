@@ -2105,9 +2105,25 @@ function participantsProposedInHistory(
 }
 
 /**
+ * A bare yes names no section. It answers the latest helper question, which
+ * can be a participant proposal that arrived after an older pending card.
+ */
+function approvalConfirmsLatestParticipant(
+  message: string,
+  history: readonly QuestDraftTurnHistoryItem[] | undefined,
+): boolean {
+  const text = message.trim();
+  if (!isQuestSectionApproval(text)) return false;
+  if (participantsNamedForImmediateWrite(text)) return false;
+  const named = sectionNamedInApproval(text);
+  if (named && named !== 'members') return false;
+  return participantsProposedInHistory(history).length > 0;
+}
+
+/**
  * A create-flow reply that names participants writes the card immediately.
- * Other sections still wait for yes. A bare "yes" after the helper proposed
- * a person writes that person when no other suggestion is waiting.
+ * Other sections still wait for yes. A bare "yes" answers the latest helper
+ * question, including a participant proposal that is newer than a pending card.
  */
 function participantsToStoreNow({
   message,
@@ -2133,7 +2149,13 @@ function participantsToStoreNow({
   if (isQuestSectionApproval(text)) {
     const named = sectionNamedInApproval(text);
     if (named && named !== 'members') return null;
-    if (pending && Object.keys(pending.patch).length > 0) return null;
+    if (
+      pending &&
+      Object.keys(pending.patch).length > 0 &&
+      !approvalConfirmsLatestParticipant(text, history)
+    ) {
+      return null;
+    }
     const proposed = participantsProposedInHistory(history);
     return proposed.length > 0 ? proposed : null;
   }
@@ -2290,7 +2312,25 @@ export function runNewQuestDraftTurn({
     history,
     voice,
   });
-  if (storeNow) return finishApply('members', { members: storeNow });
+  if (storeNow) {
+    const applied = finishApply('members', { members: storeNow });
+    if (
+      approvalConfirmsLatestParticipant(text, history) &&
+      applied.wrote &&
+      pending &&
+      pending.step !== 'members' &&
+      Object.keys(pending.patch).length > 0
+    ) {
+      return {
+        ...applied,
+        pending,
+        reply: `Added that to the Participants.\n\n${questPendingYesNotice(
+          pending.step,
+        )}`,
+      };
+    }
+    return applied;
+  }
 
   if (isQuestSectionApproval(text)) {
     const named = sectionNamedInApproval(text);
@@ -2638,9 +2678,14 @@ export function applyQuestHelperAgentTurn({
     : null;
   let pendingSuggestion =
     suggestion && Object.keys(suggestion.patch).length > 0 ? suggestion : null;
+  const confirmLatestParticipant = approvalConfirmsLatestParticipant(
+    message,
+    history,
+  );
 
   const namedNow =
-    voice === 'create' && helper.saved?.step !== 'members'
+    voice === 'create' &&
+    (confirmLatestParticipant || helper.saved?.step !== 'members')
       ? participantsToStoreNow({
           message,
           currentStep,
@@ -2650,7 +2695,10 @@ export function applyQuestHelperAgentTurn({
         })
       : null;
   let immediateMembers: QuestDraftPatchInput['members'] | null = namedNow;
-  if (
+  if (confirmLatestParticipant && namedNow) {
+    immediateMembers = namedNow;
+    if (pendingSuggestion?.step === 'members') pendingSuggestion = null;
+  } else if (
     namedNow &&
     pendingSuggestion?.step === 'members' &&
     (pendingSuggestion.patch.members?.length ?? 0) > 0
@@ -2669,6 +2717,14 @@ export function applyQuestHelperAgentTurn({
   let keptPending: PendingQuestSectionProposal | null = helper.discarded
     ? null
     : pending;
+  if (
+    confirmLatestParticipant &&
+    pending &&
+    pending.step !== 'members' &&
+    Object.keys(pending.patch).length > 0
+  ) {
+    keptPending = pending;
+  }
 
   const recordWrite = (
     step: QuestStewardStep,
@@ -2700,7 +2756,7 @@ export function applyQuestHelperAgentTurn({
     recordWrite('members', { members: immediateMembers }, nextDraft);
   }
 
-  if (helper.saved) {
+  if (helper.saved && !confirmLatestParticipant) {
     const step = helper.saved.step;
     const source =
       helper.saved.source === 'pending' && pending?.step === step
@@ -2709,7 +2765,7 @@ export function applyQuestHelperAgentTurn({
     recordWrite(step, source, nextDraft);
   }
 
-  if (pendingSuggestion) {
+  if (pendingSuggestion && !confirmLatestParticipant) {
     return {
       draft: nextDraft,
       wrote,
@@ -2722,6 +2778,24 @@ export function applyQuestHelperAgentTurn({
           pendingSuggestion.step,
           pendingSuggestion.patch,
         ),
+      ),
+    };
+  }
+
+  if (
+    confirmLatestParticipant &&
+    wrote &&
+    keptPending &&
+    keptPending.step !== 'members'
+  ) {
+    return {
+      draft: nextDraft,
+      wrote,
+      pending: keptPending,
+      focusStep,
+      reply: joinReply(
+        savedLine ?? 'Added that to the Participants.',
+        questPendingYesNotice(keptPending.step),
       ),
     };
   }
@@ -2749,6 +2823,9 @@ export function applyQuestHelperAgentTurn({
     wrote,
     pending: keptPending,
     focusStep,
-    reply: joinReply(savedLine, prose || fallback),
+    reply: joinReply(
+      savedLine,
+      confirmLatestParticipant ? fallback : prose || fallback,
+    ),
   };
 }

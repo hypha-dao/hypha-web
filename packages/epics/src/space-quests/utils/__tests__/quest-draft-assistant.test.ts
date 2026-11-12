@@ -4106,4 +4106,101 @@ describe('quest participant writes', () => {
     expect(confirmed.wrote).toBe(true);
     expect(confirmed.draft.members[0]?.memberName).toBe('Grace Hopper');
   });
+
+  it('applies a bare yes to the newest participant question, not a stale pending goal', async () => {
+    const savedGoal = 'The goal already on the card.';
+    const pendingGoal = 'Ship a shorter goal the member has not confirmed.';
+    const pending: PendingQuestSectionProposal = {
+      step: 'goal',
+      patch: { goal: pendingGoal },
+    };
+    const draft: QuestDraftStateSnapshot = {
+      ...emptyDraft,
+      goal: savedGoal,
+    };
+    const history = [
+      {
+        role: 'agent' as const,
+        text: `Do you want that to be in the Goal?\n\n${pendingGoal}`,
+      },
+      {
+        role: 'agent' as const,
+        text: 'Should Grok Test be listed as a participant?',
+      },
+    ];
+
+    const offline = runNewQuestDraftTurn({
+      message: 'yes',
+      currentStep: 'goal',
+      draft,
+      pending,
+      history,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      model: null,
+    });
+    expect(offline.wrote).toBe(true);
+    expect(offline.draft.members.map((member) => member.memberName)).toEqual([
+      'Grok Test',
+    ]);
+    expect(offline.draft.goal).toBe(savedGoal);
+    expect(offline.pending).toEqual(pending);
+    expect(offline.reply).toContain('Added that to the Participants.');
+    expect(offline.reply).toContain(questPendingYesNotice('goal'));
+    expect(offline.reply).not.toContain(pendingGoal);
+
+    const state: CreateDraftTurnSnapshot = {
+      draft,
+      pending,
+      currentStep: 'goal',
+    };
+    const routed = await settleCreateDraftTurn({
+      message: 'yes',
+      history,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      readState: () => state,
+      isCurrent: () => true,
+      loadModel: async () => ({
+        reply: 'Saved the goal.',
+        helper: {
+          suggestion: {
+            step: 'goal',
+            patch: { goal: 'A different goal the model invented.' },
+          },
+          saved: {
+            step: 'goal',
+            source: 'pending',
+            patch: { goal: pendingGoal },
+          },
+          discarded: true,
+        },
+      }),
+    });
+    expect(routed?.wrote).toBe(true);
+    expect(routed?.draft.goal).toBe(savedGoal);
+    expect(routed?.draft.members.map((member) => member.memberName)).toEqual([
+      'Grok Test',
+    ]);
+    expect(routed?.pending).toEqual(pending);
+    expect(routed?.reply).toMatch(/Added that to the Participants/);
+    expect(routed?.reply).toContain(questPendingYesNotice('goal'));
+    expect(routed?.reply).not.toMatch(/Saved the goal/i);
+    expect(routed?.reply).not.toContain('A different goal');
+
+    const namedGoal = runNewQuestDraftTurn({
+      message: 'yes to goal suggestion',
+      currentStep: 'goal',
+      draft,
+      pending,
+      history,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: [],
+      model: null,
+    });
+    expect(namedGoal.wrote).toBe(true);
+    expect(namedGoal.draft.goal).toBe(pendingGoal);
+    expect(namedGoal.draft.members).toEqual([]);
+    expect(namedGoal.pending).toBeNull();
+  });
 });
