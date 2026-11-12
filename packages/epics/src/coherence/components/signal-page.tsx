@@ -48,19 +48,18 @@ const SECTION_LABEL_CLASS =
 
 /**
  * Column gap for Created by / Created / Last reply / Discussion.
- * 24px at the floor, 6% of the card up to 80px. From a 720px content box
- * the percent follows the viewport, the same pair list cards use
- * (`signal-feed-row.tsx`).
+ * 64px floor, 8% of the viewport, 112px cap. List cards keep the smaller
+ * clamp in `signal-feed-row.tsx`.
  *
  * Columns keep their text width. The row wraps instead of ellipsizing a
  * label or a value. Open discussion uses `ml-auto`, so it stays at the
  * right end of whichever line it lands on.
  *
- * Container queries read the content box. The container is padded like a
- * list card (`p-4`); the body adds the rest of the 24px inset.
+ * The section is padded like a list card (`p-4`); the body adds the rest
+ * of the 24px inset.
  */
 export const SIGNAL_PAGE_META_ROW_CLASS =
-  'm-0 flex w-full min-w-0 flex-wrap items-start gap-y-4 border-t border-border/70 pt-4 gap-x-[clamp(1.5rem,6cqi,5rem)] @min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]';
+  'm-0 flex w-full min-w-0 flex-wrap items-start gap-y-4 border-t border-border/70 pt-4 gap-x-[clamp(64px,8vw,112px)]';
 
 export const SIGNAL_PAGE_CARD_CLASS =
   'craft-card @container flex min-w-0 flex-col p-4';

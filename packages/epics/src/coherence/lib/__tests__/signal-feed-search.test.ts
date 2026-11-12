@@ -113,8 +113,8 @@ describe('upvote cell shared by the list and the detail', () => {
     expect(pageSource).toContain(
       'flex w-full min-w-0 flex-wrap items-start gap-y-4',
     );
-    expect(pageSource).toContain('gap-x-[clamp(1.5rem,6cqi,5rem)]');
-    expect(pageSource).toContain('@min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]');
+    expect(pageSource).toContain('gap-x-[clamp(64px,8vw,112px)]');
+    expect(pageSource).not.toContain('gap-x-[clamp(1.5rem,6cqi,5rem)]');
     expect(feedRowSource).toContain('gap-x-[clamp(1.5rem,6cqi,5rem)]');
     expect(feedRowSource).toContain(
       '@min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]',

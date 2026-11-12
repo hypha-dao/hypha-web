@@ -239,7 +239,8 @@ describe('signal page meta row', () => {
           sameRow: boolean;
           gapMin: number;
           gapMax: number;
-          matchList: boolean;
+          listGapMin: number;
+          listGapMax: number;
         }> = [
           {
             name: '320',
@@ -248,9 +249,10 @@ describe('signal page meta row', () => {
             right: 0,
             pad: 0,
             sameRow: false,
-            gapMin: 24,
-            gapMax: 24.5,
-            matchList: true,
+            gapMin: 64,
+            gapMax: 64.5,
+            listGapMin: 24,
+            listGapMax: 24.5,
           },
           {
             name: '390',
@@ -259,9 +261,10 @@ describe('signal page meta row', () => {
             right: 0,
             pad: 16,
             sameRow: false,
-            gapMin: 24,
-            gapMax: 24.5,
-            matchList: true,
+            gapMin: 64,
+            gapMax: 64.5,
+            listGapMin: 24,
+            listGapMax: 24.5,
           },
           {
             name: '421',
@@ -270,9 +273,10 @@ describe('signal page meta row', () => {
             right: 0,
             pad: 16,
             sameRow: false,
-            gapMin: 24,
-            gapMax: 26,
-            matchList: true,
+            gapMin: 64,
+            gapMax: 64.5,
+            listGapMin: 24,
+            listGapMax: 26,
           },
           {
             name: '520',
@@ -281,9 +285,10 @@ describe('signal page meta row', () => {
             right: 0,
             pad: 0,
             sameRow: false,
-            gapMin: 24,
-            gapMax: 32,
-            matchList: true,
+            gapMin: 64,
+            gapMax: 64.5,
+            listGapMin: 24,
+            listGapMax: 32,
           },
           {
             name: '720',
@@ -292,9 +297,10 @@ describe('signal page meta row', () => {
             right: 0,
             pad: 24,
             sameRow: false,
-            gapMin: 36,
-            gapMax: 42,
-            matchList: true,
+            gapMin: 64,
+            gapMax: 64.5,
+            listGapMin: 36,
+            listGapMax: 42,
           },
           {
             name: '900',
@@ -302,10 +308,11 @@ describe('signal page meta row', () => {
             left: 0,
             right: 0,
             pad: 24,
-            sameRow: true,
-            gapMin: 50,
-            gapMax: 58,
-            matchList: true,
+            sameRow: false,
+            gapMin: 71,
+            gapMax: 73,
+            listGapMin: 50,
+            listGapMax: 58,
           },
           {
             name: '1024',
@@ -314,9 +321,10 @@ describe('signal page meta row', () => {
             right: 0,
             pad: 24,
             sameRow: true,
-            gapMin: 58,
-            gapMax: 66,
-            matchList: true,
+            gapMin: 81,
+            gapMax: 83,
+            listGapMin: 58,
+            listGapMax: 66,
           },
           {
             name: '1280',
@@ -325,12 +333,13 @@ describe('signal page meta row', () => {
             right: 0,
             pad: 24,
             sameRow: true,
-            gapMin: 70,
-            gapMax: 82,
-            matchList: true,
+            gapMin: 101,
+            gapMax: 104,
+            listGapMin: 70,
+            listGapMax: 82,
           },
-          // Icon rail + chat panel. This is the width where the list card's
-          // content box crosses 720px and the old p-5 detail card did not.
+          // Icon rail + chat panel. The detail gap follows the viewport, so
+          // it stays large while the narrower card wraps.
           {
             name: '1200-chat',
             width: 1200,
@@ -338,9 +347,22 @@ describe('signal page meta row', () => {
             right: 320,
             pad: 24,
             sameRow: false,
-            gapMin: 64,
-            gapMax: 78,
-            matchList: true,
+            gapMin: 95,
+            gapMax: 97,
+            listGapMin: 64,
+            listGapMax: 78,
+          },
+          {
+            name: '1440',
+            width: 1440,
+            left: 0,
+            right: 0,
+            pad: 24,
+            sameRow: true,
+            gapMin: 111,
+            gapMax: 112.5,
+            listGapMin: 78,
+            listGapMax: 80.5,
           },
           {
             name: '1440-chat',
@@ -348,10 +370,11 @@ describe('signal page meta row', () => {
             left: 72,
             right: 320,
             pad: 24,
-            sameRow: true,
-            gapMin: 78,
-            gapMax: 80.5,
-            matchList: true,
+            sameRow: false,
+            gapMin: 111,
+            gapMax: 112.5,
+            listGapMin: 78,
+            listGapMax: 80.5,
           },
           {
             name: '1440-both',
@@ -360,9 +383,10 @@ describe('signal page meta row', () => {
             right: 320,
             pad: 24,
             sameRow: false,
-            gapMin: 40,
-            gapMax: 50,
-            matchList: true,
+            gapMin: 111,
+            gapMax: 112.5,
+            listGapMin: 40,
+            listGapMax: 50,
           },
         ];
         for (const layout of layouts) {
@@ -494,20 +518,22 @@ describe('signal page meta row', () => {
             layout.gapMax,
           );
           expect(box.inset, `${layout.name} inset`).toBe(24);
-          if (layout.matchList) {
-            expect(
-              Math.abs(box.columnGap - box.listColumnGap),
-              `${layout.name} matches list`,
-            ).toBeLessThan(1);
-          }
+          expect(
+            box.listColumnGap,
+            `${layout.name} list gap`,
+          ).toBeGreaterThanOrEqual(layout.listGapMin);
+          expect(
+            box.listColumnGap,
+            `${layout.name} list gap`,
+          ).toBeLessThanOrEqual(layout.listGapMax);
+          expect(
+            box.columnGap,
+            `${layout.name} detail gap exceeds list`,
+          ).toBeGreaterThan(box.listColumnGap);
           if (layout.sameRow) {
             expect(
               Math.abs(box.gap - box.columnGap),
               `${layout.name} painted gap`,
-            ).toBeLessThan(1);
-            expect(
-              Math.abs(box.gap - box.listGap),
-              `${layout.name} painted list gap`,
             ).toBeLessThan(1);
           }
           if (layout.name === '1280') {
