@@ -17,8 +17,10 @@ import {
   isMappedHost,
   localeForPath,
   resolve,
+  privyHostOrigins,
   serializeAuthConfig,
   stripWhiteLabelHeaders,
+  withPrivyHostOrigins,
   type FramingPolicy,
 } from './lib/white-label';
 
@@ -75,6 +77,8 @@ function applyCsp(
   response: NextResponse,
   request: NextRequest,
   framing: FramingPolicy = DENY_FRAMING,
+  /** Extra Privy origins of a mapped host (its own cookie host), exact, per request. */
+  extraPrivyOrigins: readonly string[] = [],
 ): NextResponse {
   if (
     process.env.NODE_ENV === 'development' &&
@@ -163,7 +167,10 @@ function applyCsp(
       "manifest-src 'self'",
     ].join(';') + ';';
 
-  response.headers.set('Content-Security-Policy', cspHeaderValue);
+  response.headers.set(
+    'Content-Security-Policy',
+    withPrivyHostOrigins(cspHeaderValue, extraPrivyOrigins),
+  );
   response.headers.set(
     'Permissions-Policy',
     'camera=(self), microphone=(self), display-capture=(self)',
@@ -250,7 +257,15 @@ export function middleware(request: NextRequest) {
         maxAge: 60 * 60 * 24 * 365,
       });
     }
-    return applyFramingHeaders(applyCsp(rewrite, request, framing), framing);
+    return applyFramingHeaders(
+      applyCsp(
+        rewrite,
+        request,
+        framing,
+        decision.mode === 'host' ? privyHostOrigins(decision.authConfig) : [],
+      ),
+      framing,
+    );
   }
 
   if (decision.kind === 'not-found') {

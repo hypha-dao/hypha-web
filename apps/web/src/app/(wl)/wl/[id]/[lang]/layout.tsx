@@ -22,7 +22,14 @@ import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 
 import { LiveSpaceHero } from '@web/app/(main)/[lang]/dho/[id]/_components/live-space-hero';
-import { WL_SPACE_HEADER } from '@web/lib/white-label';
+import {
+  WL_AUTH_HEADER,
+  WL_MODE_HEADER,
+  WL_SPACE_HEADER,
+  authKindFor,
+  readAuthConfigHeader,
+} from '@web/lib/white-label';
+import { WhiteLabelAuthControl } from '@web/components/white-label/auth-control';
 import { WhiteLabelSectionNav } from '@web/components/white-label/section-nav';
 
 import '@web/app/(main)/[lang]/_shared/space-accent.css';
@@ -67,6 +74,14 @@ export default async function WhiteLabelSpaceLayout({
     notFound();
   }
 
+  // Sign in / out only on a mapped host with login settings (same rule as the
+  // auth provider chosen by the root layout).
+  const showAuthControl =
+    authKindFor(
+      requestHeaders.get(WL_MODE_HEADER) === 'host' ? 'host' : 'embed',
+      readAuthConfigHeader(requestHeaders.get(WL_AUTH_HEADER)),
+    ) === 'privy';
+
   const space = await findSpaceBySlug({ slug }, { db });
   if (!space) notFound();
 
@@ -109,11 +124,16 @@ export default async function WhiteLabelSpaceLayout({
               })}
               revealMetaLabel={tCommon('spaceBannerRevealMeta')}
             />
-            <WhiteLabelSectionNav
-              spaceSlug={slug}
-              coherenceEnabled={coherenceEnabled}
-              memoryEnabled={memoryEnabled}
-            />
+            <div className="flex w-full min-w-0 items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <WhiteLabelSectionNav
+                  spaceSlug={slug}
+                  coherenceEnabled={coherenceEnabled}
+                  memoryEnabled={memoryEnabled}
+                />
+              </div>
+              {showAuthControl ? <WhiteLabelAuthControl /> : null}
+            </div>
             {children}
           </div>
         </div>

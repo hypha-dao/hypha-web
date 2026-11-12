@@ -1,7 +1,7 @@
 /**
  * `/api` reads a mapped host may call (A1). Everything else under `/api` is
  * refused on a mapped host: the read-only sections need these and nothing more.
- * Widen per endpoint when login and writes arrive.
+ * Widen per endpoint when writes arrive.
  *
  * Patterns are decoded path segments; `:name` matches exactly one segment.
  * Only GET and HEAD are ever allowed.
@@ -27,6 +27,18 @@ export const WL_API_READ_ALLOWLIST: readonly string[] = [
   '/api/v1/spaces/:slug/token-holdings',
   '/api/v1/currency-rates',
   '/api/v1/tokens/:address/supply',
+  // Signed-in reads (login on a mapped host). Each handler authenticates the
+  // bearer token itself; the allowlist only makes the route reachable. Measured
+  // by reading the hooks of all twelve sections, not one browser run: the
+  // profile (`useMe`, used by Banking, Overview, Members) and the four Banking
+  // listings (`transfers` also answers `?mode=transfer-options`). The rest of
+  // the signed-in calls the sections can make stay refused on purpose, see
+  // the notes in the login ticket.
+  '/api/v1/people/me',
+  '/api/v1/spaces/:slug/banking/bank-customers',
+  '/api/v1/spaces/:slug/banking/accounts',
+  '/api/v1/spaces/:slug/banking/payout-accounts',
+  '/api/v1/spaces/:slug/banking/transfers',
   // Read from the hooks of sections not exercised by that run (pipeline is
   // off for the test Space): kept until they are measured, then confirm or drop.
   '/api/v1/spaces/:slug/pipeline/config',
