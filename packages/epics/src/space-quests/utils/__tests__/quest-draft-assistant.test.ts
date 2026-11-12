@@ -4285,13 +4285,13 @@ describe('quest participant writes', () => {
       pending: {
         step: 'members',
         patch: {
-          members: [{ memberName: 'Ada Lovelace', personId: 999 }],
+          members: [{ memberName: 'Nobody', personId: 999 }],
         },
       },
       history: [
         {
           role: 'agent',
-          text: 'Should Ada Lovelace be listed as a participant?',
+          text: 'Should Nobody be listed as a participant?',
         },
       ],
       viewerDisplayName: 'Vlad Hramtsov',
@@ -4365,5 +4365,136 @@ describe('quest participant writes', () => {
           member.memberName === 'or' || member.memberName === 'Grok Test',
       ),
     ).toBe(false);
+  });
+
+  it('adds the roster member named in the latest suggestion after an earlier either/or turn', async () => {
+    const roster = [
+      {
+        personId: 7,
+        name: 'Vlad Hramtsov',
+        avatarUrl: null,
+        nickname: 'vlad',
+        person: { id: 7 },
+      },
+      {
+        personId: 8,
+        name: 'Grok Test',
+        avatarUrl: null,
+        nickname: null,
+        person: { id: 8 },
+      },
+    ] as QuestSpaceMember[];
+    const savedGoal = 'The goal already on the card.';
+    const pendingGoal =
+      'Goal card is up for you to confirm, nothing is written yet';
+    const pending: PendingQuestSectionProposal = {
+      step: 'goal',
+      patch: { goal: pendingGoal },
+    };
+    const draft: QuestDraftStateSnapshot = {
+      ...emptyDraft,
+      goal: savedGoal,
+    };
+    const history = [
+      {
+        role: 'agent' as const,
+        text: 'Grok Test is on the roster… Should Vlad Hramtsov stay the Lead only, or be listed as a participant as well?',
+      },
+      { role: 'user' as const, text: 'suggest a goal' },
+      {
+        role: 'agent' as const,
+        text: 'Goal card is up for you to confirm, nothing is written yet',
+      },
+      { role: 'user' as const, text: 'suggest adding Grok Test' },
+      {
+        role: 'agent' as const,
+        text: 'Participants card is up for Grok Test, and your goal wording stays unsaved',
+      },
+    ];
+    const assertGrokAdded = (
+      result: {
+        wrote: boolean;
+        draft: QuestDraftStateSnapshot;
+        pending: PendingQuestSectionProposal | null;
+        reply: string;
+      } | null,
+    ) => {
+      expect(result?.wrote).toBe(true);
+      expect(result?.draft.goal).toBe(savedGoal);
+      expect(result?.pending).toEqual(pending);
+      expect(result?.draft.members).toEqual([
+        expect.objectContaining({ memberName: 'Grok Test', personId: 8 }),
+      ]);
+      expect(
+        result?.draft.members.some(
+          (member) =>
+            member.memberName === 'or' || member.memberName === 'Vlad Hramtsov',
+        ),
+      ).toBe(false);
+      expect(result?.reply).toMatch(/Added that to the Participants/);
+      expect(result?.reply).not.toBe(
+        'Which space member should I add as a participant?',
+      );
+    };
+
+    assertGrokAdded(
+      runNewQuestDraftTurn({
+        message: 'yes',
+        currentStep: 'goal',
+        draft,
+        pending,
+        history,
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: roster,
+        model: null,
+      }),
+    );
+
+    const state: CreateDraftTurnSnapshot = {
+      draft,
+      pending,
+      currentStep: 'goal',
+    };
+    assertGrokAdded(
+      await settleCreateDraftTurn({
+        message: 'yes',
+        history,
+        viewerDisplayName: 'Vlad Hramtsov',
+        spaceMembers: roster,
+        readState: () => state,
+        isCurrent: () => true,
+        loadModel: async () => ({
+          reply: 'Saved the goal.',
+          helper: {
+            suggestion: null,
+            saved: {
+              step: 'members',
+              source: 'shown',
+              patch: { members: [{ memberName: 'or' }] },
+            },
+            discarded: true,
+          },
+        }),
+      }),
+    );
+
+    const namedOnly = runNewQuestDraftTurn({
+      message: 'yes',
+      currentStep: 'goal',
+      draft,
+      pending: {
+        step: 'members',
+        patch: { members: [{ memberName: 'Grok Test' }] },
+      },
+      history,
+      viewerDisplayName: 'Vlad Hramtsov',
+      spaceMembers: roster,
+      model: null,
+    });
+    expect(namedOnly.wrote).toBe(true);
+    expect(namedOnly.draft.members).toEqual([
+      expect.objectContaining({ memberName: 'Grok Test', personId: 8 }),
+    ]);
+    expect(namedOnly.draft.goal).toBe(savedGoal);
   });
 });

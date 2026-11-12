@@ -28,6 +28,13 @@ const harness = vi.hoisted(() => ({
   closeAiPanel: vi.fn(),
   openHumanChatPanel: vi.fn(),
   push: vi.fn(),
+  spaceMembers: [] as Array<{
+    person: { id: number };
+    personId: number;
+    name: string;
+    avatarUrl: string | null;
+    nickname: string | null;
+  }>,
 }));
 
 vi.mock('next/image', () => ({
@@ -107,7 +114,7 @@ vi.mock('../../../common/human-chat-panel-context', () => ({
 }));
 
 vi.mock('../../hooks/use-space-quests', () => ({
-  useQuestSpaceMembers: () => [],
+  useQuestSpaceMembers: () => harness.spaceMembers,
   toQuestSpaceMemberPersons: () => [],
   findQuestSpaceMember: () => null,
   findQuestSpaceMemberId: () => null,
@@ -183,6 +190,7 @@ beforeEach(() => {
   harness.deleteQuestDraftRequest.mockReset();
   harness.setSpaceQuestDraft.mockReset();
   harness.push.mockReset();
+  harness.spaceMembers = [];
   harness.createSpaceQuestRequest.mockResolvedValue({
     slug: 'quest-test',
     name: 'Quest test',
@@ -492,6 +500,178 @@ describe('quest create draft persistence', () => {
       ).not.toContain(pendingGoal);
     } finally {
       vi.unstubAllGlobals();
+    }
+  });
+
+  it('saves a yes for the latest roster member after an earlier either/or turn', async () => {
+    const pendingGoal =
+      'Goal card is up for you to confirm, nothing is written yet';
+    const savedGoal = 'The goal already on the card.';
+    harness.spaceMembers = [
+      {
+        person: { id: 7 },
+        personId: 7,
+        name: 'Vlad Hramtsov',
+        avatarUrl: null,
+        nickname: 'vlad',
+      },
+      {
+        person: { id: 8 },
+        personId: 8,
+        name: 'Grok Test',
+        avatarUrl: null,
+        nickname: null,
+      },
+    ];
+    window.sessionStorage.setItem(
+      questCreateSessionKey(SPACE),
+      JSON.stringify({
+        draft: emptyDraft({
+          name: 'Quest test',
+          goal: savedGoal,
+        }),
+        messages: [
+          {
+            id: 'either-1',
+            role: 'member',
+            senderName: 'Quest Helper',
+            text: 'Grok Test is on the roster… Should Vlad Hramtsov stay the Lead only, or be listed as a participant as well?',
+            timestamp: '2026-11-09T20:00:00.000Z',
+          },
+          {
+            id: 'goal-1',
+            role: 'member',
+            senderName: 'Quest Helper',
+            text: pendingGoal,
+            timestamp: '2026-11-09T20:01:00.000Z',
+          },
+          {
+            id: 'person-1',
+            role: 'member',
+            senderName: 'Quest Helper',
+            text: 'Participants card is up for Grok Test, and your goal wording stays unsaved',
+            timestamp: '2026-11-09T20:02:00.000Z',
+          },
+        ],
+        step: 0,
+        pending: { step: 'goal', patch: { goal: pendingGoal } },
+        checkpoint: null,
+        draftId: 4,
+      }),
+    );
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        reply: 'Which space member should I add as a participant?',
+        helper: {
+          suggestion: null,
+          saved: {
+            step: 'members',
+            source: 'shown',
+            patch: { members: [{ memberName: 'or' }] },
+          },
+          discarded: true,
+        },
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const view = render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
+      expect(await screen.findByText(savedGoal)).toBeTruthy();
+
+      const session = () =>
+        harness.setSpaceQuestDraft.mock.calls.at(-1)?.[0] as
+          | {
+              input: string;
+              onInputChange: (value: string) => void;
+              onSend: () => void;
+            }
+          | null
+          | undefined;
+      await waitFor(() => {
+        expect(session()?.onSend).toEqual(expect.any(Function));
+      });
+      session()?.onInputChange('yes');
+      await waitFor(() => {
+        expect(session()?.input).toBe('yes');
+      });
+      session()?.onSend();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId('draft-section-members').textContent,
+        ).toContain('Grok Test');
+      });
+      const membersCard = screen.getByTestId(
+        'draft-section-members',
+      ).textContent;
+      expect(membersCard).not.toContain('Vlad Hramtsov');
+      expect(screen.getByTestId('draft-section-goal').textContent).toContain(
+        savedGoal,
+      );
+      expect(
+        screen.getByTestId('draft-section-goal').textContent,
+      ).not.toContain(pendingGoal);
+
+      let payload:
+        | {
+            draft: {
+              goal: string;
+              members: Array<{ memberName?: string; personId?: number }>;
+            };
+          }
+        | undefined;
+      await waitFor(
+        () => {
+          payload = harness.saveQuestDraftRequest.mock.calls
+            .map((call) => call[0]?.payload)
+            .find((saved) =>
+              saved?.draft?.members?.some(
+                (member: { memberName?: string }) =>
+                  member.memberName === 'Grok Test',
+              ),
+            );
+          expect(payload?.draft.goal).toBe(savedGoal);
+          expect(payload?.draft.members).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                memberName: 'Grok Test',
+                personId: 8,
+              }),
+            ]),
+          );
+        },
+        { timeout: 4000 },
+      );
+      expect(
+        payload?.draft.members.some(
+          (member) =>
+            member.memberName === 'or' || member.memberName === 'Vlad Hramtsov',
+        ),
+      ).toBe(false);
+
+      view.unmount();
+      window.sessionStorage.clear();
+      harness.getQuestDraftRequest.mockResolvedValue({
+        id: 4,
+        name: 'Quest test',
+        updatedAt: '2026-11-12T00:00:00.000Z',
+        payload,
+      });
+      render(<SpaceQuestCreateDraft spaceSlug={SPACE} resumeDraftId={4} />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId('draft-section-members').textContent,
+        ).toContain('Grok Test');
+      });
+      expect(screen.getByTestId('draft-section-goal').textContent).toContain(
+        savedGoal,
+      );
+    } finally {
+      vi.unstubAllGlobals();
+      harness.spaceMembers = [];
     }
   });
 });
