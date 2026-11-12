@@ -179,6 +179,13 @@ describe('quest create draft heading', () => {
     expect(discussion.parentElement?.className).toContain('items-end');
     const draft = screen.getByText('Draft');
     expect(heading.nextElementSibling).toBe(draft);
+    expect(draft.parentElement?.className).toContain('gap-2');
+    expect(heading.className).toContain('[field-sizing:content]');
+    expect(heading.className).not.toContain('min-w-');
+    expect(draft.parentElement?.parentElement?.contains(status)).toBe(true);
+    expect(draft.parentElement?.parentElement?.className).toContain('gap-1');
+    expect(intro.querySelector('.w-\\[140px\\]')).toBeNull();
+    expect(screen.queryByTestId('draft-section-deliverables')).toBeNull();
     expect(draft.parentElement?.contains(create)).toBe(false);
     expect(requestQuestChat).toHaveBeenCalled();
     const participants = screen.getByTestId('draft-section-members');

@@ -13,7 +13,6 @@ import {
   readableQuestErrorMessage,
   stripViewerYouMarker,
   withoutPlaceholderLeadDuplicates,
-  splitMarkdownLinesToBullets,
   useCreateAgreementOrchestrator,
   useJwt,
   useMe,
@@ -1325,7 +1324,6 @@ export function SpaceQuestCreateDraft({
     }
     leaveCreate();
   };
-  const successBullets = splitMarkdownLinesToBullets(successCriteria);
   const scopeInPreview =
     scopeInMarkdown.trim() || bulletsToMarkdownList(scopeIn);
   const scopeOutPreview =
@@ -1342,25 +1340,6 @@ export function SpaceQuestCreateDraft({
     leadMember?.avatarUrl ?? (viewerIsLead ? person?.avatarUrl ?? null : null);
   const leadPersonId =
     leadMember?.personId ?? (viewerIsLead ? person?.id : null);
-  const draftCompletionPercent = Math.max(
-    4,
-    Math.round(
-      ([
-        name.trim(),
-        goal.trim(),
-        scopeIn.length > 0 || scopeOut.length > 0,
-        successBullets.length > 0,
-        rewards.length > 0,
-        milestones.length > 0,
-        members.length > 0,
-        leadName.trim(),
-        targetDate,
-      ].filter(Boolean).length /
-        9) *
-        100,
-    ),
-  );
-
   return (
     <SpaceLoadingBackdrop
       progress={progress}
@@ -1379,19 +1358,72 @@ export function SpaceQuestCreateDraft({
               className="flex flex-col gap-1"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  <input
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="New quest"
-                    aria-label="Quest title"
-                    data-testid="quest-create-title"
-                    size={Math.max((name.trim() || 'New quest').length, 1)}
-                    className="w-auto min-w-[7.5rem] max-w-[min(100%,36rem)] bg-transparent font-display text-[18px] font-semibold leading-none text-foreground outline-none placeholder:text-neutral-11"
-                  />
-                  <span className="shrink-0 bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
-                    Draft
-                  </span>
+                <div className="flex min-w-0 flex-col gap-1">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <input
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      placeholder="New quest"
+                      aria-label="Quest title"
+                      data-testid="quest-create-title"
+                      className="w-auto max-w-[min(100%,36rem)] bg-transparent font-display text-[18px] font-semibold leading-none text-foreground outline-none [field-sizing:content] placeholder:text-neutral-11"
+                    />
+                    <span className="shrink-0 bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
+                      Draft
+                    </span>
+                  </div>
+                  {draftHydrating ? (
+                    <div
+                      data-testid="quest-draft-save-status"
+                      data-state="loading"
+                      aria-busy="true"
+                      aria-live="polite"
+                      className={DRAFT_SAVE_STATUS_CLASS}
+                    >
+                      <span className="h-3 w-24 bg-neutral-4" aria-hidden />
+                    </div>
+                  ) : draftSaveState === 'error' ? (
+                    <button
+                      type="button"
+                      onClick={() => void saveDraftToServer()}
+                      data-testid="quest-draft-save-status"
+                      className={`${DRAFT_SAVE_STATUS_CLASS} text-error-11`}
+                    >
+                      {tDrafts('drafts.retry')}
+                    </button>
+                  ) : (
+                    <div
+                      data-testid="quest-draft-save-status"
+                      aria-live="polite"
+                      className={DRAFT_SAVE_STATUS_CLASS}
+                    >
+                      {draftSaveState === 'saving' ? (
+                        <>
+                          <Loader2
+                            className="size-3.5 shrink-0 animate-spin text-neutral-11"
+                            aria-hidden
+                          />
+                          <span className="text-neutral-11">
+                            {tDrafts('drafts.saving')}
+                          </span>
+                        </>
+                      ) : draftSaveState === 'saved' ? (
+                        <>
+                          <Check
+                            className="size-3.5 shrink-0 text-success-11"
+                            aria-hidden
+                          />
+                          <span className="text-success-11">
+                            {tDrafts('drafts.savedAuto')}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-neutral-11">
+                          {tDrafts('drafts.notSaved')}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <div className="flex items-center gap-2">
@@ -1431,76 +1463,9 @@ export function SpaceQuestCreateDraft({
                 </div>
               </div>
 
-              {draftHydrating ? (
-                <div
-                  data-testid="quest-draft-save-status"
-                  data-state="loading"
-                  aria-busy="true"
-                  aria-live="polite"
-                  className={DRAFT_SAVE_STATUS_CLASS}
-                >
-                  <span className="h-3 w-24 bg-neutral-4" aria-hidden />
-                </div>
-              ) : draftSaveState === 'error' ? (
-                <button
-                  type="button"
-                  onClick={() => void saveDraftToServer()}
-                  data-testid="quest-draft-save-status"
-                  className={`${DRAFT_SAVE_STATUS_CLASS} text-error-11`}
-                >
-                  {tDrafts('drafts.retry')}
-                </button>
-              ) : (
-                <div
-                  data-testid="quest-draft-save-status"
-                  aria-live="polite"
-                  className={DRAFT_SAVE_STATUS_CLASS}
-                >
-                  {draftSaveState === 'saving' ? (
-                    <>
-                      <Loader2
-                        className="size-3.5 shrink-0 animate-spin text-neutral-11"
-                        aria-hidden
-                      />
-                      <span className="text-neutral-11">
-                        {tDrafts('drafts.saving')}
-                      </span>
-                    </>
-                  ) : draftSaveState === 'saved' ? (
-                    <>
-                      <Check
-                        className="size-3.5 shrink-0 text-success-11"
-                        aria-hidden
-                      />
-                      <span className="text-success-11">
-                        {tDrafts('drafts.savedAuto')}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-neutral-11">
-                      {tDrafts('drafts.notSaved')}
-                    </span>
-                  )}
-                </div>
-              )}
-
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-neutral-11">
-                  Fills in live as you chat · click any section to edit
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="h-1.5 w-[140px] overflow-hidden bg-neutral-4">
-                    <div
-                      className="h-full bg-foreground transition-[width]"
-                      style={{
-                        width: draftHydrating
-                          ? '0%'
-                          : `${draftCompletionPercent}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
+              <p className="text-xs text-neutral-11">
+                Fills in live as you chat · click any section to edit
+              </p>
             </div>
 
             {proposalLinkError ? (
@@ -1770,37 +1735,6 @@ export function SpaceQuestCreateDraft({
                       ))}
                     </div>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setEditingModal('deliverables')}
-                    data-testid="draft-section-deliverables"
-                    className={cn(
-                      'flex w-full flex-col items-start gap-1.5 border p-3.5 text-left transition-colors',
-                      editingModal === 'deliverables'
-                        ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
-                        : 'border-border bg-background hover:border-foreground/40',
-                    )}
-                  >
-                    <div className="flex w-full items-center justify-between">
-                      <span className={LABEL_CLASS}>DELIVERABLES</span>
-                      <span className="text-xs text-neutral-11">✎</span>
-                    </div>
-                    {deliverables.length === 0 ? (
-                      <p className="text-[13px] text-neutral-11">—</p>
-                    ) : (
-                      <div className="w-full space-y-1">
-                        {deliverables.map((item, index) => (
-                          <p
-                            key={`${item.name}-${index}`}
-                            className="text-[13px] font-semibold text-foreground"
-                          >
-                            {item.name}
-                          </p>
-                        ))}
-                      </div>
-                    )}
-                  </button>
                 </div>
 
                 {/* Right column: Lead, Participants, Target Date */}
