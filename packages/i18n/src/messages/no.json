@@ -2545,6 +2545,7 @@
     "exitSpaceConfirmNo": "Nei, bli",
     "exitSpaceDisabledTooltip": "Du må være autorisert og medlem av det gjeldende rommet for å kunne forlate det",
     "accessDeniedNotLoggedIn": "Du trenger en aktiv konto for å få tilgang til denne seksjonen. Logg inn eller klikk på Kom i gang for å opprette en.",
+    "accessDeniedReadOnly": "Denne seksjonen krever en aktiv konto og er ikke tilgjengelig her.",
     "signIn": "Logg inn",
     "getStarted": "Kom i gang",
     "accessDeniedNotMember": "Du må bli medlem for å få tilgang til denne funksjonen. Bli med i rommet nå for å se aktiviteten i dette rommet.",

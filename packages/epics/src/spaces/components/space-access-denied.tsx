@@ -23,7 +23,7 @@ export function SpaceAccessDenied({
   className,
 }: SpaceAccessDeniedProps) {
   const t = useTranslations('Spaces');
-  const { login } = useAuthentication();
+  const { login, canLogin } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug || '');
   const effectiveSpaceId = spaceId || space?.web3SpaceId;
   const { spaces: spacesByWeb3Id } = useSpacesByWeb3Ids(
@@ -33,6 +33,14 @@ export function SpaceAccessDenied({
   const resolvedSpaceId = space?.id ?? spacesByWeb3Id[0]?.id;
 
   if (userState === UserSpaceState.NOT_LOGGED_IN) {
+    // A read-only tree (no login here): say so, with nothing to click.
+    if (!canLogin) {
+      return (
+        <Empty className={className}>
+          <p>{t('accessDeniedReadOnly')}</p>
+        </Empty>
+      );
+    }
     return (
       <Empty className={className}>
         <div className="flex flex-col gap-7">

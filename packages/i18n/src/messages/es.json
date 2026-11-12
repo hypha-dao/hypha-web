@@ -2768,6 +2768,7 @@
     "exitSpaceConfirmNo": "No, quedarse",
     "exitSpaceDisabledTooltip": "Necesitas estar autorizado y ser miembro del espacio actual para poder salir",
     "accessDeniedNotLoggedIn": "Necesita una cuenta activa para acceder a esta sección. Inicie sesión o haga clic en Comenzar para crear uno.",
+    "accessDeniedReadOnly": "Esta sección requiere una cuenta activa y no está disponible aquí.",
     "signIn": "Iniciar sesión",
     "getStarted": "Empezar",
     "accessDeniedNotMember": "Debe convertirse en miembro para acceder a esta función. Únase al espacio ahora para ver la actividad de este espacio.",

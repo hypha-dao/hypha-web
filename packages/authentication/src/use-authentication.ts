@@ -107,6 +107,8 @@ function usePrivyAuthentication() {
   }, [exportWallet, isEmbeddedWallet]);
 
   return {
+    /** A visitor can sign in here (always true under the Privy provider). */
+    canLogin: true,
     isAuthenticated: authenticated,
     isLoading: !ready,
     isEmbeddedWallet,
