@@ -122,9 +122,28 @@ export function pickUserVisibleMemberLabel(
 }
 
 /**
+ * Empty text and the translated fallback ("Unknown" / "Member") are not a
+ * person's name. Callers should keep a skeleton, or "Someone is typing",
+ * until a real label exists.
+ */
+export function isUnresolvedMemberLabel(
+  label: string | undefined | null,
+  unresolvedLabel: string,
+): boolean {
+  const trimmed = label?.trim() ?? '';
+  if (!trimmed) return true;
+  const unresolved = unresolvedLabel.trim();
+  if (!unresolved) return false;
+  return (
+    trimmed.localeCompare(unresolved, undefined, { sensitivity: 'accent' }) ===
+    0
+  );
+}
+
+/**
  * Hypha profile or Matrix display name, then a shortened id.
  * Bridged Privy locals stay hidden — return empty so callers can show
- * "Unknown member" instead of `@prod_privy…`.
+ * a neutral fallback instead of `@prod_privy…`.
  */
 export function visibleMatrixMemberName(
   matrixUserId: string,

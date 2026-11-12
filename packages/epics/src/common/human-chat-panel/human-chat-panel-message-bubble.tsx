@@ -34,11 +34,13 @@ import {
   TooltipTrigger,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   MATRIX_MXID_IN_PLAIN_TEXT,
   chatMarkupLooksFormatted,
   chatMarkupToHtml,
   normalizePlainTextMxidCaptureFromMatch,
+  useJwt,
   useMatrix,
   usePersonBySub,
   specialistById,
@@ -65,6 +67,7 @@ import {
 import { ChatMessageRichText } from './parse-simple-matrix-html';
 import {
   isHyphaBotMatrixIdentity,
+  isUnresolvedMemberLabel,
   matrixMemberDisplayLabelFromRoom,
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
@@ -956,10 +959,14 @@ function buildReplyConnectorPathD(params: {
   yRep: number;
   xEnd: number;
 }): string {
-  const { xMain, yStemStart, yRep, xEnd } = params;
+  // Whole pixels keep the path string stable across ResizeObserver chatter.
+  const xMain = Math.round(params.xMain);
+  const yStemStart = Math.round(params.yStemStart);
+  const yRep = Math.round(params.yRep);
+  const xEnd = Math.round(params.xEnd);
   const r = REPLY_CONNECTOR_CORNER_R;
 
-  if (Math.abs(xEnd - xMain) < 0.75) {
+  if (Math.abs(xEnd - xMain) < 1) {
     return `M ${xMain} ${yStemStart} L ${xMain} ${yRep}`;
   }
 
@@ -981,6 +988,10 @@ function buildReplyConnectorPathD(params: {
 /**
  * Measured Discord-style connector: stem from main-avatar column (under the image),
  * up to the reply row with a **rounded** elbow, horizontal to just before the small avatar.
+ *
+ * After the SVG mounts, geometry is written imperatively. Putting every
+ * ResizeObserver tick through `setState` re-entered React (#185) when
+ * sub-pixel rects jittered — equality checks were not enough.
  */
 function ChatReplyConnectorMeasured({
   rowRef,
@@ -991,26 +1002,55 @@ function ChatReplyConnectorMeasured({
   replyAvatarRef: RefObject<HTMLDivElement | null>;
   mainAvatarRef: RefObject<HTMLDivElement | null>;
 }) {
-  const [geom, setGeom] = useState<ReplyConnectorGeometry | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const pathRef = useRef<SVGPathElement | null>(null);
+  const lastGeomRef = useRef<ReplyConnectorGeometry | null>(null);
 
   useLayoutEffect(() => {
     let raf = 0;
+    let cancelled = false;
+
+    const applyGeom = (next: ReplyConnectorGeometry) => {
+      if (cancelled) return;
+      const prev = lastGeomRef.current;
+      if (
+        prev &&
+        prev.width === next.width &&
+        prev.height === next.height &&
+        prev.d === next.d
+      ) {
+        return;
+      }
+      lastGeomRef.current = next;
+      const svg = svgRef.current;
+      const path = pathRef.current;
+      if (svg && path) {
+        svg.setAttribute('width', String(next.width));
+        svg.setAttribute('height', String(next.height));
+        svg.setAttribute('viewBox', `0 0 ${next.width} ${next.height}`);
+        path.setAttribute('d', next.d);
+        return;
+      }
+      // One React commit to mount the SVG; further ticks stay imperative.
+      // Never unmount on a missed measure — remount loops are React #185.
+      setMounted((was) => (was ? was : true));
+    };
 
     const measure = () => {
       const rEl = rowRef.current;
       const rep = replyAvatarRef.current;
       const main = mainAvatarRef.current;
+      // Skip this tick only; do not clear/unmount on transient missing refs.
       if (!rEl || !rep || !main) {
-        setGeom(null);
         return;
       }
       const rowRect = rEl.getBoundingClientRect();
       const repRect = rep.getBoundingClientRect();
       const mainRect = main.getBoundingClientRect();
-      const w = rowRect.width;
-      const h = rowRect.height;
+      const w = Math.round(rowRect.width);
+      const h = Math.round(rowRect.height);
       if (w <= 0 || h <= 0) {
-        setGeom(null);
         return;
       }
       const xMain = mainRect.left + mainRect.width / 2 - rowRect.left;
@@ -1040,7 +1080,7 @@ function ChatReplyConnectorMeasured({
         yRep,
         xEnd,
       });
-      setGeom({ width: w, height: h, d });
+      applyGeom({ width: w, height: h, d });
     };
 
     const requestMeasure = () => {
@@ -1081,6 +1121,7 @@ function ChatReplyConnectorMeasured({
     });
     window.addEventListener('resize', requestMeasure);
     return () => {
+      cancelled = true;
       if (raf) {
         cancelAnimationFrame(raf);
       }
@@ -1090,10 +1131,25 @@ function ChatReplyConnectorMeasured({
     };
   }, [rowRef, replyAvatarRef, mainAvatarRef]);
 
-  if (!geom) return null;
+  // After mount, sync attributes once refs exist (first paint after setMounted).
+  useLayoutEffect(() => {
+    if (!mounted) return;
+    const next = lastGeomRef.current;
+    const svg = svgRef.current;
+    const path = pathRef.current;
+    if (!next || !svg || !path) return;
+    svg.setAttribute('width', String(next.width));
+    svg.setAttribute('height', String(next.height));
+    svg.setAttribute('viewBox', `0 0 ${next.width} ${next.height}`);
+    path.setAttribute('d', next.d);
+  }, [mounted]);
+
+  if (!mounted || !lastGeomRef.current) return null;
+  const geom = lastGeomRef.current;
 
   return (
     <svg
+      ref={svgRef}
       className="pointer-events-none absolute inset-0 z-0 overflow-visible text-border/80 dark:text-border/85"
       width={geom.width}
       height={geom.height}
@@ -1102,6 +1158,7 @@ function ChatReplyConnectorMeasured({
       aria-hidden
     >
       <path
+        ref={pathRef}
         d={geom.d}
         fill="none"
         stroke="currentColor"
@@ -1127,6 +1184,41 @@ function needsHyphaProfileForMatrixLabel(
   if (!l) return true;
   if (l === matrixId) return true;
   return needsHyphaProfileResolutionForMatrixLabel(label);
+}
+
+function omitUnresolvedMemberLabel(
+  label: string | undefined | null,
+  unresolvedLabel: string,
+): string {
+  const trimmed = label?.trim() ?? '';
+  if (!trimmed || isUnresolvedMemberLabel(trimmed, unresolvedLabel)) return '';
+  return trimmed;
+}
+
+/**
+ * True while the Hypha person behind a Matrix id is still loading.
+ * A missing JWT used to make `usePersonBySub` look idle, so the header
+ * painted the fallback name before Privy had a chance to resolve.
+ */
+function hyphaPersonLookupPending({
+  linkLoading,
+  personLoading,
+  sub,
+  user,
+  isLoadingJwt,
+  jwt,
+}: {
+  linkLoading: boolean;
+  personLoading: boolean;
+  sub?: string;
+  user: unknown;
+  isLoadingJwt: boolean;
+  jwt?: string | null;
+}): boolean {
+  if (linkLoading) return true;
+  if (!sub) return false;
+  if (personLoading) return true;
+  return (Boolean(user) && isLoadingJwt && !jwt) || (!user && isLoadingJwt);
 }
 
 function formatPersonDisplayName(p: {
@@ -1351,7 +1443,10 @@ function MxidMentionPill({
   syncLabel: string;
   viewerMentionTintRow: boolean;
 }) {
-  const needsProfile = needsHyphaProfileForMatrixLabel(syncLabel, fullMxid);
+  const t = useTranslations('HumanChatPanel');
+  const unresolvedLabel = t('unknownMember');
+  const cleanedSync = omitUnresolvedMemberLabel(syncLabel, unresolvedLabel);
+  const needsProfile = needsHyphaProfileForMatrixLabel(cleanedSync, fullMxid);
   const canonicalSub = needsProfile
     ? matrixUserIdToCanonicalPrivySub(fullMxid) ?? undefined
     : undefined;
@@ -1359,29 +1454,35 @@ function MxidMentionPill({
     useUserPrivyIdByMatrixId({
       matrixUserId: needsProfile && !canonicalSub ? fullMxid : undefined,
     });
-  const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: linkedSub ?? canonicalSub ?? undefined,
-  });
+  const sub = linkedSub ?? canonicalSub ?? undefined;
+  const { person, isLoading: loadingPerson } = usePersonBySub({ sub });
+  const { user } = useAuthentication();
+  const { jwt, isLoadingJwt } = useJwt();
 
-  const t = useTranslations('HumanChatPanel');
   const displayLabel = useMemo(() => {
-    if (isHyphaBotMatrixIdentity(fullMxid, syncLabel)) {
+    if (isHyphaBotMatrixIdentity(fullMxid, cleanedSync)) {
       // Picker and chip stay "AI Agents". Specialist names are reply attribution.
       return botMentionChipText(t('agentMentionLabel'));
     }
     const fromPerson = person ? formatPersonDisplayName(person) : '';
-    const visible = visibleMatrixMemberName(fullMxid, fromPerson, syncLabel);
+    const visible = visibleMatrixMemberName(fullMxid, fromPerson, cleanedSync);
     if (!visible) return '';
     return visible.startsWith('@') ? visible : `@${visible}`;
-  }, [person, syncLabel, fullMxid, t]);
+  }, [cleanedSync, person, fullMxid, t]);
 
-  const loading =
+  const pending =
     needsProfile &&
-    (loadingLink ||
-      (Boolean(linkedSub ?? canonicalSub) && loadingPerson) ||
-      !displayLabel.trim());
+    !displayLabel.trim() &&
+    hyphaPersonLookupPending({
+      linkLoading: loadingLink,
+      personLoading: loadingPerson,
+      sub,
+      user,
+      isLoadingJwt,
+      jwt,
+    });
 
-  if (loading) {
+  if (pending) {
     return (
       <Skeleton
         className="inline-block rounded align-baseline"
@@ -1392,10 +1493,12 @@ function MxidMentionPill({
     );
   }
 
+  const shown =
+    displayLabel.trim() || (needsProfile ? `@${unresolvedLabel}` : '');
+  if (!shown) return null;
+
   return (
-    <span className={chatMentionPillClass(viewerMentionTintRow)}>
-      {displayLabel}
-    </span>
+    <span className={chatMentionPillClass(viewerMentionTintRow)}>{shown}</span>
   );
 }
 
@@ -1663,6 +1766,8 @@ export function HumanChatPanelMessageBubble({
   receiptStatus = null,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
+  const { user } = useAuthentication();
+  const { jwt, isLoadingJwt } = useJwt();
   const tCoherence = useTranslations('CoherenceTab');
   const agentMentionLabel = useAgentMentionLabel();
   const specialist = message.agentSpecialistId
@@ -1748,6 +1853,7 @@ export function HumanChatPanelMessageBubble({
     return html || null;
   }, [message.formattedContentHtml, textContent, jumboLayout.mode]);
 
+  const unresolvedLabel = t('unknownMember');
   const rosterSenderLabel =
     message.role === 'member' && message.senderMatrixId
       ? resolveSenderDisplayLabel?.(message.senderMatrixId)
@@ -1756,6 +1862,22 @@ export function HumanChatPanelMessageBubble({
     replyTo?.sourceUserId != null
       ? resolveSenderDisplayLabel?.(replyTo.sourceUserId)
       : undefined;
+  const cleanRosterSenderLabel = omitUnresolvedMemberLabel(
+    rosterSenderLabel,
+    unresolvedLabel,
+  );
+  const cleanMessageSenderName = omitUnresolvedMemberLabel(
+    message.senderName,
+    unresolvedLabel,
+  );
+  const cleanRosterReplyLabel = omitUnresolvedMemberLabel(
+    rosterReplyLabel,
+    unresolvedLabel,
+  );
+  const cleanReplyAuthorLabel = omitUnresolvedMemberLabel(
+    replyTo?.authorLabel,
+    unresolvedLabel,
+  );
 
   const senderMatrixId =
     message.role === 'member' ? message.senderMatrixId?.trim() : undefined;
@@ -1766,13 +1888,13 @@ export function HumanChatPanelMessageBubble({
     needsHyphaProfileForMatrixLabel(
       // Empty string from filtered technical roster labels must not block
       // falling through to message.senderName / person lookup.
-      rosterSenderLabel || message.senderName,
+      cleanRosterSenderLabel || cleanMessageSenderName,
       senderMatrixId,
     );
   const resolveReplyProfile =
     Boolean(replyMatrixId) &&
     needsHyphaProfileForMatrixLabel(
-      rosterReplyLabel || replyTo?.authorLabel,
+      cleanRosterReplyLabel || cleanReplyAuthorLabel,
       replyMatrixId,
     );
 
@@ -1820,19 +1942,21 @@ export function HumanChatPanelMessageBubble({
         ? visibleMatrixMemberName(
             message.senderMatrixId,
             fromPerson,
-            rosterSenderLabel,
-            message.senderName,
+            cleanRosterSenderLabel,
+            cleanMessageSenderName,
           )
-        : fromPerson || rosterSenderLabel?.trim() || message.senderName?.trim();
-    return visible || t('unknownMember');
+        : fromPerson || cleanRosterSenderLabel || cleanMessageSenderName;
+    return visible || unresolvedLabel;
   }, [
     agentMentionLabel,
+    cleanMessageSenderName,
+    cleanRosterSenderLabel,
     message.role,
     message.senderMatrixId,
     message.senderName,
-    rosterSenderLabel,
     senderPerson,
     t,
+    unresolvedLabel,
   ]);
 
   const resolvedReplyAuthorLabel = useMemo(() => {
@@ -1846,12 +1970,19 @@ export function HumanChatPanelMessageBubble({
         ? visibleMatrixMemberName(
             replyTo.sourceUserId,
             fromPerson,
-            rosterReplyLabel,
-            replyTo.authorLabel,
+            cleanRosterReplyLabel,
+            cleanReplyAuthorLabel,
           )
-        : fromPerson || rosterReplyLabel?.trim() || replyTo.authorLabel?.trim();
-    return visible || t('unknownMember');
-  }, [agentMentionLabel, replyPerson, replyTo, rosterReplyLabel, t]);
+        : fromPerson || cleanRosterReplyLabel || cleanReplyAuthorLabel;
+    return visible || unresolvedLabel;
+  }, [
+    agentMentionLabel,
+    cleanReplyAuthorLabel,
+    cleanRosterReplyLabel,
+    replyPerson,
+    replyTo,
+    unresolvedLabel,
+  ]);
 
   const senderHasVisibleLabel = useMemo(() => {
     if (message.role !== 'member' || !message.senderMatrixId) return true;
@@ -1859,53 +1990,75 @@ export function HumanChatPanelMessageBubble({
       pickUserVisibleMemberLabel(
         message.senderMatrixId,
         senderPerson ? formatPersonDisplayName(senderPerson) : '',
-        rosterSenderLabel,
-        message.senderName,
+        cleanRosterSenderLabel,
+        cleanMessageSenderName,
       ),
     );
   }, [
+    cleanMessageSenderName,
+    cleanRosterSenderLabel,
     message.role,
     message.senderMatrixId,
-    message.senderName,
-    rosterSenderLabel,
     senderPerson,
   ]);
 
   /**
-   * Show header skeleton while SWR is in flight or labels are still technical after idle.
-   * Never surface bridged Privy locals — fall back to "Unknown member" once resolution finishes.
+   * Skeleton while the Privy person is still loading.
+   * Show "Member" only after that lookup finishes with no name.
+   * Never unmount the reply connector while this flips — that remount loop
+   * caused React #185 on the previous attempt.
    */
+  const senderSub = senderPrivySub ?? senderCanonicalSub;
   const senderProfileLoading =
     !specialistName &&
     message.role === 'member' &&
     Boolean(message.senderMatrixId) &&
     !senderHasVisibleLabel &&
     (resolveSenderProfile
-      ? isLoadingSenderLink ||
-        (Boolean(senderPrivySub ?? senderCanonicalSub) && isLoadingSenderPerson)
+      ? hyphaPersonLookupPending({
+          linkLoading: isLoadingSenderLink,
+          personLoading: isLoadingSenderPerson,
+          sub: senderSub,
+          user,
+          isLoadingJwt,
+          jwt,
+        })
       : needsHyphaProfileForMatrixLabel(
-          rosterSenderLabel || message.senderName,
+          cleanRosterSenderLabel || cleanMessageSenderName,
           message.senderMatrixId,
         ));
 
+  const replySub = replyPrivySub ?? replyCanonicalSub;
+  const replyHasVisibleLabel = Boolean(
+    replyTo?.sourceUserId &&
+      pickUserVisibleMemberLabel(
+        replyTo.sourceUserId,
+        replyPerson ? formatPersonDisplayName(replyPerson) : '',
+        cleanRosterReplyLabel,
+        cleanReplyAuthorLabel,
+      ),
+  );
   const replyProfileLoading =
     replyTo?.sourceUserId != null &&
-    !pickUserVisibleMemberLabel(
-      replyTo.sourceUserId,
-      replyPerson ? formatPersonDisplayName(replyPerson) : '',
-      rosterReplyLabel,
-      replyTo.authorLabel,
-    ) &&
+    !replyHasVisibleLabel &&
     (resolveReplyProfile
-      ? isLoadingReplyLink ||
-        (Boolean(replyPrivySub ?? replyCanonicalSub) && isLoadingReplyPerson)
+      ? hyphaPersonLookupPending({
+          linkLoading: isLoadingReplyLink,
+          personLoading: isLoadingReplyPerson,
+          sub: replySub,
+          user,
+          isLoadingJwt,
+          jwt,
+        })
       : needsHyphaProfileForMatrixLabel(
-          rosterReplyLabel || replyTo.authorLabel,
+          cleanRosterReplyLabel || cleanReplyAuthorLabel,
           replyTo.sourceUserId,
         ));
 
-  const senderName = specialistName ?? resolvedSenderName;
-  const replyAuthorLabelForUi = replyTo ? resolvedReplyAuthorLabel : '';
+  const senderName =
+    specialistName ?? (senderProfileLoading ? '' : resolvedSenderName);
+  const replyAuthorLabelForUi =
+    replyTo && !replyProfileLoading ? resolvedReplyAuthorLabel : '';
   const senderIsAgent =
     message.id !== 'welcome' &&
     isAgentChatAuthor({
@@ -2064,11 +2217,20 @@ export function HumanChatPanelMessageBubble({
         )}
       </div>
       <span className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
-        <span className="shrink-0 font-semibold text-muted-foreground">
-          {replyAuthorLabelForUi.startsWith('@')
-            ? replyAuthorLabelForUi
-            : `@${replyAuthorLabelForUi}`}
-        </span>
+        {replyProfileLoading ? (
+          <Skeleton
+            className="inline-block shrink-0 align-baseline"
+            loading
+            width={72}
+            height={12}
+          />
+        ) : (
+          <span className="shrink-0 font-semibold text-muted-foreground">
+            {replyAuthorLabelForUi.startsWith('@')
+              ? replyAuthorLabelForUi
+              : `@${replyAuthorLabelForUi}`}
+          </span>
+        )}
         {replyExcerpt}
       </span>
     </>

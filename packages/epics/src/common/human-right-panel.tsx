@@ -150,6 +150,7 @@ import {
 } from './human-chat-panel/matrix-chat-unread';
 import {
   isHyphaBotMatrixIdentity,
+  isUnresolvedMemberLabel,
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
   matrixUserIdToCanonicalPrivySub,
@@ -2645,10 +2646,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         if (sub) mxid = subToMatrixUserId[sub]?.trim();
       }
       if (!mxid) continue;
-      m.set(mxid, personRosterLabel(p, t('unknownMember')));
+      // Empty fallback — never stash "Member"/"Unknown" as a resolved roster label.
+      m.set(mxid, personRosterLabel(p, ''));
     }
     return m;
-  }, [spaceMembers, personIdToMatrixUserId, subToMatrixUserId, t]);
+  }, [spaceMembers, personIdToMatrixUserId, subToMatrixUserId]);
 
   /** Hypha profile photos keyed by Matrix MXID — preferred over Matrix MXC avatars in the timeline. */
   const matrixUserIdToPersonAvatar = useMemo(() => {
@@ -2674,10 +2676,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     for (const p of spaceMembers) {
       const sub = p.sub?.trim();
       if (!sub) continue;
-      m.set(sub, personRosterLabel(p, t('unknownMember')));
+      // Empty fallback — never stash "Member"/"Unknown" as a resolved roster label.
+      m.set(sub, personRosterLabel(p, ''));
     }
     return m;
-  }, [spaceMembers, t]);
+  }, [spaceMembers]);
 
   const personAvatarByPrivySub = useMemo(() => {
     const m = new Map<string, string>();
@@ -2720,13 +2723,23 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           if (fromPeer) return fromPeer;
         }
       }
-      const directoryLabel =
-        directoryLabelByMxid.get(userId)?.trim() ||
-        directoryLabelByMxid.get(userId.toLowerCase())?.trim();
+      const unresolvedLabel = t('unknownMember');
+      const acceptName = (label: string | undefined) => {
+        const trimmed = label?.trim() ?? '';
+        if (!trimmed || isUnresolvedMemberLabel(trimmed, unresolvedLabel)) {
+          return '';
+        }
+        return trimmed;
+      };
+      const directoryLabel = acceptName(
+        directoryLabelByMxid.get(userId) ||
+          directoryLabelByMxid.get(userId.toLowerCase()),
+      );
       if (directoryLabel) return directoryLabel;
-      const rosterLabel =
-        matrixUserIdToPersonLabel.get(userId)?.trim() ||
-        matrixUserIdToPersonLabel.get(userId.toLowerCase())?.trim();
+      const rosterLabel = acceptName(
+        matrixUserIdToPersonLabel.get(userId) ||
+          matrixUserIdToPersonLabel.get(userId.toLowerCase()),
+      );
       if (rosterLabel) return rosterLabel;
       const localpartSub = matrixLocalpartToPrivySub(userId);
       if (localpartSub) {
@@ -2735,12 +2748,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           const roomLabel = personRosterLabel(fromRoom, '');
           if (roomLabel) return roomLabel;
         }
-        const rosterBySub = personLabelByPrivySub.get(localpartSub)?.trim();
+        const rosterBySub = acceptName(personLabelByPrivySub.get(localpartSub));
         if (rosterBySub) return rosterBySub;
       }
       const profileLabel = matrixProfileLabelByUserId[userId]?.trim();
       if (
         profileLabel &&
+        !isUnresolvedMemberLabel(profileLabel, unresolvedLabel) &&
         !looksLikeTechnicalMatrixDisplayName(profileLabel, userId)
       ) {
         return profileLabel;
@@ -2750,14 +2764,15 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         const member = room?.getMember(userId);
         if (member) {
           const fromMatrix = matrixMemberDisplayLabel(member, userId);
-          if (!looksLikeTechnicalMatrixDisplayName(fromMatrix, userId)) {
+          if (
+            !isUnresolvedMemberLabel(fromMatrix, unresolvedLabel) &&
+            !looksLikeTechnicalMatrixDisplayName(fromMatrix, userId)
+          ) {
             return fromMatrix;
           }
         }
       }
-      return (
-        visibleMatrixMemberName(userId, profileLabel) || t('unknownMember')
-      );
+      return visibleMatrixMemberName(userId, profileLabel) || unresolvedLabel;
     },
     [
       agentMentionLabel,
@@ -6327,6 +6342,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     client: client ?? null,
     roomId,
     resolveName: resolveMemberLabel,
+    unresolvedMemberLabel: t('unknownMember'),
   });
 
   const handleComposerChange = useCallback(

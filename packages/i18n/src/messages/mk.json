@@ -3979,7 +3979,7 @@
     "noMembers": "Не се пронајдени членови",
     "membersSearch": "Пребарај членови",
     "membersNoMatches": "Нема членови што одговараат.",
-    "unknownMember": "Непознат",
+    "unknownMember": "Член",
     "failedToJoinRoom": "Неуспешно приклучување кон собата за разговор",
     "emojiPickerComposer": "Избери емоџи",
     "emojiPickerReactToMessage": "Реагирај со емоџи",
@@ -4272,7 +4272,9 @@
     "archivedGroupReadOnly": "Оваа група е архивирана. Врати ја за да испраќаш пораки.",
     "typingOne": "{name} пишува…",
     "typingTwo": "{name} и {other} пишуваат…",
-    "typingMany": "{count} луѓе пишуваат…"
+    "typingMany": "{count} луѓе пишуваат…",
+    "typingSomeone": "Некој пишува…",
+    "typingNameAndSomeone": "{name} и некој пишуваат…"
   },
   "CoherenceTab": {
     "signals": "Сигнали",
