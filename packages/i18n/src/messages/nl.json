@@ -1041,6 +1041,7 @@
       "emailNotifications": "E-mailmeldingen",
       "toEmail": "naar {email}",
       "browserNotifications": "Push-meldingen in de browser",
+      "browserUnavailable": "Push-meldingen kunnen in deze browser of op dit apparaat niet worden ingeschakeld. E-mail en je andere instellingen werken nog steeds.",
       "yes": "Ja",
       "no": "Nee",
       "emailNotificationsWithEmail": "E-mailmeldingen ({email})",

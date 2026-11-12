@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  WL_API_READ_ALLOWLIST,
   WL_REQUEST_HEADERS,
   WL_SECTIONS,
   classifyLink,
@@ -630,6 +631,43 @@ describe('/api on a mapped host', () => {
         allowlist,
       ),
     ).toBe(false);
+  });
+
+  it('the real allowlist serves the documents, overview and treasury reads for the own Space only', () => {
+    const real = (method: string, path: string, slug = 'space-one') =>
+      isApiReadAllowed(
+        method,
+        path.split('/').filter(Boolean),
+        slug,
+        WL_API_READ_ALLOWLIST,
+      );
+    for (const path of [
+      '/api/v1/spaces/space-one/documents',
+      '/api/v1/spaces/space-one/documents/all',
+      '/api/v1/spaces/space-one/overview-activity',
+      '/api/v1/spaces/space-one/token-holdings',
+    ]) {
+      expect(real('GET', path)).toBe(true);
+      expect(real('HEAD', path)).toBe(true);
+      for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+        expect(real(method, path)).toBe(false);
+      }
+      // Another Space's slug is refused, and so is the Space without a slug.
+      expect(real('GET', path.replace('space-one', 'space-two'))).toBe(false);
+      expect(
+        isApiReadAllowed(
+          'GET',
+          path.split('/').filter(Boolean),
+          undefined,
+          WL_API_READ_ALLOWLIST,
+        ),
+      ).toBe(false);
+    }
+    // Extra segments are not matched.
+    expect(real('GET', '/api/v1/spaces/space-one/documents/all/x')).toBe(false);
+    expect(real('GET', '/api/v1/spaces/space-one/documents/some-doc')).toBe(
+      false,
+    );
   });
 
   it('with the real allowlist, an empty list refuses everything', () => {

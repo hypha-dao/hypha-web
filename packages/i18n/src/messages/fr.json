@@ -1042,6 +1042,7 @@
       "emailNotifications": "Notifications par e-mail",
       "toEmail": "à {email}",
       "browserNotifications": "Notifications push du navigateur",
+      "browserUnavailable": "Les notifications push ne peuvent pas être activées dans ce navigateur ou sur cet appareil. L’e-mail et vos autres paramètres continuent de fonctionner.",
       "yes": "Oui",
       "no": "Non",
       "emailNotificationsWithEmail": "Notifications par e-mail ({email})",

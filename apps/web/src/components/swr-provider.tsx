@@ -3,6 +3,9 @@
 import { SWRConfig } from 'swr';
 import type { ReactNode } from 'react';
 
+/** Statuses a retry cannot fix (refused or missing): do not retry them. */
+const NO_RETRY_STATUSES = new Set([401, 403, 404]);
+
 /**
  * App-wide SWR defaults.
  *
@@ -18,8 +21,18 @@ import type { ReactNode } from 'react';
  *  - `refreshInterval`: polling stays opt-in per hook.
  *  - `keepPreviousData`: kept per-hook so navigating between different
  *    resources (e.g. two spaces) doesn't briefly show the previous one's data.
+ *
+ * `skipClientErrorRetry` (white-label tree only): a call the mapped host does
+ * not serve answers 404, and retrying it never helps. Only errors that carry a
+ * `status` (as `useEvents` does) are affected; the main app does not set it.
  */
-export function SwrProvider({ children }: { children: ReactNode }) {
+export function SwrProvider({
+  children,
+  skipClientErrorRetry = false,
+}: {
+  children: ReactNode;
+  skipClientErrorRetry?: boolean;
+}) {
   return (
     <SWRConfig
       value={{
@@ -27,6 +40,22 @@ export function SwrProvider({ children }: { children: ReactNode }) {
         revalidateOnFocus: true,
         revalidateOnReconnect: true,
         errorRetryCount: 3,
+        ...(skipClientErrorRetry
+          ? {
+              onErrorRetry: (error, _key, config, revalidate, opts) => {
+                const status = (error as { status?: unknown } | null)?.status;
+                if (typeof status === 'number' && NO_RETRY_STATUSES.has(status))
+                  return;
+                const max = config.errorRetryCount;
+                if (max !== undefined && opts.retryCount > max) return;
+                setTimeout(
+                  () => revalidate(opts),
+                  Math.round((Math.random() + 0.5) * 2 ** opts.retryCount) *
+                    config.errorRetryInterval,
+                );
+              },
+            }
+          : {}),
       }}
     >
       {children}

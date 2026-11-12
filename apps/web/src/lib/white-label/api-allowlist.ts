@@ -19,6 +19,12 @@ export const WL_API_READ_ALLOWLIST: readonly string[] = [
   '/api/v1/spaces/:slug/vaults',
   '/api/v1/spaces/:slug/org-memory',
   '/api/v1/spaces/:slug/scheduled-items',
+  // Measured on a mapped host after A1 shipped: Agreements, Overview and
+  // Treasury returned 404 on these until listed.
+  '/api/v1/spaces/:slug/documents',
+  '/api/v1/spaces/:slug/documents/all',
+  '/api/v1/spaces/:slug/overview-activity',
+  '/api/v1/spaces/:slug/token-holdings',
   '/api/v1/currency-rates',
   '/api/v1/tokens/:address/supply',
   // Read from the hooks of sections not exercised by that run (pipeline is

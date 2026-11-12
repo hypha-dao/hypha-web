@@ -1052,6 +1052,7 @@
     "channels": {
       "emailDescription": "Sent to {email}.",
       "emailDescriptionNoAddress": "Sent to your account email.",
+      "browserUnavailable": "Push notifications can’t be turned on in this browser or device. Email and your other settings still work.",
       "browserDescription": "Alerts on this browser or device. Turn it on in each browser you use.",
       "title": "Notification Channels",
       "description": "Choose how you’d like to receive notifications:",

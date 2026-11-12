@@ -39,6 +39,7 @@ export function NotificationSubscriber({
   const [subscribed, setSubscribed] = React.useState(false);
   const [pushActive, setPushActive] = React.useState(false);
   const [loggedIn, setLoggedIn] = React.useState(false);
+  const [initFailed, setInitFailed] = React.useState(false);
   const hasInitAttemptRef = React.useRef(false);
   const syncedExternalIdRef = React.useRef<string | null>(null);
   const router = useRouter();
@@ -158,12 +159,14 @@ export function NotificationSubscriber({
         await oneSignalInitPromise;
         oneSignalInitPromise = null;
         console.log('OneSignal initialized');
+        setInitFailed(false);
         setInitialized(true);
         setSubscribed(await isEnrolled());
         setPushActive(isPushActive());
       } catch (err) {
         oneSignalInitPromise = null;
         hasInitAttemptRef.current = false;
+        setInitFailed(true);
         console.error(
           '[notifications-subscriber] OneSignal initialization error:',
           err,
@@ -342,6 +345,7 @@ export function NotificationSubscriber({
         pushActive,
         setPushActive,
         loggedIn,
+        initFailed,
       }}
     >
       <HookRegistryProvider useSendNotifications={useSendNotifications}>

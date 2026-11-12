@@ -1021,6 +1021,7 @@
       "emailNotifications": "Известувања по е-пошта",
       "toEmail": "на {email}",
       "browserNotifications": "Push известувања во прелистувачот",
+      "browserUnavailable": "Push известувањата не можат да се вклучат во овој прелистувач или на овој уред. Е-поштата и твоите други поставки продолжуваат да работат.",
       "yes": "Да",
       "no": "Не",
       "emailNotificationsWithEmail": "Известувања по е-пошта ({email})",
