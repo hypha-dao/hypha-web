@@ -109,7 +109,14 @@ const DRAFT_SAVE_STATUS_CLASS =
 
 function DraftResumeSkeleton() {
   const columns = [
-    ['NAME', 'GOAL', 'SCOPE', 'SUCCESS CRITERIA', 'QUEST REWARD', 'MILESTONES'],
+    [
+      'TITLE',
+      'GOAL',
+      'SCOPE',
+      'SUCCESS CRITERIA',
+      'QUEST REWARD',
+      'MILESTONES',
+    ],
     ['LEAD', 'PARTICIPANTS', 'TARGET DATE'],
   ];
   return (
@@ -1278,11 +1285,11 @@ export function SpaceQuestCreateDraft({
   ]);
   const proposalOverLimit =
     proposalCharacterCount > QUEST_PROPOSAL_DESCRIPTION_LIMIT;
-  // The title is optional: submit stores "Untitled quest" when it is blank.
-  // Goal is the only required field. A draft that is too long to publish is
-  // the other block, and that case already explains itself beside the button.
+  // Title and Goal are both required. A draft that is too long to publish
+  // stays blocked too, and that case explains itself beside the button.
+  const missingTitleOrGoal = !name.trim() || !goal.trim();
   const createProposalBlocked =
-    !pendingProposalLink && (!goal.trim() || proposalOverLimit);
+    !pendingProposalLink && (missingTitleOrGoal || proposalOverLimit);
 
   const questsListHref = `/${locale}/dho/${spaceSlug}/quests`;
   const leaveCreate = () => {
@@ -1365,14 +1372,12 @@ export function SpaceQuestCreateDraft({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-col gap-1">
                   <div className="flex min-w-0 items-center gap-2">
-                    <input
-                      value={name}
-                      onChange={(event) => setName(event.target.value)}
-                      placeholder="New quest"
-                      aria-label="Quest title"
+                    <h1
                       data-testid="quest-create-title"
-                      className="w-auto max-w-[min(100%,36rem)] bg-transparent font-display text-[18px] font-semibold leading-none text-foreground outline-none [field-sizing:content] placeholder:text-neutral-11"
-                    />
+                      className="font-display text-[18px] font-semibold leading-none text-foreground"
+                    >
+                      New quest
+                    </h1>
                     <span className="shrink-0 bg-neutral-3 px-2 py-0.5 text-[11px] font-semibold text-foreground">
                       Draft
                     </span>
@@ -1452,6 +1457,14 @@ export function SpaceQuestCreateDraft({
                       CREATE PROPOSAL
                     </Button>
                   </div>
+                  {missingTitleOrGoal && !pendingProposalLink ? (
+                    <p
+                      data-testid="create-proposal-requirement"
+                      className="max-w-56 text-right text-[11px] leading-snug text-neutral-11"
+                    >
+                      {tDrafts('drafts.needTitleAndGoal')}
+                    </p>
+                  ) : null}
                   <button
                     type="button"
                     onClick={toggleQuestHelper}
@@ -1527,6 +1540,43 @@ export function SpaceQuestCreateDraft({
             ) : (
               <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,1fr)_330px]">
                 <div className="space-y-2.5">
+                  {/* TITLE */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      setActiveSection('name');
+                      setEditingModal('name');
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ') return;
+                      event.preventDefault();
+                      setActiveSection('name');
+                      setEditingModal('name');
+                    }}
+                    data-testid="draft-section-name"
+                    className={cn(
+                      'flex w-full flex-col items-start gap-1.5 border p-3.5 text-left transition-colors',
+                      activeSection === 'name'
+                        ? 'border-[#4b4bff] bg-[#f6f5ff] dark:bg-accent-2'
+                        : 'border-border bg-background hover:border-foreground/40',
+                    )}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <span className={LABEL_CLASS}>TITLE</span>
+                      <span className="text-xs text-neutral-11">✎</span>
+                    </div>
+                    {name.trim() ? (
+                      <p className="w-full text-[13px] leading-relaxed text-foreground [overflow-wrap:anywhere]">
+                        {name}
+                      </p>
+                    ) : (
+                      <p className="text-[13px] text-neutral-11">
+                        Not set yet — reply in chat or click to edit
+                      </p>
+                    )}
+                  </div>
+
                   {/* GOAL */}
                   <div
                     role="button"
@@ -1847,6 +1897,11 @@ export function SpaceQuestCreateDraft({
                   space: space?.title?.trim() || spaceSlug,
                 })}
               </p>
+              {missingTitleOrGoal && !pendingProposalLink ? (
+                <p className="text-right text-[11px] leading-snug text-neutral-11">
+                  {tDrafts('drafts.needTitleAndGoal')}
+                </p>
+              ) : null}
               <div className="flex items-center justify-end gap-2 pt-1">
                 <Button
                   type="button"

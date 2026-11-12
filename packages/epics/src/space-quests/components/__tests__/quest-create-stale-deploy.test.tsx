@@ -240,7 +240,9 @@ describe('quest create after a replaced deploy', () => {
     );
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
 
-    expect(await screen.findByDisplayValue('Quest test')).toBeTruthy();
+    expect(
+      (await screen.findByTestId('draft-section-name')).textContent,
+    ).toContain('Quest test');
     expect(
       screen.getByText('Verify that the quest flow works end-to-end.'),
     ).toBeTruthy();
@@ -282,7 +284,7 @@ describe('quest create after a replaced deploy', () => {
       new StaleDeploymentError({ id: 44, slug: 'quest-test-proposal' }),
     );
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
-    await screen.findByDisplayValue('Quest test');
+    await screen.findByTestId('draft-section-name');
     await confirmCreate();
 
     expect(
@@ -320,7 +322,7 @@ describe('quest create after a replaced deploy', () => {
     harness.agreement = { slug: 'quest-test-proposal', proposalId: 9 };
 
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
-    await screen.findByDisplayValue('Quest test');
+    await screen.findByTestId('draft-section-name');
     await confirmCreate();
 
     await waitFor(() => {
@@ -346,7 +348,7 @@ describe('quest create after a replaced deploy', () => {
     seedDraft();
     harness.createAgreement.mockRejectedValue(new Error('wallet rejected'));
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
-    await screen.findByDisplayValue('Quest test');
+    await screen.findByTestId('draft-section-name');
     await confirmCreate();
 
     expect(await screen.findByText('wallet rejected')).toBeTruthy();

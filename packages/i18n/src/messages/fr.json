@@ -5814,6 +5814,7 @@
       "discard": "Abandonner",
       "savedAuto": "Brouillon enregistré automatiquement",
       "notSaved": "Pas encore enregistré",
+      "needTitleAndGoal": "Ajoutez un titre et un objectif pour créer une proposition",
       "retry": "Enregistrement impossible. Réessayer",
       "deleteFailed": "Impossible de supprimer ce brouillon. Il est de retour dans la liste."
     },

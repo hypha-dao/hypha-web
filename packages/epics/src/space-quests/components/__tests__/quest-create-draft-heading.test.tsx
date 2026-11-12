@@ -125,12 +125,23 @@ afterEach(() => {
 });
 
 describe('quest create draft heading', () => {
-  it('uses the title field as the header and drops the duplicate name card', () => {
+  it('uses a static New quest heading and a Title card above Goal', () => {
     render(<SpaceQuestCreateDraft spaceSlug="sandbox" />);
 
-    const heading = screen.getByLabelText('Quest title');
-    expect(heading.getAttribute('placeholder')).toBe('New quest');
-    expect(screen.queryByTestId('draft-section-name')).toBeNull();
+    const heading = screen.getByRole('heading', { name: 'New quest' });
+    expect(heading.getAttribute('data-testid')).toBe('quest-create-title');
+    expect(heading.tagName).toBe('H1');
+    expect(screen.queryByRole('textbox', { name: 'Quest title' })).toBeNull();
+    const titleCard = screen.getByTestId('draft-section-name');
+    expect(titleCard.textContent).toContain('TITLE');
+    expect(titleCard.textContent).toContain(
+      'Not set yet — reply in chat or click to edit',
+    );
+    const goal = screen.getByTestId('draft-section-goal');
+    expect(
+      titleCard.compareDocumentPosition(goal) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(screen.getByText('Draft')).toBeTruthy();
     expect(
       screen.getByText('Fills in live as you chat · click any section to edit'),
@@ -180,8 +191,8 @@ describe('quest create draft heading', () => {
     const draft = screen.getByText('Draft');
     expect(heading.nextElementSibling).toBe(draft);
     expect(draft.parentElement?.className).toContain('gap-2');
-    expect(heading.className).toContain('[field-sizing:content]');
-    expect(heading.className).not.toContain('min-w-');
+    expect(heading.className).toContain('font-display');
+    expect(heading.className).toContain('text-[18px]');
     expect(draft.parentElement?.parentElement?.contains(status)).toBe(true);
     expect(draft.parentElement?.parentElement?.className).toContain('gap-1');
     expect(intro.querySelector('.w-\\[140px\\]')).toBeNull();
@@ -316,7 +327,10 @@ describe('quest create draft heading', () => {
       });
     });
 
-    expect(await screen.findByDisplayValue('Late checklist')).toBeTruthy();
+    expect(screen.getByTestId('draft-section-name').textContent).toContain(
+      'Late checklist',
+    );
+    expect(screen.getByRole('heading', { name: 'New quest' })).toBeTruthy();
     expect(screen.getByText('Finish the checklist')).toBeTruthy();
     expect(screen.queryByTestId('quest-draft-loading')).toBeNull();
     const saved = screen.getByTestId('quest-draft-save-status');

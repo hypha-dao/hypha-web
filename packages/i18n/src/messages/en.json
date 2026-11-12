@@ -5840,6 +5840,7 @@
       "discard": "Discard",
       "savedAuto": "Draft saved automatically",
       "notSaved": "Not saved yet",
+      "needTitleAndGoal": "Add a title and goal to create a proposal",
       "retry": "Couldn't save. Retry",
       "deleteFailed": "Could not delete that draft. It is back in your list."
     },

@@ -329,7 +329,9 @@ describe('quest create draft persistence', () => {
 
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} resumeDraftId={9} />);
 
-    expect(await screen.findByDisplayValue('Late checklist')).toBeTruthy();
+    expect(
+      (await screen.findByTestId('draft-section-name')).textContent,
+    ).toContain('Late checklist');
     expect(screen.getByText('Finish the checklist')).toBeTruthy();
     await waitFor(() => {
       const latest = harness.setSpaceQuestDraft.mock.calls.at(-1)?.[0];
@@ -357,7 +359,9 @@ describe('quest create draft persistence', () => {
   it('asks to keep or discard on cancel', async () => {
     seedSession(4);
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
-    expect(await screen.findByDisplayValue('Quest test')).toBeTruthy();
+    expect(
+      (await screen.findByTestId('draft-section-name')).textContent,
+    ).toContain('Quest test');
 
     fireEvent.click(screen.getByTestId('cancel-quest-button'));
     fireEvent.click(screen.getByTestId('keep-quest-draft-button'));
@@ -373,7 +377,9 @@ describe('quest create draft persistence', () => {
   it('discards the server draft and the local session', async () => {
     seedSession(4);
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
-    expect(await screen.findByDisplayValue('Quest test')).toBeTruthy();
+    expect(
+      (await screen.findByTestId('draft-section-name')).textContent,
+    ).toContain('Quest test');
 
     fireEvent.click(screen.getByTestId('cancel-quest-button'));
     fireEvent.click(screen.getByTestId('discard-quest-draft-button'));
@@ -396,7 +402,9 @@ describe('quest create draft persistence', () => {
       slug: 'quest-test-proposal',
     });
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
-    expect(await screen.findByDisplayValue('Quest test')).toBeTruthy();
+    expect(
+      (await screen.findByTestId('draft-section-name')).textContent,
+    ).toContain('Quest test');
 
     await waitFor(() => {
       expect(
@@ -738,7 +746,67 @@ describe('quest create draft persistence', () => {
     }
   });
 
-  it('enables create proposal from a goal alone, including after the other cards are edited by hand', async () => {
+  it('keeps create proposal disabled when only the title is set', async () => {
+    render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
+    const button = screen.getByTestId(
+      'create-quest-button',
+    ) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(screen.getByTestId('create-proposal-requirement').textContent).toBe(
+      'drafts.needTitleAndGoal',
+    );
+
+    fireEvent.click(screen.getByTestId('draft-section-name'));
+    fireEvent.change(screen.getByPlaceholderText('e.g. Onboarding matcher'), {
+      target: { value: 'Sandbox quest' },
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('draft-section-name').textContent).toContain(
+        'Sandbox quest',
+      );
+    });
+    expect(screen.getByTestId('draft-section-goal').textContent).toContain(
+      'Not set yet',
+    );
+    expect(button.disabled).toBe(true);
+    expect(screen.getByTestId('create-proposal-requirement')).toBeTruthy();
+  });
+
+  it('persists a Title card edit through autosave and reload', async () => {
+    const view = render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
+    fireEvent.click(screen.getByTestId('draft-section-name'));
+    fireEvent.change(screen.getByPlaceholderText('e.g. Onboarding matcher'), {
+      target: { value: 'Sandbox quest' },
+    });
+
+    await waitFor(
+      () => {
+        expect(harness.saveQuestDraftRequest).toHaveBeenCalled();
+      },
+      { timeout: 4000 },
+    );
+    const payload =
+      harness.saveQuestDraftRequest.mock.calls.at(-1)?.[0]?.payload;
+    expect(payload?.draft?.name).toBe('Sandbox quest');
+
+    view.unmount();
+    window.sessionStorage.clear();
+    harness.getQuestDraftRequest.mockResolvedValue({
+      id: 4,
+      name: 'Sandbox quest',
+      updatedAt: '2026-11-12T00:00:00.000Z',
+      payload,
+    });
+    render(<SpaceQuestCreateDraft spaceSlug={SPACE} resumeDraftId={4} />);
+
+    expect(
+      (await screen.findByTestId('draft-section-name')).textContent,
+    ).toContain('Sandbox quest');
+    expect(screen.getByRole('heading', { name: 'New quest' })).toBeTruthy();
+    expect(screen.queryByRole('textbox', { name: 'Quest title' })).toBeNull();
+  });
+
+  it('enables create proposal only after both the title and the goal are set', async () => {
     harness.spaceMembers = [
       {
         person: { id: 8, name: 'Grok Test', surname: '' },
@@ -771,8 +839,8 @@ describe('quest create draft persistence', () => {
 
     const createButton = () =>
       screen.getByTestId('create-quest-button') as HTMLButtonElement;
-    const title = () =>
-      screen.getByLabelText('Quest title') as HTMLInputElement;
+    const requirement = () =>
+      screen.queryByTestId('create-proposal-requirement');
     const insertEditor = (text: string, index = 0) => {
       const editor = screen.getAllByRole('textbox', {
         name: 'Rich text editor',
@@ -791,17 +859,32 @@ describe('quest create draft persistence', () => {
 
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
     expect(createButton().disabled).toBe(true);
-    expect(title().value).toBe('');
+    expect(screen.getByRole('heading', { name: 'New quest' })).toBeTruthy();
+    expect(requirement()?.textContent).toBe('drafts.needTitleAndGoal');
     expect(screen.queryByText(/too long to publish/i)).toBeNull();
 
     fireEvent.click(screen.getByTestId('draft-section-goal'));
     insertEditor('test2');
     await waitFor(() => {
+      expect(screen.getByTestId('draft-section-goal').textContent).toContain(
+        'test2',
+      );
+    });
+    expect(createButton().disabled).toBe(true);
+    expect(requirement()).toBeTruthy();
+    await saveDialog();
+
+    fireEvent.click(screen.getByTestId('draft-section-name'));
+    fireEvent.change(screen.getByPlaceholderText('e.g. Onboarding matcher'), {
+      target: { value: 'Sandbox quest' },
+    });
+    await waitFor(() => {
       expect(createButton().disabled).toBe(false);
     });
-    expect(screen.getByTestId('draft-section-goal').textContent).toContain(
-      'test2',
+    expect(screen.getByTestId('draft-section-name').textContent).toContain(
+      'Sandbox quest',
     );
+    expect(requirement()).toBeNull();
     await saveDialog();
 
     fireEvent.click(screen.getByTestId('draft-section-scope'));
@@ -863,7 +946,10 @@ describe('quest create draft persistence', () => {
     });
     await saveDialog();
 
-    expect(title().value).toBe('');
+    expect(screen.getByRole('heading', { name: 'New quest' })).toBeTruthy();
+    expect(screen.getByTestId('draft-section-name').textContent).toContain(
+      'Sandbox quest',
+    );
     expect(createButton().disabled).toBe(false);
     expect(screen.queryByText(/too long to publish/i)).toBeNull();
     fireEvent.click(createButton());

@@ -5816,6 +5816,7 @@
       "discard": "Descartar",
       "savedAuto": "Rascunho guardado automaticamente",
       "notSaved": "Ainda não guardado",
+      "needTitleAndGoal": "Adicione um título e um objetivo para criar uma proposta",
       "retry": "Não foi possível guardar. Tentar de novo",
       "deleteFailed": "Não foi possível apagar esse rascunho. Ele voltou para a lista."
     },

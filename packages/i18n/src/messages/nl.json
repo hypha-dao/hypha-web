@@ -5824,6 +5824,7 @@
       "discard": "Weggooien",
       "savedAuto": "Concept automatisch opgeslagen",
       "notSaved": "Nog niet opgeslagen",
+      "needTitleAndGoal": "Voeg een titel en een doel toe om een voorstel te maken",
       "retry": "Opslaan mislukt. Opnieuw",
       "deleteFailed": "Die conceptversie kon niet worden verwijderd. Hij staat weer in de lijst."
     },
