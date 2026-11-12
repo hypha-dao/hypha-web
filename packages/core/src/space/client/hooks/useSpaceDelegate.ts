@@ -32,9 +32,12 @@ export const useSpaceDelegate = ({
     [delegatorAddress],
   );
 
-  const { data: person, isLoading: isPersonLoading } = useSWR(
-    spaceId && endpoint ? [endpoint] : null,
-    ([endpoint]) => fetchJson(endpoint, undefined, 'delegate person'),
+  const {
+    data: person,
+    isLoading: isPersonLoading,
+    error: personError,
+  } = useSWR(spaceId && endpoint ? [endpoint] : null, ([endpoint]) =>
+    fetchJson(endpoint, undefined, 'delegate person'),
   );
 
   const isLoading = isDelegatesLoading || (endpoint ? isPersonLoading : false);
@@ -42,6 +45,6 @@ export const useSpaceDelegate = ({
   return {
     person,
     isLoading: spaceId ? isLoading : false,
-    error,
+    error: error ?? personError,
   };
 };
