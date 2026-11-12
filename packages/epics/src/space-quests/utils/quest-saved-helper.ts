@@ -63,7 +63,7 @@ type SavedQuestSource = {
  * Kept so a stored thread from an older tab can drop that greeting.
  */
 export const SAVED_QUEST_HELPER_INTRO =
-  'This quest is already saved. Tell me which section to change — Goal, Scope, Success, Milestones, Participants, Lead, Target Date, Rewards, or the name. I will suggest one section, and yes saves only that section.';
+  'This quest is already saved. Tell me which section to change — Goal, Scope, Success, Milestones, Participants, Lead, Target Date, Rewards, or the title. I will suggest one section, and yes saves only that section.';
 
 export const SAVED_QUEST_HELPER_SAVE_FAILED =
   'Could not save that section. It is not saved yet. Yes still applies the suggestion that was waiting.';
@@ -262,7 +262,7 @@ export function savedQuestSectionReply(patch: QuestPatch): string {
   }
   if (patch.targetDate !== undefined) return 'Saved the Target date.';
   if (patch.rewards !== undefined) return 'Saved the Quest Reward.';
-  if (patch.name !== undefined) return 'Saved the Name.';
+  if (patch.name !== undefined) return 'Saved the Title.';
   return SAVED_QUEST_HELPER_SAVED;
 }
 

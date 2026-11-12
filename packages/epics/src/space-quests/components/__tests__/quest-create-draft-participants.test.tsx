@@ -183,11 +183,7 @@ describe('quest create draft participants', () => {
     expect(participantCard().textContent).toContain('Not set yet');
 
     await chooseAda();
-
-    await waitFor(() => {
-      expect(within(participantCard()).getByText('Ada Lovelace')).toBeTruthy();
-    });
-    expect(within(participantCard()).queryByText('Not set yet')).toBeNull();
+    expect(within(participantCard()).queryByText('Ada Lovelace')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(screen.queryByRole('dialog')).toBeNull();

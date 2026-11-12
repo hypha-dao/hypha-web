@@ -7,7 +7,6 @@ import {
   fireEvent,
   render,
   screen,
-  waitFor,
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -205,7 +204,7 @@ describe('quest create draft heading', () => {
     expect(label?.className).toContain('uppercase');
   });
 
-  it('autosaves a focused Goal edit without waiting for blur', async () => {
+  it('discards a focused Goal edit on Cancel and does not autosave it', async () => {
     render(<SpaceQuestCreateDraft spaceSlug="sandbox" />);
 
     expect(screen.getByTestId('quest-draft-save-status').textContent).toContain(
@@ -216,9 +215,6 @@ describe('quest create draft heading', () => {
       name: 'Rich text editor',
     });
     editor.focus();
-    expect(screen.getByTestId('quest-draft-save-status').textContent).toContain(
-      'Not saved yet',
-    );
 
     const tiptap = (
       editor as HTMLElement & {
@@ -229,41 +225,24 @@ describe('quest create draft heading', () => {
     ).editor;
     expect(tiptap).toBeTruthy();
     tiptap?.commands.insertContent('Ship the focused goal');
-
-    expect(
-      editor.contains(document.activeElement) ||
-        document.activeElement === editor,
-    ).toBe(true);
     expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
 
-    await waitFor(() => {
-      expect(
-        screen.getByTestId('quest-draft-save-status').textContent,
-      ).toContain('Saving…');
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByTestId('draft-section-goal').textContent).toContain(
+      'Not set yet',
+    );
+    expect(screen.getByTestId('draft-section-goal').textContent).not.toContain(
+      'Ship the focused goal',
+    );
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     });
     expect(saveQuestDraftRequest).not.toHaveBeenCalled();
-    await waitFor(
-      () => {
-        expect(
-          screen.getByTestId('quest-draft-save-status').textContent,
-        ).toContain('Draft saved automatically');
-      },
-      { timeout: 3000 },
+    expect(screen.getByTestId('quest-draft-save-status').textContent).toContain(
+      'Not saved yet',
     );
-    expect(screen.queryByText('Not saved yet')).toBeNull();
-    expect(saveQuestDraftRequest).toHaveBeenCalledWith(
-      expect.objectContaining({
-        payload: expect.objectContaining({
-          draft: expect.objectContaining({
-            goal: expect.stringContaining('Ship the focused goal'),
-          }),
-        }),
-      }),
-    );
-    expect(
-      document.activeElement === editor ||
-        editor.contains(document.activeElement),
-    ).toBe(true);
   });
 
   it('keeps Continue neutral until the saved draft hydrates', async () => {

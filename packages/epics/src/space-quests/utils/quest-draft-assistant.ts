@@ -99,7 +99,7 @@ export function stewardQuestionForStep(step: QuestStewardStep): string {
     case 'rewards':
       return 'What Quest Reward tokens and amounts should be included (e.g. 2,500 USDC + 0.4 ETH)?';
     case 'name':
-      return 'Finally, what should we name this quest?';
+      return 'Finally, what should the title be?';
   }
 }
 
@@ -274,7 +274,7 @@ const QUEST_STEP_LABEL: Record<QuestStewardStep, string> = {
   lead: 'Lead',
   targetDate: 'Target date',
   rewards: 'Quest Reward',
-  name: 'Name',
+  name: 'Title',
 };
 
 export function questStepSectionLabel(step: QuestStewardStep): string {
@@ -695,7 +695,7 @@ export function questSectionCoachReply(step: QuestStewardStep): string {
     case 'rewards':
       return 'Quest Reward is the token amount the space is agreeing to pay for this outcome, such as 2,500 USDC. What amount and token should be in the proposal?';
     case 'name':
-      return 'The name is the short title voters will see on the proposal, usually two to six words. What should this quest be called?';
+      return 'The title is what voters will see on the proposal, usually two to six words. What should this quest be called?';
   }
 }
 
@@ -1532,7 +1532,7 @@ export function applyPatchToQuestDraftState({
 
   if (clean.name?.trim()) {
     next.name = clean.name.trim();
-    updatedLabels.push('Name');
+    updatedLabels.push('Title');
   }
 
   return { next, updatedLabels };

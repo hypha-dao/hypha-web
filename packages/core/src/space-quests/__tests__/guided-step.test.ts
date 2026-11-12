@@ -520,7 +520,7 @@ describe('resolveQuestDraftTarget', () => {
       ['lead', 'Lead'],
       ['targetDate', 'Target date'],
       ['rewards', 'Quest Reward'],
-      ['name', 'Name'],
+      ['name', 'Title'],
     ] as const;
     for (const [step, section] of sections) {
       const notice = questPendingYesNotice(step);

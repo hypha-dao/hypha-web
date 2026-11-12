@@ -60,7 +60,7 @@ const SECTION_LABEL: Record<QuestStewardStep, string> = {
   lead: 'Lead',
   targetDate: 'Target date',
   rewards: 'Quest Reward',
-  name: 'Name',
+  name: 'Title',
 };
 
 function hasFields(patch: QuestDraftAssistPatch | null | undefined): boolean {
@@ -239,7 +239,7 @@ export const QUEST_HELPER_AGENT_SECTION_GUIDE = `Sections of the quest form, in 
 6. Lead (\`leadName\`): one person from the roster.
 7. Target date (\`targetDate\`): when the outcome should be real.
 8. Quest Reward (\`rewards\`): \`{ amount, token }\` only when the member named both.
-9. Name (\`name\`): a 2–6 word title.
+9. Title (\`name\`): a 2–6 word title. Call this section Title in every reply. The stored field stays \`name\`.
 The published proposal must stay under 4000 characters, so keep wording short.`;
 
 export const QUEST_HELPER_AGENT_RULES = `How you change the form — only through tools:

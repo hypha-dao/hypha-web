@@ -9,7 +9,7 @@ const PENDING_SECTION_LABEL: Record<QuestStewardStep, string> = {
   lead: 'Lead',
   targetDate: 'Target date',
   rewards: 'Quest Reward',
-  name: 'Name',
+  name: 'Title',
 };
 
 /**

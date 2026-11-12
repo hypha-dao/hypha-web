@@ -1975,14 +1975,12 @@ export function SpaceQuestCreateDraft({
           onOpenChange={(open) => !open && setEditingModal(null)}
           value={name}
           onSave={setName}
-          onLiveChange={setName}
         />
         <EditQuestGoalModal
           open={editingModal === 'goal'}
           onOpenChange={(open) => !open && setEditingModal(null)}
           value={goal}
           onSave={setGoal}
-          onLiveChange={setGoal}
         />
         <EditQuestScopeModal
           open={editingModal === 'scope'}
@@ -1997,19 +1995,12 @@ export function SpaceQuestCreateDraft({
             setScopeInMarkdown(next.scopeInMarkdown);
             setScopeOutMarkdown(next.scopeOutMarkdown);
           }}
-          onLiveChange={(next) => {
-            setScopeIn(next.scopeIn);
-            setScopeOut(next.scopeOut);
-            setScopeInMarkdown(next.scopeInMarkdown);
-            setScopeOutMarkdown(next.scopeOutMarkdown);
-          }}
         />
         <EditQuestSuccessModal
           open={editingModal === 'success'}
           onOpenChange={(open) => !open && setEditingModal(null)}
           value={successCriteria}
           onSave={setSuccessCriteria}
-          onLiveChange={setSuccessCriteria}
         />
         <EditQuestRewardsModal
           open={editingModal === 'rewards'}
@@ -2017,7 +2008,6 @@ export function SpaceQuestCreateDraft({
           rewards={rewards}
           spaceSlug={spaceSlug}
           onSave={setRewards}
-          onLiveChange={setRewards}
         />
         <EditQuestMilestonesModal
           open={editingModal === 'milestones'}
@@ -2026,7 +2016,6 @@ export function SpaceQuestCreateDraft({
           spaceMembers={spaceMemberPersons}
           spaceMemberNames={spaceMemberNames}
           onSave={setMilestones}
-          onLiveChange={setMilestones}
         />
         <EditQuestLeadModal
           open={editingModal === 'lead'}
@@ -2039,10 +2028,6 @@ export function SpaceQuestCreateDraft({
             setLeadNameOverride(nextLeadName);
             setSelectedLeadPersonId(nextLeadPersonId ?? null);
           }}
-          onLiveChange={(nextLeadName, nextLeadPersonId) => {
-            setLeadNameOverride(nextLeadName);
-            setSelectedLeadPersonId(nextLeadPersonId ?? null);
-          }}
         />
         <EditQuestMembersModal
           open={editingModal === 'members'}
@@ -2051,14 +2036,12 @@ export function SpaceQuestCreateDraft({
           spaceMembers={spaceMemberPersons}
           spaceMemberNames={spaceMemberNames}
           onSave={setMembers}
-          onLiveChange={setMembers}
         />
         <EditQuestTargetDateModal
           open={editingModal === 'targetDate'}
           onOpenChange={(open) => !open && setEditingModal(null)}
           value={targetDate}
           onSave={setTargetDate}
-          onLiveChange={setTargetDate}
         />
       </>
     </SpaceLoadingBackdrop>

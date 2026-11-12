@@ -3311,6 +3311,20 @@ describe('quest draft review corrections', () => {
     expect(yesName.pending).toBeNull();
     expect(yesName.draft.goal).toBe('');
     expect(yesName.reply).not.toMatch(/Nothing is waiting on a yes/i);
+    expect(yesName.reply).toMatch(/Added that to the Title/);
+    expect(yesName.reply).not.toMatch(/Added that to the Name/);
+
+    const titled = send(
+      'Set the title to "Onboarding matcher"',
+      emptyDraft,
+      null,
+      'goal',
+      null,
+    );
+    expect(titled.wrote).toBe(true);
+    expect(titled.draft.name).toBe('Onboarding matcher');
+    expect(titled.reply).toMatch(/Added that to the Title/);
+    expect(titled.reply).not.toMatch(/Added that to the Name/);
 
     const questionName = send(
       'Set the name to "Can new members onboard?"',

@@ -2,11 +2,13 @@
 
 import React from 'react';
 import {
+  act,
   cleanup,
   fireEvent,
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpaceQuestCreateDraft } from '../space-quest-create-draft';
@@ -760,6 +762,7 @@ describe('quest create draft persistence', () => {
     fireEvent.change(screen.getByPlaceholderText('e.g. Onboarding matcher'), {
       target: { value: 'Sandbox quest' },
     });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => {
       expect(screen.getByTestId('draft-section-name').textContent).toContain(
         'Sandbox quest',
@@ -778,6 +781,7 @@ describe('quest create draft persistence', () => {
     fireEvent.change(screen.getByPlaceholderText('e.g. Onboarding matcher'), {
       target: { value: 'Sandbox quest' },
     });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(
       () => {
@@ -856,6 +860,16 @@ describe('quest create draft persistence', () => {
         expect(screen.queryByRole('dialog')).toBeNull();
       });
     };
+    const saveEditor = async (text: string, index = 0) => {
+      insertEditor(text, index);
+      await waitFor(() => {
+        expect(
+          screen.getAllByRole('textbox', { name: 'Rich text editor' })[index]
+            ?.textContent,
+        ).toContain(text);
+      });
+      await saveDialog();
+    };
 
     render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
     expect(createButton().disabled).toBe(true);
@@ -864,46 +878,35 @@ describe('quest create draft persistence', () => {
     expect(screen.queryByText(/too long to publish/i)).toBeNull();
 
     fireEvent.click(screen.getByTestId('draft-section-goal'));
-    insertEditor('test2');
-    await waitFor(() => {
-      expect(screen.getByTestId('draft-section-goal').textContent).toContain(
-        'test2',
-      );
-    });
+    await saveEditor('test2');
+    expect(screen.getByTestId('draft-section-goal').textContent).toContain(
+      'test2',
+    );
     expect(createButton().disabled).toBe(true);
     expect(requirement()).toBeTruthy();
-    await saveDialog();
 
     fireEvent.click(screen.getByTestId('draft-section-name'));
     fireEvent.change(screen.getByPlaceholderText('e.g. Onboarding matcher'), {
       target: { value: 'Sandbox quest' },
     });
-    await waitFor(() => {
-      expect(createButton().disabled).toBe(false);
-    });
+    await saveDialog();
+    expect(createButton().disabled).toBe(false);
     expect(screen.getByTestId('draft-section-name').textContent).toContain(
       'Sandbox quest',
     );
     expect(requirement()).toBeNull();
-    await saveDialog();
 
     fireEvent.click(screen.getByTestId('draft-section-scope'));
-    insertEditor('234');
-    await waitFor(() => {
-      expect(screen.getByTestId('draft-section-scope').textContent).toContain(
-        '234',
-      );
-    });
-    await saveDialog();
+    await saveEditor('234');
+    expect(screen.getByTestId('draft-section-scope').textContent).toContain(
+      '234',
+    );
 
     fireEvent.click(screen.getByTestId('draft-section-success'));
-    insertEditor('234');
-    await waitFor(() => {
-      expect(screen.getByTestId('draft-section-success').textContent).toContain(
-        '234',
-      );
-    });
-    await saveDialog();
+    await saveEditor('234');
+    expect(screen.getByTestId('draft-section-success').textContent).toContain(
+      '234',
+    );
 
     fireEvent.click(screen.getByTestId('add-reward-token-button'));
     fireEvent.change(screen.getByPlaceholderText('0.00'), {
@@ -917,12 +920,10 @@ describe('quest create draft persistence', () => {
     fireEvent.change(screen.getByLabelText('Choose or search a participant…'), {
       target: { value: '8' },
     });
-    await waitFor(() => {
-      expect(screen.getByTestId('draft-section-members').textContent).toContain(
-        'Grok Test',
-      );
-    });
     await saveDialog();
+    expect(screen.getByTestId('draft-section-members').textContent).toContain(
+      'Grok Test',
+    );
 
     fireEvent.click(screen.getByTestId('draft-section-target-date'));
     fireEvent.click(screen.getByRole('button', { name: '20 November 2026' }));
@@ -939,12 +940,10 @@ describe('quest create draft persistence', () => {
       screen.getByPlaceholderText('e.g. Draft review with stewards'),
       { target: { value: 'M1' } },
     );
-    await waitFor(() => {
-      expect(
-        screen.getByTestId('draft-section-milestones').textContent,
-      ).toContain('M1');
-    });
     await saveDialog();
+    expect(
+      screen.getByTestId('draft-section-milestones').textContent,
+    ).toContain('M1');
 
     expect(screen.getByRole('heading', { name: 'New quest' })).toBeTruthy();
     expect(screen.getByTestId('draft-section-name').textContent).toContain(
@@ -960,5 +959,268 @@ describe('quest create draft persistence', () => {
         ) as HTMLButtonElement
       ).disabled,
     ).toBe(false);
+  });
+
+  it('discards Cancel on every create card and reloads the saved draft', async () => {
+    if (!HTMLElement.prototype.hasPointerCapture) {
+      HTMLElement.prototype.hasPointerCapture = () => false;
+    }
+    if (!HTMLElement.prototype.setPointerCapture) {
+      HTMLElement.prototype.setPointerCapture = () => undefined;
+    }
+    if (!HTMLElement.prototype.releasePointerCapture) {
+      HTMLElement.prototype.releasePointerCapture = () => undefined;
+    }
+    if (!HTMLElement.prototype.scrollIntoView) {
+      HTMLElement.prototype.scrollIntoView = () => undefined;
+    }
+    if (!('ResizeObserver' in globalThis)) {
+      class ResizeObserver {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      }
+      vi.stubGlobal('ResizeObserver', ResizeObserver);
+    }
+    harness.spaceMembers = [
+      {
+        person: { id: 7, name: 'Vlad', surname: 'Hramtsov' },
+        personId: 7,
+        name: 'Vlad Hramtsov',
+        avatarUrl: null,
+        nickname: null,
+      },
+      {
+        person: { id: 8, name: 'Grok Test', surname: '' },
+        personId: 8,
+        name: 'Grok Test',
+        avatarUrl: null,
+        nickname: null,
+      },
+    ];
+    const original = emptyDraft({
+      name: 'Sandbox quest',
+      goal: 'Ship the checklist',
+      scopeIn: ['In the sandbox'],
+      scopeInMarkdown: 'In the sandbox',
+      successCriteria: 'A recorded pass',
+      rewards: [{ amount: '234', token: 'USDC' }],
+      milestones: [
+        {
+          name: 'Draft the brief',
+          description: '',
+          dueDate: null,
+          ownerName: null,
+          status: 'not_started',
+        },
+      ],
+      leadName: 'Vlad Hramtsov',
+      selectedLeadPersonId: 7,
+      members: [
+        {
+          personId: 8,
+          memberName: 'Grok Test',
+          roleLabel: null,
+          responsibilities: ['Own the notes'],
+        },
+      ],
+      targetDate: '2026-11-20',
+    });
+    const saved = {
+      id: 9,
+      name: 'Sandbox quest',
+      updatedAt: '2026-11-12T00:00:00.000Z',
+      payload: {
+        draft: original,
+        messages: [],
+        step: 1,
+        pending: null,
+      },
+    };
+    harness.getQuestDraftRequest.mockResolvedValue(saved);
+
+    const view = render(
+      <SpaceQuestCreateDraft spaceSlug={SPACE} resumeDraftId={9} />,
+    );
+    expect(
+      (await screen.findByTestId('draft-section-name')).textContent,
+    ).toContain('Sandbox quest');
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 900));
+    });
+    const savesBeforeEdit = harness.saveQuestDraftRequest.mock.calls.length;
+
+    const insertEditor = (text: string) => {
+      const editor = screen.getAllByRole('textbox', {
+        name: 'Rich text editor',
+      })[0] as HTMLElement & {
+        editor?: { commands: { insertContent: (value: string) => boolean } };
+      };
+      expect(editor?.editor).toBeTruthy();
+      editor.editor?.commands.insertContent(text);
+    };
+    const cancel = () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(screen.queryByRole('dialog')).toBeNull();
+    };
+
+    fireEvent.click(screen.getByTestId('draft-section-name'));
+    fireEvent.change(screen.getByPlaceholderText('e.g. Onboarding matcher'), {
+      target: { value: '' },
+    });
+    cancel();
+
+    fireEvent.click(screen.getByTestId('draft-section-goal'));
+    insertEditor('LEAKED GOAL');
+    cancel();
+
+    fireEvent.click(screen.getByTestId('draft-section-scope'));
+    insertEditor('LEAKED SCOPE');
+    cancel();
+
+    fireEvent.click(screen.getByTestId('draft-section-success'));
+    insertEditor('LEAKED SUCCESS');
+    cancel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit quest reward' }));
+    fireEvent.change(
+      within(screen.getByRole('dialog')).getByDisplayValue('234'),
+      {
+        target: { value: '999' },
+      },
+    );
+    cancel();
+
+    fireEvent.click(screen.getByTestId('draft-section-milestones'));
+    fireEvent.change(screen.getByDisplayValue('Draft the brief'), {
+      target: { value: 'Leaked milestone' },
+    });
+    cancel();
+
+    fireEvent.click(screen.getByTestId('draft-section-members'));
+    fireEvent.change(screen.getByTestId('quest-participant-role-0'), {
+      target: { value: 'Scribe' },
+    });
+    cancel();
+
+    fireEvent.click(screen.getByTestId('draft-section-lead'));
+    fireEvent.change(screen.getByLabelText('Select a participant…'), {
+      target: { value: '8' },
+    });
+    cancel();
+
+    fireEvent.click(screen.getByTestId('draft-section-target-date'));
+    fireEvent.click(screen.getByRole('button', { name: '20 November 2026' }));
+    const day = document.querySelector(
+      '[data-quest-date-popover] button[aria-label*="November 13"]',
+    );
+    expect(day).toBeInstanceOf(HTMLButtonElement);
+    fireEvent.click(day as HTMLButtonElement);
+    cancel();
+
+    const page = document.body.textContent ?? '';
+    expect(screen.getByTestId('draft-section-name').textContent).toContain(
+      'Sandbox quest',
+    );
+    expect(screen.getByTestId('draft-section-goal').textContent).toContain(
+      'Ship the checklist',
+    );
+    expect(screen.getByTestId('draft-section-goal').textContent).not.toContain(
+      'LEAKED GOAL',
+    );
+    expect(screen.getByTestId('draft-section-scope').textContent).toContain(
+      'In the sandbox',
+    );
+    expect(screen.getByTestId('draft-section-scope').textContent).not.toContain(
+      'LEAKED SCOPE',
+    );
+    expect(screen.getByTestId('draft-section-success').textContent).toContain(
+      'A recorded pass',
+    );
+    expect(
+      screen.getByTestId('draft-section-success').textContent,
+    ).not.toContain('LEAKED SUCCESS');
+    expect(screen.getByTestId('draft-section-rewards').textContent).toContain(
+      'USDC',
+    );
+    expect(
+      within(screen.getByTestId('draft-section-rewards')).getByDisplayValue(
+        '234',
+      ),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByTestId('draft-section-rewards')).queryByDisplayValue(
+        '999',
+      ),
+    ).toBeNull();
+    expect(
+      screen.getByTestId('draft-section-milestones').textContent,
+    ).toContain('Draft the brief');
+    expect(
+      screen.getByTestId('draft-section-milestones').textContent,
+    ).not.toContain('Leaked milestone');
+    expect(screen.getByTestId('draft-section-members').textContent).toContain(
+      'Grok Test',
+    );
+    expect(screen.getByTestId('draft-section-members').textContent).toContain(
+      'Own the notes',
+    );
+    expect(
+      screen.getByTestId('draft-section-members').textContent,
+    ).not.toContain('Scribe');
+    expect(screen.getByTestId('draft-section-lead').textContent).toContain(
+      'Vlad Hramtsov',
+    );
+    expect(screen.getByTestId('draft-section-lead').textContent).not.toContain(
+      'Grok Test',
+    );
+    expect(
+      screen.getByTestId('draft-section-target-date').textContent,
+    ).toContain('20 November 2026');
+    expect(
+      screen.getByTestId('draft-section-target-date').textContent,
+    ).not.toContain('13 November 2026');
+    expect(page).not.toContain('LEAKED GOAL');
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    });
+    expect(harness.saveQuestDraftRequest.mock.calls.length).toBe(
+      savesBeforeEdit,
+    );
+
+    view.unmount();
+    window.sessionStorage.clear();
+    harness.getQuestDraftRequest.mockResolvedValue(saved);
+    render(<SpaceQuestCreateDraft spaceSlug={SPACE} resumeDraftId={9} />);
+    expect(
+      (await screen.findByTestId('draft-section-name')).textContent,
+    ).toContain('Sandbox quest');
+    expect(screen.getByTestId('draft-section-goal').textContent).toContain(
+      'Ship the checklist',
+    );
+    expect(screen.getByTestId('draft-section-scope').textContent).toContain(
+      'In the sandbox',
+    );
+    expect(screen.getByTestId('draft-section-success').textContent).toContain(
+      'A recorded pass',
+    );
+    expect(
+      within(screen.getByTestId('draft-section-rewards')).getByDisplayValue(
+        '234',
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId('draft-section-milestones').textContent,
+    ).toContain('Draft the brief');
+    expect(screen.getByTestId('draft-section-members').textContent).toContain(
+      'Grok Test',
+    );
+    expect(screen.getByTestId('draft-section-lead').textContent).toContain(
+      'Vlad Hramtsov',
+    );
+    expect(
+      screen.getByTestId('draft-section-target-date').textContent,
+    ).toContain('20 November 2026');
   });
 });
