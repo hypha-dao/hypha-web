@@ -2,6 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
+import { fetchJson } from '@hypha-platform/core/client';
 
 export const useMemberBySlug = (slug: string) => {
   const endpoint = React.useMemo(
@@ -10,11 +11,15 @@ export const useMemberBySlug = (slug: string) => {
   );
 
   const { data: person, isLoading } = useSWR(endpoint, (endpoint) =>
-    fetch(endpoint, {
-      headers: {
-        'Content-Type': 'application/json',
+    fetchJson(
+      endpoint,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-    }).then((res) => res.json()),
+      'person',
+    ),
   );
   return { person, isLoading };
 };
