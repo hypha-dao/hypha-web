@@ -50,16 +50,17 @@ const SECTION_LABEL_CLASS =
  * Column gap for Created by / Created / Last reply / Discussion.
  * 24px at the floor, 6% of the card up to 80px. From a 720px content box
  * the percent follows the viewport, the same pair list cards use
- * (`signal-feed-row.tsx`). Under 520px the row wraps.
+ * (`signal-feed-row.tsx`).
  *
- * Container queries read the content box. This card used to be `p-5`
- * (48px of horizontal padding) on the container itself, so a column that
- * had already switched the list card (`p-4`) to the wide gap still left
- * this card on the 6% gap — about the same size as the previous cap.
- * The container is padded like the list card; the body adds the rest.
+ * Columns keep their text width. The row wraps instead of ellipsizing a
+ * label or a value. Open discussion uses `ml-auto`, so it stays at the
+ * right end of whichever line it lands on.
+ *
+ * Container queries read the content box. The container is padded like a
+ * list card (`p-4`); the body adds the rest of the 24px inset.
  */
 export const SIGNAL_PAGE_META_ROW_CLASS =
-  'm-0 flex w-full min-w-0 flex-nowrap items-start gap-y-4 border-t border-border/70 pt-4 @max-[520px]:flex-wrap gap-x-[clamp(1.5rem,6cqi,5rem)] @min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]';
+  'm-0 flex w-full min-w-0 flex-wrap items-start gap-y-4 border-t border-border/70 pt-4 gap-x-[clamp(1.5rem,6cqi,5rem)] @min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]';
 
 export const SIGNAL_PAGE_CARD_CLASS =
   'craft-card @container flex min-w-0 flex-col p-4';
@@ -68,7 +69,7 @@ export const SIGNAL_PAGE_CARD_BODY_CLASS =
   'flex min-w-0 w-full flex-col gap-5 p-2';
 
 export const SIGNAL_PAGE_META_ITEM_CLASS =
-  'flex min-w-0 max-w-full shrink flex-col gap-1 overflow-hidden @max-[520px]:shrink-0';
+  'flex max-w-full shrink-0 flex-col gap-1';
 
 function fileExtension(name: string, url: string): string {
   const source = name.includes('.') ? name : url.split('?')[0] ?? '';
@@ -85,8 +86,8 @@ function MetaItem({
 }) {
   return (
     <div className={SIGNAL_PAGE_META_ITEM_CLASS}>
-      <dt className={cn(SECTION_LABEL_CLASS, 'truncate')}>{label}</dt>
-      <dd className="m-0 flex min-w-0 items-center gap-2 text-1 text-foreground">
+      <dt className={SECTION_LABEL_CLASS}>{label}</dt>
+      <dd className="m-0 flex max-w-full flex-wrap items-center gap-2 break-words text-1 text-foreground">
         {children}
       </dd>
     </div>
@@ -575,22 +576,22 @@ export function SignalPage({
                 userName={creatorDisplayName ?? undefined}
                 personId={signal.creatorId ?? undefined}
               />
-              <span className="min-w-0 truncate">{creatorDisplayName}</span>
+              <span className="break-words">{creatorDisplayName}</span>
             </MetaItem>
             {created ? (
               <MetaItem label={t('signalCreatedLabel')}>{created}</MetaItem>
             ) : null}
             {lastReply ? (
               <MetaItem label={t('signalLastReplyLabel')}>
-                <span className="min-w-0 truncate">{lastReply}</span>
+                <span className="break-words">{lastReply}</span>
               </MetaItem>
             ) : null}
             <MetaItem label={t('signalDiscussion')}>
-              <span className="min-w-0 truncate">{discussion}</span>
+              <span className="break-words">{discussion}</span>
             </MetaItem>
             {mediaSummary ? (
               <MetaItem label={t('signalAttachmentsLabel')}>
-                <span className="truncate">{mediaSummary}</span>
+                <span className="break-words">{mediaSummary}</span>
               </MetaItem>
             ) : null}
             {humanChatEnabled ? (

@@ -71,12 +71,31 @@ const chrome = [
 const LABEL =
   'text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground';
 
-function Meta({ label, value }: { label: string; value: string }) {
+function Meta({
+  label,
+  value,
+  avatar = false,
+}: {
+  label: string;
+  value: string;
+  avatar?: boolean;
+}) {
   return (
     <div className={SIGNAL_PAGE_META_ITEM_CLASS}>
-      <dt className={`${LABEL} truncate`}>{label}</dt>
-      <dd className="m-0 flex min-w-0 items-center gap-2 text-1 text-foreground">
-        <span className="min-w-0 truncate">{value}</span>
+      <dt className={LABEL}>{label}</dt>
+      <dd className="m-0 flex max-w-full flex-wrap items-center gap-2 break-words text-1 text-foreground">
+        {avatar ? (
+          <span
+            aria-hidden
+            style={{
+              display: 'inline-block',
+              width: 24,
+              height: 24,
+              flex: 'none',
+            }}
+          />
+        ) : null}
+        <span className="break-words">{value}</span>
       </dd>
     </div>
   );
@@ -101,9 +120,9 @@ function DetailAndList({ pad }: { pad: number }) {
               className={SIGNAL_PAGE_META_ROW_CLASS}
               data-testid="signal-page-meta"
             >
-              <Meta label="Created by" value="Alexandria Rivera-Montgomery" />
-              <Meta label="Created" value="4 hours ago" />
-              <Meta label="Last reply" value="2 hours ago · Sam Lee" />
+              <Meta label="Created by" value="Vlad Hramtsov" avatar />
+              <Meta label="Created" value="2 weeks ago" />
+              <Meta label="Last reply" value="2 weeks ago · Grok Tester" />
               <Meta label="Discussion" value="15 comments · 4 people" />
               <div className="ml-auto flex max-w-full shrink-0 flex-col gap-1">
                 <span className={`${LABEL} invisible`} aria-hidden>
@@ -249,7 +268,7 @@ describe('signal page meta row', () => {
             width: 421,
             left: 0,
             right: 0,
-            pad: 0,
+            pad: 16,
             sameRow: false,
             gapMin: 24,
             gapMax: 26,
@@ -271,10 +290,32 @@ describe('signal page meta row', () => {
             width: 720,
             left: 0,
             right: 0,
-            pad: 0,
+            pad: 24,
+            sameRow: false,
+            gapMin: 36,
+            gapMax: 42,
+            matchList: true,
+          },
+          {
+            name: '900',
+            width: 900,
+            left: 0,
+            right: 0,
+            pad: 24,
             sameRow: true,
-            gapMin: 38,
-            gapMax: 50,
+            gapMin: 50,
+            gapMax: 58,
+            matchList: true,
+          },
+          {
+            name: '1024',
+            width: 1024,
+            left: 0,
+            right: 0,
+            pad: 24,
+            sameRow: true,
+            gapMin: 58,
+            gapMax: 66,
             matchList: true,
           },
           {
@@ -282,7 +323,7 @@ describe('signal page meta row', () => {
             width: 1280,
             left: 0,
             right: 0,
-            pad: 0,
+            pad: 24,
             sameRow: true,
             gapMin: 70,
             gapMax: 82,
@@ -296,7 +337,7 @@ describe('signal page meta row', () => {
             left: 72,
             right: 320,
             pad: 24,
-            sameRow: true,
+            sameRow: false,
             gapMin: 64,
             gapMax: 78,
             matchList: true,
@@ -318,7 +359,7 @@ describe('signal page meta row', () => {
             left: 320,
             right: 320,
             pad: 24,
-            sameRow: true,
+            sameRow: false,
             gapMin: 40,
             gapMax: 50,
             matchList: true,
@@ -374,6 +415,22 @@ describe('signal page meta row', () => {
               metaItems[0]!.getBoundingClientRect().right;
             const columnGap = parseFloat(getComputedStyle(row).columnGap);
             const listColumnGap = parseFloat(getComputedStyle(meta).columnGap);
+            const texts = [
+              ...row.querySelectorAll('dt, dd span, button'),
+            ] as HTMLElement[];
+            const clipped = texts
+              .filter((el) => el.scrollWidth > el.clientWidth + 1)
+              .map((el) => el.textContent ?? '');
+            const rowBox = row.getBoundingClientRect();
+            let sameLineGap: number | null = null;
+            for (let index = 1; index < items.length; index += 1) {
+              const previous = items[index - 1]!.getBoundingClientRect();
+              const current = items[index]!.getBoundingClientRect();
+              if (Math.abs(previous.top - current.top) < 2) {
+                sameLineGap = current.left - previous.right;
+                break;
+              }
+            }
             const body = card.firstElementChild as HTMLElement;
             const inset =
               parseFloat(getComputedStyle(card).paddingLeft) +
@@ -394,6 +451,9 @@ describe('signal page meta row', () => {
               }),
               sameRow: Math.abs(first.top - linkRow.top) < 2,
               gap: second.left - first.right,
+              sameLineGap,
+              clipped,
+              linkRight: rowBox.right - linkBox.right,
               columnGap,
               listGap: metaGap,
               listColumnGap,
@@ -411,7 +471,22 @@ describe('signal page meta row', () => {
             true,
           );
           expect(box.childrenInside, `children at ${layout.name}`).toBe(true);
+          expect(box.clipped, `clipped at ${layout.name}`).toEqual([]);
+          expect(
+            box.linkRight,
+            `open discussion at ${layout.name}`,
+          ).toBeLessThan(2);
+          expect(
+            box.linkRight,
+            `open discussion at ${layout.name}`,
+          ).toBeGreaterThan(-1);
           expect(box.sameRow, `${layout.name} row`).toBe(layout.sameRow);
+          if (box.sameLineGap != null) {
+            expect(
+              Math.abs(box.sameLineGap - box.columnGap),
+              `${layout.name} painted gap`,
+            ).toBeLessThan(1);
+          }
           expect(box.columnGap, `${layout.name} gap`).toBeGreaterThanOrEqual(
             layout.gapMin,
           );

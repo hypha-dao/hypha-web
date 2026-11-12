@@ -111,7 +111,7 @@ describe('upvote cell shared by the list and the detail', () => {
     expect(pageSource).toContain('data-testid="signal-page-meta"');
     expect(pageSource).toContain('SIGNAL_PAGE_META_ROW_CLASS');
     expect(pageSource).toContain(
-      'flex w-full min-w-0 flex-nowrap items-start gap-y-4',
+      'flex w-full min-w-0 flex-wrap items-start gap-y-4',
     );
     expect(pageSource).toContain('gap-x-[clamp(1.5rem,6cqi,5rem)]');
     expect(pageSource).toContain('@min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]');
@@ -120,10 +120,9 @@ describe('upvote cell shared by the list and the detail', () => {
       '@min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]',
     );
     expect(feedRowSource).toContain('@container');
-    expect(pageSource).toContain('@max-[520px]:flex-wrap');
-    expect(pageSource).toContain(
-      'flex min-w-0 max-w-full shrink flex-col gap-1 overflow-hidden @max-[520px]:shrink-0',
-    );
+    expect(pageSource).not.toContain('flex-nowrap');
+    expect(pageSource).toContain('flex max-w-full shrink-0 flex-col gap-1');
+    expect(metaSlice).not.toContain('truncate');
     expect(pageSource).not.toContain('min-w-[5.5rem]');
     expect(pageSource).not.toContain('max-[420px]:flex-wrap');
     expect(pageSource).toContain('signalDiscussionCount');
@@ -152,6 +151,7 @@ describe('upvote cell shared by the list and the detail', () => {
     expect(voteSummarySource).toContain("t('voteDown')");
     expect(voteSummarySource).toContain("t('upVotesCount'");
     expect(voteSummarySource).toContain("t('upVotesPower'");
+    expect(feedRowSource).not.toContain("t('signalCreatedBy')");
     expect(feedRowSource).toContain('spaceSlug={spaceSlug}');
     expect(pageSource).toContain('spaceSlug={spaceSlug}');
     expect(upvoteSource).not.toContain("variant === 'feed'");
