@@ -6,6 +6,10 @@ import {
   findPeopleByWeb3Addresses,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import {
+  findDocumentSpaceId,
+  resolveMappedHostScope,
+} from '../../../../../../lib/white-label/mapped-host-scope';
 
 type Params = { documentSlug: string };
 
@@ -23,6 +27,22 @@ export async function GET(
   }
 
   try {
+    // Mapped host (Space header set by middleware): voters of a proposal of
+    // the host's own Space only. No header means the main app, unchanged.
+    const scope = await resolveMappedHostScope(request);
+    if (scope.kind !== 'main') {
+      const documentSpaceId =
+        scope.kind === 'mapped'
+          ? await findDocumentSpaceId({ slug: documentSlug })
+          : null;
+      if (scope.kind !== 'mapped' || documentSpaceId !== scope.spaceId) {
+        return NextResponse.json(
+          { error: 'Document not found' },
+          { status: 404 },
+        );
+      }
+    }
+
     const document = await findDocumentBySlug({ slug: documentSlug }, { db });
 
     if (!document || !document.web3ProposalId) {
