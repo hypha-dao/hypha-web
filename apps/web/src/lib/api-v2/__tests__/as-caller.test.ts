@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { generateKeyPair, SignJWT } from 'jose';
 import type { AuthServerConfig } from '@hypha-platform/auth-server/server';
-import { resolveAuthServerToken } from '../as-caller';
+import {
+  resolveAuthServerToken,
+  tokenMatchesRegistryClient,
+} from '../as-caller';
 
 const ISSUER = 'https://auth.example.org';
 const AUDIENCE = 'https://app.example.org/api/v2';
@@ -105,5 +108,29 @@ describe('resolveAuthServerToken (v2 spike)', () => {
     expect(
       await resolveAuthServerToken(req(noScope), config, keys),
     ).toMatchObject({ kind: 'failure', status: 403 });
+  });
+});
+
+describe('tokenMatchesRegistryClient', () => {
+  it('requires the token client id to equal the registry slug of the key', () => {
+    expect(tokenMatchesRegistryClient('test-app', 'test-app')).toBe(true);
+    expect(tokenMatchesRegistryClient('other-app', 'test-app')).toBe(false);
+  });
+
+  it('never matches a CIMD url client id (those carry no client key)', () => {
+    expect(
+      tokenMatchesRegistryClient(
+        'https://client.example.com/cimd.json',
+        'test-app',
+      ),
+    ).toBe(false);
+  });
+
+  it('the token the resolver returns carries the client id to compare', async () => {
+    const r = await resolveAuthServerToken(req(await token()), config, keys);
+    expect(r).toMatchObject({
+      kind: 'ok',
+      clientId: 'https://client.example.com/cimd.json',
+    });
   });
 });

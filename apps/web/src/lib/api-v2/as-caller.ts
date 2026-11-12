@@ -33,6 +33,21 @@ function peekIssuer(token: string): string | undefined {
   }
 }
 
+/**
+ * #2608 / #2515 mapping (v2 side): the token's `client_id` must equal the slug of the registry
+ * client that owns the client key sent with the request. The key says which app is calling; the
+ * token says which app the person approved. If they differ, a token granted to one app is being
+ * used by another (or with another app's key), so the call is refused rather than logged.
+ * CIMD clients (URL client ids) can never match a slug: they carry no client key, so v2 is not
+ * for them.
+ */
+export function tokenMatchesRegistryClient(
+  tokenClientId: string,
+  registrySlug: string,
+): boolean {
+  return tokenClientId === registrySlug;
+}
+
 export async function resolveAuthServerToken(
   request: Request,
   config: AuthServerConfig | AuthServerDisabled,

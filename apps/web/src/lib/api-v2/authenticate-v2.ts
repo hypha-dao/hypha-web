@@ -10,7 +10,10 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthServerConfig } from '../../app/(auth)/auth/_lib/server';
-import { resolveAuthServerToken } from './as-caller';
+import {
+  resolveAuthServerToken,
+  tokenMatchesRegistryClient,
+} from './as-caller';
 
 export type V2AuthResult =
   | { ok: true; caller: V2Caller }
@@ -45,6 +48,15 @@ export async function authenticateV2(
     };
   }
   if (asToken.kind === 'ok') {
+    if (!tokenMatchesRegistryClient(asToken.clientId, clientAuth.client.slug)) {
+      console.warn(
+        `v2: AS token client_id does not match the client key's registry slug (token client: ${asToken.clientId}, key client: ${clientAuth.client.slug})`,
+      );
+      return {
+        ok: false,
+        response: jsonV2({ error: 'client_mismatch' }, { status: 403 }),
+      };
+    }
     const person = await findPersonBySub({ sub: asToken.sub }, { db });
     if (!person) {
       return {
