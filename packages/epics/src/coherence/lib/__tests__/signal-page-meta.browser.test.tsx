@@ -35,6 +35,33 @@ const SIGNAL_PAGE_META_ROW_CLASS = exportedClass('SIGNAL_PAGE_META_ROW_CLASS');
 const SIGNAL_PAGE_META_ITEM_CLASS = exportedClass(
   'SIGNAL_PAGE_META_ITEM_CLASS',
 );
+const SIGNAL_PAGE_CARD_CLASS = exportedClass('SIGNAL_PAGE_CARD_CLASS');
+const SIGNAL_PAGE_CARD_BODY_CLASS = exportedClass(
+  'SIGNAL_PAGE_CARD_BODY_CLASS',
+);
+const feedRowSource = readFileSync(
+  join(here, '../../components/signal-feed-row.tsx'),
+  'utf8',
+);
+
+function classAfter(source: string, marker: string): string {
+  const at = source.indexOf(marker);
+  if (at < 0) throw new Error(`Missing ${marker}`);
+  const match = source.slice(at, at + 600).match(/className="([^"]+)"/);
+  if (!match?.[1]) throw new Error(`Missing class after ${marker}`);
+  return match[1];
+}
+
+const LIST_ARTICLE_CLASS = classAfter(
+  feedRowSource,
+  'data-testid="signal-card"',
+);
+const LIST_COLUMN_CLASS = classAfter(feedRowSource, LIST_ARTICLE_CLASS);
+const LIST_DESC_CLASS = classAfter(feedRowSource, '{about ?');
+const LIST_META_CLASS = classAfter(
+  feedRowSource,
+  'data-testid="signal-card-meta"',
+);
 const chrome = [
   '/usr/local/bin/google-chrome',
   '/usr/bin/google-chrome',
@@ -55,32 +82,67 @@ function Meta({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MetaCard() {
+function DetailAndList({ pad }: { pad: number }) {
   return (
-    <section
-      className="craft-card @container w-full min-w-0 p-5"
-      data-testid="card"
-    >
-      <dl className={SIGNAL_PAGE_META_ROW_CLASS} data-testid="signal-page-meta">
-        <Meta label="Created by" value="Alexandria Rivera-Montgomery" />
-        <Meta label="Created" value="4 hours ago" />
-        <Meta label="Last reply" value="2 hours ago · Sam Lee" />
-        <Meta label="Discussion" value="15 comments" />
-        <div className="ml-auto flex max-w-full shrink-0 flex-col gap-1">
-          <span className={`${LABEL} invisible`} aria-hidden>
-            {'\u00a0'}
-          </span>
-          <button
-            type="button"
-            data-testid="signal-open-discussion"
-            className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2"
-          >
-            Open discussion
-            <span aria-hidden>→</span>
-          </button>
-        </div>
-      </dl>
-    </section>
+    <div id="shell" style={{ display: 'flex', width: '100vw' }}>
+      <div id="left" style={{ flex: 'none' }} />
+      <div
+        id="col"
+        style={{
+          minWidth: 0,
+          flex: '1 1 auto',
+          boxSizing: 'border-box',
+          padding: `0 ${pad}px`,
+        }}
+      >
+        <section className={SIGNAL_PAGE_CARD_CLASS} data-testid="card">
+          <div className={SIGNAL_PAGE_CARD_BODY_CLASS}>
+            <dl
+              className={SIGNAL_PAGE_META_ROW_CLASS}
+              data-testid="signal-page-meta"
+            >
+              <Meta label="Created by" value="Alexandria Rivera-Montgomery" />
+              <Meta label="Created" value="4 hours ago" />
+              <Meta label="Last reply" value="2 hours ago · Sam Lee" />
+              <Meta label="Discussion" value="15 comments · 4 people" />
+              <div className="ml-auto flex max-w-full shrink-0 flex-col gap-1">
+                <span className={`${LABEL} invisible`} aria-hidden>
+                  {'\u00a0'}
+                </span>
+                <button
+                  type="button"
+                  data-testid="signal-open-discussion"
+                  className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2"
+                >
+                  Open discussion
+                  <span aria-hidden>→</span>
+                </button>
+              </div>
+            </dl>
+          </div>
+        </section>
+        <article className={LIST_ARTICLE_CLASS} data-testid="signal-card">
+          <div className={LIST_COLUMN_CLASS}>
+            <h3
+              className="m-0 truncate text-3 font-medium leading-snug text-foreground"
+              data-testid="title"
+            >
+              A signal title that is fairly long
+            </h3>
+            <p className={LIST_DESC_CLASS} data-testid="desc">
+              A one line description of the signal that sits under the title.
+            </p>
+            <div className={LIST_META_CLASS} data-testid="signal-card-meta">
+              <span>12</span>
+              <span>4 hours ago</span>
+              <span>2 hours ago</span>
+              <span>15 comments</span>
+            </div>
+          </div>
+        </article>
+      </div>
+      <div id="right" style={{ flex: 'none' }} />
+    </div>
   );
 }
 
@@ -107,6 +169,7 @@ describe('signal page meta row', () => {
             "@source '../../../**/*.{ts,tsx}';",
             [
               'packages/epics/src/coherence/components/signal-page.tsx',
+              'packages/epics/src/coherence/components/signal-feed-row.tsx',
               'packages/epics/src/coherence/lib/__tests__/signal-page-meta.browser.test.tsx',
             ]
               .map(
@@ -136,22 +199,147 @@ describe('signal page meta row', () => {
         rmSync(work, { recursive: true, force: true });
       }
 
-      const html = `<!doctype html><html><head>
+      const htmlFor = (pad: number) => `<!doctype html><html><head>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&display=swap">
         <style>html,body{margin:0} :root{--font-body:"Manrope";}${css}</style>
-        </head><body>${renderToStaticMarkup(<MetaCard />)}</body></html>`;
+        </head><body>${renderToStaticMarkup(
+          <DetailAndList pad={pad} />,
+        )}</body></html>`;
       const { chromium } = await import('@playwright/test');
       const browser = await chromium.launch({
         executablePath: chrome,
         args: ['--no-sandbox', '--disable-dev-shm-usage'],
       });
       try {
-        for (const width of [320, 390, 421, 520, 720, 1280]) {
+        const layouts: Array<{
+          name: string;
+          width: number;
+          left: number;
+          right: number;
+          pad: number;
+          sameRow: boolean;
+          gapMin: number;
+          gapMax: number;
+          matchList: boolean;
+        }> = [
+          {
+            name: '320',
+            width: 320,
+            left: 0,
+            right: 0,
+            pad: 0,
+            sameRow: false,
+            gapMin: 24,
+            gapMax: 24.5,
+            matchList: true,
+          },
+          {
+            name: '390',
+            width: 390,
+            left: 0,
+            right: 0,
+            pad: 16,
+            sameRow: false,
+            gapMin: 24,
+            gapMax: 24.5,
+            matchList: true,
+          },
+          {
+            name: '421',
+            width: 421,
+            left: 0,
+            right: 0,
+            pad: 0,
+            sameRow: false,
+            gapMin: 24,
+            gapMax: 26,
+            matchList: true,
+          },
+          {
+            name: '520',
+            width: 520,
+            left: 0,
+            right: 0,
+            pad: 0,
+            sameRow: false,
+            gapMin: 24,
+            gapMax: 32,
+            matchList: true,
+          },
+          {
+            name: '720',
+            width: 720,
+            left: 0,
+            right: 0,
+            pad: 0,
+            sameRow: true,
+            gapMin: 38,
+            gapMax: 50,
+            matchList: true,
+          },
+          {
+            name: '1280',
+            width: 1280,
+            left: 0,
+            right: 0,
+            pad: 0,
+            sameRow: true,
+            gapMin: 70,
+            gapMax: 82,
+            matchList: true,
+          },
+          // Icon rail + chat panel. This is the width where the list card's
+          // content box crosses 720px and the old p-5 detail card did not.
+          {
+            name: '1200-chat',
+            width: 1200,
+            left: 72,
+            right: 320,
+            pad: 24,
+            sameRow: true,
+            gapMin: 64,
+            gapMax: 78,
+            matchList: true,
+          },
+          {
+            name: '1440-chat',
+            width: 1440,
+            left: 72,
+            right: 320,
+            pad: 24,
+            sameRow: true,
+            gapMin: 78,
+            gapMax: 80.5,
+            matchList: true,
+          },
+          {
+            name: '1440-both',
+            width: 1440,
+            left: 320,
+            right: 320,
+            pad: 24,
+            sameRow: true,
+            gapMin: 40,
+            gapMax: 50,
+            matchList: true,
+          },
+        ];
+        for (const layout of layouts) {
           const page = await browser.newPage({
-            viewport: { width, height: 800 },
+            viewport: { width: layout.width, height: 800 },
           });
-          await page.setContent(html, { waitUntil: 'networkidle' });
+          await page.setContent(htmlFor(layout.pad), {
+            waitUntil: 'networkidle',
+          });
           await page.evaluate(() => document.fonts.ready);
+          await page.evaluate(({ left, right }) => {
+            (
+              document.getElementById('left') as HTMLElement
+            ).style.width = `${left}px`;
+            (
+              document.getElementById('right') as HTMLElement
+            ).style.width = `${right}px`;
+          }, layout);
           const box = await page.evaluate(() => {
             const card = document.querySelector(
               '[data-testid="card"]',
@@ -162,6 +350,15 @@ describe('signal page meta row', () => {
             const link = document.querySelector(
               '[data-testid="signal-open-discussion"]',
             ) as HTMLElement;
+            const meta = document.querySelector(
+              '[data-testid="signal-card-meta"]',
+            ) as HTMLElement;
+            const title = document.querySelector(
+              '[data-testid="title"]',
+            ) as HTMLElement;
+            const desc = document.querySelector(
+              '[data-testid="desc"]',
+            ) as HTMLElement;
             const cardBox = card.getBoundingClientRect();
             const linkBox = link.getBoundingClientRect();
             const linkRow = (
@@ -171,7 +368,19 @@ describe('signal page meta row', () => {
             const first = items[0]!.getBoundingClientRect();
             const second = items[1]!.getBoundingClientRect();
             const discussion = items[3]!.getBoundingClientRect();
-            const sameRow = Math.abs(first.top - linkRow.top) < 2;
+            const metaItems = [...meta.children] as HTMLElement[];
+            const metaGap =
+              metaItems[1]!.getBoundingClientRect().left -
+              metaItems[0]!.getBoundingClientRect().right;
+            const columnGap = parseFloat(getComputedStyle(row).columnGap);
+            const listColumnGap = parseFloat(getComputedStyle(meta).columnGap);
+            const body = card.firstElementChild as HTMLElement;
+            const inset =
+              parseFloat(getComputedStyle(card).paddingLeft) +
+              parseFloat(getComputedStyle(body).paddingLeft);
+            const titleBox = title.getBoundingClientRect();
+            const descBox = desc.getBoundingClientRect();
+            const metaBox = meta.getBoundingClientRect();
             return {
               overflow: card.scrollWidth - card.clientWidth,
               linkInside:
@@ -183,26 +392,56 @@ describe('signal page meta row', () => {
                 const itemBox = item.getBoundingClientRect();
                 return itemBox.right <= cardBox.right + 0.5;
               }),
-              sameRow,
+              sameRow: Math.abs(first.top - linkRow.top) < 2,
               gap: second.left - first.right,
+              columnGap,
+              listGap: metaGap,
+              listColumnGap,
+              inset,
+              titleToDesc: descBox.top - titleBox.bottom,
+              descToMeta: metaBox.top - descBox.bottom,
             };
           });
-          expect(box.overflow, `overflow at ${width}`).toBeLessThanOrEqual(1);
-          expect(box.linkInside, `link at ${width}`).toBe(true);
-          expect(box.discussionInside, `discussion at ${width}`).toBe(true);
-          expect(box.childrenInside, `children at ${width}`).toBe(true);
-          if (width === 1280) {
-            expect(box.sameRow, '1280 row').toBe(true);
-            expect(box.gap, '1280 gap').toBeGreaterThan(70);
-            expect(box.gap, '1280 gap').toBeLessThan(82);
+          expect(
+            box.overflow,
+            `overflow at ${layout.name}`,
+          ).toBeLessThanOrEqual(1);
+          expect(box.linkInside, `link at ${layout.name}`).toBe(true);
+          expect(box.discussionInside, `discussion at ${layout.name}`).toBe(
+            true,
+          );
+          expect(box.childrenInside, `children at ${layout.name}`).toBe(true);
+          expect(box.sameRow, `${layout.name} row`).toBe(layout.sameRow);
+          expect(box.columnGap, `${layout.name} gap`).toBeGreaterThanOrEqual(
+            layout.gapMin,
+          );
+          expect(box.columnGap, `${layout.name} gap`).toBeLessThanOrEqual(
+            layout.gapMax,
+          );
+          expect(box.inset, `${layout.name} inset`).toBe(24);
+          if (layout.matchList) {
+            expect(
+              Math.abs(box.columnGap - box.listColumnGap),
+              `${layout.name} matches list`,
+            ).toBeLessThan(1);
           }
-          if (width === 720) {
-            expect(box.sameRow, '720 row').toBe(true);
-            expect(box.gap, '720 gap').toBeGreaterThan(38);
-            expect(box.gap, '720 gap').toBeLessThan(50);
+          if (layout.sameRow) {
+            expect(
+              Math.abs(box.gap - box.columnGap),
+              `${layout.name} painted gap`,
+            ).toBeLessThan(1);
+            expect(
+              Math.abs(box.gap - box.listGap),
+              `${layout.name} painted list gap`,
+            ).toBeLessThan(1);
           }
-          if (width === 421) {
-            expect(box.sameRow, '421 wraps before it clips').toBe(false);
+          if (layout.name === '1280') {
+            expect(box.titleToDesc, 'title to description').toBeGreaterThan(10);
+            expect(box.titleToDesc, 'title to description').toBeLessThan(14);
+            expect(box.descToMeta, 'description to vote row').toBeGreaterThan(
+              14,
+            );
+            expect(box.descToMeta, 'description to vote row').toBeLessThan(18);
           }
           await page.close();
         }

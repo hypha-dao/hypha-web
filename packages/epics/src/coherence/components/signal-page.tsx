@@ -48,12 +48,24 @@ const SECTION_LABEL_CLASS =
 
 /**
  * Column gap for Created by / Created / Last reply / Discussion.
- * 24px at the floor, 6% of the card up to 80px. From 720px the percent
- * follows the viewport so a wide row opens up; under 520px the row wraps.
- * List cards use the same pair (`signal-feed-row.tsx`).
+ * 24px at the floor, 6% of the card up to 80px. From a 720px content box
+ * the percent follows the viewport, the same pair list cards use
+ * (`signal-feed-row.tsx`). Under 520px the row wraps.
+ *
+ * Container queries read the content box. This card used to be `p-5`
+ * (48px of horizontal padding) on the container itself, so a column that
+ * had already switched the list card (`p-4`) to the wide gap still left
+ * this card on the 6% gap — about the same size as the previous cap.
+ * The container is padded like the list card; the body adds the rest.
  */
 export const SIGNAL_PAGE_META_ROW_CLASS =
   'm-0 flex w-full min-w-0 flex-nowrap items-start gap-y-4 border-t border-border/70 pt-4 @max-[520px]:flex-wrap gap-x-[clamp(1.5rem,6cqi,5rem)] @min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]';
+
+export const SIGNAL_PAGE_CARD_CLASS =
+  'craft-card @container flex min-w-0 flex-col p-4';
+
+export const SIGNAL_PAGE_CARD_BODY_CLASS =
+  'flex min-w-0 w-full flex-col gap-5 p-2';
 
 export const SIGNAL_PAGE_META_ITEM_CLASS =
   'flex min-w-0 max-w-full shrink flex-col gap-1 overflow-hidden @max-[520px]:shrink-0';
@@ -512,94 +524,96 @@ export function SignalPage({
         </div>
       ) : null}
 
-      <section className="craft-card @container flex min-w-0 flex-col gap-5 p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-          <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <SignalTypeBadge type={signal.type} variant="box" />
-            <h1 className="m-0 min-w-0 text-4 leading-tight text-foreground">
-              {signal.title}
-            </h1>
-            <SignalUpvoteButton
-              slug={signal.slug}
-              spaceSlug={spaceSlug}
-              upvotes={signal.upvotes}
-              votingMode={votingMode}
-              votingModeStatus={votingModeStatus}
-              onRetryVotingMode={retryVotingMode}
-              isNonMember={isNonMember}
-              isMembershipPending={isMembershipPending}
-              refresh={refresh}
-              archived={signal.archived}
-              variant="page"
-              summaryState={signalListUpvoteSummaryState({
-                hasSettledList: Boolean(coherences),
-                isLoading: isSignalsLoading,
-                hasError: signalsError != null,
-              })}
-              className="self-start"
-            />
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2 self-start">
-            <SignalCreatorActions
-              lang={lang}
-              spaceSlug={spaceSlug}
-              slug={signal.slug ?? ''}
-              creatorId={signal.creatorId}
-              className="flex items-center gap-2"
-            />
-          </div>
-        </div>
-
-        <dl
-          data-testid="signal-page-meta"
-          className={SIGNAL_PAGE_META_ROW_CLASS}
-        >
-          <MetaItem label={t('signalCreatedBy')}>
-            <PersonAvatar
-              size="sm"
-              shape="circle"
-              avatarSrc={creator?.avatarUrl ?? ''}
-              userName={creatorDisplayName ?? undefined}
-              personId={signal.creatorId ?? undefined}
-            />
-            <span className="min-w-0 truncate">{creatorDisplayName}</span>
-          </MetaItem>
-          {created ? (
-            <MetaItem label={t('signalCreatedLabel')}>{created}</MetaItem>
-          ) : null}
-          {lastReply ? (
-            <MetaItem label={t('signalLastReplyLabel')}>
-              <span className="min-w-0 truncate">{lastReply}</span>
-            </MetaItem>
-          ) : null}
-          <MetaItem label={t('signalDiscussion')}>
-            <span className="min-w-0 truncate">{discussion}</span>
-          </MetaItem>
-          {mediaSummary ? (
-            <MetaItem label={t('signalAttachmentsLabel')}>
-              <span className="truncate">{mediaSummary}</span>
-            </MetaItem>
-          ) : null}
-          {humanChatEnabled ? (
-            <div className="ml-auto flex max-w-full shrink-0 flex-col gap-1">
-              <span
-                className={cn(SECTION_LABEL_CLASS, 'invisible')}
-                aria-hidden
-              >
-                {'\u00a0'}
-              </span>
-              <button
-                type="button"
-                data-testid="signal-open-discussion"
-                onClick={openChat}
-                className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
-              >
-                {t('openDiscussion')}
-                <span aria-hidden>→</span>
-              </button>
+      <section className={SIGNAL_PAGE_CARD_CLASS}>
+        <div className={SIGNAL_PAGE_CARD_BODY_CLASS}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            <div className="flex min-w-0 flex-1 flex-col gap-3">
+              <SignalTypeBadge type={signal.type} variant="box" />
+              <h1 className="m-0 min-w-0 text-4 leading-tight text-foreground">
+                {signal.title}
+              </h1>
+              <SignalUpvoteButton
+                slug={signal.slug}
+                spaceSlug={spaceSlug}
+                upvotes={signal.upvotes}
+                votingMode={votingMode}
+                votingModeStatus={votingModeStatus}
+                onRetryVotingMode={retryVotingMode}
+                isNonMember={isNonMember}
+                isMembershipPending={isMembershipPending}
+                refresh={refresh}
+                archived={signal.archived}
+                variant="page"
+                summaryState={signalListUpvoteSummaryState({
+                  hasSettledList: Boolean(coherences),
+                  isLoading: isSignalsLoading,
+                  hasError: signalsError != null,
+                })}
+                className="self-start"
+              />
             </div>
-          ) : null}
-        </dl>
+            <div className="flex shrink-0 flex-wrap items-center gap-2 self-start">
+              <SignalCreatorActions
+                lang={lang}
+                spaceSlug={spaceSlug}
+                slug={signal.slug ?? ''}
+                creatorId={signal.creatorId}
+                className="flex items-center gap-2"
+              />
+            </div>
+          </div>
+
+          <dl
+            data-testid="signal-page-meta"
+            className={SIGNAL_PAGE_META_ROW_CLASS}
+          >
+            <MetaItem label={t('signalCreatedBy')}>
+              <PersonAvatar
+                size="sm"
+                shape="circle"
+                avatarSrc={creator?.avatarUrl ?? ''}
+                userName={creatorDisplayName ?? undefined}
+                personId={signal.creatorId ?? undefined}
+              />
+              <span className="min-w-0 truncate">{creatorDisplayName}</span>
+            </MetaItem>
+            {created ? (
+              <MetaItem label={t('signalCreatedLabel')}>{created}</MetaItem>
+            ) : null}
+            {lastReply ? (
+              <MetaItem label={t('signalLastReplyLabel')}>
+                <span className="min-w-0 truncate">{lastReply}</span>
+              </MetaItem>
+            ) : null}
+            <MetaItem label={t('signalDiscussion')}>
+              <span className="min-w-0 truncate">{discussion}</span>
+            </MetaItem>
+            {mediaSummary ? (
+              <MetaItem label={t('signalAttachmentsLabel')}>
+                <span className="truncate">{mediaSummary}</span>
+              </MetaItem>
+            ) : null}
+            {humanChatEnabled ? (
+              <div className="ml-auto flex max-w-full shrink-0 flex-col gap-1">
+                <span
+                  className={cn(SECTION_LABEL_CLASS, 'invisible')}
+                  aria-hidden
+                >
+                  {'\u00a0'}
+                </span>
+                <button
+                  type="button"
+                  data-testid="signal-open-discussion"
+                  onClick={openChat}
+                  className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
+                >
+                  {t('openDiscussion')}
+                  <span aria-hidden>→</span>
+                </button>
+              </div>
+            ) : null}
+          </dl>
+        </div>
       </section>
 
       {description ? (

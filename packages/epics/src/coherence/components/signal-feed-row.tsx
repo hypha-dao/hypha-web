@@ -116,11 +116,13 @@ export function SignalFeedRow({
           </Link>
         </h3>
         {about ? (
-          <p className="m-0 truncate text-1 text-muted-foreground">{about}</p>
+          <p className="mb-0 mt-1.5 truncate text-1 text-muted-foreground">
+            {about}
+          </p>
         ) : null}
         <div
           data-testid="signal-card-meta"
-          className="mt-1 flex flex-wrap items-center gap-y-1.5 text-1 text-muted-foreground gap-x-[clamp(1.5rem,6cqi,5rem)] @min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]"
+          className="mt-2.5 flex flex-wrap items-center gap-y-1.5 text-1 text-muted-foreground gap-x-[clamp(1.5rem,6cqi,5rem)] @min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]"
         >
           <SignalUpvoteButton
             slug={signal.slug}
