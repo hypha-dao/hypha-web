@@ -1278,6 +1278,11 @@ export function SpaceQuestCreateDraft({
   ]);
   const proposalOverLimit =
     proposalCharacterCount > QUEST_PROPOSAL_DESCRIPTION_LIMIT;
+  // The title is optional: submit stores "Untitled quest" when it is blank.
+  // Goal is the only required field. A draft that is too long to publish is
+  // the other block, and that case already explains itself beside the button.
+  const createProposalBlocked =
+    !pendingProposalLink && (!goal.trim() || proposalOverLimit);
 
   const questsListHref = `/${locale}/dho/${spaceSlug}/quests`;
   const leaveCreate = () => {
@@ -1439,11 +1444,7 @@ export function SpaceQuestCreateDraft({
                     </Button>
                     <Button
                       type="button"
-                      disabled={
-                        submitting ||
-                        (!pendingProposalLink &&
-                          (!name.trim() || !goal.trim() || proposalOverLimit))
-                      }
+                      disabled={submitting || createProposalBlocked}
                       onClick={() => setConfirmOpen(true)}
                       data-testid="create-quest-button"
                       className="bg-foreground text-background hover:bg-foreground/90"
@@ -1859,10 +1860,7 @@ export function SpaceQuestCreateDraft({
                 </Button>
                 <Button
                   type="button"
-                  disabled={
-                    !pendingProposalLink &&
-                    (proposalOverLimit || !name.trim() || !goal.trim())
-                  }
+                  disabled={createProposalBlocked}
                   onClick={() => void handleConfirmCreateProposal()}
                   data-testid="confirm-create-proposal-button"
                   className="bg-foreground text-background hover:bg-foreground/90"

@@ -29,7 +29,13 @@ const harness = vi.hoisted(() => ({
   openHumanChatPanel: vi.fn(),
   push: vi.fn(),
   spaceMembers: [] as Array<{
-    person: { id: number };
+    person: {
+      id: number;
+      name?: string;
+      surname?: string;
+      avatarUrl?: string | null;
+      nickname?: string | null;
+    };
     personId: number;
     name: string;
     avatarUrl: string | null;
@@ -65,6 +71,37 @@ vi.mock('next-intl', () => ({
 vi.mock('wagmi', () => ({
   useConfig: () => ({}),
 }));
+
+vi.mock('@hypha-platform/ui', async () => {
+  const actual = await vi.importActual<typeof import('@hypha-platform/ui')>(
+    '@hypha-platform/ui',
+  );
+  return {
+    ...actual,
+    Combobox: ({
+      options,
+      onChange,
+      placeholder,
+    }: {
+      options: Array<{ value: string; label?: string }>;
+      onChange?: (value: string) => void;
+      placeholder?: string;
+    }) => (
+      <select
+        aria-label={placeholder}
+        defaultValue=""
+        onChange={(event) => onChange?.(event.target.value)}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    ),
+  };
+});
 
 vi.mock('@hypha-platform/authentication', () => ({
   useAuthentication: () => ({
@@ -115,7 +152,32 @@ vi.mock('../../../common/human-chat-panel-context', () => ({
 
 vi.mock('../../hooks/use-space-quests', () => ({
   useQuestSpaceMembers: () => harness.spaceMembers,
-  toQuestSpaceMemberPersons: () => [],
+  toQuestSpaceMemberPersons: (
+    members: Array<{
+      person?: {
+        id: number;
+        name?: string;
+        surname?: string;
+        avatarUrl?: string | null;
+        nickname?: string | null;
+      };
+      personId: number;
+      name: string;
+      avatarUrl: string | null;
+      nickname: string | null;
+    }>,
+  ) =>
+    members.map((member) =>
+      member.person?.name
+        ? member.person
+        : {
+            id: member.personId,
+            name: member.name,
+            surname: '',
+            avatarUrl: member.avatarUrl,
+            nickname: member.nickname,
+          },
+    ),
   findQuestSpaceMember: () => null,
   findQuestSpaceMemberId: () => null,
   createSpaceQuestRequest: harness.createSpaceQuestRequest,
@@ -231,6 +293,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   window.sessionStorage.clear();
+  vi.unstubAllGlobals();
 });
 
 describe('quest create draft persistence', () => {
@@ -673,5 +736,143 @@ describe('quest create draft persistence', () => {
       vi.unstubAllGlobals();
       harness.spaceMembers = [];
     }
+  });
+
+  it('enables create proposal from a goal alone, including after the other cards are edited by hand', async () => {
+    harness.spaceMembers = [
+      {
+        person: { id: 8, name: 'Grok Test', surname: '' },
+        personId: 8,
+        name: 'Grok Test',
+        avatarUrl: null,
+        nickname: null,
+      },
+    ];
+    if (!HTMLElement.prototype.hasPointerCapture) {
+      HTMLElement.prototype.hasPointerCapture = () => false;
+    }
+    if (!HTMLElement.prototype.setPointerCapture) {
+      HTMLElement.prototype.setPointerCapture = () => undefined;
+    }
+    if (!HTMLElement.prototype.releasePointerCapture) {
+      HTMLElement.prototype.releasePointerCapture = () => undefined;
+    }
+    if (!HTMLElement.prototype.scrollIntoView) {
+      HTMLElement.prototype.scrollIntoView = () => undefined;
+    }
+    if (!('ResizeObserver' in globalThis)) {
+      class ResizeObserver {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      }
+      vi.stubGlobal('ResizeObserver', ResizeObserver);
+    }
+
+    const createButton = () =>
+      screen.getByTestId('create-quest-button') as HTMLButtonElement;
+    const title = () =>
+      screen.getByLabelText('Quest title') as HTMLInputElement;
+    const insertEditor = (text: string, index = 0) => {
+      const editor = screen.getAllByRole('textbox', {
+        name: 'Rich text editor',
+      })[index] as HTMLElement & {
+        editor?: { commands: { insertContent: (value: string) => boolean } };
+      };
+      expect(editor?.editor).toBeTruthy();
+      editor.editor?.commands.insertContent(text);
+    };
+    const saveDialog = async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).toBeNull();
+      });
+    };
+
+    render(<SpaceQuestCreateDraft spaceSlug={SPACE} />);
+    expect(createButton().disabled).toBe(true);
+    expect(title().value).toBe('');
+    expect(screen.queryByText(/too long to publish/i)).toBeNull();
+
+    fireEvent.click(screen.getByTestId('draft-section-goal'));
+    insertEditor('test2');
+    await waitFor(() => {
+      expect(createButton().disabled).toBe(false);
+    });
+    expect(screen.getByTestId('draft-section-goal').textContent).toContain(
+      'test2',
+    );
+    await saveDialog();
+
+    fireEvent.click(screen.getByTestId('draft-section-scope'));
+    insertEditor('234');
+    await waitFor(() => {
+      expect(screen.getByTestId('draft-section-scope').textContent).toContain(
+        '234',
+      );
+    });
+    await saveDialog();
+
+    fireEvent.click(screen.getByTestId('draft-section-success'));
+    insertEditor('234');
+    await waitFor(() => {
+      expect(screen.getByTestId('draft-section-success').textContent).toContain(
+        '234',
+      );
+    });
+    await saveDialog();
+
+    fireEvent.click(screen.getByTestId('add-reward-token-button'));
+    fireEvent.change(screen.getByPlaceholderText('0.00'), {
+      target: { value: '234' },
+    });
+    expect(screen.getByTestId('draft-section-rewards').textContent).toContain(
+      'USDC',
+    );
+
+    fireEvent.click(screen.getByTestId('draft-section-members'));
+    fireEvent.change(screen.getByLabelText('Choose or search a participant…'), {
+      target: { value: '8' },
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('draft-section-members').textContent).toContain(
+        'Grok Test',
+      );
+    });
+    await saveDialog();
+
+    fireEvent.click(screen.getByTestId('draft-section-target-date'));
+    fireEvent.click(screen.getByRole('button', { name: '20 November 2026' }));
+    const day = document.querySelector(
+      '[data-quest-date-popover] button[aria-label*="November 13"]',
+    );
+    expect(day).toBeInstanceOf(HTMLButtonElement);
+    fireEvent.click(day as HTMLButtonElement);
+    await saveDialog();
+
+    fireEvent.click(screen.getByTestId('draft-section-milestones'));
+    fireEvent.click(screen.getByTestId('add-milestone-at-end'));
+    fireEvent.change(
+      screen.getByPlaceholderText('e.g. Draft review with stewards'),
+      { target: { value: 'M1' } },
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('draft-section-milestones').textContent,
+      ).toContain('M1');
+    });
+    await saveDialog();
+
+    expect(title().value).toBe('');
+    expect(createButton().disabled).toBe(false);
+    expect(screen.queryByText(/too long to publish/i)).toBeNull();
+    fireEvent.click(createButton());
+    expect(
+      (
+        screen.getByTestId(
+          'confirm-create-proposal-button',
+        ) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
   });
 });
