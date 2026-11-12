@@ -1,5 +1,5 @@
 import { EventType } from 'matrix-js-sdk';
-import { isSignalDescriptionCopy } from '../../../../core/src/coherence/signal-creator';
+import { summarizeHumanDiscussionTimeline } from '../../../../core/src/matrix/human-discussion-count';
 
 export type SignalRoomMessage = {
   sender: string;
@@ -21,41 +21,26 @@ export type SignalRepliesSummary = {
 };
 
 /**
- * Replies in a signal room. Bot posts, copies of the signal description
- * (older rooms got the description posted into chat), and events the chat
- * hides are not replies, so they never count as a comment, a participant
- * or the last reply.
+ * Human bubbles in a signal room. Bot posts and events the chat hides are
+ * not comments. A person's own message still counts when its plaintext body
+ * matches the signal description: the bubble renders that message (often via
+ * `formatted_body` or the text after a reply quote), and the count uses the
+ * same predicate.
  */
 export function summarizeSignalReplies(
   messages: readonly SignalRoomMessage[],
-  description: string | null | undefined,
   { isBot }: { isBot: (sender: string) => boolean },
 ): SignalRepliesSummary {
-  const senders = new Set<string>();
-  let comments = 0;
-  let lastReplyAt: number | null = null;
-  let lastReplySenderId: string | null = null;
-  for (const message of messages) {
-    if (message.hidden) continue;
-    if (isBot(message.sender)) continue;
-    const isCopy = isSignalDescriptionCopy({
-      messageContent: message.editedBody ?? message.body,
-      signalDescription: description,
-    });
-    if (isCopy) continue;
-    comments += 1;
-    senders.add(message.sender);
-    if (lastReplyAt == null || message.ts >= lastReplyAt) {
-      lastReplyAt = message.ts;
-      lastReplySenderId = message.sender;
-    }
-  }
-  return {
-    comments,
-    people: senders.size,
-    lastReplyAt,
-    lastReplySenderId,
-  };
+  return summarizeHumanDiscussionTimeline(
+    messages.map((message) => ({
+      type: 'm.room.message',
+      sender: message.sender,
+      ts: message.ts,
+      hidden: message.hidden,
+      content: { body: message.editedBody ?? message.body },
+    })),
+    { isBot },
+  );
 }
 
 /**
@@ -81,9 +66,9 @@ export function timelineReachesRoomStart(room: {
 
 /**
  * Comment total for a signal. A timeline that reaches the room start is the
- * only source: that count is human replies the chat shows, without the
- * description seed, bot posts, or hidden notices. Until then the stored total
- * stands, and a shorter partial timeline cannot replace it.
+ * only live source: that count is the human bubbles the chat shows. Until
+ * then the stored total stands, and a shorter partial timeline cannot
+ * replace it.
  */
 export function signalDiscussionCount(
   stored: number | null | undefined,

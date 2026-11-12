@@ -57,6 +57,45 @@ describe('ingestParsedMessage age guard', () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
+  it('recounts a signal room again when the event was already claimed', async () => {
+    vi.clearAllMocks();
+    vi.mocked(resolveRoomToSpace).mockResolvedValue({
+      kind: 'signal',
+      spaceId: 1,
+      spaceSlug: 'acme',
+      coherenceId: 9,
+    } as never);
+    vi.mocked(claimProcessedEvent).mockResolvedValue(false);
+    const onSignalDiscussion = vi.fn().mockResolvedValue(undefined);
+    const { dispatch, deps: d } = deps({ onSignalDiscussion });
+
+    await expect(ingestParsedMessage(parsed(2 * HOUR), {}, d)).resolves.toBe(
+      'duplicate',
+    );
+    expect(onSignalDiscussion).toHaveBeenCalledWith('!room:hs');
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it('recounts a signal room and still dispatches when that recount throws', async () => {
+    vi.clearAllMocks();
+    vi.mocked(resolveRoomToSpace).mockResolvedValue({
+      kind: 'signal',
+      spaceId: 1,
+      spaceSlug: 'acme',
+      coherenceId: 9,
+    } as never);
+    vi.mocked(claimProcessedEvent).mockResolvedValue(true);
+    const onSignalDiscussion = vi.fn().mockRejectedValue(new Error('matrix'));
+    const { dispatch, logger, deps: d } = deps({ onSignalDiscussion });
+
+    await expect(ingestParsedMessage(parsed(2 * HOUR), {}, d)).resolves.toBe(
+      'dispatched',
+    );
+    expect(onSignalDiscussion).toHaveBeenCalledWith('!room:hs');
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
   it('still processes an event inside the window', async () => {
     vi.clearAllMocks();
     vi.mocked(resolveRoomToSpace).mockResolvedValue({

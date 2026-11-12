@@ -3,31 +3,27 @@
 import React from 'react';
 import {
   ClientEvent,
-  EventType,
   RoomEvent,
   SyncState,
   UserEvent,
   type MatrixClient,
 } from 'matrix-js-sdk';
 import {
-  getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
   useMatrix,
 } from '@hypha-platform/core/client';
-import { isHiddenHumanChatRoomMessage } from '../../../../core/src/matrix/human-chat-timeline-message';
+import { summarizeHumanDiscussionTimeline } from '../../../../core/src/matrix/human-discussion-count';
 import {
   isHyphaBotMatrixIdentity,
   pickUserVisibleMemberLabel,
 } from '../../common/human-chat-panel/matrix-room-member-display';
 import {
   sameSignalRoomActivity,
-  summarizeSignalReplies,
   timelineReachesRoomStart,
-  type SignalRoomMessage,
 } from '../utils/signal-room-replies';
 
 export type SignalRoomActivity = {
-  /** Replies in the loaded live timeline; description copies are not replies. */
+  /** Human bubbles in the loaded live timeline. */
   comments: number;
   /** Distinct people who replied. */
   people: number;
@@ -47,52 +43,26 @@ type SignalRoomRef = {
   description?: string | null;
 };
 
-function messageBody(content: unknown): string | null {
-  const body = (content as { body?: unknown } | null)?.body;
-  return typeof body === 'string' ? body : null;
-}
-
 function readRoomActivity(
   client: MatrixClient,
   roomId: string,
-  description: string | null | undefined,
 ): SignalRoomActivity | null {
   const room = client.getRoom(roomId);
   if (!room || room.getMyMembership() !== 'join') return null;
 
   const events = room.getLiveTimeline().getEvents();
   const reachesRoomStart = timelineReachesRoomStart(room);
-  const editedBodies = new Map<string, string>();
-  for (const event of events) {
-    if (event.getType() !== EventType.RoomMessage) continue;
-    const target = getMessageReplaceTargetEventId(event);
-    if (!target) continue;
-    const next = messageBody(
-      (event.getContent() as { 'm.new_content'?: unknown })['m.new_content'],
-    );
-    if (next != null) editedBodies.set(target, next);
-  }
-
-  const messages: SignalRoomMessage[] = [];
-  for (const event of events) {
-    if (event.getType() !== EventType.RoomMessage) continue;
-    if (isRedactedRoomMessageEvent(event)) continue;
-    if (getMessageReplaceTargetEventId(event) != null) continue;
-    const sender = event.getSender();
-    if (!sender) continue;
-    const eventId = event.getId();
-    messages.push({
-      sender,
+  const summary = summarizeHumanDiscussionTimeline(
+    events.map((event) => ({
+      type: event.getType(),
+      sender: event.getSender(),
       ts: event.getTs(),
-      body: messageBody(event.getContent()),
-      editedBody: eventId ? editedBodies.get(eventId) ?? null : null,
-      hidden: isHiddenHumanChatRoomMessage(event),
-    });
-  }
-
-  const summary = summarizeSignalReplies(messages, description, {
-    isBot: (sender) => isHyphaBotMatrixIdentity(sender),
-  });
+      redacted: isRedactedRoomMessageEvent(event),
+      content: event.getContent() as Record<string, unknown>,
+      relatesTo: event.getWireContent()?.['m.relates_to'],
+    })),
+    { isBot: (sender) => isHyphaBotMatrixIdentity(sender) },
+  );
   const member = summary.lastReplySenderId
     ? room.getMember(summary.lastReplySenderId)
     : null;
@@ -115,11 +85,10 @@ function readRoomActivity(
 export function readSignalRoomDiscussionCount(
   client: MatrixClient | null | undefined,
   roomId: string | null | undefined,
-  description?: string | null,
 ): { comments: number; reachesRoomStart: boolean } | null {
   const id = roomId?.trim();
   if (!client || !id) return null;
-  const activity = readRoomActivity(client, id, description);
+  const activity = readRoomActivity(client, id);
   if (!activity) return null;
   return {
     comments: activity.comments,
@@ -136,7 +105,7 @@ function readAllActivity(
   for (const room of rooms) {
     const roomId = room.roomId?.trim();
     if (!roomId) continue;
-    const activity = readRoomActivity(client, roomId, room.description);
+    const activity = readRoomActivity(client, roomId);
     if (activity) result[roomId] = activity;
   }
   return result;

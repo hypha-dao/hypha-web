@@ -208,7 +208,6 @@ import {
   pickSignalDeepLinkTarget,
   shouldWriteOpenChatToSignalUrl,
 } from '../coherence/lib/signal-deep-link-dom';
-import { readSignalRoomDiscussionCount } from '../coherence/hooks/use-signal-room-activity';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 import {
@@ -3508,8 +3507,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const prevSidebarOpenRef = useRef(sidebarOpen);
   const prevChatModeRef = useRef(mode);
   const lastHumanChatSpaceSlugRef = useRef(routeSpaceSlug || null);
-  const hasLoadedCoherenceMessagesRef = useRef(false);
-  const persistedCoherenceCountRef = useRef<number | null>(null);
   useEffect(() => {
     if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
       // Back from a space signal closes the panel and resets after the slide.
@@ -3619,11 +3616,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceSpaceSlug,
     closeCoherenceChat,
   ]);
-
-  useEffect(() => {
-    hasLoadedCoherenceMessagesRef.current = false;
-    persistedCoherenceCountRef.current = null;
-  }, [coherenceSlug, mode]);
 
   // Reset chat state when space changes. The dashboard network room has no slug,
   // so this must not clear it — that loop would wipe the room on every message sync.
@@ -4430,66 +4422,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!roomId) return;
     writePersistedChatHistory(roomId, messages);
   }, [roomId, messages]);
-
-  useEffect(() => {
-    if (mode !== 'coherence') return;
-    if (!isMatrixAvailable || !coherenceSlug || !roomId || isJoining) return;
-    const client = matrix.client;
-    if (!client) return;
-
-    let cancelled = false;
-    const persist = () => {
-      if (cancelled) return;
-      const discussion = readSignalRoomDiscussionCount(
-        client,
-        roomId,
-        coherenceDescription,
-      );
-      // A partial timeline is not the comment total. Scrollback that reaches
-      // the room start often adds no visible messages (the tail was already
-      // painted), so this must run on timeline events, not messages.length.
-      if (!discussion?.reachesRoomStart) return;
-      if (!hasLoadedCoherenceMessagesRef.current && discussion.comments === 0) {
-        return;
-      }
-      if (persistedCoherenceCountRef.current === discussion.comments) return;
-      hasLoadedCoherenceMessagesRef.current = true;
-      persistedCoherenceCountRef.current = discussion.comments;
-      updateCoherenceBySlugRef
-        .current({
-          slug: coherenceSlug,
-          messages: discussion.comments,
-        })
-        .catch((error) => {
-          if (persistedCoherenceCountRef.current === discussion.comments) {
-            persistedCoherenceCountRef.current = null;
-          }
-          console.warn(
-            '[HumanRightPanel] Failed to persist coherence message count:',
-            error,
-          );
-        });
-    };
-
-    persist();
-    const onTimeline = (_event: MatrixEvent, room: Room | undefined) => {
-      if (room?.roomId && room.roomId !== roomId) return;
-      persist();
-    };
-    client.on(RoomEvent.Timeline, onTimeline);
-    return () => {
-      cancelled = true;
-      client.off(RoomEvent.Timeline, onTimeline);
-    };
-  }, [
-    mode,
-    isMatrixAvailable,
-    matrix.client,
-    coherenceDescription,
-    coherenceSlug,
-    roomId,
-    isJoining,
-  ]);
 
   // Keep message ids in sync when the SDK replaces provisional ~… ids with $… after send
   useEffect(() => {

@@ -119,6 +119,12 @@ export interface ReceiverDeps {
   botUserIds: string[];
   now?: () => number;
   logger?: Pick<typeof console, 'info' | 'warn' | 'error'>;
+  /**
+   * Recompute a signal room's stored human-bubble count after a message or
+   * redaction lands. Must not throw: a Matrix failure cannot fail the
+   * transaction ACK.
+   */
+  onSignalDiscussion?: (roomId: string) => Promise<void>;
 }
 
 export interface ReceiveTransactionInput {

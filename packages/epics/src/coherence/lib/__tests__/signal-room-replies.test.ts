@@ -2,6 +2,14 @@ import { EventType } from 'matrix-js-sdk';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { CALL_CAPTURE_NOTICE_TYPE } from '../../../../../core/src/matrix/client/hooks/call-capture-consent';
+import {
+  collectDiscussionTimeline,
+  isHumanChatBubbleEvent,
+  summarizeHumanDiscussionTimeline,
+  type HumanDiscussionTimelineEvent,
+} from '../../../../../core/src/matrix/human-discussion-count';
+import { isSignalDescriptionCopy } from '../../../../../core/src/coherence/signal-creator';
 import {
   signalDiscussionCount,
   signalLastReplierLabel,
@@ -25,76 +33,52 @@ function message(
 }
 
 describe('summarizeSignalReplies', () => {
-  it('does not count the seeded description as a comment or a person', () => {
+  it('counts a human message whose text matches the description', () => {
     const summary = summarizeSignalReplies(
       [
         message(ALEX, 1, 'Fix the bridge before winter'),
         message(SAM, 2, 'I can help on Saturday'),
       ],
-      'Fix the bridge before winter',
       { isBot },
     );
     expect(summary).toEqual({
-      comments: 1,
-      people: 1,
+      comments: 2,
+      people: 2,
       lastReplyAt: 2,
       lastReplySenderId: SAM,
     });
   });
 
-  it('excludes a description copy even when the timeline starts mid-room', () => {
+  it('counts a formatted description copy from a person', () => {
     const summary = summarizeSignalReplies(
       [message(SAM, 5, 'Agreed'), message(ALEX, 6, '<p>Fix the bridge</p>')],
-      'Fix the bridge',
       { isBot },
     );
-    expect(summary.comments).toBe(1);
-    expect(summary.lastReplySenderId).toBe(SAM);
-  });
-
-  it('excludes a seed that was edited to the current description', () => {
-    const summary = summarizeSignalReplies(
-      [message(ALEX, 1, 'Old text', 'New text')],
-      'New text',
-      { isBot },
-    );
-    expect(summary.comments).toBe(0);
-    expect(summary.people).toBe(0);
-    expect(summary.lastReplyAt).toBeNull();
-  });
-
-  it('counts a seed once the current edit is no longer the description', () => {
-    const summary = summarizeSignalReplies(
-      [message(ALEX, 1, 'Fix the bridge', 'I can bring tools')],
-      'Fix the bridge',
-      { isBot },
-    );
-    expect(summary.comments).toBe(1);
+    expect(summary.comments).toBe(2);
     expect(summary.lastReplySenderId).toBe(ALEX);
   });
 
-  it('excludes an edit that matches the description even when the original body does not', () => {
+  it('counts a human edit even when the new text is the description', () => {
     const summary = summarizeSignalReplies(
-      [message(ALEX, 1, 'I can bring tools', 'Fix the bridge')],
-      'Fix the bridge',
+      [message(ALEX, 1, 'Old text', 'New text')],
       { isBot },
     );
-    expect(summary.comments).toBe(0);
+    expect(summary.comments).toBe(1);
+    expect(summary.people).toBe(1);
+    expect(summary.lastReplySenderId).toBe(ALEX);
   });
 
   it('skips bot posts', () => {
     const summary = summarizeSignalReplies(
       [message(BOT, 1, 'Fix the bridge'), message(ALEX, 2, 'On it')],
-      'Fix the bridge',
       { isBot },
     );
     expect(summary).toMatchObject({ comments: 1, people: 1 });
   });
 
-  it('counts every message when the signal has no description', () => {
+  it('counts every human message when the signal has no description', () => {
     const summary = summarizeSignalReplies(
       [message(ALEX, 1, 'First'), message(ALEX, 2, 'Second')],
-      '',
       { isBot },
     );
     expect(summary).toMatchObject({ comments: 2, people: 1 });
@@ -106,12 +90,111 @@ describe('summarizeSignalReplies', () => {
         { ...message(ALEX, 1, 'Added Sam to the signal team'), hidden: true },
         message(SAM, 2, 'I can help on Saturday'),
       ],
-      null,
       { isBot },
     );
     expect(summary.comments).toBe(1);
     expect(summary.people).toBe(1);
     expect(summary.lastReplySenderId).toBe(SAM);
+  });
+});
+
+describe('signal room fixture', () => {
+  const DESCRIPTION = 'Fix the bridge before the freeze';
+
+  function wire(
+    sender: string,
+    ts: number,
+    content: Record<string, unknown>,
+    type = 'm.room.message',
+  ): HumanDiscussionTimelineEvent {
+    return {
+      type,
+      sender,
+      ts,
+      content,
+      relatesTo: content['m.relates_to'],
+    };
+  }
+
+  it('counts the two human bubbles and not the bot seed, bots or notices', () => {
+    const authorBody = DESCRIPTION;
+    // The live filter used to drop this bubble: the plaintext body is the
+    // seeded description, while the chat renders formatted_body.
+    expect(
+      isSignalDescriptionCopy({
+        messageContent: authorBody,
+        signalDescription: DESCRIPTION,
+      }),
+    ).toBe(true);
+
+    const authorMessage = wire(ALEX, 5, {
+      msgtype: 'm.text',
+      body: authorBody,
+      format: 'org.matrix.custom.html',
+      formatted_body: '<p>Assign an owner before Friday.</p>',
+    });
+    expect(isHumanChatBubbleEvent(authorMessage, isBot)).toBe(true);
+
+    const timeline: HumanDiscussionTimelineEvent[] = [
+      wire(ALEX, 1, {}, 'm.room.create'),
+      wire(BOT, 2, { msgtype: 'm.text', body: 'Pulling the latest notes' }),
+      wire(BOT, 3, { msgtype: 'm.text', body: DESCRIPTION }),
+      wire(BOT, 4, {
+        msgtype: 'm.notice',
+        body: '[hypha:signal-team]',
+        memberMatrixUserIds: [SAM],
+      }),
+      wire(ALEX, 4, {
+        msgtype: 'm.text',
+        body: 'capture started',
+        [CALL_CAPTURE_NOTICE_TYPE]: true,
+      }),
+      authorMessage,
+      wire(SAM, 6, { msgtype: 'm.text', body: 'I can take the east span.' }),
+      wire(SAM, 7, {
+        msgtype: 'm.text',
+        body: '* I can take the east span tomorrow.',
+        'm.new_content': {
+          msgtype: 'm.text',
+          body: 'I can take the east span tomorrow.',
+        },
+        'm.relates_to': { rel_type: 'm.replace', event_id: '$sam' },
+      }),
+    ];
+
+    expect(summarizeHumanDiscussionTimeline(timeline, { isBot })).toEqual({
+      comments: 2,
+      people: 2,
+      lastReplyAt: 6,
+      lastReplySenderId: SAM,
+    });
+  });
+});
+
+describe('collectDiscussionTimeline', () => {
+  it('reaches the start only when the homeserver omits the next token', async () => {
+    const full = await collectDiscussionTimeline(async (from) =>
+      from
+        ? { chunk: [{ type: 'm.room.create', sender: ALEX }] }
+        : {
+            chunk: [{ type: 'm.room.message', sender: SAM }],
+            end: 'older',
+          },
+    );
+    expect(full.reachedStart).toBe(true);
+    expect(full.events).toHaveLength(2);
+
+    const repeated = await collectDiscussionTimeline(async () => ({
+      chunk: [{ type: 'm.room.message', sender: SAM }],
+      end: 'same',
+    }));
+    expect(repeated.reachedStart).toBe(false);
+
+    const emptyWithToken = await collectDiscussionTimeline(async () => ({
+      chunk: [],
+      end: 'older',
+    }));
+    expect(emptyWithToken.reachedStart).toBe(false);
   });
 });
 
@@ -181,16 +264,31 @@ describe('signal discussion count persistence', () => {
     resolve(__dirname, '../../components/chat-room.tsx'),
     'utf8',
   );
+  const ingestSource = readFileSync(
+    resolve(
+      __dirname,
+      '../../../../../notifications/src/ingest/matrix-as/ingest-message.ts',
+    ),
+    'utf8',
+  );
+  const routeSource = readFileSync(
+    resolve(
+      __dirname,
+      '../../../../../../apps/web/src/app/api/matrix/appservice/transactions/[txnId]/route.ts',
+    ),
+    'utf8',
+  );
 
-  it('saves the human count when scrollback reaches the start, not when the tail length changes', () => {
-    for (const source of [panelSource, chatRoomSource]) {
-      expect(source).toContain('readSignalRoomDiscussionCount');
-      expect(source).toContain('RoomEvent.Timeline');
-      expect(source).toContain('reachesRoomStart');
-    }
-    expect(chatRoomSource).not.toContain('messages.length,\n    slug');
+  it('stores the human count from the server message path, not from the open chat', () => {
+    expect(panelSource).not.toContain('readSignalRoomDiscussionCount');
+    expect(chatRoomSource).not.toContain('readSignalRoomDiscussionCount');
+    expect(panelSource).not.toContain('messages: discussion.comments');
+    expect(chatRoomSource).not.toContain('messages: discussion.comments');
     expect(panelSource).toContain('pageSize: 50, maxBatches: 4');
     expect(panelSource).toContain("chatModeRef.current === 'coherence'");
+    expect(ingestSource).toContain('onSignalDiscussion');
+    expect(ingestSource).toContain("context.kind === 'signal'");
+    expect(routeSource).toContain('recountSignalDiscussionByRoomId');
   });
 });
 

@@ -23,13 +23,31 @@ export type IngestOutcome =
   | 'ignored_stale'
   | 'ignored_unmapped';
 
-type IngestDeps = Pick<ReceiverDeps, 'db' | 'dispatch'> & {
+type IngestDeps = Pick<
+  ReceiverDeps,
+  'db' | 'dispatch' | 'onSignalDiscussion'
+> & {
   botUserIds: Set<string>;
   logger: Pick<typeof console, 'info' | 'warn' | 'error'>;
   /** Test seams; default `Date.now` and `resolveMaxEventAgeMs()`. */
   now?: () => number;
   maxEventAgeMs?: number;
 };
+
+async function syncSignalDiscussionCount(
+  roomId: string,
+  deps: IngestDeps,
+): Promise<void> {
+  if (!deps.onSignalDiscussion) return;
+  try {
+    await deps.onSignalDiscussion(roomId);
+  } catch (error) {
+    deps.logger.warn('[matrix-as] signal discussion count was not updated', {
+      roomId,
+      error,
+    });
+  }
+}
 
 /**
  * Shared per-message pipeline used by both the live endpoint (`receiveTransaction`) and the
@@ -93,6 +111,14 @@ export async function ingestParsedMessage(
       return 'ignored_unmapped';
     }
     context = { kind: 'direct' };
+  }
+
+  // Before the claim. A timeout after the ledger insert used to make the
+  // retry a duplicate, and the duplicate path never repaired the count.
+  // Recount is idempotent and a failure here is logged, not fatal: the
+  // homeserver must still get its ACK, and the next signal event tries again.
+  if (context.kind === 'signal') {
+    await syncSignalDiscussionCount(parsed.roomId, deps);
   }
 
   const claimed = await claimProcessedEvent(
