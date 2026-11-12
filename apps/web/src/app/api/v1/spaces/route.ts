@@ -4,6 +4,7 @@ import {
   getAllSpaces,
   getSpacesBySlugs,
 } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 import { resolveMappedHostScope } from '../../../../lib/white-label/mapped-host-scope';
 
 type Web3SpaceIds = number[] | undefined;
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
     // Mapped host: only the host's own Space, named by id or slug. Anything
     // else (another Space, a list that includes one, no filter) is a 404.
     // No Space header means the main app, which continues below unchanged.
-    const scope = await resolveMappedHostScope(request);
+    const scope = await resolveMappedHostScope(request, { db });
     if (scope.kind !== 'main') {
       const own =
         scope.kind === 'mapped' &&
@@ -67,6 +68,11 @@ export async function GET(request: NextRequest) {
       spaces = await getSpacesBySlugs(slugs, options);
     } else {
       spaces = await getAllSpaces({ parentOnly });
+    }
+
+    if (scope.kind === 'mapped') {
+      // `web3_space_id` is not unique in the schema: keep the host's own row.
+      spaces = spaces.filter((space) => space.id === scope.spaceId);
     }
 
     return NextResponse.json(spaces);

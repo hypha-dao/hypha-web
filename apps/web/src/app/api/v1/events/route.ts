@@ -3,7 +3,7 @@ import { findAllEvents } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { EVENT_ENTITY_TYPES, EventEntity } from '@hypha-platform/core/client';
 import {
-  findDocumentSpaceId,
+  findDocumentSpace,
   resolveMappedHostScope,
 } from '../../../../lib/white-label/mapped-host-scope';
 
@@ -13,8 +13,12 @@ export async function GET(request: NextRequest) {
   // Mapped host (Space header set by middleware): events of the host's own
   // Space only. No header means the main app, which continues below unchanged.
   try {
-    const scope = await resolveMappedHostScope(request);
+    const scope = await resolveMappedHostScope(request, { db });
     if (scope.kind !== 'main') {
+      // An unknown host Space is a 404 whatever the parameters are.
+      if (scope.kind !== 'mapped') {
+        return new NextResponse(null, { status: 404 });
+      }
       const entity = searchParams.get('referenceEntity');
       const idRaw = searchParams.get('referenceId');
       if (
@@ -28,15 +32,13 @@ export async function GET(request: NextRequest) {
           { status: 400 },
         );
       }
-      if (scope.kind !== 'mapped')
-        return new NextResponse(null, { status: 404 });
       const id = Number(idRaw);
       // `person` and `token` events are not served on a mapped host.
       const allowed =
         entity === 'space'
           ? id === scope.spaceId
           : entity === 'document'
-          ? (await findDocumentSpaceId({ id })) === scope.spaceId
+          ? (await findDocumentSpace({ id }, { db }))?.spaceId === scope.spaceId
           : false;
       if (!allowed) return new NextResponse(null, { status: 404 });
     }

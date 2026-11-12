@@ -95,6 +95,13 @@ describe('GET /api/v1/spaces', () => {
     expect(getSpacesBySlugs).not.toHaveBeenCalled();
   });
 
+  it('mapped: a row that only shares the on-chain id is dropped from the answer', async () => {
+    getSpacesByWeb3Ids.mockResolvedValue([{ id: 7 }, { id: 99 }]);
+    const res = await get('?web3SpaceIds=42');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual([{ id: 7 }]);
+  });
+
   it('mapped: no filter, parentOnly and empty lists are 404', async () => {
     for (const q of [
       '',
@@ -157,11 +164,11 @@ describe('GET /api/v1/events', () => {
   });
 
   it('mapped: document events need documents.spaceId to be the own Space', async () => {
-    findDocument.mockResolvedValue({ spaceId: 7 });
+    findDocument.mockResolvedValue({ spaceId: 7, web3ProposalId: 5 });
     expect(
       (await get('?referenceEntity=document&referenceId=100')).status,
     ).toBe(200);
-    findDocument.mockResolvedValue({ spaceId: 8 });
+    findDocument.mockResolvedValue({ spaceId: 8, web3ProposalId: 5 });
     expect(
       (await get('?referenceEntity=document&referenceId=101')).status,
     ).toBe(404);
@@ -199,6 +206,15 @@ describe('GET /api/v1/events', () => {
     expect(findAllEvents).not.toHaveBeenCalled();
   });
 
+  it('mapped: an unknown host Space is 404 even when parameters are missing', async () => {
+    findSpace.mockResolvedValue(undefined);
+    expect((await get('')).status).toBe(404);
+    expect((await get('?referenceEntity=space&referenceId=7')).status).toBe(
+      404,
+    );
+    expect(findAllEvents).not.toHaveBeenCalled();
+  });
+
   it('main app (no header): unchanged, including the no-filter call and NaN', async () => {
     expect((await get('', false)).status).toBe(200);
     expect(findAllEvents).toHaveBeenLastCalledWith(expect.anything(), {
@@ -232,21 +248,34 @@ describe('GET /api/v1/documents/:documentSlug/voters', () => {
     ]);
   });
 
-  it('mapped: a proposal of the own Space is served', async () => {
-    findDocument.mockResolvedValue({ spaceId: 7 });
+  it('mapped: a proposal of the own Space is read from the row that passed the check', async () => {
+    findDocument.mockResolvedValue({ spaceId: 7, web3ProposalId: 11 });
+    // The generic lookup would give another proposal id: it must not be used.
+    findDocumentBySlug.mockResolvedValue({ web3ProposalId: 99 });
     const res = await get();
     expect(res.status).toBe(200);
     expect((await res.json()).voters).toHaveLength(1);
-    expect(findDocument.mock.calls[0]?.[0].columns).toEqual({ spaceId: true });
+    expect(findDocument.mock.calls[0]?.[0].columns).toEqual({
+      spaceId: true,
+      web3ProposalId: true,
+    });
+    expect(findDocumentBySlug).not.toHaveBeenCalled();
+    expect(readContract).toHaveBeenCalledWith({ proposalId: 11n });
   });
 
   it('mapped: a proposal of another Space, or an unknown one, is 404 before the chain is read', async () => {
-    findDocument.mockResolvedValue({ spaceId: 8 });
+    findDocument.mockResolvedValue({ spaceId: 8, web3ProposalId: 11 });
     expect((await get()).status).toBe(404);
     findDocument.mockResolvedValue(undefined);
     expect((await get()).status).toBe(404);
     expect(readContract).not.toHaveBeenCalled();
     expect(findPeopleByWeb3Addresses).not.toHaveBeenCalled();
+  });
+
+  it('mapped: a document without a proposal id is 404', async () => {
+    findDocument.mockResolvedValue({ spaceId: 7, web3ProposalId: null });
+    expect((await get()).status).toBe(404);
+    expect(readContract).not.toHaveBeenCalled();
   });
 
   it('mapped: an unknown host Space is 404', async () => {
@@ -255,9 +284,10 @@ describe('GET /api/v1/documents/:documentSlug/voters', () => {
   });
 
   it('main app (no header): unchanged, no extra lookups', async () => {
-    findDocument.mockResolvedValue({ spaceId: 8 });
     const res = await get(false);
     expect(res.status).toBe(200);
+    expect(findDocumentBySlug).toHaveBeenCalledTimes(1);
+    expect(readContract).toHaveBeenCalledWith({ proposalId: 5n });
     expect(findDocument).not.toHaveBeenCalled();
     expect(findSpace).not.toHaveBeenCalled();
   });
