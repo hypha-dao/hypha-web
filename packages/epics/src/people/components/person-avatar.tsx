@@ -1,9 +1,10 @@
 'use client';
 
-import { Avatar, AvatarImage, AvatarFallback } from '@hypha-platform/ui';
+import { Avatar, AvatarFallback } from '@hypha-platform/ui';
 import { UserIcon } from 'lucide-react';
 import { Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { OptimizedAvatarImage } from '../../common/optimized-avatar-image';
 
 import type { PresenceLevel } from './member-presence';
 import { useRegisteredPresence } from './member-presence-provider';
@@ -11,19 +12,23 @@ import { PresenceDot } from './presence-dot';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'chat' | 'reply' | 'toolbar';
 
-const sizeMap: Record<AvatarSize, { avatar: string; skeleton: string }> = {
-  xs: { avatar: 'w-[12px] h-[12px]', skeleton: '12px' },
-  sm: { avatar: 'w-[24px] h-[24px]', skeleton: '24px' },
-  md: { avatar: 'w-[32px] h-[32px]', skeleton: '32px' },
-  lg: { avatar: 'w-[64px] h-[64px]', skeleton: '64px' },
+const sizeMap: Record<
+  AvatarSize,
+  { avatar: string; skeleton: string; pixel: number }
+> = {
+  xs: { avatar: 'w-[12px] h-[12px]', skeleton: '12px', pixel: 12 },
+  sm: { avatar: 'w-[24px] h-[24px]', skeleton: '24px', pixel: 24 },
+  md: { avatar: 'w-[32px] h-[32px]', skeleton: '32px', pixel: 32 },
+  lg: { avatar: 'w-[64px] h-[64px]', skeleton: '64px', pixel: 64 },
   /** Human chat timeline (~Discord proportions): main message */
-  chat: { avatar: 'h-10 w-10', skeleton: '40px' },
+  chat: { avatar: 'h-10 w-10', skeleton: '40px', pixel: 40 },
   /** Rich-reply quoted author */
-  reply: { avatar: 'h-4 w-4', skeleton: '16px' },
+  reply: { avatar: 'h-4 w-4', skeleton: '16px', pixel: 16 },
   /** MenuTop chrome: 36px square (important beats Avatar’s default h-10/w-10) */
   toolbar: {
     avatar: '!h-[36px] !w-[36px] shrink-0',
     skeleton: '36px',
+    pixel: 36,
   },
 };
 
@@ -48,12 +53,15 @@ export const PersonAvatar = ({
   matrixUserId,
   presence: presenceProp,
   showPresence,
+  priority = false,
 }: {
   avatarSrc?: string;
   userName?: string;
   className?: string;
   isLoading?: boolean;
   size?: AvatarSize;
+  /** Above-the-fold portraits only. Others lazy-load via next/image. */
+  priority?: boolean;
   /** `circle` = full round (default; survives `--radius-md: 0`); `squircle` ≈ superellipse; `rounded` = soft corners; `square` = website chrome */
   shape?: 'rounded' | 'squircle' | 'circle' | 'square';
   /** Registers the portrait for live Matrix presence lights. */
@@ -83,7 +91,11 @@ export const PersonAvatar = ({
     <UserIcon className="h-[45%] w-[45%]" aria-hidden />
   );
 
-  const { avatar: avatarSize, skeleton: skeletonSize } = sizeMap[size];
+  const {
+    avatar: avatarSize,
+    skeleton: skeletonSize,
+    pixel: pixelSize,
+  } = sizeMap[size];
   const radiusClass =
     shape === 'circle'
       ? 'rounded-full'
@@ -109,7 +121,12 @@ export const PersonAvatar = ({
           'border-0 shadow-none ring-0',
         )}
       >
-        <AvatarImage src={avatarSrc} alt={`${userName}'s avatar`} />
+        <OptimizedAvatarImage
+          src={avatarSrc}
+          alt={`${userName}'s avatar`}
+          pixelSize={pixelSize}
+          priority={priority}
+        />
         <AvatarFallback>{getFallbackContent()}</AvatarFallback>
       </Avatar>
     </Skeleton>

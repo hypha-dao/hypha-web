@@ -8,7 +8,8 @@ import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
 import type { EnergyParticipantProfile } from '../../../hooks/use-space-energy';
 import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
-import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
+import { BarChart, type ChartSeries } from './charts';
+import { ENERGY_PALETTE } from './energy-palette';
 import { type EnergyPerson } from './use-energy-people';
 import {
   formatBpsPct,

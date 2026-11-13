@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { UsersIcon, ZapIcon } from 'lucide-react';
-import { ENERGY_PALETTE } from './charts';
+import { ENERGY_PALETTE } from './energy-palette';
 import { SourceCard, SectionTitle } from './shared';
 import { ConsumerConsumptionCard } from './consumer-consumption-card';
 import {
@@ -76,7 +76,7 @@ export const EnergyOverviewTab = ({
           <p className="text-2 text-neutral-11">{t('consumersUnavailable')}</p>
         ) : consumers.length ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {consumers.map((address) => {
+            {consumers.map((address, index) => {
               const display = resolveEnergyParticipantDisplay(
                 address,
                 people,
@@ -103,6 +103,7 @@ export const EnergyOverviewTab = ({
                   deviceIds={
                     deviceIdsByAddress.get(address.toLowerCase()) ?? null
                   }
+                  priority={index < 3}
                 />
               );
             })}

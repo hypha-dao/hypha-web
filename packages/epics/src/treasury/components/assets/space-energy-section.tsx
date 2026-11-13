@@ -1,24 +1,41 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { UsersIcon, ZapIcon, CoinsIcon } from 'lucide-react';
 import { useSpaceEnergy } from '../../hooks/use-space-energy';
 import { StatCard } from './energy/shared';
-import { ENERGY_PALETTE } from './energy/charts';
+import { ENERGY_PALETTE } from './energy/energy-palette';
 import { formatStablecoinMicro, UNAVAILABLE } from './energy/format';
 import { EnergyOverviewTab } from './energy/overview-tab';
-import {
-  PRODUCTION_DEFAULT_TIMEFRAME,
-  ProductionConsumptionTab,
-} from './energy/production-consumption-tab';
+import { PRODUCTION_DEFAULT_TIMEFRAME } from './energy/dummy-data';
 import { useSpaceEnergyTelemetry } from '../../hooks/use-space-energy-telemetry';
-import { OwnershipTab } from './energy/ownership-tab';
-import { CreditsTab } from './energy/credits-tab';
+import { useOverviewFirstTelemetryPrefetch } from '../../hooks/use-overview-first-telemetry-prefetch';
 import { useEnergyPeople } from './energy/use-energy-people';
-import { usePreloadImages } from './energy/use-preload-images';
-import { EnergySectionSkeleton } from './energy/loading-skeletons';
+import {
+  EnergyChartSkeleton,
+  EnergySectionSkeleton,
+} from './energy/loading-skeletons';
+
+const ProductionConsumptionTab = dynamic(
+  () =>
+    import('./energy/production-consumption-tab').then(
+      (mod) => mod.ProductionConsumptionTab,
+    ),
+  { loading: () => <EnergyChartSkeleton height={220} bars={12} /> },
+);
+
+const OwnershipTab = dynamic(
+  () => import('./energy/ownership-tab').then((mod) => mod.OwnershipTab),
+  { loading: () => <EnergyChartSkeleton height={220} bars={12} /> },
+);
+
+const CreditsTab = dynamic(
+  () => import('./energy/credits-tab').then((mod) => mod.CreditsTab),
+  { loading: () => <EnergyChartSkeleton height={220} bars={12} /> },
+);
 
 const TAB_VALUES = ['overview', 'flows', 'ownership', 'credits'] as const;
 
@@ -33,10 +50,15 @@ export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
   const { data, isLoading } = useSpaceEnergy(spaceSlug);
   const [tab, setTab] = React.useState<string>('overview');
 
-  // Start 7d telemetry with the overview so Production opens from cache.
-  // Wait for that Azure scan before 30d so the two windows do not contend.
+  // Overview is gated only on `/energy`. 7d then 30d still prefetch so
+  // Production opens from cache, but only after the consumer grid paints
+  // (or as soon as the user leaves Overview).
+  const prefetchEnabled = useOverviewFirstTelemetryPrefetch(
+    Boolean(data?.enabled),
+    tab,
+  );
   const prefetchTelemetry = {
-    enabled: Boolean(data?.enabled),
+    enabled: prefetchEnabled,
     refreshInterval: 0,
   };
   const sevenDayTelemetry = useSpaceEnergyTelemetry(
@@ -71,19 +93,6 @@ export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
   const { people, isLoading: peopleLoading } = useEnergyPeople(
     unresolvedMemberAddresses,
   );
-
-  const avatarUrls = React.useMemo(() => {
-    const urls = new Set<string>();
-    for (const profile of Object.values(data?.participantProfiles ?? {})) {
-      if (profile.avatarUrl) urls.add(profile.avatarUrl);
-    }
-    for (const person of Object.values(people)) {
-      if (person?.avatarUrl) urls.add(person.avatarUrl);
-    }
-    return [...urls];
-  }, [data?.participantProfiles, people]);
-
-  usePreloadImages(avatarUrls);
 
   if (isLoading) {
     return <EnergySectionSkeleton />;

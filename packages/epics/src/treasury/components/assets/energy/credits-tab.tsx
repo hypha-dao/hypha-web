@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
 import { EnergyPersonCard, GridOperatorCard } from './shared';
-import { ENERGY_PALETTE } from './charts';
+import { ENERGY_PALETTE } from './energy-palette';
 import {
   formatStablecoinMicro,
   UNAVAILABLE,

@@ -5,10 +5,12 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
 import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
 import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
-import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
+import { BarChart, type ChartSeries } from './charts';
+import { ENERGY_PALETTE } from './energy-palette';
 import {
   buildProductionSeries,
   buildGridFlowSeries,
+  PRODUCTION_DEFAULT_TIMEFRAME,
   timeframeLabels,
   type Timeframe,
 } from './dummy-data';
@@ -23,7 +25,7 @@ import {
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
-export const PRODUCTION_DEFAULT_TIMEFRAME: Timeframe = '7d';
+export { PRODUCTION_DEFAULT_TIMEFRAME };
 
 export const ProductionConsumptionTab = ({
   data,

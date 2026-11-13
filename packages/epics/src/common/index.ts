@@ -249,4 +249,5 @@ export {
   FormattedLocalDateTime,
   SpaceCreatedOnText,
 } from './formatted-local-date-time';
+export { OptimizedAvatarImage } from './optimized-avatar-image';
 export * from './composer';
