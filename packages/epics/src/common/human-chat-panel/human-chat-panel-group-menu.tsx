@@ -420,7 +420,18 @@ export function HumanChatPanelGroupMenu({
     setError(null);
     try {
       rememberGroupChatMembers(roomId, memberIds);
-      await ensureRoomMembers(roomId, memberIds);
+      // The result can also list older pending invitees; only the people
+      // picked here decide whether this add failed.
+      const notJoined = new Set(await ensureRoomMembers(roomId, memberIds));
+      const failedPersonIds = [...selected].filter((id) => {
+        const mxid = personIdToMatrixUserId[id]?.trim();
+        return mxid ? notJoined.has(mxid) : false;
+      });
+      if (failedPersonIds.length > 0) {
+        setSelected(new Set(failedPersonIds));
+        setError(t('addPeopleFailed'));
+        return;
+      }
       setAddOpen(false);
       setSelected(new Set());
     } catch {

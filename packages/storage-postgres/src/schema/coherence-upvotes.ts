@@ -5,6 +5,7 @@ import {
   pgTable,
   serial,
   smallint,
+  text,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
@@ -35,6 +36,11 @@ export const coherenceUpvotes = pgTable(
       .$type<string>(),
     /** Display decimals of the voting power source token (0 for 1m1v, 18 for token/voice). */
     tokenDecimals: smallint('token_decimals').notNull().default(0),
+    /**
+     * `up` or `down`. Existing rows are upvotes: the column defaults to `up`.
+     * The stored voting power stays positive; the summary subtracts downvotes.
+     */
+    direction: text('direction').notNull().default('up'),
     ...commonDateFields,
   },
   (table) => [

@@ -1,5 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { middleware as i18nMiddleware, routing } from '@hypha-platform/i18n';
+import {
+  cspMediaSrcSources,
+  matrixHomeserverOrigin,
+  parseCspImageHosts,
+} from '@hypha-platform/core/csp';
 import { matrixTurnConnectSourcesFromEnv } from './lib/matrix-connect-src';
 import {
   API_PREFIX,
@@ -28,7 +33,7 @@ import {
 /** Header next-intl reads to pick the request locale. */
 const INTL_LOCALE_HEADER = 'X-NEXT-INTL-LOCALE';
 
-const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
+const IMAGE_HOSTS = parseCspImageHosts(process.env.NEXT_PUBLIC_IMAGE_HOSTS);
 const CONNECT_SOURCES =
   process.env.NEXT_PUBLIC_CONNECT_SOURCES?.split(', ') ?? [];
 
@@ -63,15 +68,7 @@ const OPENAI_REALTIME_CONNECT_SOURCES =
 
 /** Origin of `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` for CSP (timeline MXC → HTTP). */
 function matrixHomeserverImgSrc(): string {
-  const raw = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.trim();
-  if (!raw) return '';
-  try {
-    const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-    const u = new URL(withProtocol);
-    return `${u.protocol}//${u.host}`;
-  } catch {
-    return '';
-  }
+  return matrixHomeserverOrigin(process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL);
 }
 
 function applyCsp(
@@ -107,17 +104,15 @@ function applyCsp(
     'https://*.ggpht.com',
     ...IMAGE_HOSTS.map((host) => `https://${host}`),
   ].join(' ');
-  /** `<video>` / `<audio>` use `media-src`; if unset, `default-src` blocks cross-origin Matrix clips. */
-  const mediaSrc = [
-    "'self'",
-    'data:',
-    'blob:',
-    UPLOADTHING_UFS_HOST,
-    'https://utfs.io',
-    'https://*.utfs.io',
-    ...(matrixImg ? [matrixImg] : []),
-    ...IMAGE_HOSTS.map((host) => `https://${host}`),
-  ].join(' ');
+  /**
+   * `<video>` / `<audio>` use `media-src`; if unset, `default-src` blocks
+   * cross-origin Matrix clips. The signal composer checks video links against
+   * this same list.
+   */
+  const mediaSrc = cspMediaSrcSources({
+    imageHosts: IMAGE_HOSTS,
+    matrixOrigin: matrixImg,
+  }).join(' ');
   const localChainRpc =
     process.env.NODE_ENV !== 'production'
       ? [

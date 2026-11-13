@@ -44,6 +44,7 @@ function kindLabel(
   if (kind === 'Tension') return t('filterTension');
   if (kind === 'Insight') return t('filterInsight');
   if (kind === 'Action') return t('filterAction');
+  if (kind === 'Bug') return t('filterBug');
   return t('filterImpact');
 }
 

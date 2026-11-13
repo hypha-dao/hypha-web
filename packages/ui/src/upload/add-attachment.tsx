@@ -1,5 +1,10 @@
 'use client';
-import React, { ChangeEvent, useRef, useState } from 'react';
+import React, {
+  ChangeEvent,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import {
   FileText,
   Image as ImageIcon,
@@ -22,7 +27,17 @@ interface AddAttachmentProps {
   accept?: string;
   maxFiles?: number;
   maxBytes?: number;
+  /**
+   * Hide the text trigger. Callers that open the same input from their own
+   * control (one user gesture, one dialog) use `openFileDialog` instead.
+   */
+  hideTrigger?: boolean;
 }
+
+export type AddAttachmentHandle = {
+  /** Opens the native file dialog. Must run inside the caller's click. */
+  openFileDialog: () => void;
+};
 
 function fileMatchesAccept(file: File, accept: string) {
   const rules = accept
@@ -39,17 +54,29 @@ function fileMatchesAccept(file: File, accept: string) {
   });
 }
 
-export const AddAttachment: React.FC<AddAttachmentProps> = ({
-  onChange,
-  onExistingAttachmentsChange,
-  value,
-  defaultAttachments,
-  label = 'Add Attachment (JPEG, PNG, WebP, or PDF — max 16MB)',
-  accept,
-  maxFiles,
-  maxBytes,
-}) => {
+export const AddAttachment = React.forwardRef<
+  AddAttachmentHandle,
+  AddAttachmentProps
+>(function AddAttachment(
+  {
+    onChange,
+    onExistingAttachmentsChange,
+    value,
+    defaultAttachments,
+    label = 'Add Attachment (JPEG, PNG, WebP, or PDF — max 16MB)',
+    accept,
+    maxFiles,
+    maxBytes,
+    hideTrigger = false,
+  },
+  ref,
+) {
   const inputRef = useRef<HTMLInputElement>(null);
+  useImperativeHandle(ref, () => ({
+    openFileDialog: () => {
+      inputRef.current?.click();
+    },
+  }));
   const [attachments, setAttachments] = useState<File[]>([]);
   const [existingAttachments, setExistingAttachments] = useState<
     AttachmentInput[]
@@ -154,32 +181,44 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
     onExistingAttachmentsChange?.(updated);
   };
 
+  // The labeled button is the control. This input only receives the
+  // programmatic click, so it stays out of the accessibility tree.
+  const fileInput = (
+    <input
+      ref={inputRef}
+      type="file"
+      className="sr-only"
+      aria-hidden="true"
+      accept={accept}
+      multiple
+      tabIndex={-1}
+      onChange={(e: ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+          handleUpload(e.target.files);
+        }
+      }}
+    />
+  );
+
   return (
     <div className="flex w-full min-w-0 max-w-full flex-col items-end">
-      <button
-        type="button"
-        onClick={handleClick}
-        className="flex w-full min-w-0 max-w-full items-start gap-2 px-0.5 py-1.5 text-left text-2 leading-snug text-neutral-11 transition-colors hover:text-foreground"
-      >
-        <Upload
-          className="mt-0.5 size-4 shrink-0"
-          strokeWidth={1.5}
-          aria-hidden
-        />
-        <span className="min-w-0 flex-1 break-words">{label}</span>
-        <input
-          ref={inputRef}
-          type="file"
-          className="hidden"
-          accept={accept}
-          multiple
-          onChange={(e: ChangeEvent<HTMLInputElement>) => {
-            if (e.target.files) {
-              handleUpload(e.target.files);
-            }
-          }}
-        />
-      </button>
+      {hideTrigger ? (
+        fileInput
+      ) : (
+        <button
+          type="button"
+          onClick={handleClick}
+          className="flex w-full min-w-0 max-w-full items-start gap-2 px-0.5 py-1.5 text-left text-2 leading-snug text-neutral-11 transition-colors hover:text-foreground"
+        >
+          <Upload
+            className="mt-0.5 size-4 shrink-0"
+            strokeWidth={1.5}
+            aria-hidden
+          />
+          <span className="min-w-0 flex-1 break-words">{label}</span>
+          {fileInput}
+        </button>
+      )}
 
       <div className="mt-4 w-full min-w-0 max-w-full space-y-2">
         {existingAttachments.map((file, idx) => (
@@ -215,7 +254,11 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
           </div>
         ))}
       </div>
-      <Separator className="max-w-full" />
+      {hideTrigger &&
+      attachments.length === 0 &&
+      existingAttachments.length === 0 ? null : (
+        <Separator className="max-w-full" />
+      )}
     </div>
   );
-};
+});

@@ -162,7 +162,8 @@
   color: var(--space-accent-fg, var(--color-accent-11));
 }
 
-[data-space-accent-scope] .hypha-control-outline:hover {
+[data-space-accent-scope] .hypha-control-outline:hover,
+[data-space-accent-scope] .hypha-control-outline[data-state='open'] {
   border-color: var(--space-accent, var(--color-accent-9));
   background-color: color-mix(
     in oklab,

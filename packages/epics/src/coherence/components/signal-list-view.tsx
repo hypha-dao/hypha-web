@@ -395,14 +395,12 @@ export function SignalListView({
                       slug={signal.slug}
                       upvotes={signal.upvotes}
                       refresh={refresh}
-                      disabled={Boolean(signal.archived)}
                     />
                   </div>
 
                   <div className="flex items-center justify-end gap-2 lg:col-start-7 lg:px-3">
                     <SignalCardActions
                       signal={signal}
-                      refresh={refresh}
                       className="shrink-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
                     />
                   </div>

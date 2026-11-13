@@ -1,6 +1,7 @@
 'use client';
 
 import { Locale } from '@hypha-platform/i18n';
+import { signalDetailPath } from '../coherence/lib/signal-detail-path';
 
 export const getDhoPathAgreements = (lang: Locale, id: string) => {
   return `/${lang}/dho/${id}/agreements`;
@@ -39,12 +40,9 @@ export const getSignalPath = (
   spaceSlug: string,
   signalSlug: string,
 ) => {
-  // Signals board with that card selected. `useCoherenceSignalDeepLink` scrolls
-  // to the card and opens its chat when Human chat is on. Coherence-off still
-  // redirects this tab to overview.
-  return `/${lang}/dho/${spaceSlug}/coherence?signal=${encodeURIComponent(
-    signalSlug,
-  )}`;
+  // Signal detail. Chat stays closed until the member opens it.
+  // Coherence-off redirects to overview with `?signal=`.
+  return signalDetailPath(lang, spaceSlug, signalSlug);
 };
 
 export const getProposalUrl = (

@@ -1,4 +1,4 @@
-import { isImageAttachment } from './signal-video';
+import { isImageAttachment, resolveSignalVideo } from './signal-video';
 
 export const SIGNAL_IMAGE_LIMIT = 8;
 export const SIGNAL_DOCUMENT_LIMIT = 8;
@@ -41,6 +41,25 @@ export function splitSignalMedia(input?: {
     });
   }
   return { images, documents };
+}
+
+export type SignalMediaCounts = {
+  videos: number;
+  images: number;
+  documents: number;
+};
+
+export function countSignalMedia(input?: {
+  leadImage?: string | null;
+  videoUrl?: string | null;
+  attachments?: SignalMediaItem[] | null;
+}): SignalMediaCounts {
+  const { images, documents } = splitSignalMedia(input);
+  return {
+    videos: resolveSignalVideo(input?.videoUrl) ? 1 : 0,
+    images: images.length,
+    documents: documents.length,
+  };
 }
 
 export function writeSignalCreateMedia(draft: SignalMediaDraft) {

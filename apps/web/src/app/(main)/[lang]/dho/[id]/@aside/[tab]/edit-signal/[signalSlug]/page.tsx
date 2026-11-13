@@ -1,5 +1,5 @@
 import { ConnectedCreateSignalForm } from '@web/components/connected-create-signal-form';
-import { ProposalOverlayShell } from '@hypha-platform/epics';
+import { ProposalOverlayShell, signalDetailPath } from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../../../../@tab/coherence/constants';
 import { Locale } from '@hypha-platform/i18n';
 import {
@@ -39,14 +39,14 @@ export default async function EditSignalPage({ params }: PageProps) {
     notFound();
   }
 
-  const successfulUrl = getDhoPathCoherence(lang, id);
+  const listUrl = getDhoPathCoherence(lang, id);
+  const detailUrl = signalDetailPath(lang, id, signal.slug);
   const signalType = signal.type as (typeof COHERENCE_SIGNAL_TYPES)[number];
 
   return (
     <ProposalOverlayShell>
       <ConnectedCreateSignalForm
         mode="edit"
-        signalId={signal.id}
         signalSlug={signal.slug}
         signalRoomId={signal.roomId}
         initialValues={{
@@ -69,9 +69,9 @@ export default async function EditSignalPage({ params }: PageProps) {
           sharedWithNetwork: signal.sharedWithNetwork ?? false,
           capitals: signal.capitals ?? [],
         }}
-        successfulUrl={successfulUrl}
-        closeUrl={successfulUrl}
-        backUrl={successfulUrl}
+        successfulUrl={detailUrl}
+        closeUrl={listUrl}
+        backUrl={listUrl}
         spaceId={spaceFromDb.id}
       />
     </ProposalOverlayShell>

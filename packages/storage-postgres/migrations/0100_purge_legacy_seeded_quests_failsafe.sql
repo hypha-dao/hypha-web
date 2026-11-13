@@ -1,5 +1,5 @@
--- Follow-up to 0098: same fail-safe predicate for environments that already
--- applied the broader 0098 filter. Idempotent if 0098 already removed these
+-- Follow-up to 0099: same fail-safe predicate for environments that already
+-- applied the broader 0099 filter. Idempotent if 0099 already removed these
 -- rows. Ambiguous (non-seed) rows are left in place.
 DELETE FROM "space_quests"
 WHERE "creator_person_id" IS NULL

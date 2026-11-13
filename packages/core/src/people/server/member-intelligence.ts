@@ -68,6 +68,10 @@ import {
   movementKindForAgreement,
   selectMemberMovement,
 } from '../member-situation';
+import {
+  canonicalSignalType,
+  storedSignalTypes,
+} from '../../coherence/coherence-types';
 import { SpaceTransparencyLevel } from '../../space/transparency-policy';
 import { readSpaceOnChainTransparency } from '../../space/server/read-space-on-chain-transparency';
 import {
@@ -819,7 +823,7 @@ async function loadNetworkHorizonSignals(
       and(
         eq(coherences.sharedWithNetwork, true),
         or(eq(coherences.archived, false), isNull(coherences.archived)),
-        inArray(coherences.type, [...allowedTypes]),
+        inArray(coherences.type, storedSignalTypes(allowedTypes)),
         eq(spaces.isArchived, false),
         or(isNull(coherences.creatorId), ne(coherences.creatorId, personId)),
         spaceIds.length > 0
@@ -837,7 +841,7 @@ async function loadNetworkHorizonSignals(
         id: row.id,
         slug: row.slug,
         title: row.title,
-        type: row.type,
+        type: canonicalSignalType(row.type),
         description: optionalExcerpt(row.description),
         tags: stringTags(row.tags),
         updatedAt: row.updatedAt.toISOString(),

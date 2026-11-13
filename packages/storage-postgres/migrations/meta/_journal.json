@@ -685,35 +685,42 @@
       "idx": 97,
       "version": "7",
       "when": 1784000000028,
-      "tag": "0097_space_quests",
+      "tag": "0097_signal_vote_direction",
       "breakpoints": true
     },
     {
       "idx": 98,
       "version": "7",
       "when": 1784000000029,
-      "tag": "0098_purge_legacy_seeded_quests",
+      "tag": "0098_space_quests",
       "breakpoints": true
     },
     {
       "idx": 99,
       "version": "7",
       "when": 1784000000030,
-      "tag": "0099_purge_legacy_seeded_quests_failsafe",
+      "tag": "0099_purge_legacy_seeded_quests",
       "breakpoints": true
     },
     {
       "idx": 100,
       "version": "7",
       "when": 1784000000031,
-      "tag": "0100_space_quest_drafts",
+      "tag": "0100_purge_legacy_seeded_quests_failsafe",
       "breakpoints": true
     },
     {
       "idx": 101,
       "version": "7",
       "when": 1784000000032,
-      "tag": "0101_space_quest_deliverables_enabled",
+      "tag": "0101_space_quest_drafts",
+      "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1784000000033,
+      "tag": "0102_space_quest_deliverables_enabled",
       "breakpoints": true
     }
   ]

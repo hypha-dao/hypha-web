@@ -48,6 +48,26 @@
   pointer-events: none;
 }
 
+/* Create-signal description: match the Tag people label (14px / medium). */
+.richtext-editor.signal-description-editor
+  .richtext-editor-content-host
+  .tiptap
+  p {
+  font-size: var(--text-2);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--text-2--line-height);
+}
+
+.richtext-editor.signal-description-editor
+  .richtext-editor-content-host
+  .tiptap
+  .is-editor-empty:first-child::before {
+  font-size: var(--text-2) !important;
+  font-weight: var(--font-weight-medium) !important;
+  line-height: var(--text-2--line-height) !important;
+  color: var(--muted-foreground);
+}
+
 /*
  * accent-4 is the panel fill (paper-adjacent). That made selected text
  * nearly invisible on the editor surface. Mix the solid accent so the

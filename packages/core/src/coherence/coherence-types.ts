@@ -7,6 +7,7 @@ export const COHERENCE_SIGNAL_TYPES = [
   'Risk',
   'Action',
   'Impact',
+  'Bug',
 ] as const;
 
 export type CoherenceSignalType = (typeof COHERENCE_SIGNAL_TYPES)[number];
@@ -18,6 +19,21 @@ export const COHERENCE_TYPES = [
 ] as const;
 
 export type CoherenceType = (typeof COHERENCE_TYPES)[number];
+
+/** Trim a stored type. Impact evidence and proof of action are separate types. */
+export function canonicalSignalType(type: string | null | undefined): string {
+  return type?.trim() ?? '';
+}
+
+/** Query values for the given types, with blanks dropped. */
+export function storedSignalTypes(types: readonly string[]): string[] {
+  const stored = new Set<string>();
+  for (const type of types) {
+    const canonical = canonicalSignalType(type);
+    if (canonical) stored.add(canonical);
+  }
+  return [...stored];
+}
 
 export const COHERENCE_TYPE_OPTIONS: {
   icon: string;
@@ -81,6 +97,14 @@ export const COHERENCE_TYPE_OPTIONS: {
     type: 'Impact',
     title: 'Impact Evidence',
     description: 'Stories and real-world outcomes',
+  },
+  {
+    icon: 'Bug',
+    colorVariant: 'error',
+    // Stored value stays `Bug` so existing rows still load. The label is Issue.
+    type: 'Bug',
+    title: 'Issue',
+    description: 'Something is broken',
   },
   {
     icon: 'TrendingUp',

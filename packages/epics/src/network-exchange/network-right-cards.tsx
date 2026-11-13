@@ -678,7 +678,7 @@ function WeaveCard({
 const SHARE_KIND = {
   need: 'Need',
   action: 'Action',
-  impact: 'Impact',
+  impact: 'Action',
 } as const;
 
 export function ActionShareCard({

@@ -24,6 +24,7 @@ export const createSpaceSignalBySlugInputSchema = z.object({
       'Tension',
       'Risk',
       'Action',
+      'Bug',
       'Impact',
       'Trend',
       'Proposal',

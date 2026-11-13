@@ -1,360 +1,284 @@
 'use client';
 
-import { ErrorAlert } from '@hypha-platform/ui';
-import {
-  COHERENCE_SIGNAL_TYPES,
-  Coherence,
-  collectExistingTags,
-  filterSignals,
-  parseSignalBoardFilters,
-  useCoherenceMutationsWeb2Rsc,
-  useFindCoherences,
-  useJwt,
-  useMe,
-  useSpaceBySlug,
-  writeSignalBoardFilters,
-} from '@hypha-platform/core/client';
-import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
+import {
+  DEFAULT_SIGNAL_SORT,
+  DEFAULT_SIGNAL_TIME_FRAME,
+  filterSignalsByTitle,
+  parseSignalSort,
+  parseSignalTimeFrame,
+  rankSignals,
+  signalListUpvoteSummaryState,
+  useFindCoherences,
+  useSpaceBySlug,
+  type SignalSort,
+  type SignalTimeFrame,
+} from '@hypha-platform/core/client';
+import { Locale } from '@hypha-platform/i18n';
+import { Button, ErrorAlert, Skeleton } from '@hypha-platform/ui';
 import { CoherenceOrder } from '../types';
-import { buildSignalWorkflowConfigurationPath } from '../lib/signal-workflow-configuration-return';
-import {
-  DEFAULT_SIGNAL_VIEW_MODE,
-  isDefaultSignalViewMode,
-  parseSignalViewMode,
-  readStoredSignalViewMode,
-  SIGNAL_VIEW_QUERY_KEY,
-  writeStoredSignalViewMode,
-} from '../lib/signal-view-mode';
-import { SignalSection, type SignalViewMode } from './signal-section';
-import {
-  parseSignalPriorityFilters,
-  parseSignalTypeFilters,
-  SignalBoardFilters,
-} from './signal-board-filters';
-import { SignalViewControls } from './signal-view-controls';
-import { setSignalSearchParam } from '../../common/human-chat-panel/human-chat-message-link';
-import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
-import { useCoherenceSignalDeepLink } from '../hooks/use-coherence-signal-deep-link';
+import { getSignalPath } from '../../common/get-path-function';
+import { signalSpaceMembership } from '../hooks/use-is-signal-space-non-member';
+import { useSignalProvisioningNotice } from '../hooks/use-signal-provisioning-notice';
+import { useSignalRoomActivity } from '../hooks/use-signal-room-activity';
+import {
+  signalVotingSpaceId,
+  useSignalVotingMode,
+} from '../hooks/use-signal-voting-mode';
+import { SignalFeedFilters } from './signal-feed-filters';
+import { SignalFeedRow } from './signal-feed-row';
+import { useDebouncedFeedTitle } from '../lib/use-debounced-feed-title';
 import type { UseMembers } from '../../spaces/hooks/types';
+
+export const SIGNAL_SORT_QUERY_KEY = 'sort';
+export const SIGNAL_TIME_FRAME_QUERY_KEY = 't';
+/** Title-only feed search. Distinct from the board's `title` query. */
+export const SIGNAL_TITLE_QUERY_KEY = 'q';
+/** Earlier `?top=7d|30d|all` links still open on the matching time frame. */
+const LEGACY_TOP_WINDOW_QUERY_KEY = 'top';
+const ARCHIVED_QUERY_KEY = 'archived';
 
 export type CoherenceBlockProps = {
   lang: Locale;
   spaceSlug: string;
+  /** Kept for route compatibility; the feed always ranks by upvotes. */
   order?: CoherenceOrder;
   humanChatEnabled?: boolean;
-  useMembers: UseMembers;
+  useMembers?: UseMembers;
 };
 
-export function CoherenceBlock({
-  lang,
-  spaceSlug,
-  order,
-  humanChatEnabled = false,
-  useMembers,
-}: CoherenceBlockProps) {
+export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const viewParamFromUrl = searchParams.get(SIGNAL_VIEW_QUERY_KEY);
-  const [hideArchived, setHideArchived] = React.useState(true);
-  const [acknowledgeError, setAcknowledgeError] = React.useState<string | null>(
-    null,
-  );
-  const viewMode = React.useMemo(() => {
-    const fromUrl = parseSignalViewMode(viewParamFromUrl);
-    if (fromUrl) {
-      return fromUrl;
-    }
-    const stored = readStoredSignalViewMode(spaceSlug);
-    return stored ?? DEFAULT_SIGNAL_VIEW_MODE;
-  }, [viewParamFromUrl, spaceSlug]);
-  React.useLayoutEffect(() => {
-    if (parseSignalViewMode(viewParamFromUrl)) {
-      return;
-    }
-    const stored = readStoredSignalViewMode(spaceSlug);
-    if (!stored || isDefaultSignalViewMode(stored)) {
-      return;
-    }
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set(SIGNAL_VIEW_QUERY_KEY, stored);
-    router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
-  }, [pathname, router, searchParams, spaceSlug, viewParamFromUrl]);
 
-  const handleViewModeChange = React.useCallback(
-    (nextValue: SignalViewMode) => {
-      writeStoredSignalViewMode(spaceSlug, nextValue);
-      const nextParams = new URLSearchParams(searchParams.toString());
-      if (isDefaultSignalViewMode(nextValue)) {
-        nextParams.delete(SIGNAL_VIEW_QUERY_KEY);
-      } else {
-        nextParams.set(SIGNAL_VIEW_QUERY_KEY, nextValue);
-      }
-      const query = nextParams.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, {
-        scroll: false,
-      });
-    },
-    [pathname, router, searchParams, spaceSlug],
-  );
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
-  const { person } = useMe();
-  const { jwt } = useJwt();
-  const { acknowledgeCoherenceAssignment } = useCoherenceMutationsWeb2Rsc(jwt);
-  const { persons: spaceMembersResult } = useMembers({
+  const {
+    canMutate,
+    isLoading: isMembershipLoading,
+    userState,
+  } = useCanMutateInSpace({
     spaceSlug,
-    paginationDisabled: true,
+    spaceId: space?.web3SpaceId ?? undefined,
   });
-  const spaceMembers = spaceMembersResult?.data ?? [];
-  const boardFilters = React.useMemo(
-    () => parseSignalBoardFilters(searchParams),
-    [searchParams],
+  const { isNonMember, isMembershipPending } = signalSpaceMembership({
+    space,
+    isLoading: isMembershipLoading,
+    userState,
+  });
+  const {
+    votingMode,
+    status: votingModeStatus,
+    retry: retryVotingMode,
+  } = useSignalVotingMode(signalVotingSpaceId(space));
+  const provisioningNoticeLines = useSignalProvisioningNotice();
+
+  const sort = parseSignalSort(searchParams.get(SIGNAL_SORT_QUERY_KEY));
+  const timeFrame = parseSignalTimeFrame(
+    searchParams.get(SIGNAL_TIME_FRAME_QUERY_KEY) ??
+      searchParams.get(LEGACY_TOP_WINDOW_QUERY_KEY),
   );
-  const deferredBoardFilters = React.useDeferredValue(boardFilters);
-  const handleBoardFiltersChange = React.useCallback(
-    (nextFilters: ReturnType<typeof parseSignalBoardFilters>) => {
-      const nextParams = writeSignalBoardFilters(searchParams, nextFilters);
-      const query = nextParams.toString();
+  React.useEffect(() => {
+    if (!searchParams.has(ARCHIVED_QUERY_KEY)) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(ARCHIVED_QUERY_KEY);
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  }, [pathname, router, searchParams]);
+
+  const replaceQuery = React.useCallback(
+    (key: string, value: string, defaultValue: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      const legacyTop = params.get(LEGACY_TOP_WINDOW_QUERY_KEY);
+      if (legacyTop != null) {
+        params.delete(LEGACY_TOP_WINDOW_QUERY_KEY);
+        const legacyTimeFrame = parseSignalTimeFrame(legacyTop);
+        if (
+          !params.has(SIGNAL_TIME_FRAME_QUERY_KEY) &&
+          legacyTimeFrame !== DEFAULT_SIGNAL_TIME_FRAME
+        ) {
+          params.set(SIGNAL_TIME_FRAME_QUERY_KEY, legacyTimeFrame);
+        }
+      }
+      if (value === defaultValue) params.delete(key);
+      else params.set(key, value);
+      const query = params.toString();
       router.replace(query ? `${pathname}?${query}` : pathname, {
         scroll: false,
       });
     },
     [pathname, router, searchParams],
   );
-  const { canMutate } = useCanMutateInSpace({
-    spaceSlug,
-    spaceId: space?.web3SpaceId ?? undefined,
-  });
-  const workflowSettingsHref = React.useMemo(
-    () =>
-      canMutate
-        ? buildSignalWorkflowConfigurationPath(lang, spaceSlug, searchParams)
-        : null,
-    [canMutate, lang, searchParams, spaceSlug],
+  const handleSortChange = React.useCallback(
+    (next: SignalSort) =>
+      replaceQuery(SIGNAL_SORT_QUERY_KEY, next, DEFAULT_SIGNAL_SORT),
+    [replaceQuery],
   );
+  const handleTimeFrameChange = React.useCallback(
+    (next: SignalTimeFrame) =>
+      replaceQuery(
+        SIGNAL_TIME_FRAME_QUERY_KEY,
+        next,
+        DEFAULT_SIGNAL_TIME_FRAME,
+      ),
+    [replaceQuery],
+  );
+  const titleQuery = searchParams.get(SIGNAL_TITLE_QUERY_KEY) ?? '';
+  const handleTitleCommit = React.useCallback(
+    (next: string) => replaceQuery(SIGNAL_TITLE_QUERY_KEY, next, ''),
+    [replaceQuery],
+  );
+  const { titleInput, onTitleChange } = useDebouncedFeedTitle({
+    committed: titleQuery,
+    onCommit: handleTitleCommit,
+  });
   const {
     coherences: signals,
     isLoading: isSignalsLoading,
-    refresh: refreshSignals,
+    isPreviousData: isPreviousSignals,
+    error: signalsError,
+    refresh,
   } = useFindCoherences({
     spaceSlug,
-    includeArchived: !hideArchived,
-    orderBy: order,
+    orderBy: 'mostupvoted',
   });
-  const typeFilters = React.useMemo(
-    () => parseSignalTypeFilters(searchParams.get('type')),
-    [searchParams],
-  );
-  const priorityFilters = React.useMemo(
-    () => parseSignalPriorityFilters(searchParams.get('priority')),
-    [searchParams],
-  );
-  const filteredSignals = React.useMemo(() => {
-    const byTypeAndPriority = (signals ?? []).filter((signal) => {
-      const matchesPriority =
-        priorityFilters.length === 0 ||
-        priorityFilters.some((priority) => priority === signal.priority);
-      const matchesType =
-        typeFilters.length === 0 ||
-        typeFilters.includes(
-          signal.type as (typeof COHERENCE_SIGNAL_TYPES)[number],
-        );
-      return matchesPriority && matchesType;
-    });
-    return filterSignals(byTypeAndPriority, deferredBoardFilters, {
-      currentPersonId: person?.id,
-    });
-  }, [deferredBoardFilters, person?.id, priorityFilters, signals, typeFilters]);
-  const existingTags = React.useMemo(
-    () => collectExistingTags((signals ?? []).map((signal) => signal.tags)),
-    [signals],
-  );
 
-  const refresh = React.useCallback(async () => {
-    await refreshSignals();
-  }, [refreshSignals]);
-
-  const chatBasePath = React.useMemo(
-    () => `/${lang}/dho/${spaceSlug}/coherence/chat`,
-    [lang, spaceSlug],
-  );
-
-  const {
-    open: humanChatOpen,
-    openCoherenceChat,
-    mode,
-    coherenceSlug,
-  } = useHumanChatPanel();
-
-  const activeSignalSlug = React.useMemo(() => {
-    const slug = coherenceSlug?.trim() ?? null;
-    if (humanChatEnabled && humanChatOpen && mode === 'coherence' && slug) {
-      return slug;
+  const [isRetrying, setIsRetrying] = React.useState(false);
+  const retryLoad = React.useCallback(async () => {
+    setIsRetrying(true);
+    try {
+      await refresh();
+    } catch {
+      // The SWR error state already drives the retry notice.
+    } finally {
+      setIsRetrying(false);
     }
-    return searchParams.get('signal')?.trim() || null;
-  }, [coherenceSlug, humanChatEnabled, humanChatOpen, mode, searchParams]);
+  }, [refresh]);
 
-  const acknowledgingSlugRef = React.useRef<string | null>(null);
-  const acknowledgeAssignmentIfNeeded = React.useCallback(
-    (signal: Coherence) => {
-      const slug = signal.slug?.trim() ?? '';
-      if (
-        !slug ||
-        !person?.id ||
-        !(Array.isArray(signal.assigneeIds) ? signal.assigneeIds : []).includes(
-          person.id,
-        )
-      ) {
-        return;
-      }
-      if (signal.assigneeAcknowledgedAt?.[String(person.id)]) {
-        return;
-      }
-      if (acknowledgingSlugRef.current === slug) {
-        return;
-      }
-      acknowledgingSlugRef.current = slug;
-      void acknowledgeCoherenceAssignment({ slug })
-        .then((updated) => {
-          setAcknowledgeError(null);
-          if (!updated && acknowledgingSlugRef.current === slug) {
-            acknowledgingSlugRef.current = null;
-          }
-          return updated ? refreshSignals() : undefined;
-        })
-        .catch((error: unknown) => {
-          if (acknowledgingSlugRef.current === slug) {
-            acknowledgingSlugRef.current = null;
-          }
-          console.error(
-            'Could not acknowledge assignment or refresh signals:',
-            error,
-          );
-          setAcknowledgeError(t('errorOhSnap'));
-        });
-    },
-    [acknowledgeCoherenceAssignment, person?.id, refreshSignals, t],
-  );
-
-  React.useEffect(() => {
-    if (!humanChatEnabled) return;
-    const slug = activeSignalSlug?.trim();
-    if (!slug) return;
-    const signal = (signals ?? []).find((item) => item.slug?.trim() === slug);
-    if (!signal) return;
-    acknowledgeAssignmentIfNeeded(signal);
-  }, [
-    acknowledgeAssignmentIfNeeded,
-    activeSignalSlug,
-    humanChatEnabled,
-    signals,
-  ]);
-
-  const handleSignalClick = React.useCallback(
-    (signal: Coherence) => {
-      acknowledgeAssignmentIfNeeded(signal);
-      const slug = signal.slug?.trim() ?? '';
-      openCoherenceChat(
-        signal.roomId ?? null,
-        signal.title ?? '',
-        slug,
-        signal.description ?? null,
-      );
-      if (!slug || typeof window === 'undefined') return;
-      const href = setSignalSearchParam(pathname, window.location.search, slug);
-      const current = `${window.location.pathname}${window.location.search}`;
-      if (current !== href) {
-        window.history.replaceState(window.history.state, '', href);
-        router.replace(href, { scroll: false });
-      }
-    },
-    [acknowledgeAssignmentIfNeeded, openCoherenceChat, pathname, router],
-  );
-
-  const handleRevealArchivedSignal = React.useCallback(() => {
-    setHideArchived(false);
-  }, []);
-
-  const handleClearPriorityFilter = React.useCallback(() => {
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.delete('priority');
-    nextParams.delete('type');
-    const query = nextParams.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false,
-    });
-  }, [pathname, router, searchParams]);
-
-  useCoherenceSignalDeepLink({
-    signals,
-    isLoading: isSpaceLoading || (isSignalsLoading && !signals?.length),
-    humanChatEnabled,
-    humanChatOpen,
-    hideArchived,
-    priorityFilters,
-    typeFilters,
-    activeCoherenceSlug: coherenceSlug,
-    onOpenSignalChat: humanChatEnabled ? handleSignalClick : undefined,
-    onRevealArchivedSignal: handleRevealArchivedSignal,
-    onClearPriorityFilter: handleClearPriorityFilter,
-    onRefreshSignals: refresh,
+  const ranked = React.useMemo(() => {
+    // `useFindCoherences` already concatenates every page. Filter titles on
+    // that full list, then rank, so sort and time frame apply to matches
+    // past the first page. The API `search` param also matches descriptions.
+    const matched = filterSignalsByTitle(signals ?? [], titleQuery);
+    return rankSignals(matched, { sort, timeFrame });
+  }, [signals, sort, timeFrame, titleQuery]);
+  const activity = useSignalRoomActivity(ranked);
+  const upvoteSummaryState = signalListUpvoteSummaryState({
+    hasSettledList: Boolean(signals),
+    isLoading: isSignalsLoading,
+    hasError: signalsError != null,
   });
-
-  const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;
+  const hasSignals = Boolean(signals?.length);
+  const hasCurrentQuerySignals = hasSignals && !isPreviousSignals;
+  const isLoading = isSpaceLoading || (isSignalsLoading && !hasSignals);
+  // Same-query refresh errors keep the list; a failed new query must not hide behind the old one.
+  const loadFailed =
+    signalsError != null && !hasCurrentQuerySignals && !isSignalsLoading;
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="craft-page-header">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="craft-page-title text-6 font-medium">
           {t('signals')}
-          {typeof signals?.length === 'number' ? (
+          {typeof signals?.length === 'number' && !loadFailed && !isLoading ? (
             <span className="ml-2 text-4 font-normal text-muted-foreground">
-              | {format.number(signals.length)}
+              | {format.number(ranked.length)}
             </span>
           ) : null}
         </h1>
       </header>
-      <SignalBoardFilters
-        typeFilters={typeFilters}
-        priorityFilters={priorityFilters}
-        boardFilters={boardFilters}
-        onBoardFiltersChange={handleBoardFiltersChange}
-        existingTags={existingTags}
-        members={spaceMembers}
-        currentPersonId={person?.id}
-        controls={
-          <SignalViewControls
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            hideArchived={hideArchived}
-            onHideArchivedChange={setHideArchived}
-            workflowSettingsHref={workflowSettingsHref}
-            createSignalHref={
-              canMutate
-                ? `/${lang}/dho/${spaceSlug}/coherence/new-signal`
-                : null
-            }
-            className="shrink-0"
-          />
+
+      <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
+
+      <SignalFeedFilters
+        sort={sort}
+        timeFrame={timeFrame}
+        onSortChange={handleSortChange}
+        onTimeFrameChange={handleTimeFrameChange}
+        titleQuery={titleInput}
+        onTitleQueryChange={onTitleChange}
+        action={
+          canMutate ? (
+            <div className="shrink-0">
+              <Button asChild variant="default" colorVariant="accent">
+                <Link
+                  href={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
+                  scroll={false}
+                >
+                  {t('newSignal')}
+                </Link>
+              </Button>
+            </div>
+          ) : null
         }
       />
-      {acknowledgeError ? <ErrorAlert lines={[acknowledgeError]} /> : null}
-      <SignalSection
-        basePath={chatBasePath}
-        web3SpaceId={space?.web3SpaceId ?? 0}
-        signals={filteredSignals}
-        isLoading={isSpaceLoading || (isSignalsLoading && !signals?.length)}
-        viewMode={viewMode}
-        refresh={refresh}
-        onSignalClick={onSignalClick}
-        activeSignalSlug={activeSignalSlug}
-      />
+
+      {isLoading ? (
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton
+              key={index}
+              loading
+              className="h-[104px] w-full rounded-none"
+            />
+          ))}
+        </div>
+      ) : loadFailed ? (
+        <div
+          role="alert"
+          className="craft-card flex flex-col items-center gap-3 px-4 py-8 text-center"
+        >
+          <p className="m-0 text-1 text-muted-foreground">
+            {t('signalLoadFailed')}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            colorVariant="neutral"
+            size="sm"
+            disabled={isRetrying}
+            onClick={() => void retryLoad()}
+          >
+            {t('signalLoadRetry')}
+          </Button>
+        </div>
+      ) : ranked.length === 0 ? (
+        <p className="craft-card px-4 py-8 text-center text-1 text-muted-foreground">
+          {titleQuery.trim() && hasSignals
+            ? t('signalTitleNoResults')
+            : t('listIsEmpty')}
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {ranked.map((signal) =>
+            signal.slug ? (
+              <SignalFeedRow
+                key={signal.id}
+                signal={signal}
+                spaceSlug={spaceSlug}
+                href={getSignalPath(lang, spaceSlug, signal.slug)}
+                votingMode={votingMode}
+                votingModeStatus={votingModeStatus}
+                onRetryVotingMode={retryVotingMode}
+                isNonMember={isNonMember}
+                isMembershipPending={isMembershipPending}
+                activity={signal.roomId ? activity[signal.roomId] : undefined}
+                refresh={refresh}
+                sort={sort}
+                summaryState={upvoteSummaryState}
+              />
+            ) : null,
+          )}
+        </div>
+      )}
     </div>
   );
 }
