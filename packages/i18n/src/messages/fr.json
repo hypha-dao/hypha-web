@@ -1976,6 +1976,7 @@
     "exitSpaceConfirmNo": "Non, rester",
     "exitSpaceDisabledTooltip": "Vous devez être autorisé et membre de l'espace actuel pour pouvoir le quitter",
     "accessDeniedNotLoggedIn": "Vous avez besoin d'un compte actif pour accéder à cette section. Veuillez vous connecter ou cliquer sur Commencer pour en créer un.",
+    "accessDeniedReadOnly": "Cette section nécessite un compte actif et n'est pas disponible ici.",
     "signIn": "Se connecter",
     "getStarted": "Commencer",
     "accessDeniedNotMember": "Vous devez devenir membre pour accéder à cette fonctionnalité. Rejoignez l'espace maintenant pour voir l'activité de cet espace.",

@@ -27,6 +27,9 @@ export function useAnonymousAuthentication() {
   const [isLoggingIn, setLoggingIn] = React.useState(false);
   return React.useMemo(
     () => ({
+      // Read-only tree: nobody can sign in, so UI that only makes sense for a
+      // signed-in visitor (account prompts, write actions) hides itself.
+      canLogin: false,
       isAuthenticated: false,
       isLoading: false,
       isEmbeddedWallet: false,

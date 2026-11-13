@@ -2,6 +2,7 @@
 import React from 'react';
 
 import useSWR from 'swr';
+import { fetchJson } from '@hypha-platform/core/client';
 
 export function useTokenSupply(token: `0x${string}` | undefined | null) {
   const endpoint = React.useMemo(
@@ -11,7 +12,7 @@ export function useTokenSupply(token: `0x${string}` | undefined | null) {
   );
   const { data, isLoading } = useSWR(
     endpoint ? [endpoint] : null,
-    ([url]) => fetch(url).then((res) => res.json()),
+    ([url]) => fetchJson(url, undefined, 'token supply'),
     {
       revalidateOnFocus: true,
     },

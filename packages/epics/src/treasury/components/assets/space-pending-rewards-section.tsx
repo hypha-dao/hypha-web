@@ -46,7 +46,7 @@ export const SpacePendingRewardsSection: FC<
   const tTreasury = useTranslations('TreasuryTab');
   const { id: spaceSlug } = useParams<{ id: string }>();
   const { mutate } = useSWRConfig();
-  const { isAuthenticated } = useAuthentication();
+  const { isAuthenticated, canLogin } = useAuthentication();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
   const { isMember } = useSpaceMember({ spaceId: web3SpaceId });
   const executor = spaceDetails?.executor as `0x${string}` | undefined;
@@ -187,22 +187,24 @@ export const SpacePendingRewardsSection: FC<
         )}
         <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
           {toolbarActions}
-          <Button
-            title={
-              !isAuthenticated
-                ? tTreasury('rewardsSection.signInToClaimRewards')
-                : !isMember
-                ? tTreasury('rewardsSection.onlySpaceMembersCanClaimRewards')
-                : !hasRewards
-                ? tTreasury('rewardsSection.noRewardsToClaim')
-                : ''
-            }
-            disabled={!canClaim || disableClaimButton}
-            onClick={onHandleClaim}
-          >
-            {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
-            {tTreasury('rewardsSection.claim')}
-          </Button>
+          {canLogin ? (
+            <Button
+              title={
+                !isAuthenticated
+                  ? tTreasury('rewardsSection.signInToClaimRewards')
+                  : !isMember
+                  ? tTreasury('rewardsSection.onlySpaceMembersCanClaimRewards')
+                  : !hasRewards
+                  ? tTreasury('rewardsSection.noRewardsToClaim')
+                  : ''
+              }
+              disabled={!canClaim || disableClaimButton}
+              onClick={onHandleClaim}
+            >
+              {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
+              {tTreasury('rewardsSection.claim')}
+            </Button>
+          ) : null}
         </div>
       </div>
       <div className="w-full max-w-sm">

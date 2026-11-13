@@ -3,7 +3,7 @@
 import React from 'react';
 import useSWR from 'swr';
 // TODO: #594 declare UI interface separately
-import { Space, useJwt } from '@hypha-platform/core/client';
+import { Space, useJwt, fetchJson } from '@hypha-platform/core/client';
 
 type UseSpacesByMemberSlugReturn = {
   spaces: Space[];
@@ -23,12 +23,16 @@ export const useSpacesByMemberSlug = (
   const { data: spaces, isLoading } = useSWR(
     jwt ? [endpoint, jwt] : null,
     ([endpoint]) =>
-      fetch(endpoint, {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          'Content-Type': 'application/json',
+      fetchJson<Space[]>(
+        endpoint,
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+            'Content-Type': 'application/json',
+          },
         },
-      }).then((res) => res.json()),
+        'spaces by member',
+      ),
   );
 
   return { spaces: spaces || [], isLoading };

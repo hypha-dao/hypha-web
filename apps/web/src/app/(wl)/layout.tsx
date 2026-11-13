@@ -52,8 +52,9 @@ export const metadata: Metadata = {
  * Without them (a direct request to /wl/...) it renders the 404.
  *
  * The mode (`embed` on the main host, `host` on a mapped host) picks the auth
- * provider through `WhiteLabelAuthProvider`. Both are signed out and mount no
- * Privy for now: the tree is read-only.
+ * provider through `WhiteLabelAuthProvider`. The iframe is signed out and
+ * mounts no Privy; a mapped host with login settings mounts Privy on its own
+ * client (the sections stay read-only: writes are a later step).
  */
 export default async function WhiteLabelRootLayout({
   children,

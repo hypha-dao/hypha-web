@@ -1,4 +1,4 @@
-import { WL_REQUEST_HEADERS } from './constants';
+import { WL_REQUEST_HEADERS, WL_SPACE_HEADER } from './constants';
 
 /** Value of CSP `frame-ancestors` for a response. `'none'` unless origins given. */
 export function buildFrameAncestors(origins: readonly string[]): string {
@@ -12,6 +12,21 @@ export function buildFrameAncestors(origins: readonly string[]): string {
 export function stripWhiteLabelHeaders(headers: Headers): Headers {
   const copy = new Headers(headers);
   for (const name of WL_REQUEST_HEADERS) copy.delete(name);
+  return copy;
+}
+
+/**
+ * Request headers for an `/api` route. Inbound white-label headers are always
+ * dropped. A mapped-host request (`mappedSpaceSlug` given, already validated by
+ * the allowlist) then carries the Space header, so a route can tell it from a
+ * main-host request, which never has one.
+ */
+export function apiRequestHeaders(
+  headers: Headers,
+  mappedSpaceSlug?: string,
+): Headers {
+  const copy = stripWhiteLabelHeaders(headers);
+  if (mappedSpaceSlug) copy.set(WL_SPACE_HEADER, mappedSpaceSlug);
   return copy;
 }
 

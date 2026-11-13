@@ -17,13 +17,16 @@ import {
   WL_MODE_HEADER,
   WL_NOT_FOUND_HEADER,
   WL_SPACE_HEADER,
+  apiRequestHeaders,
   embedFraming,
   getWhiteLabelConfig,
   isMappedHost,
   localeForPath,
   resolve,
+  privyHostOrigins,
   serializeAuthConfig,
   stripWhiteLabelHeaders,
+  withPrivyHostOrigins,
   type FramingPolicy,
 } from './lib/white-label';
 
@@ -72,6 +75,8 @@ function applyCsp(
   response: NextResponse,
   request: NextRequest,
   framing: FramingPolicy = DENY_FRAMING,
+  /** Extra Privy origins of a mapped host (its own cookie host), exact, per request. */
+  extraPrivyOrigins: readonly string[] = [],
 ): NextResponse {
   if (
     process.env.NODE_ENV === 'development' &&
@@ -158,7 +163,10 @@ function applyCsp(
       "manifest-src 'self'",
     ].join(';') + ';';
 
-  response.headers.set('Content-Security-Policy', cspHeaderValue);
+  response.headers.set(
+    'Content-Security-Policy',
+    withPrivyHostOrigins(cspHeaderValue, extraPrivyOrigins),
+  );
   response.headers.set(
     'Permissions-Policy',
     'camera=(self), microphone=(self), display-capture=(self)',
@@ -202,9 +210,12 @@ export function middleware(request: NextRequest) {
   const decision = resolve(host, pathname, config, whiteLabelOptions);
 
   if (decision.kind === 'api-allow') {
-    // A read a mapped host may call: the route runs unchanged.
+    // A read a mapped host may call: the route runs, and learns the host's
+    // Space from the header (inbound copies dropped first).
     return NextResponse.next({
-      request: { headers: stripWhiteLabelHeaders(request.headers) },
+      request: {
+        headers: apiRequestHeaders(request.headers, decision.spaceSlug),
+      },
     });
   }
 
@@ -245,7 +256,15 @@ export function middleware(request: NextRequest) {
         maxAge: 60 * 60 * 24 * 365,
       });
     }
-    return applyFramingHeaders(applyCsp(rewrite, request, framing), framing);
+    return applyFramingHeaders(
+      applyCsp(
+        rewrite,
+        request,
+        framing,
+        decision.mode === 'host' ? privyHostOrigins(decision.authConfig) : [],
+      ),
+      framing,
+    );
   }
 
   if (decision.kind === 'not-found') {
@@ -274,10 +293,11 @@ export function middleware(request: NextRequest) {
 
   // Main host (or feature off): `/api` behaves as before the matcher included
   // it, except that the internal white-label headers are dropped so a caller
-  // can never smuggle them to a route.
+  // can never smuggle them to a route (and none is set: no Space header means
+  // "main app").
   if (isApi) {
     return NextResponse.next({
-      request: { headers: stripWhiteLabelHeaders(request.headers) },
+      request: { headers: apiRequestHeaders(request.headers) },
     });
   }
 

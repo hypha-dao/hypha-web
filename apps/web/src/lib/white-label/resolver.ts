@@ -4,7 +4,7 @@ import {
   INTERNAL_PREFIX,
   LANDING_SECTION,
 } from './constants';
-import { isApiReadAllowed } from './api-allowlist';
+import { apiAllowlistFor, isApiReadAllowed } from './api-allowlist';
 import { isValidSlug, normaliseHost } from './config';
 import type {
   ResolveDecision,
@@ -174,8 +174,16 @@ function resolveMappedHost(
   const segments = splitPath(path);
   if (first === API_PREFIX) {
     if (!segments) return { kind: 'not-found', reason: 'malformed-path' };
-    return isApiReadAllowed(options.method, segments, record.spaceSlug)
-      ? { kind: 'api-allow' }
+    // Login is an option of the registration: derived from authConfig, so the
+    // signed-in reads exist only on a host that has it.
+    const allowlist = apiAllowlistFor(Boolean(record.authConfig));
+    return isApiReadAllowed(
+      options.method,
+      segments,
+      record.spaceSlug,
+      allowlist,
+    )
+      ? { kind: 'api-allow', spaceSlug: record.spaceSlug }
       : { kind: 'not-found', reason: 'api-not-allowed' };
   }
   // The iframe delivery lives on the main host only.

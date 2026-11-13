@@ -89,7 +89,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   const { isMember } = useSpaceMember({
     spaceId: space?.web3SpaceId as number,
   });
-  const { isAuthenticated, user } = useAuthentication();
+  const { isAuthenticated, canLogin, user } = useAuthentication();
 
   const isDisabled = isUndelegating || !isAuthenticated || !isMember;
   const tooltipMessage = !isAuthenticated
@@ -183,7 +183,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
           </div>
 
           <div className="flex w-[7.75rem] shrink-0 flex-col items-end gap-2 @min-[24rem]/member:w-auto @min-[24rem]/member:max-w-[16rem]">
-            {localIsDelegate ? (
+            {localIsDelegate && canLogin ? (
               <Skeleton width="96px" height="32px" loading={isLoading}>
                 <Button
                   size="sm"

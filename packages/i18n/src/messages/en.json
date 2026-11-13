@@ -2575,6 +2575,7 @@
     "exitSpaceConfirmNo": "No, stay",
     "exitSpaceDisabledTooltip": "You need to be authorized and to be a member of the current space to be able to exit",
     "accessDeniedNotLoggedIn": "You need an active account to access this section. Please sign in or click Get Started to create one.",
+    "accessDeniedReadOnly": "This section needs an active account and is not available here.",
     "signIn": "Sign In",
     "getStarted": "Get Started",
     "accessDeniedNotMember": "You need to become a member to access this feature. Join the space now to view the activity of this space.",

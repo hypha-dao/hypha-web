@@ -2547,6 +2547,7 @@
     "exitSpaceConfirmNo": "Nee, blijf",
     "exitSpaceDisabledTooltip": "U moet geautoriseerd zijn en lid zijn van de huidige ruimte om deze te kunnen verlaten",
     "accessDeniedNotLoggedIn": "Om toegang te krijgen tot dit gedeelte heeft u een actief account nodig. Meld u aan of klik op Aan de slag om er een te maken.",
+    "accessDeniedReadOnly": "Dit gedeelte vereist een actief account en is hier niet beschikbaar.",
     "signIn": "Inloggen",
     "getStarted": "Aan de slag",
     "accessDeniedNotMember": "Om toegang te krijgen tot deze functie moet u lid worden. Word nu lid van de ruimte om de activiteit van deze ruimte te bekijken.",

@@ -71,7 +71,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
   const params = useParams();
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const { person } = useMe();
-  const { isAuthenticated } = useAuthentication();
+  const { isAuthenticated, canLogin } = useAuthentication();
   const { isDelegate } = useIsDelegate({
     spaceId: space?.web3SpaceId as number,
   });
@@ -137,8 +137,11 @@ export const MembersSection: FC<MemberSectionProps> = ({
           {isMember && spaceSlug ? (
             <SpaceMemberInviteButton spaceSlug={spaceSlug} lang={lang} />
           ) : null}
-          <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
-          {!isDelegate ? (
+          {/* No login here (read-only host): nothing to exit or delegate. */}
+          {canLogin ? (
+            <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
+          ) : null}
+          {canLogin && !isDelegate ? (
             canDelegateLink ? (
               <Link
                 title={tooltipMessage || ''}

@@ -1,4 +1,5 @@
 import { normaliseHost } from './config';
+import type { WhiteLabelMode } from './constants';
 import type { WhiteLabelAuthConfig } from './types';
 
 /**
@@ -35,4 +36,27 @@ export function readAuthConfigHeader(
   const domain = normaliseHost(cookieDomain);
   if (domain === null || domain.includes(':')) return null;
   return { privyClientId, cookieDomain: domain };
+}
+
+/**
+ * Which auth a white-label tree gets: `privy` only on a mapped host that has
+ * login settings, `anonymous` everywhere else (the iframe never mounts Privy).
+ */
+export function authKindFor(
+  mode: WhiteLabelMode,
+  authConfig: WhiteLabelAuthConfig | null,
+): 'anonymous' | 'privy' {
+  return mode === 'host' && authConfig ? 'privy' : 'anonymous';
+}
+
+/**
+ * Origins the Privy SDK needs on a host with login settings, derived from that
+ * host's own cookie domain (Privy serves its HttpOnly session from
+ * `privy.<cookie domain>`). Empty without login settings. Never a wildcard.
+ */
+export function privyHostOrigins(
+  authConfig: WhiteLabelAuthConfig | null | undefined,
+): string[] {
+  if (!authConfig) return [];
+  return [`https://privy.${authConfig.cookieDomain}`];
 }
