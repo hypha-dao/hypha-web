@@ -18,6 +18,7 @@ import {
   AUTH_SERVER_LOGIN_PATH,
   AUTH_SERVER_SCOPES,
   REFRESH_TOKEN_TTL_SECONDS,
+  REFRESH_TOKEN_REUSE_INTERVAL_SECONDS,
   type AuthServerConfig,
 } from './config';
 import {
@@ -125,6 +126,7 @@ export function createAuthServer(
         accessTokenExpiresIn:
           deps.accessTokenExpiresIn ?? ACCESS_TOKEN_TTL_SECONDS,
         refreshTokenExpiresIn: REFRESH_TOKEN_TTL_SECONDS,
+        refreshTokenReuseInterval: REFRESH_TOKEN_REUSE_INTERVAL_SECONDS,
         codeExpiresIn: AUTH_CODE_TTL_SECONDS,
         resources: [...config.resources],
         // CIMD clients are unregistered, so they cannot be linked to resources one by one.

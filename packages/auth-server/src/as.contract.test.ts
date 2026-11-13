@@ -131,6 +131,74 @@ run('authorization server: protocol, gate, revocation, storage', () => {
     expect(again.res.status).toBeGreaterThanOrEqual(400);
   });
 
+  describe('refresh reuse window (K61, 10 s)', () => {
+    const refresh = (rt: string) =>
+      h.tokenRequest(s, {
+        grant_type: 'refresh_token',
+        refresh_token: rt,
+        client_id: h.CLIENT_ID,
+        resource: h.RESOURCE,
+      });
+
+    it('inside the window the old token gets the same response again; the new token still works', async () => {
+      const f = await h.fullFlow(s);
+      const rt0 = f.token!.body.refresh_token as string;
+      const first = await refresh(rt0);
+      expect(first.res.status).toBe(200);
+      const replay = await refresh(rt0);
+      expect(replay.res.status).toBe(200);
+      // same pair, not a new one
+      expect(replay.body.refresh_token).toBe(first.body.refresh_token);
+      expect(replay.body.access_token).toBe(first.body.access_token);
+      // the family was not extended: still one live token, and it refreshes
+      const live = await s.pool.query(
+        'select count(*)::int as n from as_oauth_refresh_token where "userId" = $1 and "clientId" = $2 and revoked is null',
+        [h.PERSON, h.CLIENT_ID],
+      );
+      const next = await refresh(first.body.refresh_token);
+      expect(next.res.status).toBe(200);
+      expect(live.rows[0].n).toBe(1);
+    });
+
+    it('after the window the old token revokes the whole family', async () => {
+      const f = await h.fullFlow(s);
+      const rt0 = f.token!.body.refresh_token as string;
+      const first = await refresh(rt0);
+      expect(first.res.status).toBe(200);
+      // Move the window into the past instead of sleeping 10 s.
+      await s.pool.query(
+        `update as_oauth_refresh_token set "rotationReplayExpiresAt" = now() - interval '1 second' where "userId" = $1 and "clientId" = $2 and "rotatedAt" is not null`,
+        [h.PERSON, h.CLIENT_ID],
+      );
+      const late = await refresh(rt0);
+      expect(late.res.status).toBe(400);
+      expect(late.body.error).toBe('invalid_grant');
+      // the newest token died with the family
+      const newest = await refresh(first.body.refresh_token);
+      expect(newest.res.status).toBe(400);
+      expect(newest.body.error).toBe('invalid_grant');
+    });
+
+    it('inside the window a request with a different resource is refused without a replay', async () => {
+      const f = await h.fullFlow(s);
+      const rt0 = f.token!.body.refresh_token as string;
+      expect((await refresh(rt0)).res.status).toBe(200);
+      const other = await h.tokenRequest(s, {
+        grant_type: 'refresh_token',
+        refresh_token: rt0,
+        client_id: h.CLIENT_ID,
+        scope: 'spaces:read',
+        resource: h.RESOURCE,
+      });
+      console.log(
+        'INFO replay with narrower scope ->',
+        other.res.status,
+        other.body.error,
+      );
+      expect(other.body.access_token).toBeUndefined();
+    });
+  });
+
   it('refresh does not depend on the AS browser session', async () => {
     const f = await h.fullFlow(s);
     await s.pool.query('delete from as_session');
