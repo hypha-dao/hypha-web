@@ -5,12 +5,16 @@ import {
   buildLocatedAtPatch,
   normalizeSpaceLocationFields,
 } from '../../geo/location';
-import { CreateSpaceInput, UpdateSpaceInput } from '../types';
+import type { CreateSpaceInput, UpdateSpaceInput } from '../types';
 import { eq } from 'drizzle-orm';
-import { DatabaseInstance } from '@hypha-platform/core/server';
+import type { DatabaseInstance } from '@hypha-platform/core/server';
 import { spaces } from '@hypha-platform/storage-postgres';
 import { parseCapitalKeys } from '../../network/capitals';
 import { writeSpaceCapitals } from '../../network/exchange-capitals';
+import {
+  rejectReplacementSpaceSlug,
+  rejectSpaceSlugMatchingSignal,
+} from './assert-space-slug-signal';
 
 function takeExchangeCapitals<
   T extends { exchangeCapitals?: { seeks: string[]; offers: string[] } },
@@ -116,9 +120,11 @@ export const updateSpaceBySlug = async (
   { db }: { db: DatabaseInstance },
 ) => {
   const { capitals, rest: spaceFields } = takeExchangeCapitals(rest);
+  const patch = applyLocationFieldsIfPresent(spaceFields);
+  await rejectReplacementSpaceSlug(db, { lookupSlug: slug, patch });
   const [updatedSpace] = await db
     .update(spaces)
-    .set(applyLocationFieldsIfPresent(spaceFields))
+    .set(patch)
     .where(eq(spaces.slug, slug))
     .returning();
 
@@ -195,6 +201,12 @@ export const updateSpaceConfigurationById = async (
     const normalizedRest = willBeArchived
       ? { ...spaceFields, parentId: null }
       : spaceFields;
+
+    await rejectSpaceSlugMatchingSignal(tx, {
+      spaceId: originalSpace.id,
+      currentSlug: originalSpace.slug,
+      nextSlug: normalizedRest.slug,
+    });
 
     if (!wasArchived && willBeArchived) {
       const reparentTo = originalSpace.parentId ?? null;

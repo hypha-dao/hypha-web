@@ -15,10 +15,25 @@ vi.mock('../server/coherence-upvotes', () => ({
   EMPTY_COHERENCE_UPVOTE_SUMMARY: {
     totalVotingPower: '0',
     upvoteCount: 0,
+    downvoteCount: 0,
+    upVotingPower: '0',
+    downVotingPower: '0',
+    netVoteCount: 0,
     tokenDecimals: 0,
     voters: [],
     myUpvote: null,
   },
+  emptyCoherenceUpvoteSummary: () => ({
+    totalVotingPower: '0',
+    upvoteCount: 0,
+    downvoteCount: 0,
+    upVotingPower: '0',
+    downVotingPower: '0',
+    netVoteCount: 0,
+    tokenDecimals: 0,
+    voters: [],
+    myUpvote: null,
+  }),
   findCoherenceUpvoteSummaries: vi.fn().mockResolvedValue({}),
   removeCoherenceUpvote: vi.fn(),
   upsertCoherenceUpvote: vi.fn(),
@@ -98,16 +113,40 @@ describe('applyCoherenceUpvote', () => {
         votingPower: '250',
         maxVotingPower: '1000',
         tokenDecimals: 18,
+        direction: 'up',
       },
       { db },
     );
   });
 
-  it('allocates at least one unit when the percentage rounds to zero', async () => {
+  it('stores one whole vote in one-member-one-vote mode', async () => {
     mockedVotingPower.mockResolvedValue({
       votingPower: 10n,
       votingPowerSource: 2,
       tokenDecimals: 0,
+    });
+
+    await applyCoherenceUpvote(
+      { coherence: signal, actor, votingPowerPercent: 1, direction: 'down' },
+      { db },
+    );
+
+    expect(mockedUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        votingPower: '10',
+        maxVotingPower: '10',
+        direction: 'down',
+      }),
+      { db },
+    );
+    expect(mockedMirror).not.toHaveBeenCalled();
+  });
+
+  it('allocates at least one unit when a token percentage rounds to zero', async () => {
+    mockedVotingPower.mockResolvedValue({
+      votingPower: 10n,
+      votingPowerSource: 1,
+      tokenDecimals: 18,
     });
 
     await applyCoherenceUpvote(
@@ -116,9 +155,26 @@ describe('applyCoherenceUpvote', () => {
     );
 
     expect(mockedUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ votingPower: '1' }),
+      expect.objectContaining({ votingPower: '1', direction: 'up' }),
       { db },
     );
+  });
+
+  it('removes the on-chain upvote when an upvote switches to a downvote', async () => {
+    mockedUpsert.mockResolvedValue('up');
+
+    await applyCoherenceUpvote(
+      { coherence: signal, actor, direction: 'down' },
+      { db },
+    );
+
+    expect(mockedMirror).toHaveBeenCalledTimes(1);
+    expect(mockedMirror).toHaveBeenCalledWith({
+      web3SpaceId: 77,
+      signalId: 11,
+      voter,
+      kind: 'removal',
+    });
   });
 
   it('mirrors the upvote on-chain with the snapshotted amount', async () => {
@@ -193,7 +249,7 @@ describe('applyCoherenceUpvote', () => {
 
 describe('applyCoherenceUpvoteRemoval', () => {
   it('mirrors a removal when a row was actually deleted', async () => {
-    mockedRemove.mockResolvedValue(true);
+    mockedRemove.mockResolvedValue('up');
 
     await applyCoherenceUpvoteRemoval({ coherence: signal, actor }, { db });
 
@@ -206,7 +262,15 @@ describe('applyCoherenceUpvoteRemoval', () => {
   });
 
   it('stays silent on-chain when there was nothing to remove', async () => {
-    mockedRemove.mockResolvedValue(false);
+    mockedRemove.mockResolvedValue(null);
+
+    await applyCoherenceUpvoteRemoval({ coherence: signal, actor }, { db });
+
+    expect(mockedMirror).not.toHaveBeenCalled();
+  });
+
+  it('stays silent on-chain when the removed vote was a downvote', async () => {
+    mockedRemove.mockResolvedValue('down');
 
     await applyCoherenceUpvoteRemoval({ coherence: signal, actor }, { db });
 

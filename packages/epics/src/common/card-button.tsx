@@ -140,11 +140,13 @@ export const CardButton = ({
   children,
   className,
   onClick,
+  ...rest
 }: CardButtonProps) => {
   return (
     <Card
       className={cn(cardButtonVariants({ selected, colorVariant }), className)}
       onClick={onClick}
+      {...rest}
     >
       {children ? (
         children

@@ -123,8 +123,10 @@ const signalAttachmentsSchema = z
 
 import { parseCapitalKeys } from '../network/capitals';
 
+export const signalTypeSchema = z.enum(COHERENCE_SIGNAL_TYPES);
+
 const coherenceSignalFields = {
-  type: z.enum(COHERENCE_SIGNAL_TYPES),
+  type: signalTypeSchema,
   priority: z.enum(COHERENCE_PRIORITIES),
   title: z
     .string()
@@ -262,7 +264,7 @@ const patchDueAtSchema = z
  */
 export const schemaIngestSignal = z
   .object({
-    type: z.enum(COHERENCE_SIGNAL_TYPES),
+    type: signalTypeSchema,
     priority: z.enum(COHERENCE_PRIORITIES).default('medium'),
     title: z.string().trim().min(1).max(50),
     description: z.string().trim().min(1).max(4000),
@@ -279,7 +281,7 @@ export const schemaIngestSignal = z
 
 export const schemaPatchIngestedSignal = z
   .object({
-    type: z.enum(COHERENCE_SIGNAL_TYPES).optional(),
+    type: signalTypeSchema.optional(),
     priority: z.enum(COHERENCE_PRIORITIES).optional(),
     title: z.string().trim().min(1).max(50).optional(),
     description: z.string().trim().min(1).max(4000).optional(),
@@ -301,6 +303,8 @@ export const schemaIngestedSignalUpvote = z
   .object({
     voter: z.object({ walletAddress: evmAddressSchema }).strict(),
     votingPowerPercent: z.number().int().min(1).max(100).optional(),
+    /** Omitted means an upvote, matching votes recorded before downvotes. */
+    direction: z.enum(['up', 'down']).optional(),
   })
   .strict();
 

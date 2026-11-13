@@ -209,16 +209,12 @@ export function resolveSignalTeamUpdateDisplayBody(
   return formatSignalTeamUpdateDisplayBody(changes.added, changes.removed);
 }
 
-/** Only meaningful team changes belong in chat; roster snapshots are call-only noise. */
+/**
+ * Signal discussions are open to every space member, so legacy Signal-team
+ * roster / access notices still present in older rooms never render in chat.
+ */
 export function shouldIncludeSignalTeamNoticeInChatTimeline(
   notice: SignalTeamNotice | null | undefined,
 ): boolean {
-  if (!notice) return true;
-  if (notice.kind === 'access_requested' || notice.kind === 'access_approved') {
-    return true;
-  }
-  return (
-    notice.addedMemberMatrixUserIds.length > 0 ||
-    notice.removedMemberMatrixUserIds.length > 0
-  );
+  return !notice;
 }

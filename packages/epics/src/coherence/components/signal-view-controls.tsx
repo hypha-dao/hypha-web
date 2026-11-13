@@ -6,7 +6,6 @@ import { useTranslations } from 'next-intl';
 import { ChevronDown, Cog, Plus } from 'lucide-react';
 import {
   Button,
-  Checkbox,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
@@ -33,8 +32,6 @@ const VIEW_OPTIONS = [
 type SignalViewControlsProps = {
   viewMode: SignalViewMode;
   onViewModeChange: (mode: SignalViewMode) => void;
-  hideArchived: boolean;
-  onHideArchivedChange: (checked: boolean) => void;
   workflowSettingsHref?: string | null;
   createSignalHref?: string | null;
   className?: string;
@@ -43,8 +40,6 @@ type SignalViewControlsProps = {
 export function SignalViewControls({
   viewMode,
   onViewModeChange,
-  hideArchived,
-  onHideArchivedChange,
   workflowSettingsHref,
   createSignalHref,
   className,
@@ -150,14 +145,6 @@ export function SignalViewControls({
           </DropdownMenu>
         </div>
       </div>
-      <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[14px]">
-        <Checkbox
-          id="hideArchivedSignalsCheckbox"
-          checked={hideArchived}
-          onCheckedChange={(checked) => onHideArchivedChange(checked === true)}
-        />
-        {t('hideArchived')}
-      </label>
     </div>
   );
 }

@@ -6,7 +6,7 @@ export const COHERENCE_TYPES = [
   'Tension',
   'Risk',
   'Action',
-  'Impact',
+  'Bug',
   'Trend',
   'Proposal',
 ] as const;

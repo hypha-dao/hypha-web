@@ -4,9 +4,12 @@ import React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ChevronDown } from 'lucide-react';
 import {
+  applyPendingSignalUpvotes,
+  resolveSignalVoteAction,
   useCoherenceUpvoteMutations,
   useJwt,
   type CoherenceUpvoteSummary,
+  type SignalVoteDirection,
 } from '@hypha-platform/core/client';
 import {
   Button,
@@ -17,14 +20,22 @@ import {
   Slider,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { formatVotingPowerCompact } from '../utils/format-voting-power';
-import { SignalUpvoteIcon } from './signal-upvote-icon';
+import { SignalUpvoteTriangle } from './signal-upvote-cell';
+import {
+  SignalVoteRoster,
+  SignalVoteTotals,
+  useSignalSpaceSlug,
+} from './signal-vote-summary';
 
 const EMPTY_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
   upvoteCount: 0,
+  downvoteCount: 0,
+  upVotingPower: '0',
+  downVotingPower: '0',
+  netVoteCount: 0,
   tokenDecimals: 0,
   voters: [],
   myUpvote: null,
@@ -53,9 +64,9 @@ type SignalUpvoteControlProps = {
 };
 
 /**
- * Upvote pill + details popover for a signal. The pill toggles an upvote at
- * full voting power; the popover lets the user fine-tune the share of voting
- * power, remove the upvote, and see who has voted.
+ * Up/down pill plus a details popover. Clicking the selected direction clears
+ * the vote; clicking the other direction switches. The number is the net.
+ * The popover still allocates a share of voting power for the active direction.
  */
 export function SignalUpvoteControl({
   slug,
@@ -68,6 +79,7 @@ export function SignalUpvoteControl({
   const t = useTranslations('SignalCard');
   const locale = useLocale();
   const { jwt } = useJwt();
+  const resolvedSpaceSlug = useSignalSpaceSlug();
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
   const { upvote, removeUpvote, isUpvoting, isRemovingUpvote } =
     useCoherenceUpvoteMutations(jwt);
@@ -84,7 +96,12 @@ export function SignalUpvoteControl({
   }, [upvotes]);
 
   const summary = localSummary ?? upvotes ?? EMPTY_SUMMARY;
-  const hasVoted = summary.myUpvote != null;
+  const direction: SignalVoteDirection | null = summary.myUpvote
+    ? summary.myUpvote.direction === 'down'
+      ? 'down'
+      : 'up'
+    : null;
+  const hasVoted = direction != null;
   const isMutating = isUpvoting || isRemovingUpvote;
   const canVote = Boolean(slug?.trim()) && Boolean(jwt) && !disabled;
 
@@ -104,38 +121,52 @@ export function SignalUpvoteControl({
     async (next: CoherenceUpvoteSummary) => {
       setLocalSummary(next);
       setPercent(myUpvotePercent(next));
+      const signalSlug = slug?.trim();
+      if (resolvedSpaceSlug && signalSlug) {
+        applyPendingSignalUpvotes(resolvedSpaceSlug, signalSlug, next);
+      }
       try {
         await refresh?.();
       } catch {
-        // Ranking refresh is best-effort; the local summary is already current.
+        // The feed cache already has this vote. A refetch is best-effort.
       }
     },
-    [refresh],
+    [refresh, resolvedSpaceSlug, slug],
   );
 
-  const handleToggle = React.useCallback(async () => {
-    const trimmedSlug = slug?.trim();
-    if (!trimmedSlug || !canVote || isMutating) return;
-    setError(null);
-    try {
-      const next = hasVoted
-        ? await removeUpvote({ slug: trimmedSlug })
-        : await upvote({ slug: trimmedSlug });
-      if (next) await applyResult(next);
-    } catch (err) {
-      console.warn('Could not toggle signal upvote:', err);
-      setError(t('upvoteFailed'));
-    }
-  }, [
-    applyResult,
-    canVote,
-    hasVoted,
-    isMutating,
-    removeUpvote,
-    slug,
-    t,
-    upvote,
-  ]);
+  const handleDirection = React.useCallback(
+    async (clicked: SignalVoteDirection) => {
+      const trimmedSlug = slug?.trim();
+      if (!trimmedSlug || !canVote || isMutating) return;
+      setError(null);
+      try {
+        const action = resolveSignalVoteAction(direction, clicked);
+        const next =
+          action === 'remove'
+            ? await removeUpvote({ slug: trimmedSlug })
+            : await upvote({
+                slug: trimmedSlug,
+                direction: action,
+                votingPowerPercent: percent,
+              });
+        if (next) await applyResult(next);
+      } catch (err) {
+        console.warn('Could not update signal vote:', err);
+        setError(t('upvoteFailed'));
+      }
+    },
+    [
+      applyResult,
+      canVote,
+      direction,
+      isMutating,
+      percent,
+      removeUpvote,
+      slug,
+      t,
+      upvote,
+    ],
+  );
 
   const handleApplyPercent = React.useCallback(async () => {
     const trimmedSlug = slug?.trim();
@@ -145,6 +176,7 @@ export function SignalUpvoteControl({
       const next = await upvote({
         slug: trimmedSlug,
         votingPowerPercent: percent,
+        direction: direction ?? 'up',
       });
       if (next) {
         setPopoverOpen(false);
@@ -154,7 +186,7 @@ export function SignalUpvoteControl({
       console.warn('Could not update signal upvote:', err);
       setError(t('upvoteFailed'));
     }
-  }, [applyResult, canVote, isMutating, percent, slug, t, upvote]);
+  }, [applyResult, canVote, direction, isMutating, percent, slug, t, upvote]);
 
   const handleRemove = React.useCallback(async () => {
     const trimmedSlug = slug?.trim();
@@ -180,7 +212,7 @@ export function SignalUpvoteControl({
   // Button size="sm" sets min-h-8; zero it so our pill height wins.
   const pillHeightClass = cn('min-h-0 shrink-0 py-0', compact ? 'h-5' : 'h-6');
   const iconSizeClass = compact ? 'h-2.5 w-2.5' : 'h-3 w-3';
-  const hasAnyVotes = summary.upvoteCount > 0;
+  const hasAnyVotes = summary.upvoteCount + summary.downvoteCount > 0;
 
   return (
     <div
@@ -192,7 +224,7 @@ export function SignalUpvoteControl({
         className={cn(
           'group/upvote inline-flex items-stretch overflow-hidden rounded-full border transition-[border-color,background-color,opacity] duration-200 ease-out',
           pillHeightClass,
-          hasVoted
+          direction === 'down' || direction === 'up'
             ? 'border-accent-8/80 bg-background/60'
             : 'border-border/75 bg-background/55 hover:border-border hover:bg-muted/25',
           isMutating && 'pointer-events-none opacity-65',
@@ -206,49 +238,74 @@ export function SignalUpvoteControl({
           size="sm"
           className={cn(
             pillHeightClass,
-            'gap-1 rounded-none border-0 px-0 tabular-nums shadow-none ring-0 hover:shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
-            'flex items-center justify-center',
-            compact ? 'min-w-[2.5rem] px-1.5' : 'min-w-[2.75rem] px-2',
-            hasVoted
-              ? 'text-accent-11 hover:bg-muted/30 active:bg-muted/40'
-              : 'text-muted-foreground hover:bg-muted/35 hover:text-foreground active:bg-muted/50',
+            'w-6 rounded-none border-0 px-0 shadow-none ring-0 hover:shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
+            direction === 'up'
+              ? 'bg-accent-9 text-accent-contrast hover:bg-accent-10'
+              : 'text-muted-foreground hover:bg-muted/35 hover:text-foreground',
           )}
           disabled={!canVote || isMutating}
-          aria-pressed={hasVoted}
-          aria-label={hasVoted ? t('removeUpvote') : t('upvote')}
+          aria-pressed={direction === 'up'}
+          aria-label={direction === 'up' ? t('removeUpvote') : t('upvote')}
           title={
             !jwt
               ? t('signInToUpvote')
-              : hasVoted
+              : direction === 'up'
               ? t('removeUpvote')
               : t('upvote')
           }
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            void handleToggle();
+            void handleDirection('up');
           }}
         >
-          <SignalUpvoteIcon
-            className={cn(
-              iconSizeClass,
-              'transition-transform duration-200 ease-out group-hover/upvote:scale-105',
-              hasVoted ? 'text-accent-11' : 'text-muted-foreground',
-            )}
-            active={hasVoted}
-          />
-          <span
-            className={cn(
-              compact ? 'text-[10px]' : 'text-[11px]',
-              hasVoted
-                ? 'font-semibold text-accent-11'
-                : hasAnyVotes
-                ? 'font-medium text-foreground'
-                : 'font-medium text-muted-foreground',
-            )}
-          >
-            {totalLabel}
-          </span>
+          <SignalUpvoteTriangle className={iconSizeClass} />
+        </Button>
+        <span
+          className={cn(
+            'flex items-center px-1.5 tabular-nums',
+            compact ? 'text-[10px]' : 'text-[11px]',
+            direction === 'down' || direction === 'up'
+              ? 'font-semibold text-accent-11'
+              : hasAnyVotes
+              ? 'font-medium text-foreground'
+              : 'font-medium text-muted-foreground',
+          )}
+          title={`${t('net')} ${totalLabel}`}
+        >
+          {totalLabel}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          colorVariant="neutral"
+          size="sm"
+          className={cn(
+            pillHeightClass,
+            'w-6 rounded-none border-0 px-0 shadow-none ring-0 hover:shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
+            direction === 'down'
+              ? 'bg-accent-9 text-accent-contrast hover:bg-accent-10'
+              : 'text-muted-foreground hover:bg-muted/35 hover:text-foreground',
+          )}
+          disabled={!canVote || isMutating}
+          aria-pressed={direction === 'down'}
+          aria-label={
+            direction === 'down' ? t('removeDownvote') : t('downvote')
+          }
+          title={
+            !jwt
+              ? t('signInToUpvote')
+              : direction === 'down'
+              ? t('removeDownvote')
+              : t('downvote')
+          }
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            void handleDirection('down');
+          }}
+        >
+          <SignalUpvoteTriangle className={cn(iconSizeClass, 'rotate-180')} />
         </Button>
         <span
           className="my-1 w-px shrink-0 self-stretch bg-border/80"
@@ -300,13 +357,12 @@ export function SignalUpvoteControl({
             onClick={stopPropagation}
           >
             <div className="flex flex-col">
-              <div className="flex items-center justify-between gap-3 px-4 py-3.5">
-                <span className="text-1 font-medium text-muted-foreground">
-                  {t('totalSupport')}
-                </span>
-                <span className="text-3 font-semibold tabular-nums text-foreground">
-                  {totalLabel}
-                </span>
+              <div className="flex flex-col gap-2 px-4 py-3.5">
+                <SignalVoteTotals
+                  summary={summary}
+                  totalLabel={totalLabel}
+                  mode="power"
+                />
               </div>
 
               {canVote ? (
@@ -316,7 +372,9 @@ export function SignalUpvoteControl({
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-1 font-medium text-foreground">
-                          {t('yourVotingPowerShare')}
+                          {direction === 'down'
+                            ? t('downvoteWithVotingPower')
+                            : t('yourVotingPowerShare')}
                         </span>
                         <span className="text-1 font-semibold tabular-nums text-accent-11">
                           {percent}%
@@ -339,7 +397,12 @@ export function SignalUpvoteControl({
                         disabled={isMutating}
                         onClick={() => void handleApplyPercent()}
                       >
-                        <SignalUpvoteIcon className="h-4 w-4" active />
+                        <SignalUpvoteTriangle
+                          className={cn(
+                            'h-4 w-4',
+                            direction === 'down' && 'rotate-180',
+                          )}
+                        />
                         {hasVoted ? t('updateUpvote') : t('upvote')}
                       </Button>
                       {hasVoted ? (
@@ -377,39 +440,7 @@ export function SignalUpvoteControl({
 
               <Separator className="bg-border/70" />
               <div className="flex flex-col gap-3 px-4 py-3.5">
-                <span className="text-1 font-medium text-muted-foreground">
-                  {t('supportersCount', { count: summary.upvoteCount })}
-                </span>
-                {summary.voters.length > 0 ? (
-                  <ul className="flex max-h-44 flex-col gap-1 overflow-y-auto rounded-none border border-border/80 bg-background-2 p-1.5 narrow-scrollbar">
-                    {summary.voters.map((voter) => (
-                      <li
-                        key={voter.personId}
-                        className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-background-3/70"
-                      >
-                        <span className="flex min-w-0 items-center gap-2">
-                          <PersonAvatar
-                            size="sm"
-                            shape="circle"
-                            avatarSrc={voter.avatarUrl ?? ''}
-                            userName={voter.name ?? undefined}
-                            personId={voter.personId}
-                          />
-                          <span className="truncate text-1 font-medium text-foreground">
-                            {voter.name || t('anonymousSupporter')}
-                          </span>
-                        </span>
-                        <span className="shrink-0 text-1 tabular-nums text-muted-foreground">
-                          {formatVotingPowerCompact(
-                            voter.votingPower,
-                            summary.tokenDecimals,
-                            locale,
-                          )}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
+                <SignalVoteRoster summary={summary} mode="power" />
               </div>
             </div>
           </PopoverContent>

@@ -51,7 +51,7 @@ import {
 import { isTransientMatrixNetworkError } from '../matrix-network-errors';
 
 import { isScreenshareTakeoverEvent } from '../hooks/screenshare-takeover';
-import { isCallEphemeralRoomMessageEvent } from '../hooks/call-reactions';
+import { isHiddenHumanChatRoomMessage } from '../../human-chat-timeline-message';
 import { isAutoJoinGroupInvite } from '../../group-room';
 import type { HyphaRoomType } from '../../room-types';
 import {
@@ -62,12 +62,7 @@ import {
   ensureNetworkChatRoomAction,
   ensurePublicChatRoomAction,
 } from '../../server/actions';
-import {
-  parseSignalTeamNoticeFromWireContent,
-  shouldIncludeSignalTeamNoticeInChatTimeline,
-} from '../../signal-team-events';
 
-const CALL_CAPTURE_NOTICE_TYPE = 'io.hypha.call_capture_notice.v1';
 /** Sentinel refresh token so matrix-js-sdk v40 invokes Hypha token rotation. */
 const HYPHA_MATRIX_REFRESH_TOKEN = 'hypha-managed-refresh';
 
@@ -90,30 +85,6 @@ function retryMatrixClientSync(client: MatrixSdk.MatrixClient): void {
   if (typeof clientWithRetry.retryImmediately === 'function') {
     clientWithRetry.retryImmediately();
   }
-}
-
-function isCallCaptureNoticeEvent(event: MatrixSdk.MatrixEvent): boolean {
-  if (event.getType() !== MatrixSdk.EventType.RoomMessage) return false;
-  const content = event.getContent() as {
-    [CALL_CAPTURE_NOTICE_TYPE]?: boolean;
-  };
-  return content[CALL_CAPTURE_NOTICE_TYPE] === true;
-}
-
-function isHiddenHumanChatRoomMessage(event: MatrixSdk.MatrixEvent): boolean {
-  if (event.getType() !== MatrixSdk.EventType.RoomMessage) return false;
-  if (isCallCaptureNoticeEvent(event)) return true;
-  if (isCallEphemeralRoomMessageEvent(event)) return true;
-  const content = event.getContent() as Record<string, unknown>;
-  const body = typeof content.body === 'string' ? content.body : '';
-  const signalTeamNotice = parseSignalTeamNoticeFromWireContent(content, body);
-  if (
-    signalTeamNotice &&
-    !shouldIncludeSignalTeamNoticeInChatTimeline(signalTeamNotice)
-  ) {
-    return true;
-  }
-  return false;
 }
 
 /** Keep this session online on every sync. A one-off presence update is dropped. */
@@ -584,13 +555,15 @@ interface MatrixContextType {
   ) => Promise<{ roomId: string }>;
   /**
    * Join these people into an existing group room. Invite-only rooms stay
-   * invisible until the bot puppet-accepts each member.
+   * invisible until the bot puppet-accepts each member. Resolves to the IDs
+   * that could not be joined. An aborted `signal` stops before the next join
+   * with `SendMessageCancelledError`.
    */
   ensureRoomMembers: (
     roomId: string,
     matrixUserIds: readonly string[],
-    options?: { pruneAbsent?: boolean },
-  ) => Promise<void>;
+    options?: { pruneAbsent?: boolean; signal?: AbortSignal },
+  ) => Promise<string[]>;
   /** Join the single network-wide room, creating it on first use. */
   ensureNetworkRoom: () => Promise<{ roomId: string }>;
   /** Join this ecosystem’s shared room (not the root space member room). */
@@ -1262,11 +1235,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     async (
       roomId: string,
       matrixUserIds: readonly string[],
-      options?: { pruneAbsent?: boolean },
-    ) => {
-      if (!client) return;
+      options?: { pruneAbsent?: boolean; signal?: AbortSignal },
+    ): Promise<string[]> => {
+      if (!client) return [...matrixUserIds];
       const trimmedRoomId = roomId.trim();
-      if (!trimmedRoomId) return;
+      if (!trimmedRoomId) return [...matrixUserIds];
       const selfId = client.getUserId();
       const botId = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
       const room = client.getRoom(trimmedRoomId);
@@ -1312,13 +1285,17 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           ids.add(id);
         }
       }
+      const failed: string[] = [];
       for (const matrixUserId of ids) {
+        throwIfAborted(options?.signal);
         try {
-          await ensureMemberJoinedRoomAction({
+          const { joined } = await ensureMemberJoinedRoomAction({
             roomId: trimmedRoomId,
             matrixUserId,
           });
+          if (!joined) failed.push(matrixUserId);
         } catch (error) {
+          failed.push(matrixUserId);
           console.warn(
             '[Matrix] Failed to include a group member:',
             trimmedRoomId,
@@ -1326,6 +1303,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           );
         }
       }
+      return failed;
     },
     [client],
   );
@@ -2662,7 +2640,7 @@ const noopMatrixContext: MatrixContextType = {
   ensureDirectRoom: async () => {
     throw new Error('Matrix unavailable');
   },
-  ensureRoomMembers: async () => {},
+  ensureRoomMembers: async (_roomId, matrixUserIds) => [...matrixUserIds],
   ensureNetworkRoom: async () => {
     throw new Error('Matrix unavailable');
   },

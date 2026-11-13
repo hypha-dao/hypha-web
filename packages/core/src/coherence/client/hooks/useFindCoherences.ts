@@ -2,12 +2,12 @@
 
 import React from 'react';
 import { useAuthentication } from '@hypha-platform/authentication';
-import useSWR, { mutate } from 'swr';
+import useSWR, { mutate, unstable_serialize, useSWRConfig } from 'swr';
 import type { PaginatedResponse } from '@hypha-platform/core/client';
 import { CoherenceType } from '../../coherence-types';
 import { CoherenceTag } from '../../coherence-tags';
 import { CoherencePriority } from '../../coherence-priorities';
-import type { Coherence } from '../../types';
+import type { Coherence, CoherenceUpvoteSummary } from '../../types';
 
 function dueAtTimeMs(value: Date | null | undefined): number | null {
   if (value == null) return null;
@@ -141,6 +141,94 @@ export function mergePendingCoherenceTaskPatches(
   return changed ? next : items;
 }
 
+type PendingSignalUpvotes = {
+  upvotes: CoherenceUpvoteSummary;
+};
+
+const pendingSignalUpvotes = new Map<string, PendingSignalUpvotes>();
+
+function pendingVoteKey(spaceSlug: string, signalSlug: string): string {
+  return `${spaceSlug.trim()}:${signalSlug.trim()}`;
+}
+
+function myVoteMatches(
+  server: CoherenceUpvoteSummary | undefined,
+  pending: CoherenceUpvoteSummary,
+): boolean {
+  const serverVote = server?.myUpvote ?? null;
+  const pendingVote = pending.myUpvote ?? null;
+  if (serverVote == null && pendingVote == null) return true;
+  if (serverVote == null || pendingVote == null) return false;
+  const serverDirection = serverVote.direction === 'down' ? 'down' : 'up';
+  const pendingDirection = pendingVote.direction === 'down' ? 'down' : 'up';
+  return (
+    serverDirection === pendingDirection &&
+    serverVote.votingPower === pendingVote.votingPower
+  );
+}
+
+/**
+ * Keep a just-cast vote on every cached signal list until a fetch shows that
+ * same vote. A list request that started before the write must not snap the
+ * ranking back.
+ */
+export function mergePendingSignalUpvotes(
+  spaceSlug: string,
+  items: Coherence[],
+  options?: MergePendingOptions,
+): Coherence[] {
+  const trimmedSpace = spaceSlug.trim();
+  if (!trimmedSpace || pendingSignalUpvotes.size === 0) return items;
+
+  let changed = false;
+  const next = items.map((item) => {
+    const slug = item.slug?.trim();
+    if (!slug) return item;
+    const key = pendingVoteKey(trimmedSpace, slug);
+    const pending = pendingSignalUpvotes.get(key);
+    if (!pending) return item;
+
+    if (options?.fromFetch && myVoteMatches(item.upvotes, pending.upvotes)) {
+      pendingSignalUpvotes.delete(key);
+      return item;
+    }
+
+    if (item.upvotes === pending.upvotes) return item;
+    changed = true;
+    return { ...item, upvotes: pending.upvotes };
+  });
+
+  return changed ? next : items;
+}
+
+/** Remember a vote and write it into every cached list for the space. */
+export function applyPendingSignalUpvotes(
+  spaceSlug: string,
+  signalSlug: string,
+  upvotes: CoherenceUpvoteSummary,
+): void {
+  const trimmedSpace = spaceSlug.trim();
+  const trimmedSignal = signalSlug.trim();
+  if (!trimmedSpace || !trimmedSignal) return;
+  pendingSignalUpvotes.set(pendingVoteKey(trimmedSpace, trimmedSignal), {
+    upvotes,
+  });
+  touchSignalVoteCache(trimmedSpace);
+  void revalidateCoherences(trimmedSpace);
+}
+
+function touchSignalVoteCache(spaceSlug: string): void {
+  void mutate(
+    (key) =>
+      Array.isArray(key) &&
+      key[0] === COHERENCES_SWR_KEY &&
+      key[1] === spaceSlug,
+    (current: Coherence[] | undefined) =>
+      current?.length ? mergePendingSignalUpvotes(spaceSlug, current) : current,
+    { revalidate: false },
+  );
+}
+
 function touchCoherenceCache(spaceSlug: string): void {
   const trimmedSpaceSlug = spaceSlug.trim();
   if (!trimmedSpaceSlug) return;
@@ -267,7 +355,11 @@ async function fetchAllCoherences(
     page += 1;
   }
 
-  return mergePendingCoherenceTaskPatches(spaceSlug, all, { fromFetch: true });
+  return mergePendingSignalUpvotes(
+    spaceSlug,
+    mergePendingCoherenceTaskPatches(spaceSlug, all, { fromFetch: true }),
+    { fromFetch: true },
+  );
 }
 
 export const useFindCoherences = ({
@@ -280,6 +372,7 @@ export const useFindCoherences = ({
   orderBy,
 }: CoherenceQuery) => {
   const { getAccessToken } = useAuthentication();
+  const { cache } = useSWRConfig();
   const slug = spaceSlug?.trim() || null;
 
   const swrKey = slug
@@ -332,14 +425,24 @@ export const useFindCoherences = ({
   const mergedCoherences = React.useMemo(
     () =>
       slug && coherences
-        ? mergePendingCoherenceTaskPatches(slug, coherences)
+        ? mergePendingSignalUpvotes(
+            slug,
+            mergePendingCoherenceTaskPatches(slug, coherences),
+          )
         : coherences,
     [slug, coherences],
   );
 
+  // keepPreviousData serves the last query's list while a new key loads or fails.
+  const isPreviousData =
+    coherences !== undefined &&
+    (swrKey == null ||
+      cache.get(unstable_serialize(swrKey))?.data === undefined);
+
   return {
     coherences: mergedCoherences,
     isLoading,
+    isPreviousData,
     error,
     refresh,
   };

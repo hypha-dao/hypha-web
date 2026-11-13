@@ -1,9 +1,10 @@
 import { after } from 'next/server';
 
 import type { DbConfig } from '../../server';
-import type { CoherenceUpvoteSummary } from '../types';
+import { ONE_MEMBER_ONE_VOTE_SOURCE } from '../signal-voting';
+import type { CoherenceUpvoteSummary, SignalVoteDirection } from '../types';
 import {
-  EMPTY_COHERENCE_UPVOTE_SUMMARY,
+  emptyCoherenceUpvoteSummary,
   findCoherenceUpvoteSummaries,
   removeCoherenceUpvote,
   upsertCoherenceUpvote,
@@ -60,7 +61,7 @@ export async function getCoherenceUpvoteSummary(
     { coherenceIds: [coherenceId], viewerPersonId },
     { db },
   );
-  return summaries[coherenceId] ?? EMPTY_COHERENCE_UPVOTE_SUMMARY;
+  return summaries[coherenceId] ?? emptyCoherenceUpvoteSummary();
 }
 
 /**
@@ -68,18 +69,22 @@ export async function getCoherenceUpvoteSummary(
  *
  * Shared by the signed-in UI path and the community-app API path so both read
  * voting power from the space's on-chain source — an integration can allocate
- * a percentage of what a member actually holds, never more. Callers are
- * responsible for authorizing the actor first.
+ * a percentage of what a member actually holds, never more. One member, one
+ * vote is never split: the stored power is the member's whole vote, up or
+ * down. Callers are responsible for authorizing the actor first.
  */
 export async function applyCoherenceUpvote(
   {
     coherence,
     actor,
     votingPowerPercent,
+    direction: requestedDirection,
   }: {
     coherence: CoherenceUpvoteTarget;
     actor: CoherenceUpvoteActor;
     votingPowerPercent?: number;
+    /** Omitted means an upvote, so existing callers stay upvotes. */
+    direction?: SignalVoteDirection;
   },
   { db }: DbConfig,
 ): Promise<CoherenceUpvoteSummary> {
@@ -93,39 +98,61 @@ export async function applyCoherenceUpvote(
     throw new Error('A linked wallet is required to vote on signals');
   }
 
-  const percent = resolveVotingPowerPercent(votingPowerPercent);
+  const direction: SignalVoteDirection =
+    requestedDirection === 'down' ? 'down' : 'up';
   const voter = actor.address as `0x${string}`;
   const web3SpaceId = coherence.web3SpaceId;
 
-  const { votingPower: maxVotingPower, tokenDecimals } =
-    await getMemberVotingPower({ memberAddress: voter, web3SpaceId });
+  const {
+    votingPower: maxVotingPower,
+    tokenDecimals,
+    votingPowerSource,
+  } = await getMemberVotingPower({ memberAddress: voter, web3SpaceId });
   if (maxVotingPower <= 0n) {
     throw new Error('You have no voting power in this space');
   }
 
-  let votingPower = (maxVotingPower * BigInt(percent)) / 100n;
-  if (votingPower <= 0n) {
+  const oneMemberOneVote = votingPowerSource === ONE_MEMBER_ONE_VOTE_SOURCE;
+  const percent = oneMemberOneVote
+    ? 100
+    : resolveVotingPowerPercent(votingPowerPercent);
+  let votingPower = oneMemberOneVote
+    ? maxVotingPower
+    : (maxVotingPower * BigInt(percent)) / 100n;
+  if (!oneMemberOneVote && votingPower <= 0n) {
     votingPower = 1n;
   }
 
-  await upsertCoherenceUpvote(
+  const previous = await upsertCoherenceUpvote(
     {
       coherenceId: coherence.id,
       personId: actor.id,
       votingPower: votingPower.toString(),
       maxVotingPower: maxVotingPower.toString(),
       tokenDecimals,
+      direction,
     },
     { db },
   );
 
-  scheduleUpvoteMirror({
-    web3SpaceId,
-    signalId: coherence.id,
-    voter,
-    amount: votingPower,
-    kind: 'upvote',
-  });
+  // The contract only records upvotes. A downvote is not an upvote, and
+  // switching off an upvote emits the removal. Removing a downvote emits nothing.
+  if (direction === 'up') {
+    scheduleUpvoteMirror({
+      web3SpaceId,
+      signalId: coherence.id,
+      voter,
+      amount: votingPower,
+      kind: 'upvote',
+    });
+  } else if (previous === 'up') {
+    scheduleUpvoteMirror({
+      web3SpaceId,
+      signalId: coherence.id,
+      voter,
+      kind: 'removal',
+    });
+  }
 
   return getCoherenceUpvoteSummary(
     { coherenceId: coherence.id, viewerPersonId: actor.id },
@@ -146,8 +173,8 @@ export async function applyCoherenceUpvoteRemoval(
     { db },
   );
 
-  // A no-op removal (e.g. a double click) should not emit a removal event.
-  if (removed && coherence.web3SpaceId != null && actor.address) {
+  // A no-op removal, or removing a downvote, does not emit an upvote removal.
+  if (removed === 'up' && coherence.web3SpaceId != null && actor.address) {
     scheduleUpvoteMirror({
       web3SpaceId: coherence.web3SpaceId,
       signalId: coherence.id,

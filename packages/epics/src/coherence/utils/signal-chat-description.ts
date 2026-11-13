@@ -14,24 +14,12 @@ export type SignalChatMatrixOps = {
   joinRoom: (roomId: string) => Promise<string>;
   loadRoomHistory: (roomId: string) => Promise<LoadRoomHistoryResult>;
   getRoomMessages: (roomId: string) => SignalChatMatrixMessage[] | null;
-  sendMessage: (params: {
-    roomId: string;
-    message: string;
-  }) => Promise<unknown>;
   editRoomMessage: (params: {
     roomId: string;
     targetEventId: string;
     message: string;
   }) => Promise<void>;
 };
-
-/**
- * - `safe`: seed empty rooms only; update the first message only when it already
- *   matches the description (avoids overwriting real chat on panel open).
- * - `save`: explicit save/create from the signal form — update or create the
- *   description anchor message.
- */
-export type UpsertSignalDescriptionMode = 'safe' | 'save';
 
 export function normalizeSignalDescriptionForChat(
   description?: string | null,
@@ -99,42 +87,40 @@ function getChatTimelineMessages(
     .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 }
 
-/** Post signal description as the first Matrix message, or update it on edit. */
-export async function upsertSignalDescriptionInRoom({
+/**
+ * Signal rooms no longer get the description posted into chat — the signal
+ * page shows it. Older rooms still open with a copy; on edit, keep that copy
+ * in step so it stays recognisable and is not counted as a reply. Rooms
+ * without a copy are left alone, and real chat is never overwritten.
+ */
+export async function updateSignalDescriptionCopyInRoom({
   roomId,
+  previousDescription,
   description,
   matrix,
-  mode = 'save',
 }: {
   roomId: string;
+  previousDescription?: string | null;
   description?: string | null;
   matrix: SignalChatMatrixOps;
-  mode?: UpsertSignalDescriptionMode;
 }): Promise<void> {
   const nextDescription = normalizeSignalDescriptionForChat(description);
   if (!nextDescription || !roomId.trim()) return;
+  const priorDescription =
+    normalizeSignalDescriptionForChat(previousDescription);
+  if (priorDescription === nextDescription) return;
 
   const canonicalRoomId = await matrix.joinRoom(roomId);
   await matrix.loadRoomHistory(canonicalRoomId);
 
-  const chatMessages = getChatTimelineMessages(
+  const firstMessage = getChatTimelineMessages(
     matrix.getRoomMessages(canonicalRoomId) ?? [],
-  );
-  const firstMessage = chatMessages[0];
-
-  if (!firstMessage?.id) {
-    await matrix.sendMessage({
-      roomId: canonicalRoomId,
-      message: nextDescription,
-    });
-    return;
-  }
-
-  if (mode === 'safe') {
-    if (!descriptionsMatch(firstMessage.content, nextDescription)) {
-      return;
-    }
-  }
+  )[0];
+  if (!firstMessage?.id) return;
+  const isCopy =
+    priorDescription != null &&
+    descriptionsMatch(firstMessage.content, priorDescription);
+  if (!isCopy) return;
 
   await matrix.editRoomMessage({
     roomId: canonicalRoomId,

@@ -1,3 +1,4 @@
+import type { CoherenceType } from '../coherence-types';
 import {
   spacePaymentTrackerAbi,
   spacePaymentTrackerAddress,
@@ -13,17 +14,7 @@ import {
 
 const PAYMENT_CHAIN_ID = 8453 as const;
 
-export type SignalType =
-  | 'Need'
-  | 'Resource'
-  | 'Opportunity'
-  | 'Insight'
-  | 'Tension'
-  | 'Risk'
-  | 'Action'
-  | 'Impact'
-  | 'Trend'
-  | 'Proposal';
+export type SignalType = CoherenceType;
 export type SignalPriority = 'critical' | 'high' | 'medium' | 'low';
 
 export type PaymentEligibility = {

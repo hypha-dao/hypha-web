@@ -62,7 +62,7 @@ describe('signal-team-events', () => {
     });
   });
 
-  it('excludes roster snapshot notices from chat timeline', () => {
+  it('excludes every legacy signal-team notice from chat timeline', () => {
     const notice = parseSignalTeamNoticeFromWireContent(
       {
         memberMatrixUserIds: ['@alice:example.org'],
@@ -77,7 +77,15 @@ describe('signal-team-events', () => {
         addedMemberMatrixUserIds: [],
         removedMemberMatrixUserIds: [],
       }),
-    ).toBe(true);
+    ).toBe(false);
+    expect(
+      shouldIncludeSignalTeamNoticeInChatTimeline({
+        kind: 'members_updated',
+        addedMemberMatrixUserIds: ['@bob:example.org'],
+        removedMemberMatrixUserIds: [],
+      }),
+    ).toBe(false);
+    expect(shouldIncludeSignalTeamNoticeInChatTimeline(null)).toBe(true);
   });
 
   it('maps assignee person ids onto unique Matrix user ids', () => {

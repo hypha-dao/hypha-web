@@ -4,6 +4,7 @@ import type { PaginatedResponse } from '@hypha-platform/core/client';
 import {
   COHERENCE_TAGS,
   COHERENCE_TYPES,
+  emptyCoherenceUpvoteSummary,
   findCoherenceUpvoteSummaries,
   findSelf,
   findSpaceBySlug,
@@ -172,7 +173,7 @@ export async function GET(
 
     let enriched: Coherence[] = coherences.map((coherence) => ({
       ...coherence,
-      upvotes: upvoteSummaries[coherence.id],
+      upvotes: upvoteSummaries[coherence.id] ?? emptyCoherenceUpvoteSummary(),
     }));
 
     if (orderBy === 'mostupvoted') {

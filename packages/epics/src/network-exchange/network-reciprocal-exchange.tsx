@@ -97,6 +97,7 @@ function typeLabel(
   if (type === 'Tension') return t('filterTension');
   if (type === 'Insight') return t('filterInsight');
   if (type === 'Action') return t('filterAction');
+  if (type === 'Bug') return t('filterBug');
   return t('filterImpact');
 }
 
@@ -1118,7 +1119,6 @@ export function NetworkReciprocalExchange({
     for (const signal of signals) {
       const row = counts.get(signal.spaceSlug) ?? { action: 0, impact: 0 };
       if (signal.type === 'Action') row.action += 1;
-      if (signal.type === 'Impact') row.impact += 1;
       counts.set(signal.spaceSlug, row);
     }
     return counts;
@@ -1228,8 +1228,7 @@ export function NetworkReciprocalExchange({
                   t('ongoing'),
                 );
                 const payout = payoutText(signal, t);
-                const impactCard =
-                  signal.type === 'Impact' || signal.type === 'Action';
+                const impactCard = signal.type === 'Action';
                 const proofs = proofsBySpace.get(signal.spaceSlug) ?? {
                   action: 0,
                   impact: 0,
