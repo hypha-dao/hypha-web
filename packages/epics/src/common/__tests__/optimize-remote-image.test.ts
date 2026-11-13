@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { shouldOptimizeRemoteImage } from '../optimize-remote-image';
+import {
+  isLikelyGifSrc,
+  shouldOptimizeRemoteImage,
+} from '../optimize-remote-image';
 
 describe('shouldOptimizeRemoteImage', () => {
   const originalHosts = process.env.NEXT_PUBLIC_IMAGE_HOSTS;
@@ -46,5 +49,21 @@ describe('shouldOptimizeRemoteImage', () => {
   it('does not send unknown remotes through the optimizer', () => {
     process.env.NEXT_PUBLIC_IMAGE_HOSTS = '';
     expect(shouldOptimizeRemoteImage('https://evil.example/a.png')).toBe(false);
+  });
+
+  it('leaves animated GIFs unoptimized so the optimizer does not fetch them twice', () => {
+    expect(
+      isLikelyGifSrc('https://bovzk9ehhu.ufs.sh/f/community-logo.gif'),
+    ).toBe(true);
+    expect(
+      shouldOptimizeRemoteImage(
+        'https://bovzk9ehhu.ufs.sh/f/community-logo.gif',
+      ),
+    ).toBe(false);
+    expect(
+      shouldOptimizeRemoteImage(
+        'https://bovzk9ehhu.ufs.sh/f/community-logo.GIF?w=1',
+      ),
+    ).toBe(false);
   });
 });

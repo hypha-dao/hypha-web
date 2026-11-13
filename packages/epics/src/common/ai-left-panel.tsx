@@ -65,6 +65,8 @@ import {
   AiPanelChatBar,
   type AiPanelDraftAttachment,
 } from './ai-panel';
+import { OptimizedAvatarImage } from './optimized-avatar-image';
+import { useEnergyOverviewIdleGate } from './use-after-idle';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { HYPHA_SPACE_SWITCH_LINK_ATTR } from './main-column-scroll';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
@@ -373,6 +375,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const matrix = useMatrix();
   const params = useParams<{ id?: string; lang?: string }>();
   const pathname = usePathname();
+  const prefetchNav = useEnergyOverviewIdleGate();
   const isOnboardingPath = isInteractiveCreatePath(pathname);
   const [onboardingContext, setOnboardingContext] = useState<
     OnboardingConversationContext | undefined
@@ -1031,6 +1034,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           <Link
             href={item.href}
             scroll={false}
+            prefetch={prefetchNav}
             onClick={mode === 'collapsed' ? undefined : closeIfExpanded}
             aria-label={item.label}
             aria-current={item.active ? 'page' : undefined}
@@ -1054,7 +1058,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         </SidebarMenuItem>
       );
     },
-    [handleExpandedMenuNavigation],
+    [handleExpandedMenuNavigation, prefetchNav],
   );
 
   const renderRecentSpaceItem = useCallback(
@@ -1089,6 +1093,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             <Link
               href={safeHref}
               scroll={false}
+              prefetch={prefetchNav}
               {...{ [HYPHA_SPACE_SWITCH_LINK_ATTR]: '' }}
               onClick={
                 mode === 'collapsed' ? undefined : handleExpandedMenuNavigation
@@ -1110,14 +1115,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
                   }`}
                 >
                   {recentSpaceIcon ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={recentSpaceIcon}
-                        alt={space.title}
-                        className="block h-full w-full rounded-full object-cover object-center"
-                      />
-                    </>
+                    <OptimizedAvatarImage
+                      src={recentSpaceIcon}
+                      alt={space.title}
+                      pixelSize={24}
+                      className="block h-full w-full rounded-full object-cover object-center"
+                    />
                   ) : (
                     <span className="text-xs font-semibold text-muted-foreground">
                       {space.title.slice(0, 1).toUpperCase()}
@@ -1133,7 +1136,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         </SidebarMenuItem>
       );
     },
-    [lang, pathname, resolvedTheme, spaceSlug, handleExpandedMenuNavigation],
+    [
+      lang,
+      pathname,
+      resolvedTheme,
+      spaceSlug,
+      handleExpandedMenuNavigation,
+      prefetchNav,
+    ],
   );
 
   const renderRecentSpacesSection = useCallback(

@@ -17,6 +17,7 @@ import {
 } from '../utils/space-accent-scope-style';
 import { defaultSpacePortalStyles } from '../utils/space-accent-portal-styles';
 import { useSetSpaceAccentPortalStyles } from './space-accent-portal-context';
+import { useAfterIdle } from '../../common/use-after-idle';
 
 /** Keys mirrored to `document.documentElement` so portaled UI (e.g. Human Chat) uses space accent. */
 const DOCUMENT_ACCENT_MIRROR_PREFIXES = [
@@ -85,8 +86,11 @@ function canvasFriendlyImageSrc(src: string): string | null {
   if (typeof window === 'undefined') return null;
   try {
     const u = new URL(t);
+    if (u.pathname.toLowerCase().endsWith('.gif')) {
+      return null;
+    }
     if (u.protocol === 'http:' || u.protocol === 'https:') {
-      return `/_next/image?url=${encodeURIComponent(t)}&w=96&q=75`;
+      return `/_next/image?url=${encodeURIComponent(t)}&w=64&q=60`;
     }
   } catch {
     /* ignore */
@@ -198,8 +202,11 @@ export function SpaceAccentFromImages({
   const ref = React.useRef<HTMLDivElement>(null);
   const setPortalStyles = useSetSpaceAccentPortalStyles();
   const documentMirroredKeysRef = React.useRef<string[]>([]);
+  const samplingReady = useAfterIdle(true);
 
   React.useEffect(() => {
+    if (!samplingReady) return;
+
     let cancelled = false;
     documentAccentMirrorInstanceCount += 1;
 
@@ -268,7 +275,7 @@ export function SpaceAccentFromImages({
         documentMirroredKeysRef.current = [];
       }
     };
-  }, [bannerSrc, logoSrc, setPortalStyles]);
+  }, [bannerSrc, logoSrc, samplingReady, setPortalStyles]);
 
   return (
     <div

@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import { useAfterIdle } from '../../common/use-after-idle';
 
 /**
  * Overview must paint from `/energy` alone. 7d/30d Azure scans are useful
@@ -14,34 +14,6 @@ export function useOverviewFirstTelemetryPrefetch(
   energyEnabled: boolean,
   tab: string,
 ): boolean {
-  const [afterOverviewPaint, setAfterOverviewPaint] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!energyEnabled) {
-      setAfterOverviewPaint(false);
-      return;
-    }
-
-    let idleId = 0;
-    let timeoutId = 0;
-    const enable = () => setAfterOverviewPaint(true);
-    const afterPaint = () => {
-      if (typeof window.requestIdleCallback === 'function') {
-        idleId = window.requestIdleCallback(enable, { timeout: 1_200 });
-        return;
-      }
-      timeoutId = window.setTimeout(enable, 400);
-    };
-    const raf = window.requestAnimationFrame(afterPaint);
-
-    return () => {
-      window.cancelAnimationFrame(raf);
-      if (idleId && typeof window.cancelIdleCallback === 'function') {
-        window.cancelIdleCallback(idleId);
-      }
-      window.clearTimeout(timeoutId);
-    };
-  }, [energyEnabled]);
-
+  const afterOverviewPaint = useAfterIdle(energyEnabled && tab === 'overview');
   return energyEnabled && (afterOverviewPaint || tab !== 'overview');
 }

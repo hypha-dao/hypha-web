@@ -10,10 +10,10 @@ import { ENERGY_PALETTE } from './energy-palette';
 import {
   buildProductionSeries,
   buildGridFlowSeries,
-  PRODUCTION_DEFAULT_TIMEFRAME,
   timeframeLabels,
   type Timeframe,
 } from './dummy-data';
+import { PRODUCTION_DEFAULT_TIMEFRAME } from './energy-constants';
 import { TimeframeToggle } from './timeframe-toggle';
 import { StatCard } from './shared';
 import { readableSourceMetadataLabel, sourceCardLabel } from './format';

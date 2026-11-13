@@ -250,4 +250,9 @@ export {
   SpaceCreatedOnText,
 } from './formatted-local-date-time';
 export { OptimizedAvatarImage } from './optimized-avatar-image';
+export {
+  isLikelyGifSrc,
+  shouldOptimizeRemoteImage,
+} from './optimize-remote-image';
+export { useAfterIdle, useEnergyOverviewIdleGate } from './use-after-idle';
 export * from './composer';

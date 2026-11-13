@@ -10,7 +10,7 @@ import { StatCard } from './energy/shared';
 import { ENERGY_PALETTE } from './energy/energy-palette';
 import { formatStablecoinMicro, UNAVAILABLE } from './energy/format';
 import { EnergyOverviewTab } from './energy/overview-tab';
-import { PRODUCTION_DEFAULT_TIMEFRAME } from './energy/dummy-data';
+import { PRODUCTION_DEFAULT_TIMEFRAME } from './energy/energy-constants';
 import { useSpaceEnergyTelemetry } from '../../hooks/use-space-energy-telemetry';
 import { useOverviewFirstTelemetryPrefetch } from '../../hooks/use-overview-first-telemetry-prefetch';
 import { useEnergyPeople } from './energy/use-energy-people';
@@ -19,22 +19,33 @@ import {
   EnergySectionSkeleton,
 } from './energy/loading-skeletons';
 
+export { EnergySectionSkeleton };
+
 const ProductionConsumptionTab = dynamic(
   () =>
     import('./energy/production-consumption-tab').then(
       (mod) => mod.ProductionConsumptionTab,
     ),
-  { loading: () => <EnergyChartSkeleton height={220} bars={12} /> },
+  {
+    ssr: false,
+    loading: () => <EnergyChartSkeleton height={220} bars={12} />,
+  },
 );
 
 const OwnershipTab = dynamic(
   () => import('./energy/ownership-tab').then((mod) => mod.OwnershipTab),
-  { loading: () => <EnergyChartSkeleton height={220} bars={12} /> },
+  {
+    ssr: false,
+    loading: () => <EnergyChartSkeleton height={220} bars={12} />,
+  },
 );
 
 const CreditsTab = dynamic(
   () => import('./energy/credits-tab').then((mod) => mod.CreditsTab),
-  { loading: () => <EnergyChartSkeleton height={220} bars={12} /> },
+  {
+    ssr: false,
+    loading: () => <EnergyChartSkeleton height={220} bars={12} />,
+  },
 );
 
 const TAB_VALUES = ['overview', 'flows', 'ownership', 'credits'] as const;
@@ -94,12 +105,12 @@ export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
     unresolvedMemberAddresses,
   );
 
-  if (isLoading) {
-    return <EnergySectionSkeleton />;
+  if (!isLoading && (!data?.enabled || !data.overview)) {
+    return null;
   }
 
-  if (!data?.enabled || !data.overview) {
-    return null;
+  if (isLoading || !data?.overview) {
+    return <EnergySectionSkeleton />;
   }
 
   const overview = data.overview;
@@ -155,25 +166,31 @@ export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
             peopleLoading={peopleLoading}
           />
         </TabsContent>
-        <TabsContent value="flows" className="mt-6">
-          <ProductionConsumptionTab data={data} spaceSlug={spaceSlug} />
-        </TabsContent>
-        <TabsContent value="ownership" className="mt-6">
-          <OwnershipTab
-            spaceSlug={spaceSlug}
-            data={data}
-            people={people}
-            peopleLoading={peopleLoading}
-          />
-        </TabsContent>
-        <TabsContent value="credits" className="mt-6">
-          <CreditsTab
-            spaceSlug={spaceSlug}
-            data={data}
-            people={people}
-            peopleLoading={peopleLoading}
-          />
-        </TabsContent>
+        {tab === 'flows' ? (
+          <TabsContent value="flows" className="mt-6">
+            <ProductionConsumptionTab data={data} spaceSlug={spaceSlug} />
+          </TabsContent>
+        ) : null}
+        {tab === 'ownership' ? (
+          <TabsContent value="ownership" className="mt-6">
+            <OwnershipTab
+              spaceSlug={spaceSlug}
+              data={data}
+              people={people}
+              peopleLoading={peopleLoading}
+            />
+          </TabsContent>
+        ) : null}
+        {tab === 'credits' ? (
+          <TabsContent value="credits" className="mt-6">
+            <CreditsTab
+              spaceSlug={spaceSlug}
+              data={data}
+              people={people}
+              peopleLoading={peopleLoading}
+            />
+          </TabsContent>
+        ) : null}
       </Tabs>
     </div>
   );

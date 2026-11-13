@@ -8,14 +8,29 @@ function configuredImageHosts(): string[] {
     .filter(Boolean);
 }
 
+/** Animated GIFs through `/_next/image` are slow and often a second original fetch. */
+export function isLikelyGifSrc(src: string): boolean {
+  if (!src) return false;
+  try {
+    const path = new URL(src, 'https://hypha.invalid').pathname.toLowerCase();
+    return path.endsWith('.gif');
+  } catch {
+    return /\.gif(?:$|[?#])/i.test(src);
+  }
+}
+
 /**
  * Whether `next/image` can send this URL through `/_next/image`.
  * UploadThing originals are huge; those hosts are always optimized.
  * Other remote hosts must be listed in `NEXT_PUBLIC_IMAGE_HOSTS` or the
  * optimizer rejects them — those stay `unoptimized` (original src).
+ * GIFs stay unoptimized: the optimizer is slow and drops animation.
  */
 export function shouldOptimizeRemoteImage(src: string): boolean {
   if (!src || src.startsWith('data:') || src.startsWith('blob:')) {
+    return false;
+  }
+  if (isLikelyGifSrc(src)) {
     return false;
   }
   if (!/^https?:\/\//i.test(src)) {

@@ -24,6 +24,7 @@ import {
   partitionSpaceSectionNavForTabs,
   type SpaceSectionNavKey,
   useAiPanel,
+  useEnergyOverviewIdleGate,
   useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
@@ -45,6 +46,7 @@ export function NavigationTabs({
   const tTreasury = useTranslations('TreasuryTab');
   const tCoherence = useTranslations('CoherenceTab');
   const { open: aiPanelOpen } = useAiPanel();
+  const prefetchNav = useEnergyOverviewIdleGate();
   const pathname = usePathname();
   const activeTab = React.useMemo(
     () => getActiveTabFromPath(pathname),
@@ -148,6 +150,7 @@ export function NavigationTabs({
                 <Link
                   href={href}
                   scroll={false}
+                  prefetch={prefetchNav}
                   className="flex min-w-max flex-1 items-center justify-center gap-1.5 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]"
                 >
                   <Icon className="craft-icon" strokeWidth={1.25} aria-hidden />
@@ -182,6 +185,7 @@ export function NavigationTabs({
                       <Link
                         href={href}
                         scroll={false}
+                        prefetch={prefetchNav}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
                           'flex cursor-pointer items-center gap-2',

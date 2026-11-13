@@ -127,7 +127,9 @@ export const PersonAvatar = ({
           pixelSize={pixelSize}
           priority={priority}
         />
-        <AvatarFallback>{getFallbackContent()}</AvatarFallback>
+        {avatarSrc ? null : (
+          <AvatarFallback>{getFallbackContent()}</AvatarFallback>
+        )}
       </Avatar>
     </Skeleton>
   );

@@ -5,6 +5,10 @@ import Image from 'next/image';
 import { cn } from '@hypha-platform/ui-utils';
 import { useMainColumnScrollY } from '../../common/main-column-scroll';
 import { shouldOptimizeRemoteImage } from '../../common/optimize-remote-image';
+import {
+  SPACE_BANNER_IMAGE_QUALITY,
+  SPACE_BANNER_IMAGE_SIZES,
+} from '../utils/space-banner-image';
 
 type Props = {
   src: string;
@@ -113,8 +117,8 @@ export function CompactSpaceBannerLead({ src }: Props) {
             fill
             priority
             unoptimized={unoptimized}
-            quality={85}
-            sizes="(max-width: 768px) 100vw, 1280px"
+            quality={SPACE_BANNER_IMAGE_QUALITY}
+            sizes={SPACE_BANNER_IMAGE_SIZES}
             className={cn(
               'object-cover object-center transition-opacity duration-320 ease-out',
               imageFailed

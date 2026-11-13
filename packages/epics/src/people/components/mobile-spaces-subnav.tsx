@@ -4,6 +4,7 @@ import { useJwt, type MemberIntelligence } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 import useSWR from 'swr';
 
+import { useEnergyOverviewIdleGate } from '../../common/use-after-idle';
 import { MemberHomeSpacesRail } from './member-home-spaces-rail';
 
 /**
@@ -23,9 +24,10 @@ export function MobileSpacesSubnav({
   layout?: 'column' | 'row';
 }) {
   const { jwt } = useJwt();
+  const idle = useEnergyOverviewIdleGate();
 
   const { data: home, isLoading } = useSWR<MemberIntelligence | null>(
-    jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
+    idle && jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
     async ([url, token]) => {
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },

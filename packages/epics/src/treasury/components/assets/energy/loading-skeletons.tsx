@@ -1,8 +1,12 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { CoinsIcon, UsersIcon, ZapIcon } from 'lucide-react';
 import { Wave } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { ENERGY_PALETTE } from './energy-palette';
+import { StatCard } from './shared';
 
 /**
  * Energy loading placeholders. Chart bars keep their own shape. Text lines
@@ -136,11 +140,31 @@ export function EnergyPersonRowSkeleton({ delayMs = 0 }: { delayMs?: number }) {
   );
 }
 
-/** Initial Energy section load — stats + tab panel shell. */
+/** Initial Energy section load — labeled stats, no chart JS. */
 export function EnergySectionSkeleton() {
+  const tOverview = useTranslations('Energy.overview');
   return (
     <div className="flex flex-col gap-6" role="status" aria-busy="true">
-      <EnergyStatCardsSkeleton count={3} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatCard
+          label={tOverview('statConsumers')}
+          value={<Pulse className="h-7 w-16" />}
+          accent={ENERGY_PALETTE[2]}
+          icon={<UsersIcon size={16} />}
+        />
+        <StatCard
+          label={tOverview('statSources')}
+          value={<Pulse className="h-7 w-16" delayMs={80} />}
+          accent={ENERGY_PALETTE[0]}
+          icon={<ZapIcon size={16} />}
+        />
+        <StatCard
+          label={tOverview('statTotalSettled')}
+          value={<Pulse className="h-7 w-24" delayMs={160} />}
+          accent={ENERGY_PALETTE[1]}
+          icon={<CoinsIcon size={16} />}
+        />
+      </div>
       <div className="flex flex-col gap-4">
         <Pulse className="h-10 w-full max-w-xl rounded-full" />
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -148,7 +172,6 @@ export function EnergySectionSkeleton() {
             <EnergyPersonRowSkeleton key={i} delayMs={i * 100} />
           ))}
         </div>
-        <EnergyChartSkeleton height={220} bars={12} className="mt-2" />
       </div>
     </div>
   );

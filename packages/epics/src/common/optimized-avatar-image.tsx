@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import { AvatarImage } from '@hypha-platform/ui';
 import { shouldOptimizeRemoteImage } from './optimize-remote-image';
 
 type OptimizedAvatarImageProps = {
@@ -15,8 +14,9 @@ type OptimizedAvatarImageProps = {
 };
 
 /**
- * Radix `AvatarImage` backed by `next/image` so UploadThing originals are
- * downscaled instead of fetched at full size.
+ * Sized `next/image` for portraits and space marks.
+ * Do not wrap this in Radix `AvatarImage` — that primitive loads `src` with
+ * `new Image()` and duplicates the UploadThing original.
  */
 export function OptimizedAvatarImage({
   src,
@@ -28,18 +28,16 @@ export function OptimizedAvatarImage({
   if (!src) return null;
 
   return (
-    <AvatarImage asChild>
-      <Image
-        src={src}
-        alt={alt}
-        width={pixelSize}
-        height={pixelSize}
-        sizes={`${pixelSize}px`}
-        quality={70}
-        priority={priority}
-        unoptimized={!shouldOptimizeRemoteImage(src)}
-        className={className}
-      />
-    </AvatarImage>
+    <Image
+      src={src}
+      alt={alt}
+      width={pixelSize}
+      height={pixelSize}
+      sizes={`${pixelSize}px`}
+      quality={70}
+      priority={priority}
+      unoptimized={!shouldOptimizeRemoteImage(src)}
+      className={className}
+    />
   );
 }
