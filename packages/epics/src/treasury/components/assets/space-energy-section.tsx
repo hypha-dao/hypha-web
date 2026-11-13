@@ -33,18 +33,24 @@ export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
   const { data, isLoading } = useSpaceEnergy(spaceSlug);
   const [tab, setTab] = React.useState<string>('overview');
 
-  // Start telemetry with the overview so the Production tab and the consumer
-  // cards (daily = 30d) open from cache. The tabs themselves poll.
+  // Start 7d telemetry with the overview so Production opens from cache.
+  // Wait for that Azure scan before 30d so the two windows do not contend.
   const prefetchTelemetry = {
     enabled: Boolean(data?.enabled),
     refreshInterval: 0,
   };
-  useSpaceEnergyTelemetry(
+  const sevenDayTelemetry = useSpaceEnergyTelemetry(
     PRODUCTION_DEFAULT_TIMEFRAME,
     spaceSlug,
     prefetchTelemetry,
   );
-  useSpaceEnergyTelemetry('30d', spaceSlug, prefetchTelemetry);
+  useSpaceEnergyTelemetry('30d', spaceSlug, {
+    ...prefetchTelemetry,
+    enabled:
+      prefetchTelemetry.enabled &&
+      (sevenDayTelemetry.data !== undefined ||
+        sevenDayTelemetry.error !== undefined),
+  });
 
   const memberAddresses = React.useMemo(
     () =>

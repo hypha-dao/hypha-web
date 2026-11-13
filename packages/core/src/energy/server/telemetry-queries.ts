@@ -6,19 +6,31 @@ import { getEnergyDbConfigFromEnv } from './azure-db-config';
 import {
   assembleEnergyTelemetry,
   emptyEnergyTelemetryResponse,
-  ENERGY_TELEMETRY_PERIOD_CONFIG,
   parseEnergyTelemetryPeriod,
   type EnergyTelemetryAggregateRow,
 } from './telemetry-assemble';
 import type { EnergyTelemetryResponse } from './telemetry-types';
+import {
+  missingTelemetryRange,
+  storeTelemetryRowsByDay,
+  telemetryPeriodDayKeys,
+  utcDayKeysInRange,
+} from './telemetry-window';
 import { createTtlCache } from './ttl-cache';
 
-/** Charts poll every 60s; cache just under that so the first paint is reused. */
-export const ENERGY_TELEMETRY_CACHE_TTL_MS = 45_000;
+/** Keep assembled period payloads for the same freshness window as the route. */
+export const ENERGY_TELEMETRY_CACHE_TTL_MS = 5 * 60_000;
+/** Daily buckets are reused across 7d/30d/12m on the same instance. */
+const ENERGY_TELEMETRY_DAY_TTL_MS = 10 * 60_000;
 
 const telemetryCache = createTtlCache<EnergyTelemetryResponse>(
   ENERGY_TELEMETRY_CACHE_TTL_MS,
 );
+const telemetryDayCache = createTtlCache<EnergyTelemetryAggregateRow[]>(
+  ENERGY_TELEMETRY_DAY_TTL_MS,
+);
+
+const communityWindowLoads = new Map<number, Promise<void>>();
 
 let energyDbPool: Pool | undefined;
 
@@ -52,22 +64,9 @@ function getEnergyDbPool(): Pool | null {
   return energyDbPool;
 }
 
-async function queryEnergyTelemetryUncached(input: {
-  communityId: number;
-  period: ReturnType<typeof parseEnergyTelemetryPeriod>;
-  sourceLabels?: Record<number, string>;
-}): Promise<EnergyTelemetryResponse> {
-  const cfg = ENERGY_TELEMETRY_PERIOD_CONFIG[input.period];
-  const pool = getEnergyDbPool();
-  if (!pool) {
-    return emptyEnergyTelemetryResponse(input.period, input.communityId, false);
-  }
-
-  const truncateUnit =
-    cfg.unit === 'month' ? 'month' : cfg.unit === 'week' ? 'week' : 'day';
-  const aggregateSql = `
+const AGGREGATE_SQL = `
       select
-        date_trunc('${truncateUnit}', interval_start at time zone 'UTC')::text as bucket,
+        date_trunc('day', interval_start at time zone 'UTC')::text as bucket,
         case
           when direction = 'production'
             or (direction is null and meter_id in (9001, 9002, 9003))
@@ -90,7 +89,8 @@ async function queryEnergyTelemetryUncached(input: {
         ) as last_reading
       from accounting.interval_readings
       where community_id = $1
-        and interval_start >= now() - ${cfg.intervalSql}
+        and interval_start >= $2
+        and interval_start < $3
         and (
           direction in ('consumption', 'production', 'import', 'export')
           or (
@@ -105,21 +105,113 @@ async function queryEnergyTelemetryUncached(input: {
       order by 1 asc
     `;
 
+function dayCacheKey(communityId: number, dayKey: string) {
+  return `${communityId}:${dayKey}`;
+}
+
+function cachedDaysFor(communityId: number, dayKeys: string[]): Set<string> {
+  const cached = new Set<string>();
+  for (const day of dayKeys) {
+    if (telemetryDayCache.get(dayCacheKey(communityId, day))) {
+      cached.add(day);
+    }
+  }
+  return cached;
+}
+
+async function queryTelemetryWindow(
+  pool: Pool,
+  communityId: number,
+  from: Date,
+  to: Date,
+): Promise<EnergyTelemetryAggregateRow[]> {
   const started = Date.now();
-  const result = await pool.query<EnergyTelemetryAggregateRow>(aggregateSql, [
-    input.communityId,
+  const result = await pool.query<EnergyTelemetryAggregateRow>(AGGREGATE_SQL, [
+    communityId,
+    from.toISOString(),
+    to.toISOString(),
   ]);
   console.info(
-    `[energy/telemetry] community ${input.communityId} ${input.period} ${
+    `[energy/telemetry] community ${communityId} ${from.toISOString()}–${to.toISOString()} ${
       result.rowCount
     } rows in ${Date.now() - started}ms`,
   );
+  return result.rows;
+}
+
+async function fillMissingTelemetryDays(
+  pool: Pool,
+  communityId: number,
+  dayKeys: string[],
+): Promise<void> {
+  const run = async () => {
+    const missing = missingTelemetryRange(
+      dayKeys,
+      cachedDaysFor(communityId, dayKeys),
+    );
+    if (!missing) return;
+
+    const rows = await queryTelemetryWindow(
+      pool,
+      communityId,
+      missing.from,
+      missing.to,
+    );
+    storeTelemetryRowsByDay(
+      rows,
+      (day, dayRows) => {
+        telemetryDayCache.set(dayCacheKey(communityId, day), dayRows);
+      },
+      utcDayKeysInRange(missing.from, missing.to),
+    );
+  };
+
+  const previous = communityWindowLoads.get(communityId);
+  const chained = previous ? previous.then(run, run) : run();
+  communityWindowLoads.set(communityId, chained);
+  try {
+    await chained;
+  } finally {
+    if (communityWindowLoads.get(communityId) === chained) {
+      communityWindowLoads.delete(communityId);
+    }
+  }
+
+  if (missingTelemetryRange(dayKeys, cachedDaysFor(communityId, dayKeys))) {
+    await fillMissingTelemetryDays(pool, communityId, dayKeys);
+  }
+}
+
+function rowsForDays(
+  communityId: number,
+  dayKeys: string[],
+): EnergyTelemetryAggregateRow[] {
+  const rows: EnergyTelemetryAggregateRow[] = [];
+  for (const day of dayKeys) {
+    const dayRows = telemetryDayCache.get(dayCacheKey(communityId, day));
+    if (dayRows) rows.push(...dayRows);
+  }
+  return rows;
+}
+
+async function queryEnergyTelemetryUncached(input: {
+  communityId: number;
+  period: ReturnType<typeof parseEnergyTelemetryPeriod>;
+  sourceLabels?: Record<number, string>;
+}): Promise<EnergyTelemetryResponse> {
+  const pool = getEnergyDbPool();
+  if (!pool) {
+    return emptyEnergyTelemetryResponse(input.period, input.communityId, false);
+  }
+
+  const dayKeys = telemetryPeriodDayKeys(input.period);
+  await fillMissingTelemetryDays(pool, input.communityId, dayKeys);
 
   return assembleEnergyTelemetry({
     period: input.period,
     communityId: input.communityId,
     configured: true,
-    rows: result.rows,
+    rows: rowsForDays(input.communityId, dayKeys),
     sourceLabels: input.sourceLabels,
   });
 }
@@ -148,4 +240,6 @@ export async function fetchEnergyTelemetry(input: {
 /** Test helper. */
 export function clearEnergyTelemetryCache() {
   telemetryCache.clear();
+  telemetryDayCache.clear();
+  communityWindowLoads.clear();
 }

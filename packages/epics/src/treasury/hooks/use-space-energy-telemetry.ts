@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import useSWR, { useSWRConfig } from 'swr';
+import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
 import type { Timeframe } from '../components/assets/energy/dummy-data';
 
@@ -43,20 +43,17 @@ export type SpaceEnergyTelemetryResponse = {
 };
 
 /**
- * Uncached Azure reads take ~22s (7d) and ~31s (30d). Past this the UI stops
- * waiting and shows the error state; the request keeps running and a late
- * result still replaces the error.
+ * Below the route's 90s `maxDuration`. Covers a 15s Azure connect plus the
+ * 70s query timeout so a cold 30d aggregate can finish instead of flipping
+ * Production to placeholder charts.
  */
-const TELEMETRY_SOFT_TIMEOUT_MS = 25_000;
-/** Below the route's 90s `maxDuration`, so a hung request is always released. */
-const TELEMETRY_HARD_TIMEOUT_MS = 60_000;
+const TELEMETRY_HARD_TIMEOUT_MS = 85_000;
+/** Match the server telemetry freshness window; polling sooner is wasted. */
+const TELEMETRY_REFRESH_INTERVAL_MS = 5 * 60_000;
 const TELEMETRY_TOKEN_WAIT_MS = 5_000;
 const TOKEN_PENDING = Symbol('token-pending');
 
 export class EnergyTelemetryTimeoutError extends Error {
-  /** Set when the request behind a soft timeout later succeeds. */
-  lateResultArrived = false;
-
   constructor() {
     super('Energy telemetry request timed out');
     this.name = 'EnergyTelemetryTimeoutError';
@@ -179,11 +176,10 @@ export const useSpaceEnergyTelemetry = (
   spaceSlug: string | undefined,
   {
     enabled = true,
-    refreshInterval = 60_000,
+    refreshInterval = TELEMETRY_REFRESH_INTERVAL_MS,
   }: { enabled?: boolean; refreshInterval?: number } = {},
 ) => {
   const { getAccessToken, isLoading: isAuthLoading } = useAuthentication();
-  const { mutate: mutateCache } = useSWRConfig();
 
   const endpoint = React.useMemo(() => {
     if (!enabled || isAuthLoading || !spaceSlug?.trim()) return null;
@@ -222,49 +218,18 @@ export const useSpaceEnergyTelemetry = (
       const request =
         inflightTelemetry.get(path) ??
         startTelemetryRequest(path, getAccessToken);
-      let softTimer: ReturnType<typeof setTimeout> | undefined;
-      try {
-        return await Promise.race([
-          request.promise,
-          new Promise<never>((_, reject) => {
-            softTimer = setTimeout(
-              () => reject(new EnergyTelemetryTimeoutError()),
-              TELEMETRY_SOFT_TIMEOUT_MS,
-            );
-          }),
-        ]);
-      } catch (fetchError) {
-        if (
-          fetchError instanceof EnergyTelemetryTimeoutError &&
-          !request.controller.signal.aborted
-        ) {
-          void request.promise.then(
-            (late) => {
-              fetchError.lateResultArrived = true;
-              return mutateCache(key, late, { revalidate: false });
-            },
-            () => undefined,
-          );
-        }
-        throw fetchError;
-      } finally {
-        clearTimeout(softTimer);
-      }
+      return request.promise;
     },
     {
       refreshInterval,
       shouldRetryOnError: isRetryableTelemetryError,
-      onErrorRetry: (retryError, _key, _config, revalidate, retryOptions) => {
+      onErrorRetry: (_retryError, key, _config, revalidate, retryOptions) => {
         if (retryOptions.retryCount > TELEMETRY_MAX_RETRIES) return;
+        const path = Array.isArray(key) ? key[0] : undefined;
+        // A still-running request is the cold Azure aggregate; starting
+        // another one is what made 7d and 30d time out together.
+        if (typeof path === 'string' && inflightTelemetry.has(path)) return;
         setTimeout(() => {
-          // A failed retry would set `error` beside the late data and
-          // flip consumers back to placeholder charts.
-          if (
-            retryError instanceof EnergyTelemetryTimeoutError &&
-            retryError.lateResultArrived
-          ) {
-            return;
-          }
           void revalidate(retryOptions);
         }, TELEMETRY_RETRY_BASE_MS * 2 ** (retryOptions.retryCount - 1));
       },

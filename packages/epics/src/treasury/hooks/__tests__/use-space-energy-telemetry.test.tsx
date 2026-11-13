@@ -108,20 +108,20 @@ describe('useSpaceEnergyTelemetry', () => {
     vi.useRealTimers();
   });
 
-  it('leaves loading after the soft timeout, then shows the late result', async () => {
+  it('keeps loading through a slow Azure aggregate instead of showing placeholders', async () => {
     const { result } = renderHook(
-      () => useSpaceEnergyTelemetry('30d', 'slow-space'),
+      () =>
+        useSpaceEnergyTelemetry('30d', 'slow-space', { refreshInterval: 0 }),
       { wrapper },
     );
     await advance(0);
     expect(pending).toHaveLength(1);
     expect(result.current.isLoading).toBe(true);
 
-    await advance(24_000);
+    await advance(40_000);
     expect(result.current.isLoading).toBe(true);
-    await advance(1_000);
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.error).toBeInstanceOf(EnergyTelemetryTimeoutError);
+    expect(result.current.error).toBeUndefined();
+    expect(pending).toHaveLength(1);
 
     await act(async () => {
       pending[0]!.resolve(payload('30d'));
@@ -129,9 +129,10 @@ describe('useSpaceEnergyTelemetry', () => {
     });
     expect(result.current.error).toBeUndefined();
     expect(result.current.data?.period).toBe('30d');
+    expect(result.current.isLoading).toBe(false);
   });
 
-  it('skips the soft-timeout retry once the late result has arrived', async () => {
+  it('does not start a second request while the first aggregate is in flight', async () => {
     const { result } = renderHook(
       () =>
         useSpaceEnergyTelemetry('30d', 'late-retry-space', {
@@ -139,8 +140,9 @@ describe('useSpaceEnergyTelemetry', () => {
         }),
       { wrapper },
     );
-    await advance(25_000);
-    expect(result.current.error).toBeInstanceOf(EnergyTelemetryTimeoutError);
+    await advance(40_000);
+    expect(result.current.isLoading).toBe(true);
+    expect(pending).toHaveLength(1);
 
     await act(async () => {
       pending[0]!.resolve(payload('30d'));
@@ -318,15 +320,16 @@ describe('useSpaceEnergyTelemetry', () => {
     expect(result.current.error).toBeInstanceOf(EnergyTelemetryHttpError);
   });
 
-  it('hard-aborts a hung request after 60s', async () => {
+  it('hard-aborts a hung request after 85s', async () => {
     const { result } = renderHook(
-      () => useSpaceEnergyTelemetry('30d', 'hung-space'),
+      () =>
+        useSpaceEnergyTelemetry('30d', 'hung-space', { refreshInterval: 0 }),
       { wrapper },
     );
     await advance(0);
     const request = pending[0]!;
 
-    await advance(59_999);
+    await advance(84_999);
     expect(request.signal.aborted).toBe(false);
     await advance(1);
     expect(request.signal.aborted).toBe(true);

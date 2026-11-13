@@ -67,6 +67,33 @@ describe('assembleEnergyTelemetry', () => {
     expect(telemetry.dataTo).toBe('2026-10-29T16:45:00.000Z');
   });
 
+  it('rolls daily buckets into weekly keys', () => {
+    const telemetry = assembleEnergyTelemetry({
+      period: '12w',
+      communityId: 2,
+      configured: true,
+      rows: [
+        {
+          bucket: '2026-10-28T00:00:00.000Z',
+          kind: 'consumption',
+          meter_id: 7,
+          total_wh: '1000',
+        },
+        {
+          bucket: '2026-10-29T00:00:00.000Z',
+          kind: 'consumption',
+          meter_id: 7,
+          total_wh: '2000',
+        },
+      ],
+    });
+
+    const monday = telemetry.labels[telemetry.labels.length - 1];
+    expect(monday).toBe('26/10');
+    const last = telemetry.consumptionKwh[telemetry.consumptionKwh.length - 1];
+    expect(last).toBe(3);
+  });
+
   it('returns an enabled empty series when the period has no rows', () => {
     const telemetry = assembleEnergyTelemetry({
       period: '30d',

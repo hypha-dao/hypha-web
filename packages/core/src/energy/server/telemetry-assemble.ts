@@ -110,11 +110,23 @@ export function buildEnergyTelemetryBucketKeys(
   return { keys, labels };
 }
 
+function utcMondayKey(bucketIso: string): string {
+  const d = new Date(bucketIso);
+  if (Number.isNaN(d.getTime())) return bucketIso.slice(0, 10);
+  const monday = new Date(
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
+  );
+  monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+  return monday.toISOString().slice(0, 10);
+}
+
 function bucketKeyFromRow(
   bucketIso: string,
   unit: 'day' | 'week' | 'month',
 ): string {
-  return unit === 'month' ? bucketIso.slice(0, 7) : bucketIso.slice(0, 10);
+  if (unit === 'month') return bucketIso.slice(0, 7);
+  if (unit === 'week') return utcMondayKey(bucketIso);
+  return bucketIso.slice(0, 10);
 }
 
 export function emptyEnergyTelemetryResponse(
