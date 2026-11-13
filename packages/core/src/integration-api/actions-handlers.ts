@@ -36,7 +36,7 @@ export type IntegrationActionDeps = Pick<
   'authenticateClient' | 'authenticateUser'
 > & {
   resolveVoteTarget(args: {
-    authorization: string | null;
+    personId: number;
     spaceSlug: string;
     proposalSlug: string;
   }): Promise<VoteTargetResult>;
@@ -88,6 +88,8 @@ export type IntegrationActionDeps = Pick<
 };
 
 const VOTE_SCOPE = 'agreements:vote';
+/** Scope an authorization-server token needs to poll an action (as the v2 reads). */
+const POLL_TOKEN_SCOPE = 'spaces:read';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const notFound = () => integrationJson({ error: 'Not found' }, { status: 404 });
@@ -100,7 +102,10 @@ export async function handlePrepareAction(
   request: Request,
   deps: IntegrationActionDeps,
 ): Promise<Response> {
-  const auth = await authenticateClientAndUser(request, deps);
+  // The person's token must carry the vote scope too (authorization-server tokens; Privy ignores it).
+  const auth = await authenticateClientAndUser(request, deps, {
+    scope: VOTE_SCOPE,
+  });
   if (!auth.ok) return auth.response;
 
   if (!auth.client.scopes.includes(VOTE_SCOPE)) {
@@ -127,7 +132,7 @@ export async function handlePrepareAction(
 
   try {
     const target = await deps.resolveVoteTarget({
-      authorization: request.headers.get('authorization'),
+      personId: auth.user.id,
       spaceSlug: input.spaceSlug,
       proposalSlug: input.proposalSlug,
     });
@@ -206,7 +211,9 @@ export async function handleGetClientAction(
   deps: IntegrationActionDeps,
   id: string,
 ): Promise<Response> {
-  const auth = await authenticateClientAndUser(request, deps);
+  const auth = await authenticateClientAndUser(request, deps, {
+    scope: POLL_TOKEN_SCOPE,
+  });
   if (!auth.ok) return auth.response;
   if (!UUID.test(id)) return notFound();
 

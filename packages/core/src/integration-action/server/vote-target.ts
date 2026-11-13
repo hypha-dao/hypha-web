@@ -2,7 +2,8 @@ import { documents } from '@hypha-platform/storage-postgres';
 import { eq } from 'drizzle-orm';
 
 import { buildMyVoteV2 } from '../../api-v2/server/documents';
-import { resolveV2Caller } from '../../api-v2/server/access';
+import type { V2Caller } from '../../api-v2/server/access';
+import { findPersonById } from '../../people/server/queries';
 import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
 import type { DbConfig } from '../../server';
 import type { VoteActionContext } from '../types';
@@ -18,34 +19,37 @@ export type VoteTargetResult =
     };
 
 /**
- * Check, with the existing v2 read logic, that the token user may vote on the
+ * Check, with the existing v2 read logic, that the authenticated person may vote on the
  * proposal right now (member or delegate, open window, voting power) and
  * resolve the titles the approval page will show. Nothing here comes from the
  * client except the two slugs.
  */
 export async function resolveVoteTarget(
   {
-    authorization,
+    personId,
     spaceSlug,
     proposalSlug,
   }: {
-    authorization: string | null;
+    personId: number;
     spaceSlug: string;
     proposalSlug: string;
   },
   { db }: DbConfig,
 ): Promise<VoteTargetResult> {
-  const caller = await resolveV2Caller(authorization, { db });
-  if (!caller.ok) {
-    return {
-      ok: false,
-      status: caller.status === 403 ? 403 : 401,
-      error: caller.error,
-    };
+  // The person was authenticated by the route (Privy or authorization-server token): the same
+  // person is loaded here, so this step does not depend on which kind of token was used.
+  const person = await findPersonById({ id: personId }, { db });
+  if (!person) {
+    return { ok: false, status: 403, error: 'A Hypha profile is required' };
   }
+  const caller: V2Caller = {
+    kind: 'user',
+    person,
+    address: (person.address as `0x${string}` | null | undefined) ?? null,
+  };
 
   const state = await buildMyVoteV2(
-    { spaceSlug, documentSlug: proposalSlug, caller: caller.caller },
+    { spaceSlug, documentSlug: proposalSlug, caller },
     { db },
   );
   if (!state.ok) {

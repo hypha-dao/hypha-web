@@ -301,14 +301,47 @@ describe('POST actions (prepare)', () => {
     expect(rows).toHaveLength(0);
   });
 
-  it('forwards the user token to the eligibility check', async () => {
+  it('checks eligibility for the authenticated person, whatever kind of token it was', async () => {
     const { deps } = makeDeps();
     await handlePrepareAction(post(PREPARE_BODY), deps);
     expect(deps.resolveVoteTarget).toHaveBeenCalledWith({
-      authorization: 'Bearer user-token',
+      personId: USER.id,
       spaceSlug: 'garden',
       proposalSlug: 'plant-more-trees',
     });
+  });
+
+  it('asks the user check for the vote scope and the client on prepare', async () => {
+    const { deps } = makeDeps();
+    await handlePrepareAction(post(PREPARE_BODY), deps);
+    expect(deps.authenticateUser).toHaveBeenCalledWith(
+      expect.any(Request),
+      expect.objectContaining({
+        scope: 'agreements:vote',
+        client: expect.objectContaining({ id: expect.any(Number) }),
+      }),
+    );
+  });
+
+  it('asks the user check for spaces:read on poll', async () => {
+    const { deps } = makeDeps();
+    const { actionId } = await prepared(deps);
+    await handleGetClientAction(get(), deps, actionId);
+    expect(deps.authenticateUser).toHaveBeenLastCalledWith(
+      expect.any(Request),
+      expect.objectContaining({ scope: 'spaces:read' }),
+    );
+  });
+
+  it('passes a user-check refusal through (insufficient_scope, client_mismatch)', async () => {
+    for (const code of ['insufficient_scope', 'client_mismatch'] as const) {
+      const { deps } = makeDeps({
+        user: { ok: false, status: 403, code, error: code },
+      });
+      const response = await handlePrepareAction(post(PREPARE_BODY), deps);
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({ error: code, code });
+    }
   });
 
   it('429 after too many open actions for the same person and client', async () => {

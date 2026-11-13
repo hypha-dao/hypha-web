@@ -52,6 +52,8 @@ export async function resolveAuthServerToken(
   request: Request,
   config: AuthServerConfig | AuthServerDisabled,
   keys?: Parameters<typeof guardResource>[2]['keys'],
+  /** Scope the token must carry; v2 reads use `spaces:read`. */
+  scope: string = V2_AS_SCOPE,
 ): Promise<AuthServerCallerResult> {
   const token = /^Bearer\s+(\S+)$/i.exec(
     request.headers.get('authorization') ?? '',
@@ -59,6 +61,8 @@ export async function resolveAuthServerToken(
   if (!token || !config.enabled || peekIssuer(token) !== config.issuer) {
     return { kind: 'not-as-token' };
   }
+  // The one audience `<origin>/api/v2` identifies the whole integrator surface of this server
+  // (v2 reads and `/api/integration/v1`): one token, one consent, scopes tell the routes apart.
   // From here the token claims to be ours: it is never handed to the Privy path.
   const audience = config.resources.find((r) => r.endsWith('/api/v2'));
   if (!audience) {
@@ -66,7 +70,7 @@ export async function resolveAuthServerToken(
   }
   const guard = await guardResource(request, config, {
     audience,
-    scope: V2_AS_SCOPE,
+    scope,
     keys,
   });
   if (!guard.ok) {

@@ -62,7 +62,7 @@ export async function authenticateV2(
       return {
         ok: false,
         response: jsonV2(
-          { error: 'A Hypha profile is required' },
+          { error: 'A Hypha profile is required', code: 'profile_required' },
           { status: 403 },
         ),
       };

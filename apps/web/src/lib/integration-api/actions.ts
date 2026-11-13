@@ -15,6 +15,8 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
+import { authenticateIntegrationUserAsOrPrivy } from './as-user';
+
 /**
  * Wiring of the approval-flow spike handlers (#2515, milestone 04b) to the
  * database and the existing read logic. The routes themselves are wrapped by
@@ -34,4 +36,14 @@ export const integrationActionDeps: IntegrationActionDeps = {
   recordActionResult: (args) => recordActionResult(args, { db }),
   approvalUrl: (actionId) => getAbsoluteAppUrl(`/en/approve/${actionId}`),
   now: () => new Date(),
+};
+
+/**
+ * #2608 TEMP: the app-facing routes (`POST actions`, `GET actions/{id}`) take the person from an
+ * authorization-server token (or Privy, unchanged). The approval page's routes keep
+ * `integrationActionDeps`: Privy only, by design (wallet signing is Privy in Hypha's UI).
+ */
+export const integrationClientActionDeps: IntegrationActionDeps = {
+  ...integrationActionDeps,
+  authenticateUser: authenticateIntegrationUserAsOrPrivy,
 };

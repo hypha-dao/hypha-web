@@ -38,7 +38,20 @@ export type IntegrationUser = {
 export type UserAuthErrorCode =
   | 'missing_token'
   | 'invalid_token'
-  | 'profile_required';
+  | 'profile_required'
+  | 'insufficient_scope'
+  | 'client_mismatch';
+
+/**
+ * What an `authenticateUser` implementation may use besides the request. The default
+ * implementation ignores it; an authorization-server token check needs the client the
+ * key belongs to (its `client_id` must equal the client's slug) and the scope the
+ * route requires (#2608 TEMP).
+ */
+export type UserAuthContext = {
+  client?: AuthenticatedIntegrationClient;
+  scope?: string;
+};
 
 export type UserAuthResult =
   | { ok: true; user: IntegrationUser }
@@ -53,7 +66,10 @@ export type IssuedKey = { client: IntegrationClientSummary; plaintext: string };
  */
 export type IntegrationApiDeps = {
   authenticateClient(request: Request): Promise<ClientAuthResult>;
-  authenticateUser(request: Request): Promise<UserAuthResult>;
+  authenticateUser(
+    request: Request,
+    context?: UserAuthContext,
+  ): Promise<UserAuthResult>;
   /** A response to send back when the caller is not ops, or null to continue. */
   authorizeOps(request: Request): Response | null;
   requestClient(
@@ -227,12 +243,16 @@ type ClientAndUser =
 export async function authenticateClientAndUser(
   request: Request,
   deps: Pick<IntegrationApiDeps, 'authenticateClient' | 'authenticateUser'>,
+  options: { scope?: string } = {},
 ): Promise<ClientAndUser> {
   const clientAuth = await deps.authenticateClient(request);
   if (!clientAuth.ok) {
     return { ok: false, response: clientAuthFailure(clientAuth) };
   }
-  const userAuth = await deps.authenticateUser(request);
+  const userAuth = await deps.authenticateUser(request, {
+    client: clientAuth.client,
+    scope: options.scope,
+  });
   if (!userAuth.ok) return { ok: false, response: userAuthFailure(userAuth) };
   return { ok: true, client: clientAuth.client, user: userAuth.user };
 }
