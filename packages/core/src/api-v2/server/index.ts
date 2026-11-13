@@ -2,6 +2,7 @@ export * from './access';
 export * from './spaces';
 export * from './documents';
 export * from './membership';
+export * from './people';
 export { filterSpacesForViewer, relationsForSpaces } from './viewer-access';
 export * from '../visibility-rule';
 export * from '../chain-cache';
