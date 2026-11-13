@@ -5,6 +5,11 @@ const COPY: Record<string, { title: string; detail: string }> = {
     detail:
       'View the spaces you can see on Hypha: their details, members and public activity.',
   },
+  'agreements:vote': {
+    title: 'Prepare votes for you to approve',
+    detail:
+      'Ask you to vote on proposals in your spaces. Nothing is cast until you approve each vote on Hypha and sign it with your wallet.',
+  },
   offline_access: {
     title: 'Stay connected',
     detail:

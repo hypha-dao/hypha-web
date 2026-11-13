@@ -5,7 +5,11 @@
  */
 
 /** Scope vocabulary issued by this server. Kept in one place, shared with the resource side. */
-export const AUTH_SERVER_SCOPES = ['spaces:read', 'offline_access'] as const;
+export const AUTH_SERVER_SCOPES = [
+  'spaces:read',
+  'agreements:vote',
+  'offline_access',
+] as const;
 export type AuthServerScope = (typeof AUTH_SERVER_SCOPES)[number];
 
 /** Product defaults (reported for confirmation). Seconds. */
