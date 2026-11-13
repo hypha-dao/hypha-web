@@ -60,6 +60,10 @@ export const WL_API_SIGNED_IN_READ_ALLOWLIST: readonly string[] = [
   // Signal section: the Space's signal-workflow config, read only when signed in.
   // The handler checks Space read access itself (`checkSpaceAccess`).
   '/api/v1/spaces/:slug/signal-workflow',
+  // The organisation's Spaces (parent and siblings), used to count membership in
+  // any of them as access. The handler serves it without auth, as on the main
+  // app (public Space records); it is requested only once a token exists.
+  '/api/v1/spaces/:slug/organisation',
 ];
 
 /**
