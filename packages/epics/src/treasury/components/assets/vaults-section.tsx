@@ -30,6 +30,7 @@ const SingleVaultSection: FC<{
   updateDisabledTitle,
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
+  const { canLogin } = useAuthentication();
   const translatedTitle = tTreasury('vaultsSection.vaultTitle', {
     symbol: vault.tokenSymbol,
   });
@@ -50,7 +51,7 @@ const SingleVaultSection: FC<{
           </h3>
           <p className="mt-1 text-2 text-muted-foreground">{totalLabel}</p>
         </div>
-        {canUpdateVault ? (
+        {!canLogin ? null : canUpdateVault ? (
           <Link href={perVaultUpdateHref} scroll={false}>
             <Button>{tTreasury('vaultsSection.updateBackingVault')}</Button>
           </Link>
