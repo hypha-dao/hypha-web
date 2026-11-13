@@ -98,6 +98,7 @@ import type { UseMembers } from '../../spaces/hooks/types';
 import { SignalTagMergeDialog } from './signal-tag-merge-dialog';
 import { SignalImagePicker } from './signal-image-picker';
 import { SignalTagPeopleField } from './signal-tag-people-field';
+import { LegacySignalFieldsDisclosure } from './legacy-signal-fields/legacy-signal-fields-form';
 import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
 import { EXCHANGE_SIGNAL_CAPITALS_KEY } from '../../network-exchange/exchange-draft-keys';
 
@@ -1425,7 +1426,7 @@ export const CreateSignalForm = ({
               </div>
             </section>
 
-            <div className="flex w-full flex-col items-end gap-3 pt-8">
+            <div className="relative flex w-full flex-col items-end gap-3 pt-8">
               <SignalFormRootError control={form.control} />
               <div className="flex w-full justify-end gap-2">
                 <Button
@@ -1439,6 +1440,8 @@ export const CreateSignalForm = ({
                     : tAgreementFlow('buttons.publish')}
                 </Button>
               </div>
+              {/* TODO: Temporary for Reciprocal Exchange. Delete with legacy-signal-fields/. */}
+              <LegacySignalFieldsDisclosure disabled={isMutating} />
             </div>
           </div>
         </form>

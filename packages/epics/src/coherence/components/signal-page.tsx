@@ -42,6 +42,7 @@ import { useSignalShortDate } from './signal-feed-row';
 import { SignalTypeBadge } from './signal-type-badge';
 import { SignalUpvoteButton } from './signal-upvote-button';
 import { SignalVideoPlayer } from './signal-video-player';
+import { LegacySignalFieldsDetail } from './legacy-signal-fields/legacy-signal-fields-detail';
 
 const SECTION_LABEL_CLASS =
   'text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground';
@@ -615,6 +616,9 @@ export function SignalPage({
           </dl>
         </div>
       </section>
+
+      {/* TODO: Temporary for Reciprocal Exchange. Delete with legacy-signal-fields/. */}
+      <LegacySignalFieldsDetail signal={signal} />
 
       {description ? (
         <section className="craft-card flex flex-col gap-3 p-5">
