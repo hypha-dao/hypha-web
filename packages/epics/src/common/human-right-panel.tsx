@@ -62,7 +62,6 @@ import {
   type Person,
   isArchivedGroupRoom,
   looksLikeTechnicalSpaceMemoryName,
-  type MemberIntelligence,
   type SignalTeamNotice,
   requestRemoteGroupCallLeave,
   calledSpecialistIds,
@@ -92,7 +91,7 @@ import {
 import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 import { OptimizedAvatarImage } from './optimized-avatar-image';
-import { useEnergyGatedSWRKey } from './use-after-idle';
+import { useMemberIntelligence } from './member-intelligence-swr';
 import { Empty } from './empty';
 import { notifyConversationUnreadChanged } from '../people/components/conversation-unread-event';
 import {
@@ -2504,21 +2503,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const profileLookupInFlightRef = useRef<Set<string>>(new Set());
   const profileLookupAttemptedRef = useRef<Set<string>>(new Set());
 
-  const directoryIntelligenceKey = useEnergyGatedSWRKey(
-    isDirectConversation && authToken
-      ? (['/api/v1/people/me/intelligence', authToken] as const)
-      : null,
-  );
-  const { data: directoryHome } = useSWR<MemberIntelligence | null>(
-    directoryIntelligenceKey,
-    async ([url, token]) => {
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) return null;
-      return (await response.json()) as MemberIntelligence;
-    },
-  );
+  const { data: directoryHome } = useMemberIntelligence(null, {
+    enabled: isDirectConversation,
+  });
   const directoryPersonIds = useMemo(() => {
     if (!directoryHome) return [];
     return [

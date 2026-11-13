@@ -4,6 +4,7 @@ import {
   isLikelyGifSrc,
   parseConfiguredImageHosts,
   shouldOptimizeRemoteImage,
+  toNextImageOptimizerSrc,
 } from '../optimize-remote-image';
 
 describe('shouldOptimizeRemoteImage', () => {
@@ -93,6 +94,18 @@ describe('shouldOptimizeRemoteImage', () => {
     expect(shouldOptimizeRemoteImage('https://evil.example/a.png')).toBe(false);
   });
 
+  it('optimizes the leftover Ponta ecosystem PNG that has no file extension', () => {
+    const pontaPng =
+      'https://bovzk9ehhu.ufs.sh/f/6MiOwFUJuAcocp3uZG4AN0lxYkareI1GvqLDX2FV5jh8d4fo';
+    expect(shouldOptimizeRemoteImage(pontaPng)).toBe(true);
+    expect(toNextImageOptimizerSrc(pontaPng, 384, 70)).toBe(
+      `/_next/image?url=${encodeURIComponent(pontaPng)}&w=384&q=70`,
+    );
+    expect(toNextImageOptimizerSrc(pontaPng, 384, 70)).not.toContain(
+      'https://bovzk9ehhu.ufs.sh/',
+    );
+  });
+
   it('leaves animated GIFs unoptimized so the optimizer does not fetch them twice', () => {
     expect(
       isLikelyGifSrc('https://bovzk9ehhu.ufs.sh/f/community-logo.gif'),
@@ -107,5 +120,11 @@ describe('shouldOptimizeRemoteImage', () => {
         'https://bovzk9ehhu.ufs.sh/f/community-logo.GIF?w=1',
       ),
     ).toBe(false);
+    expect(
+      toNextImageOptimizerSrc(
+        'https://bovzk9ehhu.ufs.sh/f/community-logo.gif',
+        64,
+      ),
+    ).toBe('https://bovzk9ehhu.ufs.sh/f/community-logo.gif');
   });
 });

@@ -57,3 +57,9 @@ export function useEnergySevenDaySettled(): boolean {
     getEnergySevenDaySettled,
   );
 }
+
+/** Test-only: drop every holder so energy-route tests start from unssettled. */
+export function resetEnergySevenDaySettledForTests(): void {
+  settledHolders = 0;
+  notify();
+}

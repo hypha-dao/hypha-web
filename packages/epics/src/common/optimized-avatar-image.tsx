@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Image from 'next/image';
-import { shouldOptimizeRemoteImage } from './optimize-remote-image';
+import { toNextImageOptimizerSrc } from './optimize-remote-image';
 
 type OptimizedAvatarImageProps = {
   src?: string;
@@ -41,16 +41,18 @@ export function OptimizedAvatarImage({
     return fallback ? <>{fallback}</> : null;
   }
 
+  const imageSrc = toNextImageOptimizerSrc(src, pixelSize * 2, 70);
+
   return (
     <Image
-      src={src}
+      src={imageSrc}
       alt={alt}
       width={pixelSize}
       height={pixelSize}
       sizes={`${pixelSize}px`}
       quality={70}
       priority={priority}
-      unoptimized={!shouldOptimizeRemoteImage(src)}
+      unoptimized
       className={className}
       onError={() => {
         setFailed(true);

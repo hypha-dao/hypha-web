@@ -1,10 +1,8 @@
 'use client';
 
-import { useJwt, type MemberIntelligence } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
-import useSWR from 'swr';
 
-import { useEnergyGatedSWRKey } from '../../common/use-after-idle';
+import { useMemberIntelligence } from '../../common/member-intelligence-swr';
 import { MemberHomeSpacesRail } from './member-home-spaces-rail';
 
 /**
@@ -23,21 +21,7 @@ export function MobileSpacesSubnav({
   /** Row sits under the header with the top-bar circle. Column fills the AI rail. */
   layout?: 'column' | 'row';
 }) {
-  const { jwt } = useJwt();
-  const intelligenceKey = useEnergyGatedSWRKey(
-    jwt ? (['/api/v1/people/me/intelligence', jwt] as const) : null,
-  );
-
-  const { data: home, isLoading } = useSWR<MemberIntelligence | null>(
-    intelligenceKey,
-    async ([url, token]) => {
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) return null;
-      return (await response.json()) as MemberIntelligence;
-    },
-  );
+  const { data: home, isLoading } = useMemberIntelligence();
 
   const spaces = home?.spaces ?? [];
 

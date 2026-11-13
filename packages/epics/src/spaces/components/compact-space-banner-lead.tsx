@@ -4,7 +4,10 @@ import * as React from 'react';
 import Image from 'next/image';
 import { cn } from '@hypha-platform/ui-utils';
 import { useMainColumnScrollY } from '../../common/main-column-scroll';
-import { shouldOptimizeRemoteImage } from '../../common/optimize-remote-image';
+import {
+  shouldOptimizeRemoteImage,
+  toNextImageOptimizerSrc,
+} from '../../common/optimize-remote-image';
 import {
   SPACE_BANNER_IMAGE_QUALITY,
   SPACE_BANNER_IMAGE_SIZES,
@@ -116,6 +119,13 @@ export function CompactSpaceBannerLead({ src }: Props) {
             alt=""
             fill
             priority
+            loader={({ src: loaderSrc, width, quality }) =>
+              toNextImageOptimizerSrc(
+                loaderSrc,
+                width,
+                quality ?? SPACE_BANNER_IMAGE_QUALITY,
+              )
+            }
             unoptimized={unoptimized}
             quality={SPACE_BANNER_IMAGE_QUALITY}
             sizes={SPACE_BANNER_IMAGE_SIZES}

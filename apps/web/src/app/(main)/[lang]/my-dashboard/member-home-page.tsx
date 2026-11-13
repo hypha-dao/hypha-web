@@ -8,6 +8,7 @@ import {
   UserSpaceState,
   type MemberHomeRecord,
   type SignupOrientation,
+  useEnergyGatedSWRKey,
 } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
@@ -119,48 +120,46 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     },
     [memberId],
   );
+  // The token string rotates. Keying on it dropped the cached home, unmounted
+  // the assistant, and started a new turn a few seconds later. useJwt can
+  // keep the previous member's token via keepPreviousData — only fetch when
+  // that token's sub matches the current member.
+  // Shell is the wallet pattern: spaces, proposals, and the chat, without
+  // waiting for the chain roster and vote reads.
+  const shellKey = useEnergyGatedSWRKey(
+    homeKeyReady
+      ? (['/api/v1/people/me/intelligence', memberId, 'shell'] as const)
+      : null,
+  );
   const {
     data: shell,
     error: shellError,
     isLoading: isLoadingShell,
     mutate: reloadShell,
-  } = useSWR<MemberIntelligence | null>(
-    // The token string rotates. Keying on it dropped the cached home, unmounted
-    // the assistant, and started a new turn a few seconds later. useJwt can
-    // keep the previous member's token via keepPreviousData — only fetch when
-    // that token's sub matches the current member.
-    // Shell is the wallet pattern: spaces, proposals, and the chat, without
-    // waiting for the chain roster and vote reads.
-    homeKeyReady
-      ? (['/api/v1/people/me/intelligence', memberId, 'shell'] as const)
+  } = useSWR<MemberIntelligence | null>(shellKey, () => fetchHome('shell'), {
+    revalidateOnFocus: false,
+    refreshInterval: 0,
+    keepPreviousData: false,
+    isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
+    compare: sameMemberHome,
+  });
+  const fullKey = useEnergyGatedSWRKey(
+    homeKeyReady && shell
+      ? (['/api/v1/people/me/intelligence', memberId, 'full'] as const)
       : null,
-    () => fetchHome('shell'),
-    {
-      revalidateOnFocus: false,
-      refreshInterval: 0,
-      keepPreviousData: false,
-      isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
-      compare: sameMemberHome,
-    },
   );
   const {
     data: full,
     error: fullError,
     isLoading: isLoadingFull,
     mutate,
-  } = useSWR<MemberIntelligence | null>(
-    homeKeyReady && shell
-      ? (['/api/v1/people/me/intelligence', memberId, 'full'] as const)
-      : null,
-    () => fetchHome('full'),
-    {
-      refreshInterval: 10_000,
-      revalidateOnFocus: true,
-      keepPreviousData: false,
-      isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
-      compare: sameMemberHome,
-    },
-  );
+  } = useSWR<MemberIntelligence | null>(fullKey, () => fetchHome('full'), {
+    refreshInterval: 10_000,
+    revalidateOnFocus: true,
+    keepPreviousData: false,
+    isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
+    compare: sameMemberHome,
+  });
   const data = full === undefined ? shell : full;
   const error = data ? null : shellError ?? fullError;
   const isLoadingHome = !data && (isLoadingShell || isLoadingFull);

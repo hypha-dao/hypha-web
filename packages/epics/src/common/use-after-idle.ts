@@ -4,7 +4,7 @@ import * as React from 'react';
 import { usePathname } from 'next/navigation';
 
 import { useEnergySevenDaySettled } from './energy-seven-day-settled';
-import { getActiveTabFromPath } from './get-active-tab-from-path';
+import { isEnergyTabPath } from './get-active-tab-from-path';
 
 /**
  * When `wait` is true, stays false until the first paint plus idle (or
@@ -60,9 +60,11 @@ export function toLinkPrefetch(ready: boolean): boolean | null {
 /** Background fetches wait until 7d telemetry has settled on `/energy`. */
 export function useEnergyOverviewIdleGate(): boolean {
   const pathname = usePathname();
-  const onEnergy = getActiveTabFromPath(pathname) === 'energy';
   const sevenDaySettled = useEnergySevenDaySettled();
-  if (!onEnergy) return true;
+  // Fail closed until the router has a path — an empty first paint used to
+  // look like overview and fire intelligence on `/energy`.
+  if (!pathname) return false;
+  if (!isEnergyTabPath(pathname)) return true;
   return sevenDaySettled;
 }
 

@@ -7,6 +7,12 @@ export function getActiveTabFromPath(pathname: string) {
   return match?.[1] || 'overview';
 }
 
+/** True for `/dho/{slug}/energy` even without a locale prefix. */
+export function isEnergyTabPath(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
+  return /\/dho\/[^/]+\/energy(?:\/|$)/.test(pathname);
+}
+
 /**
  * @deprecated Prefer {@link getActiveTabFromPath}; Coherence tab visibility is gated by
  * {@link getEnableCoherence}. Space Memory uses {@link getEnableSpaceMemory}.

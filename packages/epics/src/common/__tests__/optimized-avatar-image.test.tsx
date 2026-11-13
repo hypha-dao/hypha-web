@@ -16,6 +16,7 @@ vi.mock('next/image', () => ({
 }));
 
 import { OptimizedAvatarImage } from '../optimized-avatar-image';
+import { toNextImageOptimizerSrc } from '../optimize-remote-image';
 
 afterEach(() => {
   cleanup();
@@ -58,7 +59,7 @@ describe('OptimizedAvatarImage', () => {
     );
     expect(screen.queryByText('fallback')).toBeNull();
     expect(screen.getByRole('img', { name: 'Ada' }).getAttribute('src')).toBe(
-      'https://bovzk9ehhu.ufs.sh/f/ok.png',
+      toNextImageOptimizerSrc('https://bovzk9ehhu.ufs.sh/f/ok.png', 64, 70),
     );
   });
 });

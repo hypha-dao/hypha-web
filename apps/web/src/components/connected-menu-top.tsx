@@ -9,7 +9,7 @@ import {
   getDhoSpaceSlugFromPathname,
   getRootSpace,
   isSafeImageUrl,
-  shouldOptimizeRemoteImage,
+  toNextImageOptimizerSrc,
   useAiPanel,
   AiPanelTrigger,
   SpacesRailTopToggle,
@@ -167,14 +167,14 @@ export function ConnectedMenuTop({
           title={logoA11yLabel}
         >
           <Image
-            src={rootLogoUrl}
+            src={toNextImageOptimizerSrc(rootLogoUrl, 384, 70)}
             alt={rootTitle || tNavigation('ecosystemLogo')}
             width={192}
             height={28}
             sizes="192px"
             quality={70}
             priority
-            unoptimized={!shouldOptimizeRemoteImage(rootLogoUrl)}
+            unoptimized
             className="max-h-[28px] w-auto bg-transparent object-contain"
           />
           <span className="pointer-events-none absolute bottom-0.5 right-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">

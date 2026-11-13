@@ -254,7 +254,15 @@ export {
   isLikelyGifSrc,
   parseConfiguredImageHosts,
   shouldOptimizeRemoteImage,
+  toNextImageOptimizerSrc,
 } from './optimize-remote-image';
+export {
+  energyIntelligenceSWRMiddleware,
+  fetchMemberIntelligence,
+  isMemberIntelligenceSWRKey,
+  MEMBER_INTELLIGENCE_PATH,
+  useMemberIntelligence,
+} from './member-intelligence-swr';
 export {
   toLinkPrefetch,
   useAfterIdle,

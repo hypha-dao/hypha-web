@@ -31,6 +31,7 @@ import {
   usePeopleBySubs,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
+import { useEnergyGatedSWRKey } from '../use-after-idle';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -125,9 +126,15 @@ export function HumanChatPanelGroupMenu({
     isLoading: directoryLoading,
     isValidating: directoryValidating,
   } = useSWR<MemberIntelligence>(
-    addOpen && jwt
-      ? ['/api/v1/people/me/intelligence', jwt, 'add-people-directory']
-      : null,
+    useEnergyGatedSWRKey(
+      addOpen && jwt
+        ? ([
+            '/api/v1/people/me/intelligence',
+            jwt,
+            'add-people-directory',
+          ] as const)
+        : null,
+    ),
     async ([url, token]: [string, string]) => {
       const response = await fetch(
         `${url}?connections=${MEMBER_CONNECTION_MAX}`,

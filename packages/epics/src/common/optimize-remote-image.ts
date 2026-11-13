@@ -71,3 +71,20 @@ export function shouldOptimizeRemoteImage(src: string): boolean {
     return false;
   }
 }
+
+/**
+ * Browser-facing URL for a remote/local image that `next/image` can optimize.
+ * The DOM `src` is `/_next/image?...` so Chrome never requests the UploadThing
+ * original (including when `images.unoptimized` or a raw `<img>` would).
+ * GIFs and other non-optimizable srcs are returned unchanged.
+ */
+export function toNextImageOptimizerSrc(
+  src: string,
+  width: number,
+  quality = 70,
+): string {
+  if (!shouldOptimizeRemoteImage(src)) return src;
+  const w = Math.max(1, Math.round(width));
+  const q = Math.min(100, Math.max(1, Math.round(quality)));
+  return `/_next/image?url=${encodeURIComponent(src)}&w=${w}&q=${q}`;
+}

@@ -3,16 +3,14 @@
 import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import useSWR from 'swr';
 import {
   listSpaceAttentionLead,
-  useJwt,
   type MemberHomeThreadItem,
-  type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 
 import { getProposalPath, getSignalPath } from '../../common/get-path-function';
+import { useMemberIntelligence } from '../../common/member-intelligence-swr';
 import { HOME_REFRESH_EVENT } from '../../people/components/member-home-resume';
 
 function stripTags(value: string) {
@@ -63,24 +61,12 @@ export function SpaceAttention({
 }) {
   const t = useTranslations('OverviewOps');
   const tCoherence = useTranslations('CoherenceTab');
-  const { jwt } = useJwt();
-  const { data, isLoading, mutate } = useSWR<MemberIntelligence | null>(
-    jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
-    async ([url, token]) => {
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.status === 404) return null;
-      if (!response.ok) return null;
-      return (await response.json()) as MemberIntelligence;
-    },
-    {
-      // Votes and signal status changes land elsewhere; keep this tile fresh.
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-      refreshInterval: 30_000,
-    },
-  );
+  const { data, isLoading, mutate } = useMemberIntelligence(null, {
+    // Votes and signal status changes land elsewhere; keep this tile fresh.
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+    refreshInterval: 30_000,
+  });
 
   useEffect(() => {
     const refresh = () => {
@@ -94,8 +80,6 @@ export function SpaceAttention({
     if (!data) return null;
     return listSpaceAttentionLead(data, spaceSlug, turn);
   }, [data, spaceSlug, turn]);
-
-  if (!jwt) return null;
 
   const inSpace =
     data?.spaces.some((space) => space.slug === spaceSlug) ?? false;

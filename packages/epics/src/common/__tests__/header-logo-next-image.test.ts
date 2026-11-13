@@ -13,7 +13,19 @@ describe('ConnectedMenuTop space logo', () => {
       'utf8',
     );
     expect(source).toContain("import Image from 'next/image'");
-    expect(source).toContain('shouldOptimizeRemoteImage(rootLogoUrl)');
+    expect(source).toContain('toNextImageOptimizerSrc(rootLogoUrl');
     expect(source).not.toMatch(/<img\s+src=\{rootLogoUrl\}/);
+    expect(source).not.toMatch(/src=\{rootLogoUrl\}/);
+  });
+
+  it('sends the compact banner lead through the optimizer loader', () => {
+    const source = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        '../../spaces/components/compact-space-banner-lead.tsx',
+      ),
+      'utf8',
+    );
+    expect(source).toContain('toNextImageOptimizerSrc');
   });
 });

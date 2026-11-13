@@ -41,9 +41,9 @@ describe('energy-route space logos stay on next/image', () => {
       join(dir, '../../people/components/mobile-spaces-subnav.tsx'),
       'utf8',
     );
-    expect(source).toContain('useEnergyGatedSWRKey');
+    expect(source).toContain('useMemberIntelligence');
     expect(source).not.toMatch(
-      /idle && jwt \? \['\/api\/v1\/people\/me\/intelligence'/,
+      /jwt \? \['\/api\/v1\/people\/me\/intelligence'/,
     );
   });
 });
