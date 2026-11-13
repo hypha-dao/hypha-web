@@ -226,6 +226,7 @@ export function NetworkQuickCreate({
     void (async () => {
       const headers = { Authorization: `Bearer ${jwt}` };
       const intel = await fetch('/api/v1/people/me/intelligence', { headers });
+      if (cancelled) return;
       if (intel.ok) {
         const body = (await intel.json()) as {
           spaces?: MemberSpace[];
@@ -236,6 +237,7 @@ export function NetworkQuickCreate({
           return;
         }
       }
+      if (cancelled) return;
       const slug = person?.slug;
       if (!slug) return;
       const list = await fetch(`/api/v1/people/${slug}/spaces`, { headers });

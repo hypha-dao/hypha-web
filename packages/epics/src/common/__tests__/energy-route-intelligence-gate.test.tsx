@@ -207,6 +207,7 @@ const TEST_AND_DOCS_ALLOWLIST = [
   'packages/epics/src/common/__tests__/energy-route-intelligence-gate.test.tsx',
   'packages/epics/src/common/__tests__/use-after-idle.test.tsx',
   'packages/epics/src/common/__tests__/member-intelligence-swr.test.ts',
+  'packages/epics/src/common/__tests__/network-quick-create-cancel.test.tsx',
   'packages/epics/src/common/__tests__/ai-panel-header-next-image.test.ts',
   'packages/epics/src/people/components/__tests__/member-connections.test.ts',
   'apps/web/src/lib/white-label/__tests__/host-login.test.ts',
