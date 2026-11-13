@@ -15,6 +15,11 @@ import {
 const IMAGE_HOSTS = parseConfiguredImageHosts(
   process.env.NEXT_PUBLIC_IMAGE_HOSTS,
 );
+/** One value for `images.unoptimized` and the client-inlined public env. */
+const disableImageOptimization =
+  process.env.NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION ||
+  process.env.DISABLE_IMAGE_OPTIMIZATION ||
+  '';
 const LOCALES = routing.locales;
 
 /**
@@ -61,6 +66,9 @@ const MIDDLEWARE_SKIPPED_PREFIXES = [
 const withNextIntl = createNextIntlPlugin('../../packages/i18n/src/request.ts');
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION: disableImageOptimization,
+  },
   // Load matrix-js-sdk from node_modules on the server so it is not duplicated
   // across server chunks (pairs with webpack resolve.alias below). See
   // .agents/references/domain/hypha-matrix-mapping.md — stay on SDK ^40.x.
@@ -127,7 +135,7 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    unoptimized: isNextImageOptimizationDisabled(),
+    unoptimized: isNextImageOptimizationDisabled(disableImageOptimization),
     remotePatterns: [
       ...new Set([
         ...IMAGE_HOSTS,

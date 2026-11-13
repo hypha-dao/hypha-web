@@ -26,12 +26,16 @@ export function parseConfiguredImageHosts(
 
 /**
  * Same flag `apps/web/next.config.ts` uses for `images.unoptimized`.
- * When set, `/_next/image` is not the browser URL — return originals.
+ * Client bundles only inline `NEXT_PUBLIC_*`, so next.config copies
+ * `DISABLE_IMAGE_OPTIMIZATION` onto `NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION`.
+ * Read the public name first, then the server name, so SSR and CSR agree.
  */
 export function isNextImageOptimizationDisabled(
-  raw: string | null | undefined = process.env.DISABLE_IMAGE_OPTIMIZATION,
+  publicRaw: string | null | undefined = process.env
+    .NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION,
+  serverRaw: string | null | undefined = process.env.DISABLE_IMAGE_OPTIMIZATION,
 ): boolean {
-  return raw === 'true';
+  return (publicRaw || serverRaw) === 'true';
 }
 
 /** Animated GIFs through `/_next/image` are slow and often a second original fetch. */

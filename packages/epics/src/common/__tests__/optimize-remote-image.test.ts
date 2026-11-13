@@ -140,7 +140,9 @@ describe('shouldOptimizeRemoteImage', () => {
       ),
       'utf8',
     );
-    expect(config).toContain('isNextImageOptimizationDisabled()');
+    expect(config).toContain('isNextImageOptimizationDisabled(');
+    expect(config).toContain('NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION');
+    expect(config).toContain('DISABLE_IMAGE_OPTIMIZATION');
     expect(config).not.toMatch(/imageSizes\s*:/);
     expect(config).not.toMatch(/deviceSizes\s*:/);
   });
@@ -166,6 +168,8 @@ describe('shouldOptimizeRemoteImage', () => {
 
   it('returns the original src when DISABLE_IMAGE_OPTIMIZATION is true', () => {
     const previous = process.env.DISABLE_IMAGE_OPTIMIZATION;
+    const previousPublic = process.env.NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION;
+    delete process.env.NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION;
     process.env.DISABLE_IMAGE_OPTIMIZATION = 'true';
     const pontaPng =
       'https://bovzk9ehhu.ufs.sh/f/6MiOwFUJuAcocp3uZG4AN0lxYkareI1GvqLDX2FV5jh8d4fo';
@@ -178,6 +182,37 @@ describe('shouldOptimizeRemoteImage', () => {
         delete process.env.DISABLE_IMAGE_OPTIMIZATION;
       } else {
         process.env.DISABLE_IMAGE_OPTIMIZATION = previous;
+      }
+      if (previousPublic === undefined) {
+        delete process.env.NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION;
+      } else {
+        process.env.NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION = previousPublic;
+      }
+    }
+  });
+
+  it('returns the original src from the client-inlined NEXT_PUBLIC flag', () => {
+    const previous = process.env.DISABLE_IMAGE_OPTIMIZATION;
+    const previousPublic = process.env.NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION;
+    delete process.env.DISABLE_IMAGE_OPTIMIZATION;
+    process.env.NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION = 'true';
+    const pontaPng =
+      'https://bovzk9ehhu.ufs.sh/f/6MiOwFUJuAcocp3uZG4AN0lxYkareI1GvqLDX2FV5jh8d4fo';
+    try {
+      expect(isNextImageOptimizationDisabled()).toBe(true);
+      expect(shouldOptimizeRemoteImage(pontaPng)).toBe(false);
+      expect(toNextImageOptimizerSrc(pontaPng, 128, 70)).toBe(pontaPng);
+      expect(toCanvasSampleSrc(pontaPng)).toBeNull();
+    } finally {
+      if (previous === undefined) {
+        delete process.env.DISABLE_IMAGE_OPTIMIZATION;
+      } else {
+        process.env.DISABLE_IMAGE_OPTIMIZATION = previous;
+      }
+      if (previousPublic === undefined) {
+        delete process.env.NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION;
+      } else {
+        process.env.NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION = previousPublic;
       }
     }
   });
