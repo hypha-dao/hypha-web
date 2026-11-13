@@ -11,6 +11,9 @@ import {
 /** Canonical path shared by every member-intelligence SWR key. */
 export const MEMBER_INTELLIGENCE_PATH = '/api/v1/people/me/intelligence';
 
+/** User-opened Add people dialog — must not wait on the energy 7d gate. */
+export const ADD_PEOPLE_DIRECTORY_KEY = 'add-people-directory';
+
 export function isMemberIntelligenceSWRKey(key: unknown): boolean {
   if (typeof key === 'string') {
     return key.includes(MEMBER_INTELLIGENCE_PATH);
@@ -21,15 +24,47 @@ export function isMemberIntelligenceSWRKey(key: unknown): boolean {
   return false;
 }
 
+export function isEnergyExemptMemberIntelligenceKey(key: unknown): boolean {
+  return Array.isArray(key) && key.includes(ADD_PEOPLE_DIRECTORY_KEY);
+}
+
+/**
+ * Open Add people with no result yet is pending (in-flight or energy-gated
+ * null key), not a load failure.
+ */
+export function isAddPeopleDirectoryPending(input: {
+  addOpen: boolean;
+  hasJwt: boolean;
+  home: unknown;
+  error: unknown;
+}): boolean {
+  return Boolean(
+    input.addOpen && input.hasJwt && input.home == null && input.error == null,
+  );
+}
+
+export function isAddPeopleDirectoryFailed(input: {
+  addOpen: boolean;
+  hasJwt: boolean;
+  error: unknown;
+}): boolean {
+  return Boolean(input.addOpen && input.hasJwt && input.error != null);
+}
+
 /**
  * Drops every intelligence SWR key on `/energy` until 7d telemetry has
  * settled (success or retries exhausted). One middleware so a missed
- * `useEnergyGatedSWRKey` at a caller cannot race 7d.
+ * `useEnergyGatedSWRKey` at a caller cannot race 7d. User-initiated Add
+ * people is exempt.
  */
 export const energyIntelligenceSWRMiddleware: Middleware = (useSWRNext) => {
   return (key, fetcher, config) => {
     const ready = useEnergyOverviewIdleGate();
-    if (!ready && isMemberIntelligenceSWRKey(key)) {
+    if (
+      !ready &&
+      isMemberIntelligenceSWRKey(key) &&
+      !isEnergyExemptMemberIntelligenceKey(key)
+    ) {
       return useSWRNext(null, fetcher, config);
     }
     return useSWRNext(key, fetcher, config);
@@ -45,7 +80,9 @@ export async function fetchMemberIntelligence(
     cache: 'no-store',
   });
   if (response.status === 404) return null;
-  if (!response.ok) return null;
+  if (!response.ok) {
+    throw new Error(`member-intelligence ${response.status}`);
+  }
   return (await response.json()) as MemberIntelligence;
 }
 

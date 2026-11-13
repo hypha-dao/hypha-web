@@ -4,10 +4,7 @@ import * as React from 'react';
 import Image from 'next/image';
 import { cn } from '@hypha-platform/ui-utils';
 import { useMainColumnScrollY } from '../../common/main-column-scroll';
-import {
-  shouldOptimizeRemoteImage,
-  toNextImageOptimizerSrc,
-} from '../../common/optimize-remote-image';
+import { toNextImageOptimizerSrc } from '../../common/optimize-remote-image';
 import {
   SPACE_BANNER_IMAGE_QUALITY,
   SPACE_BANNER_IMAGE_SIZES,
@@ -63,7 +60,13 @@ export function CompactSpaceBannerLead({ src }: Props) {
   const parallaxY = reduceMotion ? 0 : clampParallaxScrollY(mainScrollY);
   const imageVisible = ready && !imageFailed;
   const loadedOverlayOpacity = imageVisible ? 1 : 0;
-  const unoptimized = !shouldOptimizeRemoteImage(src);
+  // Pass the optimizer URL as `src` so React 19 / next/image preload cannot
+  // `new Image()` the UploadThing original. GIFs stay on the CDN.
+  const imageSrc = toNextImageOptimizerSrc(
+    src,
+    1920,
+    SPACE_BANNER_IMAGE_QUALITY,
+  );
   const predecodePlateStyle = {
     backgroundImage:
       'radial-gradient(ellipse 140% 100% at 12% -5%, rgb(14,17,25) 0%, rgb(10,13,20) 42%, rgb(7,9,15) 68%, rgb(4,6,11) 100%)',
@@ -115,18 +118,11 @@ export function CompactSpaceBannerLead({ src }: Props) {
       >
         <div className="relative h-full w-full min-h-[8rem]">
           <Image
-            src={src}
+            src={imageSrc}
             alt=""
             fill
             priority
-            loader={({ src: loaderSrc, width, quality }) =>
-              toNextImageOptimizerSrc(
-                loaderSrc,
-                width,
-                quality ?? SPACE_BANNER_IMAGE_QUALITY,
-              )
-            }
-            unoptimized={unoptimized}
+            unoptimized
             quality={SPACE_BANNER_IMAGE_QUALITY}
             sizes={SPACE_BANNER_IMAGE_SIZES}
             className={cn(

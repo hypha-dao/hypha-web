@@ -74,3 +74,15 @@ export function useEnergyGatedSWRKey<T>(key: T | null | undefined): T | null {
   if (!ready || key == null) return null;
   return key;
 }
+
+/**
+ * Direct member-intelligence fetches (not SWR) must use this so the
+ * always-mounted mobile create sheet cannot race 7d.
+ */
+export function shouldFetchEnergyGatedIntelligence(
+  energyReady: boolean,
+  options: { enabled?: boolean; hasProvidedData?: boolean } = {},
+): boolean {
+  const { enabled = true, hasProvidedData = false } = options;
+  return enabled && energyReady && !hasProvidedData;
+}

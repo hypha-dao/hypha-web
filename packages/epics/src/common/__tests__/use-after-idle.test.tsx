@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { holdEnergySevenDaySettled } from '../energy-seven-day-settled';
 import {
+  shouldFetchEnergyGatedIntelligence,
   toLinkPrefetch,
   useAfterIdle,
   useEnergyGatedSWRKey,
@@ -61,6 +62,26 @@ describe('useAfterIdle', () => {
     expect(result.current).toBe(true);
     rerender({ wait: true });
     expect(result.current).toBe(false);
+  });
+});
+
+describe('shouldFetchEnergyGatedIntelligence', () => {
+  it('blocks a hidden sheet and the energy route until 7d is ready', () => {
+    expect(shouldFetchEnergyGatedIntelligence(false, { enabled: true })).toBe(
+      false,
+    );
+    expect(shouldFetchEnergyGatedIntelligence(true, { enabled: false })).toBe(
+      false,
+    );
+    expect(
+      shouldFetchEnergyGatedIntelligence(true, {
+        enabled: true,
+        hasProvidedData: true,
+      }),
+    ).toBe(false);
+    expect(shouldFetchEnergyGatedIntelligence(true, { enabled: true })).toBe(
+      true,
+    );
   });
 });
 

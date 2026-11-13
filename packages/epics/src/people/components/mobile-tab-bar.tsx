@@ -442,7 +442,7 @@ export function MobileTabBar({
         inert={!createOpen}
       >
         <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-4">
-          <NetworkQuickCreate lang={lang} />
+          <NetworkQuickCreate lang={lang} enabled={createOpen} />
           <div className="mt-6 border border-border">
             <p className="border-b border-border px-3 py-2 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
               {t('settings')}

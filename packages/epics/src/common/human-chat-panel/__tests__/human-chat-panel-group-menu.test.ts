@@ -161,10 +161,13 @@ describe('add people directory', () => {
 
   it('keeps the shared-space page and searches the message directory', () => {
     expect(source).toContain('fetchMessageDirectorySearch');
-    expect(source).toContain("'add-people-directory'");
+    expect(source).toContain('ADD_PEOPLE_DIRECTORY_KEY');
     expect(source).not.toContain("'add-people', debouncedAddQuery");
     expect(source).toContain('addPeopleCandidateStatus');
     expect(source).toContain('usePeopleBySubs');
+    expect(source).not.toContain('useEnergyGatedSWRKey');
+    expect(source).toContain('isAddPeopleDirectoryFailed');
+    expect(source).toContain('isAddPeopleDirectoryPending');
   });
 });
 

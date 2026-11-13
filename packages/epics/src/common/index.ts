@@ -252,18 +252,29 @@ export {
 export { OptimizedAvatarImage } from './optimized-avatar-image';
 export {
   isLikelyGifSrc,
+  isLikelySvgSrc,
+  isNextImageOptimizationDisabled,
+  isNextImageOptimizerSrc,
+  NEXT_IMAGE_WIDTHS,
   parseConfiguredImageHosts,
   shouldOptimizeRemoteImage,
+  snapToNextImageWidth,
+  toCanvasSampleSrc,
   toNextImageOptimizerSrc,
 } from './optimize-remote-image';
 export {
+  ADD_PEOPLE_DIRECTORY_KEY,
   energyIntelligenceSWRMiddleware,
   fetchMemberIntelligence,
+  isAddPeopleDirectoryFailed,
+  isAddPeopleDirectoryPending,
+  isEnergyExemptMemberIntelligenceKey,
   isMemberIntelligenceSWRKey,
   MEMBER_INTELLIGENCE_PATH,
   useMemberIntelligence,
 } from './member-intelligence-swr';
 export {
+  shouldFetchEnergyGatedIntelligence,
   toLinkPrefetch,
   useAfterIdle,
   useEnergyGatedSWRKey,

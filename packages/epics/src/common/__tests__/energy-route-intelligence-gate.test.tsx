@@ -12,7 +12,9 @@ import {
   resetEnergySevenDaySettledForTests,
 } from '../energy-seven-day-settled';
 import {
+  ADD_PEOPLE_DIRECTORY_KEY,
   energyIntelligenceSWRMiddleware,
+  MEMBER_INTELLIGENCE_PATH,
   useMemberIntelligence,
 } from '../member-intelligence-swr';
 import { MobileSpacesSubnav } from '../../people/components/mobile-spaces-subnav';
@@ -204,6 +206,7 @@ const TEST_AND_DOCS_ALLOWLIST = [
   'packages/epics/src/common/index.ts',
   'packages/epics/src/common/__tests__/energy-route-intelligence-gate.test.tsx',
   'packages/epics/src/common/__tests__/use-after-idle.test.tsx',
+  'packages/epics/src/common/__tests__/member-intelligence-swr.test.ts',
   'packages/epics/src/common/__tests__/ai-panel-header-next-image.test.ts',
   'packages/epics/src/people/components/__tests__/member-connections.test.ts',
   'apps/web/src/lib/white-label/__tests__/host-login.test.ts',
@@ -262,5 +265,56 @@ describe('people/me/intelligence caller inventory', () => {
           source.includes('useMemberIntelligence'),
       ).toBe(true);
     }
+  });
+
+  it('lets a user-initiated add-people directory fetch before 7d settles', async () => {
+    function AddPeopleDirectoryCaller() {
+      useSWR(
+        [
+          MEMBER_INTELLIGENCE_PATH,
+          'test-jwt',
+          ADD_PEOPLE_DIRECTORY_KEY,
+        ] as const,
+        () =>
+          fetchMock(
+            `${MEMBER_INTELLIGENCE_PATH}?connections=24`,
+          ) as Promise<unknown>,
+      );
+      return null;
+    }
+    render(
+      <SWRConfig
+        value={{
+          provider: () => new Map(),
+          use: [energyIntelligenceSWRMiddleware],
+        }}
+      >
+        <AddPeopleDirectoryCaller />
+      </SWRConfig>,
+    );
+    await waitFor(() => {
+      expect(intelligenceCalls().length).toBeGreaterThan(0);
+    });
+  });
+
+  it('gates the always-mounted NetworkQuickCreate fetch on 7d and createOpen', () => {
+    const repoRoot = join(
+      dirname(fileURLToPath(import.meta.url)),
+      '../../../../../',
+    );
+    const create = readFileSync(
+      join(
+        repoRoot,
+        'packages/epics/src/network-exchange/network-quick-create.tsx',
+      ),
+      'utf8',
+    );
+    expect(create).toContain('shouldFetchEnergyGatedIntelligence');
+    expect(create).toContain('useEnergyOverviewIdleGate');
+    const tabBar = readFileSync(
+      join(repoRoot, 'packages/epics/src/people/components/mobile-tab-bar.tsx'),
+      'utf8',
+    );
+    expect(tabBar).toContain('enabled={createOpen}');
   });
 });

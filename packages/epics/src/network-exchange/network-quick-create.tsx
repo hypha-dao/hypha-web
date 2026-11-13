@@ -19,6 +19,10 @@ import { AddAttachment, Input } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { getLegacyCreateSpacePath } from '../common/get-path-function';
 import {
+  shouldFetchEnergyGatedIntelligence,
+  useEnergyOverviewIdleGate,
+} from '../common/use-after-idle';
+import {
   appendIndicativePayoutParams,
   LinkedTreasuryAmountField,
   type LinkedTreasuryPayout,
@@ -125,17 +129,24 @@ export function NetworkQuickCreate({
   lang,
   memberSpaces,
   kinds,
+  enabled = true,
 }: {
   lang: Locale;
   /** Prefer the member's known spaces (e.g. home intelligence) over a second fetch. */
   memberSpaces?: readonly MemberSpace[];
   /** Limit the actions. The create page asks only for a new space. */
   kinds?: readonly Kind[];
+  /**
+   * The mobile tab-bar mounts this sheet even while it is off-screen.
+   * Pass `createOpen` so a hidden sheet cannot fetch intelligence.
+   */
+  enabled?: boolean;
 }) {
   const t = useTranslations('NetworkExchange');
   const tSignals = useTranslations('CoherenceTab');
   const router = useRouter();
   const { jwt } = useJwt();
+  const energyReady = useEnergyOverviewIdleGate();
   const { person, isLoading: isLoadingMe } = useMe();
   const persona = personaOf(person?.primaryOrientation);
   const allowedKinds = kinds ?? KINDS_FOR_PERSONA[persona];
@@ -202,7 +213,15 @@ export function NetworkQuickCreate({
       applySpaces(fromProps);
       return;
     }
-    if (!jwt) return;
+    if (
+      !jwt ||
+      !shouldFetchEnergyGatedIntelligence(energyReady, {
+        enabled,
+        hasProvidedData: fromProps.length > 0,
+      })
+    ) {
+      return;
+    }
     let cancelled = false;
     void (async () => {
       const headers = { Authorization: `Bearer ${jwt}` };
@@ -230,7 +249,7 @@ export function NetworkQuickCreate({
     };
     // memberSpacesKey tracks prop identity without depending on array identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
-  }, [jwt, memberSpacesKey, person?.slug]);
+  }, [enabled, energyReady, jwt, memberSpacesKey, person?.slug]);
 
   useEffect(() => {
     if (isLoadingMe || allowedKinds.includes(kind)) return;

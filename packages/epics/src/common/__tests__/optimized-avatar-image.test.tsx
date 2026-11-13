@@ -62,4 +62,24 @@ describe('OptimizedAvatarImage', () => {
       toNextImageOptimizerSrc('https://bovzk9ehhu.ufs.sh/f/ok.png', 64, 70),
     );
   });
+
+  it('renders a ufs.sh PNG as a single /_next/image wrap with a valid w', () => {
+    const pontaPng =
+      'https://bovzk9ehhu.ufs.sh/f/6MiOwFUJuAcocp3uZG4AN0lxYkareI1GvqLDX2FV5jh8d4fo';
+    render(<OptimizedAvatarImage src={pontaPng} alt="Ponta" pixelSize={56} />);
+    const src = screen.getByRole('img', { name: 'Ponta' }).getAttribute('src');
+    expect(src).toBe(
+      `/_next/image?url=${encodeURIComponent(pontaPng)}&w=128&q=70`,
+    );
+    expect(src?.match(/\/_next\/image\?/g)).toHaveLength(1);
+    expect(src).not.toContain('url=%2F_next%2Fimage');
+  });
+
+  it('leaves a GIF on the CDN', () => {
+    const gif = 'https://bovzk9ehhu.ufs.sh/f/community-logo.gif';
+    render(<OptimizedAvatarImage src={gif} alt="Gif" pixelSize={56} />);
+    expect(screen.getByRole('img', { name: 'Gif' }).getAttribute('src')).toBe(
+      gif,
+    );
+  });
 });

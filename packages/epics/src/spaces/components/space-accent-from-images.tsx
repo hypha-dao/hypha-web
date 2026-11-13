@@ -17,6 +17,7 @@ import {
 } from '../utils/space-accent-scope-style';
 import { defaultSpacePortalStyles } from '../utils/space-accent-portal-styles';
 import { useSetSpaceAccentPortalStyles } from './space-accent-portal-context';
+import { toCanvasSampleSrc } from '../../common/optimize-remote-image';
 import { useAfterIdle } from '../../common/use-after-idle';
 
 /** Keys mirrored to `document.documentElement` so portaled UI (e.g. Human Chat) uses space accent. */
@@ -74,28 +75,11 @@ export type SpaceAccentFromImagesProps = {
 
 /**
  * Same-origin image URL so canvas readPixels works for remote hosts without CORS
- * (Next.js Image Optimization proxies the bytes). Null for unsupported URLs.
+ * (Next.js Image Optimization proxies the bytes). Null for unsupported URLs —
+ * never the UploadThing original, which Chrome would fetch via `new Image()`.
  */
 function canvasFriendlyImageSrc(src: string): string | null {
-  const t = src.trim();
-  if (!t) return null;
-  /** Same-origin path — reject protocol-relative `//evil` */
-  if (t.startsWith('/')) {
-    return t.startsWith('//') ? null : t;
-  }
-  if (typeof window === 'undefined') return null;
-  try {
-    const u = new URL(t);
-    if (u.pathname.toLowerCase().endsWith('.gif')) {
-      return null;
-    }
-    if (u.protocol === 'http:' || u.protocol === 'https:') {
-      return `/_next/image?url=${encodeURIComponent(t)}&w=64&q=60`;
-    }
-  } catch {
-    /* ignore */
-  }
-  return null;
+  return toCanvasSampleSrc(src);
 }
 
 function loadImageData(

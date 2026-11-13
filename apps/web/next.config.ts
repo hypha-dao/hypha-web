@@ -3,7 +3,10 @@ import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import createWithVercelToolbar from '@vercel/toolbar/plugins/next';
 import { routing } from '../../packages/i18n/src/routing';
-import { parseConfiguredImageHosts } from '../../packages/epics/src/common/optimize-remote-image';
+import {
+  isNextImageOptimizationDisabled,
+  parseConfiguredImageHosts,
+} from '../../packages/epics/src/common/optimize-remote-image';
 import {
   WHITE_LABEL_HOST_CONFIG_ENV,
   parseWhiteLabelHostConfig,
@@ -124,7 +127,7 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    unoptimized: process.env.DISABLE_IMAGE_OPTIMIZATION === 'true',
+    unoptimized: isNextImageOptimizationDisabled(),
     remotePatterns: [
       ...new Set([
         ...IMAGE_HOSTS,

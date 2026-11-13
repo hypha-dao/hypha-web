@@ -18,7 +18,7 @@ describe('ConnectedMenuTop space logo', () => {
     expect(source).not.toMatch(/src=\{rootLogoUrl\}/);
   });
 
-  it('sends the compact banner lead through the optimizer loader', () => {
+  it('passes the optimizer URL as next/image src so React commit cannot Image() ufs.sh', () => {
     const source = readFileSync(
       join(
         dirname(fileURLToPath(import.meta.url)),
@@ -27,5 +27,20 @@ describe('ConnectedMenuTop space logo', () => {
       'utf8',
     );
     expect(source).toContain('toNextImageOptimizerSrc');
+    expect(source).toContain('src={imageSrc}');
+    expect(source).toContain('unoptimized');
+    expect(source).not.toMatch(/src=\{src\}/);
+  });
+
+  it('rewrites MemberSpaceSelect img src through the optimizer', () => {
+    const source = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        '../../network-exchange/member-space-select.tsx',
+      ),
+      'utf8',
+    );
+    expect(source).toContain('toNextImageOptimizerSrc');
+    expect(source).not.toMatch(/src=\{logoUrl\}/);
   });
 });
