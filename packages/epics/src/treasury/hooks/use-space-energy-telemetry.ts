@@ -3,6 +3,7 @@
 import React from 'react';
 import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { holdEnergySevenDaySettled } from '../../common/energy-seven-day-settled';
 import type { Timeframe } from '../components/assets/energy/dummy-data';
 
 /** Server-side telemetry period. Superset of the chart `Timeframe` toggle values. */
@@ -264,6 +265,14 @@ export const useSpaceEnergyTelemetry = (
     if (cancelled && endpoint) void mutate();
   }, [cancelled, endpoint, mutate]);
 
+  const retriesGaveUp = Boolean(visibleError) && retriesExhausted;
+
+  React.useEffect(() => {
+    if (period !== '7d') return;
+    if (data === undefined && !retriesGaveUp) return;
+    return holdEnergySevenDaySettled();
+  }, [period, data, retriesGaveUp]);
+
   return {
     data,
     isLoading:
@@ -271,7 +280,7 @@ export const useSpaceEnergyTelemetry = (
       data === undefined &&
       (isLoading || isValidating || cancelled),
     error: visibleError,
-    retriesExhausted: Boolean(visibleError) && retriesExhausted,
+    retriesExhausted: retriesGaveUp,
     refresh: mutate,
   };
 };

@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { usePathname } from 'next/navigation';
 
+import { useEnergySevenDaySettled } from './energy-seven-day-settled';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 
 /**
@@ -43,9 +44,11 @@ export function useAfterIdle(wait: boolean, timeoutMs = 1_200): boolean {
   return wait ? ready : true;
 }
 
-/** Background fetches/prefetches wait until Overview has had the network. */
+/** Background fetches wait until 7d telemetry has settled on `/energy`. */
 export function useEnergyOverviewIdleGate(): boolean {
   const pathname = usePathname();
   const onEnergy = getActiveTabFromPath(pathname) === 'energy';
-  return useAfterIdle(onEnergy);
+  const sevenDaySettled = useEnergySevenDaySettled();
+  if (!onEnergy) return true;
+  return sevenDaySettled;
 }

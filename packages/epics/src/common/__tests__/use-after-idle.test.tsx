@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import * as React from 'react';
-import { act, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { holdEnergySevenDaySettled } from '../energy-seven-day-settled';
 import { useAfterIdle, useEnergyOverviewIdleGate } from '../use-after-idle';
 
 vi.mock('next/navigation', () => ({
@@ -24,6 +25,7 @@ describe('useAfterIdle', () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.unstubAllGlobals();
     vi.useRealTimers();
   });
@@ -62,12 +64,22 @@ describe('useEnergyOverviewIdleGate', () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
-  it('waits on the energy route so other tabs do not prefetch yet', () => {
+  it('waits on the energy route until 7d telemetry has settled', () => {
     const { result } = renderHook(() => useEnergyOverviewIdleGate());
+    expect(result.current).toBe(false);
+    let release: () => void = () => undefined;
+    act(() => {
+      release = holdEnergySevenDaySettled();
+    });
+    expect(result.current).toBe(true);
+    act(() => {
+      release();
+    });
     expect(result.current).toBe(false);
   });
 });
