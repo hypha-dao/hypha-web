@@ -33,6 +33,7 @@ describe('energy-route space logos stay on next/image', () => {
       'utf8',
     );
     expect(source).toContain('shouldHoldSettledForDisabledEnergy');
+    expect(source).toContain('error && !data');
     expect(source).not.toMatch(/if \(isLoading \|\| data\?\.enabled\) return;/);
   });
 

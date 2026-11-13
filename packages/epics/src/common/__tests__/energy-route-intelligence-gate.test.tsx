@@ -16,6 +16,7 @@ import {
   useMemberIntelligence,
 } from '../member-intelligence-swr';
 import { MobileSpacesSubnav } from '../../people/components/mobile-spaces-subnav';
+import { SpaceEnergySection } from '../../treasury/components/assets/space-energy-section';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/en/dho/ponta-do-sol-energy-community/energy',
@@ -25,6 +26,31 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@hypha-platform/core/client', () => ({
   useJwt: () => ({ jwt: 'test-jwt', isLoadingJwt: false }),
+}));
+
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
+vi.mock('@hypha-platform/authentication', () => ({
+  useAuthentication: () => ({
+    getAccessToken: async () => 'token',
+    isLoading: false,
+  }),
+}));
+
+const spaceEnergy = vi.hoisted(() => ({
+  data: undefined as { enabled?: boolean } | undefined,
+  isLoading: false,
+  error: undefined as Error | undefined,
+}));
+
+vi.mock('../../treasury/hooks/use-space-energy', () => ({
+  useSpaceEnergy: () => ({
+    data: spaceEnergy.data,
+    isLoading: spaceEnergy.isLoading,
+    error: spaceEnergy.error,
+  }),
 }));
 
 vi.mock('../../people/components/member-home-spaces-rail', () => ({
@@ -97,6 +123,9 @@ describe('energy route intelligence fetches', () => {
   beforeEach(() => {
     resetEnergySevenDaySettledForTests();
     fetchMock.mockClear();
+    spaceEnergy.data = undefined;
+    spaceEnergy.isLoading = false;
+    spaceEnergy.error = undefined;
     vi.stubGlobal('fetch', fetchMock);
   });
 
@@ -128,6 +157,21 @@ describe('energy route intelligence fetches', () => {
     expect(sharedKeyCalls).toHaveLength(1);
     act(() => {
       release();
+    });
+  });
+
+  it('releases the intelligence gate when /energy errors with no cached data', async () => {
+    spaceEnergy.error = new Error('Failed to fetch space energy data: 500');
+    spaceEnergy.data = undefined;
+    spaceEnergy.isLoading = false;
+    render(
+      <>
+        <SpaceEnergySection spaceSlug="ponta-do-sol-energy-community" />
+        <EnergyRouteTree />
+      </>,
+    );
+    await waitFor(() => {
+      expect(intelligenceCalls().length).toBeGreaterThan(0);
     });
   });
 });

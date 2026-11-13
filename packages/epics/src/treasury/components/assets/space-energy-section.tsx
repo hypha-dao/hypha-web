@@ -62,7 +62,7 @@ export type SpaceEnergySectionProps = {
 export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
   const t = useTranslations('Energy.tabs');
   const tOverview = useTranslations('Energy.overview');
-  const { data, isLoading } = useSpaceEnergy(spaceSlug);
+  const { data, isLoading, error } = useSpaceEnergy(spaceSlug);
   const [tab, setTab] = React.useState<string>('overview');
 
   // Overview is gated only on `/energy`. 7d then 30d still prefetch so
@@ -82,9 +82,13 @@ export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
     prefetchTelemetry,
   );
   React.useEffect(() => {
-    if (!shouldHoldSettledForDisabledEnergy(isLoading, data)) return;
-    return holdEnergySevenDaySettled();
-  }, [data, isLoading]);
+    if (
+      shouldHoldSettledForDisabledEnergy(isLoading, data) ||
+      (error && !data)
+    ) {
+      return holdEnergySevenDaySettled();
+    }
+  }, [data, error, isLoading]);
   useSpaceEnergyTelemetry('30d', spaceSlug, {
     ...prefetchTelemetry,
     enabled:

@@ -17,6 +17,10 @@ vi.mock('@hypha-platform/authentication', () => ({
 }));
 
 import {
+  getEnergySevenDaySettled,
+  resetEnergySevenDaySettledForTests,
+} from '../../../common/energy-seven-day-settled';
+import {
   EnergyTelemetryHttpError,
   EnergyTelemetryTimeoutError,
   useSpaceEnergyTelemetry,
@@ -82,6 +86,7 @@ describe('useSpaceEnergyTelemetry', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     pending = [];
+    resetEnergySevenDaySettledForTests();
     auth.getAccessToken = () => Promise.resolve('token');
     auth.isLoading = false;
     vi.stubGlobal(
@@ -105,6 +110,7 @@ describe('useSpaceEnergyTelemetry', () => {
 
   afterEach(() => {
     cleanup();
+    resetEnergySevenDaySettledForTests();
     vi.unstubAllGlobals();
     vi.useRealTimers();
   });
@@ -320,6 +326,7 @@ describe('useSpaceEnergyTelemetry', () => {
     expect(pending).toHaveLength(1);
     expect(result.current.error).toBeInstanceOf(EnergyTelemetryHttpError);
     expect(result.current.retriesExhausted).toBe(true);
+    expect(getEnergySevenDaySettled()).toBe(true);
   });
 
   it('does not exhaust retries on the first retryable 7d error', async () => {
@@ -334,6 +341,7 @@ describe('useSpaceEnergyTelemetry', () => {
     });
     expect(result.current.error).toBeInstanceOf(EnergyTelemetryHttpError);
     expect(result.current.retriesExhausted).toBe(false);
+    expect(getEnergySevenDaySettled()).toBe(false);
   });
 
   it('exhausts retries after the last 7d attempt so 30d can start', async () => {
@@ -370,6 +378,7 @@ describe('useSpaceEnergyTelemetry', () => {
     expect(pending).toHaveLength(4);
     expect(result.current.error).toBeInstanceOf(EnergyTelemetryHttpError);
     expect(result.current.retriesExhausted).toBe(true);
+    expect(getEnergySevenDaySettled()).toBe(true);
   });
 
   it('hard-aborts a hung request after 85s', async () => {
