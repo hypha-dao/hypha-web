@@ -66,7 +66,7 @@ import {
   type AiPanelDraftAttachment,
 } from './ai-panel';
 import { OptimizedAvatarImage } from './optimized-avatar-image';
-import { useEnergyOverviewIdleGate } from './use-after-idle';
+import { toLinkPrefetch, useEnergyOverviewIdleGate } from './use-after-idle';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { HYPHA_SPACE_SWITCH_LINK_ATTR } from './main-column-scroll';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
@@ -1034,7 +1034,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           <Link
             href={item.href}
             scroll={false}
-            prefetch={prefetchNav}
+            prefetch={toLinkPrefetch(prefetchNav)}
             onClick={mode === 'collapsed' ? undefined : closeIfExpanded}
             aria-label={item.label}
             aria-current={item.active ? 'page' : undefined}
@@ -1093,7 +1093,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             <Link
               href={safeHref}
               scroll={false}
-              prefetch={prefetchNav}
+              prefetch={toLinkPrefetch(prefetchNav)}
               {...{ [HYPHA_SPACE_SWITCH_LINK_ATTR]: '' }}
               onClick={
                 mode === 'collapsed' ? undefined : handleExpandedMenuNavigation

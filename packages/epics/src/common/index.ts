@@ -255,5 +255,9 @@ export {
   parseConfiguredImageHosts,
   shouldOptimizeRemoteImage,
 } from './optimize-remote-image';
-export { useAfterIdle, useEnergyOverviewIdleGate } from './use-after-idle';
+export {
+  toLinkPrefetch,
+  useAfterIdle,
+  useEnergyOverviewIdleGate,
+} from './use-after-idle';
 export * from './composer';

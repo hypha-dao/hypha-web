@@ -26,7 +26,10 @@ import {
   subscribeRecentSpaceSlugs,
 } from '../../common/recent-space-history';
 import { OptimizedAvatarImage } from '../../common/optimized-avatar-image';
-import { useEnergyOverviewIdleGate } from '../../common/use-after-idle';
+import {
+  toLinkPrefetch,
+  useEnergyOverviewIdleGate,
+} from '../../common/use-after-idle';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { groupSpacesByEcosystemRecency } from './order-spaces-by-ecosystem';
 import { SPACES_RAIL_ID, useSpacesRailControl } from './spaces-rail-control';
@@ -121,7 +124,7 @@ export function MemberHomeSpacesRail({
               <TooltipTrigger asChild>
                 <Link
                   href={`/${lang}/my-spaces`}
-                  prefetch={prefetchNav}
+                  prefetch={toLinkPrefetch(prefetchNav)}
                   aria-label={t('openMySpaces')}
                   className={cn(
                     'grid place-items-center rounded-full border border-dashed border-border text-neutral-11',
@@ -171,7 +174,7 @@ export function MemberHomeSpacesRail({
                       <TooltipTrigger asChild>
                         <Link
                           href={`/${lang}/dho/${space.slug}/overview`}
-                          prefetch={prefetchNav}
+                          prefetch={toLinkPrefetch(prefetchNav)}
                           aria-label={space.title}
                           aria-current={active ? 'page' : undefined}
                           className={cn(
@@ -214,7 +217,7 @@ export function MemberHomeSpacesRail({
                 <TooltipTrigger asChild>
                   <Link
                     href={`/${lang}/my-spaces`}
-                    prefetch={prefetchNav}
+                    prefetch={toLinkPrefetch(prefetchNav)}
                     aria-label={t('openMySpaces')}
                     className={cn(
                       'grid shrink-0 place-items-center rounded-full border border-border text-neutral-11',

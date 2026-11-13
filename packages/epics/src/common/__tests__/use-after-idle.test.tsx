@@ -4,7 +4,11 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { holdEnergySevenDaySettled } from '../energy-seven-day-settled';
-import { useAfterIdle, useEnergyOverviewIdleGate } from '../use-after-idle';
+import {
+  toLinkPrefetch,
+  useAfterIdle,
+  useEnergyOverviewIdleGate,
+} from '../use-after-idle';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/en/dho/ponta-do-sol-energy-community/energy',
@@ -46,6 +50,23 @@ describe('useAfterIdle', () => {
       await vi.advanceTimersByTimeAsync(400);
     });
     expect(result.current).toBe(true);
+  });
+
+  it('returns false on the first render after wait flips from false to true', () => {
+    const { result, rerender } = renderHook(
+      ({ wait }: { wait: boolean }) => useAfterIdle(wait),
+      { initialProps: { wait: false } },
+    );
+    expect(result.current).toBe(true);
+    rerender({ wait: true });
+    expect(result.current).toBe(false);
+  });
+});
+
+describe('toLinkPrefetch', () => {
+  it('uses viewport auto prefetch when ready and disables it while waiting', () => {
+    expect(toLinkPrefetch(true)).toBeNull();
+    expect(toLinkPrefetch(false)).toBe(false);
   });
 });
 

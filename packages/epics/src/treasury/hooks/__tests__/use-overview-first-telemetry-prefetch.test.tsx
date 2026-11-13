@@ -48,6 +48,17 @@ describe('useOverviewFirstTelemetryPrefetch', () => {
     expect(result.current).toBe(true);
   });
 
+  it('re-applies the idle delay when returning to overview', () => {
+    const { result, rerender } = renderHook(
+      ({ tab }: { tab: string }) =>
+        useOverviewFirstTelemetryPrefetch(true, tab),
+      { initialProps: { tab: 'flows' } },
+    );
+    expect(result.current).toBe(true);
+    rerender({ tab: 'overview' });
+    expect(result.current).toBe(false);
+  });
+
   it('stays off when energy data has not arrived', async () => {
     const { result } = renderHook(() =>
       useOverviewFirstTelemetryPrefetch(false, 'overview'),

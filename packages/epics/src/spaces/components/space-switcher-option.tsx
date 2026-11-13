@@ -53,7 +53,7 @@ export const SpaceSwitcherOption = forwardRef<
     <Link
       ref={ref}
       {...props}
-      prefetch={prefetch ?? prefetchNav}
+      prefetch={prefetch ?? (prefetchNav ? null : false)}
       className={cn('flex w-full min-w-0 items-center gap-2', className)}
       style={{ minHeight: 32 }}
     >

@@ -26,7 +26,10 @@ import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
-import { useEnergyOverviewIdleGate } from '../../common/use-after-idle';
+import {
+  toLinkPrefetch,
+  useEnergyOverviewIdleGate,
+} from '../../common/use-after-idle';
 import { useAiPanel } from '../../common/human-chat-panel-context';
 import { buildSpaceSectionNavItems } from '../../common/space-section-nav';
 import type { SpaceSectionNavKey } from '../../common/space-section-nav';
@@ -549,7 +552,7 @@ export function MobileTabBar({
                 <Link
                   key={item.key}
                   href={item.href}
-                  prefetch={prefetchNav}
+                  prefetch={toLinkPrefetch(prefetchNav)}
                   aria-current={item.active ? 'page' : undefined}
                   className={className}
                 >
@@ -571,7 +574,7 @@ export function MobileTabBar({
               href={dashboardHref}
               label={t('myDashboard')}
               active={dashboardActive}
-              prefetch={prefetchNav}
+              prefetch={toLinkPrefetch(prefetchNav)}
               onClick={() => setCreateOpen(false)}
               icon={<House className={iconClass} strokeWidth={1.25} />}
             />
@@ -581,7 +584,7 @@ export function MobileTabBar({
                 label={t('chat')}
                 active={connectionsActive}
                 badge={unreadCount}
-                prefetch={prefetchNav}
+                prefetch={toLinkPrefetch(prefetchNav)}
                 onClick={() => setCreateOpen(false)}
                 icon={
                   <MessagesSquare className={iconClass} strokeWidth={1.25} />
@@ -593,7 +596,7 @@ export function MobileTabBar({
               label={t('myWallet')}
               active={walletActive}
               center
-              prefetch={prefetchNav}
+              prefetch={toLinkPrefetch(prefetchNav)}
               onClick={() => setCreateOpen(false)}
               icon={
                 <Wallet className="block h-5 w-5 shrink-0" strokeWidth={1.25} />
@@ -604,7 +607,7 @@ export function MobileTabBar({
                 href={spacesHref}
                 label={t('mySpaces')}
                 active={spacesActive}
-                prefetch={prefetchNav}
+                prefetch={toLinkPrefetch(prefetchNav)}
                 onClick={() => setCreateOpen(false)}
                 icon={<LayoutGrid className={iconClass} strokeWidth={1.25} />}
               />
@@ -613,7 +616,7 @@ export function MobileTabBar({
               href={networkHref}
               label={t('network')}
               active={networkActive}
-              prefetch={prefetchNav}
+              prefetch={toLinkPrefetch(prefetchNav)}
               onClick={() => setCreateOpen(false)}
               icon={<Globe2 className={iconClass} strokeWidth={1.25} />}
             />
@@ -631,7 +634,7 @@ function TabLink({
   active,
   center,
   badge = 0,
-  prefetch = true,
+  prefetch = null,
   onClick,
   icon,
 }: {
@@ -640,7 +643,7 @@ function TabLink({
   active: boolean;
   center?: boolean;
   badge?: number;
-  prefetch?: boolean;
+  prefetch?: boolean | null;
   onClick: () => void;
   icon: ReactNode;
 }) {
