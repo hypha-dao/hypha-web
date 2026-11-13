@@ -59,9 +59,16 @@ describe('legacy signal fields', () => {
       'relative flex w-full flex-col items-end gap-3 pt-8',
     );
     expect(form).toContain('flex w-full justify-end gap-2');
+    expect(form.indexOf('<LegacySignalFieldsDisclosure')).toBeLessThan(
+      form.indexOf('flex w-full justify-end gap-2'),
+    );
     expect(page.match(/<LegacySignalFieldsDetail/g)).toHaveLength(1);
+    expect(page.indexOf('<SignalMediaSection')).toBeLessThan(
+      page.indexOf('<LegacySignalFieldsDetail'),
+    );
     expect(disclosure).toContain('absolute right-0 top-2');
-    expect(disclosure).toContain('absolute bottom-full right-0');
+    expect(disclosure).toContain('className="w-full self-stretch"');
+    expect(disclosure).not.toContain('absolute bottom-full');
     const toggle = disclosure.slice(
       disclosure.indexOf('data-testid="legacy-signal-fields-toggle"') - 80,
       disclosure.indexOf('</button>'),

@@ -1428,6 +1428,8 @@ export const CreateSignalForm = ({
 
             <div className="relative flex w-full flex-col items-end gap-3 pt-8">
               <SignalFormRootError control={form.control} />
+              {/* TODO: Temporary for Reciprocal Exchange. Delete with legacy-signal-fields/. */}
+              <LegacySignalFieldsDisclosure disabled={isMutating} />
               <div className="flex w-full justify-end gap-2">
                 <Button
                   type="submit"
@@ -1440,8 +1442,6 @@ export const CreateSignalForm = ({
                     : tAgreementFlow('buttons.publish')}
                 </Button>
               </div>
-              {/* TODO: Temporary for Reciprocal Exchange. Delete with legacy-signal-fields/. */}
-              <LegacySignalFieldsDisclosure disabled={isMutating} />
             </div>
           </div>
         </form>

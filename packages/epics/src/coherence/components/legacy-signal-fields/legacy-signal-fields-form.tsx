@@ -44,8 +44,8 @@ import {
  * insertion points in `create-signal-form.tsx` and `signal-page.tsx`, when
  * Reciprocal Exchange no longer reads these columns.
  *
- * The control is absolutely positioned in the form's existing lower-right
- * padding, so the publish row does not move.
+ * The control stays absolutely positioned in the form's existing lower-right
+ * padding. Opened fields are in normal flow, directly above the button row.
  */
 export function LegacySignalFieldsDisclosure({
   disabled = false,
@@ -73,7 +73,7 @@ export function LegacySignalFieldsDisclosure({
       {open ? (
         <div
           data-testid="legacy-signal-fields-panel"
-          className="absolute bottom-full right-0 z-30 mb-1 max-h-[min(32rem,70vh)] w-full overflow-y-auto overscroll-contain border border-border bg-background p-4"
+          className="w-full self-stretch"
         >
           <LegacySignalFieldsForm disabled={disabled} />
         </div>

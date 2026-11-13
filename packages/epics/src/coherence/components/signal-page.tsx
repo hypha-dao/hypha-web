@@ -617,9 +617,6 @@ export function SignalPage({
         </div>
       </section>
 
-      {/* TODO: Temporary for Reciprocal Exchange. Delete with legacy-signal-fields/. */}
-      <LegacySignalFieldsDetail signal={signal} />
-
       {description ? (
         <section className="craft-card flex flex-col gap-3 p-5">
           <h2 className={cn(SECTION_LABEL_CLASS, 'm-0')}>{t('description')}</h2>
@@ -630,6 +627,9 @@ export function SignalPage({
       ) : null}
 
       <SignalMediaSection signal={signal} />
+
+      {/* TODO: Temporary for Reciprocal Exchange. Delete with legacy-signal-fields/. */}
+      <LegacySignalFieldsDetail signal={signal} />
     </div>
   );
 }
